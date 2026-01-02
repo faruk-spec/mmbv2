@@ -85,15 +85,37 @@ class NavbarController extends BaseController
                 $urls = $_POST['custom_link_url'];
                 $icons = $_POST['custom_link_icon'];
                 $positions = $_POST['custom_link_position'];
+                $isDropdownArray = $_POST['custom_link_is_dropdown'] ?? [];
 
                 foreach ($titles as $index => $title) {
                     if (!empty($title) && !empty($urls[$index])) {
-                        $customLinks[] = [
+                        $linkData = [
                             'title' => $title,
                             'url' => $urls[$index],
                             'icon' => $icons[$index] ?? '',
-                            'position' => (int)($positions[$index] ?? 0)
+                            'position' => (int)($positions[$index] ?? 0),
+                            'is_dropdown' => in_array((string)$index, $isDropdownArray),
+                            'dropdown_items' => []
                         ];
+                        
+                        // Handle dropdown items if this is a dropdown
+                        if ($linkData['is_dropdown']) {
+                            $dropdownTitles = $_POST['dropdown_item_title_' . $index] ?? [];
+                            $dropdownUrls = $_POST['dropdown_item_url_' . $index] ?? [];
+                            $dropdownIcons = $_POST['dropdown_item_icon_' . $index] ?? [];
+                            
+                            foreach ($dropdownTitles as $subIndex => $subTitle) {
+                                if (!empty($subTitle) && !empty($dropdownUrls[$subIndex])) {
+                                    $linkData['dropdown_items'][] = [
+                                        'title' => $subTitle,
+                                        'url' => $dropdownUrls[$subIndex],
+                                        'icon' => $dropdownIcons[$subIndex] ?? ''
+                                    ];
+                                }
+                            }
+                        }
+                        
+                        $customLinks[] = $linkData;
                     }
                 }
             }
