@@ -906,7 +906,7 @@ try {
             <!-- Dashboard Layout with Left and Right Sidebars -->
             <div class="full-dashboard-layout" style="display: grid; grid-template-columns: 250px 1fr 300px; gap: 0; min-height: calc(100vh - 60px);">
                 <!-- Left Navigation Sidebar -->
-                <aside class="left-sidebar" id="leftSidebar" style="background: var(--bg-card); border-right: 1px solid var(--border-color); position: sticky; top: 0; height: 100vh; overflow-y: auto; transition: width 0.3s ease;">
+                <aside class="left-sidebar" id="leftSidebar" style="background: var(--bg-card); border-right: 1px solid var(--border-color); position: sticky; top: 0; min-height: 100vh; max-height: 100vh; overflow-y: auto; transition: width 0.3s ease;">
                     <!-- Toggle Button -->
                     <div style="padding: 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color);">
                         <span class="sidebar-title" style="font-size: 0.9rem; font-weight: 700; color: var(--text-primary);">Navigation</span>
@@ -932,6 +932,24 @@ try {
                                 </svg>
                                 <span class="nav-text">Dashboard</span>
                             </a>
+                        </div>
+                        
+                        <!-- Account Information Compact Card -->
+                        <div class="nav-section" style="margin: 8px 16px 16px 16px; padding: 12px; background: var(--bg-secondary); border-radius: 8px; border: 1px solid var(--border-color);">
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+                                </svg>
+                                <span class="nav-text" style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Account Info</span>
+                            </div>
+                            <div class="nav-text" style="margin-bottom: 8px;">
+                                <div style="font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 3px;">Email</div>
+                                <div style="font-size: 0.75rem; font-weight: 500; color: var(--text-primary); word-break: break-all;"><?= htmlspecialchars(Auth::user()['email'] ?? 'N/A') ?></div>
+                            </div>
+                            <div class="nav-text">
+                                <div style="font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 3px;">Role</div>
+                                <div style="display: inline-block; font-size: 0.7rem; padding: 3px 8px; background: rgba(0, 240, 255, 0.1); color: var(--cyan); border-radius: 4px; font-weight: 600; text-transform: capitalize;"><?= htmlspecialchars(Auth::user()['role'] ?? 'User') ?></div>
+                            </div>
                         </div>
                         
                         <!-- Account Section -->
@@ -999,15 +1017,17 @@ try {
                                 <div class="nav-group-content" style="max-height: 0; overflow: hidden; transition: max-height 0.3s ease;">
                                     <?php
                                     $projects = [
-                                        ['name' => 'ProShare', 'url' => '/projects/proshare', 'icon' => '📁'],
-                                        ['name' => 'ImgTxt', 'url' => '/projects/imgtxt', 'icon' => '🖼️'],
-                                        ['name' => 'CodeXPro', 'url' => '/projects/codexpro', 'icon' => '💻'],
-                                        ['name' => 'DevZone', 'url' => '/projects/devzone', 'icon' => '🚀'],
+                                        ['name' => 'ProShare', 'url' => '/projects/proshare', 'icon' => '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>'],
+                                        ['name' => 'ImgTxt', 'url' => '/projects/imgtxt', 'icon' => '<rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline>'],
+                                        ['name' => 'CodeXPro', 'url' => '/projects/codexpro', 'icon' => '<polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline>'],
+                                        ['name' => 'DevZone', 'url' => '/projects/devzone', 'icon' => '<circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon>'],
                                     ];
                                     foreach ($projects as $project):
                                     ?>
                                         <a href="<?= $project['url'] ?>" class="nav-sub-item" style="display: flex; align-items: center; gap: 12px; padding: 8px 16px 8px 44px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.8rem;" onmouseover="this.style.background='rgba(0,240,255,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
-                                            <span style="font-size: 14px;"><?= $project['icon'] ?></span>
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <?= $project['icon'] ?>
+                                            </svg>
                                             <span class="nav-text"><?= $project['name'] ?></span>
                                         </a>
                                     <?php endforeach; ?>
@@ -1117,17 +1137,17 @@ try {
                     </div>
                     
                     <!-- Recent Activity Card with Dropdown -->
-                    <div class="sidebar-card sidebar-dropdown" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 16px; margin-bottom: 16px;">
-                        <h3 class="sidebar-dropdown-trigger" style="font-size: 0.9rem; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none;">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
+                    <div class="sidebar-card sidebar-dropdown" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; margin-bottom: 16px;">
+                        <h3 class="sidebar-dropdown-trigger" style="font-size: 0.85rem; font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none;">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
                                 <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
                             </svg>
                             Recent Activity
-                            <svg class="dropdown-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2" style="margin-left: auto; transition: transform 0.3s;">
+                            <svg class="dropdown-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2" style="margin-left: auto; transition: transform 0.3s;">
                                 <polyline points="6 9 12 15 18 9"></polyline>
                             </svg>
                         </h3>
-                        <div class="sidebar-dropdown-content" style="display: flex; flex-direction: column; gap: 6px; max-height: 0; overflow: hidden; transition: max-height 0.3s ease, opacity 0.3s ease; opacity: 0;">
+                        <div class="sidebar-dropdown-content" style="display: flex; flex-direction: column; gap: 4px; max-height: 0; overflow: hidden; transition: max-height 0.3s ease, opacity 0.3s ease; opacity: 0;">
                             <?php
                             try {
                                 $db = \Core\Database::getInstance();
@@ -1138,26 +1158,26 @@ try {
                                 
                                 if (empty($recentActivities)):
                             ?>
-                                <div style="padding: 8px; text-align: center; color: var(--text-secondary); font-size: 0.75rem;">
+                                <div style="padding: 6px; text-align: center; color: var(--text-secondary); font-size: 0.7rem;">
                                     No recent activity
                                 </div>
                             <?php else: ?>
                                 <?php foreach ($recentActivities as $activity): ?>
-                                    <div style="padding: 6px 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 4px; font-size: 0.75rem;">
-                                        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px;">
-                                            <span style="font-weight: 600; color: var(--text-primary); text-transform: capitalize;"><?= htmlspecialchars($activity['action']) ?></span>
+                                    <div style="padding: 5px 6px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 4px; font-size: 0.7rem;">
+                                        <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 2px;">
+                                            <span style="font-weight: 600; color: var(--text-primary); text-transform: capitalize; font-size: 0.7rem;"><?= htmlspecialchars($activity['action']) ?></span>
                                         </div>
-                                        <div style="color: var(--text-secondary); font-size: 0.7rem;">
+                                        <div style="color: var(--text-secondary); font-size: 0.65rem;">
                                             <?= \Core\Helpers::timeAgo($activity['created_at']) ?>
                                         </div>
                                     </div>
                                 <?php endforeach; ?>
-                                <a href="/activity" style="display: block; text-align: center; padding: 6px; color: var(--cyan); font-size: 0.75rem; text-decoration: none; margin-top: 4px;">
+                                <a href="/activity" style="display: block; text-align: center; padding: 4px; color: var(--cyan); font-size: 0.7rem; text-decoration: none; margin-top: 2px;">
                                     View All Activity →
                                 </a>
                             <?php endif; ?>
                             <?php } catch (\Exception $e) { ?>
-                                <div style="padding: 8px; text-align: center; color: var(--text-secondary); font-size: 0.75rem;">
+                                <div style="padding: 6px; text-align: center; color: var(--text-secondary); font-size: 0.7rem;">
                                     Unable to load activities
                                 </div>
                             <?php } ?>
@@ -1255,6 +1275,12 @@ try {
                     .dashboard-sidebar {
                         display: none !important;
                     }
+                    
+                    /* Ensure main content doesn't overflow */
+                    .dashboard-main-content {
+                        max-width: 100%;
+                        overflow-x: hidden;
+                    }
                 }
                 
                 @media (max-width: 768px) {
@@ -1264,6 +1290,25 @@ try {
                     
                     .left-sidebar {
                         display: none !important;
+                    }
+                    
+                    /* Mobile-specific adjustments */
+                    .dashboard-main-content {
+                        padding: 12px !important;
+                        max-width: 100vw;
+                        overflow-x: hidden;
+                    }
+                    
+                    .card {
+                        border-radius: 8px !important;
+                    }
+                    
+                    .card-header {
+                        padding: 10px !important;
+                    }
+                    
+                    .card-title {
+                        font-size: 0.9rem !important;
                     }
                 }
                 
@@ -1321,13 +1366,13 @@ try {
                         const content = group.querySelector('.nav-group-content');
                         const chevron = group.querySelector('.group-chevron');
                         
-                        // Open by default
-                        group.classList.add('open');
+                        // Start collapsed by default (closed)
+                        group.classList.remove('open');
                         if (content) {
-                            content.style.maxHeight = content.scrollHeight + 'px';
+                            content.style.maxHeight = '0';
                         }
                         if (chevron) {
-                            chevron.style.transform = 'rotate(180deg)';
+                            chevron.style.transform = 'rotate(0deg)';
                         }
                         
                         // Add click handler
