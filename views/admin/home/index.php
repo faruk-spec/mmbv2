@@ -172,6 +172,29 @@
                 </div>
                 
                 <div class="form-group">
+                    <label class="form-label">Project Tier</label>
+                    <select name="tier" class="form-input">
+                        <option value="free" <?= ($project['tier'] ?? 'free') === 'free' ? 'selected' : '' ?>>Free</option>
+                        <option value="freemium" <?= ($project['tier'] ?? 'free') === 'freemium' ? 'selected' : '' ?>>Freemium</option>
+                        <option value="enterprise" <?= ($project['tier'] ?? 'free') === 'enterprise' ? 'selected' : '' ?>>Enterprise Grade</option>
+                    </select>
+                    <small style="color: var(--text-secondary);">Select the pricing tier for this project</small>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Key Features (one per line, max 5)</label>
+                    <textarea name="features" class="form-input" rows="5" placeholder="Enter features, one per line&#10;Example:&#10;Advanced editor capabilities&#10;Real-time collaboration&#10;Cloud sync & backup"><?php 
+                        if (!empty($project['features'])) {
+                            $features = json_decode($project['features'], true);
+                            if (is_array($features)) {
+                                echo View::e(implode("\n", $features));
+                            }
+                        }
+                    ?></textarea>
+                    <small style="color: var(--text-secondary);">These features will appear in the collapsible section on project cards</small>
+                </div>
+                
+                <div class="form-group">
                     <label class="form-label">Project Image</label>
                     <?php if (!empty($project['image_url'])): ?>
                         <div style="margin-bottom: 10px; border: 2px solid var(--border-color); border-radius: 8px; overflow: hidden; position: relative;">

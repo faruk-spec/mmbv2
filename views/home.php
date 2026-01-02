@@ -363,13 +363,22 @@ if ($showStats):
                     <h4 style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Key Features</h4>
                     <ul style="list-style: none; padding: 0; margin: 0;">
                         <?php
-                        // Example features - would come from database in production
-                        $features = [
-                            'Advanced editor capabilities',
-                            'Real-time collaboration',
-                            'Cloud sync & backup'
-                        ];
-                        foreach (array_slice($features, 0, 3) as $feature): 
+                        // Get features from database or use default
+                        $projectFeatures = [];
+                        if (!empty($project['features'])) {
+                            $projectFeatures = json_decode($project['features'], true) ?? [];
+                        }
+                        
+                        // Fallback to default features if none in database
+                        if (empty($projectFeatures)) {
+                            $projectFeatures = [
+                                'Advanced capabilities',
+                                'Professional tools',
+                                'Cloud integration'
+                            ];
+                        }
+                        
+                        foreach (array_slice($projectFeatures, 0, 3) as $feature): 
                         ?>
                         <li style="font-size: 12px; color: var(--text-primary); padding: 4px 0; display: flex; align-items: center; gap: 8px;">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="<?= $projectColor ?>" stroke-width="3">

@@ -76,6 +76,7 @@ try {
         html, body {
             width: 100%;
             overflow-x: hidden;
+            position: relative;
         }
         
         body {
@@ -85,6 +86,7 @@ try {
             min-height: 100vh;
             line-height: 1.6;
             font-size: 14px;
+            overflow-y: auto;
         }
         
         h1 { font-size: 2rem; }
