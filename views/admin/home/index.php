@@ -105,7 +105,7 @@
             <label class="form-label">Section Title</label>
             <input type="text" name="projects_title" class="form-input" 
                    value="<?= View::e($projectsSection['title'] ?? 'Explore Our Super Fast Products') ?>" required>
-            <small style="color: var(--text-secondary);">Title for the projects section</small>
+            <small style="color: var(--text-secondary);">Title for the projects section on home page</small>
         </div>
         
         <button type="submit" class="btn btn-primary">
