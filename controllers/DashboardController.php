@@ -232,4 +232,90 @@ class DashboardController extends BaseController
             ]
         ]);
     }
+    
+    /**
+     * Settings page
+     */
+    public function settings(): void
+    {
+        $this->view('dashboard/settings', [
+            'title' => 'Settings'
+        ]);
+    }
+    
+    /**
+     * Update settings
+     */
+    public function updateSettings(): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request.');
+            $this->redirect('/settings');
+            return;
+        }
+        
+        $settingType = $this->input('setting_type', 'theme');
+        
+        try {
+            $db = Database::getInstance();
+            
+            // Handle different setting types
+            switch ($settingType) {
+                case 'theme':
+                    $theme = $this->input('theme', 'dark');
+                    if (!in_array($theme, ['dark', 'light'])) {
+                        $theme = 'dark';
+                    }
+                    
+                    // Update user preferences
+                    $db->update('user_profiles', [
+                        'theme_preference' => $theme,
+                        'updated_at' => date('Y-m-d H:i:s')
+                    ], 'user_id = ?', [Auth::id()]);
+                    
+                    Logger::activity(Auth::id(), 'theme_changed', $theme);
+                    $this->flash('success', 'Theme preference updated successfully.');
+                    break;
+                    
+                case 'notifications':
+                    $emailNotifications = $this->input('email_notifications', 0);
+                    $securityAlerts = $this->input('security_alerts', 0);
+                    $productUpdates = $this->input('product_updates', 0);
+                    
+                    $db->update('user_profiles', [
+                        'email_notifications' => $emailNotifications ? 1 : 0,
+                        'security_alerts' => $securityAlerts ? 1 : 0,
+                        'product_updates' => $productUpdates ? 1 : 0,
+                        'updated_at' => date('Y-m-d H:i:s')
+                    ], 'user_id = ?', [Auth::id()]);
+                    
+                    Logger::activity(Auth::id(), 'notification_preferences_updated');
+                    $this->flash('success', 'Notification preferences updated successfully.');
+                    break;
+                    
+                case 'display':
+                    $itemsPerPage = max(10, min(100, (int) $this->input('items_per_page', 20)));
+                    $dateFormat = Security::sanitize($this->input('date_format', 'M d, Y'));
+                    
+                    $db->update('user_profiles', [
+                        'items_per_page' => $itemsPerPage,
+                        'date_format' => $dateFormat,
+                        'updated_at' => date('Y-m-d H:i:s')
+                    ], 'user_id = ?', [Auth::id()]);
+                    
+                    Logger::activity(Auth::id(), 'display_settings_updated');
+                    $this->flash('success', 'Display settings updated successfully.');
+                    break;
+                    
+                default:
+                    $this->flash('error', 'Invalid setting type.');
+            }
+            
+        } catch (\Exception $e) {
+            Logger::error('Settings update error: ' . $e->getMessage());
+            $this->flash('error', 'Failed to update settings.');
+        }
+        
+        $this->redirect('/settings');
+    }
 }
