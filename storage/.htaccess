@@ -1,0 +1,32 @@
+# MyMultiBranch - Storage .htaccess
+# Deny all PHP execution
+
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
+
+<IfModule mod_php7.c>
+    php_flag engine off
+</IfModule>
+
+<IfModule mod_php8.c>
+    php_flag engine off
+</IfModule>
+
+# Deny access to PHP files
+<FilesMatch "\.php$">
+    Require all denied
+</FilesMatch>
+
+# Deny access to log files
+<FilesMatch "\.log$">
+    Require all denied
+</FilesMatch>
+
+# Disable directory listing
+Options -Indexes
+
+# Only allow certain file types for download
+<FilesMatch "\.(jpg|jpeg|png|gif|webp|pdf|txt|md)$">
+    Require all granted
+</FilesMatch>

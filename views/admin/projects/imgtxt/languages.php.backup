@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ImgTxt Admin - Language Statistics</title>
+    <style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background: #0f0f1e;
+    color: #e0e0e0;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.admin-content {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+h1 {
+    color: #00ff88;
+    margin-bottom: 20px;
+    font-size: 32px;
+}
+
+.content-section {
+    background: #1a1a2e;
+    padding: 25px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+}
+
+.content-section h2 {
+    color: #00ff88;
+    margin-top: 0;
+    margin-bottom: 20px;
+}
+
+.table-container {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+table th {
+    background: #0f0f1e;
+    padding: 12px;
+    text-align: left;
+    color: #00ff88;
+    font-weight: 600;
+    border-bottom: 2px solid #2a2a3e;
+}
+
+table td {
+    padding: 12px;
+    border-bottom: 1px solid #2a2a3e;
+    color: #e0e0e0;
+}
+
+table tr:hover {
+    background: #0f0f1e;
+}
+
+.badge {
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.badge-active {
+    background: #00ff8844;
+    color: #00ff88;
+}
+
+.badge-inactive, .badge-expired {
+    background: #ff006644;
+    color: #ff6666;
+}
+
+.badge-read {
+    background: #667eea44;
+    color: #667eea;
+}
+
+.badge-unread {
+    background: #ffaa0044;
+    color: #ffaa00;
+}
+
+.btn-view {
+    padding: 6px 12px;
+    background: #667eea;
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: background 0.2s;
+    display: inline-block;
+}
+
+.btn-view:hover {
+    background: #5568d3;
+}
+
+.pagination {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.page-link {
+    padding: 8px 16px;
+    background: #1a1a2e;
+    color: #00ff88;
+    text-decoration: none;
+    border-radius: 6px;
+    transition: all 0.2s;
+    border: 1px solid #2a2a3e;
+}
+
+.page-link:hover {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+}
+
+.page-link.active {
+    background: #00ff88;
+    color: #0f0f1e;
+    border-color: #00ff88;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px !important;
+    color: #666;
+}
+
+@media (max-width: 768px) {
+    table {
+        font-size: 14px;
+    }
+    
+    table th, table td {
+        padding: 8px;
+    }
+}
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+.stat-card {
+    background: #1a1a2e;
+    padding: 25px;
+    border-radius: 12px;
+    border-left: 4px solid #667eea;
+    transition: transform 0.2s;
+}
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+.stat-card h3 {
+    font-size: 16px;
+    color: #00ff88;
+    margin-bottom: 15px;
+    font-weight: 600;
+}
+.stat-value {
+    font-size: 32px;
+    font-weight: bold;
+    color: #e0e0e0;
+    margin-bottom: 5px;
+}
+.stat-label {
+    font-size: 14px;
+    color: #999;
+}
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+<nav class="admin-navbar" style="background: #0c0c12; border-bottom: 1px solid #1e1e2e; padding: 15px 30px; position: sticky; top: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center;">
+    <div style="display: flex; align-items: center; gap: 30px;">
+        <a href="/admin" style="color: #00ff88; text-decoration: none; font-weight: 600; font-size: 18px;">
+            <i class="fas fa-bolt"></i> Admin Panel
+        </a>
+        <div style="display: flex; gap: 20px;">
+            <a href="/admin/projects" style="color: #e0e0e0; text-decoration: none; padding: 8px 15px; border-radius: 6px; transition: all 0.3s;">Projects</a>
+            <a href="/admin/users" style="color: #e0e0e0; text-decoration: none; padding: 8px 15px; border-radius: 6px; transition: all 0.3s;">Users</a>
+            <a href="/admin/settings" style="color: #e0e0e0; text-decoration: none; padding: 8px 15px; border-radius: 6px; transition: all 0.3s;">Settings</a>
+        </div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 15px;">
+        <a href="/logout" style="color: #ff6b6b; text-decoration: none; padding: 8px 15px; border: 1px solid #ff6b6b; border-radius: 6px; transition: all 0.3s;">Logout</a>
+    </div>
+</nav>
+<style>
+.admin-navbar a:hover:not(:first-child) {
+    background: rgba(0, 255, 136, 0.1);
+    color: #00ff88 !important;
+}
+@media (max-width: 768px) {
+    .admin-navbar {
+        flex-direction: column;
+        gap: 15px;
+        padding: 15px;
+    }
+    .admin-navbar > div:first-child {
+        flex-direction: column;
+        gap: 15px;
+        width: 100%;
+    }
+    .admin-navbar > div:first-child > div {
+        flex-direction: column;
+        gap: 10px;
+        width: 100%;
+    }
+    .admin-navbar a {
+        text-align: center;
+        display: block;
+    }
+}
+</style>
+
+
+<div class="admin-content">
+    <h1>Language Statistics</h1>
+    
+    <div class="stats-grid">
+        <?php foreach ($languages as $lang): ?>
+            <div class="stat-card">
+                <h3><?= htmlspecialchars($lang['name']) ?> (<?= htmlspecialchars($lang['code']) ?>)</h3>
+                <p class="stat-value"><?= number_format($lang['usage_count']) ?></p>
+                <p class="stat-label">Jobs Processed</p>
+            </div>
+        <?php endforeach; ?>
+    </div>
+</div>
+</body>
+</html>

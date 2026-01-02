@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ImgTxt Admin - Settings</title>
+</head>
+<body>
+
+<div class="admin-content">
+    <div class="content-header">
+        <h1>ImgTxt Settings</h1>
+        <p class="text-muted">Configure OCR engine and processing settings</p>
+    </div>
+
+    <?php if (isset($_SESSION['flash_message'])): ?>
+        <div class="alert alert-<?= $_SESSION['flash_type'] ?>">
+            <?= htmlspecialchars($_SESSION['flash_message']) ?>
+        </div>
+        <?php unset($_SESSION['flash_message'], $_SESSION['flash_type']); ?>
+    <?php endif; ?>
+
+    <div class="settings-card">
+        <form method="POST" action="/admin/projects/imgtxt/settings">
+            <input type="hidden" name="_csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
+
+            <!-- File Upload Settings -->
+            <div class="settings-section">
+                <h3>File Upload Settings</h3>
+                <div class="form-group">
+                    <label for="max_file_size">Maximum File Size (MB)</label>
+                    <input type="number" id="max_file_size" name="max_file_size" 
+                           value="<?= $settings['max_file_size'] ?? 10 ?>" 
+                           min="1" max="100" class="form-control">
+                    <small class="form-text">Maximum size for uploaded images</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="batch_size">Batch Processing Size</label>
+                    <input type="number" id="batch_size" name="batch_size" 
+                           value="<?= $settings['batch_size'] ?? 5 ?>" 
+                           min="1" max="20" class="form-control">
+                    <small class="form-text">Maximum number of files to process at once</small>
+                </div>
+            </div>
+
+            <!-- OCR Engine Settings -->
+            <div class="settings-section">
+                <h3>OCR Engine Configuration</h3>
+                <div class="form-group">
+                    <label for="ocr_engine">OCR Engine</label>
+                    <select id="ocr_engine" name="ocr_engine" class="form-control">
+                        <option value="tesseract" <?= ($settings['ocr_engine'] ?? 'tesseract') == 'tesseract' ? 'selected' : '' ?>>Tesseract</option>
+                        <option value="tesseract_legacy" <?= ($settings['ocr_engine'] ?? '') == 'tesseract_legacy' ? 'selected' : '' ?>>Tesseract Legacy</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="default_language">Default Language</label>
+                    <select id="default_language" name="default_language" class="form-control">
+                        <option value="eng" <?= ($settings['default_language'] ?? 'eng') == 'eng' ? 'selected' : '' ?>>English</option>
+                        <option value="spa" <?= ($settings['default_language'] ?? '') == 'spa' ? 'selected' : '' ?>>Spanish</option>
+                        <option value="fra" <?= ($settings['default_language'] ?? '') == 'fra' ? 'selected' : '' ?>>French</option>
+                        <option value="deu" <?= ($settings['default_language'] ?? '') == 'deu' ? 'selected' : '' ?>>German</option>
+                        <option value="ita" <?= ($settings['default_language'] ?? '') == 'ita' ? 'selected' : '' ?>>Italian</option>
+                        <option value="por" <?= ($settings['default_language'] ?? '') == 'por' ? 'selected' : '' ?>>Portuguese</option>
+                        <option value="rus" <?= ($settings['default_language'] ?? '') == 'rus' ? 'selected' : '' ?>>Russian</option>
+                        <option value="chi_sim" <?= ($settings['default_language'] ?? '') == 'chi_sim' ? 'selected' : '' ?>>Chinese Simplified</option>
+                        <option value="jpn" <?= ($settings['default_language'] ?? '') == 'jpn' ? 'selected' : '' ?>>Japanese</option>
+                        <option value="kor" <?= ($settings['default_language'] ?? '') == 'kor' ? 'selected' : '' ?>>Korean</option>
+                        <option value="ara" <?= ($settings['default_language'] ?? '') == 'ara' ? 'selected' : '' ?>>Arabic</option>
+                        <option value="hin" <?= ($settings['default_language'] ?? '') == 'hin' ? 'selected' : '' ?>>Hindi</option>
+                        <option value="tur" <?= ($settings['default_language'] ?? '') == 'tur' ? 'selected' : '' ?>>Turkish</option>
+                        <option value="vie" <?= ($settings['default_language'] ?? '') == 'vie' ? 'selected' : '' ?>>Vietnamese</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Feature Toggles -->
+            <div class="settings-section">
+                <h3>Features</h3>
+                <div class="form-group">
+                    <label class="toggle-label">
+                        <input type="checkbox" name="batch_processing_enabled" 
+                               <?= ($settings['batch_processing_enabled'] ?? true) ? 'checked' : '' ?>>
+                        <span class="toggle-switch"></span>
+                        Batch Processing
+                    </label>
+                    <small class="form-text">Allow users to process multiple files at once</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="toggle-label">
+                        <input type="checkbox" name="multi_language_enabled" 
+                               <?= ($settings['multi_language_enabled'] ?? true) ? 'checked' : '' ?>>
+                        <span class="toggle-switch"></span>
+                        Multi-Language Support
+                    </label>
+                    <small class="form-text">Enable OCR in multiple languages</small>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Save Settings</button>
+                <a href="/admin/projects/imgtxt" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.settings-card {
+    background: #2d3250;
+    border-radius: 12px;
+    padding: 30px;
+    margin-top: 20px;
+}
+
+.settings-section {
+    margin-bottom: 40px;
+    padding-bottom: 30px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.settings-section:last-of-type {
+    border-bottom: none;
+}
+
+.settings-section h3 {
+    color: #f093fb;
+    margin-bottom: 20px;
+    font-size: 1.2em;
+}
+
+.form-group {
+    margin-bottom: 25px;
+}
+
+.form-group label {
+    display: block;
+    color: #e0e0e0;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px 15px;
+    background: #1a1d2e;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #f093fb;
+    box-shadow: 0 0 0 3px rgba(240, 147, 251, 0.1);
+}
+
+.form-text {
+    display: block;
+    margin-top: 5px;
+    color: #888;
+    font-size: 12px;
+}
+
+.toggle-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    color: #e0e0e0;
+}
+
+.toggle-label input[type="checkbox"] {
+    display: none;
+}
+
+.toggle-switch {
+    position: relative;
+    width: 50px;
+    height: 26px;
+    background: #1a1d2e;
+    border-radius: 13px;
+    margin-right: 12px;
+    transition: background 0.3s ease;
+}
+
+.toggle-switch::before {
+    content: '';
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #fff;
+    top: 2px;
+    left: 2px;
+    transition: transform 0.3s ease;
+}
+
+.toggle-label input[type="checkbox"]:checked + .toggle-switch {
+    background: #f093fb;
+}
+
+.toggle-label input[type="checkbox"]:checked + .toggle-switch::before {
+    transform: translateX(24px);
+}
+
+.form-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 30px;
+}
+
+.btn {
+    padding: 12px 30px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: #fff;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(240, 147, 251, 0.3);
+}
+
+.btn-secondary {
+    background: #2d3250;
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.btn-secondary:hover {
+    background: #3d4260;
+}
+
+@media (max-width: 768px) {
+    .settings-card {
+        padding: 20px;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .btn {
+        width: 100%;
+    }
+}
+</style>
+
+</body>
+</html>

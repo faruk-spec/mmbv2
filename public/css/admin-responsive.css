@@ -1,0 +1,667 @@
+/**
+ * Admin Panel Responsive Styles - Enhanced & Optimized
+ * ======================================================
+ * 
+ * Comprehensive responsive optimization for the entire admin panel
+ * Supports: Desktop (1200px+), Tablet/iPad (768px-1199px), Mobile (<768px)
+ * 
+ * Features:
+ * - Touch-friendly UI (44px minimum touch targets - Apple HIG compliant)
+ * - Responsive AdminLTE components (small-box, info-box, cards, tables)
+ * - Optimized for all devices: PC, Tablet, iPad, Mobile phones
+ * - Landscape orientation support
+ * - Touch device specific optimizations
+ * - Print optimization
+ * - High DPI display support
+ * - Performance optimized with scoped selectors
+ * 
+ * @version 2.0
+ * @updated 2025-12-05
+ */
+
+/* ============================================
+   DESKTOP OPTIMIZATIONS (1200px+)
+   ============================================ */
+@media (min-width: 1200px) {
+    /* AdminLTE already optimized for desktop */
+    .content-wrapper {
+        max-width: 100%;
+    }
+    
+    /* Optimize grid layouts for large screens */
+    .row {
+        margin-left: -15px;
+        margin-right: -15px;
+    }
+}
+
+/* ============================================
+   TABLET/IPAD OPTIMIZATIONS (768px-1199px)
+   ============================================ */
+@media (max-width: 1199px) and (min-width: 768px) {
+    /* Column adjustments for tablet */
+    .row .col-md-3 { width: 50%; }
+    .row .col-md-4 { width: 50%; }
+    .row .col-md-6 { width: 100%; }
+    
+    /* AdminLTE components */
+    .small-box, .info-box {
+        margin-bottom: 15px;
+    }
+    
+    /* Optimize sidebar for tablet */
+    .sidebar {
+        width: 250px;
+    }
+    
+    .main-content {
+        margin-left: 250px;
+    }
+    
+    /* Card headers on tablet */
+    .card-header .card-tools {
+        margin-top: 5px;
+    }
+    
+    /* Table font size for tablet */
+    .content table {
+        font-size: 13px;
+    }
+    
+    /* Stat boxes on tablet */
+    .small-box .inner h3 {
+        font-size: 32px;
+    }
+    
+    /* Two columns for stat boxes on tablet */
+    .content .row .col-lg-3 {
+        width: 50%;
+    }
+    
+    .content .row .col-md-4 {
+        width: 50%;
+    }
+    
+    /* Modal adjustments for tablet */
+    .modal-dialog {
+        max-width: 90%;
+        margin: 30px auto;
+    }
+}
+
+/* ============================================
+   MOBILE OPTIMIZATIONS (<768px)
+   ============================================ */
+@media (max-width: 767px) {
+    /* Prevent horizontal overflow */
+    body, html {
+        overflow-x: hidden;
+        width: 100%;
+    }
+    
+    .content-wrapper, .main-content {
+        padding: 10px;
+        margin-left: 0;
+    }
+    
+    /* ========== LAYOUT ========== */
+    
+    /* Sidebar - Hidden by default on mobile */
+    .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100vh;
+        width: 280px;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+        z-index: 1050;
+    }
+    
+    .sidebar.active {
+        transform: translateX(0);
+    }
+    
+    /* Mobile menu button */
+    .mobile-menu-btn {
+        display: block;
+    }
+    
+    /* Content header - Stack breadcrumbs */
+    .content-header .row {
+        margin-bottom: 10px;
+    }
+    
+    .content-header .col-sm-6 {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    
+    .content-header h1 {
+        font-size: 20px;
+        margin-bottom: 5px;
+    }
+    
+    .breadcrumb {
+        float: none;
+        margin-bottom: 10px;
+        padding: 10px;
+        background: rgba(0,0,0,0.05);
+        font-size: 13px;
+    }
+    
+    /* ========== TYPOGRAPHY ========== */
+    
+    body {
+        font-size: 14px;
+        line-height: 1.6;
+    }
+    
+    h1 { font-size: 24px; }
+    h2 { font-size: 20px; }
+    h3 { font-size: 18px; }
+    h4 { font-size: 16px; }
+    h5 { font-size: 14px; }
+    
+    /* ========== BUTTONS & TOUCH TARGETS ========== */
+    
+    /* Touch-friendly buttons - Apple HIG standards (44px minimum) */
+    .content .btn, 
+    .content button, 
+    .content a.btn, 
+    .content .small-box-footer {
+        min-height: 44px;
+        min-width: 44px;
+        padding: 12px 16px;
+        font-size: 14px;
+    }
+    
+    .content .btn-sm {
+        min-height: 36px;
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+    
+    .content .btn-lg {
+        min-height: 48px;
+        padding: 14px 20px;
+        font-size: 16px;
+    }
+    
+    /* ========== GRID & COLUMNS ========== */
+    
+    /* AdminLTE columns - Stack to single column */
+    .content .row .col-lg-1,
+    .content .row .col-lg-2,
+    .content .row .col-lg-3, 
+    .content .row .col-lg-4,
+    .content .row .col-lg-6,
+    .content .row .col-lg-8,
+    .content .row .col-lg-9,
+    .content .row .col-lg-12,
+    .content .row .col-md-1,
+    .content .row .col-md-2,
+    .content .row .col-md-3, 
+    .content .row .col-md-4, 
+    .content .row .col-md-6, 
+    .content .row .col-md-8,
+    .content .row .col-md-9,
+    .content .row .col-md-12,
+    .content .row .col-sm-1,
+    .content .row .col-sm-2,
+    .content .row .col-sm-3,
+    .content .row .col-sm-4,
+    .content .row .col-sm-6,
+    .content .row .col-sm-8,
+    .content .row .col-sm-9,
+    .content .row .col-sm-12 {
+        width: 100%;
+        float: none;
+        padding: 0 15px;
+    }
+    
+    /* Grid utilities */
+    .grid-2, .grid-3, .grid-4 {
+        grid-template-columns: 1fr;
+    }
+    
+    .small-box {
+        margin-bottom: 15px;
+    }
+    
+    .small-box .inner {
+        padding: 15px;
+    }
+    
+    .small-box h3 {
+        font-size: 28px;
+    }
+    
+    .small-box .icon {
+        font-size: 60px;
+        top: 10px;
+        right: 10px;
+    }
+    
+    /* Info-box - Full width with proper spacing */
+    .info-box {
+        margin-bottom: 15px;
+        min-height: 80px;
+    }
+    
+    .info-box-icon {
+        width: 80px;
+    }
+    
+    /* Cards - Stack properly */
+    .card {
+        margin-bottom: 15px;
+    }
+    
+    .card-body {
+        padding: 15px;
+    }
+    
+    .card-header {
+        padding: 15px;
+    }
+    
+    .card-header .card-title {
+        font-size: 16px;
+        margin-bottom: 10px;
+    }
+    
+    /* Card tools move below title on mobile */
+    .card-header .card-tools {
+        margin-top: 10px;
+        width: 100%;
+        text-align: left;
+    }
+    
+    .card-header .input-group {
+        width: 100%;
+    }
+    
+    /* Tables - Horizontal scroll */
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        margin-bottom: 15px;
+    }
+    
+    .content table {
+        min-width: 800px;
+        font-size: 12px;
+    }
+    
+    .content table th, 
+    .content table td {
+        padding: 8px 6px;
+        white-space: nowrap;
+    }
+    
+    /* Compact table headers */
+    .content table th i.fas, 
+    .content table th i.far {
+        display: none;
+    }
+    
+    /* Action buttons in tables */
+    .btn-group {
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .btn-group .btn {
+        width: 100%;
+        margin: 0;
+    }
+    
+    /* Small-box AdminLTE cards */
+    .small-box {
+        margin-bottom: 15px;
+    }
+    
+    .small-box .inner h3 {
+        font-size: 28px;
+    }
+    
+    .small-box .inner p {
+        font-size: 14px;
+    }
+    
+    /* Info-box cards */
+    .info-box {
+        margin-bottom: 15px;
+    }
+    
+    /* Form elements full width */
+    .content input[type="text"],
+    .content input[type="email"],
+    .content input[type="password"],
+    .content input[type="number"],
+    .content input[type="date"],
+    .content select,
+    .content textarea,
+    .content .form-control {
+        width: 100%;
+        box-sizing: border-box;
+    }
+    
+    /* Form groups */
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    /* Row spacing */
+    .row .col-md-6, .row .col-sm-6 {
+        margin-bottom: 15px;
+    }
+    
+    /* Modal dialogs optimize for mobile */
+    .modal-dialog {
+        margin: 10px;
+        max-width: calc(100% - 20px);
+    }
+    
+    .modal-xl {
+        max-width: calc(100% - 20px);
+    }
+    
+    .modal-body {
+        max-height: calc(100vh - 200px);
+        overflow-y: auto;
+        padding: 15px;
+    }
+    
+    .modal-body table {
+        font-size: 12px;
+    }
+    
+    .modal-body .row .col-md-6 {
+        width: 100%;
+    }
+    
+    /* Filter bars collapse */
+    .filter-bar {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .filter-bar > * {
+        width: 100%;
+    }
+    
+    /* Action button groups stack */
+    .btn-group:not(.btn-group-vertical) {
+        flex-direction: column;
+    }
+    
+    .btn-group .btn {
+        width: 100%;
+        margin-bottom: 5px;
+    }
+    
+    /* Search bars full width */
+    .search-box {
+        width: 100% !important;
+    }
+    
+    /* Pagination adapts */
+    .pagination {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .pagination li {
+        margin: 2px;
+    }
+    
+    .pagination .page-link {
+        padding: 6px 10px;
+        font-size: 13px;
+    }
+    
+    /* Badge sizes adjust */
+    .badge {
+        font-size: 11px;
+        padding: 4px 8px;
+    }
+    
+    .content .badge-lg {
+        font-size: 12px;
+        padding: 5px 8px;
+    }
+    
+    /* Avatar sizes */
+    .content .user-avatar, 
+    .content .avatar-circle {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
+    }
+    
+    /* Chart containers */
+    canvas {
+        max-width: 100%;
+        height: auto;
+    }
+    
+    .chart-container {
+        height: 250px;
+    }
+    
+    /* Stat boxes adapt */
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    /* Hide less important table columns on mobile */
+    .table .hide-mobile {
+        display: none;
+    }
+    
+    /* Card headers wrap */
+    .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .card-header .card-tools {
+        margin-top: 10px;
+        width: 100%;
+    }
+    
+    /* File upload zone */
+    .upload-zone {
+        min-height: 200px;
+        padding: 20px;
+    }
+    
+    /* Result boxes stack */
+    .result-box {
+        margin-bottom: 15px;
+    }
+    
+    /* Text preview areas */
+    pre {
+        font-size: 12px;
+        max-width: 100%;
+        overflow-x: auto;
+    }
+    
+    /* Activity page specific fixes */
+    .content-header p.text-muted {
+        font-size: 12px;
+    }
+    
+    /* Activity page search box */
+    .activity-search-box {
+        width: 100%;
+    }
+    
+    /* Activity table container */
+    .activity-table-container {
+        max-height: 600px;
+    }
+    
+    /* Compact badges in filter section */
+    .content .badge-info.badge-lg {
+        font-size: 11px;
+        padding: 4px 8px;
+    }
+    
+    /* Card footer pagination */
+    .card-footer {
+        padding: 10px 15px;
+    }
+    
+    .card-footer .pagination {
+        margin: 5px 0;
+    }
+}
+
+/* Tablet Optimizations (768px - 1199px) */
+@media (min-width: 768px) and (max-width: 1199px) {
+    .grid-4 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .grid-3 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .content table {
+        font-size: 13px;
+    }
+    
+    .small-box .inner h3 {
+        font-size: 32px;
+    }
+    
+    /* Two columns for stat boxes on tablet */
+    .content .row .col-lg-3 {
+        width: 50%;
+    }
+    
+    .content .row .col-md-4 {
+        width: 50%;
+    }
+}
+
+/* Small Mobile Optimizations (<480px) */
+@media (max-width: 479px) {
+    body {
+        font-size: 13px;
+    }
+    
+    h1 { font-size: 18px; }
+    h2 { font-size: 16px; }
+    h3 { font-size: 15px; }
+    
+    .content .btn {
+        font-size: 13px;
+        padding: 8px 12px;
+    }
+    
+    .content .btn-sm {
+        font-size: 12px;
+        padding: 6px 10px;
+    }
+    
+    .small-box .inner h3 {
+        font-size: 22px;
+    }
+    
+    .card {
+        padding: 10px;
+    }
+    
+    .card-body {
+        padding: 10px;
+    }
+    
+    .content .user-avatar, 
+    .content .avatar-circle {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+    }
+    
+    .content table {
+        font-size: 11px;
+        min-width: 700px;
+    }
+    
+    .modal-body {
+        padding: 10px;
+    }
+    
+    .breadcrumb {
+        font-size: 12px;
+        padding: 8px;
+    }
+}
+
+/* Landscape Orientation Optimizations */
+@media (max-width: 767px) and (orientation: landscape) {
+    .modal-body {
+        max-height: 50vh;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .content .row .col-lg-3, 
+    .content .row .col-md-3 {
+        width: 50%;
+    }
+}
+
+/* Touch Device Optimizations */
+@media (hover: none) and (pointer: coarse) {
+    /* Larger touch targets */
+    .content a, 
+    .content button, 
+    .content .btn, 
+    .content input[type="checkbox"], 
+    .content input[type="radio"] {
+        min-height: 44px;
+        min-width: 44px;
+    }
+    
+    /* Remove hover effects on touch devices */
+    .btn:hover, .card:hover {
+        transform: none;
+    }
+    
+    /* Better tap highlights */
+    * {
+        -webkit-tap-highlight-color: rgba(0, 255, 136, 0.2);
+    }
+}
+
+/* Print Optimizations */
+@media print {
+    .sidebar, .navbar, .btn, .filter-bar, .breadcrumb {
+        display: none;
+    }
+    
+    .content {
+        margin: 0;
+        width: 100%;
+    }
+    
+    table {
+        font-size: 10px;
+    }
+}
+
+/* High DPI Displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    /* Sharper borders and shadows */
+    .card {
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+}

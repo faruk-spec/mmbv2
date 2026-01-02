@@ -1,0 +1,64 @@
+
+# MyMultiBranch - Root .htaccess
+# 
+# This file handles routing when DocumentRoot is set to the project root
+# instead of the /public directory.
+#
+# RECOMMENDED: Set your DocumentRoot to /path/to/mymultibranch/public
+# for better security (prevents access to config files, etc.)
+
+# Set DirectoryIndex first
+DirectoryIndex index.php public/index.php
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+    
+    # Block direct access to sensitive directories
+    RewriteRule ^(config|core|controllers|views|storage|routes)(/|$) - [F,L]
+    
+    # Block path traversal attempts in projects (any occurrence of ..)
+    RewriteRule ^projects/.*\.\..*  - [F,L]
+    
+    # Block direct access to PHP files in projects directory (except index.php handled by router)
+    # Project names must be at least 2 characters (start with alphanumeric, followed by 1+ chars)
+    RewriteRule ^projects/[a-zA-Z0-9][a-zA-Z0-9_-]+/(config\.php|schema\.sql|controllers/?|routes/?|views/?) - [F,L]
+    
+    # Block access to hidden files and directories
+    RewriteRule (^|/)\.(?!well-known) - [F,L]
+    
+    # Allow install directory
+    RewriteCond %{REQUEST_URI} ^/install
+    RewriteRule ^install/(.*)$ install/$1 [L]
+    
+    # Static files in public/ directory - serve directly
+    RewriteCond %{REQUEST_URI} ^/public/
+    RewriteCond %{DOCUMENT_ROOT}%{REQUEST_URI} -f
+    RewriteRule ^(.*)$ $1 [L]
+    
+    # Route everything else to index.php (root level) with url parameter
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)$ index.php?url=$1 [L,QSA]
+</IfModule>
+
+# Fallback for servers without mod_rewrite
+<IfModule !mod_rewrite.c>
+    # Use FallbackResource as fallback
+    FallbackResource /index.php
+</IfModule>
+
+# Security: Block access to sensitive files
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
+
+<FilesMatch "\.(ini|log|conf|sql|md)$">
+    Require all denied
+</FilesMatch>
+
+# Disable directory listing
+Options -Indexes
+
+# Set default charset
+AddDefaultCharset UTF-8

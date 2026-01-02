@@ -1,0 +1,75 @@
+# MyMultiBranch Nginx Configuration Example
+# 
+# Copy this configuration to your Nginx server configuration.
+# For BT Panel (Baota): Go to Website Settings > URL Rewrite (伪静态)
+# and paste the location block contents.
+#
+# IMPORTANT: This configuration is for when DocumentRoot is the project root.
+# For better security, set DocumentRoot to /path/to/mmb/public
+
+server {
+    listen 80;
+    server_name test.mymultibranch.com;
+    root /www/wwwroot/test.mymultibranch.com;
+    index index.php index.html;
+
+    # Block access to sensitive directories
+    location ~ ^/(config|core|controllers|views|storage|projects|routes)/ {
+        deny all;
+        return 403;
+    }
+
+    # Block access to hidden files
+    location ~ /\. {
+        deny all;
+    }
+
+    # Block access to sensitive file types
+    location ~ \.(ini|log|conf|sql|md)$ {
+        deny all;
+    }
+
+    # Allow install directory
+    location /install {
+        try_files $uri $uri/ /install/index.php?$query_string;
+    }
+
+    # Serve static files from public directory
+    location /public {
+        try_files $uri $uri/ =404;
+    }
+
+    # Main routing - send all requests to index.php
+    # Note: $uri already includes the leading slash, which is expected by the PHP router
+    location / {
+        try_files $uri $uri/ /index.php?url=$uri&$query_string;
+    }
+
+    # PHP processing
+    location ~ \.php$ {
+        fastcgi_pass unix:/tmp/php-cgi-80.sock;  # Adjust this path for your server
+        fastcgi_index index.php;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        include fastcgi_params;
+    }
+}
+
+# ============================================================
+# BT Panel (Baota) URL Rewrite Rules (伪静态规则)
+# ============================================================
+# Copy only the following rules to BT Panel's URL Rewrite section:
+# Note: $uri already includes the leading slash, which is expected by the PHP router
+#
+# location ~ ^/(config|core|controllers|views|storage|projects|routes)/ {
+#     deny all;
+#     return 403;
+# }
+# 
+# location ~ /\. {
+#     deny all;
+# }
+# 
+# location / {
+#     try_files $uri $uri/ /index.php?url=$uri&$query_string;
+# }
+# ============================================================
