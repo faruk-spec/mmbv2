@@ -132,30 +132,44 @@ class SSO
      */
     public static function validateProjectRequest(string $projectName): bool
     {
-        // If user is authenticated via Auth system (from middleware), always pass
+        $userId = null;
+        $isAuthenticated = false;
+        
+        // Check if user is authenticated via Auth system (from middleware)
         if (Auth::check()) {
-            // Check project access permissions
-            return self::hasProjectAccess(Auth::id(), $projectName);
+            $userId = Auth::id();
+            $isAuthenticated = true;
+        } else {
+            // If not authenticated, try SSO token
+            $token = $_COOKIE['sso_token'] ?? $_SERVER['HTTP_X_SSO_TOKEN'] ?? null;
+            
+            if ($token) {
+                $user = self::getUserFromToken($token);
+                if ($user) {
+                    // Set up session for this user
+                    $_SESSION['user_id'] = $user['id'];
+                    $_SESSION['user_role'] = $user['role'];
+                    $userId = $user['id'];
+                    $isAuthenticated = true;
+                }
+            }
         }
         
-        // If not authenticated, try SSO token
-        $token = $_COOKIE['sso_token'] ?? $_SERVER['HTTP_X_SSO_TOKEN'] ?? null;
-        
-        if (!$token) {
+        // If not authenticated at all, return false (will redirect to login)
+        if (!$isAuthenticated) {
             return false;
         }
-        
-        $user = self::getUserFromToken($token);
-        if (!$user) {
-            return false;
-        }
-        
-        // Set up session for this user
-        $_SESSION['user_id'] = $user['id'];
-        $_SESSION['user_role'] = $user['role'];
         
         // Check project access permissions
-        return self::hasProjectAccess($user['id'], $projectName);
+        $hasAccess = self::hasProjectAccess($userId, $projectName);
+        
+        // If authenticated but no access, show access denied instead of redirect loop
+        if (!$hasAccess) {
+            self::showAccessDenied($projectName);
+            exit;
+        }
+        
+        return true;
     }
     
     /**
@@ -247,5 +261,20 @@ class SSO
     {
         header('Location: ' . self::getLoginUrl($returnUrl));
         exit;
+    }
+    
+    /**
+     * Show access denied page for authenticated users without project access
+     */
+    private static function showAccessDenied(string $projectName): void
+    {
+        http_response_code(403);
+        $user = Auth::user();
+        
+        // Render access denied view
+        View::render('errors/project-access-denied', [
+            'project' => $projectName,
+            'user' => $user
+        ]);
     }
 }
