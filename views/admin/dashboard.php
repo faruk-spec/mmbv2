@@ -105,7 +105,14 @@
 <!-- New Projects Stats -->
 <div class="card mb-3">
     <div class="card-header">
-        <h3 class="card-title" style="font-size: 1.3rem;">📦 New Projects Overview</h3>
+        <h3 class="card-title" style="font-size: 1.3rem;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <rect x="7" y="7" width="3" height="9"></rect>
+                <rect x="14" y="7" width="3" height="5"></rect>
+            </svg>
+            New Projects Overview
+        </h3>
     </div>
     
     <div class="grid grid-3">
