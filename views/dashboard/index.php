@@ -2,11 +2,11 @@
 <?php View::extend('main'); ?>
 
 <?php View::section('content'); ?>
-<div class="dashboard-header" style="margin-bottom: 40px;">
-    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
+<div class="dashboard-header" style="margin-bottom: 24px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
         <div>
-            <h1 style="margin-bottom: 10px; font-size: 2rem;">Welcome back, <?= View::e($currentUser['name']) ?>! 👋</h1>
-            <p style="color: var(--text-secondary); font-size: 1.1rem;">Discover powerful tools designed to streamline your workflow.</p>
+            <h1 style="margin-bottom: 8px; font-size: 1rem; font-weight: 700;">Welcome back, <?= View::e($currentUser['name']) ?>! 👋</h1>
+            <p style="color: var(--text-secondary); font-size: 0.875rem;">Discover powerful tools designed to streamline your workflow.</p>
         </div>
     </div>
 </div>
@@ -16,32 +16,32 @@
 <?php endif; ?>
 
 <!-- Applications Grid -->
-<div class="card" style="border-radius: 16px; overflow: hidden; margin-bottom: 30px;">
-    <div class="card-header" style="background: linear-gradient(135deg, rgba(0, 240, 255, 0.1) 0%, rgba(255, 46, 196, 0.1) 100%); border-bottom: 1px solid var(--border-color); padding: 20px;">
-        <h3 class="card-title" style="font-size: 1.3rem; display: flex; align-items: center; gap: 10px;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
+<div class="card" style="border-radius: 12px; overflow: hidden; margin-bottom: 24px;">
+    <div class="card-header" style="background: linear-gradient(135deg, rgba(0, 240, 255, 0.1) 0%, rgba(255, 46, 196, 0.1) 100%); border-bottom: 1px solid var(--border-color); padding: 16px;">
+        <h3 class="card-title" style="font-size: 0.95rem; display: flex; align-items: center; gap: 8px; font-weight: 600;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
                 <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
             </svg>
             Your Applications
         </h3>
     </div>
     
-    <div style="padding: 30px;">
+    <div style="padding: 20px;">
         <?php if (empty($projects)): ?>
-            <p style="color: var(--text-secondary); text-align: center; padding: 40px 20px;">No applications available</p>
+            <p style="color: var(--text-secondary); text-align: center; padding: 32px 16px; font-size: 0.875rem;">No applications available</p>
         <?php else: ?>
-            <div class="applications-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
+            <div class="applications-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px;">
                 <?php foreach ($projects as $key => $project): ?>
-                    <a href="<?= $project['url'] ?>" class="application-card" style="display: block; background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border-color); padding: 24px; transition: all 0.3s ease; text-align: center;">
-                        <div style="width: 70px; height: 70px; background: <?= $project['color'] ?>20; border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
-                            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="<?= $project['color'] ?>" stroke-width="2">
+                    <a href="<?= $project['url'] ?>" class="application-card" style="display: block; background: var(--bg-secondary); border-radius: 10px; border: 1px solid var(--border-color); padding: 16px; transition: all 0.3s ease; text-align: center;">
+                        <div style="width: 48px; height: 48px; background: <?= $project['color'] ?>20; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="<?= $project['color'] ?>" stroke-width="2">
                                 <rect x="3" y="3" width="18" height="18" rx="2"/>
                             </svg>
                         </div>
-                        <div style="font-weight: 600; font-size: 1.15rem; margin-bottom: 10px;"><?= View::e($project['name']) ?></div>
-                        <div style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5;"><?= View::e($project['description']) ?></div>
-                        <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-color);">
-                            <button style="width: 100%; padding: 10px; background: <?= $project['color'] ?>; color: #06060a; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;">
+                        <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 6px;"><?= View::e($project['name']) ?></div>
+                        <div style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4;"><?= View::e($project['description']) ?></div>
+                        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-color);">
+                            <button style="width: 100%; padding: 8px; background: <?= $project['color'] ?>; color: #06060a; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 0.85rem;">
                                 Access Application
                             </button>
                         </div>
