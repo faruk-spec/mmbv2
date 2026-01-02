@@ -2,28 +2,28 @@
 <?php View::extend('main'); ?>
 
 <?php View::section('content'); ?>
-<div style="margin-bottom: 40px;">
-    <h1 style="font-size: 2rem; margin-bottom: 8px; background: linear-gradient(135deg, var(--cyan), var(--magenta)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Activity Log</h1>
-    <p style="color: var(--text-secondary); font-size: 1rem;">View your recent account activity and security events</p>
+<div style="margin-bottom: 12px;">
+    <h1 style="font-size: 1rem; font-weight: 700; margin-bottom: 8px; background: linear-gradient(135deg, var(--cyan), var(--magenta)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Activity Log</h1>
+    <p style="color: var(--text-secondary); font-size: 0.875rem;">View your recent account activity and security events</p>
 </div>
 
-<div class="card" style="border-radius: 16px; overflow: hidden; border: 1px solid var(--border-color);">
-    <div class="card-header" style="background: linear-gradient(135deg, rgba(0, 240, 255, 0.1) 0%, rgba(255, 46, 196, 0.1) 100%); border-bottom: 1px solid var(--border-color); padding: 24px;">
-        <h3 class="card-title" style="font-size: 1.3rem; display: flex; align-items: center; gap: 10px; margin: 0;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
+<div class="card" style="border-radius: 10px; overflow: hidden; border: 1px solid var(--border-color);">
+    <div class="card-header" style="background: linear-gradient(135deg, rgba(0, 240, 255, 0.1) 0%, rgba(255, 46, 196, 0.1) 100%); border-bottom: 1px solid var(--border-color); padding: 12px;">
+        <h3 class="card-title" style="font-size: 0.9rem; display: flex; align-items: center; gap: 10px; margin: 0;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
                 <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
             </svg>
             Recent Activities
         </h3>
     </div>
     
-    <div style="padding: 24px;">
+    <div style="padding: 12px;">
         <?php if (empty($activity)): ?>
             <div style="text-align: center; padding: 60px 20px;">
                 <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.5" style="display: block; margin: 0 auto 20px; opacity: 0.4;">
                     <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
                 </svg>
-                <p style="color: var(--text-secondary); font-size: 1.1rem; margin-bottom: 8px;">No activity recorded yet</p>
+                <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 8px;">No activity recorded yet</p>
                 <p style="color: var(--text-secondary); font-size: 0.9rem;">Your account activities will appear here</p>
             </div>
         <?php else: ?>
@@ -90,7 +90,7 @@
                                 <td style="padding: 16px;">
                                     <div style="display: flex; align-items: center; gap: 12px;">
                                         <div style="width: 45px; height: 45px; background: <?= $bgColor ?>; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="<?= $iconColor ?>" stroke-width="2">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="<?= $iconColor ?>" stroke-width="2">
                                                 <circle cx="12" cy="12" r="10"/>
                                                 <polyline points="12 6 12 12 16 14"/>
                                             </svg>

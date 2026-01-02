@@ -5,7 +5,7 @@
 <div class="dashboard-header" style="margin-bottom: 24px;">
     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
         <div>
-            <h1 style="margin-bottom: 8px; font-size: 1rem; font-weight: 700;">Welcome back, <?= View::e($currentUser['name']) ?>! 👋</h1>
+            <h1 style="font-size: 1rem; font-weight: 700; margin-bottom: 8px;">Welcome back, <?= View::e($currentUser['name']) ?>! 👋</h1>
             <p style="color: var(--text-secondary); font-size: 0.875rem;">Discover powerful tools designed to streamline your workflow.</p>
         </div>
     </div>
