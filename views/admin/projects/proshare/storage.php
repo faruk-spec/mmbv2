@@ -130,7 +130,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <div class="card">
     <div class="card-header">
-        <h3 class="card-title">📈 Storage Growth Trend (Last 30 Days)</h3>
+        <h3 class="card-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
+                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                <polyline points="17 6 23 6 23 12"></polyline>
+            </svg>
+            Storage Growth Trend (Last 30 Days)
+        </h3>
     </div>
     <div class="card-body">
         <div class="chart-container">

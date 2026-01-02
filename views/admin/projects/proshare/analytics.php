@@ -106,7 +106,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <div class="card mb-3">
     <div class="card-header">
-        <h3 class="card-title">📊 Traffic Overview (Last 30 Days)</h3>
+        <h3 class="card-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
+                <line x1="18" y1="20" x2="18" y2="10"></line>
+                <line x1="12" y1="20" x2="12" y2="4"></line>
+                <line x1="6" y1="20" x2="6" y2="14"></line>
+            </svg>
+            Traffic Overview (Last 30 Days)
+        </h3>
     </div>
     <div class="card-body">
         <div class="chart-container">

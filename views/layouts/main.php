@@ -62,9 +62,51 @@ try {
         }
         
         [data-theme="light"] body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: -1;
             background: 
-                radial-gradient(ellipse at 20% 0%, rgba(0, 240, 255, 0.05) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 100%, rgba(255, 46, 196, 0.05) 0%, transparent 50%);
+                radial-gradient(ellipse at 20% 0%, rgba(0, 240, 255, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 100%, rgba(255, 46, 196, 0.08) 0%, transparent 50%),
+                repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(0, 240, 255, 0.03) 35px, rgba(0, 240, 255, 0.03) 70px);
+            animation: techBgMove 20s ease-in-out infinite;
+        }
+        
+        @keyframes techBgMove {
+            0%, 100% {
+                transform: translateY(0) scale(1);
+            }
+            50% {
+                transform: translateY(-20px) scale(1.05);
+            }
+        }
+        
+        [data-theme="light"] body::after {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            right: -50%;
+            bottom: -50%;
+            z-index: -2;
+            background-image: 
+                radial-gradient(circle at 20% 80%, rgba(0, 240, 255, 0.06) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(153, 69, 255, 0.06) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(255, 170, 0, 0.04) 0%, transparent 30%);
+            animation: techBgRotate 30s linear infinite;
+        }
+        
+        @keyframes techBgRotate {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
         }
         
         * {
@@ -76,6 +118,7 @@ try {
         html, body {
             width: 100%;
             overflow-x: hidden;
+            position: relative;
         }
         
         body {
@@ -85,6 +128,7 @@ try {
             min-height: 100vh;
             line-height: 1.6;
             font-size: 14px;
+            overflow-y: auto;
         }
         
         h1 { font-size: 2rem; }

@@ -5,7 +5,13 @@
 <?php $db = Database::getInstance(); ?>
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
     <div>
-        <h1>🏠 Home Page Management</h1>
+        <h1>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+            Home Page Management
+        </h1>
         <p style="color: var(--text-secondary);">Customize your home page content, projects, and images</p>
     </div>
     <a href="/" target="_blank" class="btn btn-secondary">
@@ -24,7 +30,12 @@
 <!-- Hero Section -->
 <div class="card" style="margin-bottom: 30px;">
     <h2 style="margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
-        <span style="font-size: 1.5rem;">🎯</span> Hero Section
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <circle cx="12" cy="12" r="6"></circle>
+            <circle cx="12" cy="12" r="2"></circle>
+        </svg>
+        Hero Section
     </h2>
     <form method="POST" action="/admin/home-content/hero" enctype="multipart/form-data">
         <?= \Core\Security::csrfField() ?>
@@ -82,7 +93,10 @@
 <!-- Projects Section Title -->
 <div class="card" style="margin-bottom: 30px;">
     <h2 style="margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
-        <span style="font-size: 1.5rem;">⚡</span> Projects Section
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polyline>
+        </svg>
+        Projects Section
     </h2>
     <form method="POST" action="/admin/home-content/projects-section">
         <?= \Core\Security::csrfField() ?>
@@ -91,7 +105,7 @@
             <label class="form-label">Section Title</label>
             <input type="text" name="projects_title" class="form-input" 
                    value="<?= View::e($projectsSection['title'] ?? 'Explore Our Super Fast Products') ?>" required>
-            <small style="color: var(--text-secondary);">Title for the projects section (will display with a lightning icon ⚡)</small>
+            <small style="color: var(--text-secondary);">Title for the projects section on home page</small>
         </div>
         
         <button type="submit" class="btn btn-primary">
@@ -103,7 +117,12 @@
 <!-- Projects Cards -->
 <div class="card">
     <h2 style="margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
-        <span style="font-size: 1.5rem;">📦</span> Project Cards
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <rect x="7" y="7" width="3" height="9"></rect>
+            <rect x="14" y="7" width="3" height="5"></rect>
+        </svg>
+        Project Cards
     </h2>
     
     <div class="grid grid-2" style="gap: 20px;">
@@ -150,6 +169,29 @@
                         <input type="text" name="icon" class="form-input" 
                                value="<?= View::e($project['icon']) ?>" placeholder="e.g., code, users">
                     </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Project Tier</label>
+                    <select name="tier" class="form-input">
+                        <option value="free" <?= ($project['tier'] ?? 'free') === 'free' ? 'selected' : '' ?>>Free</option>
+                        <option value="freemium" <?= ($project['tier'] ?? 'free') === 'freemium' ? 'selected' : '' ?>>Freemium</option>
+                        <option value="enterprise" <?= ($project['tier'] ?? 'free') === 'enterprise' ? 'selected' : '' ?>>Enterprise Grade</option>
+                    </select>
+                    <small style="color: var(--text-secondary);">Select the pricing tier for this project</small>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Key Features (one per line, max 5)</label>
+                    <textarea name="features" class="form-input" rows="5" placeholder="Enter features, one per line&#10;Example:&#10;Advanced editor capabilities&#10;Real-time collaboration&#10;Cloud sync & backup"><?php 
+                        if (!empty($project['features'])) {
+                            $features = json_decode($project['features'], true);
+                            if (is_array($features)) {
+                                echo View::e(implode("\n", $features));
+                            }
+                        }
+                    ?></textarea>
+                    <small style="color: var(--text-secondary);">These features will appear in the collapsible section on project cards</small>
                 </div>
                 
                 <div class="form-group">
@@ -236,7 +278,12 @@ document.addEventListener('click', function(e) {
 <!-- Statistics Section -->
 <div class="card" style="margin-bottom: 30px;">
     <h2 style="margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
-        <span style="font-size: 1.5rem;">📊</span> Animated Statistics
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="20" x2="18" y2="10"></line>
+            <line x1="12" y1="20" x2="12" y2="4"></line>
+            <line x1="6" y1="20" x2="6" y2="14"></line>
+        </svg>
+        Animated Statistics
     </h2>
     <p style="color: var(--text-secondary); margin-bottom: 20px;">Add animated counters to showcase your platform's impact</p>
     
@@ -278,7 +325,13 @@ document.addEventListener('click', function(e) {
 <!-- Timeline Section -->
 <div class="card" style="margin-bottom: 30px;">
     <h2 style="margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
-        <span style="font-size: 1.5rem;">🚀</span> Timeline
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path>
+            <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path>
+            <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"></path>
+            <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"></path>
+        </svg>
+        Timeline
     </h2>
     <p style="color: var(--text-secondary); margin-bottom: 20px;">Showcase your platform's journey and milestones</p>
     
@@ -320,7 +373,11 @@ document.addEventListener('click', function(e) {
 <!-- Section Headings Management -->
 <div class="card" style="margin-bottom: 30px;">
     <h2 style="display: flex; align-items: center; margin-bottom: 25px;">
-        <span style="font-size: 1.5rem;">📝</span> Section Headings
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 10px;">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+        </svg>
+        Section Headings
     </h2>
     <p style="color: var(--text-secondary); margin-bottom: 25px;">
         Customize section titles and subtitles displayed on the home page.
@@ -328,9 +385,9 @@ document.addEventListener('click', function(e) {
     
     <?php 
     $sectionConfigs = [
-        'stats' => ['label' => 'Statistics Section', 'icon' => '📊', 'color' => '#00f0ff'],
-        'timeline' => ['label' => 'Timeline Section', 'icon' => '🚀', 'color' => '#ff2ec4'],
-        'features' => ['label' => 'Features Section', 'icon' => '🎯', 'color' => '#00ff88']
+        'stats' => ['label' => 'Statistics Section', 'icon' => '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>', 'color' => '#00f0ff'],
+        'timeline' => ['label' => 'Timeline Section', 'icon' => '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path></svg>', 'color' => '#ff2ec4'],
+        'features' => ['label' => 'Features Section', 'icon' => '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>', 'color' => '#00ff88']
     ];
     
     foreach ($sectionConfigs as $key => $config): 

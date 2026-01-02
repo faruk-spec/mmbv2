@@ -65,7 +65,14 @@
 
 <div class="stats-grid">
     <div class="stat-card">
-        <div class="stat-label">💻 CPU Usage</div>
+        <div class="stat-label">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 4px;">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                <line x1="8" y1="21" x2="16" y2="21"></line>
+                <line x1="12" y1="17" x2="12" y2="21"></line>
+            </svg>
+            CPU Usage
+        </div>
         <div class="stat-value"><?= number_format($health['cpu_usage'], 2) ?>%</div>
         <div class="progress-bar">
             <div class="progress-fill <?= $health['cpu_usage'] > 80 ? 'danger' : ($health['cpu_usage'] > 60 ? 'warning' : '') ?>" 
@@ -107,7 +114,14 @@
 
 <div class="card mb-3">
     <div class="card-header">
-        <h3 class="card-title">📊 Load Average</h3>
+        <h3 class="card-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
+                <line x1="18" y1="20" x2="18" y2="10"></line>
+                <line x1="12" y1="20" x2="12" y2="4"></line>
+                <line x1="6" y1="20" x2="6" y2="14"></line>
+            </svg>
+            Load Average
+        </h3>
     </div>
     <div class="card-body">
         <div class="metric-row">

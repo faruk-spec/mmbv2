@@ -241,7 +241,13 @@
 
 <div class="container" style="max-width: 1200px; margin: 0 auto; padding: 24px;">
     <div class="page-header" style="margin-bottom: 32px;">
-        <h1 style="margin: 0 0 8px 0; font-size: 2rem;">⚙️ Navbar Settings</h1>
+        <h1 style="margin: 0 0 8px 0; font-size: 2rem;">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"></path>
+            </svg>
+            Navbar Settings
+        </h1>
         <p style="color: var(--text-secondary); margin: 0;">Customize your platform's navigation bar appearance and behavior</p>
     </div>
 
@@ -347,6 +353,14 @@
                 </label>
                 <span>Show Theme Toggle (Dark/Light)</span>
             </div>
+            
+            <div class="switch-container">
+                <label class="switch">
+                    <input type="checkbox" name="navbar_sticky" <?= isset($settings['navbar_sticky']) ? ($settings['navbar_sticky'] ? 'checked' : '') : 'checked' ?>>
+                    <span class="slider"></span>
+                </label>
+                <span>Enable Sticky Navbar (stays at top when scrolling)</span>
+            </div>
         </div>
 
         <!-- Theme Settings -->
@@ -390,21 +404,50 @@
         <!-- Custom Links -->
         <div class="settings-card">
             <h3><i class="fas fa-link"></i> Custom Links</h3>
-            <p style="color: var(--text-secondary); margin-bottom: 16px;">Add custom menu links to your navbar</p>
+            <p style="color: var(--text-secondary); margin-bottom: 16px;">Add custom menu links to your navbar. Custom links appear after the Home link.</p>
             
             <div id="custom-links-container">
                 <?php if (!empty($settings['custom_links'])): ?>
                     <?php foreach ($settings['custom_links'] as $index => $link): ?>
-                        <div class="custom-link-item">
+                        <div class="custom-link-item" data-index="<?= $index ?>">
                             <div class="form-row">
                                 <input type="text" name="custom_link_title[]" class="form-control" placeholder="Link Title" value="<?= View::e($link['title']) ?>">
                                 <input type="text" name="custom_link_url[]" class="form-control" placeholder="/path or https://..." value="<?= View::e($link['url']) ?>">
                                 <input type="text" name="custom_link_icon[]" class="form-control" placeholder="fas fa-icon" value="<?= View::e($link['icon'] ?? '') ?>">
                                 <input type="number" name="custom_link_position[]" class="form-control" placeholder="Order" value="<?= $link['position'] ?? 0 ?>" min="0">
                             </div>
-                            <button type="button" class="btn-remove-link" onclick="this.parentElement.remove()">
-                                <i class="fas fa-trash"></i> Remove
-                            </button>
+                            <div class="form-row" style="margin-top: 10px;">
+                                <label class="switch" style="margin-right: 10px;">
+                                    <input type="checkbox" name="custom_link_is_dropdown[]" value="<?= $index ?>" <?= !empty($link['is_dropdown']) ? 'checked' : '' ?> onchange="toggleDropdownItems(this)">
+                                    <span class="slider"></span>
+                                </label>
+                                <span style="color: var(--text-secondary); font-size: 14px; flex: 1;">Make this a dropdown menu</span>
+                                <button type="button" class="btn-remove-link" onclick="this.closest('.custom-link-item').remove()">
+                                    <i class="fas fa-trash"></i> Remove
+                                </button>
+                            </div>
+                            
+                            <!-- Dropdown Items Container -->
+                            <div class="dropdown-items-container" style="<?= empty($link['is_dropdown']) ? 'display: none;' : '' ?> margin-top: 15px; padding-left: 20px; border-left: 3px solid var(--cyan);">
+                                <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 10px;">Dropdown Menu Items:</p>
+                                <div class="dropdown-items-list">
+                                    <?php if (!empty($link['dropdown_items'])): ?>
+                                        <?php foreach ($link['dropdown_items'] as $subIndex => $subLink): ?>
+                                            <div class="dropdown-item-row" style="display: flex; gap: 8px; margin-bottom: 8px;">
+                                                <input type="text" name="dropdown_item_title_<?= $index ?>[]" class="form-control" placeholder="Item Title" value="<?= View::e($subLink['title']) ?>" style="flex: 2;">
+                                                <input type="text" name="dropdown_item_url_<?= $index ?>[]" class="form-control" placeholder="URL" value="<?= View::e($subLink['url']) ?>" style="flex: 2;">
+                                                <input type="text" name="dropdown_item_icon_<?= $index ?>[]" class="form-control" placeholder="Icon" value="<?= View::e($subLink['icon'] ?? '') ?>" style="flex: 1;">
+                                                <button type="button" onclick="this.closest('.dropdown-item-row').remove()" style="padding: 8px 12px; background: var(--danger); color: white; border: none; border-radius: 6px; cursor: pointer;">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </div>
+                                <button type="button" class="btn-add-dropdown-item" onclick="addDropdownItem(this)" style="padding: 6px 12px; background: var(--cyan); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; margin-top: 8px;">
+                                    <i class="fas fa-plus"></i> Add Dropdown Item
+                                </button>
+                            </div>
                         </div>
                     <?php endforeach; ?>
                 <?php endif; ?>
@@ -452,10 +495,13 @@ function resetNavbarSettings(e) {
 </script>
 
 <script>
+let linkCounter = <?= !empty($settings['custom_links']) ? count($settings['custom_links']) : 0 ?>;
+
 function addCustomLink() {
     const container = document.getElementById('custom-links-container');
     const linkItem = document.createElement('div');
     linkItem.className = 'custom-link-item';
+    linkItem.setAttribute('data-index', linkCounter);
     linkItem.innerHTML = `
         <div class="form-row">
             <input type="text" name="custom_link_title[]" class="form-control" placeholder="Link Title">
@@ -463,11 +509,53 @@ function addCustomLink() {
             <input type="text" name="custom_link_icon[]" class="form-control" placeholder="fas fa-icon">
             <input type="number" name="custom_link_position[]" class="form-control" placeholder="Order" value="0" min="0">
         </div>
-        <button type="button" class="btn-remove-link" onclick="this.parentElement.remove()">
-            <i class="fas fa-trash"></i> Remove
-        </button>
+        <div class="form-row" style="margin-top: 10px;">
+            <label class="switch" style="margin-right: 10px;">
+                <input type="checkbox" name="custom_link_is_dropdown[]" value="${linkCounter}" onchange="toggleDropdownItems(this)">
+                <span class="slider"></span>
+            </label>
+            <span style="color: var(--text-secondary); font-size: 14px; flex: 1;">Make this a dropdown menu</span>
+            <button type="button" class="btn-remove-link" onclick="this.closest('.custom-link-item').remove()">
+                <i class="fas fa-trash"></i> Remove
+            </button>
+        </div>
+        
+        <!-- Dropdown Items Container -->
+        <div class="dropdown-items-container" style="display: none; margin-top: 15px; padding-left: 20px; border-left: 3px solid var(--cyan);">
+            <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 10px;">Dropdown Menu Items:</p>
+            <div class="dropdown-items-list"></div>
+            <button type="button" class="btn-add-dropdown-item" onclick="addDropdownItem(this)" style="padding: 6px 12px; background: var(--cyan); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; margin-top: 8px;">
+                <i class="fas fa-plus"></i> Add Dropdown Item
+            </button>
+        </div>
     `;
     container.appendChild(linkItem);
+    linkCounter++;
+}
+
+function toggleDropdownItems(checkbox) {
+    const linkItem = checkbox.closest('.custom-link-item');
+    const dropdownContainer = linkItem.querySelector('.dropdown-items-container');
+    dropdownContainer.style.display = checkbox.checked ? 'block' : 'none';
+}
+
+function addDropdownItem(button) {
+    const linkItem = button.closest('.custom-link-item');
+    const linkIndex = linkItem.getAttribute('data-index');
+    const dropdownList = linkItem.querySelector('.dropdown-items-list');
+    
+    const itemRow = document.createElement('div');
+    itemRow.className = 'dropdown-item-row';
+    itemRow.style.cssText = 'display: flex; gap: 8px; margin-bottom: 8px;';
+    itemRow.innerHTML = `
+        <input type="text" name="dropdown_item_title_${linkIndex}[]" class="form-control" placeholder="Item Title" style="flex: 2;">
+        <input type="text" name="dropdown_item_url_${linkIndex}[]" class="form-control" placeholder="URL" style="flex: 2;">
+        <input type="text" name="dropdown_item_icon_${linkIndex}[]" class="form-control" placeholder="Icon" style="flex: 1;">
+        <button type="button" onclick="this.closest('.dropdown-item-row').remove()" style="padding: 8px 12px; background: var(--danger); color: white; border: none; border-radius: 6px; cursor: pointer;">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    dropdownList.appendChild(itemRow);
 }
 
 // Sync color picker with text input

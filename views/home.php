@@ -124,32 +124,78 @@ $featuresHeading = $sections['features']['heading'] ?? 'Platform Features';
 $featuresSubheading = $sections['features']['subheading'] ?? 'Powerful capabilities across all projects';
 ?>
 
-<div class="hero" style="text-align: center; padding: 50px 20px; max-width: 1100px; margin: 0 auto;">
-    <?php if (!empty($heroBanner)): ?>
-    <div style="margin-bottom: 30px;">
-        <img src="<?= htmlspecialchars($heroBanner) ?>" alt="Hero Banner" class="hero-banner" style="display: block;">
-    </div>
-    <?php endif; ?>
-    
-    <h1 style="font-size: 2.2rem; margin-bottom: 16px; background: linear-gradient(135deg, var(--cyan), var(--magenta)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
-        <?= htmlspecialchars($heroTitle) ?>
-    </h1>
-    <?php if ($heroSubtitle && $heroSubtitle !== $heroTitle): ?>
-    <h2 style="font-size: 1.4rem; margin-bottom: 12px; color: var(--text-primary);">
-        <?= htmlspecialchars($heroSubtitle) ?>
-    </h2>
-    <?php endif; ?>
-    <p style="font-size: 1rem; color: var(--text-secondary); max-width: 600px; margin: 0 auto 30px;">
-        <?= htmlspecialchars($heroDescription) ?>
-    </p>
-    
-    <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
-        <a href="/register" class="btn btn-primary">Get Started</a>
-        <a href="/login" class="btn btn-secondary">Sign In</a>
+<div class="hero" style="padding: 50px 20px; max-width: 1400px; margin: 0 auto;">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center;">
+        <!-- Left side: Text content -->
+        <div style="text-align: left;">
+            <h1 style="font-size: 2.5rem; margin-bottom: 16px; background: linear-gradient(135deg, var(--cyan), var(--magenta)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1.2;">
+                <?= htmlspecialchars($heroTitle) ?>
+            </h1>
+            <?php if ($heroSubtitle && $heroSubtitle !== $heroTitle): ?>
+            <h2 style="font-size: 1.5rem; margin-bottom: 12px; color: var(--text-primary);">
+                <?= htmlspecialchars($heroSubtitle) ?>
+            </h2>
+            <?php endif; ?>
+            <p style="font-size: 1.05rem; color: var(--text-secondary); margin-bottom: 30px; line-height: 1.6;">
+                <?= htmlspecialchars($heroDescription) ?>
+            </p>
+            
+            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                <?php if (isset($_SESSION['user'])): ?>
+                    <a href="/dashboard" class="btn btn-primary">Go to Dashboard</a>
+                    <a href="/projects" class="btn btn-secondary">Browse Projects</a>
+                <?php else: ?>
+                    <a href="/register" class="btn btn-primary">Get Started</a>
+                    <a href="/login" class="btn btn-secondary">Sign In</a>
+                <?php endif; ?>
+            </div>
+        </div>
+        
+        <!-- Right side: Hero banner image -->
+        <div style="text-align: center;">
+            <?php if (!empty($heroBanner)): ?>
+                <img src="<?= htmlspecialchars($heroBanner) ?>" alt="Hero Banner" class="hero-banner" style="max-width: 100%; height: auto; border-radius: 12px; box-shadow: var(--shadow-glow);">
+            <?php else: ?>
+                <!-- Placeholder if no image -->
+                <div style="width: 100%; aspect-ratio: 16/10; background: linear-gradient(135deg, rgba(0, 240, 255, 0.1), rgba(255, 46, 196, 0.1)); border-radius: 12px; display: flex; align-items: center; justify-content: center; border: 2px dashed var(--border-color);">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.5">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                        <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                </div>
+            <?php endif; ?>
+        </div>
     </div>
 </div>
 
-<div class="grid grid-3" style="margin-top: 40px; max-width: 1200px; margin-left: auto; margin-right: auto;">
+<style>
+/* Responsive hero section */
+@media (max-width: 768px) {
+    .hero > div {
+        grid-template-columns: 1fr !important;
+        gap: 30px !important;
+    }
+    
+    .hero h1 {
+        font-size: 1.8rem !important;
+    }
+    
+    .hero h2 {
+        font-size: 1.2rem !important;
+    }
+    
+    .hero > div > div:first-child {
+        text-align: center !important;
+    }
+    
+    .hero > div > div:first-child > div {
+        justify-content: center !important;
+    }
+}
+</style>
+
+<div class="grid grid-3" style="margin-top: 40px; max-width: 1400px; margin-left: auto; margin-right: auto;">
     <div class="card animate-fade-in" style="animation-delay: 0.1s;">
         <div style="width: 45px; height: 45px; background: rgba(0, 240, 255, 0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
@@ -208,7 +254,7 @@ try {
 
 if ($showStats): 
 ?>
-<div style="margin-top: 60px; text-align: center; max-width: 1300px; margin-left: auto; margin-right: auto; padding: 0 20px;">
+<div style="margin-top: 60px; text-align: center; max-width: 1500px; margin-left: auto; margin-right: auto; padding: 0 20px;">
     <h2 style="margin-bottom: 12px; font-size: 1.75rem;"><?= htmlspecialchars($statsHeading) ?></h2>
     <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 40px;"><?= htmlspecialchars($statsSubheading) ?></p>
     
@@ -240,82 +286,135 @@ if ($showStats):
 </div>
 <?php endif; ?>
 
-<!-- Timeline Section -->
-<?php 
-// Fetch timeline - show section even if query fails, ensure no duplicates
-$showTimeline = false;
-$timeline = [];
-try {
-    // Use DISTINCT and LIMIT to prevent duplicates
-    $timeline = $db->fetchAll("SELECT DISTINCT id, title, description, sort_order, is_active FROM home_timeline WHERE is_active = 1 ORDER BY sort_order ASC LIMIT 10");
-    $showTimeline = !empty($timeline);
-} catch (Exception $e) {
-    $showTimeline = false;
-    error_log("Timeline fetch error: " . $e->getMessage());
-}
 
-if ($showTimeline): 
-?>
-<div style="margin-top: 60px; text-align: center; max-width: 1100px; margin-left: auto; margin-right: auto; padding: 0 20px;">
-    <h2 style="margin-bottom: 12px; font-size: 1.75rem;"><?= htmlspecialchars($timelineHeading) ?></h2>
-    <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 40px;"><?= htmlspecialchars($timelineSubheading) ?></p>
+
+<div style="margin-top: 60px; text-align: center; max-width: 1500px; margin-left: auto; margin-right: auto; padding: 0 20px;">
+    <h2 style="margin-bottom: 20px; font-size: 1.75rem;"><?= htmlspecialchars($projectsSectionTitle) ?></h2>
     
-    <div style="position: relative; text-align: left;">
-        <?php 
-        $delay = 0;
-        $itemNumber = 1;
-        $renderedIds = []; // Track rendered IDs to prevent duplicates
-        foreach ($timeline as $item): 
-            // Skip if already rendered (safety check)
-            if (in_array($item['id'], $renderedIds)) {
-                continue;
-            }
-            $renderedIds[] = $item['id'];
-        ?>
-        <div class="card animate-fade-in timeline-item" style="margin-bottom: 20px; animation-delay: <?= $delay ?>s;">
-            <div class="timeline-badge" style="font-size: 16px; font-weight: 700;">
-                <?= $itemNumber ?>
-            </div>
-            <div>
-                <h4 style="margin-bottom: 8px; font-size: 1.1rem; color: var(--cyan);"><?= htmlspecialchars($item['title']) ?></h4>
-                <p style="color: var(--text-secondary); font-size: 14px;"><?= htmlspecialchars($item['description']) ?></p>
-            </div>
-        </div>
-        <?php 
-        $delay += 0.1;
-        $itemNumber++;
-        endforeach;
-        ?>
+    <!-- Filter Buttons -->
+    <div style="display: flex; justify-content: center; gap: 12px; margin-bottom: 40px; flex-wrap: wrap;">
+        <button class="filter-btn active" data-filter="all" style="padding: 10px 24px; border-radius: 25px; border: 2px solid var(--cyan); background: var(--cyan); color: var(--bg-primary); font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 14px;">
+            All Tools
+        </button>
+        <button class="filter-btn" data-filter="free" style="padding: 10px 24px; border-radius: 25px; border: 2px solid var(--border-color); background: transparent; color: var(--text-primary); font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 14px;">
+            Free Tools
+        </button>
+        <button class="filter-btn" data-filter="freemium" style="padding: 10px 24px; border-radius: 25px; border: 2px solid var(--border-color); background: transparent; color: var(--text-primary); font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 14px;">
+            Freemium
+        </button>
+        <button class="filter-btn" data-filter="enterprise" style="padding: 10px 24px; border-radius: 25px; border: 2px solid var(--border-color); background: transparent; color: var(--text-primary); font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 14px;">
+            Enterprise Grade
+        </button>
     </div>
-</div>
-<?php endif; ?>
-
-<div style="margin-top: 60px; text-align: center; max-width: 1300px; margin-left: auto; margin-right: auto; padding: 0 20px;">
-    <h2 style="margin-bottom: 30px; font-size: 1.75rem;"><?= htmlspecialchars($projectsSectionTitle) ?></h2>
-    <div class="grid grid-3">
+    
+    <div class="grid grid-3" id="projectsGrid">
         <?php 
-        $projects = require BASE_PATH . '/config/projects.php';
+        // Fetch enabled projects from database
+        try {
+            $projects = $db->fetchAll("SELECT * FROM home_projects WHERE is_enabled = 1 ORDER BY sort_order ASC");
+        } catch (Exception $e) {
+            // Fallback to config file if database query fails
+            $projects = require BASE_PATH . '/config/projects.php';
+            // Filter only enabled projects
+            $projects = array_filter($projects, function($project) {
+                return isset($project['enabled']) && $project['enabled'] === true;
+            });
+        }
+        
         $delay = 0;
         foreach ($projects as $key => $project): 
+            // Handle both database and config array formats
+            $projectName = $project['name'] ?? '';
+            $projectDescription = $project['description'] ?? '';
+            $projectColor = $project['color'] ?? '#00f0ff';
+            $projectUrl = $project['url'] ?? '';
+            $projectTier = $project['tier'] ?? 'free'; // Default to free
         ?>
-        <div class="card animate-fade-in" style="border-color: <?= $project['color'] ?>30; animation-delay: <?= $delay ?>s;">
-            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
-                <div style="width: 36px; height: 36px; background: <?= $project['color'] ?>20; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="<?= $project['color'] ?>" stroke-width="2">
+        <div class="card animate-fade-in project-card" data-tier="<?= htmlspecialchars($projectTier) ?>" style="border-color: <?= $projectColor ?>30; animation-delay: <?= $delay ?>s; position: relative; overflow: hidden; transition: all 0.4s ease;">
+            <!-- Tier Badge -->
+            <div style="position: absolute; top: 12px; right: 12px; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; 
+                <?php 
+                $badgeStyles = [
+                    'free' => 'background: rgba(0, 255, 136, 0.2); color: var(--green); border: 1px solid var(--green);',
+                    'freemium' => 'background: rgba(255, 170, 0, 0.2); color: var(--orange); border: 1px solid var(--orange);',
+                    'enterprise' => 'background: rgba(153, 69, 255, 0.2); color: var(--purple); border: 1px solid var(--purple);'
+                ];
+                echo $badgeStyles[$projectTier] ?? $badgeStyles['free'];
+                ?>">
+                <?= htmlspecialchars(ucfirst($projectTier === 'enterprise' ? 'Enterprise' : $projectTier)) ?>
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px; margin-top: 8px;">
+                <div style="width: 36px; height: 36px; background: <?= $projectColor ?>20; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="<?= $projectColor ?>" stroke-width="2">
                         <rect x="3" y="3" width="18" height="18" rx="2"/>
                     </svg>
                 </div>
-                <h3 style="color: <?= $project['color'] ?>; font-size: 1.1rem;"><?= $project['name'] ?></h3>
+                <h3 style="color: <?= $projectColor ?>; font-size: 1.1rem;"><?= htmlspecialchars($projectName) ?></h3>
             </div>
-            <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 16px;"><?= $project['description'] ?></p>
+            
+            <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 16px; line-height: 1.5;">
+                <?= htmlspecialchars($projectDescription) ?>
+            </p>
+            
+            <!-- Collapsible Features Section -->
+            <div class="project-details" style="max-height: 0; overflow: hidden; transition: max-height 0.4s ease; margin-bottom: 16px;">
+                <div style="padding: 12px; background: rgba(0, 240, 255, 0.03); border-radius: 8px; margin-bottom: 12px;">
+                    <h4 style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Key Features</h4>
+                    <ul style="list-style: none; padding: 0; margin: 0;">
+                        <?php
+                        // Get features from database or use default
+                        $projectFeatures = [];
+                        if (!empty($project['features'])) {
+                            $projectFeatures = json_decode($project['features'], true) ?? [];
+                        }
+                        
+                        // Fallback to default features if none in database
+                        if (empty($projectFeatures)) {
+                            $projectFeatures = [
+                                'Advanced capabilities',
+                                'Professional tools',
+                                'Cloud integration'
+                            ];
+                        }
+                        
+                        foreach (array_slice($projectFeatures, 0, 3) as $feature): 
+                        ?>
+                        <li style="font-size: 12px; color: var(--text-primary); padding: 4px 0; display: flex; align-items: center; gap: 8px;">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="<?= $projectColor ?>" stroke-width="3">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            <?= htmlspecialchars($feature) ?>
+                        </li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Toggle Details Button -->
+            <button class="toggle-details" style="width: 100%; padding: 8px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-secondary); font-size: 12px; cursor: pointer; margin-bottom: 12px; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                <span class="toggle-text">Show Features</span>
+                <svg class="toggle-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition: transform 0.3s ease;">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+            </button>
             
             <?php if (isset($_SESSION['user'])): ?>
-                <a href="<?= $project['url'] ?>" class="btn btn-primary" style="width: 100%; background: <?= $project['color'] ?>; border-color: <?= $project['color'] ?>;">
-                    <i class="fas fa-arrow-right"></i> Access Project
+                <a href="<?= htmlspecialchars($projectUrl) ?>" class="btn btn-primary" style="width: 100%; background: <?= $projectColor ?>; border-color: <?= $projectColor ?>;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 6px;">
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                        <polyline points="12 5 19 12 12 19"></polyline>
+                    </svg>
+                    Access Project
                 </a>
             <?php else: ?>
-                <a href="/login?redirect=<?= urlencode($project['url']) ?>" class="btn btn-secondary" style="width: 100%;">
-                    <i class="fas fa-sign-in-alt"></i> Sign In to Access
+                <a href="/login?redirect=<?= urlencode($projectUrl) ?>" class="btn btn-secondary" style="width: 100%;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 6px;">
+                        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                        <polyline points="10 17 15 12 10 7"></polyline>
+                        <line x1="15" y1="12" x2="3" y2="12"></line>
+                    </svg>
+                    Sign In to Access
                 </a>
             <?php endif; ?>
         </div>
@@ -326,7 +425,96 @@ if ($showTimeline):
     </div>
 </div>
 
-<div style="margin-top: 60px; padding: 40px 20px; background: rgba(0, 240, 255, 0.02); border-radius: 16px; max-width: 1300px; margin-left: auto; margin-right: auto;">
+<style>
+/* Filter Buttons Styles */
+.filter-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 240, 255, 0.3);
+}
+
+.filter-btn.active {
+    background: var(--cyan) !important;
+    border-color: var(--cyan) !important;
+    color: var(--bg-primary) !important;
+}
+
+/* Project Card Enhancements */
+.project-card {
+    cursor: pointer;
+}
+
+.project-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+}
+
+.project-card .toggle-details:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--cyan);
+}
+
+.project-card.expanded .project-details {
+    max-height: 300px !important;
+}
+
+.project-card.expanded .toggle-icon {
+    transform: rotate(180deg);
+}
+
+/* Project Card Animation */
+.project-card.filtered-out {
+    display: none;
+    opacity: 0;
+    transform: scale(0.8);
+}
+</style>
+
+<script>
+// Filter functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    const projectCards = document.querySelectorAll('.project-card');
+    
+    filterBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            // Update active state
+            filterBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            const filter = this.dataset.filter;
+            
+            // Filter projects with animation
+            projectCards.forEach((card, index) => {
+                const tier = card.dataset.tier;
+                
+                if (filter === 'all' || tier === filter) {
+                    card.classList.remove('filtered-out');
+                    card.style.animation = `fadeIn 0.5s ease forwards ${index * 0.1}s`;
+                } else {
+                    card.classList.add('filtered-out');
+                }
+            });
+        });
+    });
+    
+    // Toggle details functionality
+    document.querySelectorAll('.toggle-details').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const card = this.closest('.project-card');
+            const isExpanded = card.classList.contains('expanded');
+            const toggleText = this.querySelector('.toggle-text');
+            
+            card.classList.toggle('expanded');
+            toggleText.textContent = isExpanded ? 'Show Features' : 'Hide Features';
+        });
+    });
+});
+</script>
+
+<div style="margin-top: 60px; padding: 40px 20px; background: rgba(0, 240, 255, 0.02); border-radius: 16px; max-width: 1500px; margin-left: auto; margin-right: auto;">
     <div style="text-align: center; margin-bottom: 30px;">
         <h2 style="margin-bottom: 12px; font-size: 1.75rem;"><?= htmlspecialchars($featuresHeading) ?></h2>
         <p style="color: var(--text-secondary); font-size: 0.95rem;"><?= htmlspecialchars($featuresSubheading) ?></p>
@@ -592,17 +780,26 @@ $timelineItems = $db->fetchAll("SELECT * FROM home_timeline WHERE is_active = 1 
         gap: 15px !important;
     }
     
-    .timeline-item > div > div:first-child,
-    .timeline-item > div > div:last-child {
+    .timeline-item > div > div:first-child {
         display: none !important;
     }
     
+    .timeline-item > div > div:nth-child(2) {
+        /* Circle - keep visible */
+    }
+    
     .timeline-item > div > div:nth-child(3) {
+        display: block !important;
         text-align: left !important;
     }
     
     .timeline-card {
         max-width: 100% !important;
+    }
+    
+    /* Show content from hidden columns */
+    .timeline-item > div > div:last-child .timeline-card {
+        display: block !important;
     }
 }
 </style>

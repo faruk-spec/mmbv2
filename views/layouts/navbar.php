@@ -94,6 +94,13 @@ if (!empty($navbarSettings['navbar_bg_color'])) {
 if (!empty($navbarSettings['navbar_border_color'])) {
     $headerStyles[] = 'border-bottom-color: ' . htmlspecialchars($navbarSettings['navbar_border_color']);
 }
+// Add sticky positioning inline if enabled (highest priority)
+if (!isset($navbarSettings['navbar_sticky']) || $navbarSettings['navbar_sticky']) {
+    $headerStyles[] = 'position: -webkit-sticky';
+    $headerStyles[] = 'position: sticky';
+    $headerStyles[] = 'top: 0';
+    $headerStyles[] = 'z-index: 9999';
+}
 $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerStyles) . ';"' : '';
 ?>
 <?php if (!empty($navbarSettings['custom_css'])): ?>
@@ -111,12 +118,62 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
         <?php endif; ?>
         
         <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle menu">
-            ☰
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
         </button>
         
         <nav class="universal-nav" id="mainNav">
             <?php if ($navbarSettings['show_home_link']): ?>
             <a href="/" class="nav-link">Home</a>
+            <?php endif; ?>
+            
+            <!-- Custom Links (moved after Home) -->
+            <?php if (!empty($customLinks)): ?>
+                <?php 
+                // Sort custom links by position
+                usort($customLinks, function($a, $b) {
+                    return ($a['position'] ?? 0) - ($b['position'] ?? 0);
+                });
+                foreach ($customLinks as $link): 
+                    // Check if this is a dropdown link (has is_dropdown flag)
+                    $isDropdown = !empty($link['is_dropdown']) && !empty($link['dropdown_items']);
+                ?>
+                    <?php if ($isDropdown): ?>
+                        <!-- Dropdown Custom Link -->
+                        <div class="dropdown nav-item">
+                            <button class="nav-link dropdown-toggle">
+                                <?php if (!empty($link['icon'])): ?>
+                                    <i class="<?= htmlspecialchars($link['icon']) ?>"></i>
+                                <?php endif; ?>
+                                <?= htmlspecialchars($link['title']) ?>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M6 9l6 6 6-6"/>
+                                </svg>
+                            </button>
+                            <div class="dropdown-menu">
+                                <?php foreach ($link['dropdown_items'] as $subLink): ?>
+                                    <a href="<?= htmlspecialchars($subLink['url']) ?>" class="dropdown-item">
+                                        <?php if (!empty($subLink['icon'])): ?>
+                                            <i class="<?= htmlspecialchars($subLink['icon']) ?>"></i>
+                                        <?php endif; ?>
+                                        <?= htmlspecialchars($subLink['title']) ?>
+                                    </a>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    <?php else: ?>
+                        <!-- Regular Custom Link -->
+                        <a href="<?= htmlspecialchars($link['url']) ?>" class="nav-link">
+                            <?php if (!empty($link['icon'])): ?>
+                                <i class="<?= htmlspecialchars($link['icon']) ?>"></i>
+                            <?php endif; ?>
+                            <?= htmlspecialchars($link['title']) ?>
+                        </a>
+                    <?php endif; ?>
+                <?php endforeach; ?>
             <?php endif; ?>
             
             <?php if ($isLoggedIn): ?>
@@ -219,24 +276,6 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
                 </svg>
                 <span id="themeText">Light</span>
             </button>
-            <?php endif; ?>
-            
-            <!-- Custom Links -->
-            <?php if (!empty($customLinks)): ?>
-                <?php 
-                // Sort custom links by position
-                usort($customLinks, function($a, $b) {
-                    return ($a['position'] ?? 0) - ($b['position'] ?? 0);
-                });
-                foreach ($customLinks as $link): 
-                ?>
-                <a href="<?= htmlspecialchars($link['url']) ?>" class="nav-link">
-                    <?php if (!empty($link['icon'])): ?>
-                        <i class="<?= htmlspecialchars($link['icon']) ?>"></i>
-                    <?php endif; ?>
-                    <?= htmlspecialchars($link['title']) ?>
-                </a>
-                <?php endforeach; ?>
             <?php endif; ?>
         </nav>
     </div>
@@ -346,33 +385,50 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
 
 <style>
 /* Universal Navbar Styles */
-.universal-header {
-    background: rgba(12, 12, 18, 0.98);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-bottom: 1px solid var(--border-color);
-    position: -webkit-sticky;
-    position: sticky;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 1000;
-    width: 100%;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-    transition: all 0.3s ease;
+html {
+    scroll-behavior: smooth;
 }
 
-/* Force sticky on all browsers */
+body {
+    overflow-x: hidden;
+}
+
+.universal-header {
+    background: rgba(12, 12, 18, 0.98) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    <?php if (!isset($navbarSettings['navbar_sticky']) || $navbarSettings['navbar_sticky']): ?>
+    /* Sticky positioning enabled (default) */
+    position: -webkit-sticky !important;
+    position: sticky !important;
+    top: 0 !important;
+    <?php else: ?>
+    /* Sticky positioning disabled */
+    position: relative !important;
+    <?php endif; ?>
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 9999 !important;
+    width: 100% !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3) !important;
+    transition: all 0.3s ease !important;
+    will-change: transform !important;
+}
+
+/* Force sticky on all browsers (only if enabled) */
+<?php if (!isset($navbarSettings['navbar_sticky']) || $navbarSettings['navbar_sticky']): ?>
 @supports (position: sticky) or (position: -webkit-sticky) {
     .universal-header {
-        position: -webkit-sticky;
-        position: sticky;
+        position: -webkit-sticky !important;
+        position: sticky !important;
     }
 }
+<?php endif; ?>
 
 [data-theme="light"] .universal-header {
-    background: rgba(255, 255, 255, 0.98);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.98) !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1) !important;
 }
 
 .universal-header .header-content {

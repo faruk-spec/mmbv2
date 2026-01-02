@@ -197,11 +197,23 @@ class HomeContentController extends BaseController
             $description = Security::sanitize($this->input('description'));
             $color = Security::sanitize($this->input('color'));
             $icon = Security::sanitize($this->input('icon'));
+            $tier = Security::sanitize($this->input('tier', 'free'));
             $isEnabled = $this->input('is_enabled', '0') === '1' ? 1 : 0;
+            
+            // Process features - convert newline-separated text to JSON array
+            $featuresInput = $this->input('features', '');
+            $featuresArray = array_filter(array_map('trim', explode("\n", $featuresInput)));
+            $featuresArray = array_slice($featuresArray, 0, 5); // Max 5 features
+            $featuresJson = !empty($featuresArray) ? json_encode($featuresArray) : null;
             
             // Validate color format
             if (!preg_match('/^#[0-9A-Fa-f]{6}$/', $color)) {
                 throw new \Exception('Invalid color format. Use hex format (#RRGGBB).');
+            }
+            
+            // Validate tier
+            if (!in_array($tier, ['free', 'freemium', 'enterprise'])) {
+                $tier = 'free';
             }
             
             // Handle image upload or removal
@@ -233,6 +245,8 @@ class HomeContentController extends BaseController
                 'description' => $description,
                 'color' => $color,
                 'icon' => $icon,
+                'tier' => $tier,
+                'features' => $featuresJson,
                 'image_url' => $imageUrl,
                 'is_enabled' => $isEnabled,
                 'updated_at' => date('Y-m-d H:i:s')
@@ -257,12 +271,22 @@ class HomeContentController extends BaseController
      */
     private function handleImageUpload(array $file, string $prefix): string
     {
-        // Create uploads directory if it doesn't exist
-        $uploadDir = BASE_PATH . '/storage/uploads/home';
+        // Create uploads directory in public folder if it doesn't exist
+        $uploadDir = BASE_PATH . '/public/uploads/home';
         if (!is_dir($uploadDir)) {
-            if (!mkdir($uploadDir, 0755, true)) {
+            if (!mkdir($uploadDir, 0775, true)) {
                 Logger::error('Failed to create upload directory: ' . $uploadDir);
                 throw new \Exception('Failed to create upload directory.');
+            }
+            chmod($uploadDir, 0775);
+        }
+        
+        // Ensure directory is writable
+        if (!is_writable($uploadDir)) {
+            chmod($uploadDir, 0775);
+            if (!is_writable($uploadDir)) {
+                Logger::error('Upload directory is not writable: ' . $uploadDir);
+                throw new \Exception('Upload directory is not writable. Please set permissions to 775.');
             }
         }
         
@@ -302,8 +326,9 @@ class HomeContentController extends BaseController
             throw new \Exception('Failed to upload image. Please check file permissions.');
         }
         
-        // Return relative URL
-        return '/storage/uploads/home/' . $filename;
+        // Return relative URL accessible from web
+        // Since document root is project root (not public/), include /public/ in path
+        return '/public/uploads/home/' . $filename;
     }
     
     /**

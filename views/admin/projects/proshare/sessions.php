@@ -5,7 +5,14 @@
 
 <div class="card">
     <div class="card-header">
-        <h3 class="card-title">💻 Session History</h3>
+        <h3 class="card-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                <line x1="8" y1="21" x2="16" y2="21"></line>
+                <line x1="12" y1="17" x2="12" y2="21"></line>
+            </svg>
+            Session History
+        </h3>
     </div>
     <div class="card-body">
         <p><strong>Total Sessions:</strong> <?= number_format($totalCount) ?></p>
