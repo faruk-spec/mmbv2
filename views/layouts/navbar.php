@@ -355,12 +355,12 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-bottom: 1px solid var(--border-color);
-    position: -webkit-sticky;
-    position: sticky;
-    top: 0;
+    position: -webkit-sticky !important;
+    position: sticky !important;
+    top: 0 !important;
     left: 0;
     right: 0;
-    z-index: 1000;
+    z-index: 9999 !important;
     width: 100%;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
     transition: all 0.3s ease;
@@ -369,8 +369,8 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
 /* Force sticky on all browsers */
 @supports (position: sticky) or (position: -webkit-sticky) {
     .universal-header {
-        position: -webkit-sticky;
-        position: sticky;
+        position: -webkit-sticky !important;
+        position: sticky !important;
     }
 }
 

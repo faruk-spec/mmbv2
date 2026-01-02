@@ -124,30 +124,71 @@ $featuresHeading = $sections['features']['heading'] ?? 'Platform Features';
 $featuresSubheading = $sections['features']['subheading'] ?? 'Powerful capabilities across all projects';
 ?>
 
-<div class="hero" style="text-align: center; padding: 50px 20px; max-width: 1100px; margin: 0 auto;">
-    <?php if (!empty($heroBanner)): ?>
-    <div style="margin-bottom: 30px;">
-        <img src="<?= htmlspecialchars($heroBanner) ?>" alt="Hero Banner" class="hero-banner" style="display: block;">
-    </div>
-    <?php endif; ?>
-    
-    <h1 style="font-size: 2.2rem; margin-bottom: 16px; background: linear-gradient(135deg, var(--cyan), var(--magenta)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
-        <?= htmlspecialchars($heroTitle) ?>
-    </h1>
-    <?php if ($heroSubtitle && $heroSubtitle !== $heroTitle): ?>
-    <h2 style="font-size: 1.4rem; margin-bottom: 12px; color: var(--text-primary);">
-        <?= htmlspecialchars($heroSubtitle) ?>
-    </h2>
-    <?php endif; ?>
-    <p style="font-size: 1rem; color: var(--text-secondary); max-width: 600px; margin: 0 auto 30px;">
-        <?= htmlspecialchars($heroDescription) ?>
-    </p>
-    
-    <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
-        <a href="/register" class="btn btn-primary">Get Started</a>
-        <a href="/login" class="btn btn-secondary">Sign In</a>
+<div class="hero" style="padding: 50px 20px; max-width: 1200px; margin: 0 auto;">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center;">
+        <!-- Left side: Text content -->
+        <div style="text-align: left;">
+            <h1 style="font-size: 2.5rem; margin-bottom: 16px; background: linear-gradient(135deg, var(--cyan), var(--magenta)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1.2;">
+                <?= htmlspecialchars($heroTitle) ?>
+            </h1>
+            <?php if ($heroSubtitle && $heroSubtitle !== $heroTitle): ?>
+            <h2 style="font-size: 1.5rem; margin-bottom: 12px; color: var(--text-primary);">
+                <?= htmlspecialchars($heroSubtitle) ?>
+            </h2>
+            <?php endif; ?>
+            <p style="font-size: 1.05rem; color: var(--text-secondary); margin-bottom: 30px; line-height: 1.6;">
+                <?= htmlspecialchars($heroDescription) ?>
+            </p>
+            
+            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                <a href="/register" class="btn btn-primary">Get Started</a>
+                <a href="/login" class="btn btn-secondary">Sign In</a>
+            </div>
+        </div>
+        
+        <!-- Right side: Hero banner image -->
+        <div style="text-align: center;">
+            <?php if (!empty($heroBanner)): ?>
+                <img src="<?= htmlspecialchars($heroBanner) ?>" alt="Hero Banner" class="hero-banner" style="max-width: 100%; height: auto; border-radius: 12px; box-shadow: var(--shadow-glow);">
+            <?php else: ?>
+                <!-- Placeholder if no image -->
+                <div style="width: 100%; aspect-ratio: 16/10; background: linear-gradient(135deg, rgba(0, 240, 255, 0.1), rgba(255, 46, 196, 0.1)); border-radius: 12px; display: flex; align-items: center; justify-content: center; border: 2px dashed var(--border-color);">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.5">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                        <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                </div>
+            <?php endif; ?>
+        </div>
     </div>
 </div>
+
+<style>
+/* Responsive hero section */
+@media (max-width: 768px) {
+    .hero > div {
+        grid-template-columns: 1fr !important;
+        gap: 30px !important;
+    }
+    
+    .hero h1 {
+        font-size: 1.8rem !important;
+    }
+    
+    .hero h2 {
+        font-size: 1.2rem !important;
+    }
+    
+    .hero > div > div:first-child {
+        text-align: center !important;
+    }
+    
+    .hero > div > div:first-child > div {
+        justify-content: center !important;
+    }
+}
+</style>
 
 <div class="grid grid-3" style="margin-top: 40px; max-width: 1200px; margin-left: auto; margin-right: auto;">
     <div class="card animate-fade-in" style="animation-delay: 0.1s;">
@@ -246,27 +287,43 @@ if ($showStats):
     <h2 style="margin-bottom: 30px; font-size: 1.75rem;"><?= htmlspecialchars($projectsSectionTitle) ?></h2>
     <div class="grid grid-3">
         <?php 
-        $projects = require BASE_PATH . '/config/projects.php';
+        // Fetch enabled projects from database
+        try {
+            $projects = $db->fetchAll("SELECT * FROM home_projects WHERE is_enabled = 1 ORDER BY sort_order ASC");
+        } catch (Exception $e) {
+            // Fallback to config file if database query fails
+            $projects = require BASE_PATH . '/config/projects.php';
+            // Filter only enabled projects
+            $projects = array_filter($projects, function($project) {
+                return isset($project['enabled']) && $project['enabled'] === true;
+            });
+        }
+        
         $delay = 0;
         foreach ($projects as $key => $project): 
+            // Handle both database and config array formats
+            $projectName = $project['name'] ?? '';
+            $projectDescription = $project['description'] ?? '';
+            $projectColor = $project['color'] ?? '#00f0ff';
+            $projectUrl = $project['url'] ?? '';
         ?>
-        <div class="card animate-fade-in" style="border-color: <?= $project['color'] ?>30; animation-delay: <?= $delay ?>s;">
+        <div class="card animate-fade-in" style="border-color: <?= $projectColor ?>30; animation-delay: <?= $delay ?>s;">
             <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
-                <div style="width: 36px; height: 36px; background: <?= $project['color'] ?>20; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="<?= $project['color'] ?>" stroke-width="2">
+                <div style="width: 36px; height: 36px; background: <?= $projectColor ?>20; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="<?= $projectColor ?>" stroke-width="2">
                         <rect x="3" y="3" width="18" height="18" rx="2"/>
                     </svg>
                 </div>
-                <h3 style="color: <?= $project['color'] ?>; font-size: 1.1rem;"><?= $project['name'] ?></h3>
+                <h3 style="color: <?= $projectColor ?>; font-size: 1.1rem;"><?= htmlspecialchars($projectName) ?></h3>
             </div>
-            <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 16px;"><?= $project['description'] ?></p>
+            <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 16px;"><?= htmlspecialchars($projectDescription) ?></p>
             
             <?php if (isset($_SESSION['user'])): ?>
-                <a href="<?= $project['url'] ?>" class="btn btn-primary" style="width: 100%; background: <?= $project['color'] ?>; border-color: <?= $project['color'] ?>;">
+                <a href="<?= htmlspecialchars($projectUrl) ?>" class="btn btn-primary" style="width: 100%; background: <?= $projectColor ?>; border-color: <?= $projectColor ?>;">
                     <i class="fas fa-arrow-right"></i> Access Project
                 </a>
             <?php else: ?>
-                <a href="/login?redirect=<?= urlencode($project['url']) ?>" class="btn btn-secondary" style="width: 100%;">
+                <a href="/login?redirect=<?= urlencode($projectUrl) ?>" class="btn btn-secondary" style="width: 100%;">
                     <i class="fas fa-sign-in-alt"></i> Sign In to Access
                 </a>
             <?php endif; ?>

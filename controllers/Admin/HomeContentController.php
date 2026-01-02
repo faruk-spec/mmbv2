@@ -257,8 +257,8 @@ class HomeContentController extends BaseController
      */
     private function handleImageUpload(array $file, string $prefix): string
     {
-        // Create uploads directory if it doesn't exist
-        $uploadDir = BASE_PATH . '/storage/uploads/home';
+        // Create uploads directory in public folder if it doesn't exist
+        $uploadDir = BASE_PATH . '/public/uploads/home';
         if (!is_dir($uploadDir)) {
             if (!mkdir($uploadDir, 0755, true)) {
                 Logger::error('Failed to create upload directory: ' . $uploadDir);
@@ -302,8 +302,8 @@ class HomeContentController extends BaseController
             throw new \Exception('Failed to upload image. Please check file permissions.');
         }
         
-        // Return relative URL
-        return '/storage/uploads/home/' . $filename;
+        // Return relative URL accessible from web
+        return '/uploads/home/' . $filename;
     }
     
     /**
