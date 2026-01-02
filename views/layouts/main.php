@@ -897,7 +897,166 @@ try {
     <?php include BASE_PATH . '/views/layouts/navbar.php'; ?>
     
     <main class="main">
-        <?php View::yield('content'); ?>
+        <?php 
+        // Check if this is a dashboard page that needs sidebar
+        $isDashboardPage = isset($title) && in_array($title, ['Dashboard', 'Profile', 'Security Settings', 'Activity Log', 'Settings']);
+        ?>
+        
+        <?php if ($isDashboardPage): ?>
+            <!-- Dashboard Layout with Sidebar -->
+            <div class="dashboard-container" style="display: grid; grid-template-columns: 1fr 300px; gap: 20px; max-width: 1400px; margin: 0 auto; padding: 20px;">
+                <div class="dashboard-main-content">
+                    <?php View::yield('content'); ?>
+                </div>
+                
+                <!-- Right Sidebar -->
+                <aside class="dashboard-sidebar" style="position: sticky; top: 80px; height: fit-content;">
+                    <!-- User Stats Card -->
+                    <div class="sidebar-card" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 16px; margin-bottom: 16px;">
+                        <h3 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                            Account Overview
+                        </h3>
+                        <div style="space-y: 8px;">
+                            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-color); font-size: 0.8rem;">
+                                <span style="color: var(--text-secondary);">Status</span>
+                                <span style="color: var(--green); font-weight: 600;">Active</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-color); font-size: 0.8rem;">
+                                <span style="color: var(--text-secondary);">Role</span>
+                                <span style="color: var(--text-primary); font-weight: 600;"><?= ucfirst(Auth::user()['role'] ?? 'User') ?></span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; padding: 8px 0; font-size: 0.8rem;">
+                                <span style="color: var(--text-secondary);">Member Since</span>
+                                <span style="color: var(--text-primary); font-weight: 600;"><?= date('M Y', strtotime(Auth::user()['created_at'] ?? 'now')) ?></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Actions Card -->
+                    <div class="sidebar-card" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 16px; margin-bottom: 16px;">
+                        <h3 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--magenta)" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                            </svg>
+                            Quick Actions
+                        </h3>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <a href="/profile" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; text-decoration: none; color: var(--text-primary); font-size: 0.8rem; transition: all 0.3s;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                                Edit Profile
+                            </a>
+                            <a href="/security" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; text-decoration: none; color: var(--text-primary); font-size: 0.8rem; transition: all 0.3s;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--magenta)" stroke-width="2">
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                </svg>
+                                Security
+                            </a>
+                            <a href="/settings" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; text-decoration: none; color: var(--text-primary); font-size: 0.8rem; transition: all 0.3s;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2">
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                    <path d="M12 1v6m0 6v6m5.2-13.2l-4.2 4.2m-2 2l-4.2 4.2m13.2-5.2l-4.2-4.2m-2 2l-4.2-4.2"></path>
+                                </svg>
+                                Settings
+                            </a>
+                            <a href="/activity" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; text-decoration: none; color: var(--text-primary); font-size: 0.8rem; transition: all 0.3s;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2">
+                                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                                </svg>
+                                Activity Log
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- System Status Card -->
+                    <div class="sidebar-card" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 16px; margin-bottom: 16px;">
+                        <h3 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <polyline points="12 6 12 12 16 14"/>
+                            </svg>
+                            System Status
+                        </h3>
+                        <div style="space-y: 8px;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 0; font-size: 0.8rem;">
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <div style="width: 6px; height: 6px; background: var(--green); border-radius: 50%;"></div>
+                                    <span style="color: var(--text-secondary);">All Systems</span>
+                                </div>
+                                <span style="color: var(--green); font-weight: 600; font-size: 0.75rem;">Operational</span>
+                            </div>
+                            <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 0; font-size: 0.8rem;">
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <div style="width: 6px; height: 6px; background: var(--green); border-radius: 50%;"></div>
+                                    <span style="color: var(--text-secondary);">API</span>
+                                </div>
+                                <span style="color: var(--green); font-weight: 600; font-size: 0.75rem;">Online</span>
+                            </div>
+                            <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 0; font-size: 0.8rem;">
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <div style="width: 6px; height: 6px; background: var(--green); border-radius: 50%;"></div>
+                                    <span style="color: var(--text-secondary);">Database</span>
+                                </div>
+                                <span style="color: var(--green); font-weight: 600; font-size: 0.75rem;">Connected</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Help & Support Card -->
+                    <div class="sidebar-card" style="background: linear-gradient(135deg, rgba(0, 240, 255, 0.1) 0%, rgba(255, 46, 196, 0.1) 100%); border: 1px solid var(--border-color); border-radius: 10px; padding: 16px;">
+                        <h3 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                            </svg>
+                            Need Help?
+                        </h3>
+                        <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 10px; line-height: 1.4;">Get assistance with your account or projects.</p>
+                        <a href="/help" style="display: inline-block; padding: 6px 12px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; text-decoration: none; color: var(--text-primary); font-size: 0.75rem; font-weight: 600; transition: all 0.3s;">
+                            View Documentation
+                        </a>
+                    </div>
+                </aside>
+            </div>
+            
+            <style>
+                .sidebar-card a:hover {
+                    background: rgba(0, 240, 255, 0.1);
+                    border-color: var(--cyan);
+                    transform: translateX(2px);
+                }
+                
+                @media (max-width: 1024px) {
+                    .dashboard-container {
+                        grid-template-columns: 1fr !important;
+                    }
+                    
+                    .dashboard-sidebar {
+                        position: static !important;
+                        display: grid;
+                        grid-template-columns: repeat(2, 1fr);
+                        gap: 16px;
+                    }
+                }
+                
+                @media (max-width: 640px) {
+                    .dashboard-sidebar {
+                        grid-template-columns: 1fr !important;
+                    }
+                }
+            </style>
+        <?php else: ?>
+            <!-- Regular Content Layout -->
+            <?php View::yield('content'); ?>
+        <?php endif; ?>
     </main>
     
     <footer class="footer">
