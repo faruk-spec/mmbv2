@@ -2,11 +2,6 @@
 <?php View::extend('main'); ?>
 
 <?php View::section('content'); ?>
-<div style="margin-bottom: 12px;">
-    <h1 style="font-size: 1rem; font-weight: 700; margin-bottom: 8px; background: linear-gradient(135deg, var(--cyan), var(--magenta)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Security Settings</h1>
-    <p style="color: var(--text-secondary); font-size: 0.875rem;">Protect your account with strong security measures</p>
-</div>
-
 <?php if (Helpers::hasFlash('success')): ?>
     <div class="alert alert-success" style="margin-bottom: 12px; padding: 16px; background: rgba(0, 255, 136, 0.1); border: 1px solid var(--green); border-radius: 8px; color: var(--green);">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">

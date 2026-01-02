@@ -2,11 +2,6 @@
 <?php View::extend('main'); ?>
 
 <?php View::section('content'); ?>
-<div style="margin-bottom: 12px;">
-    <h1 style="font-size: 1rem; font-weight: 700; margin-bottom: 8px; background: linear-gradient(135deg, var(--cyan), var(--magenta)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Activity Log</h1>
-    <p style="color: var(--text-secondary); font-size: 0.875rem;">View your recent account activity and security events</p>
-</div>
-
 <div class="card" style="border-radius: 10px; overflow: hidden; border: 1px solid var(--border-color);">
     <div class="card-header" style="background: linear-gradient(135deg, rgba(0, 240, 255, 0.1) 0%, rgba(255, 46, 196, 0.1) 100%); border-bottom: 1px solid var(--border-color); padding: 12px;">
         <h3 class="card-title" style="font-size: 0.9rem; display: flex; align-items: center; gap: 10px; margin: 0;">

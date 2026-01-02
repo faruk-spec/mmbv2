@@ -13,6 +13,7 @@ use Core\SSO;
 use Core\Helpers;
 use Core\View;
 use Core\TrafficTracker;
+use Core\Logger;
 
 class AuthController extends BaseController
 {
@@ -58,6 +59,12 @@ class AuthController extends BaseController
         if (Auth::attempt($email, $password, $remember)) {
             // Track login
             TrafficTracker::trackLogin(Auth::id());
+            
+            // Log activity
+            Logger::activity(Auth::id(), 'login', [
+                'method' => 'email_password',
+                'remember' => $remember
+            ]);
             
             // Generate SSO token
             $ssoToken = SSO::generateToken(Auth::id());
@@ -121,6 +128,12 @@ class AuthController extends BaseController
             // Track registration
             TrafficTracker::trackRegistration($userId);
             
+            // Log activity
+            Logger::activity($userId, 'registration', [
+                'name' => Security::sanitize($this->input('name')),
+                'email' => $this->input('email')
+            ]);
+            
             $this->flash('success', 'Registration successful! Please login.');
             $this->redirect('/login');
         } else {
@@ -134,6 +147,11 @@ class AuthController extends BaseController
      */
     public function logout(): void
     {
+        // Log activity before logout
+        if (Auth::check()) {
+            Logger::activity(Auth::id(), 'logout');
+        }
+        
         SSO::clearToken();
         setcookie('sso_token', '', time() - 3600, '/', '', true, true);
         Auth::logout();
@@ -205,6 +223,15 @@ class AuthController extends BaseController
         $password = $this->input('password');
         
         if (Auth::resetPassword($token, $password)) {
+            // Get user ID from token before logging
+            $db = \Core\Database::getInstance();
+            $resetRecord = $db->fetch("SELECT user_id FROM password_resets WHERE token = ?", [$token]);
+            if ($resetRecord) {
+                Logger::activity($resetRecord['user_id'], 'password_reset', [
+                    'method' => 'email_link'
+                ]);
+            }
+            
             $this->flash('success', 'Password has been reset. Please login.');
             $this->redirect('/login');
         } else {
@@ -219,6 +246,13 @@ class AuthController extends BaseController
     public function verifyEmail(string $token): void
     {
         if (Auth::verifyEmail($token)) {
+            // Get user ID and log activity
+            $db = \Core\Database::getInstance();
+            $user = $db->fetch("SELECT id FROM users WHERE email_verified = 1 ORDER BY updated_at DESC LIMIT 1");
+            if ($user) {
+                Logger::activity($user['id'], 'email_verified');
+            }
+            
             $this->flash('success', 'Email verified successfully!');
         } else {
             $this->flash('error', 'Invalid verification token.');

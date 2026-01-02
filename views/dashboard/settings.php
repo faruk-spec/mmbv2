@@ -2,11 +2,6 @@
 <?php View::extend('main'); ?>
 
 <?php View::section('content'); ?>
-<div style="margin-bottom: 16px;">
-    <h1 style="font-size: 1rem; margin-bottom: 4px; font-weight: 700;">Settings</h1>
-    <p style="color: var(--text-secondary); font-size: 0.8rem;">Customize your experience and preferences</p>
-</div>
-
 <?php if (Helpers::hasFlash('success')): ?>
     <div class="alert alert-success" style="margin-bottom: 12px; padding: 10px; background: rgba(0, 255, 136, 0.1); border: 1px solid var(--green); border-radius: 6px; color: var(--green); font-size: 0.8rem;">
         ✓ <?= View::e(Helpers::getFlash('success')) ?>
