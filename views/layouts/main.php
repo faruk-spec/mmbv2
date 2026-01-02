@@ -937,7 +937,7 @@ try {
                         <!-- Account Section -->
                         <div class="nav-section" style="margin-bottom: 8px;">
                             <div class="nav-group">
-                                <div class="nav-group-header" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 16px; cursor: pointer; user-select: none;" onclick="this.parentElement.classList.toggle('open')">
+                                <div class="nav-group-header" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 16px; cursor: pointer; user-select: none;">
                                     <div style="display: flex; align-items: center; gap: 12px; color: var(--text-secondary); font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -984,7 +984,7 @@ try {
                             </a>
                             
                             <div class="nav-group">
-                                <div class="nav-group-header" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 16px; cursor: pointer; user-select: none;" onclick="this.parentElement.classList.toggle('open')">
+                                <div class="nav-group-header" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 16px; cursor: pointer; user-select: none;">
                                     <div style="display: flex; align-items: center; gap: 12px; color: var(--text-secondary); font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                             <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
@@ -1323,8 +1323,32 @@ try {
                         
                         // Open by default
                         group.classList.add('open');
-                        if (content) content.style.maxHeight = content.scrollHeight + 'px';
-                        if (chevron) chevron.style.transform = 'rotate(180deg)';
+                        if (content) {
+                            content.style.maxHeight = content.scrollHeight + 'px';
+                        }
+                        if (chevron) {
+                            chevron.style.transform = 'rotate(180deg)';
+                        }
+                        
+                        // Add click handler
+                        if (header) {
+                            header.addEventListener('click', function(e) {
+                                e.stopPropagation();
+                                const isOpen = group.classList.contains('open');
+                                
+                                if (isOpen) {
+                                    // Close
+                                    group.classList.remove('open');
+                                    if (content) content.style.maxHeight = '0';
+                                    if (chevron) chevron.style.transform = 'rotate(0deg)';
+                                } else {
+                                    // Open
+                                    group.classList.add('open');
+                                    if (content) content.style.maxHeight = content.scrollHeight + 'px';
+                                    if (chevron) chevron.style.transform = 'rotate(180deg)';
+                                }
+                            });
+                        }
                     });
                     
                     // Left Sidebar Toggle
