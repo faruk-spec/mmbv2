@@ -350,6 +350,14 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
 
 <style>
 /* Universal Navbar Styles */
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    overflow-x: hidden;
+}
+
 .universal-header {
     background: rgba(12, 12, 18, 0.98);
     backdrop-filter: blur(20px);
@@ -364,6 +372,7 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
     width: 100%;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
     transition: all 0.3s ease;
+    will-change: transform;
 }
 
 /* Force sticky on all browsers */

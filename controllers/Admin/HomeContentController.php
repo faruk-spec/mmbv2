@@ -260,9 +260,19 @@ class HomeContentController extends BaseController
         // Create uploads directory in public folder if it doesn't exist
         $uploadDir = BASE_PATH . '/public/uploads/home';
         if (!is_dir($uploadDir)) {
-            if (!mkdir($uploadDir, 0755, true)) {
+            if (!mkdir($uploadDir, 0775, true)) {
                 Logger::error('Failed to create upload directory: ' . $uploadDir);
                 throw new \Exception('Failed to create upload directory.');
+            }
+            chmod($uploadDir, 0775);
+        }
+        
+        // Ensure directory is writable
+        if (!is_writable($uploadDir)) {
+            chmod($uploadDir, 0775);
+            if (!is_writable($uploadDir)) {
+                Logger::error('Upload directory is not writable: ' . $uploadDir);
+                throw new \Exception('Upload directory is not writable. Please set permissions to 775.');
             }
         }
         
