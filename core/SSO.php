@@ -132,27 +132,30 @@ class SSO
      */
     public static function validateProjectRequest(string $projectName): bool
     {
-        // Check if user has session
-        if (!Auth::check()) {
-            // Try to validate SSO token from cookie/header
-            $token = $_COOKIE['sso_token'] ?? $_SERVER['HTTP_X_SSO_TOKEN'] ?? null;
-            
-            if (!$token) {
-                return false;
-            }
-            
-            $user = self::getUserFromToken($token);
-            if (!$user) {
-                return false;
-            }
-            
-            // Set up session for this user
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['user_role'] = $user['role'];
+        // If user is authenticated via Auth system (from middleware), always pass
+        if (Auth::check()) {
+            // Check project access permissions
+            return self::hasProjectAccess(Auth::id(), $projectName);
         }
         
+        // If not authenticated, try SSO token
+        $token = $_COOKIE['sso_token'] ?? $_SERVER['HTTP_X_SSO_TOKEN'] ?? null;
+        
+        if (!$token) {
+            return false;
+        }
+        
+        $user = self::getUserFromToken($token);
+        if (!$user) {
+            return false;
+        }
+        
+        // Set up session for this user
+        $_SESSION['user_id'] = $user['id'];
+        $_SESSION['user_role'] = $user['role'];
+        
         // Check project access permissions
-        return self::hasProjectAccess(Auth::id(), $projectName);
+        return self::hasProjectAccess($user['id'], $projectName);
     }
     
     /**
