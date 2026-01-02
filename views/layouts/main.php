@@ -1020,7 +1020,7 @@ try {
                             <a href="/settings" class="nav-item" style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.85rem;" onmouseover="this.style.background='rgba(0,240,255,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <circle cx="12" cy="12" r="3"></circle>
-                                    <path d="M12 1v6m0 6v6"></path>
+                                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                                 </svg>
                                 <span class="nav-text">Settings</span>
                             </a>
@@ -1367,27 +1367,6 @@ try {
                     }
                 });
             })();
-            
-            // Nav group toggle functionality
-            document.addEventListener('click', function(e) {
-                const header = e.target.closest('.nav-group-header');
-                if (header) {
-                    const group = header.parentElement;
-                    const content = group.querySelector('.nav-group-content');
-                    const chevron = group.querySelector('.group-chevron');
-                    const isOpen = group.classList.contains('open');
-                    
-                    if (isOpen) {
-                        group.classList.remove('open');
-                        content.style.maxHeight = '0';
-                        chevron.style.transform = 'rotate(0deg)';
-                    } else {
-                        group.classList.add('open');
-                        content.style.maxHeight = content.scrollHeight + 'px';
-                        chevron.style.transform = 'rotate(180deg)';
-                    }
-                }
-            });
             </script>
         <?php else: ?>
             <!-- Regular Content Layout -->
