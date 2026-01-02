@@ -936,15 +936,18 @@ try {
                         </div>
                     </div>
                     
-                    <!-- Quick Actions Card -->
-                    <div class="sidebar-card" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 16px; margin-bottom: 16px;">
-                        <h3 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                    <!-- Quick Actions Card with Dropdown -->
+                    <div class="sidebar-card sidebar-dropdown" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 16px; margin-bottom: 16px;">
+                        <h3 class="sidebar-dropdown-trigger" style="font-size: 0.9rem; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none;">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--magenta)" stroke-width="2">
                                 <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
                             </svg>
                             Quick Actions
+                            <svg class="dropdown-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2" style="margin-left: auto; transition: transform 0.3s;">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
                         </h3>
-                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <div class="sidebar-dropdown-content" style="display: flex; flex-direction: column; gap: 8px; max-height: 0; overflow: hidden; transition: max-height 0.3s ease, opacity 0.3s ease; opacity: 0;">
                             <a href="/profile" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; text-decoration: none; color: var(--text-primary); font-size: 0.8rem; transition: all 0.3s;">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
                                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -972,6 +975,54 @@ try {
                                 </svg>
                                 Activity Log
                             </a>
+                        </div>
+                    </div>
+                    
+                    <!-- Recent Activity Card with Dropdown -->
+                    <div class="sidebar-card sidebar-dropdown" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 16px; margin-bottom: 16px;">
+                        <h3 class="sidebar-dropdown-trigger" style="font-size: 0.9rem; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
+                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                            </svg>
+                            Recent Activity
+                            <svg class="dropdown-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2" style="margin-left: auto; transition: transform 0.3s;">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </h3>
+                        <div class="sidebar-dropdown-content" style="display: flex; flex-direction: column; gap: 6px; max-height: 0; overflow: hidden; transition: max-height 0.3s ease, opacity 0.3s ease; opacity: 0;">
+                            <?php
+                            try {
+                                $db = \Core\Database::getInstance();
+                                $recentActivities = $db->fetchAll(
+                                    "SELECT * FROM activity_logs WHERE user_id = ? ORDER BY created_at DESC LIMIT 5",
+                                    [\Core\Auth::id()]
+                                );
+                                
+                                if (empty($recentActivities)):
+                            ?>
+                                <div style="padding: 8px; text-align: center; color: var(--text-secondary); font-size: 0.75rem;">
+                                    No recent activity
+                                </div>
+                            <?php else: ?>
+                                <?php foreach ($recentActivities as $activity): ?>
+                                    <div style="padding: 6px 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 4px; font-size: 0.75rem;">
+                                        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px;">
+                                            <span style="font-weight: 600; color: var(--text-primary); text-transform: capitalize;"><?= htmlspecialchars($activity['action']) ?></span>
+                                        </div>
+                                        <div style="color: var(--text-secondary); font-size: 0.7rem;">
+                                            <?= \Core\Helpers::timeAgo($activity['created_at']) ?>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                                <a href="/activity" style="display: block; text-align: center; padding: 6px; color: var(--cyan); font-size: 0.75rem; text-decoration: none; margin-top: 4px;">
+                                    View All Activity →
+                                </a>
+                            <?php endif; ?>
+                            <?php } catch (\Exception $e) { ?>
+                                <div style="padding: 8px; text-align: center; color: var(--text-secondary); font-size: 0.75rem;">
+                                    Unable to load activities
+                                </div>
+                            <?php } ?>
                         </div>
                     </div>
                     
@@ -1034,6 +1085,20 @@ try {
                     transform: translateX(2px);
                 }
                 
+                .sidebar-dropdown.open .sidebar-dropdown-content {
+                    max-height: 500px;
+                    opacity: 1;
+                    margin-top: 12px;
+                }
+                
+                .sidebar-dropdown.open .dropdown-chevron {
+                    transform: rotate(180deg);
+                }
+                
+                .sidebar-dropdown-trigger:hover {
+                    color: var(--cyan);
+                }
+                
                 @media (max-width: 1024px) {
                     .dashboard-container {
                         grid-template-columns: 1fr !important;
@@ -1053,6 +1118,37 @@ try {
                     }
                 }
             </style>
+            
+            <script>
+            // Sidebar dropdown functionality
+            (function() {
+                document.addEventListener('DOMContentLoaded', function() {
+                    const dropdownTriggers = document.querySelectorAll('.sidebar-dropdown-trigger');
+                    
+                    dropdownTriggers.forEach(trigger => {
+                        trigger.addEventListener('click', function() {
+                            const dropdown = this.closest('.sidebar-dropdown');
+                            const isOpen = dropdown.classList.contains('open');
+                            
+                            // Close all other dropdowns
+                            document.querySelectorAll('.sidebar-dropdown.open').forEach(d => {
+                                if (d !== dropdown) {
+                                    d.classList.remove('open');
+                                }
+                            });
+                            
+                            // Toggle current dropdown
+                            dropdown.classList.toggle('open');
+                        });
+                    });
+                    
+                    // Open Quick Actions and Recent Activity by default
+                    document.querySelectorAll('.sidebar-dropdown').forEach(dropdown => {
+                        dropdown.classList.add('open');
+                    });
+                });
+            })();
+            </script>
         <?php else: ?>
             <!-- Regular Content Layout -->
             <?php View::yield('content'); ?>

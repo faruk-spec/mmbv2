@@ -2,17 +2,14 @@
 <?php View::extend('main'); ?>
 
 <?php View::section('content'); ?>
-<div class="dashboard-header" style="margin-bottom: 24px;">
-    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
-        <div>
-            <h1 style="font-size: 1rem; font-weight: 700; margin-bottom: 8px;">Welcome back, <?= View::e($currentUser['name']) ?>! 👋</h1>
-            <p style="color: var(--text-secondary); font-size: 0.875rem;">Discover powerful tools designed to streamline your workflow.</p>
-        </div>
-    </div>
-</div>
-
 <?php if (Helpers::hasFlash('success')): ?>
-    <div class="alert alert-success" style="margin-bottom: 30px;"><?= View::e(Helpers::getFlash('success')) ?></div>
+    <div class="alert alert-success" style="margin-bottom: 24px; padding: 16px; background: rgba(0, 255, 136, 0.1); border: 1px solid var(--green); border-radius: 8px; color: var(--green);">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+        <?= View::e(Helpers::getFlash('success')) ?>
+    </div>
 <?php endif; ?>
 
 <!-- Applications Grid -->
