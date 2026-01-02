@@ -124,7 +124,7 @@ $featuresHeading = $sections['features']['heading'] ?? 'Platform Features';
 $featuresSubheading = $sections['features']['subheading'] ?? 'Powerful capabilities across all projects';
 ?>
 
-<div class="hero" style="padding: 50px 20px; max-width: 1200px; margin: 0 auto;">
+<div class="hero" style="padding: 50px 20px; max-width: 1400px; margin: 0 auto;">
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center;">
         <!-- Left side: Text content -->
         <div style="text-align: left;">
@@ -195,7 +195,7 @@ $featuresSubheading = $sections['features']['subheading'] ?? 'Powerful capabilit
 }
 </style>
 
-<div class="grid grid-3" style="margin-top: 40px; max-width: 1200px; margin-left: auto; margin-right: auto;">
+<div class="grid grid-3" style="margin-top: 40px; max-width: 1400px; margin-left: auto; margin-right: auto;">
     <div class="card animate-fade-in" style="animation-delay: 0.1s;">
         <div style="width: 45px; height: 45px; background: rgba(0, 240, 255, 0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
@@ -254,7 +254,7 @@ try {
 
 if ($showStats): 
 ?>
-<div style="margin-top: 60px; text-align: center; max-width: 1300px; margin-left: auto; margin-right: auto; padding: 0 20px;">
+<div style="margin-top: 60px; text-align: center; max-width: 1500px; margin-left: auto; margin-right: auto; padding: 0 20px;">
     <h2 style="margin-bottom: 12px; font-size: 1.75rem;"><?= htmlspecialchars($statsHeading) ?></h2>
     <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 40px;"><?= htmlspecialchars($statsSubheading) ?></p>
     
@@ -288,7 +288,7 @@ if ($showStats):
 
 
 
-<div style="margin-top: 60px; text-align: center; max-width: 1300px; margin-left: auto; margin-right: auto; padding: 0 20px;">
+<div style="margin-top: 60px; text-align: center; max-width: 1500px; margin-left: auto; margin-right: auto; padding: 0 20px;">
     <h2 style="margin-bottom: 20px; font-size: 1.75rem;"><?= htmlspecialchars($projectsSectionTitle) ?></h2>
     
     <!-- Filter Buttons -->
@@ -514,7 +514,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-<div style="margin-top: 60px; padding: 40px 20px; background: rgba(0, 240, 255, 0.02); border-radius: 16px; max-width: 1300px; margin-left: auto; margin-right: auto;">
+<div style="margin-top: 60px; padding: 40px 20px; background: rgba(0, 240, 255, 0.02); border-radius: 16px; max-width: 1500px; margin-left: auto; margin-right: auto;">
     <div style="text-align: center; margin-bottom: 30px;">
         <h2 style="margin-bottom: 12px; font-size: 1.75rem;"><?= htmlspecialchars($featuresHeading) ?></h2>
         <p style="color: var(--text-secondary); font-size: 0.95rem;"><?= htmlspecialchars($featuresSubheading) ?></p>

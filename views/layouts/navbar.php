@@ -359,20 +359,20 @@ body {
 }
 
 .universal-header {
-    background: rgba(12, 12, 18, 0.98);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-bottom: 1px solid var(--border-color);
+    background: rgba(12, 12, 18, 0.98) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border-bottom: 1px solid var(--border-color) !important;
     position: -webkit-sticky !important;
     position: sticky !important;
     top: 0 !important;
-    left: 0;
-    right: 0;
+    left: 0 !important;
+    right: 0 !important;
     z-index: 9999 !important;
-    width: 100%;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-    transition: all 0.3s ease;
-    will-change: transform;
+    width: 100% !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3) !important;
+    transition: all 0.3s ease !important;
+    will-change: transform !important;
 }
 
 /* Force sticky on all browsers */
@@ -384,8 +384,8 @@ body {
 }
 
 [data-theme="light"] .universal-header {
-    background: rgba(255, 255, 255, 0.98);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.98) !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1) !important;
 }
 
 .universal-header .header-content {
