@@ -903,9 +903,147 @@ try {
         ?>
         
         <?php if ($isDashboardPage): ?>
-            <!-- Dashboard Layout with Sidebar -->
-            <div class="dashboard-container" style="display: grid; grid-template-columns: 1fr 300px; gap: 20px; padding: 20px;">
-                <div class="dashboard-main-content">
+            <!-- Dashboard Layout with Left and Right Sidebars -->
+            <div class="full-dashboard-layout" style="display: grid; grid-template-columns: 250px 1fr 300px; gap: 0; min-height: calc(100vh - 60px);">
+                <!-- Left Navigation Sidebar -->
+                <aside class="left-sidebar" id="leftSidebar" style="background: var(--bg-card); border-right: 1px solid var(--border-color); position: sticky; top: 0; height: 100vh; overflow-y: auto; transition: width 0.3s ease;">
+                    <!-- Toggle Button -->
+                    <div style="padding: 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color);">
+                        <span class="sidebar-title" style="font-size: 0.9rem; font-weight: 700; color: var(--text-primary);">Navigation</span>
+                        <button id="sidebarToggle" style="background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 4px; border-radius: 4px; transition: all 0.3s;" onmouseover="this.style.color='var(--cyan)'" onmouseout="this.style.color='var(--text-secondary)'">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="3" y1="12" x2="21" y2="12"></line>
+                                <line x1="3" y1="6" x2="21" y2="6"></line>
+                                <line x1="3" y1="18" x2="21" y2="18"></line>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <!-- Navigation Menu -->
+                    <nav style="padding: 12px 0;">
+                        <!-- Dashboard Section -->
+                        <div class="nav-section" style="margin-bottom: 8px;">
+                            <a href="/dashboard" class="nav-item" style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.85rem;" onmouseover="this.style.background='rgba(0,240,255,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="3" width="7" height="7"></rect>
+                                    <rect x="14" y="3" width="7" height="7"></rect>
+                                    <rect x="14" y="14" width="7" height="7"></rect>
+                                    <rect x="3" y="14" width="7" height="7"></rect>
+                                </svg>
+                                <span class="nav-text">Dashboard</span>
+                            </a>
+                        </div>
+                        
+                        <!-- Account Section -->
+                        <div class="nav-section" style="margin-bottom: 8px;">
+                            <div class="nav-group">
+                                <div class="nav-group-header" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 16px; cursor: pointer; user-select: none;" onclick="this.parentElement.classList.toggle('open')">
+                                    <div style="display: flex; align-items: center; gap: 12px; color: var(--text-secondary); font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                            <circle cx="12" cy="7" r="4"></circle>
+                                        </svg>
+                                        <span class="nav-text">Account</span>
+                                    </div>
+                                    <svg class="group-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2" style="transition: transform 0.3s;">
+                                        <polyline points="6 9 12 15 18 9"></polyline>
+                                    </svg>
+                                </div>
+                                <div class="nav-group-content" style="max-height: 0; overflow: hidden; transition: max-height 0.3s ease;">
+                                    <a href="/profile" class="nav-sub-item" style="display: flex; align-items: center; gap: 12px; padding: 8px 16px 8px 44px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.8rem;" onmouseover="this.style.background='rgba(0,240,255,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                            <circle cx="12" cy="7" r="4"></circle>
+                                        </svg>
+                                        <span class="nav-text">Profile</span>
+                                    </a>
+                                    <a href="/security" class="nav-sub-item" style="display: flex; align-items: center; gap: 12px; padding: 8px 16px 8px 44px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.8rem;" onmouseover="this.style.background='rgba(0,240,255,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                        </svg>
+                                        <span class="nav-text">Security</span>
+                                    </a>
+                                    <a href="/activity" class="nav-sub-item" style="display: flex; align-items: center; gap: 12px; padding: 8px 16px 8px 44px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.8rem;" onmouseover="this.style.background='rgba(0,240,255,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                                        </svg>
+                                        <span class="nav-text">Activity Log</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Projects Section -->
+                        <div class="nav-section" style="margin-bottom: 8px;">
+                            <a href="/browse" class="nav-item" style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.85rem;" onmouseover="this.style.background='rgba(0,240,255,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                                </svg>
+                                <span class="nav-text">Browse Projects</span>
+                            </a>
+                            
+                            <div class="nav-group">
+                                <div class="nav-group-header" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 16px; cursor: pointer; user-select: none;" onclick="this.parentElement.classList.toggle('open')">
+                                    <div style="display: flex; align-items: center; gap: 12px; color: var(--text-secondary); font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                                            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                                        </svg>
+                                        <span class="nav-text">My Projects</span>
+                                    </div>
+                                    <svg class="group-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2" style="transition: transform 0.3s;">
+                                        <polyline points="6 9 12 15 18 9"></polyline>
+                                    </svg>
+                                </div>
+                                <div class="nav-group-content" style="max-height: 0; overflow: hidden; transition: max-height 0.3s ease;">
+                                    <?php
+                                    $projects = [
+                                        ['name' => 'ProShare', 'url' => '/projects/proshare', 'icon' => '📁'],
+                                        ['name' => 'ImgTxt', 'url' => '/projects/imgtxt', 'icon' => '🖼️'],
+                                        ['name' => 'CodeXPro', 'url' => '/projects/codexpro', 'icon' => '💻'],
+                                        ['name' => 'DevZone', 'url' => '/projects/devzone', 'icon' => '🚀'],
+                                    ];
+                                    foreach ($projects as $project):
+                                    ?>
+                                        <a href="<?= $project['url'] ?>" class="nav-sub-item" style="display: flex; align-items: center; gap: 12px; padding: 8px 16px 8px 44px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.8rem;" onmouseover="this.style.background='rgba(0,240,255,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
+                                            <span style="font-size: 14px;"><?= $project['icon'] ?></span>
+                                            <span class="nav-text"><?= $project['name'] ?></span>
+                                        </a>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Settings Section -->
+                        <div class="nav-section" style="margin-bottom: 8px;">
+                            <a href="/settings" class="nav-item" style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.85rem;" onmouseover="this.style.background='rgba(0,240,255,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                    <path d="M12 1v6m0 6v6"></path>
+                                </svg>
+                                <span class="nav-text">Settings</span>
+                            </a>
+                        </div>
+                        
+                        <!-- Help Section (Admin Only) -->
+                        <?php if (in_array(Auth::user()['role'] ?? '', ['admin', 'super_admin'])): ?>
+                        <div class="nav-section" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-color);">
+                            <a href="/help" class="nav-item" style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.85rem;" onmouseover="this.style.background='rgba(0,240,255,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                                </svg>
+                                <span class="nav-text">Help & Support</span>
+                            </a>
+                        </div>
+                        <?php endif; ?>
+                    </nav>
+                </aside>
+                
+                <!-- Main Content Area -->
+                <div class="dashboard-main-content" style="padding: 20px;">
                     <?php View::yield('content'); ?>
                 </div>
                 
@@ -1100,27 +1238,56 @@ try {
                 }
                 
                 @media (max-width: 1024px) {
-                    .dashboard-container {
-                        grid-template-columns: 1fr !important;
+                    .full-dashboard-layout {
+                        grid-template-columns: 60px 1fr !important;
+                    }
+                    
+                    .left-sidebar {
+                        width: 60px !important;
+                    }
+                    
+                    .left-sidebar .nav-text,
+                    .left-sidebar .sidebar-title,
+                    .left-sidebar .group-chevron {
+                        display: none !important;
                     }
                     
                     .dashboard-sidebar {
-                        position: static !important;
-                        display: grid;
-                        grid-template-columns: repeat(2, 1fr);
-                        gap: 16px;
+                        display: none !important;
                     }
                 }
                 
-                @media (max-width: 640px) {
-                    .dashboard-sidebar {
+                @media (max-width: 768px) {
+                    .full-dashboard-layout {
                         grid-template-columns: 1fr !important;
                     }
+                    
+                    .left-sidebar {
+                        display: none !important;
+                    }
+                }
+                
+                /* Left Sidebar Scrollbar */
+                .left-sidebar::-webkit-scrollbar {
+                    width: 6px;
+                }
+                
+                .left-sidebar::-webkit-scrollbar-track {
+                    background: transparent;
+                }
+                
+                .left-sidebar::-webkit-scrollbar-thumb {
+                    background: var(--border-color);
+                    border-radius: 3px;
+                }
+                
+                .left-sidebar::-webkit-scrollbar-thumb:hover {
+                    background: var(--text-secondary);
                 }
             </style>
             
             <script>
-            // Sidebar dropdown functionality
+            // Sidebar dropdown functionality (Right Sidebar)
             (function() {
                 document.addEventListener('DOMContentLoaded', function() {
                     const dropdownTriggers = document.querySelectorAll('.sidebar-dropdown-trigger');
@@ -1146,8 +1313,81 @@ try {
                     document.querySelectorAll('.sidebar-dropdown').forEach(dropdown => {
                         dropdown.classList.add('open');
                     });
+                    
+                    // Left Sidebar Navigation Groups
+                    const navGroups = document.querySelectorAll('.nav-group');
+                    navGroups.forEach(group => {
+                        const header = group.querySelector('.nav-group-header');
+                        const content = group.querySelector('.nav-group-content');
+                        const chevron = group.querySelector('.group-chevron');
+                        
+                        // Open by default
+                        group.classList.add('open');
+                        if (content) content.style.maxHeight = content.scrollHeight + 'px';
+                        if (chevron) chevron.style.transform = 'rotate(180deg)';
+                    });
+                    
+                    // Left Sidebar Toggle
+                    const sidebar = document.getElementById('leftSidebar');
+                    const toggleBtn = document.getElementById('sidebarToggle');
+                    const dashboardLayout = document.querySelector('.full-dashboard-layout');
+                    
+                    if (toggleBtn && sidebar) {
+                        toggleBtn.addEventListener('click', function() {
+                            const isCollapsed = sidebar.classList.contains('collapsed');
+                            
+                            if (isCollapsed) {
+                                sidebar.classList.remove('collapsed');
+                                sidebar.style.width = '250px';
+                                dashboardLayout.style.gridTemplateColumns = '250px 1fr 300px';
+                                document.querySelectorAll('.nav-text, .sidebar-title').forEach(el => {
+                                    el.style.display = 'inline';
+                                });
+                                document.querySelectorAll('.group-chevron').forEach(el => {
+                                    el.style.display = 'block';
+                                });
+                            } else {
+                                sidebar.classList.add('collapsed');
+                                sidebar.style.width = '60px';
+                                dashboardLayout.style.gridTemplateColumns = '60px 1fr 300px';
+                                document.querySelectorAll('.nav-text, .sidebar-title').forEach(el => {
+                                    el.style.display = 'none';
+                                });
+                                document.querySelectorAll('.group-chevron').forEach(el => {
+                                    el.style.display = 'none';
+                                });
+                                // Close all nav groups when collapsed
+                                navGroups.forEach(group => {
+                                    group.classList.remove('open');
+                                    const content = group.querySelector('.nav-group-content');
+                                    if (content) content.style.maxHeight = '0';
+                                });
+                            }
+                        });
+                    }
                 });
             })();
+            
+            // Nav group toggle functionality
+            document.addEventListener('click', function(e) {
+                const header = e.target.closest('.nav-group-header');
+                if (header) {
+                    const group = header.parentElement;
+                    const content = group.querySelector('.nav-group-content');
+                    const chevron = group.querySelector('.group-chevron');
+                    const isOpen = group.classList.contains('open');
+                    
+                    if (isOpen) {
+                        group.classList.remove('open');
+                        content.style.maxHeight = '0';
+                        chevron.style.transform = 'rotate(0deg)';
+                    } else {
+                        group.classList.add('open');
+                        content.style.maxHeight = content.scrollHeight + 'px';
+                        chevron.style.transform = 'rotate(180deg)';
+                    }
+                }
+            });
             </script>
         <?php else: ?>
             <!-- Regular Content Layout -->
