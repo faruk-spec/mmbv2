@@ -71,6 +71,7 @@ class NavbarController extends BaseController
             $showAdminLink = isset($_POST['show_admin_link']) ? 1 : 0;
             $showProjectsDropdown = isset($_POST['show_projects_dropdown']) ? 1 : 0;
             $showThemeToggle = isset($_POST['show_theme_toggle']) ? 1 : 0;
+            $navbarSticky = isset($_POST['navbar_sticky']) ? 1 : 0;
             $defaultTheme = $_POST['default_theme'] ?? 'dark';
             $navbarBgColor = $_POST['navbar_bg_color'] ?? '#06060a';
             $navbarTextColor = $_POST['navbar_text_color'] ?? '#e8eefc';
@@ -164,6 +165,11 @@ class NavbarController extends BaseController
             if (in_array('show_theme_toggle', $columnNames)) {
                 $updateFields[] = "show_theme_toggle = ?";
                 $updateValues[] = $showThemeToggle;
+            }
+            
+            if (in_array('navbar_sticky', $columnNames)) {
+                $updateFields[] = "navbar_sticky = ?";
+                $updateValues[] = $navbarSticky;
             }
             
             if (in_array('default_theme', $columnNames)) {

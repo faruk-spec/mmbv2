@@ -363,9 +363,15 @@ body {
     backdrop-filter: blur(20px) !important;
     -webkit-backdrop-filter: blur(20px) !important;
     border-bottom: 1px solid var(--border-color) !important;
+    <?php if (!isset($navbarSettings['navbar_sticky']) || $navbarSettings['navbar_sticky']): ?>
+    /* Sticky positioning enabled (default) */
     position: -webkit-sticky !important;
     position: sticky !important;
     top: 0 !important;
+    <?php else: ?>
+    /* Sticky positioning disabled */
+    position: relative !important;
+    <?php endif; ?>
     left: 0 !important;
     right: 0 !important;
     z-index: 9999 !important;
@@ -375,13 +381,15 @@ body {
     will-change: transform !important;
 }
 
-/* Force sticky on all browsers */
+/* Force sticky on all browsers (only if enabled) */
+<?php if (!isset($navbarSettings['navbar_sticky']) || $navbarSettings['navbar_sticky']): ?>
 @supports (position: sticky) or (position: -webkit-sticky) {
     .universal-header {
         position: -webkit-sticky !important;
         position: sticky !important;
     }
 }
+<?php endif; ?>
 
 [data-theme="light"] .universal-header {
     background: rgba(255, 255, 255, 0.98) !important;

@@ -353,6 +353,14 @@
                 </label>
                 <span>Show Theme Toggle (Dark/Light)</span>
             </div>
+            
+            <div class="switch-container">
+                <label class="switch">
+                    <input type="checkbox" name="navbar_sticky" <?= isset($settings['navbar_sticky']) ? ($settings['navbar_sticky'] ? 'checked' : '') : 'checked' ?>>
+                    <span class="slider"></span>
+                </label>
+                <span>Enable Sticky Navbar (stays at top when scrolling)</span>
+            </div>
         </div>
 
         <!-- Theme Settings -->
