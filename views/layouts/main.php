@@ -906,7 +906,7 @@ try {
             <!-- Dashboard Layout with Left and Right Sidebars -->
             <div class="full-dashboard-layout" style="display: grid; grid-template-columns: 250px 1fr 300px; gap: 0; min-height: calc(100vh - 60px);">
                 <!-- Left Navigation Sidebar -->
-                <aside class="left-sidebar" id="leftSidebar" style="background: var(--bg-card); border-right: 1px solid var(--border-color); position: sticky; top: 0; min-height: 100vh; max-height: 100vh; overflow-y: auto; transition: width 0.3s ease;">
+                <aside class="left-sidebar" id="leftSidebar" style="background: var(--bg-card); border-right: 1px solid var(--border-color); position: sticky; top: 0; height: 100vh; overflow-y: auto; transition: width 0.3s ease;">
                     <!-- Toggle Button -->
                     <div style="padding: 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color);">
                         <span class="sidebar-title" style="font-size: 0.9rem; font-weight: 700; color: var(--text-primary);">Navigation</span>
@@ -944,7 +944,7 @@ try {
                             </div>
                             <div class="nav-text" style="margin-bottom: 8px;">
                                 <div style="font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 3px;">Email</div>
-                                <div style="font-size: 0.75rem; font-weight: 500; color: var(--text-primary); word-break: break-all;"><?= htmlspecialchars(Auth::user()['email'] ?? 'N/A') ?></div>
+                                <div style="font-size: 0.75rem; font-weight: 500; color: var(--text-primary); overflow-wrap: break-word;"><?= htmlspecialchars(Auth::user()['email'] ?? 'N/A') ?></div>
                             </div>
                             <div class="nav-text">
                                 <div style="font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 3px;">Role</div>
