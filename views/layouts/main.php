@@ -910,7 +910,7 @@ try {
                 </div>
                 
                 <!-- Right Sidebar -->
-                <aside class="dashboard-sidebar" style="position: sticky; top: 80px; height: fit-content;">
+                <aside class="dashboard-sidebar" style="position: sticky; top: 0; height: fit-content;">
                     <!-- User Stats Card -->
                     <div class="sidebar-card" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 16px; margin-bottom: 16px;">
                         <h3 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
