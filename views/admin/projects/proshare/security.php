@@ -33,25 +33,57 @@
 <div class="stats-grid">
     <div class="stat-card">
         <div class="stat-value"><?= number_format($stats['failed_logins_24h']) ?></div>
-        <div class="stat-label">⚠️ Failed Logins (24h)</div>
+        <div class="stat-label">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 4px;">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                <line x1="12" y1="9" x2="12" y2="13"></line>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+            Failed Logins (24h)
+        </div>
     </div>
     <div class="stat-card">
         <div class="stat-value"><?= number_format($stats['blocked_ips']) ?></div>
-        <div class="stat-label">🚫 Blocked IPs</div>
+        <div class="stat-label">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 4px;">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+            </svg>
+            Blocked IPs
+        </div>
     </div>
     <div class="stat-card">
         <div class="stat-value"><?= number_format($stats['suspicious_activities']) ?></div>
-        <div class="stat-label">🔍 Suspicious Activities</div>
+        <div class="stat-label">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 4px;">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.35-4.35"></path>
+            </svg>
+            Suspicious Activities
+        </div>
     </div>
     <div class="stat-card">
         <div class="stat-value"><?= number_format($stats['unique_attackers']) ?></div>
-        <div class="stat-label">👤 Unique Attackers (7d)</div>
+        <div class="stat-label">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 4px;">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            Unique Attackers (7d)
+        </div>
     </div>
 </div>
 
 <div class="card mb-3">
     <div class="card-header">
-        <h3 class="card-title">⚠️ Recent Failed Login Attempts</h3>
+        <h3 class="card-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                <line x1="12" y1="9" x2="12" y2="13"></line>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+            Recent Failed Login Attempts
+        </h3>
     </div>
     <div class="card-body">
         <?php if (!empty($failedLogins)): ?>
@@ -83,7 +115,13 @@
 
 <div class="card mb-3">
     <div class="card-header">
-        <h3 class="card-title">🚫 Blocked IP Addresses</h3>
+        <h3 class="card-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+            </svg>
+            Blocked IP Addresses
+        </h3>
     </div>
     <div class="card-body">
         <?php if (!empty($blockedIps)): ?>

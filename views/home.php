@@ -240,55 +240,7 @@ if ($showStats):
 </div>
 <?php endif; ?>
 
-<!-- Timeline Section -->
-<?php 
-// Fetch timeline - show section even if query fails, ensure no duplicates
-$showTimeline = false;
-$timeline = [];
-try {
-    // Use DISTINCT and LIMIT to prevent duplicates
-    $timeline = $db->fetchAll("SELECT DISTINCT id, title, description, sort_order, is_active FROM home_timeline WHERE is_active = 1 ORDER BY sort_order ASC LIMIT 10");
-    $showTimeline = !empty($timeline);
-} catch (Exception $e) {
-    $showTimeline = false;
-    error_log("Timeline fetch error: " . $e->getMessage());
-}
 
-if ($showTimeline): 
-?>
-<div style="margin-top: 60px; text-align: center; max-width: 1100px; margin-left: auto; margin-right: auto; padding: 0 20px;">
-    <h2 style="margin-bottom: 12px; font-size: 1.75rem;"><?= htmlspecialchars($timelineHeading) ?></h2>
-    <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 40px;"><?= htmlspecialchars($timelineSubheading) ?></p>
-    
-    <div style="position: relative; text-align: left;">
-        <?php 
-        $delay = 0;
-        $itemNumber = 1;
-        $renderedIds = []; // Track rendered IDs to prevent duplicates
-        foreach ($timeline as $item): 
-            // Skip if already rendered (safety check)
-            if (in_array($item['id'], $renderedIds)) {
-                continue;
-            }
-            $renderedIds[] = $item['id'];
-        ?>
-        <div class="card animate-fade-in timeline-item" style="margin-bottom: 20px; animation-delay: <?= $delay ?>s;">
-            <div class="timeline-badge" style="font-size: 16px; font-weight: 700;">
-                <?= $itemNumber ?>
-            </div>
-            <div>
-                <h4 style="margin-bottom: 8px; font-size: 1.1rem; color: var(--cyan);"><?= htmlspecialchars($item['title']) ?></h4>
-                <p style="color: var(--text-secondary); font-size: 14px;"><?= htmlspecialchars($item['description']) ?></p>
-            </div>
-        </div>
-        <?php 
-        $delay += 0.1;
-        $itemNumber++;
-        endforeach;
-        ?>
-    </div>
-</div>
-<?php endif; ?>
 
 <div style="margin-top: 60px; text-align: center; max-width: 1300px; margin-left: auto; margin-right: auto; padding: 0 20px;">
     <h2 style="margin-bottom: 30px; font-size: 1.75rem;"><?= htmlspecialchars($projectsSectionTitle) ?></h2>

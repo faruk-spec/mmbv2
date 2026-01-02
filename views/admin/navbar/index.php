@@ -4,7 +4,13 @@
 <?php View::section('content'); ?>
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
     <div>
-        <h1>⚙️ Navbar Settings</h1>
+        <h1>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"></path>
+            </svg>
+            Navbar Settings
+        </h1>
         <p style="color: var(--text-secondary);">Customize your navigation bar logo, links, and appearance</p>
     </div>
     <a href="/" target="_blank" class="btn btn-secondary">
@@ -26,7 +32,10 @@
     <!-- Logo Settings -->
     <div class="card" style="margin-bottom: 30px;">
         <h2 style="margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
-            <span style="font-size: 1.5rem;">🎨</span> Logo Settings
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
+            </svg>
+            Logo Settings
         </h2>
         
         <div class="form-group">

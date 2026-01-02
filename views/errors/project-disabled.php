@@ -4,7 +4,12 @@
 <?php View::section('content'); ?>
 <div style="text-align: center; padding: 80px 0;">
     <div style="font-size: 6rem; margin-bottom: 30px;">
-        <span style="animation: pulse 2s ease-in-out infinite;">🔒</span>
+        <span style="animation: pulse 2s ease-in-out infinite;">
+            <svg width="96" height="96" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block;">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+        </span>
     </div>
     <h1 style="margin-bottom: 20px; font-size: 2.5rem;">Application Temporarily Unavailable</h1>
     <p style="color: var(--text-secondary); margin-bottom: 10px; max-width: 500px; margin-left: auto; margin-right: auto; font-size: 1.1rem;">
