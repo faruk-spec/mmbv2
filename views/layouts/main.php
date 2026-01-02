@@ -904,7 +904,7 @@ try {
         
         <?php if ($isDashboardPage): ?>
             <!-- Dashboard Layout with Sidebar -->
-            <div class="dashboard-container" style="display: grid; grid-template-columns: 1fr 300px; gap: 20px; max-width: 1400px; margin: 0 auto; padding: 20px;">
+            <div class="dashboard-container" style="display: grid; grid-template-columns: 1fr 300px; gap: 20px; padding: 20px;">
                 <div class="dashboard-main-content">
                     <?php View::yield('content'); ?>
                 </div>
