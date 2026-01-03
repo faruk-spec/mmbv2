@@ -149,23 +149,65 @@ ON DUPLICATE KEY UPDATE `value` = VALUES(`value`);
 -- PART 5: User Profile Settings Columns
 -- ============================================
 
--- Add theme preference column if it doesn't exist
-ALTER TABLE `user_profiles` 
-ADD COLUMN IF NOT EXISTS `theme_preference` VARCHAR(20) DEFAULT 'dark' AFTER `language`;
+-- Add theme preference column (with conditional check for MariaDB compatibility)
+SET @column_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS 
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_profiles' AND COLUMN_NAME = 'theme_preference');
+SET @sql = IF(@column_exists = 0, 
+    'ALTER TABLE `user_profiles` ADD COLUMN `theme_preference` VARCHAR(20) DEFAULT ''dark'' AFTER `language`', 
+    'SELECT ''theme_preference already exists'' AS info');
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
--- Add notification preference columns if they don't exist
-ALTER TABLE `user_profiles` 
-ADD COLUMN IF NOT EXISTS `email_notifications` TINYINT(1) DEFAULT 1 AFTER `theme_preference`,
-ADD COLUMN IF NOT EXISTS `security_alerts` TINYINT(1) DEFAULT 1 AFTER `email_notifications`,
-ADD COLUMN IF NOT EXISTS `product_updates` TINYINT(1) DEFAULT 0 AFTER `security_alerts`;
+-- Add email_notifications column
+SET @column_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS 
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_profiles' AND COLUMN_NAME = 'email_notifications');
+SET @sql = IF(@column_exists = 0, 
+    'ALTER TABLE `user_profiles` ADD COLUMN `email_notifications` TINYINT(1) DEFAULT 1 AFTER `theme_preference`', 
+    'SELECT ''email_notifications already exists'' AS info');
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
--- Add display settings column if it doesn't exist
-ALTER TABLE `user_profiles` 
-ADD COLUMN IF NOT EXISTS `display_settings` JSON NULL AFTER `product_updates`;
+-- Add security_alerts column
+SET @column_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS 
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_profiles' AND COLUMN_NAME = 'security_alerts');
+SET @sql = IF(@column_exists = 0, 
+    'ALTER TABLE `user_profiles` ADD COLUMN `security_alerts` TINYINT(1) DEFAULT 1 AFTER `email_notifications`', 
+    'SELECT ''security_alerts already exists'' AS info');
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
--- Add project settings column if it doesn't exist
-ALTER TABLE `user_profiles` 
-ADD COLUMN IF NOT EXISTS `project_settings` JSON NULL AFTER `display_settings`;
+-- Add product_updates column
+SET @column_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS 
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_profiles' AND COLUMN_NAME = 'product_updates');
+SET @sql = IF(@column_exists = 0, 
+    'ALTER TABLE `user_profiles` ADD COLUMN `product_updates` TINYINT(1) DEFAULT 0 AFTER `security_alerts`', 
+    'SELECT ''product_updates already exists'' AS info');
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Add display_settings column
+SET @column_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS 
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_profiles' AND COLUMN_NAME = 'display_settings');
+SET @sql = IF(@column_exists = 0, 
+    'ALTER TABLE `user_profiles` ADD COLUMN `display_settings` JSON NULL AFTER `product_updates`', 
+    'SELECT ''display_settings already exists'' AS info');
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Add project_settings column
+SET @column_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS 
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_profiles' AND COLUMN_NAME = 'project_settings');
+SET @sql = IF(@column_exists = 0, 
+    'ALTER TABLE `user_profiles` ADD COLUMN `project_settings` JSON NULL AFTER `display_settings`', 
+    'SELECT ''project_settings already exists'' AS info');
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 -- ============================================
 -- VERIFICATION QUERIES
