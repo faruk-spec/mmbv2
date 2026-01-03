@@ -94,6 +94,37 @@ $router->post('/admin/projects/database-setup/test', 'Admin\\ProjectDatabaseCont
 $router->post('/admin/projects/database-setup/save', 'Admin\\ProjectDatabaseController@saveConfiguration', ['auth', 'admin']);
 $router->post('/admin/projects/database-setup/import', 'Admin\\ProjectDatabaseController@importSchema', ['auth', 'admin']);
 
+// Mail Server admin routes - Platform Super Admin
+$router->get('/admin/projects/mail', 'Admin\\MailAdminController@overview', ['auth', 'admin']);
+$router->get('/admin/projects/mail/overview', 'Admin\\MailAdminController@overview', ['auth', 'admin']);
+
+// Subscriber Management
+$router->get('/admin/projects/mail/subscribers', 'Admin\\MailAdminController@subscribers', ['auth', 'admin']);
+$router->get('/admin/projects/mail/subscribers/{id}', 'Admin\\MailAdminController@subscriberDetails', ['auth', 'admin']);
+$router->post('/admin/projects/mail/subscribers/suspend', 'Admin\\MailAdminController@suspendSubscriber', ['auth', 'admin']);
+$router->post('/admin/projects/mail/subscribers/activate', 'Admin\\MailAdminController@activateSubscriber', ['auth', 'admin']);
+$router->post('/admin/projects/mail/subscribers/override-plan', 'Admin\\MailAdminController@overridePlan', ['auth', 'admin']);
+$router->post('/admin/projects/mail/subscribers/toggle-feature', 'Admin\\MailAdminController@toggleFeature', ['auth', 'admin']);
+
+// Plan Management
+$router->get('/admin/projects/mail/plans', 'Admin\\MailAdminController@plans', ['auth', 'admin']);
+$router->get('/admin/projects/mail/plans/{id}/edit', 'Admin\\MailAdminController@editPlan', ['auth', 'admin']);
+$router->post('/admin/projects/mail/plans/{id}/edit', 'Admin\\MailAdminController@editPlan', ['auth', 'admin']);
+
+// Domain Management
+$router->get('/admin/projects/mail/domains', 'Admin\\MailAdminController@domains', ['auth', 'admin']);
+
+// Abuse Management
+$router->get('/admin/projects/mail/abuse', 'Admin\\MailAdminController@abuseReports', ['auth', 'admin']);
+$router->post('/admin/projects/mail/abuse/handle', 'Admin\\MailAdminController@handleAbuseReport', ['auth', 'admin']);
+
+// System Settings
+$router->get('/admin/projects/mail/settings', 'Admin\\MailAdminController@settings', ['auth', 'admin']);
+$router->post('/admin/projects/mail/settings', 'Admin\\MailAdminController@settings', ['auth', 'admin']);
+
+// Admin Logs
+$router->get('/admin/projects/mail/logs', 'Admin\\MailAdminController@logs', ['auth', 'admin']);
+
 // Security center
 $router->get('/admin/security', 'Admin\\SecurityController@index', ['auth', 'admin']);
 $router->get('/admin/security/blocked-ips', 'Admin\\SecurityController@blockedIps', ['auth', 'admin']);
