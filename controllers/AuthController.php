@@ -26,6 +26,11 @@ class AuthController extends BaseController
             $this->redirect('/dashboard');
         }
         
+        // Check if session expired
+        if (isset($_GET['expired']) && $_GET['expired'] == '1') {
+            $this->flash('info', 'Your session has expired. Please sign in again.');
+        }
+        
         $this->view('auth/login', [
             'title' => 'Login'
         ]);

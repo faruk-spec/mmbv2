@@ -19,6 +19,7 @@ class Auth
         // Rate limiting
         $ip = Security::getClientIp();
         if (!Security::checkRateLimit("login_{$ip}", 5, 15)) {
+            self::logLogin(null, $email, 'email_password', 'blocked', 'Rate limit exceeded');
             return false;
         }
         
@@ -31,12 +32,14 @@ class Auth
             
             if (!$user || !Security::verifyPassword($password, $user['password'])) {
                 Security::logFailedLogin($email, $ip);
+                self::logLogin($user['id'] ?? null, $email, 'email_password', 'failed', 'Invalid credentials');
                 return false;
             }
             
             // Check email verification if required
             if (defined('REQUIRE_EMAIL_VERIFICATION') && REQUIRE_EMAIL_VERIFICATION) {
                 if (!$user['email_verified_at']) {
+                    self::logLogin($user['id'], $email, 'email_password', 'failed', 'Email not verified');
                     return false;
                 }
             }
@@ -47,6 +50,9 @@ class Auth
             // Set session
             self::setUserSession($user);
             
+            // Track session
+            SessionManager::track($user['id']);
+            
             // Handle remember me
             if ($remember) {
                 self::createRememberToken($user['id']);
@@ -54,6 +60,9 @@ class Auth
             
             // Log activity
             Logger::activity($user['id'], 'login', ['ip' => $ip]);
+            
+            // Log login history
+            self::logLogin($user['id'], $email, 'email_password', 'success');
             
             // Update last login
             $db->update('users', [
@@ -135,6 +144,9 @@ class Auth
             Logger::activity(self::id(), 'logout');
         }
         
+        // Terminate session tracking
+        SessionManager::terminateSession('logout');
+        
         // Clear remember token cookie
         if (isset($_COOKIE['remember_token'])) {
             setcookie('remember_token', '', time() - 3600, '/', '', true, true);
@@ -157,6 +169,14 @@ class Auth
                 time() - 42000,
                 $params['path'],
                 $params['domain'],
+                $params['secure'],
+                $params['httponly']
+            );
+        }
+        session_destroy();
+        
+        self::$user = null;
+    }
                 $params['secure'],
                 $params['httponly']
             );
@@ -461,6 +481,28 @@ class Auth
         } catch (\Exception $e) {
             Logger::error('Email verification error: ' . $e->getMessage());
             return false;
+        }
+    }
+    
+    /**
+     * Log login attempt to database
+     */
+    private static function logLogin(?int $userId, string $email, string $method, string $status, ?string $failureReason = null): void
+    {
+        try {
+            $db = Database::getInstance();
+            $db->insert('login_history', [
+                'user_id' => $userId,
+                'email' => $email,
+                'login_method' => $method,
+                'ip_address' => Security::getClientIp(),
+                'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? null,
+                'status' => $status,
+                'failure_reason' => $failureReason,
+                'created_at' => date('Y-m-d H:i:s')
+            ]);
+        } catch (\Exception $e) {
+            Logger::error('Log login error: ' . $e->getMessage());
         }
     }
 }

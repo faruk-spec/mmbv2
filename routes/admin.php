@@ -103,6 +103,19 @@ $router->get('/admin/security/failed-logins', 'Admin\\SecurityController@failedL
 $router->post('/admin/security/auto-block', 'Admin\\SecurityController@autoBlock', ['auth', 'admin']);
 $router->get('/admin/security/stats', 'Admin\\SecurityController@getStats', ['auth', 'admin']);
 
+// OAuth Management
+$router->get('/admin/oauth', 'Admin\\OAuthController@index', ['auth', 'admin']);
+$router->get('/admin/oauth/{id}/edit', 'Admin\\OAuthController@edit', ['auth', 'admin']);
+$router->post('/admin/oauth/{id}/edit', 'Admin\\OAuthController@update', ['auth', 'admin']);
+$router->get('/admin/oauth/connections', 'Admin\\OAuthController@connections', ['auth', 'admin']);
+$router->post('/admin/oauth/connections/{id}/revoke', 'Admin\\OAuthController@revokeConnection', ['auth', 'admin']);
+
+// Session Management
+$router->get('/admin/sessions', 'Admin\\SessionController@index', ['auth', 'admin']);
+$router->post('/admin/sessions/{id}/revoke', 'Admin\\SessionController@revoke', ['auth', 'admin']);
+$router->post('/admin/sessions/cleanup', 'Admin\\SessionController@cleanup', ['auth', 'admin']);
+$router->get('/admin/sessions/login-history', 'Admin\\SessionController@loginHistory', ['auth', 'admin']);
+
 // Activity logs
 $router->get('/admin/logs', 'Admin\\LogController@index', ['auth', 'admin']);
 $router->get('/admin/logs/activity', 'Admin\\LogController@activity', ['auth', 'admin']);
