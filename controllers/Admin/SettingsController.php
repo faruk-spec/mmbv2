@@ -309,11 +309,11 @@ class SettingsController extends BaseController
         $stats = [
             'active_sessions' => $db->fetch("SELECT COUNT(*) as count FROM user_sessions WHERE is_active = 1")['count'] ?? 0,
             'sessions_today' => $db->fetch("SELECT COUNT(*) as count FROM user_sessions WHERE DATE(created_at) = CURDATE()")['count'] ?? 0,
-            'expired_sessions' => $db->fetch("SELECT COUNT(*) as count FROM user_sessions WHERE is_active = 0 AND terminated_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)")['count'] ?? 0,
+            'expired_sessions' => $db->fetch("SELECT COUNT(*) as count FROM user_sessions WHERE is_active = 0 AND expires_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)")['count'] ?? 0,
         ];
         
         // Calculate average session duration
-        $avgDuration = $db->fetch("SELECT AVG(TIMESTAMPDIFF(MINUTE, created_at, COALESCE(terminated_at, NOW()))) as avg_minutes FROM user_sessions WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)");
+        $avgDuration = $db->fetch("SELECT AVG(TIMESTAMPDIFF(MINUTE, created_at, last_activity_at)) as avg_minutes FROM user_sessions WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)");
         $stats['avg_duration'] = $avgDuration && $avgDuration['avg_minutes'] ? round($avgDuration['avg_minutes']) . ' min' : 'N/A';
         
         $this->view('admin/settings/session', [

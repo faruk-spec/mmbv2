@@ -209,6 +209,58 @@ class DashboardController extends BaseController
     }
     
     /**
+     * Revoke a session
+     */
+    public function revokeSession(): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request.');
+            $this->redirect('/security');
+            return;
+        }
+        
+        try {
+            $db = Database::getInstance();
+            $sessionId = (int) $this->input('session_id');
+            
+            // Verify this session belongs to the current user
+            $session = $db->fetch(
+                "SELECT * FROM user_sessions WHERE id = ? AND user_id = ?",
+                [$sessionId, Auth::id()]
+            );
+            
+            if (!$session) {
+                $this->flash('error', 'Session not found.');
+                $this->redirect('/security');
+                return;
+            }
+            
+            // Don't allow revoking current session
+            if ($session['session_id'] === session_id()) {
+                $this->flash('error', 'Cannot revoke current session. Use logout instead.');
+                $this->redirect('/security');
+                return;
+            }
+            
+            // Mark session as inactive
+            $db->update('user_sessions', [
+                'is_active' => 0,
+                'last_activity_at' => date('Y-m-d H:i:s')
+            ], 'id = ?', [$sessionId]);
+            
+            Logger::activity(Auth::id(), 'session_revoked', ['session_id' => $sessionId]);
+            
+            $this->flash('success', 'Session revoked successfully.');
+            
+        } catch (\Exception $e) {
+            Logger::error('Session revoke error: ' . $e->getMessage());
+            $this->flash('error', 'Failed to revoke session.');
+        }
+        
+        $this->redirect('/security');
+    }
+    
+    /**
      * Activity log page
      */
     public function activity(): void
