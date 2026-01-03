@@ -60,7 +60,10 @@ class SettingsController extends BaseController
                 'site_description',
                 'contact_email',
                 'maintenance_mode',
-                'registration_enabled'
+                'registration_enabled',
+                'system_timezone',
+                'date_format',
+                'time_format'
             ];
             
             foreach ($settingsToUpdate as $key) {
@@ -81,6 +84,11 @@ class SettingsController extends BaseController
                         'created_at' => date('Y-m-d H:i:s')
                     ]);
                 }
+            }
+            
+            // Update timezone in app config if changed
+            if ($this->input('system_timezone')) {
+                date_default_timezone_set($this->input('system_timezone'));
             }
             
             Logger::activity(Auth::id(), 'settings_updated');

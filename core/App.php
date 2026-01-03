@@ -23,8 +23,27 @@ class App
         // Initialize database
         $this->db = Database::getInstance();
         
+        // Load system timezone from database
+        $this->loadSystemTimezone();
+        
         // Initialize router
         $this->router = new Router();
+    }
+    
+    /**
+     * Load system timezone from database settings
+     */
+    protected function loadSystemTimezone(): void
+    {
+        try {
+            $timezone = $this->db->fetch("SELECT value FROM settings WHERE `key` = 'system_timezone'");
+            if ($timezone && !empty($timezone['value'])) {
+                date_default_timezone_set($timezone['value']);
+            }
+        } catch (\Exception $e) {
+            // If database query fails, keep default timezone
+            // This can happen during installation
+        }
     }
     
     /**

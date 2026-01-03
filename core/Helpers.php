@@ -112,9 +112,26 @@ class Helpers
     /**
      * Format time ago
      */
-    public static function timeAgo(string $datetime): string
+    public static function timeAgo($datetime): string
     {
-        $time = time() - strtotime($datetime);
+        // Handle both timestamp integers and datetime strings
+        if (is_numeric($datetime)) {
+            $timestamp = (int)$datetime;
+        } else {
+            $timestamp = strtotime($datetime);
+        }
+        
+        // If conversion failed, return original value
+        if ($timestamp === false) {
+            return is_string($datetime) ? $datetime : 'unknown';
+        }
+        
+        $time = time() - $timestamp;
+        
+        // Handle future dates (shouldn't happen but just in case)
+        if ($time < 0) {
+            return 'just now';
+        }
         
         $units = [
             31536000 => 'year',
