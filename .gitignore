@@ -1,0 +1,50 @@
+# Composer
+/vendor/
+composer.phar
+composer.lock
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+/storage/logs/*.log
+*.log
+
+# Cache
+/storage/cache/*
+!/storage/cache/.gitkeep
+
+# Uploads
+/public/uploads/*
+!/public/uploads/.gitkeep
+/storage/uploads/*
+!/storage/uploads/.gitkeep
+
+# Config (if contains sensitive data)
+# /config/database.php
+
+# PHPUnit
+/tests/coverage/
+/tests/results/
+.phpunit.result.cache
+
+# Node modules (if used)
+node_modules/
+package-lock.json
+
+# Build artifacts
+/build/
+/dist/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
