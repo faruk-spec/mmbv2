@@ -20,7 +20,7 @@ class GoogleOAuthController extends BaseController
     /**
      * Redirect to Google OAuth
      */
-    public function redirect(): void
+    public function redirectToGoogle(): void
     {
         if (!GoogleOAuth::isEnabled()) {
             $this->flash('error', 'Google Sign-In is not configured.');

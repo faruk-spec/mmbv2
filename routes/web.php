@@ -33,7 +33,7 @@ $router->post('/reset-password', 'AuthController@resetPassword');
 $router->get('/verify-email/{token}', 'AuthController@verifyEmail');
 
 // Google OAuth routes
-$router->get('/auth/google', 'GoogleOAuthController@redirect');
+$router->get('/auth/google', 'GoogleOAuthController@redirectToGoogle');
 $router->get('/auth/google/callback', 'GoogleOAuthController@callback');
 $router->get('/auth/google/link', 'GoogleOAuthController@link', ['auth']);
 $router->post('/auth/google/unlink', 'GoogleOAuthController@unlink', ['auth']);
