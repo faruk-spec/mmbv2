@@ -123,27 +123,26 @@ CREATE TABLE IF NOT EXISTS `settings` (
     `key` VARCHAR(255) NOT NULL UNIQUE,
     `value` TEXT NULL,
     `type` VARCHAR(50) DEFAULT 'string',
-    `description` TEXT NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP,
     INDEX `idx_key` (`key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Insert default timezone and date/time format settings
-INSERT INTO `settings` (`key`, `value`, `type`, `description`) VALUES
-('system_timezone', 'UTC', 'string', 'System timezone for displaying dates/times'),
-('date_format', 'M d, Y', 'string', 'Date format for displaying dates'),
-('time_format', 'g:i A', 'string', 'Time format for displaying times'),
-('default_session_timeout', '120', 'integer', 'Default session timeout in minutes'),
-('remember_me_duration', '30', 'integer', 'Remember me duration in days'),
-('max_concurrent_sessions', '5', 'integer', 'Maximum concurrent sessions per user'),
-('auto_logout_enabled', '1', 'boolean', 'Enable automatic logout on inactivity'),
-('session_ip_validation', '0', 'boolean', 'Validate session IP address'),
-('max_failed_login_attempts', '5', 'integer', 'Maximum failed login attempts before lockout'),
-('account_lockout_duration', '15', 'integer', 'Account lockout duration in minutes'),
-('password_min_length', '8', 'integer', 'Minimum password length'),
-('require_email_verification', '0', 'boolean', 'Require email verification for new accounts'),
-('force_password_change', '0', 'boolean', 'Force password change every 90 days')
+INSERT INTO `settings` (`key`, `value`, `type`) VALUES
+('system_timezone', 'UTC', 'string'),
+('date_format', 'M d, Y', 'string'),
+('time_format', 'g:i A', 'string'),
+('default_session_timeout', '120', 'integer'),
+('remember_me_duration', '30', 'integer'),
+('max_concurrent_sessions', '5', 'integer'),
+('auto_logout_enabled', '1', 'boolean'),
+('session_ip_validation', '0', 'boolean'),
+('max_failed_login_attempts', '5', 'integer'),
+('account_lockout_duration', '15', 'integer'),
+('password_min_length', '8', 'integer'),
+('require_email_verification', '0', 'boolean'),
+('force_password_change', '0', 'boolean')
 ON DUPLICATE KEY UPDATE `value` = VALUES(`value`);
 
 -- ============================================

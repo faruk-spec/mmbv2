@@ -45,6 +45,7 @@
                     Add an extra layer of security to your account by enabling two-factor authentication.
                 </p>
                 
+                <?php if (isset($secret) && isset($qrCodeUrl)): ?>
                 <div style="background: var(--bg-secondary); padding: 20px; border-radius: 10px; margin-bottom: 20px;">
                     <h3 style="font-size: 1rem; margin-bottom: 15px;">Step 1: Scan QR Code</h3>
                     <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 15px;">
@@ -83,6 +84,12 @@
                         Enable 2FA
                     </button>
                 </form>
+                <?php else: ?>
+                <div style="padding: 20px; text-align: center; color: var(--text-secondary);">
+                    <p>Unable to generate 2FA setup. Please try again.</p>
+                    <a href="/security" style="color: var(--cyan);">Return to Security Settings</a>
+                </div>
+                <?php endif; ?>
             </div>
         <?php endif; ?>
         

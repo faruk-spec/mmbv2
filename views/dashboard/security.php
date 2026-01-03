@@ -150,46 +150,6 @@
             <?php endif; ?>
         </div>
     </div>
-                Two-Factor Authentication
-            </h3>
-        </div>
-        
-        <div style="text-align: center; padding: 40px 30px;">
-            <?php if ($twoFactorEnabled): ?>
-                <div style="width: 80px; height: 80px; background: rgba(0, 255, 136, 0.1); border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 30px rgba(0, 255, 136, 0.2);">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                        <path d="M9 12l2 2 4-4"/>
-                    </svg>
-                </div>
-                <h4 style="color: var(--green); margin-bottom: 12px; font-size: 0.85rem;">2FA Enabled</h4>
-                <p style="color: var(--text-secondary); margin-bottom: 12px; line-height: 1.6;">Your account is protected with two-factor authentication. An additional code is required for login.</p>
-                <a href="/2fa/setup" class="btn btn-secondary" style="padding: 10px 24px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 10px; color: var(--text-primary); font-weight: 600; text-decoration: none; display: inline-block; transition: all 0.3s ease;">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 6px;">
-                        <circle cx="12" cy="12" r="3"></circle>
-                        <path d="M12 1v6m0 6v6m5.2-13.2l-4.2 4.2m-2 2l-4.2 4.2m13.2-5.2l-4.2-4.2m-2 2l-4.2-4.2"></path>
-                    </svg>
-                    Manage 2FA
-                </a>
-            <?php else: ?>
-                <div style="width: 80px; height: 80px; background: rgba(255, 170, 0, 0.1); border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 30px rgba(255, 170, 0, 0.2);">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                        <line x1="12" y1="9" x2="12" y2="13"></line>
-                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                    </svg>
-                </div>
-                <h4 style="color: var(--orange); margin-bottom: 12px; font-size: 0.85rem;">2FA Disabled</h4>
-                <p style="color: var(--text-secondary); margin-bottom: 12px; line-height: 1.6;">Add an extra layer of security to your account by enabling two-factor authentication.</p>
-                <a href="/2fa/setup" class="btn btn-primary" style="padding: 10px 24px; background: linear-gradient(135deg, var(--cyan), var(--magenta)); border: none; border-radius: 10px; color: #06060a; font-weight: 600; text-decoration: none; display: inline-block; transition: all 0.3s ease;">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 6px;">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                    </svg>
-                    Enable 2FA
-                </a>
-            <?php endif; ?>
-        </div>
-    </div>
 </div>
 
 <!-- Google OAuth Connection -->
