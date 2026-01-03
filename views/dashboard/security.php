@@ -147,7 +147,7 @@ $googleConnection = null;
 if (\Core\GoogleOAuth::isEnabled()) {
     try {
         $googleConnection = $db->fetch(
-            "SELECT ouc.*, op.id as provider_id 
+            "SELECT ouc.*, op.id as provider_id, op.display_name as provider_display_name 
              FROM oauth_user_connections ouc
              JOIN oauth_providers op ON ouc.provider_id = op.id
              WHERE ouc.user_id = ? AND op.name = 'google'",
@@ -187,7 +187,7 @@ if (\Core\GoogleOAuth::isEnabled()) {
             </div>
             <h4 style="color: #4285F4; margin-bottom: 12px; font-size: 0.85rem;">Google Account Connected</h4>
             <p style="color: var(--text-secondary); margin-bottom: 8px; line-height: 1.6;">
-                <strong><?= View::e($googleConnection['provider_name'] ?? '') ?></strong><br>
+                <strong><?= View::e($googleConnection['provider_display_name'] ?? 'Google') ?></strong><br>
                 <small><?= View::e($googleConnection['provider_email']) ?></small>
             </p>
             <p style="color: var(--text-secondary); margin-bottom: 16px; font-size: 0.85rem;">

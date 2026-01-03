@@ -231,7 +231,7 @@ class GoogleOAuth
             
             // Check if this Google account is already linked
             $existing = $db->fetch(
-                "SELECT user_id FROM oauth_user_connections WHERE provider_id = ? AND provider_user_id = ?",
+                "SELECT id, user_id FROM oauth_user_connections WHERE provider_id = ? AND provider_user_id = ?",
                 [self::$config['provider_id'], $oauthData['provider_user_id']]
             );
             

@@ -177,14 +177,7 @@ class Auth
         
         self::$user = null;
     }
-                $params['secure'],
-                $params['httponly']
-            );
-        }
-        session_destroy();
-        
-        self::$user = null;
-    }
+
     
     /**
      * Check if user is logged in

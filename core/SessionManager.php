@@ -24,7 +24,9 @@ class SessionManager
             
             // Get user's custom timeout or use default
             $user = $db->fetch("SELECT session_timeout_minutes FROM users WHERE id = ?", [$userId]);
-            $timeoutMinutes = $user['session_timeout_minutes'] ?? SESSION_LIFETIME;
+            $timeoutMinutes = ($user && isset($user['session_timeout_minutes'])) 
+                ? $user['session_timeout_minutes'] 
+                : SESSION_LIFETIME;
             
             $expiresAt = date('Y-m-d H:i:s', time() + ($timeoutMinutes * 60));
             

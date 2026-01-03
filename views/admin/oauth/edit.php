@@ -63,7 +63,7 @@
                 <ol>
                     <li>Go to <a href="https://console.cloud.google.com/" target="_blank">Google Cloud Console</a></li>
                     <li>Create a new project or select existing one</li>
-                    <li>Enable Google+ API</li>
+                    <li>Navigate to APIs & Services → Credentials</li>
                     <li>Go to Credentials → Create Credentials → OAuth 2.0 Client ID</li>
                     <li>Add authorized redirect URI: <code><?= View::e(defined('APP_URL') ? APP_URL : 'https://yourdomain.com') ?>/auth/google/callback</code></li>
                     <li>Copy Client ID and Client Secret and paste them above</li>

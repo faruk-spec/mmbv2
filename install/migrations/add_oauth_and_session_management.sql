@@ -85,8 +85,8 @@ INSERT INTO `oauth_providers` (`name`, `display_name`, `scopes`, `is_enabled`, `
 )) ON DUPLICATE KEY UPDATE display_name = 'Google';
 
 -- Add oauth_id column to users table if not exists
-ALTER TABLE `users` ADD COLUMN IF NOT EXISTS `google_id` VARCHAR(255) NULL AFTER `email_verification_token`;
+ALTER TABLE `users` ADD COLUMN IF NOT EXISTS `google_id` VARCHAR(255) NULL;
 ALTER TABLE `users` ADD UNIQUE INDEX IF NOT EXISTS `idx_google_id` (`google_id`);
 
 -- Add session tracking fields to users table if not exists
-ALTER TABLE `users` ADD COLUMN IF NOT EXISTS `session_timeout_minutes` INT DEFAULT 120 AFTER `two_factor_enabled`;
+ALTER TABLE `users` ADD COLUMN IF NOT EXISTS `session_timeout_minutes` INT DEFAULT 120;
