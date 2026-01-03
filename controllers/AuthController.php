@@ -73,7 +73,7 @@ class AuthController extends BaseController
             // Set SSO cookie for projects
             setcookie('sso_token', $ssoToken, time() + 3600, '/', '', true, true);
             
-            $returnUrl = $_GET['return'] ?? '/dashboard';
+            $returnUrl = $_GET['redirect'] ?? $_GET['return'] ?? '/dashboard';
             $this->redirect($returnUrl);
         } else {
             $this->flash('error', 'Invalid credentials or account is locked.');

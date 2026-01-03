@@ -889,6 +889,29 @@ try {
         .scroll-top.visible {
             display: flex;
         }
+        
+        /* Dashboard Layout Styles */
+        .full-dashboard-layout {
+            display: grid;
+            grid-template-columns: 250px 1fr 300px;
+            gap: 0;
+            min-height: calc(100vh - 60px);
+        }
+        
+        .left-sidebar {
+            background: var(--bg-card);
+            border-right: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+            transition: width 0.3s ease, left 0.3s ease;
+        }
+        
+        .dashboard-main-content {
+            padding: 20px;
+            overflow-x: hidden;
+        }
     </style>
     
     <?php View::yield('styles'); ?>
@@ -904,9 +927,9 @@ try {
         
         <?php if ($isDashboardPage): ?>
             <!-- Dashboard Layout with Left and Right Sidebars -->
-            <div class="full-dashboard-layout" style="display: grid; grid-template-columns: 250px 1fr 300px; gap: 0; min-height: calc(100vh - 60px);">
+            <div class="full-dashboard-layout">
                 <!-- Left Navigation Sidebar -->
-                <aside class="left-sidebar" id="leftSidebar" style="background: var(--bg-card); border-right: 1px solid var(--border-color); position: sticky; top: 0; height: 100vh; overflow-y: auto; transition: width 0.3s ease;">
+                <aside class="left-sidebar" id="leftSidebar">
                     <!-- Toggle Button -->
                     <div style="padding: 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color);">
                         <span class="sidebar-title" style="font-size: 0.9rem; font-weight: 700; color: var(--text-primary);">Navigation</span>
@@ -1313,6 +1336,13 @@ try {
                     
                     .left-sidebar.mobile-open {
                         left: 0 !important;
+                    }
+                    
+                    /* Show text when mobile sidebar is open */
+                    .left-sidebar.mobile-open .nav-text,
+                    .left-sidebar.mobile-open .sidebar-title,
+                    .left-sidebar.mobile-open .group-chevron {
+                        display: block !important;
                     }
                     
                     /* Backdrop overlay */
