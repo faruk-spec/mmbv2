@@ -901,9 +901,7 @@ try {
         .left-sidebar {
             background: var(--bg-card);
             border-right: 1px solid var(--border-color);
-            position: sticky;
-            top: 0;
-            height: 100vh;
+            height: calc(100vh - 60px);
             overflow-y: auto;
             transition: width 0.3s ease, left 0.3s ease;
         }
@@ -911,6 +909,13 @@ try {
         .dashboard-main-content {
             padding: 20px;
             overflow-x: hidden;
+        }
+        
+        .dashboard-sidebar {
+            background: var(--bg-primary);
+            height: calc(100vh - 60px);
+            overflow-y: auto;
+            padding: 20px;
         }
     </style>
     
@@ -1098,12 +1103,12 @@ try {
                 <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
                 
                 <!-- Main Content Area -->
-                <div class="dashboard-main-content" style="padding: 20px;">
+                <div class="dashboard-main-content">
                     <?php View::yield('content'); ?>
                 </div>
                 
                 <!-- Right Sidebar -->
-                <aside class="dashboard-sidebar" style="position: sticky; top: 0; height: fit-content;">
+                <aside class="dashboard-sidebar">
                     <!-- User Stats Card -->
                     <div class="sidebar-card" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 16px; margin-bottom: 16px;">
                         <h3 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
