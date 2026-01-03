@@ -382,6 +382,6 @@ Copyright © 2026 MyMultiBranch Platform. All rights reserved.
 ## Version
 
 Current Version: 0.3.0 (Phases 1-3 Complete)
-- Version 0.3.0 - Phases 1-3 Complete (January 2026)
-- Version 1.0.0 - Will be released when all phases complete
+- v0.3.0 - Phases 1-3 Complete (January 2026)
+- v1.0.0 - Will be released when all phases complete
 - Uses Semantic Versioning: Major.Minor.Patch
