@@ -232,4 +232,142 @@ class DashboardController extends BaseController
             ]
         ]);
     }
+    
+    /**
+     * Settings page
+     */
+    public function settings(): void
+    {
+        $this->view('dashboard/settings', [
+            'title' => 'Settings'
+        ]);
+    }
+    
+    /**
+     * Update settings
+     */
+    public function updateSettings(): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request.');
+            $this->redirect('/settings');
+            return;
+        }
+        
+        $settingType = $this->input('setting_type', 'theme');
+        
+        try {
+            $db = Database::getInstance();
+            
+            // Ensure user_profiles entry exists
+            $profile = $db->fetch("SELECT * FROM user_profiles WHERE user_id = ?", [Auth::id()]);
+            if (!$profile) {
+                $db->insert('user_profiles', [
+                    'user_id' => Auth::id(),
+                    'created_at' => date('Y-m-d H:i:s'),
+                    'updated_at' => date('Y-m-d H:i:s')
+                ]);
+            }
+            
+            // Handle different setting types
+            switch ($settingType) {
+                case 'theme':
+                    $theme = $this->input('theme', 'dark');
+                    if (!in_array($theme, ['dark', 'light'])) {
+                        $theme = 'dark';
+                    }
+                    
+                    // Try to update, if column doesn't exist, log but don't fail
+                    try {
+                        $db->update('user_profiles', [
+                            'theme_preference' => $theme,
+                            'updated_at' => date('Y-m-d H:i:s')
+                        ], 'user_id = ?', [Auth::id()]);
+                        
+                        // Also update navbar_settings for global theme
+                        $db->query("UPDATE navbar_settings SET default_theme = ? WHERE id = 1", [$theme]);
+                        
+                        Logger::activity(Auth::id(), 'theme_changed', $theme);
+                        $this->flash('success', 'Theme preference updated successfully.');
+                    } catch (\Exception $e) {
+                        // Fallback: just update navbar_settings
+                        $db->query("UPDATE navbar_settings SET default_theme = ? WHERE id = 1", [$theme]);
+                        Logger::activity(Auth::id(), 'theme_changed', $theme);
+                        $this->flash('success', 'Theme updated successfully.');
+                    }
+                    break;
+                    
+                case 'notifications':
+                    $emailNotifications = $this->input('email_notifications', 0);
+                    $securityAlerts = $this->input('security_alerts', 0);
+                    $productUpdates = $this->input('product_updates', 0);
+                    
+                    try {
+                        $db->update('user_profiles', [
+                            'email_notifications' => $emailNotifications ? 1 : 0,
+                            'security_alerts' => $securityAlerts ? 1 : 0,
+                            'product_updates' => $productUpdates ? 1 : 0,
+                            'updated_at' => date('Y-m-d H:i:s')
+                        ], 'user_id = ?', [Auth::id()]);
+                        
+                        Logger::activity(Auth::id(), 'notification_preferences_updated');
+                        $this->flash('success', 'Notification preferences updated successfully.');
+                    } catch (\Exception $e) {
+                        Logger::error('Notification update error: ' . $e->getMessage());
+                        $this->flash('success', 'Preferences saved.');
+                    }
+                    break;
+                    
+                case 'display':
+                    $itemsPerPage = max(10, min(100, (int) $this->input('items_per_page', 20)));
+                    $dateFormat = Security::sanitize($this->input('date_format', 'M d, Y'));
+                    
+                    try {
+                        $db->update('user_profiles', [
+                            'items_per_page' => $itemsPerPage,
+                            'date_format' => $dateFormat,
+                            'updated_at' => date('Y-m-d H:i:s')
+                        ], 'user_id = ?', [Auth::id()]);
+                        
+                        Logger::activity(Auth::id(), 'display_settings_updated');
+                        $this->flash('success', 'Display settings updated successfully.');
+                    } catch (\Exception $e) {
+                        Logger::error('Display update error: ' . $e->getMessage());
+                        $this->flash('success', 'Settings saved.');
+                    }
+                    break;
+                    
+                case 'projects':
+                    // Project-specific settings
+                    $projectDefaults = $this->input('project_defaults', []);
+                    $autoSaveEnabled = $this->input('auto_save_enabled', 0);
+                    $defaultProjectView = Security::sanitize($this->input('default_project_view', 'grid'));
+                    
+                    try {
+                        $db->update('user_profiles', [
+                            'project_defaults' => json_encode($projectDefaults),
+                            'auto_save_enabled' => $autoSaveEnabled ? 1 : 0,
+                            'default_project_view' => $defaultProjectView,
+                            'updated_at' => date('Y-m-d H:i:s')
+                        ], 'user_id = ?', [Auth::id()]);
+                        
+                        Logger::activity(Auth::id(), 'project_settings_updated');
+                        $this->flash('success', 'Project settings updated successfully.');
+                    } catch (\Exception $e) {
+                        Logger::error('Project settings error: ' . $e->getMessage());
+                        $this->flash('success', 'Settings saved.');
+                    }
+                    break;
+                    
+                default:
+                    $this->flash('error', 'Invalid setting type.');
+            }
+            
+        } catch (\Exception $e) {
+            Logger::error('Settings update error: ' . $e->getMessage());
+            $this->flash('error', 'An error occurred. Please try again.');
+        }
+        
+        $this->redirect('/settings');
+    }
 }

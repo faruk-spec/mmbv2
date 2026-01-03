@@ -132,27 +132,109 @@ class SSO
      */
     public static function validateProjectRequest(string $projectName): bool
     {
-        // Check if user has session
-        if (!Auth::check()) {
-            // Try to validate SSO token from cookie/header
+        $userId = null;
+        $isAuthenticated = false;
+        
+        // Check if user is authenticated via Auth system (from middleware)
+        if (Auth::check()) {
+            $userId = Auth::id();
+            $isAuthenticated = true;
+        } else {
+            // If not authenticated, try SSO token
             $token = $_COOKIE['sso_token'] ?? $_SERVER['HTTP_X_SSO_TOKEN'] ?? null;
             
-            if (!$token) {
-                return false;
+            if ($token) {
+                $user = self::getUserFromToken($token);
+                if ($user) {
+                    // Set up session for this user
+                    $_SESSION['user_id'] = $user['id'];
+                    $_SESSION['user_role'] = $user['role'];
+                    $userId = $user['id'];
+                    $isAuthenticated = true;
+                }
             }
-            
-            $user = self::getUserFromToken($token);
-            if (!$user) {
-                return false;
-            }
-            
-            // Set up session for this user
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['user_role'] = $user['role'];
+        }
+        
+        // If not authenticated at all, return false (will redirect to login)
+        if (!$isAuthenticated) {
+            return false;
         }
         
         // Check project access permissions
-        return self::hasProjectAccess(Auth::id(), $projectName);
+        $hasAccess = self::hasProjectAccess($userId, $projectName);
+        
+        // If authenticated but no access, show access denied page and stop execution
+        if (!$hasAccess) {
+            http_response_code(403);
+            header('Content-Type: text/html; charset=UTF-8');
+            
+            // Load the access denied view directly
+            $projectDisplayName = ucfirst(str_replace('-', ' ', $projectName));
+            $user = Auth::user();
+            
+            ?>
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Access Denied - <?= htmlspecialchars($projectDisplayName) ?></title>
+                <style>
+                    * { margin: 0; padding: 0; box-sizing: border-box; }
+                    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; background: #0f172a; color: #e2e8f0; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+                    .container { max-width: 600px; text-align: center; }
+                    .icon { font-size: 80px; margin-bottom: 20px; }
+                    h1 { font-size: 2rem; margin-bottom: 16px; color: #f87171; }
+                    p { font-size: 1.1rem; color: #94a3b8; margin-bottom: 12px; line-height: 1.6; }
+                    .user-info { background: #1e293b; padding: 16px; border-radius: 8px; margin: 24px 0; border: 1px solid #334155; }
+                    .user-info strong { color: #00f0ff; }
+                    .actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 24px; }
+                    .btn { padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; transition: all 0.3s; display: inline-block; }
+                    .btn-primary { background: linear-gradient(135deg, #00f0ff, #ff2ec4); color: #fff; }
+                    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0, 240, 255, 0.3); }
+                    .btn-secondary { background: #1e293b; color: #e2e8f0; border: 1px solid #334155; }
+                    .btn-secondary:hover { background: #334155; }
+                    .reasons { text-align: left; background: #1e293b; padding: 20px; border-radius: 8px; margin-top: 24px; border-left: 4px solid #f59e0b; }
+                    .reasons h3 { color: #f59e0b; margin-bottom: 12px; font-size: 1rem; }
+                    .reasons ul { list-style: none; }
+                    .reasons li { padding: 8px 0; color: #94a3b8; display: flex; align-items: start; gap: 8px; }
+                    .reasons li:before { content: "•"; color: #f59e0b; font-weight: bold; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="icon">🚫</div>
+                    <h1>Access Denied</h1>
+                    <p>You don't have permission to access <strong><?= htmlspecialchars($projectDisplayName) ?></strong>.</p>
+                    
+                    <?php if ($user): ?>
+                    <div class="user-info">
+                        <p>Logged in as: <strong><?= htmlspecialchars($user['email']) ?></strong></p>
+                        <p style="font-size: 0.9rem; color: #64748b; margin-top: 8px;">Role: <?= htmlspecialchars(ucfirst($user['role'])) ?></p>
+                    </div>
+                    <?php endif; ?>
+                    
+                    <div class="reasons">
+                        <h3>Possible Reasons:</h3>
+                        <ul>
+                            <li>This project is disabled or under maintenance</li>
+                            <li>You don't have the required permissions</li>
+                            <li>Your account needs additional access rights</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="actions">
+                        <a href="/dashboard" class="btn btn-primary">Go to Dashboard</a>
+                        <a href="/settings" class="btn btn-secondary">Check Settings</a>
+                    </div>
+                </div>
+            </body>
+            </html>
+            <?php
+            exit;
+        }
+        
+        return true;
     }
     
     /**
@@ -244,5 +326,20 @@ class SSO
     {
         header('Location: ' . self::getLoginUrl($returnUrl));
         exit;
+    }
+    
+    /**
+     * Show access denied page for authenticated users without project access
+     */
+    private static function showAccessDenied(string $projectName): void
+    {
+        http_response_code(403);
+        $user = Auth::user();
+        
+        // Render access denied view
+        View::render('errors/project-access-denied', [
+            'project' => $projectName,
+            'user' => $user
+        ]);
     }
 }
