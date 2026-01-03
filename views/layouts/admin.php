@@ -1275,6 +1275,23 @@
                             </a>
                         </div>
                     </div>
+                    
+                    <!-- 2FA Management -->
+                    <div class="menu-item menu-dropdown">
+                        <div class="menu-dropdown-toggle">
+                            <div class="left">
+                                <i class="fas fa-shield-alt"></i>
+                                <span>2FA Management</span>
+                            </div>
+                            <i class="fas fa-chevron-down arrow"></i>
+                        </div>
+                        <div class="menu-dropdown-content">
+                            <a href="/admin/2fa" class="menu-link">
+                                <i class="fas fa-users-cog"></i>
+                                <span>User 2FA Status</span>
+                            </a>
+                        </div>
+                    </div>
                 </div>
                 
                 <!-- Logs -->

@@ -110,6 +110,11 @@ $router->post('/admin/oauth/{id}/edit', 'Admin\\OAuthController@update', ['auth'
 $router->get('/admin/oauth/connections', 'Admin\\OAuthController@connections', ['auth', 'admin']);
 $router->post('/admin/oauth/connections/{id}/revoke', 'Admin\\OAuthController@revokeConnection', ['auth', 'admin']);
 
+// 2FA Management routes
+$router->get('/admin/2fa', 'Admin\\TwoFactorController@index', ['auth', 'admin']);
+$router->post('/admin/2fa/{userId}/reset', 'Admin\\TwoFactorController@reset', ['auth', 'admin']);
+$router->post('/admin/2fa/{userId}/toggle', 'Admin\\TwoFactorController@toggle', ['auth', 'admin']);
+
 // Session Management
 $router->get('/admin/sessions', 'Admin\\SessionController@index', ['auth', 'admin']);
 $router->post('/admin/sessions/{id}/revoke', 'Admin\\SessionController@revoke', ['auth', 'admin']);
