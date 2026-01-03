@@ -346,12 +346,12 @@ class DashboardController extends BaseController
                         // Also update navbar_settings for global theme
                         $db->query("UPDATE navbar_settings SET default_theme = ? WHERE id = 1", [$theme]);
                         
-                        Logger::activity(Auth::id(), 'theme_changed', $theme);
+                        Logger::activity(Auth::id(), 'theme_changed', ['theme' => $theme]);
                         $this->flash('success', 'Theme preference updated successfully.');
                     } catch (\Exception $e) {
                         // Fallback: just update navbar_settings
                         $db->query("UPDATE navbar_settings SET default_theme = ? WHERE id = 1", [$theme]);
-                        Logger::activity(Auth::id(), 'theme_changed', $theme);
+                        Logger::activity(Auth::id(), 'theme_changed', ['theme' => $theme]);
                         $this->flash('success', 'Theme updated successfully.');
                     }
                     break;

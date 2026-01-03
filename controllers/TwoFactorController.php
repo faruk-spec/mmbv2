@@ -286,27 +286,3 @@ class TwoFactorController extends BaseController
         }
     }
 }
-                $this->flash('error', 'Invalid verification code.');
-                $this->redirect('/2fa/verify');
-                return;
-            }
-            
-            // Mark as verified and complete login
-            unset($_SESSION['pending_2fa_user_id']);
-            $_SESSION['2fa_verified'] = true;
-            $_SESSION['user_id'] = $userId;
-            
-            Logger::activity($userId, '2fa_verified');
-            
-            $returnUrl = $_SESSION['return_url'] ?? '/dashboard';
-            unset($_SESSION['return_url']);
-            
-            $this->redirect($returnUrl);
-            
-        } catch (\Exception $e) {
-            Logger::error('2FA verification error: ' . $e->getMessage());
-            $this->flash('error', 'Verification failed.');
-            $this->redirect('/2fa/verify');
-        }
-    }
-}
