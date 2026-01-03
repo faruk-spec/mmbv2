@@ -992,13 +992,13 @@ try {
                             </div>
                         </div>
                         
-                        <!-- Projects Section -->
+                        <!-- Applications Section -->
                         <div class="nav-section" style="margin-bottom: 8px;">
                             <a href="/browse" class="nav-item" style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.85rem;" onmouseover="this.style.background='rgba(0,240,255,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                                 </svg>
-                                <span class="nav-text">Browse Projects</span>
+                                <span class="nav-text">Browse Applications</span>
                             </a>
                             
                             <div class="nav-group">
@@ -1008,7 +1008,7 @@ try {
                                             <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
                                             <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
                                         </svg>
-                                        <span class="nav-text">My Projects</span>
+                                        <span class="nav-text">Your Applications</span>
                                     </div>
                                     <svg class="group-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2" style="transition: transform 0.3s;">
                                         <polyline points="6 9 12 15 18 9"></polyline>
@@ -1061,6 +1061,18 @@ try {
                         <?php endif; ?>
                     </nav>
                 </aside>
+                
+                <!-- Mobile Sidebar Toggle Button -->
+                <button class="mobile-sidebar-toggle" id="mobileSidebarToggle" style="display: none;" aria-label="Toggle sidebar">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                    </svg>
+                </button>
+                
+                <!-- Sidebar Backdrop for Mobile -->
+                <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
                 
                 <!-- Main Content Area -->
                 <div class="dashboard-main-content" style="padding: 20px;">
@@ -1289,7 +1301,65 @@ try {
                     }
                     
                     .left-sidebar {
-                        display: none !important;
+                        position: fixed !important;
+                        left: -280px !important;
+                        top: 60px !important;
+                        width: 280px !important;
+                        height: calc(100vh - 60px) !important;
+                        z-index: 9998 !important;
+                        transition: left 0.3s ease !important;
+                        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5);
+                    }
+                    
+                    .left-sidebar.mobile-open {
+                        left: 0 !important;
+                    }
+                    
+                    /* Backdrop overlay */
+                    .sidebar-backdrop {
+                        display: none;
+                        position: fixed;
+                        top: 60px;
+                        left: 0;
+                        right: 0;
+                        bottom: 0;
+                        background: rgba(0, 0, 0, 0.5);
+                        z-index: 9997;
+                        opacity: 0;
+                        transition: opacity 0.3s ease;
+                    }
+                    
+                    .sidebar-backdrop.active {
+                        display: block;
+                        opacity: 1;
+                    }
+                    
+                    /* Hamburger button */
+                    .mobile-sidebar-toggle {
+                        display: flex !important;
+                        position: fixed;
+                        bottom: 20px;
+                        right: 20px;
+                        width: 56px;
+                        height: 56px;
+                        background: linear-gradient(135deg, var(--cyan), var(--magenta));
+                        border: none;
+                        border-radius: 50%;
+                        align-items: center;
+                        justify-content: center;
+                        cursor: pointer;
+                        box-shadow: 0 4px 20px rgba(0, 240, 255, 0.4);
+                        z-index: 9999;
+                        transition: all 0.3s ease;
+                    }
+                    
+                    .mobile-sidebar-toggle:hover {
+                        transform: scale(1.1);
+                        box-shadow: 0 6px 25px rgba(0, 240, 255, 0.6);
+                    }
+                    
+                    .mobile-sidebar-toggle svg {
+                        color: #06060a;
                     }
                     
                     /* Mobile-specific adjustments */
@@ -1400,7 +1470,35 @@ try {
                     const sidebar = document.getElementById('leftSidebar');
                     const toggleBtn = document.getElementById('sidebarToggle');
                     const dashboardLayout = document.querySelector('.full-dashboard-layout');
+                    const mobileSidebarToggle = document.getElementById('mobileSidebarToggle');
+                    const sidebarBackdrop = document.getElementById('sidebarBackdrop');
                     
+                    // Mobile sidebar toggle
+                    if (mobileSidebarToggle && sidebar && sidebarBackdrop) {
+                        mobileSidebarToggle.addEventListener('click', function() {
+                            sidebar.classList.toggle('mobile-open');
+                            sidebarBackdrop.classList.toggle('active');
+                        });
+                        
+                        // Close sidebar when clicking backdrop
+                        sidebarBackdrop.addEventListener('click', function() {
+                            sidebar.classList.remove('mobile-open');
+                            sidebarBackdrop.classList.remove('active');
+                        });
+                        
+                        // Close sidebar when clicking a link on mobile
+                        const sidebarLinks = sidebar.querySelectorAll('a');
+                        sidebarLinks.forEach(link => {
+                            link.addEventListener('click', function() {
+                                if (window.innerWidth <= 768) {
+                                    sidebar.classList.remove('mobile-open');
+                                    sidebarBackdrop.classList.remove('active');
+                                }
+                            });
+                        });
+                    }
+                    
+                    // Desktop sidebar toggle
                     if (toggleBtn && sidebar) {
                         toggleBtn.addEventListener('click', function() {
                             const isCollapsed = sidebar.classList.contains('collapsed');
