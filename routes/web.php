@@ -39,6 +39,8 @@ $router->post('/profile', 'DashboardController@updateProfile', ['auth']);
 $router->get('/security', 'DashboardController@security', ['auth']);
 $router->post('/security/password', 'DashboardController@updatePassword', ['auth']);
 $router->get('/activity', 'DashboardController@activity', ['auth']);
+$router->get('/settings', 'DashboardController@settings', ['auth']);
+$router->post('/settings', 'DashboardController@updateSettings', ['auth']);
 
 // 2FA routes
 $router->get('/2fa/setup', 'TwoFactorController@setup', ['auth']);
