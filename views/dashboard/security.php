@@ -140,6 +140,98 @@
     </div>
 </div>
 
+<!-- Google OAuth Connection -->
+<?php 
+$db = \Core\Database::getInstance();
+$googleConnection = null;
+if (\Core\GoogleOAuth::isEnabled()) {
+    try {
+        $googleConnection = $db->fetch(
+            "SELECT ouc.*, op.id as provider_id 
+             FROM oauth_user_connections ouc
+             JOIN oauth_providers op ON ouc.provider_id = op.id
+             WHERE ouc.user_id = ? AND op.name = 'google'",
+            [\Core\Auth::id()]
+        );
+    } catch (\Exception $e) {}
+}
+?>
+
+<?php if (\Core\GoogleOAuth::isEnabled()): ?>
+<div class="card" style="border-radius: 10px; overflow: hidden; border: 1px solid var(--border-color); margin-top: 24px;">
+    <div class="card-header" style="background: linear-gradient(135deg, rgba(66, 133, 244, 0.1) 0%, rgba(234, 67, 53, 0.1) 100%); border-bottom: 1px solid var(--border-color); padding: 12px;">
+        <h3 class="card-title" style="font-size: 0.9rem; display: flex; align-items: center; gap: 10px; margin: 0;">
+            <svg width="16" height="16" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+                <g fill="none" fill-rule="evenodd">
+                    <path d="M17.64 9.205c0-.639-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+                    <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
+                    <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+                    <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+                </g>
+            </svg>
+            Google Account
+        </h3>
+    </div>
+    
+    <div style="text-align: center; padding: 40px 30px;">
+        <?php if ($googleConnection): ?>
+            <div style="width: 80px; height: 80px; background: rgba(66, 133, 244, 0.1); border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 30px rgba(66, 133, 244, 0.2);">
+                <svg width="24" height="24" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+                    <g fill="none" fill-rule="evenodd">
+                        <path d="M17.64 9.205c0-.639-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+                        <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
+                        <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+                        <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+                    </g>
+                </svg>
+            </div>
+            <h4 style="color: #4285F4; margin-bottom: 12px; font-size: 0.85rem;">Google Account Connected</h4>
+            <p style="color: var(--text-secondary); margin-bottom: 8px; line-height: 1.6;">
+                <strong><?= View::e($googleConnection['provider_name'] ?? '') ?></strong><br>
+                <small><?= View::e($googleConnection['provider_email']) ?></small>
+            </p>
+            <p style="color: var(--text-secondary); margin-bottom: 16px; font-size: 0.85rem;">
+                Connected <?= Helpers::timeAgo(strtotime($googleConnection['created_at'])) ?>
+            </p>
+            <form method="POST" action="/auth/google/unlink" style="display: inline-block;" onsubmit="return confirm('Are you sure you want to unlink your Google account?');">
+                <?= \Core\Security::csrfField() ?>
+                <button type="submit" class="btn btn-secondary" style="padding: 10px 24px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 10px; color: var(--text-primary); font-weight: 600; cursor: pointer; transition: all 0.3s ease;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 6px;">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                    Unlink Google Account
+                </button>
+            </form>
+        <?php else: ?>
+            <div style="width: 80px; height: 80px; background: rgba(100, 116, 139, 0.1); border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 30px rgba(100, 116, 139, 0.2);">
+                <svg width="24" height="24" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+                    <g fill="none" fill-rule="evenodd" opacity="0.5">
+                        <path d="M17.64 9.205c0-.639-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+                        <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
+                        <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+                        <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+                    </g>
+                </svg>
+            </div>
+            <h4 style="color: var(--text-secondary); margin-bottom: 12px; font-size: 0.85rem;">Google Account Not Connected</h4>
+            <p style="color: var(--text-secondary); margin-bottom: 16px; line-height: 1.6;">Link your Google account for easier sign-in and enhanced security.</p>
+            <a href="/auth/google/link" class="btn btn-primary" style="padding: 10px 24px; background: linear-gradient(135deg, #4285F4, #34A853); border: none; border-radius: 10px; color: white; font-weight: 600; text-decoration: none; display: inline-block; transition: all 0.3s ease;">
+                <svg width="16" height="16" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" style="display: inline-block; vertical-align: middle; margin-right: 6px;">
+                    <g fill="none" fill-rule="evenodd">
+                        <path d="M17.64 9.205c0-.639-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="white"/>
+                        <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="white"/>
+                        <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="white"/>
+                        <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="white"/>
+                    </g>
+                </svg>
+                Link Google Account
+            </a>
+        <?php endif; ?>
+    </div>
+</div>
+<?php endif; ?>
+
 <div class="card mt-3" style="border-radius: 10px; overflow: hidden; border: 1px solid var(--border-color); margin-top: 24px;">
     <div class="card-header" style="background: linear-gradient(135deg, rgba(0, 255, 136, 0.1) 0%, rgba(0, 240, 255, 0.1) 100%); border-bottom: 1px solid var(--border-color); padding: 12px;">
         <h3 class="card-title" style="font-size: 0.9rem; display: flex; align-items: center; gap: 10px; margin: 0;">
