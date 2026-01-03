@@ -363,13 +363,22 @@ class GoogleOAuth
         try {
             $db = Database::getInstance();
             
+            // CRITICAL: Check if user has a password set
+            // If user signed in with Google and has no password, prevent unlinking
+            $user = $db->fetch("SELECT password FROM users WHERE id = ?", [$userId]);
+            
+            if (!$user || empty($user['password']) || $user['password'] === '') {
+                Logger::error('Cannot unlink Google account: User has no password set');
+                return false; // User must set a password first
+            }
+            
             $db->delete('oauth_user_connections', 'user_id = ? AND provider_id = ?', [$userId, self::$config['provider_id']]);
             
             $db->update('users', [
                 'google_id' => null
             ], 'id = ?', [$userId]);
             
-            Logger::activity($userId, 'google_oauth_revoked');
+            Logger::activity($userId, 'google_oauth_revoked', []);
             
             return true;
             

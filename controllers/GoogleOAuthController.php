@@ -166,11 +166,20 @@ class GoogleOAuthController extends BaseController
         }
         
         $userId = Auth::id();
+        $user = Auth::user();
+        
+        // CRITICAL: Check if user has a password set
+        // If user signed in with Google and has no password, prevent unlinking
+        if (empty($user['password']) || $user['password'] === '') {
+            $this->flash('error', 'You must set a password before unlinking your Google account. Please change your password in the settings first.');
+            $this->redirect('/security');
+            return;
+        }
         
         if (GoogleOAuth::revokeConnection($userId)) {
             $this->flash('success', 'Google account unlinked successfully.');
         } else {
-            $this->flash('error', 'Failed to unlink Google account.');
+            $this->flash('error', 'Failed to unlink Google account. Please ensure you have a password set.');
         }
         
         $this->redirect('/security');
