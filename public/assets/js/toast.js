@@ -91,10 +91,11 @@ function showToast(message, type = 'info', duration = 5000) {
     const messageDiv = document.createElement('div');
     messageDiv.style.cssText = `
         flex: 1;
-        color: var(--text-primary, #fff);
+        color: #ffffff;
         font-size: 14px;
         line-height: 1.5;
         padding-top: 4px;
+        font-weight: 500;
     `;
     messageDiv.textContent = message;
     

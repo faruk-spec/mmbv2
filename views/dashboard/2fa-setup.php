@@ -52,7 +52,11 @@
                         Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.)
                     </p>
                     <div style="text-align: center; padding: 20px; background: white; border-radius: 10px; margin-bottom: 15px;">
-                        <img src="<?= htmlspecialchars_decode($qrCodeUrl, ENT_QUOTES) ?>" alt="2FA QR Code" style="max-width: 200px; height: auto;">
+                        <img src="<?= $qrCodeUrl ?>" alt="2FA QR Code" style="max-width: 200px; height: auto;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                        <div style="display: none; color: #666; padding: 20px;">
+                            <p>QR Code could not be loaded.</p>
+                            <p style="font-size: 0.9rem; margin-top: 10px;">Please use the manual code below instead.</p>
+                        </div>
                     </div>
                     
                     <h3 style="font-size: 1rem; margin-bottom: 10px;">Or enter this code manually:</h3>
