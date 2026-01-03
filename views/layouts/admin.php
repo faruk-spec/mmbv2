@@ -1196,6 +1196,62 @@
                     </div>
                 </div>
                 
+                <!-- Mail Server (Email Hosting SaaS) -->
+                <div class="menu-section">
+                    <div class="menu-dropdown">
+                        <div class="menu-dropdown-toggle">
+                            <div class="left">
+                                <i class="fas fa-envelope-open-text"></i>
+                                <span>Mail Server</span>
+                            </div>
+                            <i class="fas fa-chevron-down arrow"></i>
+                        </div>
+                        <div class="menu-dropdown-content">
+                            <!-- Overview -->
+                            <a href="/admin/projects/mail" class="menu-link">
+                                <i class="fas fa-chart-line"></i>
+                                <span>Overview</span>
+                            </a>
+                            
+                            <!-- Subscribers Management -->
+                            <a href="/admin/projects/mail/subscribers" class="menu-link">
+                                <i class="fas fa-users"></i>
+                                <span>Subscribers</span>
+                            </a>
+                            
+                            <!-- Subscription Plans -->
+                            <a href="/admin/projects/mail/plans" class="menu-link">
+                                <i class="fas fa-layer-group"></i>
+                                <span>Subscription Plans</span>
+                            </a>
+                            
+                            <!-- Domains -->
+                            <a href="/admin/projects/mail/domains" class="menu-link">
+                                <i class="fas fa-globe"></i>
+                                <span>All Domains</span>
+                            </a>
+                            
+                            <!-- Abuse Reports -->
+                            <a href="/admin/projects/mail/abuse" class="menu-link">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <span>Abuse Reports</span>
+                            </a>
+                            
+                            <!-- System Settings -->
+                            <a href="/admin/projects/mail/settings" class="menu-link">
+                                <i class="fas fa-cog"></i>
+                                <span>System Settings</span>
+                            </a>
+                            
+                            <!-- Admin Action Logs -->
+                            <a href="/admin/projects/mail/logs" class="menu-link">
+                                <i class="fas fa-clipboard-list"></i>
+                                <span>Admin Logs</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
                 <!-- User Management -->
                 <div class="menu-section">
                     <div class="menu-section-title">Management</div>

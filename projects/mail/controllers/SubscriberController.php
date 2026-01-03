@@ -45,9 +45,9 @@ class SubscriberController extends Controller
         // Check if user is a subscriber owner
         $subscriber = $this->db->fetch(
             "SELECT s.*, sub.plan_id, sp.plan_name, sp.max_users, sp.storage_per_user_gb
-             FROM subscribers s
-             JOIN subscriptions sub ON s.id = sub.subscriber_id
-             JOIN subscription_plans sp ON sub.plan_id = sp.id
+             FROM mail_subscribers s
+             JOIN mail_subscriptions sub ON s.id = sub.subscriber_id
+             JOIN mail_subscription_plans sp ON sub.plan_id = sp.id
              WHERE s.mmb_user_id = ? AND sub.status = 'active'
              LIMIT 1",
             [$userId]
@@ -88,26 +88,26 @@ class SubscriberController extends Controller
             "SELECT s.*, sub.plan_id, sub.status as subscription_status, 
                     sp.plan_name, sp.max_users, sp.storage_per_user_gb, sp.max_domains,
                     sp.daily_send_limit, sp.max_aliases
-             FROM subscribers s
-             JOIN subscriptions sub ON s.id = sub.subscriber_id
-             JOIN subscription_plans sp ON sub.plan_id = sp.id
+             FROM mail_subscribers s
+             JOIN mail_subscriptions sub ON s.id = sub.subscriber_id
+             JOIN mail_subscription_plans sp ON sub.plan_id = sp.id
              WHERE s.id = ?",
             [$this->subscriberId]
         );
         
         // Get usage statistics
         $stats = [
-            'users_count' => $this->db->fetch("SELECT COUNT(*) as count FROM mailboxes WHERE subscriber_id = ?", [$this->subscriberId])['count'] ?? 0,
-            'domains_count' => $this->db->fetch("SELECT COUNT(*) as count FROM domains WHERE subscriber_id = ?", [$this->subscriberId])['count'] ?? 0,
-            'aliases_count' => $this->db->fetch("SELECT COUNT(*) as count FROM aliases a JOIN domains d ON a.domain_id = d.id WHERE d.subscriber_id = ?", [$this->subscriberId])['count'] ?? 0,
-            'emails_today' => $this->db->fetch("SELECT COUNT(*) as count FROM mail_logs WHERE mailbox_id IN (SELECT id FROM mailboxes WHERE subscriber_id = ?) AND DATE(created_at) = CURDATE() AND log_type = 'send'", [$this->subscriberId])['count'] ?? 0,
+            'users_count' => $this->db->fetch("SELECT COUNT(*) as count FROM mail_mailboxes WHERE subscriber_id = ?", [$this->subscriberId])['count'] ?? 0,
+            'domains_count' => $this->db->fetch("SELECT COUNT(*) as count FROM mail_domains WHERE subscriber_id = ?", [$this->subscriberId])['count'] ?? 0,
+            'aliases_count' => $this->db->fetch("SELECT COUNT(*) as count FROM mail_aliases a JOIN mail_domains d ON a.domain_id = d.id WHERE d.subscriber_id = ?", [$this->subscriberId])['count'] ?? 0,
+            'emails_today' => $this->db->fetch("SELECT COUNT(*) as count FROM mail_logs WHERE mailbox_id IN (SELECT id FROM mail_mailboxes WHERE subscriber_id = ?) AND DATE(created_at) = CURDATE() AND log_type = 'send'", [$this->subscriberId])['count'] ?? 0,
         ];
         
         // Get recent users
         $recentUsers = $this->db->query(
             "SELECT m.*, d.domain_name 
-             FROM mailboxes m
-             JOIN domains d ON m.domain_id = d.id
+             FROM mail_mailboxes m
+             JOIN mail_domains d ON m.domain_id = d.id
              WHERE m.subscriber_id = ?
              ORDER BY m.created_at DESC
              LIMIT 5",
@@ -116,7 +116,7 @@ class SubscriberController extends Controller
         
         // Get recent domains
         $recentDomains = $this->db->query(
-            "SELECT * FROM domains 
+            "SELECT * FROM mail_domains 
              WHERE subscriber_id = ?
              ORDER BY created_at DESC
              LIMIT 5",
@@ -145,9 +145,9 @@ class SubscriberController extends Controller
         // Get plan limits
         $plan = $this->db->fetch(
             "SELECT sp.max_users, s.users_count
-             FROM subscribers s
-             JOIN subscriptions sub ON s.id = sub.subscriber_id
-             JOIN subscription_plans sp ON sub.plan_id = sp.id
+             FROM mail_subscribers s
+             JOIN mail_subscriptions sub ON s.id = sub.subscriber_id
+             JOIN mail_subscription_plans sp ON sub.plan_id = sp.id
              WHERE s.id = ?",
             [$this->subscriberId]
         );
@@ -156,8 +156,8 @@ class SubscriberController extends Controller
         $users = $this->db->query(
             "SELECT m.*, d.domain_name, 
                     CASE WHEN m.mmb_user_id IS NOT NULL THEN 'Linked' ELSE 'Mail Only' END as user_type
-             FROM mailboxes m
-             JOIN domains d ON m.domain_id = d.id
+             FROM mail_mailboxes m
+             JOIN mail_domains d ON m.domain_id = d.id
              WHERE m.subscriber_id = ?
              ORDER BY m.created_at DESC",
             [$this->subscriberId]
@@ -188,9 +188,9 @@ class SubscriberController extends Controller
         // Get plan limits
         $plan = $this->db->fetch(
             "SELECT sp.max_users, s.users_count
-             FROM subscribers s
-             JOIN subscriptions sub ON s.id = sub.subscriber_id
-             JOIN subscription_plans sp ON sub.plan_id = sp.id
+             FROM mail_subscribers s
+             JOIN mail_subscriptions sub ON s.id = sub.subscriber_id
+             JOIN mail_subscription_plans sp ON sub.plan_id = sp.id
              WHERE s.id = ?",
             [$this->subscriberId]
         );
@@ -203,7 +203,7 @@ class SubscriberController extends Controller
         
         // Get domains for dropdown
         $domains = $this->db->query(
-            "SELECT * FROM domains 
+            "SELECT * FROM mail_domains 
              WHERE subscriber_id = ? AND is_verified = 1 AND is_active = 1
              ORDER BY domain_name",
             [$this->subscriberId]
@@ -238,9 +238,9 @@ class SubscriberController extends Controller
         // Check plan limits
         $plan = $this->db->fetch(
             "SELECT sp.max_users, s.users_count
-             FROM subscribers s
-             JOIN subscriptions sub ON s.id = sub.subscriber_id
-             JOIN subscription_plans sp ON sub.plan_id = sp.id
+             FROM mail_subscribers s
+             JOIN mail_subscriptions sub ON s.id = sub.subscriber_id
+             JOIN mail_subscription_plans sp ON sub.plan_id = sp.id
              WHERE s.id = ?",
             [$this->subscriberId]
         );
@@ -251,7 +251,7 @@ class SubscriberController extends Controller
         }
         
         // Check if email already exists
-        $existing = $this->db->fetch("SELECT id FROM mailboxes WHERE email = ?", [$email]);
+        $existing = $this->db->fetch("SELECT id FROM mail_mailboxes WHERE email = ?", [$email]);
         if ($existing) {
             $this->error('Email address already exists');
             return;
@@ -259,7 +259,7 @@ class SubscriberController extends Controller
         
         // Verify domain belongs to subscriber
         $domain = $this->db->fetch(
-            "SELECT id FROM domains WHERE id = ? AND subscriber_id = ?",
+            "SELECT id FROM mail_domains WHERE id = ? AND subscriber_id = ?",
             [$domainId, $this->subscriberId]
         );
         
@@ -274,14 +274,14 @@ class SubscriberController extends Controller
         // Insert mailbox
         try {
             $this->db->query(
-                "INSERT INTO mailboxes (subscriber_id, domain_id, email, username, password, display_name, role_type, added_by_user_id, storage_quota, created_at)
+                "INSERT INTO mail_mailboxes (subscriber_id, domain_id, email, username, password, display_name, role_type, added_by_user_id, storage_quota, created_at)
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())",
                 [$this->subscriberId, $domainId, $email, $username, $hashedPassword, $displayName, $roleType, Auth::id(), $storageQuota]
             );
             
             // Update users count
             $this->db->query(
-                "UPDATE subscribers SET users_count = users_count + 1 WHERE id = ?",
+                "UPDATE mail_subscribers SET users_count = users_count + 1 WHERE id = ?",
                 [$this->subscriberId]
             );
             
@@ -335,7 +335,7 @@ class SubscriberController extends Controller
         
         // Verify mailbox belongs to subscriber
         $mailbox = $this->db->fetch(
-            "SELECT id FROM mailboxes WHERE id = ? AND subscriber_id = ?",
+            "SELECT id FROM mail_mailboxes WHERE id = ? AND subscriber_id = ?",
             [$mailboxId, $this->subscriberId]
         );
         
@@ -346,7 +346,7 @@ class SubscriberController extends Controller
         
         // Update role
         $this->db->query(
-            "UPDATE mailboxes SET role_type = ? WHERE id = ?",
+            "UPDATE mail_mailboxes SET role_type = ? WHERE id = ?",
             [$roleType, $mailboxId]
         );
         
@@ -367,7 +367,7 @@ class SubscriberController extends Controller
         
         // Verify mailbox belongs to subscriber
         $mailbox = $this->db->fetch(
-            "SELECT id, role_type FROM mailboxes WHERE id = ? AND subscriber_id = ?",
+            "SELECT id, role_type FROM mail_mailboxes WHERE id = ? AND subscriber_id = ?",
             [$mailboxId, $this->subscriberId]
         );
         
@@ -383,11 +383,11 @@ class SubscriberController extends Controller
         }
         
         // Delete mailbox (cascades to folders, messages, etc.)
-        $this->db->query("DELETE FROM mailboxes WHERE id = ?", [$mailboxId]);
+        $this->db->query("DELETE FROM mail_mailboxes WHERE id = ?", [$mailboxId]);
         
         // Update users count
         $this->db->query(
-            "UPDATE subscribers SET users_count = users_count - 1 WHERE id = ?",
+            "UPDATE mail_subscribers SET users_count = users_count - 1 WHERE id = ?",
             [$this->subscriberId]
         );
         

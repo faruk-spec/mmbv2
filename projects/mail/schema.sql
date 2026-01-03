@@ -7,7 +7,7 @@
 -- ============================================
 
 -- Subscription Plans table - Free, Starter, Business, Developer
-CREATE TABLE IF NOT EXISTS `subscription_plans` (
+CREATE TABLE IF NOT EXISTS `mail_subscription_plans` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `plan_name` VARCHAR(100) NOT NULL UNIQUE,
     `plan_slug` VARCHAR(50) NOT NULL UNIQUE,
@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS `subscription_plans` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Plan Features table - Feature gating configuration
-CREATE TABLE IF NOT EXISTS `plan_features` (
+CREATE TABLE IF NOT EXISTS `mail_plan_features` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `plan_id` INT UNSIGNED NOT NULL,
     `feature_key` VARCHAR(50) NOT NULL,
@@ -38,14 +38,14 @@ CREATE TABLE IF NOT EXISTS `plan_features` (
     `is_enabled` TINYINT(1) DEFAULT 0,
     `feature_value` VARCHAR(255) NULL COMMENT 'For numeric/string limits',
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (`plan_id`) REFERENCES `subscription_plans`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`plan_id`) REFERENCES `mail_subscription_plans`(`id`) ON DELETE CASCADE,
     INDEX `idx_plan_id` (`plan_id`),
     INDEX `idx_feature_key` (`feature_key`),
     UNIQUE KEY `unique_plan_feature` (`plan_id`, `feature_key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Subscribers table - Account owners/customers (references main MMB users table)
-CREATE TABLE IF NOT EXISTS `subscribers` (
+CREATE TABLE IF NOT EXISTS `mail_subscribers` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `mmb_user_id` INT UNSIGNED NOT NULL UNIQUE COMMENT 'Reference to main MMB users table - the buyer',
     `account_name` VARCHAR(255) NOT NULL,
@@ -66,7 +66,7 @@ CREATE TABLE IF NOT EXISTS `subscribers` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Subscriptions table - Active subscriptions
-CREATE TABLE IF NOT EXISTS `subscriptions` (
+CREATE TABLE IF NOT EXISTS `mail_subscriptions` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `subscriber_id` INT UNSIGNED NOT NULL,
     `plan_id` INT UNSIGNED NOT NULL,
@@ -79,8 +79,8 @@ CREATE TABLE IF NOT EXISTS `subscriptions` (
     `stripe_subscription_id` VARCHAR(255) NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (`subscriber_id`) REFERENCES `subscribers`(`id`) ON DELETE CASCADE,
-    FOREIGN KEY (`plan_id`) REFERENCES `subscription_plans`(`id`) ON DELETE RESTRICT,
+    FOREIGN KEY (`subscriber_id`) REFERENCES `mail_subscribers`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`plan_id`) REFERENCES `mail_subscription_plans`(`id`) ON DELETE RESTRICT,
     INDEX `idx_subscriber_id` (`subscriber_id`),
     INDEX `idx_plan_id` (`plan_id`),
     INDEX `idx_status` (`status`),
@@ -88,7 +88,7 @@ CREATE TABLE IF NOT EXISTS `subscriptions` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Payments table - Payment history
-CREATE TABLE IF NOT EXISTS `payments` (
+CREATE TABLE IF NOT EXISTS `mail_payments` (
     `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `subscriber_id` INT UNSIGNED NOT NULL,
     `subscription_id` INT UNSIGNED NULL,
@@ -101,8 +101,8 @@ CREATE TABLE IF NOT EXISTS `payments` (
     `description` TEXT NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (`subscriber_id`) REFERENCES `subscribers`(`id`) ON DELETE CASCADE,
-    FOREIGN KEY (`subscription_id`) REFERENCES `subscriptions`(`id`) ON DELETE SET NULL,
+    FOREIGN KEY (`subscriber_id`) REFERENCES `mail_subscribers`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`subscription_id`) REFERENCES `mail_subscriptions`(`id`) ON DELETE SET NULL,
     INDEX `idx_subscriber_id` (`subscriber_id`),
     INDEX `idx_subscription_id` (`subscription_id`),
     INDEX `idx_status` (`status`),
@@ -110,7 +110,7 @@ CREATE TABLE IF NOT EXISTS `payments` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Invoices table - Billing invoices
-CREATE TABLE IF NOT EXISTS `invoices` (
+CREATE TABLE IF NOT EXISTS `mail_invoices` (
     `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `subscriber_id` INT UNSIGNED NOT NULL,
     `subscription_id` INT UNSIGNED NULL,
@@ -126,8 +126,8 @@ CREATE TABLE IF NOT EXISTS `invoices` (
     `invoice_pdf_url` VARCHAR(500) NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (`subscriber_id`) REFERENCES `subscribers`(`id`) ON DELETE CASCADE,
-    FOREIGN KEY (`subscription_id`) REFERENCES `subscriptions`(`id`) ON DELETE SET NULL,
+    FOREIGN KEY (`subscriber_id`) REFERENCES `mail_subscribers`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`subscription_id`) REFERENCES `mail_subscriptions`(`id`) ON DELETE SET NULL,
     INDEX `idx_subscriber_id` (`subscriber_id`),
     INDEX `idx_invoice_number` (`invoice_number`),
     INDEX `idx_status` (`status`)
@@ -138,7 +138,7 @@ CREATE TABLE IF NOT EXISTS `invoices` (
 -- ============================================
 
 -- Domains table - Custom domains (multi-tenant)
-CREATE TABLE IF NOT EXISTS `domains` (
+CREATE TABLE IF NOT EXISTS `mail_domains` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `subscriber_id` INT UNSIGNED NOT NULL COMMENT 'Owner subscriber',
     `domain_name` VARCHAR(255) NOT NULL UNIQUE,
@@ -154,7 +154,7 @@ CREATE TABLE IF NOT EXISTS `domains` (
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP,
     `verified_at` TIMESTAMP NULL,
-    FOREIGN KEY (`subscriber_id`) REFERENCES `subscribers`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`subscriber_id`) REFERENCES `mail_subscribers`(`id`) ON DELETE CASCADE,
     INDEX `idx_subscriber_id` (`subscriber_id`),
     INDEX `idx_domain_name` (`domain_name`),
     INDEX `idx_is_active` (`is_active`),
@@ -162,7 +162,7 @@ CREATE TABLE IF NOT EXISTS `domains` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- DNS Records table - MX, SPF, DKIM, DMARC records
-CREATE TABLE IF NOT EXISTS `dns_records` (
+CREATE TABLE IF NOT EXISTS `mail_dns_records` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `domain_id` INT UNSIGNED NOT NULL,
     `record_type` ENUM('MX', 'TXT', 'CNAME', 'A', 'AAAA', 'SPF', 'DKIM', 'DMARC') NOT NULL,
@@ -173,7 +173,7 @@ CREATE TABLE IF NOT EXISTS `dns_records` (
     `is_verified` TINYINT(1) DEFAULT 0,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `verified_at` TIMESTAMP NULL,
-    FOREIGN KEY (`domain_id`) REFERENCES `domains`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`domain_id`) REFERENCES `mail_domains`(`id`) ON DELETE CASCADE,
     INDEX `idx_domain_id` (`domain_id`),
     INDEX `idx_record_type` (`record_type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -183,7 +183,7 @@ CREATE TABLE IF NOT EXISTS `dns_records` (
 -- ============================================
 
 -- Mail User Roles table - Platform Super Admin, Subscriber (Account Owner), Domain Admin, End User
-CREATE TABLE IF NOT EXISTS `mail_user_roles` (
+CREATE TABLE IF NOT EXISTS `mail_mail_user_roles` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `mmb_user_id` INT UNSIGNED NOT NULL COMMENT 'Reference to main MMB users',
     `subscriber_id` INT UNSIGNED NULL COMMENT 'NULL for platform super admin only',
@@ -197,12 +197,12 @@ CREATE TABLE IF NOT EXISTS `mail_user_roles` (
     INDEX `idx_subscriber_id` (`subscriber_id`),
     INDEX `idx_role_type` (`role_type`),
     INDEX `idx_is_owner` (`is_owner`),
-    FOREIGN KEY (`subscriber_id`) REFERENCES `subscribers`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`subscriber_id`) REFERENCES `mail_subscribers`(`id`) ON DELETE CASCADE,
     UNIQUE KEY `unique_user_subscriber` (`mmb_user_id`, `subscriber_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Feature Access table - Track plan features + super admin overrides
-CREATE TABLE IF NOT EXISTS `feature_access` (
+CREATE TABLE IF NOT EXISTS `mail_feature_access` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `subscriber_id` INT UNSIGNED NULL COMMENT 'Subscriber level override',
     `mailbox_id` INT UNSIGNED NULL COMMENT 'User level override',
@@ -215,11 +215,11 @@ CREATE TABLE IF NOT EXISTS `feature_access` (
     INDEX `idx_subscriber_id` (`subscriber_id`),
     INDEX `idx_mailbox_id` (`mailbox_id`),
     INDEX `idx_feature_key` (`feature_key`),
-    FOREIGN KEY (`subscriber_id`) REFERENCES `subscribers`(`id`) ON DELETE CASCADE
+    FOREIGN KEY (`subscriber_id`) REFERENCES `mail_subscribers`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Mailboxes table - Email accounts (multi-tenant)
-CREATE TABLE IF NOT EXISTS `mailboxes` (
+CREATE TABLE IF NOT EXISTS `mail_mailboxes` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `subscriber_id` INT UNSIGNED NOT NULL COMMENT 'Owner subscriber',
     `domain_id` INT UNSIGNED NOT NULL,
@@ -242,8 +242,8 @@ CREATE TABLE IF NOT EXISTS `mailboxes` (
     `last_login_ip` VARCHAR(45) NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (`subscriber_id`) REFERENCES `subscribers`(`id`) ON DELETE CASCADE,
-    FOREIGN KEY (`domain_id`) REFERENCES `domains`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`subscriber_id`) REFERENCES `mail_subscribers`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`domain_id`) REFERENCES `mail_domains`(`id`) ON DELETE CASCADE,
     INDEX `idx_subscriber_id` (`subscriber_id`),
     INDEX `idx_domain_id` (`domain_id`),
     INDEX `idx_mmb_user_id` (`mmb_user_id`),
@@ -253,7 +253,7 @@ CREATE TABLE IF NOT EXISTS `mailboxes` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- User Invitations table - Track invited users by subscriber
-CREATE TABLE IF NOT EXISTS `user_invitations` (
+CREATE TABLE IF NOT EXISTS `mail_user_invitations` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `subscriber_id` INT UNSIGNED NOT NULL,
     `invited_by_user_id` INT UNSIGNED NOT NULL COMMENT 'Subscriber who sent invitation',
@@ -264,7 +264,7 @@ CREATE TABLE IF NOT EXISTS `user_invitations` (
     `expires_at` TIMESTAMP NOT NULL,
     `accepted_at` TIMESTAMP NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (`subscriber_id`) REFERENCES `subscribers`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`subscriber_id`) REFERENCES `mail_subscribers`(`id`) ON DELETE CASCADE,
     INDEX `idx_subscriber_id` (`subscriber_id`),
     INDEX `idx_email` (`email`),
     INDEX `idx_invitation_token` (`invitation_token`),
@@ -272,7 +272,7 @@ CREATE TABLE IF NOT EXISTS `user_invitations` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Email Aliases table - Email forwarding and aliases
-CREATE TABLE IF NOT EXISTS `aliases` (
+CREATE TABLE IF NOT EXISTS `mail_aliases` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `domain_id` INT UNSIGNED NOT NULL,
     `source_email` VARCHAR(255) NOT NULL,
@@ -280,13 +280,13 @@ CREATE TABLE IF NOT EXISTS `aliases` (
     `is_active` TINYINT(1) DEFAULT 1,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (`domain_id`) REFERENCES `domains`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`domain_id`) REFERENCES `mail_domains`(`id`) ON DELETE CASCADE,
     INDEX `idx_domain_id` (`domain_id`),
     INDEX `idx_source_email` (`source_email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Mail Folders table - Inbox, Sent, Drafts, Trash, Custom folders
-CREATE TABLE IF NOT EXISTS `mail_folders` (
+CREATE TABLE IF NOT EXISTS `mail_mail_folders` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `mailbox_id` INT UNSIGNED NOT NULL,
     `folder_name` VARCHAR(100) NOT NULL,
@@ -296,15 +296,15 @@ CREATE TABLE IF NOT EXISTS `mail_folders` (
     `unread_count` INT UNSIGNED DEFAULT 0,
     `sort_order` INT UNSIGNED DEFAULT 0,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (`mailbox_id`) REFERENCES `mailboxes`(`id`) ON DELETE CASCADE,
-    FOREIGN KEY (`parent_folder_id`) REFERENCES `mail_folders`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`mailbox_id`) REFERENCES `mail_mailboxes`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`parent_folder_id`) REFERENCES `mail_mail_folders`(`id`) ON DELETE CASCADE,
     INDEX `idx_mailbox_id` (`mailbox_id`),
     INDEX `idx_folder_type` (`folder_type`),
     UNIQUE KEY `unique_mailbox_folder` (`mailbox_id`, `folder_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Mail Messages table - Email storage
-CREATE TABLE IF NOT EXISTS `mail_messages` (
+CREATE TABLE IF NOT EXISTS `mail_mail_messages` (
     `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `mailbox_id` INT UNSIGNED NOT NULL,
     `folder_id` INT UNSIGNED NOT NULL,
@@ -333,8 +333,8 @@ CREATE TABLE IF NOT EXISTS `mail_messages` (
     `received_at` TIMESTAMP NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (`mailbox_id`) REFERENCES `mailboxes`(`id`) ON DELETE CASCADE,
-    FOREIGN KEY (`folder_id`) REFERENCES `mail_folders`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`mailbox_id`) REFERENCES `mail_mailboxes`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`folder_id`) REFERENCES `mail_mail_folders`(`id`) ON DELETE CASCADE,
     INDEX `idx_mailbox_id` (`mailbox_id`),
     INDEX `idx_folder_id` (`folder_id`),
     INDEX `idx_message_id` (`message_id`),
@@ -346,7 +346,7 @@ CREATE TABLE IF NOT EXISTS `mail_messages` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Mail Attachments table
-CREATE TABLE IF NOT EXISTS `mail_attachments` (
+CREATE TABLE IF NOT EXISTS `mail_mail_attachments` (
     `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `message_id` BIGINT UNSIGNED NOT NULL,
     `filename` VARCHAR(255) NOT NULL,
@@ -358,12 +358,12 @@ CREATE TABLE IF NOT EXISTS `mail_attachments` (
     `is_inline` TINYINT(1) DEFAULT 0,
     `checksum` VARCHAR(64) NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (`message_id`) REFERENCES `mail_messages`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`message_id`) REFERENCES `mail_mail_messages`(`id`) ON DELETE CASCADE,
     INDEX `idx_message_id` (`message_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Mail Filters table - Auto-reply, forwarding, spam rules
-CREATE TABLE IF NOT EXISTS `mail_filters` (
+CREATE TABLE IF NOT EXISTS `mail_mail_filters` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `mailbox_id` INT UNSIGNED NOT NULL,
     `filter_name` VARCHAR(100) NOT NULL,
@@ -374,13 +374,13 @@ CREATE TABLE IF NOT EXISTS `mail_filters` (
     `actions` TEXT NOT NULL COMMENT 'JSON actions',
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (`mailbox_id`) REFERENCES `mailboxes`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`mailbox_id`) REFERENCES `mail_mailboxes`(`id`) ON DELETE CASCADE,
     INDEX `idx_mailbox_id` (`mailbox_id`),
     INDEX `idx_filter_type` (`filter_type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Auto Responders table
-CREATE TABLE IF NOT EXISTS `auto_responders` (
+CREATE TABLE IF NOT EXISTS `mail_auto_responders` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `mailbox_id` INT UNSIGNED NOT NULL,
     `subject` VARCHAR(255) NOT NULL,
@@ -390,12 +390,12 @@ CREATE TABLE IF NOT EXISTS `auto_responders` (
     `end_date` TIMESTAMP NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (`mailbox_id`) REFERENCES `mailboxes`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`mailbox_id`) REFERENCES `mail_mailboxes`(`id`) ON DELETE CASCADE,
     INDEX `idx_mailbox_id` (`mailbox_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Mail Logs table - Sending and receiving logs
-CREATE TABLE IF NOT EXISTS `mail_logs` (
+CREATE TABLE IF NOT EXISTS `mail_mail_logs` (
     `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `mailbox_id` INT UNSIGNED NULL,
     `message_id` BIGINT UNSIGNED NULL,
@@ -409,8 +409,8 @@ CREATE TABLE IF NOT EXISTS `mail_logs` (
     `ip_address` VARCHAR(45) NULL,
     `user_agent` VARCHAR(500) NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (`mailbox_id`) REFERENCES `mailboxes`(`id`) ON DELETE SET NULL,
-    FOREIGN KEY (`message_id`) REFERENCES `mail_messages`(`id`) ON DELETE SET NULL,
+    FOREIGN KEY (`mailbox_id`) REFERENCES `mail_mailboxes`(`id`) ON DELETE SET NULL,
+    FOREIGN KEY (`message_id`) REFERENCES `mail_mail_messages`(`id`) ON DELETE SET NULL,
     INDEX `idx_mailbox_id` (`mailbox_id`),
     INDEX `idx_message_id` (`message_id`),
     INDEX `idx_log_type` (`log_type`),
@@ -419,7 +419,7 @@ CREATE TABLE IF NOT EXISTS `mail_logs` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Contacts table
-CREATE TABLE IF NOT EXISTS `contacts` (
+CREATE TABLE IF NOT EXISTS `mail_contacts` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `mailbox_id` INT UNSIGNED NOT NULL,
     `email` VARCHAR(255) NOT NULL,
@@ -432,13 +432,13 @@ CREATE TABLE IF NOT EXISTS `contacts` (
     `is_favorite` TINYINT(1) DEFAULT 0,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (`mailbox_id`) REFERENCES `mailboxes`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`mailbox_id`) REFERENCES `mail_mailboxes`(`id`) ON DELETE CASCADE,
     INDEX `idx_mailbox_id` (`mailbox_id`),
     INDEX `idx_email` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Email Templates table
-CREATE TABLE IF NOT EXISTS `email_templates` (
+CREATE TABLE IF NOT EXISTS `mail_email_templates` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `mailbox_id` INT UNSIGNED NOT NULL,
     `template_name` VARCHAR(100) NOT NULL,
@@ -447,12 +447,12 @@ CREATE TABLE IF NOT EXISTS `email_templates` (
     `is_html` TINYINT(1) DEFAULT 1,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (`mailbox_id`) REFERENCES `mailboxes`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`mailbox_id`) REFERENCES `mail_mailboxes`(`id`) ON DELETE CASCADE,
     INDEX `idx_mailbox_id` (`mailbox_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Blacklist/Whitelist table
-CREATE TABLE IF NOT EXISTS `mail_lists` (
+CREATE TABLE IF NOT EXISTS `mail_mail_lists` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `mailbox_id` INT UNSIGNED NULL COMMENT 'NULL for global lists',
     `list_type` ENUM('blacklist', 'whitelist') NOT NULL,
@@ -460,13 +460,13 @@ CREATE TABLE IF NOT EXISTS `mail_lists` (
     `reason` VARCHAR(255) NULL,
     `is_active` TINYINT(1) DEFAULT 1,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (`mailbox_id`) REFERENCES `mailboxes`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`mailbox_id`) REFERENCES `mail_mailboxes`(`id`) ON DELETE CASCADE,
     INDEX `idx_mailbox_id` (`mailbox_id`),
     INDEX `idx_list_type` (`list_type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Mail Queue table - For outgoing emails
-CREATE TABLE IF NOT EXISTS `mail_queue` (
+CREATE TABLE IF NOT EXISTS `mail_mail_queue` (
     `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `mailbox_id` INT UNSIGNED NOT NULL,
     `from_email` VARCHAR(255) NOT NULL,
@@ -485,14 +485,14 @@ CREATE TABLE IF NOT EXISTS `mail_queue` (
     `scheduled_at` TIMESTAMP NULL,
     `processed_at` TIMESTAMP NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (`mailbox_id`) REFERENCES `mailboxes`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`mailbox_id`) REFERENCES `mail_mailboxes`(`id`) ON DELETE CASCADE,
     INDEX `idx_mailbox_id` (`mailbox_id`),
     INDEX `idx_status` (`status`),
     INDEX `idx_scheduled_at` (`scheduled_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Statistics table
-CREATE TABLE IF NOT EXISTS `mail_statistics` (
+CREATE TABLE IF NOT EXISTS `mail_mail_statistics` (
     `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `domain_id` INT UNSIGNED NULL,
     `mailbox_id` INT UNSIGNED NULL,
@@ -504,8 +504,8 @@ CREATE TABLE IF NOT EXISTS `mail_statistics` (
     `storage_used` BIGINT UNSIGNED DEFAULT 0,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (`domain_id`) REFERENCES `domains`(`id`) ON DELETE CASCADE,
-    FOREIGN KEY (`mailbox_id`) REFERENCES `mailboxes`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`domain_id`) REFERENCES `mail_domains`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`mailbox_id`) REFERENCES `mail_mailboxes`(`id`) ON DELETE CASCADE,
     INDEX `idx_domain_id` (`domain_id`),
     INDEX `idx_mailbox_id` (`mailbox_id`),
     INDEX `idx_stat_date` (`stat_date`),
@@ -514,7 +514,7 @@ CREATE TABLE IF NOT EXISTS `mail_statistics` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Sessions table - For webmail sessions
-CREATE TABLE IF NOT EXISTS `mail_sessions` (
+CREATE TABLE IF NOT EXISTS `mail_mail_sessions` (
     `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `mailbox_id` INT UNSIGNED NOT NULL,
     `session_token` VARCHAR(64) NOT NULL UNIQUE,
@@ -523,7 +523,7 @@ CREATE TABLE IF NOT EXISTS `mail_sessions` (
     `last_activity` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     `expires_at` TIMESTAMP NOT NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (`mailbox_id`) REFERENCES `mailboxes`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`mailbox_id`) REFERENCES `mail_mailboxes`(`id`) ON DELETE CASCADE,
     INDEX `idx_mailbox_id` (`mailbox_id`),
     INDEX `idx_session_token` (`session_token`),
     INDEX `idx_expires_at` (`expires_at`)
@@ -534,7 +534,7 @@ CREATE TABLE IF NOT EXISTS `mail_sessions` (
 -- ============================================
 
 -- SMTP Credentials table - For paid users to access SMTP
-CREATE TABLE IF NOT EXISTS `smtp_credentials` (
+CREATE TABLE IF NOT EXISTS `mail_smtp_credentials` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `mailbox_id` INT UNSIGNED NOT NULL,
     `credential_name` VARCHAR(100) NOT NULL,
@@ -548,13 +548,13 @@ CREATE TABLE IF NOT EXISTS `smtp_credentials` (
     `last_used_at` TIMESTAMP NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (`mailbox_id`) REFERENCES `mailboxes`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`mailbox_id`) REFERENCES `mail_mailboxes`(`id`) ON DELETE CASCADE,
     INDEX `idx_mailbox_id` (`mailbox_id`),
     INDEX `idx_smtp_username` (`smtp_username`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- API Keys table - For paid users to access REST API
-CREATE TABLE IF NOT EXISTS `api_keys` (
+CREATE TABLE IF NOT EXISTS `mail_api_keys` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `subscriber_id` INT UNSIGNED NOT NULL,
     `mailbox_id` INT UNSIGNED NULL COMMENT 'NULL for subscriber-level keys',
@@ -569,15 +569,15 @@ CREATE TABLE IF NOT EXISTS `api_keys` (
     `expires_at` TIMESTAMP NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (`subscriber_id`) REFERENCES `subscribers`(`id`) ON DELETE CASCADE,
-    FOREIGN KEY (`mailbox_id`) REFERENCES `mailboxes`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`subscriber_id`) REFERENCES `mail_subscribers`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`mailbox_id`) REFERENCES `mail_mailboxes`(`id`) ON DELETE CASCADE,
     INDEX `idx_subscriber_id` (`subscriber_id`),
     INDEX `idx_mailbox_id` (`mailbox_id`),
     INDEX `idx_api_key` (`api_key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- API Usage Logs table - Track API usage
-CREATE TABLE IF NOT EXISTS `api_usage_logs` (
+CREATE TABLE IF NOT EXISTS `mail_api_usage_logs` (
     `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `api_key_id` INT UNSIGNED NOT NULL,
     `endpoint` VARCHAR(255) NOT NULL,
@@ -589,7 +589,7 @@ CREATE TABLE IF NOT EXISTS `api_usage_logs` (
     `request_payload` TEXT NULL,
     `response_payload` TEXT NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (`api_key_id`) REFERENCES `api_keys`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`api_key_id`) REFERENCES `mail_api_keys`(`id`) ON DELETE CASCADE,
     INDEX `idx_api_key_id` (`api_key_id`),
     INDEX `idx_endpoint` (`endpoint`),
     INDEX `idx_created_at` (`created_at`)
@@ -600,7 +600,7 @@ CREATE TABLE IF NOT EXISTS `api_usage_logs` (
 -- ============================================
 
 -- Usage Logs table - Track quota and usage per subscriber
-CREATE TABLE IF NOT EXISTS `usage_logs` (
+CREATE TABLE IF NOT EXISTS `mail_usage_logs` (
     `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `subscriber_id` INT UNSIGNED NOT NULL,
     `log_date` DATE NOT NULL,
@@ -611,7 +611,7 @@ CREATE TABLE IF NOT EXISTS `usage_logs` (
     `bandwidth_used_bytes` BIGINT UNSIGNED DEFAULT 0,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (`subscriber_id`) REFERENCES `subscribers`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`subscriber_id`) REFERENCES `mail_subscribers`(`id`) ON DELETE CASCADE,
     INDEX `idx_subscriber_id` (`subscriber_id`),
     INDEX `idx_log_date` (`log_date`),
     UNIQUE KEY `unique_subscriber_date` (`subscriber_id`, `log_date`)
@@ -622,7 +622,7 @@ CREATE TABLE IF NOT EXISTS `usage_logs` (
 -- ============================================
 
 -- Admin Actions table - Audit trail for super admin actions
-CREATE TABLE IF NOT EXISTS `admin_actions` (
+CREATE TABLE IF NOT EXISTS `mail_admin_actions` (
     `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `admin_user_id` INT UNSIGNED NOT NULL COMMENT 'MMB user ID of admin',
     `action_type` VARCHAR(50) NOT NULL,
@@ -640,7 +640,7 @@ CREATE TABLE IF NOT EXISTS `admin_actions` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Abuse Reports table - Track spam and abuse reports
-CREATE TABLE IF NOT EXISTS `abuse_reports` (
+CREATE TABLE IF NOT EXISTS `mail_abuse_reports` (
     `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `reporter_email` VARCHAR(255) NULL,
     `reported_mailbox_id` INT UNSIGNED NULL,
@@ -654,8 +654,8 @@ CREATE TABLE IF NOT EXISTS `abuse_reports` (
     `resolved_at` TIMESTAMP NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (`reported_mailbox_id`) REFERENCES `mailboxes`(`id`) ON DELETE SET NULL,
-    FOREIGN KEY (`reported_domain_id`) REFERENCES `domains`(`id`) ON DELETE SET NULL,
+    FOREIGN KEY (`reported_mailbox_id`) REFERENCES `mail_mailboxes`(`id`) ON DELETE SET NULL,
+    FOREIGN KEY (`reported_domain_id`) REFERENCES `mail_domains`(`id`) ON DELETE SET NULL,
     INDEX `idx_reported_mailbox_id` (`reported_mailbox_id`),
     INDEX `idx_reported_domain_id` (`reported_domain_id`),
     INDEX `idx_status` (`status`),
@@ -663,7 +663,7 @@ CREATE TABLE IF NOT EXISTS `abuse_reports` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Webhooks table - For API webhooks (paid feature)
-CREATE TABLE IF NOT EXISTS `webhooks` (
+CREATE TABLE IF NOT EXISTS `mail_webhooks` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `subscriber_id` INT UNSIGNED NOT NULL,
     `webhook_url` VARCHAR(500) NOT NULL,
@@ -674,12 +674,12 @@ CREATE TABLE IF NOT EXISTS `webhooks` (
     `failure_count` INT UNSIGNED DEFAULT 0,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (`subscriber_id`) REFERENCES `subscribers`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`subscriber_id`) REFERENCES `mail_subscribers`(`id`) ON DELETE CASCADE,
     INDEX `idx_subscriber_id` (`subscriber_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Webhook Deliveries table - Track webhook delivery attempts
-CREATE TABLE IF NOT EXISTS `webhook_deliveries` (
+CREATE TABLE IF NOT EXISTS `mail_webhook_deliveries` (
     `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `webhook_id` INT UNSIGNED NOT NULL,
     `event_type` VARCHAR(50) NOT NULL,
@@ -691,14 +691,14 @@ CREATE TABLE IF NOT EXISTS `webhook_deliveries` (
     `failure_reason` TEXT NULL,
     `retry_count` INT UNSIGNED DEFAULT 0,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (`webhook_id`) REFERENCES `webhooks`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`webhook_id`) REFERENCES `mail_webhooks`(`id`) ON DELETE CASCADE,
     INDEX `idx_webhook_id` (`webhook_id`),
     INDEX `idx_event_type` (`event_type`),
     INDEX `idx_created_at` (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- System Settings table - Global configuration
-CREATE TABLE IF NOT EXISTS `system_settings` (
+CREATE TABLE IF NOT EXISTS `mail_system_settings` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `setting_key` VARCHAR(100) NOT NULL UNIQUE,
     `setting_value` TEXT NULL,
@@ -715,14 +715,14 @@ CREATE TABLE IF NOT EXISTS `system_settings` (
 -- ============================================
 
 -- Insert default subscription plans
-INSERT INTO `subscription_plans` (`plan_name`, `plan_slug`, `plan_type`, `price_monthly`, `price_yearly`, `max_users`, `storage_per_user_gb`, `daily_send_limit`, `max_attachment_size_mb`, `max_domains`, `max_aliases`, `sort_order`, `description`) VALUES
+INSERT INTO `mail_subscription_plans` (`plan_name`, `plan_slug`, `plan_type`, `price_monthly`, `price_yearly`, `max_users`, `storage_per_user_gb`, `daily_send_limit`, `max_attachment_size_mb`, `max_domains`, `max_aliases`, `sort_order`, `description`) VALUES
 ('Free', 'free', 'free', 0.00, 0.00, 1, 1, 50, 5, 1, 3, 1, 'Perfect for personal use'),
 ('Starter', 'starter', 'paid', 9.99, 99.00, 5, 5, 500, 25, 3, 25, 2, 'Great for small teams'),
 ('Business', 'business', 'paid', 29.99, 299.00, 25, 25, 2000, 50, 10, 100, 3, 'For growing businesses'),
 ('Developer', 'developer', 'paid', 49.99, 499.00, 100, 50, 10000, 100, 50, 500, 4, 'Full API access for developers');
 
 -- Insert default plan features
-INSERT INTO `plan_features` (`plan_id`, `feature_key`, `feature_name`, `is_enabled`) VALUES
+INSERT INTO `mail_plan_features` (`plan_id`, `feature_key`, `feature_name`, `is_enabled`) VALUES
 -- Free plan features
 (1, 'webmail', 'Webmail Access', 1),
 (1, 'smtp', 'SMTP Access', 0),

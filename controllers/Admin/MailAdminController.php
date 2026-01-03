@@ -36,23 +36,23 @@ class MailAdminController extends Controller
     {
         // Get system statistics
         $stats = [
-            'total_subscribers' => $this->db->fetch("SELECT COUNT(*) as count FROM subscribers")['count'] ?? 0,
-            'active_subscriptions' => $this->db->fetch("SELECT COUNT(*) as count FROM subscriptions WHERE status = 'active'")['count'] ?? 0,
-            'total_domains' => $this->db->fetch("SELECT COUNT(*) as count FROM domains")['count'] ?? 0,
-            'verified_domains' => $this->db->fetch("SELECT COUNT(*) as count FROM domains WHERE is_verified = 1")['count'] ?? 0,
-            'total_mailboxes' => $this->db->fetch("SELECT COUNT(*) as count FROM mailboxes")['count'] ?? 0,
-            'active_mailboxes' => $this->db->fetch("SELECT COUNT(*) as count FROM mailboxes WHERE is_active = 1")['count'] ?? 0,
+            'total_subscribers' => $this->db->fetch("SELECT COUNT(*) as count FROM mail_subscribers")['count'] ?? 0,
+            'active_subscriptions' => $this->db->fetch("SELECT COUNT(*) as count FROM mail_subscriptions WHERE status = 'active'")['count'] ?? 0,
+            'total_domains' => $this->db->fetch("SELECT COUNT(*) as count FROM mail_domains")['count'] ?? 0,
+            'verified_domains' => $this->db->fetch("SELECT COUNT(*) as count FROM mail_domains WHERE is_verified = 1")['count'] ?? 0,
+            'total_mailboxes' => $this->db->fetch("SELECT COUNT(*) as count FROM mail_mailboxes")['count'] ?? 0,
+            'active_mailboxes' => $this->db->fetch("SELECT COUNT(*) as count FROM mail_mailboxes WHERE is_active = 1")['count'] ?? 0,
             'emails_today' => $this->db->fetch("SELECT COUNT(*) as count FROM mail_logs WHERE DATE(created_at) = CURDATE() AND log_type = 'send'")['count'] ?? 0,
             'emails_this_month' => $this->db->fetch("SELECT COUNT(*) as count FROM mail_logs WHERE MONTH(created_at) = MONTH(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE()) AND log_type = 'send'")['count'] ?? 0,
-            'revenue_this_month' => $this->db->fetch("SELECT COALESCE(SUM(amount), 0) as total FROM payments WHERE status = 'completed' AND MONTH(created_at) = MONTH(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE())")['total'] ?? 0,
-            'pending_abuse_reports' => $this->db->fetch("SELECT COUNT(*) as count FROM abuse_reports WHERE status = 'pending'")['count'] ?? 0,
+            'revenue_this_month' => $this->db->fetch("SELECT COALESCE(SUM(amount), 0) as total FROM mail_payments WHERE status = 'completed' AND MONTH(created_at) = MONTH(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE())")['total'] ?? 0,
+            'pending_abuse_reports' => $this->db->fetch("SELECT COUNT(*) as count FROM mail_abuse_reports WHERE status = 'pending'")['count'] ?? 0,
         ];
         
         // Get plan distribution
         $planDistribution = $this->db->query(
             "SELECT sp.plan_name, COUNT(sub.id) as count
-             FROM subscription_plans sp
-             LEFT JOIN subscriptions sub ON sp.id = sub.plan_id AND sub.status = 'active'
+             FROM mail_subscription_plans sp
+             LEFT JOIN mail_subscriptions sub ON sp.id = sub.plan_id AND sub.status = 'active'
              GROUP BY sp.id, sp.plan_name
              ORDER BY sp.sort_order"
         )->fetchAll();
@@ -60,10 +60,10 @@ class MailAdminController extends Controller
         // Get recent subscribers
         $recentSubscribers = $this->db->query(
             "SELECT s.*, u.username, u.email, sp.plan_name
-             FROM subscribers s
+             FROM mail_subscribers s
              JOIN users u ON s.mmb_user_id = u.id
-             JOIN subscriptions sub ON s.id = sub.subscriber_id
-             JOIN subscription_plans sp ON sub.plan_id = sp.id
+             JOIN mail_subscriptions sub ON s.id = sub.subscriber_id
+             JOIN mail_subscription_plans sp ON sub.plan_id = sp.id
              ORDER BY s.created_at DESC
              LIMIT 10"
         )->fetchAll();
@@ -71,9 +71,9 @@ class MailAdminController extends Controller
         // Get recent abuse reports
         $recentAbuse = $this->db->query(
             "SELECT ar.*, m.email as mailbox_email, d.domain_name
-             FROM abuse_reports ar
-             LEFT JOIN mailboxes m ON ar.reported_mailbox_id = m.id
-             LEFT JOIN domains d ON ar.reported_domain_id = d.id
+             FROM mail_abuse_reports ar
+             LEFT JOIN mail_mailboxes m ON ar.reported_mailbox_id = m.id
+             LEFT JOIN mail_domains d ON ar.reported_domain_id = d.id
              WHERE ar.status = 'pending'
              ORDER BY ar.created_at DESC
              LIMIT 5"
@@ -104,19 +104,19 @@ class MailAdminController extends Controller
                     sp.plan_name,
                     COUNT(DISTINCT d.id) as domains_count,
                     COUNT(DISTINCT m.id) as mailboxes_count
-             FROM subscribers s
+             FROM mail_subscribers s
              JOIN users u ON s.mmb_user_id = u.id
-             LEFT JOIN subscriptions sub ON s.id = sub.subscriber_id
-             LEFT JOIN subscription_plans sp ON sub.plan_id = sp.id
-             LEFT JOIN domains d ON s.id = d.subscriber_id
-             LEFT JOIN mailboxes m ON s.id = m.subscriber_id
+             LEFT JOIN mail_subscriptions sub ON s.id = sub.subscriber_id
+             LEFT JOIN mail_subscription_plans sp ON sub.plan_id = sp.id
+             LEFT JOIN mail_domains d ON s.id = d.subscriber_id
+             LEFT JOIN mail_mailboxes m ON s.id = m.subscriber_id
              GROUP BY s.id
              ORDER BY s.created_at DESC
              LIMIT ? OFFSET ?",
             [$perPage, $offset]
         )->fetchAll();
         
-        $totalCount = $this->db->fetch("SELECT COUNT(*) as count FROM subscribers")['count'];
+        $totalCount = $this->db->fetch("SELECT COUNT(*) as count FROM mail_subscribers")['count'];
         $totalPages = ceil($totalCount / $perPage);
         
         View::render('admin/mail/subscribers', [
@@ -136,10 +136,10 @@ class MailAdminController extends Controller
             "SELECT s.*, u.username, u.email, 
                     sub.status as subscription_status, sub.current_period_start, sub.current_period_end,
                     sp.plan_name, sp.max_users, sp.storage_per_user_gb, sp.daily_send_limit
-             FROM subscribers s
+             FROM mail_subscribers s
              JOIN users u ON s.mmb_user_id = u.id
-             LEFT JOIN subscriptions sub ON s.id = sub.subscriber_id
-             LEFT JOIN subscription_plans sp ON sub.plan_id = sp.id
+             LEFT JOIN mail_subscriptions sub ON s.id = sub.subscriber_id
+             LEFT JOIN mail_subscription_plans sp ON sub.plan_id = sp.id
              WHERE s.id = ?",
             [$id]
         );
@@ -152,15 +152,15 @@ class MailAdminController extends Controller
         
         // Get domains
         $domains = $this->db->query(
-            "SELECT * FROM domains WHERE subscriber_id = ? ORDER BY created_at DESC",
+            "SELECT * FROM mail_domains WHERE subscriber_id = ? ORDER BY created_at DESC",
             [$id]
         )->fetchAll();
         
         // Get mailboxes
         $mailboxes = $this->db->query(
             "SELECT m.*, d.domain_name 
-             FROM mailboxes m
-             JOIN domains d ON m.domain_id = d.id
+             FROM mail_mailboxes m
+             JOIN mail_domains d ON m.domain_id = d.id
              WHERE m.subscriber_id = ?
              ORDER BY m.created_at DESC",
             [$id]
@@ -172,14 +172,14 @@ class MailAdminController extends Controller
                 COALESCE(SUM(emails_sent), 0) as total_sent,
                 COALESCE(SUM(emails_received), 0) as total_received,
                 COALESCE(SUM(storage_used_bytes), 0) as total_storage
-             FROM usage_logs
+             FROM mail_usage_logs
              WHERE subscriber_id = ?",
             [$id]
         );
         
         // Get payment history
         $payments = $this->db->query(
-            "SELECT * FROM payments 
+            "SELECT * FROM mail_payments 
              WHERE subscriber_id = ?
              ORDER BY created_at DESC
              LIMIT 10",
@@ -205,7 +205,7 @@ class MailAdminController extends Controller
         $reason = $_POST['reason'] ?? 'Administrative action';
         
         $this->db->query(
-            "UPDATE subscribers 
+            "UPDATE mail_subscribers 
              SET status = 'suspended', suspension_reason = ?, suspended_at = NOW()
              WHERE id = ?",
             [$reason, $id]
@@ -225,7 +225,7 @@ class MailAdminController extends Controller
         $id = $_POST['subscriber_id'] ?? 0;
         
         $this->db->query(
-            "UPDATE subscribers 
+            "UPDATE mail_subscribers 
              SET status = 'active', suspension_reason = NULL, suspended_at = NULL
              WHERE id = ?",
             [$id]
@@ -248,7 +248,7 @@ class MailAdminController extends Controller
         
         // Update subscription
         $this->db->query(
-            "UPDATE subscriptions 
+            "UPDATE mail_subscriptions 
              SET plan_id = ?
              WHERE subscriber_id = ?",
             [$planId, $subscriberId]
@@ -272,7 +272,7 @@ class MailAdminController extends Controller
         
         // Check if override exists
         $existing = $this->db->fetch(
-            "SELECT id FROM feature_access 
+            "SELECT id FROM mail_feature_access 
              WHERE subscriber_id = ? AND feature_key = ?",
             [$subscriberId, $featureKey]
         );
@@ -280,7 +280,7 @@ class MailAdminController extends Controller
         if ($existing) {
             // Update
             $this->db->query(
-                "UPDATE feature_access 
+                "UPDATE mail_feature_access 
                  SET is_enabled = ?, override_by_admin = 1, override_reason = ?
                  WHERE id = ?",
                 [$isEnabled, $reason, $existing['id']]
@@ -288,7 +288,7 @@ class MailAdminController extends Controller
         } else {
             // Insert
             $this->db->query(
-                "INSERT INTO feature_access (subscriber_id, feature_key, is_enabled, override_by_admin, override_reason, created_at)
+                "INSERT INTO mail_feature_access (subscriber_id, feature_key, is_enabled, override_by_admin, override_reason, created_at)
                  VALUES (?, ?, ?, 1, ?, NOW())",
                 [$subscriberId, $featureKey, $isEnabled, $reason]
             );
@@ -308,8 +308,8 @@ class MailAdminController extends Controller
     {
         $plans = $this->db->query(
             "SELECT sp.*, COUNT(sub.id) as active_subscriptions
-             FROM subscription_plans sp
-             LEFT JOIN subscriptions sub ON sp.id = sub.plan_id AND sub.status = 'active'
+             FROM mail_subscription_plans sp
+             LEFT JOIN mail_subscriptions sub ON sp.id = sub.plan_id AND sub.status = 'active'
              GROUP BY sp.id
              ORDER BY sp.sort_order"
         )->fetchAll();
@@ -329,7 +329,7 @@ class MailAdminController extends Controller
             return $this->updatePlan($id);
         }
         
-        $plan = $this->db->fetch("SELECT * FROM subscription_plans WHERE id = ?", [$id]);
+        $plan = $this->db->fetch("SELECT * FROM mail_subscription_plans WHERE id = ?", [$id]);
         
         if (!$plan) {
             $this->error('Plan not found');
@@ -339,7 +339,7 @@ class MailAdminController extends Controller
         
         // Get plan features
         $features = $this->db->query(
-            "SELECT * FROM plan_features WHERE plan_id = ? ORDER BY feature_key",
+            "SELECT * FROM mail_plan_features WHERE plan_id = ? ORDER BY feature_key",
             [$id]
         )->fetchAll();
         
@@ -367,7 +367,7 @@ class MailAdminController extends Controller
         $description = $_POST['description'] ?? '';
         
         $this->db->query(
-            "UPDATE subscription_plans 
+            "UPDATE mail_subscription_plans 
              SET plan_name = ?, price_monthly = ?, price_yearly = ?, max_users = ?,
                  storage_per_user_gb = ?, daily_send_limit = ?, max_attachment_size_mb = ?,
                  max_domains = ?, max_aliases = ?, description = ?, updated_at = NOW()
@@ -380,7 +380,7 @@ class MailAdminController extends Controller
         if (isset($_POST['features'])) {
             foreach ($_POST['features'] as $featureKey => $isEnabled) {
                 $this->db->query(
-                    "UPDATE plan_features 
+                    "UPDATE mail_plan_features 
                      SET is_enabled = ?
                      WHERE plan_id = ? AND feature_key = ?",
                     [$isEnabled ? 1 : 0, $id, $featureKey]
@@ -406,15 +406,15 @@ class MailAdminController extends Controller
         
         $domains = $this->db->query(
             "SELECT d.*, s.account_name, u.username
-             FROM domains d
-             JOIN subscribers s ON d.subscriber_id = s.id
+             FROM mail_domains d
+             JOIN mail_subscribers s ON d.subscriber_id = s.id
              JOIN users u ON s.mmb_user_id = u.id
              ORDER BY d.created_at DESC
              LIMIT ? OFFSET ?",
             [$perPage, $offset]
         )->fetchAll();
         
-        $totalCount = $this->db->fetch("SELECT COUNT(*) as count FROM domains")['count'];
+        $totalCount = $this->db->fetch("SELECT COUNT(*) as count FROM mail_domains")['count'];
         $totalPages = ceil($totalCount / $perPage);
         
         View::render('admin/mail/domains', [
@@ -437,10 +437,10 @@ class MailAdminController extends Controller
                     m.email as mailbox_email,
                     d.domain_name,
                     s.account_name
-             FROM abuse_reports ar
-             LEFT JOIN mailboxes m ON ar.reported_mailbox_id = m.id
-             LEFT JOIN domains d ON ar.reported_domain_id = d.id
-             LEFT JOIN subscribers s ON (m.subscriber_id = s.id OR d.subscriber_id = s.id)
+             FROM mail_abuse_reports ar
+             LEFT JOIN mail_mailboxes m ON ar.reported_mailbox_id = m.id
+             LEFT JOIN mail_domains d ON ar.reported_domain_id = d.id
+             LEFT JOIN mail_subscribers s ON (m.subscriber_id = s.id OR d.subscriber_id = s.id)
              WHERE ar.status = ?
              ORDER BY ar.created_at DESC",
             [$status]
@@ -470,7 +470,7 @@ class MailAdminController extends Controller
         };
         
         $this->db->query(
-            "UPDATE abuse_reports 
+            "UPDATE mail_abuse_reports 
              SET status = ?, action_taken = ?, handled_by_admin_id = ?, resolved_at = NOW()
              WHERE id = ?",
             [$status, $actionTaken, Auth::id(), $reportId]
@@ -492,7 +492,7 @@ class MailAdminController extends Controller
         }
         
         // Get all settings
-        $settings = $this->db->query("SELECT * FROM system_settings ORDER BY setting_key")->fetchAll();
+        $settings = $this->db->query("SELECT * FROM mail_system_settings ORDER BY setting_key")->fetchAll();
         
         $settingsArray = [];
         foreach ($settings as $setting) {
@@ -516,18 +516,18 @@ class MailAdminController extends Controller
                 
                 // Check if exists
                 $existing = $this->db->fetch(
-                    "SELECT id FROM system_settings WHERE setting_key = ?",
+                    "SELECT id FROM mail_system_settings WHERE setting_key = ?",
                     [$settingKey]
                 );
                 
                 if ($existing) {
                     $this->db->query(
-                        "UPDATE system_settings SET setting_value = ?, updated_at = NOW() WHERE setting_key = ?",
+                        "UPDATE mail_system_settings SET setting_value = ?, updated_at = NOW() WHERE setting_key = ?",
                         [$value, $settingKey]
                     );
                 } else {
                     $this->db->query(
-                        "INSERT INTO system_settings (setting_key, setting_value, created_at) VALUES (?, ?, NOW())",
+                        "INSERT INTO mail_system_settings (setting_key, setting_value, created_at) VALUES (?, ?, NOW())",
                         [$settingKey, $value]
                     );
                 }
@@ -552,14 +552,14 @@ class MailAdminController extends Controller
         
         $logs = $this->db->query(
             "SELECT aa.*, u.username
-             FROM admin_actions aa
+             FROM mail_admin_actions aa
              JOIN users u ON aa.admin_user_id = u.id
              ORDER BY aa.created_at DESC
              LIMIT ? OFFSET ?",
             [$perPage, $offset]
         )->fetchAll();
         
-        $totalCount = $this->db->fetch("SELECT COUNT(*) as count FROM admin_actions")['count'];
+        $totalCount = $this->db->fetch("SELECT COUNT(*) as count FROM mail_admin_actions")['count'];
         $totalPages = ceil($totalCount / $perPage);
         
         View::render('admin/mail/logs', [
@@ -576,7 +576,7 @@ class MailAdminController extends Controller
     private function logAdminAction($actionType, $targetType, $targetId, $description)
     {
         $this->db->query(
-            "INSERT INTO admin_actions (admin_user_id, action_type, target_type, target_id, action_description, ip_address, user_agent, created_at)
+            "INSERT INTO mail_admin_actions (admin_user_id, action_type, target_type, target_id, action_description, ip_address, user_agent, created_at)
              VALUES (?, ?, ?, ?, ?, ?, ?, NOW())",
             [Auth::id(), $actionType, $targetType, $targetId, $description, $_SERVER['REMOTE_ADDR'] ?? null, $_SERVER['HTTP_USER_AGENT'] ?? null]
         );
