@@ -380,23 +380,48 @@ class DashboardController extends BaseController
                 case 'display':
                     $itemsPerPage = max(10, min(100, (int) $this->input('items_per_page', 20)));
                     $dateFormat = Security::sanitize($this->input('date_format', 'M d, Y'));
+                    $displaySettings = json_encode([
+                        'items_per_page' => $itemsPerPage,
+                        'date_format' => $dateFormat
+                    ]);
                     
                     try {
                         $db->update('user_profiles', [
-                            'items_per_page' => $itemsPerPage,
-                            'date_format' => $dateFormat,
+                            'display_settings' => $displaySettings,
                             'updated_at' => date('Y-m-d H:i:s')
                         ], 'user_id = ?', [Auth::id()]);
                         
-                        Logger::activity(Auth::id(), 'display_settings_updated');
+                        Logger::activity(Auth::id(), 'display_settings_updated', ['settings' => $displaySettings]);
                         $this->flash('success', 'Display settings updated successfully.');
                     } catch (\Exception $e) {
                         Logger::error('Display update error: ' . $e->getMessage());
-                        $this->flash('success', 'Settings saved.');
+                        $this->flash('error', 'Failed to update display settings. Please ensure database migration is run.');
                     }
                     break;
                     
                 case 'projects':
+                    $defaultView = Security::sanitize($this->input('default_view', 'grid'));
+                    $autoSave = $this->input('auto_save', 0);
+                    $projectSettings = json_encode([
+                        'default_view' => $defaultView,
+                        'auto_save' => $autoSave ? 1 : 0
+                    ]);
+                    
+                    try {
+                        $db->update('user_profiles', [
+                            'project_settings' => $projectSettings,
+                            'updated_at' => date('Y-m-d H:i:s')
+                        ], 'user_id = ?', [Auth::id()]);
+                        
+                        Logger::activity(Auth::id(), 'project_settings_updated', ['settings' => $projectSettings]);
+                        $this->flash('success', 'Project settings updated successfully.');
+                    } catch (\Exception $e) {
+                        Logger::error('Project update error: ' . $e->getMessage());
+                        $this->flash('error', 'Failed to update project settings. Please ensure database migration is run.');
+                    }
+                    break;
+                    
+                default:
                     // Project-specific settings
                     $projectDefaults = $this->input('project_defaults', []);
                     $autoSaveEnabled = $this->input('auto_save_enabled', 0);
