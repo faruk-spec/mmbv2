@@ -1623,6 +1623,9 @@ try {
         });
     </script>
     
+    <!-- Toast Notification System -->
+    <script src="/assets/js/toast.js"></script>
+    
     <?php View::yield('scripts'); ?>
 </body>
 </html>
