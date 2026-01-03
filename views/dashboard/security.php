@@ -98,6 +98,58 @@
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2">
                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
                 </svg>
+                Two-Factor Authentication (2FA)
+            </h3>
+        </div>
+        
+        <div style="padding: 16px;">
+            <?php
+            $user = \Core\Auth::user();
+            $twoFactorEnabled = !empty($user['two_factor_secret']) && $user['two_factor_enabled'];
+            ?>
+            
+            <?php if ($twoFactorEnabled): ?>
+                <div style="display: flex; align-items: center; gap: 15px; padding: 15px; background: rgba(0, 255, 136, 0.1); border: 1px solid var(--green); border-radius: 10px; margin-bottom: 15px;">
+                    <div style="flex-shrink: 0;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                            <path d="M9 12l2 2 4-4"></path>
+                        </svg>
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600; color: var(--green); margin-bottom: 4px;">2FA is Active</div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary);">Your account is protected with two-factor authentication</div>
+                    </div>
+                </div>
+                
+                <a href="/2fa/setup" class="btn" style="width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 10px; color: var(--text-primary); text-decoration: none; transition: all 0.3s ease;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    </svg>
+                    Manage 2FA Settings
+                </a>
+            <?php else: ?>
+                <div style="display: flex; align-items: center; gap: 15px; padding: 15px; background: rgba(255, 170, 0, 0.1); border: 1px solid var(--orange); border-radius: 10px; margin-bottom: 15px;">
+                    <div style="flex-shrink: 0;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        </svg>
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600; color: var(--orange); margin-bottom: 4px;">2FA is Not Enabled</div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary);">Add an extra layer of security to your account</div>
+                    </div>
+                </div>
+                
+                <a href="/2fa/setup" class="btn btn-primary" style="width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; background: linear-gradient(135deg, var(--cyan), var(--magenta)); border: none; border-radius: 10px; color: #06060a; font-weight: 600; text-decoration: none; transition: all 0.3s ease;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 5v14M5 12h14"></path>
+                    </svg>
+                    Enable 2FA
+                </a>
+            <?php endif; ?>
+        </div>
+    </div>
                 Two-Factor Authentication
             </h3>
         </div>

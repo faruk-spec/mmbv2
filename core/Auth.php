@@ -16,11 +16,34 @@ class Auth
      */
     public static function attempt(string $email, string $password, bool $remember = false): bool
     {
+        $user = self::attemptCredentials($email, $password);
+        
+        if ($user) {
+            // Check if 2FA is enabled
+            if (!empty($user['two_factor_secret']) && $user['two_factor_enabled']) {
+                // For 2FA users, don't complete login here
+                // Caller should redirect to 2FA verification
+                return false;
+            }
+            
+            // Complete login for non-2FA users
+            return self::loginUser($user['id'], $remember);
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Attempt to authenticate credentials without logging in
+     * Returns user array if valid, null if invalid
+     */
+    public static function attemptCredentials(string $email, string $password): ?array
+    {
         // Rate limiting
         $ip = Security::getClientIp();
         if (!Security::checkRateLimit("login_{$ip}", 5, 15)) {
             self::logLogin(null, $email, 'email_password', 'blocked', 'Rate limit exceeded');
-            return false;
+            return null;
         }
         
         try {
@@ -33,19 +56,42 @@ class Auth
             if (!$user || !Security::verifyPassword($password, $user['password'])) {
                 Security::logFailedLogin($email, $ip);
                 self::logLogin($user['id'] ?? null, $email, 'email_password', 'failed', 'Invalid credentials');
-                return false;
+                return null;
             }
             
             // Check email verification if required
             if (defined('REQUIRE_EMAIL_VERIFICATION') && REQUIRE_EMAIL_VERIFICATION) {
                 if (!$user['email_verified_at']) {
                     self::logLogin($user['id'], $email, 'email_password', 'failed', 'Email not verified');
-                    return false;
+                    return null;
                 }
             }
             
-            // Clear rate limit on successful login
+            // Clear rate limit on successful authentication
             Security::clearRateLimit("login_{$ip}");
+            
+            return $user;
+            
+        } catch (\Exception $e) {
+            Logger::error('Authentication error: ' . $e->getMessage());
+            return null;
+        }
+    }
+    
+    /**
+     * Complete user login after authentication
+     */
+    public static function loginUser(int $userId, bool $remember = false): bool
+    {
+        try {
+            $db = Database::getInstance();
+            $user = $db->fetch("SELECT * FROM users WHERE id = ? AND status = 'active'", [$userId]);
+            
+            if (!$user) {
+                return false;
+            }
+            
+            $ip = Security::getClientIp();
             
             // Set session
             self::setUserSession($user);
@@ -62,7 +108,7 @@ class Auth
             Logger::activity($user['id'], 'login', ['ip' => $ip]);
             
             // Log login history
-            self::logLogin($user['id'], $email, 'email_password', 'success');
+            self::logLogin($user['id'], $user['email'], 'email_password', 'success');
             
             // Update last login
             $db->update('users', [
@@ -73,7 +119,7 @@ class Auth
             return true;
             
         } catch (\Exception $e) {
-            Logger::error('Login error: ' . $e->getMessage());
+            Logger::error('Login completion error: ' . $e->getMessage());
             return false;
         }
     }

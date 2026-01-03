@@ -249,6 +249,44 @@ class TwoFactorController extends BaseController
             
             if (!$verified) {
                 $this->flash('error', 'Invalid verification code.');
+                Logger::activity($userId, '2fa_verification_failed');
+                $this->redirect('/2fa/verify');
+                return;
+            }
+            
+            // 2FA verified, complete login
+            $remember = $_SESSION['pending_2fa_remember'] ?? false;
+            unset($_SESSION['pending_2fa_user_id']);
+            unset($_SESSION['pending_2fa_remember']);
+            
+            Auth::loginUser($userId, $remember);
+            
+            // Track login
+            \Core\TrafficTracker::trackLogin($userId);
+            
+            // Log activity
+            Logger::activity($userId, 'login', [
+                'method' => '2fa',
+                'remember' => $remember
+            ]);
+            
+            // Generate SSO token
+            $ssoToken = \Core\SSO::generateToken($userId);
+            \Core\SSO::storeToken($ssoToken);
+            
+            // Set SSO cookie for projects
+            setcookie('sso_token', $ssoToken, time() + 3600, '/', '', true, true);
+            
+            $this->redirect('/dashboard');
+            
+        } catch (\Exception $e) {
+            Logger::error('2FA verification error: ' . $e->getMessage());
+            $this->flash('error', 'Verification failed. Please try again.');
+            $this->redirect('/2fa/verify');
+        }
+    }
+}
+                $this->flash('error', 'Invalid verification code.');
                 $this->redirect('/2fa/verify');
                 return;
             }

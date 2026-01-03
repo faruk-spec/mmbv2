@@ -50,9 +50,11 @@ $router->get('/settings', 'DashboardController@settings', ['auth']);
 $router->post('/settings', 'DashboardController@updateSettings', ['auth']);
 
 // 2FA routes
+// Two-Factor Authentication routes
 $router->get('/2fa/setup', 'TwoFactorController@setup', ['auth']);
 $router->post('/2fa/enable', 'TwoFactorController@enable', ['auth']);
 $router->post('/2fa/disable', 'TwoFactorController@disable', ['auth']);
+$router->get('/2fa/backup-codes', 'TwoFactorController@showBackupCodes', ['auth']);
 $router->get('/2fa/verify', 'TwoFactorController@showVerify');
 $router->post('/2fa/verify', 'TwoFactorController@verify');
 
