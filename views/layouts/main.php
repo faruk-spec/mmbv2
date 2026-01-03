@@ -1359,7 +1359,7 @@ try {
                     }
                     
                     .mobile-sidebar-toggle svg {
-                        color: #06060a;
+                        color: var(--bg-primary);
                     }
                     
                     /* Mobile-specific adjustments */
