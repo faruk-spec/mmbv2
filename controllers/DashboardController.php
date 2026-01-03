@@ -160,10 +160,70 @@ class DashboardController extends BaseController
     /**
      * Update password
      */
+    /**
+     * Set password (for OAuth-only users)
+     */
+    public function setPassword(): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request.');
+            $this->redirect('/security');
+            return;
+        }
+        
+        $db = Database::getInstance();
+        $user = $db->fetch("SELECT * FROM users WHERE id = ?", [Auth::id()]);
+        
+        // Only allow OAuth-only users to use this method
+        if (!$user || !isset($user['oauth_only']) || $user['oauth_only'] != 1) {
+            $this->flash('error', 'This action is not available for your account type.');
+            $this->redirect('/security');
+            return;
+        }
+        
+        $errors = $this->validate([
+            'password' => 'required|min:8|confirmed'
+        ]);
+        
+        if (!empty($errors)) {
+            $this->redirect('/security');
+            return;
+        }
+        
+        try {
+            // Set password and mark as no longer OAuth-only
+            $db->update('users', [
+                'password' => Security::hashPassword($this->input('password')),
+                'oauth_only' => 0,
+                'updated_at' => date('Y-m-d H:i:s')
+            ], 'id = ?', [Auth::id()]);
+            
+            Logger::activity(Auth::id(), 'password_set', ['method' => 'oauth_to_standard']);
+            
+            $this->flash('success', 'Password set successfully! You can now use traditional login and unlink your Google account if desired.');
+            
+        } catch (\Exception $e) {
+            Logger::error('Password set error: ' . $e->getMessage());
+            $this->flash('error', 'Failed to set password.');
+        }
+        
+        $this->redirect('/security');
+    }
+    
     public function updatePassword(): void
     {
         if (!$this->validateCsrf()) {
             $this->flash('error', 'Invalid request.');
+            $this->redirect('/security');
+            return;
+        }
+        
+        $db = Database::getInstance();
+        $user = $db->fetch("SELECT * FROM users WHERE id = ?", [Auth::id()]);
+        
+        // Check if this is an OAuth-only user trying to change password
+        if ($user && isset($user['oauth_only']) && $user['oauth_only'] == 1) {
+            $this->flash('error', 'Please use the "Set Password" option to create your first password.');
             $this->redirect('/security');
             return;
         }
@@ -178,8 +238,6 @@ class DashboardController extends BaseController
             return;
         }
         
-        $user = Auth::user();
-        
         if (!Security::verifyPassword($this->input('current_password'), $user['password'])) {
             $this->flash('error', 'Current password is incorrect.');
             $this->redirect('/security');
@@ -187,10 +245,8 @@ class DashboardController extends BaseController
         }
         
         try {
-            $db = Database::getInstance();
             $db->update('users', [
                 'password' => Security::hashPassword($this->input('password')),
-                'oauth_only' => 0, // User has now set their own password, no longer OAuth-only
                 'updated_at' => date('Y-m-d H:i:s')
             ], 'id = ?', [Auth::id()]);
             

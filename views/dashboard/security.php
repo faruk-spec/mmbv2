@@ -24,6 +24,13 @@
 <?php endif; ?>
 
 <div class="grid grid-2" style="gap: 24px;">
+    <?php
+    // Check if user is OAuth-only
+    $db = Core\Database::getInstance();
+    $currentUser = $db->fetch("SELECT oauth_only FROM users WHERE id = ?", [Core\Auth::id()]);
+    $isOAuthOnly = $currentUser && isset($currentUser['oauth_only']) && $currentUser['oauth_only'] == 1;
+    ?>
+    
     <div class="card" style="border-radius: 10px; overflow: hidden; border: 1px solid var(--border-color);">
         <div class="card-header" style="background: linear-gradient(135deg, rgba(0, 240, 255, 0.1) 0%, rgba(255, 46, 196, 0.1) 100%); border-bottom: 1px solid var(--border-color); padding: 12px;">
             <h3 class="card-title" style="font-size: 0.9rem; display: flex; align-items: center; gap: 10px; margin: 0;">
@@ -31,64 +38,110 @@
                     <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                     <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                 </svg>
-                Change Password
+                <?= $isOAuthOnly ? 'Set Password' : 'Change Password' ?>
             </h3>
         </div>
         
         <div style="padding: 16px;">
-            <form method="POST" action="/security/password">
-                <?= \Core\Security::csrfField() ?>
-                
-                <div class="form-group" style="margin-bottom: 12px;">
-                    <label class="form-label" for="current_password" style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary); font-size: 0.95rem;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 6px;">
-                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                        </svg>
-                        Current Password
-                    </label>
-                    <input type="password" id="current_password" name="current_password" 
-                           class="form-input" style="width: 100%; padding: 12px 16px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 10px; color: var(--text-primary); font-size: 0.95rem;" required>
-                    <?php if (View::hasError('current_password')): ?>
-                        <div class="form-error" style="color: var(--red); font-size: 0.875rem; margin-top: 6px;"><?= View::error('current_password') ?></div>
-                    <?php endif; ?>
+            <?php if ($isOAuthOnly): ?>
+                <div style="background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.3); border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255, 193, 7, 1)" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    <span style="color: rgba(255, 193, 7, 1); font-size: 0.9rem;">
+                        You currently sign in with Google. Set a password to enable traditional login and unlock all security features.
+                    </span>
                 </div>
-                
-                <div class="form-group" style="margin-bottom: 12px;">
-                    <label class="form-label" for="password" style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary); font-size: 0.95rem;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 6px;">
+                <form method="POST" action="/security/set-password">
+                    <?= \Core\Security::csrfField() ?>
+                    
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <label class="form-label" for="password" style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary); font-size: 0.95rem;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 6px;">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                            </svg>
+                            New Password
+                        </label>
+                        <input type="password" id="password" name="password" 
+                               class="form-input" style="width: 100%; padding: 12px 16px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 10px; color: var(--text-primary); font-size: 0.95rem;" required minlength="8">
+                        <small style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 6px; display: block;">Minimum 8 characters</small>
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 16px;">
+                        <label class="form-label" for="password_confirmation" style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary); font-size: 0.95rem;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 6px;">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            Confirm Password
+                        </label>
+                        <input type="password" id="password_confirmation" name="password_confirmation" 
+                               class="form-input" style="width: 100%; padding: 12px 16px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 10px; color: var(--text-primary); font-size: 0.95rem;" required>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary" style="padding: 12px 32px; background: linear-gradient(135deg, var(--cyan), var(--magenta)); border: none; border-radius: 10px; color: #06060a; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 0.875rem;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
                             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
                         </svg>
-                        New Password
-                    </label>
-                    <input type="password" id="password" name="password" 
-                           class="form-input" style="width: 100%; padding: 12px 16px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 10px; color: var(--text-primary); font-size: 0.95rem;" required minlength="8">
-                    <?php if (View::hasError('password')): ?>
-                        <div class="form-error" style="color: var(--red); font-size: 0.875rem; margin-top: 6px;"><?= View::error('password') ?></div>
-                    <?php endif; ?>
-                    <small style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 6px; display: block;">Minimum 8 characters</small>
-                </div>
-                
-                <div class="form-group" style="margin-bottom: 16px;">
-                    <label class="form-label" for="password_confirmation" style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary); font-size: 0.95rem;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 6px;">
-                            <polyline points="20 6 9 17 4 12"></polyline>
+                        Set Password
+                    </button>
+                </form>
+            <?php else: ?>
+                <form method="POST" action="/security/password">
+                    <?= \Core\Security::csrfField() ?>
+                    
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <label class="form-label" for="current_password" style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary); font-size: 0.95rem;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 6px;">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                            </svg>
+                            Current Password
+                        </label>
+                        <input type="password" id="current_password" name="current_password" 
+                               class="form-input" style="width: 100%; padding: 12px 16px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 10px; color: var(--text-primary); font-size: 0.95rem;" required>
+                        <?php if (View::hasError('current_password')): ?>
+                            <div class="form-error" style="color: var(--red); font-size: 0.875rem; margin-top: 6px;"><?= View::error('current_password') ?></div>
+                        <?php endif; ?>
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <label class="form-label" for="password" style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary); font-size: 0.95rem;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 6px;">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                            </svg>
+                            New Password
+                        </label>
+                        <input type="password" id="password" name="password" 
+                               class="form-input" style="width: 100%; padding: 12px 16px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 10px; color: var(--text-primary); font-size: 0.95rem;" required minlength="8">
+                        <?php if (View::hasError('password')): ?>
+                            <div class="form-error" style="color: var(--red); font-size: 0.875rem; margin-top: 6px;"><?= View::error('password') ?></div>
+                        <?php endif; ?>
+                        <small style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 6px; display: block;">Minimum 8 characters</small>
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 16px;">
+                        <label class="form-label" for="password_confirmation" style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary); font-size: 0.95rem;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 6px;">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            Confirm New Password
+                        </label>
+                        <input type="password" id="password_confirmation" name="password_confirmation" 
+                               class="form-input" style="width: 100%; padding: 12px 16px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 10px; color: var(--text-primary); font-size: 0.95rem;" required>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary" style="padding: 12px 32px; background: linear-gradient(135deg, var(--cyan), var(--magenta)); border: none; border-radius: 10px; color: #06060a; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 0.875rem;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                            <polyline points="7 3 7 8 15 8"></polyline>
                         </svg>
-                        Confirm New Password
-                    </label>
-                    <input type="password" id="password_confirmation" name="password_confirmation" 
-                           class="form-input" style="width: 100%; padding: 12px 16px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 10px; color: var(--text-primary); font-size: 0.95rem;" required>
-                </div>
-                
-                <button type="submit" class="btn btn-primary" style="padding: 12px 32px; background: linear-gradient(135deg, var(--cyan), var(--magenta)); border: none; border-radius: 10px; color: #06060a; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 0.875rem;">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
-                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                        <polyline points="7 3 7 8 15 8"></polyline>
-                    </svg>
-                    Update Password
-                </button>
-            </form>
+                        Update Password
+                    </button>
+                </form>
+            <?php endif; ?>
         </div>
     </div>
     
