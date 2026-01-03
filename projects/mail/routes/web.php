@@ -48,6 +48,23 @@ $router->get($baseUrl . '/subscriber/aliases', 'Mail\\AliasController@index');
 $router->get($baseUrl . '/subscriber/aliases/add', 'Mail\\AliasController@create');
 $router->post($baseUrl . '/subscriber/aliases/store', 'Mail\\AliasController@store');
 $router->post($baseUrl . '/subscriber/aliases/{id}/toggle', 'Mail\\AliasController@toggleStatus');
+
+// ============================================
+// WEBMAIL INTERFACE ROUTES
+// ============================================
+$router->get($baseUrl . '/webmail', 'Mail\\WebmailController@inbox');
+$router->get($baseUrl . '/webmail/inbox', 'Mail\\WebmailController@inbox');
+$router->get($baseUrl . '/webmail/view/{messageId}', 'Mail\\WebmailController@viewEmail');
+$router->get($baseUrl . '/webmail/compose', 'Mail\\WebmailController@compose');
+$router->post($baseUrl . '/webmail/send', 'Mail\\WebmailController@send');
+
+// Webmail actions
+$router->post($baseUrl . '/webmail/move-to-folder', 'Mail\\WebmailController@moveToFolder');
+$router->post($baseUrl . '/webmail/toggle-read', 'Mail\\WebmailController@toggleRead');
+$router->post($baseUrl . '/webmail/toggle-star', 'Mail\\WebmailController@toggleStar');
+$router->post($baseUrl . '/webmail/delete', 'Mail\\WebmailController@delete');
+$router->post($baseUrl . '/webmail/bulk-action', 'Mail\\WebmailController@bulkAction');
+$router->get($baseUrl . '/webmail/attachment/{attachmentId}', 'Mail\\WebmailController@downloadAttachment');
 $router->delete($baseUrl . '/subscriber/aliases/{id}/delete', 'Mail\\AliasController@delete');
 
 // ============================================
