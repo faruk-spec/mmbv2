@@ -1,5 +1,5 @@
 <?php use Core\View; use Core\Helpers; ?>
-<?php View::extend('admin/layout'); ?>
+<?php View::extend('admin'); ?>
 
 <?php View::section('content'); ?>
 <div class="admin-content">

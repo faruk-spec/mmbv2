@@ -1235,6 +1235,46 @@
                             </a>
                         </div>
                     </div>
+                    
+                    <div class="menu-item menu-dropdown">
+                        <div class="menu-dropdown-toggle">
+                            <div class="left">
+                                <i class="fas fa-key"></i>
+                                <span>OAuth & SSO</span>
+                            </div>
+                            <i class="fas fa-chevron-down arrow"></i>
+                        </div>
+                        <div class="menu-dropdown-content">
+                            <a href="/admin/oauth" class="menu-link">
+                                <i class="fas fa-cog"></i>
+                                <span>OAuth Providers</span>
+                            </a>
+                            <a href="/admin/oauth/connections" class="menu-link">
+                                <i class="fas fa-link"></i>
+                                <span>OAuth Connections</span>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="menu-item menu-dropdown">
+                        <div class="menu-dropdown-toggle">
+                            <div class="left">
+                                <i class="fas fa-clock"></i>
+                                <span>Session Management</span>
+                            </div>
+                            <i class="fas fa-chevron-down arrow"></i>
+                        </div>
+                        <div class="menu-dropdown-content">
+                            <a href="/admin/sessions" class="menu-link">
+                                <i class="fas fa-users"></i>
+                                <span>Active Sessions</span>
+                            </a>
+                            <a href="/admin/sessions/login-history" class="menu-link">
+                                <i class="fas fa-history"></i>
+                                <span>Login History</span>
+                            </a>
+                        </div>
+                    </div>
                 </div>
                 
                 <!-- Logs -->
