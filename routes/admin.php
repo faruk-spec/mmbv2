@@ -103,6 +103,24 @@ $router->get('/admin/security/failed-logins', 'Admin\\SecurityController@failedL
 $router->post('/admin/security/auto-block', 'Admin\\SecurityController@autoBlock', ['auth', 'admin']);
 $router->get('/admin/security/stats', 'Admin\\SecurityController@getStats', ['auth', 'admin']);
 
+// OAuth Management
+$router->get('/admin/oauth', 'Admin\\OAuthController@index', ['auth', 'admin']);
+$router->get('/admin/oauth/{id}/edit', 'Admin\\OAuthController@edit', ['auth', 'admin']);
+$router->post('/admin/oauth/{id}/edit', 'Admin\\OAuthController@update', ['auth', 'admin']);
+$router->get('/admin/oauth/connections', 'Admin\\OAuthController@connections', ['auth', 'admin']);
+$router->post('/admin/oauth/connections/{id}/revoke', 'Admin\\OAuthController@revokeConnection', ['auth', 'admin']);
+
+// 2FA Management routes
+$router->get('/admin/2fa', 'Admin\\TwoFactorController@index', ['auth', 'admin']);
+$router->post('/admin/2fa/{userId}/reset', 'Admin\\TwoFactorController@reset', ['auth', 'admin']);
+$router->post('/admin/2fa/{userId}/toggle', 'Admin\\TwoFactorController@toggle', ['auth', 'admin']);
+
+// Session Management
+$router->get('/admin/sessions', 'Admin\\SessionController@index', ['auth', 'admin']);
+$router->post('/admin/sessions/{id}/revoke', 'Admin\\SessionController@revoke', ['auth', 'admin']);
+$router->post('/admin/sessions/cleanup', 'Admin\\SessionController@cleanup', ['auth', 'admin']);
+$router->get('/admin/sessions/login-history', 'Admin\\SessionController@loginHistory', ['auth', 'admin']);
+
 // Activity logs
 $router->get('/admin/logs', 'Admin\\LogController@index', ['auth', 'admin']);
 $router->get('/admin/logs/activity', 'Admin\\LogController@activity', ['auth', 'admin']);
@@ -117,6 +135,9 @@ $router->post('/admin/navbar/reset', 'Admin\\NavbarController@reset', ['auth', '
 // Settings
 $router->get('/admin/settings', 'Admin\\SettingsController@index', ['auth', 'admin']);
 $router->post('/admin/settings', 'Admin\\SettingsController@update', ['auth', 'admin']);
+$router->get('/admin/settings/session', 'Admin\\SettingsController@session', ['auth', 'admin']);
+$router->post('/admin/settings/session', 'Admin\\SettingsController@updateSession', ['auth', 'admin']);
+$router->post('/admin/settings/security-policy', 'Admin\\SettingsController@updateSecurityPolicy', ['auth', 'admin']);
 $router->get('/admin/settings/maintenance', 'Admin\\SettingsController@maintenance', ['auth', 'admin']);
 $router->post('/admin/settings/maintenance', 'Admin\\SettingsController@toggleMaintenance', ['auth', 'admin']);
 $router->post('/admin/settings/maintenance/update', 'Admin\\SettingsController@updateMaintenanceSettings', ['auth', 'admin']);

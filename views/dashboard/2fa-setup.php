@@ -39,28 +39,61 @@
                 </form>
             </div>
         <?php else: ?>
-            <div style="text-align: center; padding: 20px 0;">
-                <div style="width: 80px; height: 80px; background: rgba(255, 170, 0, 0.1); border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
-                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                    </svg>
-                </div>
-                <h2 style="margin-bottom: 15px;">Set Up 2FA</h2>
-                <p style="color: var(--text-secondary); margin-bottom: 30px;">
+            <div style="padding: 20px 0;">
+                <h2 style="margin-bottom: 15px; text-align: center;">Set Up 2FA</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 30px; text-align: center;">
                     Add an extra layer of security to your account by enabling two-factor authentication.
                 </p>
+                
+                <?php if (isset($secret) && isset($qrCodeUrl)): ?>
+                <div style="background: var(--bg-secondary); padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                    <h3 style="font-size: 1rem; margin-bottom: 15px;">Step 1: Scan QR Code</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 15px;">
+                        Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.)
+                    </p>
+                    <div style="text-align: center; padding: 20px; background: white; border-radius: 10px; margin-bottom: 15px;">
+                        <img src="<?= $qrCodeUrl ?>" alt="2FA QR Code" style="max-width: 200px; height: auto;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                        <div style="display: none; color: #666; padding: 20px;">
+                            <p>QR Code could not be loaded.</p>
+                            <p style="font-size: 0.9rem; margin-top: 10px;">Please use the manual code below instead.</p>
+                        </div>
+                    </div>
+                    
+                    <h3 style="font-size: 1rem; margin-bottom: 10px;">Or enter this code manually:</h3>
+                    <div style="background: var(--bg-primary); padding: 15px; border-radius: 8px; font-family: monospace; font-size: 1.1rem; text-align: center; letter-spacing: 2px; word-break: break-all;">
+                        <?= View::e($secret) ?>
+                    </div>
+                </div>
                 
                 <form method="POST" action="/2fa/enable">
                     <?= \Core\Security::csrfField() ?>
                     
-                    <div class="form-group">
-                        <label class="form-label">Enter the 6-digit code from your authenticator app</label>
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label class="form-label" style="display: block; margin-bottom: 10px; font-weight: 600;">
+                            Step 2: Enter the 6-digit code from your app
+                        </label>
                         <input type="text" name="code" class="form-input" maxlength="6" 
-                               placeholder="000000" style="text-align: center; font-size: 1.5rem; letter-spacing: 10px;">
+                               placeholder="000000" required
+                               style="text-align: center; font-size: 1.5rem; letter-spacing: 10px; font-family: monospace;">
+                        <small style="display: block; margin-top: 8px; color: var(--text-secondary);">
+                            Enter the code shown in your authenticator app to verify setup
+                        </small>
                     </div>
                     
-                    <button type="submit" class="btn btn-primary" style="width: 100%;">Enable 2FA</button>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                            <path d="M9 12l2 2 4-4"/>
+                        </svg>
+                        Enable 2FA
+                    </button>
                 </form>
+                <?php else: ?>
+                <div style="padding: 20px; text-align: center; color: var(--text-secondary);">
+                    <p>Unable to generate 2FA setup. Please try again.</p>
+                    <a href="/security" style="color: var(--cyan);">Return to Security Settings</a>
+                </div>
+                <?php endif; ?>
             </div>
         <?php endif; ?>
         

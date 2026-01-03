@@ -60,7 +60,10 @@ class SettingsController extends BaseController
                 'site_description',
                 'contact_email',
                 'maintenance_mode',
-                'registration_enabled'
+                'registration_enabled',
+                'system_timezone',
+                'date_format',
+                'time_format'
             ];
             
             foreach ($settingsToUpdate as $key) {
@@ -81,6 +84,11 @@ class SettingsController extends BaseController
                         'created_at' => date('Y-m-d H:i:s')
                     ]);
                 }
+            }
+            
+            // Update timezone in app config if changed
+            if ($this->input('system_timezone')) {
+                date_default_timezone_set($this->input('system_timezone'));
             }
             
             Logger::activity(Auth::id(), 'settings_updated');
@@ -281,5 +289,143 @@ class SettingsController extends BaseController
         } catch (\Exception $e) {
             $this->json(['success' => false, 'message' => $e->getMessage()]);
         }
+    }
+    
+    /**
+     * Session settings page
+     */
+    public function session(): void
+    {
+        $db = Database::getInstance();
+        
+        // Get current settings
+        $settings = $db->fetchAll("SELECT * FROM settings");
+        $settingsMap = [];
+        foreach ($settings as $setting) {
+            $settingsMap[$setting['key']] = $setting['value'];
+        }
+        
+        // Get session statistics
+        $stats = [
+            'active_sessions' => $db->fetch("SELECT COUNT(*) as count FROM user_sessions WHERE is_active = 1")['count'] ?? 0,
+            'sessions_today' => $db->fetch("SELECT COUNT(*) as count FROM user_sessions WHERE DATE(created_at) = CURDATE()")['count'] ?? 0,
+            'expired_sessions' => $db->fetch("SELECT COUNT(*) as count FROM user_sessions WHERE is_active = 0 AND expires_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)")['count'] ?? 0,
+        ];
+        
+        // Calculate average session duration
+        $avgDuration = $db->fetch("SELECT AVG(TIMESTAMPDIFF(MINUTE, created_at, last_activity_at)) as avg_minutes FROM user_sessions WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)");
+        $stats['avg_duration'] = $avgDuration && $avgDuration['avg_minutes'] ? round($avgDuration['avg_minutes']) . ' min' : 'N/A';
+        
+        $this->view('admin/settings/session', [
+            'title' => 'Session & Security Settings',
+            'settings' => $settingsMap,
+            'stats' => $stats
+        ]);
+    }
+    
+    /**
+     * Update session settings
+     */
+    public function updateSession(): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request.');
+            $this->redirect('/admin/settings/session');
+            return;
+        }
+        
+        try {
+            $db = Database::getInstance();
+            
+            $settingsToUpdate = [
+                'default_session_timeout' => $this->input('default_session_timeout', '120'),
+                'remember_me_duration' => $this->input('remember_me_duration', '30'),
+                'max_concurrent_sessions' => $this->input('max_concurrent_sessions', '5'),
+                'auto_logout_enabled' => $this->input('auto_logout_enabled') === '1' ? '1' : '0',
+                'session_ip_validation' => $this->input('session_ip_validation') === '1' ? '1' : '0',
+            ];
+            
+            foreach ($settingsToUpdate as $key => $value) {
+                // Check if setting exists
+                $existing = $db->fetch("SELECT id FROM settings WHERE `key` = ?", [$key]);
+                
+                if ($existing) {
+                    $db->update('settings', [
+                        'value' => Security::sanitize($value),
+                        'updated_at' => date('Y-m-d H:i:s')
+                    ], '`key` = ?', [$key]);
+                } else {
+                    $db->insert('settings', [
+                        'key' => $key,
+                        'value' => Security::sanitize($value),
+                        'type' => 'string',
+                        'created_at' => date('Y-m-d H:i:s')
+                    ]);
+                }
+            }
+            
+            Logger::activity(Auth::id(), 'session_settings_updated');
+            
+            $this->flash('success', 'Session settings updated successfully.');
+            
+        } catch (\Exception $e) {
+            Logger::error('Session settings update error: ' . $e->getMessage());
+            $this->flash('error', 'Failed to update session settings: ' . $e->getMessage());
+        }
+        
+        $this->redirect('/admin/settings/session');
+    }
+    
+    /**
+     * Update security policy settings
+     */
+    public function updateSecurityPolicy(): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request.');
+            $this->redirect('/admin/settings/session');
+            return;
+        }
+        
+        try {
+            $db = Database::getInstance();
+            
+            $settingsToUpdate = [
+                'max_failed_login_attempts' => $this->input('max_failed_login_attempts', '5'),
+                'account_lockout_duration' => $this->input('account_lockout_duration', '15'),
+                'password_min_length' => $this->input('password_min_length', '8'),
+                'require_email_verification' => $this->input('require_email_verification') === '1' ? '1' : '0',
+                'force_password_change' => $this->input('force_password_change') === '1' ? '1' : '0',
+            ];
+            
+            foreach ($settingsToUpdate as $key => $value) {
+                // Check if setting exists
+                $existing = $db->fetch("SELECT id FROM settings WHERE `key` = ?", [$key]);
+                
+                if ($existing) {
+                    $db->update('settings', [
+                        'value' => Security::sanitize($value),
+                        'updated_at' => date('Y-m-d H:i:s')
+                    ], '`key` = ?', [$key]);
+                } else {
+                    $db->insert('settings', [
+                        'key' => $key,
+                        'value' => Security::sanitize($value),
+                        'type' => 'string',
+                        'created_at' => date('Y-m-d H:i:s')
+                    ]);
+                }
+            }
+            
+            Logger::activity(Auth::id(), 'security_policy_updated');
+            
+            $this->flash('success', 'Security policies updated successfully.');
+            
+        } catch (\Exception $e) {
+            Logger::error('Security policy update error: ' . $e->getMessage());
+            $this->flash('error', 'Failed to update security policies: ' . $e->getMessage());
+        }
+        
+        $this->redirect('/admin/settings/session');
     }
 }

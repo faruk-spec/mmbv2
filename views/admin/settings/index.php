@@ -41,6 +41,94 @@
                 </div>
                 
                 <div class="form-group">
+                    <label class="form-label">System Timezone</label>
+                    <select name="system_timezone" class="form-input">
+                        <?php
+                        $currentTimezone = $settings['system_timezone'] ?? 'UTC';
+                        $timezones = [
+                            'UTC' => 'UTC (Coordinated Universal Time)',
+                            'America/New_York' => 'America/New York (EST/EDT)',
+                            'America/Chicago' => 'America/Chicago (CST/CDT)',
+                            'America/Denver' => 'America/Denver (MST/MDT)',
+                            'America/Los_Angeles' => 'America/Los Angeles (PST/PDT)',
+                            'America/Toronto' => 'America/Toronto',
+                            'America/Mexico_City' => 'America/Mexico City',
+                            'America/Sao_Paulo' => 'America/São Paulo',
+                            'Europe/London' => 'Europe/London (GMT/BST)',
+                            'Europe/Paris' => 'Europe/Paris (CET/CEST)',
+                            'Europe/Berlin' => 'Europe/Berlin (CET/CEST)',
+                            'Europe/Rome' => 'Europe/Rome (CET/CEST)',
+                            'Europe/Madrid' => 'Europe/Madrid (CET/CEST)',
+                            'Europe/Amsterdam' => 'Europe/Amsterdam (CET/CEST)',
+                            'Europe/Brussels' => 'Europe/Brussels (CET/CEST)',
+                            'Europe/Vienna' => 'Europe/Vienna (CET/CEST)',
+                            'Europe/Stockholm' => 'Europe/Stockholm (CET/CEST)',
+                            'Europe/Warsaw' => 'Europe/Warsaw (CET/CEST)',
+                            'Europe/Athens' => 'Europe/Athens (EET/EEST)',
+                            'Europe/Istanbul' => 'Europe/Istanbul (TRT)',
+                            'Europe/Moscow' => 'Europe/Moscow (MSK)',
+                            'Africa/Cairo' => 'Africa/Cairo (EET)',
+                            'Africa/Johannesburg' => 'Africa/Johannesburg (SAST)',
+                            'Asia/Dubai' => 'Asia/Dubai (GST)',
+                            'Asia/Kolkata' => 'Asia/Kolkata (IST)',
+                            'Asia/Bangkok' => 'Asia/Bangkok (ICT)',
+                            'Asia/Singapore' => 'Asia/Singapore (SGT)',
+                            'Asia/Hong_Kong' => 'Asia/Hong Kong (HKT)',
+                            'Asia/Shanghai' => 'Asia/Shanghai (CST)',
+                            'Asia/Tokyo' => 'Asia/Tokyo (JST)',
+                            'Asia/Seoul' => 'Asia/Seoul (KST)',
+                            'Australia/Sydney' => 'Australia/Sydney (AEDT/AEST)',
+                            'Australia/Melbourne' => 'Australia/Melbourne (AEDT/AEST)',
+                            'Australia/Perth' => 'Australia/Perth (AWST)',
+                            'Pacific/Auckland' => 'Pacific/Auckland (NZDT/NZST)',
+                        ];
+                        foreach ($timezones as $tz => $label):
+                        ?>
+                            <option value="<?= $tz ?>" <?= $currentTimezone === $tz ? 'selected' : '' ?>><?= $label ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <small class="form-help">Current server time: <?= date('Y-m-d H:i:s T') ?></small>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Date Format</label>
+                    <select name="date_format" class="form-input">
+                        <?php
+                        $currentFormat = $settings['date_format'] ?? 'M d, Y';
+                        $formats = [
+                            'M d, Y' => date('M d, Y') . ' (M d, Y)',
+                            'Y-m-d' => date('Y-m-d') . ' (Y-m-d)',
+                            'd/m/Y' => date('d/m/Y') . ' (d/m/Y)',
+                            'm/d/Y' => date('m/d/Y') . ' (m/d/Y)',
+                            'F j, Y' => date('F j, Y') . ' (F j, Y)',
+                            'd-M-Y' => date('d-M-Y') . ' (d-M-Y)',
+                        ];
+                        foreach ($formats as $format => $label):
+                        ?>
+                            <option value="<?= $format ?>" <?= $currentFormat === $format ? 'selected' : '' ?>><?= $label ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Time Format</label>
+                    <select name="time_format" class="form-input">
+                        <?php
+                        $currentTimeFormat = $settings['time_format'] ?? 'g:i A';
+                        $timeFormats = [
+                            'g:i A' => date('g:i A') . ' (12-hour with AM/PM)',
+                            'H:i' => date('H:i') . ' (24-hour)',
+                            'h:i:s A' => date('h:i:s A') . ' (12-hour with seconds)',
+                            'H:i:s' => date('H:i:s') . ' (24-hour with seconds)',
+                        ];
+                        foreach ($timeFormats as $format => $label):
+                        ?>
+                            <option value="<?= $format ?>" <?= $currentTimeFormat === $format ? 'selected' : '' ?>><?= $label ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                
+                <div class="form-group">
                     <label class="form-checkbox">
                         <input type="checkbox" name="registration_enabled" value="1" 
                                <?= ($settings['registration_enabled'] ?? '1') === '1' ? 'checked' : '' ?>>

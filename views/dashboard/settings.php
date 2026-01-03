@@ -19,7 +19,14 @@
     <div class="card" style="border-radius: 10px; overflow: hidden; border: 1px solid var(--border-color);">
         <div class="card-header" style="background: linear-gradient(135deg, rgba(0, 240, 255, 0.1) 0%, rgba(255, 46, 196, 0.1) 100%); border-bottom: 1px solid var(--border-color); padding: 12px;">
             <h3 class="card-title" style="font-size: 0.9rem; display: flex; align-items: center; gap: 6px; margin: 0; font-weight: 600;">
-                🎨 Theme
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="13.5" cy="6.5" r=".5"/>
+                    <circle cx="17.5" cy="10.5" r=".5"/>
+                    <circle cx="8.5" cy="7.5" r=".5"/>
+                    <circle cx="6.5" cy="12.5" r=".5"/>
+                    <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/>
+                </svg>
+                Theme
             </h3>
         </div>
         
@@ -32,12 +39,28 @@
                     <label style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.85rem;">Choose Theme</label>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                         <div class="theme-option" data-theme="dark" style="padding: 12px; border: 2px solid var(--border-color); border-radius: 8px; cursor: pointer; text-align: center; transition: all 0.3s ease;">
-                            <div style="font-size: 20px; margin-bottom: 4px;">🌙</div>
+                            <div style="margin-bottom: 4px;">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                                </svg>
+                            </div>
                             <div style="font-weight: 600; font-size: 0.85rem;">Dark</div>
                         </div>
                         
                         <div class="theme-option" data-theme="light" style="padding: 12px; border: 2px solid var(--border-color); border-radius: 8px; cursor: pointer; text-align: center; transition: all 0.3s ease;">
-                            <div style="font-size: 20px; margin-bottom: 4px;">☀️</div>
+                            <div style="margin-bottom: 4px;">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="5"/>
+                                    <line x1="12" y1="1" x2="12" y2="3"/>
+                                    <line x1="12" y1="21" x2="12" y2="23"/>
+                                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                                    <line x1="1" y1="12" x2="3" y2="12"/>
+                                    <line x1="21" y1="12" x2="23" y2="12"/>
+                                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                                </svg>
+                            </div>
                             <div style="font-weight: 600; font-size: 0.85rem;">Light</div>
                         </div>
                     </div>
@@ -55,7 +78,11 @@
     <div class="card" style="border-radius: 10px; overflow: hidden; border: 1px solid var(--border-color);">
         <div class="card-header" style="background: linear-gradient(135deg, rgba(153, 69, 255, 0.1) 0%, rgba(255, 46, 196, 0.1) 100%); border-bottom: 1px solid var(--border-color); padding: 12px;">
             <h3 class="card-title" style="font-size: 0.9rem; display: flex; align-items: center; gap: 6px; margin: 0; font-weight: 600;">
-                🔔 Notifications
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                </svg>
+                Notifications
             </h3>
         </div>
         
@@ -66,21 +93,37 @@
                 
                 <div style="margin-bottom: 8px;">
                     <label style="display: flex; align-items: center; justify-content: space-between; padding: 10px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; font-size: 0.85rem;">
-                        <span>📧 Email Notifications</span>
+                        <span style="display: flex; align-items: center; gap: 6px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                                <polyline points="22,6 12,13 2,6"/>
+                            </svg>
+                            Email Notifications
+                        </span>
                         <input type="checkbox" name="email_notifications" value="1" checked style="width: 16px; height: 16px; cursor: pointer;">
                     </label>
                 </div>
                 
                 <div style="margin-bottom: 8px;">
                     <label style="display: flex; align-items: center; justify-content: space-between; padding: 10px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; font-size: 0.85rem;">
-                        <span>🛡️ Security Alerts</span>
+                        <span style="display: flex; align-items: center; gap: 6px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                            </svg>
+                            Security Alerts
+                        </span>
                         <input type="checkbox" name="security_alerts" value="1" checked style="width: 16px; height: 16px; cursor: pointer;">
                     </label>
                 </div>
                 
                 <div style="margin-bottom: 12px;">
                     <label style="display: flex; align-items: center; justify-content: space-between; padding: 10px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; font-size: 0.85rem;">
-                        <span>📦 Product Updates</span>
+                        <span style="display: flex; align-items: center; gap: 6px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                            </svg>
+                            Product Updates
+                        </span>
                         <input type="checkbox" name="product_updates" value="1" checked style="width: 16px; height: 16px; cursor: pointer;">
                     </label>
                 </div>
@@ -99,7 +142,12 @@
     <div class="card" style="border-radius: 10px; overflow: hidden; border: 1px solid var(--border-color);">
         <div class="card-header" style="background: linear-gradient(135deg, rgba(0, 255, 136, 0.1) 0%, rgba(0, 240, 255, 0.1) 100%); border-bottom: 1px solid var(--border-color); padding: 12px;">
             <h3 class="card-title" style="font-size: 0.9rem; display: flex; align-items: center; gap: 6px; margin: 0; font-weight: 600;">
-                💻 Display
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                    <line x1="8" y1="21" x2="16" y2="21"/>
+                    <line x1="12" y1="17" x2="12" y2="21"/>
+                </svg>
+                Display
             </h3>
         </div>
         
@@ -142,7 +190,11 @@
     <div class="card" style="border-radius: 10px; overflow: hidden; border: 1px solid var(--border-color);">
         <div class="card-header" style="background: linear-gradient(135deg, rgba(255, 170, 0, 0.1) 0%, rgba(255, 46, 196, 0.1) 100%); border-bottom: 1px solid var(--border-color); padding: 12px;">
             <h3 class="card-title" style="font-size: 0.9rem; display: flex; align-items: center; gap: 6px; margin: 0; font-weight: 600;">
-                📁 Projects
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                </svg>
+                Projects
+            </h3>
             </h3>
         </div>
         

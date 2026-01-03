@@ -25,8 +25,7 @@ try {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- Icons -->
-    <link rel="stylesheet" href="https://unpkg.com/lucide@latest/dist/lucide.min.css">
+    <!-- Icons - No external dependencies needed, using inline SVG -->
     
     <style>
         :root {
@@ -1622,6 +1621,9 @@ try {
             window.scrollTo({ top: 0, behavior: 'smooth' });
         });
     </script>
+    
+    <!-- Toast Notification System -->
+    <script src="/assets/js/toast.js"></script>
     
     <?php View::yield('scripts'); ?>
 </body>

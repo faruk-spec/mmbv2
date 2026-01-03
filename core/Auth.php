@@ -16,10 +16,34 @@ class Auth
      */
     public static function attempt(string $email, string $password, bool $remember = false): bool
     {
+        $user = self::attemptCredentials($email, $password);
+        
+        if ($user) {
+            // Check if 2FA is enabled
+            if (!empty($user['two_factor_secret']) && $user['two_factor_enabled']) {
+                // For 2FA users, don't complete login here
+                // Caller should redirect to 2FA verification
+                return false;
+            }
+            
+            // Complete login for non-2FA users
+            return self::loginUser($user['id'], $remember);
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Attempt to authenticate credentials without logging in
+     * Returns user array if valid, null if invalid
+     */
+    public static function attemptCredentials(string $email, string $password): ?array
+    {
         // Rate limiting
         $ip = Security::getClientIp();
         if (!Security::checkRateLimit("login_{$ip}", 5, 15)) {
-            return false;
+            self::logLogin(null, $email, 'email_password', 'blocked', 'Rate limit exceeded');
+            return null;
         }
         
         try {
@@ -31,21 +55,49 @@ class Auth
             
             if (!$user || !Security::verifyPassword($password, $user['password'])) {
                 Security::logFailedLogin($email, $ip);
-                return false;
+                self::logLogin($user['id'] ?? null, $email, 'email_password', 'failed', 'Invalid credentials');
+                return null;
             }
             
             // Check email verification if required
             if (defined('REQUIRE_EMAIL_VERIFICATION') && REQUIRE_EMAIL_VERIFICATION) {
                 if (!$user['email_verified_at']) {
-                    return false;
+                    self::logLogin($user['id'], $email, 'email_password', 'failed', 'Email not verified');
+                    return null;
                 }
             }
             
-            // Clear rate limit on successful login
+            // Clear rate limit on successful authentication
             Security::clearRateLimit("login_{$ip}");
+            
+            return $user;
+            
+        } catch (\Exception $e) {
+            Logger::error('Authentication error: ' . $e->getMessage());
+            return null;
+        }
+    }
+    
+    /**
+     * Complete user login after authentication
+     */
+    public static function loginUser(int $userId, bool $remember = false): bool
+    {
+        try {
+            $db = Database::getInstance();
+            $user = $db->fetch("SELECT * FROM users WHERE id = ? AND status = 'active'", [$userId]);
+            
+            if (!$user) {
+                return false;
+            }
+            
+            $ip = Security::getClientIp();
             
             // Set session
             self::setUserSession($user);
+            
+            // Track session
+            SessionManager::track($user['id']);
             
             // Handle remember me
             if ($remember) {
@@ -54,6 +106,9 @@ class Auth
             
             // Log activity
             Logger::activity($user['id'], 'login', ['ip' => $ip]);
+            
+            // Log login history
+            self::logLogin($user['id'], $user['email'], 'email_password', 'success');
             
             // Update last login
             $db->update('users', [
@@ -64,7 +119,7 @@ class Auth
             return true;
             
         } catch (\Exception $e) {
-            Logger::error('Login error: ' . $e->getMessage());
+            Logger::error('Login completion error: ' . $e->getMessage());
             return false;
         }
     }
@@ -135,6 +190,9 @@ class Auth
             Logger::activity(self::id(), 'logout');
         }
         
+        // Terminate session tracking
+        SessionManager::terminateSession('logout');
+        
         // Clear remember token cookie
         if (isset($_COOKIE['remember_token'])) {
             setcookie('remember_token', '', time() - 3600, '/', '', true, true);
@@ -165,6 +223,7 @@ class Auth
         
         self::$user = null;
     }
+
     
     /**
      * Check if user is logged in
@@ -461,6 +520,28 @@ class Auth
         } catch (\Exception $e) {
             Logger::error('Email verification error: ' . $e->getMessage());
             return false;
+        }
+    }
+    
+    /**
+     * Log login attempt to database
+     */
+    private static function logLogin(?int $userId, string $email, string $method, string $status, ?string $failureReason = null): void
+    {
+        try {
+            $db = Database::getInstance();
+            $db->insert('login_history', [
+                'user_id' => $userId,
+                'email' => $email,
+                'login_method' => $method,
+                'ip_address' => Security::getClientIp(),
+                'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? null,
+                'status' => $status,
+                'failure_reason' => $failureReason,
+                'created_at' => date('Y-m-d H:i:s')
+            ]);
+        } catch (\Exception $e) {
+            Logger::error('Log login error: ' . $e->getMessage());
         }
     }
 }

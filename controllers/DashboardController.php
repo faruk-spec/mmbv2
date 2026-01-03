@@ -140,12 +140,19 @@ class DashboardController extends BaseController
             [Auth::id()]
         );
         
+        // Get user active sessions
+        $sessions = $db->fetchAll(
+            "SELECT * FROM user_sessions WHERE user_id = ? AND is_active = 1 ORDER BY last_activity_at DESC",
+            [Auth::id()]
+        );
+        
         // Get user info for 2FA status
         $user = Auth::user();
         
         $this->view('dashboard/security', [
             'title' => 'Security Settings',
             'devices' => $devices,
+            'sessions' => $sessions,
             'twoFactorEnabled' => !empty($user['two_factor_secret'])
         ]);
     }
@@ -153,10 +160,70 @@ class DashboardController extends BaseController
     /**
      * Update password
      */
+    /**
+     * Set password (for OAuth-only users)
+     */
+    public function setPassword(): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request.');
+            $this->redirect('/security');
+            return;
+        }
+        
+        $db = Database::getInstance();
+        $user = $db->fetch("SELECT * FROM users WHERE id = ?", [Auth::id()]);
+        
+        // Only allow OAuth-only users to use this method
+        if (!$user || !isset($user['oauth_only']) || $user['oauth_only'] != 1) {
+            $this->flash('error', 'This action is not available for your account type.');
+            $this->redirect('/security');
+            return;
+        }
+        
+        $errors = $this->validate([
+            'password' => 'required|min:8|confirmed'
+        ]);
+        
+        if (!empty($errors)) {
+            $this->redirect('/security');
+            return;
+        }
+        
+        try {
+            // Set password and mark as no longer OAuth-only
+            $db->update('users', [
+                'password' => Security::hashPassword($this->input('password')),
+                'oauth_only' => 0,
+                'updated_at' => date('Y-m-d H:i:s')
+            ], 'id = ?', [Auth::id()]);
+            
+            Logger::activity(Auth::id(), 'password_set', ['method' => 'oauth_to_standard']);
+            
+            $this->flash('success', 'Password set successfully! You can now use traditional login and unlink your Google account if desired.');
+            
+        } catch (\Exception $e) {
+            Logger::error('Password set error: ' . $e->getMessage());
+            $this->flash('error', 'Failed to set password.');
+        }
+        
+        $this->redirect('/security');
+    }
+    
     public function updatePassword(): void
     {
         if (!$this->validateCsrf()) {
             $this->flash('error', 'Invalid request.');
+            $this->redirect('/security');
+            return;
+        }
+        
+        $db = Database::getInstance();
+        $user = $db->fetch("SELECT * FROM users WHERE id = ?", [Auth::id()]);
+        
+        // Check if this is an OAuth-only user trying to change password
+        if ($user && isset($user['oauth_only']) && $user['oauth_only'] == 1) {
+            $this->flash('error', 'Please use the "Set Password" option to create your first password.');
             $this->redirect('/security');
             return;
         }
@@ -171,8 +238,6 @@ class DashboardController extends BaseController
             return;
         }
         
-        $user = Auth::user();
-        
         if (!Security::verifyPassword($this->input('current_password'), $user['password'])) {
             $this->flash('error', 'Current password is incorrect.');
             $this->redirect('/security');
@@ -180,7 +245,6 @@ class DashboardController extends BaseController
         }
         
         try {
-            $db = Database::getInstance();
             $db->update('users', [
                 'password' => Security::hashPassword($this->input('password')),
                 'updated_at' => date('Y-m-d H:i:s')
@@ -196,6 +260,58 @@ class DashboardController extends BaseController
         } catch (\Exception $e) {
             Logger::error('Password update error: ' . $e->getMessage());
             $this->flash('error', 'Failed to update password.');
+        }
+        
+        $this->redirect('/security');
+    }
+    
+    /**
+     * Revoke a session
+     */
+    public function revokeSession(): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request.');
+            $this->redirect('/security');
+            return;
+        }
+        
+        try {
+            $db = Database::getInstance();
+            $sessionId = (int) $this->input('session_id');
+            
+            // Verify this session belongs to the current user
+            $session = $db->fetch(
+                "SELECT * FROM user_sessions WHERE id = ? AND user_id = ?",
+                [$sessionId, Auth::id()]
+            );
+            
+            if (!$session) {
+                $this->flash('error', 'Session not found.');
+                $this->redirect('/security');
+                return;
+            }
+            
+            // Don't allow revoking current session
+            if ($session['session_id'] === session_id()) {
+                $this->flash('error', 'Cannot revoke current session. Use logout instead.');
+                $this->redirect('/security');
+                return;
+            }
+            
+            // Mark session as inactive
+            $db->update('user_sessions', [
+                'is_active' => 0,
+                'last_activity_at' => date('Y-m-d H:i:s')
+            ], 'id = ?', [$sessionId]);
+            
+            Logger::activity(Auth::id(), 'session_revoked', ['session_id' => $sessionId]);
+            
+            $this->flash('success', 'Session revoked successfully.');
+            
+        } catch (\Exception $e) {
+            Logger::error('Session revoke error: ' . $e->getMessage());
+            $this->flash('error', 'Failed to revoke session.');
         }
         
         $this->redirect('/security');
@@ -287,12 +403,12 @@ class DashboardController extends BaseController
                         // Also update navbar_settings for global theme
                         $db->query("UPDATE navbar_settings SET default_theme = ? WHERE id = 1", [$theme]);
                         
-                        Logger::activity(Auth::id(), 'theme_changed', $theme);
+                        Logger::activity(Auth::id(), 'theme_changed', ['theme' => $theme]);
                         $this->flash('success', 'Theme preference updated successfully.');
                     } catch (\Exception $e) {
                         // Fallback: just update navbar_settings
                         $db->query("UPDATE navbar_settings SET default_theme = ? WHERE id = 1", [$theme]);
-                        Logger::activity(Auth::id(), 'theme_changed', $theme);
+                        Logger::activity(Auth::id(), 'theme_changed', ['theme' => $theme]);
                         $this->flash('success', 'Theme updated successfully.');
                     }
                     break;
@@ -321,41 +437,44 @@ class DashboardController extends BaseController
                 case 'display':
                     $itemsPerPage = max(10, min(100, (int) $this->input('items_per_page', 20)));
                     $dateFormat = Security::sanitize($this->input('date_format', 'M d, Y'));
+                    $displaySettings = json_encode([
+                        'items_per_page' => $itemsPerPage,
+                        'date_format' => $dateFormat
+                    ]);
                     
                     try {
                         $db->update('user_profiles', [
-                            'items_per_page' => $itemsPerPage,
-                            'date_format' => $dateFormat,
+                            'display_settings' => $displaySettings,
                             'updated_at' => date('Y-m-d H:i:s')
                         ], 'user_id = ?', [Auth::id()]);
                         
-                        Logger::activity(Auth::id(), 'display_settings_updated');
+                        Logger::activity(Auth::id(), 'display_settings_updated', ['settings' => $displaySettings]);
                         $this->flash('success', 'Display settings updated successfully.');
                     } catch (\Exception $e) {
                         Logger::error('Display update error: ' . $e->getMessage());
-                        $this->flash('success', 'Settings saved.');
+                        $this->flash('error', 'Failed to update display settings. Please ensure database migration is run.');
                     }
                     break;
                     
                 case 'projects':
-                    // Project-specific settings
-                    $projectDefaults = $this->input('project_defaults', []);
-                    $autoSaveEnabled = $this->input('auto_save_enabled', 0);
-                    $defaultProjectView = Security::sanitize($this->input('default_project_view', 'grid'));
+                    $defaultView = Security::sanitize($this->input('default_view', 'grid'));
+                    $autoSave = $this->input('auto_save', 0);
+                    $projectSettings = json_encode([
+                        'default_view' => $defaultView,
+                        'auto_save' => $autoSave ? 1 : 0
+                    ]);
                     
                     try {
                         $db->update('user_profiles', [
-                            'project_defaults' => json_encode($projectDefaults),
-                            'auto_save_enabled' => $autoSaveEnabled ? 1 : 0,
-                            'default_project_view' => $defaultProjectView,
+                            'project_settings' => $projectSettings,
                             'updated_at' => date('Y-m-d H:i:s')
                         ], 'user_id = ?', [Auth::id()]);
                         
-                        Logger::activity(Auth::id(), 'project_settings_updated');
+                        Logger::activity(Auth::id(), 'project_settings_updated', ['settings' => $projectSettings]);
                         $this->flash('success', 'Project settings updated successfully.');
                     } catch (\Exception $e) {
-                        Logger::error('Project settings error: ' . $e->getMessage());
-                        $this->flash('success', 'Settings saved.');
+                        Logger::error('Project update error: ' . $e->getMessage());
+                        $this->flash('error', 'Failed to update project settings. Please ensure database migration is run.');
                     }
                     break;
                     

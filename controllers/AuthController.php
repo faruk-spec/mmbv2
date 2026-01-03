@@ -26,6 +26,11 @@ class AuthController extends BaseController
             $this->redirect('/dashboard');
         }
         
+        // Check if session expired
+        if (isset($_GET['expired']) && $_GET['expired'] == '1') {
+            $this->flash('info', 'Your session has expired. Please sign in again.');
+        }
+        
         $this->view('auth/login', [
             'title' => 'Login'
         ]);
@@ -56,18 +61,35 @@ class AuthController extends BaseController
         $password = $this->input('password');
         $remember = $this->input('remember') === 'on';
         
-        if (Auth::attempt($email, $password, $remember)) {
+        // Attempt authentication (but don't complete login yet if 2FA is enabled)
+        $user = Auth::attemptCredentials($email, $password);
+        
+        if ($user) {
+            // Check if 2FA is enabled
+            if (!empty($user['two_factor_secret']) && $user['two_factor_enabled']) {
+                // Store user ID in session for 2FA verification
+                $_SESSION['pending_2fa_user_id'] = $user['id'];
+                $_SESSION['pending_2fa_remember'] = $remember;
+                
+                // Redirect to 2FA verification
+                $this->redirect('/2fa/verify');
+                return;
+            }
+            
+            // No 2FA, complete login normally
+            Auth::loginUser($user['id'], $remember);
+            
             // Track login
-            TrafficTracker::trackLogin(Auth::id());
+            TrafficTracker::trackLogin($user['id']);
             
             // Log activity
-            Logger::activity(Auth::id(), 'login', [
+            Logger::activity($user['id'], 'login', [
                 'method' => 'email_password',
                 'remember' => $remember
             ]);
             
             // Generate SSO token
-            $ssoToken = SSO::generateToken(Auth::id());
+            $ssoToken = SSO::generateToken($user['id']);
             SSO::storeToken($ssoToken);
             
             // Set SSO cookie for projects

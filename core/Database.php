@@ -123,10 +123,11 @@ class Database
      */
     public function insert(string $table, array $data): int
     {
-        $columns = implode(', ', array_keys($data));
+        // Escape column names with backticks to handle reserved words
+        $columns = implode('`, `', array_keys($data));
         $placeholders = implode(', ', array_fill(0, count($data), '?'));
         
-        $sql = "INSERT INTO {$table} ({$columns}) VALUES ({$placeholders})";
+        $sql = "INSERT INTO {$table} (`{$columns}`) VALUES ({$placeholders})";
         $this->query($sql, array_values($data));
         
         return (int) $this->connection->lastInsertId();
@@ -137,8 +138,9 @@ class Database
      */
     public function update(string $table, array $data, string $where, array $whereParams = []): int
     {
-        $set = implode(' = ?, ', array_keys($data)) . ' = ?';
-        $sql = "UPDATE {$table} SET {$set} WHERE {$where}";
+        // Escape column names with backticks to handle reserved words
+        $set = implode('` = ?, `', array_keys($data)) . '` = ?';
+        $sql = "UPDATE {$table} SET `{$set} WHERE {$where}";
         
         $stmt = $this->query($sql, array_merge(array_values($data), $whereParams));
         return $stmt->rowCount();

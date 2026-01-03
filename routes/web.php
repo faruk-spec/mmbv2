@@ -32,20 +32,30 @@ $router->post('/reset-password', 'AuthController@resetPassword');
 // Email verification
 $router->get('/verify-email/{token}', 'AuthController@verifyEmail');
 
+// Google OAuth routes
+$router->get('/auth/google', 'GoogleOAuthController@redirectToGoogle');
+$router->get('/auth/google/callback', 'GoogleOAuthController@callback');
+$router->get('/auth/google/link', 'GoogleOAuthController@link', ['auth']);
+$router->post('/auth/google/unlink', 'GoogleOAuthController@unlink', ['auth']);
+
 // User Dashboard
 $router->get('/dashboard', 'DashboardController@index', ['auth']);
 $router->get('/profile', 'DashboardController@profile', ['auth']);
 $router->post('/profile', 'DashboardController@updateProfile', ['auth']);
 $router->get('/security', 'DashboardController@security', ['auth']);
+$router->post('/security/set-password', 'DashboardController@setPassword', ['auth']);
 $router->post('/security/password', 'DashboardController@updatePassword', ['auth']);
+$router->post('/security/revoke-session', 'DashboardController@revokeSession', ['auth']);
 $router->get('/activity', 'DashboardController@activity', ['auth']);
 $router->get('/settings', 'DashboardController@settings', ['auth']);
 $router->post('/settings', 'DashboardController@updateSettings', ['auth']);
 
 // 2FA routes
+// Two-Factor Authentication routes
 $router->get('/2fa/setup', 'TwoFactorController@setup', ['auth']);
 $router->post('/2fa/enable', 'TwoFactorController@enable', ['auth']);
 $router->post('/2fa/disable', 'TwoFactorController@disable', ['auth']);
+$router->get('/2fa/backup-codes', 'TwoFactorController@showBackupCodes', ['auth']);
 $router->get('/2fa/verify', 'TwoFactorController@showVerify');
 $router->post('/2fa/verify', 'TwoFactorController@verify');
 

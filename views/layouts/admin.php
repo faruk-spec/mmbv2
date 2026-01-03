@@ -1235,6 +1235,63 @@
                             </a>
                         </div>
                     </div>
+                    
+                    <div class="menu-item menu-dropdown">
+                        <div class="menu-dropdown-toggle">
+                            <div class="left">
+                                <i class="fas fa-key"></i>
+                                <span>OAuth & SSO</span>
+                            </div>
+                            <i class="fas fa-chevron-down arrow"></i>
+                        </div>
+                        <div class="menu-dropdown-content">
+                            <a href="/admin/oauth" class="menu-link">
+                                <i class="fas fa-cog"></i>
+                                <span>OAuth Providers</span>
+                            </a>
+                            <a href="/admin/oauth/connections" class="menu-link">
+                                <i class="fas fa-link"></i>
+                                <span>OAuth Connections</span>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="menu-item menu-dropdown">
+                        <div class="menu-dropdown-toggle">
+                            <div class="left">
+                                <i class="fas fa-clock"></i>
+                                <span>Session Management</span>
+                            </div>
+                            <i class="fas fa-chevron-down arrow"></i>
+                        </div>
+                        <div class="menu-dropdown-content">
+                            <a href="/admin/sessions" class="menu-link">
+                                <i class="fas fa-users"></i>
+                                <span>Active Sessions</span>
+                            </a>
+                            <a href="/admin/sessions/login-history" class="menu-link">
+                                <i class="fas fa-history"></i>
+                                <span>Login History</span>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- 2FA Management -->
+                    <div class="menu-item menu-dropdown">
+                        <div class="menu-dropdown-toggle">
+                            <div class="left">
+                                <i class="fas fa-shield-alt"></i>
+                                <span>2FA Management</span>
+                            </div>
+                            <i class="fas fa-chevron-down arrow"></i>
+                        </div>
+                        <div class="menu-dropdown-content">
+                            <a href="/admin/2fa" class="menu-link">
+                                <i class="fas fa-users-cog"></i>
+                                <span>User 2FA Status</span>
+                            </a>
+                        </div>
+                    </div>
                 </div>
                 
                 <!-- Logs -->
@@ -1432,6 +1489,10 @@
                             <a href="/admin/settings" class="menu-link">
                                 <i class="fas fa-sliders-h"></i>
                                 <span>General</span>
+                            </a>
+                            <a href="/admin/settings/session" class="menu-link">
+                                <i class="fas fa-clock"></i>
+                                <span>Session & Security</span>
                             </a>
                             <a href="/admin/home-content" class="menu-link">
                                 <i class="fas fa-home"></i>
