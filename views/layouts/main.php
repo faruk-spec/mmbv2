@@ -896,6 +896,8 @@ try {
             grid-template-columns: 250px 1fr 300px;
             gap: 0;
             min-height: calc(100vh - 60px);
+            max-width: 100vw;
+            overflow-x: hidden;
         }
         
         .left-sidebar {
@@ -903,19 +905,24 @@ try {
             border-right: 1px solid var(--border-color);
             height: calc(100vh - 60px);
             overflow-y: auto;
+            overflow-x: hidden;
             transition: width 0.3s ease, left 0.3s ease;
+            min-width: 0;
         }
         
         .dashboard-main-content {
             padding: 20px;
             overflow-x: hidden;
+            min-width: 0;
         }
         
         .dashboard-sidebar {
             background: var(--bg-primary);
             height: calc(100vh - 60px);
             overflow-y: auto;
+            overflow-x: hidden;
             padding: 20px;
+            min-width: 0;
         }
     </style>
     
@@ -1295,6 +1302,21 @@ try {
                 
                 .sidebar-dropdown-trigger:hover {
                     color: var(--cyan);
+                }
+                
+                @media (max-width: 1200px) {
+                    .full-dashboard-layout {
+                        grid-template-columns: 250px 1fr !important;
+                    }
+                    
+                    .dashboard-sidebar {
+                        display: none !important;
+                    }
+                    
+                    .dashboard-main-content {
+                        max-width: 100%;
+                        overflow-x: hidden;
+                    }
                 }
                 
                 @media (max-width: 1024px) {
