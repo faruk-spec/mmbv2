@@ -244,7 +244,7 @@ if (\Core\GoogleOAuth::isEnabled()) {
     </div>
     
     <div style="padding: 12px;">
-        <?php if (empty($devices)): ?>
+        <?php if (empty($sessions)): ?>
             <p style="color: var(--text-secondary); text-align: center; padding: 40px 20px;">
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.5" style="display: block; margin: 0 auto 16px; opacity: 0.5;">
                     <circle cx="12" cy="12" r="10"></circle>
@@ -252,6 +252,70 @@ if (\Core\GoogleOAuth::isEnabled()) {
                     <line x1="12" y1="16" x2="12.01" y2="16"></line>
                 </svg>
                 No active sessions found
+            </p>
+        <?php else: ?>
+            <div style="overflow-x: auto;">
+                <table class="table" style="width: 100%; border-collapse: separate; border-spacing: 0;">
+                    <thead>
+                        <tr style="background: var(--bg-secondary);">
+                            <th style="padding: 16px; text-align: left; border-bottom: 1px solid var(--border-color); font-weight: 600; color: var(--text-primary);">Device</th>
+                            <th style="padding: 16px; text-align: left; border-bottom: 1px solid var(--border-color); font-weight: 600; color: var(--text-primary);">IP Address</th>
+                            <th style="padding: 16px; text-align: left; border-bottom: 1px solid var(--border-color); font-weight: 600; color: var(--text-primary);">Last Activity</th>
+                            <th style="padding: 16px; text-align: left; border-bottom: 1px solid var(--border-color); font-weight: 600; color: var(--text-primary);">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($sessions as $session): ?>
+                            <?php 
+                                $deviceInfo = json_decode($session['device_info'], true);
+                                $isCurrentSession = $session['session_id'] === session_id();
+                            ?>
+                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                <td style="padding: 16px; color: var(--text-primary);">
+                                    <?= View::e($deviceInfo['browser'] ?? 'Unknown') ?> on <?= View::e($deviceInfo['platform'] ?? 'Unknown') ?>
+                                    <?php if ($isCurrentSession): ?>
+                                        <span style="color: var(--green); font-size: 0.8rem;"> (Current)</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td style="padding: 16px; color: var(--text-secondary);"><code><?= View::e($session['ip_address']) ?></code></td>
+                                <td style="padding: 16px; color: var(--text-secondary);"><?= Helpers::timeAgo($session['last_activity_at']) ?></td>
+                                <td style="padding: 16px; color: var(--text-secondary);">
+                                    <?php if (strtotime($session['expires_at']) > time()): ?>
+                                        <span style="color: var(--green);">Active</span>
+                                    <?php else: ?>
+                                        <span style="color: var(--orange);">Expired</span>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php endif; ?>
+    </div>
+</div>
+
+<!-- Remember Me Devices -->
+<div class="card mt-3" style="border-radius: 10px; overflow: hidden; border: 1px solid var(--border-color); margin-top: 24px;">
+    <div class="card-header" style="background: linear-gradient(135deg, rgba(153, 69, 255, 0.1) 0%, rgba(255, 46, 196, 0.1) 100%); border-bottom: 1px solid var(--border-color); padding: 12px;">
+        <h3 class="card-title" style="font-size: 0.9rem; display: flex; align-items: center; gap: 10px; margin: 0;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2">
+                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+            </svg>
+            Remember Me Devices
+        </h3>
+    </div>
+    
+    <div style="padding: 12px;">
+        <?php if (empty($devices)): ?>
+            <p style="color: var(--text-secondary); text-align: center; padding: 40px 20px;">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.5" style="display: block; margin: 0 auto 16px; opacity: 0.5;">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                No remembered devices
             </p>
         <?php else: ?>
             <div style="overflow-x: auto;">

@@ -1473,6 +1473,10 @@
                                 <i class="fas fa-sliders-h"></i>
                                 <span>General</span>
                             </a>
+                            <a href="/admin/settings/session" class="menu-link">
+                                <i class="fas fa-clock"></i>
+                                <span>Session & Security</span>
+                            </a>
                             <a href="/admin/home-content" class="menu-link">
                                 <i class="fas fa-home"></i>
                                 <span>Home Page</span>

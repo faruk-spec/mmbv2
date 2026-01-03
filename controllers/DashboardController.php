@@ -140,12 +140,19 @@ class DashboardController extends BaseController
             [Auth::id()]
         );
         
+        // Get user active sessions
+        $sessions = $db->fetchAll(
+            "SELECT * FROM user_sessions WHERE user_id = ? AND is_active = 1 ORDER BY last_activity_at DESC",
+            [Auth::id()]
+        );
+        
         // Get user info for 2FA status
         $user = Auth::user();
         
         $this->view('dashboard/security', [
             'title' => 'Security Settings',
             'devices' => $devices,
+            'sessions' => $sessions,
             'twoFactorEnabled' => !empty($user['two_factor_secret'])
         ]);
     }
