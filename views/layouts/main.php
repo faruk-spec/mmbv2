@@ -1097,18 +1097,6 @@ try {
                     </nav>
                 </aside>
                 
-                <!-- Mobile Sidebar Toggle Button -->
-                <button class="mobile-sidebar-toggle" id="mobileSidebarToggle" style="display: none;" aria-label="Toggle sidebar">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="3" y1="6" x2="21" y2="6"></line>
-                        <line x1="3" y1="12" x2="21" y2="12"></line>
-                        <line x1="3" y1="18" x2="21" y2="18"></line>
-                    </svg>
-                </button>
-                
-                <!-- Sidebar Backdrop for Mobile -->
-                <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
-                
                 <!-- Main Content Area -->
                 <div class="dashboard-main-content">
                     <?php View::yield('content'); ?>
@@ -1282,6 +1270,18 @@ try {
                     </div>
                 </aside>
             </div>
+            
+            <!-- Mobile Sidebar Toggle Button (Outside Grid) -->
+            <button class="mobile-sidebar-toggle" id="mobileSidebarToggle" style="display: none;" aria-label="Toggle sidebar">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+            
+            <!-- Sidebar Backdrop for Mobile (Outside Grid) -->
+            <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
             
             <style>
                 .sidebar-card a:hover {
