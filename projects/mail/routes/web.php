@@ -15,7 +15,34 @@ $baseUrl = '/projects/mail';
 $router->get($baseUrl, 'Mail\\DashboardController@index');
 $router->get($baseUrl . '/dashboard', 'Mail\\DashboardController@index');
 
-// Mailbox Management
+// ============================================
+// SUBSCRIBER OWNER ROUTES (Manage their subscription)
+// ============================================
+$router->get($baseUrl . '/subscriber/dashboard', 'Mail\\SubscriberController@dashboard');
+$router->get($baseUrl . '/subscriber/users', 'Mail\\SubscriberController@manageUsers');
+$router->get($baseUrl . '/subscriber/users/add', 'Mail\\SubscriberController@addUser');
+$router->post($baseUrl . '/subscriber/users/add', 'Mail\\SubscriberController@addUser');
+$router->post($baseUrl . '/subscriber/users/assign-role', 'Mail\\SubscriberController@assignRole');
+$router->post($baseUrl . '/subscriber/users/delete', 'Mail\\SubscriberController@deleteUser');
+$router->get($baseUrl . '/subscriber/users/{id}/edit', 'Mail\\SubscriberController@editUser');
+$router->post($baseUrl . '/subscriber/users/{id}/edit', 'Mail\\SubscriberController@updateUser');
+$router->post($baseUrl . '/subscriber/users/{id}/suspend', 'Mail\\SubscriberController@suspendUser');
+$router->post($baseUrl . '/subscriber/users/{id}/activate', 'Mail\\SubscriberController@activateUser');
+
+// Subscriber billing and subscription management
+$router->get($baseUrl . '/subscriber/subscription', 'Mail\\SubscriberController@subscription');
+$router->get($baseUrl . '/subscriber/billing', 'Mail\\SubscriberController@billing');
+$router->post($baseUrl . '/subscriber/upgrade', 'Mail\\SubscriberController@upgradePlan');
+$router->post($baseUrl . '/subscriber/downgrade', 'Mail\\SubscriberController@downgradePlan');
+
+// Subscriber domain management
+$router->get($baseUrl . '/subscriber/domains', 'Mail\\SubscriberController@domains');
+$router->get($baseUrl . '/subscriber/domains/add', 'Mail\\SubscriberController@addDomain');
+$router->post($baseUrl . '/subscriber/domains/add', 'Mail\\SubscriberController@storeDomain');
+
+// ============================================
+// MAILBOX MANAGEMENT
+// ============================================
 $router->get($baseUrl . '/mailbox/inbox', 'Mail\\MailboxController@inbox');
 $router->get($baseUrl . '/mailbox/sent', 'Mail\\MailboxController@sent');
 $router->get($baseUrl . '/mailbox/drafts', 'Mail\\MailboxController@drafts');
