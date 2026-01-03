@@ -36,9 +36,19 @@ $router->post($baseUrl . '/subscriber/upgrade', 'Mail\\SubscriberController@upgr
 $router->post($baseUrl . '/subscriber/downgrade', 'Mail\\SubscriberController@downgradePlan');
 
 // Subscriber domain management
-$router->get($baseUrl . '/subscriber/domains', 'Mail\\SubscriberController@domains');
-$router->get($baseUrl . '/subscriber/domains/add', 'Mail\\SubscriberController@addDomain');
-$router->post($baseUrl . '/subscriber/domains/add', 'Mail\\SubscriberController@storeDomain');
+$router->get($baseUrl . '/subscriber/domains', 'Mail\\DomainController@index');
+$router->get($baseUrl . '/subscriber/domains/add', 'Mail\\DomainController@create');
+$router->post($baseUrl . '/subscriber/domains/store', 'Mail\\DomainController@store');
+$router->get($baseUrl . '/subscriber/domains/{id}/dns', 'Mail\\DomainController@dnsRecords');
+$router->post($baseUrl . '/subscriber/domains/{id}/verify', 'Mail\\DomainController@verify');
+$router->delete($baseUrl . '/subscriber/domains/{id}/delete', 'Mail\\DomainController@delete');
+
+// Subscriber alias management
+$router->get($baseUrl . '/subscriber/aliases', 'Mail\\AliasController@index');
+$router->get($baseUrl . '/subscriber/aliases/add', 'Mail\\AliasController@create');
+$router->post($baseUrl . '/subscriber/aliases/store', 'Mail\\AliasController@store');
+$router->post($baseUrl . '/subscriber/aliases/{id}/toggle', 'Mail\\AliasController@toggleStatus');
+$router->delete($baseUrl . '/subscriber/aliases/{id}/delete', 'Mail\\AliasController@delete');
 
 // ============================================
 // MAILBOX MANAGEMENT
