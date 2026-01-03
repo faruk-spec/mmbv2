@@ -168,10 +168,13 @@ class GoogleOAuthController extends BaseController
         $userId = Auth::id();
         $user = Auth::user();
         
-        // CRITICAL: Check if user has a password set
-        // If user signed in with Google and has no password, prevent unlinking
-        if (empty($user['password']) || $user['password'] === '') {
-            $this->flash('error', 'You must set a password before unlinking your Google account. Please change your password in the settings first.');
+        // CRITICAL: Check if user is OAuth-only (never set their own password)
+        // If user signed in with Google and never set a password, prevent unlinking
+        $db = Database::getInstance();
+        $userCheck = $db->fetch("SELECT oauth_only FROM users WHERE id = ?", [$userId]);
+        
+        if ($userCheck && ($userCheck['oauth_only'] ?? 0) == 1) {
+            $this->flash('error', 'You must set a password before unlinking your Google account. Go to Security Settings and change your password first.');
             $this->redirect('/security');
             return;
         }

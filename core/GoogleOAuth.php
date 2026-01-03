@@ -324,6 +324,7 @@ class GoogleOAuth
                 'email' => $oauthData['email'],
                 'password' => Security::hashPassword(bin2hex(random_bytes(16))), // Random password
                 'google_id' => $oauthData['provider_user_id'],
+                'oauth_only' => 1, // Mark as OAuth-only user (no manual password set)
                 'email_verified_at' => $oauthData['email_verified'] ? date('Y-m-d H:i:s') : null,
                 'status' => 'active',
                 'role' => 'user',
@@ -363,13 +364,13 @@ class GoogleOAuth
         try {
             $db = Database::getInstance();
             
-            // CRITICAL: Check if user has a password set
-            // If user signed in with Google and has no password, prevent unlinking
-            $user = $db->fetch("SELECT password FROM users WHERE id = ?", [$userId]);
+            // CRITICAL: Check if user is OAuth-only (never set their own password)
+            // If user signed in with Google and never set a password, prevent unlinking
+            $user = $db->fetch("SELECT oauth_only FROM users WHERE id = ?", [$userId]);
             
-            if (!$user || empty($user['password']) || $user['password'] === '') {
-                Logger::error('Cannot unlink Google account: User has no password set');
-                return false; // User must set a password first
+            if (!$user || ($user['oauth_only'] ?? 0) == 1) {
+                Logger::error('Cannot unlink Google account: User is OAuth-only (no password set)');
+                return false; // User must set a password first via security settings
             }
             
             $db->delete('oauth_user_connections', 'user_id = ? AND provider_id = ?', [$userId, self::$config['provider_id']]);

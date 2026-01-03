@@ -190,6 +190,7 @@ class DashboardController extends BaseController
             $db = Database::getInstance();
             $db->update('users', [
                 'password' => Security::hashPassword($this->input('password')),
+                'oauth_only' => 0, // User has now set their own password, no longer OAuth-only
                 'updated_at' => date('Y-m-d H:i:s')
             ], 'id = ?', [Auth::id()]);
             

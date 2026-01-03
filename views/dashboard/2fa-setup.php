@@ -52,7 +52,7 @@
                         Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.)
                     </p>
                     <div style="text-align: center; padding: 20px; background: white; border-radius: 10px; margin-bottom: 15px;">
-                        <img src="<?= $qrCodeUrl ?>" alt="2FA QR Code" style="max-width: 200px; height: auto;">
+                        <img src="<?= htmlspecialchars_decode($qrCodeUrl, ENT_QUOTES) ?>" alt="2FA QR Code" style="max-width: 200px; height: auto;">
                     </div>
                     
                     <h3 style="font-size: 1rem; margin-bottom: 10px;">Or enter this code manually:</h3>
