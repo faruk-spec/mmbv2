@@ -422,28 +422,6 @@ class DashboardController extends BaseController
                     break;
                     
                 default:
-                    // Project-specific settings
-                    $projectDefaults = $this->input('project_defaults', []);
-                    $autoSaveEnabled = $this->input('auto_save_enabled', 0);
-                    $defaultProjectView = Security::sanitize($this->input('default_project_view', 'grid'));
-                    
-                    try {
-                        $db->update('user_profiles', [
-                            'project_defaults' => json_encode($projectDefaults),
-                            'auto_save_enabled' => $autoSaveEnabled ? 1 : 0,
-                            'default_project_view' => $defaultProjectView,
-                            'updated_at' => date('Y-m-d H:i:s')
-                        ], 'user_id = ?', [Auth::id()]);
-                        
-                        Logger::activity(Auth::id(), 'project_settings_updated');
-                        $this->flash('success', 'Project settings updated successfully.');
-                    } catch (\Exception $e) {
-                        Logger::error('Project settings error: ' . $e->getMessage());
-                        $this->flash('success', 'Settings saved.');
-                    }
-                    break;
-                    
-                default:
                     $this->flash('error', 'Invalid setting type.');
             }
             
