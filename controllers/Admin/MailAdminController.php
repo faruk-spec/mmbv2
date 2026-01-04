@@ -184,7 +184,7 @@ class MailAdminController extends BaseController
             [$id]
         )->fetchAll();
         
-        View::render('admin/mail/subscriber-details', [
+        $this->view('admin/mail/subscriber-details', [
             'subscriber' => $subscriber,
             'domains' => $domains,
             'mailboxes' => $mailboxes,
@@ -341,7 +341,7 @@ class MailAdminController extends BaseController
             [$id]
         )->fetchAll();
         
-        View::render('admin/mail/edit-plan', [
+        $this->view('admin/mail/edit-plan', [
             'plan' => $plan,
             'features' => $features,
             'title' => 'Edit Plan - ' . $plan['plan_name']
@@ -445,7 +445,7 @@ class MailAdminController extends BaseController
             [$status]
         )->fetchAll();
         
-        View::render('admin/mail/abuse-reports', [
+        $this->view('admin/mail/abuse-reports', [
             'reports' => $reports,
             'currentStatus' => $status,
             'title' => 'Abuse Reports'
@@ -498,7 +498,7 @@ class MailAdminController extends BaseController
             $settingsArray[$setting['setting_key']] = $setting['setting_value'];
         }
         
-        View::render('admin/mail/settings', [
+        $this->view('admin/mail/settings', [
             'settings' => $settingsArray,
             'title' => 'Mail Server Settings'
         ]);

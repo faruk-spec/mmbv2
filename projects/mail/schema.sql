@@ -722,7 +722,7 @@ INSERT IGNORE INTO `mail_subscription_plans` (`plan_name`, `plan_slug`, `plan_ty
 ('Developer', 'developer', 'paid', 49.99, 499.00, 100, 50, 10000, 100, 50, 500, 4, 'Full API access for developers');
 
 -- Insert default plan features
-INSERT INTO `mail_plan_features` (`plan_id`, `feature_key`, `feature_name`, `is_enabled`) VALUES
+INSERT IGNORE INTO `mail_plan_features` (`plan_id`, `feature_key`, `feature_name`, `is_enabled`) VALUES
 -- Free plan features
 (1, 'webmail', 'Webmail Access', 1),
 (1, 'smtp', 'SMTP Access', 0),
