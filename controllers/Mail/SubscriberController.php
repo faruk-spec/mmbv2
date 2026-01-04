@@ -230,8 +230,8 @@ class SubscriberController extends BaseController
         $storageQuota = $_POST['storage_quota'] ?? 1073741824; // 1GB default
         
         // Validate
-        if (!MailHelpers::isValidEmail($email)) {
-            $this->error('Invalid email address');
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $this->flash('error', 'Invalid email address');
             return;
         }
         

@@ -2,20 +2,21 @@
 
 namespace Controllers\Mail;
 
-use Core\View;
-
 use Controllers\BaseController;
 use Core\Auth;
 use Core\Database;
+use Core\View;
 
 class ContactController extends BaseController
 {
+    private $db;
     private $subscriberId;
     private $mailboxId;
 
     public function __construct()
     {
         parent::__construct();
+        $this->db = Database::getInstance();
         $this->subscriberId = Auth::user()->subscriber_id;
         $this->mailboxId = Auth::user()->mailbox_id;
     }
