@@ -46,33 +46,24 @@
                         </div>
 
                         <div class="row">
-                            <div class="col-md-4">
+                            <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="currency">Currency *</label>
-                                    <select class="form-control" id="currency" name="currency" required>
-                                        <option value="USD" <?= ($plan['currency'] ?? 'USD') === 'USD' ? 'selected' : '' ?>>USD ($)</option>
-                                        <option value="EUR" <?= ($plan['currency'] ?? 'USD') === 'EUR' ? 'selected' : '' ?>>EUR (€)</option>
-                                        <option value="GBP" <?= ($plan['currency'] ?? 'USD') === 'GBP' ? 'selected' : '' ?>>GBP (£)</option>
-                                        <option value="INR" <?= ($plan['currency'] ?? 'USD') === 'INR' ? 'selected' : '' ?>>INR (₹)</option>
-                                        <option value="AUD" <?= ($plan['currency'] ?? 'USD') === 'AUD' ? 'selected' : '' ?>>AUD (A$)</option>
-                                        <option value="CAD" <?= ($plan['currency'] ?? 'USD') === 'CAD' ? 'selected' : '' ?>>CAD (C$)</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label for="price_monthly">Monthly Price *</label>
+                                    <label for="price_monthly">Monthly Price ($) *</label>
                                     <input type="number" step="0.01" class="form-control" id="price_monthly" 
                                            name="price_monthly" value="<?= $plan['price_monthly'] ?>" required>
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="price_yearly">Yearly Price *</label>
+                                    <label for="price_yearly">Yearly Price ($) *</label>
                                     <input type="number" step="0.01" class="form-control" id="price_yearly" 
                                            name="price_yearly" value="<?= $plan['price_yearly'] ?>" required>
                                 </div>
                             </div>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> Prices are in USD. To add multi-currency support, update the database schema to include a currency column.
                         </div>
 
                         <div class="form-group">

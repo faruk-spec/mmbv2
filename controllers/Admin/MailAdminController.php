@@ -300,6 +300,66 @@ class MailAdminController extends BaseController
     }
     
     /**
+     * Create Subscription for User
+     */
+    public function createSubscription()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->redirect('/admin/projects/mail/subscribers');
+        }
+        
+        $mmbUserId = $_POST['mmb_user_id'] ?? 0;
+        $planId = $_POST['plan_id'] ?? 0;
+        $accountName = $_POST['account_name'] ?? '';
+        $billingCycle = $_POST['billing_cycle'] ?? 'monthly';
+        
+        // Validate inputs
+        if (!$mmbUserId || !$planId || !$accountName) {
+            $this->flash('error', 'All fields are required');
+            $this->redirect('/admin/projects/mail/subscribers');
+        }
+        
+        // Check if subscriber already exists
+        $existingSubscriber = $this->db->fetch(
+            "SELECT id FROM mail_subscribers WHERE mmb_user_id = ?",
+            [$mmbUserId]
+        );
+        
+        if ($existingSubscriber) {
+            $this->flash('error', 'User already has a mail subscription');
+            $this->redirect('/admin/projects/mail/subscribers');
+        }
+        
+        // Create subscriber
+        $this->db->query(
+            "INSERT INTO mail_subscribers (mmb_user_id, account_name, billing_email, status, created_at)
+             VALUES (?, ?, (SELECT email FROM users WHERE id = ?), 'active', NOW())",
+            [$mmbUserId, $accountName, $mmbUserId]
+        );
+        
+        $subscriberId = $this->db->getConnection()->lastInsertId();
+        
+        // Create subscription
+        $periodStart = date('Y-m-d H:i:s');
+        $periodEnd = $billingCycle === 'yearly' 
+            ? date('Y-m-d H:i:s', strtotime('+1 year'))
+            : date('Y-m-d H:i:s', strtotime('+1 month'));
+        
+        $this->db->query(
+            "INSERT INTO mail_subscriptions 
+             (subscriber_id, plan_id, status, billing_cycle, current_period_start, current_period_end, created_at)
+             VALUES (?, ?, 'active', ?, ?, ?, NOW())",
+            [$subscriberId, $planId, $billingCycle, $periodStart, $periodEnd]
+        );
+        
+        // Log admin action
+        $this->logAdminAction('create_subscription', 'subscriber', $subscriberId, "Created subscription for user ID: $mmbUserId");
+        
+        $this->flash('success', 'Subscription created successfully');
+        $this->redirect('/admin/projects/mail/subscribers/' . $subscriberId);
+    }
+    
+    /**
      * Manage Subscription Plans
      */
     public function plans()
@@ -356,7 +416,6 @@ class MailAdminController extends BaseController
         $planName = $_POST['plan_name'] ?? '';
         $priceMonthly = $_POST['price_monthly'] ?? 0;
         $priceYearly = $_POST['price_yearly'] ?? 0;
-        $currency = $_POST['currency'] ?? 'USD';
         $maxUsers = $_POST['max_users'] ?? 1;
         $storagePerUserGb = $_POST['storage_per_user_gb'] ?? 1;
         $dailySendLimit = $_POST['daily_send_limit'] ?? 100;
@@ -368,11 +427,11 @@ class MailAdminController extends BaseController
         
         $this->db->query(
             "UPDATE mail_subscription_plans 
-             SET plan_name = ?, price_monthly = ?, price_yearly = ?, currency = ?, max_users = ?,
+             SET plan_name = ?, price_monthly = ?, price_yearly = ?, max_users = ?,
                  storage_per_user_gb = ?, daily_send_limit = ?, max_attachment_size_mb = ?,
                  max_domains = ?, max_aliases = ?, description = ?, is_active = ?, updated_at = NOW()
              WHERE id = ?",
-            [$planName, $priceMonthly, $priceYearly, $currency, $maxUsers, $storagePerUserGb, 
+            [$planName, $priceMonthly, $priceYearly, $maxUsers, $storagePerUserGb, 
              $dailySendLimit, $maxAttachmentSizeMb, $maxDomains, $maxAliases, $description, $isActive, $id]
         );
         
@@ -407,7 +466,8 @@ class MailAdminController extends BaseController
         $domains = $this->db->query(
             "SELECT d.*, 
                     s.account_name as subscriber_name,
-                    s.account_name as username
+                    s.account_name as username,
+                    (SELECT COUNT(*) FROM mail_mailboxes m WHERE m.domain_id = d.id) as mailbox_count
              FROM mail_domains d
              LEFT JOIN mail_subscribers s ON d.subscriber_id = s.id
              ORDER BY d.created_at DESC
