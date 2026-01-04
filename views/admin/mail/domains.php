@@ -52,84 +52,73 @@
                             </tr>
                         </thead>
                         <tbody id="domains-table-body">
-                            <tr>
-                                <td>example.com</td>
-                                <td>
-                                    <a href="/admin/projects/mail/subscribers/1">Acme Corp</a>
-                                </td>
-                                <td>
-                                    <span class="badge badge-success">Active</span>
-                                </td>
-                                <td>
-                                    <span class="badge badge-success">
-                                        <i class="fas fa-check"></i> Verified
-                                    </span>
-                                </td>
-                                <td>
-                                    <span class="badge badge-info">5 mailboxes</span>
-                                </td>
-                                <td>Jan 1, 2026</td>
-                                <td>
-                                    <button class="btn btn-sm btn-info" onclick="viewDomain(1)">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-warning" onclick="verifyDNS(1)">
-                                        <i class="fas fa-sync"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>company.net</td>
-                                <td>
-                                    <a href="/admin/projects/mail/subscribers/2">Tech Solutions</a>
-                                </td>
-                                <td>
-                                    <span class="badge badge-success">Active</span>
-                                </td>
-                                <td>
-                                    <span class="badge badge-warning">
-                                        <i class="fas fa-clock"></i> Pending
-                                    </span>
-                                </td>
-                                <td>
-                                    <span class="badge badge-info">3 mailboxes</span>
-                                </td>
-                                <td>Jan 2, 2026</td>
-                                <td>
-                                    <button class="btn btn-sm btn-info" onclick="viewDomain(2)">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-warning" onclick="verifyDNS(2)">
-                                        <i class="fas fa-sync"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>startup.io</td>
-                                <td>
-                                    <a href="/admin/projects/mail/subscribers/3">Startup Inc</a>
-                                </td>
-                                <td>
-                                    <span class="badge badge-danger">Suspended</span>
-                                </td>
-                                <td>
-                                    <span class="badge badge-danger">
-                                        <i class="fas fa-times"></i> Failed
-                                    </span>
-                                </td>
-                                <td>
-                                    <span class="badge badge-info">1 mailbox</span>
-                                </td>
-                                <td>Jan 3, 2026</td>
-                                <td>
-                                    <button class="btn btn-sm btn-info" onclick="viewDomain(3)">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-warning" onclick="verifyDNS(3)">
-                                        <i class="fas fa-sync"></i>
-                                    </button>
-                                </td>
-                            </tr>
+                            <?php if (isset($domains) && count($domains) > 0): ?>
+                                <?php foreach ($domains as $domain): ?>
+                                <tr>
+                                    <td><?= htmlspecialchars($domain['domain_name']) ?></td>
+                                    <td>
+                                        <?php if ($domain['subscriber_name']): ?>
+                                            <a href="/admin/projects/mail/subscribers/<?= $domain['subscriber_id'] ?>">
+                                                <?= htmlspecialchars($domain['subscriber_name']) ?>
+                                            </a>
+                                        <?php else: ?>
+                                            <span class="text-muted">N/A</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <?php if ($domain['is_active']): ?>
+                                            <span class="badge badge-success">Active</span>
+                                        <?php else: ?>
+                                            <span class="badge badge-danger">Inactive</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <?php if ($domain['is_verified']): ?>
+                                            <span class="badge badge-success">
+                                                <i class="fas fa-check"></i> Verified
+                                            </span>
+                                        <?php else: ?>
+                                            <span class="badge badge-warning">
+                                                <i class="fas fa-clock"></i> Pending
+                                            </span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-info">
+                                            <?= $domain['mailbox_count'] ?? 0 ?> mailboxes
+                                        </span>
+                                    </td>
+                                    <td><?= date('M d, Y', strtotime($domain['created_at'])) ?></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-primary" onclick="editDomain(<?= $domain['id'] ?>)" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-info" onclick="viewDomain(<?= $domain['id'] ?>)" title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-warning" onclick="verifyDNS(<?= $domain['id'] ?>)" title="Verify DNS">
+                                            <i class="fas fa-sync"></i>
+                                        </button>
+                                        <?php if (!$domain['is_active']): ?>
+                                        <button class="btn btn-sm btn-success" onclick="activateDomain(<?= $domain['id'] ?>)" title="Activate">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                        <?php else: ?>
+                                        <button class="btn btn-sm btn-danger" onclick="suspendDomain(<?= $domain['id'] ?>)" title="Suspend">
+                                            <i class="fas fa-ban"></i>
+                                        </button>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted py-4">
+                                        <i class="fas fa-inbox fa-3x mb-3"></i><br>
+                                        No domains found
+                                    </td>
+                                </tr>
+                            <?php endif; ?>
                         </tbody>
                     </table>
                 </div>
@@ -288,6 +277,50 @@ function verifyDNS(domainId) {
             alert('Error: ' + (data.error || 'Verification failed'));
         }
     });
+}
+
+function editDomain(domainId) {
+    window.location.href = '/admin/projects/mail/domains/' + domainId + '/edit';
+}
+
+function activateDomain(domainId) {
+    if (confirm('Are you sure you want to activate this domain?')) {
+        fetch('/admin/projects/mail/domains/' + domainId + '/activate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Domain activated successfully');
+                location.reload();
+            } else {
+                alert('Error: ' + (data.error || 'Activation failed'));
+            }
+        });
+    }
+}
+
+function suspendDomain(domainId) {
+    if (confirm('Are you sure you want to suspend this domain?')) {
+        fetch('/admin/projects/mail/domains/' + domainId + '/suspend', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Domain suspended successfully');
+                location.reload();
+            } else {
+                alert('Error: ' + (data.error || 'Suspension failed'));
+            }
+        });
+    }
 }
 
 // Search functionality

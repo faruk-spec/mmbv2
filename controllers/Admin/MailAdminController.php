@@ -356,6 +356,7 @@ class MailAdminController extends BaseController
         $planName = $_POST['plan_name'] ?? '';
         $priceMonthly = $_POST['price_monthly'] ?? 0;
         $priceYearly = $_POST['price_yearly'] ?? 0;
+        $currency = $_POST['currency'] ?? 'USD';
         $maxUsers = $_POST['max_users'] ?? 1;
         $storagePerUserGb = $_POST['storage_per_user_gb'] ?? 1;
         $dailySendLimit = $_POST['daily_send_limit'] ?? 100;
@@ -363,15 +364,16 @@ class MailAdminController extends BaseController
         $maxDomains = $_POST['max_domains'] ?? 1;
         $maxAliases = $_POST['max_aliases'] ?? 5;
         $description = $_POST['description'] ?? '';
+        $isActive = isset($_POST['is_active']) ? 1 : 0;
         
         $this->db->query(
             "UPDATE mail_subscription_plans 
-             SET plan_name = ?, price_monthly = ?, price_yearly = ?, max_users = ?,
+             SET plan_name = ?, price_monthly = ?, price_yearly = ?, currency = ?, max_users = ?,
                  storage_per_user_gb = ?, daily_send_limit = ?, max_attachment_size_mb = ?,
-                 max_domains = ?, max_aliases = ?, description = ?, updated_at = NOW()
+                 max_domains = ?, max_aliases = ?, description = ?, is_active = ?, updated_at = NOW()
              WHERE id = ?",
-            [$planName, $priceMonthly, $priceYearly, $maxUsers, $storagePerUserGb, 
-             $dailySendLimit, $maxAttachmentSizeMb, $maxDomains, $maxAliases, $description, $id]
+            [$planName, $priceMonthly, $priceYearly, $currency, $maxUsers, $storagePerUserGb, 
+             $dailySendLimit, $maxAttachmentSizeMb, $maxDomains, $maxAliases, $description, $isActive, $id]
         );
         
         // Update features if provided
@@ -389,8 +391,8 @@ class MailAdminController extends BaseController
         // Log admin action
         $this->logAdminAction('update_plan', 'plan', $id, "Updated plan: $planName");
         
-        $this->success('Plan updated successfully');
-        redirect('/admin/projects/mail/plans');
+        $this->flash('success', 'Plan updated successfully');
+        $this->redirect('/admin/projects/mail/plans');
     }
     
     /**
@@ -422,6 +424,77 @@ class MailAdminController extends BaseController
             'totalPages' => $totalPages,
             'title' => 'All Domains'
         ]);
+    }
+    
+    /**
+     * Edit Domain
+     */
+    public function editDomain($id)
+    {
+        $domain = $this->db->fetch("SELECT * FROM mail_domains WHERE id = ?", [$id]);
+        
+        if (!$domain) {
+            $this->flash('error', 'Domain not found');
+            $this->redirect('/admin/projects/mail/domains');
+            return;
+        }
+        
+        $subscriber = $this->db->fetch("SELECT * FROM mail_subscribers WHERE id = ?", [$domain['subscriber_id']]);
+        
+        $this->view('admin/mail/edit-domain', [
+            'domain' => $domain,
+            'subscriber' => $subscriber,
+            'title' => 'Edit Domain - ' . $domain['domain_name']
+        ]);
+    }
+    
+    /**
+     * Update Domain
+     */
+    public function updateDomain($id)
+    {
+        $isActive = isset($_POST['is_active']) ? 1 : 0;
+        $catchAllEmail = $_POST['catch_all_email'] ?? null;
+        $description = $_POST['description'] ?? '';
+        
+        $this->db->query(
+            "UPDATE mail_domains 
+             SET is_active = ?, catch_all_email = ?, description = ?, updated_at = NOW()
+             WHERE id = ?",
+            [$isActive, $catchAllEmail, $description, $id]
+        );
+        
+        $domain = $this->db->fetch("SELECT domain_name FROM mail_domains WHERE id = ?", [$id]);
+        $this->logAdminAction('update_domain', 'domain', $id, "Updated domain: " . $domain['domain_name']);
+        
+        $this->flash('success', 'Domain updated successfully');
+        $this->redirect('/admin/projects/mail/domains');
+    }
+    
+    /**
+     * Activate Domain
+     */
+    public function activateDomain($id)
+    {
+        $this->db->query("UPDATE mail_domains SET is_active = 1, updated_at = NOW() WHERE id = ?", [$id]);
+        
+        $domain = $this->db->fetch("SELECT domain_name FROM mail_domains WHERE id = ?", [$id]);
+        $this->logAdminAction('activate_domain', 'domain', $id, "Activated domain: " . $domain['domain_name']);
+        
+        $this->json(['success' => true, 'message' => 'Domain activated successfully']);
+    }
+    
+    /**
+     * Suspend Domain
+     */
+    public function suspendDomain($id)
+    {
+        $this->db->query("UPDATE mail_domains SET is_active = 0, updated_at = NOW() WHERE id = ?", [$id]);
+        
+        $domain = $this->db->fetch("SELECT domain_name FROM mail_domains WHERE id = ?", [$id]);
+        $this->logAdminAction('suspend_domain', 'domain', $id, "Suspended domain: " . $domain['domain_name']);
+        
+        $this->json(['success' => true, 'message' => 'Domain suspended successfully']);
     }
     
     /**
@@ -545,8 +618,8 @@ class MailAdminController extends BaseController
         // Log admin action
         $this->logAdminAction('update_settings', 'system', 0, "Updated system settings");
         
-        $this->success('Settings saved successfully');
-        redirect('/admin/projects/mail/settings');
+        $this->flash('success', 'Settings saved successfully');
+        $this->redirect('/admin/projects/mail/settings');
     }
     
     /**

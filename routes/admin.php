@@ -113,6 +113,10 @@ $router->post('/admin/projects/mail/plans/{id}/edit', 'Admin\\MailAdminControlle
 
 // Domain Management
 $router->get('/admin/projects/mail/domains', 'Admin\\MailAdminController@domains', ['auth', 'admin']);
+$router->get('/admin/projects/mail/domains/{id}/edit', 'Admin\\MailAdminController@editDomain', ['auth', 'admin']);
+$router->post('/admin/projects/mail/domains/{id}/edit', 'Admin\\MailAdminController@updateDomain', ['auth', 'admin']);
+$router->post('/admin/projects/mail/domains/{id}/activate', 'Admin\\MailAdminController@activateDomain', ['auth', 'admin']);
+$router->post('/admin/projects/mail/domains/{id}/suspend', 'Admin\\MailAdminController@suspendDomain', ['auth', 'admin']);
 
 // Abuse Management
 $router->get('/admin/projects/mail/abuse', 'Admin\\MailAdminController@abuseReports', ['auth', 'admin']);

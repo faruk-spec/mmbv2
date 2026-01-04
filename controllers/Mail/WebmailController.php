@@ -26,7 +26,7 @@ class WebmailController extends BaseController
         // Get authenticated user's mailbox
         $userId = Auth::id();
         $this->mailbox = $this->db->fetch(
-            "SELECT * FROM mail_mailboxes WHERE user_id = ? AND is_active = 1 LIMIT 1",
+            "SELECT * FROM mail_mailboxes WHERE mmb_user_id = ? AND is_active = 1 LIMIT 1",
             [$userId]
         );
         
