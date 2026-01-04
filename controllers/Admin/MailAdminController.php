@@ -431,6 +431,14 @@ class MailAdminController extends BaseController
     {
         $status = $_GET['status'] ?? 'pending';
         
+        // Get statistics
+        $stats = [
+            'pending' => $this->db->fetch("SELECT COUNT(*) as count FROM mail_abuse_reports WHERE status = 'pending'")['count'] ?? 0,
+            'investigating' => $this->db->fetch("SELECT COUNT(*) as count FROM mail_abuse_reports WHERE status = 'investigating'")['count'] ?? 0,
+            'resolved' => $this->db->fetch("SELECT COUNT(*) as count FROM mail_abuse_reports WHERE status = 'resolved'")['count'] ?? 0,
+            'dismissed' => $this->db->fetch("SELECT COUNT(*) as count FROM mail_abuse_reports WHERE status = 'dismissed'")['count'] ?? 0,
+        ];
+        
         $reports = $this->db->query(
             "SELECT ar.*, 
                     m.email as mailbox_email,
@@ -448,6 +456,7 @@ class MailAdminController extends BaseController
         $this->view('admin/mail/abuse-reports', [
             'reports' => $reports,
             'currentStatus' => $status,
+            'stats' => $stats,
             'title' => 'Abuse Reports'
         ]);
     }

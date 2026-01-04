@@ -1,3 +1,4 @@
+<?php use Core\View; ?>
 <?php View::extend('admin'); ?>
 
 <?php View::section('content'); ?>
