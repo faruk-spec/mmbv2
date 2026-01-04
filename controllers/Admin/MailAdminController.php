@@ -425,6 +425,7 @@ class MailAdminController extends BaseController
         $planName = $_POST['plan_name'] ?? '';
         $priceMonthly = $_POST['price_monthly'] ?? 0;
         $priceYearly = $_POST['price_yearly'] ?? 0;
+        $currency = $_POST['currency'] ?? 'USD';
         $maxUsers = $_POST['max_users'] ?? 1;
         $storagePerUserGb = $_POST['storage_per_user_gb'] ?? 1;
         $dailySendLimit = $_POST['daily_send_limit'] ?? 100;
@@ -434,15 +435,32 @@ class MailAdminController extends BaseController
         $description = $_POST['description'] ?? '';
         $isActive = isset($_POST['is_active']) ? 1 : 0;
         
-        $this->db->query(
-            "UPDATE mail_subscription_plans 
-             SET plan_name = ?, price_monthly = ?, price_yearly = ?, max_users = ?,
-                 storage_per_user_gb = ?, daily_send_limit = ?, max_attachment_size_mb = ?,
-                 max_domains = ?, max_aliases = ?, description = ?, is_active = ?, updated_at = NOW()
-             WHERE id = ?",
-            [$planName, $priceMonthly, $priceYearly, $maxUsers, $storagePerUserGb, 
-             $dailySendLimit, $maxAttachmentSizeMb, $maxDomains, $maxAliases, $description, $isActive, $id]
-        );
+        // Check if currency column exists
+        $columns = $this->db->query("SHOW COLUMNS FROM mail_subscription_plans LIKE 'currency'")->fetchAll();
+        
+        if (!empty($columns)) {
+            // Currency column exists, update with currency
+            $this->db->query(
+                "UPDATE mail_subscription_plans 
+                 SET plan_name = ?, price_monthly = ?, price_yearly = ?, currency = ?, max_users = ?,
+                     storage_per_user_gb = ?, daily_send_limit = ?, max_attachment_size_mb = ?,
+                     max_domains = ?, max_aliases = ?, description = ?, is_active = ?, updated_at = NOW()
+                 WHERE id = ?",
+                [$planName, $priceMonthly, $priceYearly, $currency, $maxUsers, $storagePerUserGb, 
+                 $dailySendLimit, $maxAttachmentSizeMb, $maxDomains, $maxAliases, $description, $isActive, $id]
+            );
+        } else {
+            // Currency column doesn't exist, update without it
+            $this->db->query(
+                "UPDATE mail_subscription_plans 
+                 SET plan_name = ?, price_monthly = ?, price_yearly = ?, max_users = ?,
+                     storage_per_user_gb = ?, daily_send_limit = ?, max_attachment_size_mb = ?,
+                     max_domains = ?, max_aliases = ?, description = ?, is_active = ?, updated_at = NOW()
+                 WHERE id = ?",
+                [$planName, $priceMonthly, $priceYearly, $maxUsers, $storagePerUserGb, 
+                 $dailySendLimit, $maxAttachmentSizeMb, $maxDomains, $maxAliases, $description, $isActive, $id]
+            );
+        }
         
         // Update features if provided
         if (isset($_POST['features'])) {
@@ -498,6 +516,43 @@ class MailAdminController extends BaseController
         $this->logAdminAction('update_plan', 'plan', $id, "Updated plan: $planName");
         
         $this->flash('success', 'Plan updated successfully');
+        $this->redirect('/admin/projects/mail/plans');
+    }
+    
+    /**
+     * Set universal currency for all plans
+     */
+    public function setUniversalCurrency()
+    {
+        $currency = $_POST['currency'] ?? 'USD';
+        
+        // Validate currency
+        $validCurrencies = ['USD', 'EUR', 'GBP', 'INR', 'AUD', 'CAD', 'JPY', 'CNY'];
+        if (!in_array($currency, $validCurrencies)) {
+            $this->flash('error', 'Invalid currency selected');
+            $this->redirect('/admin/projects/mail/plans');
+            return;
+        }
+        
+        // Check if currency column exists
+        $columns = $this->db->query("SHOW COLUMNS FROM mail_subscription_plans LIKE 'currency'")->fetchAll();
+        
+        if (empty($columns)) {
+            $this->flash('error', 'Currency column not found. Please run the database migration first: projects/mail/migrations/add_currency_column.sql');
+            $this->redirect('/admin/projects/mail/plans');
+            return;
+        }
+        
+        // Update all plans
+        $this->db->query(
+            "UPDATE mail_subscription_plans SET currency = ?, updated_at = NOW()",
+            [$currency]
+        );
+        
+        // Log admin action
+        $this->logAdminAction('set_universal_currency', 'system', 0, "Set universal currency to: $currency");
+        
+        $this->flash('success', "Currency updated to $currency for all plans");
         $this->redirect('/admin/projects/mail/plans');
     }
     

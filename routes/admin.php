@@ -111,6 +111,7 @@ $router->post('/admin/projects/mail/subscribers/toggle-feature', 'Admin\\MailAdm
 $router->get('/admin/projects/mail/plans', 'Admin\\MailAdminController@plans', ['auth', 'admin']);
 $router->get('/admin/projects/mail/plans/{id}/edit', 'Admin\\MailAdminController@editPlan', ['auth', 'admin']);
 $router->post('/admin/projects/mail/plans/{id}/edit', 'Admin\\MailAdminController@editPlan', ['auth', 'admin']);
+$router->post('/admin/projects/mail/plans/set-universal-currency', 'Admin\\MailAdminController@setUniversalCurrency', ['auth', 'admin']);
 
 // Domain Management
 $router->get('/admin/projects/mail/domains', 'Admin\\MailAdminController@domains', ['auth', 'admin']);

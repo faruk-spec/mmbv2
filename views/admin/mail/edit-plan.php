@@ -46,24 +46,44 @@
                         </div>
 
                         <div class="row">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="form-group">
-                                    <label for="price_monthly">Monthly Price ($) *</label>
+                                    <label for="price_monthly">Monthly Price *</label>
                                     <input type="number" step="0.01" class="form-control" id="price_monthly" 
                                            name="price_monthly" value="<?= $plan['price_monthly'] ?>" required>
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="form-group">
-                                    <label for="price_yearly">Yearly Price ($) *</label>
+                                    <label for="price_yearly">Yearly Price *</label>
                                     <input type="number" step="0.01" class="form-control" id="price_yearly" 
                                            name="price_yearly" value="<?= $plan['price_yearly'] ?>" required>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="currency">Currency *</label>
+                                    <select class="form-control" id="currency" name="currency" required>
+                                        <option value="USD" <?= (isset($plan['currency']) && $plan['currency'] === 'USD') || !isset($plan['currency']) ? 'selected' : '' ?>>USD ($)</option>
+                                        <option value="EUR" <?= isset($plan['currency']) && $plan['currency'] === 'EUR' ? 'selected' : '' ?>>EUR (€)</option>
+                                        <option value="GBP" <?= isset($plan['currency']) && $plan['currency'] === 'GBP' ? 'selected' : '' ?>>GBP (£)</option>
+                                        <option value="INR" <?= isset($plan['currency']) && $plan['currency'] === 'INR' ? 'selected' : '' ?>>INR (₹)</option>
+                                        <option value="AUD" <?= isset($plan['currency']) && $plan['currency'] === 'AUD' ? 'selected' : '' ?>>AUD (A$)</option>
+                                        <option value="CAD" <?= isset($plan['currency']) && $plan['currency'] === 'CAD' ? 'selected' : '' ?>>CAD (C$)</option>
+                                        <option value="JPY" <?= isset($plan['currency']) && $plan['currency'] === 'JPY' ? 'selected' : '' ?>>JPY (¥)</option>
+                                        <option value="CNY" <?= isset($plan['currency']) && $plan['currency'] === 'CNY' ? 'selected' : '' ?>>CNY (¥)</option>
+                                    </select>
                                 </div>
                             </div>
                         </div>
 
                         <div class="alert alert-info">
-                            <i class="fas fa-info-circle"></i> Prices are in USD. To add multi-currency support, update the database schema to include a currency column.
+                            <i class="fas fa-info-circle"></i> 
+                            <?php if (!isset($plan['currency'])): ?>
+                            <strong>Note:</strong> Run the SQL migration to add currency support: <code>projects/mail/migrations/add_currency_column.sql</code>
+                            <?php else: ?>
+                            Currency support is enabled. Prices will be displayed in the selected currency.
+                            <?php endif; ?>
                         </div>
 
                         <div class="form-group">

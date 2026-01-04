@@ -24,15 +24,15 @@ class SubscriberController extends BaseController
     {
         parent::__construct();
         
-        // Ensure user is authenticated
-        if (!Auth::check()) {
-            $this->redirect('/login');
-        }
-        
         $this->db = Database::getInstance();
         
-        // Get subscriber info for current user
-        $this->loadSubscriberInfo();
+        // Note: Authentication check moved to individual methods
+        // Some methods like subscribe() need to be accessible to all authenticated users
+        // Other methods require subscriber ownership
+        if (Auth::check()) {
+            // Get subscriber info for current user
+            $this->loadSubscriberInfo();
+        }
     }
     
     /**
@@ -76,6 +76,13 @@ class SubscriberController extends BaseController
      */
     public function dashboard()
     {
+        // Ensure user is authenticated
+        if (!Auth::check()) {
+            $this->flash('error', 'Please login to access dashboard');
+            $this->redirect('/login');
+            return;
+        }
+        
         if (!$this->isOwner) {
             $this->error('Access denied. Subscriber owner access required.');
             return;
@@ -137,6 +144,13 @@ class SubscriberController extends BaseController
      */
     public function manageUsers()
     {
+        // Ensure user is authenticated
+        if (!Auth::check()) {
+            $this->flash('error', 'Please login to manage users');
+            $this->redirect('/login');
+            return;
+        }
+        
         if (!$this->isOwner) {
             $this->error('Access denied. Subscriber owner access required.');
             return;
@@ -426,6 +440,13 @@ class SubscriberController extends BaseController
      */
     public function subscribe()
     {
+        // Ensure user is authenticated
+        if (!Auth::check()) {
+            $this->flash('error', 'Please login to subscribe');
+            $this->redirect('/login');
+            return;
+        }
+        
         $planId = $_GET['plan'] ?? null;
         
         if (!$planId) {
@@ -462,6 +483,13 @@ class SubscriberController extends BaseController
      */
     public function processSubscription()
     {
+        // Ensure user is authenticated
+        if (!Auth::check()) {
+            $this->flash('error', 'Please login to subscribe');
+            $this->redirect('/login');
+            return;
+        }
+        
         $planId = $_POST['plan_id'] ?? null;
         $billingCycle = $_POST['billing_cycle'] ?? 'monthly';
         $accountName = $_POST['account_name'] ?? '';
@@ -515,9 +543,17 @@ class SubscriberController extends BaseController
      */
     public function showUpgrade()
     {
+        // Ensure user is authenticated
+        if (!Auth::check()) {
+            $this->flash('error', 'Please login to access upgrade options');
+            $this->redirect('/login');
+            return;
+        }
+        
         if (!$this->isOwner) {
             $this->flash('error', 'Access denied');
             $this->redirect('/projects/mail');
+            return;
         }
         
         // Get current plan
