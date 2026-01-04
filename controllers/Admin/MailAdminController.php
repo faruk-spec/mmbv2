@@ -308,14 +308,23 @@ class MailAdminController extends BaseController
             $this->redirect('/admin/projects/mail/subscribers');
         }
         
-        $mmbUserId = $_POST['mmb_user_id'] ?? 0;
-        $planId = $_POST['plan_id'] ?? 0;
-        $accountName = $_POST['account_name'] ?? '';
-        $billingCycle = $_POST['billing_cycle'] ?? 'monthly';
+        $mmbUserId = (int)($_POST['mmb_user_id'] ?? 0);
+        $planId = (int)($_POST['plan_id'] ?? 0);
+        $accountName = trim($_POST['account_name'] ?? '');
+        $billingCycle = in_array($_POST['billing_cycle'] ?? '', ['monthly', 'yearly']) 
+            ? $_POST['billing_cycle'] 
+            : 'monthly';
         
         // Validate inputs
         if (!$mmbUserId || !$planId || !$accountName) {
             $this->flash('error', 'All fields are required');
+            $this->redirect('/admin/projects/mail/subscribers');
+        }
+        
+        // Check if user exists
+        $user = $this->db->fetch("SELECT id, email FROM users WHERE id = ?", [$mmbUserId]);
+        if (!$user) {
+            $this->flash('error', 'User not found');
             $this->redirect('/admin/projects/mail/subscribers');
         }
         
@@ -333,8 +342,8 @@ class MailAdminController extends BaseController
         // Create subscriber
         $this->db->query(
             "INSERT INTO mail_subscribers (mmb_user_id, account_name, billing_email, status, created_at)
-             VALUES (?, ?, (SELECT email FROM users WHERE id = ?), 'active', NOW())",
-            [$mmbUserId, $accountName, $mmbUserId]
+             VALUES (?, ?, ?, 'active', NOW())",
+            [$mmbUserId, $accountName, $user['email']]
         );
         
         $subscriberId = $this->db->getConnection()->lastInsertId();
