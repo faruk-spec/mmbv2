@@ -420,4 +420,125 @@ class SubscriberController extends BaseController
         echo json_encode(['success' => false, 'message' => $message]);
         exit;
     }
+    
+    /**
+     * Show subscription/purchase page
+     */
+    public function subscribe()
+    {
+        $planId = $_GET['plan'] ?? null;
+        
+        if (!$planId) {
+            $this->flash('error', 'Please select a plan');
+            $this->redirect('/projects/mail');
+        }
+        
+        // Get plan details
+        $plan = $this->db->fetch(
+            "SELECT * FROM mail_subscription_plans WHERE id = ? AND is_active = 1",
+            [$planId]
+        );
+        
+        if (!$plan) {
+            $this->flash('error', 'Invalid plan selected');
+            $this->redirect('/projects/mail');
+        }
+        
+        // Get plan features
+        $features = $this->db->fetchAll(
+            "SELECT * FROM mail_plan_features WHERE plan_id = ? AND is_enabled = 1 ORDER BY feature_name",
+            [$planId]
+        );
+        
+        $this->view('mail/subscribe', [
+            'pageTitle' => 'Subscribe to ' . $plan['plan_name'],
+            'plan' => $plan,
+            'features' => $features
+        ]);
+    }
+    
+    /**
+     * Process subscription payment
+     */
+    public function processSubscription()
+    {
+        $planId = $_POST['plan_id'] ?? null;
+        $billingCycle = $_POST['billing_cycle'] ?? 'monthly';
+        $accountName = $_POST['account_name'] ?? '';
+        
+        if (!$planId || !$accountName) {
+            $this->flash('error', 'Please fill all required fields');
+            $this->redirect('/projects/mail/subscribe?plan=' . $planId);
+        }
+        
+        $userId = Auth::id();
+        
+        // Check if user already has a subscription
+        $existing = $this->db->fetch(
+            "SELECT id FROM mail_subscribers WHERE mmb_user_id = ?",
+            [$userId]
+        );
+        
+        if ($existing) {
+            $this->flash('error', 'You already have an active subscription');
+            $this->redirect('/projects/mail');
+        }
+        
+        // Create subscriber
+        $this->db->query(
+            "INSERT INTO mail_subscribers (mmb_user_id, account_name, billing_email, status, created_at)
+             VALUES (?, ?, (SELECT email FROM users WHERE id = ?), 'active', NOW())",
+            [$userId, $accountName, $userId]
+        );
+        
+        $subscriberId = $this->db->getConnection()->lastInsertId();
+        
+        // Create subscription
+        $periodStart = date('Y-m-d H:i:s');
+        $periodEnd = $billingCycle === 'yearly' 
+            ? date('Y-m-d H:i:s', strtotime('+1 year'))
+            : date('Y-m-d H:i:s', strtotime('+1 month'));
+        
+        $this->db->query(
+            "INSERT INTO mail_subscriptions 
+             (subscriber_id, plan_id, status, billing_cycle, current_period_start, current_period_end, created_at)
+             VALUES (?, ?, 'active', ?, ?, ?, NOW())",
+            [$subscriberId, $planId, $billingCycle, $periodStart, $periodEnd]
+        );
+        
+        $this->flash('success', 'Subscription created successfully! Welcome to Mail Hosting.');
+        $this->redirect('/projects/mail/subscriber/dashboard');
+    }
+    
+    /**
+     * Show upgrade page
+     */
+    public function showUpgrade()
+    {
+        if (!$this->isOwner) {
+            $this->flash('error', 'Access denied');
+            $this->redirect('/projects/mail');
+        }
+        
+        // Get current plan
+        $current = $this->db->fetch(
+            "SELECT sp.*, sub.billing_cycle
+             FROM mail_subscriptions sub
+             JOIN mail_subscription_plans sp ON sub.plan_id = sp.id
+             WHERE sub.subscriber_id = ? AND sub.status = 'active'
+             LIMIT 1",
+            [$this->subscriberId]
+        );
+        
+        // Get all available plans
+        $plans = $this->db->fetchAll(
+            "SELECT * FROM mail_subscription_plans WHERE is_active = 1 ORDER BY price_monthly ASC"
+        );
+        
+        $this->view('mail/upgrade', [
+            'pageTitle' => 'Upgrade Your Plan',
+            'currentPlan' => $current,
+            'plans' => $plans
+        ]);
+    }
 }
