@@ -8,23 +8,19 @@
 
 namespace Controllers\Admin;
 
-use Core\Controller;
+use Controllers\BaseController;
 use Core\Auth;
 use Core\View;
 use Core\Database;
 
-class MailAdminController extends Controller
+class MailAdminController extends BaseController
 {
     private $db;
     
     public function __construct()
     {
-        parent::__construct();
-        
-        // Ensure user is admin
-        if (!Auth::check() || !Auth::hasRole('admin')) {
-            redirect('/admin/login');
-        }
+        $this->requireAuth();
+        $this->requireAdmin();
         
         $this->db = Database::getInstance();
     }

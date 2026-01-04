@@ -6,9 +6,8 @@
  */
 
 use Core\Router;
-use Core\App;
 
-$router = App::getRouter();
+$router = new Router();
 $baseUrl = '/projects/mail';
 
 // Dashboard / Webmail Interface
