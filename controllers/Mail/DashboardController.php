@@ -32,17 +32,29 @@ class DashboardController extends BaseController
         
         // Check if user is a subscriber owner
         $subscriber = $this->db->fetch(
-            "SELECT s.*, sub.status as subscription_status
+            "SELECT s.*, sub.status as subscription_status, sub.plan_id,
+                    sp.plan_name, sp.price_monthly, sp.max_users, sp.storage_per_user_gb
              FROM mail_subscribers s
              LEFT JOIN mail_subscriptions sub ON s.id = sub.subscriber_id
+             LEFT JOIN mail_subscription_plans sp ON sub.plan_id = sp.id
              WHERE s.mmb_user_id = ?
              LIMIT 1",
             [$userId]
         );
         
         if ($subscriber) {
-            // User is a subscriber - redirect to subscriber dashboard
-            $this->redirect('/projects/mail/subscriber/dashboard');
+            // User is a subscriber - show upgrade page with current plan
+            $currentPlanId = $subscriber['plan_id'];
+            $allPlans = $this->db->fetchAll(
+                "SELECT * FROM mail_subscription_plans WHERE is_active = 1 ORDER BY price_monthly ASC"
+            );
+            
+            $this->view('mail/subscriber-dashboard', [
+                'pageTitle' => 'Mail Hosting Dashboard',
+                'subscriber' => $subscriber,
+                'currentPlan' => $subscriber,
+                'plans' => $allPlans
+            ]);
             return;
         }
         
@@ -58,9 +70,14 @@ class DashboardController extends BaseController
             return;
         }
         
-        // User has no mail access - show getting started page
+        // User has no mail access - show getting started page with plans
+        $plans = $this->db->fetchAll(
+            "SELECT * FROM mail_subscription_plans WHERE is_active = 1 ORDER BY price_monthly ASC"
+        );
+        
         $this->view('mail/getting-started', [
-            'pageTitle' => 'Mail Hosting - Getting Started'
+            'pageTitle' => 'Mail Hosting - Getting Started',
+            'plans' => $plans
         ]);
     }
     

@@ -447,12 +447,50 @@ class MailAdminController extends BaseController
         // Update features if provided
         if (isset($_POST['features'])) {
             foreach ($_POST['features'] as $featureKey => $isEnabled) {
-                $this->db->query(
-                    "UPDATE mail_plan_features 
-                     SET is_enabled = ?
-                     WHERE plan_id = ? AND feature_key = ?",
-                    [$isEnabled ? 1 : 0, $id, $featureKey]
+                $featureValue = $_POST['feature_values'][$featureKey] ?? null;
+                
+                // Check if feature exists
+                $existing = $this->db->fetch(
+                    "SELECT id FROM mail_plan_features WHERE plan_id = ? AND feature_key = ?",
+                    [$id, $featureKey]
                 );
+                
+                if ($existing) {
+                    // Update existing feature
+                    $this->db->query(
+                        "UPDATE mail_plan_features 
+                         SET is_enabled = ?, feature_value = ?
+                         WHERE plan_id = ? AND feature_key = ?",
+                        [$isEnabled ? 1 : 0, $featureValue, $id, $featureKey]
+                    );
+                } else {
+                    // Insert new feature (this handles custom features added via modal)
+                    // Try to get feature name from a hidden field or use the key
+                    $featureName = $_POST['feature_names'][$featureKey] ?? ucwords(str_replace('_', ' ', $featureKey));
+                    
+                    $this->db->query(
+                        "INSERT INTO mail_plan_features (plan_id, feature_key, feature_name, is_enabled, feature_value)
+                         VALUES (?, ?, ?, ?, ?)",
+                        [$id, $featureKey, $featureName, $isEnabled ? 1 : 0, $featureValue]
+                    );
+                }
+            }
+        }
+        
+        // Also handle new features that were added (with empty checkboxes)
+        if (isset($_POST['new_features'])) {
+            $newFeatures = json_decode($_POST['new_features'], true);
+            if (is_array($newFeatures)) {
+                foreach ($newFeatures as $newFeature) {
+                    $this->db->query(
+                        "INSERT INTO mail_plan_features (plan_id, feature_key, feature_name, is_enabled, feature_value, created_at)
+                         VALUES (?, ?, ?, ?, ?, NOW())
+                         ON DUPLICATE KEY UPDATE 
+                         is_enabled = VALUES(is_enabled), 
+                         feature_value = VALUES(feature_value)",
+                        [$id, $newFeature['key'], $newFeature['name'], $newFeature['enabled'] ? 1 : 0, $newFeature['value'] ?? null]
+                    );
+                }
             }
         }
         
