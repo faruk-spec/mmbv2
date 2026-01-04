@@ -95,13 +95,14 @@ class MailAdminController extends BaseController
         
         // Get all subscribers with their subscriptions
         $subscribers = $this->db->query(
-            "SELECT s.*, u.username, u.email, 
+            "SELECT s.*, 
+                    s.billing_email as email,
+                    s.account_name as username,
                     sub.status as subscription_status, 
                     sp.plan_name,
                     COUNT(DISTINCT d.id) as domains_count,
                     COUNT(DISTINCT m.id) as mailboxes_count
              FROM mail_subscribers s
-             JOIN users u ON s.mmb_user_id = u.id
              LEFT JOIN mail_subscriptions sub ON s.id = sub.subscriber_id
              LEFT JOIN mail_subscription_plans sp ON sub.plan_id = sp.id
              LEFT JOIN mail_domains d ON s.id = d.subscriber_id
