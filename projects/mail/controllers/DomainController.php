@@ -1,5 +1,11 @@
 <?php
 
+namespace Mail;
+
+use Controllers\BaseController;
+use Core\Auth;
+use Core\Database;
+
 /**
  * DomainController
  * Handles domain management operations for subscriber owners

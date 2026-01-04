@@ -1,6 +1,10 @@
 <?php
 
-namespace Projects\Mail\Controllers;
+namespace Mail;
+
+use Controllers\BaseController;
+use Core\Auth;
+use Core\Database;
 
 class ContactController extends BaseController
 {

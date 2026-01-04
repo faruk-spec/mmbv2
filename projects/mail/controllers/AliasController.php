@@ -1,5 +1,11 @@
 <?php
 
+namespace Mail;
+
+use Controllers\BaseController;
+use Core\Auth;
+use Core\Database;
+
 /**
  * AliasController
  * Handles email alias management for subscriber owners

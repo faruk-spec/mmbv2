@@ -7,9 +7,12 @@
  * Supports email operations, mailbox management, domain operations
  */
 
-namespace Mail\Controllers;
+namespace Mail;
 
-class APIController
+use Controllers\BaseController;
+use Core\Database;
+
+class APIController extends BaseController
 {
     private $db;
     private $apiKey;

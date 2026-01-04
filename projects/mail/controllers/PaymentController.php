@@ -7,13 +7,15 @@
  * Supports multiple payment gateways (Stripe, Razorpay, Cashfree)
  */
 
-namespace Mail\Controllers;
+namespace Mail;
 
+use Controllers\BaseController;
+use Core\Database;
 use Mail\Payment\Gateways\StripeGateway;
 use Mail\Payment\Gateways\RazorpayGateway;
 use Mail\Payment\Gateways\CashfreeGateway;
 
-class PaymentController
+class PaymentController extends BaseController
 {
     private $db;
     private $subscriberId;
