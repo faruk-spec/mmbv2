@@ -436,7 +436,6 @@ class MailAdminController extends BaseController
         if (!$domain) {
             $this->flash('error', 'Domain not found');
             $this->redirect('/admin/projects/mail/domains');
-            return;
         }
         
         $subscriber = $this->db->fetch("SELECT * FROM mail_subscribers WHERE id = ?", [$domain['subscriber_id']]);

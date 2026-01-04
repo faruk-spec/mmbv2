@@ -153,7 +153,12 @@ function activateDomain() {
             if (data.success) {
                 alert('Domain activated');
                 location.reload();
+            } else {
+                alert('Error: ' + (data.error || 'Activation failed'));
             }
+        })
+        .catch(error => {
+            alert('Error: ' + error.message);
         });
     }
 }
@@ -168,7 +173,12 @@ function suspendDomain() {
             if (data.success) {
                 alert('Domain suspended');
                 location.reload();
+            } else {
+                alert('Error: ' + (data.error || 'Suspension failed'));
             }
+        })
+        .catch(error => {
+            alert('Error: ' + error.message);
         });
     }
 }
