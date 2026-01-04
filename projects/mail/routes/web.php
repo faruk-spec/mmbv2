@@ -165,4 +165,4 @@ $router->post($baseUrl . '/api/attachment/upload', 'Mail\\ApiController@uploadAt
 $router->get($baseUrl . '/api/attachment/download/{id}', 'Mail\\ApiController@downloadAttachment');
 
 // Run the router
-$router->dispatch();
+$router->dispatch($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI']);

@@ -395,7 +395,7 @@ CREATE TABLE IF NOT EXISTS `mail_auto_responders` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Mail Logs table - Sending and receiving logs
-CREATE TABLE IF NOT EXISTS `mail_mail_logs` (
+CREATE TABLE IF NOT EXISTS `mail_logs` (
     `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `mailbox_id` INT UNSIGNED NULL,
     `message_id` BIGINT UNSIGNED NULL,
@@ -410,7 +410,7 @@ CREATE TABLE IF NOT EXISTS `mail_mail_logs` (
     `user_agent` VARCHAR(500) NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (`mailbox_id`) REFERENCES `mail_mailboxes`(`id`) ON DELETE SET NULL,
-    FOREIGN KEY (`message_id`) REFERENCES `mail_mail_messages`(`id`) ON DELETE SET NULL,
+    FOREIGN KEY (`message_id`) REFERENCES `mail_messages`(`id`) ON DELETE SET NULL,
     INDEX `idx_mailbox_id` (`mailbox_id`),
     INDEX `idx_message_id` (`message_id`),
     INDEX `idx_log_type` (`log_type`),
