@@ -55,11 +55,13 @@ class MailAdminController extends BaseController
         
         // Get recent subscribers
         $recentSubscribers = $this->db->query(
-            "SELECT s.*, u.username, u.email, sp.plan_name
+            "SELECT s.*, 
+                    s.account_name as username,
+                    s.billing_email as email,
+                    sp.plan_name
              FROM mail_subscribers s
-             JOIN users u ON s.mmb_user_id = u.id
-             JOIN mail_subscriptions sub ON s.id = sub.subscriber_id
-             JOIN mail_subscription_plans sp ON sub.plan_id = sp.id
+             LEFT JOIN mail_subscriptions sub ON s.id = sub.subscriber_id
+             LEFT JOIN mail_subscription_plans sp ON sub.plan_id = sp.id
              ORDER BY s.created_at DESC
              LIMIT 10"
         )->fetchAll();
@@ -75,7 +77,7 @@ class MailAdminController extends BaseController
              LIMIT 5"
         )->fetchAll();
         
-        View::render('admin/mail/overview', [
+        $this->view('admin/mail/overview', [
             'stats' => $stats,
             'planDistribution' => $planDistribution,
             'recentSubscribers' => $recentSubscribers,
@@ -401,10 +403,11 @@ class MailAdminController extends BaseController
         $offset = ($page - 1) * $perPage;
         
         $domains = $this->db->query(
-            "SELECT d.*, s.account_name, u.username
+            "SELECT d.*, 
+                    s.account_name as subscriber_name,
+                    s.account_name as username
              FROM mail_domains d
-             JOIN mail_subscribers s ON d.subscriber_id = s.id
-             JOIN users u ON s.mmb_user_id = u.id
+             LEFT JOIN mail_subscribers s ON d.subscriber_id = s.id
              ORDER BY d.created_at DESC
              LIMIT ? OFFSET ?",
             [$perPage, $offset]
@@ -413,7 +416,7 @@ class MailAdminController extends BaseController
         $totalCount = $this->db->fetch("SELECT COUNT(*) as count FROM mail_domains")['count'];
         $totalPages = ceil($totalCount / $perPage);
         
-        View::render('admin/mail/domains', [
+        $this->view('admin/mail/domains', [
             'domains' => $domains,
             'currentPage' => $page,
             'totalPages' => $totalPages,
@@ -547,9 +550,10 @@ class MailAdminController extends BaseController
         $offset = ($page - 1) * $perPage;
         
         $logs = $this->db->query(
-            "SELECT aa.*, u.username
+            "SELECT aa.*, 
+                    aa.admin_user_id,
+                    'Admin' as username
              FROM mail_admin_actions aa
-             JOIN users u ON aa.admin_user_id = u.id
              ORDER BY aa.created_at DESC
              LIMIT ? OFFSET ?",
             [$perPage, $offset]
@@ -558,7 +562,7 @@ class MailAdminController extends BaseController
         $totalCount = $this->db->fetch("SELECT COUNT(*) as count FROM mail_admin_actions")['count'];
         $totalPages = ceil($totalCount / $perPage);
         
-        View::render('admin/mail/logs', [
+        $this->view('admin/mail/logs', [
             'logs' => $logs,
             'currentPage' => $page,
             'totalPages' => $totalPages,

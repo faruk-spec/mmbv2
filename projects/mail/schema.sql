@@ -715,7 +715,7 @@ CREATE TABLE IF NOT EXISTS `mail_system_settings` (
 -- ============================================
 
 -- Insert default subscription plans
-INSERT INTO `mail_subscription_plans` (`plan_name`, `plan_slug`, `plan_type`, `price_monthly`, `price_yearly`, `max_users`, `storage_per_user_gb`, `daily_send_limit`, `max_attachment_size_mb`, `max_domains`, `max_aliases`, `sort_order`, `description`) VALUES
+INSERT IGNORE INTO `mail_subscription_plans` (`plan_name`, `plan_slug`, `plan_type`, `price_monthly`, `price_yearly`, `max_users`, `storage_per_user_gb`, `daily_send_limit`, `max_attachment_size_mb`, `max_domains`, `max_aliases`, `sort_order`, `description`) VALUES
 ('Free', 'free', 'free', 0.00, 0.00, 1, 1, 50, 5, 1, 3, 1, 'Perfect for personal use'),
 ('Starter', 'starter', 'paid', 9.99, 99.00, 5, 5, 500, 25, 3, 25, 2, 'Great for small teams'),
 ('Business', 'business', 'paid', 29.99, 299.00, 25, 25, 2000, 50, 10, 100, 3, 'For growing businesses'),
