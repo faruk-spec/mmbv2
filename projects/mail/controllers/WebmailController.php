@@ -4,6 +4,12 @@
  * Handles email inbox, composer, and email management operations
  */
 
+namespace Mail;
+
+use Controllers\BaseController;
+use Core\Auth;
+use Core\Database;
+
 class WebmailController extends BaseController
 {
     private $db;

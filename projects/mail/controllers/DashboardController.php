@@ -6,11 +6,10 @@
  * @package MMB\Projects\Mail\Controllers
  */
 
-namespace Mail\Controllers;
+namespace Mail;
 
-use BaseController;
+use Controllers\BaseController;
 use Core\Auth;
-use Core\View;
 use Core\Database;
 
 class DashboardController extends BaseController

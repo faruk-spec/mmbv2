@@ -6,15 +6,13 @@
  * @package MMB\Projects\Mail\Controllers
  */
 
-namespace Mail\Controllers;
+namespace Mail;
 
-use Core\Controller;
+use Controllers\BaseController;
 use Core\Auth;
-use Core\View;
 use Core\Database;
-use Mail\MailHelpers;
 
-class SubscriberController extends Controller
+class SubscriberController extends BaseController
 {
     private $db;
     private $subscriberId;

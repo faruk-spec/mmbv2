@@ -116,7 +116,7 @@ class MailAdminController extends BaseController
         $totalCount = $this->db->fetch("SELECT COUNT(*) as count FROM mail_subscribers")['count'];
         $totalPages = ceil($totalCount / $perPage);
         
-        View::render('admin/mail/subscribers', [
+        $this->view('admin/mail/subscribers', [
             'subscribers' => $subscribers,
             'currentPage' => $page,
             'totalPages' => $totalPages,
@@ -130,11 +130,10 @@ class MailAdminController extends BaseController
     public function subscriberDetails($id)
     {
         $subscriber = $this->db->fetch(
-            "SELECT s.*, u.username, u.email, 
+            "SELECT s.*, s.account_name as username, s.billing_email as email, 
                     sub.status as subscription_status, sub.current_period_start, sub.current_period_end,
                     sp.plan_name, sp.max_users, sp.storage_per_user_gb, sp.daily_send_limit
              FROM mail_subscribers s
-             JOIN users u ON s.mmb_user_id = u.id
              LEFT JOIN mail_subscriptions sub ON s.id = sub.subscriber_id
              LEFT JOIN mail_subscription_plans sp ON sub.plan_id = sp.id
              WHERE s.id = ?",
@@ -311,7 +310,7 @@ class MailAdminController extends BaseController
              ORDER BY sp.sort_order"
         )->fetchAll();
         
-        View::render('admin/mail/plans', [
+        $this->view('admin/mail/plans', [
             'plans' => $plans,
             'title' => 'Subscription Plans'
         ]);
