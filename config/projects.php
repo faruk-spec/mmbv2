@@ -64,5 +64,16 @@ return [
         'enabled' => true,
         'database' => 'mmb_resumex',
         'url' => '/projects/resumex'
+    ],
+    
+    'mail' => [
+        'name' => 'Mail Hosting',
+        'description' => 'Professional email hosting with custom domains',
+        'icon' => 'mail',
+        'color' => '#4CAF50',
+        'enabled' => true,
+        'database' => 'mail_server',
+        'url' => '/projects/mail',
+        'admin_url' => '/admin/projects/mail'
     ]
 ];
