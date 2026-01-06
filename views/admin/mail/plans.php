@@ -43,14 +43,21 @@
                 <div class="card-body">
                     <!-- Pricing -->
                     <div class="text-center mb-4">
+                        <?php
+                        $currencySymbol = '$';
+                        if (isset($plan['currency'])) {
+                            $symbols = ['USD' => '$', 'EUR' => '€', 'GBP' => '£', 'INR' => '₹', 'AUD' => 'A$', 'CAD' => 'C$', 'JPY' => '¥', 'CNY' => '¥'];
+                            $currencySymbol = $symbols[$plan['currency']] ?? $plan['currency'] . ' ';
+                        }
+                        ?>
                         <h2 class="display-4">
-                            $<?= number_format($plan['price_monthly'], 2) ?>
+                            <?= $currencySymbol ?><?= number_format($plan['price_monthly'], 2) ?>
                         </h2>
-                        <p class="text-muted">per month</p>
+                        <p class="text-muted">per month <?= isset($plan['currency']) ? '(' . $plan['currency'] . ')' : '' ?></p>
                         <?php if ($plan['price_yearly'] > 0): ?>
                         <p class="small text-success">
                             <i class="fas fa-check"></i> 
-                            $<?= number_format($plan['price_yearly'], 2) ?>/year
+                            <?= $currencySymbol ?><?= number_format($plan['price_yearly'], 2) ?>/year
                             (Save <?= round((1 - ($plan['price_yearly'] / ($plan['price_monthly'] * 12))) * 100) ?>%)
                         </p>
                         <?php endif; ?>
