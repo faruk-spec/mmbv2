@@ -19,24 +19,46 @@ class WebmailController extends BaseController
 
     public function __construct()
     {
-        parent::__construct();
-        $this->db = Database::getInstance();
+        // BaseController doesn't have a constructor, so no need to call parent::__construct()
         
-        // Get authenticated user's mailbox
-        $userId = Auth::id();
-        $this->mailbox = $this->db->fetch(
-            "SELECT * FROM mail_mailboxes WHERE user_id = ? AND is_active = 1 LIMIT 1",
-            [$userId]
-        );
-        
-        if (!$this->mailbox) {
-            $this->error('No active mailbox found');
-            redirect('/projects/mail');
-            exit;
+        // Initialize database with error handling
+        try {
+            $this->db = Database::getInstance();
+        } catch (\Throwable $e) {
+            error_log('Warning: Database initialization failed in WebmailController: ' . $e->getMessage());
+            $this->db = null;
+        }
+    }
+    
+    /**
+     * Ensure database is available and load mailbox
+     */
+    private function ensureDatabaseAndMailbox()
+    {
+        if ($this->db === null) {
+            try {
+                $this->db = Database::getInstance();
+            } catch (\Throwable $e) {
+                error_log('Failed to initialize database in WebmailController: ' . $e->getMessage());
+                throw new \RuntimeException('Database is not available. Please try again later.');
+            }
         }
         
-        $this->mailboxId = $this->mailbox['id'];
-        $this->subscriberId = $this->mailbox['subscriber_id'];
+        if ($this->mailbox === null) {
+            // Get authenticated user's mailbox
+            $userId = Auth::id();
+            $this->mailbox = $this->db->fetch(
+                "SELECT * FROM mail_mailboxes WHERE mmb_user_id = ? AND is_active = 1 LIMIT 1",
+                [$userId]
+            );
+            
+            if (!$this->mailbox) {
+                throw new \RuntimeException('No active mailbox found');
+            }
+            
+            $this->mailboxId = $this->mailbox['id'];
+            $this->subscriberId = $this->mailbox['subscriber_id'];
+        }
     }
 
     /**
@@ -44,6 +66,9 @@ class WebmailController extends BaseController
      */
     public function inbox()
     {
+        // Ensure database and mailbox are available
+        $this->ensureDatabaseAndMailbox();
+        
         $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
         $perPage = 50;
         $offset = ($page - 1) * $perPage;

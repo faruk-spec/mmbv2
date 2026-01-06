@@ -19,7 +19,30 @@ class DashboardController extends BaseController
     public function __construct()
     {
         $this->requireAuth();
-        $this->db = Database::getInstance();
+        
+        // Initialize database with error handling
+        try {
+            $this->db = Database::getInstance();
+        } catch (\Throwable $e) {
+            error_log('Warning: Database initialization failed in DashboardController: ' . $e->getMessage());
+            $this->db = null;
+        }
+    }
+    
+    /**
+     * Ensure database is available
+     */
+    private function ensureDatabase()
+    {
+        if ($this->db === null) {
+            try {
+                $this->db = Database::getInstance();
+            } catch (\Throwable $e) {
+                error_log('Failed to initialize database in DashboardController: ' . $e->getMessage());
+                throw new \RuntimeException('Database is not available. Please try again later.');
+            }
+        }
+        return $this->db;
     }
     
     /**
@@ -28,6 +51,9 @@ class DashboardController extends BaseController
      */
     public function index()
     {
+        // Ensure database is available
+        $this->ensureDatabase();
+        
         $userId = Auth::id();
         
         // Check if user is a subscriber owner
