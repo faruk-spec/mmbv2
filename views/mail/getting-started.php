@@ -397,7 +397,10 @@ body {
                 <?php 
                 $isPopular = stripos($plan['plan_name'], 'business') !== false || 
                             stripos($plan['plan_name'], 'professional') !== false;
-                // Calculate responsive columns based on plan count
+                // Calculate responsive columns based on plan count:
+                // - 3 or fewer plans: col-lg-4 (3 columns on large screens)
+                // - 4 plans: col-lg-3 (4 columns on large screens)
+                // - 5+ plans: col-xl-2 col-lg-3 (5 columns on XL, 3 on large screens)
                 $planCount = count($plans);
                 $colClass = $planCount <= 3 ? 'col-lg-4' : ($planCount == 4 ? 'col-lg-3' : 'col-xl-2 col-lg-3');
                 ?>

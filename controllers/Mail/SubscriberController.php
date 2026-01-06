@@ -40,14 +40,32 @@ class SubscriberController extends BaseController
     }
     
     /**
+     * Get database instance, ensuring it's initialized
+     * @throws \RuntimeException if database is not available
+     */
+    private function ensureDatabase()
+    {
+        if ($this->db === null) {
+            try {
+                $this->db = Database::getInstance();
+            } catch (\Throwable $e) {
+                error_log('Failed to initialize database in SubscriberController: ' . $e->getMessage());
+                throw new \RuntimeException('Database is not available. Please try again later.');
+            }
+        }
+        return $this->db;
+    }
+    
+    /**
      * Load subscriber information for current user
      */
     private function loadSubscriberInfo()
     {
         $userId = Auth::id();
+        $db = $this->ensureDatabase();
         
         // Check if user is a subscriber owner
-        $subscriber = $this->db->fetch(
+        $subscriber = $db->fetch(
             "SELECT s.*, sub.plan_id, sp.plan_name, sp.max_users, sp.storage_per_user_gb
              FROM mail_subscribers s
              JOIN mail_subscriptions sub ON s.id = sub.subscriber_id
@@ -62,7 +80,7 @@ class SubscriberController extends BaseController
             $this->isOwner = true;
         } else {
             // Check if user is a domain admin or end user
-            $role = $this->db->fetch(
+            $role = $db->fetch(
                 "SELECT subscriber_id, role_type FROM mail_user_roles 
                  WHERE mmb_user_id = ? LIMIT 1",
                 [$userId]
@@ -87,6 +105,9 @@ class SubscriberController extends BaseController
             return;
         }
         
+        // Ensure database is available
+        $db = $this->ensureDatabase();
+        
         // Load subscriber info
         $this->loadSubscriberInfo();
         
@@ -98,7 +119,7 @@ class SubscriberController extends BaseController
         $userId = Auth::id();
         
         // Get subscriber details with subscription info
-        $subscriber = $this->db->fetch(
+        $subscriber = $db->fetch(
             "SELECT s.*, sub.plan_id, sub.status as subscription_status, 
                     sp.plan_name, sp.max_users, sp.storage_per_user_gb, sp.max_domains,
                     sp.daily_send_limit, sp.max_aliases
@@ -200,6 +221,9 @@ class SubscriberController extends BaseController
      */
     public function addUser()
     {
+        // Ensure database is available
+        $this->ensureDatabase();
+        
         if (!$this->isOwner) {
             $this->error('Access denied. Subscriber owner access required.');
             return;
@@ -349,6 +373,9 @@ class SubscriberController extends BaseController
      */
     public function assignRole()
     {
+        // Ensure database is available
+        $this->ensureDatabase();
+        
         if (!$this->isOwner) {
             $this->jsonError('Access denied');
             return;
@@ -382,6 +409,9 @@ class SubscriberController extends BaseController
      */
     public function deleteUser()
     {
+        // Ensure database is available
+        $this->ensureDatabase();
+        
         if (!$this->isOwner) {
             $this->jsonError('Access denied');
             return;
@@ -457,6 +487,9 @@ class SubscriberController extends BaseController
             return;
         }
         
+        // Ensure database is available
+        $this->ensureDatabase();
+        
         $planId = $_GET['plan'] ?? null;
         
         if (!$planId) {
@@ -499,6 +532,9 @@ class SubscriberController extends BaseController
             $this->redirect('/login');
             return;
         }
+        
+        // Ensure database is available
+        $this->ensureDatabase();
         
         $planId = $_POST['plan_id'] ?? null;
         $billingCycle = $_POST['billing_cycle'] ?? 'monthly';
@@ -559,6 +595,9 @@ class SubscriberController extends BaseController
             $this->redirect('/login');
             return;
         }
+        
+        // Ensure database is available
+        $this->ensureDatabase();
         
         if (!$this->isOwner) {
             $this->flash('error', 'Access denied');
