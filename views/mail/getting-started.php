@@ -385,9 +385,7 @@
                             <?php 
                             // Get features for this plan
                             $db = \Core\Database::getInstance();
-                            $stmt = $db->prepare("SELECT feature_name, feature_value FROM mail_plan_features WHERE plan_id = ? ORDER BY id ASC");
-                            $stmt->execute([$plan['id']]);
-                            $features = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                            $features = $db->fetchAll("SELECT feature_name, feature_value FROM mail_plan_features WHERE plan_id = ? ORDER BY id ASC", [$plan['id']]);
                             
                             if (count($features) > 0):
                                 foreach ($features as $feature):
