@@ -384,6 +384,7 @@
                         <ul class="plan-features">
                             <?php 
                             // Get features for this plan
+                            $db = \Core\Database::getInstance();
                             $stmt = $db->prepare("SELECT feature_name, feature_value FROM mail_plan_features WHERE plan_id = ? ORDER BY id ASC");
                             $stmt->execute([$plan['id']]);
                             $features = $stmt->fetchAll(PDO::FETCH_ASSOC);
