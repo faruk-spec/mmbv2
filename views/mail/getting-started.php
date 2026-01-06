@@ -364,9 +364,143 @@ body {
         font-size: 2.5rem;
     }
 }
+
+/* Theme Switcher Styles */
+.theme-switcher {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    z-index: 1000;
+    background: white;
+    border-radius: 30px;
+    padding: 8px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+    display: flex;
+    gap: 10px;
+}
+
+.theme-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+}
+
+.theme-btn:hover {
+    transform: scale(1.1);
+}
+
+.theme-btn.active {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+.theme-btn-light {
+    background: white;
+    color: #333;
+}
+
+.theme-btn-dark {
+    background: #1a202c;
+    color: #fff;
+}
+
+/* Dark Theme */
+body.dark-theme {
+    background: #1a202c;
+    color: #e2e8f0;
+}
+
+body.dark-theme .mail-landing {
+    background: #1a202c;
+}
+
+body.dark-theme .hero-section {
+    background: linear-gradient(135deg, rgba(45, 55, 72, 0.95) 0%, rgba(26, 32, 44, 0.95) 100%);
+}
+
+body.dark-theme .plans-section {
+    background: #2d3748;
+}
+
+body.dark-theme .glass-card {
+    background: rgba(45, 55, 72, 0.95);
+    border-color: rgba(255,255,255,0.1);
+}
+
+body.dark-theme .plan-name {
+    color: #90cdf4;
+}
+
+body.dark-theme .plan-price,
+body.dark-theme .section-title {
+    color: #e2e8f0;
+}
+
+body.dark-theme .section-subtitle,
+body.dark-theme .plan-features li {
+    color: #cbd5e0;
+}
+
+body.dark-theme .features-grid {
+    background: #2d3748;
+}
+
+body.dark-theme .feature-item {
+    color: #cbd5e0;
+}
+
+body.dark-theme .feature-item:hover {
+    background: rgba(66, 153, 225, 0.1);
+}
+
+body.dark-theme .feature-title {
+    color: #e2e8f0;
+}
+
+body.dark-theme .testimonials-section {
+    background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+}
+
+body.dark-theme .testimonial-card {
+    background: rgba(45, 55, 72, 0.5);
+}
+
+body.dark-theme .faq-section {
+    background: #2d3748;
+}
+
+body.dark-theme .faq-item {
+    background: #1a202c;
+    border-color: #4a5568;
+}
+
+body.dark-theme .faq-question {
+    color: #e2e8f0;
+}
+
+body.dark-theme .faq-answer {
+    color: #cbd5e0;
+}
 </style>
 
 <div class="mail-landing">
+    <!-- Theme Switcher -->
+    <div class="theme-switcher">
+        <button class="theme-btn theme-btn-light active" onclick="setTheme('light')" title="Light Theme">
+            <i class="fas fa-sun"></i>
+        </button>
+        <button class="theme-btn theme-btn-dark" onclick="setTheme('dark')" title="Dark Theme">
+            <i class="fas fa-moon"></i>
+        </button>
+    </div>
+
     <!-- Hero Section -->
     <div class="hero-section">
         <div class="container">
@@ -676,6 +810,31 @@ document.querySelectorAll('.faq-question').forEach(question => {
 // Hide all answers initially
 document.querySelectorAll('.faq-answer').forEach(answer => {
     answer.style.display = 'none';
+});
+
+// Theme Switcher Functionality
+function setTheme(theme) {
+    const body = document.body;
+    const lightBtn = document.querySelector('.theme-btn-light');
+    const darkBtn = document.querySelector('.theme-btn-dark');
+    
+    if (theme === 'dark') {
+        body.classList.add('dark-theme');
+        darkBtn.classList.add('active');
+        lightBtn.classList.remove('active');
+        localStorage.setItem('mail-theme', 'dark');
+    } else {
+        body.classList.remove('dark-theme');
+        lightBtn.classList.add('active');
+        darkBtn.classList.remove('active');
+        localStorage.setItem('mail-theme', 'light');
+    }
+}
+
+// Load saved theme on page load
+document.addEventListener('DOMContentLoaded', () => {
+    const savedTheme = localStorage.getItem('mail-theme') || 'light';
+    setTheme(savedTheme);
 });
 </script>
 
