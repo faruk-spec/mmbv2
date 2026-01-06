@@ -19,22 +19,45 @@ class DomainController extends BaseController
 
     public function __construct()
     {
-        parent::__construct();
-        $this->db = Database::getInstance();
+        // BaseController doesn't have a constructor, so no need to call parent::__construct()
         
-        // Get subscriber ID from session
-        $userId = Auth::id();
-        $mailbox = $this->db->fetch(
-            "SELECT subscriber_id FROM mail_mailboxes WHERE user_id = ? AND role_type = 'subscriber_owner'",
-            [$userId]
-        );
-        
-        if (!$mailbox) {
-            $this->error('Access denied. Subscriber owner access required.');
-            return;
+        // Initialize database with error handling
+        try {
+            $this->db = Database::getInstance();
+        } catch (\Throwable $e) {
+            error_log('Warning: Database initialization failed in DomainController: ' . $e->getMessage());
+            $this->db = null;
+        }
+    }
+    
+    /**
+     * Ensure database and subscriber access
+     */
+    private function ensureDatabaseAndSubscriber()
+    {
+        if ($this->db === null) {
+            try {
+                $this->db = Database::getInstance();
+            } catch (\Throwable $e) {
+                error_log('Failed to initialize database in DomainController: ' . $e->getMessage());
+                throw new \RuntimeException('Database is not available. Please try again later.');
+            }
         }
         
-        $this->subscriberId = $mailbox['subscriber_id'];
+        if ($this->subscriberId === null) {
+            // Get subscriber ID from session
+            $userId = Auth::id();
+            $mailbox = $this->db->fetch(
+                "SELECT subscriber_id FROM mail_mailboxes WHERE mmb_user_id = ? AND role_type = 'subscriber_owner'",
+                [$userId]
+            );
+            
+            if (!$mailbox) {
+                throw new \RuntimeException('Access denied. Subscriber owner access required.');
+            }
+            
+            $this->subscriberId = $mailbox['subscriber_id'];
+        }
     }
 
     /**
@@ -42,6 +65,9 @@ class DomainController extends BaseController
      */
     public function index()
     {
+        // Ensure database and subscriber access
+        $this->ensureDatabaseAndSubscriber();
+        
         $domains = $this->db->fetchAll(
             "SELECT d.*, 
                     COUNT(DISTINCT m.id) as mailboxes_count,
@@ -65,6 +91,9 @@ class DomainController extends BaseController
      * Show add domain form
      */
     public function create()
+        // Ensure database and subscriber access
+        $this->ensureDatabaseAndSubscriber();
+
     {
         View::render('mail/subscriber/add-domain', [
             'subscriberId' => $this->subscriberId
@@ -72,6 +101,9 @@ class DomainController extends BaseController
     }
 
     /**
+        // Ensure database and subscriber access
+        $this->ensureDatabaseAndSubscriber();
+
      * Store new domain
      */
     public function store()
@@ -121,6 +153,9 @@ class DomainController extends BaseController
 
         $this->success('Domain added successfully. Please configure DNS records to verify.');
         $this->redirect('/projects/mail/subscriber/domains/' . $domainId . '/dns');
+        // Ensure database and subscriber access
+        $this->ensureDatabaseAndSubscriber();
+
     }
 
     /**
@@ -146,6 +181,9 @@ class DomainController extends BaseController
 
         View::render('mail/subscriber/dns-records', [
             'domain' => $domain,
+        // Ensure database and subscriber access
+        $this->ensureDatabaseAndSubscriber();
+
             'dnsRecords' => $dnsRecords,
             'subscriberId' => $this->subscriberId
         ]);
@@ -199,6 +237,9 @@ class DomainController extends BaseController
                 [$domainId]
             );
         }
+
+        // Ensure database and subscriber access
+        $this->ensureDatabaseAndSubscriber();
 
         return $this->json([
             'success' => true,
