@@ -17,22 +17,45 @@ class DomainController extends BaseController
 
     public function __construct()
     {
-        parent::__construct();
-        $this->db = Database::getInstance();
+        // BaseController doesn't have a constructor, so no need to call parent::__construct()
         
-        // Get subscriber ID from session
-        $userId = Auth::id();
-        $mailbox = $this->db->fetch(
-            "SELECT subscriber_id FROM mail_mailboxes WHERE user_id = ? AND role_type = 'subscriber_owner'",
-            [$userId]
-        );
-        
-        if (!$mailbox) {
-            $this->error('Access denied. Subscriber owner access required.');
-            return;
+        // Initialize database with error handling
+        try {
+            $this->db = Database::getInstance();
+        } catch (\Throwable $e) {
+            error_log('Warning: Database initialization failed in DomainController: ' . $e->getMessage());
+            $this->db = null;
+        }
+    }
+    
+    /**
+     * Ensure database and subscriber access
+     */
+    private function ensureDatabaseAndSubscriber()
+    {
+        if ($this->db === null) {
+            try {
+                $this->db = Database::getInstance();
+            } catch (\Throwable $e) {
+                error_log('Failed to initialize database in DomainController: ' . $e->getMessage());
+                throw new \RuntimeException('Database is not available. Please try again later.');
+            }
         }
         
-        $this->subscriberId = $mailbox['subscriber_id'];
+        if ($this->subscriberId === null) {
+            // Get subscriber ID from session
+            $userId = Auth::id();
+            $mailbox = $this->db->fetch(
+                "SELECT subscriber_id FROM mail_mailboxes WHERE mmb_user_id = ? AND role_type = 'subscriber_owner'",
+                [$userId]
+            );
+            
+            if (!$mailbox) {
+                throw new \RuntimeException('Access denied. Subscriber owner access required.');
+            }
+            
+            $this->subscriberId = $mailbox['subscriber_id'];
+        }
     }
 
     /**
@@ -40,6 +63,9 @@ class DomainController extends BaseController
      */
     public function index()
     {
+        // Ensure database and subscriber access
+        $this->ensureDatabaseAndSubscriber();
+        
         $domains = $this->db->fetchAll(
             "SELECT d.*, 
                     COUNT(DISTINCT m.id) as mailboxes_count,
@@ -64,6 +90,9 @@ class DomainController extends BaseController
      */
     public function create()
     {
+        // Ensure database and subscriber access
+        $this->ensureDatabaseAndSubscriber();
+        
         View::render('mail/subscriber/add-domain', [
             'subscriberId' => $this->subscriberId
         ]);
@@ -74,6 +103,9 @@ class DomainController extends BaseController
      */
     public function store()
     {
+        // Ensure database and subscriber access
+        $this->ensureDatabaseAndSubscriber();
+        
         $domainName = trim($_POST['domain_name'] ?? '');
         $description = trim($_POST['description'] ?? '');
         $catchAllEmail = trim($_POST['catch_all_email'] ?? '');
@@ -126,6 +158,9 @@ class DomainController extends BaseController
      */
     public function dnsRecords($domainId)
     {
+        // Ensure database and subscriber access
+        $this->ensureDatabaseAndSubscriber();
+        
         $domain = $this->db->fetch(
             "SELECT * FROM mail_domains WHERE id = ? AND subscriber_id = ?",
             [$domainId, $this->subscriberId]
@@ -150,6 +185,9 @@ class DomainController extends BaseController
     }
 
     /**
+        // Ensure database and subscriber access
+        $this->ensureDatabaseAndSubscriber();
+
      * Verify domain DNS records
      */
     public function verify($domainId)
@@ -204,6 +242,9 @@ class DomainController extends BaseController
             'results' => $results,
             'message' => $verified ? 'Domain verified successfully!' : 'Some DNS records are not configured correctly'
         ]);
+        // Ensure database and subscriber access
+        $this->ensureDatabaseAndSubscriber();
+
     }
 
     /**

@@ -17,22 +17,45 @@ class AliasController extends BaseController
 
     public function __construct()
     {
-        parent::__construct();
-        $this->db = Database::getInstance();
+        // BaseController doesn't have a constructor, so no need to call parent::__construct()
         
-        // Get subscriber ID from session
-        $userId = Auth::id();
-        $mailbox = $this->db->fetch(
-            "SELECT subscriber_id FROM mail_mailboxes WHERE user_id = ? AND role_type = 'subscriber_owner'",
-            [$userId]
-        );
-        
-        if (!$mailbox) {
-            $this->error('Access denied. Subscriber owner access required.');
-            return;
+        // Initialize database with error handling
+        try {
+            $this->db = Database::getInstance();
+        } catch (\Throwable $e) {
+            error_log('Warning: Database initialization failed in AliasController: ' . $e->getMessage());
+            $this->db = null;
+        }
+    }
+    
+    /**
+     * Ensure database and subscriber access
+     */
+    private function ensureDatabaseAndSubscriber()
+    {
+        if ($this->db === null) {
+            try {
+                $this->db = Database::getInstance();
+            } catch (\Throwable $e) {
+                error_log('Failed to initialize database in AliasController: ' . $e->getMessage());
+                throw new \RuntimeException('Database is not available. Please try again later.');
+            }
         }
         
-        $this->subscriberId = $mailbox['subscriber_id'];
+        if ($this->subscriberId === null) {
+            // Get subscriber ID from session
+            $userId = Auth::id();
+            $mailbox = $this->db->fetch(
+                "SELECT subscriber_id FROM mail_mailboxes WHERE mmb_user_id = ? AND role_type = 'subscriber_owner'",
+                [$userId]
+            );
+            
+            if (!$mailbox) {
+                throw new \RuntimeException('Access denied. Subscriber owner access required.');
+            }
+            
+            $this->subscriberId = $mailbox['subscriber_id'];
+        }
     }
 
     /**
@@ -40,6 +63,9 @@ class AliasController extends BaseController
      */
     public function index()
     {
+        // Ensure database and subscriber access
+        $this->ensureDatabaseAndSubscriber();
+        
         // Check plan limits
         $plan = $this->db->fetch(
             "SELECT sp.max_aliases, 
@@ -75,6 +101,9 @@ class AliasController extends BaseController
      */
     public function create()
     {
+        // Ensure database and subscriber access
+        $this->ensureDatabaseAndSubscriber();
+        
         // Get verified domains
         $domains = $this->db->fetchAll(
             "SELECT * FROM mail_domains WHERE subscriber_id = ? AND is_verified = 1 AND is_active = 1",
@@ -103,6 +132,9 @@ class AliasController extends BaseController
      */
     public function store()
     {
+        // Ensure database and subscriber access
+        $this->ensureDatabaseAndSubscriber();
+        
         $aliasName = trim($_POST['alias_name'] ?? '');
         $domainId = intval($_POST['domain_id'] ?? 0);
         $destinationType = $_POST['destination_type'] ?? 'mailbox';
@@ -205,6 +237,9 @@ class AliasController extends BaseController
 
         $this->success('Alias created successfully');
         redirect('/projects/mail/subscriber/aliases');
+        // Ensure database and subscriber access
+        $this->ensureDatabaseAndSubscriber();
+
     }
 
     /**
@@ -229,6 +264,9 @@ class AliasController extends BaseController
 
         return $this->json([
             'success' => true,
+        // Ensure database and subscriber access
+        $this->ensureDatabaseAndSubscriber();
+
             'message' => 'Alias ' . ($newStatus ? 'activated' : 'deactivated') . ' successfully',
             'is_active' => $newStatus
         ]);

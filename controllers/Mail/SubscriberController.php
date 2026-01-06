@@ -626,4 +626,61 @@ class SubscriberController extends BaseController
             'plans' => $plans
         ]);
     }
+    
+    /**
+     * Billing and subscription management
+     */
+    public function billing()
+    {
+        // Ensure user is authenticated
+        if (!Auth::check()) {
+            $this->flash('error', 'Please login to access billing');
+            $this->redirect('/login');
+            return;
+        }
+        
+        // Ensure database is available
+        $this->ensureDatabase();
+        
+        // Load subscriber info
+        $this->loadSubscriberInfo();
+        
+        if (!$this->isOwner) {
+            $this->error('Access denied. Subscriber owner access required.');
+            return;
+        }
+        
+        // Get subscription details
+        $subscription = $this->db->fetch(
+            "SELECT sub.*, sp.plan_name, sp.price_monthly, sp.price_yearly
+             FROM mail_subscriptions sub
+             JOIN mail_subscription_plans sp ON sub.plan_id = sp.id
+             WHERE sub.subscriber_id = ?",
+            [$this->subscriberId]
+        );
+        
+        // Get billing history
+        $billingHistory = $this->db->fetchAll(
+            "SELECT * FROM mail_billing_history 
+             WHERE subscriber_id = ? 
+             ORDER BY created_at DESC 
+             LIMIT 20",
+            [$this->subscriberId]
+        );
+        
+        // Get payment methods
+        $paymentMethods = $this->db->fetchAll(
+            "SELECT * FROM mail_payment_methods 
+             WHERE subscriber_id = ? AND is_active = 1 
+             ORDER BY is_default DESC, created_at DESC",
+            [$this->subscriberId]
+        );
+        
+        View::render('mail/subscriber/billing', [
+            'subscription' => $subscription,
+            'billingHistory' => $billingHistory,
+            'paymentMethods' => $paymentMethods,
+            'title' => 'Billing & Subscription'
+        ]);
+    }
 }

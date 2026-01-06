@@ -154,6 +154,9 @@ class WebmailController extends BaseController
      * View single email
      */
     public function viewEmail($messageId)
+        // Ensure database and mailbox are available
+        $this->ensureDatabaseAndMailbox();
+
     {
         $message = $this->db->fetch(
             "SELECT * FROM mail_messages WHERE id = ? AND mailbox_id = ?",
@@ -188,6 +191,9 @@ class WebmailController extends BaseController
     }
 
     /**
+        // Ensure database and mailbox are available
+        $this->ensureDatabaseAndMailbox();
+
      * Display compose form
      */
     public function compose()
@@ -221,6 +227,9 @@ class WebmailController extends BaseController
             'forward' => $forward,
             'signature' => $signature ? $signature['signature'] : ''
         ]);
+        // Ensure database and mailbox are available
+        $this->ensureDatabaseAndMailbox();
+
     }
 
     /**
@@ -351,6 +360,9 @@ class WebmailController extends BaseController
                         'mime_type' => $mimeType,
                         'created_at' => date('Y-m-d H:i:s')
                     ]);
+        // Ensure database and mailbox are available
+        $this->ensureDatabaseAndMailbox();
+
                 }
             }
         }
@@ -367,6 +379,9 @@ class WebmailController extends BaseController
 
         $messageId = (int)$_POST['message_id'];
         $folderId = (int)$_POST['folder_id'];
+
+        // Ensure database and mailbox are available
+        $this->ensureDatabaseAndMailbox();
 
         $this->db->query(
             "UPDATE mail_messages SET folder_id = ? WHERE id = ? AND mailbox_id = ?",
@@ -385,6 +400,9 @@ class WebmailController extends BaseController
             return;
         }
 
+        // Ensure database and mailbox are available
+        $this->ensureDatabaseAndMailbox();
+
         $messageId = (int)$_POST['message_id'];
         $isRead = (int)$_POST['is_read'];
 
@@ -402,6 +420,9 @@ class WebmailController extends BaseController
     public function toggleStar()
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        // Ensure database and mailbox are available
+        $this->ensureDatabaseAndMailbox();
+
             return;
         }
 
@@ -424,6 +445,9 @@ class WebmailController extends BaseController
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             return;
         }
+        // Ensure database and mailbox are available
+        $this->ensureDatabaseAndMailbox();
+
 
         $messageId = (int)$_POST['message_id'];
 
@@ -482,6 +506,9 @@ class WebmailController extends BaseController
                     "SELECT id FROM mail_folders WHERE mailbox_id = ? AND folder_type = 'trash' LIMIT 1",
                     [$this->mailboxId]
                 );
+        // Ensure database and mailbox are available
+        $this->ensureDatabaseAndMailbox();
+
                 $this->db->query(
                     "UPDATE mail_messages SET folder_id = ?, deleted_at = NOW() 
                      WHERE id IN ($placeholders) AND mailbox_id = ?",
