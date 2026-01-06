@@ -253,12 +253,12 @@
                         
                         <div class="feature-item">
                             <i class="fas fa-at"></i>
-                            <span><strong><?= $plan['max_aliases'] ?></strong> Email Alias<?= $plan['max_aliases'] > 1 ? 'es' : '' ?></span>
+                            <span><strong><?= $plan['max_aliases'] ?? 0 ?></strong> Email Alias<?= ($plan['max_aliases'] ?? 0) > 1 ? 'es' : '' ?></span>
                         </div>
                         
                         <div class="feature-item">
                             <i class="fas fa-paperclip"></i>
-                            <span><strong><?= $plan['max_attachment_size_mb'] ?>MB</strong> Max Attachment Size</span>
+                            <span><strong><?= $plan['max_attachment_size_mb'] ?? 0 ?>MB</strong> Max Attachment Size</span>
                         </div>
                         
                         <?php if (!empty($features)): ?>

@@ -90,10 +90,10 @@
                                     <?php endif; ?>
                                 </li>
                                 <li class="mb-2">
-                                    <i class="fas fa-check text-success"></i> <?= number_format($plan['daily_send_limit']) ?> Emails/Day
+                                    <i class="fas fa-check text-success"></i> <?= number_format($plan['daily_send_limit'] ?? 0) ?> Emails/Day
                                 </li>
                                 <li class="mb-2">
-                                    <i class="fas fa-check text-success"></i> <?= $plan['max_aliases'] ?> Aliases
+                                    <i class="fas fa-check text-success"></i> <?= $plan['max_aliases'] ?? 0 ?> Aliases
                                 </li>
                             </ul>
                         </div>
