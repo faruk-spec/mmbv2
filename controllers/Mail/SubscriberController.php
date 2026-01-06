@@ -22,9 +22,17 @@ class SubscriberController extends BaseController
     
     public function __construct()
     {
-        parent::__construct();
+        // BaseController doesn't have a constructor, so no need to call parent::__construct()
         
-        $this->db = Database::getInstance();
+        // Initialize database - if it fails, individual methods will handle the error
+        try {
+            $this->db = Database::getInstance();
+        } catch (\Throwable $e) {
+            // Log the error but don't fail the constructor
+            // This allows the controller to be instantiated even if DB is temporarily unavailable
+            error_log('Warning: Database initialization failed in SubscriberController: ' . $e->getMessage());
+            $this->db = null;
+        }
         
         // Note: Constructor no longer checks authentication
         // Authentication is handled in individual methods

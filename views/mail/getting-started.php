@@ -86,6 +86,13 @@ body {
     padding: 60px 0;
 }
 
+.plans-section .row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: stretch;
+}
+
 .section-title {
     text-align: center;
     font-size: 2.5rem;
@@ -385,13 +392,16 @@ body {
             </p>
 
             <?php if (isset($plans) && count($plans) > 0): ?>
-            <div class="row">
+            <div class="row justify-content-center">
                 <?php foreach ($plans as $index => $plan): ?>
                 <?php 
                 $isPopular = stripos($plan['plan_name'], 'business') !== false || 
                             stripos($plan['plan_name'], 'professional') !== false;
+                // Calculate responsive columns based on plan count
+                $planCount = count($plans);
+                $colClass = $planCount <= 3 ? 'col-lg-4' : ($planCount == 4 ? 'col-lg-3' : 'col-xl-2 col-lg-3');
                 ?>
-                <div class="col-lg-3 col-md-6 mb-4">
+                <div class="<?= $colClass ?> col-md-6 col-sm-12 mb-4">
                     <div class="glass-card <?= $isPopular ? 'popular' : '' ?>">
                         <?php if ($isPopular): ?>
                         <div class="popular-badge">Most Popular</div>
