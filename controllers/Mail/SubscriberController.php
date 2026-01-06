@@ -26,13 +26,9 @@ class SubscriberController extends BaseController
         
         $this->db = Database::getInstance();
         
-        // Note: Authentication check moved to individual methods
-        // Some methods like subscribe() need to be accessible to all authenticated users
-        // Other methods require subscriber ownership
-        if (Auth::check()) {
-            // Get subscriber info for current user
-            $this->loadSubscriberInfo();
-        }
+        // Note: Constructor no longer checks authentication
+        // Authentication is handled in individual methods
+        // This allows public routes to work without auth errors
     }
     
     /**
@@ -82,6 +78,9 @@ class SubscriberController extends BaseController
             $this->redirect('/login');
             return;
         }
+        
+        // Load subscriber info
+        $this->loadSubscriberInfo();
         
         if (!$this->isOwner) {
             $this->error('Access denied. Subscriber owner access required.');
@@ -150,6 +149,9 @@ class SubscriberController extends BaseController
             $this->redirect('/login');
             return;
         }
+        
+        // Load subscriber info
+        $this->loadSubscriberInfo();
         
         if (!$this->isOwner) {
             $this->error('Access denied. Subscriber owner access required.');
