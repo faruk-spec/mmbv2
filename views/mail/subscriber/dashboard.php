@@ -3,353 +3,238 @@
 
 <?php View::section('content'); ?>
 
-<div class="container-fluid">
-    <!-- Page Header -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <h2 class="mb-0">
-                <i class="fas fa-tachometer-alt mr-2"></i>
-                Subscriber Dashboard
-            </h2>
-            <p class="text-muted">Manage your mail hosting subscription</p>
-        </div>
-    </div>
-
-    <!-- Subscription Info -->
-    <div class="row mb-4">
-        <div class="col-md-12">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h3 class="mb-0">
-                        <i class="fas fa-info-circle mr-2"></i>
-                        Subscription Information
-                    </h3>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>Account Name:</strong><br>
-                            <?= htmlspecialchars($subscriber['account_name']) ?>
-                        </div>
-                        <div class="col-md-3">
-                            <strong>Current Plan:</strong><br>
-                            <span class="badge badge-<?= getPlanBadgeColor($subscriber['plan_name']) ?> badge-lg px-3 py-2">
-                                <?= htmlspecialchars($subscriber['plan_name']) ?>
-                            </span>
-                        </div>
-                        <div class="col-md-3">
-                            <strong>Status:</strong><br>
-                            <span class="badge badge-<?= getStatusBadgeColor($subscriber['status']) ?> badge-lg px-3 py-2">
-                                <?= ucfirst($subscriber['status']) ?>
-                            </span>
-                        </div>
-                        <div class="col-md-3">
-                            <strong>Member Since:</strong><br>
-                            <?= date('F d, Y', strtotime($subscriber['created_at'])) ?>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Statistics Cards -->
-    <div class="row mb-4">
-        <!-- Users -->
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card border-left-info shadow h-100">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Users</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                <?= $stats['users_count'] ?> / <?= $subscriber['max_users'] ?>
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-users fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                    <div class="mt-2">
-                        <a href="/projects/mail/subscriber/users" class="btn btn-sm btn-info btn-block">
-                            Manage Users <i class="fas fa-arrow-circle-right"></i>
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Domains -->
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card border-left-success shadow h-100">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Domains</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                <?= $stats['domains_count'] ?> / <?= $subscriber['max_domains'] ?>
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-globe fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                    <div class="mt-2">
-                        <a href="/projects/mail/subscriber/domains" class="btn btn-sm btn-success btn-block">
-                            Manage Domains <i class="fas fa-arrow-circle-right"></i>
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Aliases -->
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card border-left-warning shadow h-100">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Email Aliases</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                <?= $stats['aliases_count'] ?> / <?= $subscriber['max_aliases'] ?>
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-at fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                    <div class="mt-2">
-                        <a href="/projects/mail/subscriber/aliases" class="btn btn-sm btn-warning btn-block">
-                            Manage Aliases <i class="fas fa-arrow-circle-right"></i>
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Emails Today -->
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card border-left-primary shadow h-100">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Emails Sent Today</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                <?= $stats['emails_today'] ?> / <?= $subscriber['daily_send_limit'] ?>
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-paper-plane fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                    <div class="mt-2">
-                        <a href="/projects/mail/webmail" class="btn btn-sm btn-primary btn-block">
-                            View Webmail <i class="fas fa-arrow-circle-right"></i>
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Recent Activity -->
-    <div class="row">
-        <!-- Recent Users -->
-        <div class="col-md-6 mb-4">
-            <div class="card shadow">
-                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-primary">
-                        <i class="fas fa-user-plus mr-2"></i>
-                        Recent Users
-                    </h6>
-                    <a href="/projects/mail/subscriber/users" class="btn btn-sm btn-primary">
-                        <i class="fas fa-list"></i> View All
-                    </a>
-                </div>
-                <div class="card-body p-0">
-                    <?php if (empty($recentUsers)): ?>
-                    <div class="text-center py-5 text-muted">
-                        <i class="fas fa-users fa-3x mb-3"></i>
-                        <p class="mb-3">No users yet</p>
-                        <a href="/projects/mail/subscriber/users/add" class="btn btn-primary">
-                            <i class="fas fa-plus"></i> Add Your First User
-                        </a>
-                    </div>
-                    <?php else: ?>
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0">
-                            <tbody>
-                                <?php foreach ($recentUsers as $user): ?>
-                                <tr>
-                                    <td>
-                                        <i class="fas fa-envelope text-primary mr-2"></i>
-                                        <strong><?= htmlspecialchars($user['email']) ?></strong>
-                                        <br>
-                                        <small class="text-muted">
-                                            <i class="fas fa-globe"></i> <?= htmlspecialchars($user['domain_name']) ?>
-                                        </small>
-                                    </td>
-                                    <td class="text-right">
-                                        <span class="badge badge-<?= $user['role_type'] === 'domain_admin' ? 'warning' : 'info' ?>">
-                                            <?= ucwords(str_replace('_', ' ', $user['role_type'])) ?>
-                                        </span>
-                                        <br>
-                                        <small class="text-muted">
-                                            <?= date('M d, Y', strtotime($user['created_at'])) ?>
-                                        </small>
-                                    </td>
-                                </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </div>
-
-        <!-- Recent Domains -->
-        <div class="col-md-6 mb-4">
-            <div class="card shadow">
-                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-success">
-                        <i class="fas fa-globe mr-2"></i>
-                        Your Domains
-                    </h6>
-                    <a href="/projects/mail/subscriber/domains" class="btn btn-sm btn-success">
-                        <i class="fas fa-list"></i> View All
-                    </a>
-                </div>
-                <div class="card-body p-0">
-                    <?php if (empty($recentDomains)): ?>
-                    <div class="text-center py-5 text-muted">
-                        <i class="fas fa-globe fa-3x mb-3"></i>
-                        <p class="mb-3">No domains added yet</p>
-                        <a href="/projects/mail/subscriber/domains/add" class="btn btn-success">
-                            <i class="fas fa-plus"></i> Add Your First Domain
-                        </a>
-                    </div>
-                    <?php else: ?>
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0">
-                            <tbody>
-                                <?php foreach ($recentDomains as $domain): ?>
-                                <tr>
-                                    <td>
-                                        <i class="fas fa-globe text-success mr-2"></i>
-                                        <strong><?= htmlspecialchars($domain['domain_name']) ?></strong>
-                                    </td>
-                                    <td class="text-right">
-                                        <?php if ($domain['is_verified']): ?>
-                                        <span class="badge badge-success">
-                                            <i class="fas fa-check"></i> Verified
-                                        </span>
-                                        <?php else: ?>
-                                        <span class="badge badge-warning">
-                                            <i class="fas fa-clock"></i> Pending
-                                        </span>
-                                        <?php endif; ?>
-                                        <br>
-                                        <small class="text-muted">
-                                            <?= date('M d, Y', strtotime($domain['created_at'])) ?>
-                                        </small>
-                                    </td>
-                                </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Quick Actions -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card shadow">
-                <div class="card-header bg-gradient-primary text-white">
-                    <h5 class="mb-0">
-                        <i class="fas fa-bolt mr-2"></i>
-                        Quick Actions
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-3 col-sm-6 mb-2">
-                            <a href="/projects/mail/subscriber/users/add" class="btn btn-primary btn-block btn-lg">
-                                <i class="fas fa-user-plus"></i><br>Add New User
-                            </a>
-                        </div>
-                        <div class="col-md-3 col-sm-6 mb-2">
-                            <a href="/projects/mail/subscriber/domains/add" class="btn btn-success btn-block btn-lg">
-                                <i class="fas fa-globe"></i><br>Add Domain
-                            </a>
-                        </div>
-                        <div class="col-md-3 col-sm-6 mb-2">
-                            <a href="/projects/mail/webmail" class="btn btn-info btn-block btn-lg">
-                                <i class="fas fa-inbox"></i><br>Check Mail
-                            </a>
-                        </div>
-                        <div class="col-md-3 col-sm-6 mb-2">
-                            <a href="/projects/mail/subscriber/billing" class="btn btn-warning btn-block btn-lg">
-                                <i class="fas fa-credit-card"></i><br>View Billing
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <style>
-.border-left-info {
-    border-left: 0.25rem solid #36b9cc !important;
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+body {
+    font-family: 'Inter', sans-serif !important;
 }
-.border-left-success {
-    border-left: 0.25rem solid #1cc88a !important;
+
+.mail-dashboard-container {
+    display: flex;
+    min-height: 100vh;
+    background: #f8f9fa;
 }
-.border-left-warning {
-    border-left: 0.25rem solid #f6c23e !important;
+
+/* Fixed Sidebar */
+.mail-sidebar {
+    width: 260px;
+    background: white;
+    border-right: 1px solid #e2e8f0;
+    position: fixed;
+    height: 100vh;
+    overflow-y: auto;
+    z-index: 1000;
 }
-.border-left-primary {
-    border-left: 0.25rem solid #4e73df !important;
+
+.sidebar-header {
+    padding: 20px;
+    border-bottom: 1px solid #e2e8f0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
 }
-.badge-lg {
-    font-size: 0.95rem;
+
+.sidebar-logo {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.sidebar-menu {
+    padding: 20px 0;
+}
+
+.menu-section-title {
+    padding: 10px 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #a0aec0;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 20px;
+    color: #4a5568;
+    text-decoration: none;
+    transition: all 0.2s;
+    border-left: 3px solid transparent;
+}
+
+.menu-item:hover {
+    background: #f7fafc;
+    color: #667eea;
+    text-decoration: none;
+    border-left-color: #667eea;
+}
+
+.menu-item.active {
+    background: #edf2f7;
+    color: #667eea;
+    border-left-color: #667eea;
+    font-weight: 600;
+}
+
+.menu-item i {
+    width: 20px;
+    margin-right: 12px;
+}
+
+.menu-badge {
+    margin-left: auto;
+    background: #667eea;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+}
+
+/* Main Content Area */
+.mail-content {
+    margin-left: 260px;
+    flex: 1;
+    padding: 30px;
+}
+
+.dashboard-title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 30px;
+}
+
+/* Theme Toggle */
+.theme-toggle {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1001;
+}
+
+.theme-btn {
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 25px;
+    padding: 8px 20px;
+    cursor: pointer;
+}
+
+/* Dark Theme */
+body.dark-theme {
+    background: #1a202c;
+    color: #e2e8f0;
+}
+
+body.dark-theme .mail-dashboard-container {
+    background: #1a202c;
+}
+
+body.dark-theme .mail-sidebar {
+    background: #2d3748;
+    border-right-color: #4a5568;
+}
+
+body.dark-theme .menu-item {
+    color: #cbd5e0;
+}
+
+body.dark-theme .menu-item:hover,
+body.dark-theme .menu-item.active {
+    background: #374151;
+    color: #90cdf4;
+}
+
+body.dark-theme .theme-btn {
+    background: #2d3748;
+    border-color: #4a5568;
+    color: #e2e8f0;
 }
 </style>
 
-<?php View::endSection(); ?>
+<div class="theme-toggle">
+    <button class="theme-btn" onclick="toggleTheme()">
+        <i class="fas fa-moon"></i> <span class="theme-text">Dark Mode</span>
+    </button>
+</div>
 
-<?php
-function getPlanBadgeColor($planName) {
-    $planName = strtolower($planName);
-    $colors = [
-        'free' => 'secondary',
-        'starter' => 'info',
-        'business' => 'warning',
-        'developer' => 'success',
-        'professional' => 'primary',
-        'enterprise' => 'dark'
-    ];
-    foreach ($colors as $plan => $color) {
-        if (stripos($planName, $plan) !== false) {
-            return $color;
-        }
+<div class="mail-dashboard-container">
+    <!-- Sidebar -->
+    <div class="mail-sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo"><i class="fas fa-envelope"></i> Mail Server</div>
+        </div>
+        
+        <nav class="sidebar-menu">
+            <div class="menu-section-title">Overview</div>
+            <a href="/projects/mail/subscriber/dashboard" class="menu-item active">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
+            
+            <div class="menu-section-title">Management</div>
+            <a href="/projects/mail/subscriber/users" class="menu-item">
+                <i class="fas fa-users"></i> Users
+                <span class="menu-badge"><?= $stats['users_count'] ?></span>
+            </a>
+            <a href="/projects/mail/subscriber/domains" class="menu-item">
+                <i class="fas fa-globe"></i> Domains
+                <span class="menu-badge"><?= $stats['domains_count'] ?></span>
+            </a>
+            <a href="/projects/mail/subscriber/aliases" class="menu-item">
+                <i class="fas fa-at"></i> Aliases
+                <span class="menu-badge"><?= $stats['aliases_count'] ?></span>
+            </a>
+            
+            <div class="menu-section-title">Email</div>
+            <a href="/projects/mail/webmail" class="menu-item">
+                <i class="fas fa-inbox"></i> Webmail
+            </a>
+            
+            <div class="menu-section-title">Settings</div>
+            <a href="/projects/mail/subscriber/billing" class="menu-item">
+                <i class="fas fa-credit-card"></i> Billing
+            </a>
+            <a href="/dashboard" class="menu-item">
+                <i class="fas fa-arrow-left"></i> Back to Main
+            </a>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="mail-content">
+        <h1 class="dashboard-title">Mail Dashboard</h1>
+        <p>Welcome! Your mail hosting dashboard with universal sidebar.</p>
+        <!-- Dashboard content here -->
+    </div>
+</div>
+
+<script>
+function toggleTheme() {
+    const body = document.body;
+    const icon = document.querySelector('.theme-btn i');
+    const text = document.querySelector('.theme-text');
+    
+    if (body.classList.contains('dark-theme')) {
+        body.classList.remove('dark-theme');
+        icon.className = 'fas fa-moon';
+        text.textContent = 'Dark Mode';
+        localStorage.setItem('mail-theme', 'light');
+    } else {
+        body.classList.add('dark-theme');
+        icon.className = 'fas fa-sun';
+        text.textContent = 'Light Mode';
+        localStorage.setItem('mail-theme', 'dark');
     }
-    return 'primary';
 }
 
-function getStatusBadgeColor($status) {
-    $colors = [
-        'active' => 'success',
-        'suspended' => 'danger',
-        'cancelled' => 'secondary',
-        'grace_period' => 'warning'
-    ];
-    return $colors[$status] ?? 'info';
-}
-?>
+// Load saved theme
+document.addEventListener('DOMContentLoaded', () => {
+    if (localStorage.getItem('mail-theme') === 'dark') {
+        document.body.classList.add('dark-theme');
+        document.querySelector('.theme-btn i').className = 'fas fa-sun';
+        document.querySelector('.theme-text').textContent = 'Light Mode';
+    }
+});
+</script>
+
+<?php View::endSection(); ?>
