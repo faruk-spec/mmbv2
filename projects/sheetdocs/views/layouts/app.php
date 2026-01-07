@@ -1,0 +1,210 @@
+<?php 
+use Core\View; 
+use Core\Security; 
+use Core\Auth;
+
+// Set theme from navbar settings
+$defaultTheme = 'dark';
+try {
+    $db = \Core\Database::getInstance();
+    $navbarSettings = $db->fetch("SELECT default_theme FROM navbar_settings WHERE id = 1");
+    if ($navbarSettings && !empty($navbarSettings['default_theme'])) {
+        $defaultTheme = $navbarSettings['default_theme'];
+    }
+} catch (\Exception $e) {
+    // Use default if query fails
+}
+?>
+<!DOCTYPE html>
+<html lang="en" data-theme="<?= htmlspecialchars($defaultTheme) ?>">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?= View::e($title ?? 'SheetDocs') ?> - <?= APP_NAME ?></title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Universal Theme CSS -->
+    <link rel="stylesheet" href="/css/universal-theme.css">
+    
+    <script>
+        // Sync theme with universal navbar (before page renders to avoid flash)
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || '<?= htmlspecialchars($defaultTheme) ?>';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
+    </script>
+    
+    <style>
+        /* SheetDocs specific styles */
+        .page-wrapper {
+            display: flex;
+            max-width: 100vw;
+            overflow-x: hidden;
+        }
+        
+        .sidebar {
+            width: 280px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            min-height: calc(100vh - 60px);
+            padding: 20px;
+            flex-shrink: 0;
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--cyan);
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .nav-item {
+            padding: 12px 20px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.3s;
+        }
+        
+        .nav-item:hover, .nav-item.active {
+            background: rgba(0, 212, 170, 0.1);
+            color: var(--cyan);
+        }
+        
+        .main-content {
+            flex: 1;
+            padding: 30px 40px;
+            min-width: 0;
+            max-width: 100%;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            font-size: 32px;
+            font-weight: 600;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--cyan), #00a88a);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 212, 170, 0.3);
+        }
+        
+        .alert {
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .alert-success {
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid #00ff88;
+            color: #00ff88;
+        }
+        
+        .alert-error {
+            background: rgba(255, 107, 107, 0.1);
+            border: 1px solid #ff6b6b;
+            color: #ff6b6b;
+        }
+    </style>
+</head>
+<body>
+    <?php include BASE_PATH . '/views/layouts/navbar.php'; ?>
+    
+    <div class="page-wrapper">
+        <aside class="sidebar">
+            <div class="logo">
+                <i class="fas fa-file-alt"></i>
+                SheetDocs
+            </div>
+            
+            <nav>
+                <a href="/projects/sheetdocs/dashboard" class="nav-item">
+                    <i class="fas fa-th-large"></i>
+                    Dashboard
+                </a>
+                <a href="/projects/sheetdocs/documents/new" class="nav-item">
+                    <i class="fas fa-file-alt"></i>
+                    New Document
+                </a>
+                <a href="/projects/sheetdocs/sheets/new" class="nav-item">
+                    <i class="fas fa-table"></i>
+                    New Spreadsheet
+                </a>
+                <a href="/projects/sheetdocs/documents" class="nav-item">
+                    <i class="fas fa-folder"></i>
+                    My Documents
+                </a>
+                <a href="/projects/sheetdocs/sheets" class="nav-item">
+                    <i class="fas fa-th"></i>
+                    My Sheets
+                </a>
+                <a href="/projects/sheetdocs/templates" class="nav-item">
+                    <i class="fas fa-clone"></i>
+                    Templates
+                </a>
+                <a href="/projects/sheetdocs/pricing" class="nav-item">
+                    <i class="fas fa-crown"></i>
+                    Upgrade
+                </a>
+            </nav>
+        </aside>
+        
+        <main class="main-content">
+            <?php View::yield('content'); ?>
+        </main>
+    </div>
+    
+    <script>
+        // Listen for theme changes from universal navbar
+        document.addEventListener('themeChanged', function(e) {
+            document.documentElement.setAttribute('data-theme', e.detail.theme);
+        });
+        
+        // Highlight active nav item
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentPath = window.location.pathname;
+            document.querySelectorAll('.nav-item').forEach(item => {
+                const itemPath = item.getAttribute('href');
+                if (itemPath === currentPath || currentPath.startsWith(itemPath + '/')) {
+                    item.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

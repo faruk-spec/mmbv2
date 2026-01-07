@@ -49,7 +49,7 @@ class ExportController
         $document = $stmt->fetch(\PDO::FETCH_ASSOC);
         
         if (!$document) {
-            Helpers::setFlash('error', 'Document not found or you do not have access.');
+            Helpers::flash('error', 'Document not found or you do not have access.');
             Helpers::redirect('/projects/sheetdocs');
             exit;
         }
@@ -63,7 +63,7 @@ class ExportController
         $allowedFormats = $this->projectConfig['features'][$plan]['export_formats'];
         
         if (!in_array($format, $allowedFormats)) {
-            Helpers::setFlash('error', 'This export format requires a premium subscription.');
+            Helpers::flash('error', 'This export format requires a premium subscription.');
             Helpers::redirect('/projects/sheetdocs/pricing');
             exit;
         }
@@ -83,7 +83,7 @@ class ExportController
                 $this->exportCSV($document);
                 break;
             default:
-                Helpers::setFlash('error', 'Invalid export format.');
+                Helpers::flash('error', 'Invalid export format.');
                 Helpers::redirect('/projects/sheetdocs/documents/' . $id);
         }
     }

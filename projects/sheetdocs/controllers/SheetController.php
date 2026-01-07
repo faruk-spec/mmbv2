@@ -57,7 +57,7 @@ class SheetController
         $userId = Auth::id();
         
         if (!$this->canCreateSheet($userId)) {
-            Helpers::setFlash('error', 'You have reached your sheet limit. Please upgrade to create more sheets.');
+            Helpers::flash('error', 'You have reached your sheet limit. Please upgrade to create more sheets.');
             Helpers::redirect('/projects/sheetdocs/pricing');
             exit;
         }
@@ -74,7 +74,7 @@ class SheetController
         $userId = Auth::id();
         
         if (!$this->canCreateSheet($userId)) {
-            Helpers::setFlash('error', 'You have reached your sheet limit.');
+            Helpers::flash('error', 'You have reached your sheet limit.');
             Helpers::redirect('/projects/sheetdocs/pricing');
             exit;
         }
@@ -86,13 +86,14 @@ class SheetController
         // Create document
         $stmt = $this->db->prepare("
             INSERT INTO sheet_documents (user_id, title, type, visibility, last_edited_by)
-            VALUES (:user_id, :title, 'sheet', :visibility, :user_id)
+            VALUES (:user_id, :title, 'sheet', :visibility, :last_edited_by)
         ");
         
         $stmt->execute([
             'user_id' => $userId,
             'title' => $title,
-            'visibility' => $visibility
+            'visibility' => $visibility,
+            'last_edited_by' => $userId
         ]);
         
         $documentId = $this->db->lastInsertId();
@@ -110,20 +111,26 @@ class SheetController
         // Log activity
         $this->logActivity($userId, $documentId, 'create', ['title' => $title, 'type' => 'sheet']);
         
-        Helpers::setFlash('success', 'Spreadsheet created successfully!');
+        Helpers::flash('success', 'Spreadsheet created successfully!');
         Helpers::redirect('/projects/sheetdocs/sheets/' . $documentId . '/edit');
     }
     
     /**
      * Show sheet
      */
-    public function show(int $id): void
+    public function show(string|int $id): void
     {
+        $id = (int)$id;
+        if ($id <= 0) {
+            Helpers::flash('error', 'Invalid sheet ID.');
+            Helpers::redirect('/projects/sheetdocs');
+            exit;
+        }
         $userId = Auth::id();
         $sheet = $this->getSheet($id, $userId);
         
         if (!$sheet) {
-            Helpers::setFlash('error', 'Sheet not found or you do not have access.');
+            Helpers::flash('error', 'Sheet not found or you do not have access.');
             Helpers::redirect('/projects/sheetdocs');
             exit;
         }
@@ -144,13 +151,19 @@ class SheetController
     /**
      * Edit sheet
      */
-    public function edit(int $id): void
+    public function edit(string|int $id): void
     {
+        $id = (int)$id;
+        if ($id <= 0) {
+            Helpers::flash('error', 'Invalid sheet ID.');
+            Helpers::redirect('/projects/sheetdocs');
+            exit;
+        }
         $userId = Auth::id();
         $sheet = $this->getSheet($id, $userId, true);
         
         if (!$sheet) {
-            Helpers::setFlash('error', 'Sheet not found or you do not have edit access.');
+            Helpers::flash('error', 'Sheet not found or you do not have edit access.');
             Helpers::redirect('/projects/sheetdocs');
             exit;
         }
@@ -172,14 +185,15 @@ class SheetController
     /**
      * Update sheet
      */
-    public function update(int $id): void
+    public function update(string|int $id): void
     {
+        $id = (int)$id;
         Security::validateCsrfToken();
         $userId = Auth::id();
         
         $sheet = $this->getSheet($id, $userId, true);
         if (!$sheet) {
-            Helpers::setFlash('error', 'Sheet not found or you do not have edit access.');
+            Helpers::flash('error', 'Sheet not found or you do not have edit access.');
             Helpers::redirect('/projects/sheetdocs');
             exit;
         }
@@ -201,21 +215,22 @@ class SheetController
         // Log activity
         $this->logActivity($userId, $id, 'edit', ['title' => $title]);
         
-        Helpers::setFlash('success', 'Spreadsheet updated successfully!');
+        Helpers::flash('success', 'Spreadsheet updated successfully!');
         Helpers::redirect('/projects/sheetdocs/sheets/' . $id . '/edit');
     }
     
     /**
      * Delete sheet
      */
-    public function delete(int $id): void
+    public function delete(string|int $id): void
     {
+        $id = (int)$id;
         Security::validateCsrfToken();
         $userId = Auth::id();
         
         $sheet = $this->getSheet($id, $userId);
         if (!$sheet || $sheet['user_id'] != $userId) {
-            Helpers::setFlash('error', 'Sheet not found or you do not have permission to delete it.');
+            Helpers::flash('error', 'Sheet not found or you do not have permission to delete it.');
             Helpers::redirect('/projects/sheetdocs');
             exit;
         }
@@ -229,7 +244,7 @@ class SheetController
         // Log activity
         $this->logActivity($userId, null, 'delete', ['document_id' => $id, 'title' => $sheet['title']]);
         
-        Helpers::setFlash('success', 'Spreadsheet deleted successfully!');
+        Helpers::flash('success', 'Spreadsheet deleted successfully!');
         Helpers::redirect('/projects/sheetdocs/sheets');
     }
     
@@ -240,12 +255,10 @@ class SheetController
     {
         $stmt = $this->db->prepare("
             SELECT d.*, 
-                   ds.permission as share_permission,
                    (d.user_id = :user_id) as is_owner
             FROM sheet_documents d
-            LEFT JOIN document_shares ds ON d.id = ds.document_id AND ds.shared_with_user_id = :user_id
             WHERE d.id = :id AND d.type = 'sheet'
-            AND (d.user_id = :user_id OR ds.shared_with_user_id = :user_id OR d.visibility = 'public')
+            AND (d.user_id = :user_id OR d.visibility = 'public')
         ");
         $stmt->execute(['id' => $id, 'user_id' => $userId]);
         $sheet = $stmt->fetch(\PDO::FETCH_ASSOC);
@@ -255,7 +268,7 @@ class SheetController
         }
         
         if ($requireEdit) {
-            $hasEditAccess = ($sheet['is_owner'] == 1) || ($sheet['share_permission'] === 'edit');
+            $hasEditAccess = ($sheet['is_owner'] == 1);
             if (!$hasEditAccess) {
                 return null;
             }

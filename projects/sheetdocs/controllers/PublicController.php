@@ -38,7 +38,7 @@ class PublicController
         ", [$token]);
         
         if (!$share) {
-            Helpers::setFlash('error', 'This link is invalid or has expired.');
+            Helpers::flash('error', 'This link is invalid or has expired.');
             Helpers::redirect('/');
             exit;
         }

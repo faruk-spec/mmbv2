@@ -129,7 +129,7 @@ class SubscriptionController
             'trial' => true
         ]);
         
-        Helpers::setFlash('success', 'Congratulations! You now have access to all premium features for ' . 
+        Helpers::flash('success', 'Congratulations! You now have access to all premium features for ' . 
             $this->projectConfig['subscription']['trial_days'] . ' days trial. Enjoy unlimited documents, sheets, and advanced features!');
         Helpers::redirect('/projects/sheetdocs/dashboard');
     }
@@ -145,7 +145,7 @@ class SubscriptionController
         $subscription = $this->getUserSubscription($userId);
         
         if (!$subscription || $subscription['plan'] === 'free') {
-            Helpers::setFlash('error', 'You do not have an active paid subscription.');
+            Helpers::flash('error', 'You do not have an active paid subscription.');
             Helpers::redirect('/projects/sheetdocs/pricing');
             exit;
         }
@@ -165,7 +165,7 @@ class SubscriptionController
             'plan' => $subscription['plan']
         ]);
         
-        Helpers::setFlash('success', 'Your subscription has been cancelled. You will continue to have access until the end of your current billing period.');
+        Helpers::flash('success', 'Your subscription has been cancelled. You will continue to have access until the end of your current billing period.');
         Helpers::redirect('/projects/sheetdocs/pricing');
     }
     

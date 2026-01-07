@@ -42,7 +42,7 @@ class ShareController
         $document = $stmt->fetch(\PDO::FETCH_ASSOC);
         
         if (!$document) {
-            Helpers::setFlash('error', 'Document not found or you do not have permission.');
+            Helpers::flash('error', 'Document not found or you do not have permission.');
             Helpers::redirect('/projects/sheetdocs');
             exit;
         }
@@ -76,7 +76,7 @@ class ShareController
         $document = $stmt->fetch(\PDO::FETCH_ASSOC);
         
         if (!$document) {
-            Helpers::setFlash('error', 'Document not found or you do not have permission.');
+            Helpers::flash('error', 'Document not found or you do not have permission.');
             Helpers::redirect('/projects/sheetdocs');
             exit;
         }
@@ -103,7 +103,7 @@ class ShareController
             ]);
             
             $shareUrl = Helpers::url('/sd/' . $token);
-            Helpers::setFlash('success', 'Public share link created: ' . $shareUrl);
+            Helpers::flash('success', 'Public share link created: ' . $shareUrl);
         } else {
             // Share with specific user (would need user lookup)
             $sharedWithUserId = (int)($_POST['shared_with_user_id'] ?? 0);
@@ -123,7 +123,7 @@ class ShareController
                     'permission' => $permission
                 ]);
                 
-                Helpers::setFlash('success', 'Document shared successfully!');
+                Helpers::flash('success', 'Document shared successfully!');
             }
         }
         
@@ -153,9 +153,9 @@ class ShareController
             $stmt = $this->db->prepare("DELETE FROM sheet_document_shares WHERE id = :id");
             $stmt->execute(['id' => $shareId]);
             
-            Helpers::setFlash('success', 'Share revoked successfully!');
+            Helpers::flash('success', 'Share revoked successfully!');
         } else {
-            Helpers::setFlash('error', 'Share not found or you do not have permission.');
+            Helpers::flash('error', 'Share not found or you do not have permission.');
         }
         
         Helpers::redirect('/projects/sheetdocs/share/' . $id);
