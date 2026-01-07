@@ -3,27 +3,51 @@
  * Mail Project Verification Script
  * Run this to diagnose why you're getting "Access Denied" errors
  * 
- * Usage: php verify_mail_setup.php
+ * Usage: php /path/to/projects/mail/migrations/verify_mail_setup.php
+ *    Or: cd /path/to/project && php projects/mail/migrations/verify_mail_setup.php
  */
 
-// Try to load bootstrap
-$bootstrapPaths = [
-    __DIR__ . '/../../bootstrap.php',
-    __DIR__ . '/../../index.php',
-    __DIR__ . '/../../../bootstrap.php',
-];
-
-$bootstrapLoaded = false;
-foreach ($bootstrapPaths as $path) {
-    if (file_exists($path)) {
-        require_once $path;
-        $bootstrapLoaded = true;
-        break;
+// Find the project root by looking for core/Autoloader.php
+function findProjectRoot($startDir) {
+    $currentDir = $startDir;
+    $maxLevels = 5; // Prevent infinite loop
+    
+    for ($i = 0; $i < $maxLevels; $i++) {
+        if (file_exists($currentDir . '/core/Autoloader.php')) {
+            return $currentDir;
+        }
+        
+        $parentDir = dirname($currentDir);
+        if ($parentDir === $currentDir) {
+            // Reached filesystem root
+            break;
+        }
+        $currentDir = $parentDir;
     }
+    
+    return false;
 }
 
-if (!$bootstrapLoaded) {
-    die("ERROR: Could not find bootstrap.php. Run this from projects/mail/migrations/ directory.\n");
+// Try to find project root
+$projectRoot = findProjectRoot(__DIR__);
+
+if (!$projectRoot) {
+    die("ERROR: Could not find project root. Make sure you're running this from within the project.\n" .
+        "Expected to find: core/Autoloader.php\n" .
+        "Script location: " . __DIR__ . "\n");
+}
+
+// Define BASE_PATH if not already defined
+if (!defined('BASE_PATH')) {
+    define('BASE_PATH', $projectRoot);
+}
+
+// Load autoloader
+require_once BASE_PATH . '/core/Autoloader.php';
+
+// Load configuration if it exists
+if (file_exists(BASE_PATH . '/config/app.php')) {
+    require_once BASE_PATH . '/config/app.php';
 }
 
 use Core\Auth;
