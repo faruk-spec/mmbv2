@@ -77,7 +77,8 @@ class SubscriberController extends BaseController
     public function dashboard()
     {
         if (!$this->isOwner) {
-            $this->error('Access denied. Subscriber owner access required.');
+            $this->flash('error', 'Access denied. Subscriber owner access required.');
+            $this->redirect('/projects/mail');
             return;
         }
         
@@ -138,7 +139,8 @@ class SubscriberController extends BaseController
     public function manageUsers()
     {
         if (!$this->isOwner) {
-            $this->error('Access denied. Subscriber owner access required.');
+            $this->flash('error', 'Access denied. Subscriber owner access required.');
+            $this->redirect('/projects/mail');
             return;
         }
         
@@ -177,7 +179,8 @@ class SubscriberController extends BaseController
     public function addUser()
     {
         if (!$this->isOwner) {
-            $this->error('Access denied. Subscriber owner access required.');
+            $this->flash('error', 'Access denied. Subscriber owner access required.');
+            $this->redirect('/projects/mail');
             return;
         }
         
@@ -197,7 +200,8 @@ class SubscriberController extends BaseController
         
         // Check if can add more users
         if ($plan['users_count'] >= $plan['max_users']) {
-            $this->error('User limit reached. Please upgrade your plan to add more users.');
+            $this->flash('error', 'User limit reached. Please upgrade your plan to add more users.');
+            $this->redirect('/projects/mail/subscriber/users');
             return;
         }
         
@@ -231,7 +235,8 @@ class SubscriberController extends BaseController
         
         // Validate
         if (!MailHelpers::isValidEmail($email)) {
-            $this->error('Invalid email address');
+            $this->flash('error', 'Invalid email address');
+            $this->redirect('/projects/mail/subscriber/users/add');
             return;
         }
         
@@ -246,14 +251,16 @@ class SubscriberController extends BaseController
         );
         
         if ($plan['users_count'] >= $plan['max_users']) {
-            $this->error('User limit reached for your plan');
+            $this->flash('error', 'User limit reached for your plan');
+            $this->redirect('/projects/mail/subscriber/users/add');
             return;
         }
         
         // Check if email already exists
         $existing = $this->db->fetch("SELECT id FROM mail_mailboxes WHERE email = ?", [$email]);
         if ($existing) {
-            $this->error('Email address already exists');
+            $this->flash('error', 'Email address already exists');
+            $this->redirect('/projects/mail/subscriber/users/add');
             return;
         }
         
@@ -264,7 +271,8 @@ class SubscriberController extends BaseController
         );
         
         if (!$domain) {
-            $this->error('Invalid domain selected');
+            $this->flash('error', 'Invalid domain selected');
+            $this->redirect('/projects/mail/subscriber/users/add');
             return;
         }
         
@@ -289,11 +297,12 @@ class SubscriberController extends BaseController
             $mailboxId = $this->db->getConnection()->lastInsertId();
             $this->createDefaultFolders($mailboxId);
             
-            $this->success('User created successfully');
+            $this->flash('success', 'User created successfully');
             $this->redirect('/projects/mail/subscriber/users');
             
         } catch (\Exception $e) {
-            $this->error('Failed to create user: ' . $e->getMessage());
+            $this->flash('error', 'Failed to create user: ' . $e->getMessage());
+            $this->redirect('/projects/mail/subscriber/users/add');
         }
     }
     
@@ -430,7 +439,7 @@ class SubscriberController extends BaseController
         );
         
         if (!$plan) {
-            $this->error('Invalid plan selected');
+            $this->flash('error', 'Invalid plan selected');
             $this->redirect('/projects/mail/subscribe');
             return;
         }
@@ -444,7 +453,7 @@ class SubscriberController extends BaseController
         );
         
         if ($existing) {
-            $this->error('You already have an active subscription');
+            $this->flash('error', 'You already have an active subscription');
             $this->redirect('/projects/mail/subscriber/dashboard');
             return;
         }
@@ -466,7 +475,7 @@ class SubscriberController extends BaseController
             [$subscriberId, $planId, $billingCycle]
         );
         
-        $this->success('Subscription created successfully!');
+        $this->flash('success', 'Subscription created successfully!');
         $this->redirect('/projects/mail/subscriber/dashboard');
     }
     
@@ -476,7 +485,7 @@ class SubscriberController extends BaseController
     public function subscription()
     {
         if (!$this->isOwner) {
-            $this->error('Access denied. Subscriber owner access required.');
+            $this->flash('error', 'Access denied. Subscriber owner access required.');
             $this->redirect('/projects/mail');
             return;
         }
@@ -509,7 +518,7 @@ class SubscriberController extends BaseController
     public function billing()
     {
         if (!$this->isOwner) {
-            $this->error('Access denied. Subscriber owner access required.');
+            $this->flash('error', 'Access denied. Subscriber owner access required.');
             $this->redirect('/projects/mail');
             return;
         }
@@ -546,7 +555,7 @@ class SubscriberController extends BaseController
     public function showUpgrade()
     {
         if (!$this->isOwner) {
-            $this->error('Access denied. Subscriber owner access required.');
+            $this->flash('error', 'Access denied. Subscriber owner access required.');
             $this->redirect('/projects/mail');
             return;
         }
