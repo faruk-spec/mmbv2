@@ -184,12 +184,20 @@ class MailAdminController extends BaseController
             [$id]
         )->fetchAll();
         
+        // Get all available plans for changing subscription
+        $plans = $this->db->query(
+            "SELECT * FROM mail_subscription_plans 
+             WHERE is_active = 1 
+             ORDER BY sort_order ASC"
+        )->fetchAll();
+        
         $this->view('admin/mail/subscriber-details', [
             'subscriber' => $subscriber,
             'domains' => $domains,
             'mailboxes' => $mailboxes,
             'usageStats' => $usageStats,
             'payments' => $payments,
+            'plans' => $plans,
             'title' => 'Subscriber Details - ' . $subscriber['account_name']
         ]);
     }
@@ -233,6 +241,58 @@ class MailAdminController extends BaseController
         $this->logAdminAction('activate_subscriber', 'subscriber', $id, "Activated subscriber");
         
         $this->jsonSuccess('Subscriber activated successfully');
+    }
+    
+    /**
+     * Delete Subscriber and all associated data
+     */
+    public function deleteSubscriber()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->jsonError('Invalid request method');
+            return;
+        }
+        
+        $id = $_POST['subscriber_id'] ?? 0;
+        
+        if (!$id) {
+            $this->jsonError('Invalid subscriber ID');
+            return;
+        }
+        
+        // Get subscriber info before deletion for logging
+        $subscriber = $this->db->fetch(
+            "SELECT account_name FROM mail_subscribers WHERE id = ?",
+            [$id]
+        );
+        
+        if (!$subscriber) {
+            $this->jsonError('Subscriber not found');
+            return;
+        }
+        
+        try {
+            // The database foreign keys with CASCADE will handle deletion of:
+            // - mail_subscriptions
+            // - mail_domains
+            // - mail_mailboxes
+            // - mail_aliases
+            // - mail_messages
+            // - mail_payments
+            // - mail_billing_history
+            // etc.
+            
+            $this->db->query("DELETE FROM mail_subscribers WHERE id = ?", [$id]);
+            
+            // Log admin action
+            $this->logAdminAction('delete_subscriber', 'subscriber', $id, 
+                "Deleted subscriber: {$subscriber['account_name']}");
+            
+            $this->jsonSuccess('Subscriber and all associated data deleted successfully');
+        } catch (\Exception $e) {
+            error_log("Error deleting subscriber: " . $e->getMessage());
+            $this->jsonError('Failed to delete subscriber: ' . $e->getMessage());
+        }
     }
     
     /**
