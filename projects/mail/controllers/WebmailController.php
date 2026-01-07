@@ -61,12 +61,14 @@ class WebmailController extends BaseController
                 );
                 
                 if ($subscriber) {
-                    // Redirect subscriber owner to their dashboard
-                    header('Location: /projects/mail/subscriber/dashboard');
+                    // Redirect subscriber owner to create mailboxes first
+                    $this->flash('info', 'Please add a mailbox user to access webmail.');
+                    $this->redirect('/projects/mail/subscriber/users/add');
                     exit;
                 } else {
                     // User needs to subscribe first
-                    header('Location: /projects/mail/subscribe');
+                    $this->flash('error', 'You need to subscribe to access webmail.');
+                    $this->redirect('/projects/mail/subscribe');
                     exit;
                 }
             }
