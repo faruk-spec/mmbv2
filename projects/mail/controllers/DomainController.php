@@ -5,6 +5,7 @@ namespace Mail;
 use Controllers\BaseController;
 use Core\Auth;
 use Core\Database;
+use Core\View;
 
 /**
  * DomainController
@@ -17,7 +18,7 @@ class DomainController extends BaseController
 
     public function __construct()
     {
-        // BaseController doesn't have a constructor, so no need to call parent::__construct()
+        parent::__construct();
         
         // Initialize database with error handling
         try {
@@ -43,18 +44,21 @@ class DomainController extends BaseController
         }
         
         if ($this->subscriberId === null) {
-            // Get subscriber ID from session
+            // Get subscriber ID from authenticated user
             $userId = Auth::id();
-            $mailbox = $this->db->fetch(
-                "SELECT subscriber_id FROM mail_mailboxes WHERE mmb_user_id = ? AND role_type = 'subscriber_owner'",
+            $subscriber = $this->db->fetch(
+                "SELECT id FROM mail_subscribers WHERE mmb_user_id = ?",
                 [$userId]
             );
             
-            if (!$mailbox) {
-                throw new \RuntimeException('Access denied. Subscriber owner access required.');
+            if (!$subscriber) {
+                // User is not a subscriber - redirect to subscribe page
+                $this->flash('error', 'You need to subscribe to access this feature.');
+                $this->redirect('/projects/mail/subscribe');
+                exit;
             }
             
-            $this->subscriberId = $mailbox['subscriber_id'];
+            $this->subscriberId = $subscriber['id'];
         }
     }
 
@@ -150,7 +154,7 @@ class DomainController extends BaseController
         $this->generateDNSRecords($domainId, $domainName);
 
         $this->success('Domain added successfully. Please configure DNS records to verify.');
-        redirect('/projects/mail/subscriber/domains/' . $domainId . '/dns');
+        $this->redirect('/projects/mail/subscriber/domains/' . $domainId . '/dns');
     }
 
     /**
@@ -168,7 +172,7 @@ class DomainController extends BaseController
 
         if (!$domain) {
             $this->error('Domain not found');
-            redirect('/projects/mail/subscriber/domains');
+            $this->redirect('/projects/mail/subscriber/domains');
             return;
         }
 
@@ -185,13 +189,13 @@ class DomainController extends BaseController
     }
 
     /**
-        // Ensure database and subscriber access
-        $this->ensureDatabaseAndSubscriber();
-
      * Verify domain DNS records
      */
     public function verify($domainId)
     {
+        // Ensure database and subscriber access
+        $this->ensureDatabaseAndSubscriber();
+        
         $domain = $this->db->fetch(
             "SELECT * FROM mail_domains WHERE id = ? AND subscriber_id = ?",
             [$domainId, $this->subscriberId]
@@ -242,9 +246,6 @@ class DomainController extends BaseController
             'results' => $results,
             'message' => $verified ? 'Domain verified successfully!' : 'Some DNS records are not configured correctly'
         ]);
-        // Ensure database and subscriber access
-        $this->ensureDatabaseAndSubscriber();
-
     }
 
     /**
@@ -252,6 +253,9 @@ class DomainController extends BaseController
      */
     public function delete($domainId)
     {
+        // Ensure database and subscriber access
+        $this->ensureDatabaseAndSubscriber();
+        
         $domain = $this->db->fetch(
             "SELECT * FROM mail_domains WHERE id = ? AND subscriber_id = ?",
             [$domainId, $this->subscriberId]

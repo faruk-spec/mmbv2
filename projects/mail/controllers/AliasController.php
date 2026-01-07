@@ -5,6 +5,7 @@ namespace Mail;
 use Controllers\BaseController;
 use Core\Auth;
 use Core\Database;
+use Core\View;
 
 /**
  * AliasController
@@ -17,7 +18,7 @@ class AliasController extends BaseController
 
     public function __construct()
     {
-        // BaseController doesn't have a constructor, so no need to call parent::__construct()
+        parent::__construct();
         
         // Initialize database with error handling
         try {
@@ -43,18 +44,21 @@ class AliasController extends BaseController
         }
         
         if ($this->subscriberId === null) {
-            // Get subscriber ID from session
+            // Get subscriber ID from authenticated user
             $userId = Auth::id();
-            $mailbox = $this->db->fetch(
-                "SELECT subscriber_id FROM mail_mailboxes WHERE mmb_user_id = ? AND role_type = 'subscriber_owner'",
+            $subscriber = $this->db->fetch(
+                "SELECT id FROM mail_subscribers WHERE mmb_user_id = ?",
                 [$userId]
             );
             
-            if (!$mailbox) {
-                throw new \RuntimeException('Access denied. Subscriber owner access required.');
+            if (!$subscriber) {
+                // User is not a subscriber - redirect to subscribe page
+                $this->flash('error', 'You need to subscribe to access this feature.');
+                $this->redirect('/projects/mail/subscribe');
+                exit;
             }
             
-            $this->subscriberId = $mailbox['subscriber_id'];
+            $this->subscriberId = $subscriber['id'];
         }
     }
 
@@ -236,10 +240,7 @@ class AliasController extends BaseController
         );
 
         $this->success('Alias created successfully');
-        redirect('/projects/mail/subscriber/aliases');
-        // Ensure database and subscriber access
-        $this->ensureDatabaseAndSubscriber();
-
+        $this->redirect('/projects/mail/subscriber/aliases');
     }
 
     /**
@@ -247,6 +248,9 @@ class AliasController extends BaseController
      */
     public function toggleStatus($aliasId)
     {
+        // Ensure database and subscriber access
+        $this->ensureDatabaseAndSubscriber();
+        
         $alias = $this->db->fetch(
             "SELECT * FROM mail_aliases WHERE id = ? AND subscriber_id = ?",
             [$aliasId, $this->subscriberId]
@@ -264,9 +268,6 @@ class AliasController extends BaseController
 
         return $this->json([
             'success' => true,
-        // Ensure database and subscriber access
-        $this->ensureDatabaseAndSubscriber();
-
             'message' => 'Alias ' . ($newStatus ? 'activated' : 'deactivated') . ' successfully',
             'is_active' => $newStatus
         ]);
@@ -277,6 +278,9 @@ class AliasController extends BaseController
      */
     public function delete($aliasId)
     {
+        // Ensure database and subscriber access
+        $this->ensureDatabaseAndSubscriber();
+        
         $alias = $this->db->fetch(
             "SELECT * FROM mail_aliases WHERE id = ? AND subscriber_id = ?",
             [$aliasId, $this->subscriberId]

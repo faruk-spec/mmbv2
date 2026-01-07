@@ -104,6 +104,7 @@ $router->get('/admin/projects/mail/subscribers/{id}', 'Admin\\MailAdminControlle
 $router->post('/admin/projects/mail/subscribers/create', 'Admin\\MailAdminController@createSubscription', ['auth', 'admin']);
 $router->post('/admin/projects/mail/subscribers/suspend', 'Admin\\MailAdminController@suspendSubscriber', ['auth', 'admin']);
 $router->post('/admin/projects/mail/subscribers/activate', 'Admin\\MailAdminController@activateSubscriber', ['auth', 'admin']);
+$router->post('/admin/projects/mail/subscribers/delete', 'Admin\\MailAdminController@deleteSubscriber', ['auth', 'admin']);
 $router->post('/admin/projects/mail/subscribers/override-plan', 'Admin\\MailAdminController@overridePlan', ['auth', 'admin']);
 $router->post('/admin/projects/mail/subscribers/toggle-feature', 'Admin\\MailAdminController@toggleFeature', ['auth', 'admin']);
 

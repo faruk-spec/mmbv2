@@ -68,7 +68,7 @@ class DashboardController extends BaseController
         
         if ($subscriber) {
             // User is a subscriber - redirect to subscriber dashboard
-            redirect('/projects/mail/subscriber/dashboard');
+            $this->redirect('/projects/mail/subscriber/dashboard');
             return;
         }
         
@@ -80,7 +80,7 @@ class DashboardController extends BaseController
         
         if ($mailbox) {
             // User has a mailbox - redirect to webmail
-            redirect('/projects/mail/webmail');
+            $this->redirect('/projects/mail/webmail');
             return;
         }
         
