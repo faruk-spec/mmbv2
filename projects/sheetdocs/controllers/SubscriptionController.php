@@ -41,7 +41,7 @@ class SubscriptionController
         
         // Get usage stats
         $stmt = $this->db->prepare("
-            SELECT * FROM usage_stats WHERE user_id = :user_id
+            SELECT * FROM sheet_usage_stats WHERE user_id = :user_id
         ");
         $stmt->execute(['user_id' => $userId]);
         $usageStats = $stmt->fetch(\PDO::FETCH_ASSOC);
@@ -96,7 +96,7 @@ class SubscriptionController
         if ($subscription) {
             // Update existing subscription
             $stmt = $this->db->prepare("
-                UPDATE user_subscriptions 
+                UPDATE sheet_user_subscriptions 
                 SET plan = 'paid',
                     status = 'trial',
                     billing_cycle = :billing_cycle,
@@ -109,7 +109,7 @@ class SubscriptionController
         } else {
             // Create new subscription
             $stmt = $this->db->prepare("
-                INSERT INTO user_subscriptions 
+                INSERT INTO sheet_user_subscriptions 
                 (user_id, plan, status, billing_cycle, trial_ends_at, current_period_start, current_period_end)
                 VALUES (:user_id, 'paid', 'trial', :billing_cycle, :trial_ends_at, NOW(), :period_end)
             ");
@@ -152,7 +152,7 @@ class SubscriptionController
         
         // Update subscription to cancelled
         $stmt = $this->db->prepare("
-            UPDATE user_subscriptions 
+            UPDATE sheet_user_subscriptions 
             SET status = 'cancelled',
                 cancelled_at = NOW(),
                 updated_at = NOW()
@@ -175,7 +175,7 @@ class SubscriptionController
     private function getUserSubscription(int $userId): ?array
     {
         $stmt = $this->db->prepare("
-            SELECT * FROM user_subscriptions WHERE user_id = :user_id
+            SELECT * FROM sheet_user_subscriptions WHERE user_id = :user_id
         ");
         $stmt->execute(['user_id' => $userId]);
         return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
@@ -187,7 +187,7 @@ class SubscriptionController
     private function logActivity(int $userId, ?int $documentId, string $action, array $details = []): void
     {
         $stmt = $this->db->prepare("
-            INSERT INTO activity_logs (user_id, document_id, action, details, ip_address, user_agent)
+            INSERT INTO sheet_activity_logs (user_id, document_id, action, details, ip_address, user_agent)
             VALUES (:user_id, :document_id, :action, :details, :ip, :user_agent)
         ");
         

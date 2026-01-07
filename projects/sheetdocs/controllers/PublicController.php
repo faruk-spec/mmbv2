@@ -31,8 +31,8 @@ class PublicController
         // Get share by token
         $stmt = $this->db->prepare("
             SELECT ds.*, d.*
-            FROM document_shares ds
-            INNER JOIN documents d ON ds.document_id = d.id
+            FROM sheet_document_shares ds
+            INNER JOIN sheet_documents d ON ds.document_id = d.id
             WHERE ds.share_token = :token
             AND (ds.expires_at IS NULL OR ds.expires_at > NOW())
         ");
@@ -46,7 +46,7 @@ class PublicController
         }
         
         // Increment view count
-        $stmt = $this->db->prepare("UPDATE documents SET views = views + 1 WHERE id = :id");
+        $stmt = $this->db->prepare("UPDATE sheet_documents SET views = views + 1 WHERE id = :id");
         $stmt->execute(['id' => $share['document_id']]);
         
         // Render based on type
@@ -58,7 +58,7 @@ class PublicController
         } else {
             // Get sheets
             $stmt = $this->db->prepare("
-                SELECT * FROM sheets 
+                SELECT * FROM sheet_sheets 
                 WHERE document_id = :document_id 
                 ORDER BY order_index
             ");

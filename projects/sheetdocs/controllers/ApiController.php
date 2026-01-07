@@ -45,9 +45,9 @@ class ApiController
         // Verify access to sheet
         $stmt = $this->db->prepare("
             SELECT s.*, d.user_id, d.id as document_id,
-                   (SELECT permission FROM document_shares WHERE document_id = d.id AND shared_with_user_id = :user_id) as share_permission
-            FROM sheets s
-            INNER JOIN documents d ON s.document_id = d.id
+                   (SELECT permission FROM sheet_document_shares WHERE document_id = d.id AND shared_with_user_id = :user_id) as share_permission
+            FROM sheet_sheets s
+            INNER JOIN sheet_documents d ON s.document_id = d.id
             WHERE s.id = :sheet_id
         ");
         $stmt->execute(['sheet_id' => $sheetId, 'user_id' => $userId]);
@@ -85,7 +85,7 @@ class ApiController
         
         // Update document timestamp
         $stmt = $this->db->prepare("
-            UPDATE documents 
+            UPDATE sheet_documents 
             SET last_edited_by = :user_id 
             WHERE id = :document_id
         ");
@@ -111,8 +111,8 @@ class ApiController
         // Verify access
         $stmt = $this->db->prepare("
             SELECT d.*, 
-                   (SELECT permission FROM document_shares WHERE document_id = d.id AND shared_with_user_id = :user_id) as share_permission
-            FROM documents d
+                   (SELECT permission FROM sheet_document_shares WHERE document_id = d.id AND shared_with_user_id = :user_id) as share_permission
+            FROM sheet_documents d
             WHERE d.id = :document_id
         ");
         $stmt->execute(['document_id' => $documentId, 'user_id' => $userId]);
@@ -132,7 +132,7 @@ class ApiController
         
         // Update document
         $stmt = $this->db->prepare("
-            UPDATE documents 
+            UPDATE sheet_documents 
             SET content = :content, last_edited_by = :user_id 
             WHERE id = :document_id
         ");

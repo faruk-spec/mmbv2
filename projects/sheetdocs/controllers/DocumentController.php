@@ -37,7 +37,7 @@ class DocumentController
         $userId = Auth::id();
         
         $stmt = $this->db->prepare("
-            SELECT * FROM documents 
+            SELECT * FROM sheet_documents 
             WHERE user_id = :user_id AND type = 'document'
             ORDER BY updated_at DESC
         ");
@@ -68,7 +68,7 @@ class DocumentController
         $tier = $subscription['plan'];
         
         $stmt = $this->db->prepare("
-            SELECT * FROM templates 
+            SELECT * FROM sheet_templates 
             WHERE type = 'document' AND (tier = 'free' OR tier = :tier)
             ORDER BY category, title
         ");
@@ -100,7 +100,7 @@ class DocumentController
             ? $_POST['visibility'] : 'private';
         
         $stmt = $this->db->prepare("
-            INSERT INTO documents (user_id, title, content, type, visibility, last_edited_by)
+            INSERT INTO sheet_documents (user_id, title, content, type, visibility, last_edited_by)
             VALUES (:user_id, :title, :content, 'document', :visibility, :user_id)
         ");
         
@@ -138,7 +138,7 @@ class DocumentController
         }
         
         // Increment views
-        $stmt = $this->db->prepare("UPDATE documents SET views = views + 1 WHERE id = :id");
+        $stmt = $this->db->prepare("UPDATE sheet_documents SET views = views + 1 WHERE id = :id");
         $stmt->execute(['id' => $id]);
         
         View::render('projects/sheetdocs/documents/show', [
@@ -184,7 +184,7 @@ class DocumentController
         $content = $_POST['content'] ?? $document['content'];
         
         $stmt = $this->db->prepare("
-            UPDATE documents 
+            UPDATE sheet_documents 
             SET title = :title, content = :content, last_edited_by = :user_id
             WHERE id = :id
         ");
@@ -218,7 +218,7 @@ class DocumentController
             exit;
         }
         
-        $stmt = $this->db->prepare("DELETE FROM documents WHERE id = :id AND user_id = :user_id");
+        $stmt = $this->db->prepare("DELETE FROM sheet_documents WHERE id = :id AND user_id = :user_id");
         $stmt->execute(['id' => $id, 'user_id' => $userId]);
         
         // Update usage stats
@@ -240,7 +240,7 @@ class DocumentController
             SELECT d.*, 
                    ds.permission as share_permission,
                    (d.user_id = :user_id) as is_owner
-            FROM documents d
+            FROM sheet_documents d
             LEFT JOIN document_shares ds ON d.id = ds.document_id AND ds.shared_with_user_id = :user_id
             WHERE d.id = :id 
             AND (d.user_id = :user_id OR ds.shared_with_user_id = :user_id OR d.visibility = 'public')
@@ -277,7 +277,7 @@ class DocumentController
         }
         
         $stmt = $this->db->prepare("
-            SELECT COUNT(*) as count FROM documents 
+            SELECT COUNT(*) as count FROM sheet_documents 
             WHERE user_id = :user_id AND type = 'document'
         ");
         $stmt->execute(['user_id' => $userId]);
@@ -291,7 +291,7 @@ class DocumentController
      */
     private function getUserSubscription(int $userId): array
     {
-        $stmt = $this->db->prepare("SELECT * FROM user_subscriptions WHERE user_id = :user_id");
+        $stmt = $this->db->prepare("SELECT * FROM sheet_user_subscriptions WHERE user_id = :user_id");
         $stmt->execute(['user_id' => $userId]);
         $subscription = $stmt->fetch(\PDO::FETCH_ASSOC);
         
@@ -304,11 +304,11 @@ class DocumentController
     private function updateUsageStats(int $userId): void
     {
         $stmt = $this->db->prepare("
-            INSERT INTO usage_stats (user_id, document_count, sheet_count)
+            INSERT INTO sheet_usage_stats (user_id, document_count, sheet_count)
             SELECT :user_id,
                    COUNT(CASE WHEN type = 'document' THEN 1 END),
                    COUNT(CASE WHEN type = 'sheet' THEN 1 END)
-            FROM documents WHERE user_id = :user_id
+            FROM sheet_documents WHERE user_id = :user_id
             ON DUPLICATE KEY UPDATE
                 document_count = VALUES(document_count),
                 sheet_count = VALUES(sheet_count)
@@ -322,7 +322,7 @@ class DocumentController
     private function logActivity(int $userId, ?int $documentId, string $action, array $details = []): void
     {
         $stmt = $this->db->prepare("
-            INSERT INTO activity_logs (user_id, document_id, action, details, ip_address, user_agent)
+            INSERT INTO sheet_activity_logs (user_id, document_id, action, details, ip_address, user_agent)
             VALUES (:user_id, :document_id, :action, :details, :ip, :user_agent)
         ");
         

@@ -63,8 +63,8 @@ class SheetDocsAdminController
         // Get documents with user info
         $stmt = $this->projectDb->prepare("
             SELECT d.*, 
-                   (SELECT COUNT(*) FROM document_shares WHERE document_id = d.id) as share_count
-            FROM documents d
+                   (SELECT COUNT(*) FROM sheet_document_shares WHERE document_id = d.id) as share_count
+            FROM sheet_documents d
             WHERE d.type = 'document'
             ORDER BY d.created_at DESC
             LIMIT :limit OFFSET :offset
@@ -75,7 +75,7 @@ class SheetDocsAdminController
         $documents = $stmt->fetchAll(\PDO::FETCH_ASSOC);
         
         // Get total count
-        $totalStmt = $this->projectDb->query("SELECT COUNT(*) as count FROM documents WHERE type = 'document'");
+        $totalStmt = $this->projectDb->query("SELECT COUNT(*) as count FROM sheet_documents WHERE type = 'document'");
         $total = $totalStmt->fetch(\PDO::FETCH_ASSOC)['count'];
         
         View::render('admin/sheetdocs/documents', [
@@ -94,9 +94,9 @@ class SheetDocsAdminController
     {
         $stmt = $this->projectDb->query("
             SELECT us.*, 
-                   (SELECT document_count FROM usage_stats WHERE user_id = us.user_id) as document_count,
-                   (SELECT sheet_count FROM usage_stats WHERE user_id = us.user_id) as sheet_count
-            FROM user_subscriptions us
+                   (SELECT document_count FROM sheet_usage_stats WHERE user_id = us.user_id) as document_count,
+                   (SELECT sheet_count FROM sheet_usage_stats WHERE user_id = us.user_id) as sheet_count
+            FROM sheet_user_subscriptions us
             ORDER BY us.created_at DESC
         ");
         $subscriptions = $stmt->fetchAll(\PDO::FETCH_ASSOC);
@@ -117,7 +117,7 @@ class SheetDocsAdminController
         
         $stmt = $this->projectDb->prepare("
             SELECT al.*
-            FROM activity_logs al
+            FROM sheet_activity_logs al
             ORDER BY al.created_at DESC
             LIMIT :limit OFFSET :offset
         ");
@@ -127,7 +127,7 @@ class SheetDocsAdminController
         $logs = $stmt->fetchAll(\PDO::FETCH_ASSOC);
         
         // Get total count
-        $totalStmt = $this->projectDb->query("SELECT COUNT(*) as count FROM activity_logs");
+        $totalStmt = $this->projectDb->query("SELECT COUNT(*) as count FROM sheet_activity_logs");
         $total = $totalStmt->fetch(\PDO::FETCH_ASSOC)['count'];
         
         View::render('admin/sheetdocs/activity', [
@@ -146,7 +146,7 @@ class SheetDocsAdminController
     {
         Security::validateCsrfToken();
         
-        $stmt = $this->projectDb->prepare("DELETE FROM documents WHERE id = :id");
+        $stmt = $this->projectDb->prepare("DELETE FROM sheet_documents WHERE id = :id");
         $stmt->execute(['id' => $id]);
         
         Helpers::setFlash('success', 'Document deleted successfully.');
@@ -161,27 +161,27 @@ class SheetDocsAdminController
         $stats = [];
         
         // Total documents
-        $stmt = $this->projectDb->query("SELECT COUNT(*) as count FROM documents WHERE type = 'document'");
+        $stmt = $this->projectDb->query("SELECT COUNT(*) as count FROM sheet_documents WHERE type = 'document'");
         $stats['total_documents'] = $stmt->fetch(\PDO::FETCH_ASSOC)['count'];
         
         // Total sheets
-        $stmt = $this->projectDb->query("SELECT COUNT(*) as count FROM documents WHERE type = 'sheet'");
+        $stmt = $this->projectDb->query("SELECT COUNT(*) as count FROM sheet_documents WHERE type = 'sheet'");
         $stats['total_sheets'] = $stmt->fetch(\PDO::FETCH_ASSOC)['count'];
         
         // Total users
-        $stmt = $this->projectDb->query("SELECT COUNT(DISTINCT user_id) as count FROM documents");
+        $stmt = $this->projectDb->query("SELECT COUNT(DISTINCT user_id) as count FROM sheet_documents");
         $stats['total_users'] = $stmt->fetch(\PDO::FETCH_ASSOC)['count'];
         
         // Paid subscribers
-        $stmt = $this->projectDb->query("SELECT COUNT(*) as count FROM user_subscriptions WHERE plan = 'paid' AND status IN ('active', 'trial')");
+        $stmt = $this->projectDb->query("SELECT COUNT(*) as count FROM sheet_user_subscriptions WHERE plan = 'paid' AND status IN ('active', 'trial')");
         $stats['paid_subscribers'] = $stmt->fetch(\PDO::FETCH_ASSOC)['count'];
         
         // Total shares
-        $stmt = $this->projectDb->query("SELECT COUNT(*) as count FROM document_shares");
+        $stmt = $this->projectDb->query("SELECT COUNT(*) as count FROM sheet_document_shares");
         $stats['total_shares'] = $stmt->fetch(\PDO::FETCH_ASSOC)['count'];
         
         // Total storage used (approximate from content length)
-        $stmt = $this->projectDb->query("SELECT SUM(LENGTH(content)) as total FROM documents");
+        $stmt = $this->projectDb->query("SELECT SUM(LENGTH(content)) as total FROM sheet_documents");
         $stats['storage_used'] = $stmt->fetch(\PDO::FETCH_ASSOC)['total'] ?? 0;
         
         return $stats;
@@ -193,7 +193,7 @@ class SheetDocsAdminController
     private function getRecentActivity(int $limit = 10): array
     {
         $stmt = $this->projectDb->prepare("
-            SELECT * FROM activity_logs 
+            SELECT * FROM sheet_activity_logs 
             ORDER BY created_at DESC 
             LIMIT :limit
         ");
@@ -213,7 +213,7 @@ class SheetDocsAdminController
                 plan,
                 status,
                 COUNT(*) as count
-            FROM user_subscriptions
+            FROM sheet_user_subscriptions
             GROUP BY plan, status
         ");
         

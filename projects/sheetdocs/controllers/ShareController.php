@@ -37,7 +37,7 @@ class ShareController
         $userId = Auth::id();
         
         // Verify ownership
-        $stmt = $this->db->prepare("SELECT * FROM documents WHERE id = :id AND user_id = :user_id");
+        $stmt = $this->db->prepare("SELECT * FROM sheet_documents WHERE id = :id AND user_id = :user_id");
         $stmt->execute(['id' => $id, 'user_id' => $userId]);
         $document = $stmt->fetch(\PDO::FETCH_ASSOC);
         
@@ -49,7 +49,7 @@ class ShareController
         
         // Get existing shares
         $stmt = $this->db->prepare("
-            SELECT * FROM document_shares 
+            SELECT * FROM sheet_document_shares 
             WHERE document_id = :document_id
             ORDER BY created_at DESC
         ");
@@ -71,7 +71,7 @@ class ShareController
         $userId = Auth::id();
         
         // Verify ownership
-        $stmt = $this->db->prepare("SELECT * FROM documents WHERE id = :id AND user_id = :user_id");
+        $stmt = $this->db->prepare("SELECT * FROM sheet_documents WHERE id = :id AND user_id = :user_id");
         $stmt->execute(['id' => $id, 'user_id' => $userId]);
         $document = $stmt->fetch(\PDO::FETCH_ASSOC);
         
@@ -90,7 +90,7 @@ class ShareController
             $token = bin2hex(random_bytes(32));
             
             $stmt = $this->db->prepare("
-                INSERT INTO document_shares 
+                INSERT INTO sheet_document_shares 
                 (document_id, shared_by_user_id, permission, share_token)
                 VALUES (:document_id, :user_id, :permission, :token)
             ");
@@ -110,7 +110,7 @@ class ShareController
             
             if ($sharedWithUserId > 0) {
                 $stmt = $this->db->prepare("
-                    INSERT INTO document_shares 
+                    INSERT INTO sheet_document_shares 
                     (document_id, shared_with_user_id, shared_by_user_id, permission)
                     VALUES (:document_id, :shared_with, :shared_by, :permission)
                     ON DUPLICATE KEY UPDATE permission = :permission
@@ -142,15 +142,15 @@ class ShareController
         
         // Verify ownership of the document
         $stmt = $this->db->prepare("
-            SELECT ds.* FROM document_shares ds
-            INNER JOIN documents d ON ds.document_id = d.id
+            SELECT ds.* FROM sheet_document_shares ds
+            INNER JOIN sheet_documents d ON ds.document_id = d.id
             WHERE ds.id = :share_id AND d.user_id = :user_id
         ");
         $stmt->execute(['share_id' => $shareId, 'user_id' => $userId]);
         $share = $stmt->fetch(\PDO::FETCH_ASSOC);
         
         if ($share) {
-            $stmt = $this->db->prepare("DELETE FROM document_shares WHERE id = :id");
+            $stmt = $this->db->prepare("DELETE FROM sheet_document_shares WHERE id = :id");
             $stmt->execute(['id' => $shareId]);
             
             Helpers::setFlash('success', 'Share revoked successfully!');

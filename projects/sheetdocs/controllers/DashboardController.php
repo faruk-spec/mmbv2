@@ -73,7 +73,7 @@ class DashboardController
     private function getUserSubscription(int $userId): array
     {
         $stmt = $this->db->prepare("
-            SELECT * FROM user_subscriptions 
+            SELECT * FROM sheet_user_subscriptions 
             WHERE user_id = :user_id
         ");
         $stmt->execute(['user_id' => $userId]);
@@ -82,7 +82,7 @@ class DashboardController
         if (!$subscription) {
             // Create default free subscription
             $stmt = $this->db->prepare("
-                INSERT INTO user_subscriptions (user_id, plan, status) 
+                INSERT INTO sheet_user_subscriptions (user_id, plan, status) 
                 VALUES (:user_id, 'free', 'active')
             ");
             $stmt->execute(['user_id' => $userId]);
@@ -106,7 +106,7 @@ class DashboardController
     private function getUsageStats(int $userId): array
     {
         $stmt = $this->db->prepare("
-            SELECT * FROM usage_stats 
+            SELECT * FROM sheet_usage_stats 
             WHERE user_id = :user_id
         ");
         $stmt->execute(['user_id' => $userId]);
@@ -115,7 +115,7 @@ class DashboardController
         if (!$stats) {
             // Create initial stats
             $stmt = $this->db->prepare("
-                INSERT INTO usage_stats (user_id, document_count, sheet_count, storage_used) 
+                INSERT INTO sheet_usage_stats (user_id, document_count, sheet_count, storage_used) 
                 VALUES (:user_id, 0, 0, 0)
             ");
             $stmt->execute(['user_id' => $userId]);
@@ -139,7 +139,7 @@ class DashboardController
     {
         $stmt = $this->db->prepare("
             SELECT id, title, type, visibility, views, updated_at, created_at
-            FROM documents 
+            FROM sheet_documents 
             WHERE user_id = :user_id AND type = 'document'
             ORDER BY updated_at DESC 
             LIMIT :limit
@@ -158,7 +158,7 @@ class DashboardController
     {
         $stmt = $this->db->prepare("
             SELECT id, title, type, visibility, views, updated_at, created_at
-            FROM documents 
+            FROM sheet_documents 
             WHERE user_id = :user_id AND type = 'sheet'
             ORDER BY updated_at DESC 
             LIMIT :limit
@@ -177,7 +177,7 @@ class DashboardController
     {
         $stmt = $this->db->prepare("
             SELECT d.id, d.title, d.type, d.visibility, ds.permission, ds.shared_by_user_id, ds.created_at
-            FROM documents d
+            FROM sheet_documents d
             INNER JOIN document_shares ds ON d.id = ds.document_id
             WHERE ds.shared_with_user_id = :user_id
             AND (ds.expires_at IS NULL OR ds.expires_at > NOW())
@@ -204,7 +204,7 @@ class DashboardController
             SELECT 
                 COUNT(CASE WHEN type = 'document' THEN 1 END) as document_count,
                 COUNT(CASE WHEN type = 'sheet' THEN 1 END) as sheet_count
-            FROM documents 
+            FROM sheet_documents 
             WHERE user_id = :user_id
         ");
         $stmt->execute(['user_id' => $userId]);

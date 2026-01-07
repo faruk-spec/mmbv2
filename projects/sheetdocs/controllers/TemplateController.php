@@ -37,14 +37,14 @@ class TemplateController
         $userId = Auth::id();
         
         // Get user subscription
-        $stmt = $this->db->prepare("SELECT plan FROM user_subscriptions WHERE user_id = :user_id");
+        $stmt = $this->db->prepare("SELECT plan FROM sheet_user_subscriptions WHERE user_id = :user_id");
         $stmt->execute(['user_id' => $userId]);
         $subscription = $stmt->fetch(\PDO::FETCH_ASSOC);
         $plan = ($subscription && isset($subscription['plan'])) ? $subscription['plan'] : 'free';
         
         // Get templates based on plan
         $stmt = $this->db->prepare("
-            SELECT * FROM templates 
+            SELECT * FROM sheet_templates 
             WHERE tier = 'free' OR (tier = 'paid' AND :plan = 'paid')
             ORDER BY category, title
         ");
@@ -75,7 +75,7 @@ class TemplateController
         $userId = Auth::id();
         
         // Get template
-        $stmt = $this->db->prepare("SELECT * FROM templates WHERE id = :id");
+        $stmt = $this->db->prepare("SELECT * FROM sheet_templates WHERE id = :id");
         $stmt->execute(['id' => $id]);
         $template = $stmt->fetch(\PDO::FETCH_ASSOC);
         
@@ -86,7 +86,7 @@ class TemplateController
         }
         
         // Check if user has access to this template
-        $stmt = $this->db->prepare("SELECT plan FROM user_subscriptions WHERE user_id = :user_id");
+        $stmt = $this->db->prepare("SELECT plan FROM sheet_user_subscriptions WHERE user_id = :user_id");
         $stmt->execute(['user_id' => $userId]);
         $subscription = $stmt->fetch(\PDO::FETCH_ASSOC);
         $plan = ($subscription && isset($subscription['plan'])) ? $subscription['plan'] : 'free';
@@ -104,7 +104,7 @@ class TemplateController
         
         if ($features[$maxKey] != -1) {
             $stmt = $this->db->prepare("
-                SELECT COUNT(*) as count FROM documents 
+                SELECT COUNT(*) as count FROM sheet_documents 
                 WHERE user_id = :user_id AND type = :type
             ");
             $stmt->execute(['user_id' => $userId, 'type' => $type]);
@@ -119,7 +119,7 @@ class TemplateController
         
         // Create document from template
         $stmt = $this->db->prepare("
-            INSERT INTO documents (user_id, title, content, type, visibility, last_edited_by)
+            INSERT INTO sheet_documents (user_id, title, content, type, visibility, last_edited_by)
             VALUES (:user_id, :title, :content, :type, 'private', :user_id)
         ");
         
@@ -135,14 +135,14 @@ class TemplateController
         // If it's a sheet, create default sheet tab
         if ($template['type'] === 'sheet') {
             $stmt = $this->db->prepare("
-                INSERT INTO sheets (document_id, name, order_index, row_count, col_count)
+                INSERT INTO sheet_sheets (document_id, name, order_index, row_count, col_count)
                 VALUES (:document_id, 'Sheet1', 0, 100, 26)
             ");
             $stmt->execute(['document_id' => $documentId]);
         }
         
         // Increment template usage
-        $stmt = $this->db->prepare("UPDATE templates SET usage_count = usage_count + 1 WHERE id = :id");
+        $stmt = $this->db->prepare("UPDATE sheet_templates SET usage_count = usage_count + 1 WHERE id = :id");
         $stmt->execute(['id' => $id]);
         
         Helpers::setFlash('success', 'Document created from template!');

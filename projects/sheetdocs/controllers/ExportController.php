@@ -38,11 +38,11 @@ class ExportController
         // Get document with access check
         $stmt = $this->db->prepare("
             SELECT d.*, 
-                   (SELECT permission FROM document_shares WHERE document_id = d.id AND shared_with_user_id = :user_id) as share_permission
-            FROM documents d
+                   (SELECT permission FROM sheet_document_shares WHERE document_id = d.id AND shared_with_user_id = :user_id) as share_permission
+            FROM sheet_documents d
             WHERE d.id = :id 
             AND (d.user_id = :user_id OR d.visibility = 'public' OR EXISTS (
-                SELECT 1 FROM document_shares WHERE document_id = d.id AND shared_with_user_id = :user_id
+                SELECT 1 FROM sheet_document_shares WHERE document_id = d.id AND shared_with_user_id = :user_id
             ))
         ");
         $stmt->execute(['id' => $id, 'user_id' => $userId]);
@@ -55,7 +55,7 @@ class ExportController
         }
         
         // Check if user has access to this export format
-        $stmt = $this->db->prepare("SELECT plan FROM user_subscriptions WHERE user_id = :user_id");
+        $stmt = $this->db->prepare("SELECT plan FROM sheet_user_subscriptions WHERE user_id = :user_id");
         $stmt->execute(['user_id' => $userId]);
         $subscription = $stmt->fetch(\PDO::FETCH_ASSOC);
         $plan = $subscription['plan'] ?? 'free';
@@ -141,7 +141,7 @@ class ExportController
         
         // Get sheets if it's a spreadsheet
         if ($document['type'] === 'sheet') {
-            $stmt = $this->db->prepare("SELECT id FROM sheets WHERE document_id = :document_id ORDER BY order_index LIMIT 1");
+            $stmt = $this->db->prepare("SELECT id FROM sheet_sheets WHERE document_id = :document_id ORDER BY order_index LIMIT 1");
             $stmt->execute(['document_id' => $document['id']]);
             $sheet = $stmt->fetch(\PDO::FETCH_ASSOC);
             

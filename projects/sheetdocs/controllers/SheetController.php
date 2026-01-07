@@ -37,7 +37,7 @@ class SheetController
         $userId = Auth::id();
         
         $stmt = $this->db->prepare("
-            SELECT * FROM documents 
+            SELECT * FROM sheet_documents 
             WHERE user_id = :user_id AND type = 'sheet'
             ORDER BY updated_at DESC
         ");
@@ -85,7 +85,7 @@ class SheetController
         
         // Create document
         $stmt = $this->db->prepare("
-            INSERT INTO documents (user_id, title, type, visibility, last_edited_by)
+            INSERT INTO sheet_documents (user_id, title, type, visibility, last_edited_by)
             VALUES (:user_id, :title, 'sheet', :visibility, :user_id)
         ");
         
@@ -99,7 +99,7 @@ class SheetController
         
         // Create default sheet
         $stmt = $this->db->prepare("
-            INSERT INTO sheets (document_id, name, order_index, row_count, col_count)
+            INSERT INTO sheet_sheets (document_id, name, order_index, row_count, col_count)
             VALUES (:document_id, 'Sheet1', 0, 100, 26)
         ");
         $stmt->execute(['document_id' => $documentId]);
@@ -132,7 +132,7 @@ class SheetController
         $sheetTabs = $this->getSheetTabs($id);
         
         // Increment views
-        $stmt = $this->db->prepare("UPDATE documents SET views = views + 1 WHERE id = :id");
+        $stmt = $this->db->prepare("UPDATE sheet_documents SET views = views + 1 WHERE id = :id");
         $stmt->execute(['id' => $id]);
         
         View::render('projects/sheetdocs/sheets/show', [
@@ -187,7 +187,7 @@ class SheetController
         $title = Security::sanitize($_POST['title'] ?? $sheet['title']);
         
         $stmt = $this->db->prepare("
-            UPDATE documents 
+            UPDATE sheet_documents 
             SET title = :title, last_edited_by = :user_id
             WHERE id = :id
         ");
@@ -220,7 +220,7 @@ class SheetController
             exit;
         }
         
-        $stmt = $this->db->prepare("DELETE FROM documents WHERE id = :id AND user_id = :user_id");
+        $stmt = $this->db->prepare("DELETE FROM sheet_documents WHERE id = :id AND user_id = :user_id");
         $stmt->execute(['id' => $id, 'user_id' => $userId]);
         
         // Update usage stats
@@ -242,7 +242,7 @@ class SheetController
             SELECT d.*, 
                    ds.permission as share_permission,
                    (d.user_id = :user_id) as is_owner
-            FROM documents d
+            FROM sheet_documents d
             LEFT JOIN document_shares ds ON d.id = ds.document_id AND ds.shared_with_user_id = :user_id
             WHERE d.id = :id AND d.type = 'sheet'
             AND (d.user_id = :user_id OR ds.shared_with_user_id = :user_id OR d.visibility = 'public')
@@ -270,7 +270,7 @@ class SheetController
     private function getSheetTabs(int $documentId): array
     {
         $stmt = $this->db->prepare("
-            SELECT * FROM sheets 
+            SELECT * FROM sheet_sheets 
             WHERE document_id = :document_id 
             ORDER BY order_index
         ");
@@ -304,7 +304,7 @@ class SheetController
         }
         
         $stmt = $this->db->prepare("
-            SELECT COUNT(*) as count FROM documents 
+            SELECT COUNT(*) as count FROM sheet_documents 
             WHERE user_id = :user_id AND type = 'sheet'
         ");
         $stmt->execute(['user_id' => $userId]);
@@ -318,7 +318,7 @@ class SheetController
      */
     private function getUserSubscription(int $userId): array
     {
-        $stmt = $this->db->prepare("SELECT * FROM user_subscriptions WHERE user_id = :user_id");
+        $stmt = $this->db->prepare("SELECT * FROM sheet_user_subscriptions WHERE user_id = :user_id");
         $stmt->execute(['user_id' => $userId]);
         $subscription = $stmt->fetch(\PDO::FETCH_ASSOC);
         
@@ -331,11 +331,11 @@ class SheetController
     private function updateUsageStats(int $userId): void
     {
         $stmt = $this->db->prepare("
-            INSERT INTO usage_stats (user_id, document_count, sheet_count)
+            INSERT INTO sheet_usage_stats (user_id, document_count, sheet_count)
             SELECT :user_id,
                    COUNT(CASE WHEN type = 'document' THEN 1 END),
                    COUNT(CASE WHEN type = 'sheet' THEN 1 END)
-            FROM documents WHERE user_id = :user_id
+            FROM sheet_documents WHERE user_id = :user_id
             ON DUPLICATE KEY UPDATE
                 document_count = VALUES(document_count),
                 sheet_count = VALUES(sheet_count)
@@ -349,7 +349,7 @@ class SheetController
     private function logActivity(int $userId, ?int $documentId, string $action, array $details = []): void
     {
         $stmt = $this->db->prepare("
-            INSERT INTO activity_logs (user_id, document_id, action, details, ip_address, user_agent)
+            INSERT INTO sheet_activity_logs (user_id, document_id, action, details, ip_address, user_agent)
             VALUES (:user_id, :document_id, :action, :details, :ip, :user_agent)
         ");
         
