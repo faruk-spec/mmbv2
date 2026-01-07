@@ -27,7 +27,7 @@ class SheetDocsAdminController
         
         // Get SheetDocs database connection
         $projectConfig = require dirname(dirname(__DIR__)) . '/projects/sheetdocs/config.php';
-        $this->projectDb = Database::getProjectConnection('sheetdocs', $projectConfig['database']);
+        $this->projectDb = Database::projectConnection('sheetdocs');
     }
     
     /**

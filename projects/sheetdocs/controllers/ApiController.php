@@ -25,7 +25,7 @@ class ApiController
         }
         
         $this->projectConfig = require dirname(__DIR__) . '/config.php';
-        $this->db = Database::getProjectConnection('sheetdocs', $this->projectConfig['database']);
+        $this->db = Database::projectConnection('sheetdocs');
     }
     
     /**
