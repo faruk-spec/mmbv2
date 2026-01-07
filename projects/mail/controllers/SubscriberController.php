@@ -76,11 +76,16 @@ class SubscriberController extends BaseController
      */
     public function dashboard()
     {
+        error_log('[SubscriberController::dashboard] START - User: ' . (Auth::id() ?? 'not authenticated'));
+        
         if (!$this->isOwner) {
+            error_log('[SubscriberController::dashboard] Access denied - not owner');
             $this->flash('error', 'Access denied. Subscriber owner access required.');
             $this->redirect('/projects/mail');
             return;
         }
+        
+        error_log('[SubscriberController::dashboard] Subscriber ID: ' . $this->subscriberId);
         
         $userId = Auth::id();
         
@@ -123,6 +128,8 @@ class SubscriberController extends BaseController
              LIMIT 5",
             [$this->subscriberId]
         )->fetchAll();
+        
+        error_log('[SubscriberController::dashboard] Rendering dashboard view');
         
         View::render('mail/subscriber/dashboard', [
             'subscriber' => $subscriber,
@@ -178,6 +185,7 @@ class SubscriberController extends BaseController
      */
     public function addUser()
     {
+        error_log('[SubscriberController::addUser] START - User: ' . (Auth::id() ?? 'not authenticated') . ', Method: ' . $_SERVER['REQUEST_METHOD']);
         if (!$this->isOwner) {
             $this->flash('error', 'Access denied. Subscriber owner access required.');
             $this->redirect('/projects/mail');
@@ -517,11 +525,16 @@ class SubscriberController extends BaseController
      */
     public function billing()
     {
+        error_log('[SubscriberController::billing] START - User: ' . (Auth::id() ?? 'not authenticated'));
+        
         if (!$this->isOwner) {
+            error_log('[SubscriberController::billing] Access denied - not owner');
             $this->flash('error', 'Access denied. Subscriber owner access required.');
             $this->redirect('/projects/mail');
             return;
         }
+        
+        error_log('[SubscriberController::billing] Subscriber ID: ' . $this->subscriberId);
         
         // Get billing history
         $billingHistory = $this->db->fetchAll(
@@ -655,18 +668,23 @@ class SubscriberController extends BaseController
      */
     public function upgradePlan()
     {
+        error_log('[SubscriberController::upgradePlan] START - User: ' . (Auth::id() ?? 'not authenticated') . ', Method: ' . $_SERVER['REQUEST_METHOD']);
+        
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->redirect('/projects/mail/subscriber/upgrade');
             return;
         }
         
         if (!$this->isOwner) {
+            error_log('[SubscriberController::upgradePlan] Access denied - not owner');
             $this->flash('error', 'Access denied. Subscriber owner access required.');
             $this->redirect('/projects/mail');
             return;
         }
         
         $newPlanId = intval($_POST['plan_id'] ?? 0);
+        
+        error_log('[SubscriberController::upgradePlan] Subscriber ID: ' . $this->subscriberId . ', New Plan ID: ' . $newPlanId);
         
         // Validate plan
         $plan = $this->db->fetch(

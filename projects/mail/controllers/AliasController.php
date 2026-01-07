@@ -67,8 +67,12 @@ class AliasController extends BaseController
      */
     public function index()
     {
+        error_log('[AliasController::index] START - User: ' . (Auth::id() ?? 'not authenticated'));
+        
         // Ensure database and subscriber access
         $this->ensureDatabaseAndSubscriber();
+        
+        error_log('[AliasController::index] Subscriber ID: ' . $this->subscriberId);
         
         // Check plan limits
         $plan = $this->db->fetch(
@@ -105,8 +109,12 @@ class AliasController extends BaseController
      */
     public function create()
     {
+        error_log('[AliasController::create] START - User: ' . (Auth::id() ?? 'not authenticated'));
+        
         // Ensure database and subscriber access
         $this->ensureDatabaseAndSubscriber();
+        
+        error_log('[AliasController::create] Rendering add alias form for subscriber: ' . $this->subscriberId);
         
         // Get verified domains
         $domains = $this->db->fetchAll(
@@ -136,8 +144,12 @@ class AliasController extends BaseController
      */
     public function store()
     {
+        error_log('[AliasController::store] START - User: ' . (Auth::id() ?? 'not authenticated'));
+        
         // Ensure database and subscriber access
         $this->ensureDatabaseAndSubscriber();
+        
+        error_log('[AliasController::store] Subscriber ID: ' . $this->subscriberId);
         
         $aliasName = trim($_POST['alias_name'] ?? '');
         $domainId = intval($_POST['domain_id'] ?? 0);
@@ -239,6 +251,7 @@ class AliasController extends BaseController
             ]
         );
 
+        error_log('[AliasController::store] SUCCESS - Alias created: ' . $fullAlias);
         $this->success('Alias created successfully');
         $this->redirect('/projects/mail/subscriber/aliases');
     }

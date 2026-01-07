@@ -67,8 +67,12 @@ class DomainController extends BaseController
      */
     public function index()
     {
+        error_log('[DomainController::index] START - User: ' . (Auth::id() ?? 'not authenticated'));
+        
         // Ensure database and subscriber access
         $this->ensureDatabaseAndSubscriber();
+        
+        error_log('[DomainController::index] Subscriber ID: ' . $this->subscriberId);
         
         $domains = $this->db->fetchAll(
             "SELECT d.*, 
@@ -83,6 +87,8 @@ class DomainController extends BaseController
             [$this->subscriberId]
         );
 
+        error_log('[DomainController::index] Rendering view with ' . count($domains) . ' domains');
+        
         View::render('mail/subscriber/domains', [
             'domains' => $domains,
             'subscriberId' => $this->subscriberId
@@ -94,8 +100,12 @@ class DomainController extends BaseController
      */
     public function create()
     {
+        error_log('[DomainController::create] START - User: ' . (Auth::id() ?? 'not authenticated'));
+        
         // Ensure database and subscriber access
         $this->ensureDatabaseAndSubscriber();
+        
+        error_log('[DomainController::create] Rendering add domain form for subscriber: ' . $this->subscriberId);
         
         View::render('mail/subscriber/add-domain', [
             'subscriberId' => $this->subscriberId
@@ -107,6 +117,8 @@ class DomainController extends BaseController
      */
     public function store()
     {
+        error_log('[DomainController::store] START - User: ' . (Auth::id() ?? 'not authenticated'));
+        
         // Ensure database and subscriber access
         $this->ensureDatabaseAndSubscriber();
         
@@ -149,10 +161,13 @@ class DomainController extends BaseController
         );
 
         $domainId = $this->db->lastInsertId();
+        
+        error_log('[DomainController::store] Domain created with ID: ' . $domainId);
 
         // Generate DNS records
         $this->generateDNSRecords($domainId, $domainName);
 
+        error_log('[DomainController::store] SUCCESS - Redirecting to DNS records');
         $this->success('Domain added successfully. Please configure DNS records to verify.');
         $this->redirect('/projects/mail/subscriber/domains/' . $domainId . '/dns');
     }

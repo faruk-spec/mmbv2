@@ -81,8 +81,12 @@ class WebmailController extends BaseController
      */
     public function inbox()
     {
+        error_log('[WebmailController::inbox] START - User: ' . (Auth::id() ?? 'not authenticated'));
+        
         // Ensure database and mailbox are available
         $this->ensureDatabaseAndMailbox();
+        
+        error_log('[WebmailController::inbox] Mailbox ID: ' . $this->mailboxId . ', Subscriber ID: ' . $this->subscriberId);
         
         $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
         $perPage = 50;
@@ -170,6 +174,8 @@ class WebmailController extends BaseController
      */
     public function viewEmail($messageId)
     {
+        error_log('[WebmailController::viewEmail] START - User: ' . (Auth::id() ?? 'not authenticated') . ', Message ID: ' . $messageId);
+        
         // Ensure database and mailbox are available
         $this->ensureDatabaseAndMailbox();
 
