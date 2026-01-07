@@ -59,7 +59,7 @@ class SettingsController
         // Settings can be added here as needed
         // For now, just placeholder
         
-        Helpers::setFlash('success', 'Settings updated successfully!');
+        Helpers::flash('success', 'Settings updated successfully!');
         Helpers::redirect('/projects/sheetdocs/settings');
     }
 }

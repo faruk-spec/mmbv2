@@ -57,7 +57,7 @@ class SheetController
         $userId = Auth::id();
         
         if (!$this->canCreateSheet($userId)) {
-            Helpers::setFlash('error', 'You have reached your sheet limit. Please upgrade to create more sheets.');
+            Helpers::flash('error', 'You have reached your sheet limit. Please upgrade to create more sheets.');
             Helpers::redirect('/projects/sheetdocs/pricing');
             exit;
         }
@@ -74,7 +74,7 @@ class SheetController
         $userId = Auth::id();
         
         if (!$this->canCreateSheet($userId)) {
-            Helpers::setFlash('error', 'You have reached your sheet limit.');
+            Helpers::flash('error', 'You have reached your sheet limit.');
             Helpers::redirect('/projects/sheetdocs/pricing');
             exit;
         }
@@ -110,7 +110,7 @@ class SheetController
         // Log activity
         $this->logActivity($userId, $documentId, 'create', ['title' => $title, 'type' => 'sheet']);
         
-        Helpers::setFlash('success', 'Spreadsheet created successfully!');
+        Helpers::flash('success', 'Spreadsheet created successfully!');
         Helpers::redirect('/projects/sheetdocs/sheets/' . $documentId . '/edit');
     }
     
@@ -123,7 +123,7 @@ class SheetController
         $sheet = $this->getSheet($id, $userId);
         
         if (!$sheet) {
-            Helpers::setFlash('error', 'Sheet not found or you do not have access.');
+            Helpers::flash('error', 'Sheet not found or you do not have access.');
             Helpers::redirect('/projects/sheetdocs');
             exit;
         }
@@ -150,7 +150,7 @@ class SheetController
         $sheet = $this->getSheet($id, $userId, true);
         
         if (!$sheet) {
-            Helpers::setFlash('error', 'Sheet not found or you do not have edit access.');
+            Helpers::flash('error', 'Sheet not found or you do not have edit access.');
             Helpers::redirect('/projects/sheetdocs');
             exit;
         }
@@ -179,7 +179,7 @@ class SheetController
         
         $sheet = $this->getSheet($id, $userId, true);
         if (!$sheet) {
-            Helpers::setFlash('error', 'Sheet not found or you do not have edit access.');
+            Helpers::flash('error', 'Sheet not found or you do not have edit access.');
             Helpers::redirect('/projects/sheetdocs');
             exit;
         }
@@ -201,7 +201,7 @@ class SheetController
         // Log activity
         $this->logActivity($userId, $id, 'edit', ['title' => $title]);
         
-        Helpers::setFlash('success', 'Spreadsheet updated successfully!');
+        Helpers::flash('success', 'Spreadsheet updated successfully!');
         Helpers::redirect('/projects/sheetdocs/sheets/' . $id . '/edit');
     }
     
@@ -215,7 +215,7 @@ class SheetController
         
         $sheet = $this->getSheet($id, $userId);
         if (!$sheet || $sheet['user_id'] != $userId) {
-            Helpers::setFlash('error', 'Sheet not found or you do not have permission to delete it.');
+            Helpers::flash('error', 'Sheet not found or you do not have permission to delete it.');
             Helpers::redirect('/projects/sheetdocs');
             exit;
         }
@@ -229,7 +229,7 @@ class SheetController
         // Log activity
         $this->logActivity($userId, null, 'delete', ['document_id' => $id, 'title' => $sheet['title']]);
         
-        Helpers::setFlash('success', 'Spreadsheet deleted successfully!');
+        Helpers::flash('success', 'Spreadsheet deleted successfully!');
         Helpers::redirect('/projects/sheetdocs/sheets');
     }
     

@@ -80,7 +80,7 @@ class TemplateController
         $template = $stmt->fetch(\PDO::FETCH_ASSOC);
         
         if (!$template) {
-            Helpers::setFlash('error', 'Template not found.');
+            Helpers::flash('error', 'Template not found.');
             Helpers::redirect('/projects/sheetdocs/templates');
             exit;
         }
@@ -92,7 +92,7 @@ class TemplateController
         $plan = ($subscription && isset($subscription['plan'])) ? $subscription['plan'] : 'free';
         
         if ($template['tier'] === 'paid' && $plan !== 'paid') {
-            Helpers::setFlash('error', 'This template requires a premium subscription.');
+            Helpers::flash('error', 'This template requires a premium subscription.');
             Helpers::redirect('/projects/sheetdocs/pricing');
             exit;
         }
@@ -111,7 +111,7 @@ class TemplateController
             $result = $stmt->fetch(\PDO::FETCH_ASSOC);
             
             if ($result['count'] >= $features[$maxKey]) {
-                Helpers::setFlash('error', 'You have reached your ' . $type . ' limit. Please upgrade to create more.');
+                Helpers::flash('error', 'You have reached your ' . $type . ' limit. Please upgrade to create more.');
                 Helpers::redirect('/projects/sheetdocs/pricing');
                 exit;
             }
@@ -145,7 +145,7 @@ class TemplateController
         $stmt = $this->db->prepare("UPDATE sheet_templates SET usage_count = usage_count + 1 WHERE id = :id");
         $stmt->execute(['id' => $id]);
         
-        Helpers::setFlash('success', 'Document created from template!');
+        Helpers::flash('success', 'Document created from template!');
         
         if ($template['type'] === 'document') {
             Helpers::redirect('/projects/sheetdocs/documents/' . $documentId . '/edit');

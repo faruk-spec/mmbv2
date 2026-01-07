@@ -52,22 +52,19 @@
             background: var(--bg-primary);
             color: var(--text-primary);
             min-height: 100vh;
-            padding-top: 0;
         }
         
-        .container {
+        .page-wrapper {
             display: flex;
-            min-height: 100vh;
+            max-width: 100vw;
+            overflow-x: hidden;
         }
         
         .sidebar {
             width: var(--sidebar-width);
             background: var(--bg-secondary);
             border-right: 1px solid var(--border-color);
-            position: sticky;
-            top: 0;
-            height: 100vh;
-            overflow-y: auto;
+            min-height: calc(100vh - 60px);
             padding: 20px;
             flex-shrink: 0;
         }
@@ -101,8 +98,9 @@
         
         .main-content {
             flex: 1;
-            padding: 40px;
+            padding: 30px 40px;
             min-width: 0;
+            max-width: 100%;
         }
         
         .header {
@@ -162,7 +160,7 @@
 <body>
     <?php include BASE_PATH . '/views/layouts/navbar.php'; ?>
     
-    <div class="container">
+    <div class="page-wrapper">
         <aside class="sidebar">
             <div class="logo">
                 <i class="fas fa-file-alt"></i>

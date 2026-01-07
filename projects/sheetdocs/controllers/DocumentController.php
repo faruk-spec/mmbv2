@@ -58,7 +58,7 @@ class DocumentController
         
         // Check if user can create more documents
         if (!$this->canCreateDocument($userId)) {
-            Helpers::setFlash('error', 'You have reached your document limit. Please upgrade to create more documents.');
+            Helpers::flash('error', 'You have reached your document limit. Please upgrade to create more documents.');
             Helpers::redirect('/projects/sheetdocs/pricing');
             exit;
         }
@@ -89,7 +89,7 @@ class DocumentController
         $userId = Auth::id();
         
         if (!$this->canCreateDocument($userId)) {
-            Helpers::setFlash('error', 'You have reached your document limit. Please upgrade to create more documents.');
+            Helpers::flash('error', 'You have reached your document limit. Please upgrade to create more documents.');
             Helpers::redirect('/projects/sheetdocs/pricing');
             exit;
         }
@@ -119,7 +119,7 @@ class DocumentController
         // Log activity
         $this->logActivity($userId, $documentId, 'create', ['title' => $title]);
         
-        Helpers::setFlash('success', 'Document created successfully!');
+        Helpers::flash('success', 'Document created successfully!');
         Helpers::redirect('/projects/sheetdocs/documents/' . $documentId . '/edit');
     }
     
@@ -132,7 +132,7 @@ class DocumentController
         $document = $this->getDocument($id, $userId);
         
         if (!$document) {
-            Helpers::setFlash('error', 'Document not found or you do not have access.');
+            Helpers::flash('error', 'Document not found or you do not have access.');
             Helpers::redirect('/projects/sheetdocs');
             exit;
         }
@@ -155,7 +155,7 @@ class DocumentController
         $document = $this->getDocument($id, $userId, true);
         
         if (!$document) {
-            Helpers::setFlash('error', 'Document not found or you do not have edit access.');
+            Helpers::flash('error', 'Document not found or you do not have edit access.');
             Helpers::redirect('/projects/sheetdocs');
             exit;
         }
@@ -175,7 +175,7 @@ class DocumentController
         
         $document = $this->getDocument($id, $userId, true);
         if (!$document) {
-            Helpers::setFlash('error', 'Document not found or you do not have edit access.');
+            Helpers::flash('error', 'Document not found or you do not have edit access.');
             Helpers::redirect('/projects/sheetdocs');
             exit;
         }
@@ -199,7 +199,7 @@ class DocumentController
         // Log activity
         $this->logActivity($userId, $id, 'edit', ['title' => $title]);
         
-        Helpers::setFlash('success', 'Document updated successfully!');
+        Helpers::flash('success', 'Document updated successfully!');
         Helpers::redirect('/projects/sheetdocs/documents/' . $id . '/edit');
     }
     
@@ -213,7 +213,7 @@ class DocumentController
         
         $document = $this->getDocument($id, $userId);
         if (!$document || $document['user_id'] != $userId) {
-            Helpers::setFlash('error', 'Document not found or you do not have permission to delete it.');
+            Helpers::flash('error', 'Document not found or you do not have permission to delete it.');
             Helpers::redirect('/projects/sheetdocs');
             exit;
         }
@@ -227,7 +227,7 @@ class DocumentController
         // Log activity
         $this->logActivity($userId, null, 'delete', ['document_id' => $id, 'title' => $document['title']]);
         
-        Helpers::setFlash('success', 'Document deleted successfully!');
+        Helpers::flash('success', 'Document deleted successfully!');
         Helpers::redirect('/projects/sheetdocs/documents');
     }
     
