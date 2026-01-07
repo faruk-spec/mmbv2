@@ -22,13 +22,38 @@ class SubscriberController extends BaseController
     
     public function __construct()
     {
-        parent::__construct();
+        // BaseController doesn't have a constructor, so no need to call parent::__construct()
         
-        $this->db = Database::getInstance();
+        // Initialize database - if it fails, individual methods will handle the error
+        try {
+            $this->db = Database::getInstance();
+        } catch (\Throwable $e) {
+            // Log the error but don't fail the constructor
+            // This allows the controller to be instantiated even if DB is temporarily unavailable
+            error_log('Warning: Database initialization failed in SubscriberController: ' . $e->getMessage());
+            $this->db = null;
+        }
         
         // Note: Constructor no longer checks authentication
         // Authentication is handled in individual methods
         // This allows public routes to work without auth errors
+    }
+    
+    /**
+     * Get database instance, ensuring it's initialized
+     * @throws \RuntimeException if database is not available
+     */
+    private function ensureDatabase()
+    {
+        if ($this->db === null) {
+            try {
+                $this->db = Database::getInstance();
+            } catch (\Throwable $e) {
+                error_log('Failed to initialize database in SubscriberController: ' . $e->getMessage());
+                throw new \RuntimeException('Database is not available. Please try again later.');
+            }
+        }
+        return $this->db;
     }
     
     /**
@@ -37,9 +62,10 @@ class SubscriberController extends BaseController
     private function loadSubscriberInfo()
     {
         $userId = Auth::id();
+        $db = $this->ensureDatabase();
         
         // Check if user is a subscriber owner
-        $subscriber = $this->db->fetch(
+        $subscriber = $db->fetch(
             "SELECT s.*, sub.plan_id, sp.plan_name, sp.max_users, sp.storage_per_user_gb
              FROM mail_subscribers s
              JOIN mail_subscriptions sub ON s.id = sub.subscriber_id
@@ -54,7 +80,7 @@ class SubscriberController extends BaseController
             $this->isOwner = true;
         } else {
             // Check if user is a domain admin or end user
-            $role = $this->db->fetch(
+            $role = $db->fetch(
                 "SELECT subscriber_id, role_type FROM mail_user_roles 
                  WHERE mmb_user_id = ? LIMIT 1",
                 [$userId]
@@ -79,6 +105,9 @@ class SubscriberController extends BaseController
             return;
         }
         
+        // Ensure database is available
+        $db = $this->ensureDatabase();
+        
         // Load subscriber info
         $this->loadSubscriberInfo();
         
@@ -90,7 +119,7 @@ class SubscriberController extends BaseController
         $userId = Auth::id();
         
         // Get subscriber details with subscription info
-        $subscriber = $this->db->fetch(
+        $subscriber = $db->fetch(
             "SELECT s.*, sub.plan_id, sub.status as subscription_status, 
                     sp.plan_name, sp.max_users, sp.storage_per_user_gb, sp.max_domains,
                     sp.daily_send_limit, sp.max_aliases
@@ -192,6 +221,9 @@ class SubscriberController extends BaseController
      */
     public function addUser()
     {
+        // Ensure database is available
+        $this->ensureDatabase();
+        
         if (!$this->isOwner) {
             $this->error('Access denied. Subscriber owner access required.');
             return;
@@ -341,6 +373,9 @@ class SubscriberController extends BaseController
      */
     public function assignRole()
     {
+        // Ensure database is available
+        $this->ensureDatabase();
+        
         if (!$this->isOwner) {
             $this->jsonError('Access denied');
             return;
@@ -374,6 +409,9 @@ class SubscriberController extends BaseController
      */
     public function deleteUser()
     {
+        // Ensure database is available
+        $this->ensureDatabase();
+        
         if (!$this->isOwner) {
             $this->jsonError('Access denied');
             return;
@@ -449,6 +487,9 @@ class SubscriberController extends BaseController
             return;
         }
         
+        // Ensure database is available
+        $this->ensureDatabase();
+        
         $planId = $_GET['plan'] ?? null;
         
         if (!$planId) {
@@ -491,6 +532,9 @@ class SubscriberController extends BaseController
             $this->redirect('/login');
             return;
         }
+        
+        // Ensure database is available
+        $this->ensureDatabase();
         
         $planId = $_POST['plan_id'] ?? null;
         $billingCycle = $_POST['billing_cycle'] ?? 'monthly';
@@ -552,6 +596,9 @@ class SubscriberController extends BaseController
             return;
         }
         
+        // Ensure database is available
+        $this->ensureDatabase();
+        
         if (!$this->isOwner) {
             $this->flash('error', 'Access denied');
             $this->redirect('/projects/mail');
@@ -577,6 +624,63 @@ class SubscriberController extends BaseController
             'pageTitle' => 'Upgrade Your Plan',
             'currentPlan' => $current,
             'plans' => $plans
+        ]);
+    }
+    
+    /**
+     * Billing and subscription management
+     */
+    public function billing()
+    {
+        // Ensure user is authenticated
+        if (!Auth::check()) {
+            $this->flash('error', 'Please login to access billing');
+            $this->redirect('/login');
+            return;
+        }
+        
+        // Ensure database is available
+        $this->ensureDatabase();
+        
+        // Load subscriber info
+        $this->loadSubscriberInfo();
+        
+        if (!$this->isOwner) {
+            $this->error('Access denied. Subscriber owner access required.');
+            return;
+        }
+        
+        // Get subscription details
+        $subscription = $this->db->fetch(
+            "SELECT sub.*, sp.plan_name, sp.price_monthly, sp.price_yearly
+             FROM mail_subscriptions sub
+             JOIN mail_subscription_plans sp ON sub.plan_id = sp.id
+             WHERE sub.subscriber_id = ?",
+            [$this->subscriberId]
+        );
+        
+        // Get billing history
+        $billingHistory = $this->db->fetchAll(
+            "SELECT * FROM mail_billing_history 
+             WHERE subscriber_id = ? 
+             ORDER BY created_at DESC 
+             LIMIT 20",
+            [$this->subscriberId]
+        );
+        
+        // Get payment methods
+        $paymentMethods = $this->db->fetchAll(
+            "SELECT * FROM mail_payment_methods 
+             WHERE subscriber_id = ? AND is_active = 1 
+             ORDER BY is_default DESC, created_at DESC",
+            [$this->subscriberId]
+        );
+        
+        View::render('mail/subscriber/billing', [
+            'subscription' => $subscription,
+            'billingHistory' => $billingHistory,
+            'paymentMethods' => $paymentMethods,
+            'title' => 'Billing & Subscription'
         ]);
     }
 }

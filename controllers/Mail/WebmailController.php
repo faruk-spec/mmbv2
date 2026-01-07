@@ -20,24 +20,46 @@ class WebmailController extends BaseController
 
     public function __construct()
     {
-        parent::__construct();
-        $this->db = Database::getInstance();
+        // BaseController doesn't have a constructor, removed parent::__construct()
         
-        // Get authenticated user's mailbox
-        $userId = Auth::id();
-        $this->mailbox = $this->db->fetch(
-            "SELECT * FROM mail_mailboxes WHERE mmb_user_id = ? AND is_active = 1 LIMIT 1",
-            [$userId]
-        );
-        
-        if (!$this->mailbox) {
-            $this->flash('error', 'No active mailbox found');
-            $this->redirect('/projects/mail');
-            exit;
+        // Initialize database with error handling
+        try {
+            $this->db = Database::getInstance();
+        } catch (\Throwable $e) {
+            error_log('Warning: Database initialization failed in WebmailController: ' . $e->getMessage());
+            $this->db = null;
+        }
+    }
+    
+    /**
+     * Ensure database and mailbox are available
+     */
+    private function ensureDatabaseAndMailbox()
+    {
+        if ($this->db === null) {
+            try {
+                $this->db = Database::getInstance();
+            } catch (\Throwable $e) {
+                error_log('Failed to initialize database: ' . $e->getMessage());
+                throw new \RuntimeException('Database is not available. Please try again later.');
+            }
         }
         
-        $this->mailboxId = $this->mailbox['id'];
-        $this->subscriberId = $this->mailbox['subscriber_id'];
+        if ($this->mailbox === null) {
+            // Get authenticated user's mailbox
+            $userId = Auth::id();
+            $this->mailbox = $this->db->fetch(
+                "SELECT * FROM mail_mailboxes WHERE mmb_user_id = ? AND is_active = 1 LIMIT 1",
+                [$userId]
+            );
+            
+            if (!$this->mailbox) {
+                throw new \RuntimeException('No active mailbox found');
+            }
+            
+            $this->mailboxId = $this->mailbox['id'];
+            $this->subscriberId = $this->mailbox['subscriber_id'];
+        }
     }
 
     /**
@@ -45,6 +67,8 @@ class WebmailController extends BaseController
      */
     public function inbox()
     {
+        $this->ensureDatabaseAndMailbox();
+        
         $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
         $perPage = 50;
         $offset = ($page - 1) * $perPage;
@@ -131,6 +155,8 @@ class WebmailController extends BaseController
      */
     public function viewEmail($messageId)
     {
+        $this->ensureDatabaseAndMailbox();
+        
         $message = $this->db->fetch(
             "SELECT * FROM mail_messages WHERE id = ? AND mailbox_id = ?",
             [$messageId, $this->mailboxId]
@@ -168,6 +194,8 @@ class WebmailController extends BaseController
      */
     public function compose()
     {
+        $this->ensureDatabaseAndMailbox();
+        
         $replyTo = isset($_GET['reply']) ? (int)$_GET['reply'] : null;
         $forward = isset($_GET['forward']) ? (int)$_GET['forward'] : null;
         
@@ -204,6 +232,8 @@ class WebmailController extends BaseController
      */
     public function send()
     {
+        $this->ensureDatabaseAndMailbox();
+        
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->redirect('/projects/mail/webmail/compose');
             exit;
@@ -337,6 +367,8 @@ class WebmailController extends BaseController
      */
     public function moveToFolder()
     {
+        $this->ensureDatabaseAndMailbox();
+        
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             return;
         }
@@ -357,6 +389,8 @@ class WebmailController extends BaseController
      */
     public function toggleRead()
     {
+        $this->ensureDatabaseAndMailbox();
+        
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             return;
         }
@@ -377,6 +411,8 @@ class WebmailController extends BaseController
      */
     public function toggleStar()
     {
+        $this->ensureDatabaseAndMailbox();
+        
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             return;
         }
@@ -397,6 +433,8 @@ class WebmailController extends BaseController
      */
     public function delete()
     {
+        $this->ensureDatabaseAndMailbox();
+        
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             return;
         }
@@ -422,6 +460,8 @@ class WebmailController extends BaseController
      */
     public function bulkAction()
     {
+        $this->ensureDatabaseAndMailbox();
+        
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             return;
         }
@@ -483,6 +523,8 @@ class WebmailController extends BaseController
      */
     public function downloadAttachment($attachmentId)
     {
+        $this->ensureDatabaseAndMailbox();
+        
         $attachment = $this->db->fetch(
             "SELECT a.*, m.mailbox_id FROM mail_attachments a
              JOIN mail_messages m ON a.message_id = m.id

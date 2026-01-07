@@ -335,7 +335,15 @@
                         <label for="new_plan_id">Select New Plan *</label>
                         <select class="form-control" id="new_plan_id" name="plan_id" required>
                             <option value="">Choose a plan...</option>
-                            <!-- Plans will be loaded via PHP -->
+                            <?php if (isset($plans) && !empty($plans)): ?>
+                                <?php foreach ($plans as $plan): ?>
+                                <option value="<?= $plan['id'] ?>" 
+                                        <?= $plan['id'] == $subscriber['plan_id'] ? 'selected disabled' : '' ?>>
+                                    <?= View::e($plan['plan_name']) ?> 
+                                    (<?= $plan['billing_cycle'] == 'monthly' ? '$' . $plan['price_monthly'] . '/mo' : '$' . $plan['price_yearly'] . '/yr' ?>)
+                                </option>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
                         </select>
                     </div>
                     <div class="form-group">

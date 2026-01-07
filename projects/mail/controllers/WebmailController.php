@@ -9,6 +9,7 @@ namespace Mail;
 use Controllers\BaseController;
 use Core\Auth;
 use Core\Database;
+use Core\View;
 
 class WebmailController extends BaseController
 {
@@ -19,24 +20,62 @@ class WebmailController extends BaseController
 
     public function __construct()
     {
-        parent::__construct();
-        $this->db = Database::getInstance();
+        // BaseController doesn't have a constructor, so no need to call parent::__construct()
         
-        // Get authenticated user's mailbox
-        $userId = Auth::id();
-        $this->mailbox = $this->db->fetch(
-            "SELECT * FROM mail_mailboxes WHERE user_id = ? AND is_active = 1 LIMIT 1",
-            [$userId]
-        );
-        
-        if (!$this->mailbox) {
-            $this->error('No active mailbox found');
-            redirect('/projects/mail');
-            exit;
+        // Initialize database with error handling
+        try {
+            $this->db = Database::getInstance();
+        } catch (\Throwable $e) {
+            error_log('Warning: Database initialization failed in WebmailController: ' . $e->getMessage());
+            $this->db = null;
+        }
+    }
+    
+    /**
+     * Ensure database is available and load mailbox
+     */
+    private function ensureDatabaseAndMailbox()
+    {
+        if ($this->db === null) {
+            try {
+                $this->db = Database::getInstance();
+            } catch (\Throwable $e) {
+                error_log('Failed to initialize database in WebmailController: ' . $e->getMessage());
+                throw new \RuntimeException('Database is not available. Please try again later.');
+            }
         }
         
-        $this->mailboxId = $this->mailbox['id'];
-        $this->subscriberId = $this->mailbox['subscriber_id'];
+        if ($this->mailbox === null) {
+            // Get authenticated user's mailbox
+            $userId = Auth::id();
+            $this->mailbox = $this->db->fetch(
+                "SELECT * FROM mail_mailboxes WHERE mmb_user_id = ? AND is_active = 1 LIMIT 1",
+                [$userId]
+            );
+            
+            if (!$this->mailbox) {
+                // User doesn't have a mailbox yet - check if they're a subscriber owner
+                $subscriber = $this->db->fetch(
+                    "SELECT id FROM mail_subscribers WHERE mmb_user_id = ? LIMIT 1",
+                    [$userId]
+                );
+                
+                if ($subscriber) {
+                    // Redirect subscriber owner to create mailboxes first
+                    $this->flash('info', 'Please add a mailbox user to access webmail.');
+                    $this->redirect('/projects/mail/subscriber/users/add');
+                    exit;
+                } else {
+                    // User needs to subscribe first
+                    $this->flash('error', 'You need to subscribe to access webmail.');
+                    $this->redirect('/projects/mail/subscribe');
+                    exit;
+                }
+            }
+            
+            $this->mailboxId = $this->mailbox['id'];
+            $this->subscriberId = $this->mailbox['subscriber_id'];
+        }
     }
 
     /**
@@ -44,6 +83,9 @@ class WebmailController extends BaseController
      */
     public function inbox()
     {
+        // Ensure database and mailbox are available
+        $this->ensureDatabaseAndMailbox();
+        
         $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
         $perPage = 50;
         $offset = ($page - 1) * $perPage;
@@ -130,6 +172,9 @@ class WebmailController extends BaseController
      */
     public function viewEmail($messageId)
     {
+        // Ensure database and mailbox are available
+        $this->ensureDatabaseAndMailbox();
+
         $message = $this->db->fetch(
             "SELECT * FROM mail_messages WHERE id = ? AND mailbox_id = ?",
             [$messageId, $this->mailboxId]
@@ -137,7 +182,7 @@ class WebmailController extends BaseController
 
         if (!$message) {
             $this->error('Email not found');
-            redirect('/projects/mail/webmail');
+            $this->redirect('/projects/mail/webmail');
             exit;
         }
 
@@ -167,6 +212,9 @@ class WebmailController extends BaseController
      */
     public function compose()
     {
+        // Ensure database and mailbox are available
+        $this->ensureDatabaseAndMailbox();
+        
         $replyTo = isset($_GET['reply']) ? (int)$_GET['reply'] : null;
         $forward = isset($_GET['forward']) ? (int)$_GET['forward'] : null;
         
@@ -203,8 +251,11 @@ class WebmailController extends BaseController
      */
     public function send()
     {
+        // Ensure database and mailbox are available
+        $this->ensureDatabaseAndMailbox();
+        
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            redirect('/projects/mail/webmail/compose');
+            $this->redirect('/projects/mail/webmail/compose');
             exit;
         }
 
@@ -218,7 +269,7 @@ class WebmailController extends BaseController
         // Validation
         if (empty($to) || empty($subject)) {
             $this->error('To and Subject fields are required');
-            redirect('/projects/mail/webmail/compose');
+            $this->redirect('/projects/mail/webmail/compose');
             exit;
         }
 
@@ -242,7 +293,7 @@ class WebmailController extends BaseController
 
         if ($sentToday['count'] >= $plan['daily_send_limit']) {
             $this->error('Daily send limit reached. Please upgrade your plan.');
-            redirect('/projects/mail/webmail/compose');
+            $this->redirect('/projects/mail/webmail/compose');
             exit;
         }
 
@@ -292,7 +343,7 @@ class WebmailController extends BaseController
         ]);
 
         $this->success('Email queued for sending');
-        redirect('/projects/mail/webmail');
+        $this->redirect('/projects/mail/webmail');
     }
 
     /**
@@ -343,6 +394,9 @@ class WebmailController extends BaseController
         $messageId = (int)$_POST['message_id'];
         $folderId = (int)$_POST['folder_id'];
 
+        // Ensure database and mailbox are available
+        $this->ensureDatabaseAndMailbox();
+
         $this->db->query(
             "UPDATE mail_messages SET folder_id = ? WHERE id = ? AND mailbox_id = ?",
             [$folderId, $messageId, $this->mailboxId]
@@ -359,6 +413,9 @@ class WebmailController extends BaseController
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             return;
         }
+
+        // Ensure database and mailbox are available
+        $this->ensureDatabaseAndMailbox();
 
         $messageId = (int)$_POST['message_id'];
         $isRead = (int)$_POST['is_read'];
@@ -379,6 +436,9 @@ class WebmailController extends BaseController
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             return;
         }
+        
+        // Ensure database and mailbox are available
+        $this->ensureDatabaseAndMailbox();
 
         $messageId = (int)$_POST['message_id'];
         $isStarred = (int)$_POST['is_starred'];
@@ -399,6 +459,9 @@ class WebmailController extends BaseController
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             return;
         }
+        
+        // Ensure database and mailbox are available
+        $this->ensureDatabaseAndMailbox();
 
         $messageId = (int)$_POST['message_id'];
 
@@ -424,6 +487,9 @@ class WebmailController extends BaseController
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             return;
         }
+        
+        // Ensure database and mailbox are available
+        $this->ensureDatabaseAndMailbox();
 
         $action = $_POST['action'];
         $messageIds = isset($_POST['message_ids']) ? explode(',', $_POST['message_ids']) : [];
@@ -482,6 +548,9 @@ class WebmailController extends BaseController
      */
     public function downloadAttachment($attachmentId)
     {
+        // Ensure database and mailbox are available
+        $this->ensureDatabaseAndMailbox();
+        
         $attachment = $this->db->fetch(
             "SELECT a.*, m.mailbox_id FROM mail_attachments a
              JOIN mail_messages m ON a.message_id = m.id

@@ -26,8 +26,8 @@
                                     <p><i class="fas fa-hdd text-info"></i> <strong><?= $currentPlan['storage_per_user_gb'] ?>GB</strong> Storage/User</p>
                                 </div>
                                 <div class="col-md-4">
-                                    <p><i class="fas fa-paper-plane text-success"></i> <strong><?= number_format($currentPlan['daily_send_limit']) ?></strong> Emails/Day</p>
-                                    <p><i class="fas fa-globe text-cyan"></i> <strong><?= $currentPlan['max_domains'] ?></strong> Domains</p>
+                                    <p><i class="fas fa-paper-plane text-success"></i> <strong><?= number_format($currentPlan['daily_send_limit'] ?? 0) ?></strong> Emails/Day</p>
+                                    <p><i class="fas fa-globe text-cyan"></i> <strong><?= $currentPlan['max_domains'] ?? 0 ?></strong> Domains</p>
                                 </div>
                                 <div class="col-md-4">
                                     <a href="/projects/mail/subscriber/dashboard" class="btn btn-primary btn-block">
@@ -78,9 +78,9 @@
                                     <?php endif; ?>
                                 </li>
                                 <li class="mb-2">
-                                    <i class="fas fa-check text-success"></i> <?= $plan['max_domains'] ?> Domains
-                                    <?php if ($plan['max_domains'] > $currentPlan['max_domains']): ?>
-                                    <span class="badge badge-success">+<?= $plan['max_domains'] - $currentPlan['max_domains'] ?></span>
+                                    <i class="fas fa-check text-success"></i> <?= $plan['max_domains'] ?? 0 ?> Domains
+                                    <?php if (isset($currentPlan['max_domains']) && ($plan['max_domains'] ?? 0) > $currentPlan['max_domains']): ?>
+                                    <span class="badge badge-success">+<?= ($plan['max_domains'] ?? 0) - $currentPlan['max_domains'] ?></span>
                                     <?php endif; ?>
                                 </li>
                                 <li class="mb-2">
@@ -90,10 +90,10 @@
                                     <?php endif; ?>
                                 </li>
                                 <li class="mb-2">
-                                    <i class="fas fa-check text-success"></i> <?= number_format($plan['daily_send_limit']) ?> Emails/Day
+                                    <i class="fas fa-check text-success"></i> <?= number_format($plan['daily_send_limit'] ?? 0) ?> Emails/Day
                                 </li>
                                 <li class="mb-2">
-                                    <i class="fas fa-check text-success"></i> <?= $plan['max_aliases'] ?> Aliases
+                                    <i class="fas fa-check text-success"></i> <?= $plan['max_aliases'] ?? 0 ?> Aliases
                                 </li>
                             </ul>
                         </div>

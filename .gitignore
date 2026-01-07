@@ -1,0 +1,47 @@
+# Log files
+storage/logs/*.log
+
+# Vendor directories
+vendor/
+node_modules/
+
+# Environment files
+.env
+.env.local
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+dist/
+build/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Database backups
+*.sql
+!schema.sql
+!install/*.sql
+
+# Uploaded files (exclude from repo, keep directory structure)
+storage/uploads/*
+!storage/uploads/.gitkeep
+
+# Cache
+storage/cache/*
+!storage/cache/.gitkeep
+
+# Sessions
+storage/sessions/*
+!storage/sessions/.gitkeep

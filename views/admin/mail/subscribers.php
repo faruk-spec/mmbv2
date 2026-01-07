@@ -132,6 +132,11 @@
                                                     <i class="fas fa-play"></i>
                                                 </button>
                                                 <?php endif; ?>
+                                                <button class="btn btn-danger" 
+                                                        onclick="deleteSubscription(<?= $subscriber['id'] ?>)" 
+                                                        title="Delete Subscription">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>
@@ -269,6 +274,40 @@ function activateSubscriber(id) {
     .catch(error => {
         console.error('Error:', error);
         alert('An error occurred while activating the subscriber');
+    });
+}
+
+// Delete subscription
+function deleteSubscription(id) {
+    if (!confirm('Are you sure you want to delete this subscription? This action cannot be undone and will remove all associated data including domains, mailboxes, and emails.')) {
+        return;
+    }
+    
+    const confirmText = prompt('Type "DELETE" to confirm deletion:');
+    if (confirmText !== 'DELETE') {
+        alert('Deletion cancelled. You must type DELETE to confirm.');
+        return;
+    }
+    
+    fetch('/admin/projects/mail/subscribers/delete', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `subscriber_id=${id}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Subscription deleted successfully');
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while deleting the subscription');
     });
 }
 </script>
