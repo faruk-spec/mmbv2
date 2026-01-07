@@ -87,6 +87,13 @@ $router->get('/admin/projects/proshare/notifications', 'Admin\\ProShareAdminCont
 // Analytics & Insights
 $router->get('/admin/projects/proshare/analytics', 'Admin\\ProShareAdminController@analytics', ['auth', 'admin']);
 
+// SheetDocs admin routes
+$router->get('/admin/projects/sheetdocs', 'Admin\\SheetDocsAdminController@index', ['auth', 'admin']);
+$router->get('/admin/projects/sheetdocs/documents', 'Admin\\SheetDocsAdminController@documents', ['auth', 'admin']);
+$router->get('/admin/projects/sheetdocs/subscriptions', 'Admin\\SheetDocsAdminController@subscriptions', ['auth', 'admin']);
+$router->get('/admin/projects/sheetdocs/activity', 'Admin\\SheetDocsAdminController@activityLogs', ['auth', 'admin']);
+$router->post('/admin/projects/sheetdocs/documents/{id}/delete', 'Admin\\SheetDocsAdminController@deleteDocument', ['auth', 'admin']);
+
 // Project Database Setup routes
 $router->get('/admin/projects/database-setup', 'Admin\\ProjectDatabaseController@index', ['auth', 'admin']);
 $router->get('/admin/projects/database-setup/{project}', 'Admin\\ProjectDatabaseController@configure', ['auth', 'admin']);

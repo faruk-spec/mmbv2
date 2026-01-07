@@ -36,4 +36,14 @@ return array (
     'status' => 'unconfigured',
     'last_tested' => NULL,
   ),
+  'sheetdocs' => 
+  array (
+    'host' => 'localhost',
+    'port' => '3306',
+    'database' => 'sheetdocs',
+    'username' => '',
+    'password' => '',
+    'status' => 'unconfigured',
+    'last_tested' => NULL,
+  ),
 );

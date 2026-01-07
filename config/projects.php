@@ -64,5 +64,15 @@ return [
         'enabled' => true,
         'database' => 'mmb_resumex',
         'url' => '/projects/resumex'
+    ],
+    
+    'sheetdocs' => [
+        'name' => 'SheetDocs',
+        'description' => 'Collaborative spreadsheet and document editor',
+        'icon' => 'file-spreadsheet',
+        'color' => '#00d4aa',
+        'enabled' => true,
+        'database' => 'sheetdocs',
+        'url' => '/projects/sheetdocs'
     ]
 ];
