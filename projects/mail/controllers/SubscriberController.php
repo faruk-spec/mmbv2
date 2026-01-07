@@ -394,6 +394,310 @@ class SubscriberController extends BaseController
     }
     
     /**
+     * Show subscription page (for new users to subscribe)
+     */
+    public function subscribe()
+    {
+        // Get all available plans
+        $plans = $this->db->fetchAll(
+            "SELECT * FROM mail_subscription_plans WHERE is_active = 1 ORDER BY sort_order ASC"
+        );
+        
+        View::render('mail/subscribe', [
+            'plans' => $plans,
+            'title' => 'Subscribe to Mail Hosting'
+        ]);
+    }
+    
+    /**
+     * Process new subscription
+     */
+    public function processSubscription()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            redirect('/projects/mail/subscribe');
+            return;
+        }
+        
+        $planId = intval($_POST['plan_id'] ?? 0);
+        $billingCycle = $_POST['billing_cycle'] ?? 'monthly';
+        
+        // Validate plan
+        $plan = $this->db->fetch(
+            "SELECT * FROM mail_subscription_plans WHERE id = ? AND is_active = 1",
+            [$planId]
+        );
+        
+        if (!$plan) {
+            $this->error('Invalid plan selected');
+            redirect('/projects/mail/subscribe');
+            return;
+        }
+        
+        $userId = Auth::id();
+        
+        // Check if user already has a subscription
+        $existing = $this->db->fetch(
+            "SELECT id FROM mail_subscribers WHERE mmb_user_id = ?",
+            [$userId]
+        );
+        
+        if ($existing) {
+            $this->error('You already have an active subscription');
+            redirect('/projects/mail/subscriber/dashboard');
+            return;
+        }
+        
+        // Create subscriber
+        $this->db->query(
+            "INSERT INTO mail_subscribers (mmb_user_id, account_name, status, created_at)
+             VALUES (?, ?, 'active', NOW())",
+            [$userId, Auth::user()->name ?? 'Account']
+        );
+        
+        $subscriberId = $this->db->getConnection()->lastInsertId();
+        
+        // Create subscription
+        $this->db->query(
+            "INSERT INTO mail_subscriptions (subscriber_id, plan_id, status, billing_cycle, 
+                                            current_period_start, current_period_end, created_at)
+             VALUES (?, ?, 'active', ?, NOW(), DATE_ADD(NOW(), INTERVAL 1 MONTH), NOW())",
+            [$subscriberId, $planId, $billingCycle]
+        );
+        
+        $this->success('Subscription created successfully!');
+        redirect('/projects/mail/subscriber/dashboard');
+    }
+    
+    /**
+     * Show subscription details
+     */
+    public function subscription()
+    {
+        if (!$this->isOwner) {
+            $this->error('Access denied. Subscriber owner access required.');
+            redirect('/projects/mail');
+            return;
+        }
+        
+        // Get subscription details
+        $subscription = $this->db->fetch(
+            "SELECT s.*, sub.*, sp.plan_name, sp.price_monthly, sp.price_yearly
+             FROM mail_subscribers s
+             JOIN mail_subscriptions sub ON s.id = sub.subscriber_id
+             JOIN mail_subscription_plans sp ON sub.plan_id = sp.id
+             WHERE s.id = ?",
+            [$this->subscriberId]
+        );
+        
+        // Get all available plans for upgrade/downgrade
+        $plans = $this->db->fetchAll(
+            "SELECT * FROM mail_subscription_plans WHERE is_active = 1 ORDER BY sort_order ASC"
+        );
+        
+        View::render('mail/subscriber/subscription', [
+            'subscription' => $subscription,
+            'plans' => $plans,
+            'title' => 'Subscription Details'
+        ]);
+    }
+    
+    /**
+     * Show billing history
+     */
+    public function billing()
+    {
+        if (!$this->isOwner) {
+            $this->error('Access denied. Subscriber owner access required.');
+            redirect('/projects/mail');
+            return;
+        }
+        
+        // Get billing history
+        $billingHistory = $this->db->fetchAll(
+            "SELECT * FROM mail_billing_history 
+             WHERE subscriber_id = ? 
+             ORDER BY created_at DESC 
+             LIMIT 50",
+            [$this->subscriberId]
+        );
+        
+        // Get subscription details
+        $subscription = $this->db->fetch(
+            "SELECT s.*, sub.*, sp.plan_name, sp.price_monthly, sp.price_yearly
+             FROM mail_subscribers s
+             JOIN mail_subscriptions sub ON s.id = sub.subscriber_id
+             JOIN mail_subscription_plans sp ON sub.plan_id = sp.id
+             WHERE s.id = ?",
+            [$this->subscriberId]
+        );
+        
+        View::render('mail/subscriber/billing', [
+            'billingHistory' => $billingHistory,
+            'subscription' => $subscription,
+            'title' => 'Billing History'
+        ]);
+    }
+    
+    /**
+     * Show upgrade plan page
+     */
+    public function showUpgrade()
+    {
+        if (!$this->isOwner) {
+            $this->error('Access denied. Subscriber owner access required.');
+            redirect('/projects/mail');
+            return;
+        }
+        
+        // Get current subscription
+        $subscription = $this->db->fetch(
+            "SELECT s.*, sub.*, sp.plan_name, sp.price_monthly, sp.price_yearly, sp.sort_order
+             FROM mail_subscribers s
+             JOIN mail_subscriptions sub ON s.id = sub.subscriber_id
+             JOIN mail_subscription_plans sp ON sub.plan_id = sp.id
+             WHERE s.id = ?",
+            [$this->subscriberId]
+        );
+        
+        // Get available upgrade plans (plans with higher sort_order)
+        $plans = $this->db->fetchAll(
+            "SELECT * FROM mail_subscription_plans 
+             WHERE is_active = 1 AND sort_order > ? 
+             ORDER BY sort_order ASC",
+            [$subscription['sort_order'] ?? 0]
+        );
+        
+        View::render('mail/subscriber/upgrade', [
+            'currentSubscription' => $subscription,
+            'plans' => $plans,
+            'title' => 'Upgrade Plan'
+        ]);
+    }
+    
+    /**
+     * Process plan upgrade
+     */
+    public function upgradePlan()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            redirect('/projects/mail/subscriber/upgrade');
+            return;
+        }
+        
+        if (!$this->isOwner) {
+            $this->jsonError('Access denied. Subscriber owner access required.');
+            return;
+        }
+        
+        $newPlanId = intval($_POST['plan_id'] ?? 0);
+        
+        // Validate plan
+        $plan = $this->db->fetch(
+            "SELECT * FROM mail_subscription_plans WHERE id = ? AND is_active = 1",
+            [$newPlanId]
+        );
+        
+        if (!$plan) {
+            $this->jsonError('Invalid plan selected');
+            return;
+        }
+        
+        // Get current subscription
+        $currentSubscription = $this->db->fetch(
+            "SELECT * FROM mail_subscriptions WHERE subscriber_id = ? AND status = 'active'",
+            [$this->subscriberId]
+        );
+        
+        if (!$currentSubscription) {
+            $this->jsonError('No active subscription found');
+            return;
+        }
+        
+        // Update subscription
+        $this->db->query(
+            "UPDATE mail_subscriptions SET plan_id = ?, updated_at = NOW() WHERE id = ?",
+            [$newPlanId, $currentSubscription['id']]
+        );
+        
+        // Log the upgrade
+        $this->db->query(
+            "INSERT INTO mail_billing_history (subscriber_id, subscription_id, transaction_type, 
+                                               amount, description, created_at)
+             VALUES (?, ?, 'upgrade', ?, ?, NOW())",
+            [
+                $this->subscriberId,
+                $currentSubscription['id'],
+                $plan['price_monthly'],
+                "Upgraded to {$plan['plan_name']} plan"
+            ]
+        );
+        
+        $this->jsonSuccess('Plan upgraded successfully', ['redirect' => '/projects/mail/subscriber/dashboard']);
+    }
+    
+    /**
+     * Process plan downgrade
+     */
+    public function downgradePlan()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            redirect('/projects/mail/subscriber/subscription');
+            return;
+        }
+        
+        if (!$this->isOwner) {
+            $this->jsonError('Access denied. Subscriber owner access required.');
+            return;
+        }
+        
+        $newPlanId = intval($_POST['plan_id'] ?? 0);
+        
+        // Validate plan
+        $plan = $this->db->fetch(
+            "SELECT * FROM mail_subscription_plans WHERE id = ? AND is_active = 1",
+            [$newPlanId]
+        );
+        
+        if (!$plan) {
+            $this->jsonError('Invalid plan selected');
+            return;
+        }
+        
+        // Get current subscription
+        $currentSubscription = $this->db->fetch(
+            "SELECT * FROM mail_subscriptions WHERE subscriber_id = ? AND status = 'active'",
+            [$this->subscriberId]
+        );
+        
+        if (!$currentSubscription) {
+            $this->jsonError('No active subscription found');
+            return;
+        }
+        
+        // Update subscription
+        $this->db->query(
+            "UPDATE mail_subscriptions SET plan_id = ?, updated_at = NOW() WHERE id = ?",
+            [$newPlanId, $currentSubscription['id']]
+        );
+        
+        // Log the downgrade
+        $this->db->query(
+            "INSERT INTO mail_billing_history (subscriber_id, subscription_id, transaction_type, 
+                                               amount, description, created_at)
+             VALUES (?, ?, 'downgrade', ?, ?, NOW())",
+            [
+                $this->subscriberId,
+                $currentSubscription['id'],
+                $plan['price_monthly'],
+                "Downgraded to {$plan['plan_name']} plan"
+            ]
+        );
+        
+        $this->jsonSuccess('Plan downgraded successfully', ['redirect' => '/projects/mail/subscriber/dashboard']);
+    }
+    
+    /**
      * Helper methods
      */
     private function success($message)
