@@ -128,6 +128,7 @@ if command -v mysql &> /dev/null; then
     DB_CONFIG="$PROJECT_ROOT/config/database.php"
     if [ -f "$DB_CONFIG" ]; then
         echo -e "${YELLOW}⚠${NC} Manual database verification required"
+        echo "  Note: This script does not test actual database connectivity"
         echo "  Run: php $MAIL_PROJECT/migrations/verify_mail_setup.php"
         ((WARNINGS++))
     else
@@ -136,6 +137,7 @@ if command -v mysql &> /dev/null; then
     fi
 else
     echo -e "${YELLOW}⚠${NC} MySQL client not available - skipping database checks"
+    echo "  Run: php $MAIL_PROJECT/migrations/verify_mail_setup.php"
     ((WARNINGS++))
 fi
 echo ""

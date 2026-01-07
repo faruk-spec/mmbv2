@@ -73,7 +73,7 @@ if [ -d ".git" ]; then
             echo ""
             git status --short
             echo ""
-            read -p "Continue deployment with uncommitted changes? (y/N): " -n 1 -r
+            read -p "Continue deployment with uncommitted changes? (y/N): " -r
             echo
             if [[ ! $REPLY =~ ^[Yy]$ ]]; then
                 log_error "Deployment cancelled"
@@ -117,10 +117,18 @@ echo ""
 # Step 5: Clear any PHP opcode cache
 log_step "Clearing PHP cache..."
 if command -v php &> /dev/null; then
-    php -r "if (function_exists('opcache_reset')) { opcache_reset(); echo 'OPcache cleared'; } else { echo 'OPcache not available'; }" 2>/dev/null
-    echo ""
+    CACHE_RESULT=$(php -r "if (function_exists('opcache_reset')) { if (opcache_reset()) { echo 'success'; } else { echo 'failed'; } } else { echo 'unavailable'; }" 2>&1)
+    
+    if [ "$CACHE_RESULT" = "success" ]; then
+        log_success "OPcache cleared successfully"
+    elif [ "$CACHE_RESULT" = "unavailable" ]; then
+        log_warning "OPcache not available - skipping"
+    else
+        log_warning "Failed to clear OPcache"
+    fi
+else
+    log_warning "PHP command not available - skipping cache clear"
 fi
-log_success "Cache cleared"
 echo ""
 
 # Step 6: Run database migrations (if needed)
