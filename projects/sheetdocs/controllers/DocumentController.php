@@ -101,14 +101,15 @@ class DocumentController
         
         $stmt = $this->db->prepare("
             INSERT INTO sheet_documents (user_id, title, content, type, visibility, last_edited_by)
-            VALUES (:user_id, :title, :content, 'document', :visibility, :user_id)
+            VALUES (:user_id, :title, :content, 'document', :visibility, :last_edited_by)
         ");
         
         $stmt->execute([
             'user_id' => $userId,
             'title' => $title,
             'content' => $content,
-            'visibility' => $visibility
+            'visibility' => $visibility,
+            'last_edited_by' => $userId
         ]);
         
         $documentId = $this->db->lastInsertId();

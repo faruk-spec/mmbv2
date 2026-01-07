@@ -120,14 +120,15 @@ class TemplateController
         // Create document from template
         $stmt = $this->db->prepare("
             INSERT INTO sheet_documents (user_id, title, content, type, visibility, last_edited_by)
-            VALUES (:user_id, :title, :content, :type, 'private', :user_id)
+            VALUES (:user_id, :title, :content, :type, 'private', :last_edited_by)
         ");
         
         $stmt->execute([
             'user_id' => $userId,
             'title' => $template['title'] . ' (Copy)',
             'content' => $template['content'],
-            'type' => $template['type']
+            'type' => $template['type'],
+            'last_edited_by' => $userId
         ]);
         
         $documentId = $this->db->lastInsertId();

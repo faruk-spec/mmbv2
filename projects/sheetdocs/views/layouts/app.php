@@ -23,22 +23,33 @@
             --bg-primary: #06060a;
             --bg-secondary: #0c0c12;
             --bg-card: #0f0f18;
-            --cyan: #00d4aa;
+            --cyan: #00f0ff;
+            --magenta: #ff2ec4;
+            --green: #00ff88;
+            --orange: #ffaa00;
+            --purple: #9945ff;
+            --red: #ff6b6b;
             --text-primary: #e8eefc;
             --text-secondary: #8892a6;
             --border-color: rgba(255, 255, 255, 0.1);
+            --shadow-glow: 0 0 20px rgba(0, 240, 255, 0.2);
+            --transition: all 0.3s ease;
+            --hover-bg: rgba(0, 240, 255, 0.1);
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
             --sidebar-width: 280px;
         }
         
         /* Light theme variables */
         [data-theme="light"] {
-            --bg-primary: #f5f7fa;
+            --bg-primary: #f8f9fa;
             --bg-secondary: #ffffff;
             --bg-card: #ffffff;
-            --cyan: #00d4aa;
             --text-primary: #1a1a1a;
-            --text-secondary: #6b7280;
+            --text-secondary: #666666;
             --border-color: rgba(0, 0, 0, 0.1);
+            --shadow-glow: 0 0 20px rgba(0, 0, 0, 0.1);
+            --hover-bg: rgba(0, 153, 204, 0.1);
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
         }
         
         * {

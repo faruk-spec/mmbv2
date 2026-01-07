@@ -46,6 +46,7 @@ $router->get('/sd/{token}', 'Projects\SheetDocs\Controllers\PublicController@vie
 // Templates
 $router->get('/projects/sheetdocs/templates', 'Projects\SheetDocs\Controllers\TemplateController@index');
 $router->get('/projects/sheetdocs/templates/{id}', 'Projects\SheetDocs\Controllers\TemplateController@use');
+$router->get('/projects/sheetdocs/templates/{id}/use', 'Projects\SheetDocs\Controllers\TemplateController@use');
 
 // Subscription & Pricing
 $router->get('/projects/sheetdocs/pricing', 'Projects\SheetDocs\Controllers\SubscriptionController@pricing');
