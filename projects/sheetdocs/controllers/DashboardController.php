@@ -72,20 +72,18 @@ class DashboardController
      */
     private function getUserSubscription(int $userId): array
     {
-        $stmt = $this->db->prepare("
+        $subscription = $this->db->fetch("
             SELECT * FROM sheet_user_subscriptions 
-            WHERE user_id = :user_id
-        ");
-        $stmt->execute(['user_id' => $userId]);
-        $subscription = $stmt->fetch(\PDO::FETCH_ASSOC);
+            WHERE user_id = ?
+        ", [$userId]);
         
         if (!$subscription) {
             // Create default free subscription
-            $stmt = $this->db->prepare("
-                INSERT INTO sheet_user_subscriptions (user_id, plan, status) 
-                VALUES (:user_id, 'free', 'active')
-            ");
-            $stmt->execute(['user_id' => $userId]);
+            $this->db->insert('sheet_user_subscriptions', [
+                'user_id' => $userId,
+                'plan' => 'free',
+                'status' => 'active'
+            ]);
             
             return [
                 'user_id' => $userId,
@@ -105,20 +103,19 @@ class DashboardController
      */
     private function getUsageStats(int $userId): array
     {
-        $stmt = $this->db->prepare("
+        $stats = $this->db->fetch("
             SELECT * FROM sheet_usage_stats 
-            WHERE user_id = :user_id
-        ");
-        $stmt->execute(['user_id' => $userId]);
-        $stats = $stmt->fetch(\PDO::FETCH_ASSOC);
+            WHERE user_id = ?
+        ", [$userId]);
         
         if (!$stats) {
             // Create initial stats
-            $stmt = $this->db->prepare("
-                INSERT INTO sheet_usage_stats (user_id, document_count, sheet_count, storage_used) 
-                VALUES (:user_id, 0, 0, 0)
-            ");
-            $stmt->execute(['user_id' => $userId]);
+            $this->db->insert('sheet_usage_stats', [
+                'user_id' => $userId,
+                'document_count' => 0,
+                'sheet_count' => 0,
+                'storage_used' => 0
+            ]);
             
             return [
                 'user_id' => $userId,
@@ -137,18 +134,12 @@ class DashboardController
      */
     private function getRecentDocuments(int $userId, int $limit = 10): array
     {
-        $stmt = $this->db->prepare("
+        return $this->db->fetchAll("
             SELECT id, title, type, visibility, views, updated_at, created_at
             FROM sheet_documents 
-            WHERE user_id = :user_id AND type = 'document'
+            WHERE user_id = ? AND type = 'document'
             ORDER BY updated_at DESC 
-            LIMIT :limit
-        ");
-        $stmt->bindValue(':user_id', $userId, \PDO::PARAM_INT);
-        $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
-        $stmt->execute();
-        
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            LIMIT " . (int)$limit, [$userId]);
     }
     
     /**
@@ -156,18 +147,12 @@ class DashboardController
      */
     private function getRecentSheets(int $userId, int $limit = 10): array
     {
-        $stmt = $this->db->prepare("
+        return $this->db->fetchAll("
             SELECT id, title, type, visibility, views, updated_at, created_at
             FROM sheet_documents 
-            WHERE user_id = :user_id AND type = 'sheet'
+            WHERE user_id = ? AND type = 'sheet'
             ORDER BY updated_at DESC 
-            LIMIT :limit
-        ");
-        $stmt->bindValue(':user_id', $userId, \PDO::PARAM_INT);
-        $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
-        $stmt->execute();
-        
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            LIMIT " . (int)$limit, [$userId]);
     }
     
     /**
@@ -175,20 +160,14 @@ class DashboardController
      */
     private function getSharedDocuments(int $userId, int $limit = 10): array
     {
-        $stmt = $this->db->prepare("
+        return $this->db->fetchAll("
             SELECT d.id, d.title, d.type, d.visibility, ds.permission, ds.shared_by_user_id, ds.created_at
             FROM sheet_documents d
-            INNER JOIN document_shares ds ON d.id = ds.document_id
-            WHERE ds.shared_with_user_id = :user_id
+            INNER JOIN sheet_document_shares ds ON d.id = ds.document_id
+            WHERE ds.shared_with_user_id = ?
             AND (ds.expires_at IS NULL OR ds.expires_at > NOW())
             ORDER BY ds.created_at DESC 
-            LIMIT :limit
-        ");
-        $stmt->bindValue(':user_id', $userId, \PDO::PARAM_INT);
-        $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
-        $stmt->execute();
-        
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            LIMIT " . (int)$limit, [$userId]);
     }
     
     /**
@@ -200,15 +179,13 @@ class DashboardController
         $features = $this->projectConfig['features'][$plan];
         
         // Get current usage
-        $stmt = $this->db->prepare("
+        $usage = $this->db->fetch("
             SELECT 
                 COUNT(CASE WHEN type = 'document' THEN 1 END) as document_count,
                 COUNT(CASE WHEN type = 'sheet' THEN 1 END) as sheet_count
             FROM sheet_documents 
-            WHERE user_id = :user_id
-        ");
-        $stmt->execute(['user_id' => $userId]);
-        $usage = $stmt->fetch(\PDO::FETCH_ASSOC);
+            WHERE user_id = ?
+        ", [$userId]);
         
         $canCreateDocument = ($features['max_documents'] == -1 || 
                              $usage['document_count'] < $features['max_documents']);
