@@ -643,7 +643,7 @@ class SubscriberController extends BaseController
             );
         } catch (\Exception $e) {
             // If billing history insert fails, log but continue
-            error_log("Failed to log upgrade to billing history: " . $e->getMessage());
+            error_log("Failed to log upgrade to billing history");
         }
         
         $this->flash('success', "Successfully upgraded to {$plan['plan_name']} plan!");
@@ -713,7 +713,7 @@ class SubscriberController extends BaseController
             );
         } catch (\Exception $e) {
             // If billing history insert fails, log but continue
-            error_log("Failed to log upgrade to billing history: " . $e->getMessage());
+            error_log("Failed to log upgrade to billing history");
         }
         
         $this->flash('success', "Successfully upgraded to {$plan['plan_name']} plan!");
@@ -783,7 +783,7 @@ class SubscriberController extends BaseController
             );
         } catch (\Exception $e) {
             // If billing history insert fails, log but continue
-            error_log("Failed to log downgrade to billing history: " . $e->getMessage());
+            error_log("Failed to log downgrade to billing history");
         }
         
         $this->flash('success', "Successfully downgraded to {$plan['plan_name']} plan!");
