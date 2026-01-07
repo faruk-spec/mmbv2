@@ -5,14 +5,26 @@
  * @package MMB\Projects\SheetDocs
  */
 
-// This file serves as the entry point for the SheetDocs project
-// All routes are handled by the main application router
+// Define project path
+define('PROJECT_PATH', __DIR__);
+define('BASE_PATH', dirname(dirname(__DIR__)));
 
-// Load project configuration
-$projectConfig = require __DIR__ . '/config.php';
+// Load core autoloader
+require_once BASE_PATH . '/core/Autoloader.php';
 
-// Register project routes
-require __DIR__ . '/routes/web.php';
+// Load main app config
+require_once BASE_PATH . '/config/app.php';
 
-// The actual routing and execution is handled by the main application
-// This file is included by the main index.php when accessing SheetDocs URLs
+// Validate SSO access
+use Core\SSO;
+
+// Check if user has access to this project
+if (!SSO::validateProjectRequest('sheetdocs')) {
+    SSO::redirectToLogin($_SERVER['REQUEST_URI']);
+}
+
+// Load project config
+$projectConfig = require PROJECT_PATH . '/config.php';
+
+// Load project routes
+require_once PROJECT_PATH . '/routes/web.php';
