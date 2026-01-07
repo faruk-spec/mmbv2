@@ -1,70 +1,44 @@
-<?php use Core\View; use Core\Security; use Core\Auth; ?>
+<?php 
+use Core\View; 
+use Core\Security; 
+use Core\Auth;
+
+// Set theme from navbar settings
+$defaultTheme = 'dark';
+try {
+    $db = \Core\Database::getInstance();
+    $navbarSettings = $db->fetch("SELECT default_theme FROM navbar_settings WHERE id = 1");
+    if ($navbarSettings && !empty($navbarSettings['default_theme'])) {
+        $defaultTheme = $navbarSettings['default_theme'];
+    }
+} catch (\Exception $e) {
+    // Use default if query fails
+}
+?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="<?= htmlspecialchars($defaultTheme) ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= View::e($title ?? 'SheetDocs') ?> - MyMultiBranch</title>
+    <title><?= View::e($title ?? 'SheetDocs') ?> - <?= APP_NAME ?></title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <!-- Universal Theme CSS -->
+    <link rel="stylesheet" href="/css/universal-theme.css">
+    
     <script>
         // Sync theme with universal navbar (before page renders to avoid flash)
         (function() {
-            const savedTheme = localStorage.getItem('theme') || 'dark';
+            const savedTheme = localStorage.getItem('theme') || '<?= htmlspecialchars($defaultTheme) ?>';
             document.documentElement.setAttribute('data-theme', savedTheme);
         })();
     </script>
     
     <style>
-        :root {
-            --bg-primary: #06060a;
-            --bg-secondary: #0c0c12;
-            --bg-card: #0f0f18;
-            --cyan: #00f0ff;
-            --magenta: #ff2ec4;
-            --green: #00ff88;
-            --orange: #ffaa00;
-            --purple: #9945ff;
-            --red: #ff6b6b;
-            --text-primary: #e8eefc;
-            --text-secondary: #8892a6;
-            --border-color: rgba(255, 255, 255, 0.1);
-            --shadow-glow: 0 0 20px rgba(0, 240, 255, 0.2);
-            --transition: all 0.3s ease;
-            --hover-bg: rgba(0, 240, 255, 0.1);
-            --shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-            --sidebar-width: 280px;
-        }
-        
-        /* Light theme variables */
-        [data-theme="light"] {
-            --bg-primary: #f8f9fa;
-            --bg-secondary: #ffffff;
-            --bg-card: #ffffff;
-            --text-primary: #1a1a1a;
-            --text-secondary: #666666;
-            --border-color: rgba(0, 0, 0, 0.1);
-            --shadow-glow: 0 0 20px rgba(0, 0, 0, 0.1);
-            --hover-bg: rgba(0, 153, 204, 0.1);
-            --shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Poppins', sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            min-height: 100vh;
-        }
-        
+        /* SheetDocs specific styles */
         .page-wrapper {
             display: flex;
             max-width: 100vw;
@@ -72,7 +46,7 @@
         }
         
         .sidebar {
-            width: var(--sidebar-width);
+            width: 280px;
             background: var(--bg-secondary);
             border-right: 1px solid var(--border-color);
             min-height: calc(100vh - 60px);
