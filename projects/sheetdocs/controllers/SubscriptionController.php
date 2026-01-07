@@ -54,7 +54,7 @@ class SubscriptionController
             ];
         }
         
-        $freeFe atures = $this->projectConfig['features']['free'];
+        $freeFeatures = $this->projectConfig['features']['free'];
         $paidFeatures = $this->projectConfig['features']['paid'];
         $pricing = $this->projectConfig['subscription'];
         

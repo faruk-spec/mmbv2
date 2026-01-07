@@ -92,6 +92,7 @@ A modular, multi-project PHP platform with centralized authentication, unified a
 - **ProShare**: Secure file sharing platform
 - **QR Generator**: QR code generation and management
 - **ResumeX**: Professional resume builder
+- **SheetDocs**: Collaborative spreadsheet and document editor (Google Sheets/Docs alternative)
 
 ## Configuration
 
