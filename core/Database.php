@@ -181,6 +181,14 @@ class Database
     }
     
     /**
+     * Get last insert ID
+     */
+    public function lastInsertId(): int
+    {
+        return (int) $this->connection->lastInsertId();
+    }
+    
+    /**
      * Connect to a specific project database
      */
     public static function projectConnection(string $projectName): Database

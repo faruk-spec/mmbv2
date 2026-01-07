@@ -294,7 +294,7 @@ class SubscriberController extends BaseController
             );
             
             // Create default folders for the new mailbox
-            $mailboxId = $this->db->getConnection()->lastInsertId();
+            $mailboxId = $this->db->lastInsertId();
             $this->createDefaultFolders($mailboxId);
             
             $this->flash('success', 'User created successfully');
@@ -465,7 +465,7 @@ class SubscriberController extends BaseController
             [$userId, Auth::user()->name ?? 'Account']
         );
         
-        $subscriberId = $this->db->getConnection()->lastInsertId();
+        $subscriberId = $this->db->lastInsertId();
         
         // Create subscription
         $this->db->query(
