@@ -20,8 +20,6 @@ class WebmailController extends BaseController
 
     public function __construct()
     {
-        // BaseController doesn't have a constructor, so no need to call parent::__construct()
-        
         // Initialize database with error handling
         try {
             $this->db = Database::getInstance();
