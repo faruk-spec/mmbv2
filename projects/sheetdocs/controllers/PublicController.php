@@ -29,15 +29,13 @@ class PublicController
     public function view(string $token): void
     {
         // Get share by token
-        $stmt = $this->db->prepare("
+        $share = $this->db->fetch("
             SELECT ds.*, d.*
             FROM sheet_document_shares ds
             INNER JOIN sheet_documents d ON ds.document_id = d.id
-            WHERE ds.share_token = :token
+            WHERE ds.share_token = ?
             AND (ds.expires_at IS NULL OR ds.expires_at > NOW())
-        ");
-        $stmt->execute(['token' => $token]);
-        $share = $stmt->fetch(\PDO::FETCH_ASSOC);
+        ", [$token]);
         
         if (!$share) {
             Helpers::setFlash('error', 'This link is invalid or has expired.');
@@ -46,8 +44,7 @@ class PublicController
         }
         
         // Increment view count
-        $stmt = $this->db->prepare("UPDATE sheet_documents SET views = views + 1 WHERE id = :id");
-        $stmt->execute(['id' => $share['document_id']]);
+        $this->db->query("UPDATE sheet_documents SET views = views + 1 WHERE id = ?", [$share['document_id']]);
         
         // Render based on type
         if ($share['type'] === 'document') {
@@ -57,13 +54,11 @@ class PublicController
             ]);
         } else {
             // Get sheets
-            $stmt = $this->db->prepare("
+            $sheets = $this->db->fetchAll("
                 SELECT * FROM sheet_sheets 
-                WHERE document_id = :document_id 
+                WHERE document_id = ? 
                 ORDER BY order_index
-            ");
-            $stmt->execute(['document_id' => $share['document_id']]);
-            $sheets = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            ", [$share['document_id']]);
             
             View::render('projects/sheetdocs/public/sheet', [
                 'document' => $share,

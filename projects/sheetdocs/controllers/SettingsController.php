@@ -37,14 +37,10 @@ class SettingsController
         $userId = Auth::id();
         
         // Get user subscription
-        $stmt = $this->db->prepare("SELECT * FROM sheet_user_subscriptions WHERE user_id = :user_id");
-        $stmt->execute(['user_id' => $userId]);
-        $subscription = $stmt->fetch(\PDO::FETCH_ASSOC);
+        $subscription = $this->db->fetch("SELECT * FROM sheet_user_subscriptions WHERE user_id = ?", [$userId]);
         
         // Get usage stats
-        $stmt = $this->db->prepare("SELECT * FROM sheet_usage_stats WHERE user_id = :user_id");
-        $stmt->execute(['user_id' => $userId]);
-        $stats = $stmt->fetch(\PDO::FETCH_ASSOC);
+        $stats = $this->db->fetch("SELECT * FROM sheet_usage_stats WHERE user_id = ?", [$userId]);
         
         View::render('projects/sheetdocs/settings', [
             'subscription' => $subscription,
