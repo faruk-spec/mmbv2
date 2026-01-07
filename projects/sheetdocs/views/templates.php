@@ -64,7 +64,7 @@ foreach ($templates as $template) {
                 <?php endif; ?>
             </div>
             
-            <button onclick="window.location.href='/projects/sheetdocs/templates/<?= $template['id'] ?>/use'" 
+            <button onclick="window.location.href='/projects/sheetdocs/templates/<?= $template['id'] ?>'" 
                     class="btn btn-primary" style="width: 100%;">
                 <i class="fas fa-plus"></i>
                 Use Template

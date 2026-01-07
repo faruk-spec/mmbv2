@@ -52,23 +52,24 @@
             background: var(--bg-primary);
             color: var(--text-primary);
             min-height: 100vh;
+            padding-top: 0;
         }
         
         .container {
             display: flex;
-            min-height: calc(100vh - 60px);
-            margin-top: 60px;
+            min-height: 100vh;
         }
         
         .sidebar {
             width: var(--sidebar-width);
             background: var(--bg-secondary);
             border-right: 1px solid var(--border-color);
-            position: fixed;
-            height: calc(100vh - 60px);
+            position: sticky;
+            top: 0;
+            height: 100vh;
             overflow-y: auto;
             padding: 20px;
-            top: 60px;
+            flex-shrink: 0;
         }
         
         .logo {
@@ -99,9 +100,9 @@
         }
         
         .main-content {
-            margin-left: var(--sidebar-width);
             flex: 1;
             padding: 40px;
+            min-width: 0;
         }
         
         .header {

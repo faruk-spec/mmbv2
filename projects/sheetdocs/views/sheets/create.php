@@ -17,7 +17,7 @@
 <?php endif; ?>
 
 <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 30px; max-width: 800px;">
-    <form method="POST" action="/projects/sheetdocs/sheets" style="display: flex; flex-direction: column; gap: 20px;">
+    <form method="POST" action="/projects/sheetdocs/sheets/store" style="display: flex; flex-direction: column; gap: 20px;">
         <?= Security::csrfField() ?>
         
         <div>
