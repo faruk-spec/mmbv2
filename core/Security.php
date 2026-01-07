@@ -51,6 +51,18 @@ class Security
     }
     
     /**
+     * Validate CSRF token from request
+     */
+    public static function validateCsrfToken(): void
+    {
+        $token = $_POST['_csrf_token'] ?? $_GET['_csrf_token'] ?? '';
+        
+        if (!self::verifyCsrfToken($token)) {
+            throw new \RuntimeException('Invalid CSRF token');
+        }
+    }
+    
+    /**
      * Get CSRF token field
      */
     public static function csrfField(): string
