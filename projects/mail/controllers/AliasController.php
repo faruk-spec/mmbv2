@@ -5,6 +5,7 @@ namespace Mail;
 use Controllers\BaseController;
 use Core\Auth;
 use Core\Database;
+use Core\View;
 
 /**
  * AliasController
@@ -237,9 +238,6 @@ class AliasController extends BaseController
 
         $this->success('Alias created successfully');
         redirect('/projects/mail/subscriber/aliases');
-        // Ensure database and subscriber access
-        $this->ensureDatabaseAndSubscriber();
-
     }
 
     /**
@@ -247,6 +245,9 @@ class AliasController extends BaseController
      */
     public function toggleStatus($aliasId)
     {
+        // Ensure database and subscriber access
+        $this->ensureDatabaseAndSubscriber();
+        
         $alias = $this->db->fetch(
             "SELECT * FROM mail_aliases WHERE id = ? AND subscriber_id = ?",
             [$aliasId, $this->subscriberId]
@@ -264,9 +265,6 @@ class AliasController extends BaseController
 
         return $this->json([
             'success' => true,
-        // Ensure database and subscriber access
-        $this->ensureDatabaseAndSubscriber();
-
             'message' => 'Alias ' . ($newStatus ? 'activated' : 'deactivated') . ' successfully',
             'is_active' => $newStatus
         ]);
@@ -277,6 +275,9 @@ class AliasController extends BaseController
      */
     public function delete($aliasId)
     {
+        // Ensure database and subscriber access
+        $this->ensureDatabaseAndSubscriber();
+        
         $alias = $this->db->fetch(
             "SELECT * FROM mail_aliases WHERE id = ? AND subscriber_id = ?",
             [$aliasId, $this->subscriberId]

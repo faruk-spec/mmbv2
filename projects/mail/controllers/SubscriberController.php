@@ -11,6 +11,7 @@ namespace Mail;
 use Controllers\BaseController;
 use Core\Auth;
 use Core\Database;
+use Core\View;
 
 class SubscriberController extends BaseController
 {

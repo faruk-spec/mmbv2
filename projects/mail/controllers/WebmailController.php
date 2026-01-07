@@ -9,6 +9,7 @@ namespace Mail;
 use Controllers\BaseController;
 use Core\Auth;
 use Core\Database;
+use Core\View;
 
 class WebmailController extends BaseController
 {
@@ -154,10 +155,10 @@ class WebmailController extends BaseController
      * View single email
      */
     public function viewEmail($messageId)
+    {
         // Ensure database and mailbox are available
         $this->ensureDatabaseAndMailbox();
 
-    {
         $message = $this->db->fetch(
             "SELECT * FROM mail_messages WHERE id = ? AND mailbox_id = ?",
             [$messageId, $this->mailboxId]
@@ -191,13 +192,13 @@ class WebmailController extends BaseController
     }
 
     /**
-        // Ensure database and mailbox are available
-        $this->ensureDatabaseAndMailbox();
-
      * Display compose form
      */
     public function compose()
     {
+        // Ensure database and mailbox are available
+        $this->ensureDatabaseAndMailbox();
+        
         $replyTo = isset($_GET['reply']) ? (int)$_GET['reply'] : null;
         $forward = isset($_GET['forward']) ? (int)$_GET['forward'] : null;
         
@@ -227,9 +228,6 @@ class WebmailController extends BaseController
             'forward' => $forward,
             'signature' => $signature ? $signature['signature'] : ''
         ]);
-        // Ensure database and mailbox are available
-        $this->ensureDatabaseAndMailbox();
-
     }
 
     /**
@@ -237,6 +235,9 @@ class WebmailController extends BaseController
      */
     public function send()
     {
+        // Ensure database and mailbox are available
+        $this->ensureDatabaseAndMailbox();
+        
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             redirect('/projects/mail/webmail/compose');
             exit;
@@ -360,9 +361,6 @@ class WebmailController extends BaseController
                         'mime_type' => $mimeType,
                         'created_at' => date('Y-m-d H:i:s')
                     ]);
-        // Ensure database and mailbox are available
-        $this->ensureDatabaseAndMailbox();
-
                 }
             }
         }
@@ -420,11 +418,11 @@ class WebmailController extends BaseController
     public function toggleStar()
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        // Ensure database and mailbox are available
-        $this->ensureDatabaseAndMailbox();
-
             return;
         }
+        
+        // Ensure database and mailbox are available
+        $this->ensureDatabaseAndMailbox();
 
         $messageId = (int)$_POST['message_id'];
         $isStarred = (int)$_POST['is_starred'];
@@ -445,9 +443,9 @@ class WebmailController extends BaseController
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             return;
         }
+        
         // Ensure database and mailbox are available
         $this->ensureDatabaseAndMailbox();
-
 
         $messageId = (int)$_POST['message_id'];
 
@@ -473,6 +471,9 @@ class WebmailController extends BaseController
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             return;
         }
+        
+        // Ensure database and mailbox are available
+        $this->ensureDatabaseAndMailbox();
 
         $action = $_POST['action'];
         $messageIds = isset($_POST['message_ids']) ? explode(',', $_POST['message_ids']) : [];
@@ -506,9 +507,6 @@ class WebmailController extends BaseController
                     "SELECT id FROM mail_folders WHERE mailbox_id = ? AND folder_type = 'trash' LIMIT 1",
                     [$this->mailboxId]
                 );
-        // Ensure database and mailbox are available
-        $this->ensureDatabaseAndMailbox();
-
                 $this->db->query(
                     "UPDATE mail_messages SET folder_id = ?, deleted_at = NOW() 
                      WHERE id IN ($placeholders) AND mailbox_id = ?",
@@ -534,6 +532,9 @@ class WebmailController extends BaseController
      */
     public function downloadAttachment($attachmentId)
     {
+        // Ensure database and mailbox are available
+        $this->ensureDatabaseAndMailbox();
+        
         $attachment = $this->db->fetch(
             "SELECT a.*, m.mailbox_id FROM mail_attachments a
              JOIN mail_messages m ON a.message_id = m.id

@@ -5,6 +5,7 @@ namespace Mail;
 use Controllers\BaseController;
 use Core\Auth;
 use Core\Database;
+use Core\View;
 
 /**
  * DomainController
@@ -185,13 +186,13 @@ class DomainController extends BaseController
     }
 
     /**
-        // Ensure database and subscriber access
-        $this->ensureDatabaseAndSubscriber();
-
      * Verify domain DNS records
      */
     public function verify($domainId)
     {
+        // Ensure database and subscriber access
+        $this->ensureDatabaseAndSubscriber();
+        
         $domain = $this->db->fetch(
             "SELECT * FROM mail_domains WHERE id = ? AND subscriber_id = ?",
             [$domainId, $this->subscriberId]
@@ -242,9 +243,6 @@ class DomainController extends BaseController
             'results' => $results,
             'message' => $verified ? 'Domain verified successfully!' : 'Some DNS records are not configured correctly'
         ]);
-        // Ensure database and subscriber access
-        $this->ensureDatabaseAndSubscriber();
-
     }
 
     /**
@@ -252,6 +250,9 @@ class DomainController extends BaseController
      */
     public function delete($domainId)
     {
+        // Ensure database and subscriber access
+        $this->ensureDatabaseAndSubscriber();
+        
         $domain = $this->db->fetch(
             "SELECT * FROM mail_domains WHERE id = ? AND subscriber_id = ?",
             [$domainId, $this->subscriberId]
