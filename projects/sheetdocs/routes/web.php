@@ -58,3 +58,7 @@ $router->get('/projects/sheetdocs/export/{id}/{format}', 'Projects\SheetDocs\Con
 // Settings
 $router->get('/projects/sheetdocs/settings', 'Projects\SheetDocs\Controllers\SettingsController@index');
 $router->post('/projects/sheetdocs/settings/update', 'Projects\SheetDocs\Controllers\SettingsController@update');
+
+// Dispatch the route
+$router->dispatch($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI']);
+
