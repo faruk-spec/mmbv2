@@ -1,6 +1,6 @@
 <?php use Core\View; use Core\Security; use Core\Auth; use Core\Helpers; ?>
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,6 +9,14 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        // Sync theme with universal navbar (before page renders to avoid flash)
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
+    </script>
     
     <style>
         :root {
@@ -20,6 +28,16 @@
             --text-secondary: #8892a6;
             --border-color: rgba(255, 255, 255, 0.1);
             --sidebar-width: 280px;
+        }
+        
+        /* Light theme variables */
+        [data-theme="light"] {
+            --bg-primary: #f5f7fa;
+            --bg-secondary: #ffffff;
+            --bg-card: #ffffff;
+            --text-primary: #1a1a1a;
+            --text-secondary: #6b7280;
+            --border-color: rgba(0, 0, 0, 0.1);
         }
         
         * {
@@ -339,5 +357,12 @@
             <?php endif; ?>
         </main>
     </div>
+    
+    <script>
+        // Listen for theme changes from universal navbar
+        document.addEventListener('themeChanged', function(e) {
+            document.documentElement.setAttribute('data-theme', e.detail.theme);
+        });
+    </script>
 </body>
 </html>

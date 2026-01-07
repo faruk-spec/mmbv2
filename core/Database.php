@@ -75,6 +75,27 @@ class Database
     }
     
     /**
+     * Prepare a statement (delegates to PDO)
+     */
+    public function prepare(string $sql): \PDOStatement
+    {
+        try {
+            return $this->connection->prepare($sql);
+        } catch (PDOException $e) {
+            Logger::error('Prepare failed: ' . $e->getMessage(), ['sql' => $sql]);
+            throw $e;
+        }
+    }
+    
+    /**
+     * Get last insert ID
+     */
+    public function lastInsertId(): string
+    {
+        return $this->connection->lastInsertId();
+    }
+    
+    /**
      * Execute a prepared statement
      */
     public function query(string $sql, array $params = []): \PDOStatement
