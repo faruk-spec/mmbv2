@@ -166,8 +166,8 @@ CREATE TABLE IF NOT EXISTS `sheet_templates` (
     INDEX `idx_tier` (`tier`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Insert default free templates
-INSERT INTO `sheet_templates` (`title`, `description`, `content`, `type`, `category`, `tier`, `usage_count`) VALUES
+-- Insert default free templates (skip if already exist)
+INSERT IGNORE INTO `sheet_templates` (`title`, `description`, `content`, `type`, `category`, `tier`, `usage_count`) VALUES
 ('Blank Document', 'Start with a blank document', '', 'document', 'basic', 'free', 0),
 ('Blank Spreadsheet', 'Start with a blank spreadsheet', '', 'sheet', 'basic', 'free', 0),
 ('Meeting Notes', 'Template for meeting notes', '<h1>Meeting Notes</h1><p><strong>Date:</strong></p><p><strong>Attendees:</strong></p><h2>Agenda</h2><ul><li></li></ul><h2>Discussion</h2><p></p><h2>Action Items</h2><ul><li></li></ul>', 'document', 'productivity', 'free', 0),
@@ -190,4 +190,7 @@ INSERT INTO `sheet_settings` (`key`, `value`, `type`) VALUES
 ('enable_public_sharing', '1', 'boolean'),
 ('enable_export', '1', 'boolean'),
 ('default_sheet_rows', '100', 'integer'),
-('default_sheet_cols', '26', 'integer');
+('default_sheet_cols', '26', 'integer')
+ON DUPLICATE KEY UPDATE
+    `value` = VALUES(`value`),
+    `type` = VALUES(`type`);
