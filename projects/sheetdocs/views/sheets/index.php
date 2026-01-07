@@ -23,7 +23,7 @@
 <?php if (!empty($sheets)): ?>
 <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
     <?php foreach ($sheets as $sheet): ?>
-    <div onclick="window.location.href='/projects/sheetdocs/sheets/<?= $sheet['id'] ?>/edit'" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.3s;">
+    <a href="/projects/sheetdocs/sheets/<?= $sheet['id'] ?>/edit" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.3s; text-decoration: none; color: inherit; display: block;">
         <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 10px;">
             <i class="fas fa-table" style="color: var(--cyan);"></i>
             <?= View::e($sheet['title']) ?>
@@ -36,7 +36,7 @@
                 <?= ucfirst($sheet['visibility']) ?>
             </span>
         </div>
-    </div>
+    </a>
     <?php endforeach; ?>
 </div>
 <?php else: ?>

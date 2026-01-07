@@ -35,6 +35,7 @@
             --bg-primary: #f5f7fa;
             --bg-secondary: #ffffff;
             --bg-card: #ffffff;
+            --cyan: #00d4aa;
             --text-primary: #1a1a1a;
             --text-secondary: #6b7280;
             --border-color: rgba(0, 0, 0, 0.1);
@@ -61,17 +62,13 @@
         
         .sidebar {
             width: var(--sidebar-width);
-            background: rgba(12, 12, 18, 0.95);
+            background: var(--bg-secondary);
             border-right: 1px solid var(--border-color);
             position: fixed;
             height: calc(100vh - 60px);
             overflow-y: auto;
             padding: 20px;
             top: 60px;
-        }
-        
-        [data-theme="light"] .sidebar {
-            background: var(--bg-secondary);
         }
         
         .logo {
@@ -218,7 +215,8 @@
         document.addEventListener('DOMContentLoaded', function() {
             const currentPath = window.location.pathname;
             document.querySelectorAll('.nav-item').forEach(item => {
-                if (item.getAttribute('href') === currentPath) {
+                const itemPath = item.getAttribute('href');
+                if (itemPath === currentPath || currentPath.startsWith(itemPath + '/')) {
                     item.classList.add('active');
                 }
             });
