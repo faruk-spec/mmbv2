@@ -25,6 +25,10 @@ UPDATE `home_projects` SET `tier` = 'enterprise'
 WHERE `project_key` IN ('codexpro', 'devzone') 
 AND `tier` = 'free';
 
+UPDATE `home_projects` SET `tier` = 'freemium' 
+WHERE `project_key` = 'sheetdocs' 
+AND `tier` = 'free';
+
 -- Add sample features for projects (only if features is null)
 UPDATE `home_projects` SET `features` = '["Advanced editor capabilities","Real-time collaboration","Cloud sync & backup"]' WHERE `project_key` = 'codexpro' AND `features` IS NULL;
 UPDATE `home_projects` SET `features` = '["Team collaboration tools","Project management","Issue tracking"]' WHERE `project_key` = 'devzone' AND `features` IS NULL;
@@ -32,4 +36,5 @@ UPDATE `home_projects` SET `features` = '["Image to text conversion","Multi-lang
 UPDATE `home_projects` SET `features` = '["Secure file sharing","Password protection","Download tracking"]' WHERE `project_key` = 'proshare' AND `features` IS NULL;
 UPDATE `home_projects` SET `features` = '["Custom QR codes","Bulk generation","Analytics tracking"]' WHERE `project_key` = 'qr' AND `features` IS NULL;
 UPDATE `home_projects` SET `features` = '["Professional templates","PDF export","ATS optimization"]' WHERE `project_key` = 'resumex' AND `features` IS NULL;
+UPDATE `home_projects` SET `features` = '["Document & spreadsheet editor","Real-time collaboration","Version history & templates"]' WHERE `project_key` = 'sheetdocs' AND `features` IS NULL;
 

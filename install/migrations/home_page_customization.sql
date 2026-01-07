@@ -50,4 +50,5 @@ INSERT INTO `home_projects` (`project_key`, `name`, `description`, `icon`, `colo
 ('imgtxt', 'ImgTxt', 'Image to text converter and OCR tool', 'image', '#00ff88', 1, 3, 'mmb_imgtxt', '/projects/imgtxt'),
 ('proshare', 'ProShare', 'Secure file sharing platform', 'share-2', '#ffaa00', 1, 4, 'mmb_proshare', '/projects/proshare'),
 ('qr', 'QR Generator', 'QR code generation and management', 'grid', '#9945ff', 1, 5, 'mmb_qr', '/projects/qr'),
-('resumex', 'ResumeX', 'Professional resume builder', 'file-text', '#ff6b6b', 1, 6, 'mmb_resumex', '/projects/resumex');
+('resumex', 'ResumeX', 'Professional resume builder', 'file-text', '#ff6b6b', 1, 6, 'mmb_resumex', '/projects/resumex'),
+('sheetdocs', 'SheetDocs', 'Collaborative spreadsheet and document editor', 'file-spreadsheet', '#00d4aa', 1, 7, 'sheetdocs', '/projects/sheetdocs');

@@ -8,7 +8,7 @@ use Core\Database;
 class ProjectDatabaseController extends BaseController
 {
     private $configPath;
-    private $projects = ['codexpro', 'imgtxt', 'proshare'];
+    private $projects = ['codexpro', 'imgtxt', 'proshare', 'sheetdocs'];
     
     public function __construct()
     {
