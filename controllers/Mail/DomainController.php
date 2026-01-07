@@ -19,33 +19,26 @@ class DomainController extends BaseController
 
     public function __construct()
     {
-        // BaseController doesn't have a constructor, so no need to call parent::__construct()
-        
-        // Initialize database with error handling
+        // BaseController doesn't have a constructor - removed parent::__construct()
         try {
             $this->db = Database::getInstance();
         } catch (\Throwable $e) {
-            error_log('Warning: Database initialization failed in DomainController: ' . $e->getMessage());
+            error_log('Warning: Database init failed in DomainController: ' . $e->getMessage());
             $this->db = null;
         }
     }
     
-    /**
-     * Ensure database and subscriber access
-     */
     private function ensureDatabaseAndSubscriber()
     {
         if ($this->db === null) {
             try {
                 $this->db = Database::getInstance();
             } catch (\Throwable $e) {
-                error_log('Failed to initialize database in DomainController: ' . $e->getMessage());
-                throw new \RuntimeException('Database is not available. Please try again later.');
+                throw new \RuntimeException('Database is not available.');
             }
         }
         
         if ($this->subscriberId === null) {
-            // Get subscriber ID from session
             $userId = Auth::id();
             $mailbox = $this->db->fetch(
                 "SELECT subscriber_id FROM mail_mailboxes WHERE mmb_user_id = ? AND role_type = 'subscriber_owner'",
@@ -53,7 +46,7 @@ class DomainController extends BaseController
             );
             
             if (!$mailbox) {
-                throw new \RuntimeException('Access denied. Subscriber owner access required.');
+                throw new \RuntimeException('Access denied.');
             }
             
             $this->subscriberId = $mailbox['subscriber_id'];
@@ -65,9 +58,7 @@ class DomainController extends BaseController
      */
     public function index()
     {
-        // Ensure database and subscriber access
         $this->ensureDatabaseAndSubscriber();
-        
         $domains = $this->db->fetchAll(
             "SELECT d.*, 
                     COUNT(DISTINCT m.id) as mailboxes_count,
@@ -91,23 +82,21 @@ class DomainController extends BaseController
      * Show add domain form
      */
     public function create()
-        // Ensure database and subscriber access
+    {
         $this->ensureDatabaseAndSubscriber();
 
-    {
         View::render('mail/subscriber/add-domain', [
             'subscriberId' => $this->subscriberId
         ]);
     }
 
     /**
-        // Ensure database and subscriber access
-        $this->ensureDatabaseAndSubscriber();
-
      * Store new domain
      */
     public function store()
     {
+        $this->ensureDatabaseAndSubscriber();
+
         $domainName = trim($_POST['domain_name'] ?? '');
         $description = trim($_POST['description'] ?? '');
         $catchAllEmail = trim($_POST['catch_all_email'] ?? '');
@@ -153,9 +142,6 @@ class DomainController extends BaseController
 
         $this->success('Domain added successfully. Please configure DNS records to verify.');
         $this->redirect('/projects/mail/subscriber/domains/' . $domainId . '/dns');
-        // Ensure database and subscriber access
-        $this->ensureDatabaseAndSubscriber();
-
     }
 
     /**
@@ -163,6 +149,8 @@ class DomainController extends BaseController
      */
     public function dnsRecords($domainId)
     {
+        $this->ensureDatabaseAndSubscriber();
+
         $domain = $this->db->fetch(
             "SELECT * FROM mail_domains WHERE id = ? AND subscriber_id = ?",
             [$domainId, $this->subscriberId]
@@ -181,9 +169,6 @@ class DomainController extends BaseController
 
         View::render('mail/subscriber/dns-records', [
             'domain' => $domain,
-        // Ensure database and subscriber access
-        $this->ensureDatabaseAndSubscriber();
-
             'dnsRecords' => $dnsRecords,
             'subscriberId' => $this->subscriberId
         ]);
@@ -194,6 +179,8 @@ class DomainController extends BaseController
      */
     public function verify($domainId)
     {
+        $this->ensureDatabaseAndSubscriber();
+
         $domain = $this->db->fetch(
             "SELECT * FROM mail_domains WHERE id = ? AND subscriber_id = ?",
             [$domainId, $this->subscriberId]
@@ -238,9 +225,6 @@ class DomainController extends BaseController
             );
         }
 
-        // Ensure database and subscriber access
-        $this->ensureDatabaseAndSubscriber();
-
         return $this->json([
             'success' => true,
             'verified' => $verified,
@@ -254,6 +238,8 @@ class DomainController extends BaseController
      */
     public function delete($domainId)
     {
+        $this->ensureDatabaseAndSubscriber();
+
         $domain = $this->db->fetch(
             "SELECT * FROM mail_domains WHERE id = ? AND subscriber_id = ?",
             [$domainId, $this->subscriberId]
