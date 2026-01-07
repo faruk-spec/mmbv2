@@ -151,7 +151,7 @@ class DomainController extends BaseController
         $this->generateDNSRecords($domainId, $domainName);
 
         $this->success('Domain added successfully. Please configure DNS records to verify.');
-        redirect('/projects/mail/subscriber/domains/' . $domainId . '/dns');
+        $this->redirect('/projects/mail/subscriber/domains/' . $domainId . '/dns');
     }
 
     /**
@@ -169,7 +169,7 @@ class DomainController extends BaseController
 
         if (!$domain) {
             $this->error('Domain not found');
-            redirect('/projects/mail/subscriber/domains');
+            $this->redirect('/projects/mail/subscriber/domains');
             return;
         }
 

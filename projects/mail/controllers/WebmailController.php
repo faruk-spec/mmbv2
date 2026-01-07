@@ -54,7 +54,21 @@ class WebmailController extends BaseController
             );
             
             if (!$this->mailbox) {
-                throw new \RuntimeException('No active mailbox found');
+                // User doesn't have a mailbox yet - check if they're a subscriber owner
+                $subscriber = $this->db->fetch(
+                    "SELECT id FROM mail_subscribers WHERE mmb_user_id = ? LIMIT 1",
+                    [$userId]
+                );
+                
+                if ($subscriber) {
+                    // Redirect subscriber owner to their dashboard
+                    header('Location: /projects/mail/subscriber/dashboard');
+                    exit;
+                } else {
+                    // User needs to subscribe first
+                    header('Location: /projects/mail/subscribe');
+                    exit;
+                }
             }
             
             $this->mailboxId = $this->mailbox['id'];
@@ -166,7 +180,7 @@ class WebmailController extends BaseController
 
         if (!$message) {
             $this->error('Email not found');
-            redirect('/projects/mail/webmail');
+            $this->redirect('/projects/mail/webmail');
             exit;
         }
 
@@ -239,7 +253,7 @@ class WebmailController extends BaseController
         $this->ensureDatabaseAndMailbox();
         
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            redirect('/projects/mail/webmail/compose');
+            $this->redirect('/projects/mail/webmail/compose');
             exit;
         }
 
@@ -253,7 +267,7 @@ class WebmailController extends BaseController
         // Validation
         if (empty($to) || empty($subject)) {
             $this->error('To and Subject fields are required');
-            redirect('/projects/mail/webmail/compose');
+            $this->redirect('/projects/mail/webmail/compose');
             exit;
         }
 
@@ -277,7 +291,7 @@ class WebmailController extends BaseController
 
         if ($sentToday['count'] >= $plan['daily_send_limit']) {
             $this->error('Daily send limit reached. Please upgrade your plan.');
-            redirect('/projects/mail/webmail/compose');
+            $this->redirect('/projects/mail/webmail/compose');
             exit;
         }
 
@@ -327,7 +341,7 @@ class WebmailController extends BaseController
         ]);
 
         $this->success('Email queued for sending');
-        redirect('/projects/mail/webmail');
+        $this->redirect('/projects/mail/webmail');
     }
 
     /**

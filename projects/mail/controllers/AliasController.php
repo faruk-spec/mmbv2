@@ -237,7 +237,7 @@ class AliasController extends BaseController
         );
 
         $this->success('Alias created successfully');
-        redirect('/projects/mail/subscriber/aliases');
+        $this->redirect('/projects/mail/subscriber/aliases');
     }
 
     /**

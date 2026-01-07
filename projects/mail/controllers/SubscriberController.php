@@ -12,6 +12,7 @@ use Controllers\BaseController;
 use Core\Auth;
 use Core\Database;
 use Core\View;
+use Mail\MailHelpers;
 
 class SubscriberController extends BaseController
 {
@@ -25,7 +26,7 @@ class SubscriberController extends BaseController
         
         // Ensure user is authenticated
         if (!Auth::check()) {
-            redirect('/login');
+            $this->redirect('/login');
         }
         
         $this->db = Database::getInstance();
@@ -289,7 +290,7 @@ class SubscriberController extends BaseController
             $this->createDefaultFolders($mailboxId);
             
             $this->success('User created successfully');
-            redirect('/projects/mail/subscriber/users');
+            $this->redirect('/projects/mail/subscriber/users');
             
         } catch (\Exception $e) {
             $this->error('Failed to create user: ' . $e->getMessage());
@@ -415,7 +416,7 @@ class SubscriberController extends BaseController
     public function processSubscription()
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            redirect('/projects/mail/subscribe');
+            $this->redirect('/projects/mail/subscribe');
             return;
         }
         
@@ -430,7 +431,7 @@ class SubscriberController extends BaseController
         
         if (!$plan) {
             $this->error('Invalid plan selected');
-            redirect('/projects/mail/subscribe');
+            $this->redirect('/projects/mail/subscribe');
             return;
         }
         
@@ -444,7 +445,7 @@ class SubscriberController extends BaseController
         
         if ($existing) {
             $this->error('You already have an active subscription');
-            redirect('/projects/mail/subscriber/dashboard');
+            $this->redirect('/projects/mail/subscriber/dashboard');
             return;
         }
         
@@ -466,7 +467,7 @@ class SubscriberController extends BaseController
         );
         
         $this->success('Subscription created successfully!');
-        redirect('/projects/mail/subscriber/dashboard');
+        $this->redirect('/projects/mail/subscriber/dashboard');
     }
     
     /**
@@ -476,7 +477,7 @@ class SubscriberController extends BaseController
     {
         if (!$this->isOwner) {
             $this->error('Access denied. Subscriber owner access required.');
-            redirect('/projects/mail');
+            $this->redirect('/projects/mail');
             return;
         }
         
@@ -509,7 +510,7 @@ class SubscriberController extends BaseController
     {
         if (!$this->isOwner) {
             $this->error('Access denied. Subscriber owner access required.');
-            redirect('/projects/mail');
+            $this->redirect('/projects/mail');
             return;
         }
         
@@ -546,7 +547,7 @@ class SubscriberController extends BaseController
     {
         if (!$this->isOwner) {
             $this->error('Access denied. Subscriber owner access required.');
-            redirect('/projects/mail');
+            $this->redirect('/projects/mail');
             return;
         }
         
@@ -581,7 +582,7 @@ class SubscriberController extends BaseController
     public function upgradePlan()
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            redirect('/projects/mail/subscriber/upgrade');
+            $this->redirect('/projects/mail/subscriber/upgrade');
             return;
         }
         
@@ -642,7 +643,7 @@ class SubscriberController extends BaseController
     public function downgradePlan()
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            redirect('/projects/mail/subscriber/subscription');
+            $this->redirect('/projects/mail/subscriber/subscription');
             return;
         }
         
