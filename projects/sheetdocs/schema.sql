@@ -105,7 +105,7 @@ CREATE TABLE IF NOT EXISTS `user_subscriptions` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `user_id` INT UNSIGNED NOT NULL UNIQUE,
     `plan` ENUM('free', 'paid') DEFAULT 'free',
-    `status` ENUM('active', 'cancelled', 'expired', 'trial') DEFAULT 'free',
+    `status` ENUM('active', 'cancelled', 'expired', 'trial') DEFAULT 'active',
     `billing_cycle` ENUM('monthly', 'annual') NULL,
     `trial_ends_at` TIMESTAMP NULL,
     `current_period_start` TIMESTAMP NULL,

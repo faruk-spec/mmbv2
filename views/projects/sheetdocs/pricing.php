@@ -205,7 +205,7 @@
                     </li>
                 </ul>
                 
-                <?php if ($subscription['plan'] === 'free'): ?>
+                <?php if (($subscription['plan'] ?? 'free') === 'free'): ?>
                     <button class="btn btn-secondary" disabled>Current Plan</button>
                 <?php else: ?>
                     <form method="POST" action="/projects/sheetdocs/subscription/cancel">
@@ -266,9 +266,9 @@
                     </li>
                 </ul>
                 
-                <?php if ($subscription['plan'] === 'paid'): ?>
+                <?php if (($subscription['plan'] ?? 'free') === 'paid'): ?>
                     <button class="btn btn-primary" disabled>
-                        <?= $subscription['status'] === 'trial' ? 'Trial Active' : 'Current Plan' ?>
+                        <?= ($subscription['status'] ?? 'active') === 'trial' ? 'Trial Active' : 'Current Plan' ?>
                     </button>
                 <?php else: ?>
                     <form method="POST" action="/projects/sheetdocs/subscription/upgrade">
@@ -286,7 +286,7 @@
             </div>
         </div>
         
-        <?php if ($subscription['plan'] === 'free'): ?>
+        <?php if (($subscription['plan'] ?? 'free') === 'free'): ?>
         <div class="usage-card">
             <h3 style="margin-bottom: 20px;">Your Current Usage</h3>
             

@@ -150,7 +150,7 @@ class SheetDocsAdminController
         $stmt->execute(['id' => $id]);
         
         Helpers::setFlash('success', 'Document deleted successfully.');
-        Helpers::redirect('/admin/sheetdocs/documents');
+        Helpers::redirect('/admin/projects/sheetdocs/documents');
     }
     
     /**

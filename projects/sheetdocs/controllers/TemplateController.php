@@ -40,7 +40,7 @@ class TemplateController
         $stmt = $this->db->prepare("SELECT plan FROM user_subscriptions WHERE user_id = :user_id");
         $stmt->execute(['user_id' => $userId]);
         $subscription = $stmt->fetch(\PDO::FETCH_ASSOC);
-        $plan = $subscription['plan'] ?? 'free';
+        $plan = ($subscription && isset($subscription['plan'])) ? $subscription['plan'] : 'free';
         
         // Get templates based on plan
         $stmt = $this->db->prepare("
@@ -89,7 +89,7 @@ class TemplateController
         $stmt = $this->db->prepare("SELECT plan FROM user_subscriptions WHERE user_id = :user_id");
         $stmt->execute(['user_id' => $userId]);
         $subscription = $stmt->fetch(\PDO::FETCH_ASSOC);
-        $plan = $subscription['plan'] ?? 'free';
+        $plan = ($subscription && isset($subscription['plan'])) ? $subscription['plan'] : 'free';
         
         if ($template['tier'] === 'paid' && $plan !== 'paid') {
             Helpers::setFlash('error', 'This template requires a premium subscription.');

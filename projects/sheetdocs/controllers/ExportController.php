@@ -110,12 +110,13 @@ class ExportController
      */
     private function exportDOCX(array $document): void
     {
-        $filename = Security::sanitizeFilename($document['title']) . '.txt';
+        $filename = Security::sanitizeFilename($document['title']) . '.docx';
         
         header('Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
         
         // For production, use PHPWord library
+        // For now, just output plain text (browser will handle as text file)
         echo strip_tags($document['content']);
         exit;
     }
