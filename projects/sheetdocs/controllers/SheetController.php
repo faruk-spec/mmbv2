@@ -118,8 +118,9 @@ class SheetController
     /**
      * Show sheet
      */
-    public function show(int $id): void
+    public function show(string|int $id): void
     {
+        $id = (int)$id;
         $userId = Auth::id();
         $sheet = $this->getSheet($id, $userId);
         
@@ -145,8 +146,9 @@ class SheetController
     /**
      * Edit sheet
      */
-    public function edit(int $id): void
+    public function edit(string|int $id): void
     {
+        $id = (int)$id;
         $userId = Auth::id();
         $sheet = $this->getSheet($id, $userId, true);
         
@@ -173,8 +175,9 @@ class SheetController
     /**
      * Update sheet
      */
-    public function update(int $id): void
+    public function update(string|int $id): void
     {
+        $id = (int)$id;
         Security::validateCsrfToken();
         $userId = Auth::id();
         
@@ -209,8 +212,9 @@ class SheetController
     /**
      * Delete sheet
      */
-    public function delete(int $id): void
+    public function delete(string|int $id): void
     {
+        $id = (int)$id;
         Security::validateCsrfToken();
         $userId = Auth::id();
         
@@ -241,12 +245,10 @@ class SheetController
     {
         $stmt = $this->db->prepare("
             SELECT d.*, 
-                   ds.permission as share_permission,
                    (d.user_id = :user_id) as is_owner
             FROM sheet_documents d
-            LEFT JOIN document_shares ds ON d.id = ds.document_id AND ds.shared_with_user_id = :user_id
             WHERE d.id = :id AND d.type = 'sheet'
-            AND (d.user_id = :user_id OR ds.shared_with_user_id = :user_id OR d.visibility = 'public')
+            AND (d.user_id = :user_id OR d.visibility = 'public')
         ");
         $stmt->execute(['id' => $id, 'user_id' => $userId]);
         $sheet = $stmt->fetch(\PDO::FETCH_ASSOC);
@@ -256,7 +258,7 @@ class SheetController
         }
         
         if ($requireEdit) {
-            $hasEditAccess = ($sheet['is_owner'] == 1) || ($sheet['share_permission'] === 'edit');
+            $hasEditAccess = ($sheet['is_owner'] == 1);
             if (!$hasEditAccess) {
                 return null;
             }

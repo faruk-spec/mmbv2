@@ -127,8 +127,9 @@ class DocumentController
     /**
      * Show document
      */
-    public function show(int $id): void
+    public function show(string|int $id): void
     {
+        $id = (int)$id;
         $userId = Auth::id();
         $document = $this->getDocument($id, $userId);
         
@@ -150,8 +151,9 @@ class DocumentController
     /**
      * Edit document
      */
-    public function edit(int $id): void
+    public function edit(string|int $id): void
     {
+        $id = (int)$id;
         $userId = Auth::id();
         $document = $this->getDocument($id, $userId, true);
         
@@ -169,8 +171,9 @@ class DocumentController
     /**
      * Update document
      */
-    public function update(int $id): void
+    public function update(string|int $id): void
     {
+        $id = (int)$id;
         Security::validateCsrfToken();
         $userId = Auth::id();
         
@@ -207,8 +210,9 @@ class DocumentController
     /**
      * Delete document
      */
-    public function delete(int $id): void
+    public function delete(string|int $id): void
     {
+        $id = (int)$id;
         Security::validateCsrfToken();
         $userId = Auth::id();
         
@@ -239,12 +243,10 @@ class DocumentController
     {
         $stmt = $this->db->prepare("
             SELECT d.*, 
-                   ds.permission as share_permission,
                    (d.user_id = :user_id) as is_owner
             FROM sheet_documents d
-            LEFT JOIN document_shares ds ON d.id = ds.document_id AND ds.shared_with_user_id = :user_id
             WHERE d.id = :id 
-            AND (d.user_id = :user_id OR ds.shared_with_user_id = :user_id OR d.visibility = 'public')
+            AND (d.user_id = :user_id OR d.visibility = 'public')
         ");
         $stmt->execute(['id' => $id, 'user_id' => $userId]);
         $document = $stmt->fetch(\PDO::FETCH_ASSOC);
@@ -255,8 +257,7 @@ class DocumentController
         
         // Check edit permission if required
         if ($requireEdit) {
-            $hasEditAccess = ($document['is_owner'] == 1) || 
-                           ($document['share_permission'] === 'edit');
+            $hasEditAccess = ($document['is_owner'] == 1);
             if (!$hasEditAccess) {
                 return null;
             }
