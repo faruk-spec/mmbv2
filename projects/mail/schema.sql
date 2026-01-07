@@ -142,6 +142,7 @@ CREATE TABLE IF NOT EXISTS `mail_domains` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `subscriber_id` INT UNSIGNED NOT NULL COMMENT 'Owner subscriber',
     `domain_name` VARCHAR(255) NOT NULL UNIQUE,
+    `description` TEXT NULL,
     `is_verified` TINYINT(1) DEFAULT 0,
     `verification_token` VARCHAR(64) NULL,
     `verification_method` ENUM('txt', 'cname', 'mx') DEFAULT 'txt',
@@ -150,7 +151,10 @@ CREATE TABLE IF NOT EXISTS `mail_domains` (
     `ssl_certificate` TEXT NULL,
     `ssl_private_key` TEXT NULL,
     `catch_all_enabled` TINYINT(1) DEFAULT 0,
+    `catch_all_email` VARCHAR(255) NULL,
     `catch_all_mailbox_id` INT UNSIGNED NULL,
+    `dkim_private_key` TEXT NULL,
+    `dkim_public_key` TEXT NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP,
     `verified_at` TIMESTAMP NULL,
@@ -183,7 +187,7 @@ CREATE TABLE IF NOT EXISTS `mail_dns_records` (
 -- ============================================
 
 -- Mail User Roles table - Platform Super Admin, Subscriber (Account Owner), Domain Admin, End User
-CREATE TABLE IF NOT EXISTS `mail_mail_user_roles` (
+CREATE TABLE IF NOT EXISTS `mail_user_roles` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `mmb_user_id` INT UNSIGNED NOT NULL COMMENT 'Reference to main MMB users',
     `subscriber_id` INT UNSIGNED NULL COMMENT 'NULL for platform super admin only',
@@ -228,6 +232,7 @@ CREATE TABLE IF NOT EXISTS `mail_mailboxes` (
     `username` VARCHAR(100) NOT NULL,
     `password` VARCHAR(255) NOT NULL COMMENT 'Hashed password for SMTP/IMAP auth',
     `display_name` VARCHAR(255) NULL,
+    `signature` TEXT NULL COMMENT 'Email signature',
     `role_type` ENUM('subscriber_owner', 'domain_admin', 'end_user') DEFAULT 'end_user',
     `added_by_user_id` INT UNSIGNED NULL COMMENT 'Subscriber who added this mailbox',
     `storage_quota` BIGINT UNSIGNED DEFAULT 1073741824 COMMENT 'Bytes, default 1GB',
@@ -274,19 +279,27 @@ CREATE TABLE IF NOT EXISTS `mail_user_invitations` (
 -- Email Aliases table - Email forwarding and aliases
 CREATE TABLE IF NOT EXISTS `mail_aliases` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `subscriber_id` INT UNSIGNED NOT NULL,
     `domain_id` INT UNSIGNED NOT NULL,
     `source_email` VARCHAR(255) NOT NULL,
-    `destination_emails` TEXT NOT NULL COMMENT 'Comma-separated list of destination emails',
+    `alias_email` VARCHAR(255) NOT NULL,
+    `destination_type` ENUM('mailbox', 'external') DEFAULT 'mailbox',
+    `destination_mailbox_id` INT UNSIGNED NULL,
+    `destination_email` VARCHAR(255) NULL,
+    `destination_emails` TEXT NULL COMMENT 'Comma-separated list of destination emails (legacy)',
     `is_active` TINYINT(1) DEFAULT 1,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (`subscriber_id`) REFERENCES `mail_subscribers`(`id`) ON DELETE CASCADE,
     FOREIGN KEY (`domain_id`) REFERENCES `mail_domains`(`id`) ON DELETE CASCADE,
+    INDEX `idx_subscriber_id` (`subscriber_id`),
     INDEX `idx_domain_id` (`domain_id`),
-    INDEX `idx_source_email` (`source_email`)
+    INDEX `idx_source_email` (`source_email`),
+    INDEX `idx_alias_email` (`alias_email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Mail Folders table - Inbox, Sent, Drafts, Trash, Custom folders
-CREATE TABLE IF NOT EXISTS `mail_mail_folders` (
+CREATE TABLE IF NOT EXISTS `mail_folders` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `mailbox_id` INT UNSIGNED NOT NULL,
     `folder_name` VARCHAR(100) NOT NULL,
@@ -297,14 +310,14 @@ CREATE TABLE IF NOT EXISTS `mail_mail_folders` (
     `sort_order` INT UNSIGNED DEFAULT 0,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (`mailbox_id`) REFERENCES `mail_mailboxes`(`id`) ON DELETE CASCADE,
-    FOREIGN KEY (`parent_folder_id`) REFERENCES `mail_mail_folders`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`parent_folder_id`) REFERENCES `mail_folders`(`id`) ON DELETE CASCADE,
     INDEX `idx_mailbox_id` (`mailbox_id`),
     INDEX `idx_folder_type` (`folder_type`),
     UNIQUE KEY `unique_mailbox_folder` (`mailbox_id`, `folder_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Mail Messages table - Email storage
-CREATE TABLE IF NOT EXISTS `mail_mail_messages` (
+CREATE TABLE IF NOT EXISTS `mail_messages` (
     `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `mailbox_id` INT UNSIGNED NOT NULL,
     `folder_id` INT UNSIGNED NOT NULL,
@@ -334,7 +347,7 @@ CREATE TABLE IF NOT EXISTS `mail_mail_messages` (
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (`mailbox_id`) REFERENCES `mail_mailboxes`(`id`) ON DELETE CASCADE,
-    FOREIGN KEY (`folder_id`) REFERENCES `mail_mail_folders`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`folder_id`) REFERENCES `mail_folders`(`id`) ON DELETE CASCADE,
     INDEX `idx_mailbox_id` (`mailbox_id`),
     INDEX `idx_folder_id` (`folder_id`),
     INDEX `idx_message_id` (`message_id`),
@@ -346,7 +359,7 @@ CREATE TABLE IF NOT EXISTS `mail_mail_messages` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Mail Attachments table
-CREATE TABLE IF NOT EXISTS `mail_mail_attachments` (
+CREATE TABLE IF NOT EXISTS `mail_attachments` (
     `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `message_id` BIGINT UNSIGNED NOT NULL,
     `filename` VARCHAR(255) NOT NULL,
@@ -358,12 +371,12 @@ CREATE TABLE IF NOT EXISTS `mail_mail_attachments` (
     `is_inline` TINYINT(1) DEFAULT 0,
     `checksum` VARCHAR(64) NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (`message_id`) REFERENCES `mail_mail_messages`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`message_id`) REFERENCES `mail_messages`(`id`) ON DELETE CASCADE,
     INDEX `idx_message_id` (`message_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Mail Filters table - Auto-reply, forwarding, spam rules
-CREATE TABLE IF NOT EXISTS `mail_mail_filters` (
+CREATE TABLE IF NOT EXISTS `mail_filters` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `mailbox_id` INT UNSIGNED NOT NULL,
     `filter_name` VARCHAR(100) NOT NULL,
@@ -452,7 +465,7 @@ CREATE TABLE IF NOT EXISTS `mail_email_templates` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Blacklist/Whitelist table
-CREATE TABLE IF NOT EXISTS `mail_mail_lists` (
+CREATE TABLE IF NOT EXISTS `mail_lists` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `mailbox_id` INT UNSIGNED NULL COMMENT 'NULL for global lists',
     `list_type` ENUM('blacklist', 'whitelist') NOT NULL,
@@ -466,7 +479,7 @@ CREATE TABLE IF NOT EXISTS `mail_mail_lists` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Mail Queue table - For outgoing emails
-CREATE TABLE IF NOT EXISTS `mail_mail_queue` (
+CREATE TABLE IF NOT EXISTS `mail_queue` (
     `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `mailbox_id` INT UNSIGNED NOT NULL,
     `from_email` VARCHAR(255) NOT NULL,
@@ -492,7 +505,7 @@ CREATE TABLE IF NOT EXISTS `mail_mail_queue` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Statistics table
-CREATE TABLE IF NOT EXISTS `mail_mail_statistics` (
+CREATE TABLE IF NOT EXISTS `mail_statistics` (
     `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `domain_id` INT UNSIGNED NULL,
     `mailbox_id` INT UNSIGNED NULL,
@@ -514,7 +527,7 @@ CREATE TABLE IF NOT EXISTS `mail_mail_statistics` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Sessions table - For webmail sessions
-CREATE TABLE IF NOT EXISTS `mail_mail_sessions` (
+CREATE TABLE IF NOT EXISTS `mail_sessions` (
     `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `mailbox_id` INT UNSIGNED NOT NULL,
     `session_token` VARCHAR(64) NOT NULL UNIQUE,

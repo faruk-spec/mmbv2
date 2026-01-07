@@ -203,6 +203,64 @@ class MailAdminController extends BaseController
     }
     
     /**
+     * View Subscriber Billing History
+     */
+    public function subscriberBilling($id)
+    {
+        $subscriber = $this->db->fetch(
+            "SELECT s.*, s.account_name as username, s.billing_email as email, 
+                    sub.status as subscription_status,
+                    sp.plan_name, sp.price_monthly, sp.price_yearly
+             FROM mail_subscribers s
+             LEFT JOIN mail_subscriptions sub ON s.id = sub.subscriber_id
+             LEFT JOIN mail_subscription_plans sp ON sub.plan_id = sp.id
+             WHERE s.id = ?",
+            [$id]
+        );
+        
+        if (!$subscriber) {
+            $this->flash('error', 'Subscriber not found');
+            $this->redirect('/admin/projects/mail/subscribers');
+            return;
+        }
+        
+        // Get billing history
+        $billingHistory = $this->db->query(
+            "SELECT * FROM mail_billing_history 
+             WHERE subscriber_id = ?
+             ORDER BY created_at DESC
+             LIMIT 50",
+            [$id]
+        )->fetchAll();
+        
+        // Get payments
+        $payments = $this->db->query(
+            "SELECT * FROM mail_payments 
+             WHERE subscriber_id = ?
+             ORDER BY created_at DESC
+             LIMIT 50",
+            [$id]
+        )->fetchAll();
+        
+        // Get invoices
+        $invoices = $this->db->query(
+            "SELECT * FROM mail_invoices 
+             WHERE subscriber_id = ?
+             ORDER BY created_at DESC
+             LIMIT 50",
+            [$id]
+        )->fetchAll();
+        
+        $this->view('admin/mail/subscriber-billing', [
+            'subscriber' => $subscriber,
+            'billingHistory' => $billingHistory,
+            'payments' => $payments,
+            'invoices' => $invoices,
+            'title' => 'Billing History - ' . $subscriber['account_name']
+        ]);
+    }
+    
+    /**
      * Suspend Subscriber
      */
     public function suspendSubscriber()

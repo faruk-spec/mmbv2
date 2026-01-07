@@ -18,7 +18,11 @@ class DashboardController extends BaseController
     
     public function __construct()
     {
-        $this->requireAuth();
+        // Check authentication
+        if (!Auth::check()) {
+            header('Location: /login');
+            exit;
+        }
         
         // Initialize database with error handling
         try {

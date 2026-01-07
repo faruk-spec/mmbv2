@@ -294,7 +294,7 @@ class SubscriberController extends BaseController
             );
             
             // Create default folders for the new mailbox
-            $mailboxId = $this->db->getConnection()->lastInsertId();
+            $mailboxId = $this->db->lastInsertId();
             $this->createDefaultFolders($mailboxId);
             
             $this->flash('success', 'User created successfully');
@@ -465,7 +465,7 @@ class SubscriberController extends BaseController
             [$userId, Auth::user()->name ?? 'Account']
         );
         
-        $subscriberId = $this->db->getConnection()->lastInsertId();
+        $subscriberId = $this->db->lastInsertId();
         
         // Create subscription
         $this->db->query(
@@ -560,6 +560,14 @@ class SubscriberController extends BaseController
             return;
         }
         
+        // Check if plan parameter is provided (direct upgrade link)
+        $planParam = isset($_GET['plan']) ? intval($_GET['plan']) : 0;
+        
+        if ($planParam > 0) {
+            // Direct upgrade - process immediately
+            return $this->processDirectUpgrade($planParam);
+        }
+        
         // Get current subscription
         $subscription = $this->db->fetch(
             "SELECT s.*, sub.*, sp.plan_name, sp.price_monthly, sp.price_yearly, sp.sort_order
@@ -586,6 +594,63 @@ class SubscriberController extends BaseController
     }
     
     /**
+     * Process direct upgrade from GET parameter
+     */
+    private function processDirectUpgrade($planId)
+    {
+        // Validate plan
+        $plan = $this->db->fetch(
+            "SELECT * FROM mail_subscription_plans WHERE id = ? AND is_active = 1",
+            [$planId]
+        );
+        
+        if (!$plan) {
+            $this->flash('error', 'Invalid plan selected');
+            $this->redirect('/projects/mail/subscriber/upgrade');
+            return;
+        }
+        
+        // Get current subscription
+        $currentSubscription = $this->db->fetch(
+            "SELECT * FROM mail_subscriptions WHERE subscriber_id = ? AND status = 'active'",
+            [$this->subscriberId]
+        );
+        
+        if (!$currentSubscription) {
+            $this->flash('error', 'No active subscription found');
+            $this->redirect('/projects/mail/subscribe');
+            return;
+        }
+        
+        // Update subscription
+        $this->db->query(
+            "UPDATE mail_subscriptions SET plan_id = ?, updated_at = NOW() WHERE id = ?",
+            [$planId, $currentSubscription['id']]
+        );
+        
+        // Log the upgrade
+        try {
+            $this->db->query(
+                "INSERT INTO mail_billing_history (subscriber_id, subscription_id, transaction_type, 
+                                                   amount, description, created_at)
+                 VALUES (?, ?, 'upgrade', ?, ?, NOW())",
+                [
+                    $this->subscriberId,
+                    $currentSubscription['id'],
+                    $plan['price_monthly'],
+                    "Upgraded to {$plan['plan_name']} plan"
+                ]
+            );
+        } catch (\Exception $e) {
+            // If billing history insert fails, log but continue
+            error_log("Failed to log upgrade to billing history");
+        }
+        
+        $this->flash('success', "Successfully upgraded to {$plan['plan_name']} plan!");
+        $this->redirect('/projects/mail/subscriber/dashboard');
+    }
+    
+    /**
      * Process plan upgrade
      */
     public function upgradePlan()
@@ -596,7 +661,8 @@ class SubscriberController extends BaseController
         }
         
         if (!$this->isOwner) {
-            $this->jsonError('Access denied. Subscriber owner access required.');
+            $this->flash('error', 'Access denied. Subscriber owner access required.');
+            $this->redirect('/projects/mail');
             return;
         }
         
@@ -609,7 +675,8 @@ class SubscriberController extends BaseController
         );
         
         if (!$plan) {
-            $this->jsonError('Invalid plan selected');
+            $this->flash('error', 'Invalid plan selected');
+            $this->redirect('/projects/mail/subscriber/upgrade');
             return;
         }
         
@@ -620,7 +687,8 @@ class SubscriberController extends BaseController
         );
         
         if (!$currentSubscription) {
-            $this->jsonError('No active subscription found');
+            $this->flash('error', 'No active subscription found');
+            $this->redirect('/projects/mail/subscribe');
             return;
         }
         
@@ -631,19 +699,25 @@ class SubscriberController extends BaseController
         );
         
         // Log the upgrade
-        $this->db->query(
-            "INSERT INTO mail_billing_history (subscriber_id, subscription_id, transaction_type, 
-                                               amount, description, created_at)
-             VALUES (?, ?, 'upgrade', ?, ?, NOW())",
-            [
-                $this->subscriberId,
-                $currentSubscription['id'],
-                $plan['price_monthly'],
-                "Upgraded to {$plan['plan_name']} plan"
-            ]
-        );
+        try {
+            $this->db->query(
+                "INSERT INTO mail_billing_history (subscriber_id, subscription_id, transaction_type, 
+                                                   amount, description, created_at)
+                 VALUES (?, ?, 'upgrade', ?, ?, NOW())",
+                [
+                    $this->subscriberId,
+                    $currentSubscription['id'],
+                    $plan['price_monthly'],
+                    "Upgraded to {$plan['plan_name']} plan"
+                ]
+            );
+        } catch (\Exception $e) {
+            // If billing history insert fails, log but continue
+            error_log("Failed to log upgrade to billing history");
+        }
         
-        $this->jsonSuccess('Plan upgraded successfully', ['redirect' => '/projects/mail/subscriber/dashboard']);
+        $this->flash('success', "Successfully upgraded to {$plan['plan_name']} plan!");
+        $this->redirect('/projects/mail/subscriber/dashboard');
     }
     
     /**
@@ -657,7 +731,8 @@ class SubscriberController extends BaseController
         }
         
         if (!$this->isOwner) {
-            $this->jsonError('Access denied. Subscriber owner access required.');
+            $this->flash('error', 'Access denied. Subscriber owner access required.');
+            $this->redirect('/projects/mail');
             return;
         }
         
@@ -670,7 +745,8 @@ class SubscriberController extends BaseController
         );
         
         if (!$plan) {
-            $this->jsonError('Invalid plan selected');
+            $this->flash('error', 'Invalid plan selected');
+            $this->redirect('/projects/mail/subscriber/subscription');
             return;
         }
         
@@ -681,7 +757,8 @@ class SubscriberController extends BaseController
         );
         
         if (!$currentSubscription) {
-            $this->jsonError('No active subscription found');
+            $this->flash('error', 'No active subscription found');
+            $this->redirect('/projects/mail/subscribe');
             return;
         }
         
@@ -692,19 +769,25 @@ class SubscriberController extends BaseController
         );
         
         // Log the downgrade
-        $this->db->query(
-            "INSERT INTO mail_billing_history (subscriber_id, subscription_id, transaction_type, 
-                                               amount, description, created_at)
-             VALUES (?, ?, 'downgrade', ?, ?, NOW())",
-            [
-                $this->subscriberId,
-                $currentSubscription['id'],
-                $plan['price_monthly'],
-                "Downgraded to {$plan['plan_name']} plan"
-            ]
-        );
+        try {
+            $this->db->query(
+                "INSERT INTO mail_billing_history (subscriber_id, subscription_id, transaction_type, 
+                                                   amount, description, created_at)
+                 VALUES (?, ?, 'downgrade', ?, ?, NOW())",
+                [
+                    $this->subscriberId,
+                    $currentSubscription['id'],
+                    $plan['price_monthly'],
+                    "Downgraded to {$plan['plan_name']} plan"
+                ]
+            );
+        } catch (\Exception $e) {
+            // If billing history insert fails, log but continue
+            error_log("Failed to log downgrade to billing history");
+        }
         
-        $this->jsonSuccess('Plan downgraded successfully', ['redirect' => '/projects/mail/subscriber/dashboard']);
+        $this->flash('success', "Successfully downgraded to {$plan['plan_name']} plan!");
+        $this->redirect('/projects/mail/subscriber/dashboard');
     }
     
     /**

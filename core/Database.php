@@ -181,6 +181,20 @@ class Database
     }
     
     /**
+     * Get last insert ID
+     * 
+     * @return int The ID of the last inserted row
+     * @throws \PDOException If no insert has been performed or connection is invalid
+     */
+    public function lastInsertId(): int
+    {
+        if ($this->connection === null) {
+            throw new \RuntimeException('Database connection not established');
+        }
+        return (int) $this->connection->lastInsertId();
+    }
+    
+    /**
      * Connect to a specific project database
      */
     public static function projectConnection(string $projectName): Database
