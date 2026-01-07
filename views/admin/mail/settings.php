@@ -1,7 +1,7 @@
-<?php
-$title = 'System Settings - Mail Server';
-require_once __DIR__ . '/../../layouts/admin.php';
-?>
+<?php use Core\View; ?>
+<?php View::extend('admin'); ?>
+
+<?php View::section('content'); ?>
 
 <div class="content-header">
     <div class="container-fluid">
@@ -385,4 +385,4 @@ function testMailConnection() {
 }
 </script>
 
-<?php require_once __DIR__ . '/../../layouts/admin.php'; ?>
+<?php View::endSection(); ?>

@@ -184,12 +184,20 @@ class MailAdminController extends BaseController
             [$id]
         )->fetchAll();
         
+        // Get all available plans for changing subscription
+        $plans = $this->db->query(
+            "SELECT * FROM mail_subscription_plans 
+             WHERE is_active = 1 
+             ORDER BY sort_order ASC"
+        )->fetchAll();
+        
         $this->view('admin/mail/subscriber-details', [
             'subscriber' => $subscriber,
             'domains' => $domains,
             'mailboxes' => $mailboxes,
             'usageStats' => $usageStats,
             'payments' => $payments,
+            'plans' => $plans,
             'title' => 'Subscriber Details - ' . $subscriber['account_name']
         ]);
     }
@@ -233,6 +241,58 @@ class MailAdminController extends BaseController
         $this->logAdminAction('activate_subscriber', 'subscriber', $id, "Activated subscriber");
         
         $this->jsonSuccess('Subscriber activated successfully');
+    }
+    
+    /**
+     * Delete Subscriber and all associated data
+     */
+    public function deleteSubscriber()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->jsonError('Invalid request method');
+            return;
+        }
+        
+        $id = $_POST['subscriber_id'] ?? 0;
+        
+        if (!$id) {
+            $this->jsonError('Invalid subscriber ID');
+            return;
+        }
+        
+        // Get subscriber info before deletion for logging
+        $subscriber = $this->db->fetch(
+            "SELECT account_name FROM mail_subscribers WHERE id = ?",
+            [$id]
+        );
+        
+        if (!$subscriber) {
+            $this->jsonError('Subscriber not found');
+            return;
+        }
+        
+        try {
+            // The database foreign keys with CASCADE will handle deletion of:
+            // - mail_subscriptions
+            // - mail_domains
+            // - mail_mailboxes
+            // - mail_aliases
+            // - mail_messages
+            // - mail_payments
+            // - mail_billing_history
+            // etc.
+            
+            $this->db->query("DELETE FROM mail_subscribers WHERE id = ?", [$id]);
+            
+            // Log admin action
+            $this->logAdminAction('delete_subscriber', 'subscriber', $id, 
+                "Deleted subscriber: {$subscriber['account_name']}");
+            
+            $this->jsonSuccess('Subscriber and all associated data deleted successfully');
+        } catch (\Exception $e) {
+            error_log("Error deleting subscriber: " . $e->getMessage());
+            $this->jsonError('Failed to delete subscriber: ' . $e->getMessage());
+        }
     }
     
     /**
@@ -300,6 +360,75 @@ class MailAdminController extends BaseController
     }
     
     /**
+     * Create Subscription for User
+     */
+    public function createSubscription()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->redirect('/admin/projects/mail/subscribers');
+        }
+        
+        $mmbUserId = (int)($_POST['mmb_user_id'] ?? 0);
+        $planId = (int)($_POST['plan_id'] ?? 0);
+        $accountName = trim($_POST['account_name'] ?? '');
+        $billingCycle = in_array($_POST['billing_cycle'] ?? '', ['monthly', 'yearly']) 
+            ? $_POST['billing_cycle'] 
+            : 'monthly';
+        
+        // Validate inputs
+        if (!$mmbUserId || !$planId || !$accountName) {
+            $this->flash('error', 'All fields are required');
+            $this->redirect('/admin/projects/mail/subscribers');
+        }
+        
+        // Check if user exists
+        $user = $this->db->fetch("SELECT id, email FROM users WHERE id = ?", [$mmbUserId]);
+        if (!$user) {
+            $this->flash('error', 'User not found');
+            $this->redirect('/admin/projects/mail/subscribers');
+        }
+        
+        // Check if subscriber already exists
+        $existingSubscriber = $this->db->fetch(
+            "SELECT id FROM mail_subscribers WHERE mmb_user_id = ?",
+            [$mmbUserId]
+        );
+        
+        if ($existingSubscriber) {
+            $this->flash('error', 'User already has a mail subscription');
+            $this->redirect('/admin/projects/mail/subscribers');
+        }
+        
+        // Create subscriber
+        $this->db->query(
+            "INSERT INTO mail_subscribers (mmb_user_id, account_name, billing_email, status, created_at)
+             VALUES (?, ?, ?, 'active', NOW())",
+            [$mmbUserId, $accountName, $user['email']]
+        );
+        
+        $subscriberId = $this->db->getConnection()->lastInsertId();
+        
+        // Create subscription
+        $periodStart = date('Y-m-d H:i:s');
+        $periodEnd = $billingCycle === 'yearly' 
+            ? date('Y-m-d H:i:s', strtotime('+1 year'))
+            : date('Y-m-d H:i:s', strtotime('+1 month'));
+        
+        $this->db->query(
+            "INSERT INTO mail_subscriptions 
+             (subscriber_id, plan_id, status, billing_cycle, current_period_start, current_period_end, created_at)
+             VALUES (?, ?, 'active', ?, ?, ?, NOW())",
+            [$subscriberId, $planId, $billingCycle, $periodStart, $periodEnd]
+        );
+        
+        // Log admin action
+        $this->logAdminAction('create_subscription', 'subscriber', $subscriberId, "Created subscription for user ID: $mmbUserId");
+        
+        $this->flash('success', 'Subscription created successfully');
+        $this->redirect('/admin/projects/mail/subscribers/' . $subscriberId);
+    }
+    
+    /**
      * Manage Subscription Plans
      */
     public function plans()
@@ -356,6 +485,7 @@ class MailAdminController extends BaseController
         $planName = $_POST['plan_name'] ?? '';
         $priceMonthly = $_POST['price_monthly'] ?? 0;
         $priceYearly = $_POST['price_yearly'] ?? 0;
+        $currency = $_POST['currency'] ?? 'USD';
         $maxUsers = $_POST['max_users'] ?? 1;
         $storagePerUserGb = $_POST['storage_per_user_gb'] ?? 1;
         $dailySendLimit = $_POST['daily_send_limit'] ?? 100;
@@ -363,34 +493,127 @@ class MailAdminController extends BaseController
         $maxDomains = $_POST['max_domains'] ?? 1;
         $maxAliases = $_POST['max_aliases'] ?? 5;
         $description = $_POST['description'] ?? '';
+        $isActive = isset($_POST['is_active']) ? 1 : 0;
         
-        $this->db->query(
-            "UPDATE mail_subscription_plans 
-             SET plan_name = ?, price_monthly = ?, price_yearly = ?, max_users = ?,
-                 storage_per_user_gb = ?, daily_send_limit = ?, max_attachment_size_mb = ?,
-                 max_domains = ?, max_aliases = ?, description = ?, updated_at = NOW()
-             WHERE id = ?",
-            [$planName, $priceMonthly, $priceYearly, $maxUsers, $storagePerUserGb, 
-             $dailySendLimit, $maxAttachmentSizeMb, $maxDomains, $maxAliases, $description, $id]
-        );
+        // Check if currency column exists
+        $columns = $this->db->query("SHOW COLUMNS FROM mail_subscription_plans LIKE 'currency'")->fetchAll();
+        
+        if (!empty($columns)) {
+            // Currency column exists, update with currency
+            $this->db->query(
+                "UPDATE mail_subscription_plans 
+                 SET plan_name = ?, price_monthly = ?, price_yearly = ?, currency = ?, max_users = ?,
+                     storage_per_user_gb = ?, daily_send_limit = ?, max_attachment_size_mb = ?,
+                     max_domains = ?, max_aliases = ?, description = ?, is_active = ?, updated_at = NOW()
+                 WHERE id = ?",
+                [$planName, $priceMonthly, $priceYearly, $currency, $maxUsers, $storagePerUserGb, 
+                 $dailySendLimit, $maxAttachmentSizeMb, $maxDomains, $maxAliases, $description, $isActive, $id]
+            );
+        } else {
+            // Currency column doesn't exist, update without it
+            $this->db->query(
+                "UPDATE mail_subscription_plans 
+                 SET plan_name = ?, price_monthly = ?, price_yearly = ?, max_users = ?,
+                     storage_per_user_gb = ?, daily_send_limit = ?, max_attachment_size_mb = ?,
+                     max_domains = ?, max_aliases = ?, description = ?, is_active = ?, updated_at = NOW()
+                 WHERE id = ?",
+                [$planName, $priceMonthly, $priceYearly, $maxUsers, $storagePerUserGb, 
+                 $dailySendLimit, $maxAttachmentSizeMb, $maxDomains, $maxAliases, $description, $isActive, $id]
+            );
+        }
         
         // Update features if provided
         if (isset($_POST['features'])) {
             foreach ($_POST['features'] as $featureKey => $isEnabled) {
-                $this->db->query(
-                    "UPDATE mail_plan_features 
-                     SET is_enabled = ?
-                     WHERE plan_id = ? AND feature_key = ?",
-                    [$isEnabled ? 1 : 0, $id, $featureKey]
+                $featureValue = $_POST['feature_values'][$featureKey] ?? null;
+                
+                // Check if feature exists
+                $existing = $this->db->fetch(
+                    "SELECT id FROM mail_plan_features WHERE plan_id = ? AND feature_key = ?",
+                    [$id, $featureKey]
                 );
+                
+                if ($existing) {
+                    // Update existing feature
+                    $this->db->query(
+                        "UPDATE mail_plan_features 
+                         SET is_enabled = ?, feature_value = ?
+                         WHERE plan_id = ? AND feature_key = ?",
+                        [$isEnabled ? 1 : 0, $featureValue, $id, $featureKey]
+                    );
+                } else {
+                    // Insert new feature (this handles custom features added via modal)
+                    // Try to get feature name from a hidden field or use the key
+                    $featureName = $_POST['feature_names'][$featureKey] ?? ucwords(str_replace('_', ' ', $featureKey));
+                    
+                    $this->db->query(
+                        "INSERT INTO mail_plan_features (plan_id, feature_key, feature_name, is_enabled, feature_value)
+                         VALUES (?, ?, ?, ?, ?)",
+                        [$id, $featureKey, $featureName, $isEnabled ? 1 : 0, $featureValue]
+                    );
+                }
+            }
+        }
+        
+        // Also handle new features that were added (with empty checkboxes)
+        if (isset($_POST['new_features'])) {
+            $newFeatures = json_decode($_POST['new_features'], true);
+            if (is_array($newFeatures)) {
+                foreach ($newFeatures as $newFeature) {
+                    $this->db->query(
+                        "INSERT INTO mail_plan_features (plan_id, feature_key, feature_name, is_enabled, feature_value, created_at)
+                         VALUES (?, ?, ?, ?, ?, NOW())
+                         ON DUPLICATE KEY UPDATE 
+                         is_enabled = VALUES(is_enabled), 
+                         feature_value = VALUES(feature_value)",
+                        [$id, $newFeature['key'], $newFeature['name'], $newFeature['enabled'] ? 1 : 0, $newFeature['value'] ?? null]
+                    );
+                }
             }
         }
         
         // Log admin action
         $this->logAdminAction('update_plan', 'plan', $id, "Updated plan: $planName");
         
-        $this->success('Plan updated successfully');
-        redirect('/admin/projects/mail/plans');
+        $this->flash('success', 'Plan updated successfully');
+        $this->redirect('/admin/projects/mail/plans');
+    }
+    
+    /**
+     * Set universal currency for all plans
+     */
+    public function setUniversalCurrency()
+    {
+        $currency = $_POST['currency'] ?? 'USD';
+        
+        // Validate currency
+        $validCurrencies = ['USD', 'EUR', 'GBP', 'INR', 'AUD', 'CAD', 'JPY', 'CNY'];
+        if (!in_array($currency, $validCurrencies)) {
+            $this->flash('error', 'Invalid currency selected');
+            $this->redirect('/admin/projects/mail/plans');
+            return;
+        }
+        
+        // Check if currency column exists
+        $columns = $this->db->query("SHOW COLUMNS FROM mail_subscription_plans LIKE 'currency'")->fetchAll();
+        
+        if (empty($columns)) {
+            $this->flash('error', 'Currency column not found. Please run the database migration first: projects/mail/migrations/add_currency_column.sql');
+            $this->redirect('/admin/projects/mail/plans');
+            return;
+        }
+        
+        // Update all plans
+        $this->db->query(
+            "UPDATE mail_subscription_plans SET currency = ?, updated_at = NOW()",
+            [$currency]
+        );
+        
+        // Log admin action
+        $this->logAdminAction('set_universal_currency', 'system', 0, "Set universal currency to: $currency");
+        
+        $this->flash('success', "Currency updated to $currency for all plans");
+        $this->redirect('/admin/projects/mail/plans');
     }
     
     /**
@@ -405,7 +628,8 @@ class MailAdminController extends BaseController
         $domains = $this->db->query(
             "SELECT d.*, 
                     s.account_name as subscriber_name,
-                    s.account_name as username
+                    s.account_name as username,
+                    (SELECT COUNT(*) FROM mail_mailboxes m WHERE m.domain_id = d.id) as mailbox_count
              FROM mail_domains d
              LEFT JOIN mail_subscribers s ON d.subscriber_id = s.id
              ORDER BY d.created_at DESC
@@ -425,11 +649,89 @@ class MailAdminController extends BaseController
     }
     
     /**
+     * Edit Domain
+     */
+    public function editDomain($id)
+    {
+        $domain = $this->db->fetch("SELECT * FROM mail_domains WHERE id = ?", [$id]);
+        
+        if (!$domain) {
+            $this->flash('error', 'Domain not found');
+            $this->redirect('/admin/projects/mail/domains');
+        }
+        
+        $subscriber = $this->db->fetch("SELECT * FROM mail_subscribers WHERE id = ?", [$domain['subscriber_id']]);
+        
+        $this->view('admin/mail/edit-domain', [
+            'domain' => $domain,
+            'subscriber' => $subscriber,
+            'title' => 'Edit Domain - ' . $domain['domain_name']
+        ]);
+    }
+    
+    /**
+     * Update Domain
+     */
+    public function updateDomain($id)
+    {
+        $isActive = isset($_POST['is_active']) ? 1 : 0;
+        $catchAllEmail = $_POST['catch_all_email'] ?? null;
+        $description = $_POST['description'] ?? '';
+        
+        $this->db->query(
+            "UPDATE mail_domains 
+             SET is_active = ?, catch_all_email = ?, description = ?, updated_at = NOW()
+             WHERE id = ?",
+            [$isActive, $catchAllEmail, $description, $id]
+        );
+        
+        $domain = $this->db->fetch("SELECT domain_name FROM mail_domains WHERE id = ?", [$id]);
+        $this->logAdminAction('update_domain', 'domain', $id, "Updated domain: " . $domain['domain_name']);
+        
+        $this->flash('success', 'Domain updated successfully');
+        $this->redirect('/admin/projects/mail/domains');
+    }
+    
+    /**
+     * Activate Domain
+     */
+    public function activateDomain($id)
+    {
+        $this->db->query("UPDATE mail_domains SET is_active = 1, updated_at = NOW() WHERE id = ?", [$id]);
+        
+        $domain = $this->db->fetch("SELECT domain_name FROM mail_domains WHERE id = ?", [$id]);
+        $this->logAdminAction('activate_domain', 'domain', $id, "Activated domain: " . $domain['domain_name']);
+        
+        $this->json(['success' => true, 'message' => 'Domain activated successfully']);
+    }
+    
+    /**
+     * Suspend Domain
+     */
+    public function suspendDomain($id)
+    {
+        $this->db->query("UPDATE mail_domains SET is_active = 0, updated_at = NOW() WHERE id = ?", [$id]);
+        
+        $domain = $this->db->fetch("SELECT domain_name FROM mail_domains WHERE id = ?", [$id]);
+        $this->logAdminAction('suspend_domain', 'domain', $id, "Suspended domain: " . $domain['domain_name']);
+        
+        $this->json(['success' => true, 'message' => 'Domain suspended successfully']);
+    }
+    
+    /**
      * View Abuse Reports
      */
     public function abuseReports()
     {
         $status = $_GET['status'] ?? 'pending';
+        
+        // Get statistics
+        $stats = [
+            'pending' => $this->db->fetch("SELECT COUNT(*) as count FROM mail_abuse_reports WHERE status = 'pending'")['count'] ?? 0,
+            'investigating' => $this->db->fetch("SELECT COUNT(*) as count FROM mail_abuse_reports WHERE status = 'investigating'")['count'] ?? 0,
+            'resolved' => $this->db->fetch("SELECT COUNT(*) as count FROM mail_abuse_reports WHERE status = 'resolved'")['count'] ?? 0,
+            'dismissed' => $this->db->fetch("SELECT COUNT(*) as count FROM mail_abuse_reports WHERE status = 'dismissed'")['count'] ?? 0,
+        ];
         
         $reports = $this->db->query(
             "SELECT ar.*, 
@@ -448,6 +750,7 @@ class MailAdminController extends BaseController
         $this->view('admin/mail/abuse-reports', [
             'reports' => $reports,
             'currentStatus' => $status,
+            'stats' => $stats,
             'title' => 'Abuse Reports'
         ]);
     }
@@ -536,8 +839,8 @@ class MailAdminController extends BaseController
         // Log admin action
         $this->logAdminAction('update_settings', 'system', 0, "Updated system settings");
         
-        $this->success('Settings saved successfully');
-        redirect('/admin/projects/mail/settings');
+        $this->flash('success', 'Settings saved successfully');
+        $this->redirect('/admin/projects/mail/settings');
     }
     
     /**

@@ -4,7 +4,7 @@
  * Handles email inbox, composer, and email management operations
  */
 
-namespace Mail;
+namespace Controllers\Mail;
 
 use Controllers\BaseController;
 use Core\Auth;
@@ -20,7 +20,7 @@ class WebmailController extends BaseController
 
     public function __construct()
     {
-        // BaseController doesn't have a constructor, so no need to call parent::__construct()
+        // BaseController doesn't have a constructor, removed parent::__construct()
         
         // Initialize database with error handling
         try {
@@ -32,7 +32,7 @@ class WebmailController extends BaseController
     }
     
     /**
-     * Ensure database is available and load mailbox
+     * Ensure database and mailbox are available
      */
     private function ensureDatabaseAndMailbox()
     {
@@ -40,7 +40,7 @@ class WebmailController extends BaseController
             try {
                 $this->db = Database::getInstance();
             } catch (\Throwable $e) {
-                error_log('Failed to initialize database in WebmailController: ' . $e->getMessage());
+                error_log('Failed to initialize database: ' . $e->getMessage());
                 throw new \RuntimeException('Database is not available. Please try again later.');
             }
         }
@@ -54,23 +54,7 @@ class WebmailController extends BaseController
             );
             
             if (!$this->mailbox) {
-                // User doesn't have a mailbox yet - check if they're a subscriber owner
-                $subscriber = $this->db->fetch(
-                    "SELECT id FROM mail_subscribers WHERE mmb_user_id = ? LIMIT 1",
-                    [$userId]
-                );
-                
-                if ($subscriber) {
-                    // Redirect subscriber owner to create mailboxes first
-                    $this->flash('info', 'Please add a mailbox user to access webmail.');
-                    $this->redirect('/projects/mail/subscriber/users/add');
-                    exit;
-                } else {
-                    // User needs to subscribe first
-                    $this->flash('error', 'You need to subscribe to access webmail.');
-                    $this->redirect('/projects/mail/subscribe');
-                    exit;
-                }
+                throw new \RuntimeException('No active mailbox found');
             }
             
             $this->mailboxId = $this->mailbox['id'];
@@ -83,7 +67,6 @@ class WebmailController extends BaseController
      */
     public function inbox()
     {
-        // Ensure database and mailbox are available
         $this->ensureDatabaseAndMailbox();
         
         $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
@@ -172,16 +155,15 @@ class WebmailController extends BaseController
      */
     public function viewEmail($messageId)
     {
-        // Ensure database and mailbox are available
         $this->ensureDatabaseAndMailbox();
-
+        
         $message = $this->db->fetch(
             "SELECT * FROM mail_messages WHERE id = ? AND mailbox_id = ?",
             [$messageId, $this->mailboxId]
         );
 
         if (!$message) {
-            $this->error('Email not found');
+            $this->flash('error', 'Email not found');
             $this->redirect('/projects/mail/webmail');
             exit;
         }
@@ -212,7 +194,6 @@ class WebmailController extends BaseController
      */
     public function compose()
     {
-        // Ensure database and mailbox are available
         $this->ensureDatabaseAndMailbox();
         
         $replyTo = isset($_GET['reply']) ? (int)$_GET['reply'] : null;
@@ -251,7 +232,6 @@ class WebmailController extends BaseController
      */
     public function send()
     {
-        // Ensure database and mailbox are available
         $this->ensureDatabaseAndMailbox();
         
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -268,7 +248,7 @@ class WebmailController extends BaseController
 
         // Validation
         if (empty($to) || empty($subject)) {
-            $this->error('To and Subject fields are required');
+            $this->flash('error', 'To and Subject fields are required');
             $this->redirect('/projects/mail/webmail/compose');
             exit;
         }
@@ -292,7 +272,7 @@ class WebmailController extends BaseController
         );
 
         if ($sentToday['count'] >= $plan['daily_send_limit']) {
-            $this->error('Daily send limit reached. Please upgrade your plan.');
+            $this->flash('error', 'Daily send limit reached. Please upgrade your plan.');
             $this->redirect('/projects/mail/webmail/compose');
             exit;
         }
@@ -342,7 +322,7 @@ class WebmailController extends BaseController
             'received_at' => date('Y-m-d H:i:s')
         ]);
 
-        $this->success('Email queued for sending');
+        $this->flash('success', 'Email queued for sending');
         $this->redirect('/projects/mail/webmail');
     }
 
@@ -387,15 +367,14 @@ class WebmailController extends BaseController
      */
     public function moveToFolder()
     {
+        $this->ensureDatabaseAndMailbox();
+        
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             return;
         }
 
         $messageId = (int)$_POST['message_id'];
         $folderId = (int)$_POST['folder_id'];
-
-        // Ensure database and mailbox are available
-        $this->ensureDatabaseAndMailbox();
 
         $this->db->query(
             "UPDATE mail_messages SET folder_id = ? WHERE id = ? AND mailbox_id = ?",
@@ -410,12 +389,11 @@ class WebmailController extends BaseController
      */
     public function toggleRead()
     {
+        $this->ensureDatabaseAndMailbox();
+        
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             return;
         }
-
-        // Ensure database and mailbox are available
-        $this->ensureDatabaseAndMailbox();
 
         $messageId = (int)$_POST['message_id'];
         $isRead = (int)$_POST['is_read'];
@@ -433,12 +411,11 @@ class WebmailController extends BaseController
      */
     public function toggleStar()
     {
+        $this->ensureDatabaseAndMailbox();
+        
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             return;
         }
-        
-        // Ensure database and mailbox are available
-        $this->ensureDatabaseAndMailbox();
 
         $messageId = (int)$_POST['message_id'];
         $isStarred = (int)$_POST['is_starred'];
@@ -456,12 +433,11 @@ class WebmailController extends BaseController
      */
     public function delete()
     {
+        $this->ensureDatabaseAndMailbox();
+        
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             return;
         }
-        
-        // Ensure database and mailbox are available
-        $this->ensureDatabaseAndMailbox();
 
         $messageId = (int)$_POST['message_id'];
 
@@ -484,12 +460,11 @@ class WebmailController extends BaseController
      */
     public function bulkAction()
     {
+        $this->ensureDatabaseAndMailbox();
+        
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             return;
         }
-        
-        // Ensure database and mailbox are available
-        $this->ensureDatabaseAndMailbox();
 
         $action = $_POST['action'];
         $messageIds = isset($_POST['message_ids']) ? explode(',', $_POST['message_ids']) : [];
@@ -548,7 +523,6 @@ class WebmailController extends BaseController
      */
     public function downloadAttachment($attachmentId)
     {
-        // Ensure database and mailbox are available
         $this->ensureDatabaseAndMailbox();
         
         $attachment = $this->db->fetch(
@@ -559,7 +533,7 @@ class WebmailController extends BaseController
         );
 
         if (!$attachment || !file_exists($attachment['file_path'])) {
-            $this->error('Attachment not found');
+            $this->flash('error', 'Attachment not found');
             return;
         }
 

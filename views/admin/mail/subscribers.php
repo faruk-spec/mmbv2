@@ -1,3 +1,4 @@
+<?php use Core\View; ?>
 <?php View::extend('admin'); ?>
 
 <?php View::section('content'); ?>
@@ -13,6 +14,9 @@
                     Manage Subscribers
                 </h2>
                 <div>
+                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#createSubscriptionModal">
+                        <i class="fas fa-plus"></i> Create Subscription
+                    </button>
                     <a href="/admin/projects/mail" class="btn btn-secondary">
                         <i class="fas fa-arrow-left"></i> Back to Overview
                     </a>
@@ -128,6 +132,11 @@
                                                     <i class="fas fa-play"></i>
                                                 </button>
                                                 <?php endif; ?>
+                                                <button class="btn btn-danger" 
+                                                        onclick="deleteSubscription(<?= $subscriber['id'] ?>)" 
+                                                        title="Delete Subscription">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>
@@ -267,7 +276,98 @@ function activateSubscriber(id) {
         alert('An error occurred while activating the subscriber');
     });
 }
+
+// Delete subscription
+function deleteSubscription(id) {
+    if (!confirm('Are you sure you want to delete this subscription? This action cannot be undone and will remove all associated data including domains, mailboxes, and emails.')) {
+        return;
+    }
+    
+    const confirmText = prompt('Type "DELETE" to confirm deletion:');
+    if (confirmText !== 'DELETE') {
+        alert('Deletion cancelled. You must type DELETE to confirm.');
+        return;
+    }
+    
+    fetch('/admin/projects/mail/subscribers/delete', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `subscriber_id=${id}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Subscription deleted successfully');
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while deleting the subscription');
+    });
+}
 </script>
+
+<!-- Create Subscription Modal -->
+<div class="modal fade" id="createSubscriptionModal" tabindex="-1" role="dialog" aria-labelledby="createSubscriptionModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form method="POST" action="/admin/projects/mail/subscribers/create">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createSubscriptionModalLabel">
+                        <i class="fas fa-plus"></i> Create New Subscription
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="mmb_user_id">User ID *</label>
+                        <input type="number" class="form-control" id="mmb_user_id" name="mmb_user_id" required>
+                        <small class="form-text text-muted">Enter the main MMB user ID</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="account_name">Account Name *</label>
+                        <input type="text" class="form-control" id="account_name" name="account_name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="plan_id">Plan *</label>
+                        <select class="form-control" id="plan_id" name="plan_id" required>
+                            <option value="">Select a plan...</option>
+                            <?php
+                            $db = Core\Database::getInstance();
+                            $plans = $db->fetchAll("SELECT id, plan_name, price_monthly FROM mail_subscription_plans WHERE is_active = 1 ORDER BY sort_order");
+                            foreach ($plans as $plan):
+                            ?>
+                                <option value="<?= $plan['id'] ?>">
+                                    <?= htmlspecialchars($plan['plan_name']) ?> - $<?= number_format($plan['price_monthly'], 2) ?>/month
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="billing_cycle">Billing Cycle *</label>
+                        <select class="form-control" id="billing_cycle" name="billing_cycle" required>
+                            <option value="monthly">Monthly</option>
+                            <option value="yearly">Yearly</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-check"></i> Create Subscription
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 <?php View::endSection(); ?>
 

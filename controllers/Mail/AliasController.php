@@ -1,11 +1,12 @@
 <?php
 
-namespace Mail;
+namespace Controllers\Mail;
+
+use Core\View;
 
 use Controllers\BaseController;
 use Core\Auth;
 use Core\Database;
-use Core\View;
 
 /**
  * AliasController
@@ -19,47 +20,21 @@ class AliasController extends BaseController
     public function __construct()
     {
         parent::__construct();
+        $this->db = Database::getInstance();
         
-        // Initialize database with error handling
-        try {
-            $this->db = Database::getInstance();
-        } catch (\Throwable $e) {
-            error_log('Warning: Database initialization failed in AliasController: ' . $e->getMessage());
-            $this->db = null;
-        }
-    }
-    
-    /**
-     * Ensure database and subscriber access
-     */
-    private function ensureDatabaseAndSubscriber()
-    {
-        if ($this->db === null) {
-            try {
-                $this->db = Database::getInstance();
-            } catch (\Throwable $e) {
-                error_log('Failed to initialize database in AliasController: ' . $e->getMessage());
-                throw new \RuntimeException('Database is not available. Please try again later.');
-            }
+        // Get subscriber ID from session
+        $userId = Auth::id();
+        $mailbox = $this->db->fetch(
+            "SELECT subscriber_id FROM mail_mailboxes WHERE user_id = ? AND role_type = 'subscriber_owner'",
+            [$userId]
+        );
+        
+        if (!$mailbox) {
+            $this->error('Access denied. Subscriber owner access required.');
+            return;
         }
         
-        if ($this->subscriberId === null) {
-            // Get subscriber ID from authenticated user
-            $userId = Auth::id();
-            $subscriber = $this->db->fetch(
-                "SELECT id FROM mail_subscribers WHERE mmb_user_id = ?",
-                [$userId]
-            );
-            
-            if (!$subscriber) {
-                // User is not a subscriber - redirect to subscribe page
-                $this->flash('error', 'You need to subscribe to access this feature.');
-                $this->redirect('/projects/mail/subscribe');
-                exit;
-            }
-            
-            $this->subscriberId = $subscriber['id'];
-        }
+        $this->subscriberId = $mailbox['subscriber_id'];
     }
 
     /**
@@ -67,9 +42,6 @@ class AliasController extends BaseController
      */
     public function index()
     {
-        // Ensure database and subscriber access
-        $this->ensureDatabaseAndSubscriber();
-        
         // Check plan limits
         $plan = $this->db->fetch(
             "SELECT sp.max_aliases, 
@@ -105,9 +77,6 @@ class AliasController extends BaseController
      */
     public function create()
     {
-        // Ensure database and subscriber access
-        $this->ensureDatabaseAndSubscriber();
-        
         // Get verified domains
         $domains = $this->db->fetchAll(
             "SELECT * FROM mail_domains WHERE subscriber_id = ? AND is_verified = 1 AND is_active = 1",
@@ -136,9 +105,6 @@ class AliasController extends BaseController
      */
     public function store()
     {
-        // Ensure database and subscriber access
-        $this->ensureDatabaseAndSubscriber();
-        
         $aliasName = trim($_POST['alias_name'] ?? '');
         $domainId = intval($_POST['domain_id'] ?? 0);
         $destinationType = $_POST['destination_type'] ?? 'mailbox';
@@ -248,9 +214,6 @@ class AliasController extends BaseController
      */
     public function toggleStatus($aliasId)
     {
-        // Ensure database and subscriber access
-        $this->ensureDatabaseAndSubscriber();
-        
         $alias = $this->db->fetch(
             "SELECT * FROM mail_aliases WHERE id = ? AND subscriber_id = ?",
             [$aliasId, $this->subscriberId]
@@ -278,9 +241,6 @@ class AliasController extends BaseController
      */
     public function delete($aliasId)
     {
-        // Ensure database and subscriber access
-        $this->ensureDatabaseAndSubscriber();
-        
         $alias = $this->db->fetch(
             "SELECT * FROM mail_aliases WHERE id = ? AND subscriber_id = ?",
             [$aliasId, $this->subscriberId]

@@ -14,6 +14,11 @@ $baseUrl = '/projects/mail';
 $router->get($baseUrl, 'Mail\\DashboardController@index');
 $router->get($baseUrl . '/dashboard', 'Mail\\DashboardController@index');
 
+// New subscription / upgrade routes
+$router->get($baseUrl . '/subscribe', 'Mail\\SubscriberController@subscribe');
+$router->post($baseUrl . '/subscribe', 'Mail\\SubscriberController@processSubscription');
+$router->get($baseUrl . '/subscriber/upgrade', 'Mail\\SubscriberController@showUpgrade');
+
 // ============================================
 // SUBSCRIBER OWNER ROUTES (Manage their subscription)
 // ============================================

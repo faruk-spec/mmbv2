@@ -101,8 +101,10 @@ $router->get('/admin/projects/mail/overview', 'Admin\\MailAdminController@overvi
 // Subscriber Management
 $router->get('/admin/projects/mail/subscribers', 'Admin\\MailAdminController@subscribers', ['auth', 'admin']);
 $router->get('/admin/projects/mail/subscribers/{id}', 'Admin\\MailAdminController@subscriberDetails', ['auth', 'admin']);
+$router->post('/admin/projects/mail/subscribers/create', 'Admin\\MailAdminController@createSubscription', ['auth', 'admin']);
 $router->post('/admin/projects/mail/subscribers/suspend', 'Admin\\MailAdminController@suspendSubscriber', ['auth', 'admin']);
 $router->post('/admin/projects/mail/subscribers/activate', 'Admin\\MailAdminController@activateSubscriber', ['auth', 'admin']);
+$router->post('/admin/projects/mail/subscribers/delete', 'Admin\\MailAdminController@deleteSubscriber', ['auth', 'admin']);
 $router->post('/admin/projects/mail/subscribers/override-plan', 'Admin\\MailAdminController@overridePlan', ['auth', 'admin']);
 $router->post('/admin/projects/mail/subscribers/toggle-feature', 'Admin\\MailAdminController@toggleFeature', ['auth', 'admin']);
 
@@ -110,9 +112,14 @@ $router->post('/admin/projects/mail/subscribers/toggle-feature', 'Admin\\MailAdm
 $router->get('/admin/projects/mail/plans', 'Admin\\MailAdminController@plans', ['auth', 'admin']);
 $router->get('/admin/projects/mail/plans/{id}/edit', 'Admin\\MailAdminController@editPlan', ['auth', 'admin']);
 $router->post('/admin/projects/mail/plans/{id}/edit', 'Admin\\MailAdminController@editPlan', ['auth', 'admin']);
+$router->post('/admin/projects/mail/plans/set-universal-currency', 'Admin\\MailAdminController@setUniversalCurrency', ['auth', 'admin']);
 
 // Domain Management
 $router->get('/admin/projects/mail/domains', 'Admin\\MailAdminController@domains', ['auth', 'admin']);
+$router->get('/admin/projects/mail/domains/{id}/edit', 'Admin\\MailAdminController@editDomain', ['auth', 'admin']);
+$router->post('/admin/projects/mail/domains/{id}/edit', 'Admin\\MailAdminController@updateDomain', ['auth', 'admin']);
+$router->post('/admin/projects/mail/domains/{id}/activate', 'Admin\\MailAdminController@activateDomain', ['auth', 'admin']);
+$router->post('/admin/projects/mail/domains/{id}/suspend', 'Admin\\MailAdminController@suspendDomain', ['auth', 'admin']);
 
 // Abuse Management
 $router->get('/admin/projects/mail/abuse', 'Admin\\MailAdminController@abuseReports', ['auth', 'admin']);

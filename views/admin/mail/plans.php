@@ -1,3 +1,4 @@
+<?php use Core\View; ?>
 <?php View::extend('admin'); ?>
 
 <?php View::section('content'); ?>
@@ -13,6 +14,9 @@
                     Subscription Plans
                 </h2>
                 <div>
+                    <button type="button" class="btn btn-info mr-2" data-toggle="modal" data-target="#currencyModal">
+                        <i class="fas fa-dollar-sign"></i> Set Universal Currency
+                    </button>
                     <a href="/admin/projects/mail" class="btn btn-secondary">
                         <i class="fas fa-arrow-left"></i> Back to Overview
                     </a>
@@ -39,14 +43,21 @@
                 <div class="card-body">
                     <!-- Pricing -->
                     <div class="text-center mb-4">
+                        <?php
+                        $currencySymbol = '$';
+                        if (isset($plan['currency'])) {
+                            $symbols = ['USD' => '$', 'EUR' => '€', 'GBP' => '£', 'INR' => '₹', 'AUD' => 'A$', 'CAD' => 'C$', 'JPY' => '¥', 'CNY' => '¥'];
+                            $currencySymbol = $symbols[$plan['currency']] ?? $plan['currency'] . ' ';
+                        }
+                        ?>
                         <h2 class="display-4">
-                            $<?= number_format($plan['price_monthly'], 2) ?>
+                            <?= $currencySymbol ?><?= number_format($plan['price_monthly'], 2) ?>
                         </h2>
-                        <p class="text-muted">per month</p>
+                        <p class="text-muted">per month <?= isset($plan['currency']) ? '(' . $plan['currency'] . ')' : '' ?></p>
                         <?php if ($plan['price_yearly'] > 0): ?>
                         <p class="small text-success">
                             <i class="fas fa-check"></i> 
-                            $<?= number_format($plan['price_yearly'], 2) ?>/year
+                            <?= $currencySymbol ?><?= number_format($plan['price_yearly'], 2) ?>/year
                             (Save <?= round((1 - ($plan['price_yearly'] / ($plan['price_monthly'] * 12))) * 100) ?>%)
                         </p>
                         <?php endif; ?>
@@ -168,6 +179,51 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Universal Currency Modal -->
+<div class="modal fade" id="currencyModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-dollar-sign"></i> Set Universal Currency
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <form id="universalCurrencyForm" method="POST" action="/admin/projects/mail/plans/set-universal-currency">
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> This will update the currency for all subscription plans at once.
+                    </div>
+                    <div class="form-group">
+                        <label for="universal_currency">Currency *</label>
+                        <select class="form-control form-control-lg" id="universal_currency" name="currency" required>
+                            <option value="USD">USD - US Dollar ($)</option>
+                            <option value="EUR">EUR - Euro (€)</option>
+                            <option value="GBP">GBP - British Pound (£)</option>
+                            <option value="INR">INR - Indian Rupee (₹)</option>
+                            <option value="AUD">AUD - Australian Dollar (A$)</option>
+                            <option value="CAD">CAD - Canadian Dollar (C$)</option>
+                            <option value="JPY">JPY - Japanese Yen (¥)</option>
+                            <option value="CNY">CNY - Chinese Yuan (¥)</option>
+                        </select>
+                    </div>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i> <strong>Note:</strong> This only changes the currency label. You'll need to update prices manually if needed.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-info">
+                        <i class="fas fa-check"></i> Apply to All Plans
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

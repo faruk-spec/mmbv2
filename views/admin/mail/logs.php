@@ -1,7 +1,7 @@
-<?php
-$pageTitle = "Admin Action Logs - Mail Server Admin";
-require_once __DIR__ . '/../../layouts/admin.php';
-?>
+<?php use Core\View; ?>
+<?php View::extend('admin'); ?>
+
+<?php View::section('content'); ?>
 
 <div class="content-wrapper">
     <section class="content-header">
@@ -357,4 +357,4 @@ function exportLogs() {
 }
 </script>
 
-<?php require_once __DIR__ . '/../../layouts/admin_footer.php'; ?>
+<?php View::endSection(); ?>

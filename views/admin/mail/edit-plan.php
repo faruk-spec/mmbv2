@@ -1,3 +1,4 @@
+<?php use Core\View; ?>
 <?php View::extend('admin'); ?>
 
 <?php View::section('content'); ?>
@@ -45,20 +46,44 @@
                         </div>
 
                         <div class="row">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="form-group">
-                                    <label for="price_monthly">Monthly Price ($) *</label>
+                                    <label for="price_monthly">Monthly Price *</label>
                                     <input type="number" step="0.01" class="form-control" id="price_monthly" 
                                            name="price_monthly" value="<?= $plan['price_monthly'] ?>" required>
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="form-group">
-                                    <label for="price_yearly">Yearly Price ($) *</label>
+                                    <label for="price_yearly">Yearly Price *</label>
                                     <input type="number" step="0.01" class="form-control" id="price_yearly" 
                                            name="price_yearly" value="<?= $plan['price_yearly'] ?>" required>
                                 </div>
                             </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="currency">Currency *</label>
+                                    <select class="form-control" id="currency" name="currency" required>
+                                        <option value="USD" <?= (isset($plan['currency']) && $plan['currency'] === 'USD') || !isset($plan['currency']) ? 'selected' : '' ?>>USD ($)</option>
+                                        <option value="EUR" <?= isset($plan['currency']) && $plan['currency'] === 'EUR' ? 'selected' : '' ?>>EUR (€)</option>
+                                        <option value="GBP" <?= isset($plan['currency']) && $plan['currency'] === 'GBP' ? 'selected' : '' ?>>GBP (£)</option>
+                                        <option value="INR" <?= isset($plan['currency']) && $plan['currency'] === 'INR' ? 'selected' : '' ?>>INR (₹)</option>
+                                        <option value="AUD" <?= isset($plan['currency']) && $plan['currency'] === 'AUD' ? 'selected' : '' ?>>AUD (A$)</option>
+                                        <option value="CAD" <?= isset($plan['currency']) && $plan['currency'] === 'CAD' ? 'selected' : '' ?>>CAD (C$)</option>
+                                        <option value="JPY" <?= isset($plan['currency']) && $plan['currency'] === 'JPY' ? 'selected' : '' ?>>JPY (¥)</option>
+                                        <option value="CNY" <?= isset($plan['currency']) && $plan['currency'] === 'CNY' ? 'selected' : '' ?>>CNY (¥)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> 
+                            <?php if (!isset($plan['currency'])): ?>
+                            <strong>Note:</strong> Run the SQL migration to add currency support: <code>projects/mail/migrations/add_currency_column.sql</code>
+                            <?php else: ?>
+                            Currency support is enabled. Prices will be displayed in the selected currency.
+                            <?php endif; ?>
                         </div>
 
                         <div class="form-group">
@@ -155,8 +180,14 @@
                             <i class="fas fa-check-square mr-2"></i>
                             Plan Features
                         </h3>
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-sm btn-success" data-toggle="modal" data-target="#addFeatureModal">
+                                <i class="fas fa-plus"></i> Add Custom Feature
+                            </button>
+                        </div>
                     </div>
                     <div class="card-body">
+                        <?php if (!empty($features)): ?>
                         <div class="row">
                             <?php foreach ($features as $feature): ?>
                             <div class="col-md-4 col-lg-3 mb-3">
@@ -169,8 +200,26 @@
                                         <strong><?= View::e($feature['feature_name']) ?></strong>
                                     </label>
                                 </div>
+                                <?php if ($feature['feature_value']): ?>
+                                <input type="text" class="form-control form-control-sm mt-1" 
+                                       name="feature_values[<?= $feature['feature_key'] ?>]" 
+                                       value="<?= View::e($feature['feature_value']) ?>" 
+                                       placeholder="Value/Limit">
+                                <?php endif; ?>
                             </div>
                             <?php endforeach; ?>
+                        </div>
+                        <?php else: ?>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> No features configured yet. Click "Add Custom Feature" to add features to this plan.
+                        </div>
+                        <?php endif; ?>
+                        
+                        <div class="alert alert-light mt-3">
+                            <small class="text-muted">
+                                <i class="fas fa-lightbulb"></i> <strong>Tip:</strong> Toggle switches to enable/disable features. 
+                                Add custom features like "API Access", "White Label", "Priority Support", etc.
+                            </small>
                         </div>
                     </div>
                 </div>
@@ -190,5 +239,100 @@
         </div>
     </form>
 </div>
+
+<!-- Add Feature Modal -->
+<div class="modal fade" id="addFeatureModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-plus"></i> Add Custom Feature
+                </h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <form id="addFeatureForm">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="new_feature_key">Feature Key *</label>
+                        <input type="text" class="form-control" id="new_feature_key" 
+                               placeholder="e.g., api_access, white_label" required>
+                        <small class="form-text text-muted">Lowercase, underscores only</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="new_feature_name">Feature Name *</label>
+                        <input type="text" class="form-control" id="new_feature_name" 
+                               placeholder="e.g., API Access, White Label" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="new_feature_value">Feature Value/Limit (Optional)</label>
+                        <input type="text" class="form-control" id="new_feature_value" 
+                               placeholder="e.g., 1000 requests/day, unlimited">
+                        <small class="form-text text-muted">Leave empty for boolean features</small>
+                    </div>
+                    <div class="form-group">
+                        <div class="custom-control custom-switch">
+                            <input type="checkbox" class="custom-control-input" id="new_feature_enabled" checked>
+                            <label class="custom-control-label" for="new_feature_enabled">
+                                Enable this feature
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-plus"></i> Add Feature
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+$('#addFeatureForm').on('submit', function(e) {
+    e.preventDefault();
+    
+    var featureKey = $('#new_feature_key').val().toLowerCase().replace(/[^a-z0-9_]/g, '_');
+    var featureName = $('#new_feature_name').val();
+    var featureValue = $('#new_feature_value').val();
+    var isEnabled = $('#new_feature_enabled').is(':checked');
+    
+    // Create new feature element
+    var newFeatureHtml = `
+        <div class="col-md-4 col-lg-3 mb-3">
+            <div class="custom-control custom-switch">
+                <input type="checkbox" class="custom-control-input" 
+                       id="feature_${featureKey}" 
+                       name="features[${featureKey}]" 
+                       value="1" ${isEnabled ? 'checked' : ''}>
+                <label class="custom-control-label" for="feature_${featureKey}">
+                    <strong>${featureName}</strong>
+                </label>
+            </div>
+            ${featureValue ? `<input type="text" class="form-control form-control-sm mt-1" 
+                   name="feature_values[${featureKey}]" 
+                   value="${featureValue}" 
+                   placeholder="Value/Limit">` : ''}
+        </div>
+    `;
+    
+    // Check if features container has alert, remove it
+    var featuresContainer = $('.card-body .row').first();
+    if (featuresContainer.length === 0) {
+        // No row exists, create one
+        $('.card-body .alert-info').remove();
+        featuresContainer = $('<div class="row"></div>').appendTo($('.card-body'));
+    }
+    
+    featuresContainer.append(newFeatureHtml);
+    
+    // Close modal and reset form
+    $('#addFeatureModal').modal('hide');
+    $('#addFeatureForm')[0].reset();
+});
+</script>
 
 <?php View::endSection(); ?>

@@ -1,7 +1,7 @@
-<?php
-$title = 'Abuse Reports - Mail Server';
-require_once __DIR__ . '/../../layouts/admin.php';
-?>
+<?php use Core\View; ?>
+<?php View::extend('admin'); ?>
+
+<?php View::section('content'); ?>
 
 <div class="content-header">
     <div class="container-fluid">
@@ -172,4 +172,4 @@ require_once __DIR__ . '/../../layouts/admin.php';
     </div>
 </section>
 
-<?php require_once __DIR__ . '/../../layouts/admin.php'; ?>
+<?php View::endSection(); ?>
