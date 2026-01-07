@@ -121,6 +121,11 @@ class SheetController
     public function show(string|int $id): void
     {
         $id = (int)$id;
+        if ($id <= 0) {
+            Helpers::flash('error', 'Invalid sheet ID.');
+            Helpers::redirect('/projects/sheetdocs');
+            exit;
+        }
         $userId = Auth::id();
         $sheet = $this->getSheet($id, $userId);
         
@@ -149,6 +154,11 @@ class SheetController
     public function edit(string|int $id): void
     {
         $id = (int)$id;
+        if ($id <= 0) {
+            Helpers::flash('error', 'Invalid sheet ID.');
+            Helpers::redirect('/projects/sheetdocs');
+            exit;
+        }
         $userId = Auth::id();
         $sheet = $this->getSheet($id, $userId, true);
         

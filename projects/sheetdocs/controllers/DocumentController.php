@@ -130,6 +130,11 @@ class DocumentController
     public function show(string|int $id): void
     {
         $id = (int)$id;
+        if ($id <= 0) {
+            Helpers::flash('error', 'Invalid document ID.');
+            Helpers::redirect('/projects/sheetdocs');
+            exit;
+        }
         $userId = Auth::id();
         $document = $this->getDocument($id, $userId);
         
@@ -154,6 +159,11 @@ class DocumentController
     public function edit(string|int $id): void
     {
         $id = (int)$id;
+        if ($id <= 0) {
+            Helpers::flash('error', 'Invalid document ID.');
+            Helpers::redirect('/projects/sheetdocs');
+            exit;
+        }
         $userId = Auth::id();
         $document = $this->getDocument($id, $userId, true);
         
