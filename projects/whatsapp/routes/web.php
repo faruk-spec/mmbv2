@@ -7,6 +7,14 @@
 
 use Core\Router;
 
+// Load the controllers
+require_once BASE_PATH . '/projects/whatsapp/controllers/DashboardController.php';
+require_once BASE_PATH . '/projects/whatsapp/controllers/SessionController.php';
+require_once BASE_PATH . '/projects/whatsapp/controllers/MessageController.php';
+require_once BASE_PATH . '/projects/whatsapp/controllers/ContactController.php';
+require_once BASE_PATH . '/projects/whatsapp/controllers/SettingsController.php';
+require_once BASE_PATH . '/projects/whatsapp/controllers/ApiDocsController.php';
+
 $router = new Router(false);
 
 // Dashboard routes

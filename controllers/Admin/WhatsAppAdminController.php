@@ -56,20 +56,16 @@ class WhatsAppAdminController
         $offset = ($page - 1) * $perPage;
         
         // Get all sessions with user info
-        $stmt = $this->db->prepare("
+        $sessions = $this->db->fetchAll("
             SELECT s.*, u.username, u.email 
             FROM whatsapp_sessions s
             JOIN users u ON s.user_id = u.id
             ORDER BY s.created_at DESC
             LIMIT ? OFFSET ?
-        ");
-        $stmt->execute([$perPage, $offset]);
-        $sessions = $stmt->fetchAll();
+        ", [$perPage, $offset]);
         
         // Get total count
-        $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM whatsapp_sessions");
-        $stmt->execute();
-        $totalSessions = $stmt->fetch()['total'];
+        $totalSessions = $this->db->fetchColumn("SELECT COUNT(*) FROM whatsapp_sessions");
         
         View::render('admin/projects/whatsapp/sessions', [
             'sessions' => $sessions,
@@ -88,21 +84,17 @@ class WhatsAppAdminController
         $perPage = 50;
         $offset = ($page - 1) * $perPage;
         
-        $stmt = $this->db->prepare("
+        $messages = $this->db->fetchAll("
             SELECT m.*, s.session_name, s.phone_number, u.username
             FROM whatsapp_messages m
             JOIN whatsapp_sessions s ON m.session_id = s.id
             JOIN users u ON s.user_id = u.id
             ORDER BY m.created_at DESC
             LIMIT ? OFFSET ?
-        ");
-        $stmt->execute([$perPage, $offset]);
-        $messages = $stmt->fetchAll();
+        ", [$perPage, $offset]);
         
         // Get total count
-        $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM whatsapp_messages");
-        $stmt->execute();
-        $totalMessages = $stmt->fetch()['total'];
+        $totalMessages = $this->db->fetchColumn("SELECT COUNT(*) FROM whatsapp_messages");
         
         View::render('admin/projects/whatsapp/messages', [
             'messages' => $messages,
@@ -121,20 +113,16 @@ class WhatsAppAdminController
         $perPage = 50;
         $offset = ($page - 1) * $perPage;
         
-        $stmt = $this->db->prepare("
+        $logs = $this->db->fetchAll("
             SELECT l.*, u.username, u.email
             FROM whatsapp_api_logs l
             JOIN users u ON l.user_id = u.id
             ORDER BY l.created_at DESC
             LIMIT ? OFFSET ?
-        ");
-        $stmt->execute([$perPage, $offset]);
-        $logs = $stmt->fetchAll();
+        ", [$perPage, $offset]);
         
         // Get total count
-        $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM whatsapp_api_logs");
-        $stmt->execute();
-        $totalLogs = $stmt->fetch()['total'];
+        $totalLogs = $this->db->fetchColumn("SELECT COUNT(*) FROM whatsapp_api_logs");
         
         View::render('admin/projects/whatsapp/api-logs', [
             'logs' => $logs,
@@ -153,28 +141,22 @@ class WhatsAppAdminController
         
         if ($userId) {
             // Get specific user settings
-            $stmt = $this->db->prepare("
+            $userSettings = $this->db->fetch("
                 SELECT u.*, w.webhook_url, w.webhook_enabled, w.notifications_enabled
                 FROM users u
                 LEFT JOIN whatsapp_user_settings w ON u.id = w.user_id
                 WHERE u.id = ?
-            ");
-            $stmt->execute([$userId]);
-            $userSettings = $stmt->fetch();
+            ", [$userId]);
             
             // Get user's sessions
-            $stmt = $this->db->prepare("
+            $userSessions = $this->db->fetchAll("
                 SELECT * FROM whatsapp_sessions WHERE user_id = ? ORDER BY created_at DESC
-            ");
-            $stmt->execute([$userId]);
-            $userSessions = $stmt->fetchAll();
+            ", [$userId]);
             
             // Get user's API keys
-            $stmt = $this->db->prepare("
+            $apiKeys = $this->db->fetchAll("
                 SELECT * FROM whatsapp_api_keys WHERE user_id = ? ORDER BY created_at DESC
-            ");
-            $stmt->execute([$userId]);
-            $apiKeys = $stmt->fetchAll();
+            ", [$userId]);
             
             View::render('admin/projects/whatsapp/user-detail', [
                 'userSettings' => $userSettings,
@@ -184,7 +166,7 @@ class WhatsAppAdminController
             ]);
         } else {
             // List all users with WhatsApp access
-            $stmt = $this->db->prepare("
+            $users = $this->db->fetchAll("
                 SELECT u.id, u.username, u.email,
                     COUNT(DISTINCT s.id) as session_count,
                     COUNT(DISTINCT m.id) as message_count,
@@ -196,8 +178,6 @@ class WhatsAppAdminController
                 HAVING session_count > 0
                 ORDER BY last_session DESC
             ");
-            $stmt->execute();
-            $users = $stmt->fetchAll();
             
             View::render('admin/projects/whatsapp/users', [
                 'users' => $users,
@@ -231,8 +211,7 @@ class WhatsAppAdminController
                 throw new \Exception('Invalid CSRF token');
             }
             
-            $stmt = $this->db->prepare("DELETE FROM whatsapp_sessions WHERE id = ?");
-            $stmt->execute([$sessionId]);
+            $this->db->query("DELETE FROM whatsapp_sessions WHERE id = ?", [$sessionId]);
             
             echo json_encode([
                 'success' => true,
@@ -254,44 +233,32 @@ class WhatsAppAdminController
     private function getOverviewStats()
     {
         // Total sessions
-        $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM whatsapp_sessions");
-        $stmt->execute();
-        $totalSessions = $stmt->fetch()['total'] ?? 0;
+        $totalSessions = $this->db->fetchColumn("SELECT COUNT(*) FROM whatsapp_sessions") ?? 0;
         
         // Active sessions
-        $stmt = $this->db->prepare("
-            SELECT COUNT(*) as total FROM whatsapp_sessions WHERE status = 'connected'
-        ");
-        $stmt->execute();
-        $activeSessions = $stmt->fetch()['total'] ?? 0;
+        $activeSessions = $this->db->fetchColumn("
+            SELECT COUNT(*) FROM whatsapp_sessions WHERE status = 'connected'
+        ") ?? 0;
         
         // Total messages
-        $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM whatsapp_messages");
-        $stmt->execute();
-        $totalMessages = $stmt->fetch()['total'] ?? 0;
+        $totalMessages = $this->db->fetchColumn("SELECT COUNT(*) FROM whatsapp_messages") ?? 0;
         
         // Messages today
-        $stmt = $this->db->prepare("
-            SELECT COUNT(*) as total FROM whatsapp_messages 
+        $messagesToday = $this->db->fetchColumn("
+            SELECT COUNT(*) FROM whatsapp_messages 
             WHERE DATE(created_at) = CURDATE()
-        ");
-        $stmt->execute();
-        $messagesToday = $stmt->fetch()['total'] ?? 0;
+        ") ?? 0;
         
         // Total users with WhatsApp
-        $stmt = $this->db->prepare("
-            SELECT COUNT(DISTINCT user_id) as total FROM whatsapp_sessions
-        ");
-        $stmt->execute();
-        $totalUsers = $stmt->fetch()['total'] ?? 0;
+        $totalUsers = $this->db->fetchColumn("
+            SELECT COUNT(DISTINCT user_id) FROM whatsapp_sessions
+        ") ?? 0;
         
         // API calls today
-        $stmt = $this->db->prepare("
-            SELECT COUNT(*) as total FROM whatsapp_api_logs 
+        $apiCallsToday = $this->db->fetchColumn("
+            SELECT COUNT(*) FROM whatsapp_api_logs 
             WHERE DATE(created_at) = CURDATE()
-        ");
-        $stmt->execute();
-        $apiCallsToday = $stmt->fetch()['total'] ?? 0;
+        ") ?? 0;
         
         return [
             'totalSessions' => $totalSessions,
@@ -308,15 +275,13 @@ class WhatsAppAdminController
      */
     private function getRecentSessions($limit = 10)
     {
-        $stmt = $this->db->prepare("
+        return $this->db->fetchAll("
             SELECT s.*, u.username 
             FROM whatsapp_sessions s
             JOIN users u ON s.user_id = u.id
             ORDER BY s.created_at DESC
             LIMIT ?
-        ");
-        $stmt->execute([$limit]);
-        return $stmt->fetchAll();
+        ", [$limit]);
     }
     
     /**
@@ -324,15 +289,13 @@ class WhatsAppAdminController
      */
     private function getRecentMessages($limit = 10)
     {
-        $stmt = $this->db->prepare("
+        return $this->db->fetchAll("
             SELECT m.*, s.session_name, u.username
             FROM whatsapp_messages m
             JOIN whatsapp_sessions s ON m.session_id = s.id
             JOIN users u ON s.user_id = u.id
             ORDER BY m.created_at DESC
             LIMIT ?
-        ");
-        $stmt->execute([$limit]);
-        return $stmt->fetchAll();
+        ", [$limit]);
     }
 }
