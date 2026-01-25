@@ -1,5 +1,5 @@
 <?php use Core\View; use Core\Helpers; use Core\Auth; use Core\Security; $currentUser = Auth::user(); ?>
-<?php View::extend('main'); ?>
+<?php View::extend('Projects\\WhatsApp', 'app'); ?>
 
 <?php View::section('content'); ?>
 
@@ -135,9 +135,7 @@
 
 <div style="margin-bottom: 30px;">
     <h1 style="font-size: 2rem; margin-bottom: 8px; display: flex; align-items: center; gap: 12px;">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="2">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-        </svg>
+        <i class="fas fa-comment-dots" style="color: #25D366; font-size: 2rem;"></i>
         Messages
     </h1>
     <p style="color: var(--text-secondary); font-size: 0.95rem;">Send and manage WhatsApp messages</p>
@@ -176,18 +174,14 @@
                 <textarea class="form-textarea" id="messageText" placeholder="Type your message..."></textarea>
             </div>
             <button class="btn-send" onclick="sendMessage()">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px;">
-                    <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
-                </svg>
+                <i class="fas fa-paper-plane" style="margin-right: 6px;"></i>
                 Send Message
             </button>
         </div>
 
         <div class="messages-list" id="messagesList">
             <div style="text-align: center; color: var(--text-secondary); padding: 60px 20px;">
-                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.3; margin-bottom: 16px;">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                </svg>
+                <i class="fas fa-comments" style="font-size: 64px; opacity: 0.3; margin-bottom: 16px;"></i>
                 <p>Select a session from the sidebar to send messages</p>
             </div>
         </div>
@@ -257,7 +251,7 @@ function sendMessage() {
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: `session_id=${currentSessionId}&recipient=${encodeURIComponent(recipient)}&message=${encodeURIComponent(message)}&csrf_token=<?= Security::generateCSRF() ?>`
+        body: `session_id=${currentSessionId}&recipient=${encodeURIComponent(recipient)}&message=${encodeURIComponent(message)}&csrf_token=<?= Security::generateCsrfToken() ?>`
     })
     .then(response => response.json())
     .then(data => {

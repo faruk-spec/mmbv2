@@ -1,5 +1,5 @@
 <?php use Core\View; use Core\Helpers; use Core\Auth; use Core\Security; $currentUser = Auth::user(); ?>
-<?php View::extend('main'); ?>
+<?php View::extend('Projects\\WhatsApp', 'app'); ?>
 
 <?php View::section('content'); ?>
 
@@ -128,11 +128,7 @@
 <div class="settings-container">
     <div style="margin-bottom: 30px;">
         <h1 style="font-size: 2rem; margin-bottom: 8px; display: flex; align-items: center; gap: 12px;">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="2">
-                <circle cx="12" cy="12" r="3"/>
-                <path d="M12 1v6m0 6v6"/>
-                <path d="M21 12h-6m-6 0H3"/>
-            </svg>
+            <i class="fas fa-cog" style="color: #25D366; font-size: 2rem;"></i>
             Settings
         </h1>
         <p style="color: var(--text-secondary); font-size: 0.95rem;">Manage your WhatsApp API settings</p>
@@ -142,10 +138,7 @@
     <div class="settings-card">
         <div class="settings-card-header">
             <h3 class="settings-card-title">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="2">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                </svg>
+                <i class="fas fa-key" style="color: #25D366;"></i>
                 API Key
             </h3>
         </div>
@@ -156,10 +149,7 @@
                 <div class="api-key-display">
                     <div class="api-key-box" id="apiKeyBox"><?= View::e($apiKey) ?></div>
                     <button class="btn-action btn-secondary" onclick="copyApiKey()" title="Copy to clipboard">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-                        </svg>
+                        <i class="fas fa-copy"></i>
                     </button>
                 </div>
             <?php else: ?>
@@ -170,21 +160,13 @@
             
             <div style="margin-top: 16px;">
                 <button class="btn-action btn-primary" onclick="generateNewApiKey()">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px;">
-                        <polyline points="23 4 23 10 17 10"/>
-                        <polyline points="1 20 1 14 7 14"/>
-                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-                    </svg>
+                    <i class="fas fa-sync" style="margin-right: 6px;"></i>
                     <?= $apiKey ? 'Regenerate API Key' : 'Generate API Key' ?>
                 </button>
             </div>
 
             <div class="info-box">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"/>
-                    <line x1="12" y1="16" x2="12" y2="12"/>
-                    <line x1="12" y1="8" x2="12.01" y2="8"/>
-                </svg>
+                <i class="fas fa-info-circle" style="color: #25D366;"></i>
                 <strong>Important:</strong> Use this API key to authenticate your requests. Include it in the Authorization header: <code>Authorization: Bearer YOUR_API_KEY</code>
             </div>
         </div>
@@ -194,9 +176,7 @@
     <div class="settings-card">
         <div class="settings-card-header">
             <h3 class="settings-card-title">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="2">
-                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-                </svg>
+                <i class="fas fa-webhook" style="color: #25D366;"></i>
                 Webhook Configuration
             </h3>
         </div>
@@ -211,11 +191,7 @@
             </div>
 
             <div class="info-box">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"/>
-                    <line x1="12" y1="16" x2="12" y2="12"/>
-                    <line x1="12" y1="8" x2="12.01" y2="8"/>
-                </svg>
+                <i class="fas fa-info-circle" style="color: #25D366;"></i>
                 Webhook URL will receive POST requests when you receive new messages or when session status changes.
             </div>
         </div>
@@ -225,11 +201,7 @@
     <div class="settings-card">
         <div class="settings-card-header">
             <h3 class="settings-card-title">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="2">
-                    <line x1="12" y1="20" x2="12" y2="10"/>
-                    <line x1="18" y1="20" x2="18" y2="4"/>
-                    <line x1="6" y1="20" x2="6" y2="16"/>
-                </svg>
+                <i class="fas fa-chart-bar" style="color: #25D366;"></i>
                 Usage Statistics
             </h3>
         </div>
@@ -250,10 +222,7 @@
     <div style="text-align: center; padding: 24px;">
         <p style="color: var(--text-secondary); margin-bottom: 16px;">Need help with the API?</p>
         <a href="/projects/whatsapp/api-docs" style="background: #9945ff; color: white; padding: 12px 32px; border-radius: 8px; font-weight: 600; text-decoration: none; display: inline-block;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px;">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                <polyline points="14 2 14 8 20 8"/>
-            </svg>
+            <i class="fas fa-book" style="margin-right: 6px;"></i>
             View API Documentation
         </a>
     </div>
@@ -279,7 +248,7 @@ function generateNewApiKey() {
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: `action=generate_api_key&csrf_token=<?= Security::generateCSRF() ?>`
+        body: `action=generate_api_key&csrf_token=<?= Security::generateCsrfToken() ?>`
     })
     .then(response => response.json())
     .then(data => {
@@ -300,7 +269,7 @@ function updateWebhook() {
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: `action=update_webhook&webhook_url=${encodeURIComponent(webhookUrl)}&csrf_token=<?= Security::generateCSRF() ?>`
+        body: `action=update_webhook&webhook_url=${encodeURIComponent(webhookUrl)}&csrf_token=<?= Security::generateCsrfToken() ?>`
     })
     .then(response => response.json())
     .then(data => {

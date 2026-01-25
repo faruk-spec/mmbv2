@@ -1,5 +1,5 @@
 <?php use Core\View; use Core\Helpers; use Core\Auth; use Core\Security; $currentUser = Auth::user(); ?>
-<?php View::extend('main'); ?>
+<?php View::extend('Projects\\WhatsApp', 'app'); ?>
 
 <?php View::section('content'); ?>
 
@@ -80,23 +80,14 @@
     <div style="margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center;">
         <div>
             <h1 style="font-size: 2rem; margin-bottom: 8px; display: flex; align-items: center; gap: 12px;">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="2">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                    <circle cx="9" cy="7" r="4"/>
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                </svg>
+                <i class="fas fa-address-book" style="color: #25D366; font-size: 2rem;"></i>
                 Contacts
             </h1>
             <p style="color: var(--text-secondary); font-size: 0.95rem;">Manage your WhatsApp contacts</p>
         </div>
         <?php if (!empty($sessions)): ?>
             <button onclick="syncContacts()" style="background: #25D366; color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px;">
-                    <polyline points="23 4 23 10 17 10"/>
-                    <polyline points="1 20 1 14 7 14"/>
-                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-                </svg>
+                <i class="fas fa-sync" style="margin-right: 6px;"></i>
                 Sync Contacts
             </button>
         <?php endif; ?>
@@ -104,10 +95,7 @@
 
     <?php if (empty($sessions)): ?>
         <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 60px 24px; text-align: center;">
-            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2" style="opacity: 0.5; margin-bottom: 20px;">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                <circle cx="9" cy="7" r="4"/>
-            </svg>
+            <i class="fas fa-users" style="font-size: 64px; color: var(--text-secondary); opacity: 0.5; margin-bottom: 20px;"></i>
             <h3 style="color: var(--text-secondary); margin-bottom: 12px;">No Active Sessions</h3>
             <p style="color: var(--text-secondary); margin-bottom: 20px;">Create a WhatsApp session to sync your contacts</p>
             <a href="/projects/whatsapp/sessions" style="background: #25D366; color: white; padding: 12px 32px; border: none; border-radius: 8px; font-weight: 600; text-decoration: none; display: inline-block;">
@@ -116,10 +104,7 @@
         </div>
     <?php elseif (empty($contacts)): ?>
         <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 60px 24px; text-align: center;">
-            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2" style="opacity: 0.5; margin-bottom: 20px;">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                <circle cx="9" cy="7" r="4"/>
-            </svg>
+            <i class="fas fa-address-book" style="font-size: 64px; color: var(--text-secondary); opacity: 0.5; margin-bottom: 20px;"></i>
             <h3 style="color: var(--text-secondary); margin-bottom: 12px;">No Contacts Yet</h3>
             <p style="color: var(--text-secondary); margin-bottom: 20px;">Sync your contacts from WhatsApp to see them here</p>
             <button onclick="syncContacts()" style="background: #25D366; color: white; padding: 12px 32px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
@@ -137,9 +122,7 @@
                     <div class="contact-phone"><?= View::e($contact['phone_number']) ?></div>
                     <div style="display: flex; gap: 8px; justify-content: center;">
                         <button class="btn-contact-action btn-message" onclick="messageContact('<?= View::e($contact['phone_number']) ?>')">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;">
-                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                            </svg>
+                            <i class="fas fa-comment-dots" style="margin-right: 4px;"></i>
                             Message
                         </button>
                     </div>
@@ -182,7 +165,7 @@ function doSync() {
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: `session_id=${sessionId}&csrf_token=<?= Security::generateCSRF() ?>`
+        body: `session_id=${sessionId}&csrf_token=<?= Security::generateCsrfToken() ?>`
     })
     .then(response => response.json())
     .then(data => {

@@ -1,5 +1,5 @@
 <?php use Core\View; use Core\Helpers; use Core\Auth; use Core\Security; $currentUser = Auth::user(); ?>
-<?php View::extend('main'); ?>
+<?php View::extend('Projects\\WhatsApp', 'app'); ?>
 
 <?php View::section('content'); ?>
 
@@ -100,30 +100,20 @@
     <div style="margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center;">
         <div>
             <h1 style="font-size: 2rem; margin-bottom: 8px; display: flex; align-items: center; gap: 12px;">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="2">
-                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
-                    <line x1="8" y1="21" x2="16" y2="21"/>
-                    <line x1="12" y1="17" x2="12" y2="21"/>
-                </svg>
+                <i class="fas fa-mobile-alt" style="color: #25D366; font-size: 2rem;"></i>
                 WhatsApp Sessions
             </h1>
             <p style="color: var(--text-secondary); font-size: 0.95rem;">Manage your WhatsApp connections</p>
         </div>
         <button onclick="createNewSession()" class="btn-whatsapp" style="background: #25D366; color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px;">
-                <path d="M12 5v14M5 12h14"/>
-            </svg>
+            <i class="fas fa-plus" style="margin-right: 6px;"></i>
             New Session
         </button>
     </div>
 
     <?php if (empty($sessions)): ?>
         <div class="session-card" style="text-align: center; padding: 60px 24px;">
-            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2" style="margin-bottom: 20px; opacity: 0.5;">
-                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
-                <line x1="8" y1="21" x2="16" y2="21"/>
-                <line x1="12" y1="17" x2="12" y2="21"/>
-            </svg>
+            <i class="fas fa-mobile-alt" style="font-size: 64px; color: var(--text-secondary); margin-bottom: 20px; opacity: 0.5;"></i>
             <h3 style="color: var(--text-secondary); margin-bottom: 12px;">No Sessions Yet</h3>
             <p style="color: var(--text-secondary); margin-bottom: 20px;">Create your first WhatsApp session to get started</p>
             <button onclick="createNewSession()" style="background: #25D366; color: white; padding: 12px 32px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
@@ -146,17 +136,13 @@
                     <div class="session-actions">
                         <?php if ($session['status'] === 'initializing' || $session['status'] === 'disconnected'): ?>
                             <button onclick="viewQRCode(<?= $session['id'] ?>)" class="btn btn-view-qr">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;">
-                                    <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
-                                </svg>
+                                <i class="fas fa-qrcode" style="margin-right: 4px;"></i>
                                 Scan QR
                             </button>
                         <?php endif; ?>
                         <?php if ($session['status'] === 'connected'): ?>
                             <button onclick="disconnectSession(<?= $session['id'] ?>)" class="btn btn-disconnect">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;">
-                                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                                </svg>
+                                <i class="fas fa-times" style="margin-right: 4px;"></i>
                                 Disconnect
                             </button>
                         <?php endif; ?>
@@ -209,7 +195,7 @@ function createNewSession() {
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: 'session_name=' + encodeURIComponent(sessionName) + '&csrf_token=<?= Security::generateCSRF() ?>'
+        body: 'session_name=' + encodeURIComponent(sessionName) + '&csrf_token=<?= Security::generateCsrfToken() ?>'
     })
     .then(response => response.json())
     .then(data => {
@@ -254,7 +240,7 @@ function disconnectSession(sessionId) {
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: 'session_id=' + sessionId + '&csrf_token=<?= Security::generateCSRF() ?>'
+        body: 'session_id=' + sessionId + '&csrf_token=<?= Security::generateCsrfToken() ?>'
     })
     .then(response => response.json())
     .then(data => {
