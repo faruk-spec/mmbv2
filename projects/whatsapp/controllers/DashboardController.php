@@ -51,14 +51,11 @@ class DashboardController
      */
     private function getUserSessions()
     {
-        $stmt = $this->db->prepare("
+        return $this->db->fetchAll("
             SELECT * FROM whatsapp_sessions 
             WHERE user_id = ? 
             ORDER BY created_at DESC
-        ");
-        
-        $stmt->execute([$this->user['id']]);
-        return $stmt->fetchAll();
+        ", [$this->user['id']]);
     }
     
     /**
@@ -66,17 +63,14 @@ class DashboardController
      */
     private function getRecentMessages($limit = 10)
     {
-        $stmt = $this->db->prepare("
+        return $this->db->fetchAll("
             SELECT m.*, s.session_name, s.phone_number 
             FROM whatsapp_messages m
             JOIN whatsapp_sessions s ON m.session_id = s.id
             WHERE s.user_id = ?
             ORDER BY m.created_at DESC
             LIMIT ?
-        ");
-        
-        $stmt->execute([$this->user['id'], $limit]);
-        return $stmt->fetchAll();
+        ", [$this->user['id'], $limit]);
     }
     
     /**
@@ -85,36 +79,28 @@ class DashboardController
     private function getStatistics()
     {
         // Total sessions
-        $stmt = $this->db->prepare("
-            SELECT COUNT(*) as total FROM whatsapp_sessions WHERE user_id = ?
-        ");
-        $stmt->execute([$this->user['id']]);
-        $totalSessions = $stmt->fetch()['total'] ?? 0;
+        $totalSessions = $this->db->fetchColumn("
+            SELECT COUNT(*) FROM whatsapp_sessions WHERE user_id = ?
+        ", [$this->user['id']]) ?? 0;
         
         // Active sessions
-        $stmt = $this->db->prepare("
-            SELECT COUNT(*) as total FROM whatsapp_sessions 
+        $activeSessions = $this->db->fetchColumn("
+            SELECT COUNT(*) FROM whatsapp_sessions 
             WHERE user_id = ? AND status = 'connected'
-        ");
-        $stmt->execute([$this->user['id']]);
-        $activeSessions = $stmt->fetch()['total'] ?? 0;
+        ", [$this->user['id']]) ?? 0;
         
         // Total messages sent today
-        $stmt = $this->db->prepare("
-            SELECT COUNT(*) as total FROM whatsapp_messages m
+        $messagesToday = $this->db->fetchColumn("
+            SELECT COUNT(*) FROM whatsapp_messages m
             JOIN whatsapp_sessions s ON m.session_id = s.id
             WHERE s.user_id = ? AND DATE(m.created_at) = CURDATE()
-        ");
-        $stmt->execute([$this->user['id']]);
-        $messagesToday = $stmt->fetch()['total'] ?? 0;
+        ", [$this->user['id']]) ?? 0;
         
         // Total API calls today
-        $stmt = $this->db->prepare("
-            SELECT COUNT(*) as total FROM whatsapp_api_logs
+        $apiCallsToday = $this->db->fetchColumn("
+            SELECT COUNT(*) FROM whatsapp_api_logs
             WHERE user_id = ? AND DATE(created_at) = CURDATE()
-        ");
-        $stmt->execute([$this->user['id']]);
-        $apiCallsToday = $stmt->fetch()['total'] ?? 0;
+        ", [$this->user['id']]) ?? 0;
         
         return [
             'totalSessions' => $totalSessions,

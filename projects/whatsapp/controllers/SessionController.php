@@ -63,13 +63,11 @@ class SessionController
             $sessionName = $_POST['session_name'] ?? 'WhatsApp Session ' . ($sessionCount + 1);
             
             // Insert session into database
-            $stmt = $this->db->prepare("
+            $this->db->query("
                 INSERT INTO whatsapp_sessions (
                     user_id, session_id, session_name, status, created_at
                 ) VALUES (?, ?, ?, 'initializing', NOW())
-            ");
-            
-            $stmt->execute([
+            ", [
                 $this->user['id'],
                 $sessionId,
                 $sessionName
@@ -111,23 +109,21 @@ class SessionController
             }
             
             // Verify ownership
-            $stmt = $this->db->prepare("
+            $session = $this->db->fetch("
                 SELECT id FROM whatsapp_sessions 
                 WHERE id = ? AND user_id = ?
-            ");
-            $stmt->execute([$sessionId, $this->user['id']]);
+            ", [$sessionId, $this->user['id']]);
             
-            if (!$stmt->fetch()) {
+            if (!$session) {
                 throw new \Exception('Session not found or access denied');
             }
             
             // Update session status
-            $stmt = $this->db->prepare("
+            $this->db->query("
                 UPDATE whatsapp_sessions 
                 SET status = 'disconnected', disconnected_at = NOW()
                 WHERE id = ?
-            ");
-            $stmt->execute([$sessionId]);
+            ", [$sessionId]);
             
             echo json_encode([
                 'success' => true,
@@ -158,12 +154,10 @@ class SessionController
             }
             
             // Verify ownership
-            $stmt = $this->db->prepare("
+            $session = $this->db->fetch("
                 SELECT session_id, status FROM whatsapp_sessions 
                 WHERE id = ? AND user_id = ?
-            ");
-            $stmt->execute([$sessionId, $this->user['id']]);
-            $session = $stmt->fetch();
+            ", [$sessionId, $this->user['id']]);
             
             if (!$session) {
                 throw new \Exception('Session not found or access denied');
@@ -201,13 +195,11 @@ class SessionController
                 throw new \Exception('Session ID required');
             }
             
-            $stmt = $this->db->prepare("
+            $session = $this->db->fetch("
                 SELECT status, phone_number, session_name, created_at
                 FROM whatsapp_sessions 
                 WHERE id = ? AND user_id = ?
-            ");
-            $stmt->execute([$sessionId, $this->user['id']]);
-            $session = $stmt->fetch();
+            ", [$sessionId, $this->user['id']]);
             
             if (!$session) {
                 throw new \Exception('Session not found');
@@ -232,13 +224,11 @@ class SessionController
      */
     private function getUserSessions()
     {
-        $stmt = $this->db->prepare("
+        return $this->db->fetchAll("
             SELECT * FROM whatsapp_sessions 
             WHERE user_id = ? 
             ORDER BY created_at DESC
-        ");
-        $stmt->execute([$this->user['id']]);
-        return $stmt->fetchAll();
+        ", [$this->user['id']]);
     }
     
     /**
@@ -246,12 +236,10 @@ class SessionController
      */
     private function getSessionCount()
     {
-        $stmt = $this->db->prepare("
-            SELECT COUNT(*) as total FROM whatsapp_sessions 
+        return $this->db->fetchColumn("
+            SELECT COUNT(*) FROM whatsapp_sessions 
             WHERE user_id = ? AND status != 'disconnected'
-        ");
-        $stmt->execute([$this->user['id']]);
-        return $stmt->fetch()['total'] ?? 0;
+        ", [$this->user['id']]) ?? 0;
     }
     
     /**

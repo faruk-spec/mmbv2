@@ -53,12 +53,10 @@ class ContactController
             }
             
             // Verify session ownership
-            $stmt = $this->db->prepare("
+            $session = $this->db->fetch("
                 SELECT id, status FROM whatsapp_sessions 
                 WHERE id = ? AND user_id = ?
-            ");
-            $stmt->execute([$sessionId, $this->user['id']]);
-            $session = $stmt->fetch();
+            ", [$sessionId, $this->user['id']]);
             
             if (!$session) {
                 throw new \Exception('Session not found or access denied');
@@ -94,13 +92,11 @@ class ContactController
      */
     private function getUserSessions()
     {
-        $stmt = $this->db->prepare("
+        return $this->db->fetchAll("
             SELECT * FROM whatsapp_sessions 
             WHERE user_id = ? AND status = 'connected'
             ORDER BY created_at DESC
-        ");
-        $stmt->execute([$this->user['id']]);
-        return $stmt->fetchAll();
+        ", [$this->user['id']]);
     }
     
     /**
@@ -108,15 +104,13 @@ class ContactController
      */
     private function getUserContacts()
     {
-        $stmt = $this->db->prepare("
+        return $this->db->fetchAll("
             SELECT c.*, s.session_name 
             FROM whatsapp_contacts c
             JOIN whatsapp_sessions s ON c.session_id = s.id
             WHERE s.user_id = ?
             ORDER BY c.name ASC
-        ");
-        $stmt->execute([$this->user['id']]);
-        return $stmt->fetchAll();
+        ", [$this->user['id']]);
     }
     
     /**
@@ -136,7 +130,7 @@ class ContactController
         $count = 0;
         
         foreach ($contacts as $contact) {
-            $stmt = $this->db->prepare("
+            $this->db->query("
                 INSERT INTO whatsapp_contacts (
                     session_id, phone_number, name, profile_pic, 
                     last_synced, created_at
@@ -145,9 +139,7 @@ class ContactController
                     name = VALUES(name),
                     profile_pic = VALUES(profile_pic),
                     last_synced = NOW()
-            ");
-            
-            $stmt->execute([
+            ", [
                 $sessionId,
                 $contact['phone_number'] ?? '',
                 $contact['name'] ?? 'Unknown',

@@ -60,12 +60,10 @@ class MessageController
             }
             
             // Verify session ownership and status
-            $stmt = $this->db->prepare("
+            $session = $this->db->fetch("
                 SELECT id, status FROM whatsapp_sessions 
                 WHERE id = ? AND user_id = ?
-            ");
-            $stmt->execute([$sessionId, $this->user['id']]);
-            $session = $stmt->fetch();
+            ", [$sessionId, $this->user['id']]);
             
             if (!$session) {
                 throw new \Exception('Session not found or access denied');
@@ -76,14 +74,12 @@ class MessageController
             }
             
             // Save message to database
-            $stmt = $this->db->prepare("
+            $this->db->query("
                 INSERT INTO whatsapp_messages (
                     session_id, recipient, message, media_url, 
                     direction, status, created_at
                 ) VALUES (?, ?, ?, ?, 'outgoing', 'pending', NOW())
-            ");
-            
-            $stmt->execute([
+            ", [
                 $sessionId,
                 $recipient,
                 $message,
@@ -97,12 +93,11 @@ class MessageController
             
             // Update status
             if ($sent) {
-                $stmt = $this->db->prepare("
+                $this->db->query("
                     UPDATE whatsapp_messages 
                     SET status = 'sent', sent_at = NOW()
                     WHERE id = ?
-                ");
-                $stmt->execute([$messageId]);
+                ", [$messageId]);
             }
             
             echo json_encode([
@@ -138,13 +133,12 @@ class MessageController
             }
             
             // Verify session ownership
-            $stmt = $this->db->prepare("
+            $session = $this->db->fetch("
                 SELECT id FROM whatsapp_sessions 
                 WHERE id = ? AND user_id = ?
-            ");
-            $stmt->execute([$sessionId, $this->user['id']]);
+            ", [$sessionId, $this->user['id']]);
             
-            if (!$stmt->fetch()) {
+            if (!$session) {
                 throw new \Exception('Session not found or access denied');
             }
             
@@ -164,9 +158,7 @@ class MessageController
             $params[] = (int)$limit;
             $params[] = (int)$offset;
             
-            $stmt = $this->db->prepare($query);
-            $stmt->execute($params);
-            $messages = $stmt->fetchAll();
+            $messages = $this->db->fetchAll($query, $params);
             
             echo json_encode([
                 'success' => true,
@@ -187,13 +179,11 @@ class MessageController
      */
     private function getUserSessions()
     {
-        $stmt = $this->db->prepare("
+        return $this->db->fetchAll("
             SELECT * FROM whatsapp_sessions 
             WHERE user_id = ? AND status = 'connected'
             ORDER BY created_at DESC
-        ");
-        $stmt->execute([$this->user['id']]);
-        return $stmt->fetchAll();
+        ", [$this->user['id']]);
     }
     
     /**

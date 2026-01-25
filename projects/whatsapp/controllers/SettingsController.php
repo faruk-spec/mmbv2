@@ -91,13 +91,11 @@ class SettingsController
      */
     private function getUserApiKey()
     {
-        $stmt = $this->db->prepare("
+        $result = $this->db->fetch("
             SELECT api_key FROM whatsapp_api_keys 
             WHERE user_id = ? AND status = 'active'
             ORDER BY created_at DESC LIMIT 1
-        ");
-        $stmt->execute([$this->user['id']]);
-        $result = $stmt->fetch();
+        ", [$this->user['id']]);
         
         return $result['api_key'] ?? null;
     }
@@ -108,22 +106,20 @@ class SettingsController
     private function generateApiKey()
     {
         // Deactivate old keys
-        $stmt = $this->db->prepare("
+        $this->db->query("
             UPDATE whatsapp_api_keys 
             SET status = 'inactive' 
             WHERE user_id = ?
-        ");
-        $stmt->execute([$this->user['id']]);
+        ", [$this->user['id']]);
         
         // Generate new key
         $apiKey = 'whapi_' . bin2hex(random_bytes(32));
         
-        $stmt = $this->db->prepare("
+        $this->db->query("
             INSERT INTO whatsapp_api_keys (
                 user_id, api_key, status, created_at
             ) VALUES (?, ?, 'active', NOW())
-        ");
-        $stmt->execute([$this->user['id'], $apiKey]);
+        ", [$this->user['id'], $apiKey]);
         
         return $apiKey;
     }
@@ -133,12 +129,10 @@ class SettingsController
      */
     private function getWebhookUrl()
     {
-        $stmt = $this->db->prepare("
+        $result = $this->db->fetch("
             SELECT webhook_url FROM whatsapp_user_settings 
             WHERE user_id = ?
-        ");
-        $stmt->execute([$this->user['id']]);
-        $result = $stmt->fetch();
+        ", [$this->user['id']]);
         
         return $result['webhook_url'] ?? '';
     }
@@ -148,13 +142,12 @@ class SettingsController
      */
     private function updateWebhookUrl($url)
     {
-        $stmt = $this->db->prepare("
+        $this->db->query("
             INSERT INTO whatsapp_user_settings (user_id, webhook_url, updated_at)
             VALUES (?, ?, NOW())
             ON DUPLICATE KEY UPDATE 
                 webhook_url = VALUES(webhook_url),
                 updated_at = NOW()
-        ");
-        $stmt->execute([$this->user['id'], $url]);
+        ", [$this->user['id'], $url]);
     }
 }
