@@ -117,8 +117,8 @@ class SessionController
             ]);
         }
         
-        // Clear output buffer and exit cleanly
-        ob_end_flush();
+        // Discard output buffer (don't send it) and exit cleanly
+        ob_end_clean();
         exit; // Ensure no trailing output
     }
     
@@ -251,9 +251,14 @@ class SessionController
                 return;
             }
             
-            // Generate placeholder QR code
-            // PRODUCTION: Replace with actual WhatsApp Web QR code generation
-            $qrData = $this->generatePlaceholderQR($session['session_id']);
+            // Try to get real QR code from WhatsApp Web.js bridge
+            // If bridge is not running, fall back to placeholder
+            $qrData = $this->getQRFromBridge($session['session_id']);
+            
+            if ($qrData === null) {
+                // Bridge not available, use placeholder
+                $qrData = $this->generatePlaceholderQR($session['session_id']);
+            }
             
             echo json_encode([
                 'success' => true,
@@ -261,7 +266,7 @@ class SessionController
                 'qr_code' => $qrData['image'],
                 'qr_text' => $qrData['text'],
                 'expires_at' => $qrData['expires_at'],
-                'message' => 'QR code generated successfully'
+                'message' => isset($qrData['is_real']) && $qrData['is_real'] ? 'Real QR code generated' : 'Placeholder QR - Start bridge server for real QR codes'
             ]);
             
         } catch (\Exception $e) {
@@ -402,6 +407,57 @@ class SessionController
             ]);
         }
         exit;
+    }
+    
+    /**
+     * Get QR code from WhatsApp Web.js bridge server
+     * Attempts to connect to bridge server on localhost:3000
+     * 
+     * @param string $sessionId Unique session identifier
+     * @return array|null QR code data if bridge is available, null otherwise
+     */
+    private function getQRFromBridge($sessionId)
+    {
+        try {
+            // Bridge server URL (configurable)
+            $bridgeUrl = getenv('WHATSAPP_BRIDGE_URL') ?: 'http://localhost:3000';
+            $endpoint = $bridgeUrl . '/generate-qr?session=' . urlencode($sessionId);
+            
+            // Set timeout to avoid long waits if bridge is down
+            $context = stream_context_create([
+                'http' => [
+                    'timeout' => 2, // 2 second timeout
+                    'ignore_errors' => true
+                ]
+            ]);
+            
+            // Try to call bridge server
+            $response = @file_get_contents($endpoint, false, $context);
+            
+            if ($response === false) {
+                // Bridge not available or connection failed
+                return null;
+            }
+            
+            $data = json_decode($response, true);
+            
+            if (!$data || !isset($data['success']) || !$data['success']) {
+                // Bridge returned error
+                return null;
+            }
+            
+            // Return real QR code from bridge
+            return [
+                'image' => $data['qr_code'],
+                'text' => $data['qr_text'] ?? '',
+                'expires_at' => time() + 60, // QR codes typically expire in 60 seconds
+                'is_real' => true
+            ];
+            
+        } catch (\Exception $e) {
+            // Any error means bridge not available
+            return null;
+        }
     }
     
     /**
