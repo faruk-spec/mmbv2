@@ -43,10 +43,15 @@ class SessionController
      */
     public function create()
     {
+        // Prevent any output before JSON response
+        ob_start();
+        
         // Ensure JSON response even on fatal errors
         header('Content-Type: application/json');
         
         try {
+            // Clear any previous output
+            ob_clean();
             // Validate request method
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
                 throw new \Exception('Method not allowed');
@@ -111,6 +116,9 @@ class SessionController
                 'message' => $e->getMessage()
             ]);
         }
+        
+        // Clear output buffer and exit cleanly
+        ob_end_flush();
         exit; // Ensure no trailing output
     }
     

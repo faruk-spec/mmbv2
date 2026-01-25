@@ -754,34 +754,6 @@
         
         <!-- Main Content -->
         <div class="main-content">
-            <!-- Top Bar -->
-            <div class="topbar">
-                <div class="topbar-left">
-                    <button class="mobile-menu-btn" id="mobileMenuBtn">
-                        <i class="fas fa-bars"></i>
-                    </button>
-                    <div class="topbar-title">
-                        <h1><?= View::e($title ?? 'WhatsApp') ?></h1>
-                        <?php if (isset($subtitle)): ?>
-                            <p><?= View::e($subtitle) ?></p>
-                        <?php endif; ?>
-                    </div>
-                </div>
-                <div class="topbar-right">
-                    <?php $user = Auth::user(); ?>
-                    <a href="/dashboard" class="topbar-btn">
-                        <i class="fas fa-home"></i>
-                        <span>Main Site</span>
-                    </a>
-                    <div class="user-menu">
-                        <div class="user-avatar">
-                            <?= strtoupper(substr($user['name'] ?? 'U', 0, 1)) ?>
-                        </div>
-                        <span><?= View::e($user['name'] ?? 'User') ?></span>
-                    </div>
-                </div>
-            </div>
-            
             <!-- Content -->
             <div class="content">
                 <?php View::yield('content'); ?>
