@@ -28,6 +28,7 @@ $router->get('/projects/whatsapp/subscription', 'Projects\WhatsApp\Controllers\D
 $router->get('/projects/whatsapp/sessions', 'Projects\WhatsApp\Controllers\SessionController@index');
 $router->post('/projects/whatsapp/sessions/create', 'Projects\WhatsApp\Controllers\SessionController@create');
 $router->post('/projects/whatsapp/sessions/disconnect', 'Projects\WhatsApp\Controllers\SessionController@disconnect');
+$router->post('/projects/whatsapp/sessions/delete', 'Projects\WhatsApp\Controllers\SessionController@delete');
 $router->get('/projects/whatsapp/sessions/qr', 'Projects\WhatsApp\Controllers\SessionController@getQRCode');
 $router->get('/projects/whatsapp/sessions/status', 'Projects\WhatsApp\Controllers\SessionController@status');
 

@@ -150,6 +150,10 @@
                                 Disconnect
                             </button>
                         <?php endif; ?>
+                        <button onclick="deleteSession(<?= $session['id'] ?>, '<?= View::e($session['session_name']) ?>')" class="btn" style="background: #dc3545; color: white;">
+                            <i class="fas fa-trash" style="margin-right: 4px;"></i>
+                            Delete
+                        </button>
                     </div>
                 </div>
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-color);">
@@ -659,6 +663,70 @@ function disconnectSession(sessionId) {
                 showToast('Error: ' + error.message, 'error');
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fas fa-times" style="margin-right: 4px;"></i> Disconnect';
+            });
+        }
+    );
+}
+
+function deleteSession(sessionId, sessionName) {
+    showConfirmModal(
+        'Delete Session',
+        `Are you sure you want to delete session "${sessionName}"? This action cannot be undone.`,
+        function() {
+            // Find the button that triggered this
+            const sessionCard = document.querySelector(`.session-card[data-session-id="${sessionId}"]`);
+            const btn = sessionCard ? sessionCard.querySelector('button[onclick*="deleteSession"]') : null;
+            
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 4px;"></i> Deleting...';
+            }
+            
+            fetch('/projects/whatsapp/sessions/delete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'session_id=' + sessionId + '&csrf_token=<?= Security::generateCsrfToken() ?>'
+            })
+            .then(response => {
+                // Validate content type before parsing
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    return response.text().then(text => {
+                        throw new Error('Server returned non-JSON response: ' + text.substring(0, 100));
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    showToast('Session deleted successfully', 'success');
+                    // Remove the session card from DOM
+                    if (sessionCard) {
+                        sessionCard.style.animation = 'slideOut 0.3s ease';
+                        setTimeout(() => {
+                            sessionCard.remove();
+                            // Check if there are no more sessions
+                            const remainingSessions = document.querySelectorAll('.session-card');
+                            if (remainingSessions.length === 0) {
+                                location.reload();
+                            }
+                        }, 300);
+                    } else {
+                        setTimeout(() => location.reload(), 1000);
+                    }
+                } else {
+                    throw new Error(data.message || 'Failed to delete session');
+                }
+            })
+            .catch(error => {
+                console.error('Delete error:', error);
+                showToast('Error: ' + error.message, 'error');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-trash" style="margin-right: 4px;"></i> Delete';
+                }
             });
         }
     );
