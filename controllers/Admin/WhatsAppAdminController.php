@@ -225,23 +225,28 @@ class WhatsAppAdminController
             }
             
             // Validate CSRF
-            if (!Security::validateCSRF($_POST['csrf_token'] ?? '')) {
+            if (!Security::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
                 throw new \Exception('Invalid CSRF token');
             }
             
             $this->db->query("DELETE FROM whatsapp_sessions WHERE id = ?", [$sessionId]);
             
+            http_response_code(200);
+            header('Content-Type: application/json');
             echo json_encode([
                 'success' => true,
                 'message' => 'Session deleted successfully'
             ]);
+            exit;
             
         } catch (\Exception $e) {
             http_response_code(400);
+            header('Content-Type: application/json');
             echo json_encode([
                 'success' => false,
                 'message' => $e->getMessage()
             ]);
+            exit;
         }
     }
     

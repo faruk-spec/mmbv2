@@ -7,6 +7,9 @@
     <meta name="description" content="WhatsApp API Automation - MyMultiBranch">
     <title><?= View::e($title ?? 'WhatsApp') ?> - MyMultiBranch</title>
     
+    <!-- Include Universal Navbar Styles -->
+    <link rel="stylesheet" href="/assets/css/navbar.css">
+    
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -644,7 +647,10 @@
     <?php View::yield('styles'); ?>
 </head>
 <body>
-    <div class="whatsapp-container">
+    <!-- Universal Navbar -->
+    <?php require_once BASE_PATH . '/views/layouts/navbar.php'; ?>
+    
+    <div class="whatsapp-container" style="margin-top: 60px;">
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">

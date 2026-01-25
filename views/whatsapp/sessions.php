@@ -178,6 +178,17 @@
             <i class="fab fa-whatsapp" style="margin-right: 8px;"></i>
             Scan QR Code
         </h2>
+        
+        <!-- Integration Note -->
+        <div style="background: rgba(255, 170, 0, 0.1); border: 1px solid #ffaa00; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+            <div style="display: flex; align-items: start; gap: 10px;">
+                <i class="fas fa-info-circle" style="color: #ffaa00; margin-top: 2px;"></i>
+                <div style="flex: 1; font-size: 0.85rem; color: #ffaa00; line-height: 1.6;">
+                    <strong>Note:</strong> This platform does not use the official WhatsApp API. QR codes will be functional once you integrate WhatsApp Web.js bridge service. See <code>WHATSAPP_PRODUCTION_GUIDE.md</code> for setup instructions.
+                </div>
+            </div>
+        </div>
+        
         <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 0.9rem;">
             Open WhatsApp on your phone and scan this QR code
         </p>
