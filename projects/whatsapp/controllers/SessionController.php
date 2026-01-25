@@ -44,14 +44,15 @@ class SessionController
     public function create()
     {
         // Prevent any output before JSON response
+        if (ob_get_level()) {
+            ob_end_clean();
+        }
         ob_start();
         
         // Ensure JSON response even on fatal errors
         header('Content-Type: application/json');
         
         try {
-            // Clear any previous output
-            ob_clean();
             // Validate request method
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
                 throw new \Exception('Method not allowed');
@@ -98,6 +99,8 @@ class SessionController
             
             $insertId = $this->db->lastInsertId();
             
+            // Clear any accumulated output and send only JSON
+            ob_clean();
             echo json_encode([
                 'success' => true,
                 'message' => 'Session created successfully',
@@ -110,6 +113,7 @@ class SessionController
             ]);
             
         } catch (\Exception $e) {
+            ob_clean();
             http_response_code(400);
             echo json_encode([
                 'success' => false,
@@ -117,9 +121,9 @@ class SessionController
             ]);
         }
         
-        // Discard output buffer (don't send it) and exit cleanly
-        ob_end_clean();
-        exit; // Ensure no trailing output
+        // Send the output buffer and exit cleanly
+        ob_end_flush();
+        exit;
     }
     
     /**
