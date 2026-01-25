@@ -204,3 +204,11 @@ $router->get('/admin/performance/monitoring', 'Admin\\PerformanceController@moni
 $router->post('/admin/performance/cache/clear', 'Admin\\PerformanceController@clearCache', ['auth', 'admin']);
 $router->post('/admin/performance/database/optimize', 'Admin\\PerformanceController@optimizeTable', ['auth', 'admin']);
 $router->post('/admin/performance/assets/minify', 'Admin\\PerformanceController@minifyAsset', ['auth', 'admin']);
+
+// WhatsApp API admin routes
+$router->get('/admin/whatsapp/overview', 'Admin\\WhatsAppAdminController@overview', ['auth', 'admin']);
+$router->get('/admin/whatsapp/sessions', 'Admin\\WhatsAppAdminController@sessions', ['auth', 'admin']);
+$router->get('/admin/whatsapp/messages', 'Admin\\WhatsAppAdminController@messages', ['auth', 'admin']);
+$router->get('/admin/whatsapp/users', 'Admin\\WhatsAppAdminController@userSettings', ['auth', 'admin']);
+$router->get('/admin/whatsapp/api-logs', 'Admin\\WhatsAppAdminController@apiLogs', ['auth', 'admin']);
+$router->post('/admin/whatsapp/sessions/delete', 'Admin\\WhatsAppAdminController@deleteSession', ['auth', 'admin']);

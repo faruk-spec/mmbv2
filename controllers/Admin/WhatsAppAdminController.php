@@ -17,15 +17,13 @@ use Core\Security;
 class WhatsAppAdminController
 {
     private $db;
-    private $auth;
     
     public function __construct()
     {
-        $this->auth = new Auth();
         $this->db = new Database();
         
         // Check if user is admin
-        if (!$this->auth->isAdmin()) {
+        if (!Auth::isAdmin()) {
             header('Location: /dashboard');
             exit;
         }

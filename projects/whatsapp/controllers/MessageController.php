@@ -15,13 +15,11 @@ use Core\Security;
 class MessageController
 {
     private $db;
-    private $auth;
     private $user;
     
     public function __construct()
     {
-        $this->auth = new Auth();
-        $this->user = $this->auth->getUser();
+        $this->user = Auth::user();
         $this->db = new Database();
     }
     

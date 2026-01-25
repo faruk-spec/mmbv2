@@ -5,29 +5,26 @@
  * @package MMB\Projects\WhatsApp
  */
 
-// Load core application
-require_once __DIR__ . '/../../core/Autoloader.php';
-require_once __DIR__ . '/../../config/app.php';
+// Define project path
+define('PROJECT_PATH', __DIR__);
+define('BASE_PATH', dirname(dirname(__DIR__)));
 
-use Core\Auth;
-use Core\Database;
+// Load core autoloader
+require_once BASE_PATH . '/core/Autoloader.php';
 
-// Check authentication
-$auth = new Auth();
-if (!$auth->isLoggedIn()) {
-    header('Location: /login?redirect=' . urlencode($_SERVER['REQUEST_URI']));
-    exit;
+// Load main app config
+require_once BASE_PATH . '/config/app.php';
+
+// Validate SSO access
+use Core\SSO;
+
+// Check if user has access to this project
+if (!SSO::validateProjectRequest('whatsapp')) {
+    SSO::redirectToLogin($_SERVER['REQUEST_URI']);
 }
 
-// Get current user
-$user = $auth->getUser();
+// Load project config
+$projectConfig = require PROJECT_PATH . '/config.php';
 
-// Load project configuration
-$projectConfig = require __DIR__ . '/config.php';
-
-// Initialize project database connection
-$db = new Database();
-$db->connect($projectConfig['database']);
-
-// Load routes
-require_once __DIR__ . '/routes/web.php';
+// Load project routes
+require_once PROJECT_PATH . '/routes/web.php';

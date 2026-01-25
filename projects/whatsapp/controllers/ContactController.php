@@ -14,13 +14,11 @@ use Core\Database;
 class ContactController
 {
     private $db;
-    private $auth;
     private $user;
     
     public function __construct()
     {
-        $this->auth = new Auth();
-        $this->user = $this->auth->getUser();
+        $this->user = Auth::user();
         $this->db = new Database();
     }
     

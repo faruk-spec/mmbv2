@@ -23,8 +23,7 @@ CREATE TABLE whatsapp_sessions (
     disconnected_at TIMESTAMP NULL,
     INDEX idx_user_id (user_id),
     INDEX idx_status (status),
-    INDEX idx_session_id (session_id),
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    INDEX idx_session_id (session_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- WhatsApp API Keys Table
@@ -36,8 +35,7 @@ CREATE TABLE whatsapp_api_keys (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_used_at TIMESTAMP NULL,
     INDEX idx_user_id (user_id),
-    INDEX idx_api_key (api_key),
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    INDEX idx_api_key (api_key)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- WhatsApp User Settings Table
@@ -48,8 +46,7 @@ CREATE TABLE whatsapp_user_settings (
     webhook_enabled BOOLEAN DEFAULT TRUE,
     notifications_enabled BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- WhatsApp Contacts Table
@@ -64,8 +61,7 @@ CREATE TABLE whatsapp_contacts (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_session_id (session_id),
     INDEX idx_phone_number (phone_number),
-    UNIQUE KEY unique_session_contact (session_id, phone_number),
-    FOREIGN KEY (session_id) REFERENCES whatsapp_sessions(id) ON DELETE CASCADE
+    UNIQUE KEY unique_session_contact (session_id, phone_number)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- WhatsApp Messages Table
@@ -88,8 +84,7 @@ CREATE TABLE whatsapp_messages (
     INDEX idx_recipient (recipient),
     INDEX idx_direction (direction),
     INDEX idx_status (status),
-    INDEX idx_created_at (created_at),
-    FOREIGN KEY (session_id) REFERENCES whatsapp_sessions(id) ON DELETE CASCADE
+    INDEX idx_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- WhatsApp API Logs Table
@@ -105,8 +100,7 @@ CREATE TABLE whatsapp_api_logs (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_user_id (user_id),
     INDEX idx_endpoint (endpoint),
-    INDEX idx_created_at (created_at),
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    INDEX idx_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Insert default settings for existing users (optional)
