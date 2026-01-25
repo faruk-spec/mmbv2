@@ -1233,6 +1233,10 @@
                                 <i class="fas fa-crown"></i>
                                 <span>User Subscriptions</span>
                             </a>
+                            <a href="/admin/whatsapp/user-subscriptions/assign" class="menu-link">
+                                <i class="fas fa-user-plus"></i>
+                                <span>Assign Subscription</span>
+                            </a>
                         </div>
                     </div>
                 </div>

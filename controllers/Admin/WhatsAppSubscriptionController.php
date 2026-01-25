@@ -99,7 +99,7 @@ class WhatsAppSubscriptionController
         }
         
         // Insert plan
-        $this->db->execute("
+        $this->db->query("
             INSERT INTO whatsapp_subscription_plans 
             (name, description, price, currency, messages_limit, sessions_limit, api_calls_limit, duration_days, is_active)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -164,7 +164,7 @@ class WhatsAppSubscriptionController
         }
         
         // Update plan
-        $this->db->execute("
+        $this->db->query("
             UPDATE whatsapp_subscription_plans 
             SET name = ?, description = ?, price = ?, currency = ?, 
                 messages_limit = ?, sessions_limit = ?, api_calls_limit = ?, 
@@ -207,7 +207,7 @@ class WhatsAppSubscriptionController
             exit;
         }
         
-        $this->db->execute("DELETE FROM whatsapp_subscription_plans WHERE id = ?", [$id]);
+        $this->db->query("DELETE FROM whatsapp_subscription_plans WHERE id = ?", [$id]);
         
         $_SESSION['success'] = 'Subscription plan deleted successfully';
         header('Location: /admin/whatsapp/subscription-plans');
@@ -337,7 +337,7 @@ class WhatsAppSubscriptionController
         
         if ($existingSubscription) {
             // Deactivate existing subscription
-            $this->db->execute("
+            $this->db->query("
                 UPDATE whatsapp_subscriptions 
                 SET status = 'inactive' 
                 WHERE id = ?
@@ -348,7 +348,7 @@ class WhatsAppSubscriptionController
         $start_date = date('Y-m-d H:i:s');
         $end_date = date('Y-m-d H:i:s', strtotime("+{$duration_days} days"));
         
-        $this->db->execute("
+        $this->db->query("
             INSERT INTO whatsapp_subscriptions 
             (user_id, plan_type, status, start_date, end_date, messages_limit, sessions_limit, api_calls_limit)
             VALUES (?, ?, 'active', ?, ?, ?, ?, ?)
@@ -388,14 +388,14 @@ class WhatsAppSubscriptionController
         
         if ($action === 'extend') {
             $days = intval($_POST['days'] ?? 30);
-            $this->db->execute("
+            $this->db->query("
                 UPDATE whatsapp_subscriptions 
                 SET end_date = DATE_ADD(end_date, INTERVAL ? DAY)
                 WHERE id = ?
             ", [$days, $id]);
             $_SESSION['success'] = "Subscription extended by {$days} days";
         } elseif ($action === 'reset_usage') {
-            $this->db->execute("
+            $this->db->query("
                 UPDATE whatsapp_subscriptions 
                 SET messages_used = 0, sessions_used = 0, api_calls_used = 0
                 WHERE id = ?
@@ -403,7 +403,7 @@ class WhatsAppSubscriptionController
             $_SESSION['success'] = 'Usage statistics reset successfully';
         } elseif ($action === 'change_status') {
             $status = $_POST['status'] ?? 'active';
-            $this->db->execute("
+            $this->db->query("
                 UPDATE whatsapp_subscriptions 
                 SET status = ?
                 WHERE id = ?
@@ -432,7 +432,7 @@ class WhatsAppSubscriptionController
             exit;
         }
         
-        $this->db->execute("
+        $this->db->query("
             UPDATE whatsapp_subscriptions 
             SET status = 'cancelled'
             WHERE id = ?

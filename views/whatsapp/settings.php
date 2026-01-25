@@ -258,6 +258,10 @@ function generateNewApiKey() {
         } else {
             alert('Error: ' + data.message);
         }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to generate API key. Please check console for details.');
     });
 }
 
@@ -278,6 +282,10 @@ function updateWebhook() {
         } else {
             alert('Error: ' + data.message);
         }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to update webhook URL. Please check console for details.');
     });
 }
 </script>

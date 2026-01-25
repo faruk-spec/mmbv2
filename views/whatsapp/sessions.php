@@ -185,10 +185,49 @@
     </div>
 </div>
 
+<!-- Create Session Modal -->
+<div id="createSessionModal" class="qr-modal" style="display: none;">
+    <div class="qr-modal-content">
+        <h2 style="margin-bottom: 16px; color: #25D366;">Create New Session</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 0.9rem;">
+            Enter a name for your WhatsApp session
+        </p>
+        <form id="createSessionForm" onsubmit="submitCreateSession(event)">
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.875rem;">Session Name</label>
+                <input type="text" id="sessionNameInput" name="session_name" 
+                       placeholder="e.g., My WhatsApp Session" 
+                       required
+                       style="width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-primary); color: var(--text-primary); font-size: 0.875rem;">
+            </div>
+            <div style="display: flex; gap: 12px;">
+                <button type="submit" style="flex: 1; padding: 12px; background: #25D366; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                    <i class="fas fa-plus" style="margin-right: 6px;"></i>
+                    Create Session
+                </button>
+                <button type="button" onclick="closeCreateSessionModal()" style="flex: 1; padding: 12px; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; font-weight: 600; cursor: pointer;">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
 function createNewSession() {
-    const sessionName = prompt('Enter session name:', 'WhatsApp Session');
-    if (!sessionName) return;
+    document.getElementById('createSessionModal').style.display = 'flex';
+    document.getElementById('sessionNameInput').value = 'WhatsApp Session ' + (new Date().getTime().toString().slice(-4));
+    document.getElementById('sessionNameInput').focus();
+}
+
+function closeCreateSessionModal() {
+    document.getElementById('createSessionModal').style.display = 'none';
+}
+
+function submitCreateSession(event) {
+    event.preventDefault();
+    
+    const sessionName = document.getElementById('sessionNameInput').value;
     
     fetch('/projects/whatsapp/sessions/create', {
         method: 'POST',
@@ -200,6 +239,7 @@ function createNewSession() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
+            closeCreateSessionModal();
             alert('Session created successfully!');
             location.reload();
         } else {

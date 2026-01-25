@@ -11,7 +11,22 @@
 
 .api-sidebar {
     position: sticky;
-    top: 20px;
+    top: 80px;
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
+}
+
+.api-sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.api-sidebar::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+}
+
+.api-sidebar::-webkit-scrollbar-thumb {
+    background: #25D366;
+    border-radius: 3px;
 }
 
 .api-nav-item {
