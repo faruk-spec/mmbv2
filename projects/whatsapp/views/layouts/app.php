@@ -693,6 +693,18 @@
                     </div>
                 </div>
                 
+                <!-- Account -->
+                <div class="menu-section">
+                    <div class="menu-section-title">Account</div>
+                    
+                    <div class="menu-item">
+                        <a href="/projects/whatsapp/subscription" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/projects/whatsapp/subscription') === 0 ? 'active' : '' ?>">
+                            <i class="fas fa-crown"></i>
+                            <span>Subscription</span>
+                        </a>
+                    </div>
+                </div>
+                
                 <!-- System -->
                 <div class="menu-section">
                     <div class="menu-section-title">System</div>
