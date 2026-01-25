@@ -5,7 +5,7 @@
  * @package MMB\Projects\WhatsApp\Controllers
  */
 
-namespace WhatsApp\Controllers;
+namespace Projects\WhatsApp\Controllers;
 
 use Core\Auth;
 use Core\View;

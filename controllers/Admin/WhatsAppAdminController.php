@@ -57,7 +57,7 @@ class WhatsAppAdminController
         
         // Get all sessions with user info
         $sessions = $this->db->fetchAll("
-            SELECT s.*, u.username, u.email 
+            SELECT s.*, u.name as username, u.email 
             FROM whatsapp_sessions s
             JOIN users u ON s.user_id = u.id
             ORDER BY s.created_at DESC
@@ -85,7 +85,7 @@ class WhatsAppAdminController
         $offset = ($page - 1) * $perPage;
         
         $messages = $this->db->fetchAll("
-            SELECT m.*, s.session_name, s.phone_number, u.username
+            SELECT m.*, s.session_name, s.phone_number, u.name as username
             FROM whatsapp_messages m
             JOIN whatsapp_sessions s ON m.session_id = s.id
             JOIN users u ON s.user_id = u.id
@@ -114,7 +114,7 @@ class WhatsAppAdminController
         $offset = ($page - 1) * $perPage;
         
         $logs = $this->db->fetchAll("
-            SELECT l.*, u.username, u.email
+            SELECT l.*, u.name as username, u.email
             FROM whatsapp_api_logs l
             JOIN users u ON l.user_id = u.id
             ORDER BY l.created_at DESC
@@ -167,14 +167,14 @@ class WhatsAppAdminController
         } else {
             // List all users with WhatsApp access
             $users = $this->db->fetchAll("
-                SELECT u.id, u.username, u.email,
+                SELECT u.id, u.name as username, u.email,
                     COUNT(DISTINCT s.id) as session_count,
                     COUNT(DISTINCT m.id) as message_count,
                     MAX(s.created_at) as last_session
                 FROM users u
                 LEFT JOIN whatsapp_sessions s ON u.id = s.user_id
                 LEFT JOIN whatsapp_messages m ON s.id = m.session_id
-                GROUP BY u.id, u.username, u.email
+                GROUP BY u.id, u.name, u.email
                 HAVING session_count > 0
                 ORDER BY last_session DESC
             ");
@@ -276,7 +276,7 @@ class WhatsAppAdminController
     private function getRecentSessions($limit = 10)
     {
         return $this->db->fetchAll("
-            SELECT s.*, u.username 
+            SELECT s.*, u.name as username 
             FROM whatsapp_sessions s
             JOIN users u ON s.user_id = u.id
             ORDER BY s.created_at DESC
@@ -290,7 +290,7 @@ class WhatsAppAdminController
     private function getRecentMessages($limit = 10)
     {
         return $this->db->fetchAll("
-            SELECT m.*, s.session_name, u.username
+            SELECT m.*, s.session_name, u.name as username
             FROM whatsapp_messages m
             JOIN whatsapp_sessions s ON m.session_id = s.id
             JOIN users u ON s.user_id = u.id
