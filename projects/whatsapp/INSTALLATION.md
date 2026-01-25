@@ -4,16 +4,27 @@
 
 ### 1. Database Setup
 
-Run the database schema to create the required tables:
-
+**Step 1: Create the WhatsApp database schema**
 ```bash
 cd /path/to/mmbv2
 mysql -u your_username -p mmb_whatsapp < projects/whatsapp/schema.sql
 ```
 
+**Step 2: Register WhatsApp in the main platform (IMPORTANT!)**
+```bash
+mysql -u your_username -p YOUR_MAIN_DATABASE < projects/whatsapp/install.sql
+```
+
+This step adds WhatsApp to the `home_projects` table, making it:
+- ✅ Visible in the main dashboard
+- ✅ Visible on the home page
+- ✅ Accessible via SSO (no redirect loops)
+
 Or use phpMyAdmin:
-1. Select the `mmb_whatsapp` database (create if it doesn't exist)
-2. Import the `projects/whatsapp/schema.sql` file
+1. Select your main database (e.g., `testuser`)
+2. Import the `projects/whatsapp/install.sql` file
+3. Select the `mmb_whatsapp` database (create if it doesn't exist)
+4. Import the `projects/whatsapp/schema.sql` file
 
 ### 2. Configuration
 

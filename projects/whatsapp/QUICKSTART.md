@@ -3,14 +3,26 @@
 ## 🚀 Get Started in 5 Minutes
 
 ### Step 1: Import Database
+
+**IMPORTANT: Run both SQL files in order!**
+
 ```bash
 cd /path/to/mmbv2
+
+# Step 1: Register WhatsApp in main platform
+mysql -u your_username -p YOUR_MAIN_DATABASE < projects/whatsapp/install.sql
+
+# Step 2: Create WhatsApp tables
 mysql -u your_username -p mmb_whatsapp < projects/whatsapp/schema.sql
 ```
 
 Or use phpMyAdmin:
-1. Create database `mmb_whatsapp` (if not exists)
-2. Import `projects/whatsapp/schema.sql`
+1. **First**: Open your main database → Import `projects/whatsapp/install.sql`
+2. **Second**: Select/Create `mmb_whatsapp` database → Import `projects/whatsapp/schema.sql`
+
+> **Why two files?** 
+> - `install.sql` registers WhatsApp in your main platform (makes it visible in dashboard)
+> - `schema.sql` creates the WhatsApp-specific tables
 
 ### Step 2: Access the Platform
 Navigate to: **`https://yourdomain.com/projects/whatsapp`**
