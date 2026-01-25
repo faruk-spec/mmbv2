@@ -1225,6 +1225,14 @@
                                 <i class="fas fa-file-alt"></i>
                                 <span>API Logs</span>
                             </a>
+                            <a href="/admin/whatsapp/subscription-plans" class="menu-link">
+                                <i class="fas fa-tags"></i>
+                                <span>Subscription Plans</span>
+                            </a>
+                            <a href="/admin/whatsapp/user-subscriptions" class="menu-link">
+                                <i class="fas fa-crown"></i>
+                                <span>User Subscriptions</span>
+                            </a>
                         </div>
                     </div>
                 </div>

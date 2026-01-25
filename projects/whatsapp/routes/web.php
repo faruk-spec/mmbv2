@@ -21,6 +21,9 @@ $router = new Router(false);
 $router->get('/projects/whatsapp', 'Projects\WhatsApp\Controllers\DashboardController@index');
 $router->get('/projects/whatsapp/dashboard', 'Projects\WhatsApp\Controllers\DashboardController@index');
 
+// Subscription routes
+$router->get('/projects/whatsapp/subscription', 'Projects\WhatsApp\Controllers\DashboardController@subscription');
+
 // Session management routes
 $router->get('/projects/whatsapp/sessions', 'Projects\WhatsApp\Controllers\SessionController@index');
 $router->post('/projects/whatsapp/sessions/create', 'Projects\WhatsApp\Controllers\SessionController@create');

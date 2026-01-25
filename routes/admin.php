@@ -212,3 +212,16 @@ $router->get('/admin/whatsapp/messages', 'Admin\\WhatsAppAdminController@message
 $router->get('/admin/whatsapp/users', 'Admin\\WhatsAppAdminController@userSettings', ['auth', 'admin']);
 $router->get('/admin/whatsapp/api-logs', 'Admin\\WhatsAppAdminController@apiLogs', ['auth', 'admin']);
 $router->post('/admin/whatsapp/sessions/delete', 'Admin\\WhatsAppAdminController@deleteSession', ['auth', 'admin']);
+
+// WhatsApp Subscription Management
+$router->get('/admin/whatsapp/subscription-plans', 'Admin\\WhatsAppSubscriptionController@plans', ['auth', 'admin']);
+$router->get('/admin/whatsapp/subscription-plans/create', 'Admin\\WhatsAppSubscriptionController@createPlanForm', ['auth', 'admin']);
+$router->post('/admin/whatsapp/subscription-plans/create', 'Admin\\WhatsAppSubscriptionController@createPlan', ['auth', 'admin']);
+$router->get('/admin/whatsapp/subscription-plans/edit/{id}', 'Admin\\WhatsAppSubscriptionController@editPlanForm', ['auth', 'admin']);
+$router->post('/admin/whatsapp/subscription-plans/update/{id}', 'Admin\\WhatsAppSubscriptionController@updatePlan', ['auth', 'admin']);
+$router->post('/admin/whatsapp/subscription-plans/delete/{id}', 'Admin\\WhatsAppSubscriptionController@deletePlan', ['auth', 'admin']);
+$router->get('/admin/whatsapp/user-subscriptions', 'Admin\\WhatsAppSubscriptionController@subscriptions', ['auth', 'admin']);
+$router->get('/admin/whatsapp/user-subscriptions/assign', 'Admin\\WhatsAppSubscriptionController@assignSubscriptionForm', ['auth', 'admin']);
+$router->post('/admin/whatsapp/user-subscriptions/assign', 'Admin\\WhatsAppSubscriptionController@assignSubscription', ['auth', 'admin']);
+$router->post('/admin/whatsapp/user-subscriptions/update/{id}', 'Admin\\WhatsAppSubscriptionController@updateSubscription', ['auth', 'admin']);
+$router->post('/admin/whatsapp/user-subscriptions/cancel/{id}', 'Admin\\WhatsAppSubscriptionController@cancelSubscription', ['auth', 'admin']);

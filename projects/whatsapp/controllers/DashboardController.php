@@ -109,4 +109,45 @@ class DashboardController
             'apiCallsToday' => $apiCallsToday
         ];
     }
+    
+    /**
+     * Display user's subscription page
+     */
+    public function subscription()
+    {
+        // Get user's current subscription
+        $subscription = $this->db->fetch("
+            SELECT * FROM whatsapp_subscription_details
+            WHERE user_id = ?
+            ORDER BY created_at DESC
+            LIMIT 1
+        ", [$this->user['id']]);
+        
+        // Get all available plans
+        $plans = $this->db->fetchAll("
+            SELECT * FROM whatsapp_subscription_plans 
+            WHERE is_active = 1 
+            ORDER BY price ASC
+        ");
+        
+        // Calculate usage percentages
+        if ($subscription) {
+            $subscription['messages_percent'] = $subscription['messages_limit'] > 0 
+                ? min(($subscription['messages_used'] / $subscription['messages_limit']) * 100, 100) 
+                : 0;
+            $subscription['sessions_percent'] = $subscription['sessions_limit'] > 0 
+                ? min(($subscription['sessions_used'] / $subscription['sessions_limit']) * 100, 100) 
+                : 0;
+            $subscription['api_calls_percent'] = $subscription['api_calls_limit'] > 0 
+                ? min(($subscription['api_calls_used'] / $subscription['api_calls_limit']) * 100, 100) 
+                : 0;
+        }
+        
+        View::render('whatsapp/subscription', [
+            'user' => $this->user,
+            'subscription' => $subscription,
+            'plans' => $plans,
+            'pageTitle' => 'My Subscription - WhatsApp API'
+        ]);
+    }
 }
