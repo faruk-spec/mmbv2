@@ -237,13 +237,25 @@ function deleteSession(sessionId, sessionName) {
         return;
     }
     
-    fetch(`/admin/whatsapp/sessions/${sessionId}`, {
-        method: 'DELETE',
-        headers: {
-            'Content-Type': 'application/json',
+    const formData = new FormData();
+    formData.append('session_id', sessionId);
+    formData.append('csrf_token', '<?= Core\Security::generateCsrfToken() ?>');
+    
+    fetch('/admin/whatsapp/sessions/delete', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        // Check content type before parsing
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+            return response.json();
+        } else {
+            return response.text().then(text => {
+                throw new Error('Server returned HTML instead of JSON: ' + text.substring(0, 100));
+            });
         }
     })
-    .then(response => response.json())
     .then(data => {
         if (data.success) {
             alert('Session deleted successfully');
@@ -253,6 +265,7 @@ function deleteSession(sessionId, sessionName) {
         }
     })
     .catch(error => {
+        console.error('Delete error:', error);
         alert('Error deleting session: ' + error.message);
     });
 }
