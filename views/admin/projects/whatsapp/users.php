@@ -155,6 +155,7 @@
                 <thead>
                     <tr>
                         <th>User ID</th>
+                        <th>Created</th>
                         <th>Username</th>
                         <th>Email</th>
                         <th>Total Sessions</th>
@@ -166,7 +167,7 @@
                 <tbody>
                     <?php if (empty($users)): ?>
                         <tr>
-                            <td colspan="7" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                            <td colspan="8" style="text-align: center; padding: 40px; color: var(--text-secondary);">
                                 No users found
                             </td>
                         </tr>
@@ -174,6 +175,7 @@
                         <?php foreach ($users as $user): ?>
                             <tr>
                                 <td><code><?= View::e($user['user_id']) ?></code></td>
+                                <td><?= date('M d, Y', strtotime($user['created_at'])) ?></td>
                                 <td><strong><?= View::e($user['username']) ?></strong></td>
                                 <td><?= View::e($user['email']) ?></td>
                                 <td>

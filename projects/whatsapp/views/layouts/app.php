@@ -1,6 +1,6 @@
 <?php use Core\View; use Core\Security; use Core\Auth; ?>
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="dark" id="html-theme">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,18 +17,35 @@
     
     <style>
         :root {
-            --bg-primary: #0a0e0a;
-            --bg-secondary: #0f140f;
-            --bg-card: #141914;
             --whatsapp-green: #25D366;
             --whatsapp-dark: #075E54;
             --whatsapp-light: #128C7E;
+            --transition: all 0.3s ease;
+            --sidebar-width: 280px;
+        }
+        
+        /* Dark theme */
+        [data-theme="dark"] {
+            --bg-primary: #0a0e0a;
+            --bg-secondary: #0f140f;
+            --bg-card: #141914;
             --text-primary: #e8eefc;
             --text-secondary: #8892a6;
             --border-color: rgba(37, 211, 102, 0.2);
             --shadow-glow: 0 0 20px rgba(37, 211, 102, 0.2);
-            --transition: all 0.3s ease;
-            --sidebar-width: 280px;
+            --hover-bg: rgba(37, 211, 102, 0.05);
+        }
+        
+        /* Light theme */
+        [data-theme="light"] {
+            --bg-primary: #f5f7fa;
+            --bg-secondary: #ffffff;
+            --bg-card: #ffffff;
+            --text-primary: #2c3e50;
+            --text-secondary: #7f8c8d;
+            --border-color: rgba(37, 211, 102, 0.3);
+            --shadow-glow: 0 0 20px rgba(37, 211, 102, 0.1);
+            --hover-bg: rgba(37, 211, 102, 0.08);
         }
         
         * {
@@ -767,6 +784,12 @@
     </div>
     
     <script>
+        // Apply theme from localStorage
+        (function() {
+            const theme = localStorage.getItem('theme') || 'dark';
+            document.getElementById('html-theme').setAttribute('data-theme', theme);
+        })();
+        
         // Mobile menu toggle
         const sidebar = document.getElementById('sidebar');
         const sidebarOverlay = document.getElementById('sidebarOverlay');

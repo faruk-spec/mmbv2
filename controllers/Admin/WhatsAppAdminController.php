@@ -166,21 +166,39 @@ class WhatsAppAdminController
             ]);
         } else {
             // List all users with WhatsApp access
+            $page = $_GET['page'] ?? 1;
+            $perPage = 20;
+            $offset = ($page - 1) * $perPage;
+            
             $users = $this->db->fetchAll("
-                SELECT u.id, u.name as username, u.email,
-                    COUNT(DISTINCT s.id) as session_count,
-                    COUNT(DISTINCT m.id) as message_count,
-                    MAX(s.created_at) as last_session
+                SELECT u.id as user_id, u.name as username, u.email, u.created_at,
+                    COUNT(DISTINCT s.id) as total_sessions,
+                    ak.api_key,
+                    ws.webhook_url,
+                    MAX(s.last_activity) as last_activity
                 FROM users u
                 LEFT JOIN whatsapp_sessions s ON u.id = s.user_id
-                LEFT JOIN whatsapp_messages m ON s.id = m.session_id
-                GROUP BY u.id, u.name, u.email
-                HAVING session_count > 0
-                ORDER BY last_session DESC
-            ");
+                LEFT JOIN whatsapp_api_keys ak ON u.id = ak.user_id
+                LEFT JOIN whatsapp_user_settings ws ON u.id = ws.user_id
+                GROUP BY u.id, u.name, u.email, u.created_at, ak.api_key, ws.webhook_url
+                HAVING total_sessions > 0
+                ORDER BY last_activity DESC
+                LIMIT ? OFFSET ?
+            ", [$perPage, $offset]);
+            
+            $totalUsers = $this->db->fetchColumn("
+                SELECT COUNT(DISTINCT u.id)
+                FROM users u
+                LEFT JOIN whatsapp_sessions s ON u.id = s.user_id
+                WHERE s.id IS NOT NULL
+            ") ?? 0;
+            $totalPages = ceil($totalUsers / $perPage);
             
             View::render('admin/projects/whatsapp/users', [
                 'users' => $users,
+                'currentPage' => $page,
+                'totalPages' => $totalPages,
+                'totalUsers' => $totalUsers,
                 'pageTitle' => 'WhatsApp Users - Admin'
             ]);
         }

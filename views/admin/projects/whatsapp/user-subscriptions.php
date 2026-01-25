@@ -349,6 +349,10 @@
                     </td>
                     <td>
                         <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                            <a href="/admin/whatsapp/user-subscriptions/edit/<?= $sub['id'] ?>" class="action-btn" title="Edit subscription">
+                                <i class="fas fa-edit"></i> Edit
+                            </a>
+                            
                             <form method="POST" action="/admin/whatsapp/user-subscriptions/update/<?= $sub['id'] ?>" style="display: inline;">
                                 <input type="hidden" name="csrf_token" value="<?= Security::generateCsrfToken() ?>">
                                 <input type="hidden" name="action" value="extend">

@@ -141,6 +141,10 @@
                             </button>
                         <?php endif; ?>
                         <?php if ($session['status'] === 'connected'): ?>
+                            <button onclick="logoutSession(<?= $session['id'] ?>)" class="btn" style="background: #ff9800; color: white;">
+                                <i class="fas fa-sign-out-alt" style="margin-right: 4px;"></i>
+                                Logout
+                            </button>
                             <button onclick="disconnectSession(<?= $session['id'] ?>)" class="btn btn-disconnect">
                                 <i class="fas fa-times" style="margin-right: 4px;"></i>
                                 Disconnect
@@ -213,6 +217,48 @@
     </div>
 </div>
 
+<!-- Confirmation Modal -->
+<div id="confirmModal" class="qr-modal" style="display: none;">
+    <div class="qr-modal-content" style="max-width: 450px;">
+        <h2 style="margin-bottom: 16px; color: #ff6b6b;" id="confirmTitle">Confirm Action</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 0.9rem;" id="confirmMessage">
+            Are you sure?
+        </p>
+        <div style="display: flex; gap: 12px;">
+            <button onclick="confirmAction()" style="flex: 1; padding: 12px; background: #ff6b6b; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                <i class="fas fa-check" style="margin-right: 6px;"></i>
+                Confirm
+            </button>
+            <button onclick="closeConfirmModal()" style="flex: 1; padding: 12px; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; font-weight: 600; cursor: pointer;">
+                Cancel
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+let confirmCallback = null;
+
+function showConfirmModal(title, message, callback) {
+    document.getElementById('confirmTitle').textContent = title;
+    document.getElementById('confirmMessage').textContent = message;
+    confirmCallback = callback;
+    document.getElementById('confirmModal').style.display = 'flex';
+}
+
+function closeConfirmModal() {
+    document.getElementById('confirmModal').style.display = 'none';
+    confirmCallback = null;
+}
+
+function confirmAction() {
+    if (confirmCallback) {
+        confirmCallback();
+    }
+    closeConfirmModal();
+}
+</script>
+
 <script>
 function createNewSession() {
     document.getElementById('createSessionModal').style.display = 'flex';
@@ -236,7 +282,13 @@ function submitCreateSession(event) {
         },
         body: 'session_name=' + encodeURIComponent(sessionName) + '&csrf_token=<?= Security::generateCsrfToken() ?>'
     })
-    .then(response => response.json())
+    .then(response => {
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            throw new Error('Server returned non-JSON response');
+        }
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
             closeCreateSessionModal();
@@ -247,7 +299,7 @@ function submitCreateSession(event) {
         }
     })
     .catch(error => {
-        alert('Network error: ' + error);
+        alert('Network error: ' + error.message);
     });
 }
 
@@ -272,25 +324,72 @@ function closeQRModal() {
     document.getElementById('qrModal').style.display = 'none';
 }
 
-function disconnectSession(sessionId) {
-    if (!confirm('Are you sure you want to disconnect this session?')) return;
-    
-    fetch('/projects/whatsapp/sessions/disconnect', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: 'session_id=' + sessionId + '&csrf_token=<?= Security::generateCsrfToken() ?>'
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert('Session disconnected successfully!');
-            location.reload();
-        } else {
-            alert('Error: ' + data.message);
+function logoutSession(sessionId) {
+    showConfirmModal(
+        'Logout Session',
+        'Are you sure you want to logout and end this session? This will delete all session data.',
+        () => {
+            fetch('/projects/whatsapp/sessions/delete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'session_id=' + sessionId + '&csrf_token=<?= Security::generateCsrfToken() ?>'
+            })
+            .then(response => {
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    throw new Error('Server returned non-JSON response');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    alert('Session logged out and deleted successfully!');
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                alert('Network error: ' + error.message);
+            });
         }
-    });
+    );
+}
+
+function disconnectSession(sessionId) {
+    showConfirmModal(
+        'Disconnect Session',
+        'Are you sure you want to disconnect this session?',
+        () => {
+            fetch('/projects/whatsapp/sessions/disconnect', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'session_id=' + sessionId + '&csrf_token=<?= Security::generateCsrfToken() ?>'
+            })
+            .then(response => {
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    throw new Error('Server returned non-JSON response');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    alert('Session disconnected successfully!');
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                alert('Network error: ' + error.message);
+            });
+        }
+    );
 }
 </script>
 
