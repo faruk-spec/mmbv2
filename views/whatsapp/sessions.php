@@ -174,18 +174,59 @@
 <!-- QR Code Modal -->
 <div id="qrModal" class="qr-modal">
     <div class="qr-modal-content">
-        <h2 style="margin-bottom: 16px; color: #25D366;">Scan QR Code</h2>
+        <h2 style="margin-bottom: 16px; color: #25D366;">
+            <i class="fab fa-whatsapp" style="margin-right: 8px;"></i>
+            Scan QR Code
+        </h2>
         <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 0.9rem;">
             Open WhatsApp on your phone and scan this QR code
         </p>
+        
+        <!-- Status Badge -->
+        <div id="qrStatus" style="margin-bottom: 15px;">
+            <span class="badge" style="background: rgba(37, 211, 102, 0.2); color: #25D366; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem;">
+                <i class="fas fa-sync fa-spin" style="margin-right: 6px;"></i>
+                <span id="qrStatusText">Loading...</span>
+            </span>
+        </div>
+        
         <div class="qr-code-container" id="qrCodeContainer">
             <div style="width: 256px; height: 256px; margin: 0 auto; background: #f0f0f0; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #666;">
-                Loading QR Code...
+                <div style="text-align: center;">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 48px; margin-bottom: 16px; color: #25D366;"></i>
+                    <div>Generating QR Code...</div>
+                </div>
             </div>
         </div>
-        <button onclick="closeQRModal()" style="width: 100%; padding: 12px; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; font-weight: 600; cursor: pointer; margin-top: 20px;">
-            Close
-        </button>
+        
+        <!-- Instructions -->
+        <div id="qrInstructions" style="margin-top: 20px; text-align: left; background: rgba(37, 211, 102, 0.1); padding: 16px; border-radius: 8px; border-left: 3px solid #25D366;">
+            <div style="font-weight: 600; margin-bottom: 8px; color: #25D366;">How to connect:</div>
+            <ol style="margin: 0; padding-left: 20px; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.8;">
+                <li>Open WhatsApp on your phone</li>
+                <li>Tap <strong>Menu</strong> or <strong>Settings</strong></li>
+                <li>Tap <strong>Linked Devices</strong></li>
+                <li>Tap <strong>Link a Device</strong></li>
+                <li>Point your phone at this screen to scan the QR code</li>
+            </ol>
+        </div>
+        
+        <!-- Timer -->
+        <div id="qrTimer" style="margin-top: 15px; font-size: 0.9rem; color: var(--text-secondary);">
+            <i class="fas fa-clock" style="margin-right: 6px;"></i>
+            QR code expires in <span id="qrTimeRemaining">60</span>s
+        </div>
+        
+        <div style="display: flex; gap: 12px; margin-top: 20px;">
+            <button onclick="refreshQRCode()" style="flex: 1; padding: 12px; background: #25D366; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                <i class="fas fa-sync-alt" style="margin-right: 6px;"></i>
+                Refresh QR
+            </button>
+            <button onclick="closeQRModal()" style="flex: 1; padding: 12px; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; font-weight: 600; cursor: pointer;">
+                <i class="fas fa-times" style="margin-right: 6px;"></i>
+                Close
+            </button>
+        </div>
     </div>
 </div>
 
@@ -238,6 +279,10 @@
 
 <script>
 let confirmCallback = null;
+let qrPollInterval = null;
+let qrTimeoutInterval = null;
+let currentSessionId = null;
+let qrExpiresAt = null;
 
 function showConfirmModal(title, message, callback) {
     document.getElementById('confirmTitle').textContent = title;
@@ -257,6 +302,55 @@ function confirmAction() {
     }
     closeConfirmModal();
 }
+
+// Toast notification system
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 16px 24px;
+        border-radius: 8px;
+        color: white;
+        font-weight: 600;
+        z-index: 10000;
+        animation: slideIn 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    `;
+    
+    const colors = {
+        success: '#25D366',
+        error: '#ff6b6b',
+        warning: '#ffaa00',
+        info: '#0088cc'
+    };
+    
+    toast.style.background = colors[type] || colors.info;
+    toast.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}" style="margin-right: 8px;"></i>${message}`;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// Add animations
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from { transform: translateX(400px); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(400px); opacity: 0; }
+    }
+`;
+document.head.appendChild(style);
+
 </script>
 
 <script>
@@ -273,7 +367,17 @@ function closeCreateSessionModal() {
 function submitCreateSession(event) {
     event.preventDefault();
     
-    const sessionName = document.getElementById('sessionNameInput').value;
+    const sessionName = document.getElementById('sessionNameInput').value.trim();
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+    
+    if (!sessionName) {
+        showToast('Please enter a session name', 'error');
+        return;
+    }
+    
+    // Disable button and show loading
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 6px;"></i> Creating...';
     
     fetch('/projects/whatsapp/sessions/create', {
         method: 'POST',
@@ -283,6 +387,9 @@ function submitCreateSession(event) {
         body: 'session_name=' + encodeURIComponent(sessionName) + '&csrf_token=<?= Security::generateCsrfToken() ?>'
     })
     .then(response => {
+        if (!response.ok) {
+            throw new Error('HTTP ' + response.status);
+        }
         const contentType = response.headers.get('content-type');
         if (!contentType || !contentType.includes('application/json')) {
             throw new Error('Server returned non-JSON response');
@@ -292,36 +399,170 @@ function submitCreateSession(event) {
     .then(data => {
         if (data.success) {
             closeCreateSessionModal();
-            alert('Session created successfully!');
-            location.reload();
+            showToast('Session created successfully!', 'success');
+            setTimeout(() => location.reload(), 1000);
         } else {
-            alert('Error: ' + data.message);
+            throw new Error(data.message || 'Failed to create session');
         }
     })
     .catch(error => {
-        alert('Network error: ' + error.message);
+        console.error('Create session error:', error);
+        showToast('Error: ' + error.message, 'error');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-plus" style="margin-right: 6px;"></i> Create Session';
     });
 }
 
 function viewQRCode(sessionId) {
+    currentSessionId = sessionId;
     document.getElementById('qrModal').style.display = 'flex';
     
+    // Reset state
+    clearInterval(qrPollInterval);
+    clearInterval(qrTimeoutInterval);
+    
+    // Update status
+    updateQRStatus('Loading QR code...', 'loading');
+    
+    // Load QR code
+    loadQRCode(sessionId);
+    
+    // Start polling for status updates every 3 seconds
+    qrPollInterval = setInterval(() => {
+        checkSessionStatus(sessionId);
+    }, 3000);
+}
+
+function loadQRCode(sessionId) {
     fetch('/projects/whatsapp/sessions/qr?session_id=' + sessionId)
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('HTTP ' + response.status);
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
-                document.getElementById('qrCodeContainer').innerHTML = `
-                    <div style="width: 256px; height: 256px; margin: 0 auto; background: white; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.875rem; color: #666; padding: 20px; text-align: center;">
-                        QR Code will appear here<br><br>
-                        <small style="font-size: 0.75rem;">In production, this integrates with WhatsApp Web API</small>
-                    </div>
-                `;
+                if (data.status === 'connected') {
+                    updateQRStatus('Already connected!', 'success');
+                    showToast('This session is already connected', 'success');
+                    document.getElementById('qrCodeContainer').innerHTML = `
+                        <div style="width: 256px; height: 256px; margin: 0 auto; background: rgba(37, 211, 102, 0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center; border: 2px solid #25D366;">
+                            <div style="text-align: center; color: #25D366;">
+                                <i class="fas fa-check-circle" style="font-size: 64px; margin-bottom: 16px;"></i>
+                                <div style="font-weight: 600;">Connected!</div>
+                                ${data.phone_number ? '<div style="font-size: 0.9rem; margin-top: 8px;">' + data.phone_number + '</div>' : ''}
+                            </div>
+                        </div>
+                    `;
+                    clearInterval(qrPollInterval);
+                } else {
+                    // Display QR code
+                    updateQRStatus('Ready to scan', 'ready');
+                    document.getElementById('qrCodeContainer').innerHTML = `
+                        <img src="${data.qr_code}" alt="QR Code" style="width: 256px; height: 256px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
+                    `;
+                    
+                    // Set expiration timer
+                    if (data.expires_at) {
+                        qrExpiresAt = data.expires_at;
+                        startExpirationTimer();
+                    }
+                }
+            } else {
+                throw new Error(data.message || 'Failed to load QR code');
             }
+        })
+        .catch(error => {
+            console.error('QR code error:', error);
+            updateQRStatus('Error loading QR code', 'error');
+            showToast('Error: ' + error.message, 'error');
+            document.getElementById('qrCodeContainer').innerHTML = `
+                <div style="width: 256px; height: 256px; margin: 0 auto; background: rgba(255, 107, 107, 0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center; border: 2px solid #ff6b6b;">
+                    <div style="text-align: center; color: #ff6b6b; padding: 20px;">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 16px;"></i>
+                        <div style="font-weight: 600;">Failed to load</div>
+                        <div style="font-size: 0.85rem; margin-top: 8px;">${error.message}</div>
+                    </div>
+                </div>
+            `;
         });
+}
+
+function checkSessionStatus(sessionId) {
+    fetch('/projects/whatsapp/sessions/status?session_id=' + sessionId)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.session.status === 'connected') {
+                updateQRStatus('Connected!', 'success');
+                showToast('WhatsApp connected successfully!', 'success');
+                clearInterval(qrPollInterval);
+                clearInterval(qrTimeoutInterval);
+                setTimeout(() => {
+                    closeQRModal();
+                    location.reload();
+                }, 2000);
+            }
+        })
+        .catch(error => {
+            console.error('Status check error:', error);
+        });
+}
+
+function startExpirationTimer() {
+    clearInterval(qrTimeoutInterval);
+    
+    qrTimeoutInterval = setInterval(() => {
+        const now = Math.floor(Date.now() / 1000);
+        const remaining = qrExpiresAt - now;
+        
+        if (remaining <= 0) {
+            clearInterval(qrTimeoutInterval);
+            document.getElementById('qrTimeRemaining').textContent = '0';
+            updateQRStatus('QR code expired', 'error');
+            showToast('QR code expired. Please refresh.', 'warning');
+        } else {
+            document.getElementById('qrTimeRemaining').textContent = remaining;
+        }
+    }, 1000);
+}
+
+function updateQRStatus(text, type) {
+    const statusEl = document.getElementById('qrStatusText');
+    const badge = statusEl.parentElement;
+    
+    statusEl.innerHTML = text;
+    
+    const icons = {
+        loading: '<i class="fas fa-sync fa-spin" style="margin-right: 6px;"></i>',
+        ready: '<i class="fas fa-qrcode" style="margin-right: 6px;"></i>',
+        success: '<i class="fas fa-check-circle" style="margin-right: 6px;"></i>',
+        error: '<i class="fas fa-exclamation-circle" style="margin-right: 6px;"></i>'
+    };
+    
+    const colors = {
+        loading: 'rgba(0, 136, 204, 0.2); color: #0088cc',
+        ready: 'rgba(37, 211, 102, 0.2); color: #25D366',
+        success: 'rgba(37, 211, 102, 0.3); color: #25D366',
+        error: 'rgba(255, 107, 107, 0.2); color: #ff6b6b'
+    };
+    
+    badge.style.background = colors[type] || colors.loading;
+    statusEl.innerHTML = icons[type] + text;
+}
+
+function refreshQRCode() {
+    if (currentSessionId) {
+        loadQRCode(currentSessionId);
+    }
 }
 
 function closeQRModal() {
     document.getElementById('qrModal').style.display = 'none';
+    clearInterval(qrPollInterval);
+    clearInterval(qrTimeoutInterval);
+    currentSessionId = null;
+    qrExpiresAt = null;
 }
 
 function logoutSession(sessionId) {
@@ -329,6 +570,10 @@ function logoutSession(sessionId) {
         'Logout Session',
         'Are you sure you want to logout and end this session? This will delete all session data.',
         () => {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            
             fetch('/projects/whatsapp/sessions/delete', {
                 method: 'POST',
                 headers: {
@@ -337,6 +582,9 @@ function logoutSession(sessionId) {
                 body: 'session_id=' + sessionId + '&csrf_token=<?= Security::generateCsrfToken() ?>'
             })
             .then(response => {
+                if (!response.ok) {
+                    throw new Error('HTTP ' + response.status);
+                }
                 const contentType = response.headers.get('content-type');
                 if (!contentType || !contentType.includes('application/json')) {
                     throw new Error('Server returned non-JSON response');
@@ -345,14 +593,17 @@ function logoutSession(sessionId) {
             })
             .then(data => {
                 if (data.success) {
-                    alert('Session logged out and deleted successfully!');
-                    location.reload();
+                    showToast('Session logged out successfully!', 'success');
+                    setTimeout(() => location.reload(), 1000);
                 } else {
-                    alert('Error: ' + data.message);
+                    throw new Error(data.message || 'Failed to logout session');
                 }
             })
             .catch(error => {
-                alert('Network error: ' + error.message);
+                console.error('Logout error:', error);
+                showToast('Error: ' + error.message, 'error');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-sign-out-alt" style="margin-right: 4px;"></i> Logout';
             });
         }
     );
@@ -363,6 +614,10 @@ function disconnectSession(sessionId) {
         'Disconnect Session',
         'Are you sure you want to disconnect this session?',
         () => {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            
             fetch('/projects/whatsapp/sessions/disconnect', {
                 method: 'POST',
                 headers: {
@@ -371,6 +626,9 @@ function disconnectSession(sessionId) {
                 body: 'session_id=' + sessionId + '&csrf_token=<?= Security::generateCsrfToken() ?>'
             })
             .then(response => {
+                if (!response.ok) {
+                    throw new Error('HTTP ' + response.status);
+                }
                 const contentType = response.headers.get('content-type');
                 if (!contentType || !contentType.includes('application/json')) {
                     throw new Error('Server returned non-JSON response');
@@ -379,14 +637,17 @@ function disconnectSession(sessionId) {
             })
             .then(data => {
                 if (data.success) {
-                    alert('Session disconnected successfully!');
-                    location.reload();
+                    showToast('Session disconnected successfully!', 'success');
+                    setTimeout(() => location.reload(), 1000);
                 } else {
-                    alert('Error: ' + data.message);
+                    throw new Error(data.message || 'Failed to disconnect session');
                 }
             })
             .catch(error => {
-                alert('Network error: ' + error.message);
+                console.error('Disconnect error:', error);
+                showToast('Error: ' + error.message, 'error');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-times" style="margin-right: 4px;"></i> Disconnect';
             });
         }
     );

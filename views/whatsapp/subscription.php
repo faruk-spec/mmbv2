@@ -1,49 +1,9 @@
 <?php use Core\View; ?>
+<?php View::extend('whatsapp:app'); ?>
 
-<!DOCTYPE html>
-<html lang="en" data-theme="dark">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= View::e($pageTitle ?? 'My Subscription') ?> - <?= APP_NAME ?></title>
-    
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <style>
-        :root[data-theme="dark"] {
-            --bg-primary: #06060a;
-            --bg-secondary: #0c0c12;
-            --bg-card: #0f0f18;
-            --text-primary: #e8eefc;
-            --text-secondary: #8892a6;
-            --border-color: rgba(255, 255, 255, 0.1);
-            --whatsapp-green: #25D366;
-            --success: #28c76f;
-            --danger: #ea5455;
-            --warning: #ff9f43;
-            --info: #00cfe8;
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Poppins', sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            line-height: 1.6;
-            padding: 40px 20px;
-        }
-        
+<?php View::section('content'); ?>
+
+<style>
         .container {
             max-width: 1200px;
             margin: 0 auto;
@@ -64,25 +24,6 @@
         
         .page-header p {
             color: var(--text-secondary);
-        }
-        
-        .back-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            color: var(--text-primary);
-            text-decoration: none;
-            margin-bottom: 24px;
-            padding: 8px 16px;
-            border-radius: 8px;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            transition: all 0.3s ease;
-        }
-        
-        .back-link:hover {
-            border-color: var(--whatsapp-green);
-            transform: translateX(-5px);
         }
         
         .subscription-card {
@@ -383,20 +324,13 @@
             .usage-grid, .plans-grid {
                 grid-template-columns: 1fr;
             }
-        }
     </style>
-</head>
-<body>
-    <div class="container">
-        <a href="/whatsapp/dashboard" class="back-link">
-            <i class="fas fa-arrow-left"></i>
-            Back to Dashboard
-        </a>
-        
-        <div class="page-header">
-            <h1><i class="fas fa-crown"></i> My Subscription</h1>
-            <p>Manage your WhatsApp API subscription and view usage statistics</p>
-        </div>
+
+<div class="container">
+    <div class="page-header">
+        <h1><i class="fas fa-crown"></i> My Subscription</h1>
+        <p>Manage your WhatsApp API subscription and view usage statistics</p>
+    </div>
         
         <?php if ($subscription): ?>
             <!-- Current Subscription -->
@@ -568,5 +502,5 @@
             </div>
         <?php endif; ?>
     </div>
-</body>
-</html>
+
+<?php View::endSection(); ?>
