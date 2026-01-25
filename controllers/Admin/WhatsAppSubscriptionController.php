@@ -75,7 +75,7 @@ class WhatsAppSubscriptionController
         }
         
         // Verify CSRF token
-        if (!Security::validateCsrfToken($_POST['csrf_token'] ?? '')) {
+        if (!Security::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
             $_SESSION['error'] = 'Invalid security token';
             header('Location: /admin/whatsapp/subscription-plans/create');
             exit;
@@ -140,7 +140,7 @@ class WhatsAppSubscriptionController
         }
         
         // Verify CSRF token
-        if (!Security::validateCsrfToken($_POST['csrf_token'] ?? '')) {
+        if (!Security::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
             $_SESSION['error'] = 'Invalid security token';
             header('Location: /admin/whatsapp/subscription-plans/edit/' . $id);
             exit;
@@ -188,7 +188,7 @@ class WhatsAppSubscriptionController
         }
         
         // Verify CSRF token
-        if (!Security::validateCsrfToken($_POST['csrf_token'] ?? '')) {
+        if (!Security::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
             $_SESSION['error'] = 'Invalid security token';
             header('Location: /admin/whatsapp/subscription-plans');
             exit;
@@ -300,7 +300,7 @@ class WhatsAppSubscriptionController
         }
         
         // Verify CSRF token
-        if (!Security::validateCsrfToken($_POST['csrf_token'] ?? '')) {
+        if (!Security::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
             $_SESSION['error'] = 'Invalid security token';
             header('Location: /admin/whatsapp/user-subscriptions/assign');
             exit;
@@ -378,7 +378,7 @@ class WhatsAppSubscriptionController
         }
         
         // Verify CSRF token
-        if (!Security::validateCsrfToken($_POST['csrf_token'] ?? '')) {
+        if (!Security::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
             $_SESSION['error'] = 'Invalid security token';
             header('Location: /admin/whatsapp/user-subscriptions');
             exit;
@@ -426,7 +426,7 @@ class WhatsAppSubscriptionController
         }
         
         // Verify CSRF token
-        if (!Security::validateCsrfToken($_POST['csrf_token'] ?? '')) {
+        if (!Security::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
             $_SESSION['error'] = 'Invalid security token';
             header('Location: /admin/whatsapp/user-subscriptions');
             exit;

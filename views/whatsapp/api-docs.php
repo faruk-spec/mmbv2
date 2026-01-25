@@ -1,5 +1,5 @@
 <?php use Core\View; use Core\Helpers; use Core\Auth; $currentUser = Auth::user(); ?>
-<?php View::extend('Projects\\WhatsApp', 'app'); ?>
+<?php View::extend('whatsapp:app'); ?>
 
 <?php View::section('content'); ?>
 
