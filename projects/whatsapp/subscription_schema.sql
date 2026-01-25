@@ -22,6 +22,8 @@ CREATE TABLE IF NOT EXISTS whatsapp_subscription_plans (
 
 -- Table: whatsapp_subscriptions
 -- Stores user subscriptions
+-- Note: Foreign key constraint to users(id) removed to avoid cross-database reference issues
+-- Application-level integrity is maintained by controllers checking user_id validity
 CREATE TABLE IF NOT EXISTS whatsapp_subscriptions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,

@@ -83,7 +83,20 @@ SELECT '=======================================' as '';
 SELECT 'WHATSAPP PROJECT DETAILS' as '';
 SELECT '=======================================' as '';
 
-SELECT * FROM home_projects WHERE project_key = 'whatsapp';
+SELECT 
+    id,
+    project_key,
+    name,
+    description,
+    icon,
+    color,
+    is_enabled,
+    sort_order,
+    database_name,
+    url,
+    created_at
+FROM home_projects 
+WHERE project_key = 'whatsapp';
 
 -- ============================================
 -- Verification Queries (Run these manually)
