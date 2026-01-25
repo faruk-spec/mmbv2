@@ -19,7 +19,7 @@ class ContactController
     public function __construct()
     {
         $this->user = Auth::user();
-        $this->db = new Database();
+        $this->db = Database::getInstance();
     }
     
     /**

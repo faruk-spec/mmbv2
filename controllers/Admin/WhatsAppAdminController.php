@@ -20,7 +20,7 @@ class WhatsAppAdminController
     
     public function __construct()
     {
-        $this->db = new Database();
+        $this->db = Database::getInstance();
         
         // Check if user is admin
         if (!Auth::isAdmin()) {

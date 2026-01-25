@@ -7,7 +7,7 @@
 
 use Core\Router;
 
-$router = new Router();
+$router = new Router(false);
 
 // Dashboard routes
 $router->get('/projects/whatsapp', 'WhatsApp\Controllers\DashboardController@index');
@@ -36,4 +36,5 @@ $router->post('/projects/whatsapp/settings/update', 'WhatsApp\Controllers\Settin
 // API documentation
 $router->get('/projects/whatsapp/api-docs', 'WhatsApp\Controllers\ApiDocsController@index');
 
-return $router;
+// Dispatch the route
+$router->dispatch($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI']);
