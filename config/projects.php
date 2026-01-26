@@ -64,5 +64,15 @@ return [
         'enabled' => true,
         'database' => 'mmb_resumex',
         'url' => '/projects/resumex'
+    ],
+    
+    'whatsapp' => [
+        'name' => 'WhatsApp API',
+        'description' => 'WhatsApp API automation and messaging platform',
+        'icon' => 'message-circle',
+        'color' => '#25D366',
+        'enabled' => true,
+        'database' => 'mmb_whatsapp',
+        'url' => '/projects/whatsapp'
     ]
 ];

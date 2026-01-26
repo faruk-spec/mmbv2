@@ -1194,6 +1194,51 @@
                             </a>
                         </div>
                     </div>
+                    
+                    <!-- WhatsApp API -->
+                    <div class="menu-item menu-dropdown">
+                        <div class="menu-dropdown-toggle">
+                            <div class="left">
+                                <i class="fab fa-whatsapp"></i>
+                                <span>WhatsApp API</span>
+                            </div>
+                            <i class="fas fa-chevron-down arrow"></i>
+                        </div>
+                        <div class="menu-dropdown-content">
+                            <a href="/admin/whatsapp/overview" class="menu-link">
+                                <i class="fas fa-chart-line"></i>
+                                <span>Overview</span>
+                            </a>
+                            <a href="/admin/whatsapp/sessions" class="menu-link">
+                                <i class="fas fa-mobile-alt"></i>
+                                <span>Sessions</span>
+                            </a>
+                            <a href="/admin/whatsapp/messages" class="menu-link">
+                                <i class="fas fa-comments"></i>
+                                <span>Messages</span>
+                            </a>
+                            <a href="/admin/whatsapp/users" class="menu-link">
+                                <i class="fas fa-users"></i>
+                                <span>Users</span>
+                            </a>
+                            <a href="/admin/whatsapp/api-logs" class="menu-link">
+                                <i class="fas fa-file-alt"></i>
+                                <span>API Logs</span>
+                            </a>
+                            <a href="/admin/whatsapp/subscription-plans" class="menu-link">
+                                <i class="fas fa-tags"></i>
+                                <span>Subscription Plans</span>
+                            </a>
+                            <a href="/admin/whatsapp/user-subscriptions" class="menu-link">
+                                <i class="fas fa-crown"></i>
+                                <span>User Subscriptions</span>
+                            </a>
+                            <a href="/admin/whatsapp/user-subscriptions/assign" class="menu-link">
+                                <i class="fas fa-user-plus"></i>
+                                <span>Assign Subscription</span>
+                            </a>
+                        </div>
+                    </div>
                 </div>
                 
                 <!-- User Management -->
