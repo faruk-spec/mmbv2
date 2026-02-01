@@ -43,13 +43,15 @@ class SessionController
      */
     public function create()
     {
-        // Prevent any output before JSON response
-        if (ob_get_level()) {
+        // Clear all output buffers to ensure clean JSON response
+        while (ob_get_level()) {
             ob_end_clean();
         }
+        
+        // Start fresh output buffer
         ob_start();
         
-        // Ensure JSON response even on fatal errors
+        // Set JSON header first
         header('Content-Type: application/json');
         
         try {
@@ -99,9 +101,10 @@ class SessionController
             
             $insertId = $this->db->lastInsertId();
             
-            // Clear any accumulated output and send only JSON
+            // Clear buffer and output ONLY JSON
             ob_clean();
-            echo json_encode([
+            
+            $response = [
                 'success' => true,
                 'message' => 'Session created successfully',
                 'session_id' => $insertId,
@@ -110,18 +113,24 @@ class SessionController
                     'session_name' => $sessionName,
                     'status' => 'initializing'
                 ]
-            ]);
+            ];
+            
+            echo json_encode($response);
             
         } catch (\Exception $e) {
+            // Clear buffer on error too
             ob_clean();
             http_response_code(400);
-            echo json_encode([
+            
+            $response = [
                 'success' => false,
                 'message' => $e->getMessage()
-            ]);
+            ];
+            
+            echo json_encode($response);
         }
         
-        // Send the output buffer and exit cleanly
+        // Flush output buffer and exit
         ob_end_flush();
         exit;
     }
@@ -424,13 +433,23 @@ class SessionController
     {
         try {
             // Bridge server URL (configurable)
-            $bridgeUrl = getenv('WHATSAPP_BRIDGE_URL') ?: 'http://localhost:3000';
-            $endpoint = $bridgeUrl . '/generate-qr?session=' . urlencode($sessionId);
+            $bridgeUrl = getenv('WHATSAPP_BRIDGE_URL') ?: 'http://127.0.0.1:3000';
+            $endpoint = $bridgeUrl . '/api/generate-qr';
             
-            // Set timeout to avoid long waits if bridge is down
+            // Prepare POST data as JSON (bridge expects JSON body)
+            $postData = json_encode([
+                'sessionId' => $sessionId,
+                'userId' => $this->user['id']
+            ]);
+            
+            // Set context for POST request with timeout
             $context = stream_context_create([
                 'http' => [
-                    'timeout' => 2, // 2 second timeout
+                    'method' => 'POST',
+                    'header' => "Content-Type: application/json\r\n" .
+                               "Content-Length: " . strlen($postData) . "\r\n",
+                    'content' => $postData,
+                    'timeout' => 15, // Increase timeout for WhatsApp initialization (can take 10+ seconds)
                     'ignore_errors' => true
                 ]
             ]);
@@ -440,6 +459,7 @@ class SessionController
             
             if ($response === false) {
                 // Bridge not available or connection failed
+                error_log("WhatsApp Bridge: Connection failed to $endpoint");
                 return null;
             }
             
@@ -447,19 +467,27 @@ class SessionController
             
             if (!$data || !isset($data['success']) || !$data['success']) {
                 // Bridge returned error
+                error_log("WhatsApp Bridge: API returned error - " . ($data['message'] ?? 'Unknown error'));
+                return null;
+            }
+            
+            // Bridge returns 'qr' field, not 'qr_code'
+            if (!isset($data['qr'])) {
+                error_log("WhatsApp Bridge: Missing QR field in response");
                 return null;
             }
             
             // Return real QR code from bridge
             return [
-                'image' => $data['qr_code'],
-                'text' => $data['qr_text'] ?? '',
+                'image' => $data['qr'], // Bridge returns QR in 'qr' field
+                'text' => $sessionId, // Use session ID as text
                 'expires_at' => time() + 60, // QR codes typically expire in 60 seconds
                 'is_real' => true
             ];
             
         } catch (\Exception $e) {
             // Any error means bridge not available
+            error_log("WhatsApp Bridge: Exception - " . $e->getMessage());
             return null;
         }
     }
