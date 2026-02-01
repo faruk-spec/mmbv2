@@ -43,6 +43,10 @@ class SessionController
      */
     public function create()
     {
+        // Disable error display to prevent non-JSON output
+        ini_set('display_errors', 0);
+        error_reporting(E_ALL);
+        
         // Clear all output buffers to ensure clean JSON response
         while (ob_get_level()) {
             ob_end_clean();
@@ -51,8 +55,8 @@ class SessionController
         // Start fresh output buffer
         ob_start();
         
-        // Set JSON header first
-        header('Content-Type: application/json');
+        // Set JSON header first - must be before any output
+        header('Content-Type: application/json; charset=utf-8');
         
         try {
             // Validate request method
@@ -101,8 +105,11 @@ class SessionController
             
             $insertId = $this->db->lastInsertId();
             
-            // Clear buffer and output ONLY JSON
-            ob_clean();
+            // Clear any accumulated output and prepare JSON response
+            $bufferContent = ob_get_clean();
+            
+            // Start final clean buffer for JSON only
+            ob_start();
             
             $response = [
                 'success' => true,
@@ -115,22 +122,29 @@ class SessionController
                 ]
             ];
             
-            echo json_encode($response);
+            echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             
         } catch (\Exception $e) {
-            // Clear buffer on error too
-            ob_clean();
+            // Clear any buffered content
+            if (ob_get_level()) {
+                ob_clean();
+            }
+            
+            // Start fresh for error response
+            ob_start();
+            
             http_response_code(400);
             
             $response = [
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => $e->getMessage(),
+                'error_code' => 'SESSION_CREATE_ERROR'
             ];
             
-            echo json_encode($response);
+            echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         }
         
-        // Flush output buffer and exit
+        // Send buffer and terminate
         ob_end_flush();
         exit;
     }

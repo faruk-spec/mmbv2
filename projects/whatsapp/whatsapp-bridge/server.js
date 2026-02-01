@@ -9,40 +9,84 @@ app.use(bodyParser.json());
 // Store active WhatsApp clients per user session
 const clients = {};
 
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+    res.json({ 
+        success: true, 
+        status: 'running',
+        message: 'WhatsApp Bridge is operational',
+        timestamp: new Date().toISOString()
+    });
+});
+
+// Health check with POST (for consistency)
+app.post('/api/health', (req, res) => {
+    res.json({ 
+        success: true, 
+        status: 'running',
+        message: 'WhatsApp Bridge is operational',
+        timestamp: new Date().toISOString()
+    });
+});
+
 // Generate QR Code for session
 app.post('/api/generate-qr', async (req, res) => {
     const { sessionId, userId } = req.body;
     
+    console.log(`[${new Date().toISOString()}] QR generation request:`, { sessionId, userId });
+    
     if (!sessionId || !userId) {
-        return res.status(400).json({ success: false, message: 'Missing sessionId or userId' });
+        console.error('Missing required fields:', { sessionId, userId });
+        return res.status(400).json({ 
+            success: false, 
+            message: 'Missing sessionId or userId',
+            received: { sessionId: !!sessionId, userId: !!userId }
+        });
     }
 
     try {
+        console.log(`Creating WhatsApp client for session ${sessionId}...`);
+        
         // Create new WhatsApp client for this session
         const client = new Client({
             authStrategy: new LocalAuth({ clientId: sessionId }),
             puppeteer: { 
                 headless: true,
-                args: ['--no-sandbox', '--disable-setuid-sandbox']
+                args: [
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox',
+                    '--disable-dev-shm-usage',
+                    '--disable-accelerated-2d-canvas',
+                    '--no-first-run',
+                    '--no-zygote',
+                    '--disable-gpu'
+                ]
             }
         });
 
         let qrCodeData = null;
+        let clientError = null;
 
         // When QR code is generated
         client.on('qr', async (qr) => {
-            console.log(`QR Code generated for session ${sessionId}`);
-            qrCodeData = await QRCode.toDataURL(qr);
+            console.log(`✓ QR Code generated for session ${sessionId}`);
+            try {
+                qrCodeData = await QRCode.toDataURL(qr);
+                console.log(`✓ QR Code converted to data URL for session ${sessionId}`);
+            } catch (err) {
+                console.error(`Error converting QR to data URL:`, err);
+                qrCodeData = null;
+            }
         });
 
         // When authenticated
         client.on('authenticated', () => {
-            console.log(`Session ${sessionId} authenticated`);
+            console.log(`✓ Session ${sessionId} authenticated`);
         });
 
         // When ready
         client.on('ready', () => {
-            console.log(`Session ${sessionId} is ready`);
+            console.log(`✓ Session ${sessionId} is ready`);
             clients[sessionId] = { client, userId, connected: true };
         });
 
@@ -51,26 +95,46 @@ app.post('/api/generate-qr', async (req, res) => {
             console.log(`Session ${sessionId} disconnected`);
             delete clients[sessionId];
         });
+        
+        // Catch initialization errors
+        client.on('auth_failure', (msg) => {
+            console.error(`Auth failure for session ${sessionId}:`, msg);
+            clientError = 'Authentication failed';
+        });
 
         // Initialize client
+        console.log(`Initializing client for session ${sessionId}...`);
         await client.initialize();
 
-        // Wait for QR code (max 10 seconds)
-        for (let i = 0; i < 20; i++) {
+        // Wait for QR code (max 15 seconds)
+        console.log(`Waiting for QR code for session ${sessionId}...`);
+        for (let i = 0; i < 30; i++) {
             if (qrCodeData) {
+                console.log(`✓ Returning QR code for session ${sessionId}`);
                 return res.json({ 
                     success: true, 
                     qr: qrCodeData,
-                    sessionId: sessionId
+                    qr_text: 'Scan this QR code with WhatsApp',
+                    sessionId: sessionId,
+                    generated_at: new Date().toISOString()
                 });
+            }
+            if (clientError) {
+                console.error(`Client error for session ${sessionId}:`, clientError);
+                throw new Error(clientError);
             }
             await new Promise(resolve => setTimeout(resolve, 500));
         }
 
-        res.status(408).json({ success: false, message: 'QR code generation timeout' });
+        console.error(`QR code generation timeout for session ${sessionId}`);
+        res.status(408).json({ 
+            success: false, 
+            message: 'QR code generation timeout. Please try again.',
+            sessionId: sessionId
+        });
 
     } catch (error) {
-        console.error('Error generating QR:', error);
+        console.error(`[${new Date().toISOString()}] Error generating QR for session ${sessionId}:`, error.message);
         
         // Provide helpful error messages based on error type
         let userMessage = error.message;
@@ -78,6 +142,24 @@ app.post('/api/generate-qr', async (req, res) => {
         
         if (error.message.includes('Failed to launch') || error.message.includes('cannot open shared object')) {
             userMessage = 'Chrome/Puppeteer dependencies are missing';
+            helpText = 'Run: sudo ./install-chrome-deps.sh in the whatsapp-bridge directory. See CHROME_SETUP.md for details.';
+        } else if (error.message.includes('ECONNREFUSED')) {
+            userMessage = 'Cannot connect to Chrome';
+            helpText = 'Chrome may not be installed or Puppeteer may need configuration.';
+        } else if (error.message.includes('timeout')) {
+            userMessage = 'QR code generation timed out';
+            helpText = 'This can happen if WhatsApp servers are slow. Try again in a moment.';
+        }
+        
+        res.status(500).json({ 
+            success: false, 
+            message: userMessage,
+            help: helpText,
+            technicalError: error.message,
+            sessionId: sessionId
+        });
+    }
+});
             helpText = 'Run: sudo ./install-chrome-deps.sh in the whatsapp-bridge directory. See CHROME_SETUP.md for details.';
         } else if (error.message.includes('ECONNREFUSED')) {
             userMessage = 'Cannot connect to Chrome';
