@@ -91,13 +91,23 @@ class SessionController
             }
             
             // Check session limit based on subscription
-            $sessionCount = $this->getSessionCount();
-            $subscription = $this->getUserSubscription();
-            
-            $maxSessions = $subscription['sessions_limit'] ?? 5;
-            
-            if ($maxSessions > 0 && $sessionCount >= $maxSessions) {
-                throw new \Exception("Maximum session limit ($maxSessions) reached. Please upgrade your plan.");
+            try {
+                $sessionCount = $this->getSessionCount();
+                $subscription = $this->getUserSubscription();
+                
+                $maxSessions = $subscription['sessions_limit'] ?? 5;
+                
+                if ($maxSessions > 0 && $sessionCount >= $maxSessions) {
+                    throw new \Exception("Maximum session limit ($maxSessions) reached. Please upgrade your plan.");
+                }
+            } catch (\Exception $e) {
+                // Log the error but allow session creation to proceed with default limits
+                @error_log("Subscription check failed: " . $e->getMessage());
+                // Use default limit if subscription check fails
+                $sessionCount = $this->getSessionCount();
+                if ($sessionCount >= 5) {
+                    throw new \Exception("Maximum session limit (5) reached.");
+                }
             }
             
             // Generate unique session ID
@@ -189,13 +199,21 @@ class SessionController
      */
     private function getUserSubscription()
     {
-        return $this->db->fetch("
-            SELECT sessions_limit, messages_limit, api_calls_limit, status
-            FROM whatsapp_subscriptions
-            WHERE user_id = ? AND status = 'active'
-            ORDER BY end_date DESC
-            LIMIT 1
-        ", [$this->user['id']]) ?? ['sessions_limit' => 5];
+        try {
+            $result = $this->db->fetch("
+                SELECT sessions_limit, messages_limit, api_calls_limit, status
+                FROM whatsapp_subscriptions
+                WHERE user_id = ? AND status = 'active'
+                ORDER BY end_date DESC
+                LIMIT 1
+            ", [$this->user['id']]);
+            
+            return $result ?? ['sessions_limit' => 5];
+        } catch (\Exception $e) {
+            // Log error and return default values if table doesn't exist
+            @error_log("getUserSubscription error: " . $e->getMessage());
+            return ['sessions_limit' => 5];
+        }
     }
     
     /**
@@ -270,15 +288,6 @@ class SessionController
     /**
      * Get QR code for session with proper status updates
      * Endpoint: /projects/whatsapp/sessions/qr/{session_id}
-     * 
-     * PRODUCTION NOTE:
-     * This is a placeholder implementation. For production use:
-     * 1. Install whatsapp-web.js or similar library via Node.js bridge
-     * 2. Use libraries like endroid/qr-code for PHP QR generation
-     * 3. Implement WebSocket connection to WhatsApp Web
-     * 4. Return actual QR code as base64 encoded image
-     * 5. Handle QR code expiration and regeneration
-     * 6. Update session status based on scan events
      */
     public function getQRCode()
     {
@@ -289,6 +298,10 @@ class SessionController
             
             if (!$sessionId) {
                 throw new \Exception('Session ID required');
+            }
+            
+            if (!$this->user) {
+                throw new \Exception('User not authenticated');
             }
             
             // Verify ownership and get session details
@@ -318,8 +331,8 @@ class SessionController
             $qrData = $this->getQRFromBridge($session['session_id']);
             
             if ($qrData === null) {
-                // Bridge not available - return error instead of placeholder
-                throw new \Exception('WhatsApp Web.js bridge server is not responding. Please ensure the bridge server is running at http://127.0.0.1:3000. Check server.js and logs for details.');
+                // Bridge not available - return more helpful error
+                throw new \Exception('WhatsApp bridge server is not running. Please start the bridge server: cd projects/whatsapp/whatsapp-bridge && npm start');
             }
             
             echo json_encode([
@@ -335,7 +348,8 @@ class SessionController
             http_response_code(400);
             echo json_encode([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => $e->getMessage(),
+                'error_type' => 'QR_GENERATION_ERROR'
             ]);
         }
     }
@@ -400,10 +414,18 @@ class SessionController
      */
     private function getSessionCount()
     {
-        return $this->db->fetchColumn("
-            SELECT COUNT(*) FROM whatsapp_sessions 
-            WHERE user_id = ? AND status != 'disconnected'
-        ", [$this->user['id']]) ?? 0;
+        try {
+            $count = $this->db->fetchColumn("
+                SELECT COUNT(*) FROM whatsapp_sessions 
+                WHERE user_id = ? AND status != 'disconnected'
+            ", [$this->user['id']]);
+            
+            return $count ?? 0;
+        } catch (\Exception $e) {
+            // Log error and return 0 if query fails
+            @error_log("getSessionCount error: " . $e->getMessage());
+            return 0;
+        }
     }
     
     /**
