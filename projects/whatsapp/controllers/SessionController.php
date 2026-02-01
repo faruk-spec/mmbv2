@@ -43,22 +43,33 @@ class SessionController
      */
     public function create()
     {
-        // Disable error display to prevent non-JSON output
-        ini_set('display_errors', 0);
-        error_reporting(E_ALL);
+        // CRITICAL: Suppress ALL output before JSON response
+        @ini_set('display_errors', '0');
+        @ini_set('display_startup_errors', '0');
+        @ini_set('log_errors', '1');
+        error_reporting(0); // Suppress all errors from being displayed
         
         // Clear all output buffers to ensure clean JSON response
-        while (ob_get_level()) {
-            ob_end_clean();
+        while (@ob_get_level()) {
+            @ob_end_clean();
         }
         
         // Start fresh output buffer
         ob_start();
         
         // Set JSON header first - must be before any output
-        header('Content-Type: application/json; charset=utf-8');
+        @header('Content-Type: application/json; charset=utf-8');
         
         try {
+            // Validate that we have necessary objects
+            if (!$this->user) {
+                throw new \Exception('User not authenticated');
+            }
+            
+            if (!$this->db) {
+                throw new \Exception('Database connection not available');
+            }
+            
             // Validate request method
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
                 throw new \Exception('Method not allowed');
@@ -142,10 +153,34 @@ class SessionController
             ];
             
             echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        } catch (\Throwable $e) {
+            // Catch ANY error including fatal errors (PHP 7+)
+            // Clear any buffered content
+            while (@ob_get_level()) {
+                @ob_end_clean();
+            }
+            
+            // Start fresh
+            @ob_start();
+            
+            @http_response_code(500);
+            @header('Content-Type: application/json; charset=utf-8');
+            
+            $response = [
+                'success' => false,
+                'message' => 'An unexpected error occurred: ' . $e->getMessage(),
+                'error_code' => 'INTERNAL_ERROR',
+                'error_type' => get_class($e)
+            ];
+            
+            // Log the error for debugging
+            @error_log('Session create error: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+            
+            echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         }
         
         // Send buffer and terminate
-        ob_end_flush();
+        @ob_end_flush();
         exit;
     }
     
@@ -279,12 +314,12 @@ class SessionController
             }
             
             // Try to get real QR code from WhatsApp Web.js bridge
-            // If bridge is not running, fall back to placeholder
+            // PRODUCTION MODE: No fallback to placeholder - bridge must be running
             $qrData = $this->getQRFromBridge($session['session_id']);
             
             if ($qrData === null) {
-                // Bridge not available, use placeholder
-                $qrData = $this->generatePlaceholderQR($session['session_id']);
+                // Bridge not available - return error instead of placeholder
+                throw new \Exception('WhatsApp Web.js bridge server is not responding. Please ensure the bridge server is running at http://127.0.0.1:3000. Check server.js and logs for details.');
             }
             
             echo json_encode([
@@ -293,7 +328,7 @@ class SessionController
                 'qr_code' => $qrData['image'],
                 'qr_text' => $qrData['text'],
                 'expires_at' => $qrData['expires_at'],
-                'message' => isset($qrData['is_real']) && $qrData['is_real'] ? 'Real QR code generated' : 'Placeholder QR - Start bridge server for real QR codes'
+                'message' => 'Real QR code generated from WhatsApp Web.js bridge'
             ]);
             
         } catch (\Exception $e) {
@@ -519,126 +554,5 @@ class SessionController
             error_log("WhatsApp Bridge: Exception - " . $e->getMessage());
             return null;
         }
-    }
-    
-    /**
-     * Generate placeholder QR code for WhatsApp authentication
-     * 
-     * PRODUCTION IMPLEMENTATION GUIDE:
-     * ================================
-     * 
-     * Option 1: PHP QR Code Library
-     * ------------------------------
-     * Install: composer require endroid/qr-code
-     * 
-     * use Endroid\QrCode\QrCode;
-     * use Endroid\QrCode\Writer\PngWriter;
-     * 
-     * $qrCode = new QrCode($whatsappAuthData);
-     * $writer = new PngWriter();
-     * $result = $writer->write($qrCode);
-     * $dataUri = $result->getDataUri();
-     * 
-     * Option 2: WhatsApp Web.js Bridge (Node.js + PHP)
-     * -------------------------------------------------
-     * 1. Install whatsapp-web.js in Node.js:
-     *    npm install whatsapp-web.js
-     * 
-     * 2. Create Node.js bridge server that:
-     *    - Generates QR codes via WhatsApp Web
-     *    - Communicates with PHP via HTTP/WebSocket
-     *    - Returns QR code as base64 image
-     * 
-     * 3. PHP calls Node.js bridge:
-     *    $response = file_get_contents('http://localhost:3000/generate-qr?session=' . $sessionId);
-     * 
-     * Option 3: Commercial WhatsApp Business API
-     * ------------------------------------------
-     * Use official WhatsApp Business API for production-grade solution
-     * 
-     * @param string $sessionId Unique session identifier
-     * @return array QR code data with image and metadata
-     */
-    private function generatePlaceholderQR($sessionId)
-    {
-        // Generate a placeholder QR code using SVG
-        // In production, this would be replaced with actual WhatsApp Web QR
-        
-        $qrText = "whatsapp://pair?session=" . $sessionId . "&timestamp=" . time();
-        
-        // Create a simple SVG QR code placeholder
-        // PRODUCTION: Replace with actual QR code library
-        $svg = $this->generateSimpleSVGQR($qrText);
-        
-        return [
-            'image' => 'data:image/svg+xml;base64,' . base64_encode($svg),
-            'text' => $qrText,
-            'expires_at' => time() + 60, // 60 seconds expiration
-            'instructions' => [
-                '1. Open WhatsApp on your phone',
-                '2. Tap Menu or Settings',
-                '3. Tap Linked Devices',
-                '4. Tap Link a Device',
-                '5. Scan this QR code'
-            ]
-        ];
-    }
-    
-    /**
-     * Generate a simple SVG QR code placeholder
-     * PRODUCTION: Replace with proper QR code generation
-     */
-    private function generateSimpleSVGQR($text)
-    {
-        // Simple grid pattern as placeholder
-        // Real implementation should use proper QR encoding
-        $size = 256;
-        $gridSize = 8;
-        $cellSize = $size / $gridSize;
-        
-        $svg = '<svg width="' . $size . '" height="' . $size . '" xmlns="http://www.w3.org/2000/svg">';
-        $svg .= '<rect width="' . $size . '" height="' . $size . '" fill="#ffffff"/>';
-        
-        // Generate a deterministic pattern based on text
-        $hash = md5($text);
-        for ($i = 0; $i < $gridSize; $i++) {
-            for ($j = 0; $j < $gridSize; $j++) {
-                $index = ($i * $gridSize + $j) % strlen($hash);
-                if (hexdec($hash[$index]) % 2 === 0) {
-                    $x = $i * $cellSize;
-                    $y = $j * $cellSize;
-                    $svg .= '<rect x="' . $x . '" y="' . $y . '" width="' . $cellSize . '" height="' . $cellSize . '" fill="#000000"/>';
-                }
-            }
-        }
-        
-        // Add corner markers (typical of QR codes)
-        $markerSize = $cellSize * 3;
-        $markers = [
-            ['x' => 0, 'y' => 0],
-            ['x' => $size - $markerSize, 'y' => 0],
-            ['x' => 0, 'y' => $size - $markerSize]
-        ];
-        
-        foreach ($markers as $marker) {
-            $svg .= '<rect x="' . $marker['x'] . '" y="' . $marker['y'] . '" width="' . $markerSize . '" height="' . $markerSize . '" fill="none" stroke="#000000" stroke-width="' . ($cellSize/2) . '"/>';
-            $svg .= '<rect x="' . ($marker['x'] + $cellSize) . '" y="' . ($marker['y'] + $cellSize) . '" width="' . $cellSize . '" height="' . $cellSize . '" fill="#000000"/>';
-        }
-        
-        $svg .= '</svg>';
-        
-        return $svg;
-    }
-    
-    /**
-     * Legacy method - kept for backward compatibility
-     * @deprecated Use generatePlaceholderQR() instead
-     */
-    private function generateQRCode($sessionId)
-    {
-        return [
-            'data' => 'whatsapp://qr/' . $sessionId,
-            'expires_at' => time() + 60
-        ];
     }
 }
