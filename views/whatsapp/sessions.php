@@ -183,12 +183,12 @@
             Scan QR Code
         </h2>
         
-        <!-- Integration Note -->
-        <div style="background: rgba(255, 170, 0, 0.1); border: 1px solid #ffaa00; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+        <!-- Integration Note (will be shown/hidden based on QR type) -->
+        <div id="qrIntegrationNote" style="background: rgba(255, 170, 0, 0.1); border: 1px solid #ffaa00; border-radius: 8px; padding: 12px; margin-bottom: 16px; display: none;">
             <div style="display: flex; align-items: start; gap: 10px;">
                 <i class="fas fa-info-circle" style="color: #ffaa00; margin-top: 2px;"></i>
                 <div style="flex: 1; font-size: 0.85rem; color: #ffaa00; line-height: 1.6;">
-                    <strong>Note:</strong> This platform does not use the official WhatsApp API. QR codes will be functional once you integrate WhatsApp Web.js bridge service. See <code>WHATSAPP_PRODUCTION_GUIDE.md</code> for setup instructions.
+                    <strong>Note:</strong> WhatsApp Web.js bridge server is not responding. Please ensure the bridge server is running. See <code>WHATSAPP_PRODUCTION_GUIDE.md</code> for setup instructions.
                 </div>
             </div>
         </div>
@@ -470,10 +470,18 @@ function loadQRCode(sessionId) {
                             </div>
                         </div>
                     `;
+                    // Hide integration note for connected sessions
+                    document.getElementById('qrIntegrationNote').style.display = 'none';
                     clearInterval(qrPollInterval);
                 } else {
+                    // Check if QR is real or placeholder
+                    const isRealQR = data.message && data.message.includes('Real QR code');
+                    
+                    // Show/hide integration note based on QR type
+                    document.getElementById('qrIntegrationNote').style.display = isRealQR ? 'none' : 'block';
+                    
                     // Display QR code
-                    updateQRStatus('Ready to scan', 'ready');
+                    updateQRStatus(isRealQR ? 'Ready to scan' : 'Waiting for bridge...', isRealQR ? 'ready' : 'warning');
                     document.getElementById('qrCodeContainer').innerHTML = `
                         <img src="${data.qr_code}" alt="QR Code" style="width: 256px; height: 256px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
                     `;
@@ -482,6 +490,11 @@ function loadQRCode(sessionId) {
                     if (data.expires_at) {
                         qrExpiresAt = data.expires_at;
                         startExpirationTimer();
+                    }
+                    
+                    // Show success toast for real QR
+                    if (isRealQR) {
+                        showToast('Real QR code generated successfully!', 'success');
                     }
                 }
             } else {
@@ -552,6 +565,7 @@ function updateQRStatus(text, type) {
         loading: '<i class="fas fa-sync fa-spin" style="margin-right: 6px;"></i>',
         ready: '<i class="fas fa-qrcode" style="margin-right: 6px;"></i>',
         success: '<i class="fas fa-check-circle" style="margin-right: 6px;"></i>',
+        warning: '<i class="fas fa-exclamation-triangle" style="margin-right: 6px;"></i>',
         error: '<i class="fas fa-exclamation-circle" style="margin-right: 6px;"></i>'
     };
     
@@ -559,6 +573,7 @@ function updateQRStatus(text, type) {
         loading: 'rgba(0, 136, 204, 0.2); color: #0088cc',
         ready: 'rgba(37, 211, 102, 0.2); color: #25D366',
         success: 'rgba(37, 211, 102, 0.3); color: #25D366',
+        warning: 'rgba(255, 170, 0, 0.2); color: #ffaa00',
         error: 'rgba(255, 107, 107, 0.2); color: #ff6b6b'
     };
     
