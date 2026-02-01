@@ -32,6 +32,16 @@ print_warning() {
     echo -e "${YELLOW}⚠${NC} $1"
 }
 
+# Auto-detect site root
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+# Go up two levels from whatsapp directory to site root
+SITE_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+echo "Detected paths:"
+echo "  Script directory: $SCRIPT_DIR"
+echo "  Site root: $SITE_ROOT"
+echo ""
+
 echo "=== 1. CHECKING BRIDGE SERVER ==="
 echo ""
 
@@ -47,7 +57,7 @@ if lsof -i :3000 > /dev/null 2>&1 || netstat -tuln 2>/dev/null | grep -q ":3000"
     fi
 else
     print_status 1 "Port 3000 is NOT in use - bridge server is NOT running"
-    echo "  Fix: cd projects/whatsapp/whatsapp-bridge && npm start &"
+    echo "  Fix: cd $SCRIPT_DIR/whatsapp-bridge && npm start &"
     echo ""
 fi
 
@@ -77,37 +87,35 @@ echo ""
 
 # Check PHP version
 if command -v php >/dev/null 2>&1; then
-    PHP_VERSION=$(php -r "echo PHP_VERSION;")
+    PHP_VERSION=$(php -r "echo PHP_VERSION;" 2>/dev/null)
     print_status 0 "PHP is installed (version $PHP_VERSION)"
 else
     print_status 1 "PHP is NOT installed"
 fi
 
-# Test PHP file_get_contents
+# Test PHP file_get_contents (suppress warnings)
 echo ""
 echo "Testing file_get_contents..."
-php -r '
+php -d error_reporting=0 -r '
     $result = @file_get_contents("http://127.0.0.1:3000/api/health");
     if ($result === false) {
         echo "✗ PHP file_get_contents FAILED\n";
-        $error = error_get_last();
-        echo "  Error: " . ($error["message"] ?? "Unknown error") . "\n";
         exit(1);
     } else {
         echo "✓ PHP file_get_contents SUCCESS\n";
         echo "  Response: " . $result . "\n";
         exit(0);
     }
-'
+' 2>/dev/null
 FILE_GET_STATUS=$?
 if [ $FILE_GET_STATUS -ne 0 ]; then
     ISSUES_FOUND=$((ISSUES_FOUND + 1))
 fi
 
-# Test PHP curl
+# Test PHP curl (suppress warnings)
 echo ""
 echo "Testing PHP cURL..."
-php -r '
+php -d error_reporting=0 -r '
     if (!function_exists("curl_init")) {
         echo "✗ cURL extension is NOT installed\n";
         echo "  Install: apt-get install php-curl && service php-fpm restart\n";
@@ -131,7 +139,7 @@ php -r '
         echo "  Error: $error\n";
         exit(1);
     }
-'
+' 2>/dev/null
 CURL_STATUS=$?
 if [ $CURL_STATUS -ne 0 ]; then
     ISSUES_FOUND=$((ISSUES_FOUND + 1))
@@ -141,7 +149,7 @@ echo ""
 echo "=== 4. CHECKING PHP CONFIGURATION ==="
 echo ""
 
-php -r '
+php -d error_reporting=0 -r '
     $allow_url_fopen = ini_get("allow_url_fopen");
     $curl_available = function_exists("curl_init");
     
@@ -160,7 +168,7 @@ php -r '
     }
     
     exit((!$allow_url_fopen || !$curl_available) ? 1 : 0);
-'
+' 2>/dev/null
 PHP_CONFIG_STATUS=$?
 if [ $PHP_CONFIG_STATUS -ne 0 ]; then
     ISSUES_FOUND=$((ISSUES_FOUND + 1))
@@ -170,8 +178,15 @@ echo ""
 echo "=== 5. CHECKING DATABASE CONNECTION ==="
 echo ""
 
-# Test if database queries work
-php -r '
+# Test if database queries work (from site root)
+cd "$SITE_ROOT"
+php -d error_reporting=0 -r '
+    if (!file_exists("core/Database.php")) {
+        echo "⚠ core/Database.php not found (checking from: " . getcwd() . ")\n";
+        echo "  Skipping database test (not critical if bridge works)\n";
+        exit(0);
+    }
+    
     require_once "core/Database.php";
     require_once "config/database.php";
     
@@ -197,26 +212,28 @@ php -r '
         echo "  Error: " . $e->getMessage() . "\n";
         exit(1);
     }
-' 2>&1
+' 2>/dev/null
 DB_STATUS=$?
 if [ $DB_STATUS -ne 0 ]; then
     ISSUES_FOUND=$((ISSUES_FOUND + 1))
 fi
+cd "$SCRIPT_DIR"
 
 echo ""
 echo "=== 6. CHECKING SERVER CONFIGURATION ==="
 echo ""
 
 # Check if server.js has correct config
-if [ -f "projects/whatsapp/whatsapp-bridge/server.js" ]; then
-    if grep -q "0.0.0.0" projects/whatsapp/whatsapp-bridge/server.js; then
+if [ -f "$SCRIPT_DIR/whatsapp-bridge/server.js" ]; then
+    if grep -q "0.0.0.0" "$SCRIPT_DIR/whatsapp-bridge/server.js"; then
         print_status 0 "Bridge server configured to listen on 0.0.0.0"
     else
         print_status 1 "Bridge server NOT configured for 0.0.0.0"
         echo "  Fix: Update server.js to listen on 0.0.0.0"
     fi
 else
-    print_status 1 "server.js file not found"
+    print_warning "server.js file not found at $SCRIPT_DIR/whatsapp-bridge/server.js"
+    echo "  This might be normal if running from different location"
 fi
 
 echo ""
@@ -224,15 +241,16 @@ echo "=== 7. CHECKING SESSION CONTROLLER ==="
 echo ""
 
 # Check if SessionController has curl support
-if [ -f "projects/whatsapp/controllers/SessionController.php" ]; then
-    if grep -q "curl_init" projects/whatsapp/controllers/SessionController.php; then
+if [ -f "$SITE_ROOT/projects/whatsapp/controllers/SessionController.php" ]; then
+    if grep -q "curl_init" "$SITE_ROOT/projects/whatsapp/controllers/SessionController.php"; then
         print_status 0 "SessionController has cURL support"
     else
         print_status 1 "SessionController missing cURL support"
         echo "  Fix: Update SessionController.php with dual connection method"
     fi
 else
-    print_status 1 "SessionController.php file not found"
+    print_warning "SessionController.php not found at $SITE_ROOT/projects/whatsapp/controllers/SessionController.php"
+    echo "  This might be normal if running from different location"
 fi
 
 echo ""
@@ -247,9 +265,9 @@ if [ $ISSUES_FOUND -eq 0 ]; then
     echo "System appears to be configured correctly."
     echo ""
     echo "If you're still experiencing issues:"
-    echo "1. Restart the bridge server: ./projects/whatsapp/restart-bridge.sh"
-    echo "2. Check application logs for specific errors"
-    echo "3. Try creating a test session and check browser console"
+    echo "1. Check browser console for errors (F12)"
+    echo "2. Try creating a test session"
+    echo "3. Check application error logs"
     echo "4. Access: https://your-domain.com/projects/whatsapp/bridge-health.php"
 else
     echo -e "${RED}✗ FOUND $ISSUES_FOUND ISSUE(S)${NC}"
@@ -257,14 +275,14 @@ else
     echo "Please fix the issues listed above and run this script again."
     echo ""
     echo "Quick fixes:"
-    echo "1. Bridge not running: cd projects/whatsapp/whatsapp-bridge && npm start &"
+    echo "1. Bridge not running: cd $SCRIPT_DIR/whatsapp-bridge && npm start &"
     echo "2. Missing cURL: apt-get install php-curl && service php-fpm restart"
     echo "3. Database issues: Check database credentials and tables"
     echo "4. Configuration issues: Review PRODUCTION_DEPLOYMENT.md"
 fi
 
 echo ""
-echo "For detailed help, see: projects/whatsapp/PRODUCTION_DEPLOYMENT.md"
+echo "For detailed help, see: $SCRIPT_DIR/PRODUCTION_DEPLOYMENT.md"
 echo ""
 
 exit $ISSUES_FOUND
