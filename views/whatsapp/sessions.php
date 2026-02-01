@@ -298,6 +298,7 @@ let qrPollInterval = null;
 let qrTimeoutInterval = null;
 let currentSessionId = null;
 let qrExpiresAt = null;
+let realQRToastShown = false;
 
 function showConfirmModal(title, message, callback) {
     document.getElementById('confirmTitle').textContent = title;
@@ -415,7 +416,12 @@ function submitCreateSession(event) {
         if (data.success) {
             closeCreateSessionModal();
             showToast('Session created successfully!', 'success');
-            setTimeout(() => location.reload(), 1000);
+            
+            // Reload page to show the new session
+            // Using a delay to allow toast to be visible
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
         } else {
             throw new Error(data.message || 'Failed to create session');
         }
@@ -430,6 +436,7 @@ function submitCreateSession(event) {
 
 function viewQRCode(sessionId) {
     currentSessionId = sessionId;
+    realQRToastShown = false; // Reset flag for new QR session
     document.getElementById('qrModal').style.display = 'flex';
     
     // Reset state
@@ -474,8 +481,9 @@ function loadQRCode(sessionId) {
                     document.getElementById('qrIntegrationNote').style.display = 'none';
                     clearInterval(qrPollInterval);
                 } else {
-                    // Check if QR is real or placeholder
-                    const isRealQR = data.message && data.message.includes('Real QR code');
+                    // Check if QR is real or placeholder based on message field
+                    // The backend returns 'Real QR code generated' for real QRs
+                    const isRealQR = data.message && data.message.toLowerCase().includes('real qr');
                     
                     // Show/hide integration note based on QR type
                     document.getElementById('qrIntegrationNote').style.display = isRealQR ? 'none' : 'block';
@@ -492,9 +500,10 @@ function loadQRCode(sessionId) {
                         startExpirationTimer();
                     }
                     
-                    // Show success toast for real QR
-                    if (isRealQR) {
+                    // Show success toast for real QR only once per session
+                    if (isRealQR && !realQRToastShown) {
                         showToast('Real QR code generated successfully!', 'success');
+                        realQRToastShown = true;
                     }
                 }
             } else {
