@@ -71,7 +71,25 @@ app.post('/api/generate-qr', async (req, res) => {
 
     } catch (error) {
         console.error('Error generating QR:', error);
-        res.status(500).json({ success: false, message: error.message });
+        
+        // Provide helpful error messages based on error type
+        let userMessage = error.message;
+        let helpText = '';
+        
+        if (error.message.includes('Failed to launch') || error.message.includes('cannot open shared object')) {
+            userMessage = 'Chrome/Puppeteer dependencies are missing';
+            helpText = 'Run: sudo ./install-chrome-deps.sh in the whatsapp-bridge directory. See CHROME_SETUP.md for details.';
+        } else if (error.message.includes('ECONNREFUSED')) {
+            userMessage = 'Cannot connect to Chrome';
+            helpText = 'Chrome may not be installed or Puppeteer may need configuration.';
+        }
+        
+        res.status(500).json({ 
+            success: false, 
+            message: userMessage,
+            help: helpText,
+            technicalError: error.message 
+        });
     }
 });
 

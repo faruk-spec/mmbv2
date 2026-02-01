@@ -90,8 +90,22 @@ if [ $BRIDGE_RUNNING -eq 1 ]; then
             echo -e "${GREEN}✓ Endpoint working${NC}"
             echo "     QR code generated successfully"
         else
-            echo -e "${YELLOW}✓ Endpoint responding${NC}"
-            echo "     Response: $RESPONSE"
+            echo -e "${YELLOW}✓ Endpoint responding but with error${NC}"
+            
+            # Check for specific Chrome/Puppeteer errors
+            if echo "$RESPONSE" | grep -q -i "launch.*browser\|libatk\|libgbm\|shared.*libraries"; then
+                echo -e "     ${YELLOW}⚠ Chrome/Puppeteer dependencies missing${NC}"
+                echo ""
+                echo "     Fix: Install Chrome dependencies"
+                echo "     1. cd projects/whatsapp/whatsapp-bridge"
+                echo "     2. sudo ./install-chrome-deps.sh"
+                echo "     3. See CHROME_SETUP.md for detailed instructions"
+                echo ""
+            fi
+            
+            # Show first 200 chars of response
+            TRIMMED=$(echo "$RESPONSE" | cut -c1-200)
+            echo "     Error: $TRIMMED..."
         fi
     else
         echo -e "${RED}✗ Endpoint failed${NC}"
@@ -131,6 +145,7 @@ fi
 
 echo ""
 echo "For more help, see:"
-echo "- projects/whatsapp/TROUBLESHOOTING.md"
-echo "- projects/whatsapp/QUICK_START.md"
+echo "- projects/whatsapp/CHROME_SETUP.md (Chrome/Puppeteer issues)"
+echo "- projects/whatsapp/TROUBLESHOOTING.md (General troubleshooting)"
+echo "- projects/whatsapp/QUICK_START.md (Initial setup)"
 echo ""

@@ -466,8 +466,23 @@ class SessionController
             $data = json_decode($response, true);
             
             if (!$data || !isset($data['success']) || !$data['success']) {
-                // Bridge returned error
-                error_log("WhatsApp Bridge: API returned error - " . ($data['message'] ?? 'Unknown error'));
+                // Bridge returned error - log detailed message
+                $errorMsg = $data['message'] ?? 'Unknown error';
+                $helpText = $data['help'] ?? '';
+                
+                error_log("WhatsApp Bridge: API returned error - $errorMsg");
+                if ($helpText) {
+                    error_log("WhatsApp Bridge: Help - $helpText");
+                }
+                
+                // Check if it's a Chrome/Puppeteer issue
+                if (stripos($errorMsg, 'chrome') !== false || 
+                    stripos($errorMsg, 'puppeteer') !== false ||
+                    stripos($errorMsg, 'launch') !== false ||
+                    stripos($errorMsg, 'dependencies') !== false) {
+                    error_log("WhatsApp Bridge: Chrome/Puppeteer issue detected. See CHROME_SETUP.md");
+                }
+                
                 return null;
             }
             
