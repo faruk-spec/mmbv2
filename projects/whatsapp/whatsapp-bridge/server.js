@@ -230,7 +230,11 @@ app.post('/api/disconnect', async (req, res) => {
 });
 
 // Start server
-const PORT = 3000;
-app.listen(PORT, '127.0.0.1', () => {
-    console.log(`WhatsApp Bridge running on http://127.0.0.1:${PORT}`);
+const PORT = process.env.PORT || 3000;
+const HOST = process.env.HOST || '0.0.0.0'; // Listen on all interfaces for production
+
+app.listen(PORT, HOST, () => {
+    console.log(`WhatsApp Bridge running on http://${HOST}:${PORT}`);
+    console.log(`Health check: http://localhost:${PORT}/api/health`);
+    console.log(`Server started at: ${new Date().toISOString()}`);
 });
