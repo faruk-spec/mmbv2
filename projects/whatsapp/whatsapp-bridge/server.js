@@ -160,20 +160,6 @@ app.post('/api/generate-qr', async (req, res) => {
         });
     }
 });
-            helpText = 'Run: sudo ./install-chrome-deps.sh in the whatsapp-bridge directory. See CHROME_SETUP.md for details.';
-        } else if (error.message.includes('ECONNREFUSED')) {
-            userMessage = 'Cannot connect to Chrome';
-            helpText = 'Chrome may not be installed or Puppeteer may need configuration.';
-        }
-        
-        res.status(500).json({ 
-            success: false, 
-            message: userMessage,
-            help: helpText,
-            technicalError: error.message 
-        });
-    }
-});
 
 // Check session status
 app.post('/api/check-status', (req, res) => {

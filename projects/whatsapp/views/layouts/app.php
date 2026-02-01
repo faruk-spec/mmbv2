@@ -116,6 +116,24 @@
         .sidebar-header {
             padding: 25px 20px;
             border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .whatsapp-mobile-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--whatsapp-green);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 8px;
+            transition: var(--transition);
+        }
+        
+        .whatsapp-mobile-toggle:hover {
+            color: #20BA58;
         }
         
         .logo {
@@ -207,6 +225,13 @@
         .sidebar-overlay.active {
             display: block;
             opacity: 1;
+        }
+        
+        /* Ensure sidebar is above universal navbar on mobile */
+        @media (max-width: 768px) {
+            .sidebar {
+                z-index: 10000;
+            }
         }
         
         /* Main Content */
@@ -596,6 +621,10 @@
                 transform: translateX(0);
             }
             
+            .whatsapp-mobile-toggle {
+                display: block;
+            }
+            
             .main-content {
                 margin-left: 0;
             }
@@ -650,7 +679,7 @@
     <!-- Universal Navbar -->
     <?php require_once BASE_PATH . '/views/layouts/navbar.php'; ?>
     
-    <div class="whatsapp-container" style="margin-top: 60px;">
+    <div class="whatsapp-container">
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
@@ -658,6 +687,9 @@
                     <i class="fab fa-whatsapp"></i>
                     <span>WhatsApp</span>
                 </a>
+                <button class="whatsapp-mobile-toggle" id="whatsappMobileToggle" aria-label="Toggle WhatsApp Menu">
+                    <i class="fas fa-bars"></i>
+                </button>
             </div>
             
             <nav class="sidebar-menu">
@@ -768,13 +800,14 @@
             document.getElementById('html-theme').setAttribute('data-theme', theme);
         })();
         
-        // Mobile menu toggle
+        // Mobile menu toggle for WhatsApp sidebar
         const sidebar = document.getElementById('sidebar');
         const sidebarOverlay = document.getElementById('sidebarOverlay');
-        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const whatsappMobileToggle = document.getElementById('whatsappMobileToggle');
         
-        if (mobileMenuBtn) {
-            mobileMenuBtn.addEventListener('click', () => {
+        if (whatsappMobileToggle) {
+            whatsappMobileToggle.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent event bubbling
                 sidebar.classList.toggle('active');
                 sidebarOverlay.classList.toggle('active');
             });
