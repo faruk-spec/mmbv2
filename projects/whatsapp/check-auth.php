@@ -9,21 +9,14 @@
 
 // Bootstrap the application
 define('BASE_PATH', dirname(dirname(__DIR__)));
-require BASE_PATH . '/core/App.php';
+
+// Load the project's autoloader
+require_once BASE_PATH . '/core/Autoloader.php';
 
 // Start session
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-
-// Load autoloader
-spl_autoload_register(function ($class) {
-    $class = str_replace('\\', '/', $class);
-    $file = BASE_PATH . '/' . $class . '.php';
-    if (file_exists($file)) {
-        require $file;
-    }
-});
 
 use Core\Auth;
 use Core\Database;
