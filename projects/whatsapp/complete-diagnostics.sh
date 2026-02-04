@@ -212,7 +212,7 @@ php -d error_reporting=0 -r '
         echo "  Error: " . $e->getMessage() . "\n";
         exit(1);
     }
-' 2>/dev/null
+'
 DB_STATUS=$?
 if [ $DB_STATUS -ne 0 ]; then
     ISSUES_FOUND=$((ISSUES_FOUND + 1))
