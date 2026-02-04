@@ -63,7 +63,14 @@ class SessionController
         try {
             // Validate that we have necessary objects
             if (!$this->user) {
-                throw new \Exception('User not authenticated');
+                // Enhanced error message for debugging
+                $sessionStatus = session_status();
+                $hasSessionId = isset($_SESSION['user_id']);
+                $userId = $_SESSION['user_id'] ?? 'none';
+                
+                error_log("Authentication failed in create: session_status=$sessionStatus, has_user_id=$hasSessionId, session_user_id=$userId");
+                
+                throw new \Exception('User not authenticated. Please log in again. (Session may have expired or cookies not enabled)');
             }
             
             if (!$this->db) {
@@ -301,7 +308,14 @@ class SessionController
             }
             
             if (!$this->user) {
-                throw new \Exception('User not authenticated');
+                // Enhanced error message for debugging
+                $sessionStatus = session_status();
+                $hasSessionId = isset($_SESSION['user_id']);
+                $sessionId = $_SESSION['user_id'] ?? 'none';
+                
+                error_log("Authentication failed in getQRCode: session_status=$sessionStatus, has_user_id=$hasSessionId, session_user_id=$sessionId");
+                
+                throw new \Exception('User not authenticated. Please log in again. (Session may have expired or cookies not enabled)');
             }
             
             // Verify ownership and get session details
