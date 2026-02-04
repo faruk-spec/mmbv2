@@ -181,6 +181,9 @@ echo ""
 # Test if database queries work (from site root)
 cd "$SITE_ROOT"
 php -d error_reporting=0 -r '
+    // Define BASE_PATH constant required by Database class
+    define("BASE_PATH", getcwd());
+    
     if (!file_exists("core/Database.php")) {
         echo "⚠ core/Database.php not found (checking from: " . getcwd() . ")\n";
         echo "  Skipping database test (not critical if bridge works)\n";

@@ -4,6 +4,9 @@
  * This script helps identify why session creation is failing with 500 error
  */
 
+// Define BASE_PATH constant (required by Database class)
+define('BASE_PATH', dirname(dirname(__DIR__)));
+
 // Enable error reporting
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
