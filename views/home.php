@@ -286,10 +286,10 @@ if ($showStats):
         <button class="filter-btn" data-filter="free" style="padding: var(--space-sm) var(--space-xl); border-radius: var(--radius-full); border: 2px solid var(--border-color); background: transparent; color: var(--text-primary); font-weight: var(--font-semibold); cursor: pointer; transition: all var(--transition-fast); font-size: var(--font-size-sm); font-family: inherit;">
             Free Tools
         </button>
-        <button class="filter-btn" data-filter="freemium" style="padding: 10px 24px; border-radius: 25px; border: 2px solid var(--border-color); background: transparent; color: var(--text-primary); font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 14px;">
+        <button class="filter-btn" data-filter="freemium" style="padding: var(--space-sm) var(--space-xl); border-radius: var(--radius-full); border: 2px solid var(--border-color); background: transparent; color: var(--text-primary); font-weight: var(--font-semibold); cursor: pointer; transition: all var(--transition-fast); font-size: var(--font-size-sm); font-family: inherit;">
             Freemium
         </button>
-        <button class="filter-btn" data-filter="enterprise" style="padding: 10px 24px; border-radius: 25px; border: 2px solid var(--border-color); background: transparent; color: var(--text-primary); font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 14px;">
+        <button class="filter-btn" data-filter="enterprise" style="padding: var(--space-sm) var(--space-xl); border-radius: var(--radius-full); border: 2px solid var(--border-color); background: transparent; color: var(--text-primary); font-weight: var(--font-semibold); cursor: pointer; transition: all var(--transition-fast); font-size: var(--font-size-sm); font-family: inherit;">
             Enterprise Grade
         </button>
     </div>

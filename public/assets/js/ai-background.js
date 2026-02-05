@@ -93,9 +93,12 @@ class AIBackground {
     }
     
     createParticles() {
+        // Calculate particle density: approximately 1 particle per 30,000 pixels of screen area
+        // This ensures optimal performance while maintaining visual appeal across different screen sizes
+        const PIXELS_PER_PARTICLE = 30000;
         const particleCount = Math.min(
             this.maxParticles,
-            Math.floor((window.innerWidth * window.innerHeight) / 30000)
+            Math.floor((window.innerWidth * window.innerHeight) / PIXELS_PER_PARTICLE)
         );
         
         for (let i = 0; i < particleCount; i++) {
