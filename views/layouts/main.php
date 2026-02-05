@@ -1627,6 +1627,9 @@ try {
     <!-- Toast Notification System -->
     <script src="/assets/js/toast.js"></script>
     
+    <!-- AI-Style Animated Background -->
+    <script src="/assets/js/ai-background.js"></script>
+    
     <?php View::yield('scripts'); ?>
 </body>
 </html>

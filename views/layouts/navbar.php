@@ -394,9 +394,9 @@ body {
 }
 
 .universal-header {
-    background: rgba(12, 12, 18, 0.98) !important;
-    backdrop-filter: blur(20px) !important;
-    -webkit-backdrop-filter: blur(20px) !important;
+    background: rgba(14, 16, 21, 0.95) !important;
+    backdrop-filter: blur(20px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
     border-bottom: 1px solid var(--border-color) !important;
     <?php if (!isset($navbarSettings['navbar_sticky']) || $navbarSettings['navbar_sticky']): ?>
     /* Sticky positioning enabled (default) */
@@ -411,8 +411,8 @@ body {
     right: 0 !important;
     z-index: 9999 !important;
     width: 100% !important;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3) !important;
-    transition: all 0.3s ease !important;
+    box-shadow: var(--shadow-sm) !important;
+    transition: all var(--transition) !important;
     will-change: transform !important;
 }
 
@@ -427,34 +427,38 @@ body {
 <?php endif; ?>
 
 [data-theme="light"] .universal-header {
-    background: rgba(255, 255, 255, 0.98) !important;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1) !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    box-shadow: var(--shadow-sm) !important;
 }
 
 .universal-header .header-content {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 0;
+    padding: var(--space-md) var(--space-lg);
     max-width: 1400px;
     margin: 0 auto;
-    padding-left: 20px;
-    padding-right: 20px;
 }
 
 .universal-header .logo {
-    font-size: 1.3rem;
-    font-weight: 700;
-    background: linear-gradient(135deg, var(--cyan), var(--magenta));
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-bold);
+    background: linear-gradient(135deg, var(--cyan), var(--blue));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
     text-decoration: none;
+    transition: all var(--transition);
+}
+
+.universal-header .logo:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.1);
 }
 
 .universal-nav {
     display: flex;
-    gap: 20px;
+    gap: var(--space-sm);
     align-items: center;
 }
 
@@ -464,16 +468,16 @@ body {
 
 .universal-nav .nav-link {
     color: var(--text-secondary);
-    font-weight: 500;
-    padding: 8px 12px;
+    font-weight: var(--font-medium);
+    padding: var(--space-sm) var(--space-md);
     position: relative;
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 14px;
+    gap: var(--space-xs);
+    font-size: var(--font-size-sm);
     cursor: pointer;
-    border-radius: 6px;
-    transition: var(--transition);
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
     text-decoration: none;
     background: none;
     border: none;
@@ -483,7 +487,12 @@ body {
 .universal-nav .nav-link:hover,
 .universal-nav .nav-link.active {
     color: var(--text-primary);
-    background: var(--hover-bg);
+    background: var(--bg-elevated);
+    transform: translateY(-1px);
+}
+
+.universal-nav .nav-link:active {
+    transform: translateY(0);
 }
 
 /* Dropdown Menu */
@@ -500,17 +509,28 @@ body {
 
 .dropdown-menu {
     position: absolute;
-    top: 100%;
+    top: calc(100% + var(--space-sm));
     right: 0;
     background: var(--bg-card);
     border: 1px solid var(--border-color);
-    border-radius: 8px;
+    border-radius: var(--radius-lg);
     min-width: 200px;
-    margin-top: 8px;
-    padding: 8px 0;
-    box-shadow: var(--shadow);
+    padding: var(--space-sm);
+    box-shadow: var(--shadow-lg);
     display: none;
-    z-index: 1000;
+    z-index: var(--z-dropdown);
+    animation: dropdownSlideIn var(--transition-fast) ease-out;
+}
+
+@keyframes dropdownSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .dropdown.active .dropdown-menu {
@@ -520,34 +540,36 @@ body {
 .dropdown-item {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 10px 16px;
+    gap: var(--space-md);
+    padding: var(--space-sm) var(--space-md);
     color: var(--text-primary);
     text-decoration: none;
-    transition: var(--transition);
-    font-size: 14px;
+    transition: all var(--transition-fast);
+    font-size: var(--font-size-sm);
+    border-radius: var(--radius-md);
 }
 
 .dropdown-item:hover {
-    background: var(--hover-bg);
+    background: var(--bg-elevated);
     color: var(--cyan);
+    transform: translateX(2px);
 }
 
 .dropdown-divider {
     height: 1px;
-    background: var(--border-color);
-    margin: 8px 0;
+    background: var(--divider-color);
+    margin: var(--space-sm) 0;
 }
 
 .project-icon {
-    width: 24px;
-    height: 24px;
-    border-radius: 6px;
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-md);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 12px;
-    font-weight: 600;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-semibold);
 }
 
 /* Theme Toggle */
@@ -555,30 +577,43 @@ body {
     background: var(--bg-card);
     border: 1px solid var(--border-color);
     color: var(--text-primary);
-    padding: 8px 12px;
-    border-radius: 6px;
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-md);
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 14px;
-    transition: var(--transition);
+    gap: var(--space-xs);
+    font-size: var(--font-size-sm);
+    transition: all var(--transition-fast);
     font-family: inherit;
+    font-weight: var(--font-medium);
 }
 
 .theme-toggle:hover {
-    background: var(--hover-bg);
+    background: var(--bg-elevated);
     border-color: var(--cyan);
+    transform: translateY(-1px);
+    box-shadow: 0 0 0 1px var(--cyan);
+}
+
+.theme-toggle:active {
+    transform: translateY(0);
 }
 
 .mobile-menu-btn {
     display: none;
-    background: none;
-    border: none;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
     color: var(--text-primary);
-    font-size: 24px;
+    padding: var(--space-sm);
+    border-radius: var(--radius-md);
     cursor: pointer;
-    padding: 8px;
+    transition: all var(--transition-fast);
+}
+
+.mobile-menu-btn:hover {
+    background: var(--bg-elevated);
+    border-color: var(--cyan);
 }
 
 @media (max-width: 768px) {
