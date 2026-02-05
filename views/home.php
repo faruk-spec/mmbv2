@@ -3,49 +3,36 @@
 
 <?php View::section('styles'); ?>
 <style>
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-    
     .animate-fade-in {
-        animation: fadeIn 0.6s ease-out forwards;
+        animation: fadeIn 0.5s var(--transition) forwards;
         opacity: 0;
     }
     
     .hero-banner {
         max-width: 100%;
         height: auto;
-        border-radius: 12px;
+        border-radius: var(--radius-xl);
         box-shadow: var(--shadow-glow);
-        margin-bottom: 30px;
-        animation: fadeIn 0.8s ease-out;
+        margin-bottom: var(--space-2xl);
+        animation: fadeIn 0.8s var(--transition);
     }
     
     .stat-card {
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        transition: transform var(--transition), box-shadow var(--transition);
     }
     
     .stat-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 30px rgba(0, 240, 255, 0.3);
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-glow);
     }
     
     .stat-value {
-        font-size: 2.5rem;
-        font-weight: 700;
-        background: linear-gradient(135deg, var(--cyan), var(--magenta));
+        background: linear-gradient(135deg, var(--cyan), var(--blue));
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
-        margin-bottom: 8px;
-        animation: fadeIn 1s ease-out;
+        margin-bottom: var(--space-sm);
+        animation: fadeIn 1s var(--transition);
     }
     
     .timeline-item {
@@ -124,29 +111,29 @@ $featuresHeading = $sections['features']['heading'] ?? 'Platform Features';
 $featuresSubheading = $sections['features']['subheading'] ?? 'Powerful capabilities across all projects';
 ?>
 
-<div class="hero" style="padding: 50px 20px; max-width: 1400px; margin: 0 auto;">
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center;">
+<div class="hero" style="padding: var(--space-3xl) var(--space-lg); max-width: 1400px; margin: 0 auto;">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3xl); align-items: center;">
         <!-- Left side: Text content -->
         <div style="text-align: left;">
-            <h1 style="font-size: 2.5rem; margin-bottom: 16px; background: linear-gradient(135deg, var(--cyan), var(--magenta)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1.2;">
+            <h1 style="font-size: var(--font-size-4xl); margin-bottom: var(--space-lg); background: linear-gradient(135deg, var(--cyan), var(--blue)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: var(--leading-tight); font-weight: var(--font-bold);">
                 <?= htmlspecialchars($heroTitle) ?>
             </h1>
             <?php if ($heroSubtitle && $heroSubtitle !== $heroTitle): ?>
-            <h2 style="font-size: 1.5rem; margin-bottom: 12px; color: var(--text-primary);">
+            <h2 style="font-size: var(--font-size-2xl); margin-bottom: var(--space-md); color: var(--text-primary); font-weight: var(--font-semibold);">
                 <?= htmlspecialchars($heroSubtitle) ?>
             </h2>
             <?php endif; ?>
-            <p style="font-size: 1.05rem; color: var(--text-secondary); margin-bottom: 30px; line-height: 1.6;">
+            <p style="font-size: var(--font-size-md); color: var(--text-secondary); margin-bottom: var(--space-2xl); line-height: var(--leading-relaxed);">
                 <?= htmlspecialchars($heroDescription) ?>
             </p>
             
-            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+            <div style="display: flex; gap: var(--space-md); flex-wrap: wrap;">
                 <?php if (isset($_SESSION['user'])): ?>
-                    <a href="/dashboard" class="btn btn-primary">Go to Dashboard</a>
-                    <a href="/projects" class="btn btn-secondary">Browse Projects</a>
+                    <a href="/dashboard" class="btn btn-primary btn-lg">Go to Dashboard</a>
+                    <a href="/projects" class="btn btn-secondary btn-lg">Browse Projects</a>
                 <?php else: ?>
-                    <a href="/register" class="btn btn-primary">Get Started</a>
-                    <a href="/login" class="btn btn-secondary">Sign In</a>
+                    <a href="/register" class="btn btn-primary btn-lg">Get Started</a>
+                    <a href="/login" class="btn btn-secondary btn-lg">Sign In</a>
                 <?php endif; ?>
             </div>
         </div>
@@ -154,11 +141,11 @@ $featuresSubheading = $sections['features']['subheading'] ?? 'Powerful capabilit
         <!-- Right side: Hero banner image -->
         <div style="text-align: center;">
             <?php if (!empty($heroBanner)): ?>
-                <img src="<?= htmlspecialchars($heroBanner) ?>" alt="Hero Banner" class="hero-banner" style="max-width: 100%; height: auto; border-radius: 12px; box-shadow: var(--shadow-glow);">
+                <img src="<?= htmlspecialchars($heroBanner) ?>" alt="Hero Banner" class="hero-banner" style="max-width: 100%; height: auto; border-radius: var(--radius-xl); box-shadow: var(--shadow-glow);">
             <?php else: ?>
                 <!-- Placeholder if no image -->
-                <div style="width: 100%; aspect-ratio: 16/10; background: linear-gradient(135deg, rgba(0, 240, 255, 0.1), rgba(255, 46, 196, 0.1)); border-radius: 12px; display: flex; align-items: center; justify-content: center; border: 2px dashed var(--border-color);">
-                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.5">
+                <div style="width: 100%; aspect-ratio: 16/10; background: linear-gradient(135deg, rgba(0, 217, 255, 0.08), rgba(0, 102, 255, 0.08)); border-radius: var(--radius-xl); display: flex; align-items: center; justify-content: center; border: 2px dashed var(--border-color);">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="1.5">
                         <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
                         <circle cx="8.5" cy="8.5" r="1.5"></circle>
                         <polyline points="21 15 16 10 5 21"></polyline>
@@ -195,44 +182,44 @@ $featuresSubheading = $sections['features']['subheading'] ?? 'Powerful capabilit
 }
 </style>
 
-<div class="grid grid-3" style="margin-top: 40px; max-width: 1400px; margin-left: auto; margin-right: auto;">
+<div class="grid grid-3" style="margin-top: var(--space-3xl); max-width: 1400px; margin-left: auto; margin-right: auto;">
     <div class="card animate-fade-in" style="animation-delay: 0.1s;">
-        <div style="width: 45px; height: 45px; background: rgba(0, 240, 255, 0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
+        <div style="width: 48px; height: 48px; background: rgba(0, 217, 255, 0.12); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; margin-bottom: var(--space-lg);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
             </svg>
         </div>
-        <h3 style="margin-bottom: 8px; font-size: 1.1rem;">Secure by Design</h3>
-        <p style="color: var(--text-secondary); font-size: 13px;">
+        <h3 class="mb-sm font-semibold" style="font-size: var(--font-size-lg);">Secure by Design</h3>
+        <p class="text-secondary" style="font-size: var(--font-size-sm);">
             Argon2id password hashing, CSRF protection, XSS sanitization, and rate limiting built-in.
         </p>
     </div>
     
     <div class="card animate-fade-in" style="animation-delay: 0.2s;">
-        <div style="width: 45px; height: 45px; background: rgba(255, 46, 196, 0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--magenta)" stroke-width="2">
+        <div style="width: 48px; height: 48px; background: rgba(0, 102, 255, 0.12); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; margin-bottom: var(--space-lg);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
                 <circle cx="9" cy="7" r="4"/>
                 <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
                 <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
             </svg>
         </div>
-        <h3 style="margin-bottom: 8px; font-size: 1.1rem;">Single Sign-On</h3>
-        <p style="color: var(--text-secondary); font-size: 13px;">
+        <h3 class="mb-sm font-semibold" style="font-size: var(--font-size-lg);">Single Sign-On</h3>
+        <p class="text-secondary" style="font-size: var(--font-size-sm);">
             One account to access all projects. Seamless authentication across your entire platform.
         </p>
     </div>
     
     <div class="card animate-fade-in" style="animation-delay: 0.3s;">
-        <div style="width: 45px; height: 45px; background: rgba(0, 255, 136, 0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2">
+        <div style="width: 48px; height: 48px; background: rgba(0, 255, 136, 0.12); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; margin-bottom: var(--space-lg);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2">
                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
                 <line x1="3" y1="9" x2="21" y2="9"/>
                 <line x1="9" y1="21" x2="9" y2="9"/>
             </svg>
         </div>
-        <h3 style="margin-bottom: 8px; font-size: 1.1rem;">Unified Admin</h3>
-        <p style="color: var(--text-secondary); font-size: 13px;">
+        <h3 class="mb-sm font-semibold" style="font-size: var(--font-size-lg);">Unified Admin</h3>
+        <p class="text-secondary" style="font-size: var(--font-size-sm);">
             Manage all projects from a single dashboard with role-based permissions.
         </p>
     </div>
@@ -254,9 +241,9 @@ try {
 
 if ($showStats): 
 ?>
-<div style="margin-top: 60px; text-align: center; max-width: 1500px; margin-left: auto; margin-right: auto; padding: 0 20px;">
-    <h2 style="margin-bottom: 12px; font-size: 1.75rem;"><?= htmlspecialchars($statsHeading) ?></h2>
-    <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 40px;"><?= htmlspecialchars($statsSubheading) ?></p>
+<div style="margin-top: var(--space-3xl); text-align: center; max-width: 1500px; margin-left: auto; margin-right: auto; padding: 0 var(--space-lg);">
+    <h2 class="mb-md" style="font-size: var(--font-size-3xl); font-weight: var(--font-semibold);"><?= htmlspecialchars($statsHeading) ?></h2>
+    <p class="text-secondary mb-2xl" style="font-size: var(--font-size-md);"><?= htmlspecialchars($statsSubheading) ?></p>
     
     <div class="grid grid-4">
         <?php 
@@ -270,12 +257,12 @@ if ($showStats):
             $renderedStatIds[] = $stat['id'];
         ?>
         <div class="card stat-card animate-fade-in" style="animation-delay: <?= $delay ?>s;">
-            <div class="stat-value" style="font-size: 2.5rem; font-weight: 700;">
+            <div class="stat-value" style="font-size: var(--font-size-4xl); font-weight: var(--font-bold);">
                 <?= htmlspecialchars($stat['value']) ?>
             </div>
-            <h4 style="margin-bottom: 4px; font-size: 1rem; color: var(--text-primary); font-weight: 600;"><?= htmlspecialchars($stat['label']) ?></h4>
+            <h4 class="mb-xs font-semibold" style="font-size: var(--font-size-lg); color: var(--text-primary);"><?= htmlspecialchars($stat['label']) ?></h4>
             <?php if (!empty($stat['description'])): ?>
-            <p style="font-size: 13px; color: var(--text-secondary);"><?= htmlspecialchars($stat['description']) ?></p>
+            <p class="text-secondary" style="font-size: var(--font-size-sm);"><?= htmlspecialchars($stat['description']) ?></p>
             <?php endif; ?>
         </div>
         <?php 
@@ -288,15 +275,15 @@ if ($showStats):
 
 
 
-<div style="margin-top: 60px; text-align: center; max-width: 1500px; margin-left: auto; margin-right: auto; padding: 0 20px;">
-    <h2 style="margin-bottom: 20px; font-size: 1.75rem;"><?= htmlspecialchars($projectsSectionTitle) ?></h2>
+<div style="margin-top: var(--space-3xl); text-align: center; max-width: 1500px; margin-left: auto; margin-right: auto; padding: 0 var(--space-lg);">
+    <h2 class="mb-xl" style="font-size: var(--font-size-3xl); font-weight: var(--font-semibold);"><?= htmlspecialchars($projectsSectionTitle) ?></h2>
     
     <!-- Filter Buttons -->
-    <div style="display: flex; justify-content: center; gap: 12px; margin-bottom: 40px; flex-wrap: wrap;">
-        <button class="filter-btn active" data-filter="all" style="padding: 10px 24px; border-radius: 25px; border: 2px solid var(--cyan); background: var(--cyan); color: var(--bg-primary); font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 14px;">
+    <div style="display: flex; justify-content: center; gap: var(--space-md); margin-bottom: var(--space-2xl); flex-wrap: wrap;">
+        <button class="filter-btn active" data-filter="all" style="padding: var(--space-sm) var(--space-xl); border-radius: var(--radius-full); border: 2px solid var(--cyan); background: var(--cyan); color: var(--text-inverse); font-weight: var(--font-semibold); cursor: pointer; transition: all var(--transition-fast); font-size: var(--font-size-sm); font-family: inherit;">
             All Tools
         </button>
-        <button class="filter-btn" data-filter="free" style="padding: 10px 24px; border-radius: 25px; border: 2px solid var(--border-color); background: transparent; color: var(--text-primary); font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 14px;">
+        <button class="filter-btn" data-filter="free" style="padding: var(--space-sm) var(--space-xl); border-radius: var(--radius-full); border: 2px solid var(--border-color); background: transparent; color: var(--text-primary); font-weight: var(--font-semibold); cursor: pointer; transition: all var(--transition-fast); font-size: var(--font-size-sm); font-family: inherit;">
             Free Tools
         </button>
         <button class="filter-btn" data-filter="freemium" style="padding: 10px 24px; border-radius: 25px; border: 2px solid var(--border-color); background: transparent; color: var(--text-primary); font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 14px;">

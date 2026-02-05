@@ -3,43 +3,78 @@
 
 <?php View::section('content'); ?>
 <?php if (Helpers::hasFlash('success')): ?>
-    <div class="alert alert-success" style="margin-bottom: 24px; padding: 16px; background: rgba(0, 255, 136, 0.1); border: 1px solid var(--green); border-radius: 8px; color: var(--green);">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
+    <div class="alert alert-success animate-fade-in">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
             <polyline points="22 4 12 14.01 9 11.01"></polyline>
         </svg>
-        <?= View::e(Helpers::getFlash('success')) ?>
+        <span><?= View::e(Helpers::getFlash('success')) ?></span>
     </div>
 <?php endif; ?>
 
+<!-- Welcome Section with AI Insights -->
+<div class="card mb-xl animate-fade-in" style="background: linear-gradient(135deg, rgba(0, 217, 255, 0.05) 0%, rgba(0, 102, 255, 0.05) 100%); border: 1px solid rgba(0, 217, 255, 0.2);">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-lg);">
+        <div>
+            <h2 class="mb-sm" style="font-size: var(--font-size-2xl); font-weight: var(--font-bold);">
+                Welcome back, <?= View::e($currentUser['username']) ?>
+            </h2>
+            <p class="text-secondary" style="font-size: var(--font-size-sm);">
+                Here's what's happening with your applications today
+            </p>
+        </div>
+        <div style="display: flex; gap: var(--space-md);">
+            <a href="/profile" class="btn btn-secondary btn-sm">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                </svg>
+                Profile
+            </a>
+            <a href="/settings" class="btn btn-secondary btn-sm">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"/>
+                </svg>
+                Settings
+            </a>
+        </div>
+    </div>
+</div>
+
 <!-- Applications Grid -->
-<div class="card" style="border-radius: 12px; overflow: hidden; margin-bottom: 24px;">
-    <div class="card-header" style="background: linear-gradient(135deg, rgba(0, 240, 255, 0.1) 0%, rgba(255, 46, 196, 0.1) 100%); border-bottom: 1px solid var(--border-color); padding: 16px;">
-        <h3 class="card-title" style="font-size: 0.95rem; display: flex; align-items: center; gap: 8px; font-weight: 600;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
+<div class="card animate-fade-in" style="animation-delay: 0.1s;">
+    <div class="card-header">
+        <h3 class="card-title" style="display: flex; align-items: center; gap: var(--space-sm);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
                 <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
             </svg>
             Your Applications
         </h3>
     </div>
     
-    <div style="padding: 20px;">
+    <div class="card-body" style="padding: var(--space-xl);">
         <?php if (empty($projects)): ?>
-            <p style="color: var(--text-secondary); text-align: center; padding: 32px 16px; font-size: 0.875rem;">No applications available</p>
+            <div style="text-align: center; padding: var(--space-3xl);">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="1.5" style="margin: 0 auto var(--space-lg);">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                </svg>
+                <p class="text-secondary">No applications available</p>
+            </div>
         <?php else: ?>
-            <div class="applications-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px;">
+            <div class="applications-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--space-lg);">
                 <?php foreach ($projects as $key => $project): ?>
-                    <a href="<?= $project['url'] ?>" class="application-card" style="display: block; background: var(--bg-secondary); border-radius: 10px; border: 1px solid var(--border-color); padding: 16px; transition: all 0.3s ease; text-align: center;">
-                        <div style="width: 48px; height: 48px; background: <?= $project['color'] ?>20; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="<?= $project['color'] ?>" stroke-width="2">
+                    <a href="<?= $project['url'] ?>" class="application-card card-interactive" style="display: block; background: var(--bg-secondary); border-radius: var(--radius-lg); border: 1px solid var(--border-color); padding: var(--space-lg); transition: all var(--transition); text-align: center; text-decoration: none;">
+                        <div style="width: 56px; height: 56px; background: <?= $project['color'] ?>20; border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; margin: 0 auto var(--space-lg);">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="<?= $project['color'] ?>" stroke-width="2">
                                 <rect x="3" y="3" width="18" height="18" rx="2"/>
                             </svg>
                         </div>
-                        <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 6px;"><?= View::e($project['name']) ?></div>
-                        <div style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4;"><?= View::e($project['description']) ?></div>
-                        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-color);">
-                            <button style="width: 100%; padding: 8px; background: <?= $project['color'] ?>; color: #06060a; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 0.85rem;">
-                                Access Application
+                        <div class="font-semibold mb-xs" style="font-size: var(--font-size-lg); color: var(--text-primary);"><?= View::e($project['name']) ?></div>
+                        <div class="text-secondary mb-lg" style="font-size: var(--font-size-sm); line-height: var(--leading-normal);"><?= View::e($project['description']) ?></div>
+                        <div style="padding-top: var(--space-md); border-top: 1px solid var(--divider-color);">
+                            <button style="width: 100%; padding: var(--space-sm); background: <?= $project['color'] ?>; color: var(--text-inverse); border: none; border-radius: var(--radius-md); font-weight: var(--font-semibold); cursor: pointer; transition: all var(--transition-fast); font-size: var(--font-size-sm); font-family: inherit;">
+                                Launch Application
                             </button>
                         </div>
                     </a>
@@ -51,35 +86,36 @@
 
 <style>
     .application-card:hover {
-        background: var(--bg-card) !important;
+        background: var(--bg-elevated) !important;
         border-color: var(--cyan) !important;
-        transform: translateY(-5px);
-        box-shadow: 0 8px 30px rgba(0, 240, 255, 0.3);
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-glow);
     }
     
     .application-card:hover button {
-        transform: scale(1.05);
+        transform: scale(1.02);
+        filter: brightness(1.1);
     }
     
     .quick-action-btn {
         display: flex;
         align-items: center;
-        gap: 10px;
-        padding: 14px 18px;
+        gap: var(--space-md);
+        padding: var(--space-lg);
         background: var(--bg-secondary);
         border: 1px solid var(--border-color);
-        border-radius: 10px;
-        transition: all 0.3s ease;
+        border-radius: var(--radius-lg);
+        transition: all var(--transition-fast);
         cursor: pointer;
         text-decoration: none;
         color: var(--text-primary);
     }
     
     .quick-action-btn:hover {
-        background: var(--bg-card);
+        background: var(--bg-elevated);
         border-color: var(--cyan);
         transform: translateY(-2px);
-        box-shadow: 0 4px 15px rgba(0, 240, 255, 0.2);
+        box-shadow: 0 0 0 1px var(--cyan);
     }
     
     /* Collapsible section styles */
@@ -87,7 +123,7 @@
         max-height: 1000px;
         overflow: hidden;
         opacity: 1;
-        transition: max-height 0.4s ease, opacity 0.4s ease;
+        transition: max-height var(--transition-slow), opacity var(--transition-slow);
     }
     
     .collapsible-section.collapsed .collapsible-content {
