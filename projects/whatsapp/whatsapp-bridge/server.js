@@ -160,20 +160,6 @@ app.post('/api/generate-qr', async (req, res) => {
         });
     }
 });
-            helpText = 'Run: sudo ./install-chrome-deps.sh in the whatsapp-bridge directory. See CHROME_SETUP.md for details.';
-        } else if (error.message.includes('ECONNREFUSED')) {
-            userMessage = 'Cannot connect to Chrome';
-            helpText = 'Chrome may not be installed or Puppeteer may need configuration.';
-        }
-        
-        res.status(500).json({ 
-            success: false, 
-            message: userMessage,
-            help: helpText,
-            technicalError: error.message 
-        });
-    }
-});
 
 // Check session status
 app.post('/api/check-status', (req, res) => {
@@ -244,7 +230,11 @@ app.post('/api/disconnect', async (req, res) => {
 });
 
 // Start server
-const PORT = 3000;
-app.listen(PORT, '127.0.0.1', () => {
-    console.log(`WhatsApp Bridge running on http://127.0.0.1:${PORT}`);
+const PORT = process.env.PORT || 3000;
+const HOST = process.env.HOST || '0.0.0.0'; // Listen on all interfaces for production
+
+app.listen(PORT, HOST, () => {
+    console.log(`WhatsApp Bridge running on http://${HOST}:${PORT}`);
+    console.log(`Health check: http://localhost:${PORT}/api/health`);
+    console.log(`Server started at: ${new Date().toISOString()}`);
 });
