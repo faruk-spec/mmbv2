@@ -43,22 +43,40 @@ class SessionController
      */
     public function create()
     {
-        // Disable error display to prevent non-JSON output
-        ini_set('display_errors', 0);
-        error_reporting(E_ALL);
+        // CRITICAL: Suppress ALL output before JSON response
+        @ini_set('display_errors', '0');
+        @ini_set('display_startup_errors', '0');
+        @ini_set('log_errors', '1');
+        error_reporting(0); // Suppress all errors from being displayed
         
         // Clear all output buffers to ensure clean JSON response
-        while (ob_get_level()) {
-            ob_end_clean();
+        while (@ob_get_level()) {
+            @ob_end_clean();
         }
         
         // Start fresh output buffer
         ob_start();
         
         // Set JSON header first - must be before any output
-        header('Content-Type: application/json; charset=utf-8');
+        @header('Content-Type: application/json; charset=utf-8');
         
         try {
+            // Validate that we have necessary objects
+            if (!$this->user) {
+                // Enhanced error message for debugging
+                $sessionStatus = session_status();
+                $hasSessionId = isset($_SESSION['user_id']);
+                $userId = $_SESSION['user_id'] ?? 'none';
+                
+                error_log("Authentication failed in create: session_status=$sessionStatus, has_user_id=$hasSessionId, session_user_id=$userId");
+                
+                throw new \Exception('User not authenticated. Please log in again. (Session may have expired or cookies not enabled)');
+            }
+            
+            if (!$this->db) {
+                throw new \Exception('Database connection not available');
+            }
+            
             // Validate request method
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
                 throw new \Exception('Method not allowed');
@@ -80,13 +98,23 @@ class SessionController
             }
             
             // Check session limit based on subscription
-            $sessionCount = $this->getSessionCount();
-            $subscription = $this->getUserSubscription();
-            
-            $maxSessions = $subscription['sessions_limit'] ?? 5;
-            
-            if ($maxSessions > 0 && $sessionCount >= $maxSessions) {
-                throw new \Exception("Maximum session limit ($maxSessions) reached. Please upgrade your plan.");
+            try {
+                $sessionCount = $this->getSessionCount();
+                $subscription = $this->getUserSubscription();
+                
+                $maxSessions = $subscription['sessions_limit'] ?? 5;
+                
+                if ($maxSessions > 0 && $sessionCount >= $maxSessions) {
+                    throw new \Exception("Maximum session limit ($maxSessions) reached. Please upgrade your plan.");
+                }
+            } catch (\Exception $e) {
+                // Log the error but allow session creation to proceed with default limits
+                @error_log("Subscription check failed: " . $e->getMessage());
+                // Use default limit if subscription check fails
+                $sessionCount = $this->getSessionCount();
+                if ($sessionCount >= 5) {
+                    throw new \Exception("Maximum session limit (5) reached.");
+                }
             }
             
             // Generate unique session ID
@@ -142,10 +170,34 @@ class SessionController
             ];
             
             echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        } catch (\Throwable $e) {
+            // Catch ANY error including fatal errors (PHP 7+)
+            // Clear any buffered content
+            while (@ob_get_level()) {
+                @ob_end_clean();
+            }
+            
+            // Start fresh
+            @ob_start();
+            
+            @http_response_code(500);
+            @header('Content-Type: application/json; charset=utf-8');
+            
+            $response = [
+                'success' => false,
+                'message' => 'An unexpected error occurred: ' . $e->getMessage(),
+                'error_code' => 'INTERNAL_ERROR',
+                'error_type' => get_class($e)
+            ];
+            
+            // Log the error for debugging
+            @error_log('Session create error: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+            
+            echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         }
         
         // Send buffer and terminate
-        ob_end_flush();
+        @ob_end_flush();
         exit;
     }
     
@@ -154,13 +206,21 @@ class SessionController
      */
     private function getUserSubscription()
     {
-        return $this->db->fetch("
-            SELECT sessions_limit, messages_limit, api_calls_limit, status
-            FROM whatsapp_subscriptions
-            WHERE user_id = ? AND status = 'active'
-            ORDER BY end_date DESC
-            LIMIT 1
-        ", [$this->user['id']]) ?? ['sessions_limit' => 5];
+        try {
+            $result = $this->db->fetch("
+                SELECT sessions_limit, messages_limit, api_calls_limit, status
+                FROM whatsapp_subscriptions
+                WHERE user_id = ? AND status = 'active'
+                ORDER BY end_date DESC
+                LIMIT 1
+            ", [$this->user['id']]);
+            
+            return $result ?? ['sessions_limit' => 5];
+        } catch (\Exception $e) {
+            // Log error and return default values if table doesn't exist
+            @error_log("getUserSubscription error: " . $e->getMessage());
+            return ['sessions_limit' => 5];
+        }
     }
     
     /**
@@ -235,15 +295,6 @@ class SessionController
     /**
      * Get QR code for session with proper status updates
      * Endpoint: /projects/whatsapp/sessions/qr/{session_id}
-     * 
-     * PRODUCTION NOTE:
-     * This is a placeholder implementation. For production use:
-     * 1. Install whatsapp-web.js or similar library via Node.js bridge
-     * 2. Use libraries like endroid/qr-code for PHP QR generation
-     * 3. Implement WebSocket connection to WhatsApp Web
-     * 4. Return actual QR code as base64 encoded image
-     * 5. Handle QR code expiration and regeneration
-     * 6. Update session status based on scan events
      */
     public function getQRCode()
     {
@@ -254,6 +305,17 @@ class SessionController
             
             if (!$sessionId) {
                 throw new \Exception('Session ID required');
+            }
+            
+            if (!$this->user) {
+                // Enhanced error message for debugging
+                $sessionStatus = session_status();
+                $hasSessionId = isset($_SESSION['user_id']);
+                $sessionId = $_SESSION['user_id'] ?? 'none';
+                
+                error_log("Authentication failed in getQRCode: session_status=$sessionStatus, has_user_id=$hasSessionId, session_user_id=$sessionId");
+                
+                throw new \Exception('User not authenticated. Please log in again. (Session may have expired or cookies not enabled)');
             }
             
             // Verify ownership and get session details
@@ -279,12 +341,12 @@ class SessionController
             }
             
             // Try to get real QR code from WhatsApp Web.js bridge
-            // If bridge is not running, fall back to placeholder
+            // PRODUCTION MODE: No fallback to placeholder - bridge must be running
             $qrData = $this->getQRFromBridge($session['session_id']);
             
             if ($qrData === null) {
-                // Bridge not available, use placeholder
-                $qrData = $this->generatePlaceholderQR($session['session_id']);
+                // Bridge not available - return more helpful error
+                throw new \Exception('WhatsApp bridge server is not running. Please start the bridge server: cd projects/whatsapp/whatsapp-bridge && npm start');
             }
             
             echo json_encode([
@@ -293,14 +355,15 @@ class SessionController
                 'qr_code' => $qrData['image'],
                 'qr_text' => $qrData['text'],
                 'expires_at' => $qrData['expires_at'],
-                'message' => isset($qrData['is_real']) && $qrData['is_real'] ? 'Real QR code generated' : 'Placeholder QR - Start bridge server for real QR codes'
+                'message' => 'Real QR code generated from WhatsApp Web.js bridge'
             ]);
             
         } catch (\Exception $e) {
             http_response_code(400);
             echo json_encode([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => $e->getMessage(),
+                'error_type' => 'QR_GENERATION_ERROR'
             ]);
         }
     }
@@ -365,10 +428,18 @@ class SessionController
      */
     private function getSessionCount()
     {
-        return $this->db->fetchColumn("
-            SELECT COUNT(*) FROM whatsapp_sessions 
-            WHERE user_id = ? AND status != 'disconnected'
-        ", [$this->user['id']]) ?? 0;
+        try {
+            $count = $this->db->fetchColumn("
+                SELECT COUNT(*) FROM whatsapp_sessions 
+                WHERE user_id = ? AND status != 'disconnected'
+            ", [$this->user['id']]);
+            
+            return $count ?? 0;
+        } catch (\Exception $e) {
+            // Log error and return 0 if query fails
+            @error_log("getSessionCount error: " . $e->getMessage());
+            return 0;
+        }
     }
     
     /**
@@ -456,23 +527,61 @@ class SessionController
                 'userId' => $this->user['id']
             ]);
             
-            // Set context for POST request with timeout
+            // Try curl first (more reliable in production)
+            if (function_exists('curl_init')) {
+                $ch = curl_init($endpoint);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_POST, true);
+                curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
+                curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                    'Content-Type: application/json',
+                    'Content-Length: ' . strlen($postData)
+                ]);
+                curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+                curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+                
+                $response = curl_exec($ch);
+                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                $curlError = curl_error($ch);
+                curl_close($ch);
+                
+                if ($response === false || $httpCode !== 200) {
+                    error_log("WhatsApp Bridge: cURL failed - HTTP $httpCode, Error: $curlError");
+                    // Fall through to try file_get_contents
+                } else {
+                    $data = json_decode($response, true);
+                    
+                    if ($data && isset($data['success']) && $data['success'] && isset($data['qr'])) {
+                        return [
+                            'image' => $data['qr'],
+                            'text' => $sessionId,
+                            'expires_at' => time() + 60,
+                            'is_real' => true
+                        ];
+                    }
+                    
+                    // Log bridge error
+                    $errorMsg = $data['message'] ?? 'Unknown error';
+                    error_log("WhatsApp Bridge: API returned error - $errorMsg");
+                    return null;
+                }
+            }
+            
+            // Fallback to file_get_contents if curl is not available or failed
             $context = stream_context_create([
                 'http' => [
                     'method' => 'POST',
                     'header' => "Content-Type: application/json\r\n" .
                                "Content-Length: " . strlen($postData) . "\r\n",
                     'content' => $postData,
-                    'timeout' => 15, // Increase timeout for WhatsApp initialization (can take 10+ seconds)
+                    'timeout' => 15,
                     'ignore_errors' => true
                 ]
             ]);
             
-            // Try to call bridge server
             $response = @file_get_contents($endpoint, false, $context);
             
             if ($response === false) {
-                // Bridge not available or connection failed
                 error_log("WhatsApp Bridge: Connection failed to $endpoint");
                 return null;
             }
@@ -480,13 +589,11 @@ class SessionController
             $data = json_decode($response, true);
             
             if (!$data || !isset($data['success']) || !$data['success']) {
-                // Bridge returned error - log detailed message
                 $errorMsg = $data['message'] ?? 'Unknown error';
-                $helpText = $data['help'] ?? '';
-                
                 error_log("WhatsApp Bridge: API returned error - $errorMsg");
-                if ($helpText) {
-                    error_log("WhatsApp Bridge: Help - $helpText");
+                
+                if (isset($data['help'])) {
+                    error_log("WhatsApp Bridge: Help - " . $data['help']);
                 }
                 
                 // Check if it's a Chrome/Puppeteer issue
@@ -508,137 +615,15 @@ class SessionController
             
             // Return real QR code from bridge
             return [
-                'image' => $data['qr'], // Bridge returns QR in 'qr' field
-                'text' => $sessionId, // Use session ID as text
-                'expires_at' => time() + 60, // QR codes typically expire in 60 seconds
+                'image' => $data['qr'],
+                'text' => $sessionId,
+                'expires_at' => time() + 60,
                 'is_real' => true
             ];
             
         } catch (\Exception $e) {
-            // Any error means bridge not available
             error_log("WhatsApp Bridge: Exception - " . $e->getMessage());
             return null;
         }
-    }
-    
-    /**
-     * Generate placeholder QR code for WhatsApp authentication
-     * 
-     * PRODUCTION IMPLEMENTATION GUIDE:
-     * ================================
-     * 
-     * Option 1: PHP QR Code Library
-     * ------------------------------
-     * Install: composer require endroid/qr-code
-     * 
-     * use Endroid\QrCode\QrCode;
-     * use Endroid\QrCode\Writer\PngWriter;
-     * 
-     * $qrCode = new QrCode($whatsappAuthData);
-     * $writer = new PngWriter();
-     * $result = $writer->write($qrCode);
-     * $dataUri = $result->getDataUri();
-     * 
-     * Option 2: WhatsApp Web.js Bridge (Node.js + PHP)
-     * -------------------------------------------------
-     * 1. Install whatsapp-web.js in Node.js:
-     *    npm install whatsapp-web.js
-     * 
-     * 2. Create Node.js bridge server that:
-     *    - Generates QR codes via WhatsApp Web
-     *    - Communicates with PHP via HTTP/WebSocket
-     *    - Returns QR code as base64 image
-     * 
-     * 3. PHP calls Node.js bridge:
-     *    $response = file_get_contents('http://localhost:3000/generate-qr?session=' . $sessionId);
-     * 
-     * Option 3: Commercial WhatsApp Business API
-     * ------------------------------------------
-     * Use official WhatsApp Business API for production-grade solution
-     * 
-     * @param string $sessionId Unique session identifier
-     * @return array QR code data with image and metadata
-     */
-    private function generatePlaceholderQR($sessionId)
-    {
-        // Generate a placeholder QR code using SVG
-        // In production, this would be replaced with actual WhatsApp Web QR
-        
-        $qrText = "whatsapp://pair?session=" . $sessionId . "&timestamp=" . time();
-        
-        // Create a simple SVG QR code placeholder
-        // PRODUCTION: Replace with actual QR code library
-        $svg = $this->generateSimpleSVGQR($qrText);
-        
-        return [
-            'image' => 'data:image/svg+xml;base64,' . base64_encode($svg),
-            'text' => $qrText,
-            'expires_at' => time() + 60, // 60 seconds expiration
-            'instructions' => [
-                '1. Open WhatsApp on your phone',
-                '2. Tap Menu or Settings',
-                '3. Tap Linked Devices',
-                '4. Tap Link a Device',
-                '5. Scan this QR code'
-            ]
-        ];
-    }
-    
-    /**
-     * Generate a simple SVG QR code placeholder
-     * PRODUCTION: Replace with proper QR code generation
-     */
-    private function generateSimpleSVGQR($text)
-    {
-        // Simple grid pattern as placeholder
-        // Real implementation should use proper QR encoding
-        $size = 256;
-        $gridSize = 8;
-        $cellSize = $size / $gridSize;
-        
-        $svg = '<svg width="' . $size . '" height="' . $size . '" xmlns="http://www.w3.org/2000/svg">';
-        $svg .= '<rect width="' . $size . '" height="' . $size . '" fill="#ffffff"/>';
-        
-        // Generate a deterministic pattern based on text
-        $hash = md5($text);
-        for ($i = 0; $i < $gridSize; $i++) {
-            for ($j = 0; $j < $gridSize; $j++) {
-                $index = ($i * $gridSize + $j) % strlen($hash);
-                if (hexdec($hash[$index]) % 2 === 0) {
-                    $x = $i * $cellSize;
-                    $y = $j * $cellSize;
-                    $svg .= '<rect x="' . $x . '" y="' . $y . '" width="' . $cellSize . '" height="' . $cellSize . '" fill="#000000"/>';
-                }
-            }
-        }
-        
-        // Add corner markers (typical of QR codes)
-        $markerSize = $cellSize * 3;
-        $markers = [
-            ['x' => 0, 'y' => 0],
-            ['x' => $size - $markerSize, 'y' => 0],
-            ['x' => 0, 'y' => $size - $markerSize]
-        ];
-        
-        foreach ($markers as $marker) {
-            $svg .= '<rect x="' . $marker['x'] . '" y="' . $marker['y'] . '" width="' . $markerSize . '" height="' . $markerSize . '" fill="none" stroke="#000000" stroke-width="' . ($cellSize/2) . '"/>';
-            $svg .= '<rect x="' . ($marker['x'] + $cellSize) . '" y="' . ($marker['y'] + $cellSize) . '" width="' . $cellSize . '" height="' . $cellSize . '" fill="#000000"/>';
-        }
-        
-        $svg .= '</svg>';
-        
-        return $svg;
-    }
-    
-    /**
-     * Legacy method - kept for backward compatibility
-     * @deprecated Use generatePlaceholderQR() instead
-     */
-    private function generateQRCode($sessionId)
-    {
-        return [
-            'data' => 'whatsapp://qr/' . $sessionId,
-            'expires_at' => time() + 60
-        ];
     }
 }

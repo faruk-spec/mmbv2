@@ -116,6 +116,52 @@
         .sidebar-header {
             padding: 25px 20px;
             border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .whatsapp-mobile-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--whatsapp-green);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 8px;
+            transition: var(--transition);
+        }
+        
+        .whatsapp-mobile-toggle:hover {
+            color: #20BA58;
+        }
+        
+        /* Fixed Mobile Menu Button - Always visible on mobile */
+        .fixed-mobile-menu-btn {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            background: var(--whatsapp-green);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(37, 211, 102, 0.4);
+            z-index: 9998;
+            transition: var(--transition);
+        }
+        
+        .fixed-mobile-menu-btn:hover {
+            background: #20BA58;
+            transform: scale(1.1);
+        }
+        
+        .fixed-mobile-menu-btn:active {
+            transform: scale(0.95);
         }
         
         .logo {
@@ -207,6 +253,13 @@
         .sidebar-overlay.active {
             display: block;
             opacity: 1;
+        }
+        
+        /* Ensure sidebar is above universal navbar on mobile */
+        @media (max-width: 768px) {
+            .sidebar {
+                z-index: 10000;
+            }
         }
         
         /* Main Content */
@@ -596,6 +649,16 @@
                 transform: translateX(0);
             }
             
+            .whatsapp-mobile-toggle {
+                display: block;
+            }
+            
+            .fixed-mobile-menu-btn {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            
             .main-content {
                 margin-left: 0;
             }
@@ -650,7 +713,7 @@
     <!-- Universal Navbar -->
     <?php require_once BASE_PATH . '/views/layouts/navbar.php'; ?>
     
-    <div class="whatsapp-container" style="margin-top: 60px;">
+    <div class="whatsapp-container">
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
@@ -658,6 +721,9 @@
                     <i class="fab fa-whatsapp"></i>
                     <span>WhatsApp</span>
                 </a>
+                <button class="whatsapp-mobile-toggle" id="whatsappMobileToggle" aria-label="Toggle WhatsApp Menu">
+                    <i class="fas fa-bars"></i>
+                </button>
             </div>
             
             <nav class="sidebar-menu">
@@ -752,6 +818,11 @@
         <!-- Sidebar Overlay for Mobile -->
         <div class="sidebar-overlay" id="sidebarOverlay"></div>
         
+        <!-- Fixed Mobile Menu Button (visible only on mobile) -->
+        <button class="fixed-mobile-menu-btn" id="fixedMobileMenuBtn" aria-label="Toggle WhatsApp Menu">
+            <i class="fas fa-bars"></i>
+        </button>
+        
         <!-- Main Content -->
         <div class="main-content">
             <!-- Content -->
@@ -768,13 +839,25 @@
             document.getElementById('html-theme').setAttribute('data-theme', theme);
         })();
         
-        // Mobile menu toggle
+        // Mobile menu toggle for WhatsApp sidebar
         const sidebar = document.getElementById('sidebar');
         const sidebarOverlay = document.getElementById('sidebarOverlay');
-        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const whatsappMobileToggle = document.getElementById('whatsappMobileToggle');
+        const fixedMobileMenuBtn = document.getElementById('fixedMobileMenuBtn');
         
-        if (mobileMenuBtn) {
-            mobileMenuBtn.addEventListener('click', () => {
+        // Handle fixed mobile button (always visible on mobile)
+        if (fixedMobileMenuBtn) {
+            fixedMobileMenuBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                sidebar.classList.toggle('active');
+                sidebarOverlay.classList.toggle('active');
+            });
+        }
+        
+        // Handle sidebar internal button (visible when sidebar is open)
+        if (whatsappMobileToggle) {
+            whatsappMobileToggle.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent event bubbling
                 sidebar.classList.toggle('active');
                 sidebarOverlay.classList.toggle('active');
             });
