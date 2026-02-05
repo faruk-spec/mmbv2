@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Dashboard - Final Preview</title>
+    <link rel="stylesheet" href="/css/universal-theme.css">
+    <style>
+        body { padding-top: 70px; }
+        /* Copy enhanced dashboard CSS */
+    </style>
+    <script>
+        // Inline the dashboard CSS from the actual file
+        fetch('/css/universal-theme.css').then(r => r.text()).then(css => {
+            const style = document.createElement('style');
+            style.textContent = css;
+            document.head.appendChild(style);
+        });
+    </script>
+</head>
+<body>
+    <header class="universal-header">
+        <div class="container header-content">
+            <a href="/" class="logo">MyMultiBranch</a>
+            <button class="theme-toggle" id="themeToggle">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                </svg>
+                <span>Light</span>
+            </button>
+        </div>
+    </header>
+    
+    <div class="container" style="margin-top: 32px; padding-bottom: 48px;">
+        <h1 style="font-size: 48px; text-align: center; margin-bottom: 32px; background: linear-gradient(135deg, var(--cyan), var(--blue)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+            🎉 Enhanced Dashboard Preview
+        </h1>
+        <p style="text-align: center; color: var(--text-secondary); font-size: 20px; margin-bottom: 48px;">
+            Featuring: Welcome Banner • 3-Column Layout • Timeline • Notifications • Enhanced Cards • System Health
+        </p>
+        
+        <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 48px; text-align: center;">
+            <img src="https://github.com/user-attachments/assets/2f499043-75ce-4e25-846d-36a84a177e27" alt="Old Dashboard" style="max-width: 100%; border-radius: 12px; margin-bottom: 32px; border: 2px solid var(--border-color);">
+            <h2 style="font-size: 24px; margin-bottom: 16px; color: var(--text-primary);">👆 Before (Old Dashboard)</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 48px;">Simple 2-column layout with basic features</p>
+            
+            <div style="border-top: 2px dashed var(--border-color); margin: 48px 0; position: relative;">
+                <span style="position: absolute; top: -16px; left: 50%; transform: translateX(-50%); background: var(--bg-card); padding: 0 24px; color: var(--cyan); font-weight: bold; font-size: 18px;">
+                    ⬇️ MAJOR UPGRADE ⬇️
+                </span>
+            </div>
+            
+            <h2 style="font-size: 32px; margin-bottom: 24px;">🚀 New Enhanced Dashboard Features</h2>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; text-align: left; margin: 32px 0;">
+                <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 24px;">
+                    <div style="font-size: 32px; margin-bottom: 12px;">👋</div>
+                    <h3 style="color: var(--cyan); margin-bottom: 8px;">Welcome Banner</h3>
+                    <p style="color: var(--text-secondary); font-size: 14px;">Personalized greeting with time-of-day, avatar, and status</p>
+                </div>
+                
+                <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 24px;">
+                    <div style="font-size: 32px; margin-bottom: 12px;">📊</div>
+                    <h3 style="color: var(--cyan); margin-bottom: 8px;">Enhanced Stats</h3>
+                    <p style="color: var(--text-secondary); font-size: 14px;">Gradient cards with mini charts and progress bars</p>
+                </div>
+                
+                <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 24px;">
+                    <div style="font-size: 32px; margin-bottom: 12px;">📈</div>
+                    <h3 style="color: var(--cyan); margin-bottom: 8px;">Activity Timeline</h3>
+                    <p style="color: var(--text-secondary); font-size: 14px;">Visual timeline with color-coded activity markers</p>
+                </div>
+                
+                <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 24px;">
+                    <div style="font-size: 32px; margin-bottom: 12px;">🔔</div>
+                    <h3 style="color: var(--cyan); margin-bottom: 8px;">Notifications Panel</h3>
+                    <p style="color: var(--text-secondary); font-size: 14px;">Real-time notifications with unread indicators</p>
+                </div>
+                
+                <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 24px;">
+                    <div style="font-size: 32px; margin-bottom: 12px;">🎴</div>
+                    <h3 style="color: var(--cyan); margin-bottom: 8px;">Enhanced App Cards</h3>
+                    <p style="color: var(--text-secondary); font-size: 14px;">Beautiful cards with favorite button and gradients</p>
+                </div>
+                
+                <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 24px;">
+                    <div style="font-size: 32px; margin-bottom: 12px;">⚡</div>
+                    <h3 style="color: var(--cyan); margin-bottom: 8px;">System Health</h3>
+                    <p style="color: var(--text-secondary); font-size: 14px;">Circular progress with 98% health score</p>
+                </div>
+                
+                <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 24px;">
+                    <div style="font-size: 32px; margin-bottom: 12px;">🎨</div>
+                    <h3 style="color: var(--cyan); margin-bottom: 8px;">3-Column Layout</h3>
+                    <p style="color: var(--text-secondary); font-size: 14px;">Smart responsive grid: Main + Actions + Info</p>
+                </div>
+                
+                <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 24px;">
+                    <div style="font-size: 32px; margin-bottom: 12px;">💡</div>
+                    <h3 style="color: var(--cyan); margin-bottom: 8px;">Interactive Tips</h3>
+                    <p style="color: var(--text-secondary); font-size: 14px;">Actionable recommendations with CTAs</p>
+                </div>
+                
+                <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 24px;">
+                    <div style="font-size: 32px; margin-bottom: 12px;">✨</div>
+                    <h3 style="color: var(--cyan); margin-bottom: 8px;">Smooth Animations</h3>
+                    <p style="color: var(--text-secondary); font-size: 14px;">Counter animations, hover effects, transitions</p>
+                </div>
+            </div>
+            
+            <div style="margin: 48px 0; padding: 32px; background: linear-gradient(135deg, rgba(0, 217, 255, 0.1), rgba(0, 102, 255, 0.1)); border-radius: 16px; border: 2px solid var(--cyan);">
+                <h2 style="font-size: 28px; margin-bottom: 16px; color: var(--cyan);">📈 What's Improved</h2>
+                <div style="display: grid; gap: 16px; text-align: left;">
+                    <div style="display: flex; gap: 16px; align-items: center;">
+                        <span style="font-size: 24px;">✅</span>
+                        <span style="color: var(--text-primary);"><strong>10+ New Features:</strong> Timeline, Notifications, Health Monitor, Enhanced Cards</span>
+                    </div>
+                    <div style="display: flex; gap: 16px; align-items: center;">
+                        <span style="font-size: 24px;">✅</span>
+                        <span style="color: var(--text-primary);"><strong>Better Layout:</strong> 2-column → 3-column responsive grid</span>
+                    </div>
+                    <div style="display: flex; gap: 16px; align-items: center;">
+                        <span style="font-size: 24px;">✅</span>
+                        <span style="color: var(--text-primary);"><strong>More Information:</strong> 2x information density without clutter</span>
+                    </div>
+                    <div style="display: flex; gap: 16px; align-items: center;">
+                        <span style="font-size: 24px;">✅</span>
+                        <span style="color: var(--text-primary);"><strong>Enhanced Design:</strong> Gradients, charts, progress bars, animations</span>
+                    </div>
+                    <div style="display: flex; gap: 16px; align-items: center;">
+                        <span style="font-size: 24px;">✅</span>
+                        <span style="color: var(--text-primary);"><strong>Better UX:</strong> Interactive elements, favorite buttons, hover effects</span>
+                    </div>
+                </div>
+            </div>
+            
+            <a href="/dashboard" class="btn btn-primary btn-lg" style="margin-top: 32px; display: inline-flex; align-items: center; gap: 12px;">
+                <span>View Live Dashboard</span>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M5 12h14m-7-7l7 7-7 7"/>
+                </svg>
+            </a>
+        </div>
+    </div>
+    
+    <script src="/assets/js/ai-background.js"></script>
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const html = document.documentElement;
+        
+        themeToggle.addEventListener('click', () => {
+            const current = html.getAttribute('data-theme');
+            const newTheme = current === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+            themeToggle.querySelector('span').textContent = newTheme === 'dark' ? 'Light' : 'Dark';
+        });
+    </script>
+</body>
+</html>
