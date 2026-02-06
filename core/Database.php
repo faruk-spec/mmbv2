@@ -119,6 +119,14 @@ class Database
     }
     
     /**
+     * Get the last inserted ID
+     */
+    public function lastInsertId(): int
+    {
+        return (int) $this->connection->lastInsertId();
+    }
+    
+    /**
      * Insert a row and return the ID
      */
     public function insert(string $table, array $data): int
@@ -130,7 +138,7 @@ class Database
         $sql = "INSERT INTO {$table} (`{$columns}`) VALUES ({$placeholders})";
         $this->query($sql, array_values($data));
         
-        return (int) $this->connection->lastInsertId();
+        return $this->lastInsertId();
     }
     
     /**
