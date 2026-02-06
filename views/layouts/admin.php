@@ -1631,7 +1631,7 @@
                                 
                                 <div class="profile-menu-divider"></div>
                                 
-                                <a href="/auth/logout" class="profile-menu-item" style="color: var(--red);">
+                                <a href="/logout" class="profile-menu-item" style="color: var(--red);">
                                     <i class="fas fa-sign-out-alt"></i>
                                     <span>Logout</span>
                                 </a>

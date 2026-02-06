@@ -242,33 +242,67 @@ class SSO
      */
     public static function hasProjectAccess(int $userId, string $projectName): bool
     {
+        $db = null;
+        $userRole = null;
+        
         try {
-            $db = Database::getInstance();
-            $user = $db->fetch("SELECT role FROM users WHERE id = ?", [$userId]);
+            // Try to get user role from database
+            try {
+                $db = Database::getInstance();
+                $user = $db->fetch("SELECT role FROM users WHERE id = ?", [$userId]);
+                
+                if ($user) {
+                    $userRole = $user['role'];
+                }
+            } catch (\Exception $dbError) {
+                // If database fails, try to get role from session as fallback
+                // Note: Session data is already validated by Auth middleware, so this is secure
+                Logger::warning('Database error in hasProjectAccess, falling back to session: ' . $dbError->getMessage());
+                
+                // Only use session fallback if the userId matches the session user_id
+                // This prevents privilege escalation attacks
+                if (isset($_SESSION['user_id']) && $_SESSION['user_id'] === $userId) {
+                    $userRole = $_SESSION['user_role'] ?? null;
+                } else {
+                    Logger::error('Session user_id mismatch in hasProjectAccess fallback');
+                    return false;
+                }
+            }
             
-            if (!$user) {
+            if (!$userRole) {
+                // If we can't determine the role, deny access
                 return false;
             }
             
+            // Admins have access to all projects (even disabled ones)
+            if (in_array($userRole, ['super_admin', 'admin'])) {
+                return true;
+            }
+            
             // Check if project is enabled using the Helpers method (checks database first, then config)
+            // Regular users can only access enabled projects
+            // The isProjectEnabled method has its own fallback to config if database fails
             if (!Helpers::isProjectEnabled($projectName)) {
                 return false;
             }
             
-            // Admins have access to all projects
-            if (in_array($user['role'], ['super_admin', 'admin'])) {
-                return true;
-            }
-            
-            // Check for explicit deny in project_permissions table
-            $permission = $db->fetch(
-                "SELECT has_access FROM project_permissions WHERE user_id = ? AND project_name = ?",
-                [$userId, $projectName]
-            );
-            
-            // If explicit permission exists and it's denied, deny access
-            if ($permission !== null && !$permission['has_access']) {
-                return false;
+            // Check for explicit deny in project_permissions table (only if database is available)
+            if ($db !== null) {
+                try {
+                    $permission = $db->fetch(
+                        "SELECT has_access FROM project_permissions WHERE user_id = ? AND project_name = ?",
+                        [$userId, $projectName]
+                    );
+                    
+                    // If explicit permission exists and it's denied, deny access
+                    if ($permission !== null && !$permission['has_access']) {
+                        return false;
+                    }
+                } catch (\Exception $permError) {
+                    // If permission check fails, log it but don't block access
+                    // (no explicit deny means allow by default)
+                    Logger::warning('Could not check project_permissions table: ' . $permError->getMessage());
+                }
             }
             
             // All authenticated users have access to projects by default
@@ -276,7 +310,8 @@ class SSO
             return true;
             
         } catch (\Exception $e) {
-            Logger::error('Project access check error: ' . $e->getMessage());
+            // Last resort: if everything fails, log the error and deny access
+            Logger::error('Critical error in hasProjectAccess: ' . $e->getMessage());
             return false;
         }
     }
