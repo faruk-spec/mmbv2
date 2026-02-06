@@ -192,6 +192,16 @@ class App
             ini_set('session.cookie_path', '/'); // Ensure cookie works for all paths
             ini_set('session.cookie_lifetime', '86400'); // 24 hours
             
+            // Set cookie domain to ensure session works across all paths
+            // This is critical for OAuth users accessing projects
+            if (isset($_SERVER['HTTP_HOST'])) {
+                $host = $_SERVER['HTTP_HOST'];
+                // Remove port if present
+                $host = explode(':', $host)[0];
+                // Set cookie for the entire domain
+                ini_set('session.cookie_domain', $host);
+            }
+            
             session_start();
             
             // Regenerate session ID periodically for security
