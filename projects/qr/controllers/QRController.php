@@ -11,9 +11,17 @@ use Core\Auth;
 use Core\Security;
 use Core\Helpers;
 use Core\Logger;
+use Projects\QR\Models\QRModel;
 
 class QRController
 {
+    private QRModel $qrModel;
+    
+    public function __construct()
+    {
+        $this->qrModel = new QRModel();
+    }
+    
     /**
      * Show QR generation form
      */
@@ -52,11 +60,15 @@ class QRController
         // Validate size
         $size = max(100, min(500, $size));
         
-        // Generate QR code using Google Charts API (simple implementation)
-        $qrData = $this->generateQRCode($content, $size, $color, $bgColor);
+        // Ensure colors have # prefix
+        $foregroundColor = '#' . ltrim($color, '#');
+        $backgroundColor = '#' . ltrim($bgColor, '#');
+        
+        // Generate QR code
+        $qrData = $this->generateQRCode($content, $size, $foregroundColor, $backgroundColor);
         
         if ($qrData) {
-            // Store in session for display
+            // Store in session for immediate display
             $_SESSION['generated_qr'] = [
                 'content' => $content,
                 'type' => $type,
@@ -65,7 +77,23 @@ class QRController
                 'created_at' => date('Y-m-d H:i:s')
             ];
             
-            Logger::activity(Auth::id(), 'qr_generated', ['type' => $type]);
+            // Save to database
+            $userId = Auth::id();
+            if ($userId) {
+                $qrId = $this->qrModel->save($userId, [
+                    'content' => $content,
+                    'type' => $type,
+                    'size' => $size,
+                    'foreground_color' => $foregroundColor,
+                    'background_color' => $backgroundColor
+                ]);
+                
+                if ($qrId) {
+                    Logger::activity($userId, 'qr_generated', ['type' => $type, 'qr_id' => $qrId]);
+                } else {
+                    Logger::error('Failed to save QR code to database for user ' . $userId);
+                }
+            }
             
             Helpers::flash('success', 'QR code generated successfully!');
         } else {
@@ -82,7 +110,7 @@ class QRController
     {
         try {
             // Use our standalone QR code generator
-            $dataUrl = \Core\QRCodeGenerator::generate($content, $size, '#' . $color, '#' . $bgColor);
+            $dataUrl = \Core\QRCodeGenerator::generate($content, $size, $color, $bgColor);
             return $dataUrl;
         } catch (\Exception $e) {
             \Core\Logger::error('QR generation failed: ' . $e->getMessage());
@@ -95,8 +123,23 @@ class QRController
      */
     public function history(): void
     {
-        // Placeholder - in production, fetch from database
+        $userId = Auth::id();
         $history = [];
+        
+        if ($userId) {
+            // Fetch QR codes from database
+            $history = $this->qrModel->getByUser($userId, 50);
+            
+            // Regenerate QR images for display
+            foreach ($history as &$qr) {
+                $qr['image'] = $this->generateQRCode(
+                    $qr['content'],
+                    $qr['size'] ?? 200,
+                    $qr['foreground_color'] ?? '#000000',
+                    $qr['background_color'] ?? '#ffffff'
+                );
+            }
+        }
         
         $this->render('history', [
             'title' => 'QR Code History',
@@ -134,8 +177,19 @@ class QRController
             return;
         }
         
-        // Placeholder - in production, delete from database
-        Helpers::flash('success', 'QR code deleted.');
+        $id = (int) ($_POST['id'] ?? 0);
+        $userId = Auth::id();
+        
+        if ($id && $userId) {
+            if ($this->qrModel->delete($id, $userId)) {
+                Helpers::flash('success', 'QR code deleted successfully.');
+            } else {
+                Helpers::flash('error', 'Failed to delete QR code.');
+            }
+        } else {
+            Helpers::flash('error', 'Invalid request.');
+        }
+        
         Helpers::redirect('/projects/qr/history');
     }
     

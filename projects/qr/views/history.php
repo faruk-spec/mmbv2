@@ -16,33 +16,96 @@
             <a href="/projects/qr/generate" class="btn btn-primary">Generate Your First QR Code</a>
         </div>
     <?php else: ?>
-        <table style="width: 100%; border-collapse: collapse;">
-            <thead>
-                <tr style="border-bottom: 1px solid var(--border-color);">
-                    <th style="padding: 12px; text-align: left; color: var(--text-secondary);">Preview</th>
-                    <th style="padding: 12px; text-align: left; color: var(--text-secondary);">Content</th>
-                    <th style="padding: 12px; text-align: left; color: var(--text-secondary);">Type</th>
-                    <th style="padding: 12px; text-align: left; color: var(--text-secondary);">Created</th>
-                    <th style="padding: 12px; text-align: left; color: var(--text-secondary);">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($history as $qr): ?>
-                    <tr style="border-bottom: 1px solid var(--border-color);">
-                        <td style="padding: 12px;">
-                            <div class="qr-preview" style="padding: 5px;">
-                                <img src="<?= htmlspecialchars($qr['image']) ?>" alt="QR" style="width: 50px; height: 50px;">
-                            </div>
-                        </td>
-                        <td style="padding: 12px;"><?= htmlspecialchars(substr($qr['content'], 0, 40)) ?>...</td>
-                        <td style="padding: 12px;"><?= ucfirst($qr['type']) ?></td>
-                        <td style="padding: 12px;"><?= $qr['created_at'] ?></td>
-                        <td style="padding: 12px;">
-                            <a href="<?= htmlspecialchars($qr['image']) ?>" download class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;">Download</a>
-                        </td>
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; min-width: 600px;">
+                <thead>
+                    <tr style="border-bottom: 2px solid var(--border-color);">
+                        <th style="padding: 12px; text-align: left; color: var(--text-secondary); font-weight: 600;">Preview</th>
+                        <th style="padding: 12px; text-align: left; color: var(--text-secondary); font-weight: 600;">Content</th>
+                        <th style="padding: 12px; text-align: left; color: var(--text-secondary); font-weight: 600;">Type</th>
+                        <th style="padding: 12px; text-align: left; color: var(--text-secondary); font-weight: 600;">Size</th>
+                        <th style="padding: 12px; text-align: left; color: var(--text-secondary); font-weight: 600;">Scans</th>
+                        <th style="padding: 12px; text-align: left; color: var(--text-secondary); font-weight: 600;">Created</th>
+                        <th style="padding: 12px; text-align: left; color: var(--text-secondary); font-weight: 600;">Actions</th>
                     </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    <?php foreach ($history as $qr): ?>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 12px;">
+                                <div style="background: white; padding: 8px; border-radius: 4px; display: inline-block;">
+                                    <img src="<?= htmlspecialchars($qr['image'] ?? '') ?>" 
+                                         alt="QR Code" 
+                                         style="width: 60px; height: 60px; display: block;">
+                                </div>
+                            </td>
+                            <td style="padding: 12px; max-width: 300px;">
+                                <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" 
+                                     title="<?= htmlspecialchars($qr['content']) ?>">
+                                    <?= htmlspecialchars(substr($qr['content'], 0, 50)) ?><?= strlen($qr['content']) > 50 ? '...' : '' ?>
+                                </div>
+                            </td>
+                            <td style="padding: 12px;">
+                                <span style="background: var(--bg-secondary); padding: 4px 8px; border-radius: 4px; font-size: 12px;">
+                                    <?= ucfirst(htmlspecialchars($qr['type'])) ?>
+                                </span>
+                            </td>
+                            <td style="padding: 12px;">
+                                <?= htmlspecialchars($qr['size'] ?? 200) ?>px
+                            </td>
+                            <td style="padding: 12px;">
+                                <?= (int)($qr['scan_count'] ?? 0) ?>
+                            </td>
+                            <td style="padding: 12px; color: var(--text-secondary); font-size: 14px;">
+                                <?= date('M j, Y', strtotime($qr['created_at'])) ?>
+                            </td>
+                            <td style="padding: 12px;">
+                                <div style="display: flex; gap: 8px;">
+                                    <a href="<?= htmlspecialchars($qr['image'] ?? '#') ?>" 
+                                       download="qr-code-<?= $qr['id'] ?>.png"
+                                       class="btn btn-secondary" 
+                                       style="padding: 6px 12px; font-size: 12px; text-decoration: none;">
+                                        Download
+                                    </a>
+                                    <form method="POST" action="/projects/qr/delete" style="display: inline;">
+                                        <input type="hidden" name="_csrf_token" value="<?= \Core\Security::generateCsrfToken() ?>">
+                                        <input type="hidden" name="id" value="<?= $qr['id'] ?>">
+                                        <button type="submit" 
+                                                class="btn btn-secondary" 
+                                                style="padding: 6px 12px; font-size: 12px; background: rgba(255, 107, 107, 0.1); border-color: #ff6b6b; color: #ff6b6b;"
+                                                onclick="return confirm('Are you sure you want to delete this QR code?')">
+                                            Delete
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+        
+        <div style="margin-top: 20px; padding: 15px; background: var(--bg-secondary); border-radius: 8px; text-align: center;">
+            <p style="color: var(--text-secondary); margin: 0;">
+                Total QR Codes: <strong><?= count($history) ?></strong>
+            </p>
+        </div>
     <?php endif; ?>
 </div>
+
+<style>
+    @media (max-width: 768px) {
+        table {
+            font-size: 12px;
+        }
+        
+        th, td {
+            padding: 8px !important;
+        }
+        
+        .btn {
+            padding: 4px 8px !important;
+            font-size: 11px !important;
+        }
+    }
+</style>
