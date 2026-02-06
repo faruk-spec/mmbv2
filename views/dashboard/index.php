@@ -24,7 +24,15 @@
                 $greeting = $hour < 12 ? 'Good Morning' : ($hour < 18 ? 'Good Afternoon' : 'Good Evening');
                 echo $greeting . ', ' . View::e($currentUser['username']);
                 ?>
-                <span class="wave">👋</span>
+                <span class="wave-icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
+                        <path d="M17 18a5 5 0 0 0-10 0"/>
+                        <line x1="12" y1="2" x2="12" y2="9"/>
+                        <line x1="4.22" y1="4.22" x2="9.17" y2="9.17"/>
+                        <line x1="1" y1="12" x2="8" y2="12"/>
+                        <line x1="4.22" y1="19.78" x2="9.17" y2="14.83"/>
+                    </svg>
+                </span>
             </h1>
             <p class="welcome-subtitle">
                 Here's your dashboard overview. You have <strong><?= count($projects ?? []) ?> applications</strong> ready to use.
@@ -319,8 +327,134 @@
             </div>
         </div>
 
-        <!-- Notifications Widget - NEW -->
+        <!-- NEW: Quick Search Widget -->
+        <div class="widget animate-fade-in" style="animation-delay: 0.35s;">
+            <div class="widget-header">
+                <h3 class="widget-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="m21 21-4.35-4.35"/>
+                    </svg>
+                    Quick Search
+                </h3>
+            </div>
+            <div class="widget-body">
+                <div style="position: relative;">
+                    <input type="text" placeholder="Search applications, files..." 
+                           style="width: 100%; padding: var(--space-md) var(--space-lg) var(--space-md) 40px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); color: var(--text-primary); font-size: var(--font-size-sm);">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="2" 
+                         style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%);">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="m21 21-4.35-4.35"/>
+                    </svg>
+                </div>
+                <div style="margin-top: var(--space-md); font-size: var(--font-size-xs); color: var(--text-tertiary);">
+                    <kbd style="background: var(--bg-secondary); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border-color);">Ctrl</kbd> + 
+                    <kbd style="background: var(--bg-secondary); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border-color);">K</kbd> 
+                    for quick search
+                </div>
+            </div>
+        </div>
+
+        <!-- NEW: Bookmarks/Favorites Widget -->
         <div class="widget animate-fade-in" style="animation-delay: 0.4s;">
+            <div class="widget-header">
+                <h3 class="widget-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
+                        <path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    Bookmarks
+                </h3>
+            </div>
+            <div class="widget-body">
+                <div class="quick-actions-vertical">
+                    <a href="#" class="quick-action-card">
+                        <div class="action-icon" style="background: linear-gradient(135deg, var(--cyan), var(--blue));">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                            </svg>
+                        </div>
+                        <div class="action-content">
+                            <div class="action-title">Documentation</div>
+                            <div class="action-desc">User guides</div>
+                        </div>
+                    </a>
+                    <a href="#" class="quick-action-card">
+                        <div class="action-icon" style="background: linear-gradient(135deg, var(--green), #00cc66);">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                            </svg>
+                        </div>
+                        <div class="action-content">
+                            <div class="action-title">Support</div>
+                            <div class="action-desc">Get help</div>
+                        </div>
+                    </a>
+                    <a href="#" class="quick-action-card">
+                        <div class="action-icon" style="background: linear-gradient(135deg, var(--purple), #7733ff);">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                                <polyline points="16 18 22 12 16 6"/>
+                                <polyline points="8 6 2 12 8 18"/>
+                            </svg>
+                        </div>
+                        <div class="action-content">
+                            <div class="action-title">API Docs</div>
+                            <div class="action-desc">Integration</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- NEW: Storage Usage Widget -->
+        <div class="widget animate-fade-in" style="animation-delay: 0.45s;">
+            <div class="widget-header">
+                <h3 class="widget-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                    </svg>
+                    Storage
+                </h3>
+            </div>
+            <div class="widget-body">
+                <div style="margin-bottom: var(--space-lg);">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: var(--space-sm);">
+                        <span style="font-size: var(--font-size-sm); color: var(--text-secondary);">2.4 GB used</span>
+                        <span style="font-size: var(--font-size-sm); color: var(--text-secondary);">10 GB total</span>
+                    </div>
+                    <div class="progress-bar" style="height: 8px;">
+                        <div class="progress-fill" style="width: 24%; background: linear-gradient(90deg, var(--cyan), var(--blue));"></div>
+                    </div>
+                </div>
+                <div style="display: grid; gap: var(--space-sm);">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; align-items: center; gap: var(--space-sm);">
+                            <div style="width: 8px; height: 8px; background: var(--cyan); border-radius: var(--radius-full);"></div>
+                            <span style="font-size: var(--font-size-xs); color: var(--text-secondary);">Documents</span>
+                        </div>
+                        <span style="font-size: var(--font-size-xs); color: var(--text-primary); font-weight: var(--font-semibold);">1.2 GB</span>
+                    </div>
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; align-items: center; gap: var(--space-sm);">
+                            <div style="width: 8px; height: 8px; background: var(--purple); border-radius: var(--radius-full);"></div>
+                            <span style="font-size: var(--font-size-xs); color: var(--text-secondary);">Media</span>
+                        </div>
+                        <span style="font-size: var(--font-size-xs); color: var(--text-primary); font-weight: var(--font-semibold);">800 MB</span>
+                    </div>
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; align-items: center; gap: var(--space-sm);">
+                            <div style="width: 8px; height: 8px; background: var(--green); border-radius: var(--radius-full);"></div>
+                            <span style="font-size: var(--font-size-xs); color: var(--text-secondary);">Other</span>
+                        </div>
+                        <span style="font-size: var(--font-size-xs); color: var(--text-primary); font-weight: var(--font-semibold);">400 MB</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notifications Widget - Enhanced -->
+        <div class="widget animate-fade-in" style="animation-delay: 0.5s;">
             <div class="widget-header">
                 <h3 class="widget-title">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
@@ -436,7 +570,11 @@
             <div class="widget-body">
                 <div class="tips-list-enhanced">
                     <div class="tip-item-enhanced">
-                        <div class="tip-icon-large">💡</div>
+                        <div class="tip-icon-large">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
+                                <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                            </svg>
+                        </div>
                         <div class="tip-content">
                             <div class="tip-title">Enable 2FA</div>
                             <div class="tip-text">Add extra security to your account</div>
@@ -444,7 +582,11 @@
                         </div>
                     </div>
                     <div class="tip-item-enhanced">
-                        <div class="tip-icon-large">🚀</div>
+                        <div class="tip-icon-large">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2">
+                                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                            </svg>
+                        </div>
                         <div class="tip-content">
                             <div class="tip-title">Complete Profile</div>
                             <div class="tip-text">Unlock all features</div>
@@ -497,822 +639,6 @@
     </div>
 </div>
 
-<style>
-/* Enhanced Welcome Banner */
-.dashboard-welcome {
-    background: linear-gradient(135deg, rgba(0, 217, 255, 0.08) 0%, rgba(0, 102, 255, 0.08) 100%);
-    border: 1px solid rgba(0, 217, 255, 0.2);
-    border-radius: var(--radius-xl);
-    padding: var(--space-2xl);
-    margin-bottom: var(--space-xl);
-    animation: fadeIn 0.5s ease-out;
-}
-
-.welcome-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: var(--space-lg);
-}
-
-.welcome-title {
-    font-size: var(--font-size-3xl);
-    font-weight: var(--font-bold);
-    color: var(--text-primary);
-    margin-bottom: var(--space-xs);
-    display: flex;
-    align-items: center;
-    gap: var(--space-md);
-}
-
-.wave {
-    display: inline-block;
-    animation: wave 2s ease-in-out infinite;
-}
-
-@keyframes wave {
-    0%, 100% { transform: rotate(0deg); }
-    25% { transform: rotate(20deg); }
-    75% { transform: rotate(-20deg); }
-}
-
-.welcome-subtitle {
-    font-size: var(--font-size-md);
-    color: var(--text-secondary);
-}
-
-.welcome-avatar {
-    position: relative;
-}
-
-.avatar-circle {
-    width: 72px;
-    height: 72px;
-    background: linear-gradient(135deg, var(--cyan), var(--blue));
-    border-radius: var(--radius-full);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: var(--font-size-xl);
-    font-weight: var(--font-bold);
-    color: white;
-    box-shadow: 0 8px 24px rgba(0, 217, 255, 0.3);
-}
-
-.status-badge {
-    position: absolute;
-    bottom: 0;
-    right: 0;
-    width: 20px;
-    height: 20px;
-    background: var(--green);
-    border: 3px solid var(--bg-primary);
-    border-radius: var(--radius-full);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.pulse {
-    width: 8px;
-    height: 8px;
-    background: white;
-    border-radius: var(--radius-full);
-    animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
-}
-
-.welcome-stats-mini {
-    display: flex;
-    gap: var(--space-xl);
-    flex-wrap: wrap;
-}
-
-.mini-stat {
-    display: flex;
-    align-items: center;
-    gap: var(--space-sm);
-    font-size: var(--font-size-sm);
-    color: var(--text-secondary);
-}
-
-/* Enhanced Stats Grid */
-.dashboard-stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: var(--space-lg);
-    margin-bottom: var(--space-xl);
-}
-
-.stat-widget {
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg);
-    padding: var(--space-xl);
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-md);
-    transition: all var(--transition);
-    animation: fadeIn 0.5s ease-out forwards;
-    opacity: 0;
-    position: relative;
-    overflow: hidden;
-}
-
-.stat-widget::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, var(--cyan), var(--blue));
-    opacity: 0;
-    transition: opacity var(--transition);
-}
-
-.stat-widget:hover::before {
-    opacity: 1;
-}
-
-.stat-widget:hover {
-    border-color: var(--border-color-strong);
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-lg);
-}
-
-.stat-gradient-cyan { border-top-color: var(--cyan); }
-.stat-gradient-blue { border-top-color: var(--blue); }
-.stat-gradient-green { border-top-color: var(--green); }
-.stat-gradient-purple { border-top-color: var(--purple); }
-
-.stat-icon {
-    width: 56px;
-    height: 56px;
-    background: linear-gradient(135deg, rgba(0, 217, 255, 0.1), rgba(0, 102, 255, 0.1));
-    border-radius: var(--radius-lg);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--cyan);
-}
-
-.stat-value {
-    font-size: var(--font-size-4xl);
-    font-weight: var(--font-bold);
-    color: var(--text-primary);
-    line-height: 1;
-}
-
-.stat-label {
-    font-size: var(--font-size-sm);
-    color: var(--text-secondary);
-    font-weight: var(--font-medium);
-}
-
-.stat-chart {
-    display: flex;
-    align-items: flex-end;
-    gap: 4px;
-    height: 30px;
-    margin-top: auto;
-}
-
-.mini-bar {
-    flex: 1;
-    background: linear-gradient(180deg, var(--cyan), var(--blue));
-    border-radius: 2px;
-    opacity: 0.6;
-    transition: all var(--transition-fast);
-}
-
-.stat-widget:hover .mini-bar {
-    opacity: 1;
-}
-
-.stat-trend {
-    display: flex;
-    align-items: center;
-    gap: var(--space-xs);
-    font-size: var(--font-size-xs);
-    font-weight: var(--font-semibold);
-    margin-top: auto;
-}
-
-.stat-trend.positive { color: var(--green); }
-
-.storage-progress {
-    margin-top: auto;
-}
-
-.progress-bar {
-    width: 100%;
-    height: 6px;
-    background: var(--bg-secondary);
-    border-radius: var(--radius-full);
-    overflow: hidden;
-    margin-bottom: var(--space-xs);
-}
-
-.progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--purple), #9933ff);
-    border-radius: var(--radius-full);
-    transition: width var(--transition);
-}
-
-.progress-text {
-    font-size: var(--font-size-xs);
-    color: var(--text-tertiary);
-}
-
-/* Three Column Grid Layout */
-.dashboard-grid-three {
-    display: grid;
-    grid-template-columns: 1fr 320px 320px;
-    gap: var(--space-xl);
-    margin-bottom: var(--space-xl);
-}
-
-@media (max-width: 1400px) {
-    .dashboard-grid-three {
-        grid-template-columns: 1fr 280px;
-    }
-    .dashboard-sidebar-left {
-        order: 2;
-    }
-    .dashboard-sidebar-right {
-        display: none;
-    }
-}
-
-@media (max-width: 1024px) {
-    .dashboard-grid-three {
-        grid-template-columns: 1fr;
-    }
-    .dashboard-sidebar-right {
-        display: block;
-    }
-}
-
-/* Widget Styles */
-.widget {
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg);
-    overflow: hidden;
-    transition: all var(--transition);
-    animation: fadeIn 0.5s ease-out forwards;
-    opacity: 0;
-    margin-bottom: var(--space-xl);
-}
-
-.widget:hover {
-    border-color: var(--border-color-strong);
-    box-shadow: var(--shadow-md);
-}
-
-.widget-header {
-    padding: var(--space-lg) var(--space-xl);
-    border-bottom: 1px solid var(--divider-color);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.widget-title {
-    font-size: var(--font-size-lg);
-    font-weight: var(--font-semibold);
-    color: var(--text-primary);
-    display: flex;
-    align-items: center;
-    gap: var(--space-sm);
-}
-
-.widget-action {
-    font-size: var(--font-size-sm);
-    color: var(--cyan);
-    text-decoration: none;
-    font-weight: var(--font-medium);
-    transition: all var(--transition-fast);
-    display: flex;
-    align-items: center;
-    gap: var(--space-xs);
-}
-
-.widget-action:hover {
-    color: var(--blue);
-    gap: var(--space-sm);
-}
-
-.widget-body {
-    padding: var(--space-xl);
-}
-
-.notification-badge {
-    background: var(--red);
-    color: white;
-    font-size: 10px;
-    font-weight: var(--font-bold);
-    padding: 2px 6px;
-    border-radius: var(--radius-full);
-    margin-left: var(--space-xs);
-}
-
-/* Enhanced Application Cards */
-.apps-grid-enhanced {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: var(--space-lg);
-}
-
-.app-card-enhanced {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg);
-    overflow: hidden;
-    transition: all var(--transition);
-}
-
-.app-card-enhanced:hover {
-    border-color: var(--border-color-strong);
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-lg);
-}
-
-.app-card-header {
-    padding: var(--space-xl);
-    position: relative;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-}
-
-.app-icon-large {
-    width: 64px;
-    height: 64px;
-    border-radius: var(--radius-lg);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.favorite-btn {
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    color: var(--text-secondary);
-    width: 36px;
-    height: 36px;
-    border-radius: var(--radius-full);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all var(--transition-fast);
-}
-
-.favorite-btn:hover {
-    background: var(--red);
-    border-color: var(--red);
-    color: white;
-    transform: scale(1.1);
-}
-
-.app-card-body {
-    padding: 0 var(--space-xl) var(--space-lg);
-}
-
-.app-name {
-    font-size: var(--font-size-lg);
-    font-weight: var(--font-semibold);
-    color: var(--text-primary);
-    margin-bottom: var(--space-xs);
-}
-
-.app-desc {
-    font-size: var(--font-size-sm);
-    color: var(--text-secondary);
-    margin-bottom: var(--space-md);
-    line-height: var(--leading-relaxed);
-}
-
-.app-meta {
-    display: flex;
-    gap: var(--space-md);
-    flex-wrap: wrap;
-}
-
-.meta-item {
-    display: flex;
-    align-items: center;
-    gap: var(--space-xs);
-    font-size: var(--font-size-xs);
-    color: var(--text-tertiary);
-}
-
-.app-card-footer {
-    padding: var(--space-lg) var(--space-xl);
-    border-top: 1px solid var(--divider-color);
-}
-
-.app-launch-btn {
-    width: 100%;
-    padding: var(--space-md);
-    border: none;
-    border-radius: var(--radius-md);
-    color: white;
-    font-weight: var(--font-semibold);
-    font-size: var(--font-size-sm);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-sm);
-    transition: all var(--transition-fast);
-    text-decoration: none;
-}
-
-.app-launch-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-}
-
-/* Activity Timeline */
-.activity-timeline {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-lg);
-}
-
-.timeline-item {
-    display: flex;
-    gap: var(--space-md);
-    align-items: flex-start;
-    position: relative;
-}
-
-.timeline-item:not(:last-child)::after {
-    content: '';
-    position: absolute;
-    left: 7px;
-    top: 24px;
-    bottom: -var(--space-lg);
-    width: 2px;
-    background: var(--divider-color);
-}
-
-.timeline-marker {
-    width: 16px;
-    height: 16px;
-    border-radius: var(--radius-full);
-    border: 3px solid var(--bg-card);
-    flex-shrink: 0;
-}
-
-.timeline-content {
-    flex: 1;
-}
-
-.timeline-title {
-    font-size: var(--font-size-sm);
-    font-weight: var(--font-medium);
-    color: var(--text-primary);
-    margin-bottom: var(--space-xs);
-}
-
-.timeline-time {
-    font-size: var(--font-size-xs);
-    color: var(--text-tertiary);
-}
-
-/* Quick Actions - Vertical */
-.quick-actions-vertical {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-sm);
-}
-
-.quick-action-card {
-    display: flex;
-    align-items: center;
-    gap: var(--space-md);
-    padding: var(--space-md);
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    text-decoration: none;
-    transition: all var(--transition-fast);
-}
-
-.quick-action-card:hover {
-    background: var(--bg-elevated);
-    border-color: var(--border-color-strong);
-    transform: translateX(4px);
-}
-
-.action-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: var(--radius-lg);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-.action-content {
-    flex: 1;
-}
-
-.action-title {
-    font-size: var(--font-size-sm);
-    font-weight: var(--font-semibold);
-    color: var(--text-primary);
-    margin-bottom: 2px;
-}
-
-.action-desc {
-    font-size: var(--font-size-xs);
-    color: var(--text-secondary);
-}
-
-/* Notifications */
-.notifications-list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-sm);
-}
-
-.notification-item {
-    display: flex;
-    gap: var(--space-md);
-    padding: var(--space-md);
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    transition: all var(--transition-fast);
-}
-
-.notification-item.unread {
-    background: rgba(0, 217, 255, 0.05);
-    border-color: rgba(0, 217, 255, 0.2);
-}
-
-.notification-item:hover {
-    background: var(--bg-elevated);
-    border-color: var(--border-color-strong);
-}
-
-.notification-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: var(--radius-md);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-.notification-content {
-    flex: 1;
-}
-
-.notification-title {
-    font-size: var(--font-size-sm);
-    font-weight: var(--font-semibold);
-    color: var(--text-primary);
-    margin-bottom: var(--space-xs);
-}
-
-.notification-text {
-    font-size: var(--font-size-xs);
-    color: var(--text-secondary);
-    margin-bottom: var(--space-xs);
-}
-
-.notification-time {
-    font-size: var(--font-size-xs);
-    color: var(--text-tertiary);
-}
-
-/* Account Info - Enhanced */
-.account-info-enhanced {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    margin-bottom: var(--space-xl);
-}
-
-.account-avatar-large {
-    margin-bottom: var(--space-lg);
-}
-
-.account-name-large {
-    font-size: var(--font-size-xl);
-    font-weight: var(--font-bold);
-    color: var(--text-primary);
-    margin-bottom: var(--space-xs);
-}
-
-.account-email-enhanced {
-    font-size: var(--font-size-sm);
-    color: var(--text-secondary);
-    margin-bottom: var(--space-md);
-    word-break: break-word;
-}
-
-.account-stats-enhanced {
-    width: 100%;
-    padding-top: var(--space-lg);
-    border-top: 1px solid var(--divider-color);
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-md);
-}
-
-.stat-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.stat-value-right {
-    font-size: var(--font-size-sm);
-    font-weight: var(--font-semibold);
-    color: var(--text-primary);
-}
-
-/* Tips - Enhanced */
-.tips-list-enhanced {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-md);
-}
-
-.tip-item-enhanced {
-    display: flex;
-    gap: var(--space-md);
-    padding: var(--space-md);
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    transition: all var(--transition-fast);
-}
-
-.tip-item-enhanced:hover {
-    background: var(--bg-elevated);
-    border-color: var(--border-color-strong);
-}
-
-.tip-icon-large {
-    font-size: 32px;
-    flex-shrink: 0;
-}
-
-.tip-content {
-    flex: 1;
-}
-
-.tip-title {
-    font-size: var(--font-size-sm);
-    font-weight: var(--font-semibold);
-    color: var(--text-primary);
-    margin-bottom: var(--space-xs);
-}
-
-.tip-text {
-    font-size: var(--font-size-xs);
-    color: var(--text-secondary);
-    margin-bottom: var(--space-sm);
-}
-
-.tip-link {
-    font-size: var(--font-size-xs);
-    color: var(--cyan);
-    text-decoration: none;
-    font-weight: var(--font-medium);
-    transition: color var(--transition-fast);
-}
-
-.tip-link:hover {
-    color: var(--blue);
-}
-
-/* System Health */
-.system-health {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--space-xl);
-}
-
-.health-score {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--space-md);
-}
-
-.health-circle {
-    position: relative;
-}
-
-.health-score-text {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: var(--font-size-2xl);
-    font-weight: var(--font-bold);
-    color: var(--green);
-}
-
-.health-label {
-    font-size: var(--font-size-sm);
-    color: var(--text-secondary);
-    font-weight: var(--font-medium);
-}
-
-.status-list-enhanced {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-md);
-}
-
-.status-item-enhanced {
-    display: flex;
-    align-items: center;
-    gap: var(--space-md);
-    font-size: var(--font-size-sm);
-    color: var(--text-secondary);
-}
-
-.status-indicator-large {
-    width: 12px;
-    height: 12px;
-    border-radius: var(--radius-full);
-    flex-shrink: 0;
-}
-
-/* Empty State */
-.empty-state {
-    text-align: center;
-    padding: var(--space-3xl);
-}
-
-.empty-icon {
-    margin-bottom: var(--space-lg);
-}
-
-.empty-state h4 {
-    font-size: var(--font-size-lg);
-    font-weight: var(--font-semibold);
-    color: var(--text-primary);
-    margin-bottom: var(--space-sm);
-}
-
-/* Mobile Responsive */
-@media (max-width: 768px) {
-    .dashboard-welcome {
-        padding: var(--space-lg);
-    }
-    
-    .welcome-content {
-        flex-direction: column;
-        text-align: center;
-        gap: var(--space-lg);
-    }
-    
-    .welcome-title {
-        font-size: var(--font-size-2xl);
-        justify-content: center;
-    }
-    
-    .welcome-stats-mini {
-        justify-content: center;
-    }
-    
-    .dashboard-stats-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    
-    .apps-grid-enhanced {
-        grid-template-columns: 1fr;
-    }
-}
-
-@media (max-width: 480px) {
-    .dashboard-stats-grid {
-        grid-template-columns: 1fr;
-    }
-}
-</style>
 
 <script>
 // Animated Counter for Stats
