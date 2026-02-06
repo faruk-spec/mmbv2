@@ -1,9 +1,0 @@
-[2026-02-06 19:16:35] ERROR: Database connection failed: SQLSTATE[HY000] [2002] No such file or directory 
-[2026-02-06 19:18:25] ERROR: Database connection failed: SQLSTATE[HY000] [2002] No such file or directory 
-[2026-02-06 19:18:25] ERROR: Database connection failed: SQLSTATE[HY000] [2002] No such file or directory 
-[2026-02-06 19:18:25] WARNING: Database error in hasProjectAccess, falling back to session: Database connection failed 
-[2026-02-06 19:18:25] ERROR: Database connection failed: SQLSTATE[HY000] [2002] No such file or directory 
-[2026-02-06 19:18:25] ERROR: Database connection failed: SQLSTATE[HY000] [2002] No such file or directory 
-[2026-02-06 19:18:25] WARNING: Could not check project_permissions table: Database connection failed 
-[2026-02-06 19:18:25] ERROR: Database connection failed: SQLSTATE[HY000] [2002] No such file or directory 
-[2026-02-06 19:18:25] WARNING: Database error in hasProjectAccess, falling back to session: Database connection failed 
