@@ -117,106 +117,16 @@ class QRCodeGenerator
     }
     
     /**
-     * Generate QR code matrix (simplified version)
-     * This is a basic implementation. For production use, consider using a full QR library
+     * Generate QR code matrix (proper encoding version)
+     * Uses QRCodeEncoder for standards-compliant QR codes
      * 
      * @param string $data Data to encode
      * @return array 2D matrix of boolean values
      */
     private static function generateMatrix(string $data): array
     {
-        // Simplified QR code generation
-        // This creates a basic pattern that resembles a QR code
-        // For full QR spec compliance, use a dedicated library
-        
-        $size = 21; // Version 1 QR code size
-        $matrix = array_fill(0, $size, array_fill(0, $size, false));
-        
-        // Add finder patterns (corners)
-        self::addFinderPattern($matrix, 0, 0);
-        self::addFinderPattern($matrix, 0, $size - 7);
-        self::addFinderPattern($matrix, $size - 7, 0);
-        
-        // Add timing patterns
-        for ($i = 8; $i < $size - 8; $i++) {
-            $matrix[6][$i] = ($i % 2 === 0);
-            $matrix[$i][6] = ($i % 2 === 0);
-        }
-        
-        // Simple data encoding (not real QR encoding)
-        $hash = md5($data);
-        $hashBinary = '';
-        for ($i = 0; $i < strlen($hash); $i++) {
-            $hashBinary .= str_pad(decbin(ord($hash[$i])), 8, '0', STR_PAD_LEFT);
-        }
-        
-        $bitIndex = 0;
-        $direction = -1; // Start going up
-        $x = $size - 1;
-        
-        while ($x > 0) {
-            if ($x == 6) $x--; // Skip timing column
-            
-            for ($y = 0; $y < $size; $y++) {
-                $currentY = $direction === -1 ? ($size - 1 - $y) : $y;
-                
-                for ($xOffset = 0; $xOffset < 2; $xOffset++) {
-                    $currentX = $x - $xOffset;
-                    
-                    // Skip if this is a function pattern area
-                    if (self::isFunctionPattern($currentX, $currentY, $size)) {
-                        continue;
-                    }
-                    
-                    if ($bitIndex < strlen($hashBinary)) {
-                        $matrix[$currentY][$currentX] = ($hashBinary[$bitIndex] === '1');
-                        $bitIndex++;
-                    }
-                }
-            }
-            
-            $x -= 2;
-            $direction *= -1;
-        }
-        
-        return $matrix;
-    }
-    
-    /**
-     * Add finder pattern to matrix
-     */
-    private static function addFinderPattern(array &$matrix, int $row, int $col): void
-    {
-        // Outer 7x7 border
-        for ($i = 0; $i < 7; $i++) {
-            for ($j = 0; $j < 7; $j++) {
-                if ($i === 0 || $i === 6 || $j === 0 || $j === 6) {
-                    $matrix[$row + $i][$col + $j] = true;
-                } elseif ($i >= 2 && $i <= 4 && $j >= 2 && $j <= 4) {
-                    $matrix[$row + $i][$col + $j] = true;
-                } else {
-                    $matrix[$row + $i][$col + $j] = false;
-                }
-            }
-        }
-    }
-    
-    /**
-     * Check if position is part of a function pattern
-     */
-    private static function isFunctionPattern(int $x, int $y, int $size): bool
-    {
-        // Finder patterns
-        if (($x < 9 && $y < 9) || ($x < 9 && $y >= $size - 8) || ($x >= $size - 8 && $y < 9)) {
-            return true;
-        }
-        
-        // Timing patterns
-        if ($x === 6 || $y === 6) {
-            return true;
-        }
-        
-        return false;
+        // Use proper QR encoding
+        return QRCodeEncoder::encode($data, QRCodeEncoder::ERROR_CORRECTION_M);
     }
     
     /**

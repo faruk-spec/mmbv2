@@ -269,12 +269,8 @@ CREATE TABLE IF NOT EXISTS `qr_api_logs` (
 -- End of Schema
 -- ================================================================
 
--- Verify all tables were created
-SELECT 
-    TABLE_NAME,
-    TABLE_ROWS,
-    CREATE_TIME
-FROM information_schema.TABLES
-WHERE TABLE_SCHEMA = DATABASE()
-  AND TABLE_NAME LIKE 'qr_%'
-ORDER BY TABLE_NAME;
+-- To verify all tables were created, run this query manually:
+-- SHOW TABLES LIKE 'qr_%';
+--
+-- To check specific table structure:
+-- DESCRIBE qr_codes;
