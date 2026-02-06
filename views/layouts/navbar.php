@@ -376,8 +376,32 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
     const mobileMenuBtn = document.getElementById('mobileMenuBtn');
     const mainNav = document.getElementById('mainNav');
     if (mobileMenuBtn && mainNav) {
-        mobileMenuBtn.addEventListener('click', () => {
+        // Toggle menu on button click
+        mobileMenuBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent immediate close
             mainNav.classList.toggle('active');
+            document.body.classList.toggle('mobile-menu-open');
+        });
+        
+        // Close menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (mainNav.classList.contains('active')) {
+                const isClickInsideNav = mainNav.contains(e.target);
+                const isClickOnButton = mobileMenuBtn.contains(e.target);
+                
+                if (!isClickInsideNav && !isClickOnButton) {
+                    mainNav.classList.remove('active');
+                    document.body.classList.remove('mobile-menu-open');
+                }
+            }
+        });
+        
+        // Close menu when clicking on nav links (for better UX on navigation)
+        mainNav.querySelectorAll('.nav-link:not(.dropdown-toggle)').forEach(link => {
+            link.addEventListener('click', () => {
+                mainNav.classList.remove('active');
+                document.body.classList.remove('mobile-menu-open');
+            });
         });
     }
 })();
@@ -579,6 +603,24 @@ body {
     font-size: 24px;
     cursor: pointer;
     padding: 8px;
+    transition: transform 0.3s ease, opacity 0.2s ease;
+}
+
+.mobile-menu-btn:hover {
+    transform: scale(1.1);
+    opacity: 0.8;
+}
+
+.mobile-menu-btn:active {
+    transform: scale(0.95);
+}
+
+.mobile-menu-btn svg {
+    transition: transform 0.3s ease;
+}
+
+.universal-nav.active ~ .mobile-menu-btn svg {
+    transform: rotate(90deg);
 }
 
 @media (max-width: 768px) {
@@ -593,10 +635,60 @@ body {
         padding: 20px;
         flex-direction: column;
         gap: 0;
+        /* Smooth animations */
+        opacity: 0;
+        transform: translateY(-10px);
+        transition: opacity 0.3s ease, transform 0.3s ease;
+        pointer-events: none;
     }
     
     .universal-nav.active {
         display: flex;
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
+    }
+    
+    .nav-item, .universal-nav .nav-link {
+        width: 100%;
+        justify-content: flex-start;
+        /* Stagger animation for menu items */
+        animation: slideInFromLeft 0.3s ease forwards;
+    }
+    
+    @keyframes slideInFromLeft {
+        from {
+            opacity: 0;
+            transform: translateX(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+    
+    /* Overlay for better mobile menu experience */
+    body.mobile-menu-open::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(2px);
+        z-index: 999;
+        animation: fadeIn 0.3s ease;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    .universal-header {
+        position: relative;
+        z-index: 1000;
     }
     
     .nav-item, .universal-nav .nav-link {
