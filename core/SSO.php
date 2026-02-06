@@ -250,14 +250,15 @@ class SSO
                 return false;
             }
             
-            // Check if project is enabled using the Helpers method (checks database first, then config)
-            if (!Helpers::isProjectEnabled($projectName)) {
-                return false;
-            }
-            
-            // Admins have access to all projects
+            // Admins have access to all projects (even disabled ones)
             if (in_array($user['role'], ['super_admin', 'admin'])) {
                 return true;
+            }
+            
+            // Check if project is enabled using the Helpers method (checks database first, then config)
+            // Regular users can only access enabled projects
+            if (!Helpers::isProjectEnabled($projectName)) {
+                return false;
             }
             
             // Check for explicit deny in project_permissions table
