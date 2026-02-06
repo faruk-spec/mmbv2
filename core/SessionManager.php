@@ -15,18 +15,32 @@ class SessionManager
      */
     public static function track(int $userId): void
     {
+        // ALWAYS set session metadata first, even if DB operations fail
+        // This is critical for session expiration checking
+        $timeoutMinutes = SESSION_LIFETIME;
+        
         try {
             $db = Database::getInstance();
+            
+            // Try to get user's custom timeout (column may not exist)
+            try {
+                $user = $db->fetch("SELECT session_timeout_minutes FROM users WHERE id = ?", [$userId]);
+                if ($user && isset($user['session_timeout_minutes']) && $user['session_timeout_minutes'] > 0) {
+                    $timeoutMinutes = $user['session_timeout_minutes'];
+                }
+            } catch (\Exception $e) {
+                // Column doesn't exist or query failed, use default
+                Logger::info('Could not fetch custom session timeout, using default: ' . $e->getMessage());
+            }
+            
+            // Set session metadata BEFORE database operations
+            $_SESSION['_last_activity'] = time();
+            $_SESSION['_expires_at'] = time() + ($timeoutMinutes * 60);
+            $_SESSION['_timeout_minutes'] = $timeoutMinutes;
             
             $sessionId = session_id();
             $ip = Security::getClientIp();
             $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
-            
-            // Get user's custom timeout or use default
-            $user = $db->fetch("SELECT session_timeout_minutes FROM users WHERE id = ?", [$userId]);
-            $timeoutMinutes = ($user && isset($user['session_timeout_minutes'])) 
-                ? $user['session_timeout_minutes'] 
-                : SESSION_LIFETIME;
             
             $expiresAt = date('Y-m-d H:i:s', time() + ($timeoutMinutes * 60));
             
@@ -64,13 +78,16 @@ class SessionManager
                 ]);
             }
             
-            // Store session metadata
-            $_SESSION['_last_activity'] = time();
-            $_SESSION['_expires_at'] = time() + ($timeoutMinutes * 60);
-            $_SESSION['_timeout_minutes'] = $timeoutMinutes;
-            
         } catch (\Exception $e) {
+            // Log error but don't fail - session metadata is already set
             Logger::error('Session tracking error: ' . $e->getMessage());
+            
+            // Ensure session metadata is set even if DB operations failed
+            if (!isset($_SESSION['_last_activity'])) {
+                $_SESSION['_last_activity'] = time();
+                $_SESSION['_expires_at'] = time() + ($timeoutMinutes * 60);
+                $_SESSION['_timeout_minutes'] = $timeoutMinutes;
+            }
         }
     }
     
@@ -86,6 +103,16 @@ class SessionManager
         $lastActivity = $_SESSION['_last_activity'] ?? 0;
         $expiresAt = $_SESSION['_expires_at'] ?? 0;
         $timeoutMinutes = $_SESSION['_timeout_minutes'] ?? SESSION_LIFETIME;
+        
+        // If session metadata is missing, initialize it now
+        // This can happen if SessionManager::track() failed during login
+        if ($lastActivity === 0 || $expiresAt === 0) {
+            $_SESSION['_last_activity'] = time();
+            $_SESSION['_expires_at'] = time() + ($timeoutMinutes * 60);
+            $_SESSION['_timeout_minutes'] = $timeoutMinutes;
+            Logger::info('Session metadata was missing, initialized for user: ' . Auth::id());
+            return true; // Allow this request to proceed
+        }
         
         $now = time();
         
