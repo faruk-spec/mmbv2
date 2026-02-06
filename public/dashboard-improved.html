@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Improved Dashboard - Preview</title>
+    <link rel="stylesheet" href="/css/universal-theme.css">
+</head>
+<body style="padding-top: 70px;">
+    <!-- Universal Navbar -->
+    <header class="universal-header">
+        <div class="container header-content">
+            <a href="/" class="logo">MyMultiBranch</a>
+            <button class="theme-toggle" id="themeToggle">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                </svg>
+                <span>Light</span>
+            </button>
+        </div>
+    </header>
+    
+    <div class="container" style="margin-top: 32px;">
+        <h1 style="text-align: center; font-size: 36px; margin-bottom: 24px; background: linear-gradient(135deg, var(--cyan), var(--blue)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+            Improved Dashboard
+        </h1>
+        <p style="text-align: center; color: var(--text-secondary); font-size: 18px; margin-bottom: 48px;">
+            ✅ No Emojis (SVG Icons Only) • ✅ External CSS • ✅ Enhanced Left Sidebar
+        </p>
+        
+        <!-- Dashboard Content -->
+        <div class="dashboard-welcome animate-fade-in">
+            <div class="welcome-content">
+                <div class="welcome-text">
+                    <h1 class="welcome-title">
+                        Good Evening, User
+                        <span class="wave-icon">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
+                                <path d="M17 18a5 5 0 0 0-10 0"/>
+                                <line x1="12" y1="2" x2="12" y2="9"/>
+                                <line x1="4.22" y1="4.22" x2="9.17" y2="9.17"/>
+                                <line x1="1" y1="12" x2="8" y2="12"/>
+                                <line x1="4.22" y1="19.78" x2="9.17" y2="14.83"/>
+                            </svg>
+                        </span>
+                    </h1>
+                    <p class="welcome-subtitle">
+                        Here's your dashboard overview. You have <strong>6 applications</strong> ready to use.
+                    </p>
+                </div>
+                <div class="welcome-avatar">
+                    <div class="avatar-circle">
+                        <span>JD</span>
+                    </div>
+                    <div class="status-badge" title="Online">
+                        <span class="pulse"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="welcome-stats-mini">
+                <div class="mini-stat">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                    <span>Last login: Just now</span>
+                </div>
+                <div class="mini-stat">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                    <span>Account secure</span>
+                </div>
+                <div class="mini-stat">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                    <span>Admin</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="dashboard-stats-grid animate-fade-in">
+            <div class="stat-widget stat-gradient-cyan">
+                <div class="stat-icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value" data-target="6">0</div>
+                    <div class="stat-label">Applications</div>
+                </div>
+                <div class="stat-chart">
+                    <div class="mini-bar" style="height: 60%"></div>
+                    <div class="mini-bar" style="height: 80%"></div>
+                    <div class="mini-bar" style="height: 100%"></div>
+                    <div class="mini-bar" style="height: 75%"></div>
+                </div>
+            </div>
+
+            <div class="stat-widget stat-gradient-blue" style="animation-delay: 0.1s;">
+                <div class="stat-icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value" data-target="24">0</div>
+                    <div class="stat-label">Activities Today</div>
+                </div>
+                <div class="stat-trend positive">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+                    </svg>
+                    <span>+12%</span>
+                </div>
+            </div>
+
+            <div class="stat-widget stat-gradient-green" style="animation-delay: 0.2s;">
+                <div class="stat-icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value">98.5%</div>
+                    <div class="stat-label">Uptime</div>
+                </div>
+                <div class="stat-trend positive">
+                    <span>Excellent</span>
+                </div>
+            </div>
+
+            <div class="stat-widget stat-gradient-purple" style="animation-delay: 0.3s;">
+                <div class="stat-icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value">2.4 GB</div>
+                    <div class="stat-label">Storage Used</div>
+                </div>
+                <div class="storage-progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 24%"></div>
+                    </div>
+                    <span class="progress-text">24% of 10 GB</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Dashboard Grid -->
+        <div class="dashboard-grid-three">
+            <!-- Main Content -->
+            <div class="dashboard-main">
+                <div class="widget animate-fade-in">
+                    <div class="widget-header">
+                        <h3 class="widget-title">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
+                                <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+                            </svg>
+                            Your Applications
+                        </h3>
+                    </div>
+                    <div class="widget-body">
+                        <p style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                            Application cards would appear here...
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Enhanced Left Sidebar -->
+            <div class="dashboard-sidebar-left">
+                <div class="widget animate-fade-in" style="animation-delay: 0.3s;">
+                    <div class="widget-header">
+                        <h3 class="widget-title">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                            </svg>
+                            Quick Actions
+                        </h3>
+                    </div>
+                    <div class="widget-body">
+                        <div class="quick-actions-vertical">
+                            <a href="#" class="quick-action-card">
+                                <div class="action-icon" style="background: linear-gradient(135deg, var(--cyan), var(--blue));">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                        <circle cx="12" cy="7" r="4"/>
+                                    </svg>
+                                </div>
+                                <div class="action-content">
+                                    <div class="action-title">Edit Profile</div>
+                                    <div class="action-desc">Update info</div>
+                                </div>
+                            </a>
+                            <a href="#" class="quick-action-card">
+                                <div class="action-icon" style="background: linear-gradient(135deg, var(--green), #00cc66);">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                                    </svg>
+                                </div>
+                                <div class="action-content">
+                                    <div class="action-title">Security</div>
+                                    <div class="action-desc">Settings</div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- NEW: Quick Search -->
+                <div class="widget animate-fade-in" style="animation-delay: 0.35s;">
+                    <div class="widget-header">
+                        <h3 class="widget-title">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/>
+                                <path d="m21 21-4.35-4.35"/>
+                            </svg>
+                            Quick Search
+                        </h3>
+                    </div>
+                    <div class="widget-body">
+                        <div style="position: relative;">
+                            <input type="text" placeholder="Search applications, files..." 
+                                   style="width: 100%; padding: var(--space-md) var(--space-lg) var(--space-md) 40px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); color: var(--text-primary); font-size: var(--font-size-sm);">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="2" 
+                                 style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%);">
+                                <circle cx="11" cy="11" r="8"/>
+                                <path d="m21 21-4.35-4.35"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- NEW: Bookmarks -->
+                <div class="widget animate-fade-in" style="animation-delay: 0.4s;">
+                    <div class="widget-header">
+                        <h3 class="widget-title">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
+                                <path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+                            </svg>
+                            Bookmarks
+                        </h3>
+                    </div>
+                    <div class="widget-body">
+                        <div class="quick-actions-vertical">
+                            <a href="#" class="quick-action-card">
+                                <div class="action-icon" style="background: linear-gradient(135deg, var(--cyan), var(--blue));">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                        <polyline points="14 2 14 8 20 8"/>
+                                    </svg>
+                                </div>
+                                <div class="action-content">
+                                    <div class="action-title">Documentation</div>
+                                    <div class="action-desc">User guides</div>
+                                </div>
+                            </a>
+                            <a href="#" class="quick-action-card">
+                                <div class="action-icon" style="background: linear-gradient(135deg, var(--green), #00cc66);">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                                    </svg>
+                                </div>
+                                <div class="action-content">
+                                    <div class="action-title">Support</div>
+                                    <div class="action-desc">Get help</div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- NEW: Storage Usage -->
+                <div class="widget animate-fade-in" style="animation-delay: 0.45s;">
+                    <div class="widget-header">
+                        <h3 class="widget-title">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
+                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                            </svg>
+                            Storage
+                        </h3>
+                    </div>
+                    <div class="widget-body">
+                        <div style="margin-bottom: var(--space-lg);">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: var(--space-sm);">
+                                <span style="font-size: var(--font-size-sm); color: var(--text-secondary);">2.4 GB used</span>
+                                <span style="font-size: var(--font-size-sm); color: var(--text-secondary);">10 GB total</span>
+                            </div>
+                            <div class="progress-bar" style="height: 8px;">
+                                <div class="progress-fill" style="width: 24%; background: linear-gradient(90deg, var(--cyan), var(--blue));"></div>
+                            </div>
+                        </div>
+                        <div style="display: grid; gap: var(--space-sm);">
+                            <div style="display: flex; align-items: center; justify-content: space-between;">
+                                <div style="display: flex; align-items: center; gap: var(--space-sm);">
+                                    <div style="width: 8px; height: 8px; background: var(--cyan); border-radius: var(--radius-full);"></div>
+                                    <span style="font-size: var(--font-size-xs); color: var(--text-secondary);">Documents</span>
+                                </div>
+                                <span style="font-size: var(--font-size-xs); color: var(--text-primary); font-weight: var(--font-semibold);">1.2 GB</span>
+                            </div>
+                            <div style="display: flex; align-items: center; justify-content: space-between;">
+                                <div style="display: flex; align-items: center; gap: var(--space-sm);">
+                                    <div style="width: 8px; height: 8px; background: var(--purple); border-radius: var(--radius-full);"></div>
+                                    <span style="font-size: var(--font-size-xs); color: var(--text-secondary);">Media</span>
+                                </div>
+                                <span style="font-size: var(--font-size-xs); color: var(--text-primary); font-weight: var(--font-semibold);">800 MB</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Sidebar -->
+            <div class="dashboard-sidebar-right">
+                <div class="widget animate-fade-in" style="animation-delay: 0.6s;">
+                    <div class="widget-header">
+                        <h3 class="widget-title">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                <circle cx="12" cy="7" r="4"/>
+                            </svg>
+                            Account
+                        </h3>
+                    </div>
+                    <div class="widget-body">
+                        <div class="account-info-enhanced">
+                            <div class="account-avatar-large">
+                                <div style="width: 80px; height: 80px; background: linear-gradient(135deg, var(--cyan), var(--blue)); border-radius: var(--radius-full); display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: var(--font-bold); color: white; box-shadow: 0 8px 24px rgba(0, 217, 255, 0.3);">
+                                    U
+                                </div>
+                            </div>
+                            <div class="account-details-enhanced">
+                                <div class="account-name-large">John Doe</div>
+                                <div class="account-email-enhanced">john@example.com</div>
+                                <div class="account-role-enhanced">
+                                    <span class="badge badge-primary">Admin</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const html = document.documentElement;
+        
+        themeToggle.addEventListener('click', () => {
+            const current = html.getAttribute('data-theme');
+            const newTheme = current === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+            themeToggle.querySelector('span').textContent = newTheme === 'dark' ? 'Light' : 'Dark';
+        });
+
+        // Animated Counter
+        document.addEventListener('DOMContentLoaded', function() {
+            const statValues = document.querySelectorAll('.stat-value[data-target]');
+            statValues.forEach(stat => {
+                const target = parseInt(stat.getAttribute('data-target'));
+                const duration = 1500;
+                const step = target / (duration / 16);
+                let current = 0;
+                
+                const updateCounter = () => {
+                    current += step;
+                    if (current < target) {
+                        stat.textContent = Math.floor(current);
+                        requestAnimationFrame(updateCounter);
+                    } else {
+                        stat.textContent = target;
+                    }
+                };
+                
+                setTimeout(updateCounter, 400);
+            });
+        });
+    </script>
+</body>
+</html>
