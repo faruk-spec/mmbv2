@@ -242,9 +242,11 @@ class SSO
      */
     public static function hasProjectAccess(int $userId, string $projectName): bool
     {
+        $db = null;
+        $userRole = null;
+        
         try {
             // Try to get user role from database
-            $userRole = null;
             try {
                 $db = Database::getInstance();
                 $user = $db->fetch("SELECT role FROM users WHERE id = ?", [$userId]);
@@ -254,8 +256,17 @@ class SSO
                 }
             } catch (\Exception $dbError) {
                 // If database fails, try to get role from session as fallback
+                // Note: Session data is already validated by Auth middleware, so this is secure
                 Logger::warning('Database error in hasProjectAccess, falling back to session: ' . $dbError->getMessage());
-                $userRole = $_SESSION['user_role'] ?? null;
+                
+                // Only use session fallback if the userId matches the session user_id
+                // This prevents privilege escalation attacks
+                if (isset($_SESSION['user_id']) && $_SESSION['user_id'] == $userId) {
+                    $userRole = $_SESSION['user_role'] ?? null;
+                } else {
+                    Logger::error('Session user_id mismatch in hasProjectAccess fallback');
+                    return false;
+                }
             }
             
             if (!$userRole) {
@@ -276,21 +287,22 @@ class SSO
             }
             
             // Check for explicit deny in project_permissions table (only if database is available)
-            try {
-                $db = Database::getInstance();
-                $permission = $db->fetch(
-                    "SELECT has_access FROM project_permissions WHERE user_id = ? AND project_name = ?",
-                    [$userId, $projectName]
-                );
-                
-                // If explicit permission exists and it's denied, deny access
-                if ($permission !== null && !$permission['has_access']) {
-                    return false;
+            if ($db !== null) {
+                try {
+                    $permission = $db->fetch(
+                        "SELECT has_access FROM project_permissions WHERE user_id = ? AND project_name = ?",
+                        [$userId, $projectName]
+                    );
+                    
+                    // If explicit permission exists and it's denied, deny access
+                    if ($permission !== null && !$permission['has_access']) {
+                        return false;
+                    }
+                } catch (\Exception $permError) {
+                    // If permission check fails, log it but don't block access
+                    // (no explicit deny means allow by default)
+                    Logger::warning('Could not check project_permissions table: ' . $permError->getMessage());
                 }
-            } catch (\Exception $permError) {
-                // If permission check fails, log it but don't block access
-                // (no explicit deny means allow by default)
-                Logger::warning('Could not check project_permissions table: ' . $permError->getMessage());
             }
             
             // All authenticated users have access to projects by default
@@ -298,17 +310,9 @@ class SSO
             return true;
             
         } catch (\Exception $e) {
-            // Last resort: if everything fails, log the error
+            // Last resort: if everything fails, log the error and deny access
             Logger::error('Critical error in hasProjectAccess: ' . $e->getMessage());
-            
-            // For safety, we'll allow access if isProjectEnabled returns true from config
-            // This ensures users can access projects even if database is completely down
-            try {
-                return Helpers::isProjectEnabled($projectName);
-            } catch (\Exception $fallbackError) {
-                // If even the config fallback fails, deny access
-                return false;
-            }
+            return false;
         }
     }
     
