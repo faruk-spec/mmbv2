@@ -193,7 +193,7 @@ CREATE TABLE IF NOT EXISTS `qr_codes` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Plans table
-CREATE TABLE IF NOT EXISTS `subscription_plans` (
+CREATE TABLE IF NOT EXISTS `qr_subscription_plans` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `name` VARCHAR(50) NOT NULL,
     `slug` VARCHAR(50) UNIQUE NOT NULL,
@@ -214,14 +214,14 @@ CREATE TABLE IF NOT EXISTS `subscription_plans` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Insert default plans
-INSERT INTO `subscription_plans` (`name`, `slug`, `price`, `max_static_qr`, `max_dynamic_qr`, `features`) VALUES
+INSERT INTO `qr_subscription_plans` (`name`, `slug`, `price`, `max_static_qr`, `max_dynamic_qr`, `features`) VALUES
 ('Free', 'free', 0.00, 5, 0, '{"downloads": ["png"], "analytics": false, "bulk": false, "ai": false}'),
 ('Starter', 'starter', 9.99, 50, 10, '{"downloads": ["png", "svg"], "analytics": true, "bulk": false, "ai": false}'),
 ('Pro', 'pro', 29.99, -1, -1, '{"downloads": ["png", "svg", "pdf"], "analytics": true, "bulk": true, "ai": true}'),
 ('Enterprise', 'enterprise', 99.99, -1, -1, '{"downloads": ["png", "svg", "pdf"], "analytics": true, "bulk": true, "ai": true, "api": true, "whitelabel": true}');
 
 -- User subscriptions
-CREATE TABLE IF NOT EXISTS `user_subscriptions` (
+CREATE TABLE IF NOT EXISTS `qr_user_subscriptions` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `user_id` INT UNSIGNED NOT NULL,
     `plan_id` INT UNSIGNED NOT NULL,
@@ -231,7 +231,7 @@ CREATE TABLE IF NOT EXISTS `user_subscriptions` (
     `cancelled_at` TIMESTAMP NULL,
     
     FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
-    FOREIGN KEY (`plan_id`) REFERENCES `subscription_plans`(`id`),
+    FOREIGN KEY (`plan_id`) REFERENCES `qr_subscription_plans`(`id`),
     INDEX `idx_user_id` (`user_id`),
     INDEX `idx_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
