@@ -80,20 +80,14 @@ class QRController
      */
     private function generateQRCode(string $content, int $size, string $color, string $bgColor): ?string
     {
-        // Using Google Charts API for QR generation
-        // In production, use a PHP library like endroid/qr-code
-        $url = 'https://chart.googleapis.com/chart?';
-        $params = [
-            'cht' => 'qr',
-            'chs' => $size . 'x' . $size,
-            'chl' => urlencode($content),
-            'chco' => $color,
-            'chf' => 'bg,s,' . $bgColor
-        ];
-        
-        $url .= http_build_query($params);
-        
-        return $url;
+        try {
+            // Use our standalone QR code generator
+            $dataUrl = \Core\QRCodeGenerator::generate($content, $size, '#' . $color, '#' . $bgColor);
+            return $dataUrl;
+        } catch (\Exception $e) {
+            \Core\Logger::error('QR generation failed: ' . $e->getMessage());
+            return null;
+        }
     }
     
     /**
