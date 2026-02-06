@@ -261,7 +261,7 @@ class SSO
                 
                 // Only use session fallback if the userId matches the session user_id
                 // This prevents privilege escalation attacks
-                if (isset($_SESSION['user_id']) && $_SESSION['user_id'] == $userId) {
+                if (isset($_SESSION['user_id']) && $_SESSION['user_id'] === $userId) {
                     $userRole = $_SESSION['user_role'] ?? null;
                 } else {
                     Logger::error('Session user_id mismatch in hasProjectAccess fallback');
