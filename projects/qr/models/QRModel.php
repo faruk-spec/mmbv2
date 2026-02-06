@@ -63,7 +63,7 @@ class QRModel
     public function getByUser(int $userId, int $limit = 50, int $offset = 0): array
     {
         $sql = "SELECT * FROM qr_codes 
-                WHERE user_id = ? 
+                WHERE user_id = ? AND deleted_at IS NULL
                 ORDER BY created_at DESC 
                 LIMIT ? OFFSET ?";
         
@@ -85,7 +85,7 @@ class QRModel
      */
     public function getById(int $id, int $userId): ?array
     {
-        $sql = "SELECT * FROM qr_codes WHERE id = ? AND user_id = ?";
+        $sql = "SELECT * FROM qr_codes WHERE id = ? AND user_id = ? AND deleted_at IS NULL";
         
         try {
             $result = $this->db->fetch($sql, [$id, $userId]);
@@ -97,7 +97,7 @@ class QRModel
     }
     
     /**
-     * Delete a QR code
+     * Delete a QR code (soft delete)
      * 
      * @param int $id QR code ID
      * @param int $userId User ID (for security)
@@ -105,7 +105,8 @@ class QRModel
      */
     public function delete(int $id, int $userId): bool
     {
-        $sql = "DELETE FROM qr_codes WHERE id = ? AND user_id = ?";
+        // Use soft delete to preserve total count
+        $sql = "UPDATE qr_codes SET deleted_at = NOW() WHERE id = ? AND user_id = ? AND deleted_at IS NULL";
         
         try {
             $this->db->query($sql, [$id, $userId]);
@@ -117,13 +118,15 @@ class QRModel
     }
     
     /**
-     * Get total count of QR codes for a user
+     * Get total count of QR codes for a user (including deleted)
+     * This shows total generated over time
      * 
      * @param int $userId User ID
      * @return int Total count
      */
     public function countByUser(int $userId): int
     {
+        // Count ALL QR codes including deleted ones
         $sql = "SELECT COUNT(*) as count FROM qr_codes WHERE user_id = ?";
         
         try {
@@ -131,6 +134,25 @@ class QRModel
             return (int) ($result['count'] ?? 0);
         } catch (\Exception $e) {
             \Core\Logger::error('Failed to count QR codes: ' . $e->getMessage());
+            return 0;
+        }
+    }
+    
+    /**
+     * Get count of active (non-deleted) QR codes for a user
+     * 
+     * @param int $userId User ID
+     * @return int Active count
+     */
+    public function countActiveByUser(int $userId): int
+    {
+        $sql = "SELECT COUNT(*) as count FROM qr_codes WHERE user_id = ? AND deleted_at IS NULL";
+        
+        try {
+            $result = $this->db->fetch($sql, [$userId]);
+            return (int) ($result['count'] ?? 0);
+        } catch (\Exception $e) {
+            \Core\Logger::error('Failed to count active QR codes: ' . $e->getMessage());
             return 0;
         }
     }

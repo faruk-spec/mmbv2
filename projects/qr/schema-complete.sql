@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS `qr_codes` (
     `user_id` INT UNSIGNED NOT NULL,
     `short_code` VARCHAR(10) UNIQUE,
     `content` TEXT NOT NULL,
-    `type` ENUM('url', 'text', 'phone', 'email', 'whatsapp', 'wifi', 'location', 'vcard', 'payment', 'event', 'product') DEFAULT 'url',
+    `type` ENUM('url', 'text', 'phone', 'email', 'sms', 'whatsapp', 'wifi', 'location', 'vcard', 'payment', 'event', 'product') DEFAULT 'url',
     `is_dynamic` TINYINT(1) DEFAULT 0,
     `redirect_url` TEXT NULL COMMENT 'For dynamic QR codes',
     
@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS `qr_codes` (
     
     -- Status
     `status` ENUM('active', 'inactive', 'blocked') DEFAULT 'active',
+    `deleted_at` DATETIME NULL DEFAULT NULL COMMENT 'Soft delete timestamp',
     
     -- Timestamps
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -48,6 +49,8 @@ CREATE TABLE IF NOT EXISTS `qr_codes` (
     INDEX `idx_campaign` (`campaign_id`),
     INDEX `idx_status` (`status`),
     INDEX `idx_type` (`type`),
+    INDEX `idx_deleted_at` (`deleted_at`),
+    INDEX `idx_user_deleted` (`user_id`, `deleted_at`),
     INDEX `idx_created_at` (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Main QR codes table';
 

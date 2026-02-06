@@ -34,9 +34,7 @@
                         <tr style="border-bottom: 1px solid var(--border-color);">
                             <td style="padding: 12px;">
                                 <div style="background: white; padding: 8px; border-radius: 4px; display: inline-block;">
-                                    <img src="<?= htmlspecialchars($qr['image'] ?? '') ?>" 
-                                         alt="QR Code" 
-                                         style="width: 60px; height: 60px; display: block;">
+                                    <div id="qr-<?= $qr['id'] ?>" style="width: 60px; height: 60px;"></div>
                                 </div>
                             </td>
                             <td style="padding: 12px; max-width: 300px;">
@@ -61,12 +59,11 @@
                             </td>
                             <td style="padding: 12px;">
                                 <div style="display: flex; gap: 8px;">
-                                    <a href="<?= htmlspecialchars($qr['image'] ?? '#') ?>" 
-                                       download="qr-code-<?= $qr['id'] ?>.png"
-                                       class="btn btn-secondary" 
-                                       style="padding: 6px 12px; font-size: 12px; text-decoration: none;">
+                                    <button onclick="downloadQRCode(<?= $qr['id'] ?>)" 
+                                            class="btn btn-secondary" 
+                                            style="padding: 6px 12px; font-size: 12px;">
                                         Download
-                                    </a>
+                                    </button>
                                     <form method="POST" action="/projects/qr/delete" style="display: inline;">
                                         <input type="hidden" name="_csrf_token" value="<?= \Core\Security::generateCsrfToken() ?>">
                                         <input type="hidden" name="id" value="<?= $qr['id'] ?>">
@@ -92,6 +89,35 @@
         </div>
     <?php endif; ?>
 </div>
+
+<!-- QR Code Library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<script>
+// Generate QR codes for history
+<?php foreach ($history as $qr): ?>
+new QRCode(document.getElementById("qr-<?= $qr['id'] ?>"), {
+    text: <?= json_encode($qr['content']) ?>,
+    width: 60,
+    height: 60,
+    colorDark: "<?= htmlspecialchars($qr['foreground_color'] ?? '#000000') ?>",
+    colorLight: "<?= htmlspecialchars($qr['background_color'] ?? '#ffffff') ?>",
+    correctLevel: QRCode.CorrectLevel.H
+});
+<?php endforeach; ?>
+
+// Download QR code
+function downloadQRCode(qrId) {
+    const canvas = document.querySelector('#qr-' + qrId + ' canvas');
+    if (canvas) {
+        const dataUrl = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.download = 'qr-code-' + qrId + '.png';
+        link.href = dataUrl;
+        link.click();
+    }
+}
+</script>
 
 <style>
     @media (max-width: 768px) {

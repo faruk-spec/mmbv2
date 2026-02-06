@@ -38,10 +38,10 @@ class DashboardController
         
         if ($userId) {
             try {
-                // Get total QR codes count
+                // Get total QR codes count (including deleted) - this never decreases
                 $stats['total_generated'] = $this->qrModel->countByUser($userId);
                 
-                // Get active QR codes and total scans
+                // Get active (non-deleted) QR codes and total scans
                 $qrCodes = $this->qrModel->getByUser($userId);
                 $totalScans = 0;
                 $activeCodes = 0;

@@ -64,58 +64,39 @@ class QRController
         $foregroundColor = '#' . ltrim($color, '#');
         $backgroundColor = '#' . ltrim($bgColor, '#');
         
-        // Generate QR code
-        $qrData = $this->generateQRCode($content, $size, $foregroundColor, $backgroundColor);
+        // Store in session for immediate display (client-side will regenerate)
+        $_SESSION['generated_qr'] = [
+            'content' => $content,
+            'type' => $type,
+            'size' => $size,
+            'foreground_color' => $foregroundColor,
+            'background_color' => $backgroundColor,
+            'created_at' => date('Y-m-d H:i:s')
+        ];
         
-        if ($qrData) {
-            // Store in session for immediate display
-            $_SESSION['generated_qr'] = [
+        // Save to database
+        $userId = Auth::id();
+        if ($userId) {
+            $qrId = $this->qrModel->save($userId, [
                 'content' => $content,
                 'type' => $type,
                 'size' => $size,
-                'image' => $qrData,
-                'created_at' => date('Y-m-d H:i:s')
-            ];
+                'foreground_color' => $foregroundColor,
+                'background_color' => $backgroundColor
+            ]);
             
-            // Save to database
-            $userId = Auth::id();
-            if ($userId) {
-                $qrId = $this->qrModel->save($userId, [
-                    'content' => $content,
-                    'type' => $type,
-                    'size' => $size,
-                    'foreground_color' => $foregroundColor,
-                    'background_color' => $backgroundColor
-                ]);
-                
-                if ($qrId) {
-                    Logger::activity($userId, 'qr_generated', ['type' => $type, 'qr_id' => $qrId]);
-                } else {
-                    Logger::error('Failed to save QR code to database for user ' . $userId);
-                }
+            if ($qrId) {
+                Logger::activity($userId, 'qr_generated', ['type' => $type, 'qr_id' => $qrId]);
+                Helpers::flash('success', 'QR code generated successfully!');
+            } else {
+                Logger::error('Failed to save QR code to database for user ' . $userId);
+                Helpers::flash('error', 'Failed to save QR code to database.');
             }
-            
-            Helpers::flash('success', 'QR code generated successfully!');
         } else {
-            Helpers::flash('error', 'Failed to generate QR code.');
+            Helpers::flash('success', 'QR code generated successfully!');
         }
         
         Helpers::redirect('/projects/qr/generate');
-    }
-    
-    /**
-     * Generate QR code image
-     */
-    private function generateQRCode(string $content, int $size, string $color, string $bgColor): ?string
-    {
-        try {
-            // Use our standalone QR code generator
-            $dataUrl = \Core\QRCodeGenerator::generate($content, $size, $color, $bgColor);
-            return $dataUrl;
-        } catch (\Exception $e) {
-            \Core\Logger::error('QR generation failed: ' . $e->getMessage());
-            return null;
-        }
     }
     
     /**
@@ -129,16 +110,6 @@ class QRController
         if ($userId) {
             // Fetch QR codes from database
             $history = $this->qrModel->getByUser($userId, 50);
-            
-            // Regenerate QR images for display
-            foreach ($history as &$qr) {
-                $qr['image'] = $this->generateQRCode(
-                    $qr['content'],
-                    $qr['size'] ?? 200,
-                    $qr['foreground_color'] ?? '#000000',
-                    $qr['background_color'] ?? '#ffffff'
-                );
-            }
         }
         
         $this->render('history', [
@@ -161,9 +132,8 @@ class QRController
             return;
         }
         
-        // Redirect to the QR image URL for download
-        header('Location: ' . $qr['image']);
-        exit;
+        // Client-side handles download
+        Helpers::redirect('/projects/qr/generate');
     }
     
     /**
