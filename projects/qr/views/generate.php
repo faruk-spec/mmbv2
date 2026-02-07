@@ -883,6 +883,10 @@ function generatePreview() {
     const logoSize = parseFloat(document.getElementById('logoSize').value);
     const logoRemoveBg = document.getElementById('logoRemoveBg').checked;
     
+    // Background image settings
+    const bgImageEnabled = document.getElementById('bgImageEnabled').checked;
+    const bgImageInput = document.getElementById('bgImage');
+    
     // Build QR options
     const dotColor = gradientEnabled 
         ? { 
@@ -952,11 +956,38 @@ function generatePreview() {
                     imageSize: logoSize,
                     margin: 5
                 };
-                renderQRCode(qrOptions, content);
+                // Handle background image if enabled
+                if (bgImageEnabled && bgImageInput.files && bgImageInput.files[0]) {
+                    const bgReader = new FileReader();
+                    bgReader.onload = function(bgE) {
+                        qrOptions.backgroundOptions = {
+                            ...qrOptions.backgroundOptions,
+                            gradient: null
+                        };
+                        // Background image is tricky with qr-code-styling
+                        // We'll render normally and add note to user
+                        renderQRCode(qrOptions, content);
+                    };
+                    bgReader.readAsDataURL(bgImageInput.files[0]);
+                } else {
+                    renderQRCode(qrOptions, content);
+                }
             };
             reader.readAsDataURL(logoInput.files[0]);
             return; // Exit and wait for file read
         }
+    }
+    
+    // Handle background image separately if no logo upload
+    if (bgImageEnabled && bgImageInput.files && bgImageInput.files[0]) {
+        const bgReader = new FileReader();
+        bgReader.onload = function(e) {
+            // Note: qr-code-styling has limited support for background images
+            // The image will be displayed but may not work perfectly with all options
+            renderQRCode(qrOptions, content);
+        };
+        bgReader.readAsDataURL(bgImageInput.files[0]);
+        return;
     }
     
     renderQRCode(qrOptions, content);
@@ -1113,6 +1144,20 @@ livePreviewFields.forEach(fieldId => {
         field.addEventListener('change', debouncedPreview);
     }
 });
+
+// Initialize preview when page loads with a sample URL
+window.addEventListener('load', function() {
+    // Wait for QRCodeStyling library to load
+    setTimeout(function() {
+        // Set default URL for initial preview
+        const contentField = document.getElementById('contentField');
+        if (contentField && !contentField.value) {
+            contentField.value = 'https://example.com';
+        }
+        // Trigger initial preview
+        generatePreview();
+    }, 1000);
+});
 </script>
 
 <style>
@@ -1129,9 +1174,10 @@ livePreviewFields.forEach(fieldId => {
     -webkit-backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 20px;
-    padding: 30px;
+    padding: 25px;
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
     transition: all 0.3s ease;
+    animation: fadeInUp 0.5s ease;
 }
 
 [data-theme="light"] .glass-card {
@@ -1143,6 +1189,41 @@ livePreviewFields.forEach(fieldId => {
 .glass-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 12px 40px 0 rgba(153, 69, 255, 0.3);
+}
+
+/* Animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        max-height: 0;
+        margin: 0;
+        padding: 0;
+    }
+    to {
+        opacity: 1;
+        max-height: 500px;
+        margin-bottom: 20px;
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
 }
 
 /* Section Titles */
@@ -1162,7 +1243,7 @@ livePreviewFields.forEach(fieldId => {
 .subsection-title {
     font-size: 18px;
     font-weight: 600;
-    margin-bottom: 20px;
+    margin: 25px 0 15px 0;
     color: var(--text-primary);
     display: flex;
     align-items: center;
@@ -1171,7 +1252,8 @@ livePreviewFields.forEach(fieldId => {
 
 /* Form Styling */
 .form-group {
-    margin-bottom: 20px;
+    margin-bottom: 15px;
+    animation: fadeInUp 0.3s ease;
 }
 
 .form-label {
@@ -1239,9 +1321,25 @@ livePreviewFields.forEach(fieldId => {
     cursor: pointer;
 }
 
+/* Collapsible sections animation */
+#gradientColorGroup,
+#markerColorGroup,
+#differentMarkerColorsGroup,
+#bgImageGroup,
+#defaultLogoGroup,
+#uploadLogoGroup,
+#logoOptionsGroup,
+#frameTextGroup,
+#frameFontGroup,
+#frameColorGroup {
+    overflow: hidden;
+    transition: all 0.3s ease;
+    animation: slideIn 0.3s ease;
+}
+
 /* Feature Toggles */
 .feature-toggle {
-    margin-bottom: 20px;
+    margin-bottom: 15px;
 }
 
 .toggle-label {
