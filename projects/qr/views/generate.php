@@ -320,15 +320,18 @@
                     <span class="toggle-slider"></span>
                     <span class="toggle-text">
                         <strong>Different Marker Colors</strong>
-                        <small>Use unique color for each corner marker</small>
+                        <small>Use unique color for each corner marker (limited library support)</small>
                     </span>
                 </label>
             </div>
             
             <div id="differentMarkerColorsGroup" style="display: none;">
+                <small style="color: var(--text-secondary); margin-bottom: 10px; display: block;">
+                    <i class="fas fa-info-circle"></i> Note: The QR library has limited support for per-marker colors. Top-left color will be used as primary.
+                </small>
                 <div class="grid grid-2" style="gap: 15px;">
                     <div class="form-group">
-                        <label class="form-label">Top Left</label>
+                        <label class="form-label">Top Left (Primary)</label>
                         <input type="color" name="marker_tl_color" id="markerTLColor" value="#9945ff" class="form-input color-input">
                     </div>
                     <div class="form-group">
@@ -822,6 +825,17 @@ function generatePreview() {
     const logoRemoveBg = document.getElementById('logoRemoveBg').checked;
     
     // Build QR options
+    const dotColor = gradientEnabled 
+        ? { 
+            type: 'linear-gradient', 
+            rotation: 0, 
+            colorStops: [
+                { offset: 0, color: foregroundColor }, 
+                { offset: 1, color: gradientColor }
+            ] 
+        } 
+        : foregroundColor;
+    
     const qrOptions = {
         width: size,
         height: size,
@@ -834,7 +848,7 @@ function generatePreview() {
             errorCorrectionLevel: errorCorrection
         },
         dotsOptions: {
-            color: gradientEnabled ? { type: 'linear-gradient', rotation: 0, colorStops: [{ offset: 0, color: foregroundColor }, { offset: 1, color: gradientColor }] } : foregroundColor,
+            color: dotColor,
             type: dotStyle
         },
         backgroundOptions: {
@@ -850,9 +864,10 @@ function generatePreview() {
         }
     };
     
-    // Different marker colors (override if enabled)
+    // Different marker colors (note: limited support in qr-code-styling)
     if (differentMarkers) {
-        // Note: QRCodeStyling doesn't support different colors per marker natively
+        // QRCodeStyling has limited support for per-marker colors
+        // Using top-left color for now as primary marker color
         // We'll use the top-left color for all markers but show the feature is there
         qrOptions.cornersSquareOptions.color = markerTLColor;
         qrOptions.cornersDotOptions.color = markerTLColor;

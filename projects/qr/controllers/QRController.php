@@ -502,19 +502,31 @@ class QRController
             return;
         }
         
-        // Basic rate limiting: Check for too many failed attempts
+        // Basic rate limiting with exponential backoff
         $sessionKey = 'qr_access_attempts_' . $code;
         $attempts = $_SESSION[$sessionKey] ?? 0;
         $lastAttempt = $_SESSION[$sessionKey . '_time'] ?? 0;
         
-        // Reset counter after 5 minutes
-        if (time() - $lastAttempt > 300) {
+        // Calculate exponential backoff: 2^attempts seconds (max 300 seconds)
+        $backoffTime = min(300, pow(2, $attempts));
+        $timeSinceLastAttempt = time() - $lastAttempt;
+        
+        // Reset counter after backoff period
+        if ($timeSinceLastAttempt > $backoffTime) {
             $attempts = 0;
         }
         
-        // Block after 5 failed attempts
-        if ($attempts >= 5) {
-            $waitTime = 300 - (time() - $lastAttempt);
+        // Check if still in backoff period
+        if ($attempts > 0 && $timeSinceLastAttempt < $backoffTime) {
+            $waitTime = $backoffTime - $timeSinceLastAttempt;
+            Helpers::flash('error', "Please wait " . $waitTime . " seconds before trying again.");
+            Helpers::redirect('/projects/qr/access/' . $code);
+            return;
+        }
+        
+        // Hard limit after 5 failed attempts (requires 5-minute wait)
+        if ($attempts >= 5 && $timeSinceLastAttempt < 300) {
+            $waitTime = 300 - $timeSinceLastAttempt;
             Helpers::flash('error', "Too many failed attempts. Please try again in " . ceil($waitTime / 60) . " minutes.");
             Helpers::redirect('/projects/qr/access/' . $code);
             return;

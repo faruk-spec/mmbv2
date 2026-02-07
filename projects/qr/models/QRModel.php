@@ -277,7 +277,7 @@ class QRModel
             if ($result === false) {
                 return null;
             }
-            return $result ?: null;
+            return $result;
         } catch (\Exception $e) {
             \Core\Logger::error('Failed to fetch QR code by short code: ' . $e->getMessage());
             return null;
