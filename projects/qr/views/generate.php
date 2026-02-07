@@ -897,7 +897,10 @@ window.selectLogoOption = function(option) {
     document.querySelectorAll('.logo-option-item').forEach(item => {
         item.classList.remove('active');
     });
-    document.querySelector(`[data-option="${option}"]`).classList.add('active');
+    const optionItem = document.querySelector(`[data-option="${option}"]`);
+    if (optionItem) {
+        optionItem.classList.add('active');
+    }
     
     // Show/hide relevant sections
     const defaultLogoGroup = document.getElementById('defaultLogoGroup');
@@ -912,6 +915,20 @@ window.selectLogoOption = function(option) {
     }
     if (logoOptionsGroup) {
         logoOptionsGroup.style.display = (option === 'default' || option === 'upload') ? 'block' : 'none';
+    }
+    
+    // Clear logo selections when switching to none
+    if (option === 'none') {
+        // Clear default logo selection
+        const defaultLogoInput = document.getElementById('defaultLogo');
+        if (defaultLogoInput) {
+            defaultLogoInput.value = '';
+        }
+        // Clear upload
+        const logoUploadInput = document.getElementById('logoUpload');
+        if (logoUploadInput) {
+            logoUploadInput.value = '';
+        }
     }
     
     if (typeof debouncedPreview === 'function') debouncedPreview();
@@ -1278,6 +1295,9 @@ function generatePreview() {
         } 
         : foregroundColor;
     
+    // Background color - transparent or solid
+    const bgColor = transparentBg ? 'rgba(0,0,0,0)' : backgroundColor;
+    
     const qrOptions = {
         width: size,
         height: size,
@@ -1294,36 +1314,40 @@ function generatePreview() {
             type: dotStyle
         },
         backgroundOptions: {
-            color: transparentBg ? 'rgba(0,0,0,0)' : backgroundColor
+            color: bgColor
         },
         cornersSquareOptions: {
             type: cornerStyle,
-            color: customMarkerColor ? markerColor : foregroundColor
+            color: customMarkerColor ? markerColor : (gradientEnabled ? foregroundColor : dotColor)
         },
         cornersDotOptions: {
             type: markerCenterStyle,
-            color: customMarkerColor ? markerColor : foregroundColor
+            color: customMarkerColor ? markerColor : (gradientEnabled ? foregroundColor : dotColor)
         }
     };
     
-    // Different marker colors (note: limited support in qr-code-styling)
+    // Different marker colors - Apply individual colors to each corner
     if (differentMarkers) {
-        // QRCodeStyling has limited support for per-marker colors
-        // Using top-left color for now as primary marker color
-        // We'll use the top-left color for all markers but show the feature is there
+        // Note: qr-code-styling has limited support for per-marker colors
+        // We apply the top-left color as the primary marker color
         qrOptions.cornersSquareOptions.color = markerTLColor;
         qrOptions.cornersDotOptions.color = markerTLColor;
     }
     
     // Add logo if selected
     if (logoOption === 'default') {
-        const defaultLogo = document.getElementById('defaultLogo').value;
-        qrOptions.image = defaultLogos[defaultLogo];
-        qrOptions.imageOptions = {
-            hideBackgroundDots: logoRemoveBg,
-            imageSize: logoSize,
-            margin: 5
-        };
+        const defaultLogoEl = document.getElementById('defaultLogo');
+        if (defaultLogoEl && defaultLogoEl.value) {
+            const defaultLogo = defaultLogoEl.value;
+            if (defaultLogos[defaultLogo]) {
+                qrOptions.image = defaultLogos[defaultLogo];
+                qrOptions.imageOptions = {
+                    hideBackgroundDots: logoRemoveBg,
+                    imageSize: logoSize,
+                    margin: 5
+                };
+            }
+        }
     } else if (logoOption === 'upload') {
         const logoInput = document.getElementById('logoUpload');
         if (logoInput.files && logoInput.files[0]) {
@@ -1485,13 +1509,43 @@ function buildQRContent() {
 
 // Apply frame style to QR code
 function applyFrameStyle(qrDiv) {
-    const frameStyle = document.getElementById('frameStyle').value;
+    const frameStyleEl = document.getElementById('frameStyle');
+    if (!frameStyleEl) return;
+    
+    const frameStyle = frameStyleEl.value;
     
     // Remove any existing frame classes
     qrDiv.className = 'qr-preview';
     
     if (frameStyle && frameStyle !== 'none') {
         qrDiv.classList.add('qr-frame-' + frameStyle);
+        
+        // Add frame label if provided
+        const frameLabelEl = document.getElementById('frameLabel');
+        if (frameLabelEl && frameLabelEl.value && frameLabelEl.value.trim()) {
+            const frameLabel = document.createElement('div');
+            frameLabel.className = 'frame-label';
+            frameLabel.textContent = frameLabelEl.value.trim();
+            
+            // Apply custom font if selected
+            const frameFontEl = document.getElementById('frameFont');
+            if (frameFontEl && frameFontEl.value) {
+                frameLabel.style.fontFamily = frameFontEl.value;
+            }
+            
+            // Apply custom color if provided
+            const frameColorEl = document.getElementById('frameColor');
+            if (frameColorEl && frameColorEl.value) {
+                frameLabel.style.color = frameColorEl.value;
+            }
+            
+            // Insert label based on frame style
+            if (frameStyle === 'banner-top') {
+                qrDiv.insertBefore(frameLabel, qrDiv.firstChild);
+            } else {
+                qrDiv.appendChild(frameLabel);
+            }
+        }
     }
 }
 
@@ -1521,6 +1575,26 @@ livePreviewFields.forEach(fieldId => {
     if (field) {
         field.addEventListener('input', debouncedPreview);
         field.addEventListener('change', debouncedPreview);
+    }
+});
+
+// Add event listeners for file inputs
+const bgImageInput = document.getElementById('bgImage');
+if (bgImageInput) {
+    bgImageInput.addEventListener('change', debouncedPreview);
+}
+
+const logoUploadInput = document.getElementById('logoUpload');
+if (logoUploadInput) {
+    logoUploadInput.addEventListener('change', debouncedPreview);
+}
+
+// Add event listeners for checkboxes that should trigger preview
+const previewCheckboxes = ['logoRemoveBg'];
+previewCheckboxes.forEach(checkboxId => {
+    const checkbox = document.getElementById(checkboxId);
+    if (checkbox) {
+        checkbox.addEventListener('change', debouncedPreview);
     }
 });
 
@@ -2043,6 +2117,13 @@ html[data-theme="dark"] .form-select optgroup {
     color: var(--text-primary);
     cursor: pointer;
     transition: all 0.3s ease;
+    position: relative;
+}
+
+.logo-icon-item i {
+    font-size: 24px;
+    z-index: 1;
+    display: inline-block;
 }
 
 [data-theme="light"] .logo-icon-item {
@@ -2155,6 +2236,40 @@ html[data-theme="dark"] .form-select optgroup {
     background: white;
     border-radius: 16px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Frame Label Styles */
+.frame-label {
+    font-size: 16px;
+    font-weight: 700;
+    text-align: center;
+    padding: 12px 24px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    border-radius: 8px;
+    margin: 10px 0;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.qr-frame-banner-top .frame-label {
+    order: -1;
+    margin-bottom: 15px;
+}
+
+.qr-frame-banner-bottom .frame-label {
+    margin-top: 15px;
+}
+
+.qr-frame-badge .frame-label {
+    border-radius: 50px;
+    padding: 8px 20px;
+    font-size: 14px;
+}
+
+.qr-frame-bubble .frame-label {
+    border-radius: 20px;
+    padding: 10px 20px;
 }
 
 .qr-info {
