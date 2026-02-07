@@ -191,50 +191,6 @@
                 </div>
             </div>
             
-            <!-- QR Customization Options -->
-            <div class="form-group">
-                <label class="form-label">
-                    <i class="fas fa-border-style"></i> Frame Style
-                </label>
-                <select name="frame_style" id="frameStyle" class="form-select">
-                    <option value="none">No Frame</option>
-                    <option value="square">Square Frame</option>
-                    <option value="circle">Circle Frame</option>
-                    <option value="rounded">Rounded Corners</option>
-                    <option value="banner-top">Banner Top</option>
-                    <option value="banner-bottom">Banner Bottom</option>
-                    <option value="bubble">Speech Bubble</option>
-                    <option value="badge">Badge Style</option>
-                </select>
-                <small style="color: var(--text-secondary);">Add a decorative frame around your QR code</small>
-            </div>
-            
-            <div class="grid grid-2" style="gap: 1rem;">
-                <div class="form-group">
-                    <label class="form-label">
-                        <i class="fas fa-vector-square"></i> Corner Style
-                    </label>
-                    <select name="corner_style" id="cornerStyle" class="form-select">
-                        <option value="square">Square Corners</option>
-                        <option value="rounded">Rounded Corners</option>
-                        <option value="extra-rounded">Extra Rounded</option>
-                        <option value="dot">Dot Corners</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">
-                        <i class="fas fa-th"></i> Dot Pattern
-                    </label>
-                    <select name="dot_style" id="dotStyle" class="form-select">
-                        <option value="square">Square Dots</option>
-                        <option value="rounded">Rounded Dots</option>
-                        <option value="dots">Circle Dots</option>
-                        <option value="extra-rounded">Extra Rounded Dots</option>
-                    </select>
-                </div>
-            </div>
-            
             <div class="divider"></div>
             
             <!-- Advanced Features -->

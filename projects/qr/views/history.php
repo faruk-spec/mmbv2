@@ -16,64 +16,62 @@
             <a href="/projects/qr/generate" class="btn btn-primary">Generate Your First QR Code</a>
         </div>
     <?php else: ?>
-        <div style="overflow-x: auto;">
-            <table style="width: 100%; border-collapse: collapse; min-width: 600px;">
+        <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+            <table style="width: 100%; border-collapse: collapse; min-width: 60rem; table-layout: fixed;">
                 <thead>
                     <tr style="border-bottom: 2px solid var(--border-color);">
-                        <th style="padding: 12px; text-align: left; color: var(--text-secondary); font-weight: 600;">Preview</th>
-                        <th style="padding: 12px; text-align: left; color: var(--text-secondary); font-weight: 600;">Content</th>
-                        <th style="padding: 12px; text-align: left; color: var(--text-secondary); font-weight: 600;">Type</th>
-                        <th style="padding: 12px; text-align: left; color: var(--text-secondary); font-weight: 600;">Size</th>
-                        <th style="padding: 12px; text-align: left; color: var(--text-secondary); font-weight: 600;">Scans</th>
-                        <th style="padding: 12px; text-align: left; color: var(--text-secondary); font-weight: 600;">Created</th>
-                        <th style="padding: 12px; text-align: left; color: var(--text-secondary); font-weight: 600;">Actions</th>
+                        <th style="padding: 0.75rem; text-align: left; color: var(--text-secondary); font-weight: 600; width: 5rem; white-space: nowrap;">Preview</th>
+                        <th style="padding: 0.75rem; text-align: left; color: var(--text-secondary); font-weight: 600; width: 20rem; white-space: nowrap;">Content</th>
+                        <th style="padding: 0.75rem; text-align: left; color: var(--text-secondary); font-weight: 600; width: 6rem; white-space: nowrap;">Type</th>
+                        <th style="padding: 0.75rem; text-align: left; color: var(--text-secondary); font-weight: 600; width: 5rem; white-space: nowrap;">Size</th>
+                        <th style="padding: 0.75rem; text-align: left; color: var(--text-secondary); font-weight: 600; width: 5rem; white-space: nowrap;">Scans</th>
+                        <th style="padding: 0.75rem; text-align: left; color: var(--text-secondary); font-weight: 600; width: 8rem; white-space: nowrap;">Created</th>
+                        <th style="padding: 0.75rem; text-align: left; color: var(--text-secondary); font-weight: 600; width: 14rem; white-space: nowrap;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php foreach ($history as $qr): ?>
                         <tr style="border-bottom: 1px solid var(--border-color);">
-                            <td style="padding: 12px;">
-                                <div style="background: white; padding: 8px; border-radius: 4px; display: inline-block;">
-                                    <div id="qr-<?= $qr['id'] ?>" style="width: 60px; height: 60px;"></div>
+                            <td style="padding: 0.75rem; white-space: nowrap;">
+                                <div style="background: white; padding: 0.5rem; border-radius: 0.25rem; display: inline-block;">
+                                    <div id="qr-<?= $qr['id'] ?>" style="width: 3.75rem; height: 3.75rem;"></div>
                                 </div>
                             </td>
-                            <td style="padding: 12px; max-width: 300px;">
-                                <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" 
-                                     title="<?= htmlspecialchars($qr['content']) ?>">
-                                    <?= htmlspecialchars(substr($qr['content'], 0, 50)) ?><?= strlen($qr['content']) > 50 ? '...' : '' ?>
-                                </div>
+                            <td style="padding: 0.75rem; max-width: 20rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" 
+                                title="<?= htmlspecialchars($qr['content']) ?>">
+                                <?= htmlspecialchars(substr($qr['content'], 0, 50)) ?><?= strlen($qr['content']) > 50 ? '...' : '' ?>
                             </td>
-                            <td style="padding: 12px;">
-                                <span style="background: var(--bg-secondary); padding: 4px 8px; border-radius: 4px; font-size: 12px;">
+                            <td style="padding: 0.75rem; white-space: nowrap;">
+                                <span style="background: var(--bg-secondary); padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem;">
                                     <?= ucfirst(htmlspecialchars($qr['type'])) ?>
                                 </span>
                             </td>
-                            <td style="padding: 12px;">
+                            <td style="padding: 0.75rem; white-space: nowrap;">
                                 <?= htmlspecialchars($qr['size'] ?? 200) ?>px
                             </td>
-                            <td style="padding: 12px;">
+                            <td style="padding: 0.75rem; white-space: nowrap;">
                                 <?= (int)($qr['scan_count'] ?? 0) ?>
                             </td>
-                            <td style="padding: 12px; color: var(--text-secondary); font-size: 14px;">
+                            <td style="padding: 0.75rem; color: var(--text-secondary); font-size: 0.875rem; white-space: nowrap;">
                                 <?= date('M j, Y', strtotime($qr['created_at'])) ?>
                             </td>
-                            <td style="padding: 12px;">
-                                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            <td style="padding: 0.75rem; white-space: nowrap;">
+                                <div style="display: flex; gap: 0.5rem; flex-wrap: nowrap;">
                                     <a href="/projects/qr/view/<?= $qr['id'] ?>" 
                                        class="btn btn-secondary" 
-                                       style="padding: 6px 12px; font-size: 12px; text-decoration: none;">
+                                       style="padding: 0.375rem 0.75rem; font-size: 0.75rem; text-decoration: none; white-space: nowrap;">
                                         👁️ View
                                     </a>
                                     <?php if ($qr['is_dynamic'] ?? false): ?>
                                     <a href="/projects/qr/edit/<?= $qr['id'] ?>" 
                                        class="btn btn-secondary" 
-                                       style="padding: 6px 12px; font-size: 12px; text-decoration: none; background: rgba(0, 123, 255, 0.1); border-color: #007bff; color: #007bff;">
+                                       style="padding: 0.375rem 0.75rem; font-size: 0.75rem; text-decoration: none; background: rgba(0, 123, 255, 0.1); border-color: #007bff; color: #007bff; white-space: nowrap;">
                                         ✏️ Edit
                                     </a>
                                     <?php endif; ?>
                                     <button onclick="downloadQRCode(<?= $qr['id'] ?>)" 
                                             class="btn btn-secondary" 
-                                            style="padding: 6px 12px; font-size: 12px;">
+                                            style="padding: 0.375rem 0.75rem; font-size: 0.75rem; white-space: nowrap;">
                                         📥 Download
                                     </button>
                                     <form method="POST" action="/projects/qr/delete" style="display: inline;">
@@ -81,7 +79,7 @@
                                         <input type="hidden" name="id" value="<?= $qr['id'] ?>">
                                         <button type="submit" 
                                                 class="btn btn-secondary" 
-                                                style="padding: 6px 12px; font-size: 12px; background: rgba(255, 107, 107, 0.1); border-color: #ff6b6b; color: #ff6b6b;"
+                                                style="padding: 0.375rem 0.75rem; font-size: 0.75rem; background: rgba(255, 107, 107, 0.1); border-color: #ff6b6b; color: #ff6b6b; white-space: nowrap;"
                                                 onclick="return confirm('Are you sure you want to delete this QR code?')">
                                             🗑️ Delete
                                         </button>
