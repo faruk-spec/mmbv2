@@ -172,15 +172,26 @@
                 <div class="qr-preview">
                     <div id="qrcode" style="display: inline-block;"></div>
                     <script>
-                        // Regenerate QR from saved data
-                        new QRCode(document.getElementById("qrcode"), {
-                            text: <?= json_encode($_SESSION['generated_qr']['content']) ?>,
-                            width: <?= (int)$_SESSION['generated_qr']['size'] ?>,
-                            height: <?= (int)$_SESSION['generated_qr']['size'] ?>,
-                            colorDark: "<?= htmlspecialchars($_SESSION['generated_qr']['foreground_color'] ?? '#000000') ?>",
-                            colorLight: "<?= htmlspecialchars($_SESSION['generated_qr']['background_color'] ?? '#ffffff') ?>",
-                            correctLevel: QRCode.CorrectLevel.H
-                        });
+                        // Wait for QRCode library to be available
+                        (function() {
+                            function tryGenerateQR() {
+                                if (typeof QRCode !== 'undefined') {
+                                    // Regenerate QR from saved data
+                                    new QRCode(document.getElementById("qrcode"), {
+                                        text: <?= json_encode($_SESSION['generated_qr']['content']) ?>,
+                                        width: <?= (int)$_SESSION['generated_qr']['size'] ?>,
+                                        height: <?= (int)$_SESSION['generated_qr']['size'] ?>,
+                                        colorDark: "<?= htmlspecialchars($_SESSION['generated_qr']['foreground_color'] ?? '#000000') ?>",
+                                        colorLight: "<?= htmlspecialchars($_SESSION['generated_qr']['background_color'] ?? '#ffffff') ?>",
+                                        correctLevel: QRCode.CorrectLevel.H
+                                    });
+                                } else {
+                                    // Retry after a short delay
+                                    setTimeout(tryGenerateQR, 100);
+                                }
+                            }
+                            tryGenerateQR();
+                        })();
                     </script>
                 </div>
                 
@@ -211,6 +222,21 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
 <script>
+// Wait for QRCode library to load
+window.addEventListener('load', function() {
+    if (typeof QRCode === 'undefined') {
+        console.error('QRCode.js library failed to load');
+        const container = document.getElementById('qrPreviewContainer');
+        if (container && container.innerHTML.includes('emptyState')) {
+            // Add warning message
+            const warning = document.createElement('div');
+            warning.style.cssText = 'color: #ff6b6b; font-size: 12px; margin-top: 10px;';
+            warning.textContent = 'QR library loading error. Please refresh the page.';
+            container.appendChild(warning);
+        }
+    }
+});
+
 // Dynamic form field management
 document.getElementById('qrType').addEventListener('change', function() {
     const type = this.value;
@@ -365,40 +391,58 @@ function generatePreview() {
         return;
     }
     
+    // Check if QRCode library is loaded
+    if (typeof QRCode === 'undefined') {
+        alert('QR Code library is still loading. Please wait a moment and try again.');
+        return;
+    }
+    
     const size = parseInt(document.getElementById('qrSize').value);
     const colorDark = document.getElementById('qrColor').value;
     const colorLight = document.getElementById('qrBgColor').value;
     
-    // Clear previous QR
+    // Clear previous QR and create new container
     const container = document.getElementById('qrPreviewContainer');
-    container.innerHTML = '<div id="qrcode" style="display: inline-block;"></div>';
+    container.innerHTML = '<div id="qrcode" style="display: inline-block; margin: 20px auto;"></div>';
     
-    // Hide empty state
-    const emptyState = document.getElementById('emptyState');
-    if (emptyState) {
-        emptyState.style.display = 'none';
+    try {
+        // Generate new QR
+        qrcode = new QRCode(document.getElementById("qrcode"), {
+            text: content,
+            width: size,
+            height: size,
+            colorDark: colorDark,
+            colorLight: colorLight,
+            correctLevel: QRCode.CorrectLevel.H
+        });
+        
+        // Add download button after QR is generated
+        setTimeout(() => {
+            const canvas = document.querySelector('#qrcode canvas');
+            if (canvas) {
+                const dataUrl = canvas.toDataURL('image/png');
+                document.getElementById('qrDataUrl').value = dataUrl;
+                
+                // Add info and download button below QR code
+                const infoDiv = document.createElement('div');
+                infoDiv.style.marginTop = '20px';
+                infoDiv.innerHTML = `
+                    <p style="color: var(--text-secondary); margin-bottom: 15px; font-size: 14px;">
+                        Type: ${document.getElementById('qrType').options[document.getElementById('qrType').selectedIndex].text}<br>
+                        Size: ${size}x${size}px
+                    </p>
+                    <button type="button" onclick="downloadQR()" class="btn btn-primary">Download QR Code</button>
+                `;
+                container.appendChild(infoDiv);
+            } else {
+                console.error('Canvas not found after QR generation');
+            }
+        }, 200);
+    } catch (error) {
+        console.error('Error generating QR code:', error);
+        alert('Error generating QR code. Please check your inputs and try again.');
+        container.innerHTML = '<div id="emptyState" style="padding: 60px 20px; color: var(--text-secondary);"><p>Error generating QR code</p></div>';
     }
-    
-    // Generate new QR
-    qrcode = new QRCode(document.getElementById("qrcode"), {
-        text: content,
-        width: size,
-        height: size,
-        colorDark: colorDark,
-        colorLight: colorLight,
-        correctLevel: QRCode.CorrectLevel.H
-    });
-    
-    // Add download button
-    setTimeout(() => {
-        const canvas = document.querySelector('#qrcode canvas');
-        if (canvas) {
-            const dataUrl = canvas.toDataURL('image/png');
-            document.getElementById('qrDataUrl').value = dataUrl;
-            
-            container.innerHTML += '<div style="margin-top: 20px;"><button type="button" onclick="downloadQR()" class="btn btn-primary">Download QR Code</button></div>';
-        }
-    }, 100);
 }
 
 function downloadQR() {
