@@ -3,12 +3,6 @@
 // Futuristic UI with theme integration and live preview
 ?>
 
-<a href="/projects/qr" class="back-link">← Back to Dashboard</a>
-
-<h1 style="margin-bottom: 30px; background: linear-gradient(135deg, var(--purple), var(--cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
-    <i class="fas fa-qrcode"></i> Generate QR Code
-</h1>
-
 <div class="grid grid-2">
     <div class="glass-card">
         <h3 class="section-title">
@@ -497,51 +491,120 @@
             
             <div class="form-group">
                 <label class="form-label">Logo Options</label>
-                <select name="logo_option" id="logoOption" class="form-select">
-                    <option value="none">No Logo</option>
-                    <option value="default">Default Logo</option>
-                    <option value="upload">Upload Your Logo</option>
-                </select>
+                <div class="logo-option-grid">
+                    <div class="logo-option-item active" data-option="none" onclick="selectLogoOption('none')">
+                        <div class="logo-option-icon">
+                            <i class="fas fa-ban"></i>
+                        </div>
+                        <span class="logo-option-label">No Logo</span>
+                    </div>
+                    <div class="logo-option-item" data-option="default" onclick="selectLogoOption('default')">
+                        <div class="logo-option-icon">
+                            <i class="fas fa-icons"></i>
+                        </div>
+                        <span class="logo-option-label">Default Logo</span>
+                    </div>
+                    <div class="logo-option-item" data-option="upload" onclick="selectLogoOption('upload')">
+                        <div class="logo-option-icon">
+                            <i class="fas fa-upload"></i>
+                        </div>
+                        <span class="logo-option-label">Upload Logo</span>
+                    </div>
+                </div>
+                <input type="hidden" name="logo_option" id="logoOption" value="none">
             </div>
             
+            <!-- Default Logo Icon Selector -->
             <div class="form-group" id="defaultLogoGroup" style="display: none;">
-                <label class="form-label">Select Default Logo</label>
-                <select name="default_logo" id="defaultLogo" class="form-select">
-                    <optgroup label="Basic Shapes">
-                        <option value="qr">QR Code Icon</option>
-                        <option value="star">Star</option>
-                        <option value="heart">Heart</option>
-                        <option value="check">Check Mark</option>
-                        <option value="circle">Circle</option>
-                        <option value="square">Square</option>
-                    </optgroup>
-                    <optgroup label="Social Media">
-                        <option value="facebook">Facebook</option>
-                        <option value="instagram">Instagram</option>
-                        <option value="twitter">Twitter/X</option>
-                        <option value="linkedin">LinkedIn</option>
-                        <option value="youtube">YouTube</option>
-                        <option value="tiktok">TikTok</option>
-                        <option value="pinterest">Pinterest</option>
-                        <option value="snapchat">Snapchat</option>
-                    </optgroup>
-                    <optgroup label="Business">
-                        <option value="shop">Shopping Bag</option>
-                        <option value="cart">Shopping Cart</option>
-                        <option value="store">Store</option>
-                        <option value="email">Email</option>
-                        <option value="phone">Phone</option>
-                        <option value="location">Location Pin</option>
-                    </optgroup>
-                    <optgroup label="Tech & Apps">
-                        <option value="android">Android</option>
-                        <option value="apple">Apple</option>
-                        <option value="windows">Windows</option>
-                        <option value="chrome">Chrome</option>
-                        <option value="wifi">WiFi</option>
-                        <option value="bluetooth">Bluetooth</option>
-                    </optgroup>
-                </select>
+                <label class="form-label">Select Default Logo Icon</label>
+                <div class="logo-icon-grid">
+                    <!-- Basic Shapes -->
+                    <div class="logo-icon-item" data-logo="qr" onclick="selectDefaultLogo('qr')" title="QR Code">
+                        <i class="fas fa-qrcode"></i>
+                    </div>
+                    <div class="logo-icon-item" data-logo="star" onclick="selectDefaultLogo('star')" title="Star">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <div class="logo-icon-item" data-logo="heart" onclick="selectDefaultLogo('heart')" title="Heart">
+                        <i class="fas fa-heart"></i>
+                    </div>
+                    <div class="logo-icon-item" data-logo="check" onclick="selectDefaultLogo('check')" title="Check">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="logo-icon-item" data-logo="circle" onclick="selectDefaultLogo('circle')" title="Circle">
+                        <i class="fas fa-circle"></i>
+                    </div>
+                    <div class="logo-icon-item" data-logo="square" onclick="selectDefaultLogo('square')" title="Square">
+                        <i class="fas fa-square"></i>
+                    </div>
+                    
+                    <!-- Social Media -->
+                    <div class="logo-icon-item" data-logo="facebook" onclick="selectDefaultLogo('facebook')" title="Facebook">
+                        <i class="fab fa-facebook"></i>
+                    </div>
+                    <div class="logo-icon-item" data-logo="instagram" onclick="selectDefaultLogo('instagram')" title="Instagram">
+                        <i class="fab fa-instagram"></i>
+                    </div>
+                    <div class="logo-icon-item" data-logo="twitter" onclick="selectDefaultLogo('twitter')" title="Twitter">
+                        <i class="fab fa-twitter"></i>
+                    </div>
+                    <div class="logo-icon-item" data-logo="linkedin" onclick="selectDefaultLogo('linkedin')" title="LinkedIn">
+                        <i class="fab fa-linkedin"></i>
+                    </div>
+                    <div class="logo-icon-item" data-logo="youtube" onclick="selectDefaultLogo('youtube')" title="YouTube">
+                        <i class="fab fa-youtube"></i>
+                    </div>
+                    <div class="logo-icon-item" data-logo="tiktok" onclick="selectDefaultLogo('tiktok')" title="TikTok">
+                        <i class="fab fa-tiktok"></i>
+                    </div>
+                    <div class="logo-icon-item" data-logo="pinterest" onclick="selectDefaultLogo('pinterest')" title="Pinterest">
+                        <i class="fab fa-pinterest"></i>
+                    </div>
+                    <div class="logo-icon-item" data-logo="snapchat" onclick="selectDefaultLogo('snapchat')" title="Snapchat">
+                        <i class="fab fa-snapchat"></i>
+                    </div>
+                    
+                    <!-- Business -->
+                    <div class="logo-icon-item" data-logo="shop" onclick="selectDefaultLogo('shop')" title="Shop">
+                        <i class="fas fa-shopping-bag"></i>
+                    </div>
+                    <div class="logo-icon-item" data-logo="cart" onclick="selectDefaultLogo('cart')" title="Cart">
+                        <i class="fas fa-shopping-cart"></i>
+                    </div>
+                    <div class="logo-icon-item" data-logo="store" onclick="selectDefaultLogo('store')" title="Store">
+                        <i class="fas fa-store"></i>
+                    </div>
+                    <div class="logo-icon-item" data-logo="email" onclick="selectDefaultLogo('email')" title="Email">
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <div class="logo-icon-item" data-logo="phone" onclick="selectDefaultLogo('phone')" title="Phone">
+                        <i class="fas fa-phone"></i>
+                    </div>
+                    <div class="logo-icon-item" data-logo="location" onclick="selectDefaultLogo('location')" title="Location">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                    
+                    <!-- Tech & Apps -->
+                    <div class="logo-icon-item" data-logo="android" onclick="selectDefaultLogo('android')" title="Android">
+                        <i class="fab fa-android"></i>
+                    </div>
+                    <div class="logo-icon-item" data-logo="apple" onclick="selectDefaultLogo('apple')" title="Apple">
+                        <i class="fab fa-apple"></i>
+                    </div>
+                    <div class="logo-icon-item" data-logo="windows" onclick="selectDefaultLogo('windows')" title="Windows">
+                        <i class="fab fa-windows"></i>
+                    </div>
+                    <div class="logo-icon-item" data-logo="chrome" onclick="selectDefaultLogo('chrome')" title="Chrome">
+                        <i class="fab fa-chrome"></i>
+                    </div>
+                    <div class="logo-icon-item" data-logo="wifi" onclick="selectDefaultLogo('wifi')" title="WiFi">
+                        <i class="fas fa-wifi"></i>
+                    </div>
+                    <div class="logo-icon-item" data-logo="bluetooth" onclick="selectDefaultLogo('bluetooth')" title="Bluetooth">
+                        <i class="fab fa-bluetooth"></i>
+                    </div>
+                </div>
+                <input type="hidden" name="default_logo" id="defaultLogo" value="">
             </div>
             
             <div class="form-group" id="uploadLogoGroup" style="display: none;">
@@ -821,6 +884,57 @@ document.addEventListener('DOMContentLoaded', function() {
             showNotification('QR library failed to load. Please refresh the page.', 'error');
         }
     });
+
+// Logo Option Selector Functions
+window.selectLogoOption = function(option) {
+    // Update hidden input
+    const logoOptionInput = document.getElementById('logoOption');
+    if (logoOptionInput) {
+        logoOptionInput.value = option;
+    }
+    
+    // Update visual active state
+    document.querySelectorAll('.logo-option-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    document.querySelector(`[data-option="${option}"]`).classList.add('active');
+    
+    // Show/hide relevant sections
+    const defaultLogoGroup = document.getElementById('defaultLogoGroup');
+    const uploadLogoGroup = document.getElementById('uploadLogoGroup');
+    const logoOptionsGroup = document.getElementById('logoOptionsGroup');
+    
+    if (defaultLogoGroup) {
+        defaultLogoGroup.style.display = option === 'default' ? 'block' : 'none';
+    }
+    if (uploadLogoGroup) {
+        uploadLogoGroup.style.display = option === 'upload' ? 'block' : 'none';
+    }
+    if (logoOptionsGroup) {
+        logoOptionsGroup.style.display = (option === 'default' || option === 'upload') ? 'block' : 'none';
+    }
+    
+    if (typeof debouncedPreview === 'function') debouncedPreview();
+};
+
+window.selectDefaultLogo = function(logo) {
+    // Update hidden input
+    const defaultLogoInput = document.getElementById('defaultLogo');
+    if (defaultLogoInput) {
+        defaultLogoInput.value = logo;
+    }
+    
+    // Update visual active state
+    document.querySelectorAll('.logo-icon-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    const selected = document.querySelector(`[data-logo="${logo}"]`);
+    if (selected) {
+        selected.classList.add('active');
+    }
+    
+    if (typeof debouncedPreview === 'function') debouncedPreview();
+};
 
 // Handle QR type change
 const qrTypeElement = document.getElementById('qrType');
@@ -1648,7 +1762,7 @@ window.addEventListener('load', function() {
     transition: all 0.3s ease;
 }
 
-/* Default dark mode (when no theme or dark theme) */
+/* Default dark mode (when no theme or dark theme) - MAXIMUM SPECIFICITY */
 .form-select,
 .form-select option,
 .form-select optgroup,
@@ -1657,32 +1771,42 @@ window.addEventListener('load', function() {
 :root .form-select optgroup,
 html:not([data-theme="light"]) .form-select,
 html:not([data-theme="light"]) .form-select option,
-html:not([data-theme="light"]) .form-select optgroup {
+html:not([data-theme="light"]) .form-select optgroup,
+body .form-select,
+body .form-select option,
+body .form-select optgroup {
     color: #e8eefc !important;
-    background: rgba(255, 255, 255, 0.08) !important;
+    background: #1a1a2e !important;
+    background-color: #1a1a2e !important;
 }
 
 /* Light mode form elements - improved visibility */
 [data-theme="light"] .form-input,
 [data-theme="light"] .form-select,
 [data-theme="light"] .form-textarea {
-    background: #ffffff;
+    background: #ffffff !important;
+    background-color: #ffffff !important;
     border: 1px solid #d0d0d0;
-    color: #1a1a1a;
+    color: #1a1a1a !important;
 }
 
 [data-theme="light"] .form-select option,
 [data-theme="light"] .form-select optgroup {
     background: #ffffff !important;
+    background-color: #ffffff !important;
     color: #1a1a1a !important;
 }
 
-/* Dark mode dropdown text visibility - explicit */
+/* Dark mode dropdown text visibility - ULTRA explicit */
 [data-theme="dark"] .form-select,
 [data-theme="dark"] .form-select option,
-[data-theme="dark"] .form-select optgroup {
+[data-theme="dark"] .form-select optgroup,
+html[data-theme="dark"] .form-select,
+html[data-theme="dark"] .form-select option,
+html[data-theme="dark"] .form-select optgroup {
     color: #e8eefc !important;
-    background: rgba(255, 255, 255, 0.08) !important;
+    background: #1a1a2e !important;
+    background-color: #1a1a2e !important;
 }
 
 .form-input:focus,
@@ -1814,6 +1938,132 @@ html:not([data-theme="light"]) .form-select optgroup {
     display: block;
     color: var(--text-secondary);
     font-size: 12px;
+}
+
+/* Logo Option Selector */
+.logo-option-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.logo-option-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 16px 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 2px solid transparent;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+[data-theme="light"] .logo-option-item {
+    background: rgba(0, 0, 0, 0.03);
+}
+
+.logo-option-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(153, 69, 255, 0.2);
+}
+
+[data-theme="light"] .logo-option-item:hover {
+    background: rgba(0, 0, 0, 0.06);
+}
+
+.logo-option-item.active {
+    background: linear-gradient(135deg, rgba(153, 69, 255, 0.2), rgba(0, 240, 255, 0.2));
+    border-color: var(--purple);
+}
+
+.logo-option-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    font-size: 20px;
+    color: var(--text-primary);
+}
+
+[data-theme="light"] .logo-option-icon {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.logo-option-item.active .logo-option-icon {
+    background: linear-gradient(135deg, var(--purple), var(--cyan));
+    color: white;
+}
+
+.logo-option-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+.logo-option-item.active .logo-option-label {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+/* Logo Icon Grid */
+.logo-icon-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(55px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 10px;
+}
+
+[data-theme="light"] .logo-icon-grid {
+    background: rgba(0, 0, 0, 0.02);
+}
+
+.logo-icon-item {
+    width: 55px;
+    height: 55px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid transparent;
+    border-radius: 10px;
+    font-size: 24px;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+[data-theme="light"] .logo-icon-item {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.logo-icon-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(153, 69, 255, 0.3);
+}
+
+[data-theme="light"] .logo-icon-item:hover {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.logo-icon-item.active {
+    background: linear-gradient(135deg, var(--purple), var(--cyan));
+    border-color: var(--cyan);
+    color: white;
+    transform: scale(1.05);
 }
 
 /* Buttons */
