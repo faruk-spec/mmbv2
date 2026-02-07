@@ -502,6 +502,24 @@ class QRController
             return;
         }
         
+        // Basic rate limiting: Check for too many failed attempts
+        $sessionKey = 'qr_access_attempts_' . $code;
+        $attempts = $_SESSION[$sessionKey] ?? 0;
+        $lastAttempt = $_SESSION[$sessionKey . '_time'] ?? 0;
+        
+        // Reset counter after 5 minutes
+        if (time() - $lastAttempt > 300) {
+            $attempts = 0;
+        }
+        
+        // Block after 5 failed attempts
+        if ($attempts >= 5) {
+            $waitTime = 300 - (time() - $lastAttempt);
+            Helpers::flash('error', "Too many failed attempts. Please try again in " . ceil($waitTime / 60) . " minutes.");
+            Helpers::redirect('/projects/qr/access/' . $code);
+            return;
+        }
+        
         // Find QR code by short code
         $qr = $this->qrModel->getByShortCode($code);
         
@@ -522,10 +540,18 @@ class QRController
         if ($qr['password_hash']) {
             $password = $_POST['password'] ?? '';
             if (!password_verify($password, $qr['password_hash'])) {
+                // Increment failed attempts
+                $_SESSION[$sessionKey] = $attempts + 1;
+                $_SESSION[$sessionKey . '_time'] = time();
+                
                 Helpers::flash('error', 'Incorrect password.');
                 Helpers::redirect('/projects/qr/access/' . $code);
                 return;
             }
+            
+            // Clear failed attempts on success
+            unset($_SESSION[$sessionKey]);
+            unset($_SESSION[$sessionKey . '_time']);
         }
         
         // Track scan

@@ -274,6 +274,9 @@ class QRModel
         
         try {
             $result = $this->db->fetch($sql, [$shortCode]);
+            if ($result === false) {
+                return null;
+            }
             return $result ?: null;
         } catch (\Exception $e) {
             \Core\Logger::error('Failed to fetch QR code by short code: ' . $e->getMessage());
