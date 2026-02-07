@@ -208,4 +208,57 @@ class QRModel
             return false;
         }
     }
+    
+    /**
+     * Update QR code data
+     * 
+     * @param int $id QR code ID
+     * @param int $userId User ID (for security)
+     * @param array $data Data to update
+     * @return bool Success status
+     */
+    public function update(int $id, int $userId, array $data): bool
+    {
+        // Build UPDATE query dynamically based on provided data
+        $updates = [];
+        $params = [];
+        
+        if (isset($data['redirect_url'])) {
+            $updates[] = "redirect_url = ?";
+            $params[] = $data['redirect_url'];
+        }
+        
+        if (isset($data['password_hash'])) {
+            $updates[] = "password_hash = ?";
+            $params[] = $data['password_hash'];
+        }
+        
+        if (isset($data['expires_at'])) {
+            $updates[] = "expires_at = ?";
+            $params[] = $data['expires_at'];
+        }
+        
+        if (isset($data['status'])) {
+            $updates[] = "status = ?";
+            $params[] = $data['status'];
+        }
+        
+        if (empty($updates)) {
+            return false;
+        }
+        
+        // Add WHERE conditions
+        $params[] = $id;
+        $params[] = $userId;
+        
+        $sql = "UPDATE qr_codes SET " . implode(', ', $updates) . " WHERE id = ? AND user_id = ?";
+        
+        try {
+            $this->db->query($sql, $params);
+            return true;
+        } catch (\Exception $e) {
+            \Core\Logger::error('Failed to update QR code: ' . $e->getMessage());
+            return false;
+        }
+    }
 }

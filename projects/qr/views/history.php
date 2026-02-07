@@ -58,11 +58,23 @@
                                 <?= date('M j, Y', strtotime($qr['created_at'])) ?>
                             </td>
                             <td style="padding: 12px;">
-                                <div style="display: flex; gap: 8px;">
+                                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                    <a href="/projects/qr/view/<?= $qr['id'] ?>" 
+                                       class="btn btn-secondary" 
+                                       style="padding: 6px 12px; font-size: 12px; text-decoration: none;">
+                                        👁️ View
+                                    </a>
+                                    <?php if ($qr['is_dynamic'] ?? false): ?>
+                                    <a href="/projects/qr/edit/<?= $qr['id'] ?>" 
+                                       class="btn btn-secondary" 
+                                       style="padding: 6px 12px; font-size: 12px; text-decoration: none; background: rgba(0, 123, 255, 0.1); border-color: #007bff; color: #007bff;">
+                                        ✏️ Edit
+                                    </a>
+                                    <?php endif; ?>
                                     <button onclick="downloadQRCode(<?= $qr['id'] ?>)" 
                                             class="btn btn-secondary" 
                                             style="padding: 6px 12px; font-size: 12px;">
-                                        Download
+                                        📥 Download
                                     </button>
                                     <form method="POST" action="/projects/qr/delete" style="display: inline;">
                                         <input type="hidden" name="_csrf_token" value="<?= \Core\Security::generateCsrfToken() ?>">
@@ -71,7 +83,7 @@
                                                 class="btn btn-secondary" 
                                                 style="padding: 6px 12px; font-size: 12px; background: rgba(255, 107, 107, 0.1); border-color: #ff6b6b; color: #ff6b6b;"
                                                 onclick="return confirm('Are you sure you want to delete this QR code?')">
-                                            Delete
+                                            🗑️ Delete
                                         </button>
                                     </form>
                                 </div>

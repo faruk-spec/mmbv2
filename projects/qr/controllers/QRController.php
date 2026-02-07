@@ -331,6 +331,128 @@ class QRController
     }
     
     /**
+     * View QR code details
+     */
+    public function view(int $id): void
+    {
+        $userId = Auth::id();
+        
+        if (!$userId) {
+            Helpers::flash('error', 'Please login to view QR codes.');
+            Helpers::redirect('/login');
+            return;
+        }
+        
+        $qr = $this->qrModel->getById($id, $userId);
+        
+        if (!$qr) {
+            Helpers::flash('error', 'QR code not found.');
+            Helpers::redirect('/projects/qr/history');
+            return;
+        }
+        
+        $this->render('view', [
+            'title' => 'View QR Code',
+            'user' => Auth::user(),
+            'qr' => $qr
+        ]);
+    }
+    
+    /**
+     * Show edit form for dynamic QR code
+     */
+    public function edit(int $id): void
+    {
+        $userId = Auth::id();
+        
+        if (!$userId) {
+            Helpers::flash('error', 'Please login to edit QR codes.');
+            Helpers::redirect('/login');
+            return;
+        }
+        
+        $qr = $this->qrModel->getById($id, $userId);
+        
+        if (!$qr) {
+            Helpers::flash('error', 'QR code not found.');
+            Helpers::redirect('/projects/qr/history');
+            return;
+        }
+        
+        $this->render('edit', [
+            'title' => 'Edit QR Code',
+            'user' => Auth::user(),
+            'qr' => $qr
+        ]);
+    }
+    
+    /**
+     * Update dynamic QR code
+     */
+    public function update(int $id): void
+    {
+        if (!Security::verifyCsrfToken($_POST['_csrf_token'] ?? '')) {
+            Helpers::flash('error', 'Invalid request.');
+            Helpers::redirect('/projects/qr/history');
+            return;
+        }
+        
+        $userId = Auth::id();
+        
+        if (!$userId) {
+            Helpers::flash('error', 'Please login to update QR codes.');
+            Helpers::redirect('/login');
+            return;
+        }
+        
+        // Get existing QR code
+        $qr = $this->qrModel->getById($id, $userId);
+        
+        if (!$qr) {
+            Helpers::flash('error', 'QR code not found.');
+            Helpers::redirect('/projects/qr/history');
+            return;
+        }
+        
+        if (!($qr['is_dynamic'] ?? false)) {
+            Helpers::flash('error', 'This QR code is not dynamic and cannot be edited.');
+            Helpers::redirect('/projects/qr/view/' . $id);
+            return;
+        }
+        
+        // Update data
+        $updateData = [
+            'redirect_url' => Security::sanitize($_POST['redirect_url'] ?? ''),
+            'status' => Security::sanitize($_POST['status'] ?? 'active')
+        ];
+        
+        // Update password if provided
+        $hasPassword = isset($_POST['has_password']) ? 1 : 0;
+        if ($hasPassword && !empty($_POST['password'])) {
+            $updateData['password_hash'] = password_hash($_POST['password'], PASSWORD_BCRYPT);
+        } elseif (!$hasPassword) {
+            $updateData['password_hash'] = null;
+        }
+        
+        // Update expiry date
+        $hasExpiry = isset($_POST['has_expiry']) ? 1 : 0;
+        if ($hasExpiry && !empty($_POST['expires_at'])) {
+            $updateData['expires_at'] = $_POST['expires_at'];
+        } elseif (!$hasExpiry) {
+            $updateData['expires_at'] = null;
+        }
+        
+        if ($this->qrModel->update($id, $userId, $updateData)) {
+            Logger::activity($userId, 'qr_updated', ['qr_id' => $id]);
+            Helpers::flash('success', 'QR code updated successfully!');
+        } else {
+            Helpers::flash('error', 'Failed to update QR code.');
+        }
+        
+        Helpers::redirect('/projects/qr/view/' . $id);
+    }
+    
+    /**
      * Render a project view
      */
     protected function render(string $view, array $data = []): void

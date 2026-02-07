@@ -58,20 +58,6 @@ try {
             min-height: 100vh;
         }
         
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: 
-                radial-gradient(ellipse at 20% 0%, rgba(153, 69, 255, 0.15) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 100%, rgba(0, 240, 255, 0.1) 0%, transparent 50%);
-            pointer-events: none;
-            z-index: -1;
-        }
-        
         /* Layout Structure */
         .qr-dashboard {
             display: flex;
