@@ -160,7 +160,7 @@
             </div>
             
             <button type="button" class="btn btn-secondary" onclick="generatePreview()" style="margin-right: 10px;">Preview QR</button>
-            <button type="submit" class="btn btn-primary">Save QR Code</button>
+            <button type="submit" class="btn btn-primary">Generate QR Code</button>
         </form>
     </div>
     
