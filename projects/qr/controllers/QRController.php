@@ -453,6 +453,118 @@ class QRController
     }
     
     /**
+     * Show access form for protected/dynamic QR codes
+     */
+    public function showAccessForm(string $code): void
+    {
+        // Find QR code by short code
+        $qr = $this->qrModel->getByShortCode($code);
+        
+        if (!$qr) {
+            Helpers::flash('error', 'QR code not found.');
+            http_response_code(404);
+            echo "QR code not found";
+            return;
+        }
+        
+        // Check expiry first
+        if ($qr['expires_at'] && strtotime($qr['expires_at']) < time()) {
+            $this->render('expired', [
+                'title' => 'QR Code Expired',
+                'qr' => $qr
+            ]);
+            return;
+        }
+        
+        // Check if password protected
+        if ($qr['password_hash']) {
+            $this->render('access', [
+                'title' => 'Enter Password',
+                'qr' => $qr,
+                'code' => $code
+            ]);
+            return;
+        }
+        
+        // No protection, redirect directly
+        $this->redirectQR($qr);
+    }
+    
+    /**
+     * Verify access to protected QR code
+     */
+    public function verifyAccess(string $code): void
+    {
+        // Verify CSRF
+        if (!Security::verifyCsrfToken($_POST['_csrf_token'] ?? '')) {
+            Helpers::flash('error', 'Invalid request.');
+            Helpers::redirect('/projects/qr/access/' . $code);
+            return;
+        }
+        
+        // Find QR code by short code
+        $qr = $this->qrModel->getByShortCode($code);
+        
+        if (!$qr) {
+            Helpers::flash('error', 'QR code not found.');
+            Helpers::redirect('/');
+            return;
+        }
+        
+        // Check expiry
+        if ($qr['expires_at'] && strtotime($qr['expires_at']) < time()) {
+            Helpers::flash('error', 'This QR code has expired.');
+            Helpers::redirect('/projects/qr/access/' . $code);
+            return;
+        }
+        
+        // Verify password
+        if ($qr['password_hash']) {
+            $password = $_POST['password'] ?? '';
+            if (!password_verify($password, $qr['password_hash'])) {
+                Helpers::flash('error', 'Incorrect password.');
+                Helpers::redirect('/projects/qr/access/' . $code);
+                return;
+            }
+        }
+        
+        // Track scan
+        $this->qrModel->trackScan($qr['id']);
+        
+        // Redirect to content
+        $this->redirectQR($qr);
+    }
+    
+    /**
+     * Redirect QR code to its destination
+     */
+    private function redirectQR(array $qr): void
+    {
+        // For dynamic QR codes, use redirect_url
+        if ($qr['is_dynamic'] && !empty($qr['redirect_url'])) {
+            header('Location: ' . $qr['redirect_url']);
+            exit;
+        }
+        
+        // For static QR codes, redirect to content directly
+        // Handle different content types
+        $content = $qr['content'];
+        
+        // If it's already a URL, redirect
+        if (filter_var($content, FILTER_VALIDATE_URL)) {
+            header('Location: ' . $content);
+            exit;
+        }
+        
+        // Otherwise display the content
+        $this->render('content', [
+            'title' => 'QR Code Content',
+            'qr' => $qr,
+            'content' => $content
+        ]);
+    }
+    
+    /**
      * Render a project view
      */
     protected function render(string $view, array $data = []): void

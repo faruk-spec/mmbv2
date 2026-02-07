@@ -90,6 +90,70 @@ switch ($segments[0]) {
         $controller->delete();
         break;
         
+    case 'scan':
+    case 'access':
+        // Handle QR code scanning/access with password and expiry verification
+        require_once PROJECT_PATH . '/controllers/QRController.php';
+        $controller = new \Projects\QR\Controllers\QRController();
+        $code = $segments[1] ?? '';
+        if ($code) {
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                $controller->verifyAccess($code);
+            } else {
+                $controller->showAccessForm($code);
+            }
+        } else {
+            http_response_code(404);
+            echo "Invalid QR code";
+        }
+        break;
+        
+    case 'analytics':
+        require_once PROJECT_PATH . '/controllers/AnalyticsController.php';
+        $controller = new \Projects\QR\Controllers\AnalyticsController();
+        $controller->index();
+        break;
+        
+    case 'campaigns':
+        require_once PROJECT_PATH . '/controllers/CampaignsController.php';
+        $controller = new \Projects\QR\Controllers\CampaignsController();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $controller->save();
+        } else {
+            $controller->index();
+        }
+        break;
+        
+    case 'bulk':
+        require_once PROJECT_PATH . '/controllers/BulkController.php';
+        $controller = new \Projects\QR\Controllers\BulkController();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $controller->generate();
+        } else {
+            $controller->index();
+        }
+        break;
+        
+    case 'templates':
+        require_once PROJECT_PATH . '/controllers/TemplatesController.php';
+        $controller = new \Projects\QR\Controllers\TemplatesController();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $controller->save();
+        } else {
+            $controller->index();
+        }
+        break;
+        
+    case 'settings':
+        require_once PROJECT_PATH . '/controllers/SettingsController.php';
+        $controller = new \Projects\QR\Controllers\SettingsController();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $controller->update();
+        } else {
+            $controller->index();
+        }
+        break;
+        
     default:
         http_response_code(404);
         echo "Page not found";
