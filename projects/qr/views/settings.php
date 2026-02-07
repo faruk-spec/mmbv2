@@ -4,12 +4,6 @@
  */
 ?>
 
-<a href="/projects/qr" class="back-link">← Back to Dashboard</a>
-
-<h1 style="margin-bottom: 30px; background: linear-gradient(135deg, var(--purple), var(--cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
-    <i class="fas fa-cog"></i> Settings
-</h1>
-
 <div class="glass-card">
     <h3 class="section-title">
         <i class="fas fa-sliders-h"></i> Default Settings

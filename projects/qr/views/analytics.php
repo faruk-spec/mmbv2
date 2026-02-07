@@ -4,12 +4,6 @@
  */
 ?>
 
-<a href="/projects/qr" class="back-link">← Back to Dashboard</a>
-
-<h1 style="margin-bottom: 30px; background: linear-gradient(135deg, var(--purple), var(--cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
-    <i class="fas fa-chart-line"></i> Analytics
-</h1>
-
 <!-- Stats Overview -->
 <div class="grid grid-3" style="gap: 20px; margin-bottom: 30px;">
     <div class="glass-card stat-card">
