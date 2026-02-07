@@ -1438,7 +1438,6 @@ function renderQRCode(qrOptions, content) {
         showNotification('Error generating QR code. Please check your inputs.', 'error');
     }
 }
-}
 
 // Build QR content based on type
 function buildQRContent() {
