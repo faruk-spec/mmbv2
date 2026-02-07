@@ -621,11 +621,26 @@ function generatePreview() {
                 container.appendChild(infoDiv);
                 
                 addDownloadButton(qrDiv);
+                
+                // Apply frame style
+                applyFrameStyle(qrDiv);
             }
         }, 200);
         
     } catch (error) {
         console.error('Error generating QR:', error);
+    }
+}
+
+// Apply frame style to QR code
+function applyFrameStyle(qrDiv) {
+    const frameStyle = document.getElementById('frameStyle').value;
+    
+    // Remove any existing frame classes
+    qrDiv.className = 'qr-preview';
+    
+    if (frameStyle && frameStyle !== 'none') {
+        qrDiv.classList.add('qr-frame-' + frameStyle);
     }
 }
 
@@ -639,6 +654,7 @@ function debouncedPreview() {
 // Live preview on all field changes
 const livePreviewFields = [
     'contentField', 'qrType', 'qrSize', 'qrColor', 'qrBgColor', 'errorCorrection',
+    'frameStyle', 'cornerStyle', 'dotStyle',
     'whatsappPhone', 'whatsappMessage',
     'wifiSsid', 'wifiPassword', 'wifiEncryption',
     'vcardName', 'vcardPhone', 'vcardEmail', 'vcardOrg',
@@ -1064,5 +1080,148 @@ small {
     color: var(--text-secondary);
     display: block;
     margin-top: 5px;
+}
+
+/* Frame Styles for QR Codes */
+.qr-preview {
+    display: inline-block;
+    transition: all 0.3s ease;
+}
+
+/* Square Frame */
+.qr-frame-square {
+    padding: 20px;
+    border: 4px solid var(--purple);
+    border-radius: 8px;
+    background: white;
+    box-shadow: 0 8px 20px rgba(153, 69, 255, 0.2);
+}
+
+/* Circle Frame */
+.qr-frame-circle {
+    padding: 20px;
+    border: 4px solid var(--cyan);
+    border-radius: 50%;
+    background: white;
+    box-shadow: 0 8px 20px rgba(0, 240, 255, 0.2);
+    overflow: hidden;
+}
+
+.qr-frame-circle canvas,
+.qr-frame-circle img {
+    border-radius: 50%;
+}
+
+/* Rounded Corners Frame */
+.qr-frame-rounded {
+    padding: 20px;
+    border: 3px solid transparent;
+    border-radius: 24px;
+    background: linear-gradient(white, white) padding-box,
+                linear-gradient(135deg, var(--purple), var(--cyan)) border-box;
+    box-shadow: 0 8px 24px rgba(153, 69, 255, 0.3);
+}
+
+/* Banner Top Frame */
+.qr-frame-banner-top {
+    padding: 50px 20px 20px 20px;
+    border: 3px solid var(--purple);
+    border-radius: 12px;
+    background: white;
+    position: relative;
+    box-shadow: 0 8px 20px rgba(153, 69, 255, 0.2);
+}
+
+.qr-frame-banner-top::before {
+    content: 'SCAN ME';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(135deg, var(--purple), var(--cyan));
+    color: white;
+    text-align: center;
+    padding: 8px;
+    font-weight: bold;
+    font-size: 12px;
+    letter-spacing: 2px;
+    border-radius: 8px 8px 0 0;
+}
+
+/* Banner Bottom Frame */
+.qr-frame-banner-bottom {
+    padding: 20px 20px 50px 20px;
+    border: 3px solid var(--cyan);
+    border-radius: 12px;
+    background: white;
+    position: relative;
+    box-shadow: 0 8px 20px rgba(0, 240, 255, 0.2);
+}
+
+.qr-frame-banner-bottom::after {
+    content: 'SCAN ME';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(135deg, var(--cyan), var(--purple));
+    color: white;
+    text-align: center;
+    padding: 8px;
+    font-weight: bold;
+    font-size: 12px;
+    letter-spacing: 2px;
+    border-radius: 0 0 8px 8px;
+}
+
+/* Speech Bubble Frame */
+.qr-frame-bubble {
+    padding: 20px;
+    border: 3px solid var(--purple);
+    border-radius: 20px;
+    background: white;
+    position: relative;
+    box-shadow: 0 8px 20px rgba(153, 69, 255, 0.2);
+    margin-bottom: 30px;
+}
+
+.qr-frame-bubble::after {
+    content: '';
+    position: absolute;
+    bottom: -25px;
+    left: 30px;
+    width: 0;
+    height: 0;
+    border-left: 15px solid transparent;
+    border-right: 15px solid transparent;
+    border-top: 25px solid var(--purple);
+}
+
+/* Badge Style Frame */
+.qr-frame-badge {
+    padding: 25px;
+    border: 4px solid var(--purple);
+    border-radius: 50% 50% 50% 10px;
+    background: white;
+    position: relative;
+    box-shadow: 0 8px 20px rgba(153, 69, 255, 0.3);
+}
+
+.qr-frame-badge::before {
+    content: '✓';
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    width: 30px;
+    height: 30px;
+    background: linear-gradient(135deg, var(--purple), var(--cyan));
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 18px;
+    box-shadow: 0 4px 12px rgba(153, 69, 255, 0.4);
 }
 </style>
