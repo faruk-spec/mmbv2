@@ -38,6 +38,10 @@ spl_autoload_register(function ($class) {
                 if (count($parts) > 1 && $parts[1] === 'Controllers') {
                     $parts[1] = 'controllers';
                 }
+                // Convert 'Models' directory to lowercase
+                if (count($parts) > 1 && $parts[1] === 'Models') {
+                    $parts[1] = 'models';
+                }
                 $relativeClass = implode('/', $parts);
             }
             

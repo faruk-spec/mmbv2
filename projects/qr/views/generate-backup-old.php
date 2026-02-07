@@ -1,19 +1,15 @@
 <?php
-// Production-Ready QR Code Generator with AI Design
-// Futuristic UI with theme integration and live preview
+// Enhanced QR Code Generator with Advanced Options
+// This file replaces generate.php with production-ready features
 ?>
 
 <a href="/projects/qr" class="back-link">← Back to Dashboard</a>
 
-<h1 style="margin-bottom: 30px; background: linear-gradient(135deg, var(--purple), var(--cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
-    <i class="fas fa-qrcode"></i> Generate QR Code
-</h1>
+<h1 style="margin-bottom: 30px;">Generate QR Code - Advanced Options</h1>
 
 <div class="grid grid-2">
-    <div class="glass-card">
-        <h3 class="section-title">
-            <i class="fas fa-sliders-h"></i> Configuration
-        </h3>
+    <div class="card">
+        <h3 style="margin-bottom: 20px;">QR Code Configuration</h3>
         
         <form method="POST" action="/projects/qr/generate" id="qrForm" enctype="multipart/form-data">
             <input type="hidden" name="_csrf_token" value="<?= \Core\Security::generateCsrfToken() ?>">
@@ -35,14 +31,14 @@
                     <option value="vcard">👤 vCard (Contact)</option>
                     <option value="location">📍 Location</option>
                     <option value="event">📅 Event (Calendar)</option>
-                    <option value="payment">💳 Payment</option>
+                    <option value="payment">💳 Payment (UPI/PayPal)</option>
                 </select>
             </div>
             
-            <!-- Simple Content Field -->
+            <!-- Simple Content Field (for URL, Text, Phone, Email) -->
             <div class="form-group" id="simpleContent">
                 <label class="form-label" id="contentLabel">Content</label>
-                <textarea name="content" id="contentField" class="form-textarea" rows="4" placeholder="Enter content..."></textarea>
+                <textarea name="content" id="contentField" class="form-textarea" rows="4" placeholder="Enter URL, text, or other content..."></textarea>
             </div>
             
             <!-- WhatsApp Fields -->
@@ -149,12 +145,10 @@
                 </div>
             </div>
             
-            <div class="divider"></div>
+            <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
             
             <!-- Design Options -->
-            <h4 class="subsection-title">
-                <i class="fas fa-palette"></i> Design Options
-            </h4>
+            <h4 style="margin-bottom: 15px;">🎨 Design Options</h4>
             
             <div class="grid grid-2" style="gap: 15px;">
                 <div class="form-group">
@@ -174,7 +168,7 @@
                         <option value="L">Low (7%)</option>
                         <option value="M">Medium (15%)</option>
                         <option value="Q">Quartile (25%)</option>
-                        <option value="H" selected>High (30%)</option>
+                        <option value="H" selected>High (30%) - Recommended</option>
                     </select>
                 </div>
             </div>
@@ -182,137 +176,134 @@
             <div class="grid grid-2" style="gap: 15px;">
                 <div class="form-group">
                     <label class="form-label">Foreground Color</label>
-                    <input type="color" name="foreground_color" id="qrColor" value="#000000" class="form-input color-input">
+                    <input type="color" name="foreground_color" id="qrColor" value="#000000" class="form-input" style="height: 50px;">
                 </div>
                 
                 <div class="form-group">
                     <label class="form-label">Background Color</label>
-                    <input type="color" name="background_color" id="qrBgColor" value="#ffffff" class="form-input color-input">
+                    <input type="color" name="background_color" id="qrBgColor" value="#ffffff" class="form-input" style="height: 50px;">
                 </div>
             </div>
             
-            <!-- QR Customization Options -->
+            <!-- Frame Style -->
             <div class="form-group">
-                <label class="form-label">
-                    <i class="fas fa-border-style"></i> Frame Style
-                </label>
+                <label class="form-label">Frame Style</label>
                 <select name="frame_style" id="frameStyle" class="form-select">
                     <option value="none">No Frame</option>
                     <option value="square">Square Frame</option>
                     <option value="circle">Circle Frame</option>
                     <option value="rounded">Rounded Corners</option>
-                    <option value="banner-top">Banner Top</option>
-                    <option value="banner-bottom">Banner Bottom</option>
+                    <option value="banner">Banner Style</option>
                     <option value="bubble">Speech Bubble</option>
-                    <option value="badge">Badge Style</option>
                 </select>
-                <small style="color: var(--text-secondary);">Add a decorative frame around your QR code</small>
             </div>
             
-            <div class="grid grid-2" style="gap: 1rem;">
-                <div class="form-group">
-                    <label class="form-label">
-                        <i class="fas fa-vector-square"></i> Corner Style
-                    </label>
-                    <select name="corner_style" id="cornerStyle" class="form-select">
-                        <option value="square">Square Corners</option>
-                        <option value="rounded">Rounded Corners</option>
-                        <option value="extra-rounded">Extra Rounded</option>
-                        <option value="dot">Dot Corners</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">
-                        <i class="fas fa-th"></i> Dot Pattern
-                    </label>
-                    <select name="dot_style" id="dotStyle" class="form-select">
-                        <option value="square">Square Dots</option>
-                        <option value="rounded">Rounded Dots</option>
-                        <option value="dots">Circle Dots</option>
-                        <option value="extra-rounded">Extra Rounded Dots</option>
-                    </select>
-                </div>
+            <!-- Logo Upload -->
+            <div class="form-group">
+                <label class="form-label">
+                    <i class="fas fa-image"></i> Logo (Optional)
+                    <span style="font-size: 12px; color: #666;">(Max 2MB, PNG/JPG)</span>
+                </label>
+                <input type="file" name="logo" id="logoUpload" class="form-input" accept="image/png,image/jpeg,image/jpg">
+                <small style="color: #666;">Logo will be centered in the QR code</small>
             </div>
             
-            <div class="divider"></div>
+            <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
             
             <!-- Advanced Features -->
-            <h4 class="subsection-title">
-                <i class="fas fa-rocket"></i> Advanced Features
-            </h4>
+            <h4 style="margin-bottom: 15px;">⚡ Advanced Features</h4>
             
-            <div class="feature-toggle">
-                <label class="toggle-label">
-                    <input type="checkbox" name="is_dynamic" id="isDynamic" value="1" class="toggle-input">
-                    <span class="toggle-slider"></span>
-                    <span class="toggle-text">
+            <!-- Dynamic QR Toggle -->
+            <div class="form-group">
+                <label class="form-label" style="display: flex; align-items: center;">
+                    <input type="checkbox" name="is_dynamic" id="isDynamic" value="1" style="margin-right: 10px; width: 20px; height: 20px;">
+                    <span>
                         <strong>Dynamic QR Code</strong>
-                        <small>Change URL later without regenerating</small>
+                        <small style="display: block; color: #666;">URL can be changed later without regenerating QR</small>
                     </span>
                 </label>
             </div>
             
+            <!-- Redirect URL (for dynamic QR) -->
             <div class="form-group" id="redirectUrlGroup" style="display: none;">
                 <label class="form-label">Redirect URL</label>
                 <input type="url" name="redirect_url" id="redirectUrl" class="form-input" placeholder="https://example.com">
-                <small>This URL can be edited later</small>
+                <small style="color: #666;">This URL can be edited later without changing the QR code</small>
             </div>
             
-            <div class="feature-toggle">
-                <label class="toggle-label">
-                    <input type="checkbox" name="has_password" id="hasPassword" value="1" class="toggle-input">
-                    <span class="toggle-slider"></span>
-                    <span class="toggle-text">
+            <!-- Password Protection -->
+            <div class="form-group">
+                <label class="form-label" style="display: flex; align-items: center;">
+                    <input type="checkbox" name="has_password" id="hasPassword" value="1" style="margin-right: 10px; width: 20px; height: 20px;">
+                    <span>
                         <strong>Password Protection</strong>
-                        <small>Require password to scan</small>
+                        <small style="display: block; color: #666;">Require password to scan</small>
                     </span>
                 </label>
             </div>
             
+            <!-- Password Field -->
             <div class="form-group" id="passwordGroup" style="display: none;">
                 <label class="form-label">Password</label>
                 <input type="password" name="password" id="qrPassword" class="form-input" placeholder="Enter password">
             </div>
             
-            <div class="feature-toggle">
-                <label class="toggle-label">
-                    <input type="checkbox" name="has_expiry" id="hasExpiry" value="1" class="toggle-input">
-                    <span class="toggle-slider"></span>
-                    <span class="toggle-text">
+            <!-- Expiry Date -->
+            <div class="form-group">
+                <label class="form-label" style="display: flex; align-items: center;">
+                    <input type="checkbox" name="has_expiry" id="hasExpiry" value="1" style="margin-right: 10px; width: 20px; height: 20px;">
+                    <span>
                         <strong>Set Expiry Date</strong>
-                        <small>QR code stops working after this date</small>
+                        <small style="display: block; color: #666;">QR code will stop working after this date</small>
                     </span>
                 </label>
             </div>
             
+            <!-- Expiry Date Field -->
             <div class="form-group" id="expiryGroup" style="display: none;">
                 <label class="form-label">Expires On</label>
                 <input type="datetime-local" name="expires_at" id="expiresAt" class="form-input">
             </div>
             
-            <div class="divider"></div>
+            <!-- Campaign -->
+            <div class="form-group">
+                <label class="form-label">Campaign (Optional)</label>
+                <select name="campaign_id" id="campaignId" class="form-select">
+                    <option value="">No Campaign</option>
+                    <?php
+                    // TODO: Load user's campaigns from database
+                    // For now, just show placeholder
+                    ?>
+                    <option value="1">Marketing Campaign 2024</option>
+                    <option value="2">Product Launch</option>
+                </select>
+                <small style="color: #666;">Group QR codes into campaigns for better organization</small>
+            </div>
             
-            <!-- Action Button -->
-            <button type="submit" class="btn btn-primary btn-large">
-                <i class="fas fa-save"></i> Generate & Save QR Code
-                <span class="btn-shine"></span>
-            </button>
+            <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+            
+            <!-- Action Buttons -->
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button type="button" class="btn btn-secondary" onclick="generatePreview()" style="flex: 1; min-width: 150px;">
+                    <i class="fas fa-eye"></i> Preview QR
+                </button>
+                <button type="submit" class="btn btn-primary" style="flex: 2; min-width: 200px;">
+                    <i class="fas fa-save"></i> Generate & Save QR Code
+                </button>
+            </div>
         </form>
     </div>
     
     <!-- Preview Panel -->
-    <div class="glass-card preview-panel">
-        <h3 class="section-title">
-            <i class="fas fa-eye"></i> Live Preview
-        </h3>
+    <div class="card" style="text-align: center; position: sticky; top: 20px;">
+        <h3 style="margin-bottom: 20px;">Preview</h3>
         
-        <div id="qrPreviewContainer" class="preview-container">
+        <div id="qrPreviewContainer">
             <?php if (isset($_SESSION['generated_qr'])): ?>
                 <div class="qr-preview">
-                    <div id="qrcode"></div>
+                    <div id="qrcode" style="display: inline-block;"></div>
                     <script>
-                        // Regenerate QR from session
+                        // Regenerate QR from session data
                         (function tryGenerateQR() {
                             if (typeof QRCode !== 'undefined') {
                                 try {
@@ -326,12 +317,25 @@
                                         correctLevel: QRCode.CorrectLevel.H
                                     });
                                     
-                                    // Add download button after generation
+                                    // Show download button after generation
                                     setTimeout(function() {
-                                        addDownloadButton(qrDiv);
+                                        const canvas = qrDiv.querySelector('canvas');
+                                        if (canvas) {
+                                            const downloadBtn = document.createElement('button');
+                                            downloadBtn.className = 'btn btn-primary';
+                                            downloadBtn.innerHTML = '<i class="fas fa-download"></i> Download QR Code';
+                                            downloadBtn.style.marginTop = '20px';
+                                            downloadBtn.onclick = function() {
+                                                const link = document.createElement('a');
+                                                link.download = 'qrcode-<?= time() ?>.png';
+                                                link.href = canvas.toDataURL();
+                                                link.click();
+                                            };
+                                            qrDiv.appendChild(downloadBtn);
+                                        }
                                     }, 200);
                                 } catch (error) {
-                                    console.error('Error generating QR:', error);
+                                    console.error('Error generating QR from session:', error);
                                 }
                             } else {
                                 setTimeout(tryGenerateQR, 100);
@@ -339,25 +343,26 @@
                         })();
                     </script>
                     
-                    <div class="qr-info">
-                        <p><strong>Type:</strong> <?= htmlspecialchars($_SESSION['generated_qr']['type'] ?? 'url') ?></p>
-                        <p><strong>Size:</strong> <?= htmlspecialchars($_SESSION['generated_qr']['size'] ?? 300) ?>px</p>
+                    <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; text-align: left;">
+                        <p style="margin: 5px 0;"><strong>Type:</strong> <?= htmlspecialchars($_SESSION['generated_qr']['type'] ?? 'url') ?></p>
+                        <p style="margin: 5px 0;"><strong>Size:</strong> <?= htmlspecialchars($_SESSION['generated_qr']['size'] ?? 300) ?>x<?= htmlspecialchars($_SESSION['generated_qr']['size'] ?? 300) ?>px</p>
                         <?php if (isset($_SESSION['generated_qr']['is_dynamic']) && $_SESSION['generated_qr']['is_dynamic']): ?>
-                            <p><span class="badge badge-dynamic">🔄 Dynamic</span></p>
+                            <p style="margin: 5px 0;"><strong>🔄 Dynamic QR</strong> - URL can be changed later</p>
                         <?php endif; ?>
                         <?php if (isset($_SESSION['generated_qr']['has_password']) && $_SESSION['generated_qr']['has_password']): ?>
-                            <p><span class="badge badge-secure">🔒 Protected</span></p>
+                            <p style="margin: 5px 0;"><strong>🔒 Password Protected</strong></p>
+                        <?php endif; ?>
+                        <?php if (isset($_SESSION['generated_qr']['expires_at']) && $_SESSION['generated_qr']['expires_at']): ?>
+                            <p style="margin: 5px 0;"><strong>⏰ Expires:</strong> <?= htmlspecialchars($_SESSION['generated_qr']['expires_at']) ?></p>
                         <?php endif; ?>
                     </div>
                 </div>
                 <?php unset($_SESSION['generated_qr']); ?>
             <?php else: ?>
-                <div id="emptyState" class="empty-state">
-                    <div class="empty-icon">
-                        <i class="fas fa-qrcode"></i>
-                    </div>
-                    <p class="empty-title">Preview will appear here</p>
-                    <p class="empty-subtitle">QR code updates automatically as you type</p>
+                <div id="emptyState" style="padding: 60px 20px; color: #999;">
+                    <i class="fas fa-qrcode" style="font-size: 64px; margin-bottom: 20px; opacity: 0.3;"></i>
+                    <p>QR code preview will appear here</p>
+                    <p style="font-size: 14px;">Fill in the form and click "Preview QR" to see your QR code</p>
                 </div>
             <?php endif; ?>
         </div>
@@ -368,27 +373,13 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
 <script>
-// Check library loaded
+// Check if QRCode library loaded
 window.addEventListener('load', function() {
     if (typeof QRCode === 'undefined') {
-        console.error('QRCode.js failed to load');
-        showNotification('QR library failed to load. Please refresh the page.', 'error');
+        console.error('QRCode.js library failed to load from CDN');
+        alert('QR Code library failed to load. Please check your internet connection.');
     }
 });
-
-// Notification system
-function showNotification(message, type = 'info') {
-    const notification = document.createElement('div');
-    notification.className = `notification notification-${type}`;
-    notification.textContent = message;
-    document.body.appendChild(notification);
-    
-    setTimeout(() => notification.classList.add('show'), 10);
-    setTimeout(() => {
-        notification.classList.remove('show');
-        setTimeout(() => notification.remove(), 300);
-    }, 3000);
-}
 
 // Handle QR type change
 document.getElementById('qrType').addEventListener('change', function() {
@@ -432,46 +423,55 @@ document.getElementById('qrType').addEventListener('change', function() {
             document.getElementById('paymentFields').style.display = 'block';
             break;
     }
-    
-    // Trigger live preview
-    debouncedPreview();
 });
 
 function updateContentLabel(type) {
     const label = document.getElementById('contentLabel');
     const field = document.getElementById('contentField');
     
-    const labels = {
-        'url': { label: 'URL', placeholder: 'https://example.com' },
-        'text': { label: 'Text Content', placeholder: 'Enter any text...' },
-        'email': { label: 'Email Address', placeholder: 'email@example.com' },
-        'phone': { label: 'Phone Number', placeholder: '+1234567890' },
-        'sms': { label: 'SMS (phone:message)', placeholder: '+1234567890:Hello' }
-    };
-    
-    if (labels[type]) {
-        label.textContent = labels[type].label;
-        field.placeholder = labels[type].placeholder;
+    switch(type) {
+        case 'url':
+            label.textContent = 'URL';
+            field.placeholder = 'https://example.com';
+            break;
+        case 'text':
+            label.textContent = 'Text Content';
+            field.placeholder = 'Enter any text...';
+            break;
+        case 'email':
+            label.textContent = 'Email Address';
+            field.placeholder = 'email@example.com';
+            break;
+        case 'phone':
+            label.textContent = 'Phone Number';
+            field.placeholder = '+1234567890';
+            break;
+        case 'sms':
+            label.textContent = 'SMS (phone:message)';
+            field.placeholder = '+1234567890:Hello World';
+            break;
     }
 }
 
-// Initialize
+// Initialize on page load
 document.getElementById('qrType').dispatchEvent(new Event('change'));
 
-// Toggle handlers
+// Toggle dynamic QR redirect URL field
 document.getElementById('isDynamic').addEventListener('change', function() {
     document.getElementById('redirectUrlGroup').style.display = this.checked ? 'block' : 'none';
 });
 
+// Toggle password field
 document.getElementById('hasPassword').addEventListener('change', function() {
     document.getElementById('passwordGroup').style.display = this.checked ? 'block' : 'none';
 });
 
+// Toggle expiry field
 document.getElementById('hasExpiry').addEventListener('change', function() {
     document.getElementById('expiryGroup').style.display = this.checked ? 'block' : 'none';
 });
 
-// Build QR content
+// Build QR content from form fields
 function buildQRContent() {
     const type = document.getElementById('qrType').value;
     let content = '';
@@ -538,46 +538,30 @@ function buildQRContent() {
     return content;
 }
 
-// Add download button (single function to prevent duplicates)
-function addDownloadButton(container) {
-    // Check if button already exists
-    if (container.querySelector('.btn-download')) {
-        return;
-    }
-    
-    const canvas = container.querySelector('canvas');
-    if (!canvas) return;
-    
-    const downloadBtn = document.createElement('button');
-    downloadBtn.className = 'btn btn-download';
-    downloadBtn.innerHTML = '<i class="fas fa-download"></i> Download QR Code';
-    downloadBtn.onclick = function(e) {
-        e.preventDefault();
-        const link = document.createElement('a');
-        link.download = 'qrcode-' + Date.now() + '.png';
-        link.href = canvas.toDataURL();
-        link.click();
-        showNotification('QR code downloaded successfully!', 'success');
-    };
-    container.appendChild(downloadBtn);
-}
-
 // Generate preview
 function generatePreview() {
+    // Check if library is loaded
     if (typeof QRCode === 'undefined') {
+        alert('QR Code library is still loading. Please wait a moment and try again.');
         return;
     }
     
+    // Build content
     const content = buildQRContent();
+    
+    // Validate
     if (!content || content.trim() === '') {
+        alert('Please fill in all required fields for the selected QR type.');
         return;
     }
     
+    // Get options
     const size = parseInt(document.getElementById('qrSize').value);
     const foregroundColor = document.getElementById('qrColor').value;
     const backgroundColor = document.getElementById('qrBgColor').value;
     const errorCorrection = document.getElementById('errorCorrection').value;
     
+    // Map error correction level
     let correctLevel = QRCode.CorrectLevel.H;
     switch(errorCorrection) {
         case 'L': correctLevel = QRCode.CorrectLevel.L; break;
@@ -586,16 +570,19 @@ function generatePreview() {
         case 'H': correctLevel = QRCode.CorrectLevel.H; break;
     }
     
+    // Clear preview container
     const container = document.getElementById('qrPreviewContainer');
     container.innerHTML = '';
     
+    // Create QR div
     const qrDiv = document.createElement('div');
     qrDiv.id = 'qrcode';
-    qrDiv.className = 'qr-preview';
+    qrDiv.style.display = 'inline-block';
     container.appendChild(qrDiv);
     
+    // Generate QR code
     try {
-        new QRCode(qrDiv, {
+        const qrcode = new QRCode(qrDiv, {
             text: content,
             width: size,
             height: size,
@@ -604,412 +591,134 @@ function generatePreview() {
             correctLevel: correctLevel
         });
         
+        // Wait for canvas to be created, then add download button
         setTimeout(function() {
             const canvas = qrDiv.querySelector('canvas');
             if (canvas) {
+                // Store data URL for form submission
                 document.getElementById('qrDataUrl').value = canvas.toDataURL();
                 
-                // Add info
+                // Add info section
                 const infoDiv = document.createElement('div');
-                infoDiv.className = 'qr-info';
+                infoDiv.style.cssText = 'margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; text-align: left;';
                 infoDiv.innerHTML = `
-                    <p><strong>Type:</strong> ${document.getElementById('qrType').value}</p>
-                    <p><strong>Size:</strong> ${size}px</p>
-                    ${document.getElementById('isDynamic').checked ? '<p><span class="badge badge-dynamic">🔄 Dynamic</span></p>' : ''}
-                    ${document.getElementById('hasPassword').checked ? '<p><span class="badge badge-secure">🔒 Protected</span></p>' : ''}
+                    <p style="margin: 5px 0;"><strong>Type:</strong> ${document.getElementById('qrType').value}</p>
+                    <p style="margin: 5px 0;"><strong>Size:</strong> ${size}x${size}px</p>
+                    <p style="margin: 5px 0;"><strong>Error Correction:</strong> ${errorCorrection} Level</p>
+                    ${document.getElementById('isDynamic').checked ? '<p style="margin: 5px 0;"><strong>🔄 Dynamic QR</strong> - URL can be changed later</p>' : ''}
+                    ${document.getElementById('hasPassword').checked ? '<p style="margin: 5px 0;"><strong>🔒 Password Protected</strong></p>' : ''}
+                    ${document.getElementById('hasExpiry').checked ? '<p style="margin: 5px 0;"><strong>⏰ Expires:</strong> ' + document.getElementById('expiresAt').value + '</p>' : ''}
                 `;
                 container.appendChild(infoDiv);
                 
-                addDownloadButton(qrDiv);
-                
-                // Apply frame style
-                applyFrameStyle(qrDiv);
+                // Add download button
+                const downloadBtn = document.createElement('button');
+                downloadBtn.className = 'btn btn-primary';
+                downloadBtn.innerHTML = '<i class="fas fa-download"></i> Download QR Code';
+                downloadBtn.style.marginTop = '20px';
+                downloadBtn.onclick = function() {
+                    const link = document.createElement('a');
+                    link.download = 'qrcode-' + Date.now() + '.png';
+                    link.href = canvas.toDataURL();
+                    link.click();
+                };
+                container.appendChild(downloadBtn);
             }
         }, 200);
         
     } catch (error) {
-        console.error('Error generating QR:', error);
+        console.error('Error generating QR code:', error);
+        alert('Error generating QR code. Please check your inputs and try again.');
     }
 }
 
-// Apply frame style to QR code
-function applyFrameStyle(qrDiv) {
-    const frameStyle = document.getElementById('frameStyle').value;
-    
-    // Remove any existing frame classes
-    qrDiv.className = 'qr-preview';
-    
-    if (frameStyle && frameStyle !== 'none') {
-        qrDiv.classList.add('qr-frame-' + frameStyle);
+// Auto-update preview on color/size change
+document.getElementById('qrColor').addEventListener('change', function() {
+    if (document.getElementById('qrDataUrl').value) {
+        generatePreview();
     }
-}
+});
 
-// Debounced live preview
-let previewTimeout;
-function debouncedPreview() {
-    clearTimeout(previewTimeout);
-    previewTimeout = setTimeout(generatePreview, 500);
-}
+document.getElementById('qrBgColor').addEventListener('change', function() {
+    if (document.getElementById('qrDataUrl').value) {
+        generatePreview();
+    }
+});
 
-// Live preview on all field changes
-const livePreviewFields = [
-    'contentField', 'qrType', 'qrSize', 'qrColor', 'qrBgColor', 'errorCorrection',
-    'frameStyle', 'cornerStyle', 'dotStyle',
-    'whatsappPhone', 'whatsappMessage',
-    'wifiSsid', 'wifiPassword', 'wifiEncryption',
-    'vcardName', 'vcardPhone', 'vcardEmail', 'vcardOrg',
-    'locationLat', 'locationLng',
-    'eventTitle', 'eventStart', 'eventEnd', 'eventLocation',
-    'paymentType', 'paymentAddress', 'paymentAmount'
-];
-
-livePreviewFields.forEach(fieldId => {
-    const field = document.getElementById(fieldId);
-    if (field) {
-        field.addEventListener('input', debouncedPreview);
-        field.addEventListener('change', debouncedPreview);
+document.getElementById('qrSize').addEventListener('change', function() {
+    if (document.getElementById('qrDataUrl').value) {
+        generatePreview();
     }
 });
 </script>
 
 <style>
-/* Futuristic AI Design Theme */
-:root {
-    --glow-color: rgba(153, 69, 255, 0.6);
-    --glow-cyan: rgba(0, 240, 255, 0.6);
-}
-
-/* Glassmorphism Cards */
-.glass-card {
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
-    padding: 30px;
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-    transition: all 0.3s ease;
-}
-
-[data-theme="light"] .glass-card {
-    background: rgba(255, 255, 255, 0.9);
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
-}
-
-.glass-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 40px 0 rgba(153, 69, 255, 0.3);
-}
-
-/* Section Titles */
-.section-title {
-    font-size: 24px;
-    font-weight: 600;
-    margin-bottom: 25px;
-    background: linear-gradient(135deg, var(--purple), var(--cyan));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.subsection-title {
-    font-size: 18px;
-    font-weight: 600;
-    margin-bottom: 20px;
-    color: var(--text-primary);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-/* Form Styling */
 .form-group {
     margin-bottom: 20px;
 }
 
 .form-label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 10px;
-    font-weight: 500;
-    color: var(--text-primary);
-    font-size: 14px;
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
 }
 
 .form-input,
 .form-select,
 .form-textarea {
     width: 100%;
-    padding: 12px 16px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
-    color: var(--text-primary);
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
     font-size: 14px;
-    transition: all 0.3s ease;
-}
-
-[data-theme="light"] .form-input,
-[data-theme="light"] .form-select,
-[data-theme="light"] .form-textarea {
-    background: #ffffff;
-    border: 1px solid #e0e0e0;
-    color: #1a1a1a;
+    transition: border-color 0.3s;
 }
 
 .form-input:focus,
 .form-select:focus,
 .form-textarea:focus {
     outline: none;
-    border-color: var(--purple);
-    box-shadow: 0 0 0 4px rgba(153, 69, 255, 0.1);
-    background: rgba(255, 255, 255, 0.08);
+    border-color: #7c3aed;
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
 }
 
-.color-input {
-    height: 50px;
-    cursor: pointer;
-}
-
-/* Feature Toggles */
-.feature-toggle {
-    margin-bottom: 20px;
-}
-
-.toggle-label {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    cursor: pointer;
-    padding: 15px;
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: 12px;
-    transition: all 0.3s ease;
-}
-
-.toggle-label:hover {
-    background: rgba(255, 255, 255, 0.05);
-}
-
-.toggle-input {
-    display: none;
-}
-
-.toggle-slider {
-    position: relative;
-    width: 50px;
-    height: 26px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 13px;
-    transition: all 0.3s ease;
-    flex-shrink: 0;
-}
-
-.toggle-slider::before {
-    content: '';
-    position: absolute;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: #fff;
-    top: 3px;
-    left: 3px;
-    transition: all 0.3s ease;
-}
-
-.toggle-input:checked + .toggle-slider {
-    background: linear-gradient(135deg, var(--purple), var(--cyan));
-}
-
-.toggle-input:checked + .toggle-slider::before {
-    transform: translateX(24px);
-}
-
-.toggle-text {
-    flex: 1;
-}
-
-.toggle-text strong {
-    display: block;
-    color: var(--text-primary);
-    font-size: 15px;
-    margin-bottom: 4px;
-}
-
-.toggle-text small {
-    display: block;
-    color: var(--text-secondary);
-    font-size: 12px;
-}
-
-/* Buttons */
 .btn {
-    padding: 14px 28px;
+    padding: 12px 24px;
     border: none;
-    border-radius: 12px;
-    font-size: 15px;
+    border-radius: 6px;
+    font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s ease;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    position: relative;
-    overflow: hidden;
+    transition: all 0.3s;
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, var(--purple), var(--cyan));
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
-    box-shadow: 0 4px 15px rgba(153, 69, 255, 0.4);
 }
 
 .btn-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(153, 69, 255, 0.6);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
 
-.btn-large {
-    width: 100%;
-    padding: 16px 32px;
-    font-size: 16px;
-}
-
-.btn-download {
-    margin-top: 20px;
-    background: linear-gradient(135deg, #667eea, #764ba2);
+.btn-secondary {
+    background: #6c757d;
     color: white;
 }
 
-.btn-shine {
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transition: left 0.5s;
+.btn-secondary:hover {
+    background: #5a6268;
 }
 
-.btn:hover .btn-shine {
-    left: 100%;
-}
-
-/* Preview Panel */
-.preview-panel {
-    position: sticky;
-    top: 80px;
-    max-height: calc(100vh - 100px);
-    overflow-y: auto;
-}
-
-.preview-container {
-    text-align: center;
-    min-height: 400px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-}
-
-.qr-preview {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 20px;
-    animation: fadeIn 0.5s ease;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: scale(0.9); }
-    to { opacity: 1; transform: scale(1); }
-}
-
-#qrcode {
-    padding: 20px;
+.card {
     background: white;
-    border-radius: 16px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-}
-
-.qr-info {
-    width: 100%;
-    padding: 20px;
-    background: rgba(255, 255, 255, 0.05);
     border-radius: 12px;
-    text-align: left;
+    padding: 30px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
-.qr-info p {
-    margin: 8px 0;
-    color: var(--text-primary);
-    font-size: 14px;
-}
-
-.badge {
-    display: inline-block;
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 600;
-    margin-top: 8px;
-}
-
-.badge-dynamic {
-    background: linear-gradient(135deg, #667eea, #764ba2);
-    color: white;
-}
-
-.badge-secure {
-    background: linear-gradient(135deg, #f093fb, #f5576c);
-    color: white;
-}
-
-/* Empty State */
-.empty-state {
-    text-align: center;
-    padding: 60px 20px;
-}
-
-.empty-icon {
-    font-size: 80px;
-    color: var(--purple);
-    opacity: 0.3;
-    margin-bottom: 20px;
-    animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-    0%, 100% { opacity: 0.3; transform: scale(1); }
-    50% { opacity: 0.5; transform: scale(1.05); }
-}
-
-.empty-title {
-    font-size: 18px;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 10px;
-}
-
-.empty-subtitle {
-    font-size: 14px;
-    color: var(--text-secondary);
-}
-
-/* Divider */
-.divider {
-    height: 1px;
-    background: linear-gradient(90deg, transparent, var(--border-color), transparent);
-    margin: 30px 0;
-}
-
-/* Grid */
 .grid {
     display: grid;
     gap: 30px;
@@ -1019,209 +728,28 @@ livePreviewFields.forEach(fieldId => {
     grid-template-columns: 1fr 1fr;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 768px) {
     .grid-2 {
         grid-template-columns: 1fr;
     }
-    
-    .preview-panel {
-        position: static;
-        max-height: none;
-    }
 }
 
-/* Notifications */
-.notification {
-    position: fixed;
-    top: 80px;
-    right: 20px;
-    padding: 16px 24px;
-    background: rgba(255, 255, 255, 0.95);
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-    z-index: 1000;
-    transform: translateX(400px);
-    transition: transform 0.3s ease;
+h4 {
+    color: #333;
+    font-size: 18px;
+    margin-bottom: 15px;
 }
 
-.notification.show {
-    transform: translateX(0);
+hr {
+    margin: 30px 0;
+    border: none;
+    border-top: 1px solid #eee;
 }
 
-.notification-success {
-    background: linear-gradient(135deg, #00ff88, #00d4ff);
-    color: white;
-}
-
-.notification-error {
-    background: linear-gradient(135deg, #ff2ec4, #ff6b6b);
-    color: white;
-}
-
-/* Back Link */
-.back-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    color: var(--text-secondary);
-    text-decoration: none;
-    margin-bottom: 20px;
-    transition: all 0.3s ease;
-}
-
-.back-link:hover {
-    color: var(--purple);
-    transform: translateX(-4px);
-}
-
-/* Small text */
 small {
     font-size: 12px;
-    color: var(--text-secondary);
+    color: #666;
     display: block;
     margin-top: 5px;
-}
-
-/* Frame Styles for QR Codes */
-.qr-preview {
-    display: inline-block;
-    transition: all 0.3s ease;
-}
-
-/* Square Frame */
-.qr-frame-square {
-    padding: 20px;
-    border: 4px solid var(--purple);
-    border-radius: 8px;
-    background: white;
-    box-shadow: 0 8px 20px rgba(153, 69, 255, 0.2);
-}
-
-/* Circle Frame */
-.qr-frame-circle {
-    padding: 20px;
-    border: 4px solid var(--cyan);
-    border-radius: 50%;
-    background: white;
-    box-shadow: 0 8px 20px rgba(0, 240, 255, 0.2);
-    overflow: hidden;
-}
-
-.qr-frame-circle canvas,
-.qr-frame-circle img {
-    border-radius: 50%;
-}
-
-/* Rounded Corners Frame */
-.qr-frame-rounded {
-    padding: 20px;
-    border: 3px solid transparent;
-    border-radius: 24px;
-    background: linear-gradient(white, white) padding-box,
-                linear-gradient(135deg, var(--purple), var(--cyan)) border-box;
-    box-shadow: 0 8px 24px rgba(153, 69, 255, 0.3);
-}
-
-/* Banner Top Frame */
-.qr-frame-banner-top {
-    padding: 50px 20px 20px 20px;
-    border: 3px solid var(--purple);
-    border-radius: 12px;
-    background: white;
-    position: relative;
-    box-shadow: 0 8px 20px rgba(153, 69, 255, 0.2);
-}
-
-.qr-frame-banner-top::before {
-    content: 'SCAN ME';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    background: linear-gradient(135deg, var(--purple), var(--cyan));
-    color: white;
-    text-align: center;
-    padding: 8px;
-    font-weight: bold;
-    font-size: 12px;
-    letter-spacing: 2px;
-    border-radius: 8px 8px 0 0;
-}
-
-/* Banner Bottom Frame */
-.qr-frame-banner-bottom {
-    padding: 20px 20px 50px 20px;
-    border: 3px solid var(--cyan);
-    border-radius: 12px;
-    background: white;
-    position: relative;
-    box-shadow: 0 8px 20px rgba(0, 240, 255, 0.2);
-}
-
-.qr-frame-banner-bottom::after {
-    content: 'SCAN ME';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: linear-gradient(135deg, var(--cyan), var(--purple));
-    color: white;
-    text-align: center;
-    padding: 8px;
-    font-weight: bold;
-    font-size: 12px;
-    letter-spacing: 2px;
-    border-radius: 0 0 8px 8px;
-}
-
-/* Speech Bubble Frame */
-.qr-frame-bubble {
-    padding: 20px;
-    border: 3px solid var(--purple);
-    border-radius: 20px;
-    background: white;
-    position: relative;
-    box-shadow: 0 8px 20px rgba(153, 69, 255, 0.2);
-    margin-bottom: 30px;
-}
-
-.qr-frame-bubble::after {
-    content: '';
-    position: absolute;
-    bottom: -25px;
-    left: 30px;
-    width: 0;
-    height: 0;
-    border-left: 15px solid transparent;
-    border-right: 15px solid transparent;
-    border-top: 25px solid var(--purple);
-}
-
-/* Badge Style Frame */
-.qr-frame-badge {
-    padding: 25px;
-    border: 4px solid var(--purple);
-    border-radius: 50% 50% 50% 10px;
-    background: white;
-    position: relative;
-    box-shadow: 0 8px 20px rgba(153, 69, 255, 0.3);
-}
-
-.qr-frame-badge::before {
-    content: '✓';
-    position: absolute;
-    top: -10px;
-    right: -10px;
-    width: 30px;
-    height: 30px;
-    background: linear-gradient(135deg, var(--purple), var(--cyan));
-    color: white;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    font-size: 18px;
-    box-shadow: 0 4px 12px rgba(153, 69, 255, 0.4);
 }
 </style>
