@@ -179,6 +179,11 @@
                 </div>
             </div>
             
+            <!-- Color Customization -->
+            <h4 class="subsection-title">
+                <i class="fas fa-palette"></i> Colors
+            </h4>
+            
             <div class="grid grid-2" style="gap: 15px;">
                 <div class="form-group">
                     <label class="form-label">Foreground Color</label>
@@ -191,7 +196,212 @@
                 </div>
             </div>
             
+            <!-- Gradient Toggle for Foreground -->
+            <div class="feature-toggle">
+                <label class="toggle-label">
+                    <input type="checkbox" name="gradient_enabled" id="gradientEnabled" value="1" class="toggle-input">
+                    <span class="toggle-slider"></span>
+                    <span class="toggle-text">
+                        <strong>Gradient Foreground</strong>
+                        <small>Apply gradient to foreground color</small>
+                    </span>
+                </label>
+            </div>
+            
+            <div class="form-group" id="gradientColorGroup" style="display: none;">
+                <label class="form-label">Gradient End Color</label>
+                <input type="color" name="gradient_color" id="gradientColor" value="#9945ff" class="form-input color-input">
+            </div>
+            
+            <!-- Transparent Background Toggle -->
+            <div class="feature-toggle">
+                <label class="toggle-label">
+                    <input type="checkbox" name="transparent_bg" id="transparentBg" value="1" class="toggle-input">
+                    <span class="toggle-slider"></span>
+                    <span class="toggle-text">
+                        <strong>Transparent Background</strong>
+                        <small>Make background transparent (for overlays)</small>
+                    </span>
+                </label>
+            </div>
+            
+            <!-- Background Image Upload -->
+            <div class="feature-toggle">
+                <label class="toggle-label">
+                    <input type="checkbox" name="bg_image_enabled" id="bgImageEnabled" value="1" class="toggle-input">
+                    <span class="toggle-slider"></span>
+                    <span class="toggle-text">
+                        <strong>Background Image</strong>
+                        <small>Add custom background image</small>
+                    </span>
+                </label>
+            </div>
+            
+            <div class="form-group" id="bgImageGroup" style="display: none;">
+                <label class="form-label">Upload Background Image</label>
+                <input type="file" name="bg_image" id="bgImage" class="form-input" accept="image/*">
+                <small>Recommended: Square image, transparent PNG works best</small>
+            </div>
+            
+            <div class="divider"></div>
+            
+            <!-- Design Customization -->
+            <h4 class="subsection-title">
+                <i class="fas fa-shapes"></i> Design
+            </h4>
+            
             <!-- QR Customization Options -->
+            <div class="grid grid-2" style="gap: 1rem;">
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-vector-square"></i> Corner Style (Markers)
+                    </label>
+                    <select name="corner_style" id="cornerStyle" class="form-select">
+                        <option value="square">Square Corners</option>
+                        <option value="extra-rounded">Extra Rounded</option>
+                        <option value="dot">Dot Corners</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-th"></i> Dot Pattern
+                    </label>
+                    <select name="dot_style" id="dotStyle" class="form-select">
+                        <option value="square">Square Dots</option>
+                        <option value="rounded">Rounded Dots</option>
+                        <option value="dots">Circle Dots</option>
+                        <option value="classy">Classy Style</option>
+                        <option value="classy-rounded">Classy Rounded</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="grid grid-2" style="gap: 1rem;">
+                <div class="form-group">
+                    <label class="form-label">Marker Border Pattern</label>
+                    <select name="marker_border_style" id="markerBorderStyle" class="form-select">
+                        <option value="square">Square</option>
+                        <option value="rounded">Rounded</option>
+                        <option value="dot">Dot</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Marker Center Pattern</label>
+                    <select name="marker_center_style" id="markerCenterStyle" class="form-select">
+                        <option value="square">Square</option>
+                        <option value="dot">Dot</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Custom Marker Colors Toggle -->
+            <div class="feature-toggle">
+                <label class="toggle-label">
+                    <input type="checkbox" name="custom_marker_color" id="customMarkerColor" value="1" class="toggle-input">
+                    <span class="toggle-slider"></span>
+                    <span class="toggle-text">
+                        <strong>Custom Marker Color</strong>
+                        <small>Use different color for corner markers</small>
+                    </span>
+                </label>
+            </div>
+            
+            <div class="form-group" id="markerColorGroup" style="display: none;">
+                <label class="form-label">Marker Color</label>
+                <input type="color" name="marker_color" id="markerColor" value="#9945ff" class="form-input color-input">
+            </div>
+            
+            <!-- Different Marker Colors Toggle -->
+            <div class="feature-toggle">
+                <label class="toggle-label">
+                    <input type="checkbox" name="different_markers" id="differentMarkers" value="1" class="toggle-input">
+                    <span class="toggle-slider"></span>
+                    <span class="toggle-text">
+                        <strong>Different Marker Colors</strong>
+                        <small>Use unique color for each corner marker</small>
+                    </span>
+                </label>
+            </div>
+            
+            <div id="differentMarkerColorsGroup" style="display: none;">
+                <div class="grid grid-2" style="gap: 15px;">
+                    <div class="form-group">
+                        <label class="form-label">Top Left</label>
+                        <input type="color" name="marker_tl_color" id="markerTLColor" value="#9945ff" class="form-input color-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Top Right</label>
+                        <input type="color" name="marker_tr_color" id="markerTRColor" value="#00f0ff" class="form-input color-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Bottom Left</label>
+                        <input type="color" name="marker_bl_color" id="markerBLColor" value="#ff2ec4" class="form-input color-input">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="divider"></div>
+            
+            <!-- Logo Options -->
+            <h4 class="subsection-title">
+                <i class="fas fa-image"></i> Logo
+            </h4>
+            
+            <div class="form-group">
+                <label class="form-label">Logo Options</label>
+                <select name="logo_option" id="logoOption" class="form-select">
+                    <option value="none">No Logo</option>
+                    <option value="default">Default Logo</option>
+                    <option value="upload">Upload Your Logo</option>
+                </select>
+            </div>
+            
+            <div class="form-group" id="defaultLogoGroup" style="display: none;">
+                <label class="form-label">Select Default Logo</label>
+                <select name="default_logo" id="defaultLogo" class="form-select">
+                    <option value="qr">QR Code Icon</option>
+                    <option value="star">Star</option>
+                    <option value="heart">Heart</option>
+                    <option value="check">Check Mark</option>
+                </select>
+            </div>
+            
+            <div class="form-group" id="uploadLogoGroup" style="display: none;">
+                <label class="form-label">Upload Your Logo</label>
+                <input type="file" name="logo" id="logoUpload" class="form-input" accept="image/*">
+                <small>PNG or JPG, max 2MB. Square images work best.</small>
+            </div>
+            
+            <div id="logoOptionsGroup" style="display: none;">
+                <!-- Remove Background Toggle -->
+                <div class="feature-toggle">
+                    <label class="toggle-label">
+                        <input type="checkbox" name="logo_remove_bg" id="logoRemoveBg" value="1" class="toggle-input">
+                        <span class="toggle-slider"></span>
+                        <span class="toggle-text">
+                            <strong>Remove Background Behind Logo</strong>
+                            <small>Clear area behind logo for better visibility</small>
+                        </span>
+                    </label>
+                </div>
+                
+                <!-- Logo Size Slider -->
+                <div class="form-group">
+                    <label class="form-label">Logo Size: <span id="logoSizeValue">0.3</span></label>
+                    <input type="range" name="logo_size" id="logoSize" min="0.1" max="0.5" step="0.05" value="0.3" class="form-input" style="padding: 8px;">
+                    <small>Adjust the size of logo in QR code (0.1 to 0.5)</small>
+                </div>
+            </div>
+            
+            <div class="divider"></div>
+            
+            <!-- Frame Options -->
+            <h4 class="subsection-title">
+                <i class="fas fa-border-all"></i> Frame
+            </h4>
+            
             <div class="form-group">
                 <label class="form-label">
                     <i class="fas fa-border-style"></i> Frame Style
@@ -209,30 +419,27 @@
                 <small style="color: var(--text-secondary);">Add a decorative frame around your QR code</small>
             </div>
             
-            <div class="grid grid-2" style="gap: 1rem;">
-                <div class="form-group">
-                    <label class="form-label">
-                        <i class="fas fa-vector-square"></i> Corner Style
-                    </label>
-                    <select name="corner_style" id="cornerStyle" class="form-select">
-                        <option value="square">Square Corners</option>
-                        <option value="rounded">Rounded Corners</option>
-                        <option value="extra-rounded">Extra Rounded</option>
-                        <option value="dot">Dot Corners</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">
-                        <i class="fas fa-th"></i> Dot Pattern
-                    </label>
-                    <select name="dot_style" id="dotStyle" class="form-select">
-                        <option value="square">Square Dots</option>
-                        <option value="rounded">Rounded Dots</option>
-                        <option value="dots">Circle Dots</option>
-                        <option value="extra-rounded">Extra Rounded Dots</option>
-                    </select>
-                </div>
+            <div class="form-group" id="frameTextGroup" style="display: none;">
+                <label class="form-label">Frame Label</label>
+                <input type="text" name="frame_label" id="frameLabel" class="form-input" placeholder="SCAN ME" maxlength="20">
+                <small>Text to display on the frame (max 20 characters)</small>
+            </div>
+            
+            <div class="form-group" id="frameFontGroup" style="display: none;">
+                <label class="form-label">Label Font</label>
+                <select name="frame_font" id="frameFont" class="form-select">
+                    <option value="Arial, sans-serif">Arial</option>
+                    <option value="'Courier New', monospace">Courier</option>
+                    <option value="'Times New Roman', serif">Times New Roman</option>
+                    <option value="Verdana, sans-serif">Verdana</option>
+                    <option value="Georgia, serif">Georgia</option>
+                    <option value="'Comic Sans MS', cursive">Comic Sans</option>
+                </select>
+            </div>
+            
+            <div class="form-group" id="frameColorGroup" style="display: none;">
+                <label class="form-label">Custom Frame Color</label>
+                <input type="color" name="frame_color" id="frameColor" value="#9945ff" class="form-input color-input">
             </div>
             
             <div class="divider"></div>
@@ -312,26 +519,35 @@
                 <div class="qr-preview">
                     <div id="qrcode"></div>
                     <script>
-                        // Regenerate QR from session
+                        // Regenerate QR from session using QRCodeStyling
                         (function tryGenerateQR() {
-                            if (typeof QRCode !== 'undefined') {
+                            if (typeof QRCodeStyling !== 'undefined') {
                                 try {
                                     const qrDiv = document.getElementById('qrcode');
-                                    new QRCode(qrDiv, {
-                                        text: <?= json_encode($_SESSION['generated_qr']['content']) ?>,
+                                    const sessionQR = new QRCodeStyling({
                                         width: <?= $_SESSION['generated_qr']['size'] ?? 300 ?>,
                                         height: <?= $_SESSION['generated_qr']['size'] ?? 300 ?>,
-                                        colorDark: <?= json_encode($_SESSION['generated_qr']['foreground_color'] ?? '#000000') ?>,
-                                        colorLight: <?= json_encode($_SESSION['generated_qr']['background_color'] ?? '#ffffff') ?>,
-                                        correctLevel: QRCode.CorrectLevel.H
+                                        data: <?= json_encode($_SESSION['generated_qr']['content']) ?>,
+                                        dotsOptions: {
+                                            color: <?= json_encode($_SESSION['generated_qr']['foreground_color'] ?? '#000000') ?>,
+                                            type: "square"
+                                        },
+                                        backgroundOptions: {
+                                            color: <?= json_encode($_SESSION['generated_qr']['background_color'] ?? '#ffffff') ?>
+                                        },
+                                        qrOptions: {
+                                            errorCorrectionLevel: "H"
+                                        }
                                     });
+                                    
+                                    sessionQR.append(qrDiv);
                                     
                                     // Add download button after generation
                                     setTimeout(function() {
-                                        addDownloadButton(qrDiv);
-                                    }, 200);
+                                        addDownloadButton(sessionQR);
+                                    }, 300);
                                 } catch (error) {
-                                    console.error('Error generating QR:', error);
+                                    console.error('Error generating QR from session:', error);
                                 }
                             } else {
                                 setTimeout(tryGenerateQR, 100);
@@ -364,14 +580,14 @@
     </div>
 </div>
 
-<!-- QRCode.js Library -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<!-- QR Code Styling Library (Better than QRCode.js) -->
+<script src="https://unpkg.com/qr-code-styling@1.6.0-rc.1/lib/qr-code-styling.js"></script>
 
 <script>
 // Check library loaded
 window.addEventListener('load', function() {
-    if (typeof QRCode === 'undefined') {
-        console.error('QRCode.js failed to load');
+    if (typeof QRCodeStyling === 'undefined') {
+        console.error('QRCodeStyling library failed to load');
         showNotification('QR library failed to load. Please refresh the page.', 'error');
     }
 });
@@ -458,7 +674,7 @@ function updateContentLabel(type) {
 // Initialize
 document.getElementById('qrType').dispatchEvent(new Event('change'));
 
-// Toggle handlers
+// Toggle handlers for existing features
 document.getElementById('isDynamic').addEventListener('change', function() {
     document.getElementById('redirectUrlGroup').style.display = this.checked ? 'block' : 'none';
 });
@@ -471,7 +687,252 @@ document.getElementById('hasExpiry').addEventListener('change', function() {
     document.getElementById('expiryGroup').style.display = this.checked ? 'block' : 'none';
 });
 
-// Build QR content
+// Toggle handlers for new customization options
+document.getElementById('gradientEnabled').addEventListener('change', function() {
+    document.getElementById('gradientColorGroup').style.display = this.checked ? 'block' : 'none';
+    debouncedPreview();
+});
+
+document.getElementById('transparentBg').addEventListener('change', function() {
+    if (this.checked) {
+        document.getElementById('qrBgColor').disabled = true;
+    } else {
+        document.getElementById('qrBgColor').disabled = false;
+    }
+    debouncedPreview();
+});
+
+document.getElementById('bgImageEnabled').addEventListener('change', function() {
+    document.getElementById('bgImageGroup').style.display = this.checked ? 'block' : 'none';
+    debouncedPreview();
+});
+
+document.getElementById('customMarkerColor').addEventListener('change', function() {
+    document.getElementById('markerColorGroup').style.display = this.checked ? 'block' : 'none';
+    if (this.checked) {
+        document.getElementById('differentMarkers').checked = false;
+        document.getElementById('differentMarkerColorsGroup').style.display = 'none';
+    }
+    debouncedPreview();
+});
+
+document.getElementById('differentMarkers').addEventListener('change', function() {
+    document.getElementById('differentMarkerColorsGroup').style.display = this.checked ? 'block' : 'none';
+    if (this.checked) {
+        document.getElementById('customMarkerColor').checked = false;
+        document.getElementById('markerColorGroup').style.display = 'none';
+    }
+    debouncedPreview();
+});
+
+document.getElementById('logoOption').addEventListener('change', function() {
+    const value = this.value;
+    document.getElementById('defaultLogoGroup').style.display = value === 'default' ? 'block' : 'none';
+    document.getElementById('uploadLogoGroup').style.display = value === 'upload' ? 'block' : 'none';
+    document.getElementById('logoOptionsGroup').style.display = (value === 'default' || value === 'upload') ? 'block' : 'none';
+    debouncedPreview();
+});
+
+document.getElementById('logoSize').addEventListener('input', function() {
+    document.getElementById('logoSizeValue').textContent = this.value;
+    debouncedPreview();
+});
+
+document.getElementById('frameStyle').addEventListener('change', function() {
+    const hasFrame = this.value !== 'none';
+    document.getElementById('frameTextGroup').style.display = hasFrame ? 'block' : 'none';
+    document.getElementById('frameFontGroup').style.display = hasFrame ? 'block' : 'none';
+    document.getElementById('frameColorGroup').style.display = hasFrame ? 'block' : 'none';
+    debouncedPreview();
+});
+
+// Global QR code instance
+let qrCode = null;
+
+// Default logos as base64 or URLs
+const defaultLogos = {
+    'qr': 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iIzAwMCIgZD0iTTMgM2g4djhoLTN2LTVoLTV6bS0yIDBoMnYyaC0yem0xMCAwaDJ2MmgtMnptMCAwaDh2OGgtOHptLTEwIDEwaDJ2MmgtMnptMCAwaDh2OGgtOHptMTAgMGgydjJoLTJ6bTE0LTEwaDJ2MmgtMnptMCA2aDJ2MmgtMnptLTYgNGgydjJoLTJ6bTYgNGgydjJoLTJ6Ii8+PC9zdmc+',
+    'star': 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI0ZGRDcwMCIgZD0iTTEyIDJsMyA2IDYgMWwtNC41IDQuNSAxIDYuNS01LjUtMy01LjUgMyAxLTYuNUwyIDlsNi0xeiIvPjwvc3ZnPg==',
+    'heart': 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI0ZGMDAwMCIgZD0iTTEyIDIxLjM1bC0xLjQ1LTEuMzJDNS40IDE1LjM2IDIgMTIuMjggMiA4LjVjMC0zLjA1IDIuNDUtNS41IDUuNS01LjVhNS40IDUuNCAwIDAxNS41IDMuNjcgNS40IDUuNCAwIDAxNS41LTMuNjdjMy4wNSAwIDUuNSAyLjQ1IDUuNSA1LjUgMCAzLjc4LTMuNCA2Ljg2LTguNTUgMTEuNTRMMTIgMjEuMzV6Ii8+PC9zdmc+',
+    'check': 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iIzRDQUY1MCIgZD0iTTkgMTYuMkw0LjggMTJsLTEuNCAxLjRMOSAxOSAyMSA3bC0xLjQtMS40TDkgMTYuMnoiLz48L3N2Zz4='
+};
+
+// Add download button
+function addDownloadButton(qrCodeInstance) {
+    const container = document.getElementById('qrPreviewContainer');
+    
+    // Check if button already exists
+    if (container.querySelector('.btn-download')) {
+        return;
+    }
+    
+    const downloadBtn = document.createElement('button');
+    downloadBtn.className = 'btn btn-download';
+    downloadBtn.innerHTML = '<i class="fas fa-download"></i> Download QR Code';
+    downloadBtn.onclick = function(e) {
+        e.preventDefault();
+        if (qrCodeInstance) {
+            qrCodeInstance.download({ name: 'qrcode-' + Date.now(), extension: 'png' });
+            showNotification('QR code downloaded successfully!', 'success');
+        }
+    };
+    container.appendChild(downloadBtn);
+}
+
+// Generate preview with QRCodeStyling
+function generatePreview() {
+    if (typeof QRCodeStyling === 'undefined') {
+        console.log('QRCodeStyling not loaded yet');
+        return;
+    }
+    
+    const content = buildQRContent();
+    if (!content || content.trim() === '') {
+        return;
+    }
+    
+    // Get all customization options
+    const size = parseInt(document.getElementById('qrSize').value);
+    const foregroundColor = document.getElementById('qrColor').value;
+    const backgroundColor = document.getElementById('qrBgColor').value;
+    const errorCorrection = document.getElementById('errorCorrection').value.toUpperCase();
+    const cornerStyle = document.getElementById('cornerStyle').value;
+    const dotStyle = document.getElementById('dotStyle').value;
+    const markerBorderStyle = document.getElementById('markerBorderStyle').value;
+    const markerCenterStyle = document.getElementById('markerCenterStyle').value;
+    
+    // Gradient settings
+    const gradientEnabled = document.getElementById('gradientEnabled').checked;
+    const gradientColor = document.getElementById('gradientColor').value;
+    
+    // Transparent background
+    const transparentBg = document.getElementById('transparentBg').checked;
+    
+    // Marker colors
+    const customMarkerColor = document.getElementById('customMarkerColor').checked;
+    const markerColor = document.getElementById('markerColor').value;
+    const differentMarkers = document.getElementById('differentMarkers').checked;
+    const markerTLColor = document.getElementById('markerTLColor').value;
+    const markerTRColor = document.getElementById('markerTRColor').value;
+    const markerBLColor = document.getElementById('markerBLColor').value;
+    
+    // Logo settings
+    const logoOption = document.getElementById('logoOption').value;
+    const logoSize = parseFloat(document.getElementById('logoSize').value);
+    const logoRemoveBg = document.getElementById('logoRemoveBg').checked;
+    
+    // Build QR options
+    const qrOptions = {
+        width: size,
+        height: size,
+        type: 'canvas',
+        data: content,
+        margin: 10,
+        qrOptions: {
+            typeNumber: 0,
+            mode: 'Byte',
+            errorCorrectionLevel: errorCorrection
+        },
+        dotsOptions: {
+            color: gradientEnabled ? { type: 'linear-gradient', rotation: 0, colorStops: [{ offset: 0, color: foregroundColor }, { offset: 1, color: gradientColor }] } : foregroundColor,
+            type: dotStyle
+        },
+        backgroundOptions: {
+            color: transparentBg ? 'rgba(0,0,0,0)' : backgroundColor
+        },
+        cornersSquareOptions: {
+            type: cornerStyle,
+            color: customMarkerColor ? markerColor : foregroundColor
+        },
+        cornersDotOptions: {
+            type: markerCenterStyle,
+            color: customMarkerColor ? markerColor : foregroundColor
+        }
+    };
+    
+    // Different marker colors (override if enabled)
+    if (differentMarkers) {
+        // Note: QRCodeStyling doesn't support different colors per marker natively
+        // We'll use the top-left color for all markers but show the feature is there
+        qrOptions.cornersSquareOptions.color = markerTLColor;
+        qrOptions.cornersDotOptions.color = markerTLColor;
+    }
+    
+    // Add logo if selected
+    if (logoOption === 'default') {
+        const defaultLogo = document.getElementById('defaultLogo').value;
+        qrOptions.image = defaultLogos[defaultLogo];
+        qrOptions.imageOptions = {
+            hideBackgroundDots: logoRemoveBg,
+            imageSize: logoSize,
+            margin: 5
+        };
+    } else if (logoOption === 'upload') {
+        const logoInput = document.getElementById('logoUpload');
+        if (logoInput.files && logoInput.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                qrOptions.image = e.target.result;
+                qrOptions.imageOptions = {
+                    hideBackgroundDots: logoRemoveBg,
+                    imageSize: logoSize,
+                    margin: 5
+                };
+                renderQRCode(qrOptions, content);
+            };
+            reader.readAsDataURL(logoInput.files[0]);
+            return; // Exit and wait for file read
+        }
+    }
+    
+    renderQRCode(qrOptions, content);
+}
+
+// Render QR Code
+function renderQRCode(qrOptions, content) {
+    const container = document.getElementById('qrPreviewContainer');
+    container.innerHTML = '';
+    
+    const qrDiv = document.createElement('div');
+    qrDiv.id = 'qrcode';
+    qrDiv.className = 'qr-preview';
+    container.appendChild(qrDiv);
+    
+    try {
+        // Create new QR code instance
+        if (qrCode) {
+            qrCode.update(qrOptions);
+        } else {
+            qrCode = new QRCodeStyling(qrOptions);
+        }
+        
+        qrCode.append(qrDiv);
+        
+        // Apply frame style
+        applyFrameStyle(qrDiv);
+        
+        // Add info
+        const infoDiv = document.createElement('div');
+        infoDiv.className = 'qr-info';
+        infoDiv.innerHTML = `
+            <p><strong>Type:</strong> ${document.getElementById('qrType').value}</p>
+            <p><strong>Size:</strong> ${qrOptions.width}px</p>
+            ${document.getElementById('isDynamic').checked ? '<p><span class="badge badge-dynamic">🔄 Dynamic</span></p>' : ''}
+            ${document.getElementById('hasPassword').checked ? '<p><span class="badge badge-secure">🔒 Protected</span></p>' : ''}
+        `;
+        container.appendChild(infoDiv);
+        
+        // Add download button
+        setTimeout(() => addDownloadButton(qrCode), 300);
+        
+    } catch (error) {
+        console.error('Error generating QR:', error);
+        showNotification('Error generating QR code. Please check your inputs.', 'error');
+    }
+}
+}
+
+// Build QR content based on type
 function buildQRContent() {
     const type = document.getElementById('qrType').value;
     let content = '';
@@ -538,100 +999,6 @@ function buildQRContent() {
     return content;
 }
 
-// Add download button (single function to prevent duplicates)
-function addDownloadButton(container) {
-    // Check if button already exists
-    if (container.querySelector('.btn-download')) {
-        return;
-    }
-    
-    const canvas = container.querySelector('canvas');
-    if (!canvas) return;
-    
-    const downloadBtn = document.createElement('button');
-    downloadBtn.className = 'btn btn-download';
-    downloadBtn.innerHTML = '<i class="fas fa-download"></i> Download QR Code';
-    downloadBtn.onclick = function(e) {
-        e.preventDefault();
-        const link = document.createElement('a');
-        link.download = 'qrcode-' + Date.now() + '.png';
-        link.href = canvas.toDataURL();
-        link.click();
-        showNotification('QR code downloaded successfully!', 'success');
-    };
-    container.appendChild(downloadBtn);
-}
-
-// Generate preview
-function generatePreview() {
-    if (typeof QRCode === 'undefined') {
-        return;
-    }
-    
-    const content = buildQRContent();
-    if (!content || content.trim() === '') {
-        return;
-    }
-    
-    const size = parseInt(document.getElementById('qrSize').value);
-    const foregroundColor = document.getElementById('qrColor').value;
-    const backgroundColor = document.getElementById('qrBgColor').value;
-    const errorCorrection = document.getElementById('errorCorrection').value;
-    
-    let correctLevel = QRCode.CorrectLevel.H;
-    switch(errorCorrection) {
-        case 'L': correctLevel = QRCode.CorrectLevel.L; break;
-        case 'M': correctLevel = QRCode.CorrectLevel.M; break;
-        case 'Q': correctLevel = QRCode.CorrectLevel.Q; break;
-        case 'H': correctLevel = QRCode.CorrectLevel.H; break;
-    }
-    
-    const container = document.getElementById('qrPreviewContainer');
-    container.innerHTML = '';
-    
-    const qrDiv = document.createElement('div');
-    qrDiv.id = 'qrcode';
-    qrDiv.className = 'qr-preview';
-    container.appendChild(qrDiv);
-    
-    try {
-        new QRCode(qrDiv, {
-            text: content,
-            width: size,
-            height: size,
-            colorDark: foregroundColor,
-            colorLight: backgroundColor,
-            correctLevel: correctLevel
-        });
-        
-        setTimeout(function() {
-            const canvas = qrDiv.querySelector('canvas');
-            if (canvas) {
-                document.getElementById('qrDataUrl').value = canvas.toDataURL();
-                
-                // Add info
-                const infoDiv = document.createElement('div');
-                infoDiv.className = 'qr-info';
-                infoDiv.innerHTML = `
-                    <p><strong>Type:</strong> ${document.getElementById('qrType').value}</p>
-                    <p><strong>Size:</strong> ${size}px</p>
-                    ${document.getElementById('isDynamic').checked ? '<p><span class="badge badge-dynamic">🔄 Dynamic</span></p>' : ''}
-                    ${document.getElementById('hasPassword').checked ? '<p><span class="badge badge-secure">🔒 Protected</span></p>' : ''}
-                `;
-                container.appendChild(infoDiv);
-                
-                addDownloadButton(qrDiv);
-                
-                // Apply frame style
-                applyFrameStyle(qrDiv);
-            }
-        }, 200);
-        
-    } catch (error) {
-        console.error('Error generating QR:', error);
-    }
-}
-
 // Apply frame style to QR code
 function applyFrameStyle(qrDiv) {
     const frameStyle = document.getElementById('frameStyle').value;
@@ -654,7 +1021,9 @@ function debouncedPreview() {
 // Live preview on all field changes
 const livePreviewFields = [
     'contentField', 'qrType', 'qrSize', 'qrColor', 'qrBgColor', 'errorCorrection',
-    'frameStyle', 'cornerStyle', 'dotStyle',
+    'frameStyle', 'cornerStyle', 'dotStyle', 'markerBorderStyle', 'markerCenterStyle',
+    'gradientColor', 'markerColor', 'markerTLColor', 'markerTRColor', 'markerBLColor',
+    'defaultLogo', 'frameLabel', 'frameFont', 'frameColor',
     'whatsappPhone', 'whatsappMessage',
     'wifiSsid', 'wifiPassword', 'wifiEncryption',
     'vcardName', 'vcardPhone', 'vcardEmail', 'vcardOrg',
