@@ -760,14 +760,6 @@
 <script src="https://unpkg.com/qr-code-styling@1.6.0-rc.1/lib/qr-code-styling.js"></script>
 
 <script>
-// Check library loaded
-window.addEventListener('load', function() {
-    if (typeof QRCodeStyling === 'undefined') {
-        console.error('QRCodeStyling library failed to load');
-        showNotification('QR library failed to load. Please refresh the page.', 'error');
-    }
-});
-
 // Central QR Configuration Object
 const qrConfig = {
     dotStyle: 'dots',
@@ -799,7 +791,9 @@ function selectPreset(presetType, value) {
     }
     
     // Trigger preview update
-    debouncedPreview();
+    if (typeof debouncedPreview === 'function') {
+        debouncedPreview();
+    }
 }
 
 // Notification system
@@ -816,8 +810,22 @@ function showNotification(message, type = 'info') {
     }, 3000);
 }
 
+// Initialize all event listeners when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Initializing QR Generator...');
+    
+    // Check library loaded
+    window.addEventListener('load', function() {
+        if (typeof QRCodeStyling === 'undefined') {
+            console.error('QRCodeStyling library failed to load');
+            showNotification('QR library failed to load. Please refresh the page.', 'error');
+        }
+    });
+
 // Handle QR type change
-document.getElementById('qrType').addEventListener('change', function() {
+const qrTypeElement = document.getElementById('qrType');
+if (qrTypeElement) {
+    qrTypeElement.addEventListener('change', function() {
     const type = this.value;
     
     // Hide all field groups
@@ -881,80 +889,160 @@ function updateContentLabel(type) {
     }
 }
 
-// Initialize
-document.getElementById('qrType').dispatchEvent(new Event('change'));
+// Initialize qrType to show correct fields
+const qrTypeInitElement = document.getElementById('qrType');
+if (qrTypeInitElement) {
+    qrTypeInitElement.dispatchEvent(new Event('change'));
+}
 
 // Toggle handlers for existing features
-document.getElementById('isDynamic').addEventListener('change', function() {
-    document.getElementById('redirectUrlGroup').style.display = this.checked ? 'block' : 'none';
-});
+const isDynamicEl = document.getElementById('isDynamic');
+if (isDynamicEl) {
+    isDynamicEl.addEventListener('change', function() {
+        const redirectUrlGroup = document.getElementById('redirectUrlGroup');
+        if (redirectUrlGroup) {
+            redirectUrlGroup.style.display = this.checked ? 'block' : 'none';
+        }
+    });
+}
 
-document.getElementById('hasPassword').addEventListener('change', function() {
-    document.getElementById('passwordGroup').style.display = this.checked ? 'block' : 'none';
-});
+const hasPasswordEl = document.getElementById('hasPassword');
+if (hasPasswordEl) {
+    hasPasswordEl.addEventListener('change', function() {
+        const passwordGroup = document.getElementById('passwordGroup');
+        if (passwordGroup) {
+            passwordGroup.style.display = this.checked ? 'block' : 'none';
+        }
+    });
+}
 
-document.getElementById('hasExpiry').addEventListener('change', function() {
-    document.getElementById('expiryGroup').style.display = this.checked ? 'block' : 'none';
-});
+const hasExpiryEl = document.getElementById('hasExpiry');
+if (hasExpiryEl) {
+    hasExpiryEl.addEventListener('change', function() {
+        const expiryGroup = document.getElementById('expiryGroup');
+        if (expiryGroup) {
+            expiryGroup.style.display = this.checked ? 'block' : 'none';
+        }
+    });
+}
 
 // Toggle handlers for new customization options
-document.getElementById('gradientEnabled').addEventListener('change', function() {
-    document.getElementById('gradientColorGroup').style.display = this.checked ? 'block' : 'none';
-    debouncedPreview();
-});
+const gradientEnabledEl = document.getElementById('gradientEnabled');
+if (gradientEnabledEl) {
+    gradientEnabledEl.addEventListener('change', function() {
+        const gradientColorGroup = document.getElementById('gradientColorGroup');
+        if (gradientColorGroup) {
+            gradientColorGroup.style.display = this.checked ? 'block' : 'none';
+        }
+        if (typeof debouncedPreview === 'function') debouncedPreview();
+    });
+}
 
-document.getElementById('transparentBg').addEventListener('change', function() {
-    if (this.checked) {
-        document.getElementById('qrBgColor').disabled = true;
-    } else {
-        document.getElementById('qrBgColor').disabled = false;
-    }
-    debouncedPreview();
-});
+const transparentBgEl = document.getElementById('transparentBg');
+if (transparentBgEl) {
+    transparentBgEl.addEventListener('change', function() {
+        const qrBgColor = document.getElementById('qrBgColor');
+        if (qrBgColor) {
+            qrBgColor.disabled = this.checked;
+        }
+        if (typeof debouncedPreview === 'function') debouncedPreview();
+    });
+}
 
-document.getElementById('bgImageEnabled').addEventListener('change', function() {
-    document.getElementById('bgImageGroup').style.display = this.checked ? 'block' : 'none';
-    debouncedPreview();
-});
+const bgImageEnabledEl = document.getElementById('bgImageEnabled');
+if (bgImageEnabledEl) {
+    bgImageEnabledEl.addEventListener('change', function() {
+        const bgImageGroup = document.getElementById('bgImageGroup');
+        if (bgImageGroup) {
+            bgImageGroup.style.display = this.checked ? 'block' : 'none';
+        }
+        if (typeof debouncedPreview === 'function') debouncedPreview();
+    });
+}
 
-document.getElementById('customMarkerColor').addEventListener('change', function() {
-    document.getElementById('markerColorGroup').style.display = this.checked ? 'block' : 'none';
-    if (this.checked) {
-        document.getElementById('differentMarkers').checked = false;
-        document.getElementById('differentMarkerColorsGroup').style.display = 'none';
-    }
-    debouncedPreview();
-});
+const customMarkerColorEl = document.getElementById('customMarkerColor');
+if (customMarkerColorEl) {
+    customMarkerColorEl.addEventListener('change', function() {
+        const markerColorGroup = document.getElementById('markerColorGroup');
+        const differentMarkers = document.getElementById('differentMarkers');
+        const differentMarkerColorsGroup = document.getElementById('differentMarkerColorsGroup');
+        
+        if (markerColorGroup) {
+            markerColorGroup.style.display = this.checked ? 'block' : 'none';
+        }
+        if (this.checked) {
+            if (differentMarkers) differentMarkers.checked = false;
+            if (differentMarkerColorsGroup) differentMarkerColorsGroup.style.display = 'none';
+        }
+        if (typeof debouncedPreview === 'function') debouncedPreview();
+    });
+}
 
-document.getElementById('differentMarkers').addEventListener('change', function() {
-    document.getElementById('differentMarkerColorsGroup').style.display = this.checked ? 'block' : 'none';
-    if (this.checked) {
-        document.getElementById('customMarkerColor').checked = false;
-        document.getElementById('markerColorGroup').style.display = 'none';
-    }
-    debouncedPreview();
-});
+const differentMarkersEl = document.getElementById('differentMarkers');
+if (differentMarkersEl) {
+    differentMarkersEl.addEventListener('change', function() {
+        const differentMarkerColorsGroup = document.getElementById('differentMarkerColorsGroup');
+        const customMarkerColor = document.getElementById('customMarkerColor');
+        const markerColorGroup = document.getElementById('markerColorGroup');
+        
+        if (differentMarkerColorsGroup) {
+            differentMarkerColorsGroup.style.display = this.checked ? 'block' : 'none';
+        }
+        if (this.checked) {
+            if (customMarkerColor) customMarkerColor.checked = false;
+            if (markerColorGroup) markerColorGroup.style.display = 'none';
+        }
+        if (typeof debouncedPreview === 'function') debouncedPreview();
+    });
+}
 
-document.getElementById('logoOption').addEventListener('change', function() {
-    const value = this.value;
-    document.getElementById('defaultLogoGroup').style.display = value === 'default' ? 'block' : 'none';
-    document.getElementById('uploadLogoGroup').style.display = value === 'upload' ? 'block' : 'none';
-    document.getElementById('logoOptionsGroup').style.display = (value === 'default' || value === 'upload') ? 'block' : 'none';
-    debouncedPreview();
-});
+const logoOptionEl = document.getElementById('logoOption');
+if (logoOptionEl) {
+    logoOptionEl.addEventListener('change', function() {
+        const value = this.value;
+        const defaultLogoGroup = document.getElementById('defaultLogoGroup');
+        const uploadLogoGroup = document.getElementById('uploadLogoGroup');
+        const logoOptionsGroup = document.getElementById('logoOptionsGroup');
+        
+        if (defaultLogoGroup) {
+            defaultLogoGroup.style.display = value === 'default' ? 'block' : 'none';
+        }
+        if (uploadLogoGroup) {
+            uploadLogoGroup.style.display = value === 'upload' ? 'block' : 'none';
+        }
+        if (logoOptionsGroup) {
+            logoOptionsGroup.style.display = (value === 'default' || value === 'upload') ? 'block' : 'none';
+        }
+        if (typeof debouncedPreview === 'function') debouncedPreview();
+    });
+}
 
-document.getElementById('logoSize').addEventListener('input', function() {
-    document.getElementById('logoSizeValue').textContent = this.value;
-    debouncedPreview();
-});
+const logoSizeEl = document.getElementById('logoSize');
+if (logoSizeEl) {
+    logoSizeEl.addEventListener('input', function() {
+        const logoSizeValue = document.getElementById('logoSizeValue');
+        if (logoSizeValue) {
+            logoSizeValue.textContent = this.value;
+        }
+        if (typeof debouncedPreview === 'function') debouncedPreview();
+    });
+}
 
-document.getElementById('frameStyle').addEventListener('change', function() {
-    const hasFrame = this.value !== 'none';
-    document.getElementById('frameTextGroup').style.display = hasFrame ? 'block' : 'none';
-    document.getElementById('frameFontGroup').style.display = hasFrame ? 'block' : 'none';
-    document.getElementById('frameColorGroup').style.display = hasFrame ? 'block' : 'none';
-    debouncedPreview();
-});
+const frameStyleEl = document.getElementById('frameStyle');
+if (frameStyleEl) {
+    frameStyleEl.addEventListener('change', function() {
+        const hasFrame = this.value !== 'none';
+        const frameTextGroup = document.getElementById('frameTextGroup');
+        const frameFontGroup = document.getElementById('frameFontGroup');
+        const frameColorGroup = document.getElementById('frameColorGroup');
+        
+        if (frameTextGroup) frameTextGroup.style.display = hasFrame ? 'block' : 'none';
+        if (frameFontGroup) frameFontGroup.style.display = hasFrame ? 'block' : 'none';
+        if (frameColorGroup) frameColorGroup.style.display = hasFrame ? 'block' : 'none';
+        
+        if (typeof debouncedPreview === 'function') debouncedPreview();
+    });
+}
 
 // Global QR code instance
 let qrCode = null;
@@ -1335,6 +1423,8 @@ window.addEventListener('load', function() {
         generatePreview();
     }, 1000);
 });
+
+}); // End DOMContentLoaded
 </script>
 
 <style>
@@ -1558,6 +1648,20 @@ window.addEventListener('load', function() {
     transition: all 0.3s ease;
 }
 
+/* Default dark mode (when no theme or dark theme) */
+.form-select,
+.form-select option,
+.form-select optgroup,
+:root .form-select,
+:root .form-select option,
+:root .form-select optgroup,
+html:not([data-theme="light"]) .form-select,
+html:not([data-theme="light"]) .form-select option,
+html:not([data-theme="light"]) .form-select optgroup {
+    color: #e8eefc !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+}
+
 /* Light mode form elements - improved visibility */
 [data-theme="light"] .form-input,
 [data-theme="light"] .form-select,
@@ -1567,16 +1671,18 @@ window.addEventListener('load', function() {
     color: #1a1a1a;
 }
 
-[data-theme="light"] .form-select option {
-    background: #ffffff;
-    color: #1a1a1a;
+[data-theme="light"] .form-select option,
+[data-theme="light"] .form-select optgroup {
+    background: #ffffff !important;
+    color: #1a1a1a !important;
 }
 
-/* Dark mode dropdown text visibility */
+/* Dark mode dropdown text visibility - explicit */
 [data-theme="dark"] .form-select,
-[data-theme="dark"] .form-select option {
-    color: var(--text-primary);
-    background: rgba(255, 255, 255, 0.05);
+[data-theme="dark"] .form-select option,
+[data-theme="dark"] .form-select optgroup {
+    color: #e8eefc !important;
+    background: rgba(255, 255, 255, 0.08) !important;
 }
 
 .form-input:focus,
