@@ -20,7 +20,7 @@ class QRModel
     }
     
     /**
-     * Save QR code to database
+     * Save QR code to database with enhanced features
      * 
      * @param int $userId User ID
      * @param array $data QR code data
@@ -31,16 +31,26 @@ class QRModel
         $sql = "INSERT INTO qr_codes (
             user_id, content, type, size, 
             foreground_color, background_color, 
-            status, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, 'active', NOW())";
+            error_correction, frame_style, logo_path,
+            is_dynamic, redirect_url, password_hash, expires_at,
+            campaign_id, status, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', NOW())";
         
         $params = [
             $userId,
             $data['content'],
             $data['type'] ?? 'text',
-            $data['size'] ?? 200,
+            $data['size'] ?? 300,
             $data['foreground_color'] ?? '#000000',
-            $data['background_color'] ?? '#ffffff'
+            $data['background_color'] ?? '#ffffff',
+            $data['error_correction'] ?? 'H',
+            $data['frame_style'] ?? 'none',
+            $data['logo_path'] ?? null,
+            $data['is_dynamic'] ?? 0,
+            $data['redirect_url'] ?? null,
+            $data['password_hash'] ?? null,
+            $data['expires_at'] ?? null,
+            $data['campaign_id'] ?? null
         ];
         
         try {
@@ -48,6 +58,26 @@ class QRModel
             return $this->db->lastInsertId();
         } catch (\Exception $e) {
             \Core\Logger::error('Failed to save QR code: ' . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Update short code for a QR code
+     * 
+     * @param int $qrId QR code ID
+     * @param string $shortCode Short code to set
+     * @return bool Success status
+     */
+    public function updateShortCode(int $qrId, string $shortCode): bool
+    {
+        $sql = "UPDATE qr_codes SET short_code = ? WHERE id = ?";
+        
+        try {
+            $this->db->query($sql, [$shortCode, $qrId]);
+            return true;
+        } catch (\Exception $e) {
+            \Core\Logger::error('Failed to update short code: ' . $e->getMessage());
             return false;
         }
     }

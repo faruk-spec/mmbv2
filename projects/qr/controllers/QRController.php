@@ -34,7 +34,7 @@ class QRController
     }
     
     /**
-     * Generate QR code
+     * Generate QR code with enhanced features
      */
     public function generate(): void
     {
@@ -45,11 +45,9 @@ class QRController
             return;
         }
         
-        $content = Security::sanitize($_POST['content'] ?? '');
+        // Get content based on type
         $type = Security::sanitize($_POST['type'] ?? 'text');
-        $size = (int) ($_POST['size'] ?? 200);
-        $color = Security::sanitize($_POST['color'] ?? '000000');
-        $bgColor = Security::sanitize($_POST['bg_color'] ?? 'ffffff');
+        $content = $this->buildContent($type, $_POST);
         
         if (empty($content)) {
             Helpers::flash('error', 'Please enter content for the QR code.');
@@ -57,20 +55,45 @@ class QRController
             return;
         }
         
-        // Validate size
-        $size = max(100, min(500, $size));
+        // Basic settings
+        $size = max(100, min(500, (int) ($_POST['size'] ?? 300)));
+        $foregroundColor = '#' . ltrim(Security::sanitize($_POST['foreground_color'] ?? '000000'), '#');
+        $backgroundColor = '#' . ltrim(Security::sanitize($_POST['background_color'] ?? 'ffffff'), '#');
+        $errorCorrection = Security::sanitize($_POST['error_correction'] ?? 'H');
         
-        // Ensure colors have # prefix
-        $foregroundColor = '#' . ltrim($color, '#');
-        $backgroundColor = '#' . ltrim($bgColor, '#');
+        // Design options
+        $frameStyle = Security::sanitize($_POST['frame_style'] ?? 'none');
         
-        // Store in session for immediate display (client-side will regenerate)
+        // Advanced features
+        $isDynamic = isset($_POST['is_dynamic']) ? 1 : 0;
+        $redirectUrl = $isDynamic ? Security::sanitize($_POST['redirect_url'] ?? '') : null;
+        $hasPassword = isset($_POST['has_password']) ? 1 : 0;
+        $passwordHash = null;
+        if ($hasPassword && !empty($_POST['password'])) {
+            $passwordHash = password_hash($_POST['password'], PASSWORD_BCRYPT);
+        }
+        $hasExpiry = isset($_POST['has_expiry']) ? 1 : 0;
+        $expiresAt = $hasExpiry && !empty($_POST['expires_at']) ? $_POST['expires_at'] : null;
+        $campaignId = !empty($_POST['campaign_id']) ? (int) $_POST['campaign_id'] : null;
+        
+        // Handle logo upload
+        $logoPath = null;
+        if (isset($_FILES['logo']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK) {
+            $logoPath = $this->handleLogoUpload($_FILES['logo']);
+        }
+        
+        // Store in session for immediate display
         $_SESSION['generated_qr'] = [
             'content' => $content,
             'type' => $type,
             'size' => $size,
             'foreground_color' => $foregroundColor,
             'background_color' => $backgroundColor,
+            'error_correction' => $errorCorrection,
+            'frame_style' => $frameStyle,
+            'is_dynamic' => $isDynamic,
+            'has_password' => $hasPassword,
+            'expires_at' => $expiresAt,
             'created_at' => date('Y-m-d H:i:s')
         ];
         
@@ -82,12 +105,27 @@ class QRController
                 'type' => $type,
                 'size' => $size,
                 'foreground_color' => $foregroundColor,
-                'background_color' => $backgroundColor
+                'background_color' => $backgroundColor,
+                'error_correction' => $errorCorrection,
+                'frame_style' => $frameStyle,
+                'logo_path' => $logoPath,
+                'is_dynamic' => $isDynamic,
+                'redirect_url' => $redirectUrl,
+                'password_hash' => $passwordHash,
+                'expires_at' => $expiresAt,
+                'campaign_id' => $campaignId,
+                'status' => 'active'
             ]);
             
             if ($qrId) {
-                Logger::activity($userId, 'qr_generated', ['type' => $type, 'qr_id' => $qrId]);
-                Helpers::flash('success', 'QR code generated successfully!');
+                // Generate short code for dynamic QR
+                if ($isDynamic) {
+                    $shortCode = $this->generateShortCode($qrId);
+                    $this->qrModel->updateShortCode($qrId, $shortCode);
+                }
+                
+                Logger::activity($userId, 'qr_generated', ['type' => $type, 'qr_id' => $qrId, 'is_dynamic' => $isDynamic]);
+                Helpers::flash('success', 'QR code generated successfully!' . ($isDynamic ? ' Short URL: ' . $shortCode : ''));
             } else {
                 Logger::error('Failed to save QR code to database for user ' . $userId);
                 Helpers::flash('error', 'Failed to save QR code to database.');
@@ -97,6 +135,135 @@ class QRController
         }
         
         Helpers::redirect('/projects/qr/generate');
+    }
+    
+    /**
+     * Build QR content based on type
+     */
+    private function buildContent(string $type, array $data): string
+    {
+        switch ($type) {
+            case 'url':
+            case 'text':
+                return Security::sanitize($data['content'] ?? '');
+                
+            case 'email':
+                return 'mailto:' . Security::sanitize($data['content'] ?? '');
+                
+            case 'phone':
+                return 'tel:' . Security::sanitize($data['content'] ?? '');
+                
+            case 'sms':
+                $smsData = explode(':', $data['content'] ?? '');
+                $phone = $smsData[0] ?? '';
+                $message = $smsData[1] ?? '';
+                return 'sms:' . $phone . ($message ? '?body=' . urlencode($message) : '');
+                
+            case 'whatsapp':
+                $phone = preg_replace('/\D/', '', $data['whatsapp_phone'] ?? '');
+                $message = $data['whatsapp_message'] ?? '';
+                return 'https://wa.me/' . $phone . ($message ? '?text=' . urlencode($message) : '');
+                
+            case 'wifi':
+                $ssid = Security::sanitize($data['wifi_ssid'] ?? '');
+                $password = Security::sanitize($data['wifi_password'] ?? '');
+                $encryption = Security::sanitize($data['wifi_encryption'] ?? 'WPA');
+                return "WIFI:T:$encryption;S:$ssid;P:$password;;";
+                
+            case 'vcard':
+                $name = Security::sanitize($data['vcard_name'] ?? '');
+                $phone = Security::sanitize($data['vcard_phone'] ?? '');
+                $email = Security::sanitize($data['vcard_email'] ?? '');
+                $org = Security::sanitize($data['vcard_org'] ?? '');
+                return "BEGIN:VCARD\nVERSION:3.0\nFN:$name\nTEL:$phone\nEMAIL:$email" . ($org ? "\nORG:$org" : '') . "\nEND:VCARD";
+                
+            case 'location':
+                $lat = Security::sanitize($data['location_lat'] ?? '');
+                $lng = Security::sanitize($data['location_lng'] ?? '');
+                return "geo:$lat,$lng";
+                
+            case 'event':
+                $title = Security::sanitize($data['event_title'] ?? '');
+                $start = str_replace(['-', ':', ' '], '', $data['event_start'] ?? '');
+                $end = str_replace(['-', ':', ' '], '', $data['event_end'] ?? '');
+                $location = Security::sanitize($data['event_location'] ?? '');
+                return "BEGIN:VEVENT\nSUMMARY:$title\nDTSTART:$start\nDTEND:$end" . ($location ? "\nLOCATION:$location" : '') . "\nEND:VEVENT";
+                
+            case 'payment':
+                $payType = Security::sanitize($data['payment_type'] ?? 'upi');
+                $address = Security::sanitize($data['payment_address'] ?? '');
+                $amount = Security::sanitize($data['payment_amount'] ?? '');
+                
+                if ($payType === 'upi') {
+                    return 'upi://pay?pa=' . $address . ($amount ? '&am=' . $amount : '');
+                } elseif ($payType === 'paypal') {
+                    return 'https://paypal.me/' . $address . ($amount ? '/' . $amount : '');
+                } elseif ($payType === 'bitcoin') {
+                    return 'bitcoin:' . $address . ($amount ? '?amount=' . $amount : '');
+                }
+                break;
+                
+            default:
+                return Security::sanitize($data['content'] ?? '');
+        }
+        
+        return '';
+    }
+    
+    /**
+     * Handle logo upload
+     */
+    private function handleLogoUpload(array $file): ?string
+    {
+        // Validate file
+        $allowedTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+        $maxSize = 2 * 1024 * 1024; // 2MB
+        
+        if (!in_array($file['type'], $allowedTypes)) {
+            Helpers::flash('warning', 'Logo must be PNG or JPG format.');
+            return null;
+        }
+        
+        if ($file['size'] > $maxSize) {
+            Helpers::flash('warning', 'Logo file size must be less than 2MB.');
+            return null;
+        }
+        
+        // Create upload directory if it doesn't exist
+        $uploadDir = __DIR__ . '/../../../storage/qr_logos/' . date('Y/m');
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
+        
+        // Generate unique filename
+        $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $filename = uniqid('logo_') . '.' . $extension;
+        $filepath = $uploadDir . '/' . $filename;
+        
+        // Move uploaded file
+        if (move_uploaded_file($file['tmp_name'], $filepath)) {
+            // Return relative path for storage
+            return '/storage/qr_logos/' . date('Y/m') . '/' . $filename;
+        }
+        
+        Helpers::flash('warning', 'Failed to upload logo.');
+        return null;
+    }
+    
+    /**
+     * Generate short code for dynamic QR
+     */
+    private function generateShortCode(int $qrId): string
+    {
+        // Generate a short alphanumeric code
+        $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $code = '';
+        for ($i = 0; $i < 6; $i++) {
+            $code .= $characters[random_int(0, strlen($characters) - 1)];
+        }
+        
+        // Prepend QR ID to ensure uniqueness
+        return $code . $qrId;
     }
     
     /**
