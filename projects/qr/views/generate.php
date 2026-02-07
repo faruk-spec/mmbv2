@@ -245,56 +245,199 @@
             
             <div class="divider"></div>
             
-            <!-- Design Customization -->
+            <!-- Design Customization with Visual Presets -->
             <h4 class="subsection-title">
-                <i class="fas fa-shapes"></i> Design
+                <i class="fas fa-shapes"></i> Design Presets
             </h4>
             
-            <!-- QR Customization Options -->
-            <div class="grid grid-2" style="gap: 1rem;">
-                <div class="form-group">
-                    <label class="form-label">
-                        <i class="fas fa-vector-square"></i> Corner Style (Markers)
-                    </label>
-                    <select name="corner_style" id="cornerStyle" class="form-select">
-                        <option value="square">Square Corners</option>
-                        <option value="extra-rounded">Extra Rounded</option>
-                        <option value="dot">Dot Corners</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">
-                        <i class="fas fa-th"></i> Dot Pattern
-                    </label>
-                    <select name="dot_style" id="dotStyle" class="form-select">
-                        <option value="square">Square Dots</option>
-                        <option value="rounded">Rounded Dots</option>
-                        <option value="dots">Circle Dots</option>
-                        <option value="classy">Classy Style</option>
-                        <option value="classy-rounded">Classy Rounded</option>
-                    </select>
+            <!-- Dot Pattern Presets -->
+            <div class="form-group">
+                <label class="form-label">
+                    <i class="fas fa-th"></i> Dot Pattern
+                </label>
+                <div class="preset-grid">
+                    <div class="preset-option" data-preset="dotStyle" data-value="square" onclick="selectPreset('dotStyle', 'square')">
+                        <div class="preset-visual">
+                            <svg viewBox="0 0 60 60" class="preset-svg">
+                                <rect x="5" y="5" width="8" height="8" fill="currentColor"/>
+                                <rect x="15" y="5" width="8" height="8" fill="currentColor"/>
+                                <rect x="25" y="5" width="8" height="8" fill="currentColor"/>
+                                <rect x="5" y="15" width="8" height="8" fill="currentColor"/>
+                                <rect x="25" y="15" width="8" height="8" fill="currentColor"/>
+                                <rect x="5" y="25" width="8" height="8" fill="currentColor"/>
+                                <rect x="15" y="25" width="8" height="8" fill="currentColor"/>
+                                <rect x="25" y="25" width="8" height="8" fill="currentColor"/>
+                            </svg>
+                        </div>
+                        <span class="preset-label">Square</span>
+                    </div>
+                    
+                    <div class="preset-option" data-preset="dotStyle" data-value="rounded" onclick="selectPreset('dotStyle', 'rounded')">
+                        <div class="preset-visual">
+                            <svg viewBox="0 0 60 60" class="preset-svg">
+                                <rect x="5" y="5" width="8" height="8" rx="2" fill="currentColor"/>
+                                <rect x="15" y="5" width="8" height="8" rx="2" fill="currentColor"/>
+                                <rect x="25" y="5" width="8" height="8" rx="2" fill="currentColor"/>
+                                <rect x="5" y="15" width="8" height="8" rx="2" fill="currentColor"/>
+                                <rect x="25" y="15" width="8" height="8" rx="2" fill="currentColor"/>
+                                <rect x="5" y="25" width="8" height="8" rx="2" fill="currentColor"/>
+                                <rect x="15" y="25" width="8" height="8" rx="2" fill="currentColor"/>
+                                <rect x="25" y="25" width="8" height="8" rx="2" fill="currentColor"/>
+                            </svg>
+                        </div>
+                        <span class="preset-label">Rounded</span>
+                    </div>
+                    
+                    <div class="preset-option active" data-preset="dotStyle" data-value="dots" onclick="selectPreset('dotStyle', 'dots')">
+                        <div class="preset-visual">
+                            <svg viewBox="0 0 60 60" class="preset-svg">
+                                <circle cx="9" cy="9" r="4" fill="currentColor"/>
+                                <circle cx="19" cy="9" r="4" fill="currentColor"/>
+                                <circle cx="29" cy="9" r="4" fill="currentColor"/>
+                                <circle cx="9" cy="19" r="4" fill="currentColor"/>
+                                <circle cx="29" cy="19" r="4" fill="currentColor"/>
+                                <circle cx="9" cy="29" r="4" fill="currentColor"/>
+                                <circle cx="19" cy="29" r="4" fill="currentColor"/>
+                                <circle cx="29" cy="29" r="4" fill="currentColor"/>
+                            </svg>
+                        </div>
+                        <span class="preset-label">Dots</span>
+                    </div>
+                    
+                    <div class="preset-option" data-preset="dotStyle" data-value="classy" onclick="selectPreset('dotStyle', 'classy')">
+                        <div class="preset-visual">
+                            <svg viewBox="0 0 60 60" class="preset-svg">
+                                <rect x="5" y="5" width="8" height="8" rx="1" fill="currentColor"/>
+                                <circle cx="19" cy="9" r="3" fill="currentColor"/>
+                                <rect x="25" y="5" width="8" height="8" rx="1" fill="currentColor"/>
+                                <circle cx="9" cy="19" r="3" fill="currentColor"/>
+                                <circle cx="29" cy="19" r="3" fill="currentColor"/>
+                                <rect x="5" y="25" width="8" height="8" rx="1" fill="currentColor"/>
+                                <circle cx="19" cy="29" r="3" fill="currentColor"/>
+                                <rect x="25" y="25" width="8" height="8" rx="1" fill="currentColor"/>
+                            </svg>
+                        </div>
+                        <span class="preset-label">Classy</span>
+                    </div>
+                    
+                    <div class="preset-option" data-preset="dotStyle" data-value="classy-rounded" onclick="selectPreset('dotStyle', 'classy-rounded')">
+                        <div class="preset-visual">
+                            <svg viewBox="0 0 60 60" class="preset-svg">
+                                <rect x="5" y="5" width="8" height="8" rx="3" fill="currentColor"/>
+                                <circle cx="19" cy="9" r="3.5" fill="currentColor"/>
+                                <rect x="25" y="5" width="8" height="8" rx="3" fill="currentColor"/>
+                                <circle cx="9" cy="19" r="3.5" fill="currentColor"/>
+                                <circle cx="29" cy="19" r="3.5" fill="currentColor"/>
+                                <rect x="5" y="25" width="8" height="8" rx="3" fill="currentColor"/>
+                                <circle cx="19" cy="29" r="3.5" fill="currentColor"/>
+                                <rect x="25" y="25" width="8" height="8" rx="3" fill="currentColor"/>
+                            </svg>
+                        </div>
+                        <span class="preset-label">Classy Rounded</span>
+                    </div>
                 </div>
             </div>
             
-            <div class="grid grid-2" style="gap: 1rem;">
-                <div class="form-group">
-                    <label class="form-label">Marker Border Pattern</label>
-                    <select name="marker_border_style" id="markerBorderStyle" class="form-select">
-                        <option value="square">Square</option>
-                        <option value="rounded">Rounded</option>
-                        <option value="dot">Dot</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Marker Center Pattern</label>
-                    <select name="marker_center_style" id="markerCenterStyle" class="form-select">
-                        <option value="square">Square</option>
-                        <option value="dot">Dot</option>
-                    </select>
+            <!-- Corner Style (Markers) Presets -->
+            <div class="form-group">
+                <label class="form-label">
+                    <i class="fas fa-vector-square"></i> Corner Markers
+                </label>
+                <div class="preset-grid">
+                    <div class="preset-option active" data-preset="cornerStyle" data-value="square" onclick="selectPreset('cornerStyle', 'square')">
+                        <div class="preset-visual">
+                            <svg viewBox="0 0 60 60" class="preset-svg">
+                                <rect x="5" y="5" width="20" height="20" fill="none" stroke="currentColor" stroke-width="3"/>
+                                <rect x="10" y="10" width="10" height="10" fill="currentColor"/>
+                            </svg>
+                        </div>
+                        <span class="preset-label">Square</span>
+                    </div>
+                    
+                    <div class="preset-option" data-preset="cornerStyle" data-value="extra-rounded" onclick="selectPreset('cornerStyle', 'extra-rounded')">
+                        <div class="preset-visual">
+                            <svg viewBox="0 0 60 60" class="preset-svg">
+                                <rect x="5" y="5" width="20" height="20" rx="6" fill="none" stroke="currentColor" stroke-width="3"/>
+                                <rect x="10" y="10" width="10" height="10" rx="3" fill="currentColor"/>
+                            </svg>
+                        </div>
+                        <span class="preset-label">Rounded</span>
+                    </div>
+                    
+                    <div class="preset-option" data-preset="cornerStyle" data-value="dot" onclick="selectPreset('cornerStyle', 'dot')">
+                        <div class="preset-visual">
+                            <svg viewBox="0 0 60 60" class="preset-svg">
+                                <circle cx="15" cy="15" r="10" fill="none" stroke="currentColor" stroke-width="3"/>
+                                <circle cx="15" cy="15" r="5" fill="currentColor"/>
+                            </svg>
+                        </div>
+                        <span class="preset-label">Dot</span>
+                    </div>
                 </div>
             </div>
+            
+            <!-- Marker Border Pattern Presets -->
+            <div class="form-group">
+                <label class="form-label">Marker Border Style</label>
+                <div class="preset-grid">
+                    <div class="preset-option active" data-preset="markerBorderStyle" data-value="square" onclick="selectPreset('markerBorderStyle', 'square')">
+                        <div class="preset-visual">
+                            <svg viewBox="0 0 60 60" class="preset-svg">
+                                <rect x="10" y="10" width="15" height="15" fill="none" stroke="currentColor" stroke-width="3"/>
+                            </svg>
+                        </div>
+                        <span class="preset-label">Square</span>
+                    </div>
+                    
+                    <div class="preset-option" data-preset="markerBorderStyle" data-value="rounded" onclick="selectPreset('markerBorderStyle', 'rounded')">
+                        <div class="preset-visual">
+                            <svg viewBox="0 0 60 60" class="preset-svg">
+                                <rect x="10" y="10" width="15" height="15" rx="4" fill="none" stroke="currentColor" stroke-width="3"/>
+                            </svg>
+                        </div>
+                        <span class="preset-label">Rounded</span>
+                    </div>
+                    
+                    <div class="preset-option" data-preset="markerBorderStyle" data-value="dot" onclick="selectPreset('markerBorderStyle', 'dot')">
+                        <div class="preset-visual">
+                            <svg viewBox="0 0 60 60" class="preset-svg">
+                                <circle cx="17.5" cy="17.5" r="7.5" fill="none" stroke="currentColor" stroke-width="3"/>
+                            </svg>
+                        </div>
+                        <span class="preset-label">Dot</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Marker Center Pattern Presets -->
+            <div class="form-group">
+                <label class="form-label">Marker Center Style</label>
+                <div class="preset-grid">
+                    <div class="preset-option active" data-preset="markerCenterStyle" data-value="square" onclick="selectPreset('markerCenterStyle', 'square')">
+                        <div class="preset-visual">
+                            <svg viewBox="0 0 60 60" class="preset-svg">
+                                <rect x="15" y="15" width="8" height="8" fill="currentColor"/>
+                            </svg>
+                        </div>
+                        <span class="preset-label">Square</span>
+                    </div>
+                    
+                    <div class="preset-option" data-preset="markerCenterStyle" data-value="dot" onclick="selectPreset('markerCenterStyle', 'dot')">
+                        <div class="preset-visual">
+                            <svg viewBox="0 0 60 60" class="preset-svg">
+                                <circle cx="19" cy="19" r="4" fill="currentColor"/>
+                            </svg>
+                        </div>
+                        <span class="preset-label">Dot</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Hidden inputs to store selected values -->
+            <input type="hidden" name="dot_style" id="dotStyle" value="dots">
+            <input type="hidden" name="corner_style" id="cornerStyle" value="square">
+            <input type="hidden" name="marker_border_style" id="markerBorderStyle" value="square">
+            <input type="hidden" name="marker_center_style" id="markerCenterStyle" value="square">
             
             <!-- Custom Marker Colors Toggle -->
             <div class="feature-toggle">
@@ -624,6 +767,40 @@ window.addEventListener('load', function() {
         showNotification('QR library failed to load. Please refresh the page.', 'error');
     }
 });
+
+// Central QR Configuration Object
+const qrConfig = {
+    dotStyle: 'dots',
+    cornerStyle: 'square',
+    markerBorderStyle: 'square',
+    markerCenterStyle: 'square'
+};
+
+// Preset Selection Function
+function selectPreset(presetType, value) {
+    // Update config
+    qrConfig[presetType] = value;
+    
+    // Update hidden input
+    const input = document.getElementById(presetType);
+    if (input) {
+        input.value = value;
+    }
+    
+    // Update visual selection
+    const allOptions = document.querySelectorAll(`[data-preset="${presetType}"]`);
+    allOptions.forEach(option => {
+        option.classList.remove('active');
+    });
+    
+    const selectedOption = document.querySelector(`[data-preset="${presetType}"][data-value="${value}"]`);
+    if (selectedOption) {
+        selectedOption.classList.add('active');
+    }
+    
+    // Trigger preview update
+    debouncedPreview();
+}
 
 // Notification system
 function showNotification(message, type = 'info') {
@@ -1264,6 +1441,108 @@ window.addEventListener('load', function() {
     font-weight: 500;
     color: var(--text-primary);
     font-size: 14px;
+}
+
+/* Preset Grid System */
+.preset-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.preset-option {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    animation: fadeInUp 0.3s ease;
+}
+
+[data-theme="light"] .preset-option {
+    background: rgba(0, 0, 0, 0.02);
+    border: 2px solid rgba(0, 0, 0, 0.08);
+}
+
+.preset-option:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(153, 69, 255, 0.5);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(153, 69, 255, 0.2);
+}
+
+[data-theme="light"] .preset-option:hover {
+    background: rgba(153, 69, 255, 0.05);
+    border-color: rgba(153, 69, 255, 0.4);
+}
+
+.preset-option.active {
+    background: linear-gradient(135deg, rgba(153, 69, 255, 0.2), rgba(0, 240, 255, 0.2));
+    border-color: var(--purple);
+    box-shadow: 0 0 20px rgba(153, 69, 255, 0.4);
+}
+
+[data-theme="light"] .preset-option.active {
+    background: linear-gradient(135deg, rgba(153, 69, 255, 0.15), rgba(0, 240, 255, 0.15));
+    border-color: var(--purple);
+}
+
+.preset-option.active::after {
+    content: '✓';
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 20px;
+    height: 20px;
+    background: linear-gradient(135deg, var(--purple), var(--cyan));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.preset-visual {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 8px;
+}
+
+[data-theme="light"] .preset-visual {
+    background: rgba(0, 0, 0, 0.03);
+}
+
+.preset-svg {
+    width: 100%;
+    height: 100%;
+    color: var(--text-primary);
+}
+
+.preset-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-align: center;
+    line-height: 1.2;
+}
+
+.preset-option.active .preset-label {
+    color: var(--text-primary);
+    font-weight: 600;
 }
 
 .form-input,
