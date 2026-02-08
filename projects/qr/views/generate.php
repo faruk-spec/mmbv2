@@ -871,6 +871,18 @@
                     </div>
                 </div>
                 <input type="hidden" name="default_logo" id="defaultLogo" value="">
+                <!-- Logo Preview -->
+                <div id="selectedLogoPreview" style="display: none; margin-top: 15px; padding: 15px; background: rgba(87, 96, 255, 0.1); border-radius: 10px; border: 1px solid rgba(87, 96, 255, 0.3);">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--purple), var(--cyan)); border-radius: 10px; color: white; font-size: 28px;">
+                            <i id="selectedLogoIcon" class="fas fa-qrcode"></i>
+                        </div>
+                        <div>
+                            <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 3px;">Selected Logo:</div>
+                            <div id="selectedLogoName" style="font-weight: 600; color: var(--text-primary);">None</div>
+                        </div>
+                    </div>
+                </div>
             </div>
             
             <div class="form-group" id="uploadLogoGroup" style="display: none;">
@@ -1197,6 +1209,15 @@ window.selectLogoOption = function(option) {
         if (logoUploadInput) {
             logoUploadInput.value = '';
         }
+        // Hide preview
+        const preview = document.getElementById('selectedLogoPreview');
+        if (preview) {
+            preview.style.display = 'none';
+        }
+        // Remove active state from all icons
+        document.querySelectorAll('.logo-icon-item').forEach(item => {
+            item.classList.remove('active');
+        });
     }
     
     if (typeof debouncedPreview === 'function') debouncedPreview();
@@ -1216,6 +1237,25 @@ window.selectDefaultLogo = function(logo) {
     const selected = document.querySelector(`[data-logo="${logo}"]`);
     if (selected) {
         selected.classList.add('active');
+        
+        // Update preview
+        const preview = document.getElementById('selectedLogoPreview');
+        const previewIcon = document.getElementById('selectedLogoIcon');
+        const previewName = document.getElementById('selectedLogoName');
+        
+        if (preview && previewIcon && previewName) {
+            preview.style.display = 'block';
+            
+            // Copy the icon from the selected item
+            const iconElement = selected.querySelector('i');
+            if (iconElement) {
+                previewIcon.className = iconElement.className;
+            }
+            
+            // Set the name from title attribute
+            const title = selected.getAttribute('title') || logo;
+            previewName.textContent = title;
+        }
     }
     
     if (typeof debouncedPreview === 'function') debouncedPreview();
@@ -1800,10 +1840,11 @@ function generatePreview() {
                 if (bgImageEnabled && bgImageInput.files && bgImageInput.files[0]) {
                     const bgReader = new FileReader();
                     bgReader.onload = function(bgE) {
-                        // Set the background image
+                        // Set the background image with proper transparent handling
                         qrOptions.backgroundOptions = {
-                            ...qrOptions.backgroundOptions,
-                            image: bgE.target.result
+                            color: qrOptions.backgroundOptions.color,
+                            image: bgE.target.result,
+                            imageSize: 1.0
                         };
                         renderQRCode(qrOptions, content);
                     };
@@ -1821,10 +1862,11 @@ function generatePreview() {
     if (bgImageEnabled && bgImageInput.files && bgImageInput.files[0]) {
         const bgReader = new FileReader();
         bgReader.onload = function(e) {
-            // Set the background image
+            // Set the background image with proper transparent handling
             qrOptions.backgroundOptions = {
-                ...qrOptions.backgroundOptions,
-                image: e.target.result
+                color: qrOptions.backgroundOptions.color,
+                image: e.target.result,
+                imageSize: 1.0
             };
             renderQRCode(qrOptions, content);
         };
@@ -2700,6 +2742,13 @@ html[data-theme="dark"] .form-select optgroup {
     border-color: var(--cyan);
     color: white;
     transform: scale(1.05);
+    box-shadow: 0 0 0 3px rgba(0, 240, 255, 0.3);
+}
+
+.logo-icon-item.active i {
+    color: white;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    font-weight: 900;
 }
 
 /* Buttons */
