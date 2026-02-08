@@ -51,13 +51,21 @@
                 <div style="display: flex; gap: 10px; align-items: end;">
                     <div style="flex: 1;">
                         <label style="display: block; margin-bottom: 5px; color: var(--text-secondary); font-size: 13px;">Select Type</label>
-                        <select id="sampleType" class="form-select" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);">
+                        <select id="sampleType" class="form-select" style="background: var(--glass-bg); border: 1px solid var(--glass-border); color: var(--text-primary);">
                             <option value="url">URL / Website</option>
                             <option value="text">Plain Text</option>
-                            <option value="phone">Phone Numbers</option>
-                            <option value="email">Email Addresses</option>
-                            <option value="vcard">vCard (Contacts)</option>
-                            <option value="wifi">WiFi Networks</option>
+                            <option value="email">Email Address</option>
+                            <option value="location">Location</option>
+                            <option value="phone">Phone Number</option>
+                            <option value="sms">SMS Message</option>
+                            <option value="whatsapp">WhatsApp</option>
+                            <option value="skype">Skype</option>
+                            <option value="zoom">Zoom</option>
+                            <option value="wifi">WiFi Network</option>
+                            <option value="vcard">vCard (Contact)</option>
+                            <option value="event">Event (Calendar)</option>
+                            <option value="paypal">PayPal</option>
+                            <option value="payment">Payment (UPI)</option>
                         </select>
                     </div>
                     <button type="button" class="btn-primary" style="padding: 10px 20px;" onclick="downloadSample()">

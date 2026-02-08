@@ -394,7 +394,7 @@ try {
             <div class="sidebar-section">
                 <div class="sidebar-title">Main</div>
                 <nav class="sidebar-nav">
-                    <a href="/projects/qr" class="<?= $_SERVER['REQUEST_URI'] == '/projects/qr' ? 'active' : '' ?>">
+                    <a href="/projects/qr" class="<?= $_SERVER['REQUEST_URI'] == '/projects/qr' || $_SERVER['REQUEST_URI'] == '/projects/qr/' || strpos($_SERVER['REQUEST_URI'], '/projects/qr/dashboard') !== false ? 'active' : '' ?>">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <rect x="3" y="3" width="7" height="7"/>
                             <rect x="14" y="3" width="7" height="7"/>
@@ -411,7 +411,7 @@ try {
                         </svg>
                         Create QR
                     </a>
-                    <a href="/projects/qr/history">
+                    <a href="/projects/qr/history" class="<?= strpos($_SERVER['REQUEST_URI'], '/history') !== false ? 'active' : '' ?>">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <rect x="3" y="3" width="18" height="18" rx="2"/>
                             <line x1="9" y1="9" x2="15" y2="9"/>
@@ -425,21 +425,21 @@ try {
             <div class="sidebar-section">
                 <div class="sidebar-title">Advanced</div>
                 <nav class="sidebar-nav">
-                    <a href="/projects/qr/analytics">
+                    <a href="/projects/qr/analytics" class="<?= strpos($_SERVER['REQUEST_URI'], '/analytics') !== false ? 'active' : '' ?>">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M3 3v18h18"/>
                             <path d="M18 17l-5-5-5 5-5-5"/>
                         </svg>
                         Analytics
                     </a>
-                    <a href="/projects/qr/campaigns">
+                    <a href="/projects/qr/campaigns" class="<?= strpos($_SERVER['REQUEST_URI'], '/campaigns') !== false ? 'active' : '' ?>">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
                             <polyline points="22,6 12,13 2,6"/>
                         </svg>
                         Campaigns
                     </a>
-                    <a href="/projects/qr/bulk">
+                    <a href="/projects/qr/bulk" class="<?= strpos($_SERVER['REQUEST_URI'], '/bulk') !== false ? 'active' : '' ?>">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                             <polyline points="14 2 14 8 20 8"/>
@@ -454,14 +454,14 @@ try {
             <div class="sidebar-section">
                 <div class="sidebar-title">Settings</div>
                 <nav class="sidebar-nav">
-                    <a href="/projects/qr/templates">
+                    <a href="/projects/qr/templates" class="<?= strpos($_SERVER['REQUEST_URI'], '/templates') !== false ? 'active' : '' ?>">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
                             <line x1="9" y1="3" x2="9" y2="21"/>
                         </svg>
                         Templates
                     </a>
-                    <a href="/projects/qr/settings">
+                    <a href="/projects/qr/settings" class="<?= strpos($_SERVER['REQUEST_URI'], '/settings') !== false ? 'active' : '' ?>">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <circle cx="12" cy="12" r="3"/>
                             <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"/>

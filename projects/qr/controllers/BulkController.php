@@ -280,6 +280,28 @@ class BulkController
                     ['Event Code: ABC123', 'Event code']
                 ]
             ],
+            'email' => [
+                'filename' => 'sample-emails.csv',
+                'headers' => ['Email Address', 'Subject', 'Message'],
+                'rows' => [
+                    ['john@example.com', 'Hello', 'Sample email message'],
+                    ['jane@example.com', 'Meeting', 'Let\'s schedule a meeting'],
+                    ['support@example.com', 'Support', 'Need help with...'],
+                    ['info@example.com', 'Information', 'Request for information'],
+                    ['sales@example.com', 'Quote', 'Price quote request']
+                ]
+            ],
+            'location' => [
+                'filename' => 'sample-locations.csv',
+                'headers' => ['Latitude', 'Longitude', 'Place Name'],
+                'rows' => [
+                    ['40.7128', '-74.0060', 'New York City'],
+                    ['51.5074', '-0.1278', 'London'],
+                    ['35.6762', '139.6503', 'Tokyo'],
+                    ['48.8566', '2.3522', 'Paris'],
+                    ['19.0760', '72.8777', 'Mumbai']
+                ]
+            ],
             'phone' => [
                 'filename' => 'sample-phones.csv',
                 'headers' => ['Phone Number', 'Contact Name'],
@@ -291,15 +313,59 @@ class BulkController
                     ['+91-9876543210', 'Raj Kumar']
                 ]
             ],
-            'email' => [
-                'filename' => 'sample-emails.csv',
-                'headers' => ['Email Address', 'Name'],
+            'sms' => [
+                'filename' => 'sample-sms.csv',
+                'headers' => ['Phone Number', 'Message'],
                 'rows' => [
-                    ['john@example.com', 'John Doe'],
-                    ['jane@example.com', 'Jane Smith'],
-                    ['support@example.com', 'Support Team'],
-                    ['info@example.com', 'Information'],
-                    ['sales@example.com', 'Sales Team']
+                    ['+1-555-0101', 'Hello! This is a sample SMS message'],
+                    ['+1-555-0102', 'Your order has been confirmed'],
+                    ['+1-555-0103', 'Meeting at 3 PM today'],
+                    ['+44-20-7123-4567', 'Special offer just for you!'],
+                    ['+91-9876543210', 'Thank you for your purchase']
+                ]
+            ],
+            'whatsapp' => [
+                'filename' => 'sample-whatsapp.csv',
+                'headers' => ['Phone Number', 'Message'],
+                'rows' => [
+                    ['+1-555-0101', 'Hi! Contact us on WhatsApp'],
+                    ['+1-555-0102', 'Join our WhatsApp group'],
+                    ['+1-555-0103', 'Get support via WhatsApp'],
+                    ['+44-20-7123-4567', 'WhatsApp for business inquiries'],
+                    ['+91-9876543210', 'Chat with us on WhatsApp']
+                ]
+            ],
+            'skype' => [
+                'filename' => 'sample-skype.csv',
+                'headers' => ['Skype Username', 'Action Type'],
+                'rows' => [
+                    ['john.doe', 'chat'],
+                    ['jane.smith', 'call'],
+                    ['support.team', 'chat'],
+                    ['sales.dept', 'call'],
+                    ['tech.support', 'chat']
+                ]
+            ],
+            'zoom' => [
+                'filename' => 'sample-zoom.csv',
+                'headers' => ['Meeting ID', 'Passcode', 'Description'],
+                'rows' => [
+                    ['123-456-7890', 'abc123', 'Team Meeting'],
+                    ['234-567-8901', 'def456', 'Client Presentation'],
+                    ['345-678-9012', 'ghi789', 'Training Session'],
+                    ['456-789-0123', 'jkl012', 'Weekly Standup'],
+                    ['567-890-1234', 'mno345', 'Product Demo']
+                ]
+            ],
+            'wifi' => [
+                'filename' => 'sample-wifi.csv',
+                'headers' => ['SSID', 'Password', 'Security Type'],
+                'rows' => [
+                    ['MyHomeWiFi', 'password123', 'WPA'],
+                    ['OfficeNetwork', 'officepass456', 'WPA2'],
+                    ['GuestNetwork', 'guest789', 'WPA'],
+                    ['CafeWiFi', 'cafe2024', 'WPA2'],
+                    ['PublicWiFi', '', 'nopass']
                 ]
             ],
             'vcard' => [
@@ -313,15 +379,37 @@ class BulkController
                     ['Raj Kumar', 'raj@example.com', '+91-9876543210', 'Innovation Hub']
                 ]
             ],
-            'wifi' => [
-                'filename' => 'sample-wifi.csv',
-                'headers' => ['SSID', 'Password', 'Security Type'],
+            'event' => [
+                'filename' => 'sample-events.csv',
+                'headers' => ['Event Name', 'Start Date', 'End Date', 'Location'],
                 'rows' => [
-                    ['MyHomeWiFi', 'password123', 'WPA'],
-                    ['OfficeNetwork', 'officepass456', 'WPA2'],
-                    ['GuestNetwork', 'guest789', 'WPA'],
-                    ['CafeWiFi', 'cafe2024', 'WPA2'],
-                    ['PublicWiFi', '', 'nopass']
+                    ['Product Launch', '2026-03-15 10:00', '2026-03-15 12:00', 'Conference Center'],
+                    ['Team Building', '2026-03-20 09:00', '2026-03-20 17:00', 'Outdoor Park'],
+                    ['Training Workshop', '2026-04-01 14:00', '2026-04-01 16:00', 'Office Building'],
+                    ['Client Meeting', '2026-04-05 11:00', '2026-04-05 13:00', 'Restaurant'],
+                    ['Annual Conference', '2026-05-10 08:00', '2026-05-12 18:00', 'Convention Center']
+                ]
+            ],
+            'paypal' => [
+                'filename' => 'sample-paypal.csv',
+                'headers' => ['PayPal Email', 'Amount', 'Description'],
+                'rows' => [
+                    ['payments@example.com', '50.00', 'Product Payment'],
+                    ['donate@example.com', '25.00', 'Donation'],
+                    ['shop@example.com', '100.00', 'Order #12345'],
+                    ['service@example.com', '75.00', 'Service Fee'],
+                    ['support@example.com', '30.00', 'Support Contribution']
+                ]
+            ],
+            'payment' => [
+                'filename' => 'sample-payment.csv',
+                'headers' => ['UPI ID', 'Amount', 'Description'],
+                'rows' => [
+                    ['user@upi', '500', 'Product Purchase'],
+                    ['merchant@upi', '1000', 'Service Payment'],
+                    ['shop@upi', '250', 'Order Payment'],
+                    ['donate@upi', '100', 'Donation'],
+                    ['payment@upi', '750', 'Invoice Payment']
                 ]
             ]
         ];

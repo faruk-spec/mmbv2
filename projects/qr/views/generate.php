@@ -716,38 +716,6 @@
                 <input type="color" name="marker_color" id="markerColor" value="#9945ff" class="form-input color-input">
             </div>
             
-            <!-- Different Marker Colors Toggle -->
-            <div class="feature-toggle">
-                <label class="toggle-label">
-                    <input type="checkbox" name="different_markers" id="differentMarkers" value="1" class="toggle-input">
-                    <span class="toggle-slider"></span>
-                    <span class="toggle-text">
-                        <strong>Different Marker Colors</strong>
-                        <small>Use unique color for each corner marker (limited library support)</small>
-                    </span>
-                </label>
-            </div>
-            
-            <div id="differentMarkerColorsGroup" style="display: none;">
-                <small style="color: var(--text-secondary); margin-bottom: 10px; display: block;">
-                    <i class="fas fa-info-circle"></i> Note: The QR library has limited support for per-marker colors. Top-left color will be used as primary.
-                </small>
-                <div class="grid grid-2" style="gap: 15px;">
-                    <div class="form-group">
-                        <label class="form-label">Top Left (Primary)</label>
-                        <input type="color" name="marker_tl_color" id="markerTLColor" value="#9945ff" class="form-input color-input">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Top Right</label>
-                        <input type="color" name="marker_tr_color" id="markerTRColor" value="#00f0ff" class="form-input color-input">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Bottom Left</label>
-                        <input type="color" name="marker_bl_color" id="markerBLColor" value="#ff2ec4" class="form-input color-input">
-                    </div>
-                </div>
-            </div>
-            
             <div class="divider"></div>
             
             <!-- Logo Options -->
@@ -1425,33 +1393,9 @@ const customMarkerColorEl = document.getElementById('customMarkerColor');
 if (customMarkerColorEl) {
     customMarkerColorEl.addEventListener('change', function() {
         const markerColorGroup = document.getElementById('markerColorGroup');
-        const differentMarkers = document.getElementById('differentMarkers');
-        const differentMarkerColorsGroup = document.getElementById('differentMarkerColorsGroup');
         
         if (markerColorGroup) {
             markerColorGroup.style.display = this.checked ? 'block' : 'none';
-        }
-        if (this.checked) {
-            if (differentMarkers) differentMarkers.checked = false;
-            if (differentMarkerColorsGroup) differentMarkerColorsGroup.style.display = 'none';
-        }
-        if (typeof debouncedPreview === 'function') debouncedPreview();
-    });
-}
-
-const differentMarkersEl = document.getElementById('differentMarkers');
-if (differentMarkersEl) {
-    differentMarkersEl.addEventListener('change', function() {
-        const differentMarkerColorsGroup = document.getElementById('differentMarkerColorsGroup');
-        const customMarkerColor = document.getElementById('customMarkerColor');
-        const markerColorGroup = document.getElementById('markerColorGroup');
-        
-        if (differentMarkerColorsGroup) {
-            differentMarkerColorsGroup.style.display = this.checked ? 'block' : 'none';
-        }
-        if (this.checked) {
-            if (customMarkerColor) customMarkerColor.checked = false;
-            if (markerColorGroup) markerColorGroup.style.display = 'none';
         }
         if (typeof debouncedPreview === 'function') debouncedPreview();
     });
@@ -1672,10 +1616,6 @@ async function saveCurrentTemplate() {
         bgImageEnabled: document.getElementById('bgImageEnabled').checked,
         customMarkerColor: document.getElementById('customMarkerColor').checked,
         markerColor: document.getElementById('markerColor').value,
-        differentMarkers: document.getElementById('differentMarkers').checked,
-        markerTLColor: document.getElementById('markerTLColor').value,
-        markerTRColor: document.getElementById('markerTRColor').value,
-        markerBLColor: document.getElementById('markerBLColor').value,
         logoOption: document.getElementById('logoOption').value,
         defaultLogo: document.getElementById('defaultLogo')?.value,
         logoSize: document.getElementById('logoSize').value,
@@ -1746,10 +1686,6 @@ function generatePreview() {
     // Marker colors
     const customMarkerColor = document.getElementById('customMarkerColor').checked;
     const markerColor = document.getElementById('markerColor').value;
-    const differentMarkers = document.getElementById('differentMarkers').checked;
-    const markerTLColor = document.getElementById('markerTLColor').value;
-    const markerTRColor = document.getElementById('markerTRColor').value;
-    const markerBLColor = document.getElementById('markerBLColor').value;
     
     // Logo settings
     const logoOption = document.getElementById('logoOption').value;
@@ -1795,33 +1731,13 @@ function generatePreview() {
         },
         cornersSquareOptions: {
             type: cornerStyle,
-            color: customMarkerColor ? markerColor : (gradientEnabled ? foregroundColor : dotColor)
+            color: customMarkerColor ? markerColor : (gradientEnabled ? foregroundColor : foregroundColor)
         },
         cornersDotOptions: {
             type: markerCenterStyle,
-            color: customMarkerColor ? markerColor : (gradientEnabled ? foregroundColor : dotColor)
+            color: customMarkerColor ? markerColor : (gradientEnabled ? foregroundColor : foregroundColor)
         }
     };
-    
-    // Different marker colors - Apply individual colors to each corner
-    // The qr-code-styling library supports cornersSquareOptions and cornersDotOptions as arrays
-    // for different colors on each corner: [top-left, top-right, bottom-left]
-    if (differentMarkers) {
-        qrOptions.cornersSquareOptions = [
-            { type: cornerStyle, color: markerTLColor },  // Top-left
-            { type: cornerStyle, color: markerTRColor },  // Top-right
-            { type: cornerStyle, color: markerBLColor }   // Bottom-left
-        ];
-        qrOptions.cornersDotOptions = [
-            { type: markerCenterStyle, color: markerTLColor },  // Top-left
-            { type: markerCenterStyle, color: markerTRColor },  // Top-right
-            { type: markerCenterStyle, color: markerBLColor }   // Bottom-left
-        ];
-    } else if (customMarkerColor) {
-        // Single custom color for all markers
-        qrOptions.cornersSquareOptions.color = markerColor;
-        qrOptions.cornersDotOptions.color = markerColor;
-    }
     
     // Add logo if selected
     if (logoOption === 'default') {
@@ -2145,7 +2061,7 @@ const debouncedPreview = window.debouncedPreview;
 const livePreviewFields = [
     'contentField', 'qrType', 'qrSize', 'qrColor', 'qrBgColor', 'errorCorrection',
     'frameStyle', 'cornerStyle', 'dotStyle', 'markerBorderStyle', 'markerCenterStyle',
-    'gradientColor', 'markerColor', 'markerTLColor', 'markerTRColor', 'markerBLColor',
+    'gradientColor', 'markerColor',
     'defaultLogo', 'frameLabel', 'frameFont', 'frameColor',
     // Email fields
     'emailTo', 'emailSubject', 'emailBody',

@@ -117,8 +117,26 @@ switch ($segments[0]) {
     case 'campaigns':
         require_once PROJECT_PATH . '/controllers/CampaignsController.php';
         $controller = new \Projects\QR\Controllers\CampaignsController();
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $controller->save();
+        
+        // Handle nested routes
+        if (isset($segments[1])) {
+            switch ($segments[1]) {
+                case 'create':
+                    $controller->create();
+                    break;
+                case 'edit':
+                    $controller->edit();
+                    break;
+                case 'view':
+                    $controller->view();
+                    break;
+                case 'delete':
+                    $controller->delete();
+                    break;
+                default:
+                    http_response_code(404);
+                    echo "Not found";
+            }
         } else {
             $controller->index();
         }
