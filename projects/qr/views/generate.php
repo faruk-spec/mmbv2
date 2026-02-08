@@ -842,8 +842,8 @@
                 <!-- Logo Preview -->
                 <div id="selectedLogoPreview" style="display: none; margin-top: 15px; padding: 15px; background: rgba(87, 96, 255, 0.1); border-radius: 10px; border: 1px solid rgba(87, 96, 255, 0.3);">
                     <div style="display: flex; align-items: center; gap: 15px;">
-                        <div style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--purple), var(--cyan)); border-radius: 10px; color: white; font-size: 28px;">
-                            <i id="selectedLogoIcon" class="fas fa-qrcode"></i>
+                        <div style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--purple), var(--cyan)); border-radius: 10px; color: white; font-size: 28px; position: relative;">
+                            <i id="selectedLogoIcon" class="fas fa-qrcode" style="color: white; z-index: 2; position: relative;"></i>
                         </div>
                         <div>
                             <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 3px;">Selected Logo:</div>
@@ -1076,6 +1076,18 @@ const qrConfig = {
     markerBorderStyle: 'square',
     markerCenterStyle: 'square'
 };
+
+// Debounced live preview - Define early to avoid reference errors
+let previewTimeout;
+window.debouncedPreview = function() {
+    clearTimeout(previewTimeout);
+    previewTimeout = setTimeout(() => {
+        if (typeof generatePreview === 'function') {
+            generatePreview();
+        }
+    }, 500);
+};
+const debouncedPreview = window.debouncedPreview;
 
 // Preset Selection Function (Global scope for onclick handlers)
 window.selectPreset = function(presetType, value) {
@@ -1574,15 +1586,15 @@ function showSaveTemplateModal() {
 }
 
 // Close save template modal
-function closeSaveTemplateModal() {
+window.closeSaveTemplateModal = function() {
     const modal = document.querySelector('.template-modal');
     if (modal) {
         modal.remove();
     }
-}
+};
 
 // Save current settings as template
-async function saveCurrentTemplate() {
+window.saveCurrentTemplate = async function() {
     const templateName = document.getElementById('templateName').value.trim();
     const isPublic = document.getElementById('templateIsPublic').checked;
     const errorMsg = document.getElementById('templateNameError');
@@ -1731,11 +1743,11 @@ function generatePreview() {
         },
         cornersSquareOptions: {
             type: cornerStyle,
-            color: customMarkerColor ? markerColor : (gradientEnabled ? foregroundColor : foregroundColor)
+            color: customMarkerColor ? markerColor : foregroundColor
         },
         cornersDotOptions: {
             type: markerCenterStyle,
-            color: customMarkerColor ? markerColor : (gradientEnabled ? foregroundColor : foregroundColor)
+            color: customMarkerColor ? markerColor : foregroundColor
         }
     };
     
@@ -1813,6 +1825,16 @@ function renderQRCode(qrOptions, content) {
     const qrDiv = document.createElement('div');
     qrDiv.id = 'qrcode';
     qrDiv.className = 'qr-preview';
+    
+    // Apply transparent background if enabled
+    const transparentBg = document.getElementById('transparentBg').checked;
+    if (transparentBg) {
+        qrDiv.style.background = 'transparent';
+        // Add a checkered pattern to show transparency
+        qrDiv.style.backgroundImage = 'repeating-conic-gradient(#f0f0f0 0% 25%, #ffffff 0% 50%) 50% / 20px 20px';
+        qrDiv.style.backgroundBlendMode = 'normal';
+    }
+    
     container.appendChild(qrDiv);
     
     try {
@@ -2048,14 +2070,6 @@ function applyFrameStyle(qrDiv) {
         }
     }
 }
-
-// Debounced live preview (Assign to window for global access)
-let previewTimeout;
-window.debouncedPreview = function() {
-    clearTimeout(previewTimeout);
-    previewTimeout = setTimeout(generatePreview, 500);
-};
-const debouncedPreview = window.debouncedPreview;
 
 // Live preview on all field changes
 const livePreviewFields = [
@@ -2720,13 +2734,14 @@ html[data-theme="dark"] .form-select optgroup {
 }
 
 .btn-save-template {
-    background: linear-gradient(135deg, #2ed573, #26de81);
+    background: linear-gradient(135deg, var(--purple), var(--cyan));
     color: white;
+    border: none;
 }
 
 .btn-save-template:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(46, 213, 115, 0.4);
+    box-shadow: 0 6px 20px rgba(153, 69, 255, 0.4);
 }
 
 .qr-action-buttons .btn {

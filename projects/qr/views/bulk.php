@@ -51,7 +51,7 @@
                 <div style="display: flex; gap: 10px; align-items: end;">
                     <div style="flex: 1;">
                         <label style="display: block; margin-bottom: 5px; color: var(--text-secondary); font-size: 13px;">Select Type</label>
-                        <select id="sampleType" class="form-select" style="background: var(--glass-bg); border: 1px solid var(--glass-border); color: var(--text-primary);">
+                        <select id="sampleType" class="form-select">
                             <option value="url">URL / Website</option>
                             <option value="text">Plain Text</option>
                             <option value="email">Email Address</option>
