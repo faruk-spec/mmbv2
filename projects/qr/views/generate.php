@@ -1672,7 +1672,7 @@ window.saveCurrentTemplate = async function() {
 
 
 // Generate preview with QRCodeStyling
-function generatePreview() {
+window.generatePreview = function() {
     console.log('generatePreview function called');
     if (typeof QRCodeStyling === 'undefined') {
         console.log('QRCodeStyling not loaded yet');
@@ -1880,7 +1880,7 @@ function renderQRCode(qrOptions, content) {
 }
 
 // Build QR content based on type
-function buildQRContent() {
+window.buildQRContent = function() {
     const type = document.getElementById('qrType').value;
     let content = '';
     
