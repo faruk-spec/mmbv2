@@ -2080,85 +2080,85 @@ function applyFrameStyle(qrDiv) {
     }
 }
 
-// Live preview on all field changes
-const livePreviewFields = [
-    'contentField', 'qrType', 'qrSize', 'qrColor', 'qrBgColor', 'errorCorrection',
-    'frameStyle', 'cornerStyle', 'dotStyle', 'markerBorderStyle', 'markerCenterStyle',
-    'gradientColor', 'markerColor',
-    'defaultLogo', 'frameLabel', 'frameFont', 'frameColor',
-    // Email fields
-    'emailTo', 'emailSubject', 'emailBody',
-    // Phone fields
-    'phoneCountry', 'phoneNumber',
-    // SMS fields
-    'smsCountry', 'smsNumber', 'smsMessage',
-    // WhatsApp fields
-    'whatsappCountry', 'whatsappPhone', 'whatsappMessage',
-    // Skype fields
-    'skypeAction', 'skypeUsername',
-    // Zoom fields
-    'zoomMeetingId', 'zoomPassword',
-    // WiFi fields
-    'wifiSsid', 'wifiPassword', 'wifiEncryption',
-    // vCard fields
-    'vcardTitle', 'vcardFirstName', 'vcardLastName', 'vcardPhoneHome', 'vcardPhoneMobile',
-    'vcardEmail', 'vcardWebsite', 'vcardCompany', 'vcardJobTitle', 'vcardPhoneOffice',
-    'vcardAddress', 'vcardPostCode', 'vcardCity', 'vcardState', 'vcardCountry',
-    // Location fields
-    'locationAddress', 'locationLat', 'locationLng',
-    // Event fields
-    'eventTitle', 'eventLocation', 'eventStart', 'eventEnd', 'eventReminder', 'eventLink', 'eventNotes',
-    // PayPal fields
-    'paypalType', 'paypalEmail', 'paypalItemName', 'paypalItemId', 'paypalPrice',
-    'paypalCurrency', 'paypalShipping', 'paypalTax',
-    // Payment fields
-    'paymentType', 'paymentUpiId', 'paymentName', 'paymentAmount', 'paymentNote'
-];
+    // Live preview on all field changes
+    const livePreviewFields = [
+        'contentField', 'qrType', 'qrSize', 'qrColor', 'qrBgColor', 'errorCorrection',
+        'frameStyle', 'cornerStyle', 'dotStyle', 'markerBorderStyle', 'markerCenterStyle',
+        'gradientColor', 'markerColor',
+        'defaultLogo', 'frameLabel', 'frameFont', 'frameColor',
+        // Email fields
+        'emailTo', 'emailSubject', 'emailBody',
+        // Phone fields
+        'phoneCountry', 'phoneNumber',
+        // SMS fields
+        'smsCountry', 'smsNumber', 'smsMessage',
+        // WhatsApp fields
+        'whatsappCountry', 'whatsappPhone', 'whatsappMessage',
+        // Skype fields
+        'skypeAction', 'skypeUsername',
+        // Zoom fields
+        'zoomMeetingId', 'zoomPassword',
+        // WiFi fields
+        'wifiSsid', 'wifiPassword', 'wifiEncryption',
+        // vCard fields
+        'vcardTitle', 'vcardFirstName', 'vcardLastName', 'vcardPhoneHome', 'vcardPhoneMobile',
+        'vcardEmail', 'vcardWebsite', 'vcardCompany', 'vcardJobTitle', 'vcardPhoneOffice',
+        'vcardAddress', 'vcardPostCode', 'vcardCity', 'vcardState', 'vcardCountry',
+        // Location fields
+        'locationAddress', 'locationLat', 'locationLng',
+        // Event fields
+        'eventTitle', 'eventLocation', 'eventStart', 'eventEnd', 'eventReminder', 'eventLink', 'eventNotes',
+        // PayPal fields
+        'paypalType', 'paypalEmail', 'paypalItemName', 'paypalItemId', 'paypalPrice',
+        'paypalCurrency', 'paypalShipping', 'paypalTax',
+        // Payment fields
+        'paymentType', 'paymentUpiId', 'paymentName', 'paymentAmount', 'paymentNote'
+    ];
 
-// Initialize preview when page loads with a sample URL
-setTimeout(function() {
-    console.log('Preview initialization starting...');
-    // Wait for QRCodeStyling library to load
-    // Set default URL for initial preview
-    const contentField = document.getElementById('contentField');
-    if (contentField && !contentField.value) {
-        contentField.value = 'https://example.com';
+    // Initialize preview when page loads with a sample URL
+    setTimeout(function() {
+        console.log('Preview initialization starting...');
+        // Wait for QRCodeStyling library to load
+        // Set default URL for initial preview
+        const contentField = document.getElementById('contentField');
+        if (contentField && !contentField.value) {
+            contentField.value = 'https://example.com';
+        }
+        // Trigger initial preview
+        console.log('Calling generatePreview for initial load...');
+        generatePreview();
+    }, 1000);
+
+    // Attach event listeners to all live preview fields
+    console.log('Attaching event listeners to', livePreviewFields.length, 'fields...');
+    livePreviewFields.forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        if (field) {
+            console.log('Attached listeners to:', fieldId);
+            field.addEventListener('input', debouncedPreview);
+            field.addEventListener('change', debouncedPreview);
+        }
+    });
+
+    // Add event listeners for file inputs
+    const bgImageInput = document.getElementById('bgImage');
+    if (bgImageInput) {
+        bgImageInput.addEventListener('change', debouncedPreview);
     }
-    // Trigger initial preview
-    console.log('Calling generatePreview for initial load...');
-    generatePreview();
-}, 1000);
 
-// Attach event listeners to all live preview fields
-console.log('Attaching event listeners to', livePreviewFields.length, 'fields...');
-livePreviewFields.forEach(fieldId => {
-    const field = document.getElementById(fieldId);
-    if (field) {
-        console.log('Attached listeners to:', fieldId);
-        field.addEventListener('input', debouncedPreview);
-        field.addEventListener('change', debouncedPreview);
+    const logoUploadInput = document.getElementById('logoUpload');
+    if (logoUploadInput) {
+        logoUploadInput.addEventListener('change', debouncedPreview);
     }
-});
 
-// Add event listeners for file inputs
-const bgImageInput = document.getElementById('bgImage');
-if (bgImageInput) {
-    bgImageInput.addEventListener('change', debouncedPreview);
-}
-
-const logoUploadInput = document.getElementById('logoUpload');
-if (logoUploadInput) {
-    logoUploadInput.addEventListener('change', debouncedPreview);
-}
-
-// Add event listeners for checkboxes that should trigger preview
-const previewCheckboxes = ['logoRemoveBg'];
-previewCheckboxes.forEach(checkboxId => {
-    const checkbox = document.getElementById(checkboxId);
-    if (checkbox) {
-        checkbox.addEventListener('change', debouncedPreview);
-    }
-});
+    // Add event listeners for checkboxes that should trigger preview
+    const previewCheckboxes = ['logoRemoveBg'];
+    previewCheckboxes.forEach(checkboxId => {
+        const checkbox = document.getElementById(checkboxId);
+        if (checkbox) {
+            checkbox.addEventListener('change', debouncedPreview);
+        }
+    });
 
 }); // End DOMContentLoaded
 </script>
