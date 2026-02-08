@@ -1752,11 +1752,11 @@ window.generatePreview = function() {
         },
         cornersSquareOptions: {
             type: cornerStyle,
-            color: customMarkerColor ? markerColor : foregroundColor
+            color: customMarkerColor ? markerColor : (gradientEnabled ? dotColor : foregroundColor)
         },
         cornersDotOptions: {
             type: markerCenterStyle,
-            color: customMarkerColor ? markerColor : foregroundColor
+            color: customMarkerColor ? markerColor : (gradientEnabled ? dotColor : foregroundColor)
         }
     };
     
