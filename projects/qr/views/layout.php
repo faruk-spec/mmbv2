@@ -588,6 +588,9 @@ try {
         </button>
     </div>
     
+    <!-- QR Code Styling Library -->
+    <script src="https://unpkg.com/qr-code-styling@1.6.0-rc.1/lib/qr-code-styling.js"></script>
+    
     <script>
     // Sidebar toggle for mobile
     (function() {

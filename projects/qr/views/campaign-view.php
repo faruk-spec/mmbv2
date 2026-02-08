@@ -91,13 +91,48 @@
             <div class="qr-codes-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px;">
                 <?php foreach ($qrCodes as $qr): ?>
                     <div class="qr-card glass-card" style="padding: 20px; text-align: center;">
-                        <div class="qr-preview" style="background: white; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
-                            <img src="<?= htmlspecialchars($qr['image_url'] ?? '/placeholder-qr.png') ?>" 
-                                 alt="QR Code" 
-                                 style="width: 100%; height: auto; max-width: 200px; margin: 0 auto; display: block;">
+                        <div class="qr-preview" style="background: white; padding: 15px; border-radius: 10px; margin-bottom: 15px; position: relative;">
+                            <?php if (!empty($qr['image_url'])): ?>
+                                <img src="<?= htmlspecialchars($qr['image_url']) ?>" 
+                                     alt="QR Code" 
+                                     style="width: 100%; height: auto; max-width: 200px; margin: 0 auto; display: block;">
+                            <?php else: ?>
+                                <!-- Generate QR code on-the-fly using content -->
+                                <div id="qr-<?= $qr['id'] ?>" style="width: 200px; height: 200px; margin: 0 auto;"></div>
+                                <script>
+                                    (function() {
+                                        const qrDiv = document.getElementById('qr-<?= $qr['id'] ?>');
+                                        if (qrDiv && typeof QRCodeStyling !== 'undefined') {
+                                            const qr = new QRCodeStyling({
+                                                width: 200,
+                                                height: 200,
+                                                data: <?= json_encode($qr['content']) ?>,
+                                                margin: 10,
+                                                qrOptions: {
+                                                    errorCorrectionLevel: <?= json_encode($qr['error_correction'] ?? 'H') ?>
+                                                },
+                                                dotsOptions: {
+                                                    color: <?= json_encode($qr['foreground_color'] ?? '#000000') ?>,
+                                                    type: "rounded"
+                                                },
+                                                backgroundOptions: {
+                                                    color: <?= json_encode($qr['background_color'] ?? '#ffffff') ?>
+                                                },
+                                                cornersSquareOptions: {
+                                                    type: "extra-rounded"
+                                                },
+                                                cornersDotOptions: {
+                                                    type: "dot"
+                                                }
+                                            });
+                                            qr.append(qrDiv);
+                                        }
+                                    })();
+                                </script>
+                            <?php endif; ?>
                         </div>
                         <h5 style="font-size: 14px; color: var(--text-primary); margin-bottom: 8px; font-weight: 600;">
-                            <?= htmlspecialchars($qr['name'] ?? 'QR Code') ?>
+                            <?= htmlspecialchars($qr['name'] ?? 'QR Code #' . $qr['id']) ?>
                         </h5>
                         <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px; word-break: break-all;">
                             <?= htmlspecialchars(substr($qr['content'] ?? '', 0, 50)) ?><?= strlen($qr['content'] ?? '') > 50 ? '...' : '' ?>
