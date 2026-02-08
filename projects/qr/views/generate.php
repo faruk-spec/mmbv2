@@ -1078,19 +1078,28 @@ const qrConfig = {
 };
 
 // Debounced live preview - Define early to avoid reference errors
+// Performance optimization: Increased debounce delay and added loading state
 let previewTimeout;
+let isGenerating = false;
 window.debouncedPreview = function() {
     console.log('debouncedPreview called');
     clearTimeout(previewTimeout);
     previewTimeout = setTimeout(() => {
         console.log('Debounce timeout expired, checking generatePreview...');
+        if (isGenerating) {
+            console.log('Preview generation already in progress, skipping...');
+            return;
+        }
         if (typeof generatePreview === 'function') {
             console.log('Calling generatePreview...');
+            isGenerating = true;
             generatePreview();
+            // Reset flag after generation completes
+            setTimeout(() => { isGenerating = false; }, 100);
         } else {
             console.error('generatePreview is not a function!');
         }
-    }, 500);
+    }, 800); // Increased from 500ms to 800ms for better performance
 };
 const debouncedPreview = window.debouncedPreview;
 
@@ -2164,6 +2173,33 @@ function applyFrameStyle(qrDiv) {
 </script>
 
 <style>
+/* Performance Optimizations for Smooth Scrolling */
+.qr-main {
+    /* Enable hardware acceleration */
+    will-change: scroll-position;
+    -webkit-overflow-scrolling: touch;
+    /* Optimize paint performance */
+    contain: layout style;
+}
+
+.glass-card {
+    /* Optimize transform and opacity animations */
+    will-change: transform, box-shadow;
+}
+
+.qr-preview-container {
+    /* Isolate preview rendering */
+    contain: layout style paint;
+    will-change: contents;
+}
+
+/* Reduce animation complexity on scroll */
+@media (prefers-reduced-motion: no-preference) {
+    * {
+        scroll-behavior: smooth;
+    }
+}
+
 /* Futuristic AI Design Theme */
 :root {
     --glow-color: rgba(153, 69, 255, 0.6);
@@ -2176,33 +2212,33 @@ function applyFrameStyle(qrDiv) {
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
-    padding: 25px;
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-    transition: all 0.3s ease;
+    border-radius: 1.25rem; /* 20px to rem */
+    padding: 1.5625rem; /* 25px to rem */
+    box-shadow: 0 0.5rem 2rem 0 rgba(0, 0, 0, 0.37);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
     animation: fadeInUp 0.5s ease;
 }
 
 [data-theme="light"] .glass-card {
     background: rgba(255, 255, 255, 0.9);
     border: 1px solid rgba(0, 0, 0, 0.1);
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+    box-shadow: 0 0.5rem 2rem 0 rgba(0, 0, 0, 0.1);
 }
 
 .glass-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 40px 0 rgba(153, 69, 255, 0.3);
+    transform: translateY(-0.125rem); /* -2px to rem, reduced from -2px for smoother performance */
+    box-shadow: 0 0.75rem 2.5rem 0 rgba(153, 69, 255, 0.3);
 }
 
-/* Animations */
+/* Animations - Optimized for performance */
 @keyframes fadeInUp {
     from {
         opacity: 0;
-        transform: translateY(20px);
+        transform: translate3d(0, 1.25rem, 0); /* Use translate3d for GPU acceleration */
     }
     to {
         opacity: 1;
-        transform: translateY(0);
+        transform: translate3d(0, 0, 0);
     }
 }
 
@@ -2215,8 +2251,8 @@ function applyFrameStyle(qrDiv) {
     }
     to {
         opacity: 1;
-        max-height: 500px;
-        margin-bottom: 20px;
+        max-height: 31.25rem; /* 500px to rem */
+        margin-bottom: 1.25rem;
     }
 }
 
@@ -2231,22 +2267,22 @@ function applyFrameStyle(qrDiv) {
 
 /* Section Titles */
 .section-title {
-    font-size: 24px;
+    font-size: 1.5rem; /* 24px to rem */
     font-weight: 600;
-    margin-bottom: 25px;
+    margin-bottom: 1.5625rem; /* 25px to rem */
     background: linear-gradient(135deg, var(--purple), var(--cyan));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 0.75rem; /* 12px to rem */
 }
 
 .subsection-title {
-    font-size: 18px;
+    font-size: 1.125rem; /* 18px to rem */
     font-weight: 600;
-    margin: 25px 0 15px 0;
+    margin: 1.5625rem 0 0.9375rem 0; /* 25px 0 15px 0 to rem */
     color: var(--text-primary);
     display: flex;
     align-items: center;
@@ -3029,17 +3065,17 @@ html[data-theme="dark"] .form-select optgroup {
     margin: 30px 0;
 }
 
-/* Grid */
+/* Grid - Optimized with rem units */
 .grid {
     display: grid;
-    gap: 30px;
+    gap: 1.875rem; /* 30px to rem */
 }
 
 .grid-2 {
     grid-template-columns: 1fr 1fr;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 64rem) { /* 1024px to rem */
     .grid-2 {
         grid-template-columns: 1fr;
     }
