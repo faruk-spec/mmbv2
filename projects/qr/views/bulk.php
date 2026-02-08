@@ -5,17 +5,17 @@
 ?>
 
 <div class="glass-card">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-        <h3 class="section-title">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-xl); flex-wrap: wrap; gap: var(--space-md);">
+        <h3 class="section-title" style="margin-bottom: 0;">
             <i class="fas fa-layer-group"></i> Bulk QR Generation
         </h3>
     </div>
     
-    <div class="bulk-upload-section glass-card" style="margin-bottom: 30px;">
-        <h4 style="margin-bottom: 15px; color: var(--text-primary);">
+    <div class="bulk-upload-section glass-card" style="margin-bottom: var(--space-xl);">
+        <h4 style="margin-bottom: var(--space-md); color: var(--text-primary); font-size: var(--font-lg);">
             <i class="fas fa-upload"></i> Upload CSV File
         </h4>
-        <p style="color: var(--text-secondary); margin-bottom: 20px;">
+        <p style="color: var(--text-secondary); margin-bottom: var(--space-lg); font-size: var(--font-sm);">
             Upload a CSV file with URLs or text to generate multiple QR codes at once.
         </p>
         
@@ -91,105 +91,160 @@
     
     <?php if (!empty($jobs)): ?>
         <div class="jobs-section">
-            <h4 style="margin-bottom: 20px; color: var(--text-primary);">
-                <i class="fas fa-history"></i> Recent Jobs
-            </h4>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg); flex-wrap: wrap; gap: var(--space-md);">
+                <h4 style="margin-bottom: 0; color: var(--text-primary); font-size: var(--font-lg);">
+                    <i class="fas fa-history"></i> Recent Jobs
+                </h4>
+                <div style="display: flex; gap: var(--space-sm);">
+                    <select id="filterJobStatus" class="form-select" onchange="filterJobs()" style="width: auto; min-width: 10rem; padding: 0.625rem 1rem; font-size: var(--font-sm);">
+                        <option value="">All Status</option>
+                        <option value="pending">Pending</option>
+                        <option value="processing">Processing</option>
+                        <option value="completed">Completed</option>
+                        <option value="failed">Failed</option>
+                    </select>
+                </div>
+            </div>
             
-            <div class="jobs-list">
-                <?php foreach ($jobs as $job): ?>
-                    <div class="job-card glass-card">
-                        <div class="job-header">
-                            <div>
-                                <strong>Job #<?= $job['id'] ?></strong>
-                                <?php if ($job['campaign_name']): ?>
-                                    <span class="job-campaign">
-                                        <i class="fas fa-bullhorn"></i> <?= htmlspecialchars($job['campaign_name']) ?>
-                                    </span>
-                                <?php endif; ?>
-                            </div>
-                            <span class="job-status status-<?= $job['status'] ?>">
-                                <?= ucfirst($job['status']) ?>
-                            </span>
-                        </div>
-                        
-                        <div class="job-stats">
-                            <div class="stat">
-                                <span class="stat-label">Total:</span>
-                                <span class="stat-value"><?= $job['total_count'] ?></span>
-                            </div>
-                            <div class="stat">
-                                <span class="stat-label">Completed:</span>
-                                <span class="stat-value"><?= $job['completed_count'] ?></span>
-                            </div>
-                            <?php if ($job['failed_count'] > 0): ?>
-                                <div class="stat">
-                                    <span class="stat-label">Failed:</span>
-                                    <span class="stat-value" style="color: #ff4757;"><?= $job['failed_count'] ?></span>
-                                </div>
+            <div class="jobs-list" id="jobsList"><?php foreach ($jobs as $job): ?>
+                <div class="job-card glass-card"
+                     data-status="<?= $job['status'] ?>"
+                     data-date="<?= strtotime($job['created_at']) ?>"
+                     data-campaign="<?= $job['campaign_name'] ?? '' ?>">
+                    <div class="job-header">
+                        <div>
+                            <strong>Job #<?= $job['id'] ?></strong>
+                            <?php if ($job['campaign_name']): ?>
+                                <span class="job-campaign">
+                                    <i class="fas fa-bullhorn"></i> <?= htmlspecialchars($job['campaign_name']) ?>
+                                </span>
                             <?php endif; ?>
                         </div>
-                        
-                        <div class="job-date">
-                            <i class="fas fa-clock"></i>
-                            <?= date('M j, Y g:i A', strtotime($job['created_at'])) ?>
+                        <span class="job-status status-<?= $job['status'] ?>">
+                            <?= ucfirst($job['status']) ?>
+                        </span>
+                    </div>
+                    
+                    <div class="job-stats">
+                        <div class="stat">
+                            <span class="stat-label">Total:</span>
+                            <span class="stat-value"><?= $job['total_count'] ?></span>
                         </div>
-                        
-                        <?php if ($job['status'] === 'completed' && !empty($job['file_path'])): ?>
-                            <a href="<?= $job['file_path'] ?>" class="btn-primary btn-sm" download>
-                                <i class="fas fa-download"></i> Download ZIP
-                            </a>
+                        <div class="stat">
+                            <span class="stat-label">Completed:</span>
+                            <span class="stat-value"><?= $job['completed_count'] ?></span>
+                        </div>
+                        <?php if ($job['failed_count'] > 0): ?>
+                            <div class="stat">
+                                <span class="stat-label">Failed:</span>
+                                <span class="stat-value" style="color: #ff4757;"><?= $job['failed_count'] ?></span>
+                            </div>
                         <?php endif; ?>
                     </div>
-                <?php endforeach; ?>
+                    
+                    <div class="job-date">
+                        <i class="fas fa-clock"></i>
+                        <?= date('M j, Y g:i A', strtotime($job['created_at'])) ?>
+                    </div>
+                    
+                    <?php if ($job['status'] === 'completed' && !empty($job['file_path'])): ?>
+                        <a href="<?= $job['file_path'] ?>" class="btn-primary btn-sm" download>
+                            <i class="fas fa-download"></i> Download ZIP
+                        </a>
+                    <?php endif; ?>
+                </div>
+            <?php endforeach; ?>
+            </div>
+            <div id="noJobsResult" style="display: none; text-align: center; padding: var(--space-2xl); color: var(--text-secondary);">
+                <i class="fas fa-search" style="font-size: 3rem; opacity: 0.5; margin-bottom: var(--space-md);"></i>
+                <p>No jobs found matching your criteria.</p>
             </div>
         </div>
     <?php endif; ?>
 </div>
 
+<script>
+function filterJobs() {
+    const statusFilter = document.getElementById('filterJobStatus').value.toLowerCase();
+    const cards = document.querySelectorAll('.job-card');
+    let visibleCount = 0;
+    
+    cards.forEach(card => {
+        const status = card.getAttribute('data-status');
+        const matchesStatus = !statusFilter || status === statusFilter;
+        
+        if (matchesStatus) {
+            card.style.display = 'flex';
+            visibleCount++;
+        } else {
+            card.style.display = 'none';
+        }
+    });
+    
+    // Show/hide no results message
+    const noResults = document.getElementById('noJobsResult');
+    const jobsList = document.getElementById('jobsList');
+    if (visibleCount === 0) {
+        jobsList.style.display = 'none';
+        noResults.style.display = 'block';
+    } else {
+        jobsList.style.display = 'flex';
+        noResults.style.display = 'none';
+    }
+}
+</script>
+
 <style>
 .bulk-upload-section {
-    padding: 25px;
+    padding: 1.5625rem; /* 25px to rem */
 }
 
 .jobs-list {
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: var(--space-md);
 }
 
 .job-card {
-    padding: 20px;
+    padding: var(--space-lg);
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: var(--space-md);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.job-card:hover {
+    transform: translateY(-0.125rem);
 }
 
 .job-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: var(--space-sm);
 }
 
 .job-header strong {
     color: var(--text-primary);
-    font-size: 16px;
+    font-size: var(--font-md);
 }
 
 .job-campaign {
     display: inline-block;
-    margin-left: 10px;
-    padding: 4px 10px;
+    margin-left: var(--space-sm);
+    padding: 0.25rem 0.625rem; /* 4px 10px to rem */
     background: rgba(87, 96, 255, 0.1);
-    border-radius: 12px;
-    font-size: 12px;
+    border-radius: 0.75rem; /* 12px to rem */
+    font-size: var(--font-xs);
     color: var(--purple);
 }
 
 .job-status {
-    padding: 4px 12px;
-    border-radius: 12px;
-    font-size: 12px;
+    padding: 0.25rem 0.75rem; /* 4px 12px to rem */
+    border-radius: 0.75rem;
+    font-size: var(--font-xs);
     font-weight: 600;
+    white-space: nowrap;
 }
 
 .status-pending {
@@ -214,36 +269,37 @@
 
 .job-stats {
     display: flex;
-    gap: 20px;
+    gap: var(--space-lg);
+    flex-wrap: wrap;
 }
 
 .job-stats .stat {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 0.25rem; /* 4px to rem */
 }
 
 .stat-label {
     color: var(--text-secondary);
-    font-size: 12px;
+    font-size: var(--font-xs);
 }
 
 .stat-value {
     color: var(--text-primary);
-    font-size: 18px;
+    font-size: var(--font-lg);
     font-weight: 600;
 }
 
 .job-date {
     color: var(--text-secondary);
-    font-size: 13px;
+    font-size: 0.8125rem; /* 13px to rem */
 }
 
 .progress-bar {
     width: 100%;
-    height: 8px;
+    height: 0.5rem; /* 8px to rem */
     background: rgba(255, 255, 255, 0.1);
-    border-radius: 4px;
+    border-radius: 0.25rem; /* 4px to rem */
     overflow: hidden;
 }
 
@@ -254,19 +310,14 @@
     transition: width 0.3s ease;
 }
 
-.btn-sm {
-    padding: 8px 16px;
-    font-size: 14px;
-}
-
 /* Responsive Styles */
-@media (max-width: 768px) {
+@media (max-width: 48rem) { /* 768px to rem */
     .bulk-upload-section {
-        padding: 20px;
+        padding: var(--space-lg);
     }
     
     .sample-download-section {
-        padding: 15px;
+        padding: var(--space-md);
     }
     
     .sample-download-section > div:last-child {
