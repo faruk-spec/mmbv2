@@ -5,58 +5,311 @@
 ?>
 
 <div class="glass-card">
-    <div class="empty-state" style="padding: 60px 20px;">
-        <div class="empty-icon">
-            <i class="fas fa-layer-group"></i>
-        </div>
-        <h2 style="font-size: 24px; margin-bottom: 15px; color: var(--text-primary);">Bulk QR Code Generation</h2>
-        <p style="color: var(--text-secondary); margin-bottom: 30px;">Generate hundreds of QR codes at once from CSV or Excel files.</p>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+        <h3 class="section-title">
+            <i class="fas fa-layer-group"></i> Bulk QR Generation
+        </h3>
+    </div>
+    
+    <div class="bulk-upload-section glass-card" style="margin-bottom: 30px;">
+        <h4 style="margin-bottom: 15px; color: var(--text-primary);">
+            <i class="fas fa-upload"></i> Upload CSV File
+        </h4>
+        <p style="color: var(--text-secondary); margin-bottom: 20px;">
+            Upload a CSV file with URLs or text to generate multiple QR codes at once.
+        </p>
         
-        <div class="feature-list" style="text-align: left; max-width: 500px; margin: 0 auto;">
-            <div class="feature-item">
-                <i class="fas fa-check-circle" style="color: var(--cyan);"></i>
-                <span>Upload CSV/Excel files</span>
+        <form id="bulkUploadForm" enctype="multipart/form-data">
+            <div class="form-group">
+                <label>Campaign (Optional)</label>
+                <select name="campaign_id" id="campaignId" class="form-select">
+                    <option value="">No Campaign</option>
+                    <?php if (!empty($campaigns)): ?>
+                        <?php foreach ($campaigns as $campaign): ?>
+                            <option value="<?= $campaign['id'] ?>">
+                                <?= htmlspecialchars($campaign['name']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </select>
             </div>
-            <div class="feature-item">
-                <i class="fas fa-check-circle" style="color: var(--cyan);"></i>
-                <span>Generate multiple QR codes at once</span>
+            
+            <div class="form-group">
+                <label>CSV File *</label>
+                <input type="file" name="csv_file" id="csvFile" accept=".csv,.txt" required class="form-control">
+                <small style="color: var(--text-secondary); margin-top: 5px; display: block;">
+                    First column should contain URLs or text. First row will be treated as headers.
+                </small>
             </div>
-            <div class="feature-item">
-                <i class="fas fa-check-circle" style="color: var(--cyan);"></i>
-                <span>Apply templates to bulk generation</span>
-            </div>
-            <div class="feature-item">
-                <i class="fas fa-check-circle" style="color: var(--cyan);"></i>
-                <span>Download as ZIP archive</span>
-            </div>
-        </div>
+            
+            <button type="submit" class="btn-primary" id="uploadBtn">
+                <i class="fas fa-upload"></i> Upload & Preview
+            </button>
+        </form>
         
-        <div style="margin-top: 40px;">
-            <p style="color: var(--text-secondary); font-size: 14px;">
-                <i class="fas fa-info-circle"></i> Feature coming soon...
-            </p>
+        <div id="uploadProgress" style="display: none; margin-top: 20px;">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <p id="progressText" style="text-align: center; margin-top: 10px; color: var(--text-secondary);"></p>
         </div>
     </div>
+    
+    <?php if (!empty($jobs)): ?>
+        <div class="jobs-section">
+            <h4 style="margin-bottom: 20px; color: var(--text-primary);">
+                <i class="fas fa-history"></i> Recent Jobs
+            </h4>
+            
+            <div class="jobs-list">
+                <?php foreach ($jobs as $job): ?>
+                    <div class="job-card glass-card">
+                        <div class="job-header">
+                            <div>
+                                <strong>Job #<?= $job['id'] ?></strong>
+                                <?php if ($job['campaign_name']): ?>
+                                    <span class="job-campaign">
+                                        <i class="fas fa-bullhorn"></i> <?= htmlspecialchars($job['campaign_name']) ?>
+                                    </span>
+                                <?php endif; ?>
+                            </div>
+                            <span class="job-status status-<?= $job['status'] ?>">
+                                <?= ucfirst($job['status']) ?>
+                            </span>
+                        </div>
+                        
+                        <div class="job-stats">
+                            <div class="stat">
+                                <span class="stat-label">Total:</span>
+                                <span class="stat-value"><?= $job['total_count'] ?></span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-label">Completed:</span>
+                                <span class="stat-value"><?= $job['completed_count'] ?></span>
+                            </div>
+                            <?php if ($job['failed_count'] > 0): ?>
+                                <div class="stat">
+                                    <span class="stat-label">Failed:</span>
+                                    <span class="stat-value" style="color: #ff4757;"><?= $job['failed_count'] ?></span>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                        
+                        <div class="job-date">
+                            <i class="fas fa-clock"></i>
+                            <?= date('M j, Y g:i A', strtotime($job['created_at'])) ?>
+                        </div>
+                        
+                        <?php if ($job['status'] === 'completed' && !empty($job['file_path'])): ?>
+                            <a href="<?= $job['file_path'] ?>" class="btn-primary btn-sm" download>
+                                <i class="fas fa-download"></i> Download ZIP
+                            </a>
+                        <?php endif; ?>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    <?php endif; ?>
 </div>
 
 <style>
-.feature-list {
+.bulk-upload-section {
+    padding: 25px;
+}
+
+.jobs-list {
     display: flex;
     flex-direction: column;
     gap: 15px;
 }
 
-.feature-item {
+.job-card {
+    padding: 20px;
     display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px;
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: 8px;
-    color: var(--text-primary);
+    flex-direction: column;
+    gap: 15px;
 }
 
-.feature-item i {
-    font-size: 20px;
+.job-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.job-header strong {
+    color: var(--text-primary);
+    font-size: 16px;
+}
+
+.job-campaign {
+    display: inline-block;
+    margin-left: 10px;
+    padding: 4px 10px;
+    background: rgba(87, 96, 255, 0.1);
+    border-radius: 12px;
+    font-size: 12px;
+    color: var(--purple);
+}
+
+.job-status {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status-pending {
+    background: rgba(255, 159, 64, 0.2);
+    color: #ff9f40;
+}
+
+.status-processing {
+    background: rgba(87, 96, 255, 0.2);
+    color: var(--purple);
+}
+
+.status-completed {
+    background: rgba(46, 213, 115, 0.2);
+    color: #2ed573;
+}
+
+.status-failed {
+    background: rgba(255, 71, 87, 0.2);
+    color: #ff4757;
+}
+
+.job-stats {
+    display: flex;
+    gap: 20px;
+}
+
+.job-stats .stat {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.stat-label {
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
+.stat-value {
+    color: var(--text-primary);
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.job-date {
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(135deg, var(--purple), var(--cyan));
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+.btn-sm {
+    padding: 8px 16px;
+    font-size: 14px;
 }
 </style>
+
+<script>
+let currentJobId = null;
+
+document.getElementById('bulkUploadForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const uploadBtn = document.getElementById('uploadBtn');
+    const progressDiv = document.getElementById('uploadProgress');
+    const progressFill = document.getElementById('progressFill');
+    const progressText = document.getElementById('progressText');
+    
+    uploadBtn.disabled = true;
+    uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+    progressDiv.style.display = 'block';
+    progressFill.style.width = '30%';
+    progressText.textContent = 'Uploading file...';
+    
+    try {
+        const response = await fetch('/projects/qr/bulk/upload', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            currentJobId = data.job_id;
+            progressFill.style.width = '60%';
+            progressText.textContent = `File uploaded. ${data.total} rows found. Processing...`;
+            
+            // Start generation
+            await generateBulk(data.job_id);
+        } else {
+            alert(data.message || 'Upload failed');
+            resetForm();
+        }
+    } catch (error) {
+        alert('Error uploading file');
+        console.error(error);
+        resetForm();
+    }
+});
+
+async function generateBulk(jobId) {
+    const progressFill = document.getElementById('progressFill');
+    const progressText = document.getElementById('progressText');
+    
+    try {
+        const formData = new FormData();
+        formData.append('job_id', jobId);
+        
+        const response = await fetch('/projects/qr/bulk/generate', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            progressFill.style.width = '100%';
+            progressText.textContent = `✓ Complete! Generated ${data.completed} QR codes successfully.`;
+            
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        } else {
+            alert(data.message || 'Generation failed');
+            resetForm();
+        }
+    } catch (error) {
+        alert('Error generating QR codes');
+        console.error(error);
+        resetForm();
+    }
+}
+
+function resetForm() {
+    const uploadBtn = document.getElementById('uploadBtn');
+    const progressDiv = document.getElementById('uploadProgress');
+    
+    uploadBtn.disabled = false;
+    uploadBtn.innerHTML = '<i class="fas fa-upload"></i> Upload & Preview';
+    progressDiv.style.display = 'none';
+    document.getElementById('bulkUploadForm').reset();
+}
+</script>
