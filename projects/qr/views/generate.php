@@ -1509,11 +1509,17 @@ const defaultLogos = {
 function addDownloadButton(qrCodeInstance) {
     const container = document.getElementById('qrPreviewContainer');
     
-    // Check if button already exists
+    // Check if buttons already exist
     if (container.querySelector('.btn-download')) {
         return;
     }
     
+    // Create button container for side-by-side buttons
+    const buttonContainer = document.createElement('div');
+    buttonContainer.className = 'qr-action-buttons';
+    buttonContainer.style.cssText = 'display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap;';
+    
+    // Download QR Code button
     const downloadBtn = document.createElement('button');
     downloadBtn.className = 'btn btn-download';
     downloadBtn.innerHTML = '<i class="fas fa-download"></i> Download QR Code';
@@ -1524,8 +1530,137 @@ function addDownloadButton(qrCodeInstance) {
             showNotification('QR code downloaded successfully!', 'success');
         }
     };
-    container.appendChild(downloadBtn);
+    
+    // Save as Template button
+    const saveTemplateBtn = document.createElement('button');
+    saveTemplateBtn.className = 'btn btn-save-template';
+    saveTemplateBtn.innerHTML = '<i class="fas fa-save"></i> Save as Template';
+    saveTemplateBtn.onclick = function(e) {
+        e.preventDefault();
+        showSaveTemplateModal();
+    };
+    
+    buttonContainer.appendChild(downloadBtn);
+    buttonContainer.appendChild(saveTemplateBtn);
+    container.appendChild(buttonContainer);
 }
+
+// Show save template modal
+function showSaveTemplateModal() {
+    const modal = document.createElement('div');
+    modal.className = 'template-modal';
+    modal.innerHTML = `
+        <div class="template-modal-overlay" onclick="closeSaveTemplateModal()"></div>
+        <div class="template-modal-content">
+            <div class="template-modal-header">
+                <h3><i class="fas fa-save"></i> Save as Template</h3>
+                <button class="template-modal-close" onclick="closeSaveTemplateModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="template-modal-body">
+                <div class="form-group">
+                    <label class="form-label">Template Name *</label>
+                    <input type="text" id="templateName" class="form-input" placeholder="e.g., Business Card Blue" required>
+                </div>
+                <div class="form-group">
+                    <label class="toggle-label" style="display: flex; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="templateIsPublic" class="toggle-input">
+                        <span class="toggle-slider"></span>
+                        <span style="color: var(--text-primary);">Make this template public</span>
+                    </label>
+                    <small style="color: var(--text-secondary); display: block; margin-top: 5px;">
+                        Public templates can be used by other users
+                    </small>
+                </div>
+            </div>
+            <div class="template-modal-footer">
+                <button class="btn btn-secondary" onclick="closeSaveTemplateModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveCurrentTemplate()">
+                    <i class="fas fa-save"></i> Save Template
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    document.getElementById('templateName').focus();
+}
+
+// Close save template modal
+function closeSaveTemplateModal() {
+    const modal = document.querySelector('.template-modal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+// Save current settings as template
+async function saveCurrentTemplate() {
+    const templateName = document.getElementById('templateName').value.trim();
+    const isPublic = document.getElementById('templateIsPublic').checked;
+    
+    if (!templateName) {
+        alert('Please enter a template name');
+        return;
+    }
+    
+    // Collect all current settings
+    const settings = {
+        size: document.getElementById('qrSize').value,
+        foregroundColor: document.getElementById('qrColor').value,
+        backgroundColor: document.getElementById('qrBgColor').value,
+        errorCorrection: document.getElementById('errorCorrection').value,
+        cornerStyle: document.getElementById('cornerStyle').value,
+        dotStyle: document.getElementById('dotStyle').value,
+        markerBorderStyle: document.getElementById('markerBorderStyle').value,
+        markerCenterStyle: document.getElementById('markerCenterStyle').value,
+        gradientEnabled: document.getElementById('gradientEnabled').checked,
+        gradientColor: document.getElementById('gradientColor').value,
+        transparentBg: document.getElementById('transparentBg').checked,
+        bgImageEnabled: document.getElementById('bgImageEnabled').checked,
+        customMarkerColor: document.getElementById('customMarkerColor').checked,
+        markerColor: document.getElementById('markerColor').value,
+        differentMarkers: document.getElementById('differentMarkers').checked,
+        markerTLColor: document.getElementById('markerTLColor').value,
+        markerTRColor: document.getElementById('markerTRColor').value,
+        markerBLColor: document.getElementById('markerBLColor').value,
+        logoOption: document.getElementById('logoOption').value,
+        defaultLogo: document.getElementById('defaultLogo')?.value,
+        logoSize: document.getElementById('logoSize').value,
+        logoRemoveBg: document.getElementById('logoRemoveBg').checked,
+        frameStyle: document.getElementById('frameStyle')?.value,
+        frameLabel: document.getElementById('frameLabel')?.value,
+        frameFont: document.getElementById('frameFont')?.value,
+        frameColor: document.getElementById('frameColor')?.value
+    };
+    
+    try {
+        const formData = new FormData();
+        formData.append('name', templateName);
+        formData.append('settings', JSON.stringify(settings));
+        if (isPublic) {
+            formData.append('is_public', '1');
+        }
+        
+        const response = await fetch('/projects/qr/templates/create', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification('Template saved successfully!', 'success');
+            closeSaveTemplateModal();
+        } else {
+            alert(data.message || 'Failed to save template');
+        }
+    } catch (error) {
+        console.error('Error saving template:', error);
+        alert('Error saving template');
+    }
+}
+
 
 // Generate preview with QRCodeStyling
 function generatePreview() {
@@ -1617,16 +1752,23 @@ function generatePreview() {
     };
     
     // Different marker colors - Apply individual colors to each corner
+    // The qr-code-styling library supports cornersSquareOptions and cornersDotOptions as arrays
+    // for different colors on each corner: [top-left, top-right, bottom-left]
     if (differentMarkers) {
-        // Note: qr-code-styling library limitation - we can only apply one color to all markers
-        // Using the top-left (primary) color for all markers
-        // Individual per-corner colors are not supported by the library
-        qrOptions.cornersSquareOptions.color = markerTLColor;
-        qrOptions.cornersDotOptions.color = markerTLColor;
-        
-        // Store other colors for potential future use when library adds support
-        // Top Right: markerTRColor
-        // Bottom Left: markerBLColor
+        qrOptions.cornersSquareOptions = [
+            { type: cornerStyle, color: markerTLColor },  // Top-left
+            { type: cornerStyle, color: markerTRColor },  // Top-right
+            { type: cornerStyle, color: markerBLColor }   // Bottom-left
+        ];
+        qrOptions.cornersDotOptions = [
+            { type: markerCenterStyle, color: markerTLColor },  // Top-left
+            { type: markerCenterStyle, color: markerTRColor },  // Top-right
+            { type: markerCenterStyle, color: markerBLColor }   // Bottom-left
+        ];
+    } else if (customMarkerColor) {
+        // Single custom color for all markers
+        qrOptions.cornersSquareOptions.color = markerColor;
+        qrOptions.cornersDotOptions.color = markerColor;
     }
     
     // Add logo if selected
@@ -2599,6 +2741,133 @@ html[data-theme="dark"] .form-select optgroup {
     background: linear-gradient(135deg, #667eea, #764ba2);
     color: white;
 }
+
+.btn-save-template {
+    background: linear-gradient(135deg, #2ed573, #26de81);
+    color: white;
+}
+
+.btn-save-template:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(46, 213, 115, 0.4);
+}
+
+.qr-action-buttons .btn {
+    flex: 1;
+    min-width: 200px;
+}
+
+/* Template Save Modal */
+.template-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.template-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+}
+
+.template-modal-content {
+    position: relative;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    max-width: 500px;
+    width: 90%;
+    overflow: hidden;
+    animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-30px) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.template-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 25px;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.template-modal-header h3 {
+    margin: 0;
+    font-size: 20px;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.template-modal-close {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 5px 10px;
+    border-radius: 5px;
+    transition: all 0.2s;
+}
+
+.template-modal-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+.template-modal-body {
+    padding: 25px;
+}
+
+.template-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 20px 25px;
+    border-top: 1px solid var(--glass-border);
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    border: 1px solid var(--glass-border);
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+[data-theme="light"] .btn-secondary {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .btn-secondary:hover {
+    background: rgba(0, 0, 0, 0.1);
+}
+
 
 .btn-shine {
     position: absolute;

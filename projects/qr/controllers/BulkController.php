@@ -242,6 +242,119 @@ class BulkController
     }
     
     /**
+     * Download sample CSV file
+     */
+    public function downloadSample(): void
+    {
+        $userId = Auth::id();
+        
+        if (!$userId) {
+            header('Location: /login');
+            exit;
+        }
+        
+        // Get sample type from query parameter
+        $type = $_GET['type'] ?? 'url';
+        
+        // Define sample data for different types
+        $samples = [
+            'url' => [
+                'filename' => 'sample-urls.csv',
+                'headers' => ['URL', 'Description'],
+                'rows' => [
+                    ['https://example.com', 'Example Website'],
+                    ['https://google.com', 'Google Search'],
+                    ['https://github.com', 'GitHub'],
+                    ['https://twitter.com', 'Twitter'],
+                    ['https://facebook.com', 'Facebook']
+                ]
+            ],
+            'text' => [
+                'filename' => 'sample-text.csv',
+                'headers' => ['Text', 'Notes'],
+                'rows' => [
+                    ['Hello World!', 'Simple greeting'],
+                    ['This is a sample text for QR code', 'Example text'],
+                    ['Contact us: info@example.com', 'Contact info'],
+                    ['Special Offer: 20% OFF', 'Promotional text'],
+                    ['Event Code: ABC123', 'Event code']
+                ]
+            ],
+            'phone' => [
+                'filename' => 'sample-phones.csv',
+                'headers' => ['Phone Number', 'Contact Name'],
+                'rows' => [
+                    ['+1-555-0101', 'John Doe'],
+                    ['+1-555-0102', 'Jane Smith'],
+                    ['+1-555-0103', 'Bob Johnson'],
+                    ['+44-20-7123-4567', 'Alice Brown'],
+                    ['+91-9876543210', 'Raj Kumar']
+                ]
+            ],
+            'email' => [
+                'filename' => 'sample-emails.csv',
+                'headers' => ['Email Address', 'Name'],
+                'rows' => [
+                    ['john@example.com', 'John Doe'],
+                    ['jane@example.com', 'Jane Smith'],
+                    ['support@example.com', 'Support Team'],
+                    ['info@example.com', 'Information'],
+                    ['sales@example.com', 'Sales Team']
+                ]
+            ],
+            'vcard' => [
+                'filename' => 'sample-contacts.csv',
+                'headers' => ['Full Name', 'Email', 'Phone', 'Company'],
+                'rows' => [
+                    ['John Doe', 'john@example.com', '+1-555-0101', 'Acme Corp'],
+                    ['Jane Smith', 'jane@example.com', '+1-555-0102', 'Tech Inc'],
+                    ['Bob Johnson', 'bob@example.com', '+1-555-0103', 'Design Co'],
+                    ['Alice Brown', 'alice@example.com', '+44-20-7123-4567', 'Global Ltd'],
+                    ['Raj Kumar', 'raj@example.com', '+91-9876543210', 'Innovation Hub']
+                ]
+            ],
+            'wifi' => [
+                'filename' => 'sample-wifi.csv',
+                'headers' => ['SSID', 'Password', 'Security Type'],
+                'rows' => [
+                    ['MyHomeWiFi', 'password123', 'WPA'],
+                    ['OfficeNetwork', 'officepass456', 'WPA2'],
+                    ['GuestNetwork', 'guest789', 'WPA'],
+                    ['CafeWiFi', 'cafe2024', 'WPA2'],
+                    ['PublicWiFi', '', 'nopass']
+                ]
+            ]
+        ];
+        
+        // Get the sample data or default to URL
+        $sample = $samples[$type] ?? $samples['url'];
+        
+        // Set headers for CSV download
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . $sample['filename'] . '"');
+        header('Cache-Control: no-cache, no-store, must-revalidate');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+        
+        // Create file pointer connected to output stream
+        $output = fopen('php://output', 'w');
+        
+        // Write BOM for UTF-8
+        fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
+        
+        // Write headers
+        fputcsv($output, $sample['headers']);
+        
+        // Write data rows
+        foreach ($sample['rows'] as $row) {
+            fputcsv($output, $row);
+        }
+        
+        fclose($output);
+        exit;
+    }
+    
+    /**
      * Generate short code
      */
     private function generateShortCode(int $id): string

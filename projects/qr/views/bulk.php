@@ -42,6 +42,30 @@
                 </small>
             </div>
             
+            <!-- Sample CSV Download Section -->
+            <div class="sample-download-section" style="margin: 20px 0; padding: 15px; background: rgba(87, 96, 255, 0.1); border-radius: 10px; border: 1px solid rgba(87, 96, 255, 0.3);">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                    <i class="fas fa-file-download" style="color: var(--purple); font-size: 18px;"></i>
+                    <strong style="color: var(--text-primary);">Need a sample CSV file?</strong>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: end;">
+                    <div style="flex: 1;">
+                        <label style="display: block; margin-bottom: 5px; color: var(--text-secondary); font-size: 13px;">Select Type</label>
+                        <select id="sampleType" class="form-select" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);">
+                            <option value="url">URL / Website</option>
+                            <option value="text">Plain Text</option>
+                            <option value="phone">Phone Numbers</option>
+                            <option value="email">Email Addresses</option>
+                            <option value="vcard">vCard (Contacts)</option>
+                            <option value="wifi">WiFi Networks</option>
+                        </select>
+                    </div>
+                    <button type="button" class="btn-primary" style="padding: 10px 20px;" onclick="downloadSample()">
+                        <i class="fas fa-download"></i> Download Sample
+                    </button>
+                </div>
+            </div>
+            
             <button type="submit" class="btn-primary" id="uploadBtn">
                 <i class="fas fa-upload"></i> Upload & Preview
             </button>
@@ -228,6 +252,12 @@
 
 <script>
 let currentJobId = null;
+
+// Download sample CSV function
+function downloadSample() {
+    const sampleType = document.getElementById('sampleType').value;
+    window.location.href = `/projects/qr/bulk/sample?type=${sampleType}`;
+}
 
 document.getElementById('bulkUploadForm').addEventListener('submit', async function(e) {
     e.preventDefault();
