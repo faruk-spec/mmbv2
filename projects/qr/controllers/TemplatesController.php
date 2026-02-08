@@ -9,11 +9,15 @@
 namespace Projects\QR\Controllers;
 
 use Core\Auth;
+use Projects\QR\Models\TemplateModel;
 
 class TemplatesController
 {
+    private TemplateModel $model;
+    
     public function __construct()
     {
+        $this->model = new TemplateModel();
     }
     
     /**
@@ -28,19 +32,132 @@ class TemplatesController
             exit;
         }
         
+        // Get all templates for the user
+        $templates = $this->model->getByUser($userId);
+        
         $this->render('templates', [
             'title' => 'Templates',
-            'user' => Auth::user()
+            'user' => Auth::user(),
+            'templates' => $templates
         ]);
     }
     
     /**
-     * Save template
+     * Create new template
      */
-    public function save(): void
+    public function create(): void
     {
-        // TODO: Implement template save logic
-        header('Location: /projects/qr/templates');
+        $userId = Auth::id();
+        
+        if (!$userId) {
+            echo json_encode(['success' => false, 'message' => 'Not authenticated']);
+            exit;
+        }
+        
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $data = [
+                'name' => $_POST['name'] ?? 'Untitled Template',
+                'settings' => json_decode($_POST['settings'] ?? '{}', true),
+                'is_public' => isset($_POST['is_public']) ? 1 : 0
+            ];
+            
+            $templateId = $this->model->create($userId, $data);
+            
+            if ($templateId) {
+                echo json_encode(['success' => true, 'id' => $templateId, 'message' => 'Template saved successfully']);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Failed to save template']);
+            }
+            exit;
+        }
+    }
+    
+    /**
+     * Get template by ID (for applying)
+     */
+    public function get(): void
+    {
+        $userId = Auth::id();
+        
+        if (!$userId) {
+            echo json_encode(['success' => false, 'message' => 'Not authenticated']);
+            exit;
+        }
+        
+        $templateId = $_GET['id'] ?? null;
+        
+        if (!$templateId) {
+            echo json_encode(['success' => false, 'message' => 'Template ID required']);
+            exit;
+        }
+        
+        $template = $this->model->getById($templateId, $userId);
+        
+        if ($template) {
+            echo json_encode(['success' => true, 'template' => $template]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Template not found']);
+        }
+        exit;
+    }
+    
+    /**
+     * Update template
+     */
+    public function update(): void
+    {
+        $userId = Auth::id();
+        
+        if (!$userId) {
+            echo json_encode(['success' => false, 'message' => 'Not authenticated']);
+            exit;
+        }
+        
+        $templateId = $_POST['id'] ?? null;
+        
+        if (!$templateId) {
+            echo json_encode(['success' => false, 'message' => 'Template ID required']);
+            exit;
+        }
+        
+        $data = [
+            'name' => $_POST['name'] ?? 'Untitled Template',
+            'settings' => json_decode($_POST['settings'] ?? '{}', true),
+            'is_public' => isset($_POST['is_public']) ? 1 : 0
+        ];
+        
+        if ($this->model->update($templateId, $userId, $data)) {
+            echo json_encode(['success' => true, 'message' => 'Template updated successfully']);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Failed to update template']);
+        }
+        exit;
+    }
+    
+    /**
+     * Delete template
+     */
+    public function delete(): void
+    {
+        $userId = Auth::id();
+        
+        if (!$userId) {
+            echo json_encode(['success' => false, 'message' => 'Not authenticated']);
+            exit;
+        }
+        
+        $templateId = $_POST['id'] ?? null;
+        
+        if (!$templateId) {
+            echo json_encode(['success' => false, 'message' => 'Template ID required']);
+            exit;
+        }
+        
+        if ($this->model->delete($templateId, $userId)) {
+            echo json_encode(['success' => true, 'message' => 'Template deleted successfully']);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Failed to delete template']);
+        }
         exit;
     }
     
