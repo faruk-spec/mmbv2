@@ -1601,7 +1601,10 @@ function showSaveTemplateModal() {
             <div class="template-modal-body">
                 <div class="form-group">
                     <label class="form-label">Template Name *</label>
-                    <input type="text" id="templateName" class="form-input" placeholder="e.g., Business Card Blue" required>
+                    <input type="text" id="templateName" class="form-input" placeholder="e.g., Business Card Blue" required aria-required="true" aria-describedby="templateNameError">
+                    <small id="templateNameError" style="color: #ff4757; display: none; margin-top: 5px;">
+                        Please enter a template name
+                    </small>
                 </div>
                 <div class="form-group">
                     <label class="toggle-label" style="display: flex; align-items: center; gap: 10px;">
@@ -1638,10 +1641,19 @@ function closeSaveTemplateModal() {
 async function saveCurrentTemplate() {
     const templateName = document.getElementById('templateName').value.trim();
     const isPublic = document.getElementById('templateIsPublic').checked;
+    const errorMsg = document.getElementById('templateNameError');
     
     if (!templateName) {
-        alert('Please enter a template name');
+        if (errorMsg) {
+            errorMsg.style.display = 'block';
+        }
+        showNotification('Please enter a template name', 'error');
         return;
+    }
+    
+    // Hide error if shown
+    if (errorMsg) {
+        errorMsg.style.display = 'none';
     }
     
     // Collect all current settings
@@ -1693,11 +1705,11 @@ async function saveCurrentTemplate() {
             showNotification('Template saved successfully!', 'success');
             closeSaveTemplateModal();
         } else {
-            alert(data.message || 'Failed to save template');
+            showNotification(data.message || 'Failed to save template', 'error');
         }
     } catch (error) {
         console.error('Error saving template:', error);
-        alert('Error saving template');
+        showNotification('Error saving template', 'error');
     }
 }
 
