@@ -74,9 +74,11 @@
                 </div>
             </div>
             
-            <button type="submit" class="btn-primary" id="uploadBtn">
-                <i class="fas fa-upload"></i> Upload & Preview
-            </button>
+            <div class="form-actions" style="margin-top: 20px;">
+                <button type="submit" class="btn-primary" id="uploadBtn">
+                    <i class="fas fa-upload"></i> Upload & Preview
+                </button>
+            </div>
         </form>
         
         <div id="uploadProgress" style="display: none; margin-top: 20px;">

@@ -185,16 +185,27 @@ try {
         .btn {
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 8px;
             padding: 12px 24px;
             border: none;
-            border-radius: 8px;
+            border-radius: 10px;
             font-family: inherit;
-            font-size: 14px;
-            font-weight: 500;
+            font-size: 15px;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.3s ease;
             text-decoration: none;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
         
         .btn-primary {
@@ -203,8 +214,8 @@ try {
             border: none;
         }
         
-        .btn-primary:hover {
-            box-shadow: 0 0 20px rgba(153, 69, 255, 0.4);
+        .btn-primary:hover:not(:disabled) {
+            box-shadow: 0 4px 20px rgba(153, 69, 255, 0.5);
             transform: translateY(-2px);
         }
         
@@ -214,9 +225,10 @@ try {
             border: 1px solid var(--border-color);
         }
         
-        .btn-secondary:hover {
+        .btn-secondary:hover:not(:disabled) {
             background: var(--bg-tertiary);
             transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
         }
         
         .btn-danger {
@@ -225,8 +237,8 @@ try {
             border: none;
         }
         
-        .btn-danger:hover {
-            box-shadow: 0 0 20px rgba(255, 71, 87, 0.4);
+        .btn-danger:hover:not(:disabled) {
+            box-shadow: 0 4px 20px rgba(255, 71, 87, 0.5);
             transform: translateY(-2px);
         }
         
@@ -263,6 +275,25 @@ try {
             outline: none;
             border-color: var(--purple);
             box-shadow: 0 0 0 3px rgba(153, 69, 255, 0.1);
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+        }
+        
+        .empty-icon {
+            font-size: 64px;
+            color: var(--purple);
+            margin-bottom: 20px;
+            opacity: 0.7;
         }
         
         .alert {
