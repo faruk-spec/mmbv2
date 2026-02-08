@@ -200,6 +200,7 @@ try {
         .btn-primary {
             background: linear-gradient(135deg, var(--purple), var(--magenta));
             color: white;
+            border: none;
         }
         
         .btn-primary:hover {
@@ -211,6 +212,27 @@ try {
             background: var(--bg-secondary);
             color: var(--text-primary);
             border: 1px solid var(--border-color);
+        }
+        
+        .btn-secondary:hover {
+            background: var(--bg-tertiary);
+            transform: translateY(-2px);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #ff4757, #ff6b6b);
+            color: white;
+            border: none;
+        }
+        
+        .btn-danger:hover {
+            box-shadow: 0 0 20px rgba(255, 71, 87, 0.4);
+            transform: translateY(-2px);
+        }
+        
+        .btn-sm {
+            padding: 8px 16px;
+            font-size: 14px;
         }
         
         .form-group {
@@ -348,8 +370,21 @@ try {
                 font-size: 2rem;
             }
             
-            .card {
+            .card, .glass-card {
                 padding: 20px;
+            }
+            
+            .section-title {
+                font-size: 20px;
+            }
+            
+            .btn {
+                padding: 12px 20px;
+                font-size: 14px;
+            }
+            
+            .form-input, .form-select, .form-textarea {
+                font-size: 14px;
             }
         }
         
@@ -358,7 +393,7 @@ try {
                 padding: 15px 10px;
             }
             
-            .btn {
+            .btn:not(.btn-sm) {
                 width: 100%;
                 justify-content: center;
             }
@@ -366,6 +401,15 @@ try {
             .stat-value {
                 font-size: 1.8rem;
             }
+            
+            .glass-card {
+                padding: 15px;
+            }
+            
+            .section-title {
+                font-size: 18px;
+            }
+        }
         }
         
         /* Overlay for mobile sidebar */
