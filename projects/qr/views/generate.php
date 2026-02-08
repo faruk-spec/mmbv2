@@ -412,9 +412,11 @@
             <div class="divider"></div>
             
             <!-- Design Options -->
-            <h4 class="subsection-title">
-                <i class="fas fa-palette"></i> Design Options
+            <h4 class="subsection-title collapsible-header" onclick="toggleSection('designOptions')">
+                <span><i class="fas fa-palette"></i> Design Options</span>
+                <i class="fas fa-chevron-down collapse-icon"></i>
             </h4>
+            <div id="designOptions" class="collapsible-content collapsed">
             
             <div class="grid grid-2" style="gap: 15px;">
                 <div class="form-group">
@@ -502,13 +504,16 @@
                 <input type="file" name="bg_image" id="bgImage" class="form-input" accept="image/*">
                 <small>Recommended: Square image, transparent PNG works best</small>
             </div>
+            </div><!-- End Design Options collapsible -->
             
             <div class="divider"></div>
             
             <!-- Design Customization with Visual Presets -->
-            <h4 class="subsection-title">
-                <i class="fas fa-shapes"></i> Design Presets
+            <h4 class="subsection-title collapsible-header" onclick="toggleSection('designPresets')">
+                <span><i class="fas fa-shapes"></i> Design Presets</span>
+                <i class="fas fa-chevron-down collapse-icon"></i>
             </h4>
+            <div id="designPresets" class="collapsible-content collapsed">
             
             <!-- Dot Pattern Presets -->
             <div class="form-group">
@@ -716,12 +721,16 @@
                 <input type="color" name="marker_color" id="markerColor" value="#9945ff" class="form-input color-input">
             </div>
             
+            </div><!-- End Design Presets collapsible -->
+            
             <div class="divider"></div>
             
             <!-- Logo Options -->
-            <h4 class="subsection-title">
-                <i class="fas fa-image"></i> Logo
+            <h4 class="subsection-title collapsible-header" onclick="toggleSection('logoOptions')">
+                <span><i class="fas fa-image"></i> Logo</span>
+                <i class="fas fa-chevron-down collapse-icon"></i>
             </h4>
+            <div id="logoOptions" class="collapsible-content collapsed">
             
             <div class="form-group">
                 <label class="form-label">Logo Options</label>
@@ -879,6 +888,7 @@
                     <small>Adjust the size of logo in QR code (0.1 to 0.5)</small>
                 </div>
             </div>
+            </div><!-- End Logo Options collapsible -->
             
             <div class="divider"></div>
             
@@ -1102,6 +1112,51 @@ window.debouncedPreview = function() {
     }, 800); // Increased from 500ms to 800ms for better performance
 };
 const debouncedPreview = window.debouncedPreview;
+
+// Collapsible Section Toggle Function
+window.toggleSection = function(sectionId) {
+    const content = document.getElementById(sectionId);
+    const header = content.previousElementSibling;
+    
+    if (!content) return;
+    
+    // Toggle collapsed class
+    const isCollapsed = content.classList.contains('collapsed');
+    
+    if (isCollapsed) {
+        content.classList.remove('collapsed');
+        header.classList.add('expanded');
+        // Save state to localStorage
+        localStorage.setItem('qr_section_' + sectionId, 'expanded');
+    } else {
+        content.classList.add('collapsed');
+        header.classList.remove('expanded');
+        // Save state to localStorage
+        localStorage.setItem('qr_section_' + sectionId, 'collapsed');
+    }
+};
+
+// Initialize collapsed state from localStorage on page load
+window.addEventListener('DOMContentLoaded', function() {
+    const sections = ['designOptions', 'designPresets', 'logoOptions'];
+    sections.forEach(sectionId => {
+        const content = document.getElementById(sectionId);
+        const header = content?.previousElementSibling;
+        if (!content) return;
+        
+        // Check localStorage for saved state
+        const savedState = localStorage.getItem('qr_section_' + sectionId);
+        
+        // Default to collapsed if no state is saved
+        if (!savedState || savedState === 'collapsed') {
+            content.classList.add('collapsed');
+            header?.classList.remove('expanded');
+        } else {
+            content.classList.remove('collapsed');
+            header?.classList.add('expanded');
+        }
+    });
+});
 
 // Preset Selection Function (Global scope for onclick handlers)
 window.selectPreset = function(presetType, value) {
@@ -2173,6 +2228,67 @@ function applyFrameStyle(qrDiv) {
 </script>
 
 <style>
+/* Collapsible Sections Styles */
+.collapsible-header {
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-md) var(--space-lg);
+    background: rgba(153, 69, 255, 0.1);
+    border-radius: 0.625rem;
+    margin-bottom: var(--space-md);
+    transition: all 0.3s ease;
+    user-select: none;
+}
+
+[data-theme="light"] .collapsible-header {
+    background: rgba(153, 69, 255, 0.05);
+}
+
+.collapsible-header:hover {
+    background: rgba(153, 69, 255, 0.15);
+    transform: translateY(-0.0625rem);
+}
+
+[data-theme="light"] .collapsible-header:hover {
+    background: rgba(153, 69, 255, 0.1);
+}
+
+.collapsible-header span {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.collapse-icon {
+    transition: transform 0.3s ease;
+    color: var(--purple);
+}
+
+.collapsible-header:hover .collapse-icon {
+    transform: scale(1.1);
+}
+
+.collapsible-content {
+    max-height: 10000px;
+    overflow: hidden;
+    transition: max-height 0.4s ease-out, opacity 0.3s ease-out;
+    opacity: 1;
+}
+
+.collapsible-content.collapsed {
+    max-height: 0;
+    opacity: 0;
+    transition: max-height 0.4s ease-in, opacity 0.3s ease-in;
+}
+
+/* Rotate icon when expanded */
+.collapsible-content:not(.collapsed) ~ .collapsible-header .collapse-icon,
+.collapsible-header.expanded .collapse-icon {
+    transform: rotate(180deg);
+}
+
 /* Performance Optimizations for Smooth Scrolling */
 .qr-main {
     /* Enable hardware acceleration */
