@@ -2106,6 +2106,19 @@ const livePreviewFields = [
     'paymentType', 'paymentUpiId', 'paymentName', 'paymentAmount', 'paymentNote'
 ];
 
+// Initialize preview when page loads with a sample URL
+setTimeout(function() {
+    // Wait for QRCodeStyling library to load
+    // Set default URL for initial preview
+    const contentField = document.getElementById('contentField');
+    if (contentField && !contentField.value) {
+        contentField.value = 'https://example.com';
+    }
+    // Trigger initial preview
+    generatePreview();
+}, 1000);
+
+// Attach event listeners to all live preview fields
 livePreviewFields.forEach(fieldId => {
     const field = document.getElementById(fieldId);
     if (field) {
@@ -2132,20 +2145,6 @@ previewCheckboxes.forEach(checkboxId => {
     if (checkbox) {
         checkbox.addEventListener('change', debouncedPreview);
     }
-});
-
-// Initialize preview when page loads with a sample URL
-window.addEventListener('load', function() {
-    // Wait for QRCodeStyling library to load
-    setTimeout(function() {
-        // Set default URL for initial preview
-        const contentField = document.getElementById('contentField');
-        if (contentField && !contentField.value) {
-            contentField.value = 'https://example.com';
-        }
-        // Trigger initial preview
-        generatePreview();
-    }, 1000);
 });
 
 }); // End DOMContentLoaded
