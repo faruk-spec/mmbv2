@@ -261,4 +261,71 @@ class QRModel
             return false;
         }
     }
+    
+    /**
+     * Get QR code by short code
+     * 
+     * @param string $shortCode Short code to search for
+     * @return array|null QR code data or null if not found
+     */
+    public function getByShortCode(string $shortCode): ?array
+    {
+        $sql = "SELECT * FROM qr_codes WHERE short_code = ? AND deleted_at IS NULL";
+        
+        try {
+            $result = $this->db->fetch($sql, [$shortCode]);
+            if ($result === false) {
+                return null;
+            }
+            return $result;
+        } catch (\Exception $e) {
+            \Core\Logger::error('Failed to fetch QR code by short code: ' . $e->getMessage());
+            return null;
+        }
+    }
+    
+    /**
+     * Track QR code scan
+     * Records scan in qr_scans table and updates QR code scan count
+     * 
+     * @param int $qrId QR code ID
+     * @param array $data Additional scan data (IP, user agent, location, etc.)
+     * @return bool Success status
+     */
+    public function trackScan(int $qrId, array $data = []): bool
+    {
+        try {
+            // Update scan count on QR code
+            $this->incrementScanCount($qrId);
+            
+            // Record detailed scan info if qr_scans table exists
+            $scanData = [
+                'qr_code_id' => $qrId,
+                'ip_address' => $_SERVER['REMOTE_ADDR'] ?? null,
+                'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? null,
+                'referer' => $_SERVER['HTTP_REFERER'] ?? null,
+                'scanned_at' => date('Y-m-d H:i:s')
+            ];
+            
+            // Merge with any additional data provided
+            $scanData = array_merge($scanData, $data);
+            
+            $sql = "INSERT INTO qr_scans (qr_code_id, ip_address, user_agent, referer, scanned_at) 
+                    VALUES (?, ?, ?, ?, ?)";
+            
+            $this->db->query($sql, [
+                $scanData['qr_code_id'],
+                $scanData['ip_address'],
+                $scanData['user_agent'],
+                $scanData['referer'],
+                $scanData['scanned_at']
+            ]);
+            
+            return true;
+        } catch (\Exception $e) {
+            \Core\Logger::error('Failed to track QR code scan: ' . $e->getMessage());
+            // Don't fail the entire request if tracking fails
+            return false;
+        }
+    }
 }
