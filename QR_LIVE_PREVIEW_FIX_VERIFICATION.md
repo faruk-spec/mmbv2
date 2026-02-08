@@ -1,13 +1,18 @@
 # QR Live Preview Fix - Verification Guide
 
-## Date: February 8, 2026
+## Date: February 8, 2026 (Updated)
 
 ## Issue Fixed
 **Problem:** QR live preview was not rendering changes when users modified form fields.
 
-**Root Cause:** Event listeners were attached in global scope outside DOMContentLoaded block, executing before DOM elements were ready.
-
-**Solution:** Moved event listener setup code inside DOMContentLoaded block (lines 2083-2161 in generate.php).
+**Root Causes Identified & Fixed:**
+1. ✅ **FIRST FIX:** Event listeners were attached in global scope outside DOMContentLoaded block
+   - **Solution:** Moved event listener setup code inside DOMContentLoaded block (lines 2083-2161)
+   
+2. ✅ **SECOND FIX (Critical):** JavaScript scope mismatch preventing preview updates
+   - **Problem:** `generatePreview` was in local scope (inside DOMContentLoaded) while `debouncedPreview` (which calls it) was in global scope
+   - **Solution:** Changed `function generatePreview()` to `window.generatePreview = function()` to make it globally accessible
+   - **Also Fixed:** Changed `function buildQRContent()` to `window.buildQRContent = function()`
 
 ---
 
@@ -212,4 +217,126 @@ If you find any remaining issues:
 **Deployed By:** GitHub Copilot Agent  
 **Date:** February 8, 2026  
 **Branch:** copilot/fix-qr-live-preview-issue  
-**Commit:** 1a2f5ec
+**Commits:** 
+- 1a2f5ec - Moved event listeners inside DOMContentLoaded
+- 6a81e59 - Made generatePreview globally accessible (CRITICAL FIX)
+
+---
+
+## Technical Details - Scope Issue (CRITICAL FIX)
+
+### The Scope Problem (Why Preview STILL Wasn't Updating After First Fix)
+
+**Before Second Fix:**
+```javascript
+// Line 1082 - GLOBAL SCOPE
+window.debouncedPreview = function() {
+    clearTimeout(previewTimeout);
+    previewTimeout = setTimeout(() => {
+        if (typeof generatePreview === 'function') {
+            generatePreview();  // ← FAILS! Can't find generatePreview
+        } else {
+            console.error('generatePreview is not a function!');
+        }
+    }, 500);
+};
+
+// Line 1142 - DOMContentLoaded starts
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // Line 1675 - LOCAL SCOPE (inside DOMContentLoaded callback)
+    function generatePreview() {
+        // This function is NOT accessible from global scope!
+        // When debouncedPreview tries to call it, it doesn't exist in that scope
+    }
+    
+    // Line 2134 - Event listeners properly attached (after first fix)
+    field.addEventListener('input', debouncedPreview);  // ✓ Listener works
+    // But debouncedPreview can't find generatePreview! ✗
+    
+}); // End DOMContentLoaded
+```
+
+**The Issue:**
+1. `debouncedPreview` runs in **GLOBAL SCOPE** (defined outside DOMContentLoaded)
+2. `generatePreview` was defined in **LOCAL SCOPE** (inside DOMContentLoaded function)
+3. JavaScript scope rules: Functions can't access variables/functions from sibling or child scopes
+4. Result: `typeof generatePreview === 'function'` returned `false` → preview never updated
+5. Console would show: "generatePreview is not a function!"
+
+**After Second Fix:**
+```javascript
+// Line 1082 - GLOBAL SCOPE
+window.debouncedPreview = function() {
+    clearTimeout(previewTimeout);
+    previewTimeout = setTimeout(() => {
+        if (typeof generatePreview === 'function') {
+            generatePreview();  // ✓ NOW WORKS! Found via window.generatePreview
+        }
+    }, 500);
+};
+
+// Line 1142 - DOMContentLoaded starts
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // Line 1675 - NOW GLOBAL SCOPE (assigned to window)
+    window.generatePreview = function() {
+        // Now accessible globally via window.generatePreview
+        // or just generatePreview (JS checks window automatically)
+        const content = buildQRContent();
+        // ... generate QR code
+    }
+    
+    // Line 1883 - Also made global (called by generatePreview)
+    window.buildQRContent = function() {
+        // Called by generatePreview, also needs global access
+    }
+    
+    // Line 2134 - Event listeners attached
+    field.addEventListener('input', debouncedPreview);  // ✓ Works!
+    // debouncedPreview calls generatePreview ✓ Now accessible!
+    
+}); // End DOMContentLoaded
+```
+
+**Why This Fix Works:**
+1. `window.generatePreview` creates a property on the **global `window` object**
+2. Even though assigned inside DOMContentLoaded, it's stored globally
+3. `debouncedPreview` can now successfully find and call `generatePreview()`
+4. JavaScript automatically checks `window` object when a variable is undefined in current scope
+
+**Key Concept - JavaScript Scope Chain:**
+```
+Global Scope (window)
+  ├─ debouncedPreview() ✓
+  ├─ generatePreview() ✓ (after fix)
+  └─ DOMContentLoaded callback scope
+       └─ (local variables here)
+```
+
+**What Changed:**
+- Line 1675: `function generatePreview()` → `window.generatePreview = function()`
+- Line 1883: `function buildQRContent()` → `window.buildQRContent = function()`
+
+**Impact:**
+- ✅ Preview now updates when ANY field changes
+- ✅ 500ms debounce prevents excessive re-renders
+- ✅ All 50+ form fields trigger live preview updates
+- ✅ Real-time feedback on design changes
+
+---
+
+## Summary of Both Fixes
+
+### Fix #1 (Commit 1a2f5ec): Event Listener Attachment
+**Problem:** Event listeners executed before DOM was ready  
+**Solution:** Moved event listener code inside DOMContentLoaded block  
+**Result:** Event listeners now properly attach to DOM elements
+
+### Fix #2 (Commit 6a81e59): Function Scope Access - **CRITICAL**
+**Problem:** `generatePreview` was in wrong scope, inaccessible to `debouncedPreview`  
+**Solution:** Changed to `window.generatePreview` to make globally accessible  
+**Result:** `debouncedPreview` can now successfully call `generatePreview`
+
+**Both fixes were necessary for live preview to work!**
+
