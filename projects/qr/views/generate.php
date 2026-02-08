@@ -1080,10 +1080,15 @@ const qrConfig = {
 // Debounced live preview - Define early to avoid reference errors
 let previewTimeout;
 window.debouncedPreview = function() {
+    console.log('debouncedPreview called');
     clearTimeout(previewTimeout);
     previewTimeout = setTimeout(() => {
+        console.log('Debounce timeout expired, checking generatePreview...');
         if (typeof generatePreview === 'function') {
+            console.log('Calling generatePreview...');
             generatePreview();
+        } else {
+            console.error('generatePreview is not a function!');
         }
     }, 500);
 };
@@ -1668,16 +1673,20 @@ window.saveCurrentTemplate = async function() {
 
 // Generate preview with QRCodeStyling
 function generatePreview() {
+    console.log('generatePreview function called');
     if (typeof QRCodeStyling === 'undefined') {
         console.log('QRCodeStyling not loaded yet');
         return;
     }
     
     const content = buildQRContent();
+    console.log('Built QR content:', content);
     if (!content || content.trim() === '') {
+        console.log('No content to generate QR code');
         return;
     }
     
+    console.log('Proceeding with QR generation...');
     // Get all customization options
     const size = parseInt(document.getElementById('qrSize').value);
     const foregroundColor = document.getElementById('qrColor').value;
@@ -2108,6 +2117,7 @@ const livePreviewFields = [
 
 // Initialize preview when page loads with a sample URL
 setTimeout(function() {
+    console.log('Preview initialization starting...');
     // Wait for QRCodeStyling library to load
     // Set default URL for initial preview
     const contentField = document.getElementById('contentField');
@@ -2115,13 +2125,16 @@ setTimeout(function() {
         contentField.value = 'https://example.com';
     }
     // Trigger initial preview
+    console.log('Calling generatePreview for initial load...');
     generatePreview();
 }, 1000);
 
 // Attach event listeners to all live preview fields
+console.log('Attaching event listeners to', livePreviewFields.length, 'fields...');
 livePreviewFields.forEach(fieldId => {
     const field = document.getElementById(fieldId);
     if (field) {
+        console.log('Attached listeners to:', fieldId);
         field.addEventListener('input', debouncedPreview);
         field.addEventListener('change', debouncedPreview);
     }

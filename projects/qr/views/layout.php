@@ -425,11 +425,6 @@ try {
                 font-size: 20px;
             }
             
-            .btn {
-                padding: 12px 20px;
-                font-size: 14px;
-            }
-            
             .form-input, .form-select, .form-textarea {
                 font-size: 14px;
             }
