@@ -1289,7 +1289,8 @@ if (qrTypeElement) {
     
     // Trigger live preview
     debouncedPreview();
-});
+    });
+}
 
 function updateContentLabel(type) {
     const label = document.getElementById('contentLabel');
