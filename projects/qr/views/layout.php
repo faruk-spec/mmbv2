@@ -228,6 +228,21 @@ try {
             background: linear-gradient(135deg, var(--purple), var(--magenta));
             color: white;
             border: none;
+            /* Inherit all base button styles */
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            white-space: nowrap;
         }
         
         .btn-primary:hover:not(:disabled) {
@@ -239,6 +254,21 @@ try {
             background: var(--bg-secondary);
             color: var(--text-primary);
             border: 1px solid var(--border-color);
+            /* Inherit all base button styles */
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            white-space: nowrap;
         }
         
         .btn-secondary:hover:not(:disabled) {
@@ -251,11 +281,51 @@ try {
             background: linear-gradient(135deg, #ff4757, #ff6b6b);
             color: white;
             border: none;
+            /* Inherit all base button styles */
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            white-space: nowrap;
         }
         
         .btn-danger:hover:not(:disabled) {
             box-shadow: 0 6px 24px rgba(255, 71, 87, 0.5);
             transform: translateY(-2px);
+        }
+        
+        .btn-primary:active,
+        .btn-secondary:active,
+        .btn-danger:active {
+            transform: translateY(0);
+        }
+        
+        .btn-primary:disabled,
+        .btn-secondary:disabled,
+        .btn-danger:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        /* Desktop improvements for all button variants */
+        @media (min-width: 769px) {
+            .btn-primary,
+            .btn-secondary,
+            .btn-danger {
+                padding: 14px 28px;
+                font-size: 16px;
+                border-radius: 12px;
+                box-shadow: 0 3px 12px rgba(0, 0, 0, 0.12);
+            }
         }
         
         .btn-sm {
