@@ -22,14 +22,17 @@
                     <option value="url"><i class="fas fa-globe"></i> URL / Website</option>
                     <option value="text"><i class="fas fa-file-alt"></i> Plain Text</option>
                     <option value="email"><i class="fas fa-envelope"></i> Email Address</option>
+                    <option value="location"><i class="fas fa-map-marker-alt"></i> Location</option>
                     <option value="phone"><i class="fas fa-phone"></i> Phone Number</option>
                     <option value="sms"><i class="fas fa-sms"></i> SMS Message</option>
                     <option value="whatsapp"><i class="fab fa-whatsapp"></i> WhatsApp</option>
+                    <option value="skype"><i class="fab fa-skype"></i> Skype</option>
+                    <option value="zoom"><i class="fas fa-video"></i> Zoom</option>
                     <option value="wifi"><i class="fas fa-wifi"></i> WiFi Network</option>
                     <option value="vcard"><i class="fas fa-id-card"></i> vCard (Contact)</option>
-                    <option value="location"><i class="fas fa-map-marker-alt"></i> Location</option>
                     <option value="event"><i class="fas fa-calendar-alt"></i> Event (Calendar)</option>
-                    <option value="payment"><i class="fas fa-credit-card"></i> Payment</option>
+                    <option value="paypal"><i class="fab fa-paypal"></i> PayPal</option>
+                    <option value="payment"><i class="fas fa-credit-card"></i> Payment (UPI)</option>
                 </select>
             </div>
             
@@ -39,15 +42,129 @@
                 <textarea name="content" id="contentField" class="form-textarea" rows="4" placeholder="Enter content..."></textarea>
             </div>
             
+            <!-- Email Fields -->
+            <div id="emailFields" style="display: none;">
+                <div class="form-group">
+                    <label class="form-label">Send To</label>
+                    <input type="email" name="email_to" id="emailTo" class="form-input" placeholder="recipient@example.com">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Subject</label>
+                    <input type="text" name="email_subject" id="emailSubject" class="form-input" placeholder="Email subject">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Message</label>
+                    <textarea name="email_body" id="emailBody" class="form-textarea" rows="3" placeholder="Email message body..."></textarea>
+                </div>
+            </div>
+            
+            <!-- Phone Fields -->
+            <div id="phoneFields" style="display: none;">
+                <div class="grid grid-2" style="gap: 15px;">
+                    <div class="form-group">
+                        <label class="form-label">Country Code</label>
+                        <select name="phone_country" id="phoneCountry" class="form-select">
+                            <option value="+1">+1 (US/Canada)</option>
+                            <option value="+44">+44 (UK)</option>
+                            <option value="+91">+91 (India)</option>
+                            <option value="+86">+86 (China)</option>
+                            <option value="+61">+61 (Australia)</option>
+                            <option value="+49">+49 (Germany)</option>
+                            <option value="+33">+33 (France)</option>
+                            <option value="+81">+81 (Japan)</option>
+                            <option value="+82">+82 (South Korea)</option>
+                            <option value="+55">+55 (Brazil)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Phone Number</label>
+                        <input type="text" name="phone_number" id="phoneNumber" class="form-input" placeholder="1234567890">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- SMS Fields -->
+            <div id="smsFields" style="display: none;">
+                <div class="grid grid-2" style="gap: 15px;">
+                    <div class="form-group">
+                        <label class="form-label">Country Code</label>
+                        <select name="sms_country" id="smsCountry" class="form-select">
+                            <option value="+1">+1 (US/Canada)</option>
+                            <option value="+44">+44 (UK)</option>
+                            <option value="+91">+91 (India)</option>
+                            <option value="+86">+86 (China)</option>
+                            <option value="+61">+61 (Australia)</option>
+                            <option value="+49">+49 (Germany)</option>
+                            <option value="+33">+33 (France)</option>
+                            <option value="+81">+81 (Japan)</option>
+                            <option value="+82">+82 (South Korea)</option>
+                            <option value="+55">+55 (Brazil)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Phone Number</label>
+                        <input type="text" name="sms_number" id="smsNumber" class="form-input" placeholder="1234567890">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Message</label>
+                    <textarea name="sms_message" id="smsMessage" class="form-textarea" rows="3" placeholder="SMS message..."></textarea>
+                </div>
+            </div>
+            
             <!-- WhatsApp Fields -->
             <div id="whatsappFields" style="display: none;">
-                <div class="form-group">
-                    <label class="form-label">Phone Number (with country code)</label>
-                    <input type="text" name="whatsapp_phone" id="whatsappPhone" class="form-input" placeholder="+1234567890">
+                <div class="grid grid-2" style="gap: 15px;">
+                    <div class="form-group">
+                        <label class="form-label">Country Code</label>
+                        <select name="whatsapp_country" id="whatsappCountry" class="form-select">
+                            <option value="+1">+1 (US/Canada)</option>
+                            <option value="+44">+44 (UK)</option>
+                            <option value="+91">+91 (India)</option>
+                            <option value="+86">+86 (China)</option>
+                            <option value="+61">+61 (Australia)</option>
+                            <option value="+49">+49 (Germany)</option>
+                            <option value="+33">+33 (France)</option>
+                            <option value="+81">+81 (Japan)</option>
+                            <option value="+82">+82 (South Korea)</option>
+                            <option value="+55">+55 (Brazil)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Phone Number</label>
+                        <input type="text" name="whatsapp_phone" id="whatsappPhone" class="form-input" placeholder="1234567890">
+                    </div>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Message (Optional)</label>
                     <textarea name="whatsapp_message" id="whatsappMessage" class="form-textarea" rows="3" placeholder="Pre-filled message..."></textarea>
+                </div>
+            </div>
+            
+            <!-- Skype Fields -->
+            <div id="skypeFields" style="display: none;">
+                <div class="form-group">
+                    <label class="form-label">Action Type</label>
+                    <select name="skype_action" id="skypeAction" class="form-select">
+                        <option value="chat">Chat</option>
+                        <option value="call">Call</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Skype Username</label>
+                    <input type="text" name="skype_username" id="skypeUsername" class="form-input" placeholder="username">
+                </div>
+            </div>
+            
+            <!-- Zoom Fields -->
+            <div id="zoomFields" style="display: none;">
+                <div class="form-group">
+                    <label class="form-label">Meeting ID</label>
+                    <input type="text" name="zoom_meeting_id" id="zoomMeetingId" class="form-input" placeholder="123 456 789">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password (Optional)</label>
+                    <input type="text" name="zoom_password" id="zoomPassword" class="form-input" placeholder="Meeting password">
                 </div>
             </div>
             
@@ -74,33 +191,95 @@
             <!-- vCard Fields -->
             <div id="vcardFields" style="display: none;">
                 <div class="form-group">
-                    <label class="form-label">Full Name</label>
-                    <input type="text" name="vcard_name" id="vcardName" class="form-input" placeholder="John Doe">
+                    <label class="form-label">Title</label>
+                    <input type="text" name="vcard_title" id="vcardTitle" class="form-input" placeholder="Mr. / Ms. / Dr.">
+                </div>
+                <div class="grid grid-2" style="gap: 15px;">
+                    <div class="form-group">
+                        <label class="form-label">First Name</label>
+                        <input type="text" name="vcard_firstname" id="vcardFirstName" class="form-input" placeholder="John">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Last Name</label>
+                        <input type="text" name="vcard_lastname" id="vcardLastName" class="form-input" placeholder="Doe">
+                    </div>
+                </div>
+                <div class="grid grid-2" style="gap: 15px;">
+                    <div class="form-group">
+                        <label class="form-label">Phone (Home)</label>
+                        <input type="text" name="vcard_phone_home" id="vcardPhoneHome" class="form-input" placeholder="+1234567890">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Phone (Mobile)</label>
+                        <input type="text" name="vcard_phone_mobile" id="vcardPhoneMobile" class="form-input" placeholder="+1234567890">
+                    </div>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Phone Number</label>
-                    <input type="text" name="vcard_phone" id="vcardPhone" class="form-input" placeholder="+1234567890">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Email</label>
+                    <label class="form-label">E-mail</label>
                     <input type="email" name="vcard_email" id="vcardEmail" class="form-input" placeholder="john@example.com">
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Organization (Optional)</label>
-                    <input type="text" name="vcard_org" id="vcardOrg" class="form-input" placeholder="Company Name">
+                    <label class="form-label">Website (URL)</label>
+                    <input type="url" name="vcard_website" id="vcardWebsite" class="form-input" placeholder="https://example.com">
+                </div>
+                <div class="grid grid-2" style="gap: 15px;">
+                    <div class="form-group">
+                        <label class="form-label">Company</label>
+                        <input type="text" name="vcard_company" id="vcardCompany" class="form-input" placeholder="Company Name">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Job Title</label>
+                        <input type="text" name="vcard_jobtitle" id="vcardJobTitle" class="form-input" placeholder="Position">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Phone (Office)</label>
+                    <input type="text" name="vcard_phone_office" id="vcardPhoneOffice" class="form-input" placeholder="+1234567890">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Address</label>
+                    <input type="text" name="vcard_address" id="vcardAddress" class="form-input" placeholder="123 Main Street">
+                </div>
+                <div class="grid grid-2" style="gap: 15px;">
+                    <div class="form-group">
+                        <label class="form-label">Post Code</label>
+                        <input type="text" name="vcard_postcode" id="vcardPostCode" class="form-input" placeholder="12345">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">City</label>
+                        <input type="text" name="vcard_city" id="vcardCity" class="form-input" placeholder="New York">
+                    </div>
+                </div>
+                <div class="grid grid-2" style="gap: 15px;">
+                    <div class="form-group">
+                        <label class="form-label">State</label>
+                        <input type="text" name="vcard_state" id="vcardState" class="form-input" placeholder="NY">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Country</label>
+                        <input type="text" name="vcard_country" id="vcardCountry" class="form-input" placeholder="USA">
+                    </div>
                 </div>
             </div>
             
             <!-- Location Fields -->
             <div id="locationFields" style="display: none;">
                 <div class="form-group">
-                    <label class="form-label">Latitude</label>
-                    <input type="text" name="location_lat" id="locationLat" class="form-input" placeholder="40.7128">
+                    <label class="form-label">Search Address</label>
+                    <input type="text" name="location_address" id="locationAddress" class="form-input" placeholder="Enter address to search...">
+                    <small class="form-help">Enter an address and coordinates will be filled automatically (requires manual entry for now)</small>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Longitude</label>
-                    <input type="text" name="location_lng" id="locationLng" class="form-input" placeholder="-74.0060">
+                <div class="grid grid-2" style="gap: 15px;">
+                    <div class="form-group">
+                        <label class="form-label">Latitude</label>
+                        <input type="text" name="location_lat" id="locationLat" class="form-input" placeholder="40.7128">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Longitude</label>
+                        <input type="text" name="location_lng" id="locationLng" class="form-input" placeholder="-74.0060">
+                    </div>
                 </div>
+                <small class="form-help">Tip: You can use Google Maps to find coordinates - right-click on a location</small>
             </div>
             
             <!-- Event Fields -->
@@ -110,36 +289,123 @@
                     <input type="text" name="event_title" id="eventTitle" class="form-input" placeholder="Birthday Party">
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Start Date & Time</label>
-                    <input type="datetime-local" name="event_start" id="eventStart" class="form-input">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">End Date & Time</label>
-                    <input type="datetime-local" name="event_end" id="eventEnd" class="form-input">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Location (Optional)</label>
+                    <label class="form-label">Location</label>
                     <input type="text" name="event_location" id="eventLocation" class="form-input" placeholder="123 Main St">
+                </div>
+                <div class="grid grid-2" style="gap: 15px;">
+                    <div class="form-group">
+                        <label class="form-label">Start Time</label>
+                        <input type="datetime-local" name="event_start" id="eventStart" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">End Time</label>
+                        <input type="datetime-local" name="event_end" id="eventEnd" class="form-input">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Reminder Before Event</label>
+                    <select name="event_reminder" id="eventReminder" class="form-select">
+                        <option value="">No Reminder</option>
+                        <option value="5">5 minutes before</option>
+                        <option value="15">15 minutes before</option>
+                        <option value="30">30 minutes before</option>
+                        <option value="60">1 hour before</option>
+                        <option value="120">2 hours before</option>
+                        <option value="1440">24 hours before</option>
+                        <option value="2880">48 hours before</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Link (Optional)</label>
+                    <input type="url" name="event_link" id="eventLink" class="form-input" placeholder="https://example.com/event">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Notes (Optional)</label>
+                    <textarea name="event_notes" id="eventNotes" class="form-textarea" rows="3" placeholder="Additional event details..."></textarea>
                 </div>
             </div>
             
-            <!-- Payment Fields -->
+            <!-- PayPal Fields -->
+            <div id="paypalFields" style="display: none;">
+                <div class="form-group">
+                    <label class="form-label">Payment Type</label>
+                    <select name="paypal_type" id="paypalType" class="form-select">
+                        <option value="buynow">Buy Now</option>
+                        <option value="addtocart">Add to Cart</option>
+                        <option value="donations">Donations</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email (to receive payments)</label>
+                    <input type="email" name="paypal_email" id="paypalEmail" class="form-input" placeholder="merchant@example.com">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Item Name</label>
+                    <input type="text" name="paypal_item_name" id="paypalItemName" class="form-input" placeholder="Product Name">
+                </div>
+                <div class="grid grid-2" style="gap: 15px;">
+                    <div class="form-group">
+                        <label class="form-label">Item ID</label>
+                        <input type="text" name="paypal_item_id" id="paypalItemId" class="form-input" placeholder="SKU-123">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Price</label>
+                        <input type="number" step="0.01" name="paypal_price" id="paypalPrice" class="form-input" placeholder="10.00">
+                    </div>
+                </div>
+                <div class="grid grid-2" style="gap: 15px;">
+                    <div class="form-group">
+                        <label class="form-label">Currency</label>
+                        <select name="paypal_currency" id="paypalCurrency" class="form-select">
+                            <option value="USD">USD - US Dollar</option>
+                            <option value="EUR">EUR - Euro</option>
+                            <option value="GBP">GBP - British Pound</option>
+                            <option value="INR">INR - Indian Rupee</option>
+                            <option value="JPY">JPY - Japanese Yen</option>
+                            <option value="AUD">AUD - Australian Dollar</option>
+                            <option value="CAD">CAD - Canadian Dollar</option>
+                            <option value="CNY">CNY - Chinese Yuan</option>
+                            <option value="BRL">BRL - Brazilian Real</option>
+                            <option value="MXN">MXN - Mexican Peso</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Shipping</label>
+                        <input type="number" step="0.01" name="paypal_shipping" id="paypalShipping" class="form-input" placeholder="5.00">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Tax Rate %</label>
+                    <input type="number" step="0.01" name="paypal_tax" id="paypalTax" class="form-input" placeholder="10.00">
+                </div>
+            </div>
+            
+            <!-- Payment (UPI) Fields -->
             <div id="paymentFields" style="display: none;">
                 <div class="form-group">
                     <label class="form-label">Payment Type</label>
                     <select name="payment_type" id="paymentType" class="form-select">
                         <option value="upi">UPI (India)</option>
-                        <option value="paypal">PayPal</option>
-                        <option value="bitcoin">Bitcoin</option>
+                        <option value="paytm">Paytm</option>
+                        <option value="phonepe">PhonePe</option>
+                        <option value="googlepay">Google Pay</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Payment Address/ID</label>
-                    <input type="text" name="payment_address" id="paymentAddress" class="form-input" placeholder="username@upi or email">
+                    <label class="form-label">UPI ID</label>
+                    <input type="text" name="payment_upi_id" id="paymentUpiId" class="form-input" placeholder="username@upi">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Payee Name (Optional)</label>
+                    <input type="text" name="payment_name" id="paymentName" class="form-input" placeholder="John Doe">
                 </div>
                 <div class="form-group">
                     <label class="form-label">Amount (Optional)</label>
-                    <input type="number" step="0.01" name="payment_amount" id="paymentAmount" class="form-input" placeholder="10.00">
+                    <input type="number" step="0.01" name="payment_amount" id="paymentAmount" class="form-input" placeholder="100.00">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Note (Optional)</label>
+                    <input type="text" name="payment_note" id="paymentNote" class="form-input" placeholder="Payment for...">
                 </div>
             </div>
             
@@ -963,25 +1229,43 @@ if (qrTypeElement) {
     
     // Hide all field groups
     document.getElementById('simpleContent').style.display = 'none';
+    document.getElementById('emailFields').style.display = 'none';
+    document.getElementById('phoneFields').style.display = 'none';
+    document.getElementById('smsFields').style.display = 'none';
     document.getElementById('whatsappFields').style.display = 'none';
+    document.getElementById('skypeFields').style.display = 'none';
+    document.getElementById('zoomFields').style.display = 'none';
     document.getElementById('wifiFields').style.display = 'none';
     document.getElementById('vcardFields').style.display = 'none';
     document.getElementById('locationFields').style.display = 'none';
     document.getElementById('eventFields').style.display = 'none';
+    document.getElementById('paypalFields').style.display = 'none';
     document.getElementById('paymentFields').style.display = 'none';
     
     // Show relevant fields
     switch(type) {
         case 'url':
         case 'text':
-        case 'email':
-        case 'phone':
-        case 'sms':
             document.getElementById('simpleContent').style.display = 'block';
             updateContentLabel(type);
             break;
+        case 'email':
+            document.getElementById('emailFields').style.display = 'block';
+            break;
+        case 'phone':
+            document.getElementById('phoneFields').style.display = 'block';
+            break;
+        case 'sms':
+            document.getElementById('smsFields').style.display = 'block';
+            break;
         case 'whatsapp':
             document.getElementById('whatsappFields').style.display = 'block';
+            break;
+        case 'skype':
+            document.getElementById('skypeFields').style.display = 'block';
+            break;
+        case 'zoom':
+            document.getElementById('zoomFields').style.display = 'block';
             break;
         case 'wifi':
             document.getElementById('wifiFields').style.display = 'block';
@@ -994,6 +1278,9 @@ if (qrTypeElement) {
             break;
         case 'event':
             document.getElementById('eventFields').style.display = 'block';
+            break;
+        case 'paypal':
+            document.getElementById('paypalFields').style.display = 'block';
             break;
         case 'payment':
             document.getElementById('paymentFields').style.display = 'block';
@@ -1452,19 +1739,47 @@ function buildQRContent() {
             content = document.getElementById('contentField').value;
             break;
         case 'email':
-            content = 'mailto:' + document.getElementById('contentField').value;
+            const emailTo = document.getElementById('emailTo').value;
+            const emailSubject = document.getElementById('emailSubject').value;
+            const emailBody = document.getElementById('emailBody').value;
+            content = 'mailto:' + emailTo;
+            if (emailSubject || emailBody) {
+                content += '?';
+                if (emailSubject) content += 'subject=' + encodeURIComponent(emailSubject);
+                if (emailSubject && emailBody) content += '&';
+                if (emailBody) content += 'body=' + encodeURIComponent(emailBody);
+            }
             break;
         case 'phone':
-            content = 'tel:' + document.getElementById('contentField').value;
+            const phoneCountry = document.getElementById('phoneCountry').value;
+            const phoneNumber = document.getElementById('phoneNumber').value;
+            content = 'tel:' + phoneCountry + phoneNumber.replace(/\D/g, '');
             break;
         case 'sms':
-            const smsData = document.getElementById('contentField').value.split(':');
-            content = 'sms:' + (smsData[0] || '') + (smsData[1] ? '?body=' + encodeURIComponent(smsData[1]) : '');
+            const smsCountry = document.getElementById('smsCountry').value;
+            const smsNumber = document.getElementById('smsNumber').value;
+            const smsMessage = document.getElementById('smsMessage').value;
+            content = 'sms:' + smsCountry + smsNumber.replace(/\D/g, '');
+            if (smsMessage) content += '?body=' + encodeURIComponent(smsMessage);
             break;
         case 'whatsapp':
-            const phone = document.getElementById('whatsappPhone').value.replace(/\D/g, '');
-            const message = document.getElementById('whatsappMessage').value;
-            content = 'https://wa.me/' + phone + (message ? '?text=' + encodeURIComponent(message) : '');
+            const whatsappCountry = document.getElementById('whatsappCountry').value;
+            const whatsappPhone = document.getElementById('whatsappPhone').value;
+            const whatsappMessage = document.getElementById('whatsappMessage').value;
+            const fullPhone = whatsappCountry.replace('+', '') + whatsappPhone.replace(/\D/g, '');
+            content = 'https://wa.me/' + fullPhone;
+            if (whatsappMessage) content += '?text=' + encodeURIComponent(whatsappMessage);
+            break;
+        case 'skype':
+            const skypeAction = document.getElementById('skypeAction').value;
+            const skypeUsername = document.getElementById('skypeUsername').value;
+            content = 'skype:' + skypeUsername + '?' + skypeAction;
+            break;
+        case 'zoom':
+            const zoomMeetingId = document.getElementById('zoomMeetingId').value;
+            const zoomPassword = document.getElementById('zoomPassword').value;
+            content = 'https://zoom.us/j/' + zoomMeetingId.replace(/\D/g, '');
+            if (zoomPassword) content += '?pwd=' + zoomPassword;
             break;
         case 'wifi':
             const ssid = document.getElementById('wifiSsid').value;
@@ -1473,11 +1788,38 @@ function buildQRContent() {
             content = 'WIFI:T:' + encryption + ';S:' + ssid + ';P:' + password + ';;';
             break;
         case 'vcard':
-            const name = document.getElementById('vcardName').value;
-            const vcardPhone = document.getElementById('vcardPhone').value;
+            const title = document.getElementById('vcardTitle').value;
+            const firstName = document.getElementById('vcardFirstName').value;
+            const lastName = document.getElementById('vcardLastName').value;
+            const phoneHome = document.getElementById('vcardPhoneHome').value;
+            const phoneMobile = document.getElementById('vcardPhoneMobile').value;
+            const phoneOffice = document.getElementById('vcardPhoneOffice').value;
             const vcardEmail = document.getElementById('vcardEmail').value;
-            const org = document.getElementById('vcardOrg').value;
-            content = 'BEGIN:VCARD\nVERSION:3.0\nFN:' + name + '\nTEL:' + vcardPhone + '\nEMAIL:' + vcardEmail + (org ? '\nORG:' + org : '') + '\nEND:VCARD';
+            const website = document.getElementById('vcardWebsite').value;
+            const company = document.getElementById('vcardCompany').value;
+            const jobTitle = document.getElementById('vcardJobTitle').value;
+            const address = document.getElementById('vcardAddress').value;
+            const postCode = document.getElementById('vcardPostCode').value;
+            const city = document.getElementById('vcardCity').value;
+            const state = document.getElementById('vcardState').value;
+            const country = document.getElementById('vcardCountry').value;
+            
+            content = 'BEGIN:VCARD\nVERSION:3.0\n';
+            if (title || firstName || lastName) {
+                content += 'N:' + lastName + ';' + firstName + ';' + title + ';;\n';
+                content += 'FN:' + (title ? title + ' ' : '') + firstName + ' ' + lastName + '\n';
+            }
+            if (phoneHome) content += 'TEL;TYPE=HOME:' + phoneHome + '\n';
+            if (phoneMobile) content += 'TEL;TYPE=CELL:' + phoneMobile + '\n';
+            if (phoneOffice) content += 'TEL;TYPE=WORK:' + phoneOffice + '\n';
+            if (vcardEmail) content += 'EMAIL:' + vcardEmail + '\n';
+            if (website) content += 'URL:' + website + '\n';
+            if (company) content += 'ORG:' + company + '\n';
+            if (jobTitle) content += 'TITLE:' + jobTitle + '\n';
+            if (address || city || state || postCode || country) {
+                content += 'ADR:;;' + address + ';' + city + ';' + state + ';' + postCode + ';' + country + '\n';
+            }
+            content += 'END:VCARD';
             break;
         case 'location':
             const lat = document.getElementById('locationLat').value;
@@ -1485,23 +1827,60 @@ function buildQRContent() {
             content = 'geo:' + lat + ',' + lng;
             break;
         case 'event':
-            const title = document.getElementById('eventTitle').value;
-            const start = document.getElementById('eventStart').value;
-            const end = document.getElementById('eventEnd').value;
-            const location = document.getElementById('eventLocation').value;
-            content = 'BEGIN:VEVENT\nSUMMARY:' + title + '\nDTSTART:' + start.replace(/[-:]/g, '') + '\nDTEND:' + end.replace(/[-:]/g, '') + (location ? '\nLOCATION:' + location : '') + '\nEND:VEVENT';
+            const eventTitle = document.getElementById('eventTitle').value;
+            const eventLocation = document.getElementById('eventLocation').value;
+            const eventStart = document.getElementById('eventStart').value;
+            const eventEnd = document.getElementById('eventEnd').value;
+            const eventReminder = document.getElementById('eventReminder').value;
+            const eventLink = document.getElementById('eventLink').value;
+            const eventNotes = document.getElementById('eventNotes').value;
+            
+            content = 'BEGIN:VEVENT\n';
+            if (eventTitle) content += 'SUMMARY:' + eventTitle + '\n';
+            if (eventLocation) content += 'LOCATION:' + eventLocation + '\n';
+            if (eventStart) content += 'DTSTART:' + eventStart.replace(/[-:]/g, '').replace('T', '') + '\n';
+            if (eventEnd) content += 'DTEND:' + eventEnd.replace(/[-:]/g, '').replace('T', '') + '\n';
+            if (eventReminder) {
+                content += 'BEGIN:VALARM\n';
+                content += 'TRIGGER:-PT' + eventReminder + 'M\n';
+                content += 'ACTION:DISPLAY\n';
+                content += 'DESCRIPTION:Event Reminder\n';
+                content += 'END:VALARM\n';
+            }
+            if (eventLink) content += 'URL:' + eventLink + '\n';
+            if (eventNotes) content += 'DESCRIPTION:' + eventNotes + '\n';
+            content += 'END:VEVENT';
+            break;
+        case 'paypal':
+            const paypalType = document.getElementById('paypalType').value;
+            const paypalEmail = document.getElementById('paypalEmail').value;
+            const paypalItemName = document.getElementById('paypalItemName').value;
+            const paypalItemId = document.getElementById('paypalItemId').value;
+            const paypalPrice = document.getElementById('paypalPrice').value;
+            const paypalCurrency = document.getElementById('paypalCurrency').value;
+            const paypalShipping = document.getElementById('paypalShipping').value;
+            const paypalTax = document.getElementById('paypalTax').value;
+            
+            content = 'https://www.paypal.com/cgi-bin/webscr?cmd=_xclick';
+            content += '&business=' + encodeURIComponent(paypalEmail);
+            if (paypalItemName) content += '&item_name=' + encodeURIComponent(paypalItemName);
+            if (paypalItemId) content += '&item_number=' + encodeURIComponent(paypalItemId);
+            if (paypalPrice) content += '&amount=' + paypalPrice;
+            if (paypalCurrency) content += '&currency_code=' + paypalCurrency;
+            if (paypalShipping) content += '&shipping=' + paypalShipping;
+            if (paypalTax) content += '&tax_rate=' + paypalTax;
             break;
         case 'payment':
             const payType = document.getElementById('paymentType').value;
-            const address = document.getElementById('paymentAddress').value;
+            const upiId = document.getElementById('paymentUpiId').value;
+            const payeeName = document.getElementById('paymentName').value;
             const amount = document.getElementById('paymentAmount').value;
-            if (payType === 'upi') {
-                content = 'upi://pay?pa=' + address + (amount ? '&am=' + amount : '');
-            } else if (payType === 'paypal') {
-                content = 'https://paypal.me/' + address + (amount ? '/' + amount : '');
-            } else if (payType === 'bitcoin') {
-                content = 'bitcoin:' + address + (amount ? '?amount=' + amount : '');
-            }
+            const note = document.getElementById('paymentNote').value;
+            
+            content = 'upi://pay?pa=' + upiId;
+            if (payeeName) content += '&pn=' + encodeURIComponent(payeeName);
+            if (amount) content += '&am=' + amount;
+            if (note) content += '&tn=' + encodeURIComponent(note);
             break;
     }
     
@@ -1564,12 +1943,33 @@ const livePreviewFields = [
     'frameStyle', 'cornerStyle', 'dotStyle', 'markerBorderStyle', 'markerCenterStyle',
     'gradientColor', 'markerColor', 'markerTLColor', 'markerTRColor', 'markerBLColor',
     'defaultLogo', 'frameLabel', 'frameFont', 'frameColor',
-    'whatsappPhone', 'whatsappMessage',
+    // Email fields
+    'emailTo', 'emailSubject', 'emailBody',
+    // Phone fields
+    'phoneCountry', 'phoneNumber',
+    // SMS fields
+    'smsCountry', 'smsNumber', 'smsMessage',
+    // WhatsApp fields
+    'whatsappCountry', 'whatsappPhone', 'whatsappMessage',
+    // Skype fields
+    'skypeAction', 'skypeUsername',
+    // Zoom fields
+    'zoomMeetingId', 'zoomPassword',
+    // WiFi fields
     'wifiSsid', 'wifiPassword', 'wifiEncryption',
-    'vcardName', 'vcardPhone', 'vcardEmail', 'vcardOrg',
-    'locationLat', 'locationLng',
-    'eventTitle', 'eventStart', 'eventEnd', 'eventLocation',
-    'paymentType', 'paymentAddress', 'paymentAmount'
+    // vCard fields
+    'vcardTitle', 'vcardFirstName', 'vcardLastName', 'vcardPhoneHome', 'vcardPhoneMobile',
+    'vcardEmail', 'vcardWebsite', 'vcardCompany', 'vcardJobTitle', 'vcardPhoneOffice',
+    'vcardAddress', 'vcardPostCode', 'vcardCity', 'vcardState', 'vcardCountry',
+    // Location fields
+    'locationAddress', 'locationLat', 'locationLng',
+    // Event fields
+    'eventTitle', 'eventLocation', 'eventStart', 'eventEnd', 'eventReminder', 'eventLink', 'eventNotes',
+    // PayPal fields
+    'paypalType', 'paypalEmail', 'paypalItemName', 'paypalItemId', 'paypalPrice',
+    'paypalCurrency', 'paypalShipping', 'paypalTax',
+    // Payment fields
+    'paymentType', 'paymentUpiId', 'paymentName', 'paymentAmount', 'paymentNote'
 ];
 
 livePreviewFields.forEach(fieldId => {
