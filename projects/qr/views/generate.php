@@ -1618,10 +1618,15 @@ function generatePreview() {
     
     // Different marker colors - Apply individual colors to each corner
     if (differentMarkers) {
-        // Note: qr-code-styling has limited support for per-marker colors
-        // We apply the top-left color as the primary marker color
+        // Note: qr-code-styling library limitation - we can only apply one color to all markers
+        // Using the top-left (primary) color for all markers
+        // Individual per-corner colors are not supported by the library
         qrOptions.cornersSquareOptions.color = markerTLColor;
         qrOptions.cornersDotOptions.color = markerTLColor;
+        
+        // Store other colors for potential future use when library adds support
+        // Top Right: markerTRColor
+        // Bottom Left: markerBLColor
     }
     
     // Add logo if selected
@@ -1653,12 +1658,11 @@ function generatePreview() {
                 if (bgImageEnabled && bgImageInput.files && bgImageInput.files[0]) {
                     const bgReader = new FileReader();
                     bgReader.onload = function(bgE) {
+                        // Set the background image
                         qrOptions.backgroundOptions = {
                             ...qrOptions.backgroundOptions,
-                            gradient: null
+                            image: bgE.target.result
                         };
-                        // Background image is tricky with qr-code-styling
-                        // We'll render normally and add note to user
                         renderQRCode(qrOptions, content);
                     };
                     bgReader.readAsDataURL(bgImageInput.files[0]);
@@ -1675,8 +1679,11 @@ function generatePreview() {
     if (bgImageEnabled && bgImageInput.files && bgImageInput.files[0]) {
         const bgReader = new FileReader();
         bgReader.onload = function(e) {
-            // Note: qr-code-styling has limited support for background images
-            // The image will be displayed but may not work perfectly with all options
+            // Set the background image
+            qrOptions.backgroundOptions = {
+                ...qrOptions.backgroundOptions,
+                image: e.target.result
+            };
             renderQRCode(qrOptions, content);
         };
         bgReader.readAsDataURL(bgImageInput.files[0]);
@@ -2527,6 +2534,9 @@ html[data-theme="dark"] .form-select optgroup {
     font-size: 24px;
     z-index: 1;
     display: inline-block;
+    position: relative;
+    color: inherit;
+    pointer-events: none;
 }
 
 [data-theme="light"] .logo-icon-item {
