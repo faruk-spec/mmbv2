@@ -5,7 +5,7 @@
 ?>
 
 <div class="glass-card">
-    <h3 class="section-title">
+    <h3 class="section-title" style="margin-bottom: var(--space-xl);">
         <i class="fas fa-sliders-h"></i> QR Generator Settings
     </h3>
     
@@ -23,8 +23,26 @@
         </div>
     <?php endif; ?>
     
-    <form method="POST" action="/projects/qr/settings/update" style="max-width: 800px;">
+    <!-- Settings Tabs -->
+    <div class="settings-tabs" style="margin-bottom: var(--space-xl);">
+        <button class="settings-tab active" onclick="switchTab('defaults')" id="tab-defaults">
+            <i class="fas fa-qrcode"></i> Defaults
+        </button>
+        <button class="settings-tab" onclick="switchTab('preferences')" id="tab-preferences">
+            <i class="fas fa-cog"></i> Preferences
+        </button>
+        <button class="settings-tab" onclick="switchTab('api')" id="tab-api">
+            <i class="fas fa-key"></i> API
+        </button>
+        <button class="settings-tab" onclick="switchTab('notifications')" id="tab-notifications">
+            <i class="fas fa-bell"></i> Notifications
+        </button>
+    </div>
+    
+    <form method="POST" action="/projects/qr/settings/update" style="max-width: 50rem;">
         
+        <!-- Tab Content: Defaults -->
+        <div class="tab-content active" id="content-defaults">
         <!-- Default QR Code Settings -->
         <div class="settings-section">
             <h4 class="settings-heading">
@@ -90,7 +108,10 @@
                 </div>
             </div>
         </div>
+        </div><!-- End Defaults Tab -->
         
+        <!-- Tab Content: Preferences -->
+        <div class="tab-content" id="content-preferences">
         <!-- General Preferences -->
         <div class="settings-section">
             <h4 class="settings-heading">
@@ -105,7 +126,10 @@
                 <small class="form-help">Automatically save all generated QR codes to your account.</small>
             </div>
         </div>
+        </div><!-- End Preferences Tab -->
         
+        <!-- Tab Content: Notifications -->
+        <div class="tab-content" id="content-notifications">
         <!-- Notification Settings -->
         <div class="settings-section">
             <h4 class="settings-heading">
@@ -128,7 +152,10 @@
                 <small class="form-help">Send notification after this many scans.</small>
             </div>
         </div>
+        </div><!-- End Notifications Tab -->
         
+        <!-- Tab Content: API -->
+        <div class="tab-content" id="content-api">
         <!-- API Settings -->
         <div class="settings-section">
             <h4 class="settings-heading">
@@ -169,8 +196,9 @@
                 </button>
             <?php endif; ?>
         </div>
+        </div><!-- End API Tab -->
         
-        <div class="form-actions" style="margin-top: 30px; padding-top: 30px; border-top: 1px solid rgba(255,255,255,0.1);">
+        <div class="form-actions" style="margin-top: var(--space-xl); padding-top: var(--space-xl); border-top: 1px solid rgba(255,255,255,0.1);">
             <button type="submit" class="btn-primary">
                 <i class="fas fa-save"></i> Save Settings
             </button>
@@ -181,10 +209,77 @@
     </form>
 </div>
 
+<script>
+// Tab switching
+function switchTab(tabName) {
+    // Hide all tab content
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+    });
+    
+    // Remove active from all tabs
+    document.querySelectorAll('.settings-tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    // Show selected tab content
+    document.getElementById('content-' + tabName).classList.add('active');
+    document.getElementById('tab-' + tabName).classList.add('active');
+}
+</script>
+
 <style>
+/* Settings Tabs */
+.settings-tabs {
+    display: flex;
+    gap: var(--space-sm);
+    border-bottom: 2px solid var(--border-color);
+    flex-wrap: wrap;
+}
+
+.settings-tab {
+    padding: var(--space-md) var(--space-lg);
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: var(--font-sm);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.settings-tab:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.settings-tab.active {
+    color: var(--purple);
+    border-bottom-color: var(--purple);
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(0.5rem); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 .settings-section {
-    margin-bottom: 40px;
-    padding-bottom: 30px;
+    margin-bottom: 2.5rem; /* 40px to rem */
+    padding-bottom: var(--space-xl);
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -194,104 +289,119 @@
 
 .settings-heading {
     color: var(--text-primary);
-    font-size: 18px;
-    margin-bottom: 10px;
+    font-size: var(--font-lg);
+    margin-bottom: var(--space-sm);
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: var(--space-sm);
 }
 
 .settings-description {
     color: var(--text-secondary);
-    margin-bottom: 20px;
+    margin-bottom: var(--space-lg);
+    font-size: var(--font-sm);
 }
 
 .form-row {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
-    margin-bottom: 15px;
+    grid-template-columns: repeat(auto-fit, minmax(15.625rem, 1fr)); /* 250px to rem */
+    gap: var(--space-lg);
+    margin-bottom: var(--space-md);
 }
 
 .form-group {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: var(--space-sm);
 }
 
 .form-group label {
     color: var(--text-primary);
     font-weight: 500;
-    font-size: 14px;
+    font-size: var(--font-sm);
 }
 
 .form-help {
     color: var(--text-secondary);
-    font-size: 12px;
-    margin-top: 4px;
+    font-size: var(--font-xs);
+    margin-top: 0.25rem; /* 4px to rem */
 }
 
 .color-input {
-    height: 50px;
+    height: 3.125rem; /* 50px to rem */
     cursor: pointer;
 }
 
 .checkbox-label {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: var(--space-sm);
     cursor: pointer;
     color: var(--text-primary);
     font-weight: 400;
 }
 
 .checkbox-label input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
+    width: 1.125rem; /* 18px to rem */
+    height: 1.125rem;
     cursor: pointer;
 }
 
 .api-key-display {
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: var(--space-md);
 }
 
 .api-key-input {
     display: flex;
-    gap: 10px;
+    gap: var(--space-sm);
+    align-items: center;
+}
+
+.api-key-input .btn-secondary {
+    white-space: nowrap;
 }
 
 .form-actions {
     display: flex;
-    gap: 15px;
-}
-
-.alert {
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-}
-
-.alert-success {
-    background: rgba(46, 213, 115, 0.1);
-    color: #2ed573;
-    border: 1px solid rgba(46, 213, 115, 0.3);
-}
-
-.alert-error {
-    background: rgba(255, 71, 87, 0.1);
-    color: #ff4757;
-    border: 1px solid rgba(255, 71, 87, 0.3);
+    gap: var(--space-md);
 }
 
 /* Responsive Styles */
-@media (max-width: 768px) {
+@media (max-width: 48rem) { /* 768px to rem */
+    .settings-tabs {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .settings-tab {
+        padding: var(--space-sm) var(--space-md);
+        font-size: 0.8125rem; /* 13px to rem */
+    }
+    
     .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .api-key-input {
         flex-direction: column;
     }
     
-    .form-row .form-group {
+    .api-key-input .form-control,
+    .api-key-input .btn-secondary {
+        width: 100%;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .form-actions .btn-primary,
+    .form-actions .btn-secondary {
+        width: 100%;
+    }
+}
         width: 100%;
     }
     
