@@ -831,8 +831,8 @@ const qrConfig = {
     markerCenterStyle: 'square'
 };
 
-// Preset Selection Function
-function selectPreset(presetType, value) {
+// Preset Selection Function (Global scope for onclick handlers)
+window.selectPreset = function(presetType, value) {
     // Update config
     qrConfig[presetType] = value;
     
@@ -853,11 +853,13 @@ function selectPreset(presetType, value) {
         selectedOption.classList.add('active');
     }
     
-    // Trigger preview update
-    if (typeof debouncedPreview === 'function') {
+    // Trigger preview update (check if function exists - defined in DOMContentLoaded)
+    if (typeof window.debouncedPreview === 'function') {
+        window.debouncedPreview();
+    } else if (typeof debouncedPreview === 'function') {
         debouncedPreview();
     }
-}
+};
 
 // Notification system
 function showNotification(message, type = 'info') {
@@ -1548,12 +1550,13 @@ function applyFrameStyle(qrDiv) {
     }
 }
 
-// Debounced live preview
+// Debounced live preview (Assign to window for global access)
 let previewTimeout;
-function debouncedPreview() {
+window.debouncedPreview = function() {
     clearTimeout(previewTimeout);
     previewTimeout = setTimeout(generatePreview, 500);
-}
+};
+const debouncedPreview = window.debouncedPreview;
 
 // Live preview on all field changes
 const livePreviewFields = [
