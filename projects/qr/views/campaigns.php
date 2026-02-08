@@ -268,6 +268,48 @@
     color: #ff4757;
     border: 1px solid rgba(255, 71, 87, 0.3);
 }
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+    .campaigns-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .campaign-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .campaign-stats {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .campaign-actions {
+        flex-wrap: wrap;
+    }
+    
+    .modal-content {
+        width: 95%;
+        padding: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .btn-primary, .btn-secondary {
+        font-size: 14px;
+        padding: 10px 16px;
+    }
+    
+    .campaign-card {
+        padding: 15px;
+    }
+    
+    .section-title {
+        font-size: 20px;
+    }
+}
 </style>
 
 <script>

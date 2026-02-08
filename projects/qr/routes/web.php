@@ -117,8 +117,26 @@ switch ($segments[0]) {
     case 'campaigns':
         require_once PROJECT_PATH . '/controllers/CampaignsController.php';
         $controller = new \Projects\QR\Controllers\CampaignsController();
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $controller->save();
+        
+        // Handle nested routes
+        if (isset($segments[1])) {
+            switch ($segments[1]) {
+                case 'create':
+                    $controller->create();
+                    break;
+                case 'edit':
+                    $controller->edit();
+                    break;
+                case 'view':
+                    $controller->view();
+                    break;
+                case 'delete':
+                    $controller->delete();
+                    break;
+                default:
+                    http_response_code(404);
+                    echo "Not found";
+            }
         } else {
             $controller->index();
         }
@@ -127,8 +145,23 @@ switch ($segments[0]) {
     case 'bulk':
         require_once PROJECT_PATH . '/controllers/BulkController.php';
         $controller = new \Projects\QR\Controllers\BulkController();
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $controller->generate();
+        
+        // Handle nested routes
+        if (isset($segments[1])) {
+            switch ($segments[1]) {
+                case 'upload':
+                    $controller->upload();
+                    break;
+                case 'generate':
+                    $controller->generate();
+                    break;
+                case 'sample':
+                    $controller->downloadSample();
+                    break;
+                default:
+                    http_response_code(404);
+                    echo "Not found";
+            }
         } else {
             $controller->index();
         }
@@ -137,8 +170,26 @@ switch ($segments[0]) {
     case 'templates':
         require_once PROJECT_PATH . '/controllers/TemplatesController.php';
         $controller = new \Projects\QR\Controllers\TemplatesController();
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $controller->save();
+        
+        // Handle nested routes
+        if (isset($segments[1])) {
+            switch ($segments[1]) {
+                case 'create':
+                    $controller->create();
+                    break;
+                case 'get':
+                    $controller->get();
+                    break;
+                case 'update':
+                    $controller->update();
+                    break;
+                case 'delete':
+                    $controller->delete();
+                    break;
+                default:
+                    http_response_code(404);
+                    echo "Not found";
+            }
         } else {
             $controller->index();
         }

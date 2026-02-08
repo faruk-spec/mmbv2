@@ -42,6 +42,38 @@
                 </small>
             </div>
             
+            <!-- Sample CSV Download Section -->
+            <div class="sample-download-section" style="margin: 20px 0; padding: 15px; background: rgba(87, 96, 255, 0.1); border-radius: 10px; border: 1px solid rgba(87, 96, 255, 0.3);">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                    <i class="fas fa-file-download" style="color: var(--purple); font-size: 18px;"></i>
+                    <strong style="color: var(--text-primary);">Need a sample CSV file?</strong>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: end;">
+                    <div style="flex: 1;">
+                        <label style="display: block; margin-bottom: 5px; color: var(--text-secondary); font-size: 13px;">Select Type</label>
+                        <select id="sampleType" class="form-select" style="background: var(--glass-bg); border: 1px solid var(--glass-border); color: var(--text-primary);">
+                            <option value="url">URL / Website</option>
+                            <option value="text">Plain Text</option>
+                            <option value="email">Email Address</option>
+                            <option value="location">Location</option>
+                            <option value="phone">Phone Number</option>
+                            <option value="sms">SMS Message</option>
+                            <option value="whatsapp">WhatsApp</option>
+                            <option value="skype">Skype</option>
+                            <option value="zoom">Zoom</option>
+                            <option value="wifi">WiFi Network</option>
+                            <option value="vcard">vCard (Contact)</option>
+                            <option value="event">Event (Calendar)</option>
+                            <option value="paypal">PayPal</option>
+                            <option value="payment">Payment (UPI)</option>
+                        </select>
+                    </div>
+                    <button type="button" class="btn-primary" style="padding: 10px 20px;" onclick="downloadSample()">
+                        <i class="fas fa-download"></i> Download Sample
+                    </button>
+                </div>
+            </div>
+            
             <button type="submit" class="btn-primary" id="uploadBtn">
                 <i class="fas fa-upload"></i> Upload & Preview
             </button>
@@ -224,10 +256,63 @@
     padding: 8px 16px;
     font-size: 14px;
 }
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+    .bulk-upload-section {
+        padding: 20px;
+    }
+    
+    .sample-download-section {
+        padding: 15px;
+    }
+    
+    .sample-download-section > div:last-child {
+        flex-direction: column;
+    }
+    
+    .sample-download-section > div:last-child > div {
+        width: 100%;
+    }
+    
+    .job-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .job-stats {
+        flex-wrap: wrap;
+    }
+}
+
+@media (max-width: 480px) {
+    .glass-card {
+        padding: 15px;
+    }
+    
+    .jobs-list {
+        gap: 10px;
+    }
+    
+    .job-card {
+        padding: 15px;
+    }
+    
+    .form-select, .form-control {
+        font-size: 14px;
+    }
+}
 </style>
 
 <script>
 let currentJobId = null;
+
+// Download sample CSV function
+function downloadSample() {
+    const sampleType = document.getElementById('sampleType').value;
+    window.location.href = `/projects/qr/bulk/sample?type=${sampleType}`;
+}
 
 document.getElementById('bulkUploadForm').addEventListener('submit', async function(e) {
     e.preventDefault();

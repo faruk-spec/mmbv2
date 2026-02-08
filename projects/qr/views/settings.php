@@ -284,6 +284,39 @@
     color: #ff4757;
     border: 1px solid rgba(255, 71, 87, 0.3);
 }
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+    .form-row {
+        flex-direction: column;
+    }
+    
+    .form-row .form-group {
+        width: 100%;
+    }
+    
+    .settings-section {
+        padding: 20px;
+    }
+    
+    form {
+        max-width: 100% !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .glass-card {
+        padding: 20px;
+    }
+    
+    .settings-heading {
+        font-size: 18px;
+    }
+    
+    .btn-primary {
+        width: 100%;
+    }
+}
 </style>
 
 <script>
