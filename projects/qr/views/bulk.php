@@ -248,6 +248,53 @@
     padding: 8px 16px;
     font-size: 14px;
 }
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+    .bulk-upload-section {
+        padding: 20px;
+    }
+    
+    .sample-download-section {
+        padding: 15px;
+    }
+    
+    .sample-download-section > div:last-child {
+        flex-direction: column;
+    }
+    
+    .sample-download-section > div:last-child > div {
+        width: 100%;
+    }
+    
+    .job-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .job-stats {
+        flex-wrap: wrap;
+    }
+}
+
+@media (max-width: 480px) {
+    .glass-card {
+        padding: 15px;
+    }
+    
+    .jobs-list {
+        gap: 10px;
+    }
+    
+    .job-card {
+        padding: 15px;
+    }
+    
+    .form-select, .form-control {
+        font-size: 14px;
+    }
+}
 </style>
 
 <script>

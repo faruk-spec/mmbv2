@@ -3095,6 +3095,57 @@ html[data-theme="dark"] .form-select optgroup {
     }
 }
 
+@media (max-width: 768px) {
+    .qr-action-buttons {
+        flex-direction: column;
+    }
+    
+    .qr-action-buttons .btn {
+        width: 100%;
+        min-width: auto;
+    }
+    
+    .template-modal-content {
+        width: 95%;
+        padding: 15px;
+    }
+    
+    .logo-icon-grid {
+        grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+        gap: 8px;
+        max-height: 250px;
+    }
+    
+    .sample-download-section {
+        padding: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .glass-card {
+        padding: 15px;
+    }
+    
+    .section-title {
+        font-size: 18px;
+    }
+    
+    .form-label {
+        font-size: 13px;
+    }
+    
+    .btn {
+        font-size: 14px;
+        padding: 12px 20px;
+    }
+    
+    .logo-icon-item {
+        width: 45px;
+        height: 45px;
+        font-size: 20px;
+    }
+}
+
 /* Notifications */
 .notification {
     position: fixed;

@@ -234,6 +234,40 @@
 .template-info-box a:hover {
     text-decoration: underline;
 }
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+    .templates-grid {
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    }
+    
+    .template-preview {
+        height: 150px;
+    }
+    
+    .template-settings {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+@media (max-width: 480px) {
+    .templates-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .template-card {
+        padding: 15px;
+    }
+    
+    .template-actions {
+        flex-direction: column;
+    }
+    
+    .template-actions .btn-sm {
+        width: 100%;
+    }
+}
 </style>
 
 <script>
