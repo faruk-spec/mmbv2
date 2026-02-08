@@ -1720,7 +1720,7 @@ window.generatePreview = function() {
     // Build QR options
     const dotColor = gradientEnabled 
         ? { 
-            type: 'linear-gradient', 
+            type: 'gradient', 
             rotation: 0, 
             colorStops: [
                 { offset: 0, color: foregroundColor }, 

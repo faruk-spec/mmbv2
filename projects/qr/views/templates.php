@@ -90,7 +90,7 @@
                         </button>
                         <?php if ($template['user_id'] == $user['id']): ?>
                             <button class="btn-danger btn-sm" onclick="deleteTemplate(<?= $template['id'] ?>)">
-                                <i class="fas fa-trash"></i>
+                                <i class="fas fa-trash"></i> Delete
                             </button>
                         <?php endif; ?>
                     </div>
