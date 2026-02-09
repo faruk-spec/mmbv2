@@ -39,13 +39,13 @@ try {
             --border-color: rgba(255, 255, 255, 0.1);
             --sidebar-width: 15rem; /* 240px converted to rem */
             
-            /* Spacing scale using rem */
-            --space-xs: 0.25rem;  /* 4px */
-            --space-sm: 0.5rem;   /* 8px */
-            --space-md: 1rem;     /* 16px */
-            --space-lg: 1.5rem;   /* 24px */
-            --space-xl: 2rem;     /* 32px */
-            --space-2xl: 3rem;    /* 48px */
+            /* Compact spacing scale using rem - reduced for professional compact design */
+            --space-xs: 0.25rem;  /* 4px - keep */
+            --space-sm: 0.375rem; /* 6px - reduced from 8px */
+            --space-md: 0.75rem;  /* 12px - reduced from 16px */
+            --space-lg: 1rem;     /* 16px - reduced from 24px */
+            --space-xl: 1.5rem;   /* 24px - reduced from 32px */
+            --space-2xl: 2rem;    /* 32px - reduced from 48px */
             
             /* Font sizes using rem */
             --font-xs: 0.75rem;   /* 12px */
@@ -228,12 +228,12 @@ try {
             height: 1.5rem;
         }
         
-        /* Card Styles - optimized with rem */
+        /* Card Styles - optimized with rem and compact padding */
         .card, .glass-card {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
-            border-radius: 0.75rem; /* 12px */
-            padding: var(--space-lg);
+            border-radius: 0.625rem; /* 10px - reduced from 12px */
+            padding: var(--space-md); /* 12px - reduced from 24px */
             transition: all 0.3s ease;
             /* Performance */
             will-change: transform, box-shadow;
@@ -245,39 +245,39 @@ try {
             transform: translateY(-0.125rem); /* -2px */
         }
         
-        /* Button Styles - converted to rem */
+        /* Button Styles - compact professional design */
         .btn {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 0.5rem; /* 8px */
-            padding: 0.75rem 1.5rem; /* 12px 24px */
+            gap: 0.375rem; /* 6px - reduced from 8px */
+            padding: 0.5rem 1rem; /* 8px 16px - reduced for compact design */
             border: none;
-            border-radius: 0.625rem; /* 10px */
+            border-radius: 0.5rem; /* 8px - reduced from 10px */
             font-family: inherit;
-            font-size: var(--font-sm);
+            font-size: var(--font-xs); /* 12px - smaller for compact */
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
             text-decoration: none;
-            box-shadow: 0 0.125rem 0.5rem rgba(0, 0, 0, 0.1);
+            box-shadow: 0 0.125rem 0.375rem rgba(0, 0, 0, 0.1);
             white-space: nowrap;
             /* Performance */
             will-change: transform;
         }
         
-        /* Better button appearance on desktop */
+        /* Better button appearance on desktop - still compact */
         @media (min-width: 48rem) { /* 768px */
             .btn {
-                padding: 0.875rem 1.75rem; /* 14px 28px */
-                font-size: var(--font-md);
-                border-radius: 0.75rem; /* 12px */
-                box-shadow: 0 0.1875rem 0.75rem rgba(0, 0, 0, 0.12);
+                padding: 0.625rem 1.25rem; /* 10px 20px - reduced from 14px 28px */
+                font-size: var(--font-sm); /* 14px - reduced from 16px */
+                border-radius: 0.625rem; /* 10px - reduced from 12px */
+                box-shadow: 0 0.1875rem 0.625rem rgba(0, 0, 0, 0.12);
             }
             
             .btn-sm {
-                padding: 0.625rem 1.125rem; /* 10px 18px */
-                font-size: var(--font-sm);
+                padding: 0.5rem 0.875rem; /* 8px 14px - reduced */
+                font-size: var(--font-xs); /* 12px */
             }
         }
         
@@ -294,20 +294,20 @@ try {
             background: linear-gradient(135deg, var(--purple), var(--magenta));
             color: white;
             border: none;
-            /* Inherit all base button styles */
+            /* Compact button styles */
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 0.5rem;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.625rem;
+            gap: 0.375rem;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
             font-family: inherit;
-            font-size: var(--font-sm);
+            font-size: var(--font-xs);
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
             text-decoration: none;
-            box-shadow: 0 0.125rem 0.5rem rgba(0, 0, 0, 0.1);
+            box-shadow: 0 0.125rem 0.375rem rgba(0, 0, 0, 0.1);
             white-space: nowrap;
         }
         
@@ -320,20 +320,20 @@ try {
             background: var(--bg-secondary);
             color: var(--text-primary);
             border: 1px solid var(--border-color);
-            /* Inherit all base button styles */
+            /* Compact button styles */
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 0.5rem;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.625rem;
+            gap: 0.375rem;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
             font-family: inherit;
-            font-size: var(--font-sm);
+            font-size: var(--font-xs);
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
             text-decoration: none;
-            box-shadow: 0 0.125rem 0.5rem rgba(0, 0, 0, 0.1);
+            box-shadow: 0 0.125rem 0.375rem rgba(0, 0, 0, 0.1);
             white-space: nowrap;
         }
         
@@ -347,20 +347,20 @@ try {
             background: linear-gradient(135deg, #ff4757, #ff6b6b);
             color: white;
             border: none;
-            /* Inherit all base button styles */
+            /* Compact button styles */
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 0.5rem;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.625rem;
+            gap: 0.375rem;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
             font-family: inherit;
-            font-size: var(--font-sm);
+            font-size: var(--font-xs);
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
             text-decoration: none;
-            box-shadow: 0 0.125rem 0.5rem rgba(0, 0, 0, 0.1);
+            box-shadow: 0 0.125rem 0.375rem rgba(0, 0, 0, 0.1);
             white-space: nowrap;
         }
         
@@ -382,21 +382,21 @@ try {
             cursor: not-allowed;
         }
         
-        /* Desktop improvements for all button variants */
+        /* Desktop improvements for all button variants - still compact */
         @media (min-width: 48rem) {
             .btn-primary,
             .btn-secondary,
             .btn-danger {
-                padding: 0.875rem 1.75rem;
-                font-size: var(--font-md);
-                border-radius: 0.75rem;
-                box-shadow: 0 0.1875rem 0.75rem rgba(0, 0, 0, 0.12);
+                padding: 0.625rem 1.25rem; /* 10px 20px - reduced */
+                font-size: var(--font-sm); /* 14px */
+                border-radius: 0.625rem; /* 10px */
+                box-shadow: 0 0.1875rem 0.625rem rgba(0, 0, 0, 0.12);
             }
         }
         
         .btn-sm {
-            padding: 0.5rem 1rem; /* 8px 16px */
-            font-size: var(--font-sm);
+            padding: 0.375rem 0.75rem; /* 6px 12px - reduced */
+            font-size: var(--font-xs); /* 12px */
         }
         
         .form-group {
