@@ -1870,10 +1870,12 @@ window.generatePreview = function() {
                     const bgReader = new FileReader();
                     bgReader.onload = function(bgE) {
                         // Set the background image with proper transparent handling
+                        // Use smaller imageSize for better visibility (0.3 = 30% coverage)
                         qrOptions.backgroundOptions = {
-                            color: qrOptions.backgroundOptions.color,
+                            color: transparentBg ? 'rgba(0,0,0,0)' : qrOptions.backgroundOptions.color,
                             image: bgE.target.result,
-                            imageSize: 1.0
+                            imageSize: 0.3,
+                            margin: 0
                         };
                         renderQRCode(qrOptions, content);
                     };
@@ -1892,10 +1894,12 @@ window.generatePreview = function() {
         const bgReader = new FileReader();
         bgReader.onload = function(e) {
             // Set the background image with proper transparent handling
+            // Use smaller imageSize for better visibility (0.3 = 30% coverage)
             qrOptions.backgroundOptions = {
-                color: qrOptions.backgroundOptions.color,
+                color: transparentBg ? 'rgba(0,0,0,0)' : qrOptions.backgroundOptions.color,
                 image: e.target.result,
-                imageSize: 1.0
+                imageSize: 0.3,
+                margin: 0
             };
             renderQRCode(qrOptions, content);
         };
@@ -2250,10 +2254,10 @@ function applyFrameStyle(qrDiv) {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: var(--space-md) var(--space-lg);
+    padding: 0.75rem 1rem; /* Reduced padding for more compact design */
     background: rgba(153, 69, 255, 0.1);
     border-radius: 0.625rem;
-    margin-bottom: var(--space-md);
+    margin-bottom: 0.75rem; /* Reduced from var(--space-md) */
     transition: all 0.3s ease;
     user-select: none;
 }
@@ -2274,7 +2278,23 @@ function applyFrameStyle(qrDiv) {
 .collapsible-header span {
     display: flex;
     align-items: center;
-    gap: var(--space-sm);
+    gap: 0.5rem; /* Reduced from var(--space-sm) */
+    font-size: 1rem; /* Explicit font size for compact design */
+    transition: color 0.3s ease; /* Add transition for text color */
+}
+
+/* Enhanced expanded state - change text color */
+.collapsible-header.expanded {
+    background: rgba(153, 69, 255, 0.2); /* Stronger background when expanded */
+}
+
+.collapsible-header.expanded span {
+    color: var(--purple); /* Highlight text color when expanded */
+    font-weight: 600; /* Make text bolder when expanded */
+}
+
+[data-theme="light"] .collapsible-header.expanded {
+    background: rgba(153, 69, 255, 0.15);
 }
 
 .collapse-icon {
@@ -2352,7 +2372,7 @@ function applyFrameStyle(qrDiv) {
     -webkit-backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 1.25rem; /* 20px to rem */
-    padding: 1.5625rem; /* 25px to rem */
+    padding: 1rem; /* Reduced from 1.5625rem for more compact design */
     box-shadow: 0 0.5rem 2rem 0 rgba(0, 0, 0, 0.37);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     animation: fadeInUp 0.5s ease;
@@ -2406,42 +2426,42 @@ function applyFrameStyle(qrDiv) {
 
 /* Section Titles */
 .section-title {
-    font-size: 1.5rem; /* 24px to rem */
+    font-size: 1.25rem; /* Reduced from 1.5rem for more compact design */
     font-weight: 600;
-    margin-bottom: 1.5625rem; /* 25px to rem */
+    margin-bottom: 1rem; /* Reduced from 1.5625rem */
     background: linear-gradient(135deg, var(--purple), var(--cyan));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
     display: flex;
     align-items: center;
-    gap: 0.75rem; /* 12px to rem */
+    gap: 0.5rem; /* Reduced from 0.75rem */
 }
 
 .subsection-title {
-    font-size: 1.125rem; /* 18px to rem */
+    font-size: 1rem; /* Reduced from 1.125rem for more compact design */
     font-weight: 600;
-    margin: 1.5625rem 0 0.9375rem 0; /* 25px 0 15px 0 to rem */
+    margin: 1rem 0 0.75rem 0; /* Reduced margins */
     color: var(--text-primary);
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 0.5rem; /* Reduced from 10px */
 }
 
 /* Form Styling */
 .form-group {
-    margin-bottom: 15px;
+    margin-bottom: 0.75rem; /* Reduced from 15px for more compact design */
     animation: fadeInUp 0.3s ease;
 }
 
 .form-label {
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-bottom: 10px;
+    gap: 0.5rem; /* Reduced from 8px */
+    margin-bottom: 0.5rem; /* Reduced from 10px */
     font-weight: 500;
     color: var(--text-primary);
-    font-size: 14px;
+    font-size: 0.875rem; /* Reduced from 14px for more compact design */
 }
 
 /* Preset Grid System */
