@@ -1113,16 +1113,32 @@ window.debouncedPreview = function() {
 };
 const debouncedPreview = window.debouncedPreview;
 
-// Collapsible Section Toggle Function
+// Collapsible Section Toggle Function with Accordion Behavior
 window.toggleSection = function(sectionId) {
     const content = document.getElementById(sectionId);
     const header = content.previousElementSibling;
     
     if (!content) return;
     
-    // Toggle collapsed class
+    // Check if this section is currently collapsed
     const isCollapsed = content.classList.contains('collapsed');
     
+    // Accordion behavior: Close all other sections first
+    const allSections = ['designOptions', 'designPresets', 'logoOptions'];
+    allSections.forEach(id => {
+        if (id !== sectionId) {
+            const otherContent = document.getElementById(id);
+            const otherHeader = otherContent?.previousElementSibling;
+            if (otherContent && !otherContent.classList.contains('collapsed')) {
+                otherContent.classList.add('collapsed');
+                otherHeader?.classList.remove('expanded');
+                // Save collapsed state
+                localStorage.setItem('qr_section_' + id, 'collapsed');
+            }
+        }
+    });
+    
+    // Toggle the clicked section
     if (isCollapsed) {
         content.classList.remove('collapsed');
         header.classList.add('expanded');
@@ -2262,12 +2278,25 @@ function applyFrameStyle(qrDiv) {
 }
 
 .collapse-icon {
-    transition: transform 0.3s ease;
-    color: var(--purple);
+    transition: transform 0.3s ease, color 0.3s ease;
+    color: rgba(153, 69, 255, 0.7);
+    transform: rotate(0deg);
+    font-size: 1rem;
 }
 
 .collapsible-header:hover .collapse-icon {
-    transform: scale(1.1);
+    color: var(--purple);
+    transform: scale(1.15) rotate(0deg);
+}
+
+/* Rotate icon when expanded - smooth 180deg rotation */
+.collapsible-header.expanded .collapse-icon {
+    transform: rotate(180deg);
+    color: var(--purple);
+}
+
+.collapsible-header.expanded:hover .collapse-icon {
+    transform: scale(1.15) rotate(180deg);
 }
 
 .collapsible-content {
@@ -2281,12 +2310,6 @@ function applyFrameStyle(qrDiv) {
     max-height: 0;
     opacity: 0;
     transition: max-height 0.4s ease-in, opacity 0.3s ease-in;
-}
-
-/* Rotate icon when expanded */
-.collapsible-content:not(.collapsed) ~ .collapsible-header .collapse-icon,
-.collapsible-header.expanded .collapse-icon {
-    transform: rotate(180deg);
 }
 
 /* Performance Optimizations for Smooth Scrolling */
