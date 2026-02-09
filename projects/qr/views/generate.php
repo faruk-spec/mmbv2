@@ -473,6 +473,9 @@
             <div class="form-group" id="gradientColorGroup" style="display: none;">
                 <label class="form-label">Gradient End Color</label>
                 <input type="color" name="gradient_color" id="gradientColor" value="#9945ff" class="form-input color-input">
+                <small style="display: block; margin-top: 0.25rem; color: var(--text-secondary); font-size: 0.75rem;">
+                    <i class="fas fa-info-circle"></i> Creates a smooth gradient from foreground color to this color.
+                </small>
             </div>
             
             <!-- Transparent Background Toggle -->
@@ -502,7 +505,9 @@
             <div class="form-group" id="bgImageGroup" style="display: none;">
                 <label class="form-label">Upload Background Image</label>
                 <input type="file" name="bg_image" id="bgImage" class="form-input" accept="image/*">
-                <small>Recommended: Square image, transparent PNG works best</small>
+                <small style="display: block; margin-top: 0.25rem; color: var(--text-secondary); font-size: 0.75rem;">
+                    <i class="fas fa-info-circle"></i> Image appears behind QR pattern at 30% size. Works best with square images or transparent PNGs.
+                </small>
             </div>
             </div><!-- End Design Options collapsible -->
             
@@ -2665,18 +2670,19 @@ html[data-theme="dark"] .form-select optgroup {
 
 /* Feature Toggles */
 .feature-toggle {
-    margin-bottom: 15px;
+    margin-bottom: 0.75rem; /* Reduced for compact design */
 }
 
 .toggle-label {
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: 0.75rem; /* Reduced from 15px */
     cursor: pointer;
-    padding: 15px;
+    padding: 0.75rem; /* Reduced from 15px */
     background: rgba(255, 255, 255, 0.03);
-    border-radius: 12px;
+    border-radius: 0.75rem; /* Reduced from 12px */
     transition: all 0.3s ease;
+    border: 1px solid transparent; /* Add border for enhanced state */
 }
 
 [data-theme="light"] .toggle-label {
@@ -2689,6 +2695,23 @@ html[data-theme="dark"] .form-select optgroup {
 
 [data-theme="light"] .toggle-label:hover {
     background: rgba(0, 0, 0, 0.05);
+}
+
+/* Enhanced state when toggle is checked */
+.toggle-input:checked ~ .toggle-text strong,
+.toggle-input:checked + .toggle-slider + .toggle-text strong {
+    color: var(--purple);
+}
+
+/* Add subtle glow to the entire toggle when checked */
+.toggle-label:has(.toggle-input:checked) {
+    background: rgba(153, 69, 255, 0.08);
+    border-color: rgba(153, 69, 255, 0.3);
+}
+
+[data-theme="light"] .toggle-label:has(.toggle-input:checked) {
+    background: rgba(153, 69, 255, 0.05);
+    border-color: rgba(153, 69, 255, 0.2);
 }
 
 .toggle-input {
@@ -2747,14 +2770,15 @@ html[data-theme="dark"] .form-select optgroup {
 .toggle-text strong {
     display: block;
     color: var(--text-primary);
-    font-size: 15px;
-    margin-bottom: 4px;
+    font-size: 0.875rem; /* Reduced from 15px for compact design */
+    margin-bottom: 0.25rem; /* Reduced from 4px */
+    transition: color 0.3s ease; /* Add transition for color change */
 }
 
 .toggle-text small {
     display: block;
     color: var(--text-secondary);
-    font-size: 12px;
+    font-size: 0.75rem; /* Reduced from 12px for compact design */
 }
 
 /* Logo Option Selector */
