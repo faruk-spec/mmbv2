@@ -464,17 +464,17 @@
                     <input type="checkbox" name="gradient_enabled" id="gradientEnabled" value="1" class="toggle-input">
                     <span class="toggle-slider"></span>
                     <span class="toggle-text">
-                        <strong>Gradient Foreground</strong>
-                        <small>Apply gradient to foreground color</small>
+                        <strong>🎨 Gradient Foreground</strong>
+                        <small>Enable smooth color gradient effect</small>
                     </span>
                 </label>
             </div>
             
             <div class="form-group" id="gradientColorGroup" style="display: none;">
-                <label class="form-label">Gradient End Color</label>
+                <label class="form-label">🎨 Gradient End Color</label>
                 <input type="color" name="gradient_color" id="gradientColor" value="#9945ff" class="form-input color-input">
-                <small style="display: block; margin-top: 0.25rem; color: var(--text-secondary); font-size: 0.75rem;">
-                    <i class="fas fa-info-circle"></i> Creates a smooth gradient from foreground color to this color.
+                <small style="display: block; margin-top: 0.25rem; color: var(--text-secondary); font-size: 0.7rem;">
+                    <i class="fas fa-magic"></i> Creates a smooth gradient from foreground color to this color.
                 </small>
             </div>
             
@@ -496,17 +496,17 @@
                     <input type="checkbox" name="bg_image_enabled" id="bgImageEnabled" value="1" class="toggle-input">
                     <span class="toggle-slider"></span>
                     <span class="toggle-text">
-                        <strong>Background Image</strong>
-                        <small>Add custom background image</small>
+                        <strong>🖼️ Background Image</strong>
+                        <small>Add custom image behind QR code</small>
                     </span>
                 </label>
             </div>
             
             <div class="form-group" id="bgImageGroup" style="display: none;">
-                <label class="form-label">Upload Background Image</label>
+                <label class="form-label">📤 Upload Background Image</label>
                 <input type="file" name="bg_image" id="bgImage" class="form-input" accept="image/*">
-                <small style="display: block; margin-top: 0.25rem; color: var(--text-secondary); font-size: 0.75rem;">
-                    <i class="fas fa-info-circle"></i> Image appears behind QR pattern at 30% size. Works best with square images or transparent PNGs.
+                <small style="display: block; margin-top: 0.25rem; color: var(--text-secondary); font-size: 0.7rem;">
+                    <i class="fas fa-image"></i> Image appears behind QR pattern at 30% size. Works best with square images or transparent PNGs.
                 </small>
             </div>
             </div><!-- End Design Options collapsible -->
@@ -2648,8 +2648,19 @@ html[data-theme="dark"] .form-select optgroup {
 }
 
 .color-input {
-    height: 50px;
+    height: 45px; /* More compact height */
     cursor: pointer;
+    border: 2px solid rgba(153, 69, 255, 0.3); /* Add purple border for better visibility */
+    transition: border-color 0.3s ease;
+}
+
+.color-input:hover {
+    border-color: rgba(153, 69, 255, 0.6); /* Highlight on hover */
+}
+
+.color-input:focus {
+    border-color: var(--purple); /* Strong highlight on focus */
+    box-shadow: 0 0 0 3px rgba(153, 69, 255, 0.15);
 }
 
 /* Collapsible sections animation */
