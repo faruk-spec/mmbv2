@@ -1,0 +1,60 @@
+name: 🚀 Deploy to aaPanel
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'What to do?'
+        required: true
+        type: choice
+        options:
+          - Deploy Latest
+          - Rollback
+      version:
+        description: 'Version (leave empty for latest)'
+        required: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: ${{ inputs.action }}
+    
+    steps:
+      - name: Checkout Code
+        if: inputs.action == 'Deploy Latest'
+        uses: actions/checkout@v3
+        
+      - name: Deploy via SFTP
+        if: inputs.action == 'Deploy Latest'
+        uses: Dylan700/sftp-upload-action@latest
+        with:
+          server: ${{ secrets.AAPANEL_HOST }}
+          username: ${{ secrets.AAPANEL_USER }}
+          password: ${{ secrets.AAPANEL_PASSWORD }}
+          port: 22
+          uploads: |
+            ./ => /www/wwwroot/${{ secrets.SITE_NAME }}/releases/${{ github.run_number }}/
+            
+      - name: Switch to New Release
+        if: inputs.action == 'Deploy Latest'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.AAPANEL_HOST }}
+          username: ${{ secrets.AAPANEL_USER }}
+          password: ${{ secrets.AAPANEL_PASSWORD }}
+          script: |
+            ln -sfn /www/wwwroot/${{ secrets.SITE_NAME }}/releases/${{ github.run_number }} /www/wwwroot/${{ secrets.SITE_NAME }}/current
+            echo "Deployed release ${{ github.run_number }}"
+            
+      - name: Rollback
+        if: inputs.action == 'Rollback'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.AAPANEL_HOST }}
+          username: ${{ secrets.AAPANEL_USER }}
+          password: ${{ secrets.AAPANEL_PASSWORD }}
+          script: |
+            cd /www/wwwroot/${{ secrets.SITE_NAME }}/releases
+            PREVIOUS=$(ls -t | head -n 2 | tail -n 1)
+            ln -sfn /www/wwwroot/${{ secrets.SITE_NAME }}/releases/$PREVIOUS /www/wwwroot/${{ secrets.SITE_NAME }}/current
+            echo "Rolled back to release $PREVIOUS"
