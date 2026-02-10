@@ -5,14 +5,46 @@
 ?>
 
 <div class="glass-card">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-        <h3 class="section-title">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-xl); flex-wrap: wrap; gap: var(--space-md);">
+        <h3 class="section-title" style="margin-bottom: 0;">
             <i class="fas fa-bullhorn"></i> Campaigns
         </h3>
         <button class="btn-primary" onclick="showCreateCampaignModal()">
             <i class="fas fa-plus"></i> New Campaign
         </button>
     </div>
+    
+    <!-- Search and Filter Section -->
+    <?php if (!empty($campaigns)): ?>
+    <div style="display: flex; gap: var(--space-md); margin-bottom: var(--space-xl); flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 15rem;">
+            <input type="text" 
+                   id="searchCampaigns" 
+                   class="form-control" 
+                   placeholder="Search campaigns..." 
+                   onkeyup="filterCampaigns()"
+                   style="padding: 0.625rem 1rem;">
+        </div>
+        <select id="filterStatus" 
+                class="form-select" 
+                onchange="filterCampaigns()" 
+                style="width: auto; min-width: 10rem; padding: 0.625rem 1rem;">
+            <option value="">All Status</option>
+            <option value="active">Active</option>
+            <option value="paused">Paused</option>
+            <option value="archived">Archived</option>
+        </select>
+        <select id="sortBy" 
+                class="form-select" 
+                onchange="sortCampaigns()" 
+                style="width: auto; min-width: 10rem; padding: 0.625rem 1rem;">
+            <option value="recent">Most Recent</option>
+            <option value="name">Name (A-Z)</option>
+            <option value="qr_count">Most QR Codes</option>
+            <option value="scans">Most Scans</option>
+        </select>
+    </div>
+    <?php endif; ?>
     
     <?php if (isset($_SESSION['success'])): ?>
         <div class="alert alert-success">
@@ -29,20 +61,25 @@
     <?php endif; ?>
     
     <?php if (empty($campaigns)): ?>
-        <div class="empty-state" style="padding: 60px 20px;">
+        <div class="empty-state">
             <div class="empty-icon">
                 <i class="fas fa-bullhorn"></i>
             </div>
-            <h2 style="font-size: 24px; margin-bottom: 15px; color: var(--text-primary);">No Campaigns Yet</h2>
-            <p style="color: var(--text-secondary); margin-bottom: 30px;">Create your first campaign to organize your QR codes.</p>
+            <h2 style="font-size: var(--font-2xl); margin-bottom: var(--space-md); color: var(--text-primary);">No Campaigns Yet</h2>
+            <p style="color: var(--text-secondary); margin-bottom: var(--space-xl);">Create your first campaign to organize your QR codes.</p>
             <button class="btn-primary" onclick="showCreateCampaignModal()">
                 <i class="fas fa-plus"></i> Create First Campaign
             </button>
         </div>
     <?php else: ?>
-        <div class="campaigns-grid">
+        <div class="campaigns-grid" id="campaignsGrid">
             <?php foreach ($campaigns as $campaign): ?>
-                <div class="campaign-card glass-card">
+                <div class="campaign-card glass-card" 
+                     data-name="<?= strtolower(htmlspecialchars($campaign['name'])) ?>"
+                     data-status="<?= $campaign['status'] ?>"
+                     data-qr-count="<?= $campaign['qr_count'] ?? 0 ?>"
+                     data-scans="<?= $campaign['total_scans'] ?? 0 ?>"
+                     data-date="<?= strtotime($campaign['created_at']) ?>">
                     <div class="campaign-header">
                         <h4><?= htmlspecialchars($campaign['name']) ?></h4>
                         <span class="campaign-status status-<?= $campaign['status'] ?>">
@@ -73,11 +110,15 @@
                             <i class="fas fa-edit"></i> Edit
                         </button>
                         <button class="btn-danger" onclick="deleteCampaign(<?= $campaign['id'] ?>)">
-                            <i class="fas fa-trash"></i>
+                            <i class="fas fa-trash"></i> Delete
                         </button>
                     </div>
                 </div>
             <?php endforeach; ?>
+        </div>
+        <div id="noResults" style="display: none; text-align: center; padding: var(--space-2xl); color: var(--text-secondary);">
+            <i class="fas fa-search" style="font-size: 3rem; opacity: 0.5; margin-bottom: var(--space-md);"></i>
+            <p>No campaigns found matching your criteria.</p>
         </div>
     <?php endif; ?>
 </div>
@@ -125,34 +166,43 @@
 <style>
 .campaigns-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fill, minmax(18.75rem, 1fr)); /* 300px */
+    gap: var(--space-lg);
 }
 
 .campaign-card {
-    padding: 20px;
+    padding: var(--space-lg);
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: var(--space-md);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.campaign-card:hover {
+    transform: translateY(-0.125rem); /* -2px */
 }
 
 .campaign-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: var(--space-sm);
 }
 
 .campaign-header h4 {
     margin: 0;
     color: var(--text-primary);
-    font-size: 18px;
+    font-size: var(--font-lg);
+    font-weight: 600;
+    word-break: break-word;
 }
 
 .campaign-status {
-    padding: 4px 12px;
-    border-radius: 12px;
-    font-size: 12px;
+    padding: 0.25rem 0.75rem; /* 4px 12px */
+    border-radius: 0.75rem; /* 12px */
+    font-size: var(--font-xs);
     font-weight: 600;
+    white-space: nowrap;
 }
 
 .status-active {
@@ -172,21 +222,23 @@
 
 .campaign-description {
     color: var(--text-secondary);
-    font-size: 14px;
+    font-size: var(--font-sm);
     margin: 0;
+    line-height: 1.5;
 }
 
 .campaign-stats {
     display: flex;
-    gap: 20px;
+    gap: var(--space-lg);
+    flex-wrap: wrap;
 }
 
 .campaign-stats .stat {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--space-sm);
     color: var(--text-secondary);
-    font-size: 14px;
+    font-size: var(--font-sm);
 }
 
 .campaign-stats .stat i {
@@ -195,15 +247,16 @@
 
 .campaign-actions {
     display: flex;
-    gap: 10px;
+    gap: var(--space-sm);
     margin-top: auto;
 }
 
 .campaign-actions .btn-secondary,
 .campaign-actions .btn-danger {
     flex: 1;
-    padding: 8px;
+    padding: 0.5rem; /* 8px */
     text-align: center;
+    font-size: var(--font-xs);
 }
 
 .modal {
@@ -217,25 +270,29 @@
     align-items: center;
     justify-content: center;
     z-index: 1000;
+    backdrop-filter: blur(4px);
 }
 
 .modal-content {
     width: 90%;
-    max-width: 500px;
+    max-width: 31.25rem; /* 500px */
     max-height: 90vh;
     overflow-y: auto;
+    /* Better scrolling on touch devices */
+    -webkit-overflow-scrolling: touch;
 }
 
 .modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: var(--space-lg);
 }
 
 .modal-header h3 {
     margin: 0;
     color: var(--text-primary);
+    font-size: var(--font-xl);
 }
 
 .modal-close {
@@ -243,8 +300,9 @@
     border: none;
     color: var(--text-secondary);
     cursor: pointer;
-    font-size: 20px;
-    padding: 5px;
+    font-size: var(--font-xl);
+    padding: var(--space-xs);
+    transition: color 0.2s ease;
 }
 
 .modal-close:hover {
@@ -270,7 +328,7 @@
 }
 
 /* Responsive Styles */
-@media (max-width: 768px) {
+@media (max-width: 48rem) { /* 768px */
     .campaigns-grid {
         grid-template-columns: 1fr;
     }
@@ -278,12 +336,12 @@
     .campaign-header {
         flex-direction: column;
         align-items: flex-start;
-        gap: 10px;
+        gap: var(--space-sm);
     }
     
     .campaign-stats {
         flex-direction: column;
-        gap: 10px;
+        gap: var(--space-sm);
     }
     
     .campaign-actions {
@@ -292,22 +350,22 @@
     
     .modal-content {
         width: 95%;
-        padding: 20px;
+        padding: var(--space-lg);
     }
 }
 
-@media (max-width: 480px) {
-    .btn-primary, .btn-secondary {
-        font-size: 14px;
-        padding: 10px 16px;
-    }
-    
+@media (max-width: 30rem) { /* 480px */
     .campaign-card {
-        padding: 15px;
+        padding: var(--space-md);
     }
     
-    .section-title {
-        font-size: 20px;
+    .campaign-actions {
+        flex-direction: column;
+    }
+    
+    .campaign-actions .btn-secondary,
+    .campaign-actions .btn-danger {
+        width: 100%;
     }
 }
 </style>
@@ -365,4 +423,61 @@ document.getElementById('campaignModal')?.addEventListener('click', function(e) 
         closeCampaignModal();
     }
 });
+
+// Filter and Search Functions
+function filterCampaigns() {
+    const searchTerm = document.getElementById('searchCampaigns').value.toLowerCase();
+    const statusFilter = document.getElementById('filterStatus').value.toLowerCase();
+    const cards = document.querySelectorAll('.campaign-card');
+    let visibleCount = 0;
+    
+    cards.forEach(card => {
+        const name = card.getAttribute('data-name');
+        const status = card.getAttribute('data-status');
+        
+        const matchesSearch = name.includes(searchTerm);
+        const matchesStatus = !statusFilter || status === statusFilter;
+        
+        if (matchesSearch && matchesStatus) {
+            card.style.display = 'flex';
+            visibleCount++;
+        } else {
+            card.style.display = 'none';
+        }
+    });
+    
+    // Show/hide no results message
+    const noResults = document.getElementById('noResults');
+    const grid = document.getElementById('campaignsGrid');
+    if (visibleCount === 0) {
+        grid.style.display = 'none';
+        noResults.style.display = 'block';
+    } else {
+        grid.style.display = 'grid';
+        noResults.style.display = 'none';
+    }
+}
+
+function sortCampaigns() {
+    const sortBy = document.getElementById('sortBy').value;
+    const grid = document.getElementById('campaignsGrid');
+    const cards = Array.from(grid.querySelectorAll('.campaign-card'));
+    
+    cards.sort((a, b) => {
+        switch(sortBy) {
+            case 'name':
+                return a.getAttribute('data-name').localeCompare(b.getAttribute('data-name'));
+            case 'qr_count':
+                return parseInt(b.getAttribute('data-qr-count')) - parseInt(a.getAttribute('data-qr-count'));
+            case 'scans':
+                return parseInt(b.getAttribute('data-scans')) - parseInt(a.getAttribute('data-scans'));
+            case 'recent':
+            default:
+                return parseInt(b.getAttribute('data-date')) - parseInt(a.getAttribute('data-date'));
+        }
+    });
+    
+    // Re-append sorted cards
+    cards.forEach(card => grid.appendChild(card));
+}
 </script>
