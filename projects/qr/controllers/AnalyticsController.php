@@ -32,17 +32,29 @@ class AnalyticsController
             exit;
         }
         
+        // Pagination parameters
+        $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+        $perPage = isset($_GET['per_page']) ? max(10, min(100, (int)$_GET['per_page'])) : 25;
+        $offset = ($page - 1) * $perPage;
+        
         // Get analytics data
         $totalQRs = $this->qrModel->countByUser($userId);
         $activeQRs = $this->qrModel->countActiveByUser($userId);
-        $recentQRs = $this->qrModel->getByUser($userId, 10);
+        $recentQRs = $this->qrModel->getByUser($userId, $perPage, $offset);
+        
+        // Calculate pagination
+        $totalPages = ceil($totalQRs / $perPage);
         
         $this->render('analytics', [
             'title' => 'Analytics',
             'user' => Auth::user(),
             'totalQRs' => $totalQRs,
             'activeQRs' => $activeQRs,
-            'recentQRs' => $recentQRs
+            'recentQRs' => $recentQRs,
+            'page' => $page,
+            'perPage' => $perPage,
+            'totalPages' => $totalPages,
+            'offset' => $offset
         ]);
     }
     

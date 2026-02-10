@@ -412,9 +412,11 @@
             <div class="divider"></div>
             
             <!-- Design Options -->
-            <h4 class="subsection-title">
-                <i class="fas fa-palette"></i> Design Options
+            <h4 class="subsection-title collapsible-header" onclick="toggleSection('designOptions')">
+                <span><i class="fas fa-palette"></i> Design Options</span>
+                <i class="fas fa-chevron-down collapse-icon"></i>
             </h4>
+            <div id="designOptions" class="collapsible-content collapsed">
             
             <div class="grid grid-2" style="gap: 15px;">
                 <div class="form-group">
@@ -471,6 +473,9 @@
             <div class="form-group" id="gradientColorGroup" style="display: none;">
                 <label class="form-label">Gradient End Color</label>
                 <input type="color" name="gradient_color" id="gradientColor" value="#9945ff" class="form-input color-input">
+                <small style="display: block; margin-top: 0.25rem; color: var(--text-secondary); font-size: 0.75rem;">
+                    <i class="fas fa-info-circle"></i> Creates a smooth gradient from foreground color to this color.
+                </small>
             </div>
             
             <!-- Transparent Background Toggle -->
@@ -500,15 +505,20 @@
             <div class="form-group" id="bgImageGroup" style="display: none;">
                 <label class="form-label">Upload Background Image</label>
                 <input type="file" name="bg_image" id="bgImage" class="form-input" accept="image/*">
-                <small>Recommended: Square image, transparent PNG works best</small>
+                <small style="display: block; margin-top: 0.25rem; color: var(--text-secondary); font-size: 0.75rem;">
+                    <i class="fas fa-info-circle"></i> Image appears behind QR pattern at 30% size. Works best with square images or transparent PNGs.
+                </small>
             </div>
+            </div><!-- End Design Options collapsible -->
             
             <div class="divider"></div>
             
             <!-- Design Customization with Visual Presets -->
-            <h4 class="subsection-title">
-                <i class="fas fa-shapes"></i> Design Presets
+            <h4 class="subsection-title collapsible-header" onclick="toggleSection('designPresets')">
+                <span><i class="fas fa-shapes"></i> Design Presets</span>
+                <i class="fas fa-chevron-down collapse-icon"></i>
             </h4>
+            <div id="designPresets" class="collapsible-content collapsed">
             
             <!-- Dot Pattern Presets -->
             <div class="form-group">
@@ -716,44 +726,16 @@
                 <input type="color" name="marker_color" id="markerColor" value="#9945ff" class="form-input color-input">
             </div>
             
-            <!-- Different Marker Colors Toggle -->
-            <div class="feature-toggle">
-                <label class="toggle-label">
-                    <input type="checkbox" name="different_markers" id="differentMarkers" value="1" class="toggle-input">
-                    <span class="toggle-slider"></span>
-                    <span class="toggle-text">
-                        <strong>Different Marker Colors</strong>
-                        <small>Use unique color for each corner marker (limited library support)</small>
-                    </span>
-                </label>
-            </div>
-            
-            <div id="differentMarkerColorsGroup" style="display: none;">
-                <small style="color: var(--text-secondary); margin-bottom: 10px; display: block;">
-                    <i class="fas fa-info-circle"></i> Note: The QR library has limited support for per-marker colors. Top-left color will be used as primary.
-                </small>
-                <div class="grid grid-2" style="gap: 15px;">
-                    <div class="form-group">
-                        <label class="form-label">Top Left (Primary)</label>
-                        <input type="color" name="marker_tl_color" id="markerTLColor" value="#9945ff" class="form-input color-input">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Top Right</label>
-                        <input type="color" name="marker_tr_color" id="markerTRColor" value="#00f0ff" class="form-input color-input">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Bottom Left</label>
-                        <input type="color" name="marker_bl_color" id="markerBLColor" value="#ff2ec4" class="form-input color-input">
-                    </div>
-                </div>
-            </div>
+            </div><!-- End Design Presets collapsible -->
             
             <div class="divider"></div>
             
             <!-- Logo Options -->
-            <h4 class="subsection-title">
-                <i class="fas fa-image"></i> Logo
+            <h4 class="subsection-title collapsible-header" onclick="toggleSection('logoOptions')">
+                <span><i class="fas fa-image"></i> Logo</span>
+                <i class="fas fa-chevron-down collapse-icon"></i>
             </h4>
+            <div id="logoOptions" class="collapsible-content collapsed">
             
             <div class="form-group">
                 <label class="form-label">Logo Options</label>
@@ -871,6 +853,18 @@
                     </div>
                 </div>
                 <input type="hidden" name="default_logo" id="defaultLogo" value="">
+                <!-- Logo Preview -->
+                <div id="selectedLogoPreview" style="display: none; margin-top: 15px; padding: 15px; background: rgba(87, 96, 255, 0.1); border-radius: 10px; border: 1px solid rgba(87, 96, 255, 0.3);">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--purple), var(--cyan)); border-radius: 10px; color: white; font-size: 28px; position: relative;">
+                            <i id="selectedLogoIcon" class="fas fa-qrcode" style="color: white; z-index: 2; position: relative;"></i>
+                        </div>
+                        <div>
+                            <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 3px;">Selected Logo:</div>
+                            <div id="selectedLogoName" style="font-weight: 600; color: var(--text-primary);">None</div>
+                        </div>
+                    </div>
+                </div>
             </div>
             
             <div class="form-group" id="uploadLogoGroup" style="display: none;">
@@ -899,6 +893,7 @@
                     <small>Adjust the size of logo in QR code (0.1 to 0.5)</small>
                 </div>
             </div>
+            </div><!-- End Logo Options collapsible -->
             
             <div class="divider"></div>
             
@@ -1097,6 +1092,93 @@ const qrConfig = {
     markerCenterStyle: 'square'
 };
 
+// Debounced live preview - Define early to avoid reference errors
+// Performance optimization: Increased debounce delay and added loading state
+let previewTimeout;
+let isGenerating = false;
+window.debouncedPreview = function() {
+    console.log('debouncedPreview called');
+    clearTimeout(previewTimeout);
+    previewTimeout = setTimeout(() => {
+        console.log('Debounce timeout expired, checking generatePreview...');
+        if (isGenerating) {
+            console.log('Preview generation already in progress, skipping...');
+            return;
+        }
+        if (typeof generatePreview === 'function') {
+            console.log('Calling generatePreview...');
+            isGenerating = true;
+            generatePreview();
+            // Reset flag after generation completes
+            setTimeout(() => { isGenerating = false; }, 100);
+        } else {
+            console.error('generatePreview is not a function!');
+        }
+    }, 800); // Increased from 500ms to 800ms for better performance
+};
+const debouncedPreview = window.debouncedPreview;
+
+// Collapsible Section Toggle Function with Accordion Behavior
+window.toggleSection = function(sectionId) {
+    const content = document.getElementById(sectionId);
+    const header = content.previousElementSibling;
+    
+    if (!content) return;
+    
+    // Check if this section is currently collapsed
+    const isCollapsed = content.classList.contains('collapsed');
+    
+    // Accordion behavior: Close all other sections first
+    const allSections = ['designOptions', 'designPresets', 'logoOptions'];
+    allSections.forEach(id => {
+        if (id !== sectionId) {
+            const otherContent = document.getElementById(id);
+            const otherHeader = otherContent?.previousElementSibling;
+            if (otherContent && !otherContent.classList.contains('collapsed')) {
+                otherContent.classList.add('collapsed');
+                otherHeader?.classList.remove('expanded');
+                // Save collapsed state
+                localStorage.setItem('qr_section_' + id, 'collapsed');
+            }
+        }
+    });
+    
+    // Toggle the clicked section
+    if (isCollapsed) {
+        content.classList.remove('collapsed');
+        header.classList.add('expanded');
+        // Save state to localStorage
+        localStorage.setItem('qr_section_' + sectionId, 'expanded');
+    } else {
+        content.classList.add('collapsed');
+        header.classList.remove('expanded');
+        // Save state to localStorage
+        localStorage.setItem('qr_section_' + sectionId, 'collapsed');
+    }
+};
+
+// Initialize collapsed state from localStorage on page load
+window.addEventListener('DOMContentLoaded', function() {
+    const sections = ['designOptions', 'designPresets', 'logoOptions'];
+    sections.forEach(sectionId => {
+        const content = document.getElementById(sectionId);
+        const header = content?.previousElementSibling;
+        if (!content) return;
+        
+        // Check localStorage for saved state
+        const savedState = localStorage.getItem('qr_section_' + sectionId);
+        
+        // Default to collapsed if no state is saved
+        if (!savedState || savedState === 'collapsed') {
+            content.classList.add('collapsed');
+            header?.classList.remove('expanded');
+        } else {
+            content.classList.remove('collapsed');
+            header?.classList.add('expanded');
+        }
+    });
+});
+
 // Preset Selection Function (Global scope for onclick handlers)
 window.selectPreset = function(presetType, value) {
     // Update config
@@ -1197,6 +1279,15 @@ window.selectLogoOption = function(option) {
         if (logoUploadInput) {
             logoUploadInput.value = '';
         }
+        // Hide preview
+        const preview = document.getElementById('selectedLogoPreview');
+        if (preview) {
+            preview.style.display = 'none';
+        }
+        // Remove active state from all icons
+        document.querySelectorAll('.logo-icon-item').forEach(item => {
+            item.classList.remove('active');
+        });
     }
     
     if (typeof debouncedPreview === 'function') debouncedPreview();
@@ -1216,6 +1307,25 @@ window.selectDefaultLogo = function(logo) {
     const selected = document.querySelector(`[data-logo="${logo}"]`);
     if (selected) {
         selected.classList.add('active');
+        
+        // Update preview
+        const preview = document.getElementById('selectedLogoPreview');
+        const previewIcon = document.getElementById('selectedLogoIcon');
+        const previewName = document.getElementById('selectedLogoName');
+        
+        if (preview && previewIcon && previewName) {
+            preview.style.display = 'block';
+            
+            // Copy the icon from the selected item
+            const iconElement = selected.querySelector('i');
+            if (iconElement) {
+                previewIcon.className = iconElement.className;
+            }
+            
+            // Set the name from title attribute
+            const title = selected.getAttribute('title') || logo;
+            previewName.textContent = title;
+        }
     }
     
     if (typeof debouncedPreview === 'function') debouncedPreview();
@@ -1385,33 +1495,9 @@ const customMarkerColorEl = document.getElementById('customMarkerColor');
 if (customMarkerColorEl) {
     customMarkerColorEl.addEventListener('change', function() {
         const markerColorGroup = document.getElementById('markerColorGroup');
-        const differentMarkers = document.getElementById('differentMarkers');
-        const differentMarkerColorsGroup = document.getElementById('differentMarkerColorsGroup');
         
         if (markerColorGroup) {
             markerColorGroup.style.display = this.checked ? 'block' : 'none';
-        }
-        if (this.checked) {
-            if (differentMarkers) differentMarkers.checked = false;
-            if (differentMarkerColorsGroup) differentMarkerColorsGroup.style.display = 'none';
-        }
-        if (typeof debouncedPreview === 'function') debouncedPreview();
-    });
-}
-
-const differentMarkersEl = document.getElementById('differentMarkers');
-if (differentMarkersEl) {
-    differentMarkersEl.addEventListener('change', function() {
-        const differentMarkerColorsGroup = document.getElementById('differentMarkerColorsGroup');
-        const customMarkerColor = document.getElementById('customMarkerColor');
-        const markerColorGroup = document.getElementById('markerColorGroup');
-        
-        if (differentMarkerColorsGroup) {
-            differentMarkerColorsGroup.style.display = this.checked ? 'block' : 'none';
-        }
-        if (this.checked) {
-            if (customMarkerColor) customMarkerColor.checked = false;
-            if (markerColorGroup) markerColorGroup.style.display = 'none';
         }
         if (typeof debouncedPreview === 'function') debouncedPreview();
     });
@@ -1509,11 +1595,17 @@ const defaultLogos = {
 function addDownloadButton(qrCodeInstance) {
     const container = document.getElementById('qrPreviewContainer');
     
-    // Check if button already exists
+    // Check if buttons already exist
     if (container.querySelector('.btn-download')) {
         return;
     }
     
+    // Create button container for side-by-side buttons
+    const buttonContainer = document.createElement('div');
+    buttonContainer.className = 'qr-action-buttons';
+    buttonContainer.style.cssText = 'display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap;';
+    
+    // Download QR Code button
     const downloadBtn = document.createElement('button');
     downloadBtn.className = 'btn btn-download';
     downloadBtn.innerHTML = '<i class="fas fa-download"></i> Download QR Code';
@@ -1524,21 +1616,162 @@ function addDownloadButton(qrCodeInstance) {
             showNotification('QR code downloaded successfully!', 'success');
         }
     };
-    container.appendChild(downloadBtn);
+    
+    // Save as Template button
+    const saveTemplateBtn = document.createElement('button');
+    saveTemplateBtn.className = 'btn btn-save-template';
+    saveTemplateBtn.innerHTML = '<i class="fas fa-save"></i> Save as Template';
+    saveTemplateBtn.onclick = function(e) {
+        e.preventDefault();
+        showSaveTemplateModal();
+    };
+    
+    buttonContainer.appendChild(downloadBtn);
+    buttonContainer.appendChild(saveTemplateBtn);
+    container.appendChild(buttonContainer);
 }
 
+// Show save template modal
+function showSaveTemplateModal() {
+    const modal = document.createElement('div');
+    modal.className = 'template-modal';
+    modal.innerHTML = `
+        <div class="template-modal-overlay" onclick="closeSaveTemplateModal()"></div>
+        <div class="template-modal-content">
+            <div class="template-modal-header">
+                <h3><i class="fas fa-save"></i> Save as Template</h3>
+                <button class="template-modal-close" onclick="closeSaveTemplateModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="template-modal-body">
+                <div class="form-group">
+                    <label class="form-label">Template Name *</label>
+                    <input type="text" id="templateName" class="form-input" placeholder="e.g., Business Card Blue" required aria-required="true" aria-describedby="templateNameError">
+                    <small id="templateNameError" style="color: #ff4757; display: none; margin-top: 5px;">
+                        Please enter a template name
+                    </small>
+                </div>
+                <div class="form-group">
+                    <label class="toggle-label" style="display: flex; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="templateIsPublic" class="toggle-input">
+                        <span class="toggle-slider"></span>
+                        <span style="color: var(--text-primary);">Make this template public</span>
+                    </label>
+                    <small style="color: var(--text-secondary); display: block; margin-top: 5px;">
+                        Public templates can be used by other users
+                    </small>
+                </div>
+            </div>
+            <div class="template-modal-footer">
+                <button class="btn btn-secondary" onclick="closeSaveTemplateModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveCurrentTemplate()">
+                    <i class="fas fa-save"></i> Save Template
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    document.getElementById('templateName').focus();
+}
+
+// Close save template modal
+window.closeSaveTemplateModal = function() {
+    const modal = document.querySelector('.template-modal');
+    if (modal) {
+        modal.remove();
+    }
+};
+
+// Save current settings as template
+window.saveCurrentTemplate = async function() {
+    const templateName = document.getElementById('templateName').value.trim();
+    const isPublic = document.getElementById('templateIsPublic').checked;
+    const errorMsg = document.getElementById('templateNameError');
+    
+    if (!templateName) {
+        if (errorMsg) {
+            errorMsg.style.display = 'block';
+        }
+        showNotification('Please enter a template name', 'error');
+        return;
+    }
+    
+    // Hide error if shown
+    if (errorMsg) {
+        errorMsg.style.display = 'none';
+    }
+    
+    // Collect all current settings
+    const settings = {
+        size: document.getElementById('qrSize').value,
+        foregroundColor: document.getElementById('qrColor').value,
+        backgroundColor: document.getElementById('qrBgColor').value,
+        errorCorrection: document.getElementById('errorCorrection').value,
+        cornerStyle: document.getElementById('cornerStyle').value,
+        dotStyle: document.getElementById('dotStyle').value,
+        markerBorderStyle: document.getElementById('markerBorderStyle').value,
+        markerCenterStyle: document.getElementById('markerCenterStyle').value,
+        gradientEnabled: document.getElementById('gradientEnabled').checked,
+        gradientColor: document.getElementById('gradientColor').value,
+        transparentBg: document.getElementById('transparentBg').checked,
+        bgImageEnabled: document.getElementById('bgImageEnabled').checked,
+        customMarkerColor: document.getElementById('customMarkerColor').checked,
+        markerColor: document.getElementById('markerColor').value,
+        logoOption: document.getElementById('logoOption').value,
+        defaultLogo: document.getElementById('defaultLogo')?.value,
+        logoSize: document.getElementById('logoSize').value,
+        logoRemoveBg: document.getElementById('logoRemoveBg').checked,
+        frameStyle: document.getElementById('frameStyle')?.value,
+        frameLabel: document.getElementById('frameLabel')?.value,
+        frameFont: document.getElementById('frameFont')?.value,
+        frameColor: document.getElementById('frameColor')?.value
+    };
+    
+    try {
+        const formData = new FormData();
+        formData.append('name', templateName);
+        formData.append('settings', JSON.stringify(settings));
+        if (isPublic) {
+            formData.append('is_public', '1');
+        }
+        
+        const response = await fetch('/projects/qr/templates/create', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification('Template saved successfully!', 'success');
+            closeSaveTemplateModal();
+        } else {
+            showNotification(data.message || 'Failed to save template', 'error');
+        }
+    } catch (error) {
+        console.error('Error saving template:', error);
+        showNotification('Error saving template', 'error');
+    }
+}
+
+
 // Generate preview with QRCodeStyling
-function generatePreview() {
+window.generatePreview = function() {
+    console.log('generatePreview function called');
     if (typeof QRCodeStyling === 'undefined') {
         console.log('QRCodeStyling not loaded yet');
         return;
     }
     
     const content = buildQRContent();
+    console.log('Built QR content:', content);
     if (!content || content.trim() === '') {
+        console.log('No content to generate QR code');
         return;
     }
     
+    console.log('Proceeding with QR generation...');
     // Get all customization options
     const size = parseInt(document.getElementById('qrSize').value);
     const foregroundColor = document.getElementById('qrColor').value;
@@ -1559,10 +1792,6 @@ function generatePreview() {
     // Marker colors
     const customMarkerColor = document.getElementById('customMarkerColor').checked;
     const markerColor = document.getElementById('markerColor').value;
-    const differentMarkers = document.getElementById('differentMarkers').checked;
-    const markerTLColor = document.getElementById('markerTLColor').value;
-    const markerTRColor = document.getElementById('markerTRColor').value;
-    const markerBLColor = document.getElementById('markerBLColor').value;
     
     // Logo settings
     const logoOption = document.getElementById('logoOption').value;
@@ -1576,7 +1805,7 @@ function generatePreview() {
     // Build QR options
     const dotColor = gradientEnabled 
         ? { 
-            type: 'linear-gradient', 
+            type: 'gradient', 
             rotation: 0, 
             colorStops: [
                 { offset: 0, color: foregroundColor }, 
@@ -1608,26 +1837,13 @@ function generatePreview() {
         },
         cornersSquareOptions: {
             type: cornerStyle,
-            color: customMarkerColor ? markerColor : (gradientEnabled ? foregroundColor : dotColor)
+            color: customMarkerColor ? markerColor : (gradientEnabled ? dotColor : foregroundColor)
         },
         cornersDotOptions: {
             type: markerCenterStyle,
-            color: customMarkerColor ? markerColor : (gradientEnabled ? foregroundColor : dotColor)
+            color: customMarkerColor ? markerColor : (gradientEnabled ? dotColor : foregroundColor)
         }
     };
-    
-    // Different marker colors - Apply individual colors to each corner
-    if (differentMarkers) {
-        // Note: qr-code-styling library limitation - we can only apply one color to all markers
-        // Using the top-left (primary) color for all markers
-        // Individual per-corner colors are not supported by the library
-        qrOptions.cornersSquareOptions.color = markerTLColor;
-        qrOptions.cornersDotOptions.color = markerTLColor;
-        
-        // Store other colors for potential future use when library adds support
-        // Top Right: markerTRColor
-        // Bottom Left: markerBLColor
-    }
     
     // Add logo if selected
     if (logoOption === 'default') {
@@ -1658,10 +1874,13 @@ function generatePreview() {
                 if (bgImageEnabled && bgImageInput.files && bgImageInput.files[0]) {
                     const bgReader = new FileReader();
                     bgReader.onload = function(bgE) {
-                        // Set the background image
+                        // Set the background image with proper transparent handling
+                        // Use smaller imageSize for better visibility (0.3 = 30% coverage)
                         qrOptions.backgroundOptions = {
-                            ...qrOptions.backgroundOptions,
-                            image: bgE.target.result
+                            color: transparentBg ? 'rgba(0,0,0,0)' : qrOptions.backgroundOptions.color,
+                            image: bgE.target.result,
+                            imageSize: 0.3,
+                            margin: 0
                         };
                         renderQRCode(qrOptions, content);
                     };
@@ -1679,10 +1898,13 @@ function generatePreview() {
     if (bgImageEnabled && bgImageInput.files && bgImageInput.files[0]) {
         const bgReader = new FileReader();
         bgReader.onload = function(e) {
-            // Set the background image
+            // Set the background image with proper transparent handling
+            // Use smaller imageSize for better visibility (0.3 = 30% coverage)
             qrOptions.backgroundOptions = {
-                ...qrOptions.backgroundOptions,
-                image: e.target.result
+                color: transparentBg ? 'rgba(0,0,0,0)' : qrOptions.backgroundOptions.color,
+                image: e.target.result,
+                imageSize: 0.3,
+                margin: 0
             };
             renderQRCode(qrOptions, content);
         };
@@ -1701,6 +1923,16 @@ function renderQRCode(qrOptions, content) {
     const qrDiv = document.createElement('div');
     qrDiv.id = 'qrcode';
     qrDiv.className = 'qr-preview';
+    
+    // Apply transparent background if enabled
+    const transparentBg = document.getElementById('transparentBg').checked;
+    if (transparentBg) {
+        qrDiv.style.background = 'transparent';
+        // Add a checkered pattern to show transparency
+        qrDiv.style.backgroundImage = 'repeating-conic-gradient(#f0f0f0 0% 25%, #ffffff 0% 50%) 50% / 20px 20px';
+        qrDiv.style.backgroundBlendMode = 'normal';
+    }
+    
     container.appendChild(qrDiv);
     
     try {
@@ -1737,7 +1969,7 @@ function renderQRCode(qrOptions, content) {
 }
 
 // Build QR content based on type
-function buildQRContent() {
+window.buildQRContent = function() {
     const type = document.getElementById('qrType').value;
     let content = '';
     
@@ -1937,95 +2169,201 @@ function applyFrameStyle(qrDiv) {
     }
 }
 
-// Debounced live preview (Assign to window for global access)
-let previewTimeout;
-window.debouncedPreview = function() {
-    clearTimeout(previewTimeout);
-    previewTimeout = setTimeout(generatePreview, 500);
-};
-const debouncedPreview = window.debouncedPreview;
+    // Live preview on all field changes
+    const livePreviewFields = [
+        'contentField', 'qrType', 'qrSize', 'qrColor', 'qrBgColor', 'errorCorrection',
+        'frameStyle', 'cornerStyle', 'dotStyle', 'markerBorderStyle', 'markerCenterStyle',
+        'gradientColor', 'markerColor',
+        'defaultLogo', 'frameLabel', 'frameFont', 'frameColor',
+        // Email fields
+        'emailTo', 'emailSubject', 'emailBody',
+        // Phone fields
+        'phoneCountry', 'phoneNumber',
+        // SMS fields
+        'smsCountry', 'smsNumber', 'smsMessage',
+        // WhatsApp fields
+        'whatsappCountry', 'whatsappPhone', 'whatsappMessage',
+        // Skype fields
+        'skypeAction', 'skypeUsername',
+        // Zoom fields
+        'zoomMeetingId', 'zoomPassword',
+        // WiFi fields
+        'wifiSsid', 'wifiPassword', 'wifiEncryption',
+        // vCard fields
+        'vcardTitle', 'vcardFirstName', 'vcardLastName', 'vcardPhoneHome', 'vcardPhoneMobile',
+        'vcardEmail', 'vcardWebsite', 'vcardCompany', 'vcardJobTitle', 'vcardPhoneOffice',
+        'vcardAddress', 'vcardPostCode', 'vcardCity', 'vcardState', 'vcardCountry',
+        // Location fields
+        'locationAddress', 'locationLat', 'locationLng',
+        // Event fields
+        'eventTitle', 'eventLocation', 'eventStart', 'eventEnd', 'eventReminder', 'eventLink', 'eventNotes',
+        // PayPal fields
+        'paypalType', 'paypalEmail', 'paypalItemName', 'paypalItemId', 'paypalPrice',
+        'paypalCurrency', 'paypalShipping', 'paypalTax',
+        // Payment fields
+        'paymentType', 'paymentUpiId', 'paymentName', 'paymentAmount', 'paymentNote'
+    ];
 
-// Live preview on all field changes
-const livePreviewFields = [
-    'contentField', 'qrType', 'qrSize', 'qrColor', 'qrBgColor', 'errorCorrection',
-    'frameStyle', 'cornerStyle', 'dotStyle', 'markerBorderStyle', 'markerCenterStyle',
-    'gradientColor', 'markerColor', 'markerTLColor', 'markerTRColor', 'markerBLColor',
-    'defaultLogo', 'frameLabel', 'frameFont', 'frameColor',
-    // Email fields
-    'emailTo', 'emailSubject', 'emailBody',
-    // Phone fields
-    'phoneCountry', 'phoneNumber',
-    // SMS fields
-    'smsCountry', 'smsNumber', 'smsMessage',
-    // WhatsApp fields
-    'whatsappCountry', 'whatsappPhone', 'whatsappMessage',
-    // Skype fields
-    'skypeAction', 'skypeUsername',
-    // Zoom fields
-    'zoomMeetingId', 'zoomPassword',
-    // WiFi fields
-    'wifiSsid', 'wifiPassword', 'wifiEncryption',
-    // vCard fields
-    'vcardTitle', 'vcardFirstName', 'vcardLastName', 'vcardPhoneHome', 'vcardPhoneMobile',
-    'vcardEmail', 'vcardWebsite', 'vcardCompany', 'vcardJobTitle', 'vcardPhoneOffice',
-    'vcardAddress', 'vcardPostCode', 'vcardCity', 'vcardState', 'vcardCountry',
-    // Location fields
-    'locationAddress', 'locationLat', 'locationLng',
-    // Event fields
-    'eventTitle', 'eventLocation', 'eventStart', 'eventEnd', 'eventReminder', 'eventLink', 'eventNotes',
-    // PayPal fields
-    'paypalType', 'paypalEmail', 'paypalItemName', 'paypalItemId', 'paypalPrice',
-    'paypalCurrency', 'paypalShipping', 'paypalTax',
-    // Payment fields
-    'paymentType', 'paymentUpiId', 'paymentName', 'paymentAmount', 'paymentNote'
-];
-
-livePreviewFields.forEach(fieldId => {
-    const field = document.getElementById(fieldId);
-    if (field) {
-        field.addEventListener('input', debouncedPreview);
-        field.addEventListener('change', debouncedPreview);
-    }
-});
-
-// Add event listeners for file inputs
-const bgImageInput = document.getElementById('bgImage');
-if (bgImageInput) {
-    bgImageInput.addEventListener('change', debouncedPreview);
-}
-
-const logoUploadInput = document.getElementById('logoUpload');
-if (logoUploadInput) {
-    logoUploadInput.addEventListener('change', debouncedPreview);
-}
-
-// Add event listeners for checkboxes that should trigger preview
-const previewCheckboxes = ['logoRemoveBg'];
-previewCheckboxes.forEach(checkboxId => {
-    const checkbox = document.getElementById(checkboxId);
-    if (checkbox) {
-        checkbox.addEventListener('change', debouncedPreview);
-    }
-});
-
-// Initialize preview when page loads with a sample URL
-window.addEventListener('load', function() {
-    // Wait for QRCodeStyling library to load
+    // Initialize preview when page loads with a sample URL
     setTimeout(function() {
+        console.log('Preview initialization starting...');
+        // Wait for QRCodeStyling library to load
         // Set default URL for initial preview
         const contentField = document.getElementById('contentField');
         if (contentField && !contentField.value) {
             contentField.value = 'https://example.com';
         }
         // Trigger initial preview
+        console.log('Calling generatePreview for initial load...');
         generatePreview();
     }, 1000);
-});
+
+    // Attach event listeners to all live preview fields
+    console.log('Attaching event listeners to', livePreviewFields.length, 'fields...');
+    livePreviewFields.forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        if (field) {
+            console.log('Attached listeners to:', fieldId);
+            field.addEventListener('input', debouncedPreview);
+            field.addEventListener('change', debouncedPreview);
+        }
+    });
+
+    // Add event listeners for file inputs
+    const bgImageInput = document.getElementById('bgImage');
+    if (bgImageInput) {
+        bgImageInput.addEventListener('change', debouncedPreview);
+    }
+
+    const logoUploadInput = document.getElementById('logoUpload');
+    if (logoUploadInput) {
+        logoUploadInput.addEventListener('change', debouncedPreview);
+    }
+
+    // Add event listeners for checkboxes that should trigger preview
+    const previewCheckboxes = ['logoRemoveBg'];
+    previewCheckboxes.forEach(checkboxId => {
+        const checkbox = document.getElementById(checkboxId);
+        if (checkbox) {
+            checkbox.addEventListener('change', debouncedPreview);
+        }
+    });
 
 }); // End DOMContentLoaded
 </script>
 
 <style>
+/* Collapsible Sections Styles */
+.collapsible-header {
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem; /* Reduced padding for more compact design */
+    background: rgba(153, 69, 255, 0.1);
+    border-radius: 0.625rem;
+    margin-bottom: 0.75rem; /* Reduced from var(--space-md) */
+    transition: all 0.3s ease;
+    user-select: none;
+}
+
+[data-theme="light"] .collapsible-header {
+    background: rgba(153, 69, 255, 0.05);
+}
+
+.collapsible-header:hover {
+    background: rgba(153, 69, 255, 0.15);
+    transform: translateY(-0.0625rem);
+}
+
+[data-theme="light"] .collapsible-header:hover {
+    background: rgba(153, 69, 255, 0.1);
+}
+
+.collapsible-header span {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem; /* Reduced from var(--space-sm) */
+    font-size: 1rem; /* Explicit font size for compact design */
+    transition: color 0.3s ease; /* Add transition for text color */
+}
+
+/* Enhanced expanded state - change text color */
+.collapsible-header.expanded {
+    background: rgba(153, 69, 255, 0.2); /* Stronger background when expanded */
+}
+
+.collapsible-header.expanded span {
+    color: var(--purple); /* Highlight text color when expanded */
+    font-weight: 600; /* Make text bolder when expanded */
+}
+
+[data-theme="light"] .collapsible-header.expanded {
+    background: rgba(153, 69, 255, 0.15);
+}
+
+.collapse-icon {
+    transition: transform 0.3s ease, color 0.3s ease;
+    color: rgba(153, 69, 255, 0.7);
+    transform: rotate(0deg);
+    font-size: 1rem;
+}
+
+.collapsible-header:hover .collapse-icon {
+    color: var(--purple);
+    transform: scale(1.15) rotate(0deg);
+}
+
+/* Rotate icon when expanded - smooth 180deg rotation */
+.collapsible-header.expanded .collapse-icon {
+    transform: rotate(180deg);
+    color: var(--purple);
+}
+
+.collapsible-header.expanded:hover .collapse-icon {
+    transform: scale(1.15) rotate(180deg);
+}
+
+.collapsible-content {
+    max-height: 10000px;
+    overflow: hidden;
+    transition: max-height 0.4s ease-out, opacity 0.3s ease-out;
+    opacity: 1;
+}
+
+.collapsible-content.collapsed {
+    max-height: 0;
+    opacity: 0;
+    transition: max-height 0.4s ease-in, opacity 0.3s ease-in;
+}
+
+/* Performance Optimizations for Smooth Scrolling */
+.qr-main {
+    /* Enable hardware acceleration */
+    will-change: scroll-position;
+    -webkit-overflow-scrolling: touch;
+    /* Optimize paint performance */
+    contain: layout style;
+}
+
+.glass-card {
+    /* Optimize transform and opacity animations */
+    will-change: transform, box-shadow;
+}
+
+.qr-preview-container {
+    /* Isolate preview rendering */
+    contain: layout style paint;
+    will-change: contents;
+}
+
+/* Reduce animation complexity on scroll */
+@media (prefers-reduced-motion: no-preference) {
+    * {
+        scroll-behavior: smooth;
+    }
+}
+
 /* Futuristic AI Design Theme */
 :root {
     --glow-color: rgba(153, 69, 255, 0.6);
@@ -2038,33 +2376,33 @@ window.addEventListener('load', function() {
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
-    padding: 25px;
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-    transition: all 0.3s ease;
+    border-radius: 1.25rem; /* 20px to rem */
+    padding: 1rem; /* Reduced from 1.5625rem for more compact design */
+    box-shadow: 0 0.5rem 2rem 0 rgba(0, 0, 0, 0.37);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
     animation: fadeInUp 0.5s ease;
 }
 
 [data-theme="light"] .glass-card {
     background: rgba(255, 255, 255, 0.9);
     border: 1px solid rgba(0, 0, 0, 0.1);
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+    box-shadow: 0 0.5rem 2rem 0 rgba(0, 0, 0, 0.1);
 }
 
 .glass-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 40px 0 rgba(153, 69, 255, 0.3);
+    transform: translateY(-0.125rem); /* -2px to rem, reduced from -2px for smoother performance */
+    box-shadow: 0 0.75rem 2.5rem 0 rgba(153, 69, 255, 0.3);
 }
 
-/* Animations */
+/* Animations - Optimized for performance */
 @keyframes fadeInUp {
     from {
         opacity: 0;
-        transform: translateY(20px);
+        transform: translate3d(0, 1.25rem, 0); /* Use translate3d for GPU acceleration */
     }
     to {
         opacity: 1;
-        transform: translateY(0);
+        transform: translate3d(0, 0, 0);
     }
 }
 
@@ -2077,8 +2415,8 @@ window.addEventListener('load', function() {
     }
     to {
         opacity: 1;
-        max-height: 500px;
-        margin-bottom: 20px;
+        max-height: 31.25rem; /* 500px to rem */
+        margin-bottom: 1.25rem;
     }
 }
 
@@ -2093,42 +2431,42 @@ window.addEventListener('load', function() {
 
 /* Section Titles */
 .section-title {
-    font-size: 24px;
+    font-size: 1.25rem; /* Reduced from 1.5rem for more compact design */
     font-weight: 600;
-    margin-bottom: 25px;
+    margin-bottom: 1rem; /* Reduced from 1.5625rem */
     background: linear-gradient(135deg, var(--purple), var(--cyan));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 0.5rem; /* Reduced from 0.75rem */
 }
 
 .subsection-title {
-    font-size: 18px;
+    font-size: 1rem; /* Reduced from 1.125rem for more compact design */
     font-weight: 600;
-    margin: 25px 0 15px 0;
+    margin: 1rem 0 0.75rem 0; /* Reduced margins */
     color: var(--text-primary);
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 0.5rem; /* Reduced from 10px */
 }
 
 /* Form Styling */
 .form-group {
-    margin-bottom: 15px;
+    margin-bottom: 0.75rem; /* Reduced from 15px for more compact design */
     animation: fadeInUp 0.3s ease;
 }
 
 .form-label {
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-bottom: 10px;
+    gap: 0.5rem; /* Reduced from 8px */
+    margin-bottom: 0.5rem; /* Reduced from 10px */
     font-weight: 500;
     color: var(--text-primary);
-    font-size: 14px;
+    font-size: 0.875rem; /* Reduced from 14px for more compact design */
 }
 
 /* Preset Grid System */
@@ -2332,18 +2670,19 @@ html[data-theme="dark"] .form-select optgroup {
 
 /* Feature Toggles */
 .feature-toggle {
-    margin-bottom: 15px;
+    margin-bottom: 0.75rem; /* Reduced for compact design */
 }
 
 .toggle-label {
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: 0.75rem; /* Reduced from 15px */
     cursor: pointer;
-    padding: 15px;
+    padding: 0.75rem; /* Reduced from 15px */
     background: rgba(255, 255, 255, 0.03);
-    border-radius: 12px;
+    border-radius: 0.75rem; /* Reduced from 12px */
     transition: all 0.3s ease;
+    border: 1px solid transparent; /* Add border for enhanced state */
 }
 
 [data-theme="light"] .toggle-label {
@@ -2356,6 +2695,23 @@ html[data-theme="dark"] .form-select optgroup {
 
 [data-theme="light"] .toggle-label:hover {
     background: rgba(0, 0, 0, 0.05);
+}
+
+/* Enhanced state when toggle is checked */
+.toggle-input:checked ~ .toggle-text strong,
+.toggle-input:checked + .toggle-slider + .toggle-text strong {
+    color: var(--purple);
+}
+
+/* Add subtle glow to the entire toggle when checked */
+.toggle-label:has(.toggle-input:checked) {
+    background: rgba(153, 69, 255, 0.08);
+    border-color: rgba(153, 69, 255, 0.3);
+}
+
+[data-theme="light"] .toggle-label:has(.toggle-input:checked) {
+    background: rgba(153, 69, 255, 0.05);
+    border-color: rgba(153, 69, 255, 0.2);
 }
 
 .toggle-input {
@@ -2414,14 +2770,15 @@ html[data-theme="dark"] .form-select optgroup {
 .toggle-text strong {
     display: block;
     color: var(--text-primary);
-    font-size: 15px;
-    margin-bottom: 4px;
+    font-size: 0.875rem; /* Reduced from 15px for compact design */
+    margin-bottom: 0.25rem; /* Reduced from 4px */
+    transition: color 0.3s ease; /* Add transition for color change */
 }
 
 .toggle-text small {
     display: block;
     color: var(--text-secondary);
-    font-size: 12px;
+    font-size: 0.75rem; /* Reduced from 12px for compact design */
 }
 
 /* Logo Option Selector */
@@ -2558,6 +2915,13 @@ html[data-theme="dark"] .form-select optgroup {
     border-color: var(--cyan);
     color: white;
     transform: scale(1.05);
+    box-shadow: 0 0 0 3px rgba(0, 240, 255, 0.3);
+}
+
+.logo-icon-item.active i {
+    color: white;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    font-weight: 900;
 }
 
 /* Buttons */
@@ -2599,6 +2963,134 @@ html[data-theme="dark"] .form-select optgroup {
     background: linear-gradient(135deg, #667eea, #764ba2);
     color: white;
 }
+
+.btn-save-template {
+    background: linear-gradient(135deg, var(--purple), var(--cyan));
+    color: white;
+    border: none;
+}
+
+.btn-save-template:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(153, 69, 255, 0.4);
+}
+
+.qr-action-buttons .btn {
+    flex: 1;
+    min-width: 200px;
+}
+
+/* Template Save Modal */
+.template-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.template-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+}
+
+.template-modal-content {
+    position: relative;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    max-width: 500px;
+    width: 90%;
+    overflow: hidden;
+    animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-30px) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.template-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 25px;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.template-modal-header h3 {
+    margin: 0;
+    font-size: 20px;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.template-modal-close {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 5px 10px;
+    border-radius: 5px;
+    transition: all 0.2s;
+}
+
+.template-modal-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+.template-modal-body {
+    padding: 25px;
+}
+
+.template-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 20px 25px;
+    border-top: 1px solid var(--glass-border);
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    border: 1px solid var(--glass-border);
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+[data-theme="light"] .btn-secondary {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .btn-secondary:hover {
+    background: rgba(0, 0, 0, 0.1);
+}
+
 
 .btn-shine {
     position: absolute;
@@ -2756,17 +3248,17 @@ html[data-theme="dark"] .form-select optgroup {
     margin: 30px 0;
 }
 
-/* Grid */
+/* Grid - Optimized with rem units */
 .grid {
     display: grid;
-    gap: 30px;
+    gap: 1.875rem; /* 30px to rem */
 }
 
 .grid-2 {
     grid-template-columns: 1fr 1fr;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 64rem) { /* 1024px to rem */
     .grid-2 {
         grid-template-columns: 1fr;
     }
@@ -2774,6 +3266,57 @@ html[data-theme="dark"] .form-select optgroup {
     .preview-panel {
         position: static;
         max-height: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .qr-action-buttons {
+        flex-direction: column;
+    }
+    
+    .qr-action-buttons .btn {
+        width: 100%;
+        min-width: auto;
+    }
+    
+    .template-modal-content {
+        width: 95%;
+        padding: 15px;
+    }
+    
+    .logo-icon-grid {
+        grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+        gap: 8px;
+        max-height: 250px;
+    }
+    
+    .sample-download-section {
+        padding: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .glass-card {
+        padding: 15px;
+    }
+    
+    .section-title {
+        font-size: 18px;
+    }
+    
+    .form-label {
+        font-size: 13px;
+    }
+    
+    .btn {
+        font-size: 14px;
+        padding: 12px 20px;
+    }
+    
+    .logo-icon-item {
+        width: 45px;
+        height: 45px;
+        font-size: 20px;
     }
 }
 
