@@ -14,7 +14,7 @@ try {
 
 // Cache busting version - update this when making UI changes
 // Format: YYYYMMDDHHMMSS
-$uiVersion = '20260209180742';
+$uiVersion = '20260214040500';
 
 // Prevent browser caching of this page
 header("Cache-Control: no-cache, no-store, must-revalidate, max-age=0");
@@ -29,6 +29,9 @@ header("Expires: 0");
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title><?= htmlspecialchars($title ?? 'QR Generator') ?> - MyMultiBranch</title>
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer">
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
