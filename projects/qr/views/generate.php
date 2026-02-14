@@ -489,26 +489,6 @@
                     </span>
                 </label>
             </div>
-            
-            <!-- Background Image Upload -->
-            <div class="feature-toggle">
-                <label class="toggle-label">
-                    <input type="checkbox" name="bg_image_enabled" id="bgImageEnabled" value="1" class="toggle-input">
-                    <span class="toggle-slider"></span>
-                    <span class="toggle-text">
-                        <strong><i class="fas fa-image"></i> Background Image</strong>
-                        <small>Add custom image behind QR code</small>
-                    </span>
-                </label>
-            </div>
-            
-            <div class="form-group" id="bgImageGroup" style="display: none;">
-                <label class="form-label"><i class="fas fa-upload"></i> Upload Background Image</label>
-                <input type="file" name="bg_image" id="bgImage" class="form-input" accept="image/*">
-                <small class="help-text">
-                    <i class="fas fa-image"></i> Image appears behind QR pattern at 30% size. Works best with square images or transparent PNGs.
-                </small>
-            </div>
             </div><!-- End Design Options collapsible -->
             
             <div class="divider"></div>
@@ -874,6 +854,15 @@
             </div>
             
             <div id="logoOptionsGroup" style="display: none;">
+                <!-- Logo Color Option -->
+                <div class="form-group" id="logoColorOption">
+                    <label class="form-label"><i class="fas fa-palette"></i> Logo Color</label>
+                    <input type="color" name="logo_color" id="logoColor" value="#9945ff" class="form-input color-input">
+                    <small class="help-text">
+                        <i class="fas fa-info-circle"></i> Customize the color of default logo icons. Works with icon logos only.
+                    </small>
+                </div>
+                
                 <!-- Remove Background Toggle -->
                 <div class="feature-toggle">
                     <label class="toggle-label">
@@ -1480,17 +1469,6 @@ if (transparentBgEl) {
     });
 }
 
-const bgImageEnabledEl = document.getElementById('bgImageEnabled');
-if (bgImageEnabledEl) {
-    bgImageEnabledEl.addEventListener('change', function() {
-        const bgImageGroup = document.getElementById('bgImageGroup');
-        if (bgImageGroup) {
-            bgImageGroup.style.display = this.checked ? 'block' : 'none';
-        }
-        if (typeof debouncedPreview === 'function') debouncedPreview();
-    });
-}
-
 const customMarkerColorEl = document.getElementById('customMarkerColor');
 if (customMarkerColorEl) {
     customMarkerColorEl.addEventListener('change', function() {
@@ -1553,6 +1531,27 @@ if (frameStyleEl) {
 
 // Global QR code instance
 let qrCode = null;
+
+// Function to apply color to SVG logo
+function applyColorToSVG(svgDataUri, color) {
+    try {
+        // Decode the base64 SVG
+        const base64Data = svgDataUri.split(',')[1];
+        let svgString = atob(base64Data);
+        
+        // Replace fill colors in the SVG with the new color
+        // Match fill="#HEXCOLOR" or fill='#HEXCOLOR'
+        svgString = svgString.replace(/fill="[^"]*"/g, `fill="${color}"`);
+        svgString = svgString.replace(/fill='[^']*'/g, `fill='${color}'`);
+        
+        // Re-encode to base64
+        const newBase64 = btoa(svgString);
+        return 'data:image/svg+xml;base64,' + newBase64;
+    } catch (e) {
+        console.error('Error applying color to SVG:', e);
+        return svgDataUri; // Return original if error
+    }
+}
 
 // Default logos as SVG data URIs
 const defaultLogos = {
@@ -1715,11 +1714,11 @@ window.saveCurrentTemplate = async function() {
         gradientEnabled: document.getElementById('gradientEnabled').checked,
         gradientColor: document.getElementById('gradientColor').value,
         transparentBg: document.getElementById('transparentBg').checked,
-        bgImageEnabled: document.getElementById('bgImageEnabled').checked,
         customMarkerColor: document.getElementById('customMarkerColor').checked,
         markerColor: document.getElementById('markerColor').value,
         logoOption: document.getElementById('logoOption').value,
         defaultLogo: document.getElementById('defaultLogo')?.value,
+        logoColor: document.getElementById('logoColor').value,
         logoSize: document.getElementById('logoSize').value,
         logoRemoveBg: document.getElementById('logoRemoveBg').checked,
         frameStyle: document.getElementById('frameStyle')?.value,
@@ -1797,10 +1796,7 @@ window.generatePreview = function() {
     const logoOption = document.getElementById('logoOption').value;
     const logoSize = parseFloat(document.getElementById('logoSize').value);
     const logoRemoveBg = document.getElementById('logoRemoveBg').checked;
-    
-    // Background image settings
-    const bgImageEnabled = document.getElementById('bgImageEnabled').checked;
-    const bgImageInput = document.getElementById('bgImage');
+    const logoColor = document.getElementById('logoColor').value;
     
     // Build QR options
     const dotColor = gradientEnabled 
@@ -1851,7 +1847,8 @@ window.generatePreview = function() {
         if (defaultLogoEl && defaultLogoEl.value) {
             const defaultLogo = defaultLogoEl.value;
             if (defaultLogos[defaultLogo]) {
-                qrOptions.image = defaultLogos[defaultLogo];
+                // Apply logo color to the SVG
+                qrOptions.image = applyColorToSVG(defaultLogos[defaultLogo], logoColor);
                 qrOptions.imageOptions = {
                     hideBackgroundDots: logoRemoveBg,
                     imageSize: logoSize,
@@ -1870,46 +1867,11 @@ window.generatePreview = function() {
                     imageSize: logoSize,
                     margin: 5
                 };
-                // Handle background image if enabled
-                if (bgImageEnabled && bgImageInput.files && bgImageInput.files[0]) {
-                    const bgReader = new FileReader();
-                    bgReader.onload = function(bgE) {
-                        // Set the background image with proper transparent handling
-                        // Use smaller imageSize for better visibility (0.3 = 30% coverage)
-                        qrOptions.backgroundOptions = {
-                            color: transparentBg ? 'rgba(0,0,0,0)' : qrOptions.backgroundOptions.color,
-                            image: bgE.target.result,
-                            imageSize: 0.3,
-                            margin: 0
-                        };
-                        renderQRCode(qrOptions, content);
-                    };
-                    bgReader.readAsDataURL(bgImageInput.files[0]);
-                } else {
-                    renderQRCode(qrOptions, content);
-                }
+                renderQRCode(qrOptions, content);
             };
             reader.readAsDataURL(logoInput.files[0]);
             return; // Exit and wait for file read
         }
-    }
-    
-    // Handle background image separately if no logo upload
-    if (bgImageEnabled && bgImageInput.files && bgImageInput.files[0]) {
-        const bgReader = new FileReader();
-        bgReader.onload = function(e) {
-            // Set the background image with proper transparent handling
-            // Use smaller imageSize for better visibility (0.3 = 30% coverage)
-            qrOptions.backgroundOptions = {
-                color: transparentBg ? 'rgba(0,0,0,0)' : qrOptions.backgroundOptions.color,
-                image: e.target.result,
-                imageSize: 0.3,
-                margin: 0
-            };
-            renderQRCode(qrOptions, content);
-        };
-        bgReader.readAsDataURL(bgImageInput.files[0]);
-        return;
     }
     
     renderQRCode(qrOptions, content);
@@ -2173,7 +2135,7 @@ function applyFrameStyle(qrDiv) {
     const livePreviewFields = [
         'contentField', 'qrType', 'qrSize', 'qrColor', 'qrBgColor', 'errorCorrection',
         'frameStyle', 'cornerStyle', 'dotStyle', 'markerBorderStyle', 'markerCenterStyle',
-        'gradientColor', 'markerColor',
+        'gradientColor', 'markerColor', 'logoColor',
         'defaultLogo', 'frameLabel', 'frameFont', 'frameColor',
         // Email fields
         'emailTo', 'emailSubject', 'emailBody',
@@ -2230,11 +2192,6 @@ function applyFrameStyle(qrDiv) {
     });
 
     // Add event listeners for file inputs
-    const bgImageInput = document.getElementById('bgImage');
-    if (bgImageInput) {
-        bgImageInput.addEventListener('change', debouncedPreview);
-    }
-
     const logoUploadInput = document.getElementById('logoUpload');
     if (logoUploadInput) {
         logoUploadInput.addEventListener('change', debouncedPreview);
@@ -2667,7 +2624,6 @@ html[data-theme="dark"] .form-select optgroup {
 #gradientColorGroup,
 #markerColorGroup,
 #differentMarkerColorsGroup,
-#bgImageGroup,
 #defaultLogoGroup,
 #uploadLogoGroup,
 #logoOptionsGroup,
