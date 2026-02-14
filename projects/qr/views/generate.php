@@ -1540,12 +1540,13 @@ function applyColorToSVG(svgDataUri, color) {
         let svgString = atob(base64Data);
         
         // Replace fill colors in the SVG with the new color
-        // Match fill="#HEXCOLOR" or fill='#HEXCOLOR'
-        svgString = svgString.replace(/fill="[^"]*"/g, `fill="${color}"`);
-        svgString = svgString.replace(/fill='[^']*'/g, `fill='${color}'`);
+        // Exclude 'none', 'transparent', and preserve those values
+        // Match fill="#HEXCOLOR" or fill='#HEXCOLOR' but not fill="none" or fill="transparent"
+        svgString = svgString.replace(/fill="(?!none|transparent)[^"]*"/gi, `fill="${color}"`);
+        svgString = svgString.replace(/fill='(?!none|transparent)[^']*'/gi, `fill='${color}'`);
         
-        // Re-encode to base64
-        const newBase64 = btoa(svgString);
+        // Re-encode to base64 with Unicode support
+        const newBase64 = btoa(unescape(encodeURIComponent(svgString)));
         return 'data:image/svg+xml;base64,' + newBase64;
     } catch (e) {
         console.error('Error applying color to SVG:', e);
