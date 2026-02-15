@@ -1013,10 +1013,8 @@
                             if (typeof QRCodeStyling !== 'undefined') {
                                 try {
                                     const qrDiv = document.getElementById('qrcode');
-                                    // Use access URL for protected/expiring QR codes, otherwise use content
-                                    const qrData = <?= isset($_SESSION['generated_qr']['access_url']) 
-                                        ? json_encode($_SESSION['generated_qr']['access_url']) 
-                                        : json_encode($_SESSION['generated_qr']['content']) ?>;
+                                    // For password/expiry protected QRs, content is already the access URL
+                                    const qrData = <?= json_encode($_SESSION['generated_qr']['content']) ?>;
                                     
                                     const sessionQR = new QRCodeStyling({
                                         width: <?= $_SESSION['generated_qr']['size'] ?? 300 ?>,

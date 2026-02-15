@@ -178,9 +178,20 @@ class QRController
                     $shortCode = $this->generateShortCode($qrId);
                     $this->qrModel->updateShortCode($qrId, $shortCode);
                     
+                    // Build access URL
+                    $accessUrl = 'https://' . $_SERVER['HTTP_HOST'] . '/projects/qr/access/' . $shortCode;
+                    
+                    // CRITICAL FIX: Update the content field to the access URL for password/expiry protected QRs
+                    // This ensures the QR code itself contains the access URL, not the direct content
+                    if ($hasPassword || $hasExpiry) {
+                        $this->qrModel->update($qrId, $userId, ['content' => $accessUrl]);
+                        // Update session content so the displayed QR has the correct access URL
+                        $_SESSION['generated_qr']['content'] = $accessUrl;
+                    }
+                    
                     // Update session with short code URL for display
                     $_SESSION['generated_qr']['short_code'] = $shortCode;
-                    $_SESSION['generated_qr']['access_url'] = 'https://' . $_SERVER['HTTP_HOST'] . '/projects/qr/access/' . $shortCode;
+                    $_SESSION['generated_qr']['access_url'] = $accessUrl;
                 }
                 
                 Logger::activity($userId, 'qr_generated', ['type' => $type, 'qr_id' => $qrId, 'is_dynamic' => $isDynamic, 'campaign_id' => $campaignId]);
