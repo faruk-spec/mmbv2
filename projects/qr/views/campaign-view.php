@@ -98,55 +98,11 @@
                                      style="width: 100%; height: auto; max-width: 200px; margin: 0 auto; display: block;">
                             <?php else: ?>
                                 <!-- Generate QR code on-the-fly using content -->
-                                <div id="qr-<?= $qr['id'] ?>" style="width: 200px; height: 200px; margin: 0 auto;"></div>
-                                <script>
-                                    (function() {
-                                        const qrDiv = document.getElementById('qr-<?= $qr['id'] ?>');
-                                        if (qrDiv && typeof QRCodeStyling !== 'undefined') {
-                                            // Build gradient color if enabled
-                                            const dotColor = <?= !empty($qr['gradient_enabled']) && !empty($qr['gradient_color']) ? 'true' : 'false' ?>
-                                                ? {
-                                                    type: 'gradient',
-                                                    rotation: 0,
-                                                    colorStops: [
-                                                        { offset: 0, color: <?= json_encode($qr['foreground_color'] ?? '#000000') ?> },
-                                                        { offset: 1, color: <?= json_encode($qr['gradient_color'] ?? '#9945ff') ?> }
-                                                    ]
-                                                }
-                                                : <?= json_encode($qr['foreground_color'] ?? '#000000') ?>;
-                                            
-                                            const qr = new QRCodeStyling({
-                                                width: 200,
-                                                height: 200,
-                                                data: <?= json_encode($qr['content']) ?>,
-                                                margin: 10,
-                                                qrOptions: {
-                                                    errorCorrectionLevel: <?= json_encode($qr['error_correction'] ?? 'H') ?>
-                                                },
-                                                dotsOptions: {
-                                                    color: dotColor,
-                                                    type: <?= json_encode($qr['dot_style'] ?? 'rounded') ?>
-                                                },
-                                                backgroundOptions: {
-                                                    color: <?= !empty($qr['transparent_bg']) ? '"rgba(0,0,0,0)"' : json_encode($qr['background_color'] ?? '#ffffff') ?>
-                                                },
-                                                cornersSquareOptions: {
-                                                    type: <?= json_encode($qr['corner_style'] ?? 'extra-rounded') ?>,
-                                                    color: <?= !empty($qr['custom_marker_color']) && !empty($qr['marker_color']) 
-                                                        ? json_encode($qr['marker_color']) 
-                                                        : (!empty($qr['gradient_enabled']) ? 'dotColor' : json_encode($qr['foreground_color'] ?? '#000000')) ?>
-                                                },
-                                                cornersDotOptions: {
-                                                    type: <?= json_encode($qr['marker_center_style'] ?? 'dot') ?>,
-                                                    color: <?= !empty($qr['custom_marker_color']) && !empty($qr['marker_color']) 
-                                                        ? json_encode($qr['marker_color']) 
-                                                        : (!empty($qr['gradient_enabled']) ? 'dotColor' : json_encode($qr['foreground_color'] ?? '#000000')) ?>
-                                                }
-                                            });
-                                            qr.append(qrDiv);
-                                        }
-                                    })();
-                                </script>
+                                <div id="qr-<?= $qr['id'] ?>" class="qr-placeholder" data-qr-id="<?= $qr['id'] ?>" 
+                                     data-qr-data='<?= htmlspecialchars(json_encode($qr), ENT_QUOTES, 'UTF-8') ?>'
+                                     style="width: 200px; height: 200px; margin: 0 auto; display: flex; align-items: center; justify-content: center; background: rgba(153, 69, 255, 0.05); border-radius: 8px;">
+                                    <i class="fas fa-spinner fa-spin" style="font-size: 24px; color: var(--purple);"></i>
+                                </div>
                             <?php endif; ?>
                         </div>
                         <h5 style="font-size: 14px; color: var(--text-primary); margin-bottom: 8px; font-weight: 600;">
@@ -414,6 +370,86 @@ function deleteCampaign(id) {
 }
 
 function downloadQR(id) {
-    window.location.href = '/projects/qr/download?id=' + id;
+    // Find the QR code instance by ID and trigger download
+    const qrDiv = document.getElementById('qr-' + id);
+    if (qrDiv && qrDiv.qrInstance) {
+        qrDiv.qrInstance.download({ name: 'qr-code-' + id, extension: 'png' });
+    } else {
+        alert('QR code not found. Please try viewing the QR first.');
+    }
 }
+
+// Generate all QR codes after library loads
+(function initializeQRCodes() {
+    if (typeof QRCodeStyling === 'undefined') {
+        console.log('Waiting for QRCodeStyling library...');
+        setTimeout(initializeQRCodes, 100);
+        return;
+    }
+    
+    console.log('Generating QR codes...');
+    const qrPlaceholders = document.querySelectorAll('.qr-placeholder');
+    
+    qrPlaceholders.forEach(placeholder => {
+        try {
+            const qrData = JSON.parse(placeholder.getAttribute('data-qr-data'));
+            const qrDiv = placeholder;
+            
+            // Clear loading spinner
+            qrDiv.innerHTML = '';
+            qrDiv.style.background = 'none';
+            
+            // Build gradient color if enabled
+            const dotColor = qrData.gradient_enabled && qrData.gradient_color
+                ? {
+                    type: 'gradient',
+                    rotation: 0,
+                    colorStops: [
+                        { offset: 0, color: qrData.foreground_color || '#000000' },
+                        { offset: 1, color: qrData.gradient_color }
+                    ]
+                }
+                : qrData.foreground_color || '#000000';
+            
+            const markerColor = qrData.custom_marker_color && qrData.marker_color 
+                ? qrData.marker_color 
+                : (qrData.gradient_enabled ? dotColor : (qrData.foreground_color || '#000000'));
+            
+            const qr = new QRCodeStyling({
+                width: 200,
+                height: 200,
+                data: qrData.content,
+                margin: 10,
+                qrOptions: {
+                    errorCorrectionLevel: qrData.error_correction || 'H'
+                },
+                dotsOptions: {
+                    color: dotColor,
+                    type: qrData.dot_style || 'rounded'
+                },
+                backgroundOptions: {
+                    color: qrData.transparent_bg ? 'rgba(0,0,0,0)' : (qrData.background_color || '#ffffff')
+                },
+                cornersSquareOptions: {
+                    type: qrData.corner_style || 'extra-rounded',
+                    color: markerColor
+                },
+                cornersDotOptions: {
+                    type: qrData.marker_center_style || 'dot',
+                    color: markerColor
+                }
+            });
+            
+            qr.append(qrDiv);
+            
+            // Store QR instance on the div for download functionality
+            qrDiv.qrInstance = qr;
+        } catch (error) {
+            console.error('Error generating QR code:', error);
+            qrDiv.innerHTML = '<span style="color: #ff4757; font-size: 12px;">Error loading QR</span>';
+        }
+    });
+    
+    console.log('QR codes generated:', qrPlaceholders.length);
+})();
 </script>
