@@ -1013,10 +1013,15 @@
                             if (typeof QRCodeStyling !== 'undefined') {
                                 try {
                                     const qrDiv = document.getElementById('qrcode');
+                                    // Use access URL for protected/expiring QR codes, otherwise use content
+                                    const qrData = <?= isset($_SESSION['generated_qr']['access_url']) 
+                                        ? json_encode($_SESSION['generated_qr']['access_url']) 
+                                        : json_encode($_SESSION['generated_qr']['content']) ?>;
+                                    
                                     const sessionQR = new QRCodeStyling({
                                         width: <?= $_SESSION['generated_qr']['size'] ?? 300 ?>,
                                         height: <?= $_SESSION['generated_qr']['size'] ?? 300 ?>,
-                                        data: <?= json_encode($_SESSION['generated_qr']['content']) ?>,
+                                        data: qrData,
                                         dotsOptions: {
                                             color: <?= json_encode($_SESSION['generated_qr']['foreground_color'] ?? '#000000') ?>,
                                             type: "square"
@@ -1047,11 +1052,17 @@
                     <div class="qr-info">
                         <p><strong>Type:</strong> <?= htmlspecialchars($_SESSION['generated_qr']['type'] ?? 'url') ?></p>
                         <p><strong>Size:</strong> <?= htmlspecialchars($_SESSION['generated_qr']['size'] ?? 300) ?>px</p>
+                        <?php if (isset($_SESSION['generated_qr']['access_url'])): ?>
+                            <p><strong>Access URL:</strong> <code style="font-size: 11px; word-break: break-all;"><?= htmlspecialchars($_SESSION['generated_qr']['access_url']) ?></code></p>
+                        <?php endif; ?>
                         <?php if (isset($_SESSION['generated_qr']['is_dynamic']) && $_SESSION['generated_qr']['is_dynamic']): ?>
                             <p><span class="badge badge-dynamic">🔄 Dynamic</span></p>
                         <?php endif; ?>
                         <?php if (isset($_SESSION['generated_qr']['has_password']) && $_SESSION['generated_qr']['has_password']): ?>
                             <p><span class="badge badge-secure">🔒 Protected</span></p>
+                        <?php endif; ?>
+                        <?php if (isset($_SESSION['generated_qr']['expires_at'])): ?>
+                            <p><span class="badge badge-expiry">⏰ Expires: <?= htmlspecialchars(date('M d, Y', strtotime($_SESSION['generated_qr']['expires_at']))) ?></span></p>
                         <?php endif; ?>
                     </div>
                 </div>

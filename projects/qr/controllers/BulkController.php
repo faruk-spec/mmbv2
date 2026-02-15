@@ -177,7 +177,12 @@ class BulkController
                 'campaign_id' => $campaignId,
                 'size' => 300,
                 'foreground_color' => '#000000',
-                'background_color' => '#ffffff'
+                'background_color' => '#ffffff',
+                'error_correction' => 'H',
+                // Make bulk QR codes dynamic for tracking
+                'is_dynamic' => 1,
+                'redirect_url' => $content,
+                'status' => 'active'
             ];
             
             $qrId = $this->qrModel->save($userId, $qrData);
@@ -186,7 +191,7 @@ class BulkController
                 $completed++;
                 $qrIds[] = $qrId;
                 
-                // Generate short code
+                // Generate short code for access
                 $shortCode = $this->generateShortCode($qrId);
                 $this->qrModel->updateShortCode($qrId, $shortCode);
             } else {

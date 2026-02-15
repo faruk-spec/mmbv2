@@ -98,6 +98,16 @@ class QRController
         $hasExpiry = isset($_POST['has_expiry']) ? 1 : 0;
         $expiresAt = $hasExpiry && !empty($_POST['expires_at']) ? $_POST['expires_at'] : null;
         
+        // IMPORTANT: Force dynamic mode if password or expiry is set
+        // This ensures QR codes go through the access verification route
+        if ($hasPassword || $hasExpiry) {
+            $isDynamic = 1;
+            // Store original content as redirect URL
+            if (empty($redirectUrl)) {
+                $redirectUrl = $content;
+            }
+        }
+        
         // Campaign (can come from URL or form)
         $campaignId = !empty($_POST['campaign_id']) ? (int) $_POST['campaign_id'] : null;
         if (!$campaignId && !empty($_GET['campaign_id'])) {
@@ -163,14 +173,23 @@ class QRController
             ]);
             
             if ($qrId) {
-                // Generate short code for dynamic QR
-                if ($isDynamic) {
+                // Generate short code for dynamic QR, password-protected, or expiring QR codes
+                if ($isDynamic || $hasPassword || $hasExpiry) {
                     $shortCode = $this->generateShortCode($qrId);
                     $this->qrModel->updateShortCode($qrId, $shortCode);
+                    
+                    // Update session with short code URL for display
+                    $_SESSION['generated_qr']['short_code'] = $shortCode;
+                    $_SESSION['generated_qr']['access_url'] = 'https://' . $_SERVER['HTTP_HOST'] . '/projects/qr/access/' . $shortCode;
                 }
                 
                 Logger::activity($userId, 'qr_generated', ['type' => $type, 'qr_id' => $qrId, 'is_dynamic' => $isDynamic, 'campaign_id' => $campaignId]);
-                Helpers::flash('success', 'QR code generated successfully!' . ($isDynamic ? ' Short URL: ' . $shortCode : ''));
+                
+                $message = 'QR code generated successfully!';
+                if ($isDynamic && isset($shortCode)) {
+                    $message .= ' Access URL: https://' . $_SERVER['HTTP_HOST'] . '/projects/qr/access/' . $shortCode;
+                }
+                Helpers::flash('success', $message);
             } else {
                 Logger::error('Failed to save QR code to database for user ' . $userId);
                 Helpers::flash('error', 'Failed to save QR code to database.');
