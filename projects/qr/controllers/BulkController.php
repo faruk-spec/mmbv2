@@ -194,6 +194,10 @@ class BulkController
                 // Generate short code for access
                 $shortCode = $this->generateShortCode($qrId);
                 $this->qrModel->updateShortCode($qrId, $shortCode);
+                
+                // Update content to access URL for dynamic QRs
+                $accessUrl = 'https://' . $_SERVER['HTTP_HOST'] . '/projects/qr/access/' . $shortCode;
+                $this->qrModel->update($qrId, $userId, ['content' => $accessUrl]);
             } else {
                 $failed++;
             }
