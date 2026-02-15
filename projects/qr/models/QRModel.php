@@ -30,11 +30,15 @@ class QRModel
     {
         $sql = "INSERT INTO qr_codes (
             user_id, content, type, size, 
-            foreground_color, background_color, 
-            error_correction, frame_style, logo_path,
+            foreground_color, background_color, error_correction,
+            gradient_enabled, gradient_color, transparent_bg,
+            corner_style, dot_style, marker_border_style, marker_center_style,
+            custom_marker_color, marker_color, 
+            frame_style, frame_label, frame_font, frame_color,
+            logo_path, logo_color, logo_size, logo_remove_bg,
             is_dynamic, redirect_url, password_hash, expires_at,
             campaign_id, status, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', NOW())";
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', NOW())";
         
         $params = [
             $userId,
@@ -44,8 +48,23 @@ class QRModel
             $data['foreground_color'] ?? '#000000',
             $data['background_color'] ?? '#ffffff',
             $data['error_correction'] ?? 'H',
+            $data['gradient_enabled'] ?? 0,
+            $data['gradient_color'] ?? '#9945ff',
+            $data['transparent_bg'] ?? 0,
+            $data['corner_style'] ?? 'square',
+            $data['dot_style'] ?? 'dots',
+            $data['marker_border_style'] ?? 'square',
+            $data['marker_center_style'] ?? 'square',
+            $data['custom_marker_color'] ?? 0,
+            $data['marker_color'] ?? null,
             $data['frame_style'] ?? 'none',
+            $data['frame_label'] ?? null,
+            $data['frame_font'] ?? null,
+            $data['frame_color'] ?? null,
             $data['logo_path'] ?? null,
+            $data['logo_color'] ?? '#9945ff',
+            $data['logo_size'] ?? 0.3,
+            $data['logo_remove_bg'] ?? 0,
             $data['is_dynamic'] ?? 0,
             $data['redirect_url'] ?? null,
             $data['password_hash'] ?? null,

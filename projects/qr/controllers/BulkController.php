@@ -70,7 +70,8 @@ class BulkController
         }
         
         $file = $_FILES['csv_file'];
-        $campaignId = $_POST['campaign_id'] ?? null;
+        // Campaign ID is optional - convert empty string to null
+        $campaignId = !empty($_POST['campaign_id']) ? (int) $_POST['campaign_id'] : null;
         
         // Validate file type
         $fileExt = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));

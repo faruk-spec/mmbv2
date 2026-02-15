@@ -61,8 +61,31 @@ class QRController
         $backgroundColor = '#' . ltrim(Security::sanitize($_POST['background_color'] ?? 'ffffff'), '#');
         $errorCorrection = Security::sanitize($_POST['error_correction'] ?? 'H');
         
-        // Design options
+        // Gradient settings
+        $gradientEnabled = isset($_POST['gradient_enabled']) ? 1 : 0;
+        $gradientColor = '#' . ltrim(Security::sanitize($_POST['gradient_color'] ?? '9945ff'), '#');
+        $transparentBg = isset($_POST['transparent_bg']) ? 1 : 0;
+        
+        // Design styles
+        $cornerStyle = Security::sanitize($_POST['corner_style'] ?? 'square');
+        $dotStyle = Security::sanitize($_POST['dot_style'] ?? 'dots');
+        $markerBorderStyle = Security::sanitize($_POST['marker_border_style'] ?? 'square');
+        $markerCenterStyle = Security::sanitize($_POST['marker_center_style'] ?? 'square');
+        
+        // Marker colors
+        $customMarkerColor = isset($_POST['custom_marker_color']) ? 1 : 0;
+        $markerColor = $customMarkerColor ? '#' . ltrim(Security::sanitize($_POST['marker_color'] ?? '9945ff'), '#') : null;
+        
+        // Frame options
         $frameStyle = Security::sanitize($_POST['frame_style'] ?? 'none');
+        $frameLabel = Security::sanitize($_POST['frame_label'] ?? '');
+        $frameFont = Security::sanitize($_POST['frame_font'] ?? '');
+        $frameColor = !empty($_POST['frame_color']) ? '#' . ltrim(Security::sanitize($_POST['frame_color']), '#') : null;
+        
+        // Logo options
+        $logoColor = '#' . ltrim(Security::sanitize($_POST['logo_color'] ?? '9945ff'), '#');
+        $logoSize = !empty($_POST['logo_size']) ? (float) $_POST['logo_size'] : 0.3;
+        $logoRemoveBg = isset($_POST['logo_remove_bg']) ? 1 : 0;
         
         // Advanced features
         $isDynamic = isset($_POST['is_dynamic']) ? 1 : 0;
@@ -74,7 +97,12 @@ class QRController
         }
         $hasExpiry = isset($_POST['has_expiry']) ? 1 : 0;
         $expiresAt = $hasExpiry && !empty($_POST['expires_at']) ? $_POST['expires_at'] : null;
+        
+        // Campaign (can come from URL or form)
         $campaignId = !empty($_POST['campaign_id']) ? (int) $_POST['campaign_id'] : null;
+        if (!$campaignId && !empty($_GET['campaign_id'])) {
+            $campaignId = (int) $_GET['campaign_id'];
+        }
         
         // Handle logo upload
         $logoPath = null;
@@ -90,6 +118,8 @@ class QRController
             'foreground_color' => $foregroundColor,
             'background_color' => $backgroundColor,
             'error_correction' => $errorCorrection,
+            'gradient_enabled' => $gradientEnabled,
+            'gradient_color' => $gradientColor,
             'frame_style' => $frameStyle,
             'is_dynamic' => $isDynamic,
             'has_password' => $hasPassword,
@@ -107,8 +137,23 @@ class QRController
                 'foreground_color' => $foregroundColor,
                 'background_color' => $backgroundColor,
                 'error_correction' => $errorCorrection,
+                'gradient_enabled' => $gradientEnabled,
+                'gradient_color' => $gradientColor,
+                'transparent_bg' => $transparentBg,
+                'corner_style' => $cornerStyle,
+                'dot_style' => $dotStyle,
+                'marker_border_style' => $markerBorderStyle,
+                'marker_center_style' => $markerCenterStyle,
+                'custom_marker_color' => $customMarkerColor,
+                'marker_color' => $markerColor,
                 'frame_style' => $frameStyle,
+                'frame_label' => $frameLabel,
+                'frame_font' => $frameFont,
+                'frame_color' => $frameColor,
                 'logo_path' => $logoPath,
+                'logo_color' => $logoColor,
+                'logo_size' => $logoSize,
+                'logo_remove_bg' => $logoRemoveBg,
                 'is_dynamic' => $isDynamic,
                 'redirect_url' => $redirectUrl,
                 'password_hash' => $passwordHash,
@@ -124,7 +169,7 @@ class QRController
                     $this->qrModel->updateShortCode($qrId, $shortCode);
                 }
                 
-                Logger::activity($userId, 'qr_generated', ['type' => $type, 'qr_id' => $qrId, 'is_dynamic' => $isDynamic]);
+                Logger::activity($userId, 'qr_generated', ['type' => $type, 'qr_id' => $qrId, 'is_dynamic' => $isDynamic, 'campaign_id' => $campaignId]);
                 Helpers::flash('success', 'QR code generated successfully!' . ($isDynamic ? ' Short URL: ' . $shortCode : ''));
             } else {
                 Logger::error('Failed to save QR code to database for user ' . $userId);
