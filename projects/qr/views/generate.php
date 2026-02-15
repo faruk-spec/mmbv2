@@ -1212,9 +1212,105 @@ function showNotification(message, type = 'info') {
     }, 3000);
 }
 
+// Apply template settings to form
+function applyTemplateToForm(settings) {
+    console.log('Applying template settings:', settings);
+    
+    // Basic settings
+    if (settings.size) document.getElementById('qrSize').value = settings.size;
+    if (settings.foregroundColor) document.getElementById('qrColor').value = settings.foregroundColor;
+    if (settings.backgroundColor) document.getElementById('qrBgColor').value = settings.backgroundColor;
+    if (settings.errorCorrection) document.getElementById('errorCorrection').value = settings.errorCorrection;
+    
+    // Gradient settings
+    if (settings.gradientEnabled) {
+        document.getElementById('gradientEnabled').checked = true;
+        document.getElementById('gradientColorGroup').style.display = 'block';
+        if (settings.gradientColor) document.getElementById('gradientColor').value = settings.gradientColor;
+    }
+    
+    // Transparent background
+    if (settings.transparentBg) {
+        document.getElementById('transparentBg').checked = true;
+        document.getElementById('qrBgColor').disabled = true;
+    }
+    
+    // Design styles
+    if (settings.cornerStyle) document.getElementById('cornerStyle').value = settings.cornerStyle;
+    if (settings.dotStyle) document.getElementById('dotStyle').value = settings.dotStyle;
+    if (settings.markerBorderStyle) document.getElementById('markerBorderStyle').value = settings.markerBorderStyle;
+    if (settings.markerCenterStyle) document.getElementById('markerCenterStyle').value = settings.markerCenterStyle;
+    
+    // Marker color
+    if (settings.customMarkerColor) {
+        document.getElementById('customMarkerColor').checked = true;
+        document.getElementById('markerColorGroup').style.display = 'block';
+        if (settings.markerColor) document.getElementById('markerColor').value = settings.markerColor;
+    }
+    
+    // Frame settings
+    if (settings.frameStyle) {
+        document.getElementById('frameStyle').value = settings.frameStyle;
+        if (settings.frameStyle !== 'none') {
+            document.getElementById('frameTextGroup').style.display = 'block';
+            document.getElementById('frameFontGroup').style.display = 'block';
+            document.getElementById('frameColorGroup').style.display = 'block';
+            if (settings.frameLabel) document.getElementById('frameLabel').value = settings.frameLabel;
+            if (settings.frameFont) document.getElementById('frameFont').value = settings.frameFont;
+            if (settings.frameColor) document.getElementById('frameColor').value = settings.frameColor;
+        }
+    }
+    
+    // Logo settings
+    if (settings.logoColor) document.getElementById('logoColor').value = settings.logoColor;
+    if (settings.logoSize) document.getElementById('logoSize').value = settings.logoSize;
+    if (settings.logoRemoveBg) document.getElementById('logoRemoveBg').checked = true;
+    
+    // Logo option and default logo
+    if (settings.logoOption) {
+        window.selectLogoOption(settings.logoOption);
+        if (settings.logoOption === 'default' && settings.defaultLogo) {
+            // Use setTimeout to ensure selectLogoOption has finished
+            setTimeout(() => {
+                window.selectDefaultLogo(settings.defaultLogo);
+            }, 100);
+        }
+    }
+    
+    // Trigger preview update
+    setTimeout(() => {
+        if (typeof window.debouncedPreview === 'function') {
+            window.debouncedPreview();
+        }
+    }, 200);
+}
+
 // Initialize all event listeners when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Initializing QR Generator...');
+    
+    // Check for template to apply from localStorage
+    const applyTemplateId = localStorage.getItem('applyTemplateId');
+    if (applyTemplateId) {
+        console.log('Loading template:', applyTemplateId);
+        localStorage.removeItem('applyTemplateId');
+        
+        // Fetch template data
+        fetch('/projects/qr/templates/get?id=' + applyTemplateId)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.template) {
+                    applyTemplateToForm(data.template.settings);
+                    showNotification('Template "' + data.template.name + '" applied successfully!', 'success');
+                } else {
+                    showNotification('Failed to load template', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error loading template:', error);
+                showNotification('Error loading template', 'error');
+            });
+    }
     
     // Check library loaded
     window.addEventListener('load', function() {
