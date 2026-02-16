@@ -87,6 +87,29 @@ if ($userId) {
             display: none !important;
         }
     }
+    
+    /* Mobile optimization for action buttons */
+    .icon-only-btn {
+        min-width: 2rem !important;
+        width: 2rem !important;
+        height: 2rem !important;
+        padding: 0.25rem !important;
+    }
+    
+    .icon-only-btn i {
+        font-size: 0.75rem !important;
+    }
+    
+    /* Keep action buttons in single line */
+    td:last-child {
+        white-space: nowrap !important;
+    }
+    
+    /* Reduce gap between action buttons */
+    .action-buttons {
+        gap: 0.25rem !important;
+        flex-wrap: nowrap !important;
+    }
 }
 
 /* Action button improvements */
