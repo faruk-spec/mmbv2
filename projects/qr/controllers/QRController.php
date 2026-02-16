@@ -348,16 +348,35 @@ class QRController
     {
         $userId = Auth::id();
         $history = [];
+        $totalCount = 0;
+        $perPage = (int)($_GET['per_page'] ?? 25);
+        $page = max(1, (int)($_GET['page'] ?? 1));
+        $offset = ($page - 1) * $perPage;
+        
+        // Validate per_page value
+        if (!in_array($perPage, [10, 25, 50, 100])) {
+            $perPage = 25;
+        }
         
         if ($userId) {
-            // Fetch QR codes from database
-            $history = $this->qrModel->getByUser($userId, 50);
+            // Fetch QR codes from database with pagination
+            $history = $this->qrModel->getByUser($userId, $perPage, $offset);
+            
+            // Get total count for pagination
+            $totalCount = $this->qrModel->countByUser($userId);
         }
+        
+        $totalPages = $totalCount > 0 ? (int)ceil($totalCount / $perPage) : 1;
         
         $this->render('history', [
             'title' => 'QR Code History',
             'user' => Auth::user(),
-            'history' => $history
+            'history' => $history,
+            'totalCount' => $totalCount,
+            'perPage' => $perPage,
+            'currentPage' => $page,
+            'totalPages' => $totalPages,
+            'offset' => $offset
         ]);
     }
     
@@ -403,6 +422,76 @@ class QRController
         }
         
         Helpers::redirect('/projects/qr/history');
+    }
+    
+    /**
+     * Bulk delete QR codes
+     */
+    public function bulkDelete(): void
+    {
+        if (!Security::verifyCsrfToken($_POST['_csrf_token'] ?? '')) {
+            Helpers::flash('error', 'Invalid request.');
+            Helpers::redirect('/projects/qr/history');
+            return;
+        }
+        
+        $ids = $_POST['qr_ids'] ?? [];
+        $userId = Auth::id();
+        
+        if (empty($ids) || !is_array($ids)) {
+            Helpers::flash('error', 'No QR codes selected.');
+            Helpers::redirect('/projects/qr/history');
+            return;
+        }
+        
+        $deleted = 0;
+        foreach ($ids as $id) {
+            if ($this->qrModel->delete((int)$id, $userId)) {
+                $deleted++;
+            }
+        }
+        
+        if ($deleted > 0) {
+            Helpers::flash('success', "$deleted QR code(s) deleted successfully.");
+        } else {
+            Helpers::flash('error', 'Failed to delete QR codes.');
+        }
+        
+        Helpers::redirect('/projects/qr/history');
+    }
+    
+    /**
+     * Update QR code campaign assignment
+     */
+    public function updateCampaign(): void
+    {
+        if (!Security::verifyCsrfToken($_POST['_csrf_token'] ?? '')) {
+            echo json_encode(['success' => false, 'message' => 'Invalid request.']);
+            return;
+        }
+        
+        $qrId = (int)($_POST['qr_id'] ?? 0);
+        $campaignId = !empty($_POST['campaign_id']) ? (int)$_POST['campaign_id'] : null;
+        $userId = Auth::id();
+        
+        if (!$qrId || !$userId) {
+            echo json_encode(['success' => false, 'message' => 'Invalid request.']);
+            return;
+        }
+        
+        // Verify QR code belongs to user
+        $qr = $this->qrModel->getById($qrId, $userId);
+        if (!$qr) {
+            echo json_encode(['success' => false, 'message' => 'QR code not found.']);
+            return;
+        }
+        
+        // Update campaign
+        if ($this->qrModel->update($qrId, $userId, ['campaign_id' => $campaignId])) {
+            echo json_encode(['success' => true, 'message' => 'Campaign updated successfully.']);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Failed to update campaign.']);
+        }
     }
     
     /**

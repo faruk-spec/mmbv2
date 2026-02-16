@@ -126,6 +126,23 @@ class QRModel
     }
     
     /**
+     * Count QR codes by user
+     */
+    public function countByUser(int $userId): int
+    {
+        $sql = "SELECT COUNT(*) as count FROM qr_codes 
+                WHERE user_id = ? AND deleted_at IS NULL";
+        
+        try {
+            $result = $this->db->fetch($sql, [$userId]);
+            return (int)($result['count'] ?? 0);
+        } catch (\Exception $e) {
+            \Core\Logger::error('Failed to count QR codes: ' . $e->getMessage());
+            return 0;
+        }
+    }
+    
+    /**
      * Get a single QR code by ID
      * 
      * @param int $id QR code ID
