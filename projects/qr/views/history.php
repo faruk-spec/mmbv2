@@ -263,8 +263,8 @@ if ($userId) {
                                 <input type="checkbox" name="qr_ids[]" value="<?= $qr['id'] ?>" class="qr-checkbox" form="bulkDeleteForm" style="width: 18px; height: 18px; cursor: pointer;">
                             </td>
                             <td style="padding: 0.75rem;">
-                                <div style="background: white; padding: 0.5rem; border-radius: 0.25rem; display: inline-block;">
-                                    <div id="qr-<?= $qr['id'] ?>" style="width: 3.75rem; height: 3.75rem;"></div>
+                                <div style="background: white; padding: 0.25rem; border-radius: 0.25rem; display: inline-block; min-width: 70px; min-height: 70px;">
+                                    <div id="qr-<?= $qr['id'] ?>" style="width: 60px; height: 60px;"></div>
                                 </div>
                             </td>
                             <td style="padding: 0.75rem; max-width: 15rem; overflow: hidden; text-overflow: ellipsis;" 
@@ -414,7 +414,8 @@ if ($userId) {
         const qr = qrcode(0, 'H');
         qr.addData(<?= json_encode($qr['content']) ?>);
         qr.make();
-        document.getElementById('qr-<?= $qr['id'] ?>').innerHTML = qr.createImgTag(1);
+        // Use cellSize of 2 for better visibility (60px container / 30 cells = 2px per cell)
+        document.getElementById('qr-<?= $qr['id'] ?>').innerHTML = qr.createImgTag(2, 0);
     } catch (e) {
         console.error('Failed to generate QR preview:', e);
     }

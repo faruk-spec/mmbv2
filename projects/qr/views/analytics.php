@@ -178,11 +178,19 @@
 </div>
 
 <!-- Date Range Filter -->
-<div class="glass-card" style="margin-bottom: 30px;">
+<div class="glass-card" style="margin-bottom: 30px; position: relative;">
+    <!-- Loading Overlay -->
+    <div id="filterLoadingOverlay" style="display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); border-radius: 12px; z-index: 100; align-items: center; justify-content: center;">
+        <div style="text-align: center; color: white;">
+            <div class="spinner" style="width: 40px; height: 40px; border: 4px solid rgba(255, 255, 255, 0.3); border-top-color: white; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 10px;"></div>
+            <p style="font-size: 14px; font-weight: 500;">Loading...</p>
+        </div>
+    </div>
+    
     <h3 class="section-title" style="margin-bottom: var(--space-lg);">
         <i class="fas fa-filter"></i> Filter Analytics
     </h3>
-    <form id="dateFilterForm" method="GET" style="display: flex; flex-wrap: wrap; gap: var(--space-md); align-items: end;">
+    <form id="dateFilterForm" method="GET" onsubmit="showFilterLoading()" style="display: flex; flex-wrap: wrap; gap: var(--space-md); align-items: end;">
         <div style="flex: 1; min-width: 200px;">
             <label for="start_date" style="display: block; margin-bottom: 0.5rem; font-size: var(--font-sm); color: var(--text-secondary);">Start Date</label>
             <input type="date" id="start_date" name="start_date" class="form-input" value="<?= $_GET['start_date'] ?? '' ?>" style="width: 100%;">
@@ -198,10 +206,10 @@
             <button type="button" class="btn-secondary btn-sm" onclick="setDateRange(90)">Last 90 Days</button>
         </div>
         <div style="display: flex; gap: var(--space-sm);">
-            <button type="submit" class="btn-primary btn-sm">
+            <button type="submit" class="btn-primary btn-sm" id="applyFilterBtn">
                 <i class="fas fa-check"></i> Apply
             </button>
-            <button type="button" class="btn-secondary btn-sm" onclick="exportCSV()">
+            <button type="button" class="btn-secondary btn-sm" onclick="exportCSV()" id="exportBtn">
                 <i class="fas fa-download"></i> Export CSV
             </button>
         </div>
@@ -210,13 +218,19 @@
 
 <!-- Charts Section -->
 <div class="grid grid-2" style="gap: 20px; margin-bottom: 30px;">
-    <div class="glass-card">
+    <div class="glass-card" style="position: relative;">
+        <div id="chartLoading1" class="chart-loading" style="display: flex; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10;">
+            <div class="spinner" style="width: 30px; height: 30px; border: 3px solid rgba(153, 69, 255, 0.3); border-top-color: var(--purple); border-radius: 50%; animation: spin 1s linear infinite;"></div>
+        </div>
         <h3 class="section-title" style="margin-bottom: var(--space-lg);">
             <i class="fas fa-chart-line"></i> Scan Trends
         </h3>
         <canvas id="scanTrendsChart" style="max-height: 300px;"></canvas>
     </div>
-    <div class="glass-card">
+    <div class="glass-card" style="position: relative;">
+        <div id="chartLoading2" class="chart-loading" style="display: flex; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10;">
+            <div class="spinner" style="width: 30px; height: 30px; border: 3px solid rgba(153, 69, 255, 0.3); border-top-color: var(--purple); border-radius: 50%; animation: spin 1s linear infinite;"></div>
+        </div>
         <h3 class="section-title" style="margin-bottom: var(--space-lg);">
             <i class="fas fa-chart-bar"></i> Top QR Codes
         </h3>
@@ -340,7 +354,15 @@
 
 <script>
 function changePerPage(perPage) {
+    showFilterLoading();
     window.location.href = '?page=1&per_page=' + perPage;
+}
+
+function showFilterLoading() {
+    const overlay = document.getElementById('filterLoadingOverlay');
+    if (overlay) {
+        overlay.style.display = 'flex';
+    }
 }
 
 function setDateRange(days) {
@@ -358,6 +380,13 @@ function setDateRange(days) {
 }
 
 function exportCSV() {
+    const btn = document.getElementById('exportBtn');
+    const originalHTML = btn.innerHTML;
+    
+    // Show loading state
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exporting...';
+    
     const startDate = document.getElementById('start_date').value;
     const endDate = document.getElementById('end_date').value;
     let url = '/projects/qr/analytics/export-csv';
@@ -371,8 +400,21 @@ function exportCSV() {
     }
     
     window.location.href = url;
+    
+    // Reset button after a delay
+    setTimeout(() => {
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+    }, 2000);
 }
 </script>
+
+<style>
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+</style>
 
 <!-- Chart.js Library -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -388,6 +430,10 @@ document.addEventListener('DOMContentLoaded', function() {
     fetch(`/projects/qr/analytics/scan-trends?start_date=${startDate}&end_date=${endDate}`)
         .then(response => response.json())
         .then(data => {
+            // Hide loading spinner
+            const loading1 = document.getElementById('chartLoading1');
+            if (loading1) loading1.style.display = 'none';
+            
             const ctx = document.getElementById('scanTrendsChart').getContext('2d');
             new Chart(ctx, {
                 type: 'line',
@@ -435,12 +481,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         })
-        .catch(error => console.error('Error loading scan trends:', error));
+        .catch(error => {
+            console.error('Error loading scan trends:', error);
+            const loading1 = document.getElementById('chartLoading1');
+            if (loading1) loading1.style.display = 'none';
+        });
     
     // Fetch and render Top QRs Chart
     fetch(`/projects/qr/analytics/top-qrs?start_date=${startDate}&end_date=${endDate}`)
         .then(response => response.json())
         .then(data => {
+            // Hide loading spinner
+            const loading2 = document.getElementById('chartLoading2');
+            if (loading2) loading2.style.display = 'none';
+            
             const ctx = document.getElementById('topQRsChart').getContext('2d');
             new Chart(ctx, {
                 type: 'bar',
@@ -497,7 +551,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         })
-        .catch(error => console.error('Error loading top QRs:', error));
+        .catch(error => {
+            console.error('Error loading top QRs:', error);
+            const loading2 = document.getElementById('chartLoading2');
+            if (loading2) loading2.style.display = 'none';
+        });
 });
 </script>
 

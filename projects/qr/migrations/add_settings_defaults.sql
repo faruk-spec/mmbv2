@@ -5,7 +5,7 @@
 -- Design Defaults Tab columns (some already exist in complete_latest_features.sql)
 -- default_corner_style and default_dot_style already exist, just add the marker styles
 ALTER TABLE `qr_user_settings` 
-ADD COLUMN IF NOT EXISTS `default_marker_border_style` VARCHAR(50) DEFAULT 'square' COMMENT 'Default marker border style' AFTER `default_logo_option`,
+ADD COLUMN IF NOT EXISTS `default_marker_border_style` VARCHAR(50) DEFAULT 'square' COMMENT 'Default marker border style' AFTER `default_download_format`,
 ADD COLUMN IF NOT EXISTS `default_marker_center_style` VARCHAR(50) DEFAULT 'square' COMMENT 'Default marker center style' AFTER `default_marker_border_style`;
 
 -- Logo Defaults Tab columns

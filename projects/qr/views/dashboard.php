@@ -1,17 +1,40 @@
 <div class="page-header" style="margin-bottom: 30px;">
-    <h1 style="font-size: 2rem; font-weight: 700;">QR Generator Dashboard</h1>
-    <p style="color: var(--text-secondary); margin-top: 8px;">Create and manage your QR codes</p>
+    <h1 class="dashboard-title" style="font-size: 2rem; font-weight: 700;">QR Generator Dashboard</h1>
+    <p class="dashboard-subtitle" style="color: var(--text-secondary); margin-top: 8px;">Create and manage your QR codes</p>
+</div>
+
+<!-- Quick Generate - Promoted Section -->
+<div class="card quick-generate-card" style="margin-bottom: 30px; background: linear-gradient(135deg, var(--purple), var(--cyan)); padding: 30px; border: none;">
+    <h3 style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px; color: white;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="16"/>
+            <line x1="8" y1="12" x2="16" y2="12"/>
+        </svg>
+        Quick Generate
+    </h3>
+    <p style="color: rgba(255,255,255,0.9); margin-bottom: 20px; font-size: 14px; line-height: 1.6;">
+        Create a new QR code in seconds. You have <strong><?= number_format($stats['active_codes']) ?> active QR code<?= $stats['active_codes'] != 1 ? 's' : '' ?></strong>.
+    </p>
+    <a href="/projects/qr/generate" class="btn" style="background: white; color: var(--purple); font-weight: 600; border: none;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="16"/>
+            <line x1="8" y1="12" x2="16" y2="12"/>
+        </svg>
+        Generate New QR Code
+    </a>
 </div>
 
 <!-- Enhanced Statistics Grid -->
-<div class="grid grid-3" style="margin-bottom: 30px; gap: 20px;">
+<div class="grid grid-3 stats-grid" style="margin-bottom: 30px; gap: 20px;">
     <div class="card stat-card">
         <div class="stat-icon" style="background: linear-gradient(135deg, #667eea, #764ba2);">
             <i class="fas fa-qrcode"></i>
         </div>
         <div class="stat-content">
             <div class="stat-value"><?= number_format($stats['total_generated']) ?></div>
-            <div class="stat-label">QR Codes Generated</div>
+            <div class="stat-label">QR Codes</div>
             <div class="stat-subtext"><?= number_format($stats['active_codes']) ?> active</div>
         </div>
     </div>
@@ -33,8 +56,8 @@
         </div>
         <div class="stat-content">
             <div class="stat-value"><?= number_format($stats['scans_this_week']) ?></div>
-            <div class="stat-label">Scans This Week</div>
-            <div class="stat-subtext">Avg: <?= number_format($stats['average_scans'], 1) ?> per QR</div>
+            <div class="stat-label">This Week</div>
+            <div class="stat-subtext">Avg: <?= number_format($stats['average_scans'], 1) ?></div>
         </div>
     </div>
 </div>
@@ -130,28 +153,6 @@
 
 <!-- Quick Actions Grid -->
 <div class="grid grid-2">
-    <div class="card">
-        <h3 style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="12" y1="8" x2="12" y2="16"/>
-                <line x1="8" y1="12" x2="16" y2="12"/>
-            </svg>
-            Quick Generate
-        </h3>
-        <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 14px; line-height: 1.6;">
-            Create a new QR code in seconds. Choose from various types including URLs, text, WiFi credentials, and more.
-        </p>
-        <a href="/projects/qr/generate" class="btn btn-primary">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="12" y1="8" x2="12" y2="16"/>
-                <line x1="8" y1="12" x2="16" y2="12"/>
-            </svg>
-            Generate New QR Code
-        </a>
-    </div>
-    
     <div class="card">
         <h3 style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -481,20 +482,72 @@
             grid-template-columns: 1fr !important;
         }
         
-        .stat-card {
-            padding: 15px !important;
+        /* Dashboard Title - Center and Single Line */
+        .dashboard-title {
+            font-size: 1.5rem !important;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .dashboard-subtitle {
+            text-align: center;
+            font-size: 0.875rem !important;
+        }
+        
+        /* Quick Generate Card - Compact */
+        .quick-generate-card {
+            padding: 20px !important;
+            text-align: center;
+        }
+        
+        .quick-generate-card h3 {
+            font-size: 1.125rem !important;
+            justify-content: center;
+        }
+        
+        .quick-generate-card p {
+            font-size: 0.875rem !important;
+            margin-bottom: 15px !important;
+        }
+        
+        /* Stats Grid - Horizontal Row on Mobile */
+        .stats-grid {
+            display: flex !important;
+            flex-direction: row !important;
+            overflow-x: auto;
+            gap: 10px !important;
+            padding-bottom: 10px;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .stats-grid .stat-card {
+            flex: 0 0 auto;
+            min-width: 140px;
+            max-width: 160px;
+            padding: 12px !important;
         }
         
         .stat-icon {
-            width: 50px;
-            height: 50px;
-            font-size: 20px;
+            width: 40px !important;
+            height: 40px !important;
+            font-size: 18px !important;
         }
         
         .stat-value {
-            font-size: 24px;
+            font-size: 1.25rem !important;
         }
         
+        .stat-label {
+            font-size: 0.75rem !important;
+        }
+        
+        .stat-subtext {
+            font-size: 0.7rem !important;
+        }
+        
+        /* Activity Items */
         .activity-item {
             flex-wrap: wrap;
         }
