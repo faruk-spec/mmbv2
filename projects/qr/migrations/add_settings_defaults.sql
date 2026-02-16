@@ -2,11 +2,10 @@
 -- Date: 2026-02-16
 -- Description: Adds columns for Design, Logo, and Advanced default settings to qr_user_settings
 
--- Design Defaults Tab columns
+-- Design Defaults Tab columns (some already exist in complete_latest_features.sql)
+-- default_corner_style and default_dot_style already exist, just add the marker styles
 ALTER TABLE `qr_user_settings` 
-ADD COLUMN IF NOT EXISTS `default_corner_style` VARCHAR(50) DEFAULT 'square' COMMENT 'Default corner style for QR generation' AFTER `default_corner_style`,
-ADD COLUMN IF NOT EXISTS `default_dot_style` VARCHAR(50) DEFAULT 'square' COMMENT 'Default dot style for QR generation' AFTER `default_dot_style`,
-ADD COLUMN IF NOT EXISTS `default_marker_border_style` VARCHAR(50) DEFAULT 'square' COMMENT 'Default marker border style' AFTER `default_corner_style`,
+ADD COLUMN IF NOT EXISTS `default_marker_border_style` VARCHAR(50) DEFAULT 'square' COMMENT 'Default marker border style' AFTER `default_logo_option`,
 ADD COLUMN IF NOT EXISTS `default_marker_center_style` VARCHAR(50) DEFAULT 'square' COMMENT 'Default marker center style' AFTER `default_marker_border_style`;
 
 -- Logo Defaults Tab columns
@@ -30,6 +29,6 @@ CREATE INDEX IF NOT EXISTS `idx_marker_defaults` ON `qr_user_settings`(`default_
 -- Success message
 SELECT 'Settings defaults migration completed successfully!' as message,
        'New default columns added for:' as info1,
-       '- Design Defaults (corner, dot, marker styles)' as feature1,
+       '- Design Defaults (marker border and center styles)' as feature1,
        '- Logo Defaults (color, size, remove background)' as feature2,
        '- Advanced Defaults (gradient, transparent bg, marker color)' as feature3;
