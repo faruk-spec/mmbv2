@@ -11,32 +11,9 @@ if ($userId) {
 <style>
 /* Table scroll container for mobile */
 .table-scroll {
-    position: relative;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-}
-
-/* Scroll indicator shadows */
-.table-scroll::before,
-.table-scroll::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 30px;
-    pointer-events: none;
-    z-index: 1;
-    transition: opacity 0.3s ease;
-}
-
-.table-scroll::before {
-    left: 0;
-    background: linear-gradient(to right, rgba(255,255,255,0.9), transparent);
-}
-
-.table-scroll::after {
-    right: 0;
-    background: linear-gradient(to left, rgba(255,255,255,0.9), transparent);
+    width: 100%;
 }
 
 /* Mobile Responsive Styles */
@@ -49,11 +26,10 @@ if ($userId) {
     
     /* Enhanced mobile table scrolling */
     .table-scroll {
-        margin: 0 -1rem;
-        padding: 0 1rem;
-        border: 1px solid var(--border-color);
-        border-radius: 0.5rem;
-        background: var(--background-secondary);
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        overflow-x: scroll;
     }
     
     /* Table stays at min-width to enable scrolling */

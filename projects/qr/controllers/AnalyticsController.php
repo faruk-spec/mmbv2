@@ -37,10 +37,10 @@ class AnalyticsController
         $perPage = isset($_GET['per_page']) ? max(10, min(100, (int)$_GET['per_page'])) : 25;
         $offset = ($page - 1) * $perPage;
         
-        // Get analytics data
-        $totalQRs = $this->qrModel->countByUser($userId);
+        // Get analytics data (including deleted QR codes for historical view)
+        $totalQRs = $this->qrModel->countAllByUser($userId);
         $activeQRs = $this->qrModel->countActiveByUser($userId);
-        $recentQRs = $this->qrModel->getByUser($userId, $perPage, $offset);
+        $recentQRs = $this->qrModel->getAllByUser($userId, $perPage, $offset);
         
         // Calculate pagination
         $totalPages = ceil($totalQRs / $perPage);

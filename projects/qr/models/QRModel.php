@@ -126,6 +126,31 @@ class QRModel
     }
     
     /**
+     * Get ALL QR codes for a user (including deleted)
+     * Used for analytics to show complete history
+     * 
+     * @param int $userId User ID
+     * @param int $limit Number of records to fetch
+     * @param int $offset Offset for pagination
+     * @return array QR codes
+     */
+    public function getAllByUser(int $userId, int $limit = 50, int $offset = 0): array
+    {
+        $sql = "SELECT * FROM qr_codes 
+                WHERE user_id = ?
+                ORDER BY created_at DESC 
+                LIMIT ? OFFSET ?";
+        
+        try {
+            $results = $this->db->fetchAll($sql, [$userId, $limit, $offset]);
+            return $results ?: [];
+        } catch (\Exception $e) {
+            \Core\Logger::error('Failed to fetch all QR codes: ' . $e->getMessage());
+            return [];
+        }
+    }
+    
+    /**
      * Count QR codes by user
      */
     public function countByUser(int $userId): int

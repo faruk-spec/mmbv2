@@ -176,7 +176,13 @@
                             <td><strong><?= number_format($qr['scan_count'] ?? 0) ?></strong></td>
                             <td><?= date('M d, Y', strtotime($qr['created_at'])) ?></td>
                             <td><?= $qr['last_scanned_at'] ? date('M d, Y', strtotime($qr['last_scanned_at'])) : 'Never' ?></td>
-                            <td><span class="status-badge status-<?= $qr['status'] ?>"><?= ucfirst($qr['status']) ?></span></td>
+                            <td>
+                                <?php if (!empty($qr['deleted_at'])): ?>
+                                    <span class="status-badge" style="background: #ef4444; color: white;">Deleted</span>
+                                <?php else: ?>
+                                    <span class="status-badge status-<?= $qr['status'] ?>"><?= ucfirst($qr['status']) ?></span>
+                                <?php endif; ?>
+                            </td>
                             <td>
                                 <?php if (empty($qr['deleted_at'])): ?>
                                     <a href="/projects/qr/view/<?= $qr['id'] ?>" class="btn btn-secondary btn-sm icon-only-btn" title="View QR Code" style="font-size: 0.75rem; padding: 0.375rem 0.75rem;">
