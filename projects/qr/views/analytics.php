@@ -4,6 +4,67 @@
  */
 ?>
 
+<style>
+/* Mobile Responsive Styles for Analytics */
+@media (max-width: 768px) {
+    /* Stack stat cards vertically on mobile */
+    .grid-3 {
+        grid-template-columns: 1fr !important;
+    }
+    
+    /* Make controls responsive */
+    .analytics-controls {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+    
+    /* Table responsive */
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .data-table {
+        font-size: 0.875rem;
+    }
+    
+    /* Pagination responsive */
+    .pagination-wrapper {
+        flex-direction: column !important;
+        text-align: center;
+    }
+    
+    .pagination-controls {
+        justify-content: center !important;
+        flex-wrap: wrap;
+    }
+    
+    /* Hide less important columns on small screens */
+    @media (max-width: 640px) {
+        .hide-on-mobile {
+            display: none !important;
+        }
+        
+        .stat-card {
+            padding: 1rem !important;
+        }
+        
+        .stat-icon {
+            width: 40px !important;
+            height: 40px !important;
+            font-size: 1.25rem !important;
+        }
+    }
+}
+
+/* Improve button styling */
+.btn-secondary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: all 0.2s ease;
+}
+</style>
+
 <!-- Stats Overview -->
 <div class="grid grid-3" style="gap: 20px; margin-bottom: 30px;">
     <div class="glass-card stat-card">
@@ -39,7 +100,7 @@
 
 <!-- Recent Activity -->
 <div class="glass-card">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg); flex-wrap: wrap; gap: var(--space-md);">
+    <div class="analytics-controls" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg); flex-wrap: wrap; gap: var(--space-md);">
         <h3 class="section-title" style="margin-bottom: 0;">
             <i class="fas fa-history"></i> Recent QR Codes
         </h3>
