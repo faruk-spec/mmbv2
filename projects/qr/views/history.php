@@ -8,6 +8,96 @@ if ($userId) {
 }
 ?>
 
+<style>
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+    /* Make controls stack vertically on mobile */
+    .controls-wrapper {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+    
+    /* Make table scrollable horizontally on mobile */
+    .table-scroll {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Reduce min-width for mobile */
+    .history-table {
+        min-width: 100% !important;
+        font-size: 0.875rem;
+    }
+    
+    /* Stack action buttons vertically */
+    .action-buttons {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+    
+    .action-buttons > * {
+        width: 100% !important;
+        justify-content: center;
+    }
+    
+    /* Make pagination stack on mobile */
+    .pagination-wrapper {
+        flex-direction: column !important;
+        gap: 15px !important;
+    }
+    
+    /* Adjust button sizes for mobile */
+    .btn-sm {
+        padding: 0.5rem !important;
+        font-size: 0.875rem !important;
+    }
+    
+    /* Hide less important columns on small screens */
+    @media (max-width: 640px) {
+        .hide-on-mobile {
+            display: none !important;
+        }
+    }
+}
+
+/* Action button improvements */
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.action-buttons .btn {
+    transition: all 0.2s ease;
+}
+
+.action-buttons .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+/* Improve button styling */
+.btn-info {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: white;
+}
+
+.btn-info:hover {
+    opacity: 0.9;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border: none;
+    color: white;
+}
+
+.btn-success:hover {
+    opacity: 0.9;
+}
+</style>
+
 <div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
     <h1 style="margin: 0;">QR Code History</h1>
     <a href="/projects/qr" class="btn btn-secondary">
@@ -30,7 +120,7 @@ if ($userId) {
         </div>
     <?php else: ?>
         <!-- Controls -->
-        <div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+        <div class="controls-wrapper" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
             <form method="POST" action="/projects/qr/bulk-delete" id="bulkDeleteForm" style="display: flex; align-items: center; gap: 10px;">
                 <input type="hidden" name="_csrf_token" value="<?= \Core\Security::generateCsrfToken() ?>">
                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
@@ -56,8 +146,8 @@ if ($userId) {
             </div>
         </div>
         
-        <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
-            <table style="width: 100%; border-collapse: collapse; min-width: 80rem;">
+        <div class="table-scroll" style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+            <table class="history-table" style="width: 100%; border-collapse: collapse; min-width: 80rem;">
                 <thead>
                     <tr style="border-bottom: 2px solid var(--border-color);">
                         <th style="padding: 0.75rem; text-align: left; width: 3rem;"></th>
@@ -112,7 +202,7 @@ if ($userId) {
                             <td style="padding: 0.75rem;">
                                 <?php if (!empty($qr['password_hash'])): ?>
                                     <span style="background: rgba(239, 68, 68, 0.1); color: #dc2626; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem;">
-                                        🔒 Protected
+                                        <i class="fas fa-lock"></i> Protected
                                     </span>
                                 <?php else: ?>
                                     <span style="color: var(--text-secondary); font-size: 0.75rem;">None</span>
@@ -136,32 +226,36 @@ if ($userId) {
                                 <?= date('M j, Y', strtotime($qr['created_at'])) ?>
                             </td>
                             <td style="padding: 0.75rem;">
-                                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                <div class="action-buttons" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                                     <a href="/projects/qr/view/<?= $qr['id'] ?>" 
-                                       class="btn btn-secondary" 
-                                       style="padding: 0.375rem 0.75rem; font-size: 0.75rem; text-decoration: none;">
-                                        👁️ View
+                                       class="btn btn-secondary btn-sm" 
+                                       title="View QR Code"
+                                       style="padding: 0.5rem 0.75rem; text-decoration: none;">
+                                        <i class="fas fa-eye"></i> View
                                     </a>
                                     <?php if ($qr['is_dynamic'] ?? false): ?>
                                     <a href="/projects/qr/edit/<?= $qr['id'] ?>" 
-                                       class="btn btn-secondary" 
-                                       style="padding: 0.375rem 0.75rem; font-size: 0.75rem; text-decoration: none; background: rgba(0, 123, 255, 0.1); border-color: #007bff; color: #007bff;">
-                                        ✏️ Edit
+                                       class="btn btn-info btn-sm" 
+                                       title="Edit QR Code"
+                                       style="padding: 0.5rem 0.75rem; text-decoration: none;">
+                                        <i class="fas fa-edit"></i> Edit
                                     </a>
                                     <?php endif; ?>
                                     <button onclick="downloadQRCode(<?= $qr['id'] ?>)" 
-                                            class="btn btn-secondary" 
-                                            style="padding: 0.375rem 0.75rem; font-size: 0.75rem;">
-                                        📥 Download
+                                            class="btn btn-success btn-sm" 
+                                            title="Download QR Code"
+                                            style="padding: 0.5rem 0.75rem;">
+                                        <i class="fas fa-download"></i> Download
                                     </button>
                                     <form method="POST" action="/projects/qr/delete" style="display: inline;">
                                         <input type="hidden" name="_csrf_token" value="<?= \Core\Security::generateCsrfToken() ?>">
                                         <input type="hidden" name="id" value="<?= $qr['id'] ?>">
                                         <button type="submit" 
                                                 onclick="return confirm('Are you sure you want to delete this QR code?')" 
-                                                class="btn btn-danger" 
-                                                style="padding: 0.375rem 0.75rem; font-size: 0.75rem;">
-                                            🗑️ Delete
+                                                class="btn btn-danger btn-sm" 
+                                                title="Delete QR Code"
+                                                style="padding: 0.5rem 0.75rem;">
+                                            <i class="fas fa-trash"></i> Delete
                                         </button>
                                     </form>
                                 </div>
@@ -174,7 +268,7 @@ if ($userId) {
         
         <!-- Pagination -->
         <?php if ($totalPages > 1): ?>
-        <div style="margin-top: 20px; display: flex; justify-content: center; align-items: center; gap: 10px;">
+        <div class="pagination-wrapper" style="margin-top: 20px; display: flex; justify-content: center; align-items: center; gap: 10px;">
             <?php if ($currentPage > 1): ?>
                 <a href="?page=<?= $currentPage - 1 ?>&per_page=<?= $perPage ?>" class="btn btn-secondary btn-sm">
                     <i class="fas fa-chevron-left"></i> Previous
@@ -265,7 +359,12 @@ function toggleBulkDeleteBtn() {
 function confirmBulkDelete() {
     const checked = document.querySelectorAll('.qr-checkbox:checked').length;
     if (checked === 0) {
-        alert('Please select QR codes to delete');
+        // Show a styled notification instead of alert
+        const msg = document.createElement('div');
+        msg.textContent = 'No QR codes selected. Please select at least one QR code to delete.';
+        msg.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #ef4444; color: white; padding: 15px 20px; border-radius: 8px; z-index: 9999; box-shadow: 0 4px 6px rgba(0,0,0,0.1);';
+        document.body.appendChild(msg);
+        setTimeout(() => msg.remove(), 3000);
         return;
     }
     
