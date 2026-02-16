@@ -28,6 +28,15 @@
         <button class="settings-tab active" onclick="switchTab('defaults')" id="tab-defaults">
             <i class="fas fa-qrcode"></i> Defaults
         </button>
+        <button class="settings-tab" onclick="switchTab('design')" id="tab-design">
+            <i class="fas fa-paint-brush"></i> Design
+        </button>
+        <button class="settings-tab" onclick="switchTab('logo')" id="tab-logo">
+            <i class="fas fa-image"></i> Logo
+        </button>
+        <button class="settings-tab" onclick="switchTab('advanced')" id="tab-advanced">
+            <i class="fas fa-sliders-h"></i> Advanced
+        </button>
         <button class="settings-tab" onclick="switchTab('preferences')" id="tab-preferences">
             <i class="fas fa-cog"></i> Preferences
         </button>
@@ -109,6 +118,160 @@
             </div>
         </div>
         </div><!-- End Defaults Tab -->
+        
+        <!-- Tab Content: Design Defaults -->
+        <div class="tab-content" id="content-design">
+        <div class="settings-section">
+            <h4 class="settings-heading">
+                <i class="fas fa-paint-brush"></i> Design Defaults
+            </h4>
+            <p class="settings-description">
+                Set default design styles for QR code generation. These will be applied automatically.
+            </p>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Corner Style</label>
+                    <select name="default_corner_style" class="form-select">
+                        <option value="square" <?= ($settings['default_corner_style'] ?? 'square') == 'square' ? 'selected' : '' ?>>Square</option>
+                        <option value="extra-rounded" <?= ($settings['default_corner_style'] ?? '') == 'extra-rounded' ? 'selected' : '' ?>>Extra Rounded</option>
+                        <option value="dot" <?= ($settings['default_corner_style'] ?? '') == 'dot' ? 'selected' : '' ?>>Dot</option>
+                    </select>
+                    <small class="form-help">Style for the outer corner elements of the QR code</small>
+                </div>
+                
+                <div class="form-group">
+                    <label>Dot Style</label>
+                    <select name="default_dot_style" class="form-select">
+                        <option value="dots" <?= ($settings['default_dot_style'] ?? 'square') == 'dots' ? 'selected' : '' ?>>Dots</option>
+                        <option value="rounded" <?= ($settings['default_dot_style'] ?? 'square') == 'rounded' ? 'selected' : '' ?>>Rounded</option>
+                        <option value="square" <?= ($settings['default_dot_style'] ?? 'square') == 'square' ? 'selected' : '' ?>>Square</option>
+                        <option value="classy" <?= ($settings['default_dot_style'] ?? '') == 'classy' ? 'selected' : '' ?>>Classy</option>
+                        <option value="classy-rounded" <?= ($settings['default_dot_style'] ?? '') == 'classy-rounded' ? 'selected' : '' ?>>Classy Rounded</option>
+                    </select>
+                    <small class="form-help">Pattern style for the QR code dots</small>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Marker Border Style</label>
+                    <select name="default_marker_border_style" class="form-select">
+                        <option value="square" <?= ($settings['default_marker_border_style'] ?? 'square') == 'square' ? 'selected' : '' ?>>Square</option>
+                        <option value="extra-rounded" <?= ($settings['default_marker_border_style'] ?? '') == 'extra-rounded' ? 'selected' : '' ?>>Extra Rounded</option>
+                        <option value="dot" <?= ($settings['default_marker_border_style'] ?? '') == 'dot' ? 'selected' : '' ?>>Dot</option>
+                    </select>
+                    <small class="form-help">Style for the border of corner markers</small>
+                </div>
+                
+                <div class="form-group">
+                    <label>Marker Center Style</label>
+                    <select name="default_marker_center_style" class="form-select">
+                        <option value="square" <?= ($settings['default_marker_center_style'] ?? 'square') == 'square' ? 'selected' : '' ?>>Square</option>
+                        <option value="extra-rounded" <?= ($settings['default_marker_center_style'] ?? '') == 'extra-rounded' ? 'selected' : '' ?>>Extra Rounded</option>
+                        <option value="dot" <?= ($settings['default_marker_center_style'] ?? '') == 'dot' ? 'selected' : '' ?>>Dot</option>
+                    </select>
+                    <small class="form-help">Style for the center of corner markers</small>
+                </div>
+            </div>
+        </div>
+        </div><!-- End Design Tab -->
+        
+        <!-- Tab Content: Logo Defaults -->
+        <div class="tab-content" id="content-logo">
+        <div class="settings-section">
+            <h4 class="settings-heading">
+                <i class="fas fa-image"></i> Logo Defaults
+            </h4>
+            <p class="settings-description">
+                Configure default settings for logos in QR codes.
+            </p>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Default Logo Color</label>
+                    <input type="color" name="default_logo_color" 
+                           value="<?= $settings['default_logo_color'] ?? '#9945ff' ?>" 
+                           class="form-control color-input">
+                    <small class="form-help">Default color for logo elements</small>
+                </div>
+                
+                <div class="form-group">
+                    <label>Default Logo Size</label>
+                    <input type="range" name="default_logo_size" 
+                           value="<?= $settings['default_logo_size'] ?? 0.30 ?>" 
+                           min="0.1" max="0.5" step="0.01" 
+                           class="form-control" 
+                           oninput="this.nextElementSibling.textContent = this.value">
+                    <small class="form-help">Size: <span><?= $settings['default_logo_size'] ?? 0.30 ?></span> (0.1 = 10%, 0.5 = 50%)</small>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" name="default_logo_remove_bg" 
+                           <?= ($settings['default_logo_remove_bg'] ?? 0) ? 'checked' : '' ?>>
+                    <span>Remove background behind logo by default</span>
+                </label>
+                <small class="form-help">Clear the background behind the logo for better visibility</small>
+            </div>
+        </div>
+        </div><!-- End Logo Tab -->
+        
+        <!-- Tab Content: Advanced Defaults -->
+        <div class="tab-content" id="content-advanced">
+        <div class="settings-section">
+            <h4 class="settings-heading">
+                <i class="fas fa-sliders-h"></i> Advanced Defaults
+            </h4>
+            <p class="settings-description">
+                Advanced QR code generation settings for power users.
+            </p>
+            
+            <div class="form-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" name="default_gradient_enabled" id="gradientEnabled"
+                           <?= ($settings['default_gradient_enabled'] ?? 0) ? 'checked' : '' ?>>
+                    <span>Enable gradient by default</span>
+                </label>
+                <small class="form-help">Apply a gradient effect to the QR code foreground</small>
+            </div>
+            
+            <div class="form-group" id="gradientColorGroup" style="<?= ($settings['default_gradient_enabled'] ?? 0) ? '' : 'display: none;' ?>">
+                <label>Default Gradient Color</label>
+                <input type="color" name="default_gradient_color" 
+                       value="<?= $settings['default_gradient_color'] ?? '#9945ff' ?>" 
+                       class="form-control color-input">
+                <small class="form-help">End color for the gradient effect</small>
+            </div>
+            
+            <div class="form-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" name="default_transparent_bg" 
+                           <?= ($settings['default_transparent_bg'] ?? 0) ? 'checked' : '' ?>>
+                    <span>Transparent background by default</span>
+                </label>
+                <small class="form-help">Generate QR codes with transparent backgrounds</small>
+            </div>
+            
+            <div class="form-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" name="default_custom_marker_color" id="customMarkerColor"
+                           <?= ($settings['default_custom_marker_color'] ?? 0) ? 'checked' : '' ?>>
+                    <span>Enable custom marker color by default</span>
+                </label>
+                <small class="form-help">Use a different color for corner markers</small>
+            </div>
+            
+            <div class="form-group" id="markerColorGroup" style="<?= ($settings['default_custom_marker_color'] ?? 0) ? '' : 'display: none;' ?>">
+                <label>Default Marker Color</label>
+                <input type="color" name="default_marker_color" 
+                       value="<?= $settings['default_marker_color'] ?? '#9945ff' ?>" 
+                       class="form-control color-input">
+                <small class="form-help">Color for the corner markers when custom color is enabled</small>
+            </div>
+        </div>
+        </div><!-- End Advanced Tab -->
         
         <!-- Tab Content: Preferences -->
         <div class="tab-content" id="content-preferences">
@@ -433,6 +596,16 @@ function switchTab(tabName) {
 // Toggle threshold input based on email notifications
 document.getElementById('emailNotifications')?.addEventListener('change', function() {
     document.getElementById('thresholdGroup').style.display = this.checked ? 'block' : 'none';
+});
+
+// Toggle gradient color input based on gradient enabled
+document.getElementById('gradientEnabled')?.addEventListener('change', function() {
+    document.getElementById('gradientColorGroup').style.display = this.checked ? 'block' : 'none';
+});
+
+// Toggle marker color input based on custom marker color
+document.getElementById('customMarkerColor')?.addEventListener('change', function() {
+    document.getElementById('markerColorGroup').style.display = this.checked ? 'block' : 'none';
 });
 
 function copyApiKey() {

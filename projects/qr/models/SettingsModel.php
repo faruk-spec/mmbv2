@@ -58,6 +58,22 @@ class SettingsModel
             'default_error_correction' => 'H',
             'default_frame_style' => 'none',
             'default_download_format' => 'png',
+            // Design defaults
+            'default_corner_style' => 'square',
+            'default_dot_style' => 'square',
+            'default_marker_border_style' => 'square',
+            'default_marker_center_style' => 'square',
+            // Logo defaults
+            'default_logo_color' => '#9945ff',
+            'default_logo_size' => 0.30,
+            'default_logo_remove_bg' => 0,
+            // Advanced defaults
+            'default_gradient_enabled' => 0,
+            'default_gradient_color' => '#9945ff',
+            'default_transparent_bg' => 0,
+            'default_custom_marker_color' => 0,
+            'default_marker_color' => '#9945ff',
+            // Preferences
             'auto_save' => 1,
             'email_notifications' => 0,
             'scan_notification_threshold' => 10,
@@ -98,9 +114,14 @@ class SettingsModel
             user_id, default_size, default_foreground_color, 
             default_background_color, default_error_correction, 
             default_frame_style, default_download_format,
+            default_corner_style, default_dot_style,
+            default_marker_border_style, default_marker_center_style,
+            default_logo_color, default_logo_size, default_logo_remove_bg,
+            default_gradient_enabled, default_gradient_color,
+            default_transparent_bg, default_custom_marker_color, default_marker_color,
             auto_save, email_notifications, scan_notification_threshold,
             created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
         
         $params = [
             $userId,
@@ -110,6 +131,22 @@ class SettingsModel
             $data['default_error_correction'] ?? 'H',
             $data['default_frame_style'] ?? 'none',
             $data['default_download_format'] ?? 'png',
+            // Design defaults
+            $data['default_corner_style'] ?? 'square',
+            $data['default_dot_style'] ?? 'square',
+            $data['default_marker_border_style'] ?? 'square',
+            $data['default_marker_center_style'] ?? 'square',
+            // Logo defaults
+            $data['default_logo_color'] ?? '#9945ff',
+            $data['default_logo_size'] ?? 0.30,
+            isset($data['default_logo_remove_bg']) ? 1 : 0,
+            // Advanced defaults
+            isset($data['default_gradient_enabled']) ? 1 : 0,
+            $data['default_gradient_color'] ?? '#9945ff',
+            isset($data['default_transparent_bg']) ? 1 : 0,
+            isset($data['default_custom_marker_color']) ? 1 : 0,
+            $data['default_marker_color'] ?? '#9945ff',
+            // Preferences
             $data['auto_save'] ?? 1,
             $data['email_notifications'] ?? 0,
             $data['scan_notification_threshold'] ?? 10
@@ -140,6 +177,18 @@ class SettingsModel
             default_error_correction = ?,
             default_frame_style = ?,
             default_download_format = ?,
+            default_corner_style = ?,
+            default_dot_style = ?,
+            default_marker_border_style = ?,
+            default_marker_center_style = ?,
+            default_logo_color = ?,
+            default_logo_size = ?,
+            default_logo_remove_bg = ?,
+            default_gradient_enabled = ?,
+            default_gradient_color = ?,
+            default_transparent_bg = ?,
+            default_custom_marker_color = ?,
+            default_marker_color = ?,
             auto_save = ?,
             email_notifications = ?,
             scan_notification_threshold = ?,
@@ -153,6 +202,22 @@ class SettingsModel
             $data['default_error_correction'] ?? 'H',
             $data['default_frame_style'] ?? 'none',
             $data['default_download_format'] ?? 'png',
+            // Design defaults
+            $data['default_corner_style'] ?? 'square',
+            $data['default_dot_style'] ?? 'square',
+            $data['default_marker_border_style'] ?? 'square',
+            $data['default_marker_center_style'] ?? 'square',
+            // Logo defaults
+            $data['default_logo_color'] ?? '#9945ff',
+            $data['default_logo_size'] ?? 0.30,
+            isset($data['default_logo_remove_bg']) ? 1 : 0,
+            // Advanced defaults
+            isset($data['default_gradient_enabled']) ? 1 : 0,
+            $data['default_gradient_color'] ?? '#9945ff',
+            isset($data['default_transparent_bg']) ? 1 : 0,
+            isset($data['default_custom_marker_color']) ? 1 : 0,
+            $data['default_marker_color'] ?? '#9945ff',
+            // Preferences
             $data['auto_save'] ?? 1,
             $data['email_notifications'] ?? 0,
             $data['scan_notification_threshold'] ?? 10,
