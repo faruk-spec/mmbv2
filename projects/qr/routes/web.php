@@ -90,6 +90,18 @@ switch ($segments[0]) {
         $controller->delete();
         break;
         
+    case 'bulk-delete':
+        require_once PROJECT_PATH . '/controllers/QRController.php';
+        $controller = new \Projects\QR\Controllers\QRController();
+        $controller->bulkDelete();
+        break;
+        
+    case 'update-campaign':
+        require_once PROJECT_PATH . '/controllers/QRController.php';
+        $controller = new \Projects\QR\Controllers\QRController();
+        $controller->updateCampaign();
+        break;
+        
     case 'scan':
     case 'access':
         // Handle QR code scanning/access with password and expiry verification

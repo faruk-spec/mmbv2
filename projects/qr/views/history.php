@@ -1,6 +1,197 @@
-<a href="/projects/qr" class="back-link">← Back to Dashboard</a>
+<?php
+// Fetch campaigns for dropdown
+$campaigns = [];
+$userId = \Core\Auth::id();
+if ($userId) {
+    $db = \Core\Database::getInstance();
+    $campaigns = $db->fetchAll("SELECT id, name FROM qr_campaigns WHERE user_id = ? ORDER BY name", [$userId]);
+}
+?>
 
-<h1 style="margin-bottom: 30px;">QR Code History</h1>
+<style>
+/* Table scroll container - CRITICAL for horizontal scrolling */
+.table-scroll {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    /* Ensure scrolling works on all devices */
+    overflow-y: visible;
+    /* Add subtle border to indicate scrollable area */
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    background: var(--bg-secondary);
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+    /* Make controls stack vertically on mobile */
+    .controls-wrapper {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+    
+    /* Enhanced mobile table scrolling */
+    .table-scroll {
+        display: block;
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        overflow-x: auto !important;
+        overflow-y: visible;
+    }
+    
+    /* Table stays at min-width to enable scrolling */
+    .history-table {
+        font-size: 0.875rem;
+    }
+    
+    /* Add scroll hint text */
+    .scroll-hint {
+        display: block !important;
+        text-align: center;
+        padding: 0.5rem;
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        background: var(--background-tertiary);
+        border-radius: 0.375rem;
+        margin-bottom: 1rem;
+    }
+    
+    /* Stack action buttons vertically */
+    .action-buttons {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+    
+    .action-buttons > * {
+        width: 100% !important;
+        justify-content: center;
+    }
+    
+    /* Make pagination stack on mobile */
+    .pagination-wrapper {
+        flex-direction: column !important;
+        gap: 15px !important;
+    }
+    
+    /* Adjust button sizes for mobile */
+    .btn-sm {
+        padding: 0.5rem !important;
+        font-size: 0.875rem !important;
+    }
+    
+    /* Hide less important columns on small screens */
+    @media (max-width: 640px) {
+        .hide-on-mobile {
+            display: none !important;
+        }
+    }
+    
+    /* Mobile optimization for action buttons */
+    .icon-only-btn {
+        min-width: 2rem !important;
+        width: 2rem !important;
+        height: 2rem !important;
+        padding: 0.25rem !important;
+    }
+    
+    .icon-only-btn i {
+        font-size: 0.75rem !important;
+    }
+    
+    /* Keep action buttons in single line */
+    td:last-child {
+        white-space: nowrap !important;
+    }
+    
+    /* Reduce gap between action buttons */
+    .action-buttons {
+        gap: 0.25rem !important;
+        flex-wrap: nowrap !important;
+    }
+}
+
+/* Action button improvements */
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: nowrap;
+}
+
+.action-buttons .btn {
+    transition: all 0.2s ease;
+}
+
+.action-buttons .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+/* Icon-only button styling */
+.icon-only-btn {
+    min-width: 2.5rem;
+    position: relative;
+}
+
+/* Enhanced tooltip styling */
+.icon-only-btn:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-8px);
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 1000;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.icon-only-btn:hover::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-2px);
+    border: 5px solid transparent;
+    border-top-color: rgba(0, 0, 0, 0.9);
+    pointer-events: none;
+    z-index: 1000;
+}
+
+/* Improve button styling */
+.btn-info {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: white;
+}
+
+.btn-info:hover {
+    opacity: 0.9;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border: none;
+    color: white;
+}
+
+.btn-success:hover {
+    opacity: 0.9;
+}
+</style>
+
+<div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: nowrap; gap: 15px;">
+    <h1 style="margin: 0;">QR Code History</h1>
+    <a href="/projects/qr" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Back to Dashboard
+    </a>
+</div>
 
 <div class="card">
     <?php if (empty($history)): ?>
@@ -16,72 +207,148 @@
             <a href="/projects/qr/generate" class="btn btn-primary">Generate Your First QR Code</a>
         </div>
     <?php else: ?>
-        <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
-            <table style="width: 100%; border-collapse: collapse; min-width: 60rem; table-layout: fixed;">
+        <!-- Controls -->
+        <div class="controls-wrapper" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: nowrap; gap: 15px;">
+            <form method="POST" action="/projects/qr/bulk-delete" id="bulkDeleteForm" style="display: flex; align-items: center; gap: 10px;">
+                <input type="hidden" name="_csrf_token" value="<?= \Core\Security::generateCsrfToken() ?>">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" id="selectAll" style="width: 18px; height: 18px; cursor: pointer;">
+                    <span style="font-size: 0.875rem; color: var(--text-secondary);">Select All</span>
+                </label>
+                <button type="button" onclick="confirmBulkDelete()" class="btn btn-danger btn-sm" id="bulkDeleteBtn" style="display: none;">
+                    <i class="fas fa-trash"></i> Delete Selected
+                </button>
+            </form>
+            
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <label style="font-size: 0.875rem; color: var(--text-secondary);">Show:</label>
+                <select onchange="changePerPage(this.value)" class="form-select" style="width: auto; padding: 0.5rem 2rem 0.5rem 0.75rem;">
+                    <option value="10" <?= $perPage == 10 ? 'selected' : '' ?>>10</option>
+                    <option value="25" <?= $perPage == 25 ? 'selected' : '' ?>>25</option>
+                    <option value="50" <?= $perPage == 50 ? 'selected' : '' ?>>50</option>
+                    <option value="100" <?= $perPage == 100 ? 'selected' : '' ?>>100</option>
+                </select>
+                <span style="font-size: 0.875rem; color: var(--text-secondary);">
+                    Showing <?= $offset + 1 ?>-<?= min($offset + $perPage, $totalCount) ?> of <?= number_format($totalCount) ?>
+                </span>
+            </div>
+        </div>
+        
+        <!-- Mobile scroll hint -->
+        <div class="scroll-hint" style="display: none;">
+            <i class="fas fa-arrows-alt-h"></i> Swipe left/right to view all columns
+        </div>
+        
+        <div class="table-scroll" style="display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; border: 1px solid var(--border-color); border-radius: 0.5rem; background: var(--bg-secondary);">
+            <table class="history-table" style="width: 100%; border-collapse: collapse; min-width: 80rem;">
                 <thead>
                     <tr style="border-bottom: 2px solid var(--border-color);">
-                        <th style="padding: 0.75rem; text-align: left; color: var(--text-secondary); font-weight: 600; width: 5rem; white-space: nowrap;">Preview</th>
-                        <th style="padding: 0.75rem; text-align: left; color: var(--text-secondary); font-weight: 600; width: 20rem; white-space: nowrap;">Content</th>
-                        <th style="padding: 0.75rem; text-align: left; color: var(--text-secondary); font-weight: 600; width: 6rem; white-space: nowrap;">Type</th>
-                        <th style="padding: 0.75rem; text-align: left; color: var(--text-secondary); font-weight: 600; width: 5rem; white-space: nowrap;">Size</th>
-                        <th style="padding: 0.75rem; text-align: left; color: var(--text-secondary); font-weight: 600; width: 5rem; white-space: nowrap;">Scans</th>
-                        <th style="padding: 0.75rem; text-align: left; color: var(--text-secondary); font-weight: 600; width: 8rem; white-space: nowrap;">Created</th>
-                        <th style="padding: 0.75rem; text-align: left; color: var(--text-secondary); font-weight: 600; width: 14rem; white-space: nowrap;">Actions</th>
+                        <th style="padding: 0.75rem; text-align: left; width: 3rem;"></th>
+                        <th style="padding: 0.75rem; text-align: left; width: 5rem;">Preview</th>
+                        <th style="padding: 0.75rem; text-align: left; width: 15rem;">Content</th>
+                        <th style="padding: 0.75rem; text-align: left; width: 6rem;">Type</th>
+                        <th style="padding: 0.75rem; text-align: left; width: 5rem;">Size</th>
+                        <th style="padding: 0.75rem; text-align: left; width: 5rem;">Scans</th>
+                        <th style="padding: 0.75rem; text-align: left; width: 8rem;">Campaign</th>
+                        <th style="padding: 0.75rem; text-align: left; width: 7rem;">Password</th>
+                        <th style="padding: 0.75rem; text-align: left; width: 8rem;">Expiry</th>
+                        <th style="padding: 0.75rem; text-align: left; width: 8rem;">Created</th>
+                        <th style="padding: 0.75rem; text-align: left; width: 14rem;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php foreach ($history as $qr): ?>
                         <tr style="border-bottom: 1px solid var(--border-color);">
-                            <td data-label="Preview" style="padding: 0.75rem; white-space: nowrap;">
+                            <td style="padding: 0.75rem;">
+                                <input type="checkbox" name="qr_ids[]" value="<?= $qr['id'] ?>" class="qr-checkbox" form="bulkDeleteForm" style="width: 18px; height: 18px; cursor: pointer;">
+                            </td>
+                            <td style="padding: 0.75rem;">
                                 <div style="background: white; padding: 0.5rem; border-radius: 0.25rem; display: inline-block;">
                                     <div id="qr-<?= $qr['id'] ?>" style="width: 3.75rem; height: 3.75rem;"></div>
                                 </div>
                             </td>
-                            <td data-label="Content" style="padding: 0.75rem; max-width: 20rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" 
+                            <td style="padding: 0.75rem; max-width: 15rem; overflow: hidden; text-overflow: ellipsis;" 
                                 title="<?= htmlspecialchars($qr['content']) ?>">
-                                <?= htmlspecialchars(substr($qr['content'], 0, 50)) ?><?= strlen($qr['content']) > 50 ? '...' : '' ?>
+                                <?= htmlspecialchars(substr($qr['content'], 0, 40)) ?><?= strlen($qr['content']) > 40 ? '...' : '' ?>
                             </td>
-                            <td data-label="Type" style="padding: 0.75rem; white-space: nowrap;">
+                            <td style="padding: 0.75rem;">
                                 <span style="background: var(--bg-secondary); padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem;">
                                     <?= ucfirst(htmlspecialchars($qr['type'])) ?>
                                 </span>
                             </td>
-                            <td data-label="Size" style="padding: 0.75rem; white-space: nowrap;">
+                            <td style="padding: 0.75rem;">
                                 <?= htmlspecialchars($qr['size'] ?? 200) ?>px
                             </td>
-                            <td data-label="Scans" style="padding: 0.75rem; white-space: nowrap;">
+                            <td style="padding: 0.75rem;">
                                 <?= (int)($qr['scan_count'] ?? 0) ?>
                             </td>
-                            <td data-label="Created" style="padding: 0.75rem; color: var(--text-secondary); font-size: 0.875rem; white-space: nowrap;">
+                            <td style="padding: 0.75rem;">
+                                <select onchange="updateCampaign(<?= $qr['id'] ?>, this.value)" class="form-select" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">
+                                    <option value="">None</option>
+                                    <?php foreach ($campaigns as $campaign): ?>
+                                        <option value="<?= $campaign['id'] ?>" <?= ($qr['campaign_id'] ?? 0) == $campaign['id'] ? 'selected' : '' ?>>
+                                            <?= htmlspecialchars($campaign['name']) ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </td>
+                            <td style="padding: 0.75rem;">
+                                <?php if (!empty($qr['password_hash'])): ?>
+                                    <span style="background: rgba(239, 68, 68, 0.1); color: #dc2626; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem;">
+                                        <i class="fas fa-lock"></i> Protected
+                                    </span>
+                                <?php else: ?>
+                                    <span style="color: var(--text-secondary); font-size: 0.75rem;">None</span>
+                                <?php endif; ?>
+                            </td>
+                            <td style="padding: 0.75rem;">
+                                <?php if (!empty($qr['expires_at'])): ?>
+                                    <?php 
+                                    $expiryTime = strtotime($qr['expires_at']);
+                                    $isExpired = $expiryTime < time();
+                                    $color = $isExpired ? '#dc2626' : '#10b981';
+                                    ?>
+                                    <span style="color: <?= $color ?>; font-size: 0.75rem;">
+                                        <?= date('M j, Y', $expiryTime) ?>
+                                    </span>
+                                <?php else: ?>
+                                    <span style="color: var(--text-secondary); font-size: 0.75rem;">Never</span>
+                                <?php endif; ?>
+                            </td>
+                            <td style="padding: 0.75rem; color: var(--text-secondary); font-size: 0.875rem;">
                                 <?= date('M j, Y', strtotime($qr['created_at'])) ?>
                             </td>
-                            <td data-label="Actions" style="padding: 0.75rem; white-space: nowrap;">
-                                <div style="display: flex; gap: 0.5rem; flex-wrap: nowrap;">
+                            <td style="padding: 0.75rem;">
+                                <div class="action-buttons" style="display: flex; gap: 0.5rem; flex-wrap: nowrap;">
                                     <a href="/projects/qr/view/<?= $qr['id'] ?>" 
-                                       class="btn btn-secondary" 
-                                       style="padding: 0.375rem 0.75rem; font-size: 0.75rem; text-decoration: none; white-space: nowrap;">
-                                        👁️ View
+                                       class="btn btn-secondary btn-sm icon-only-btn" 
+                                       title="View QR Code"
+                                       style="padding: 0.5rem 0.75rem; text-decoration: none;">
+                                        <i class="fas fa-eye"></i>
                                     </a>
                                     <?php if ($qr['is_dynamic'] ?? false): ?>
                                     <a href="/projects/qr/edit/<?= $qr['id'] ?>" 
-                                       class="btn btn-secondary" 
-                                       style="padding: 0.375rem 0.75rem; font-size: 0.75rem; text-decoration: none; background: rgba(0, 123, 255, 0.1); border-color: #007bff; color: #007bff; white-space: nowrap;">
-                                        ✏️ Edit
+                                       class="btn btn-info btn-sm icon-only-btn" 
+                                       title="Edit QR Code"
+                                       style="padding: 0.5rem 0.75rem; text-decoration: none;">
+                                        <i class="fas fa-edit"></i>
                                     </a>
                                     <?php endif; ?>
                                     <button onclick="downloadQRCode(<?= $qr['id'] ?>)" 
-                                            class="btn btn-secondary" 
-                                            style="padding: 0.375rem 0.75rem; font-size: 0.75rem; white-space: nowrap;">
-                                        📥 Download
+                                            class="btn btn-success btn-sm icon-only-btn" 
+                                            title="Download QR Code"
+                                            style="padding: 0.5rem 0.75rem;">
+                                        <i class="fas fa-download"></i>
                                     </button>
                                     <form method="POST" action="/projects/qr/delete" style="display: inline;">
                                         <input type="hidden" name="_csrf_token" value="<?= \Core\Security::generateCsrfToken() ?>">
                                         <input type="hidden" name="id" value="<?= $qr['id'] ?>">
                                         <button type="submit" 
-                                                class="btn btn-secondary" 
-                                                style="padding: 0.375rem 0.75rem; font-size: 0.75rem; background: rgba(255, 107, 107, 0.1); border-color: #ff6b6b; color: #ff6b6b; white-space: nowrap;"
-                                                onclick="return confirm('Are you sure you want to delete this QR code?')">
-                                            🗑️ Delete
+                                                onclick="return confirm('Are you sure you want to delete this QR code?')" 
+                                                class="btn btn-danger btn-sm icon-only-btn" 
+                                                title="Delete QR Code"
+                                                style="padding: 0.5rem 0.75rem;">
+                                            <i class="fas fa-trash"></i>
                                         </button>
                                     </form>
                                 </div>
@@ -92,221 +359,138 @@
             </table>
         </div>
         
-        <div style="margin-top: 20px; padding: 15px; background: var(--bg-secondary); border-radius: 8px; text-align: center;">
-            <p style="color: var(--text-secondary); margin: 0;">
-                Total QR Codes: <strong><?= count($history) ?></strong>
-            </p>
+        <!-- Pagination -->
+        <?php if ($totalPages > 1): ?>
+        <div class="pagination-wrapper" style="margin-top: 20px; display: flex; justify-content: center; align-items: center; gap: 10px;">
+            <?php if ($currentPage > 1): ?>
+                <a href="?page=<?= $currentPage - 1 ?>&per_page=<?= $perPage ?>" class="btn btn-secondary btn-sm">
+                    <i class="fas fa-chevron-left"></i> Previous
+                </a>
+            <?php endif; ?>
+            
+            <div style="display: flex; gap: 5px;">
+                <?php 
+                $start = max(1, $currentPage - 2);
+                $end = min($totalPages, $currentPage + 2);
+                
+                if ($start > 1): ?>
+                    <a href="?page=1&per_page=<?= $perPage ?>" class="btn btn-secondary btn-sm">1</a>
+                    <?php if ($start > 2): ?>
+                        <span style="padding: 0.5rem;">...</span>
+                    <?php endif; ?>
+                <?php endif; ?>
+                
+                <?php for ($i = $start; $i <= $end; $i++): ?>
+                    <a href="?page=<?= $i ?>&per_page=<?= $perPage ?>" 
+                       class="btn btn-sm <?= $i == $currentPage ? 'btn-primary' : 'btn-secondary' ?>">
+                        <?= $i ?>
+                    </a>
+                <?php endfor; ?>
+                
+                <?php if ($end < $totalPages): ?>
+                    <?php if ($end < $totalPages - 1): ?>
+                        <span style="padding: 0.5rem;">...</span>
+                    <?php endif; ?>
+                    <a href="?page=<?= $totalPages ?>&per_page=<?= $perPage ?>" class="btn btn-secondary btn-sm"><?= $totalPages ?></a>
+                <?php endif; ?>
+            </div>
+            
+            <?php if ($currentPage < $totalPages): ?>
+                <a href="?page=<?= $currentPage + 1 ?>&per_page=<?= $perPage ?>" class="btn btn-secondary btn-sm">
+                    Next <i class="fas fa-chevron-right"></i>
+                </a>
+            <?php endif; ?>
         </div>
+        <?php endif; ?>
     <?php endif; ?>
 </div>
 
-<!-- QR Code Library -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-
+<script src="https://unpkg.com/qrcode-generator@1.4.4/qrcode.js"></script>
 <script>
-// Generate QR codes for history
+// Generate QR code previews
 <?php foreach ($history as $qr): ?>
-new QRCode(document.getElementById("qr-<?= $qr['id'] ?>"), {
-    text: <?= json_encode($qr['content']) ?>,
-    width: 60,
-    height: 60,
-    colorDark: "<?= htmlspecialchars($qr['foreground_color'] ?? '#000000') ?>",
-    colorLight: "<?= htmlspecialchars($qr['background_color'] ?? '#ffffff') ?>",
-    correctLevel: QRCode.CorrectLevel.H
-});
+(function() {
+    try {
+        const qr = qrcode(0, 'H');
+        qr.addData(<?= json_encode($qr['content']) ?>);
+        qr.make();
+        document.getElementById('qr-<?= $qr['id'] ?>').innerHTML = qr.createImgTag(1);
+    } catch (e) {
+        console.error('Failed to generate QR preview:', e);
+    }
+})();
 <?php endforeach; ?>
 
 // Download QR code
-function downloadQRCode(qrId) {
-    const canvas = document.querySelector('#qr-' + qrId + ' canvas');
-    if (canvas) {
-        const dataUrl = canvas.toDataURL('image/png');
-        const link = document.createElement('a');
-        link.download = 'qr-code-' + qrId + '.png';
-        link.href = dataUrl;
-        link.click();
+function downloadQRCode(id) {
+    window.location.href = '/projects/qr/download?id=' + id;
+}
+
+// Change items per page
+function changePerPage(perPage) {
+    window.location.href = '?page=1&per_page=' + perPage;
+}
+
+// Select all checkboxes
+document.getElementById('selectAll')?.addEventListener('change', function() {
+    const checkboxes = document.querySelectorAll('.qr-checkbox');
+    checkboxes.forEach(cb => cb.checked = this.checked);
+    toggleBulkDeleteBtn();
+});
+
+// Show/hide bulk delete button
+document.querySelectorAll('.qr-checkbox').forEach(cb => {
+    cb.addEventListener('change', toggleBulkDeleteBtn);
+});
+
+function toggleBulkDeleteBtn() {
+    const checked = document.querySelectorAll('.qr-checkbox:checked').length;
+    document.getElementById('bulkDeleteBtn').style.display = checked > 0 ? 'block' : 'none';
+}
+
+// Bulk delete confirmation
+function confirmBulkDelete() {
+    const checked = document.querySelectorAll('.qr-checkbox:checked').length;
+    if (checked === 0) {
+        // Show a styled notification instead of alert
+        const msg = document.createElement('div');
+        msg.textContent = 'No QR codes selected. Please select at least one QR code to delete.';
+        msg.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #ef4444; color: white; padding: 15px 20px; border-radius: 8px; z-index: 9999; box-shadow: 0 4px 6px rgba(0,0,0,0.1);';
+        document.body.appendChild(msg);
+        setTimeout(() => msg.remove(), 3000);
+        return;
     }
+    
+    if (confirm(`Are you sure you want to delete ${checked} QR code(s)?`)) {
+        document.getElementById('bulkDeleteForm').submit();
+    }
+}
+
+// Update campaign assignment
+function updateCampaign(qrId, campaignId) {
+    fetch('/projects/qr/update-campaign', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `_csrf_token=<?= \Core\Security::generateCsrfToken() ?>&qr_id=${qrId}&campaign_id=${campaignId}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success message briefly
+            const msg = document.createElement('div');
+            msg.textContent = data.message;
+            msg.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #10b981; color: white; padding: 15px 20px; border-radius: 8px; z-index: 9999;';
+            document.body.appendChild(msg);
+            setTimeout(() => msg.remove(), 3000);
+        } else {
+            alert(data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to update campaign');
+    });
 }
 </script>
-
-<style>
-/* Responsive History Table Styles */
-
-/* Desktop - Default (> 768px) */
-.qr-history-table {
-    width: 100%;
-}
-
-/* Tablet adjustments (481px - 768px) */
-@media (max-width: 768px) {
-    table {
-        font-size: 0.875rem;
-        min-width: 50rem;
-    }
-    
-    th, td {
-        padding: 0.5rem !important;
-    }
-    
-    th {
-        font-size: 0.75rem;
-    }
-    
-    .btn {
-        padding: 0.25rem 0.5rem !important;
-        font-size: 0.7rem !important;
-    }
-}
-
-/* Mobile - Card Layout (< 481px) */
-@media (max-width: 480px) {
-    /* Hide table, show cards instead */
-    table, thead, tbody, th, td, tr {
-        display: block;
-    }
-    
-    thead tr {
-        position: absolute;
-        top: -9999px;
-        left: -9999px;
-    }
-    
-    tr {
-        margin-bottom: 1.5rem;
-        border: 1px solid var(--border-color);
-        border-radius: 12px;
-        padding: 1rem;
-        background: var(--bg-card);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    }
-    
-    td {
-        border: none;
-        position: relative;
-        padding: 0.75rem 0 !important;
-        border-bottom: 1px solid var(--border-color);
-    }
-    
-    td:last-child {
-        border-bottom: none;
-    }
-    
-    td:before {
-        content: attr(data-label);
-        font-weight: 600;
-        color: var(--text-secondary);
-        display: block;
-        margin-bottom: 0.5rem;
-        font-size: 0.75rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    
-    /* QR Preview - centered and larger on mobile */
-    td:first-child {
-        text-align: center;
-        padding: 1rem 0 !important;
-        border-bottom: 2px solid var(--border-color);
-    }
-    
-    td:first-child:before {
-        content: '';
-        display: none;
-    }
-    
-    td:first-child > div {
-        display: inline-block;
-        padding: 0.75rem;
-    }
-    
-    td:first-child #qr-* {
-        width: 5rem !important;
-        height: 5rem !important;
-    }
-    
-    /* Content - full width */
-    td:nth-child(2) {
-        white-space: normal !important;
-        max-width: 100% !important;
-        word-wrap: break-word;
-    }
-    
-    /* Type badge */
-    td:nth-child(3) span {
-        display: inline-block;
-        padding: 0.375rem 0.75rem;
-        font-size: 0.875rem;
-    }
-    
-    /* Actions - Grid layout for buttons */
-    td:last-child > div {
-        display: grid !important;
-        grid-template-columns: 1fr 1fr;
-        gap: 0.5rem !important;
-        flex-wrap: wrap;
-    }
-    
-    td:last-child .btn {
-        padding: 0.625rem 1rem !important;
-        font-size: 0.875rem !important;
-        white-space: nowrap;
-        width: 100%;
-        min-height: 44px;
-    }
-    
-    /* Edit button spans 2 columns if present */
-    td:last-child a[href*="edit"] {
-        grid-column: 1 / -1;
-    }
-    
-    /* Delete form button full width */
-    td:last-child form {
-        width: 100%;
-        grid-column: 1 / -1;
-    }
-    
-    td:last-child form button {
-        width: 100%;
-    }
-    
-    /* Remove horizontal scroll container on mobile */
-    div[style*="overflow-x"] {
-        overflow-x: visible !important;
-    }
-    
-    /* Empty state adjustments */
-    .card > div[style*="text-align: center"] {
-        padding: 2rem 1rem !important;
-    }
-    
-    .card > div[style*="text-align: center"] svg {
-        width: 48px !important;
-        height: 48px !important;
-    }
-    
-    .card > div[style*="text-align: center"] h3 {
-        font-size: 1.25rem;
-    }
-}
-
-/* Extra small devices (< 360px) */
-@media (max-width: 360px) {
-    tr {
-        padding: 0.75rem;
-    }
-    
-    td {
-        padding: 0.5rem 0 !important;
-    }
-    
-    .btn {
-        padding: 0.5rem 0.75rem !important;
-        font-size: 0.8rem !important;
-    }
-}
-
-/* Smooth transitions for responsive changes */
-table, tr, td, .btn {
-    transition: all 0.3s ease;
-}
-</style>

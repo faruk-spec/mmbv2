@@ -12,6 +12,9 @@
         <form method="POST" action="/projects/qr/generate" id="qrForm" enctype="multipart/form-data">
             <input type="hidden" name="_csrf_token" value="<?= \Core\Security::generateCsrfToken() ?>">
             <input type="hidden" name="qr_data_url" id="qrDataUrl">
+            <?php if (isset($_GET['campaign_id'])): ?>
+            <input type="hidden" name="campaign_id" value="<?= (int)$_GET['campaign_id'] ?>">
+            <?php endif; ?>
             
             <!-- QR Type Selection -->
             <div class="form-group">
@@ -414,7 +417,7 @@
             <!-- Design Options -->
             <h4 class="subsection-title collapsible-header" onclick="toggleSection('designOptions')">
                 <span><i class="fas fa-palette"></i> Design Options</span>
-                <i class="fas fa-chevron-down collapse-icon"></i>
+                <i class="fas fa-chevron-right collapse-icon"></i>
             </h4>
             <div id="designOptions" class="collapsible-content collapsed">
             
@@ -464,17 +467,17 @@
                     <input type="checkbox" name="gradient_enabled" id="gradientEnabled" value="1" class="toggle-input">
                     <span class="toggle-slider"></span>
                     <span class="toggle-text">
-                        <strong>Gradient Foreground</strong>
-                        <small>Apply gradient to foreground color</small>
+                        <strong><i class="fas fa-palette"></i> Gradient Foreground</strong>
+                        <small>Enable smooth color gradient effect</small>
                     </span>
                 </label>
             </div>
             
             <div class="form-group" id="gradientColorGroup" style="display: none;">
-                <label class="form-label">Gradient End Color</label>
+                <label class="form-label"><i class="fas fa-palette"></i> Gradient End Color</label>
                 <input type="color" name="gradient_color" id="gradientColor" value="#9945ff" class="form-input color-input">
-                <small style="display: block; margin-top: 0.25rem; color: var(--text-secondary); font-size: 0.75rem;">
-                    <i class="fas fa-info-circle"></i> Creates a smooth gradient from foreground color to this color.
+                <small class="help-text">
+                    <i class="fas fa-magic"></i> Creates a smooth gradient from foreground color to this color.
                 </small>
             </div>
             
@@ -489,26 +492,6 @@
                     </span>
                 </label>
             </div>
-            
-            <!-- Background Image Upload -->
-            <div class="feature-toggle">
-                <label class="toggle-label">
-                    <input type="checkbox" name="bg_image_enabled" id="bgImageEnabled" value="1" class="toggle-input">
-                    <span class="toggle-slider"></span>
-                    <span class="toggle-text">
-                        <strong>Background Image</strong>
-                        <small>Add custom background image</small>
-                    </span>
-                </label>
-            </div>
-            
-            <div class="form-group" id="bgImageGroup" style="display: none;">
-                <label class="form-label">Upload Background Image</label>
-                <input type="file" name="bg_image" id="bgImage" class="form-input" accept="image/*">
-                <small style="display: block; margin-top: 0.25rem; color: var(--text-secondary); font-size: 0.75rem;">
-                    <i class="fas fa-info-circle"></i> Image appears behind QR pattern at 30% size. Works best with square images or transparent PNGs.
-                </small>
-            </div>
             </div><!-- End Design Options collapsible -->
             
             <div class="divider"></div>
@@ -516,7 +499,7 @@
             <!-- Design Customization with Visual Presets -->
             <h4 class="subsection-title collapsible-header" onclick="toggleSection('designPresets')">
                 <span><i class="fas fa-shapes"></i> Design Presets</span>
-                <i class="fas fa-chevron-down collapse-icon"></i>
+                <i class="fas fa-chevron-right collapse-icon"></i>
             </h4>
             <div id="designPresets" class="collapsible-content collapsed">
             
@@ -733,7 +716,7 @@
             <!-- Logo Options -->
             <h4 class="subsection-title collapsible-header" onclick="toggleSection('logoOptions')">
                 <span><i class="fas fa-image"></i> Logo</span>
-                <i class="fas fa-chevron-down collapse-icon"></i>
+                <i class="fas fa-chevron-right collapse-icon"></i>
             </h4>
             <div id="logoOptions" class="collapsible-content collapsed">
             
@@ -874,6 +857,15 @@
             </div>
             
             <div id="logoOptionsGroup" style="display: none;">
+                <!-- Logo Color Option -->
+                <div class="form-group" id="logoColorOption">
+                    <label class="form-label"><i class="fas fa-palette"></i> Logo Color</label>
+                    <input type="color" name="logo_color" id="logoColor" value="#9945ff" class="form-input color-input">
+                    <small class="help-text">
+                        <i class="fas fa-info-circle"></i> Customize the color of default logo icons. Works with icon logos only.
+                    </small>
+                </div>
+                
                 <!-- Remove Background Toggle -->
                 <div class="feature-toggle">
                     <label class="toggle-label">
@@ -966,38 +958,6 @@
                 <small>This URL can be edited later</small>
             </div>
             
-            <div class="feature-toggle">
-                <label class="toggle-label">
-                    <input type="checkbox" name="has_password" id="hasPassword" value="1" class="toggle-input">
-                    <span class="toggle-slider"></span>
-                    <span class="toggle-text">
-                        <strong>Password Protection</strong>
-                        <small>Require password to scan</small>
-                    </span>
-                </label>
-            </div>
-            
-            <div class="form-group" id="passwordGroup" style="display: none;">
-                <label class="form-label">Password</label>
-                <input type="password" name="password" id="qrPassword" class="form-input" placeholder="Enter password">
-            </div>
-            
-            <div class="feature-toggle">
-                <label class="toggle-label">
-                    <input type="checkbox" name="has_expiry" id="hasExpiry" value="1" class="toggle-input">
-                    <span class="toggle-slider"></span>
-                    <span class="toggle-text">
-                        <strong>Set Expiry Date</strong>
-                        <small>QR code stops working after this date</small>
-                    </span>
-                </label>
-            </div>
-            
-            <div class="form-group" id="expiryGroup" style="display: none;">
-                <label class="form-label">Expires On</label>
-                <input type="datetime-local" name="expires_at" id="expiresAt" class="form-input">
-            </div>
-            
             <div class="divider"></div>
             
             <!-- Action Button -->
@@ -1024,10 +984,13 @@
                             if (typeof QRCodeStyling !== 'undefined') {
                                 try {
                                     const qrDiv = document.getElementById('qrcode');
+                                    // For password/expiry protected QRs, content is already the access URL
+                                    const qrData = <?= json_encode($_SESSION['generated_qr']['content']) ?>;
+                                    
                                     const sessionQR = new QRCodeStyling({
                                         width: <?= $_SESSION['generated_qr']['size'] ?? 300 ?>,
                                         height: <?= $_SESSION['generated_qr']['size'] ?? 300 ?>,
-                                        data: <?= json_encode($_SESSION['generated_qr']['content']) ?>,
+                                        data: qrData,
                                         dotsOptions: {
                                             color: <?= json_encode($_SESSION['generated_qr']['foreground_color'] ?? '#000000') ?>,
                                             type: "square"
@@ -1058,11 +1021,11 @@
                     <div class="qr-info">
                         <p><strong>Type:</strong> <?= htmlspecialchars($_SESSION['generated_qr']['type'] ?? 'url') ?></p>
                         <p><strong>Size:</strong> <?= htmlspecialchars($_SESSION['generated_qr']['size'] ?? 300) ?>px</p>
+                        <?php if (isset($_SESSION['generated_qr']['access_url'])): ?>
+                            <p><strong>Access URL:</strong> <code style="font-size: 11px; word-break: break-all;"><?= htmlspecialchars($_SESSION['generated_qr']['access_url']) ?></code></p>
+                        <?php endif; ?>
                         <?php if (isset($_SESSION['generated_qr']['is_dynamic']) && $_SESSION['generated_qr']['is_dynamic']): ?>
                             <p><span class="badge badge-dynamic">🔄 Dynamic</span></p>
-                        <?php endif; ?>
-                        <?php if (isset($_SESSION['generated_qr']['has_password']) && $_SESSION['generated_qr']['has_password']): ?>
-                            <p><span class="badge badge-secure">🔒 Protected</span></p>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -1223,9 +1186,105 @@ function showNotification(message, type = 'info') {
     }, 3000);
 }
 
+// Apply template settings to form
+function applyTemplateToForm(settings) {
+    console.log('Applying template settings:', settings);
+    
+    // Basic settings
+    if (settings.size) document.getElementById('qrSize').value = settings.size;
+    if (settings.foregroundColor) document.getElementById('qrColor').value = settings.foregroundColor;
+    if (settings.backgroundColor) document.getElementById('qrBgColor').value = settings.backgroundColor;
+    if (settings.errorCorrection) document.getElementById('errorCorrection').value = settings.errorCorrection;
+    
+    // Gradient settings
+    if (settings.gradientEnabled) {
+        document.getElementById('gradientEnabled').checked = true;
+        document.getElementById('gradientColorGroup').style.display = 'block';
+        if (settings.gradientColor) document.getElementById('gradientColor').value = settings.gradientColor;
+    }
+    
+    // Transparent background
+    if (settings.transparentBg) {
+        document.getElementById('transparentBg').checked = true;
+        document.getElementById('qrBgColor').disabled = true;
+    }
+    
+    // Design styles
+    if (settings.cornerStyle) document.getElementById('cornerStyle').value = settings.cornerStyle;
+    if (settings.dotStyle) document.getElementById('dotStyle').value = settings.dotStyle;
+    if (settings.markerBorderStyle) document.getElementById('markerBorderStyle').value = settings.markerBorderStyle;
+    if (settings.markerCenterStyle) document.getElementById('markerCenterStyle').value = settings.markerCenterStyle;
+    
+    // Marker color
+    if (settings.customMarkerColor) {
+        document.getElementById('customMarkerColor').checked = true;
+        document.getElementById('markerColorGroup').style.display = 'block';
+        if (settings.markerColor) document.getElementById('markerColor').value = settings.markerColor;
+    }
+    
+    // Frame settings
+    if (settings.frameStyle) {
+        document.getElementById('frameStyle').value = settings.frameStyle;
+        if (settings.frameStyle !== 'none') {
+            document.getElementById('frameTextGroup').style.display = 'block';
+            document.getElementById('frameFontGroup').style.display = 'block';
+            document.getElementById('frameColorGroup').style.display = 'block';
+            if (settings.frameLabel) document.getElementById('frameLabel').value = settings.frameLabel;
+            if (settings.frameFont) document.getElementById('frameFont').value = settings.frameFont;
+            if (settings.frameColor) document.getElementById('frameColor').value = settings.frameColor;
+        }
+    }
+    
+    // Logo settings
+    if (settings.logoColor) document.getElementById('logoColor').value = settings.logoColor;
+    if (settings.logoSize) document.getElementById('logoSize').value = settings.logoSize;
+    if (settings.logoRemoveBg) document.getElementById('logoRemoveBg').checked = true;
+    
+    // Logo option and default logo
+    if (settings.logoOption) {
+        window.selectLogoOption(settings.logoOption);
+        if (settings.logoOption === 'default' && settings.defaultLogo) {
+            // Use setTimeout to ensure selectLogoOption has finished
+            setTimeout(() => {
+                window.selectDefaultLogo(settings.defaultLogo);
+            }, 100);
+        }
+    }
+    
+    // Trigger preview update
+    setTimeout(() => {
+        if (typeof window.debouncedPreview === 'function') {
+            window.debouncedPreview();
+        }
+    }, 200);
+}
+
 // Initialize all event listeners when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Initializing QR Generator...');
+    
+    // Check for template to apply from localStorage
+    const applyTemplateId = localStorage.getItem('applyTemplateId');
+    if (applyTemplateId) {
+        console.log('Loading template:', applyTemplateId);
+        localStorage.removeItem('applyTemplateId');
+        
+        // Fetch template data
+        fetch('/projects/qr/templates/get?id=' + applyTemplateId)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.template) {
+                    applyTemplateToForm(data.template.settings);
+                    showNotification('Template "' + data.template.name + '" applied successfully!', 'success');
+                } else {
+                    showNotification('Failed to load template', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error loading template:', error);
+                showNotification('Error loading template', 'error');
+            });
+    }
     
     // Check library loaded
     window.addEventListener('load', function() {
@@ -1437,26 +1496,6 @@ if (isDynamicEl) {
     });
 }
 
-const hasPasswordEl = document.getElementById('hasPassword');
-if (hasPasswordEl) {
-    hasPasswordEl.addEventListener('change', function() {
-        const passwordGroup = document.getElementById('passwordGroup');
-        if (passwordGroup) {
-            passwordGroup.style.display = this.checked ? 'block' : 'none';
-        }
-    });
-}
-
-const hasExpiryEl = document.getElementById('hasExpiry');
-if (hasExpiryEl) {
-    hasExpiryEl.addEventListener('change', function() {
-        const expiryGroup = document.getElementById('expiryGroup');
-        if (expiryGroup) {
-            expiryGroup.style.display = this.checked ? 'block' : 'none';
-        }
-    });
-}
-
 // Toggle handlers for new customization options
 const gradientEnabledEl = document.getElementById('gradientEnabled');
 if (gradientEnabledEl) {
@@ -1475,17 +1514,6 @@ if (transparentBgEl) {
         const qrBgColor = document.getElementById('qrBgColor');
         if (qrBgColor) {
             qrBgColor.disabled = this.checked;
-        }
-        if (typeof debouncedPreview === 'function') debouncedPreview();
-    });
-}
-
-const bgImageEnabledEl = document.getElementById('bgImageEnabled');
-if (bgImageEnabledEl) {
-    bgImageEnabledEl.addEventListener('change', function() {
-        const bgImageGroup = document.getElementById('bgImageGroup');
-        if (bgImageGroup) {
-            bgImageGroup.style.display = this.checked ? 'block' : 'none';
         }
         if (typeof debouncedPreview === 'function') debouncedPreview();
     });
@@ -1553,6 +1581,28 @@ if (frameStyleEl) {
 
 // Global QR code instance
 let qrCode = null;
+
+// Function to apply color to SVG logo
+function applyColorToSVG(svgDataUri, color) {
+    try {
+        // Decode the base64 SVG
+        const base64Data = svgDataUri.split(',')[1];
+        let svgString = atob(base64Data);
+        
+        // Replace fill colors in the SVG with the new color
+        // Exclude 'none', 'transparent', and preserve those values
+        // Match fill="#HEXCOLOR" or fill='#HEXCOLOR' but not fill="none" or fill="transparent"
+        svgString = svgString.replace(/fill="(?!none|transparent)[^"]*"/gi, `fill="${color}"`);
+        svgString = svgString.replace(/fill='(?!none|transparent)[^']*'/gi, `fill='${color}'`);
+        
+        // Re-encode to base64 with Unicode support
+        const newBase64 = btoa(unescape(encodeURIComponent(svgString)));
+        return 'data:image/svg+xml;base64,' + newBase64;
+    } catch (e) {
+        console.error('Error applying color to SVG:', e);
+        return svgDataUri; // Return original if error
+    }
+}
 
 // Default logos as SVG data URIs
 const defaultLogos = {
@@ -1715,11 +1765,11 @@ window.saveCurrentTemplate = async function() {
         gradientEnabled: document.getElementById('gradientEnabled').checked,
         gradientColor: document.getElementById('gradientColor').value,
         transparentBg: document.getElementById('transparentBg').checked,
-        bgImageEnabled: document.getElementById('bgImageEnabled').checked,
         customMarkerColor: document.getElementById('customMarkerColor').checked,
         markerColor: document.getElementById('markerColor').value,
         logoOption: document.getElementById('logoOption').value,
         defaultLogo: document.getElementById('defaultLogo')?.value,
+        logoColor: document.getElementById('logoColor').value,
         logoSize: document.getElementById('logoSize').value,
         logoRemoveBg: document.getElementById('logoRemoveBg').checked,
         frameStyle: document.getElementById('frameStyle')?.value,
@@ -1797,10 +1847,7 @@ window.generatePreview = function() {
     const logoOption = document.getElementById('logoOption').value;
     const logoSize = parseFloat(document.getElementById('logoSize').value);
     const logoRemoveBg = document.getElementById('logoRemoveBg').checked;
-    
-    // Background image settings
-    const bgImageEnabled = document.getElementById('bgImageEnabled').checked;
-    const bgImageInput = document.getElementById('bgImage');
+    const logoColor = document.getElementById('logoColor').value;
     
     // Build QR options
     const dotColor = gradientEnabled 
@@ -1851,7 +1898,8 @@ window.generatePreview = function() {
         if (defaultLogoEl && defaultLogoEl.value) {
             const defaultLogo = defaultLogoEl.value;
             if (defaultLogos[defaultLogo]) {
-                qrOptions.image = defaultLogos[defaultLogo];
+                // Apply logo color to the SVG
+                qrOptions.image = applyColorToSVG(defaultLogos[defaultLogo], logoColor);
                 qrOptions.imageOptions = {
                     hideBackgroundDots: logoRemoveBg,
                     imageSize: logoSize,
@@ -1870,46 +1918,11 @@ window.generatePreview = function() {
                     imageSize: logoSize,
                     margin: 5
                 };
-                // Handle background image if enabled
-                if (bgImageEnabled && bgImageInput.files && bgImageInput.files[0]) {
-                    const bgReader = new FileReader();
-                    bgReader.onload = function(bgE) {
-                        // Set the background image with proper transparent handling
-                        // Use smaller imageSize for better visibility (0.3 = 30% coverage)
-                        qrOptions.backgroundOptions = {
-                            color: transparentBg ? 'rgba(0,0,0,0)' : qrOptions.backgroundOptions.color,
-                            image: bgE.target.result,
-                            imageSize: 0.3,
-                            margin: 0
-                        };
-                        renderQRCode(qrOptions, content);
-                    };
-                    bgReader.readAsDataURL(bgImageInput.files[0]);
-                } else {
-                    renderQRCode(qrOptions, content);
-                }
+                renderQRCode(qrOptions, content);
             };
             reader.readAsDataURL(logoInput.files[0]);
             return; // Exit and wait for file read
         }
-    }
-    
-    // Handle background image separately if no logo upload
-    if (bgImageEnabled && bgImageInput.files && bgImageInput.files[0]) {
-        const bgReader = new FileReader();
-        bgReader.onload = function(e) {
-            // Set the background image with proper transparent handling
-            // Use smaller imageSize for better visibility (0.3 = 30% coverage)
-            qrOptions.backgroundOptions = {
-                color: transparentBg ? 'rgba(0,0,0,0)' : qrOptions.backgroundOptions.color,
-                image: e.target.result,
-                imageSize: 0.3,
-                margin: 0
-            };
-            renderQRCode(qrOptions, content);
-        };
-        bgReader.readAsDataURL(bgImageInput.files[0]);
-        return;
     }
     
     renderQRCode(qrOptions, content);
@@ -1955,7 +1968,6 @@ function renderQRCode(qrOptions, content) {
             <p><strong>Type:</strong> ${document.getElementById('qrType').value}</p>
             <p><strong>Size:</strong> ${qrOptions.width}px</p>
             ${document.getElementById('isDynamic').checked ? '<p><span class="badge badge-dynamic">🔄 Dynamic</span></p>' : ''}
-            ${document.getElementById('hasPassword').checked ? '<p><span class="badge badge-secure">🔒 Protected</span></p>' : ''}
         `;
         container.appendChild(infoDiv);
         
@@ -2173,7 +2185,7 @@ function applyFrameStyle(qrDiv) {
     const livePreviewFields = [
         'contentField', 'qrType', 'qrSize', 'qrColor', 'qrBgColor', 'errorCorrection',
         'frameStyle', 'cornerStyle', 'dotStyle', 'markerBorderStyle', 'markerCenterStyle',
-        'gradientColor', 'markerColor',
+        'gradientColor', 'markerColor', 'logoColor',
         'defaultLogo', 'frameLabel', 'frameFont', 'frameColor',
         // Email fields
         'emailTo', 'emailSubject', 'emailBody',
@@ -2230,11 +2242,6 @@ function applyFrameStyle(qrDiv) {
     });
 
     // Add event listeners for file inputs
-    const bgImageInput = document.getElementById('bgImage');
-    if (bgImageInput) {
-        bgImageInput.addEventListener('change', debouncedPreview);
-    }
-
     const logoUploadInput = document.getElementById('logoUpload');
     if (logoUploadInput) {
         logoUploadInput.addEventListener('change', debouncedPreview);
@@ -2259,10 +2266,10 @@ function applyFrameStyle(qrDiv) {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.75rem 1rem; /* Reduced padding for more compact design */
+    padding: 0.5rem 0.75rem; /* More compact padding */
     background: rgba(153, 69, 255, 0.1);
-    border-radius: 0.625rem;
-    margin-bottom: 0.75rem; /* Reduced from var(--space-md) */
+    border-radius: 0.5rem;
+    margin-bottom: 0.5rem; /* More compact spacing */
     transition: all 0.3s ease;
     user-select: none;
 }
@@ -2284,7 +2291,7 @@ function applyFrameStyle(qrDiv) {
     display: flex;
     align-items: center;
     gap: 0.5rem; /* Reduced from var(--space-sm) */
-    font-size: 1rem; /* Explicit font size for compact design */
+    font-size: 0.9rem; /* Smaller font for more compact design */
     transition: color 0.3s ease; /* Add transition for text color */
 }
 
@@ -2303,25 +2310,25 @@ function applyFrameStyle(qrDiv) {
 }
 
 .collapse-icon {
-    transition: transform 0.3s ease, color 0.3s ease;
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s ease;
     color: rgba(153, 69, 255, 0.7);
-    transform: rotate(0deg);
-    font-size: 1rem;
+    transform: rotate(-90deg); /* Start rotated -90deg when collapsed */
+    font-size: 0.9rem;
 }
 
 .collapsible-header:hover .collapse-icon {
     color: var(--purple);
-    transform: scale(1.15) rotate(0deg);
+    transform: scale(1.15) rotate(-90deg); /* Keep collapsed rotation on hover */
 }
 
-/* Rotate icon when expanded - smooth 180deg rotation */
+/* Rotate icon when expanded - smooth 0deg rotation for more visible change */
 .collapsible-header.expanded .collapse-icon {
-    transform: rotate(180deg);
+    transform: rotate(0deg); /* Rotate to 0deg when expanded */
     color: var(--purple);
 }
 
 .collapsible-header.expanded:hover .collapse-icon {
-    transform: scale(1.15) rotate(180deg);
+    transform: scale(1.15) rotate(0deg); /* Keep expanded rotation on hover */
 }
 
 .collapsible-content {
@@ -2431,9 +2438,9 @@ function applyFrameStyle(qrDiv) {
 
 /* Section Titles */
 .section-title {
-    font-size: 1.25rem; /* Reduced from 1.5rem for more compact design */
+    font-size: 1.125rem; /* Further reduced for compact design */
     font-weight: 600;
-    margin-bottom: 1rem; /* Reduced from 1.5625rem */
+    margin-bottom: 0.875rem; /* More compact spacing */
     background: linear-gradient(135deg, var(--purple), var(--cyan));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -2444,9 +2451,9 @@ function applyFrameStyle(qrDiv) {
 }
 
 .subsection-title {
-    font-size: 1rem; /* Reduced from 1.125rem for more compact design */
+    font-size: 0.875rem; /* Smaller for more compact design */
     font-weight: 600;
-    margin: 1rem 0 0.75rem 0; /* Reduced margins */
+    margin: 0.75rem 0 0.5rem 0; /* More compact margins */
     color: var(--text-primary);
     display: flex;
     align-items: center;
@@ -2455,18 +2462,18 @@ function applyFrameStyle(qrDiv) {
 
 /* Form Styling */
 .form-group {
-    margin-bottom: 0.75rem; /* Reduced from 15px for more compact design */
+    margin-bottom: 0.625rem; /* More compact spacing */
     animation: fadeInUp 0.3s ease;
 }
 
 .form-label {
     display: flex;
     align-items: center;
-    gap: 0.5rem; /* Reduced from 8px */
-    margin-bottom: 0.5rem; /* Reduced from 10px */
+    gap: 0.375rem; /* More compact gap */
+    margin-bottom: 0.375rem; /* More compact bottom margin */
     font-weight: 500;
     color: var(--text-primary);
-    font-size: 0.875rem; /* Reduced from 14px for more compact design */
+    font-size: 0.8125rem; /* Smaller font for compact design */
 }
 
 /* Preset Grid System */
@@ -2575,12 +2582,12 @@ function applyFrameStyle(qrDiv) {
 .form-select,
 .form-textarea {
     width: 100%;
-    padding: 12px 16px;
+    padding: 8px 12px; /* More compact padding */
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
+    border-radius: 8px; /* Slightly smaller border radius */
     color: var(--text-primary);
-    font-size: 14px;
+    font-size: 13px; /* Smaller font size */
     transition: all 0.3s ease;
 }
 
@@ -2648,15 +2655,25 @@ html[data-theme="dark"] .form-select optgroup {
 }
 
 .color-input {
-    height: 50px;
+    height: 45px; /* More compact height */
     cursor: pointer;
+    border: 2px solid rgba(153, 69, 255, 0.3); /* Add purple border for better visibility */
+    transition: border-color 0.3s ease;
+}
+
+.color-input:hover {
+    border-color: rgba(153, 69, 255, 0.6); /* Highlight on hover */
+}
+
+.color-input:focus {
+    border-color: var(--purple); /* Strong highlight on focus */
+    box-shadow: 0 0 0 3px rgba(153, 69, 255, 0.15);
 }
 
 /* Collapsible sections animation */
 #gradientColorGroup,
 #markerColorGroup,
 #differentMarkerColorsGroup,
-#bgImageGroup,
 #defaultLogoGroup,
 #uploadLogoGroup,
 #logoOptionsGroup,
@@ -2670,17 +2687,17 @@ html[data-theme="dark"] .form-select optgroup {
 
 /* Feature Toggles */
 .feature-toggle {
-    margin-bottom: 0.75rem; /* Reduced for compact design */
+    margin-bottom: 0.5rem; /* More compact spacing */
 }
 
 .toggle-label {
     display: flex;
     align-items: center;
-    gap: 0.75rem; /* Reduced from 15px */
+    gap: 0.5rem; /* More compact gap */
     cursor: pointer;
-    padding: 0.75rem; /* Reduced from 15px */
+    padding: 0.5rem; /* More compact padding */
     background: rgba(255, 255, 255, 0.03);
-    border-radius: 0.75rem; /* Reduced from 12px */
+    border-radius: 0.625rem; /* Slightly smaller border radius */
     transition: all 0.3s ease;
     border: 1px solid transparent; /* Add border for enhanced state */
 }
@@ -2770,15 +2787,23 @@ html[data-theme="dark"] .form-select optgroup {
 .toggle-text strong {
     display: block;
     color: var(--text-primary);
-    font-size: 0.875rem; /* Reduced from 15px for compact design */
-    margin-bottom: 0.25rem; /* Reduced from 4px */
+    font-size: 0.8125rem; /* Smaller for more compact design */
+    margin-bottom: 0.125rem; /* More compact spacing */
     transition: color 0.3s ease; /* Add transition for color change */
 }
 
 .toggle-text small {
     display: block;
     color: var(--text-secondary);
-    font-size: 0.75rem; /* Reduced from 12px for compact design */
+    font-size: 0.6875rem; /* Smaller for more compact design */
+}
+
+/* Help Text Styling */
+.help-text {
+    display: block;
+    margin-top: 0.25rem;
+    color: var(--text-secondary);
+    font-size: 0.7rem;
 }
 
 /* Logo Option Selector */
@@ -3245,7 +3270,7 @@ html[data-theme="dark"] .form-select optgroup {
 .divider {
     height: 1px;
     background: linear-gradient(90deg, transparent, var(--border-color), transparent);
-    margin: 30px 0;
+    margin: 15px 0; /* More compact margin */
 }
 
 /* Grid - Optimized with rem units */

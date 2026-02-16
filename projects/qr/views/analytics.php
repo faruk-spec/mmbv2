@@ -4,6 +4,146 @@
  */
 ?>
 
+<style>
+/* Table responsive container - CRITICAL for horizontal scrolling */
+.table-responsive {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    /* Ensure scrolling works on all devices */
+    overflow-y: visible;
+    /* Add subtle border to indicate scrollable area */
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    background: var(--bg-secondary);
+}
+
+/* Ensure data table has minimum width to trigger scroll */
+.data-table {
+    width: 100%;
+    min-width: 50rem; /* Minimum width to enable horizontal scroll on small screens */
+    border-collapse: collapse;
+}
+
+/* Mobile Responsive Styles for Analytics */
+@media (max-width: 768px) {
+    /* Stack stat cards vertically on mobile */
+    .grid-3 {
+        grid-template-columns: 1fr !important;
+    }
+    
+    /* Make controls responsive */
+    .analytics-controls {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+    
+    /* Table responsive - ensure scrolling works */
+    .table-responsive {
+        display: block;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+        width: 100%;
+        overflow-y: visible;
+        margin: 0;
+        padding: 0;
+    }
+    
+    .data-table {
+        font-size: 0.875rem;
+    }
+    
+    /* Pagination responsive */
+    .pagination-wrapper {
+        flex-direction: column !important;
+        text-align: center;
+    }
+    
+    .pagination-controls {
+        justify-content: center !important;
+        flex-wrap: nowrap;
+    }
+    
+    /* Hide less important columns on small screens */
+    @media (max-width: 640px) {
+        .hide-on-mobile {
+            display: none !important;
+        }
+        
+        .stat-card {
+            padding: 1rem !important;
+        }
+        
+        .stat-icon {
+            width: 40px !important;
+            height: 40px !important;
+            font-size: 1.25rem !important;
+        }
+    }
+    
+    /* Mobile optimization for action buttons */
+    .icon-only-btn {
+        min-width: 2rem !important;
+        width: 2rem !important;
+        height: 2rem !important;
+        padding: 0.25rem !important;
+    }
+    
+    .icon-only-btn i {
+        font-size: 0.75rem !important;
+    }
+    
+    /* Keep action buttons in single line */
+    td:last-child {
+        white-space: nowrap !important;
+    }
+}
+
+/* Improve button styling */
+.btn-secondary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: all 0.2s ease;
+}
+
+/* Icon-only button styling */
+.icon-only-btn {
+    min-width: 2.5rem;
+    position: relative;
+}
+
+/* Enhanced tooltip styling */
+.icon-only-btn:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-8px);
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 1000;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.icon-only-btn:hover::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-2px);
+    border: 5px solid transparent;
+    border-top-color: rgba(0, 0, 0, 0.9);
+    pointer-events: none;
+    z-index: 1000;
+}
+</style>
+
 <!-- Stats Overview -->
 <div class="grid grid-3" style="gap: 20px; margin-bottom: 30px;">
     <div class="glass-card stat-card">
@@ -39,7 +179,7 @@
 
 <!-- Recent Activity -->
 <div class="glass-card">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg); flex-wrap: wrap; gap: var(--space-md);">
+    <div class="analytics-controls" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg); flex-wrap: nowrap; gap: var(--space-md);">
         <h3 class="section-title" style="margin-bottom: 0;">
             <i class="fas fa-history"></i> Recent QR Codes
         </h3>
@@ -58,7 +198,7 @@
     </div>
     
     <?php if (!empty($recentQRs)): ?>
-        <div class="table-responsive">
+        <div class="table-responsive" style="display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; border: 1px solid var(--border-color); border-radius: 0.5rem; background: var(--bg-secondary);">
             <table class="data-table">
                 <thead>
                     <tr>
@@ -68,6 +208,7 @@
                         <th>Created</th>
                         <th>Last Scanned</th>
                         <th>Status</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -78,7 +219,22 @@
                             <td><strong><?= number_format($qr['scan_count'] ?? 0) ?></strong></td>
                             <td><?= date('M d, Y', strtotime($qr['created_at'])) ?></td>
                             <td><?= $qr['last_scanned_at'] ? date('M d, Y', strtotime($qr['last_scanned_at'])) : 'Never' ?></td>
-                            <td><span class="status-badge status-<?= $qr['status'] ?>"><?= ucfirst($qr['status']) ?></span></td>
+                            <td>
+                                <?php if (!empty($qr['deleted_at'])): ?>
+                                    <span class="status-badge" style="background: #ef4444; color: white;">Deleted</span>
+                                <?php else: ?>
+                                    <span class="status-badge status-<?= $qr['status'] ?>"><?= ucfirst($qr['status']) ?></span>
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <?php if (empty($qr['deleted_at'])): ?>
+                                    <a href="/projects/qr/view/<?= $qr['id'] ?>" class="btn btn-secondary btn-sm icon-only-btn" title="View QR Code" style="font-size: 0.75rem; padding: 0.375rem 0.75rem;">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                <?php else: ?>
+                                    <span style="color: var(--text-secondary); font-size: 0.75rem;">Deleted</span>
+                                <?php endif; ?>
+                            </td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
@@ -87,7 +243,7 @@
         
         <!-- Pagination Controls -->
         <?php if ($totalPages > 1): ?>
-        <div class="pagination-wrapper" style="display: flex; justify-content: space-between; align-items: center; margin-top: var(--space-xl); padding-top: var(--space-lg); border-top: 1px solid var(--border-color); flex-wrap: wrap; gap: var(--space-md);">
+        <div class="pagination-wrapper" style="display: flex; justify-content: space-between; align-items: center; margin-top: var(--space-xl); padding-top: var(--space-lg); border-top: 1px solid var(--border-color); flex-wrap: nowrap; gap: var(--space-md);">
             <div class="pagination-info" style="font-size: var(--font-sm); color: var(--text-secondary);">
                 Page <?= $page ?> of <?= $totalPages ?>
             </div>
@@ -173,11 +329,6 @@ function changePerPage(perPage) {
     font-size: var(--font-sm);
 }
 
-.table-responsive {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-}
-
 .data-table {
     width: 100%;
     border-collapse: collapse;
@@ -255,7 +406,7 @@ function changePerPage(perPage) {
     }
     
     .pagination-controls {
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
         justify-content: center;
     }
     

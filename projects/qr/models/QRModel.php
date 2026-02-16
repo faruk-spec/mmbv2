@@ -30,11 +30,15 @@ class QRModel
     {
         $sql = "INSERT INTO qr_codes (
             user_id, content, type, size, 
-            foreground_color, background_color, 
-            error_correction, frame_style, logo_path,
+            foreground_color, background_color, error_correction,
+            gradient_enabled, gradient_color, transparent_bg,
+            corner_style, dot_style, marker_border_style, marker_center_style,
+            custom_marker_color, marker_color, 
+            frame_style, frame_label, frame_font, frame_color,
+            logo_path, logo_color, logo_size, logo_remove_bg,
             is_dynamic, redirect_url, password_hash, expires_at,
             campaign_id, status, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', NOW())";
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', NOW())";
         
         $params = [
             $userId,
@@ -44,8 +48,23 @@ class QRModel
             $data['foreground_color'] ?? '#000000',
             $data['background_color'] ?? '#ffffff',
             $data['error_correction'] ?? 'H',
+            $data['gradient_enabled'] ?? 0,
+            $data['gradient_color'] ?? '#9945ff',
+            $data['transparent_bg'] ?? 0,
+            $data['corner_style'] ?? 'square',
+            $data['dot_style'] ?? 'dots',
+            $data['marker_border_style'] ?? 'square',
+            $data['marker_center_style'] ?? 'square',
+            $data['custom_marker_color'] ?? 0,
+            $data['marker_color'] ?? null,
             $data['frame_style'] ?? 'none',
+            $data['frame_label'] ?? null,
+            $data['frame_font'] ?? null,
+            $data['frame_color'] ?? null,
             $data['logo_path'] ?? null,
+            $data['logo_color'] ?? '#9945ff',
+            $data['logo_size'] ?? 0.3,
+            $data['logo_remove_bg'] ?? 0,
             $data['is_dynamic'] ?? 0,
             $data['redirect_url'] ?? null,
             $data['password_hash'] ?? null,
@@ -107,6 +126,48 @@ class QRModel
     }
     
     /**
+     * Get ALL QR codes for a user (including deleted)
+     * Used for analytics to show complete history
+     * 
+     * @param int $userId User ID
+     * @param int $limit Number of records to fetch
+     * @param int $offset Offset for pagination
+     * @return array QR codes
+     */
+    public function getAllByUser(int $userId, int $limit = 50, int $offset = 0): array
+    {
+        $sql = "SELECT * FROM qr_codes 
+                WHERE user_id = ?
+                ORDER BY created_at DESC 
+                LIMIT ? OFFSET ?";
+        
+        try {
+            $results = $this->db->fetchAll($sql, [$userId, $limit, $offset]);
+            return $results ?: [];
+        } catch (\Exception $e) {
+            \Core\Logger::error('Failed to fetch all QR codes: ' . $e->getMessage());
+            return [];
+        }
+    }
+    
+    /**
+     * Count QR codes by user
+     */
+    public function countByUser(int $userId): int
+    {
+        $sql = "SELECT COUNT(*) as count FROM qr_codes 
+                WHERE user_id = ? AND deleted_at IS NULL";
+        
+        try {
+            $result = $this->db->fetch($sql, [$userId]);
+            return (int)($result['count'] ?? 0);
+        } catch (\Exception $e) {
+            \Core\Logger::error('Failed to count QR codes: ' . $e->getMessage());
+            return 0;
+        }
+    }
+    
+    /**
      * Get a single QR code by ID
      * 
      * @param int $id QR code ID
@@ -148,27 +209,6 @@ class QRModel
     }
     
     /**
-     * Get total count of QR codes for a user (including deleted)
-     * This shows total generated over time
-     * 
-     * @param int $userId User ID
-     * @return int Total count
-     */
-    public function countByUser(int $userId): int
-    {
-        // Count ALL QR codes including deleted ones
-        $sql = "SELECT COUNT(*) as count FROM qr_codes WHERE user_id = ?";
-        
-        try {
-            $result = $this->db->fetch($sql, [$userId]);
-            return (int) ($result['count'] ?? 0);
-        } catch (\Exception $e) {
-            \Core\Logger::error('Failed to count QR codes: ' . $e->getMessage());
-            return 0;
-        }
-    }
-    
-    /**
      * Get count of active (non-deleted) QR codes for a user
      * 
      * @param int $userId User ID
@@ -183,6 +223,27 @@ class QRModel
             return (int) ($result['count'] ?? 0);
         } catch (\Exception $e) {
             \Core\Logger::error('Failed to count active QR codes: ' . $e->getMessage());
+            return 0;
+        }
+    }
+    
+    /**
+     * Get total count of QR codes for a user (including deleted)
+     * This shows total generated over time
+     * 
+     * @param int $userId User ID
+     * @return int Total count
+     */
+    public function countAllByUser(int $userId): int
+    {
+        // Count ALL QR codes including deleted ones
+        $sql = "SELECT COUNT(*) as count FROM qr_codes WHERE user_id = ?";
+        
+        try {
+            $result = $this->db->fetch($sql, [$userId]);
+            return (int) ($result['count'] ?? 0);
+        } catch (\Exception $e) {
+            \Core\Logger::error('Failed to count QR codes: ' . $e->getMessage());
             return 0;
         }
     }
@@ -241,6 +302,16 @@ class QRModel
         if (isset($data['status'])) {
             $updates[] = "status = ?";
             $params[] = $data['status'];
+        }
+        
+        if (isset($data['content'])) {
+            $updates[] = "content = ?";
+            $params[] = $data['content'];
+        }
+        
+        if (array_key_exists('campaign_id', $data)) {
+            $updates[] = "campaign_id = ?";
+            $params[] = $data['campaign_id'];
         }
         
         if (empty($updates)) {

@@ -98,37 +98,11 @@
                                      style="width: 100%; height: auto; max-width: 200px; margin: 0 auto; display: block;">
                             <?php else: ?>
                                 <!-- Generate QR code on-the-fly using content -->
-                                <div id="qr-<?= $qr['id'] ?>" style="width: 200px; height: 200px; margin: 0 auto;"></div>
-                                <script>
-                                    (function() {
-                                        const qrDiv = document.getElementById('qr-<?= $qr['id'] ?>');
-                                        if (qrDiv && typeof QRCodeStyling !== 'undefined') {
-                                            const qr = new QRCodeStyling({
-                                                width: 200,
-                                                height: 200,
-                                                data: <?= json_encode($qr['content']) ?>,
-                                                margin: 10,
-                                                qrOptions: {
-                                                    errorCorrectionLevel: <?= json_encode($qr['error_correction'] ?? 'H') ?>
-                                                },
-                                                dotsOptions: {
-                                                    color: <?= json_encode($qr['foreground_color'] ?? '#000000') ?>,
-                                                    type: "rounded"
-                                                },
-                                                backgroundOptions: {
-                                                    color: <?= json_encode($qr['background_color'] ?? '#ffffff') ?>
-                                                },
-                                                cornersSquareOptions: {
-                                                    type: "extra-rounded"
-                                                },
-                                                cornersDotOptions: {
-                                                    type: "dot"
-                                                }
-                                            });
-                                            qr.append(qrDiv);
-                                        }
-                                    })();
-                                </script>
+                                <div id="qr-<?= $qr['id'] ?>" class="qr-placeholder" data-qr-id="<?= $qr['id'] ?>" 
+                                     data-qr-data='<?= htmlspecialchars(json_encode($qr), ENT_QUOTES, 'UTF-8') ?>'
+                                     style="width: 200px; height: 200px; margin: 0 auto; display: flex; align-items: center; justify-content: center; background: rgba(153, 69, 255, 0.05); border-radius: 8px;">
+                                    <i class="fas fa-spinner fa-spin" style="font-size: 24px; color: var(--purple);"></i>
+                                </div>
                             <?php endif; ?>
                         </div>
                         <h5 style="font-size: 14px; color: var(--text-primary); margin-bottom: 8px; font-weight: 600;">
@@ -138,9 +112,9 @@
                             <?= htmlspecialchars(substr($qr['content'] ?? '', 0, 50)) ?><?= strlen($qr['content'] ?? '') > 50 ? '...' : '' ?>
                         </p>
                         <div style="display: flex; gap: 8px; justify-content: center;">
-                            <a href="/projects/qr/history?id=<?= $qr['id'] ?>" class="btn btn-secondary btn-sm" style="flex: 1;">
+                            <button onclick="viewQRDetails(<?= $qr['id'] ?>, <?= htmlspecialchars(json_encode($qr), ENT_QUOTES, 'UTF-8') ?>)" class="btn btn-secondary btn-sm" style="flex: 1;">
                                 <i class="fas fa-eye"></i> View
-                            </a>
+                            </button>
                             <button onclick="downloadQR(<?= $qr['id'] ?>)" class="btn btn-primary btn-sm" style="flex: 1;">
                                 <i class="fas fa-download"></i> Download
                             </button>
@@ -204,7 +178,169 @@
 }
 </style>
 
+<!-- QR Details Modal -->
+<div id="qrDetailsModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 9999; align-items: center; justify-content: center;">
+    <div class="glass-card" style="max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto; position: relative;">
+        <button onclick="closeQRModal()" style="position: absolute; top: 15px; right: 15px; background: none; border: none; color: var(--text-secondary); font-size: 24px; cursor: pointer; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: all 0.2s;">
+            <i class="fas fa-times"></i>
+        </button>
+        
+        <h3 style="margin-bottom: 20px; color: var(--text-primary);">
+            <i class="fas fa-qrcode"></i> QR Code Details
+        </h3>
+        
+        <div style="text-align: center; margin-bottom: 20px;">
+            <div style="background: white; padding: 20px; border-radius: 10px; display: inline-block;">
+                <div id="modalQRCode" style="width: 300px; height: 300px;"></div>
+            </div>
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+            <label style="color: var(--text-secondary); font-size: 13px; display: block; margin-bottom: 5px;">
+                <i class="fas fa-link"></i> Content
+            </label>
+            <p id="modalContent" style="color: var(--text-primary); word-break: break-all; background: var(--bg-secondary); padding: 10px; border-radius: 6px;"></p>
+        </div>
+        
+        <div class="grid grid-2" style="gap: 15px; margin-bottom: 15px;">
+            <div>
+                <label style="color: var(--text-secondary); font-size: 13px; display: block; margin-bottom: 5px;">
+                    <i class="fas fa-calendar"></i> Created
+                </label>
+                <p id="modalCreated" style="color: var(--text-primary);"></p>
+            </div>
+            <div>
+                <label style="color: var(--text-secondary); font-size: 13px; display: block; margin-bottom: 5px;">
+                    <i class="fas fa-eye"></i> Scans
+                </label>
+                <p id="modalScans" style="color: var(--text-primary);"></p>
+            </div>
+        </div>
+        
+        <div id="modalPassword" style="display: none; margin-bottom: 15px;">
+            <label style="color: var(--text-secondary); font-size: 13px; display: block; margin-bottom: 5px;">
+                <i class="fas fa-lock"></i> Password Protected
+            </label>
+            <p style="color: var(--purple);">Yes</p>
+        </div>
+        
+        <div id="modalExpiry" style="display: none; margin-bottom: 15px;">
+            <label style="color: var(--text-secondary); font-size: 13px; display: block; margin-bottom: 5px;">
+                <i class="fas fa-clock"></i> Expires At
+            </label>
+            <p id="modalExpiryDate" style="color: var(--text-primary);"></p>
+        </div>
+        
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button onclick="downloadQRFromModal()" class="btn btn-primary" style="flex: 1;">
+                <i class="fas fa-download"></i> Download
+            </button>
+            <button onclick="closeQRModal()" class="btn btn-secondary" style="flex: 1;">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
+let currentModalQRId = null;
+
+function viewQRDetails(id, qrData) {
+    currentModalQRId = id;
+    const modal = document.getElementById('qrDetailsModal');
+    
+    // Set content details
+    document.getElementById('modalContent').textContent = qrData.content || '';
+    document.getElementById('modalCreated').textContent = qrData.created_at ? new Date(qrData.created_at).toLocaleString() : 'N/A';
+    document.getElementById('modalScans').textContent = qrData.scan_count || '0';
+    
+    // Show/hide password protection
+    const passwordDiv = document.getElementById('modalPassword');
+    if (qrData.password_hash) {
+        passwordDiv.style.display = 'block';
+    } else {
+        passwordDiv.style.display = 'none';
+    }
+    
+    // Show/hide expiry
+    const expiryDiv = document.getElementById('modalExpiry');
+    if (qrData.expires_at) {
+        expiryDiv.style.display = 'block';
+        document.getElementById('modalExpiryDate').textContent = new Date(qrData.expires_at).toLocaleString();
+    } else {
+        expiryDiv.style.display = 'none';
+    }
+    
+    // Generate QR code in modal
+    const qrDiv = document.getElementById('modalQRCode');
+    qrDiv.innerHTML = ''; // Clear previous
+    
+    if (typeof QRCodeStyling !== 'undefined') {
+        // Build gradient color if enabled
+        const dotColor = qrData.gradient_enabled && qrData.gradient_color
+            ? {
+                type: 'gradient',
+                rotation: 0,
+                colorStops: [
+                    { offset: 0, color: qrData.foreground_color || '#000000' },
+                    { offset: 1, color: qrData.gradient_color }
+                ]
+            }
+            : qrData.foreground_color || '#000000';
+        
+        const qr = new QRCodeStyling({
+            width: 300,
+            height: 300,
+            data: qrData.content,
+            margin: 10,
+            qrOptions: {
+                errorCorrectionLevel: qrData.error_correction || 'H'
+            },
+            dotsOptions: {
+                color: dotColor,
+                type: qrData.dot_style || 'rounded'
+            },
+            backgroundOptions: {
+                color: qrData.transparent_bg ? 'rgba(0,0,0,0)' : (qrData.background_color || '#ffffff')
+            },
+            cornersSquareOptions: {
+                type: qrData.corner_style || 'extra-rounded',
+                color: qrData.custom_marker_color && qrData.marker_color 
+                    ? qrData.marker_color 
+                    : (qrData.gradient_enabled ? dotColor : (qrData.foreground_color || '#000000'))
+            },
+            cornersDotOptions: {
+                type: qrData.marker_center_style || 'dot',
+                color: qrData.custom_marker_color && qrData.marker_color 
+                    ? qrData.marker_color 
+                    : (qrData.gradient_enabled ? dotColor : (qrData.foreground_color || '#000000'))
+            }
+        });
+        qr.append(qrDiv);
+    }
+    
+    // Show modal
+    modal.style.display = 'flex';
+}
+
+function closeQRModal() {
+    document.getElementById('qrDetailsModal').style.display = 'none';
+    currentModalQRId = null;
+}
+
+function downloadQRFromModal() {
+    if (currentModalQRId) {
+        downloadQR(currentModalQRId);
+    }
+}
+
+// Close modal when clicking outside
+document.getElementById('qrDetailsModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeQRModal();
+    }
+});
+
 function editCampaign(id) {
     window.location.href = '/projects/qr/campaigns/edit?id=' + id;
 }
@@ -234,6 +370,86 @@ function deleteCampaign(id) {
 }
 
 function downloadQR(id) {
-    window.location.href = '/projects/qr/download?id=' + id;
+    // Find the QR code instance by ID and trigger download
+    const qrDiv = document.getElementById('qr-' + id);
+    if (qrDiv && qrDiv.qrInstance) {
+        qrDiv.qrInstance.download({ name: 'qr-code-' + id, extension: 'png' });
+    } else {
+        alert('QR code not found. Please try viewing the QR first.');
+    }
 }
+
+// Generate all QR codes after library loads
+(function initializeQRCodes() {
+    if (typeof QRCodeStyling === 'undefined') {
+        console.log('Waiting for QRCodeStyling library...');
+        setTimeout(initializeQRCodes, 100);
+        return;
+    }
+    
+    console.log('Generating QR codes...');
+    const qrPlaceholders = document.querySelectorAll('.qr-placeholder');
+    
+    qrPlaceholders.forEach(placeholder => {
+        try {
+            const qrData = JSON.parse(placeholder.getAttribute('data-qr-data'));
+            const qrDiv = placeholder;
+            
+            // Clear loading spinner
+            qrDiv.innerHTML = '';
+            qrDiv.style.background = 'none';
+            
+            // Build gradient color if enabled
+            const dotColor = qrData.gradient_enabled && qrData.gradient_color
+                ? {
+                    type: 'gradient',
+                    rotation: 0,
+                    colorStops: [
+                        { offset: 0, color: qrData.foreground_color || '#000000' },
+                        { offset: 1, color: qrData.gradient_color }
+                    ]
+                }
+                : qrData.foreground_color || '#000000';
+            
+            const markerColor = qrData.custom_marker_color && qrData.marker_color 
+                ? qrData.marker_color 
+                : (qrData.gradient_enabled ? dotColor : (qrData.foreground_color || '#000000'));
+            
+            const qr = new QRCodeStyling({
+                width: 200,
+                height: 200,
+                data: qrData.content,
+                margin: 10,
+                qrOptions: {
+                    errorCorrectionLevel: qrData.error_correction || 'H'
+                },
+                dotsOptions: {
+                    color: dotColor,
+                    type: qrData.dot_style || 'rounded'
+                },
+                backgroundOptions: {
+                    color: qrData.transparent_bg ? 'rgba(0,0,0,0)' : (qrData.background_color || '#ffffff')
+                },
+                cornersSquareOptions: {
+                    type: qrData.corner_style || 'extra-rounded',
+                    color: markerColor
+                },
+                cornersDotOptions: {
+                    type: qrData.marker_center_style || 'dot',
+                    color: markerColor
+                }
+            });
+            
+            qr.append(qrDiv);
+            
+            // Store QR instance on the div for download functionality
+            qrDiv.qrInstance = qr;
+        } catch (error) {
+            console.error('Error generating QR code:', error);
+            qrDiv.innerHTML = '<span style="color: #ff4757; font-size: 12px;">Error loading QR</span>';
+        }
+    });
+    
+    console.log('QR codes generated:', qrPlaceholders.length);
+})();
 </script>

@@ -70,7 +70,8 @@ class BulkController
         }
         
         $file = $_FILES['csv_file'];
-        $campaignId = $_POST['campaign_id'] ?? null;
+        // Campaign ID is optional - convert empty string to null
+        $campaignId = !empty($_POST['campaign_id']) ? (int) $_POST['campaign_id'] : null;
         
         // Validate file type
         $fileExt = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
@@ -176,7 +177,12 @@ class BulkController
                 'campaign_id' => $campaignId,
                 'size' => 300,
                 'foreground_color' => '#000000',
-                'background_color' => '#ffffff'
+                'background_color' => '#ffffff',
+                'error_correction' => 'H',
+                // Make bulk QR codes dynamic for tracking
+                'is_dynamic' => 1,
+                'redirect_url' => $content,
+                'status' => 'active'
             ];
             
             $qrId = $this->qrModel->save($userId, $qrData);
@@ -185,9 +191,13 @@ class BulkController
                 $completed++;
                 $qrIds[] = $qrId;
                 
-                // Generate short code
+                // Generate short code for access
                 $shortCode = $this->generateShortCode($qrId);
                 $this->qrModel->updateShortCode($qrId, $shortCode);
+                
+                // Update content to access URL for dynamic QRs
+                $accessUrl = 'https://' . $_SERVER['HTTP_HOST'] . '/projects/qr/access/' . $shortCode;
+                $this->qrModel->update($qrId, $userId, ['content' => $accessUrl]);
             } else {
                 $failed++;
             }

@@ -14,7 +14,7 @@ try {
 
 // Cache busting version - update this when making UI changes
 // Format: YYYYMMDDHHMMSS
-$uiVersion = '20260209180742';
+$uiVersion = '20260214040500';
 
 // Prevent browser caching of this page
 header("Cache-Control: no-cache, no-store, must-revalidate, max-age=0");
@@ -24,11 +24,14 @@ header("Expires: 0");
 <html lang="en" data-theme="<?= htmlspecialchars($defaultTheme) ?>">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title><?= htmlspecialchars($title ?? 'QR Generator') ?> - MyMultiBranch</title>
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer">
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -88,6 +91,9 @@ header("Expires: 0");
             scroll-behavior: smooth;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
+            /* Prevent horizontal overflow only at root level */
+            overflow-x: hidden;
+            max-width: 100vw;
         }
         
         body {
@@ -100,6 +106,9 @@ header("Expires: 0");
             /* Performance optimization */
             will-change: scroll-position;
             -webkit-overflow-scrolling: touch;
+            /* Allow horizontal scrolling when zoomed or on small screens */
+            overflow-x: auto;
+            max-width: 100vw;
         }
         
         /* Layout Structure - optimized with rem */
@@ -203,6 +212,10 @@ header("Expires: 0");
             min-height: calc(100vh - 3.75rem);
             /* Performance optimization */
             contain: layout style;
+            /* CRITICAL: Allow horizontal scrolling for tables and zoomed content */
+            overflow-x: auto;
+            /* Ensure proper width constraints */
+            max-width: calc(100vw - var(--sidebar-width));
         }
         
         .qr-main.expanded {
@@ -563,6 +576,9 @@ header("Expires: 0");
             .qr-main {
                 margin-left: 0;
                 padding: var(--space-lg) 0.9375rem; /* 24px 15px */
+                /* CRITICAL: Ensure scrolling works on mobile */
+                overflow-x: auto !important;
+                max-width: 100vw;
             }
             
             .sidebar-toggle {
