@@ -279,6 +279,16 @@ class QRModel
             $params[] = $data['status'];
         }
         
+        if (isset($data['content'])) {
+            $updates[] = "content = ?";
+            $params[] = $data['content'];
+        }
+        
+        if (array_key_exists('campaign_id', $data)) {
+            $updates[] = "campaign_id = ?";
+            $params[] = $data['campaign_id'];
+        }
+        
         if (empty($updates)) {
             return false;
         }

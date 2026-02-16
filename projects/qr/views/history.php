@@ -9,6 +9,36 @@ if ($userId) {
 ?>
 
 <style>
+/* Table scroll container for mobile */
+.table-scroll {
+    position: relative;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Scroll indicator shadows */
+.table-scroll::before,
+.table-scroll::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 30px;
+    pointer-events: none;
+    z-index: 1;
+    transition: opacity 0.3s ease;
+}
+
+.table-scroll::before {
+    left: 0;
+    background: linear-gradient(to right, rgba(255,255,255,0.9), transparent);
+}
+
+.table-scroll::after {
+    right: 0;
+    background: linear-gradient(to left, rgba(255,255,255,0.9), transparent);
+}
+
 /* Mobile Responsive Styles */
 @media (max-width: 768px) {
     /* Make controls stack vertically on mobile */
@@ -17,16 +47,30 @@ if ($userId) {
         align-items: stretch !important;
     }
     
-    /* Make table scrollable horizontally on mobile */
+    /* Enhanced mobile table scrolling */
     .table-scroll {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
+        margin: 0 -1rem;
+        padding: 0 1rem;
+        border: 1px solid var(--border-color);
+        border-radius: 0.5rem;
+        background: var(--background-secondary);
     }
     
-    /* Reduce min-width for mobile */
+    /* Table stays at min-width to enable scrolling */
     .history-table {
-        min-width: 100% !important;
         font-size: 0.875rem;
+    }
+    
+    /* Add scroll hint text */
+    .scroll-hint {
+        display: block !important;
+        text-align: center;
+        padding: 0.5rem;
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        background: var(--background-tertiary);
+        border-radius: 0.375rem;
+        margin-bottom: 1rem;
     }
     
     /* Stack action buttons vertically */
@@ -180,6 +224,11 @@ if ($userId) {
                     Showing <?= $offset + 1 ?>-<?= min($offset + $perPage, $totalCount) ?> of <?= number_format($totalCount) ?>
                 </span>
             </div>
+        </div>
+        
+        <!-- Mobile scroll hint -->
+        <div class="scroll-hint" style="display: none;">
+            <i class="fas fa-arrows-alt-h"></i> Swipe left/right to view all columns
         </div>
         
         <div class="table-scroll" style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
