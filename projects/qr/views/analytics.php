@@ -62,7 +62,7 @@
     
     .pagination-controls {
         justify-content: center !important;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
     }
     
     /* Hide less important columns on small screens */
@@ -179,7 +179,7 @@
 
 <!-- Recent Activity -->
 <div class="glass-card">
-    <div class="analytics-controls" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg); flex-wrap: wrap; gap: var(--space-md);">
+    <div class="analytics-controls" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg); flex-wrap: nowrap; gap: var(--space-md);">
         <h3 class="section-title" style="margin-bottom: 0;">
             <i class="fas fa-history"></i> Recent QR Codes
         </h3>
@@ -243,7 +243,7 @@
         
         <!-- Pagination Controls -->
         <?php if ($totalPages > 1): ?>
-        <div class="pagination-wrapper" style="display: flex; justify-content: space-between; align-items: center; margin-top: var(--space-xl); padding-top: var(--space-lg); border-top: 1px solid var(--border-color); flex-wrap: wrap; gap: var(--space-md);">
+        <div class="pagination-wrapper" style="display: flex; justify-content: space-between; align-items: center; margin-top: var(--space-xl); padding-top: var(--space-lg); border-top: 1px solid var(--border-color); flex-wrap: nowrap; gap: var(--space-md);">
             <div class="pagination-info" style="font-size: var(--font-sm); color: var(--text-secondary);">
                 Page <?= $page ?> of <?= $totalPages ?>
             </div>
@@ -406,7 +406,7 @@ function changePerPage(perPage) {
     }
     
     .pagination-controls {
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
         justify-content: center;
     }
     

@@ -116,7 +116,7 @@ if ($userId) {
 .action-buttons {
     display: flex;
     gap: 0.5rem;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
 }
 
 .action-buttons .btn {
@@ -186,7 +186,7 @@ if ($userId) {
 }
 </style>
 
-<div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+<div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: nowrap; gap: 15px;">
     <h1 style="margin: 0;">QR Code History</h1>
     <a href="/projects/qr" class="btn btn-secondary">
         <i class="fas fa-arrow-left"></i> Back to Dashboard
@@ -208,7 +208,7 @@ if ($userId) {
         </div>
     <?php else: ?>
         <!-- Controls -->
-        <div class="controls-wrapper" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+        <div class="controls-wrapper" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: nowrap; gap: 15px;">
             <form method="POST" action="/projects/qr/bulk-delete" id="bulkDeleteForm" style="display: flex; align-items: center; gap: 10px;">
                 <input type="hidden" name="_csrf_token" value="<?= \Core\Security::generateCsrfToken() ?>">
                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
@@ -319,7 +319,7 @@ if ($userId) {
                                 <?= date('M j, Y', strtotime($qr['created_at'])) ?>
                             </td>
                             <td style="padding: 0.75rem;">
-                                <div class="action-buttons" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                <div class="action-buttons" style="display: flex; gap: 0.5rem; flex-wrap: nowrap;">
                                     <a href="/projects/qr/view/<?= $qr['id'] ?>" 
                                        class="btn btn-secondary btn-sm icon-only-btn" 
                                        title="View QR Code"
