@@ -91,7 +91,7 @@ header("Expires: 0");
             scroll-behavior: smooth;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
-            /* Prevent horizontal overflow on mobile */
+            /* Prevent horizontal overflow only at root level */
             overflow-x: hidden;
             max-width: 100vw;
         }
@@ -106,8 +106,8 @@ header("Expires: 0");
             /* Performance optimization */
             will-change: scroll-position;
             -webkit-overflow-scrolling: touch;
-            /* Prevent horizontal overflow on mobile */
-            overflow-x: hidden;
+            /* Allow horizontal scrolling when zoomed or on small screens */
+            overflow-x: auto;
             max-width: 100vw;
         }
         

@@ -5,6 +5,27 @@
 ?>
 
 <style>
+/* Table responsive container - CRITICAL for horizontal scrolling */
+.table-responsive {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    /* Ensure scrolling works on all devices */
+    overflow-y: visible;
+    /* Add subtle border to indicate scrollable area */
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    background: var(--bg-secondary);
+}
+
+/* Ensure data table has minimum width to trigger scroll */
+.data-table {
+    width: 100%;
+    min-width: 50rem; /* Minimum width to enable horizontal scroll on small screens */
+    border-collapse: collapse;
+}
+
 /* Mobile Responsive Styles for Analytics */
 @media (max-width: 768px) {
     /* Stack stat cards vertically on mobile */
@@ -18,10 +39,15 @@
         align-items: stretch !important;
     }
     
-    /* Table responsive */
+    /* Table responsive - ensure scrolling works */
     .table-responsive {
-        overflow-x: auto;
+        display: block;
+        overflow-x: auto !important;
         -webkit-overflow-scrolling: touch;
+        width: 100%;
+        overflow-y: visible;
+        margin: 0;
+        padding: 0;
     }
     
     .data-table {

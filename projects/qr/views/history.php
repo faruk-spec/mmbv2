@@ -9,11 +9,18 @@ if ($userId) {
 ?>
 
 <style>
-/* Table scroll container for mobile */
+/* Table scroll container - CRITICAL for horizontal scrolling */
 .table-scroll {
+    display: block;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     width: 100%;
+    /* Ensure scrolling works on all devices */
+    overflow-y: visible;
+    /* Add subtle border to indicate scrollable area */
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    background: var(--bg-secondary);
 }
 
 /* Mobile Responsive Styles */
@@ -26,10 +33,12 @@ if ($userId) {
     
     /* Enhanced mobile table scrolling */
     .table-scroll {
+        display: block;
         margin: 0;
         padding: 0;
         width: 100%;
-        overflow-x: scroll;
+        overflow-x: auto !important;
+        overflow-y: visible;
     }
     
     /* Table stays at min-width to enable scrolling */
@@ -207,7 +216,7 @@ if ($userId) {
             <i class="fas fa-arrows-alt-h"></i> Swipe left/right to view all columns
         </div>
         
-        <div class="table-scroll" style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+        <div class="table-scroll" style="display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; border: 1px solid var(--border-color); border-radius: 0.5rem; background: var(--bg-secondary);">
             <table class="history-table" style="width: 100%; border-collapse: collapse; min-width: 80rem;">
                 <thead>
                     <tr style="border-bottom: 2px solid var(--border-color);">
