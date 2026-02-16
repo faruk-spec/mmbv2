@@ -63,6 +63,42 @@
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     transition: all 0.2s ease;
 }
+
+/* Icon-only button styling */
+.icon-only-btn {
+    min-width: 2.5rem;
+    position: relative;
+}
+
+/* Enhanced tooltip styling */
+.icon-only-btn:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-8px);
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 1000;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.icon-only-btn:hover::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-2px);
+    border: 5px solid transparent;
+    border-top-color: rgba(0, 0, 0, 0.9);
+    pointer-events: none;
+    z-index: 1000;
+}
 </style>
 
 <!-- Stats Overview -->
@@ -143,8 +179,8 @@
                             <td><span class="status-badge status-<?= $qr['status'] ?>"><?= ucfirst($qr['status']) ?></span></td>
                             <td>
                                 <?php if (empty($qr['deleted_at'])): ?>
-                                    <a href="/projects/qr/view/<?= $qr['id'] ?>" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 0.375rem 0.75rem;">
-                                        <i class="fas fa-eye"></i> View
+                                    <a href="/projects/qr/view/<?= $qr['id'] ?>" class="btn btn-secondary btn-sm icon-only-btn" title="View QR Code" style="font-size: 0.75rem; padding: 0.375rem 0.75rem;">
+                                        <i class="fas fa-eye"></i>
                                     </a>
                                 <?php else: ?>
                                     <span style="color: var(--text-secondary); font-size: 0.75rem;">Deleted</span>

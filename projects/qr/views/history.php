@@ -76,6 +76,42 @@ if ($userId) {
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
 
+/* Icon-only button styling */
+.icon-only-btn {
+    min-width: 2.5rem;
+    position: relative;
+}
+
+/* Enhanced tooltip styling */
+.icon-only-btn:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-8px);
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 1000;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.icon-only-btn:hover::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-2px);
+    border: 5px solid transparent;
+    border-top-color: rgba(0, 0, 0, 0.9);
+    pointer-events: none;
+    z-index: 1000;
+}
+
 /* Improve button styling */
 .btn-info {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -167,7 +203,7 @@ if ($userId) {
                     <?php foreach ($history as $qr): ?>
                         <tr style="border-bottom: 1px solid var(--border-color);">
                             <td style="padding: 0.75rem;">
-                                <input type="checkbox" name="qr_ids[]" value="<?= $qr['id'] ?>" class="qr-checkbox" style="width: 18px; height: 18px; cursor: pointer;">
+                                <input type="checkbox" name="qr_ids[]" value="<?= $qr['id'] ?>" class="qr-checkbox" form="bulkDeleteForm" style="width: 18px; height: 18px; cursor: pointer;">
                             </td>
                             <td style="padding: 0.75rem;">
                                 <div style="background: white; padding: 0.5rem; border-radius: 0.25rem; display: inline-block;">
@@ -228,34 +264,34 @@ if ($userId) {
                             <td style="padding: 0.75rem;">
                                 <div class="action-buttons" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                                     <a href="/projects/qr/view/<?= $qr['id'] ?>" 
-                                       class="btn btn-secondary btn-sm" 
+                                       class="btn btn-secondary btn-sm icon-only-btn" 
                                        title="View QR Code"
                                        style="padding: 0.5rem 0.75rem; text-decoration: none;">
-                                        <i class="fas fa-eye"></i> View
+                                        <i class="fas fa-eye"></i>
                                     </a>
                                     <?php if ($qr['is_dynamic'] ?? false): ?>
                                     <a href="/projects/qr/edit/<?= $qr['id'] ?>" 
-                                       class="btn btn-info btn-sm" 
+                                       class="btn btn-info btn-sm icon-only-btn" 
                                        title="Edit QR Code"
                                        style="padding: 0.5rem 0.75rem; text-decoration: none;">
-                                        <i class="fas fa-edit"></i> Edit
+                                        <i class="fas fa-edit"></i>
                                     </a>
                                     <?php endif; ?>
                                     <button onclick="downloadQRCode(<?= $qr['id'] ?>)" 
-                                            class="btn btn-success btn-sm" 
+                                            class="btn btn-success btn-sm icon-only-btn" 
                                             title="Download QR Code"
                                             style="padding: 0.5rem 0.75rem;">
-                                        <i class="fas fa-download"></i> Download
+                                        <i class="fas fa-download"></i>
                                     </button>
                                     <form method="POST" action="/projects/qr/delete" style="display: inline;">
                                         <input type="hidden" name="_csrf_token" value="<?= \Core\Security::generateCsrfToken() ?>">
                                         <input type="hidden" name="id" value="<?= $qr['id'] ?>">
                                         <button type="submit" 
                                                 onclick="return confirm('Are you sure you want to delete this QR code?')" 
-                                                class="btn btn-danger btn-sm" 
+                                                class="btn btn-danger btn-sm icon-only-btn" 
                                                 title="Delete QR Code"
                                                 style="padding: 0.5rem 0.75rem;">
-                                            <i class="fas fa-trash"></i> Delete
+                                            <i class="fas fa-trash"></i>
                                         </button>
                                     </form>
                                 </div>

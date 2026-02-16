@@ -24,7 +24,7 @@ header("Expires: 0");
 <html lang="en" data-theme="<?= htmlspecialchars($defaultTheme) ?>">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -91,6 +91,9 @@ header("Expires: 0");
             scroll-behavior: smooth;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
+            /* Prevent horizontal overflow on mobile */
+            overflow-x: hidden;
+            max-width: 100vw;
         }
         
         body {
@@ -103,6 +106,9 @@ header("Expires: 0");
             /* Performance optimization */
             will-change: scroll-position;
             -webkit-overflow-scrolling: touch;
+            /* Prevent horizontal overflow on mobile */
+            overflow-x: hidden;
+            max-width: 100vw;
         }
         
         /* Layout Structure - optimized with rem */
