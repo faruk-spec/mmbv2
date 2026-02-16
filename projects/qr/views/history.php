@@ -57,18 +57,16 @@ if ($userId) {
         </div>
         
         <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
-            <table style="width: 100%; border-collapse: collapse; min-width: 80rem;">
+            <table style="width: 100%; border-collapse: collapse; min-width: 65rem;">
                 <thead>
                     <tr style="border-bottom: 2px solid var(--border-color);">
                         <th style="padding: 0.75rem; text-align: left; width: 3rem;"></th>
                         <th style="padding: 0.75rem; text-align: left; width: 5rem;">Preview</th>
-                        <th style="padding: 0.75rem; text-align: left; width: 15rem;">Content</th>
+                        <th style="padding: 0.75rem; text-align: left; width: 18rem;">Content</th>
                         <th style="padding: 0.75rem; text-align: left; width: 6rem;">Type</th>
                         <th style="padding: 0.75rem; text-align: left; width: 5rem;">Size</th>
                         <th style="padding: 0.75rem; text-align: left; width: 5rem;">Scans</th>
-                        <th style="padding: 0.75rem; text-align: left; width: 6rem;">Campaign</th>
-                        <th style="padding: 0.75rem; text-align: left; width: 6rem;">Password</th>
-                        <th style="padding: 0.75rem; text-align: left; width: 7rem;">Expiry</th>
+                        <th style="padding: 0.75rem; text-align: left; width: 8rem;">Campaign</th>
                         <th style="padding: 0.75rem; text-align: left; width: 8rem;">Created</th>
                         <th style="padding: 0.75rem; text-align: left; width: 14rem;">Actions</th>
                     </tr>
@@ -108,24 +106,6 @@ if ($userId) {
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
-                            </td>
-                            <td style="padding: 0.75rem;">
-                                <?php if (!empty($qr['password_hash'])): ?>
-                                    <span style="color: #10b981; font-size: 0.75rem;">
-                                        <i class="fas fa-lock"></i> Protected
-                                    </span>
-                                <?php else: ?>
-                                    <span style="color: var(--text-secondary); font-size: 0.75rem;">None</span>
-                                <?php endif; ?>
-                            </td>
-                            <td style="padding: 0.75rem;">
-                                <?php if (!empty($qr['expires_at'])): ?>
-                                    <span style="font-size: 0.75rem; <?= strtotime($qr['expires_at']) < time() ? 'color: #ef4444;' : 'color: #10b981;' ?>">
-                                        <?= date('M j, Y', strtotime($qr['expires_at'])) ?>
-                                    </span>
-                                <?php else: ?>
-                                    <span style="color: var(--text-secondary); font-size: 0.75rem;">Never</span>
-                                <?php endif; ?>
                             </td>
                             <td style="padding: 0.75rem; color: var(--text-secondary); font-size: 0.875rem;">
                                 <?= date('M j, Y', strtotime($qr['created_at'])) ?>

@@ -90,23 +90,6 @@ class QRController
         // Advanced features
         $isDynamic = isset($_POST['is_dynamic']) ? 1 : 0;
         $redirectUrl = $isDynamic ? Security::sanitize($_POST['redirect_url'] ?? '') : null;
-        $hasPassword = isset($_POST['has_password']) ? 1 : 0;
-        $passwordHash = null;
-        if ($hasPassword && !empty($_POST['password'])) {
-            $passwordHash = password_hash($_POST['password'], PASSWORD_BCRYPT);
-        }
-        $hasExpiry = isset($_POST['has_expiry']) ? 1 : 0;
-        $expiresAt = $hasExpiry && !empty($_POST['expires_at']) ? $_POST['expires_at'] : null;
-        
-        // IMPORTANT: Force dynamic mode if password or expiry is set
-        // This ensures QR codes go through the access verification route
-        if ($hasPassword || $hasExpiry) {
-            $isDynamic = 1;
-            // Store original content as redirect URL
-            if (empty($redirectUrl)) {
-                $redirectUrl = $content;
-            }
-        }
         
         // Campaign (can come from URL or form)
         $campaignId = !empty($_POST['campaign_id']) ? (int) $_POST['campaign_id'] : null;
@@ -166,28 +149,23 @@ class QRController
                 'logo_remove_bg' => $logoRemoveBg,
                 'is_dynamic' => $isDynamic,
                 'redirect_url' => $redirectUrl,
-                'password_hash' => $passwordHash,
-                'expires_at' => $expiresAt,
                 'campaign_id' => $campaignId,
                 'status' => 'active'
             ]);
             
             if ($qrId) {
-                // Generate short code for dynamic QR, password-protected, or expiring QR codes
-                if ($isDynamic || $hasPassword || $hasExpiry) {
+                // Generate short code for dynamic QR codes
+                if ($isDynamic) {
                     $shortCode = $this->generateShortCode($qrId);
                     $this->qrModel->updateShortCode($qrId, $shortCode);
                     
                     // Build access URL
                     $accessUrl = 'https://' . $_SERVER['HTTP_HOST'] . '/projects/qr/access/' . $shortCode;
                     
-                    // CRITICAL FIX: Update the content field to the access URL for password/expiry protected QRs
-                    // This ensures the QR code itself contains the access URL, not the direct content
-                    if ($hasPassword || $hasExpiry) {
-                        $this->qrModel->update($qrId, $userId, ['content' => $accessUrl]);
-                        // Update session content so the displayed QR has the correct access URL
-                        $_SESSION['generated_qr']['content'] = $accessUrl;
-                    }
+                    // Update the content field to the access URL for dynamic QRs
+                    $this->qrModel->update($qrId, $userId, ['content' => $accessUrl]);
+                    // Update session content so the displayed QR has the correct access URL
+                    $_SESSION['generated_qr']['content'] = $accessUrl;
                     
                     // Update session with short code URL for display
                     $_SESSION['generated_qr']['short_code'] = $shortCode;
@@ -590,22 +568,6 @@ class QRController
             'status' => Security::sanitize($_POST['status'] ?? 'active')
         ];
         
-        // Update password if provided
-        $hasPassword = isset($_POST['has_password']) ? 1 : 0;
-        if ($hasPassword && !empty($_POST['password'])) {
-            $updateData['password_hash'] = password_hash($_POST['password'], PASSWORD_BCRYPT);
-        } elseif (!$hasPassword) {
-            $updateData['password_hash'] = null;
-        }
-        
-        // Update expiry date
-        $hasExpiry = isset($_POST['has_expiry']) ? 1 : 0;
-        if ($hasExpiry && !empty($_POST['expires_at'])) {
-            $updateData['expires_at'] = $_POST['expires_at'];
-        } elseif (!$hasExpiry) {
-            $updateData['expires_at'] = null;
-        }
-        
         if ($this->qrModel->update($id, $userId, $updateData)) {
             Logger::activity($userId, 'qr_updated', ['qr_id' => $id]);
             Helpers::flash('success', 'QR code updated successfully!');
@@ -617,7 +579,7 @@ class QRController
     }
     
     /**
-     * Show access form for protected/dynamic QR codes
+     * Show access form for dynamic QR codes
      */
     public function showAccessForm(string $code): void
     {
@@ -631,110 +593,17 @@ class QRController
             return;
         }
         
-        // Check expiry first
-        if ($qr['expires_at'] && strtotime($qr['expires_at']) < time()) {
-            $this->render('expired', [
-                'title' => 'QR Code Expired',
-                'qr' => $qr
-            ]);
-            return;
-        }
-        
-        // Check if password protected
-        if ($qr['password_hash']) {
-            $this->render('access', [
-                'title' => 'Enter Password',
-                'qr' => $qr,
-                'code' => $code
-            ]);
-            return;
-        }
-        
         // No protection, redirect directly
         $this->redirectQR($qr);
     }
     
     /**
-     * Verify access to protected QR code
+     * Verify access to QR code (kept for backward compatibility but not used)
      */
     public function verifyAccess(string $code): void
     {
-        // Verify CSRF
-        if (!Security::verifyCsrfToken($_POST['_csrf_token'] ?? '')) {
-            Helpers::flash('error', 'Invalid request.');
-            Helpers::redirect('/projects/qr/access/' . $code);
-            return;
-        }
-        
-        // Basic rate limiting with exponential backoff
-        $sessionKey = 'qr_access_attempts_' . $code;
-        $attempts = $_SESSION[$sessionKey] ?? 0;
-        $lastAttempt = $_SESSION[$sessionKey . '_time'] ?? 0;
-        
-        // Calculate exponential backoff: 2^attempts seconds (max 300 seconds)
-        $backoffTime = min(300, pow(2, $attempts));
-        $timeSinceLastAttempt = time() - $lastAttempt;
-        
-        // Reset counter after backoff period
-        if ($timeSinceLastAttempt > $backoffTime) {
-            $attempts = 0;
-        }
-        
-        // Check if still in backoff period
-        if ($attempts > 0 && $timeSinceLastAttempt < $backoffTime) {
-            $waitTime = $backoffTime - $timeSinceLastAttempt;
-            Helpers::flash('error', "Please wait " . $waitTime . " seconds before trying again.");
-            Helpers::redirect('/projects/qr/access/' . $code);
-            return;
-        }
-        
-        // Hard limit after 5 failed attempts (requires 5-minute wait)
-        if ($attempts >= 5 && $timeSinceLastAttempt < 300) {
-            $waitTime = 300 - $timeSinceLastAttempt;
-            Helpers::flash('error', "Too many failed attempts. Please try again in " . ceil($waitTime / 60) . " minutes.");
-            Helpers::redirect('/projects/qr/access/' . $code);
-            return;
-        }
-        
-        // Find QR code by short code
-        $qr = $this->qrModel->getByShortCode($code);
-        
-        if (!$qr) {
-            Helpers::flash('error', 'QR code not found.');
-            Helpers::redirect('/');
-            return;
-        }
-        
-        // Check expiry
-        if ($qr['expires_at'] && strtotime($qr['expires_at']) < time()) {
-            Helpers::flash('error', 'This QR code has expired.');
-            Helpers::redirect('/projects/qr/access/' . $code);
-            return;
-        }
-        
-        // Verify password
-        if ($qr['password_hash']) {
-            $password = $_POST['password'] ?? '';
-            if (!password_verify($password, $qr['password_hash'])) {
-                // Increment failed attempts
-                $_SESSION[$sessionKey] = $attempts + 1;
-                $_SESSION[$sessionKey . '_time'] = time();
-                
-                Helpers::flash('error', 'Incorrect password.');
-                Helpers::redirect('/projects/qr/access/' . $code);
-                return;
-            }
-            
-            // Clear failed attempts on success
-            unset($_SESSION[$sessionKey]);
-            unset($_SESSION[$sessionKey . '_time']);
-        }
-        
-        // Track scan
-        $this->qrModel->trackScan($qr['id']);
-        
-        // Redirect to content
-        $this->redirectQR($qr);
+        // Simply redirect to the QR code
+        $this->showAccessForm($code);
     }
     
     /**

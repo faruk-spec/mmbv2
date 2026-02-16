@@ -958,38 +958,6 @@
                 <small>This URL can be edited later</small>
             </div>
             
-            <div class="feature-toggle">
-                <label class="toggle-label">
-                    <input type="checkbox" name="has_password" id="hasPassword" value="1" class="toggle-input">
-                    <span class="toggle-slider"></span>
-                    <span class="toggle-text">
-                        <strong>Password Protection</strong>
-                        <small>Require password to scan</small>
-                    </span>
-                </label>
-            </div>
-            
-            <div class="form-group" id="passwordGroup" style="display: none;">
-                <label class="form-label">Password</label>
-                <input type="password" name="password" id="qrPassword" class="form-input" placeholder="Enter password">
-            </div>
-            
-            <div class="feature-toggle">
-                <label class="toggle-label">
-                    <input type="checkbox" name="has_expiry" id="hasExpiry" value="1" class="toggle-input">
-                    <span class="toggle-slider"></span>
-                    <span class="toggle-text">
-                        <strong>Set Expiry Date</strong>
-                        <small>QR code stops working after this date</small>
-                    </span>
-                </label>
-            </div>
-            
-            <div class="form-group" id="expiryGroup" style="display: none;">
-                <label class="form-label">Expires On</label>
-                <input type="datetime-local" name="expires_at" id="expiresAt" class="form-input">
-            </div>
-            
             <div class="divider"></div>
             
             <!-- Action Button -->
@@ -1058,12 +1026,6 @@
                         <?php endif; ?>
                         <?php if (isset($_SESSION['generated_qr']['is_dynamic']) && $_SESSION['generated_qr']['is_dynamic']): ?>
                             <p><span class="badge badge-dynamic">🔄 Dynamic</span></p>
-                        <?php endif; ?>
-                        <?php if (isset($_SESSION['generated_qr']['has_password']) && $_SESSION['generated_qr']['has_password']): ?>
-                            <p><span class="badge badge-secure">🔒 Protected</span></p>
-                        <?php endif; ?>
-                        <?php if (isset($_SESSION['generated_qr']['expires_at'])): ?>
-                            <p><span class="badge badge-expiry">⏰ Expires: <?= htmlspecialchars(date('M d, Y', strtotime($_SESSION['generated_qr']['expires_at']))) ?></span></p>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -1530,26 +1492,6 @@ if (isDynamicEl) {
         const redirectUrlGroup = document.getElementById('redirectUrlGroup');
         if (redirectUrlGroup) {
             redirectUrlGroup.style.display = this.checked ? 'block' : 'none';
-        }
-    });
-}
-
-const hasPasswordEl = document.getElementById('hasPassword');
-if (hasPasswordEl) {
-    hasPasswordEl.addEventListener('change', function() {
-        const passwordGroup = document.getElementById('passwordGroup');
-        if (passwordGroup) {
-            passwordGroup.style.display = this.checked ? 'block' : 'none';
-        }
-    });
-}
-
-const hasExpiryEl = document.getElementById('hasExpiry');
-if (hasExpiryEl) {
-    hasExpiryEl.addEventListener('change', function() {
-        const expiryGroup = document.getElementById('expiryGroup');
-        if (expiryGroup) {
-            expiryGroup.style.display = this.checked ? 'block' : 'none';
         }
     });
 }
@@ -2026,7 +1968,6 @@ function renderQRCode(qrOptions, content) {
             <p><strong>Type:</strong> ${document.getElementById('qrType').value}</p>
             <p><strong>Size:</strong> ${qrOptions.width}px</p>
             ${document.getElementById('isDynamic').checked ? '<p><span class="badge badge-dynamic">🔄 Dynamic</span></p>' : ''}
-            ${document.getElementById('hasPassword').checked ? '<p><span class="badge badge-secure">🔒 Protected</span></p>' : ''}
         `;
         container.appendChild(infoDiv);
         
