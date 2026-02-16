@@ -110,47 +110,63 @@ class SettingsModel
      */
     private function create(int $userId, array $data): bool
     {
-        $sql = "INSERT INTO qr_user_settings (
-            user_id, default_size, default_foreground_color, 
-            default_background_color, default_error_correction, 
-            default_frame_style, default_download_format,
-            default_corner_style, default_dot_style,
-            default_marker_border_style, default_marker_center_style,
-            default_logo_color, default_logo_size, default_logo_remove_bg,
-            default_gradient_enabled, default_gradient_color,
-            default_transparent_bg, default_custom_marker_color, default_marker_color,
-            auto_save, email_notifications, scan_notification_threshold,
-            created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+        // Build dynamic SQL based on what columns actually exist
+        $fields = ['user_id'];
+        $placeholders = ['?'];
+        $params = [$userId];
         
-        $params = [
-            $userId,
-            $data['default_size'] ?? 300,
-            $data['default_foreground_color'] ?? '#000000',
-            $data['default_background_color'] ?? '#ffffff',
-            $data['default_error_correction'] ?? 'H',
-            $data['default_frame_style'] ?? 'none',
-            $data['default_download_format'] ?? 'png',
-            // Design defaults
-            $data['default_corner_style'] ?? 'square',
-            $data['default_dot_style'] ?? 'square',
-            $data['default_marker_border_style'] ?? 'square',
-            $data['default_marker_center_style'] ?? 'square',
-            // Logo defaults
-            $data['default_logo_color'] ?? '#9945ff',
-            $data['default_logo_size'] ?? 0.30,
-            isset($data['default_logo_remove_bg']) ? 1 : 0,
-            // Advanced defaults
-            isset($data['default_gradient_enabled']) ? 1 : 0,
-            $data['default_gradient_color'] ?? '#9945ff',
-            isset($data['default_transparent_bg']) ? 1 : 0,
-            isset($data['default_custom_marker_color']) ? 1 : 0,
-            $data['default_marker_color'] ?? '#9945ff',
-            // Preferences
-            $data['auto_save'] ?? 1,
-            $data['email_notifications'] ?? 0,
-            $data['scan_notification_threshold'] ?? 10
+        // Basic settings that should always exist
+        $basicFields = [
+            'default_size', 'default_foreground_color', 'default_background_color',
+            'default_error_correction', 'default_frame_style', 'default_download_format',
+            'auto_save', 'email_notifications', 'scan_notification_threshold'
         ];
+        
+        foreach ($basicFields as $field) {
+            $fields[] = $field;
+            $placeholders[] = '?';
+            $params[] = $data[$field] ?? $this->getDefaults()[$field];
+        }
+        
+        // Optional fields that might not exist yet
+        $optionalFields = [
+            'default_corner_style', 'default_dot_style',
+            'default_marker_border_style', 'default_marker_center_style',
+            'default_logo_color', 'default_logo_size', 'default_logo_remove_bg',
+            'default_gradient_enabled', 'default_gradient_color',
+            'default_transparent_bg', 'default_custom_marker_color', 'default_marker_color'
+        ];
+        
+        // Try to get table structure to see what columns exist
+        try {
+            $checkSql = "SHOW COLUMNS FROM qr_user_settings";
+            $columns = $this->db->query($checkSql)->fetchAll();
+            $existingColumns = array_column($columns, 'Field');
+            
+            foreach ($optionalFields as $field) {
+                if (in_array($field, $existingColumns)) {
+                    $fields[] = $field;
+                    $placeholders[] = '?';
+                    $value = isset($data[$field]) ? $data[$field] : $this->getDefaults()[$field];
+                    // Handle checkbox values
+                    if (strpos($field, '_enabled') !== false || 
+                        strpos($field, '_remove_bg') !== false || 
+                        strpos($field, '_custom_') !== false ||
+                        strpos($field, '_transparent_') !== false) {
+                        $value = isset($data[$field]) ? 1 : 0;
+                    }
+                    $params[] = $value;
+                }
+            }
+        } catch (\Exception $e) {
+            // If we can't check columns, just use basic fields
+            \Core\Logger::warning('Could not check table structure: ' . $e->getMessage());
+        }
+        
+        $fields[] = 'created_at';
+        $placeholders[] = 'NOW()';
+        
+        $sql = "INSERT INTO qr_user_settings (" . implode(', ', $fields) . ") VALUES (" . implode(', ', $placeholders) . ")";
         
         try {
             $this->db->query($sql, $params);
@@ -170,59 +186,60 @@ class SettingsModel
      */
     private function update(int $userId, array $data): bool
     {
-        $sql = "UPDATE qr_user_settings SET
-            default_size = ?,
-            default_foreground_color = ?,
-            default_background_color = ?,
-            default_error_correction = ?,
-            default_frame_style = ?,
-            default_download_format = ?,
-            default_corner_style = ?,
-            default_dot_style = ?,
-            default_marker_border_style = ?,
-            default_marker_center_style = ?,
-            default_logo_color = ?,
-            default_logo_size = ?,
-            default_logo_remove_bg = ?,
-            default_gradient_enabled = ?,
-            default_gradient_color = ?,
-            default_transparent_bg = ?,
-            default_custom_marker_color = ?,
-            default_marker_color = ?,
-            auto_save = ?,
-            email_notifications = ?,
-            scan_notification_threshold = ?,
-            updated_at = NOW()
-            WHERE user_id = ?";
+        // Build dynamic SQL based on what columns actually exist
+        $setClauses = [];
+        $params = [];
         
-        $params = [
-            $data['default_size'] ?? 300,
-            $data['default_foreground_color'] ?? '#000000',
-            $data['default_background_color'] ?? '#ffffff',
-            $data['default_error_correction'] ?? 'H',
-            $data['default_frame_style'] ?? 'none',
-            $data['default_download_format'] ?? 'png',
-            // Design defaults
-            $data['default_corner_style'] ?? 'square',
-            $data['default_dot_style'] ?? 'square',
-            $data['default_marker_border_style'] ?? 'square',
-            $data['default_marker_center_style'] ?? 'square',
-            // Logo defaults
-            $data['default_logo_color'] ?? '#9945ff',
-            $data['default_logo_size'] ?? 0.30,
-            isset($data['default_logo_remove_bg']) ? 1 : 0,
-            // Advanced defaults
-            isset($data['default_gradient_enabled']) ? 1 : 0,
-            $data['default_gradient_color'] ?? '#9945ff',
-            isset($data['default_transparent_bg']) ? 1 : 0,
-            isset($data['default_custom_marker_color']) ? 1 : 0,
-            $data['default_marker_color'] ?? '#9945ff',
-            // Preferences
-            $data['auto_save'] ?? 1,
-            $data['email_notifications'] ?? 0,
-            $data['scan_notification_threshold'] ?? 10,
-            $userId
+        // Basic settings that should always exist
+        $basicFields = [
+            'default_size', 'default_foreground_color', 'default_background_color',
+            'default_error_correction', 'default_frame_style', 'default_download_format',
+            'auto_save', 'email_notifications', 'scan_notification_threshold'
         ];
+        
+        foreach ($basicFields as $field) {
+            $setClauses[] = "$field = ?";
+            $params[] = $data[$field] ?? $this->getDefaults()[$field];
+        }
+        
+        // Optional fields that might not exist yet
+        $optionalFields = [
+            'default_corner_style', 'default_dot_style',
+            'default_marker_border_style', 'default_marker_center_style',
+            'default_logo_color', 'default_logo_size', 'default_logo_remove_bg',
+            'default_gradient_enabled', 'default_gradient_color',
+            'default_transparent_bg', 'default_custom_marker_color', 'default_marker_color'
+        ];
+        
+        // Try to get table structure to see what columns exist
+        try {
+            $checkSql = "SHOW COLUMNS FROM qr_user_settings";
+            $columns = $this->db->query($checkSql)->fetchAll();
+            $existingColumns = array_column($columns, 'Field');
+            
+            foreach ($optionalFields as $field) {
+                if (in_array($field, $existingColumns)) {
+                    $setClauses[] = "$field = ?";
+                    $value = isset($data[$field]) ? $data[$field] : $this->getDefaults()[$field];
+                    // Handle checkbox values
+                    if (strpos($field, '_enabled') !== false || 
+                        strpos($field, '_remove_bg') !== false || 
+                        strpos($field, '_custom_') !== false ||
+                        strpos($field, '_transparent_') !== false) {
+                        $value = isset($data[$field]) ? 1 : 0;
+                    }
+                    $params[] = $value;
+                }
+            }
+        } catch (\Exception $e) {
+            // If we can't check columns, just use basic fields
+            \Core\Logger::warning('Could not check table structure: ' . $e->getMessage());
+        }
+        
+        $setClauses[] = "updated_at = NOW()";
+        $params[] = $userId;
+        
+        $sql = "UPDATE qr_user_settings SET " . implode(', ', $setClauses) . " WHERE user_id = ?";
         
         try {
             $this->db->query($sql, $params);

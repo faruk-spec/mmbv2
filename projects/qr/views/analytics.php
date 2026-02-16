@@ -171,8 +171,41 @@
             <i class="fas fa-eye"></i>
         </div>
         <div class="stat-content">
-            <h3><?= number_format(array_sum(array_column($recentQRs, 'scan_count'))) ?></h3>
+            <h3><?= number_format($scanStats['total'] ?? 0) ?></h3>
             <p>Total Scans</p>
+        </div>
+    </div>
+</div>
+
+<!-- Additional Analytics Stats -->
+<div class="grid grid-3" style="gap: 20px; margin-bottom: 30px;">
+    <div class="glass-card stat-card">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #fa709a, #fee140);">
+            <i class="fas fa-calendar-day"></i>
+        </div>
+        <div class="stat-content">
+            <h3><?= number_format($scanStats['today'] ?? 0) ?></h3>
+            <p>Scans Today</p>
+        </div>
+    </div>
+    
+    <div class="glass-card stat-card">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #30cfd0, #330867);">
+            <i class="fas fa-calendar-week"></i>
+        </div>
+        <div class="stat-content">
+            <h3><?= number_format($scanStats['this_week'] ?? 0) ?></h3>
+            <p>Scans This Week</p>
+        </div>
+    </div>
+    
+    <div class="glass-card stat-card">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #a8edea, #fed6e3);">
+            <i class="fas fa-chart-bar"></i>
+        </div>
+        <div class="stat-content">
+            <h3><?= $activeQRs > 0 ? number_format($scanStats['total'] / $activeQRs, 1) : '0' ?></h3>
+            <p>Avg Scans per QR</p>
         </div>
     </div>
 </div>

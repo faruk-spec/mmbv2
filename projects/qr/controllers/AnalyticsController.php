@@ -51,13 +51,17 @@ class AnalyticsController
         
         // Pagination parameters
         $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
-        $perPage = isset($_GET['per_page']) ? max(10, min(100, (int)$_GET['per_page'])) : 25;
+        $perPage = isset($_GET['per_page']) ? max(10, min(100, (int)$_GET['per_page'])) : 10;
         $offset = ($page - 1) * $perPage;
         
         // Get analytics data with date filtering
         $totalQRs = $this->qrModel->countAllByUserWithDateFilter($userId, $startDate, $endDate);
         $activeQRs = $this->qrModel->countActiveByUser($userId);
         $recentQRs = $this->qrModel->getAllByUserWithDateFilter($userId, $perPage, $offset, $startDate, $endDate);
+        
+        // Get additional analytics
+        $scanStats = $this->qrModel->getScanStats($userId);
+        $topQRs = $this->qrModel->getTopByScans($userId, 5);
         
         // Calculate pagination
         $totalPages = ceil($totalQRs / $perPage);
@@ -68,6 +72,8 @@ class AnalyticsController
             'totalQRs' => $totalQRs,
             'activeQRs' => $activeQRs,
             'recentQRs' => $recentQRs,
+            'scanStats' => $scanStats,
+            'topQRs' => $topQRs,
             'page' => $page,
             'perPage' => $perPage,
             'totalPages' => $totalPages,

@@ -339,13 +339,13 @@ class QRController
         $userId = Auth::id();
         $history = [];
         $totalCount = 0;
-        $perPage = (int)($_GET['per_page'] ?? 25);
+        $perPage = (int)($_GET['per_page'] ?? 10);
         $page = max(1, (int)($_GET['page'] ?? 1));
         $offset = ($page - 1) * $perPage;
         
         // Validate per_page value
         if (!in_array($perPage, [10, 25, 50, 100])) {
-            $perPage = 25;
+            $perPage = 10;
         }
         
         if ($userId) {
