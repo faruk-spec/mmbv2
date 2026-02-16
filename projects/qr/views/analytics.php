@@ -181,7 +181,7 @@
     </div>
     
     <?php if (!empty($recentQRs)): ?>
-        <div class="table-responsive">
+        <div class="table-responsive" style="display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; border: 1px solid var(--border-color); border-radius: 0.5rem; background: var(--bg-secondary);">
             <table class="data-table">
                 <thead>
                     <tr>
@@ -310,11 +310,6 @@ function changePerPage(perPage) {
 .stat-content p {
     color: var(--text-secondary);
     font-size: var(--font-sm);
-}
-
-.table-responsive {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
 }
 
 .data-table {

@@ -212,6 +212,10 @@ header("Expires: 0");
             min-height: calc(100vh - 3.75rem);
             /* Performance optimization */
             contain: layout style;
+            /* CRITICAL: Allow horizontal scrolling for tables and zoomed content */
+            overflow-x: auto;
+            /* Ensure proper width constraints */
+            max-width: calc(100vw - var(--sidebar-width));
         }
         
         .qr-main.expanded {
@@ -572,6 +576,9 @@ header("Expires: 0");
             .qr-main {
                 margin-left: 0;
                 padding: var(--space-lg) 0.9375rem; /* 24px 15px */
+                /* CRITICAL: Ensure scrolling works on mobile */
+                overflow-x: auto !important;
+                max-width: 100vw;
             }
             
             .sidebar-toggle {
