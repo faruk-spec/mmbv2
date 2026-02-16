@@ -4,7 +4,7 @@ $campaigns = [];
 $userId = \Core\Auth::id();
 if ($userId) {
     $db = \Core\Database::getInstance();
-    $campaigns = $db->fetchAll("SELECT id, name FROM campaigns WHERE user_id = ? ORDER BY name", [$userId]);
+    $campaigns = $db->fetchAll("SELECT id, name FROM qr_campaigns WHERE user_id = ? ORDER BY name", [$userId]);
 }
 ?>
 
@@ -57,16 +57,18 @@ if ($userId) {
         </div>
         
         <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
-            <table style="width: 100%; border-collapse: collapse; min-width: 65rem;">
+            <table style="width: 100%; border-collapse: collapse; min-width: 80rem;">
                 <thead>
                     <tr style="border-bottom: 2px solid var(--border-color);">
                         <th style="padding: 0.75rem; text-align: left; width: 3rem;"></th>
                         <th style="padding: 0.75rem; text-align: left; width: 5rem;">Preview</th>
-                        <th style="padding: 0.75rem; text-align: left; width: 18rem;">Content</th>
+                        <th style="padding: 0.75rem; text-align: left; width: 15rem;">Content</th>
                         <th style="padding: 0.75rem; text-align: left; width: 6rem;">Type</th>
                         <th style="padding: 0.75rem; text-align: left; width: 5rem;">Size</th>
                         <th style="padding: 0.75rem; text-align: left; width: 5rem;">Scans</th>
                         <th style="padding: 0.75rem; text-align: left; width: 8rem;">Campaign</th>
+                        <th style="padding: 0.75rem; text-align: left; width: 7rem;">Password</th>
+                        <th style="padding: 0.75rem; text-align: left; width: 8rem;">Expiry</th>
                         <th style="padding: 0.75rem; text-align: left; width: 8rem;">Created</th>
                         <th style="padding: 0.75rem; text-align: left; width: 14rem;">Actions</th>
                     </tr>
@@ -106,6 +108,29 @@ if ($userId) {
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
+                            </td>
+                            <td style="padding: 0.75rem;">
+                                <?php if (!empty($qr['password_hash'])): ?>
+                                    <span style="background: rgba(239, 68, 68, 0.1); color: #dc2626; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem;">
+                                        🔒 Protected
+                                    </span>
+                                <?php else: ?>
+                                    <span style="color: var(--text-secondary); font-size: 0.75rem;">None</span>
+                                <?php endif; ?>
+                            </td>
+                            <td style="padding: 0.75rem;">
+                                <?php if (!empty($qr['expires_at'])): ?>
+                                    <?php 
+                                    $expiryTime = strtotime($qr['expires_at']);
+                                    $isExpired = $expiryTime < time();
+                                    $color = $isExpired ? '#dc2626' : '#10b981';
+                                    ?>
+                                    <span style="color: <?= $color ?>; font-size: 0.75rem;">
+                                        <?= date('M j, Y', $expiryTime) ?>
+                                    </span>
+                                <?php else: ?>
+                                    <span style="color: var(--text-secondary); font-size: 0.75rem;">Never</span>
+                                <?php endif; ?>
                             </td>
                             <td style="padding: 0.75rem; color: var(--text-secondary); font-size: 0.875rem;">
                                 <?= date('M j, Y', strtotime($qr['created_at'])) ?>
