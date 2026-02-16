@@ -33,28 +33,40 @@ class DashboardController
         $stats = [
             'total_generated' => 0,
             'total_scans' => 0,
-            'active_codes' => 0
+            'active_codes' => 0,
+            'scans_today' => 0,
+            'scans_this_week' => 0,
+            'average_scans' => 0
         ];
+        
+        $recentQRs = [];
+        $topQRs = [];
         
         if ($userId) {
             try {
                 // Get total QR codes count (including deleted) - this never decreases
                 $stats['total_generated'] = $this->qrModel->countAllByUser($userId);
                 
-                // Get active (non-deleted) QR codes and total scans
-                $qrCodes = $this->qrModel->getByUser($userId);
-                $totalScans = 0;
-                $activeCodes = 0;
+                // Get active (non-deleted) QR codes
+                $stats['active_codes'] = $this->qrModel->countActiveByUser($userId);
                 
-                foreach ($qrCodes as $qr) {
-                    $totalScans += (int)($qr['scan_count'] ?? 0);
-                    if ($qr['status'] === 'active') {
-                        $activeCodes++;
-                    }
+                // Get scan statistics
+                $scanStats = $this->qrModel->getScanStats($userId);
+                $stats['total_scans'] = $scanStats['total'];
+                $stats['scans_today'] = $scanStats['today'];
+                $stats['scans_this_week'] = $scanStats['this_week'];
+                
+                // Calculate average scans per QR code
+                if ($stats['active_codes'] > 0) {
+                    $stats['average_scans'] = round($stats['total_scans'] / $stats['active_codes'], 1);
                 }
                 
-                $stats['total_scans'] = $totalScans;
-                $stats['active_codes'] = $activeCodes;
+                // Get recent activity (last 10 QR codes)
+                $recentQRs = $this->qrModel->getRecentByUser($userId, 10);
+                
+                // Get top performing QR codes (top 5 by scans)
+                $topQRs = $this->qrModel->getTopByScans($userId, 5);
+                
             } catch (\Exception $e) {
                 \Core\Logger::error('Failed to fetch QR stats: ' . $e->getMessage());
             }
@@ -63,7 +75,9 @@ class DashboardController
         $this->render('dashboard', [
             'title' => 'QR Generator Dashboard',
             'user' => $user,
-            'stats' => $stats
+            'stats' => $stats,
+            'recentQRs' => $recentQRs,
+            'topQRs' => $topQRs
         ]);
     }
     

@@ -249,6 +249,84 @@ class QRModel
     }
     
     /**
+     * Get scan statistics for dashboard
+     * 
+     * @param int $userId User ID
+     * @return array Statistics array with today, this_week, this_month, total
+     */
+    public function getScanStats(int $userId): array
+    {
+        $sql = "SELECT 
+                    SUM(scan_count) as total_scans,
+                    SUM(CASE WHEN DATE(created_at) = CURDATE() THEN scan_count ELSE 0 END) as scans_today,
+                    SUM(CASE WHEN YEARWEEK(created_at, 1) = YEARWEEK(CURDATE(), 1) THEN scan_count ELSE 0 END) as scans_this_week,
+                    SUM(CASE WHEN YEAR(created_at) = YEAR(CURDATE()) AND MONTH(created_at) = MONTH(CURDATE()) THEN scan_count ELSE 0 END) as scans_this_month
+                FROM qr_codes 
+                WHERE user_id = ? AND deleted_at IS NULL";
+        
+        try {
+            $result = $this->db->fetch($sql, [$userId]);
+            return [
+                'total' => (int)($result['total_scans'] ?? 0),
+                'today' => (int)($result['scans_today'] ?? 0),
+                'this_week' => (int)($result['scans_this_week'] ?? 0),
+                'this_month' => (int)($result['scans_this_month'] ?? 0)
+            ];
+        } catch (\Exception $e) {
+            \Core\Logger::error('Failed to get scan stats: ' . $e->getMessage());
+            return ['total' => 0, 'today' => 0, 'this_week' => 0, 'this_month' => 0];
+        }
+    }
+    
+    /**
+     * Get recent QR codes for dashboard
+     * 
+     * @param int $userId User ID
+     * @param int $limit Number of records to fetch
+     * @return array Recent QR codes
+     */
+    public function getRecentByUser(int $userId, int $limit = 10): array
+    {
+        $sql = "SELECT id, content, type, scan_count, created_at 
+                FROM qr_codes 
+                WHERE user_id = ? AND deleted_at IS NULL
+                ORDER BY created_at DESC 
+                LIMIT ?";
+        
+        try {
+            $results = $this->db->fetchAll($sql, [$userId, $limit]);
+            return $results ?: [];
+        } catch (\Exception $e) {
+            \Core\Logger::error('Failed to fetch recent QR codes: ' . $e->getMessage());
+            return [];
+        }
+    }
+    
+    /**
+     * Get top performing QR codes by scan count
+     * 
+     * @param int $userId User ID
+     * @param int $limit Number of records to fetch
+     * @return array Top QR codes
+     */
+    public function getTopByScans(int $userId, int $limit = 5): array
+    {
+        $sql = "SELECT id, content, type, scan_count, created_at 
+                FROM qr_codes 
+                WHERE user_id = ? AND deleted_at IS NULL AND scan_count > 0
+                ORDER BY scan_count DESC 
+                LIMIT ?";
+        
+        try {
+            $results = $this->db->fetchAll($sql, [$userId, $limit]);
+            return $results ?: [];
+        } catch (\Exception $e) {
+            \Core\Logger::error('Failed to fetch top QR codes: ' . $e->getMessage());
+            return [];
+        }
+    }
+    
+    /**
      * Update scan count for a QR code
      * 
      * @param int $id QR code ID
