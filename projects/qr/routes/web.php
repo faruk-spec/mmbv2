@@ -123,7 +123,27 @@ switch ($segments[0]) {
     case 'analytics':
         require_once PROJECT_PATH . '/controllers/AnalyticsController.php';
         $controller = new \Projects\QR\Controllers\AnalyticsController();
-        $controller->index();
+        
+        // Handle nested routes
+        if (isset($pathParts[4])) {
+            $action = $pathParts[4];
+            switch ($action) {
+                case 'export-csv':
+                    $controller->exportCsv();
+                    break;
+                case 'scan-trends':
+                    $controller->scanTrends();
+                    break;
+                case 'top-qrs':
+                    $controller->topQRs();
+                    break;
+                default:
+                    $controller->index();
+                    break;
+            }
+        } else {
+            $controller->index();
+        }
         break;
         
     case 'campaigns':

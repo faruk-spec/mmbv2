@@ -477,4 +477,125 @@ class QRModel
             return false;
         }
     }
+    
+    /**
+     * Get all QR codes for a user with date filter
+     * 
+     * @param int $userId User ID
+     * @param int $limit Number of records to fetch
+     * @param int $offset Offset for pagination
+     * @param string|null $startDate Start date filter (Y-m-d)
+     * @param string|null $endDate End date filter (Y-m-d)
+     * @return array QR codes
+     */
+    public function getAllByUserWithDateFilter(int $userId, int $limit = 50, int $offset = 0, ?string $startDate = null, ?string $endDate = null): array
+    {
+        $sql = "SELECT * FROM qr_codes WHERE user_id = ?";
+        $params = [$userId];
+        
+        if ($startDate) {
+            $sql .= " AND DATE(created_at) >= ?";
+            $params[] = $startDate;
+        }
+        
+        if ($endDate) {
+            $sql .= " AND DATE(created_at) <= ?";
+            $params[] = $endDate;
+        }
+        
+        $sql .= " ORDER BY created_at DESC LIMIT ? OFFSET ?";
+        $params[] = $limit;
+        $params[] = $offset;
+        
+        try {
+            $results = $this->db->fetchAll($sql, $params);
+            return $results ?: [];
+        } catch (\Exception $e) {
+            \Core\Logger::error('Failed to fetch QR codes with date filter: ' . $e->getMessage());
+            return [];
+        }
+    }
+    
+    /**
+     * Count QR codes for a user with date filter
+     * 
+     * @param int $userId User ID
+     * @param string|null $startDate Start date filter (Y-m-d)
+     * @param string|null $endDate End date filter (Y-m-d)
+     * @return int Count
+     */
+    public function countAllByUserWithDateFilter(int $userId, ?string $startDate = null, ?string $endDate = null): int
+    {
+        $sql = "SELECT COUNT(*) as count FROM qr_codes WHERE user_id = ?";
+        $params = [$userId];
+        
+        if ($startDate) {
+            $sql .= " AND DATE(created_at) >= ?";
+            $params[] = $startDate;
+        }
+        
+        if ($endDate) {
+            $sql .= " AND DATE(created_at) <= ?";
+            $params[] = $endDate;
+        }
+        
+        try {
+            $result = $this->db->fetch($sql, $params);
+            return (int)($result['count'] ?? 0);
+        } catch (\Exception $e) {
+            \Core\Logger::error('Failed to count QR codes with date filter: ' . $e->getMessage());
+            return 0;
+        }
+    }
+    
+    /**
+     * Get scan trends for chart (last N days)
+     * 
+     * @param int $userId User ID
+     * @param int $days Number of days to include
+     * @return array Scan trends data
+     */
+    public function getScanTrends(int $userId, int $days = 30): array
+    {
+        // Generate date range
+        $dates = [];
+        for ($i = $days - 1; $i >= 0; $i--) {
+            $dates[] = date('Y-m-d', strtotime("-$i days"));
+        }
+        
+        // Get scan counts by date
+        $sql = "SELECT DATE(created_at) as date, SUM(scan_count) as scans
+                FROM qr_codes
+                WHERE user_id = ? 
+                AND deleted_at IS NULL
+                AND DATE(created_at) >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
+                GROUP BY DATE(created_at)
+                ORDER BY date";
+        
+        try {
+            $results = $this->db->fetchAll($sql, [$userId, $days]);
+            
+            // Create a map of date => scans
+            $scanMap = [];
+            foreach ($results as $row) {
+                $scanMap[$row['date']] = (int)$row['scans'];
+            }
+            
+            // Fill in all dates with 0 for missing days
+            $data = [
+                'labels' => [],
+                'values' => []
+            ];
+            
+            foreach ($dates as $date) {
+                $data['labels'][] = date('M j', strtotime($date));
+                $data['values'][] = isset($scanMap[$date]) ? $scanMap[$date] : 0;
+            }
+            
+            return $data;
+        } catch (\Exception $e) {
+            \Core\Logger::error('Failed to get scan trends: ' . $e->getMessage());
+            return ['labels' => [], 'values' => []];
+        }
+    }
 }
