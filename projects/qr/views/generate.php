@@ -12,6 +12,9 @@
         <form method="POST" action="/projects/qr/generate" id="qrForm" enctype="multipart/form-data">
             <input type="hidden" name="_csrf_token" value="<?= \Core\Security::generateCsrfToken() ?>">
             <input type="hidden" name="qr_data_url" id="qrDataUrl">
+            <?php if (isset($_GET['campaign_id'])): ?>
+            <input type="hidden" name="campaign_id" value="<?= (int)$_GET['campaign_id'] ?>">
+            <?php endif; ?>
             
             <!-- QR Type Selection -->
             <div class="form-group">
