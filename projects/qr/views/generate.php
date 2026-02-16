@@ -3540,3 +3540,133 @@ small {
     box-shadow: 0 4px 12px rgba(153, 69, 255, 0.4);
 }
 </style>
+
+<script>
+// Apply user settings defaults if available
+<?php if (!empty($settings)): ?>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Applying user default settings...');
+    
+    // Basic defaults
+    const sizeSelect = document.getElementById('qrSize');
+    if (sizeSelect && <?= (int)($settings['default_size'] ?? 300) ?>) {
+        sizeSelect.value = '<?= (int)($settings['default_size'] ?? 300) ?>';
+    }
+    
+    const errorCorrection = document.getElementById('errorCorrection');
+    if (errorCorrection) {
+        errorCorrection.value = '<?= htmlspecialchars($settings['default_error_correction'] ?? 'H') ?>';
+    }
+    
+    const fgColor = document.getElementById('qrFgColor');
+    if (fgColor) {
+        fgColor.value = '<?= htmlspecialchars($settings['default_foreground_color'] ?? '#000000') ?>';
+    }
+    
+    const bgColor = document.getElementById('qrBgColor');
+    if (bgColor) {
+        bgColor.value = '<?= htmlspecialchars($settings['default_background_color'] ?? '#ffffff') ?>';
+    }
+    
+    // Design defaults
+    const dotStyle = document.getElementById('dotStyle');
+    if (dotStyle) {
+        dotStyle.value = '<?= htmlspecialchars($settings['default_dot_style'] ?? 'square') ?>';
+        // Update visual selection if exists
+        const dotOption = document.querySelector('[data-preset="dotStyle"][data-value="<?= htmlspecialchars($settings['default_dot_style'] ?? 'square') ?>"]');
+        if (dotOption) {
+            document.querySelectorAll('[data-preset="dotStyle"]').forEach(el => el.classList.remove('active'));
+            dotOption.classList.add('active');
+        }
+    }
+    
+    const cornerStyle = document.getElementById('cornerStyle');
+    if (cornerStyle) {
+        cornerStyle.value = '<?= htmlspecialchars($settings['default_corner_style'] ?? 'square') ?>';
+        // Update visual selection if exists
+        const cornerOption = document.querySelector('[data-preset="cornerStyle"][data-value="<?= htmlspecialchars($settings['default_corner_style'] ?? 'square') ?>"]');
+        if (cornerOption) {
+            document.querySelectorAll('[data-preset="cornerStyle"]').forEach(el => el.classList.remove('active'));
+            cornerOption.classList.add('active');
+        }
+    }
+    
+    const markerBorderStyle = document.getElementById('markerBorderStyle');
+    if (markerBorderStyle) {
+        markerBorderStyle.value = '<?= htmlspecialchars($settings['default_marker_border_style'] ?? 'square') ?>';
+        const markerBorderOption = document.querySelector('[data-preset="markerBorderStyle"][data-value="<?= htmlspecialchars($settings['default_marker_border_style'] ?? 'square') ?>"]');
+        if (markerBorderOption) {
+            document.querySelectorAll('[data-preset="markerBorderStyle"]').forEach(el => el.classList.remove('active'));
+            markerBorderOption.classList.add('active');
+        }
+    }
+    
+    const markerCenterStyle = document.getElementById('markerCenterStyle');
+    if (markerCenterStyle) {
+        markerCenterStyle.value = '<?= htmlspecialchars($settings['default_marker_center_style'] ?? 'square') ?>';
+        const markerCenterOption = document.querySelector('[data-preset="markerCenterStyle"][data-value="<?= htmlspecialchars($settings['default_marker_center_style'] ?? 'square') ?>"]');
+        if (markerCenterOption) {
+            document.querySelectorAll('[data-preset="markerCenterStyle"]').forEach(el => el.classList.remove('active'));
+            markerCenterOption.classList.add('active');
+        }
+    }
+    
+    // Logo defaults
+    const logoColor = document.getElementById('logoColor');
+    if (logoColor) {
+        logoColor.value = '<?= htmlspecialchars($settings['default_logo_color'] ?? '#9945ff') ?>';
+    }
+    
+    const logoSize = document.getElementById('logoSize');
+    if (logoSize) {
+        logoSize.value = '<?= floatval($settings['default_logo_size'] ?? 0.30) ?>';
+        // Update display if there's a connected element
+        const logoSizeDisplay = document.getElementById('logoSizeValue');
+        if (logoSizeDisplay) {
+            logoSizeDisplay.textContent = '<?= floatval($settings['default_logo_size'] ?? 0.30) ?>';
+        }
+    }
+    
+    const logoRemoveBg = document.getElementById('logoRemoveBg');
+    if (logoRemoveBg) {
+        logoRemoveBg.checked = <?= !empty($settings['default_logo_remove_bg']) ? 'true' : 'false' ?>;
+    }
+    
+    // Advanced defaults
+    const gradientEnabled = document.getElementById('gradientEnabled');
+    if (gradientEnabled) {
+        gradientEnabled.checked = <?= !empty($settings['default_gradient_enabled']) ? 'true' : 'false' ?>;
+        const gradientColorGroup = document.getElementById('gradientColorGroup');
+        if (gradientColorGroup) {
+            gradientColorGroup.style.display = gradientEnabled.checked ? 'block' : 'none';
+        }
+    }
+    
+    const gradientColor = document.getElementById('gradientColor');
+    if (gradientColor) {
+        gradientColor.value = '<?= htmlspecialchars($settings['default_gradient_color'] ?? '#9945ff') ?>';
+    }
+    
+    const transparentBg = document.getElementById('transparentBg');
+    if (transparentBg) {
+        transparentBg.checked = <?= !empty($settings['default_transparent_bg']) ? 'true' : 'false' ?>;
+    }
+    
+    const customMarkerColor = document.getElementById('customMarkerColor');
+    if (customMarkerColor) {
+        customMarkerColor.checked = <?= !empty($settings['default_custom_marker_color']) ? 'true' : 'false' ?>;
+        const markerColorGroup = document.getElementById('markerColorGroup');
+        if (markerColorGroup) {
+            markerColorGroup.style.display = customMarkerColor.checked ? 'block' : 'none';
+        }
+    }
+    
+    const markerColor = document.getElementById('markerColor');
+    if (markerColor) {
+        markerColor.value = '<?= htmlspecialchars($settings['default_marker_color'] ?? '#9945ff') ?>';
+    }
+    
+    console.log('User default settings applied successfully');
+});
+<?php endif; ?>
+</script>

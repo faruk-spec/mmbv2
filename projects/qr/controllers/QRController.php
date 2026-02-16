@@ -12,14 +12,17 @@ use Core\Security;
 use Core\Helpers;
 use Core\Logger;
 use Projects\QR\Models\QRModel;
+use Projects\QR\Models\SettingsModel;
 
 class QRController
 {
     private QRModel $qrModel;
+    private SettingsModel $settingsModel;
     
     public function __construct()
     {
         $this->qrModel = new QRModel();
+        $this->settingsModel = new SettingsModel();
     }
     
     /**
@@ -27,9 +30,18 @@ class QRController
      */
     public function showForm(): void
     {
+        $userId = Auth::id();
+        $settings = [];
+        
+        // Load user settings if logged in
+        if ($userId) {
+            $settings = $this->settingsModel->get($userId);
+        }
+        
         $this->render('generate', [
             'title' => 'Generate QR Code',
-            'user' => Auth::user()
+            'user' => Auth::user(),
+            'settings' => $settings
         ]);
     }
     
