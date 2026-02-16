@@ -177,6 +177,53 @@
     </div>
 </div>
 
+<!-- Date Range Filter -->
+<div class="glass-card" style="margin-bottom: 30px;">
+    <h3 class="section-title" style="margin-bottom: var(--space-lg);">
+        <i class="fas fa-filter"></i> Filter Analytics
+    </h3>
+    <form id="dateFilterForm" method="GET" style="display: flex; flex-wrap: wrap; gap: var(--space-md); align-items: end;">
+        <div style="flex: 1; min-width: 200px;">
+            <label for="start_date" style="display: block; margin-bottom: 0.5rem; font-size: var(--font-sm); color: var(--text-secondary);">Start Date</label>
+            <input type="date" id="start_date" name="start_date" class="form-input" value="<?= $_GET['start_date'] ?? '' ?>" style="width: 100%;">
+        </div>
+        <div style="flex: 1; min-width: 200px;">
+            <label for="end_date" style="display: block; margin-bottom: 0.5rem; font-size: var(--font-sm); color: var(--text-secondary);">End Date</label>
+            <input type="date" id="end_date" name="end_date" class="form-input" value="<?= $_GET['end_date'] ?? '' ?>" style="width: 100%;">
+        </div>
+        <div style="display: flex; gap: var(--space-sm); flex-wrap: wrap;">
+            <button type="button" class="btn-secondary btn-sm" onclick="setDateRange('all')">All Time</button>
+            <button type="button" class="btn-secondary btn-sm" onclick="setDateRange(7)">Last 7 Days</button>
+            <button type="button" class="btn-secondary btn-sm" onclick="setDateRange(30)">Last 30 Days</button>
+            <button type="button" class="btn-secondary btn-sm" onclick="setDateRange(90)">Last 90 Days</button>
+        </div>
+        <div style="display: flex; gap: var(--space-sm);">
+            <button type="submit" class="btn-primary btn-sm">
+                <i class="fas fa-check"></i> Apply
+            </button>
+            <button type="button" class="btn-secondary btn-sm" onclick="exportCSV()">
+                <i class="fas fa-download"></i> Export CSV
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Charts Section -->
+<div class="grid grid-2" style="gap: 20px; margin-bottom: 30px;">
+    <div class="glass-card">
+        <h3 class="section-title" style="margin-bottom: var(--space-lg);">
+            <i class="fas fa-chart-line"></i> Scan Trends
+        </h3>
+        <canvas id="scanTrendsChart" style="max-height: 300px;"></canvas>
+    </div>
+    <div class="glass-card">
+        <h3 class="section-title" style="margin-bottom: var(--space-lg);">
+            <i class="fas fa-chart-bar"></i> Top QR Codes
+        </h3>
+        <canvas id="topQRsChart" style="max-height: 300px;"></canvas>
+    </div>
+</div>
+
 <!-- Recent Activity -->
 <div class="glass-card">
     <div class="analytics-controls" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg); flex-wrap: nowrap; gap: var(--space-md);">
@@ -295,6 +342,163 @@
 function changePerPage(perPage) {
     window.location.href = '?page=1&per_page=' + perPage;
 }
+
+function setDateRange(days) {
+    const endDate = new Date();
+    const startDate = new Date();
+    
+    if (days === 'all') {
+        document.getElementById('start_date').value = '';
+        document.getElementById('end_date').value = '';
+    } else {
+        startDate.setDate(endDate.getDate() - days);
+        document.getElementById('start_date').value = startDate.toISOString().split('T')[0];
+        document.getElementById('end_date').value = endDate.toISOString().split('T')[0];
+    }
+}
+
+function exportCSV() {
+    const startDate = document.getElementById('start_date').value;
+    const endDate = document.getElementById('end_date').value;
+    let url = '/projects/qr/analytics/export-csv';
+    const params = new URLSearchParams();
+    
+    if (startDate) params.append('start_date', startDate);
+    if (endDate) params.append('end_date', endDate);
+    
+    if (params.toString()) {
+        url += '?' + params.toString();
+    }
+    
+    window.location.href = url;
+}
+</script>
+
+<!-- Chart.js Library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<!-- Chart Initialization -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const startDate = urlParams.get('start_date') || '';
+    const endDate = urlParams.get('end_date') || '';
+    
+    // Fetch and render Scan Trends Chart
+    fetch(`/projects/qr/analytics/scan-trends?start_date=${startDate}&end_date=${endDate}`)
+        .then(response => response.json())
+        .then(data => {
+            const ctx = document.getElementById('scanTrendsChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.labels || [],
+                    datasets: [{
+                        label: 'Scans',
+                        data: data.values || [],
+                        borderColor: '#00f2fe',
+                        backgroundColor: 'rgba(0, 242, 254, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#e0e0e0'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#b0b0b0'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: '#b0b0b0'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            }
+                        }
+                    }
+                }
+            });
+        })
+        .catch(error => console.error('Error loading scan trends:', error));
+    
+    // Fetch and render Top QRs Chart
+    fetch(`/projects/qr/analytics/top-qrs?start_date=${startDate}&end_date=${endDate}`)
+        .then(response => response.json())
+        .then(data => {
+            const ctx = document.getElementById('topQRsChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.labels || [],
+                    datasets: [{
+                        label: 'Scans',
+                        data: data.values || [],
+                        backgroundColor: [
+                            'rgba(102, 126, 234, 0.8)',
+                            'rgba(118, 75, 162, 0.8)',
+                            'rgba(240, 147, 251, 0.8)',
+                            'rgba(245, 87, 108, 0.8)',
+                            'rgba(79, 172, 254, 0.8)'
+                        ],
+                        borderColor: [
+                            '#667eea',
+                            '#764ba2',
+                            '#f093fb',
+                            '#f5576c',
+                            '#4facfe'
+                        ],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#b0b0b0'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            }
+                        },
+                        y: {
+                            ticks: {
+                                color: '#b0b0b0'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            }
+                        }
+                    }
+                }
+            });
+        })
+        .catch(error => console.error('Error loading top QRs:', error));
+});
 </script>
 
 <style>
