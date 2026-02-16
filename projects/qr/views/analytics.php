@@ -68,6 +68,7 @@
                         <th>Created</th>
                         <th>Last Scanned</th>
                         <th>Status</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -79,6 +80,15 @@
                             <td><?= date('M d, Y', strtotime($qr['created_at'])) ?></td>
                             <td><?= $qr['last_scanned_at'] ? date('M d, Y', strtotime($qr['last_scanned_at'])) : 'Never' ?></td>
                             <td><span class="status-badge status-<?= $qr['status'] ?>"><?= ucfirst($qr['status']) ?></span></td>
+                            <td>
+                                <?php if (empty($qr['deleted_at'])): ?>
+                                    <a href="/projects/qr/view/<?= $qr['id'] ?>" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 0.375rem 0.75rem;">
+                                        <i class="fas fa-eye"></i> View
+                                    </a>
+                                <?php else: ?>
+                                    <span style="color: var(--text-secondary); font-size: 0.75rem;">Deleted</span>
+                                <?php endif; ?>
+                            </td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
