@@ -91,13 +91,21 @@ class SettingsModel
      */
     public function save(int $userId, array $data): bool
     {
-        // Check if settings exist
-        $existing = $this->get($userId);
+        // Check if settings exist in database
+        $sql = "SELECT id FROM qr_user_settings WHERE user_id = ?";
         
-        if (isset($existing['id'])) {
+        try {
+            $result = $this->db->query($sql, [$userId])->fetch();
+            
+            if ($result && isset($result['id'])) {
+                return $this->update($userId, $data);
+            } else {
+                return $this->create($userId, $data);
+            }
+        } catch (\Exception $e) {
+            \Core\Logger::error('Failed to check if user settings exist: ' . $e->getMessage());
+            // If we can't check, try update first (most common case)
             return $this->update($userId, $data);
-        } else {
-            return $this->create($userId, $data);
         }
     }
     
@@ -147,14 +155,8 @@ class SettingsModel
                 if (in_array($field, $existingColumns)) {
                     $fields[] = $field;
                     $placeholders[] = '?';
-                    $value = isset($data[$field]) ? $data[$field] : $this->getDefaults()[$field];
-                    // Handle checkbox values
-                    if (strpos($field, '_enabled') !== false || 
-                        strpos($field, '_remove_bg') !== false || 
-                        strpos($field, '_custom_') !== false ||
-                        strpos($field, '_transparent_') !== false) {
-                        $value = isset($data[$field]) ? 1 : 0;
-                    }
+                    // Use the value from data if provided, otherwise use default
+                    $value = $data[$field] ?? $this->getDefaults()[$field];
                     $params[] = $value;
                 }
             }
@@ -220,14 +222,8 @@ class SettingsModel
             foreach ($optionalFields as $field) {
                 if (in_array($field, $existingColumns)) {
                     $setClauses[] = "$field = ?";
-                    $value = isset($data[$field]) ? $data[$field] : $this->getDefaults()[$field];
-                    // Handle checkbox values
-                    if (strpos($field, '_enabled') !== false || 
-                        strpos($field, '_remove_bg') !== false || 
-                        strpos($field, '_custom_') !== false ||
-                        strpos($field, '_transparent_') !== false) {
-                        $value = isset($data[$field]) ? 1 : 0;
-                    }
+                    // Use the value from data if provided, otherwise use default
+                    $value = $data[$field] ?? $this->getDefaults()[$field];
                     $params[] = $value;
                 }
             }
@@ -242,10 +238,11 @@ class SettingsModel
         $sql = "UPDATE qr_user_settings SET " . implode(', ', $setClauses) . " WHERE user_id = ?";
         
         try {
-            $this->db->query($sql, $params);
+            $result = $this->db->query($sql, $params);
+            \Core\Logger::info('Settings updated for user ' . $userId . ' - SQL: ' . $sql);
             return true;
         } catch (\Exception $e) {
-            \Core\Logger::error('Failed to update user settings: ' . $e->getMessage());
+            \Core\Logger::error('Failed to update user settings: ' . $e->getMessage() . ' - SQL: ' . $sql);
             return false;
         }
     }

@@ -83,10 +83,17 @@ class SettingsController
                 'scan_notification_threshold' => intval($_POST['scan_notification_threshold'] ?? 10)
             ];
             
-            if ($this->model->save($userId, $data)) {
-                $_SESSION['success'] = 'Settings updated successfully';
-            } else {
-                $_SESSION['error'] = 'Failed to update settings';
+            try {
+                if ($this->model->save($userId, $data)) {
+                    $_SESSION['success'] = 'Settings updated successfully';
+                    \Core\Logger::info('User ' . $userId . ' successfully updated settings');
+                } else {
+                    $_SESSION['error'] = 'Failed to update settings. Please check the logs or try again.';
+                    \Core\Logger::error('Settings save returned false for user ' . $userId);
+                }
+            } catch (\Exception $e) {
+                $_SESSION['error'] = 'An error occurred: ' . $e->getMessage();
+                \Core\Logger::error('Exception during settings save for user ' . $userId . ': ' . $e->getMessage());
             }
             
             header('Location: /projects/qr/settings');
