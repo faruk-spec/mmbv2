@@ -28,6 +28,69 @@
     </a>
 </div>
 
+<!-- AI Design Assistant Widget -->
+<div class="card ai-design-widget" style="margin-bottom: 30px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1)); border: 2px solid rgba(153, 69, 255, 0.3); padding: 25px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+        <h3 style="display: flex; align-items: center; gap: 12px; font-size: 1.3rem; margin: 0;">
+            <div style="width: 50px; height: 50px; background: linear-gradient(135deg, var(--purple), var(--cyan)); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-magic" style="font-size: 1.5rem; color: white;"></i>
+            </div>
+            <div>
+                <div style="font-weight: 700;">AI Design Assistant</div>
+                <div style="font-size: 0.85rem; font-weight: 400; color: var(--text-secondary); margin-top: 3px;">Smart QR code design suggestions</div>
+            </div>
+        </h3>
+        <div class="ai-badge" style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 8px 16px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.5px;">
+            ✨ AI POWERED
+        </div>
+    </div>
+    
+    <!-- Quick Design Presets -->
+    <div style="margin-bottom: 20px;">
+        <h4 style="font-size: 0.95rem; margin-bottom: 12px; color: var(--text-secondary); font-weight: 600;">
+            <i class="fas fa-palette"></i> Quick Design Presets
+        </h4>
+        <div class="design-presets-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px;">
+            <a href="/projects/qr/generate?preset=modern" class="design-preset-card" style="text-decoration: none; padding: 15px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); border-radius: 10px; text-align: center; transition: all 0.3s; cursor: pointer;">
+                <div style="width: 40px; height: 40px; margin: 0 auto 8px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 8px;"></div>
+                <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 3px;">Modern</div>
+                <div style="font-size: 0.7rem; color: var(--text-secondary);">Clean & minimal</div>
+            </a>
+            
+            <a href="/projects/qr/generate?preset=vibrant" class="design-preset-card" style="text-decoration: none; padding: 15px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); border-radius: 10px; text-align: center; transition: all 0.3s; cursor: pointer;">
+                <div style="width: 40px; height: 40px; margin: 0 auto 8px; background: linear-gradient(135deg, #f093fb, #f5576c); border-radius: 8px;"></div>
+                <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 3px;">Vibrant</div>
+                <div style="font-size: 0.7rem; color: var(--text-secondary);">Bold & colorful</div>
+            </a>
+            
+            <a href="/projects/qr/generate?preset=professional" class="design-preset-card" style="text-decoration: none; padding: 15px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); border-radius: 10px; text-align: center; transition: all 0.3s; cursor: pointer;">
+                <div style="width: 40px; height: 40px; margin: 0 auto 8px; background: linear-gradient(135deg, #2c3e50, #34495e); border-radius: 8px;"></div>
+                <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 3px;">Professional</div>
+                <div style="font-size: 0.7rem; color: var(--text-secondary);">Business ready</div>
+            </a>
+            
+            <a href="/projects/qr/generate?preset=gradient" class="design-preset-card" style="text-decoration: none; padding: 15px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); border-radius: 10px; text-align: center; transition: all 0.3s; cursor: pointer;">
+                <div style="width: 40px; height: 40px; margin: 0 auto 8px; background: linear-gradient(135deg, #4facfe, #00f2fe); border-radius: 8px;"></div>
+                <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 3px;">Gradient</div>
+                <div style="font-size: 0.7rem; color: var(--text-secondary);">Smooth blend</div>
+            </a>
+        </div>
+    </div>
+    
+    <!-- AI Suggestions -->
+    <div style="background: rgba(0, 0, 0, 0.2); padding: 15px; border-radius: 10px; border-left: 3px solid var(--cyan);">
+        <div style="display: flex; align-items: start; gap: 12px;">
+            <i class="fas fa-lightbulb" style="color: var(--cyan); font-size: 1.2rem; margin-top: 2px;"></i>
+            <div style="flex: 1;">
+                <div style="font-weight: 600; margin-bottom: 8px; font-size: 0.95rem;">AI Design Tip</div>
+                <div style="font-size: 0.85rem; line-height: 1.5; color: var(--text-secondary);">
+                    Based on your usage patterns, we recommend using <strong style="color: var(--cyan);">rounded corners</strong> and <strong style="color: var(--purple);">gradient colors</strong> for better scan rates. Try the "Modern" preset!
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Enhanced Statistics Grid -->
 <div class="grid grid-3 stats-grid" style="margin-bottom: 30px; gap: 20px;">
     <div class="card stat-card" style="position: relative; overflow: hidden;">
@@ -265,6 +328,62 @@
     .quick-action-btn:hover {
         transform: translateY(-5px) scale(1.02);
         box-shadow: 0 8px 25px rgba(153, 69, 255, 0.4) !important;
+    }
+    
+    /* AI Design Widget */
+    .ai-design-widget {
+        animation: slideInFromLeft 0.6s ease-out;
+    }
+    
+    @keyframes slideInFromLeft {
+        from {
+            opacity: 0;
+            transform: translateX(-30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+    
+    .design-preset-card {
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .design-preset-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+        transition: left 0.5s;
+    }
+    
+    .design-preset-card:hover {
+        transform: translateY(-3px);
+        border-color: var(--cyan);
+        background: rgba(255, 255, 255, 0.08);
+        box-shadow: 0 4px 12px rgba(0, 240, 255, 0.2);
+    }
+    
+    .design-preset-card:hover::before {
+        left: 100%;
+    }
+    
+    .ai-badge {
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% {
+            box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.7);
+        }
+        50% {
+            box-shadow: 0 0 0 10px rgba(102, 126, 234, 0);
+        }
     }
     
     a.card:hover {

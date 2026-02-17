@@ -48,7 +48,7 @@
         </button>
     </div>
     
-    <form method="POST" action="/projects/qr/settings/update" style="max-width: 50rem;">
+    <form method="POST" action="/projects/qr/settings" style="max-width: 50rem;">
         
         <!-- Tab Content: Defaults -->
         <div class="tab-content active" id="content-defaults">

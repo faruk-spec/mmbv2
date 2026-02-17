@@ -3,6 +3,38 @@
 // Futuristic UI with theme integration and live preview
 ?>
 
+<?php if (isset($preset) && $preset): ?>
+<div class="preset-notification" style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1)); border: 2px solid rgba(153, 69, 255, 0.4); border-radius: 12px; padding: 15px 20px; margin-bottom: 25px; display: flex; align-items: center; gap: 15px; animation: slideInDown 0.5s ease-out;">
+    <div style="width: 45px; height: 45px; background: linear-gradient(135deg, var(--purple), var(--cyan)); border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+        <i class="fas fa-magic" style="color: white; font-size: 1.3rem;"></i>
+    </div>
+    <div style="flex: 1;">
+        <div style="font-weight: 700; font-size: 1rem; margin-bottom: 3px;">
+            <i class="fas fa-check-circle" style="color: var(--green);"></i> AI Preset Applied: <?= ucfirst(htmlspecialchars($preset)) ?>
+        </div>
+        <div style="font-size: 0.85rem; color: var(--text-secondary);">
+            Design settings have been automatically configured for optimal results
+        </div>
+    </div>
+    <a href="/projects/qr/generate" style="padding: 8px 16px; background: rgba(255, 255, 255, 0.1); border: 1px solid var(--border-color); border-radius: 8px; text-decoration: none; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;">
+        Clear Preset
+    </a>
+</div>
+
+<style>
+@keyframes slideInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+</style>
+<?php endif; ?>
+
 <div class="grid grid-2">
     <div class="glass-card">
         <h3 class="section-title">

@@ -38,11 +38,74 @@ class QRController
             $settings = $this->settingsModel->get($userId);
         }
         
+        // Check for design preset parameter
+        $preset = $_GET['preset'] ?? null;
+        $presetSettings = $this->getPresetSettings($preset);
+        
+        // Merge preset with user settings (preset takes precedence)
+        if ($presetSettings) {
+            $settings = array_merge($settings, $presetSettings);
+        }
+        
         $this->render('generate', [
             'title' => 'Generate QR Code',
             'user' => Auth::user(),
-            'settings' => $settings
+            'settings' => $settings,
+            'preset' => $preset
         ]);
+    }
+    
+    /**
+     * Get preset design settings
+     */
+    private function getPresetSettings(?string $preset): array
+    {
+        if (!$preset) {
+            return [];
+        }
+        
+        $presets = [
+            'modern' => [
+                'default_foreground_color' => '#667eea',
+                'default_background_color' => '#ffffff',
+                'default_corner_style' => 'extra-rounded',
+                'default_dot_style' => 'rounded',
+                'default_marker_border_style' => 'extra-rounded',
+                'default_marker_center_style' => 'extra-rounded',
+                'default_gradient_enabled' => 0,
+            ],
+            'vibrant' => [
+                'default_foreground_color' => '#f093fb',
+                'default_background_color' => '#ffffff',
+                'default_corner_style' => 'dot',
+                'default_dot_style' => 'classy-rounded',
+                'default_marker_border_style' => 'extra-rounded',
+                'default_marker_center_style' => 'dot',
+                'default_gradient_enabled' => 1,
+                'default_gradient_color' => '#f5576c',
+            ],
+            'professional' => [
+                'default_foreground_color' => '#2c3e50',
+                'default_background_color' => '#ffffff',
+                'default_corner_style' => 'square',
+                'default_dot_style' => 'square',
+                'default_marker_border_style' => 'square',
+                'default_marker_center_style' => 'square',
+                'default_gradient_enabled' => 0,
+            ],
+            'gradient' => [
+                'default_foreground_color' => '#4facfe',
+                'default_background_color' => '#ffffff',
+                'default_corner_style' => 'extra-rounded',
+                'default_dot_style' => 'rounded',
+                'default_marker_border_style' => 'extra-rounded',
+                'default_marker_center_style' => 'extra-rounded',
+                'default_gradient_enabled' => 1,
+                'default_gradient_color' => '#00f2fe',
+            ],
+        ];
+        
+        return $presets[$preset] ?? [];
     }
     
     /**
