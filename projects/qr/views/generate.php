@@ -425,21 +425,27 @@
                 <div class="form-group">
                     <label class="form-label">Size</label>
                     <select name="size" id="qrSize" class="form-select">
-                        <option value="150">Small (150x150)</option>
-                        <option value="200">Medium (200x200)</option>
-                        <option value="300" selected>Large (300x300)</option>
-                        <option value="400">Extra Large (400x400)</option>
-                        <option value="500">Huge (500x500)</option>
+                        <?php 
+                        $defaultSize = !empty($settings) ? ($settings['default_size'] ?? 300) : 300;
+                        ?>
+                        <option value="150" <?= $defaultSize == 150 ? 'selected' : '' ?>>Small (150x150)</option>
+                        <option value="200" <?= $defaultSize == 200 ? 'selected' : '' ?>>Medium (200x200)</option>
+                        <option value="300" <?= $defaultSize == 300 ? 'selected' : '' ?>>Large (300x300)</option>
+                        <option value="400" <?= $defaultSize == 400 ? 'selected' : '' ?>>Extra Large (400x400)</option>
+                        <option value="500" <?= $defaultSize == 500 ? 'selected' : '' ?>>Huge (500x500)</option>
                     </select>
                 </div>
                 
                 <div class="form-group">
                     <label class="form-label">Error Correction</label>
                     <select name="error_correction" id="errorCorrection" class="form-select">
-                        <option value="L">Low (7%)</option>
-                        <option value="M">Medium (15%)</option>
-                        <option value="Q">Quartile (25%)</option>
-                        <option value="H" selected>High (30%)</option>
+                        <?php 
+                        $defaultEC = !empty($settings) ? ($settings['default_error_correction'] ?? 'H') : 'H';
+                        ?>
+                        <option value="L" <?= $defaultEC == 'L' ? 'selected' : '' ?>>Low (7%)</option>
+                        <option value="M" <?= $defaultEC == 'M' ? 'selected' : '' ?>>Medium (15%)</option>
+                        <option value="Q" <?= $defaultEC == 'Q' ? 'selected' : '' ?>>Quartile (25%)</option>
+                        <option value="H" <?= $defaultEC == 'H' ? 'selected' : '' ?>>High (30%)</option>
                     </select>
                 </div>
             </div>
@@ -452,19 +458,28 @@
             <div class="grid grid-2" style="gap: 15px;">
                 <div class="form-group">
                     <label class="form-label">Foreground Color</label>
-                    <input type="color" name="foreground_color" id="qrColor" value="#000000" class="form-input color-input">
+                    <?php 
+                    $defaultFgColor = !empty($settings) ? ($settings['default_foreground_color'] ?? '#000000') : '#000000';
+                    ?>
+                    <input type="color" name="foreground_color" id="qrColor" value="<?= htmlspecialchars($defaultFgColor) ?>" class="form-input color-input">
                 </div>
                 
                 <div class="form-group">
                     <label class="form-label">Background Color</label>
-                    <input type="color" name="background_color" id="qrBgColor" value="#ffffff" class="form-input color-input">
+                    <?php 
+                    $defaultBgColor = !empty($settings) ? ($settings['default_background_color'] ?? '#ffffff') : '#ffffff';
+                    ?>
+                    <input type="color" name="background_color" id="qrBgColor" value="<?= htmlspecialchars($defaultBgColor) ?>" class="form-input color-input">
                 </div>
             </div>
             
             <!-- Gradient Toggle for Foreground -->
             <div class="feature-toggle">
                 <label class="toggle-label">
-                    <input type="checkbox" name="gradient_enabled" id="gradientEnabled" value="1" class="toggle-input">
+                    <?php 
+                    $defaultGradientEnabled = !empty($settings) ? (!empty($settings['default_gradient_enabled']) ? 'checked' : '') : '';
+                    ?>
+                    <input type="checkbox" name="gradient_enabled" id="gradientEnabled" value="1" class="toggle-input" <?= $defaultGradientEnabled ?>>
                     <span class="toggle-slider"></span>
                     <span class="toggle-text">
                         <strong><i class="fas fa-palette"></i> Gradient Foreground</strong>
@@ -475,7 +490,10 @@
             
             <div class="form-group" id="gradientColorGroup" style="display: none;">
                 <label class="form-label"><i class="fas fa-palette"></i> Gradient End Color</label>
-                <input type="color" name="gradient_color" id="gradientColor" value="#9945ff" class="form-input color-input">
+                <?php 
+                $defaultGradientColor = !empty($settings) ? ($settings['default_gradient_color'] ?? '#9945ff') : '#9945ff';
+                ?>
+                <input type="color" name="gradient_color" id="gradientColor" value="<?= htmlspecialchars($defaultGradientColor) ?>" class="form-input color-input">
                 <small class="help-text">
                     <i class="fas fa-magic"></i> Creates a smooth gradient from foreground color to this color.
                 </small>
@@ -484,7 +502,10 @@
             <!-- Transparent Background Toggle -->
             <div class="feature-toggle">
                 <label class="toggle-label">
-                    <input type="checkbox" name="transparent_bg" id="transparentBg" value="1" class="toggle-input">
+                    <?php 
+                    $defaultTransparentBg = !empty($settings) ? (!empty($settings['default_transparent_bg']) ? 'checked' : '') : '';
+                    ?>
+                    <input type="checkbox" name="transparent_bg" id="transparentBg" value="1" class="toggle-input" <?= $defaultTransparentBg ?>>
                     <span class="toggle-slider"></span>
                     <span class="toggle-text">
                         <strong>Transparent Background</strong>

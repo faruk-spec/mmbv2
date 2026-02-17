@@ -1,63 +1,80 @@
-<div class="page-header" style="margin-bottom: 30px;">
-    <h1 class="dashboard-title" style="font-size: 2rem; font-weight: 700;">QR Generator Dashboard</h1>
-    <p class="dashboard-subtitle" style="color: var(--text-secondary); margin-top: 8px;">Create and manage your QR codes</p>
+<div class="page-header" style="margin-bottom: 30px; text-align: center;">
+    <h1 class="dashboard-title" style="font-size: 2.5rem; font-weight: 700; background: linear-gradient(135deg, var(--purple), var(--cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+        QR Generator Dashboard
+    </h1>
+    <p class="dashboard-subtitle" style="color: var(--text-secondary); margin-top: 8px; font-size: 1.1rem;">
+        Welcome back! Manage and track your QR codes
+    </p>
 </div>
 
-<!-- Quick Generate - Promoted Section -->
-<div class="card quick-generate-card" style="margin-bottom: 30px; background: linear-gradient(135deg, var(--purple), var(--cyan)); padding: 30px; border: none;">
-    <h3 style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px; color: white;">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"/>
-            <line x1="12" y1="8" x2="12" y2="16"/>
-            <line x1="8" y1="12" x2="16" y2="12"/>
-        </svg>
-        Quick Generate
-    </h3>
-    <p style="color: rgba(255,255,255,0.9); margin-bottom: 20px; font-size: 14px; line-height: 1.6;">
-        Create a new QR code in seconds. You have <strong><?= number_format($stats['active_codes']) ?> active QR code<?= $stats['active_codes'] != 1 ? 's' : '' ?></strong>.
-    </p>
-    <a href="/projects/qr/generate" class="btn" style="background: white; color: var(--purple); font-weight: 600; border: none;">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"/>
-            <line x1="12" y1="8" x2="12" y2="16"/>
-            <line x1="8" y1="12" x2="16" y2="12"/>
-        </svg>
-        Generate New QR Code
+<!-- Quick Actions Bar -->
+<div class="quick-actions-bar" style="display: flex; gap: 15px; margin-bottom: 30px; flex-wrap: wrap; justify-content: center;">
+    <a href="/projects/qr/generate" class="quick-action-btn" style="flex: 1; min-width: 200px; max-width: 250px; background: linear-gradient(135deg, var(--purple), var(--cyan)); color: white; padding: 20px; border-radius: 12px; text-decoration: none; text-align: center; box-shadow: 0 4px 15px rgba(153, 69, 255, 0.3); transition: transform 0.2s;">
+        <i class="fas fa-plus-circle" style="font-size: 2rem; margin-bottom: 10px; display: block;"></i>
+        <strong style="font-size: 1.1rem;">Generate QR</strong>
+        <p style="margin: 5px 0 0 0; font-size: 0.85rem; opacity: 0.9;">Create new code</p>
+    </a>
+    
+    <a href="/projects/qr/history" class="quick-action-btn" style="flex: 1; min-width: 200px; max-width: 250px; background: linear-gradient(135deg, #f093fb, #f5576c); color: white; padding: 20px; border-radius: 12px; text-decoration: none; text-align: center; box-shadow: 0 4px 15px rgba(240, 147, 251, 0.3); transition: transform 0.2s;">
+        <i class="fas fa-history" style="font-size: 2rem; margin-bottom: 10px; display: block;"></i>
+        <strong style="font-size: 1.1rem;">View History</strong>
+        <p style="margin: 5px 0 0 0; font-size: 0.85rem; opacity: 0.9;"><?= number_format($stats['active_codes']) ?> active codes</p>
+    </a>
+    
+    <a href="/projects/qr/analytics" class="quick-action-btn" style="flex: 1; min-width: 200px; max-width: 250px; background: linear-gradient(135deg, #4facfe, #00f2fe); color: white; padding: 20px; border-radius: 12px; text-decoration: none; text-align: center; box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3); transition: transform 0.2s;">
+        <i class="fas fa-chart-line" style="font-size: 2rem; margin-bottom: 10px; display: block;"></i>
+        <strong style="font-size: 1.1rem;">Analytics</strong>
+        <p style="margin: 5px 0 0 0; font-size: 0.85rem; opacity: 0.9;"><?= number_format($stats['total_scans']) ?> total scans</p>
     </a>
 </div>
 
 <!-- Enhanced Statistics Grid -->
 <div class="grid grid-3 stats-grid" style="margin-bottom: 30px; gap: 20px;">
-    <div class="card stat-card">
-        <div class="stat-icon" style="background: linear-gradient(135deg, #667eea, #764ba2);">
+    <div class="card stat-card" style="position: relative; overflow: hidden;">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #667eea, #764ba2); position: relative; z-index: 2;">
             <i class="fas fa-qrcode"></i>
         </div>
-        <div class="stat-content">
-            <div class="stat-value"><?= number_format($stats['total_generated']) ?></div>
-            <div class="stat-label">QR Codes</div>
-            <div class="stat-subtext"><?= number_format($stats['active_codes']) ?> active</div>
+        <div class="stat-content" style="position: relative; z-index: 2;">
+            <div class="stat-value" style="font-size: 2.5rem;"><?= number_format($stats['total_generated']) ?></div>
+            <div class="stat-label" style="font-weight: 600;">Total Generated</div>
+            <div class="stat-subtext" style="color: var(--green); font-weight: 500;">
+                <i class="fas fa-check-circle"></i> <?= number_format($stats['active_codes']) ?> active
+            </div>
+        </div>
+        <div class="stat-background-pattern" style="position: absolute; top: 0; right: 0; width: 100px; height: 100px; opacity: 0.05; z-index: 1;">
+            <i class="fas fa-qrcode" style="font-size: 100px;"></i>
         </div>
     </div>
     
-    <div class="card stat-card">
-        <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb, #f5576c);">
+    <div class="card stat-card" style="position: relative; overflow: hidden;">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb, #f5576c); position: relative; z-index: 2;">
             <i class="fas fa-eye"></i>
         </div>
-        <div class="stat-content">
-            <div class="stat-value"><?= number_format($stats['total_scans']) ?></div>
-            <div class="stat-label">Total Scans</div>
-            <div class="stat-subtext"><?= number_format($stats['scans_today']) ?> today</div>
+        <div class="stat-content" style="position: relative; z-index: 2;">
+            <div class="stat-value" style="font-size: 2.5rem;"><?= number_format($stats['total_scans']) ?></div>
+            <div class="stat-label" style="font-weight: 600;">Total Scans</div>
+            <div class="stat-subtext" style="color: var(--cyan); font-weight: 500;">
+                <i class="fas fa-arrow-up"></i> <?= number_format($stats['scans_today']) ?> today
+            </div>
+        </div>
+        <div class="stat-background-pattern" style="position: absolute; top: 0; right: 0; width: 100px; height: 100px; opacity: 0.05; z-index: 1;">
+            <i class="fas fa-eye" style="font-size: 100px;"></i>
         </div>
     </div>
     
-    <div class="card stat-card">
-        <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe, #00f2fe);">
+    <div class="card stat-card" style="position: relative; overflow: hidden;">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe, #00f2fe); position: relative; z-index: 2;">
             <i class="fas fa-chart-line"></i>
         </div>
-        <div class="stat-content">
-            <div class="stat-value"><?= number_format($stats['scans_this_week']) ?></div>
-            <div class="stat-label">This Week</div>
-            <div class="stat-subtext">Avg: <?= number_format($stats['average_scans'], 1) ?></div>
+        <div class="stat-content" style="position: relative; z-index: 2;">
+            <div class="stat-value" style="font-size: 2.5rem;"><?= number_format($stats['scans_this_week']) ?></div>
+            <div class="stat-label" style="font-weight: 600;">This Week</div>
+            <div class="stat-subtext" style="color: var(--purple); font-weight: 500;">
+                <i class="fas fa-chart-bar"></i> Avg: <?= number_format($stats['average_scans'], 1) ?>/QR
+            </div>
+        </div>
+        <div class="stat-background-pattern" style="position: absolute; top: 0; right: 0; width: 100px; height: 100px; opacity: 0.05; z-index: 1;">
+            <i class="fas fa-chart-line" style="font-size: 100px;"></i>
         </div>
     </div>
 </div>
@@ -244,6 +261,12 @@
         background-clip: text;
     }
     
+    /* Quick Action Buttons */
+    .quick-action-btn:hover {
+        transform: translateY(-5px) scale(1.02);
+        box-shadow: 0 8px 25px rgba(153, 69, 255, 0.4) !important;
+    }
+    
     a.card:hover {
         transform: translateY(-4px);
         border-color: var(--cyan);
@@ -256,7 +279,33 @@
         align-items: center;
         gap: 15px;
         padding: 20px !important;
+        transition: all 0.3s ease;
+        cursor: pointer;
     }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .stat-card {
+        animation: fadeInUp 0.5s ease forwards;
+    }
+    
+    .stat-card:nth-child(1) { animation-delay: 0.1s; }
+    .stat-card:nth-child(2) { animation-delay: 0.2s; }
+    .stat-card:nth-child(3) { animation-delay: 0.3s; }
     
     .stat-icon {
         width: 60px;
@@ -268,6 +317,7 @@
         font-size: 24px;
         color: white;
         flex-shrink: 0;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     }
     
     .stat-content {
@@ -279,6 +329,7 @@
         font-weight: 700;
         color: var(--text-primary);
         margin-bottom: 4px;
+        line-height: 1;
     }
     
     .stat-label {
@@ -291,6 +342,9 @@
         font-size: 12px;
         color: var(--text-secondary);
         opacity: 0.8;
+        display: flex;
+        align-items: center;
+        gap: 5px;
     }
     
     /* Activity List */
@@ -314,6 +368,7 @@
     .activity-item:hover {
         background: rgba(255, 255, 255, 0.06);
         border-color: var(--cyan);
+        transform: translateX(5px);
     }
     
     .activity-icon {
@@ -383,6 +438,11 @@
         display: flex;
         align-items: center;
         gap: 12px;
+        transition: all 0.2s;
+    }
+    
+    .top-qr-item:hover {
+        transform: translateX(5px);
     }
     
     .top-qr-rank {
@@ -397,6 +457,7 @@
         font-weight: 700;
         font-size: 14px;
         flex-shrink: 0;
+        box-shadow: 0 2px 10px rgba(255, 107, 107, 0.3);
     }
     
     .top-qr-content {
@@ -496,20 +557,13 @@
             font-size: 0.875rem !important;
         }
         
-        /* Quick Generate Card - Compact */
-        .quick-generate-card {
-            padding: 20px !important;
-            text-align: center;
+        /* Quick Actions */
+        .quick-actions-bar {
+            flex-direction: column;
         }
         
-        .quick-generate-card h3 {
-            font-size: 1.125rem !important;
-            justify-content: center;
-        }
-        
-        .quick-generate-card p {
-            font-size: 0.875rem !important;
-            margin-bottom: 15px !important;
+        .quick-action-btn {
+            max-width: 100% !important;
         }
         
         /* Stats Grid - Horizontal Row on Mobile */
