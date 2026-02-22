@@ -43,6 +43,8 @@ class QRFeatureService
         'frame_styles',
         'priority_support',
         'export_data',
+        'scan_limit',
+        'utm_tracking',
     ];
 
     public function __construct()

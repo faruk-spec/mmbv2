@@ -1659,6 +1659,35 @@
                         <i class="fas fa-home"></i>
                         <span class="hide-mobile">Visit Site</span>
                     </a>
+
+                    <!-- Admin Notification Bell -->
+                    <?php
+                    try {
+                        $adminNotifCount = \Core\Notification::getUnreadCount($user['id'] ?? 0);
+                    } catch (\Exception $e) {
+                        $adminNotifCount = 0;
+                    }
+                    ?>
+                    <div class="admin-notif-wrap" id="adminNotifWrap" style="position:relative;">
+                        <button class="topbar-btn admin-notif-btn" id="adminNotifBtn" title="Notifications" style="position:relative;padding:8px 10px;">
+                            <i class="fas fa-bell"></i>
+                            <span id="adminNotifBadge" style="position:absolute;top:2px;right:2px;background:#e53e3e;color:#fff;font-size:10px;font-weight:700;min-width:16px;height:16px;border-radius:8px;display:<?= $adminNotifCount > 0 ? 'flex' : 'none' ?>;align-items:center;justify-content:center;padding:0 3px;">
+                                <?= min($adminNotifCount, 99) ?>
+                            </span>
+                        </button>
+                        <div id="adminNotifPanel" style="display:none;position:absolute;top:calc(100% + 8px);right:0;width:320px;background:var(--bg-card);border:1px solid var(--border-color);border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,0.4);z-index:9999;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border-color);">
+                                <strong style="font-size:14px;">Notifications</strong>
+                                <button id="adminMarkAll" style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--cyan,#00f0ff);font-family:inherit;padding:0;">Mark all read</button>
+                            </div>
+                            <div id="adminNotifList" style="max-height:340px;overflow-y:auto;">
+                                <div style="padding:20px;text-align:center;color:var(--text-secondary);font-size:13px;">Loading…</div>
+                            </div>
+                            <div style="padding:10px 16px;border-top:1px solid var(--border-color);text-align:center;">
+                                <a href="/admin/notifications/all" style="font-size:12px;color:var(--cyan,#00f0ff);">View all</a>
+                            </div>
+                        </div>
+                    </div>
                     
                     <!-- User Menu with Dropdown -->
                     <div class="user-menu" id="userMenu">
@@ -1805,6 +1834,99 @@
                 link.classList.add('active');
             }
         });
+    </script>
+    <script>
+    // Admin Notification Bell
+    (function(){
+        const btn = document.getElementById('adminNotifBtn');
+        const panel = document.getElementById('adminNotifPanel');
+        const list = document.getElementById('adminNotifList');
+        const badge = document.getElementById('adminNotifBadge');
+        const markAll = document.getElementById('adminMarkAll');
+        if (!btn) return;
+
+        let loaded = false;
+        const csrf = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').content : '';
+
+        function timeAgo(d) {
+            const s = Math.floor((Date.now() - new Date(d).getTime()) / 1000);
+            if (s < 60) return 'just now';
+            if (s < 3600) return Math.floor(s/60) + 'm ago';
+            if (s < 86400) return Math.floor(s/3600) + 'h ago';
+            return Math.floor(s/86400) + 'd ago';
+        }
+
+        function updateBadge(count) {
+            if (!badge) return;
+            badge.textContent = Math.min(count, 99);
+            badge.style.display = count > 0 ? 'flex' : 'none';
+        }
+
+        function loadNotifs() {
+            list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-secondary);font-size:13px;">Loading…</div>';
+            fetch('/api/notifications')
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.success || !data.notifications.length) {
+                        list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-secondary);font-size:13px;">No notifications</div>';
+                        return;
+                    }
+                    updateBadge(data.unread_count);
+                    list.innerHTML = data.notifications.map(n => `
+                        <div class="admin-notif-item" data-id="${n.id}" style="display:flex;gap:10px;align-items:flex-start;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.05);cursor:pointer;${n.is_read===1?'':'background:rgba(0,240,255,0.04)'}">
+                            <div style="width:8px;height:8px;border-radius:50%;background:${n.is_read===1?'transparent':'var(--cyan,#00f0ff)'};flex-shrink:0;margin-top:5px;"></div>
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-size:13px;line-height:1.4;">${n.message}</div>
+                                <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">${timeAgo(n.created_at)}</div>
+                            </div>
+                        </div>`).join('');
+                    list.querySelectorAll('.admin-notif-item').forEach(el => {
+                        el.addEventListener('click', function() {
+                            const id = this.dataset.id;
+                            fetch('/api/notifications/mark-read', {
+                                method:'POST',
+                                headers:{'Content-Type':'application/x-www-form-urlencoded'},
+                                body:'_csrf_token='+encodeURIComponent(csrf)+'&id='+id
+                            }).then(r=>r.json()).then(d=>updateBadge(d.unread_count)).catch(()=>{});
+                            this.querySelector('div[style*="border-radius:50%"]').style.background='transparent';
+                            this.style.background='';
+                        });
+                    });
+                }).catch(() => {
+                    list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-secondary);font-size:13px;">Failed to load.</div>';
+                });
+        }
+
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const isOpen = panel.style.display !== 'none';
+            panel.style.display = isOpen ? 'none' : 'block';
+            if (!isOpen && !loaded) { loadNotifs(); loaded = true; }
+        });
+
+        if (markAll) {
+            markAll.addEventListener('click', function(e) {
+                e.stopPropagation();
+                fetch('/api/notifications/mark-all-read', {
+                    method:'POST',
+                    headers:{'Content-Type':'application/x-www-form-urlencoded'},
+                    body:'_csrf_token='+encodeURIComponent(csrf)
+                }).then(r=>r.json()).then(d=>{ if(d.success) { updateBadge(0); loadNotifs(); } }).catch(()=>{});
+            });
+        }
+
+        document.addEventListener('click', function(e) {
+            if (!btn.closest('#adminNotifWrap').contains(e.target)) {
+                panel.style.display = 'none';
+            }
+        });
+
+        setInterval(function(){
+            if (!document.hidden) {
+                fetch('/api/notifications').then(r=>r.json()).then(d=>{ if(d.success) updateBadge(d.unread_count); }).catch(()=>{});
+            }
+        }, 60000);
+    })();
     </script>
     
     <?php View::yield('scripts'); ?>

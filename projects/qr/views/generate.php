@@ -54,20 +54,36 @@
                     <i class="fas fa-tag"></i> Content Type
                 </label>
                 <select name="type" class="form-select" id="qrType">
-                    <option value="url"><i class="fas fa-globe"></i> URL / Website</option>
-                    <option value="text"><i class="fas fa-file-alt"></i> Plain Text</option>
-                    <option value="email"><i class="fas fa-envelope"></i> Email Address</option>
-                    <option value="location"><i class="fas fa-map-marker-alt"></i> Location</option>
-                    <option value="phone"><i class="fas fa-phone"></i> Phone Number</option>
-                    <option value="sms"><i class="fas fa-sms"></i> SMS Message</option>
-                    <option value="whatsapp"><i class="fab fa-whatsapp"></i> WhatsApp</option>
-                    <option value="skype"><i class="fab fa-skype"></i> Skype</option>
-                    <option value="zoom"><i class="fas fa-video"></i> Zoom</option>
-                    <option value="wifi"><i class="fas fa-wifi"></i> WiFi Network</option>
-                    <option value="vcard"><i class="fas fa-id-card"></i> vCard (Contact)</option>
-                    <option value="event"><i class="fas fa-calendar-alt"></i> Event (Calendar)</option>
-                    <option value="paypal"><i class="fab fa-paypal"></i> PayPal</option>
-                    <option value="payment"><i class="fas fa-credit-card"></i> Payment (UPI)</option>
+                    <optgroup label="Basic">
+                        <option value="url">🌐 URL / Website</option>
+                        <option value="text">📄 Plain Text</option>
+                    </optgroup>
+                    <optgroup label="Communication">
+                        <option value="email">✉️ Email Address</option>
+                        <option value="phone">📞 Phone Number</option>
+                        <option value="sms">💬 SMS Message</option>
+                        <option value="whatsapp">📱 WhatsApp</option>
+                        <option value="skype">🎥 Skype</option>
+                        <option value="zoom">🖥️ Zoom</option>
+                    </optgroup>
+                    <optgroup label="Social Media">
+                        <option value="social">🔗 Social Media Profile</option>
+                    </optgroup>
+                    <optgroup label="Contact &amp; Location">
+                        <option value="vcard">🪪 vCard (Contact)</option>
+                        <option value="location">📍 Location</option>
+                        <option value="wifi">📶 WiFi Network</option>
+                    </optgroup>
+                    <optgroup label="Events &amp; Apps">
+                        <option value="event">📅 Event (Calendar)</option>
+                        <option value="app_store">📲 App Store Link</option>
+                        <option value="menu">🍽️ Restaurant Menu</option>
+                    </optgroup>
+                    <optgroup label="Payments">
+                        <option value="paypal">💸 PayPal</option>
+                        <option value="payment">💳 Payment (UPI)</option>
+                        <option value="crypto">₿ Cryptocurrency</option>
+                    </optgroup>
                 </select>
             </div>
             
@@ -443,9 +459,144 @@
                     <input type="text" name="payment_note" id="paymentNote" class="form-input" placeholder="Payment for...">
                 </div>
             </div>
-            
+
+            <!-- Social Media Profile Fields -->
+            <div id="socialFields" style="display: none;">
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-share-alt"></i> Platform</label>
+                    <select name="social_platform" id="socialPlatform" class="form-select">
+                        <option value="facebook">Facebook</option>
+                        <option value="instagram">Instagram</option>
+                        <option value="twitter">Twitter / X</option>
+                        <option value="linkedin">LinkedIn</option>
+                        <option value="youtube">YouTube</option>
+                        <option value="tiktok">TikTok</option>
+                        <option value="snapchat">Snapchat</option>
+                        <option value="discord">Discord</option>
+                        <option value="telegram">Telegram</option>
+                        <option value="github">GitHub</option>
+                        <option value="custom">Custom URL</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" id="socialInputLabel">Profile URL / Username</label>
+                    <input type="text" name="social_handle" id="socialHandle" class="form-input" placeholder="e.g. yourprofile">
+                    <small id="socialHint" style="color:var(--text-secondary);">Enter your username or full profile URL</small>
+                </div>
+            </div>
+
+            <!-- App Store Fields -->
+            <div id="appStoreFields" style="display: none;">
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-mobile-alt"></i> Platform</label>
+                    <select name="app_platform" id="appPlatform" class="form-select">
+                        <option value="both">Both Stores (Smart Link)</option>
+                        <option value="ios">iOS App Store</option>
+                        <option value="android">Google Play</option>
+                    </select>
+                </div>
+                <div class="form-group" id="appIosGroup">
+                    <label class="form-label"><i class="fab fa-apple"></i> App Store URL</label>
+                    <input type="url" name="app_ios_url" id="appIosUrl" class="form-input" placeholder="https://apps.apple.com/app/id...">
+                </div>
+                <div class="form-group" id="appAndroidGroup">
+                    <label class="form-label"><i class="fab fa-android"></i> Google Play URL</label>
+                    <input type="url" name="app_android_url" id="appAndroidUrl" class="form-input" placeholder="https://play.google.com/store/apps/details?id=...">
+                </div>
+                <div class="form-group" id="appNameGroup">
+                    <label class="form-label">App Name (for smart link page)</label>
+                    <input type="text" name="app_name" id="appName" class="form-input" placeholder="My Awesome App">
+                </div>
+            </div>
+
+            <!-- Cryptocurrency Fields -->
+            <div id="cryptoFields" style="display: none;">
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-coins"></i> Cryptocurrency</label>
+                    <select name="crypto_coin" id="cryptoCoin" class="form-select">
+                        <option value="bitcoin">Bitcoin (BTC)</option>
+                        <option value="ethereum">Ethereum (ETH)</option>
+                        <option value="litecoin">Litecoin (LTC)</option>
+                        <option value="dogecoin">Dogecoin (DOGE)</option>
+                        <option value="usdt">USDT (TRC20 / ERC20)</option>
+                        <option value="bnb">BNB (BSC)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Wallet Address</label>
+                    <input type="text" name="crypto_address" id="cryptoAddress" class="form-input" placeholder="Enter wallet address">
+                </div>
+                <div class="grid grid-2" style="gap:15px;">
+                    <div class="form-group">
+                        <label class="form-label">Amount (Optional)</label>
+                        <input type="number" step="0.00000001" name="crypto_amount" id="cryptoAmount" class="form-input" placeholder="0.001">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Label / Note (Optional)</label>
+                        <input type="text" name="crypto_label" id="cryptoLabel" class="form-input" placeholder="Donation">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Restaurant Menu Fields -->
+            <div id="menuFields" style="display: none;">
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-utensils"></i> Menu URL</label>
+                    <input type="url" name="menu_url" id="menuUrl" class="form-input" placeholder="https://yourrestaurant.com/menu">
+                    <small style="color:var(--text-secondary);">URL to your digital menu (PDF, web page, or ordering system)</small>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Restaurant / Outlet Name</label>
+                    <input type="text" name="menu_name" id="menuName" class="form-input" placeholder="The Grand Bistro">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Table / Location Label (Optional)</label>
+                    <input type="text" name="menu_table" id="menuTable" class="form-input" placeholder="Table 5 or Takeaway Counter">
+                </div>
+            </div>
+
+            <!-- UTM Parameters (URL type only) -->
+            <div id="utmGroup" style="display:none;">
+                <h4 class="subsection-title collapsible-header" onclick="toggleSection('utmOptions')" style="margin-top:12px;">
+                    <span><i class="fas fa-chart-line"></i> UTM Tracking Parameters</span>
+                    <i class="fas fa-chevron-right collapse-icon"></i>
+                </h4>
+                <div id="utmOptions" class="collapsible-content collapsed">
+                    <div class="grid grid-2" style="gap:15px;">
+                        <div class="form-group">
+                            <label class="form-label">UTM Source</label>
+                            <input type="text" name="utm_source" id="utmSource" class="form-input" placeholder="e.g. newsletter">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">UTM Medium</label>
+                            <input type="text" name="utm_medium" id="utmMedium" class="form-input" placeholder="e.g. email">
+                        </div>
+                    </div>
+                    <div class="grid grid-2" style="gap:15px;">
+                        <div class="form-group">
+                            <label class="form-label">UTM Campaign</label>
+                            <input type="text" name="utm_campaign" id="utmCampaign" class="form-input" placeholder="e.g. spring_sale">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">UTM Term (Optional)</label>
+                            <input type="text" name="utm_term" id="utmTerm" class="form-input" placeholder="e.g. running+shoes">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">UTM Content (Optional)</label>
+                        <input type="text" name="utm_content" id="utmContent" class="form-input" placeholder="e.g. banner_top">
+                    </div>
+                </div>
+            </div>
+
+            <!-- QR Label / Note (universal, always shown) -->
+            <div class="form-group" style="margin-top:12px;">
+                <label class="form-label"><i class="fas fa-tag"></i> QR Label / Note <small style="font-weight:normal;color:var(--text-secondary);">(optional, for your own reference)</small></label>
+                <input type="text" name="qr_label" id="qrLabel" class="form-input" placeholder="e.g. Product A flyer, Store entrance..." maxlength="120">
+            </div>
+
             <div class="divider"></div>
-            
+
             <!-- Design Options -->
             <h4 class="subsection-title collapsible-header" onclick="toggleSection('designOptions')">
                 <span><i class="fas fa-palette"></i> Design Options</span>
@@ -1000,6 +1151,7 @@
             $canDynamic   = (bool) ($userFeatures['dynamic_qr']          ?? true);
             $canPassword  = (bool) ($userFeatures['password_protection']  ?? true);
             $canExpiry    = (bool) ($userFeatures['expiry_date']          ?? true);
+            $canScanLimit = (bool) ($userFeatures['scan_limit']           ?? true);
             ?>
 
             <div class="feature-toggle <?= !$canDynamic ? 'feature-locked' : '' ?>">
@@ -1027,8 +1179,12 @@
                 <small>This URL can be edited later</small>
             </div>
 
-            <!-- Password Protection & Expiry Date (dynamic only) -->
-            <div id="dynamicAdvancedGroup" style="display:none;">
+            <!-- Protection: Password + Expiry (available for ALL types, not just dynamic) -->
+            <h4 class="subsection-title collapsible-header" onclick="toggleSection('protectionOptions')" style="margin-top:14px;">
+                <span><i class="fas fa-shield-alt"></i> Protection &amp; Limits</span>
+                <i class="fas fa-chevron-right collapse-icon"></i>
+            </h4>
+            <div id="protectionOptions" class="collapsible-content collapsed">
                 <div class="form-group <?= !$canPassword ? 'feature-locked' : '' ?>">
                     <label class="form-label">
                         <i class="fas fa-lock"></i> Password Protection
@@ -1040,7 +1196,7 @@
                     <input type="password" name="qr_password" id="qrPassword" class="form-input"
                            placeholder="Set a password to protect this QR" autocomplete="new-password"
                            <?= !$canPassword ? 'disabled' : '' ?>>
-                    <small><?= $canPassword ? 'Scanners must enter this password to access the link.' : 'Not available on your current plan.' ?></small>
+                    <small><?= $canPassword ? 'Scanners must enter this password to view the content.' : 'Not available on your current plan.' ?></small>
                 </div>
                 <div class="form-group <?= !$canExpiry ? 'feature-locked' : '' ?>">
                     <label class="form-label">
@@ -1053,6 +1209,18 @@
                     <input type="datetime-local" name="expires_at" id="expiresAt" class="form-input"
                            <?= !$canExpiry ? 'disabled' : '' ?>>
                     <small><?= $canExpiry ? 'QR code will stop working after this date/time.' : 'Not available on your current plan.' ?></small>
+                </div>
+                <div class="form-group <?= !$canScanLimit ? 'feature-locked' : '' ?>">
+                    <label class="form-label">
+                        <i class="fas fa-eye-slash"></i> Max Scan Limit
+                        <small style="font-weight:normal;color:var(--text-secondary);margin-left:6px;">(leave blank for unlimited)</small>
+                        <?php if (!$canScanLimit): ?>
+                        <span class="badge-plan-lock"><i class="fas fa-crown"></i> Upgrade</span>
+                        <?php endif; ?>
+                    </label>
+                    <input type="number" min="1" name="scan_limit" id="scanLimit" class="form-input"
+                           placeholder="e.g. 100" <?= !$canScanLimit ? 'disabled' : '' ?>>
+                    <small><?= $canScanLimit ? 'QR code will be deactivated after this many scans.' : 'Not available on your current plan.' ?></small>
                 </div>
             </div>
             
@@ -1508,10 +1676,25 @@ if (qrTypeElement) {
     document.getElementById('eventFields').style.display = 'none';
     document.getElementById('paypalFields').style.display = 'none';
     document.getElementById('paymentFields').style.display = 'none';
+    // New type groups
+    const socialFields = document.getElementById('socialFields');
+    const appStoreFields = document.getElementById('appStoreFields');
+    const cryptoFields = document.getElementById('cryptoFields');
+    const menuFields = document.getElementById('menuFields');
+    const utmGroup = document.getElementById('utmGroup');
+    if (socialFields) socialFields.style.display = 'none';
+    if (appStoreFields) appStoreFields.style.display = 'none';
+    if (cryptoFields) cryptoFields.style.display = 'none';
+    if (menuFields) menuFields.style.display = 'none';
+    if (utmGroup) utmGroup.style.display = 'none';
     
     // Show relevant fields
     switch(type) {
         case 'url':
+            document.getElementById('simpleContent').style.display = 'block';
+            if (utmGroup) utmGroup.style.display = 'block';
+            updateContentLabel(type);
+            break;
         case 'text':
             document.getElementById('simpleContent').style.display = 'block';
             updateContentLabel(type);
@@ -1552,12 +1735,67 @@ if (qrTypeElement) {
         case 'payment':
             document.getElementById('paymentFields').style.display = 'block';
             break;
+        case 'social':
+            if (socialFields) socialFields.style.display = 'block';
+            updateSocialHint();
+            break;
+        case 'app_store':
+            if (appStoreFields) appStoreFields.style.display = 'block';
+            updateAppStoreVisibility();
+            break;
+        case 'crypto':
+            if (cryptoFields) cryptoFields.style.display = 'block';
+            break;
+        case 'menu':
+            if (menuFields) menuFields.style.display = 'block';
+            break;
     }
     
     // Trigger live preview
     debouncedPreview();
     });
 }
+
+// Social platform hint updater
+function updateSocialHint() {
+    const platform = document.getElementById('socialPlatform');
+    const hint = document.getElementById('socialHint');
+    const label = document.getElementById('socialInputLabel');
+    if (!platform || !hint) return;
+    const hints = {
+        facebook: ['Facebook username or page name', 'facebook.com/'],
+        instagram: ['Instagram handle (without @)', 'instagram.com/'],
+        twitter: ['Twitter/X handle (without @)', 'twitter.com/'],
+        linkedin: ['LinkedIn profile URL or company name', 'linkedin.com/in/'],
+        youtube: ['YouTube channel URL or @handle', 'youtube.com/'],
+        tiktok: ['TikTok @username', 'tiktok.com/@'],
+        snapchat: ['Snapchat username', 'snapchat.com/add/'],
+        discord: ['Discord invite link or server ID', 'discord.gg/'],
+        telegram: ['Telegram @username or group link', 't.me/'],
+        github: ['GitHub username or repo', 'github.com/'],
+        custom: ['Full profile URL', ''],
+    };
+    const h = hints[platform.value] || ['Profile URL', ''];
+    hint.textContent = h[1] ? 'e.g. ' + h[1] + 'yourhandle' : 'Enter full URL';
+    if (label) label.textContent = h[0];
+}
+const socialPlatformEl = document.getElementById('socialPlatform');
+if (socialPlatformEl) socialPlatformEl.addEventListener('change', updateSocialHint);
+
+// App Store platform visibility
+function updateAppStoreVisibility() {
+    const plat = document.getElementById('appPlatform');
+    if (!plat) return;
+    const v = plat.value;
+    const ios = document.getElementById('appIosGroup');
+    const and = document.getElementById('appAndroidGroup');
+    const name = document.getElementById('appNameGroup');
+    if (ios) ios.style.display = (v === 'ios' || v === 'both') ? 'block' : 'none';
+    if (and) and.style.display = (v === 'android' || v === 'both') ? 'block' : 'none';
+    if (name) name.style.display = v === 'both' ? 'block' : 'none';
+}
+const appPlatformEl = document.getElementById('appPlatform');
+if (appPlatformEl) appPlatformEl.addEventListener('change', updateAppStoreVisibility);
 
 function updateContentLabel(type) {
     const label = document.getElementById('contentLabel');

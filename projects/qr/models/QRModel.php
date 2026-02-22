@@ -17,6 +17,20 @@ class QRModel
     public function __construct()
     {
         $this->db = Database::getInstance();
+        $this->ensureColumns();
+    }
+
+    /**
+     * Add note and scan_limit columns if they do not exist yet.
+     */
+    private function ensureColumns(): void
+    {
+        try {
+            $this->db->query("ALTER TABLE qr_codes ADD COLUMN IF NOT EXISTS note VARCHAR(255) NULL");
+            $this->db->query("ALTER TABLE qr_codes ADD COLUMN IF NOT EXISTS scan_limit INT NULL");
+        } catch (\Exception $e) {
+            // Columns may already exist or DB does not support IF NOT EXISTS — safe to ignore
+        }
     }
     
     /**
@@ -37,8 +51,8 @@ class QRModel
             frame_style, frame_label, frame_font, frame_color,
             logo_path, logo_color, logo_size, logo_remove_bg,
             is_dynamic, redirect_url, password_hash, expires_at,
-            campaign_id, status, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', NOW())";
+            campaign_id, note, scan_limit, status, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', NOW())";
         
         $params = [
             $userId,
@@ -69,7 +83,9 @@ class QRModel
             $data['redirect_url'] ?? null,
             $data['password_hash'] ?? null,
             $data['expires_at'] ?? null,
-            $data['campaign_id'] ?? null
+            $data['campaign_id'] ?? null,
+            $data['note'] ?? null,
+            $data['scan_limit'] ?? null,
         ];
         
         try {

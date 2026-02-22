@@ -179,6 +179,19 @@ class QRController
         // Get content based on type
         $type = Security::sanitize($_POST['type'] ?? 'text');
         $content = $this->buildContent($type, $_POST);
+
+        // Append UTM parameters for URL type
+        if ($type === 'url' && !empty($content)) {
+            $utmParams = [];
+            foreach (['utm_source','utm_medium','utm_campaign','utm_term','utm_content'] as $k) {
+                $v = Security::sanitize($_POST[$k] ?? '');
+                if ($v !== '') $utmParams[$k] = $v;
+            }
+            if ($utmParams) {
+                $sep = str_contains($content, '?') ? '&' : '?';
+                $content .= $sep . http_build_query($utmParams);
+            }
+        }
         
         if (empty($content)) {
             Helpers::flash('error', 'Please enter content for the QR code.');
@@ -217,25 +230,33 @@ class QRController
         $logoColor = '#' . ltrim(Security::sanitize($_POST['logo_color'] ?? '9945ff'), '#');
         $logoSize = !empty($_POST['logo_size']) ? (float) $_POST['logo_size'] : 0.3;
         $logoRemoveBg = isset($_POST['logo_remove_bg']) ? 1 : 0;
+
+        // QR label/note (for organization)
+        $qrLabel = Security::sanitize($_POST['qr_label'] ?? '');
+
+        // Scan limit
+        $scanLimitRaw = trim($_POST['scan_limit'] ?? '');
+        $scanLimit = ($scanLimitRaw !== '' && is_numeric($scanLimitRaw) && (int)$scanLimitRaw > 0)
+            ? (int) $scanLimitRaw : null;
         
         // Advanced features
         $isDynamic  = isset($_POST['is_dynamic']) ? 1 : 0;
         $redirectUrl = $isDynamic ? Security::sanitize($_POST['redirect_url'] ?? '') : null;
 
-        // Password protection — enforce minimum length of 4 characters
+        // Password protection — available for all QR types (not just dynamic)
         $rawPassword = $_POST['qr_password'] ?? '';
-        if ($isDynamic && $rawPassword !== '' && strlen($rawPassword) < 4) {
+        if ($rawPassword !== '' && strlen($rawPassword) < 4) {
             Helpers::flash('error', 'QR password must be at least 4 characters long.');
             Helpers::redirect('/projects/qr/generate');
             return;
         }
-        $passwordHash = ($isDynamic && $rawPassword !== '') ? password_hash($rawPassword, PASSWORD_DEFAULT) : null;
+        $passwordHash = ($rawPassword !== '') ? password_hash($rawPassword, PASSWORD_DEFAULT) : null;
         $hasPassword  = $passwordHash !== null ? 1 : 0;
 
-        // Expiry date — validate format and ensure it's in the future
+        // Expiry date — available for all QR types
         $expiresAtRaw = Security::sanitize($_POST['expires_at'] ?? '');
         $expiresAt    = null;
-        if ($isDynamic && $expiresAtRaw !== '') {
+        if ($expiresAtRaw !== '') {
             $parsedExpiry = strtotime($expiresAtRaw);
             if ($parsedExpiry === false || $parsedExpiry <= time()) {
                 Helpers::flash('error', 'Expiry date must be a valid date/time in the future.');
@@ -305,10 +326,24 @@ class QRController
                 'password_hash' => $passwordHash,
                 'expires_at' => $expiresAt,
                 'campaign_id' => $campaignId,
+                'note' => $qrLabel ?: null,
+                'scan_limit' => $scanLimit,
                 'status' => 'active'
             ]);
             
             if ($qrId) {
+                // For password/expiry/scan-limit protected non-dynamic QRs, generate an access URL
+                $needsAccessUrl = ($hasPassword || $expiresAt || $scanLimit) && !$isDynamic;
+                if ($needsAccessUrl) {
+                    $shortCode = $this->generateShortCode($qrId);
+                    $this->qrModel->updateShortCode($qrId, $shortCode);
+                    $accessUrl = 'https://' . $_SERVER['HTTP_HOST'] . '/projects/qr/access/' . $shortCode;
+                    $this->qrModel->update($qrId, $userId, ['content' => $accessUrl]);
+                    $_SESSION['generated_qr']['content'] = $accessUrl;
+                    $_SESSION['generated_qr']['short_code'] = $shortCode;
+                    $_SESSION['generated_qr']['access_url'] = $accessUrl;
+                }
+
                 // Generate short code for dynamic QR codes
                 if ($isDynamic) {
                     $shortCode = $this->generateShortCode($qrId);
@@ -326,9 +361,19 @@ class QRController
                     $_SESSION['generated_qr']['short_code'] = $shortCode;
                     $_SESSION['generated_qr']['access_url'] = $accessUrl;
                 }
-                
-                Logger::activity($userId, 'qr_generated', ['type' => $type, 'qr_id' => $qrId, 'is_dynamic' => $isDynamic, 'campaign_id' => $campaignId]);
-                
+
+                Logger::activity($userId, 'qr_generated', ['type' => $type, 'qr_id' => $qrId, 'is_dynamic' => $isDynamic, 'campaign_id' => $campaignId, 'label' => $qrLabel]);
+
+                // Send in-app notification to user
+                try {
+                    \Core\Notification::send($userId, 'qr_generated',
+                        'Your QR code (' . $type . ($qrLabel ? " — {$qrLabel}" : '') . ') was created successfully.',
+                        ['qr_id' => $qrId, 'type' => $type]
+                    );
+                } catch (\Exception $e) {
+                    // Notification failure must not block QR creation
+                }
+
                 $message = 'QR code generated successfully!';
                 if ($isDynamic && isset($shortCode)) {
                     $message .= ' Access URL: https://' . $_SERVER['HTTP_HOST'] . '/projects/qr/access/' . $shortCode;
@@ -410,6 +455,63 @@ class QRController
                     return 'bitcoin:' . $address . ($amount ? '?amount=' . $amount : '');
                 }
                 break;
+
+            case 'social':
+                $platform = Security::sanitize($data['social_platform'] ?? 'custom');
+                $handle   = trim(Security::sanitize($data['social_handle'] ?? ''));
+                if (empty($handle)) return '';
+                // If user entered a full URL, keep it; otherwise prepend base URL
+                if (filter_var($handle, FILTER_VALIDATE_URL)) return $handle;
+                $bases = [
+                    'facebook'  => 'https://facebook.com/',
+                    'instagram' => 'https://instagram.com/',
+                    'twitter'   => 'https://twitter.com/',
+                    'linkedin'  => 'https://linkedin.com/in/',
+                    'youtube'   => 'https://youtube.com/@',
+                    'tiktok'    => 'https://tiktok.com/@',
+                    'snapchat'  => 'https://snapchat.com/add/',
+                    'discord'   => 'https://discord.gg/',
+                    'telegram'  => 'https://t.me/',
+                    'github'    => 'https://github.com/',
+                ];
+                $base = $bases[$platform] ?? '';
+                return $base . ltrim($handle, '@/');
+
+            case 'app_store':
+                $platform   = Security::sanitize($data['app_platform'] ?? 'both');
+                $iosUrl     = Security::sanitize($data['app_ios_url'] ?? '');
+                $androidUrl = Security::sanitize($data['app_android_url'] ?? '');
+                if ($platform === 'ios')     return $iosUrl;
+                if ($platform === 'android') return $androidUrl;
+                // For "both" — return iOS URL (the dynamic redirect handles detection)
+                return $iosUrl ?: $androidUrl;
+
+            case 'crypto':
+                $coin    = Security::sanitize($data['crypto_coin'] ?? 'bitcoin');
+                $address = Security::sanitize($data['crypto_address'] ?? '');
+                $amount  = Security::sanitize($data['crypto_amount'] ?? '');
+                $label   = Security::sanitize($data['crypto_label'] ?? '');
+                if (empty($address)) return '';
+                $schemes = [
+                    'bitcoin'  => 'bitcoin',
+                    'ethereum' => 'ethereum',
+                    'litecoin' => 'litecoin',
+                    'dogecoin' => 'dogecoin',
+                    'usdt'     => 'tether',
+                    'bnb'      => 'bnb',
+                ];
+                $scheme = $schemes[$coin] ?? $coin;
+                $params = [];
+                if ($amount !== '') $params[] = 'amount=' . urlencode($amount);
+                if ($label  !== '') $params[] = 'label='  . urlencode($label);
+                return $scheme . ':' . $address . ($params ? '?' . implode('&', $params) : '');
+
+            case 'menu':
+                $url   = Security::sanitize($data['menu_url'] ?? '');
+                $table = Security::sanitize($data['menu_table'] ?? '');
+                if (empty($url)) return '';
+                // Append table identifier as a hash fragment for tracking
+                return $url . ($table ? (str_contains($url, '?') ? '&' : '?') . 'table=' . urlencode($table) : '');
                 
             default:
                 return Security::sanitize($data['content'] ?? '');
