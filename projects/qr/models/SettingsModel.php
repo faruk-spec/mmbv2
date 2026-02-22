@@ -58,6 +58,22 @@ class SettingsModel
             'default_error_correction' => 'H',
             'default_frame_style' => 'none',
             'default_download_format' => 'png',
+            // Design defaults
+            'default_corner_style' => 'square',
+            'default_dot_style' => 'square',
+            'default_marker_border_style' => 'square',
+            'default_marker_center_style' => 'square',
+            // Logo defaults
+            'default_logo_color' => '#9945ff',
+            'default_logo_size' => 0.30,
+            'default_logo_remove_bg' => 0,
+            // Advanced defaults
+            'default_gradient_enabled' => 0,
+            'default_gradient_color' => '#9945ff',
+            'default_transparent_bg' => 0,
+            'default_custom_marker_color' => 0,
+            'default_marker_color' => '#9945ff',
+            // Preferences
             'auto_save' => 1,
             'email_notifications' => 0,
             'scan_notification_threshold' => 10,
@@ -75,13 +91,21 @@ class SettingsModel
      */
     public function save(int $userId, array $data): bool
     {
-        // Check if settings exist
-        $existing = $this->get($userId);
+        // Check if settings exist in database
+        $sql = "SELECT id FROM qr_user_settings WHERE user_id = ?";
         
-        if (isset($existing['id'])) {
+        try {
+            $result = $this->db->query($sql, [$userId])->fetch();
+            
+            if ($result && isset($result['id'])) {
+                return $this->update($userId, $data);
+            } else {
+                return $this->create($userId, $data);
+            }
+        } catch (\Exception $e) {
+            \Core\Logger::error('Failed to check if user settings exist: ' . $e->getMessage());
+            // If we can't check, try update first (most common case)
             return $this->update($userId, $data);
-        } else {
-            return $this->create($userId, $data);
         }
     }
     
@@ -94,26 +118,57 @@ class SettingsModel
      */
     private function create(int $userId, array $data): bool
     {
-        $sql = "INSERT INTO qr_user_settings (
-            user_id, default_size, default_foreground_color, 
-            default_background_color, default_error_correction, 
-            default_frame_style, default_download_format,
-            auto_save, email_notifications, scan_notification_threshold,
-            created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+        // Build dynamic SQL based on what columns actually exist
+        $fields = ['user_id'];
+        $placeholders = ['?'];
+        $params = [$userId];
         
-        $params = [
-            $userId,
-            $data['default_size'] ?? 300,
-            $data['default_foreground_color'] ?? '#000000',
-            $data['default_background_color'] ?? '#ffffff',
-            $data['default_error_correction'] ?? 'H',
-            $data['default_frame_style'] ?? 'none',
-            $data['default_download_format'] ?? 'png',
-            $data['auto_save'] ?? 1,
-            $data['email_notifications'] ?? 0,
-            $data['scan_notification_threshold'] ?? 10
+        // Basic settings that should always exist
+        $basicFields = [
+            'default_size', 'default_foreground_color', 'default_background_color',
+            'default_error_correction', 'default_frame_style', 'default_download_format',
+            'auto_save', 'email_notifications', 'scan_notification_threshold'
         ];
+        
+        foreach ($basicFields as $field) {
+            $fields[] = $field;
+            $placeholders[] = '?';
+            $params[] = $data[$field] ?? $this->getDefaults()[$field];
+        }
+        
+        // Optional fields that might not exist yet
+        $optionalFields = [
+            'default_corner_style', 'default_dot_style',
+            'default_marker_border_style', 'default_marker_center_style',
+            'default_logo_color', 'default_logo_size', 'default_logo_remove_bg',
+            'default_gradient_enabled', 'default_gradient_color',
+            'default_transparent_bg', 'default_custom_marker_color', 'default_marker_color'
+        ];
+        
+        // Try to get table structure to see what columns exist
+        try {
+            $checkSql = "SHOW COLUMNS FROM qr_user_settings";
+            $columns = $this->db->query($checkSql)->fetchAll();
+            $existingColumns = array_column($columns, 'Field');
+            
+            foreach ($optionalFields as $field) {
+                if (in_array($field, $existingColumns)) {
+                    $fields[] = $field;
+                    $placeholders[] = '?';
+                    // Use the value from data if provided, otherwise use default
+                    $value = $data[$field] ?? $this->getDefaults()[$field];
+                    $params[] = $value;
+                }
+            }
+        } catch (\Exception $e) {
+            // If we can't check columns, just use basic fields
+            \Core\Logger::warning('Could not check table structure: ' . $e->getMessage());
+        }
+        
+        $fields[] = 'created_at';
+        $placeholders[] = 'NOW()';
+        
+        $sql = "INSERT INTO qr_user_settings (" . implode(', ', $fields) . ") VALUES (" . implode(', ', $placeholders) . ")";
         
         try {
             $this->db->query($sql, $params);
@@ -133,37 +188,61 @@ class SettingsModel
      */
     private function update(int $userId, array $data): bool
     {
-        $sql = "UPDATE qr_user_settings SET
-            default_size = ?,
-            default_foreground_color = ?,
-            default_background_color = ?,
-            default_error_correction = ?,
-            default_frame_style = ?,
-            default_download_format = ?,
-            auto_save = ?,
-            email_notifications = ?,
-            scan_notification_threshold = ?,
-            updated_at = NOW()
-            WHERE user_id = ?";
+        // Build dynamic SQL based on what columns actually exist
+        $setClauses = [];
+        $params = [];
         
-        $params = [
-            $data['default_size'] ?? 300,
-            $data['default_foreground_color'] ?? '#000000',
-            $data['default_background_color'] ?? '#ffffff',
-            $data['default_error_correction'] ?? 'H',
-            $data['default_frame_style'] ?? 'none',
-            $data['default_download_format'] ?? 'png',
-            $data['auto_save'] ?? 1,
-            $data['email_notifications'] ?? 0,
-            $data['scan_notification_threshold'] ?? 10,
-            $userId
+        // Basic settings that should always exist
+        $basicFields = [
+            'default_size', 'default_foreground_color', 'default_background_color',
+            'default_error_correction', 'default_frame_style', 'default_download_format',
+            'auto_save', 'email_notifications', 'scan_notification_threshold'
         ];
         
+        foreach ($basicFields as $field) {
+            $setClauses[] = "$field = ?";
+            $params[] = $data[$field] ?? $this->getDefaults()[$field];
+        }
+        
+        // Optional fields that might not exist yet
+        $optionalFields = [
+            'default_corner_style', 'default_dot_style',
+            'default_marker_border_style', 'default_marker_center_style',
+            'default_logo_color', 'default_logo_size', 'default_logo_remove_bg',
+            'default_gradient_enabled', 'default_gradient_color',
+            'default_transparent_bg', 'default_custom_marker_color', 'default_marker_color'
+        ];
+        
+        // Try to get table structure to see what columns exist
         try {
-            $this->db->query($sql, $params);
+            $checkSql = "SHOW COLUMNS FROM qr_user_settings";
+            $columns = $this->db->query($checkSql)->fetchAll();
+            $existingColumns = array_column($columns, 'Field');
+            
+            foreach ($optionalFields as $field) {
+                if (in_array($field, $existingColumns)) {
+                    $setClauses[] = "$field = ?";
+                    // Use the value from data if provided, otherwise use default
+                    $value = $data[$field] ?? $this->getDefaults()[$field];
+                    $params[] = $value;
+                }
+            }
+        } catch (\Exception $e) {
+            // If we can't check columns, just use basic fields
+            \Core\Logger::warning('Could not check table structure: ' . $e->getMessage());
+        }
+        
+        $setClauses[] = "updated_at = NOW()";
+        $params[] = $userId;
+        
+        $sql = "UPDATE qr_user_settings SET " . implode(', ', $setClauses) . " WHERE user_id = ?";
+        
+        try {
+            $result = $this->db->query($sql, $params);
+            \Core\Logger::info('Settings updated for user ' . $userId . ' - SQL: ' . $sql);
             return true;
         } catch (\Exception $e) {
-            \Core\Logger::error('Failed to update user settings: ' . $e->getMessage());
+            \Core\Logger::error('Failed to update user settings: ' . $e->getMessage() . ' - SQL: ' . $sql);
             return false;
         }
     }

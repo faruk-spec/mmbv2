@@ -12,14 +12,17 @@ use Core\Security;
 use Core\Helpers;
 use Core\Logger;
 use Projects\QR\Models\QRModel;
+use Projects\QR\Models\SettingsModel;
 
 class QRController
 {
     private QRModel $qrModel;
+    private SettingsModel $settingsModel;
     
     public function __construct()
     {
         $this->qrModel = new QRModel();
+        $this->settingsModel = new SettingsModel();
     }
     
     /**
@@ -27,10 +30,82 @@ class QRController
      */
     public function showForm(): void
     {
+        $userId = Auth::id();
+        $settings = [];
+        
+        // Load user settings if logged in
+        if ($userId) {
+            $settings = $this->settingsModel->get($userId);
+        }
+        
+        // Check for design preset parameter
+        $preset = $_GET['preset'] ?? null;
+        $presetSettings = $this->getPresetSettings($preset);
+        
+        // Merge preset with user settings (preset takes precedence)
+        if ($presetSettings) {
+            $settings = array_merge($settings, $presetSettings);
+        }
+        
         $this->render('generate', [
             'title' => 'Generate QR Code',
-            'user' => Auth::user()
+            'user' => Auth::user(),
+            'settings' => $settings,
+            'preset' => $preset
         ]);
+    }
+    
+    /**
+     * Get preset design settings
+     */
+    private function getPresetSettings(?string $preset): array
+    {
+        if (!$preset) {
+            return [];
+        }
+        
+        $presets = [
+            'modern' => [
+                'default_foreground_color' => '#667eea',
+                'default_background_color' => '#ffffff',
+                'default_corner_style' => 'extra-rounded',
+                'default_dot_style' => 'rounded',
+                'default_marker_border_style' => 'extra-rounded',
+                'default_marker_center_style' => 'extra-rounded',
+                'default_gradient_enabled' => 0,
+            ],
+            'vibrant' => [
+                'default_foreground_color' => '#f093fb',
+                'default_background_color' => '#ffffff',
+                'default_corner_style' => 'dot',
+                'default_dot_style' => 'classy-rounded',
+                'default_marker_border_style' => 'extra-rounded',
+                'default_marker_center_style' => 'dot',
+                'default_gradient_enabled' => 1,
+                'default_gradient_color' => '#f5576c',
+            ],
+            'professional' => [
+                'default_foreground_color' => '#2c3e50',
+                'default_background_color' => '#ffffff',
+                'default_corner_style' => 'square',
+                'default_dot_style' => 'square',
+                'default_marker_border_style' => 'square',
+                'default_marker_center_style' => 'square',
+                'default_gradient_enabled' => 0,
+            ],
+            'gradient' => [
+                'default_foreground_color' => '#4facfe',
+                'default_background_color' => '#ffffff',
+                'default_corner_style' => 'extra-rounded',
+                'default_dot_style' => 'rounded',
+                'default_marker_border_style' => 'extra-rounded',
+                'default_marker_center_style' => 'extra-rounded',
+                'default_gradient_enabled' => 1,
+                'default_gradient_color' => '#00f2fe',
+            ],
+        ];
+        
+        return $presets[$preset] ?? [];
     }
     
     /**
@@ -327,13 +402,13 @@ class QRController
         $userId = Auth::id();
         $history = [];
         $totalCount = 0;
-        $perPage = (int)($_GET['per_page'] ?? 25);
+        $perPage = (int)($_GET['per_page'] ?? 10);
         $page = max(1, (int)($_GET['page'] ?? 1));
         $offset = ($page - 1) * $perPage;
         
         // Validate per_page value
         if (!in_array($perPage, [10, 25, 50, 100])) {
-            $perPage = 25;
+            $perPage = 10;
         }
         
         if ($userId) {
@@ -436,6 +511,57 @@ class QRController
         }
         
         Helpers::redirect('/projects/qr/history');
+    }
+    
+    /**
+     * Bulk print QR codes
+     */
+    public function bulkPrint(): void
+    {
+        $userId = Auth::id();
+        
+        if (!$userId) {
+            header('Location: /login');
+            exit;
+        }
+        
+        // Get parameters
+        $ids = isset($_GET['ids']) ? explode(',', $_GET['ids']) : [];
+        $pageSize = $_GET['pageSize'] ?? 'a4';
+        $qrSize = $_GET['qrSize'] ?? 'medium';
+        $margins = $_GET['margins'] ?? 'normal';
+        $removeBg = isset($_GET['removeBg']) && $_GET['removeBg'] === '1';
+        $showLabels = isset($_GET['showLabels']) && $_GET['showLabels'] === '1';
+        
+        if (empty($ids)) {
+            echo "No QR codes selected.";
+            return;
+        }
+        
+        // Fetch QR codes
+        $qrCodes = [];
+        foreach ($ids as $id) {
+            $qr = $this->qrModel->getById((int)$id, $userId);
+            if ($qr) {
+                $qrCodes[] = $qr;
+            }
+        }
+        
+        if (empty($qrCodes)) {
+            echo "No valid QR codes found.";
+            return;
+        }
+        
+        // Render print view
+        $this->render('bulk-print', [
+            'title' => 'Print QR Codes',
+            'qrCodes' => $qrCodes,
+            'pageSize' => $pageSize,
+            'qrSize' => $qrSize,
+            'margins' => $margins,
+            'removeBg' => $removeBg,
+            'showLabels' => $showLabels
+        ]);
     }
     
     /**

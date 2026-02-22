@@ -62,15 +62,38 @@ class SettingsController
                 'default_error_correction' => $_POST['default_error_correction'] ?? 'H',
                 'default_frame_style' => $_POST['default_frame_style'] ?? 'none',
                 'default_download_format' => $_POST['default_download_format'] ?? 'png',
+                // Design defaults
+                'default_corner_style' => $_POST['default_corner_style'] ?? 'square',
+                'default_dot_style' => $_POST['default_dot_style'] ?? 'square',
+                'default_marker_border_style' => $_POST['default_marker_border_style'] ?? 'square',
+                'default_marker_center_style' => $_POST['default_marker_center_style'] ?? 'square',
+                // Logo defaults
+                'default_logo_color' => $_POST['default_logo_color'] ?? '#9945ff',
+                'default_logo_size' => floatval($_POST['default_logo_size'] ?? 0.30),
+                'default_logo_remove_bg' => isset($_POST['default_logo_remove_bg']) ? 1 : 0,
+                // Advanced defaults
+                'default_gradient_enabled' => isset($_POST['default_gradient_enabled']) ? 1 : 0,
+                'default_gradient_color' => $_POST['default_gradient_color'] ?? '#9945ff',
+                'default_transparent_bg' => isset($_POST['default_transparent_bg']) ? 1 : 0,
+                'default_custom_marker_color' => isset($_POST['default_custom_marker_color']) ? 1 : 0,
+                'default_marker_color' => $_POST['default_marker_color'] ?? '#9945ff',
+                // Preferences
                 'auto_save' => isset($_POST['auto_save']) ? 1 : 0,
                 'email_notifications' => isset($_POST['email_notifications']) ? 1 : 0,
                 'scan_notification_threshold' => intval($_POST['scan_notification_threshold'] ?? 10)
             ];
             
-            if ($this->model->save($userId, $data)) {
-                $_SESSION['success'] = 'Settings updated successfully';
-            } else {
-                $_SESSION['error'] = 'Failed to update settings';
+            try {
+                if ($this->model->save($userId, $data)) {
+                    $_SESSION['success'] = 'Settings updated successfully';
+                    \Core\Logger::info('User ' . $userId . ' successfully updated settings');
+                } else {
+                    $_SESSION['error'] = 'Failed to update settings. Please check the logs or try again.';
+                    \Core\Logger::error('Settings save returned false for user ' . $userId);
+                }
+            } catch (\Exception $e) {
+                $_SESSION['error'] = 'An error occurred: ' . $e->getMessage();
+                \Core\Logger::error('Exception during settings save for user ' . $userId . ': ' . $e->getMessage());
             }
             
             header('Location: /projects/qr/settings');

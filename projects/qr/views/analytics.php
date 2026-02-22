@@ -26,11 +26,95 @@
     border-collapse: collapse;
 }
 
+/* Compact Stat Card Styles with Rounded Squares */
+.stat-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    transition: all 0.3s ease;
+}
+
+.stat-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+    flex-shrink: 0;
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-content h3 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0 0 0.25rem 0;
+    color: var(--text-primary);
+}
+
+.stat-content p {
+    font-size: 0.875rem;
+    margin: 0;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+/* Date filter responsive */
+#dateFilterForm {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-md);
+    align-items: end;
+}
+
+@media (max-width: 768px) {
+    #dateFilterForm {
+        flex-direction: column;
+        align-items: stretch !important;
+    }
+    
+    #dateFilterForm > div {
+        width: 100% !important;
+        flex: none !important;
+    }
+    
+    #dateFilterForm button {
+        width: 100% !important;
+    }
+}
+
 /* Mobile Responsive Styles for Analytics */
 @media (max-width: 768px) {
-    /* Stack stat cards vertically on mobile */
+    /* Grid for stats - 2 columns on tablet */
     .grid-3 {
-        grid-template-columns: 1fr !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+    
+    /* Compact stat cards for mobile */
+    .stat-card {
+        padding: 0.75rem;
+        gap: 0.75rem;
+    }
+    
+    .stat-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+        font-size: 1.25rem;
+    }
+    
+    .stat-content h3 {
+        font-size: 1.5rem;
+    }
+    
+    .stat-content p {
+        font-size: 0.75rem;
     }
     
     /* Make controls responsive */
@@ -65,21 +149,9 @@
         flex-wrap: nowrap;
     }
     
-    /* Hide less important columns on small screens */
-    @media (max-width: 640px) {
-        .hide-on-mobile {
-            display: none !important;
-        }
-        
-        .stat-card {
-            padding: 1rem !important;
-        }
-        
-        .stat-icon {
-            width: 40px !important;
-            height: 40px !important;
-            font-size: 1.25rem !important;
-        }
+    /* Charts responsive */
+    .grid-2 {
+        grid-template-columns: 1fr !important;
     }
     
     /* Mobile optimization for action buttons */
@@ -98,6 +170,38 @@
     td:last-child {
         white-space: nowrap !important;
     }
+}
+
+/* Small mobile - single column */
+@media (max-width: 640px) {
+    .grid-3 {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .hide-on-mobile {
+        display: none !important;
+    }
+    
+    .stat-card {
+        padding: 0.625rem !important;
+        gap: 0.625rem !important;
+    }
+    
+    .stat-icon {
+        width: 38px !important;
+        height: 38px !important;
+        font-size: 1.125rem !important;
+        border-radius: 8px !important;
+    }
+    
+    .stat-content h3 {
+        font-size: 1.25rem !important;
+    }
+    
+    .stat-content p {
+        font-size: 0.7rem !important;
+    }
+}
 }
 
 /* Improve button styling */
@@ -171,9 +275,103 @@
             <i class="fas fa-eye"></i>
         </div>
         <div class="stat-content">
-            <h3><?= number_format(array_sum(array_column($recentQRs, 'scan_count'))) ?></h3>
+            <h3><?= number_format($scanStats['total'] ?? 0) ?></h3>
             <p>Total Scans</p>
         </div>
+    </div>
+</div>
+
+<!-- Additional Analytics Stats -->
+<div class="grid grid-3" style="gap: 20px; margin-bottom: 30px;">
+    <div class="glass-card stat-card">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #fa709a, #fee140);">
+            <i class="fas fa-calendar-day"></i>
+        </div>
+        <div class="stat-content">
+            <h3><?= number_format($scanStats['today'] ?? 0) ?></h3>
+            <p>Scans Today</p>
+        </div>
+    </div>
+    
+    <div class="glass-card stat-card">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #30cfd0, #330867);">
+            <i class="fas fa-calendar-week"></i>
+        </div>
+        <div class="stat-content">
+            <h3><?= number_format($scanStats['this_week'] ?? 0) ?></h3>
+            <p>Scans This Week</p>
+        </div>
+    </div>
+    
+    <div class="glass-card stat-card">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #a8edea, #fed6e3);">
+            <i class="fas fa-chart-bar"></i>
+        </div>
+        <div class="stat-content">
+            <h3><?= $activeQRs > 0 ? number_format($scanStats['total'] / $activeQRs, 1) : '0' ?></h3>
+            <p>Avg Scans per QR</p>
+        </div>
+    </div>
+</div>
+
+<!-- Date Range Filter -->
+<div class="glass-card" style="margin-bottom: 30px; position: relative;">
+    <!-- Loading Overlay -->
+    <div id="filterLoadingOverlay" style="display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); border-radius: 12px; z-index: 100; align-items: center; justify-content: center;">
+        <div style="text-align: center; color: white;">
+            <div class="spinner" style="width: 40px; height: 40px; border: 4px solid rgba(255, 255, 255, 0.3); border-top-color: white; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 10px;"></div>
+            <p style="font-size: 14px; font-weight: 500;">Loading...</p>
+        </div>
+    </div>
+    
+    <h3 class="section-title" style="margin-bottom: var(--space-lg);">
+        <i class="fas fa-filter"></i> Filter Analytics
+    </h3>
+    <form id="dateFilterForm" method="GET" onsubmit="showFilterLoading()" style="display: flex; flex-wrap: wrap; gap: var(--space-md); align-items: end;">
+        <div style="flex: 1; min-width: 200px;">
+            <label for="start_date" style="display: block; margin-bottom: 0.5rem; font-size: var(--font-sm); color: var(--text-secondary);">Start Date</label>
+            <input type="date" id="start_date" name="start_date" class="form-input" value="<?= $_GET['start_date'] ?? '' ?>" style="width: 100%;">
+        </div>
+        <div style="flex: 1; min-width: 200px;">
+            <label for="end_date" style="display: block; margin-bottom: 0.5rem; font-size: var(--font-sm); color: var(--text-secondary);">End Date</label>
+            <input type="date" id="end_date" name="end_date" class="form-input" value="<?= $_GET['end_date'] ?? '' ?>" style="width: 100%;">
+        </div>
+        <div style="display: flex; gap: var(--space-sm); flex-wrap: wrap;">
+            <button type="button" class="btn-secondary btn-sm" onclick="setDateRange('all')">All Time</button>
+            <button type="button" class="btn-secondary btn-sm" onclick="setDateRange(7)">Last 7 Days</button>
+            <button type="button" class="btn-secondary btn-sm" onclick="setDateRange(30)">Last 30 Days</button>
+            <button type="button" class="btn-secondary btn-sm" onclick="setDateRange(90)">Last 90 Days</button>
+        </div>
+        <div style="display: flex; gap: var(--space-sm);">
+            <button type="submit" class="btn-primary btn-sm" id="applyFilterBtn">
+                <i class="fas fa-check"></i> Apply
+            </button>
+            <button type="button" class="btn-secondary btn-sm" onclick="exportCSV()" id="exportBtn">
+                <i class="fas fa-download"></i> Export CSV
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Charts Section -->
+<div class="grid grid-2" style="gap: 20px; margin-bottom: 30px;">
+    <div class="glass-card" style="position: relative;">
+        <div id="chartLoading1" class="chart-loading" style="display: flex; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10;">
+            <div class="spinner" style="width: 30px; height: 30px; border: 3px solid rgba(153, 69, 255, 0.3); border-top-color: var(--purple); border-radius: 50%; animation: spin 1s linear infinite;"></div>
+        </div>
+        <h3 class="section-title" style="margin-bottom: var(--space-lg);">
+            <i class="fas fa-chart-line"></i> Scan Trends
+        </h3>
+        <canvas id="scanTrendsChart" style="max-height: 300px;"></canvas>
+    </div>
+    <div class="glass-card" style="position: relative;">
+        <div id="chartLoading2" class="chart-loading" style="display: flex; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10;">
+            <div class="spinner" style="width: 30px; height: 30px; border: 3px solid rgba(153, 69, 255, 0.3); border-top-color: var(--purple); border-radius: 50%; animation: spin 1s linear infinite;"></div>
+        </div>
+        <h3 class="section-title" style="margin-bottom: var(--space-lg);">
+            <i class="fas fa-chart-bar"></i> Top QR Codes
+        </h3>
+        <canvas id="topQRsChart" style="max-height: 300px;"></canvas>
     </div>
 </div>
 
@@ -293,8 +491,209 @@
 
 <script>
 function changePerPage(perPage) {
+    showFilterLoading();
     window.location.href = '?page=1&per_page=' + perPage;
 }
+
+function showFilterLoading() {
+    const overlay = document.getElementById('filterLoadingOverlay');
+    if (overlay) {
+        overlay.style.display = 'flex';
+    }
+}
+
+function setDateRange(days) {
+    const endDate = new Date();
+    const startDate = new Date();
+    
+    if (days === 'all') {
+        document.getElementById('start_date').value = '';
+        document.getElementById('end_date').value = '';
+    } else {
+        startDate.setDate(endDate.getDate() - days);
+        document.getElementById('start_date').value = startDate.toISOString().split('T')[0];
+        document.getElementById('end_date').value = endDate.toISOString().split('T')[0];
+    }
+}
+
+function exportCSV() {
+    const btn = document.getElementById('exportBtn');
+    const originalHTML = btn.innerHTML;
+    
+    // Show loading state
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exporting...';
+    
+    const startDate = document.getElementById('start_date').value;
+    const endDate = document.getElementById('end_date').value;
+    let url = '/projects/qr/analytics/export-csv';
+    const params = new URLSearchParams();
+    
+    if (startDate) params.append('start_date', startDate);
+    if (endDate) params.append('end_date', endDate);
+    
+    if (params.toString()) {
+        url += '?' + params.toString();
+    }
+    
+    window.location.href = url;
+    
+    // Reset button after a delay
+    setTimeout(() => {
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+    }, 2000);
+}
+</script>
+
+<style>
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+</style>
+
+<!-- Chart.js Library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<!-- Chart Initialization -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const startDate = urlParams.get('start_date') || '';
+    const endDate = urlParams.get('end_date') || '';
+    
+    // Fetch and render Scan Trends Chart
+    fetch(`/projects/qr/analytics/scan-trends?start_date=${startDate}&end_date=${endDate}`)
+        .then(response => response.json())
+        .then(data => {
+            // Hide loading spinner
+            const loading1 = document.getElementById('chartLoading1');
+            if (loading1) loading1.style.display = 'none';
+            
+            const ctx = document.getElementById('scanTrendsChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.labels || [],
+                    datasets: [{
+                        label: 'Scans',
+                        data: data.values || [],
+                        borderColor: '#00f2fe',
+                        backgroundColor: 'rgba(0, 242, 254, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#e0e0e0'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#b0b0b0'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: '#b0b0b0'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            }
+                        }
+                    }
+                }
+            });
+        })
+        .catch(error => {
+            console.error('Error loading scan trends:', error);
+            const loading1 = document.getElementById('chartLoading1');
+            if (loading1) loading1.style.display = 'none';
+        });
+    
+    // Fetch and render Top QRs Chart
+    fetch(`/projects/qr/analytics/top-qrs?start_date=${startDate}&end_date=${endDate}`)
+        .then(response => response.json())
+        .then(data => {
+            // Hide loading spinner
+            const loading2 = document.getElementById('chartLoading2');
+            if (loading2) loading2.style.display = 'none';
+            
+            const ctx = document.getElementById('topQRsChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.labels || [],
+                    datasets: [{
+                        label: 'Scans',
+                        data: data.values || [],
+                        backgroundColor: [
+                            'rgba(102, 126, 234, 0.8)',
+                            'rgba(118, 75, 162, 0.8)',
+                            'rgba(240, 147, 251, 0.8)',
+                            'rgba(245, 87, 108, 0.8)',
+                            'rgba(79, 172, 254, 0.8)'
+                        ],
+                        borderColor: [
+                            '#667eea',
+                            '#764ba2',
+                            '#f093fb',
+                            '#f5576c',
+                            '#4facfe'
+                        ],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#b0b0b0'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            }
+                        },
+                        y: {
+                            ticks: {
+                                color: '#b0b0b0'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            }
+                        }
+                    }
+                }
+            });
+        })
+        .catch(error => {
+            console.error('Error loading top QRs:', error);
+            const loading2 = document.getElementById('chartLoading2');
+            if (loading2) loading2.style.display = 'none';
+        });
+});
 </script>
 
 <style>

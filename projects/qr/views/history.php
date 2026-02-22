@@ -25,10 +25,39 @@ if ($userId) {
 
 /* Mobile Responsive Styles */
 @media (max-width: 768px) {
+    /* Make header responsive */
+    .page-header {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 1rem !important;
+    }
+    
+    .page-header h1 {
+        font-size: 1.5rem !important;
+    }
+    
+    .page-header .btn {
+        width: 100% !important;
+        justify-content: center !important;
+    }
+    
     /* Make controls stack vertically on mobile */
     .controls-wrapper {
         flex-direction: column !important;
         align-items: stretch !important;
+        gap: 1rem !important;
+    }
+    
+    .controls-wrapper > * {
+        width: 100% !important;
+    }
+    
+    .controls-wrapper form {
+        width: 100% !important;
+    }
+    
+    .controls-wrapper > div {
+        justify-content: space-between !important;
     }
     
     /* Enhanced mobile table scrolling */
@@ -46,6 +75,11 @@ if ($userId) {
         font-size: 0.875rem;
     }
     
+    .history-table th,
+    .history-table td {
+        padding: 0.5rem !important;
+    }
+    
     /* Add scroll hint text */
     .scroll-hint {
         display: block !important;
@@ -53,42 +87,31 @@ if ($userId) {
         padding: 0.5rem;
         font-size: 0.75rem;
         color: var(--text-secondary);
-        background: var(--background-tertiary);
+        background: rgba(153, 69, 255, 0.1);
+        border: 1px solid rgba(153, 69, 255, 0.2);
         border-radius: 0.375rem;
         margin-bottom: 1rem;
-    }
-    
-    /* Stack action buttons vertically */
-    .action-buttons {
-        flex-direction: column !important;
-        align-items: stretch !important;
-    }
-    
-    .action-buttons > * {
-        width: 100% !important;
-        justify-content: center;
     }
     
     /* Make pagination stack on mobile */
     .pagination-wrapper {
         flex-direction: column !important;
         gap: 15px !important;
+        align-items: center !important;
+    }
+    
+    .pagination-controls {
+        flex-wrap: wrap !important;
+        justify-content: center !important;
     }
     
     /* Adjust button sizes for mobile */
     .btn-sm {
-        padding: 0.5rem !important;
-        font-size: 0.875rem !important;
+        padding: 0.5rem 0.75rem !important;
+        font-size: 0.8rem !important;
     }
     
-    /* Hide less important columns on small screens */
-    @media (max-width: 640px) {
-        .hide-on-mobile {
-            display: none !important;
-        }
-    }
-    
-    /* Mobile optimization for action buttons */
+    /* Mobile optimization for action buttons in table */
     .icon-only-btn {
         min-width: 2rem !important;
         width: 2rem !important;
@@ -109,6 +132,26 @@ if ($userId) {
     .action-buttons {
         gap: 0.25rem !important;
         flex-wrap: nowrap !important;
+    }
+}
+
+/* Small mobile specific */
+@media (max-width: 640px) {
+    .hide-on-mobile {
+        display: none !important;
+    }
+    
+    .page-header h1 {
+        font-size: 1.25rem !important;
+    }
+    
+    .history-table {
+        font-size: 0.75rem !important;
+    }
+    
+    .btn-sm {
+        padding: 0.375rem 0.5rem !important;
+        font-size: 0.75rem !important;
     }
 }
 
@@ -184,9 +227,21 @@ if ($userId) {
 .btn-success:hover {
     opacity: 0.9;
 }
+
+/* Print dialog animation */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
 </style>
 
-<div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: nowrap; gap: 15px;">
+<div class="page-header" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: nowrap; gap: 15px;">
     <h1 style="margin: 0;">QR Code History</h1>
     <a href="/projects/qr" class="btn btn-secondary">
         <i class="fas fa-arrow-left"></i> Back to Dashboard
@@ -209,7 +264,7 @@ if ($userId) {
     <?php else: ?>
         <!-- Controls -->
         <div class="controls-wrapper" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: nowrap; gap: 15px;">
-            <form method="POST" action="/projects/qr/bulk-delete" id="bulkDeleteForm" style="display: flex; align-items: center; gap: 10px;">
+            <form method="POST" action="/projects/qr/bulk-delete" id="bulkDeleteForm" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                 <input type="hidden" name="_csrf_token" value="<?= \Core\Security::generateCsrfToken() ?>">
                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                     <input type="checkbox" id="selectAll" style="width: 18px; height: 18px; cursor: pointer;">
@@ -217,6 +272,9 @@ if ($userId) {
                 </label>
                 <button type="button" onclick="confirmBulkDelete()" class="btn btn-danger btn-sm" id="bulkDeleteBtn" style="display: none;">
                     <i class="fas fa-trash"></i> Delete Selected
+                </button>
+                <button type="button" onclick="openBulkPrintDialog()" class="btn btn-primary btn-sm" id="bulkPrintBtn" style="display: none; background: linear-gradient(135deg, #667eea, #764ba2);">
+                    <i class="fas fa-print"></i> Print Selected
                 </button>
             </form>
             
@@ -263,8 +321,8 @@ if ($userId) {
                                 <input type="checkbox" name="qr_ids[]" value="<?= $qr['id'] ?>" class="qr-checkbox" form="bulkDeleteForm" style="width: 18px; height: 18px; cursor: pointer;">
                             </td>
                             <td style="padding: 0.75rem;">
-                                <div style="background: white; padding: 0.5rem; border-radius: 0.25rem; display: inline-block;">
-                                    <div id="qr-<?= $qr['id'] ?>" style="width: 3.75rem; height: 3.75rem;"></div>
+                                <div style="background: white; padding: 0.25rem; border-radius: 0.25rem; display: inline-block; min-width: 70px; min-height: 70px;">
+                                    <div id="qr-<?= $qr['id'] ?>" style="width: 60px; height: 60px;"></div>
                                 </div>
                             </td>
                             <td style="padding: 0.75rem; max-width: 15rem; overflow: hidden; text-overflow: ellipsis;" 
@@ -414,7 +472,8 @@ if ($userId) {
         const qr = qrcode(0, 'H');
         qr.addData(<?= json_encode($qr['content']) ?>);
         qr.make();
-        document.getElementById('qr-<?= $qr['id'] ?>').innerHTML = qr.createImgTag(1);
+        // Use cellSize of 2 for better visibility (60px container / 30 cells = 2px per cell)
+        document.getElementById('qr-<?= $qr['id'] ?>').innerHTML = qr.createImgTag(2, 0);
     } catch (e) {
         console.error('Failed to generate QR preview:', e);
     }
@@ -435,17 +494,18 @@ function changePerPage(perPage) {
 document.getElementById('selectAll')?.addEventListener('change', function() {
     const checkboxes = document.querySelectorAll('.qr-checkbox');
     checkboxes.forEach(cb => cb.checked = this.checked);
-    toggleBulkDeleteBtn();
+    toggleBulkActionBtns();
 });
 
 // Show/hide bulk delete button
 document.querySelectorAll('.qr-checkbox').forEach(cb => {
-    cb.addEventListener('change', toggleBulkDeleteBtn);
+    cb.addEventListener('change', toggleBulkActionBtns);
 });
 
-function toggleBulkDeleteBtn() {
+function toggleBulkActionBtns() {
     const checked = document.querySelectorAll('.qr-checkbox:checked').length;
     document.getElementById('bulkDeleteBtn').style.display = checked > 0 ? 'block' : 'none';
+    document.getElementById('bulkPrintBtn').style.display = checked > 0 ? 'block' : 'none';
 }
 
 // Bulk delete confirmation
@@ -464,6 +524,222 @@ function confirmBulkDelete() {
     if (confirm(`Are you sure you want to delete ${checked} QR code(s)?`)) {
         document.getElementById('bulkDeleteForm').submit();
     }
+}
+
+// Open bulk print dialog
+function openBulkPrintDialog() {
+    const checked = document.querySelectorAll('.qr-checkbox:checked');
+    if (checked.length === 0) {
+        const msg = document.createElement('div');
+        msg.textContent = 'No QR codes selected. Please select at least one QR code to print.';
+        msg.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #ef4444; color: white; padding: 15px 20px; border-radius: 8px; z-index: 9999; box-shadow: 0 4px 6px rgba(0,0,0,0.1);';
+        document.body.appendChild(msg);
+        setTimeout(() => msg.remove(), 3000);
+        return;
+    }
+    
+    // Get selected QR IDs
+    const qrIds = Array.from(checked).map(cb => cb.value);
+    
+    // Create and show print options dialog
+    showPrintDialog(qrIds);
+}
+
+// Show print dialog with options
+function showPrintDialog(qrIds) {
+    const dialog = document.createElement('div');
+    dialog.id = 'printDialog';
+    dialog.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 10000; backdrop-filter: blur(5px); overflow-y: auto; padding: 10px;';
+    
+    dialog.innerHTML = `
+        <div style="background: var(--card-bg); border-radius: 16px; padding: 20px; max-width: 550px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.5); animation: slideIn 0.3s ease-out; margin: auto; max-height: 95vh; overflow-y: auto;">
+            <h3 style="margin: 0 0 20px 0; display: flex; align-items: center; gap: 10px; color: var(--text-primary); font-size: clamp(1rem, 4vw, 1.25rem);">
+                <i class="fas fa-print" style="color: var(--purple);"></i>
+                Bulk Print QR Codes (${qrIds.length} selected)
+            </h3>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary);">
+                    <i class="fas fa-file"></i> Page Size
+                </label>
+                <select id="pageSize" class="form-select" style="width: 100%;" onchange="toggleCustomSize()">
+                    <option value="a4">A4 (210 × 297 mm)</option>
+                    <option value="letter">Letter (8.5 × 11 in)</option>
+                    <option value="a3">A3 (297 × 420 mm)</option>
+                    <option value="legal">Legal (8.5 × 14 in)</option>
+                    <option value="custom">Custom Size</option>
+                </select>
+                <div id="customSizeInputs" style="display: none; margin-top: 10px; padding: 10px; background: rgba(102, 126, 234, 0.05); border-radius: 6px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div>
+                            <label style="display: block; margin-bottom: 4px; font-size: 0.85rem; color: var(--text-secondary);">Width (mm)</label>
+                            <input type="number" id="customWidth" class="form-control" value="210" min="50" max="500" style="width: 100%;">
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 4px; font-size: 0.85rem; color: var(--text-secondary);">Height (mm)</label>
+                            <input type="number" id="customHeight" class="form-control" value="297" min="50" max="500" style="width: 100%;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary);">
+                    <i class="fas fa-tablet-alt"></i> Orientation
+                </label>
+                <select id="orientation" class="form-select" style="width: 100%;">
+                    <option value="portrait">Portrait (Vertical)</option>
+                    <option value="landscape">Landscape (Horizontal)</option>
+                </select>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary);">
+                    <i class="fas fa-expand-arrows-alt"></i> QR Code Size
+                </label>
+                <select id="qrSize" class="form-select" style="width: 100%;" onchange="toggleCustomQRSize()">
+                    <option value="small">Small (4 per row, ~80mm)</option>
+                    <option value="medium" selected>Medium (3 per row, ~120mm)</option>
+                    <option value="large">Large (2 per row, ~180mm)</option>
+                    <option value="xlarge">Extra Large (1 per row, ~240mm)</option>
+                    <option value="custom-grid">Custom Grid (specify per row)</option>
+                    <option value="custom-size">Custom Size (specify exact size)</option>
+                </select>
+                <div id="customQRSizeInput" style="display: none; margin-top: 10px; padding: 10px; background: rgba(102, 126, 234, 0.05); border-radius: 6px;">
+                    <label style="display: block; margin-bottom: 4px; font-size: 0.85rem; color: var(--text-secondary);">QR Codes per Row</label>
+                    <input type="number" id="customPerRow" class="form-control" value="3" min="1" max="10" style="width: 100%;">
+                </div>
+                <div id="customQRDimensionInput" style="display: none; margin-top: 10px; padding: 10px; background: rgba(102, 126, 234, 0.05); border-radius: 6px;">
+                    <label style="display: block; margin-bottom: 4px; font-size: 0.85rem; color: var(--text-secondary);">QR Code Size (mm)</label>
+                    <input type="number" id="customQRDimension" class="form-control" value="120" min="30" max="300" style="width: 100%;" placeholder="Enter size in mm">
+                    <small style="display: block; margin-top: 4px; color: var(--text-secondary); font-size: 0.75rem;">Recommended: 80-200mm for optimal scanning</small>
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary);">
+                    <i class="fas fa-ruler-combined"></i> Margins
+                </label>
+                <select id="margins" class="form-select" style="width: 100%;">
+                    <option value="normal" selected>Normal (15mm)</option>
+                    <option value="small">Small (10mm)</option>
+                    <option value="large">Large (20mm)</option>
+                </select>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 12px; background: rgba(102, 126, 234, 0.1); border-radius: 8px; border: 1px solid rgba(102, 126, 234, 0.3);">
+                    <input type="checkbox" id="removeBg" style="width: 18px; height: 18px; cursor: pointer;">
+                    <div>
+                        <div style="font-weight: 600; color: var(--text-primary);">
+                            <i class="fas fa-eraser"></i> Remove Background
+                        </div>
+                        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 2px;">
+                            Print QR codes without background colors
+                        </div>
+                    </div>
+                </label>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 12px; background: rgba(102, 126, 234, 0.1); border-radius: 8px; border: 1px solid rgba(102, 126, 234, 0.3);">
+                    <input type="checkbox" id="showLabels" checked style="width: 18px; height: 18px; cursor: pointer;">
+                    <div>
+                        <div style="font-weight: 600; color: var(--text-primary);">
+                            <i class="fas fa-tag"></i> Show Labels
+                        </div>
+                        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 2px;">
+                            Print content text below each QR code
+                        </div>
+                    </div>
+                </label>
+            </div>
+            
+            <div style="display: flex; gap: 10px; margin-top: 25px;">
+                <button onclick="closePrintDialog()" class="btn" style="flex: 1; background: var(--bg-secondary); color: var(--text-primary);">
+                    Cancel
+                </button>
+                <button onclick="doBulkPrint()" class="btn btn-primary" style="flex: 1; background: linear-gradient(135deg, #667eea, #764ba2);">
+                    <i class="fas fa-print"></i> Print
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(dialog);
+    
+    // Store QR IDs in a data attribute
+    dialog.dataset.qrIds = JSON.stringify(qrIds);
+    
+    // Close on background click
+    dialog.addEventListener('click', function(e) {
+        if (e.target === dialog) {
+            closePrintDialog();
+        }
+    });
+}
+
+function toggleCustomSize() {
+    const pageSize = document.getElementById('pageSize').value;
+    const customInputs = document.getElementById('customSizeInputs');
+    customInputs.style.display = pageSize === 'custom' ? 'block' : 'none';
+}
+
+function toggleCustomQRSize() {
+    const qrSize = document.getElementById('qrSize').value;
+    const customGridInput = document.getElementById('customQRSizeInput');
+    const customDimensionInput = document.getElementById('customQRDimensionInput');
+    
+    customGridInput.style.display = qrSize === 'custom-grid' ? 'block' : 'none';
+    customDimensionInput.style.display = qrSize === 'custom-size' ? 'block' : 'none';
+}
+
+function closePrintDialog() {
+    const dialog = document.getElementById('printDialog');
+    if (dialog) {
+        dialog.remove();
+    }
+}
+
+function doBulkPrint() {
+    const dialog = document.getElementById('printDialog');
+    const qrIds = JSON.parse(dialog.dataset.qrIds);
+    const pageSize = document.getElementById('pageSize').value;
+    const qrSize = document.getElementById('qrSize').value;
+    const margins = document.getElementById('margins').value;
+    const orientation = document.getElementById('orientation').value;
+    const removeBg = document.getElementById('removeBg').checked;
+    const showLabels = document.getElementById('showLabels').checked;
+    
+    // Build URL with parameters
+    const params = new URLSearchParams({
+        ids: qrIds.join(','),
+        pageSize: pageSize,
+        qrSize: qrSize,
+        margins: margins,
+        orientation: orientation,
+        removeBg: removeBg ? '1' : '0',
+        showLabels: showLabels ? '1' : '0'
+    });
+    
+    // Add custom dimensions if applicable
+    if (pageSize === 'custom') {
+        params.append('customWidth', document.getElementById('customWidth').value);
+        params.append('customHeight', document.getElementById('customHeight').value);
+    }
+    
+    if (qrSize === 'custom-grid') {
+        params.append('customPerRow', document.getElementById('customPerRow').value);
+    }
+    
+    if (qrSize === 'custom-size') {
+        params.append('customQRDimension', document.getElementById('customQRDimension').value);
+    }
+    
+    // Open print page in new window
+    window.open('/projects/qr/bulk-print?' + params.toString(), '_blank');
+    
+    closePrintDialog();
 }
 
 // Update campaign assignment

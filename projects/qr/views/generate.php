@@ -3,6 +3,38 @@
 // Futuristic UI with theme integration and live preview
 ?>
 
+<?php if (isset($preset) && $preset): ?>
+<div class="preset-notification" style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1)); border: 2px solid rgba(153, 69, 255, 0.4); border-radius: 12px; padding: 15px 20px; margin-bottom: 25px; display: flex; align-items: center; gap: 15px; animation: slideInDown 0.5s ease-out;">
+    <div style="width: 45px; height: 45px; background: linear-gradient(135deg, var(--purple), var(--cyan)); border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+        <i class="fas fa-magic" style="color: white; font-size: 1.3rem;"></i>
+    </div>
+    <div style="flex: 1;">
+        <div style="font-weight: 700; font-size: 1rem; margin-bottom: 3px;">
+            <i class="fas fa-check-circle" style="color: var(--green);"></i> AI Preset Applied: <?= ucfirst(htmlspecialchars($preset)) ?>
+        </div>
+        <div style="font-size: 0.85rem; color: var(--text-secondary);">
+            Design settings have been automatically configured for optimal results
+        </div>
+    </div>
+    <a href="/projects/qr/generate" style="padding: 8px 16px; background: rgba(255, 255, 255, 0.1); border: 1px solid var(--border-color); border-radius: 8px; text-decoration: none; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;">
+        Clear Preset
+    </a>
+</div>
+
+<style>
+@keyframes slideInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+</style>
+<?php endif; ?>
+
 <div class="grid grid-2">
     <div class="glass-card">
         <h3 class="section-title">
@@ -425,21 +457,27 @@
                 <div class="form-group">
                     <label class="form-label">Size</label>
                     <select name="size" id="qrSize" class="form-select">
-                        <option value="150">Small (150x150)</option>
-                        <option value="200">Medium (200x200)</option>
-                        <option value="300" selected>Large (300x300)</option>
-                        <option value="400">Extra Large (400x400)</option>
-                        <option value="500">Huge (500x500)</option>
+                        <?php 
+                        $defaultSize = !empty($settings) ? ($settings['default_size'] ?? 300) : 300;
+                        ?>
+                        <option value="150" <?= $defaultSize == 150 ? 'selected' : '' ?>>Small (150x150)</option>
+                        <option value="200" <?= $defaultSize == 200 ? 'selected' : '' ?>>Medium (200x200)</option>
+                        <option value="300" <?= $defaultSize == 300 ? 'selected' : '' ?>>Large (300x300)</option>
+                        <option value="400" <?= $defaultSize == 400 ? 'selected' : '' ?>>Extra Large (400x400)</option>
+                        <option value="500" <?= $defaultSize == 500 ? 'selected' : '' ?>>Huge (500x500)</option>
                     </select>
                 </div>
                 
                 <div class="form-group">
                     <label class="form-label">Error Correction</label>
                     <select name="error_correction" id="errorCorrection" class="form-select">
-                        <option value="L">Low (7%)</option>
-                        <option value="M">Medium (15%)</option>
-                        <option value="Q">Quartile (25%)</option>
-                        <option value="H" selected>High (30%)</option>
+                        <?php 
+                        $defaultEC = !empty($settings) ? ($settings['default_error_correction'] ?? 'H') : 'H';
+                        ?>
+                        <option value="L" <?= $defaultEC == 'L' ? 'selected' : '' ?>>Low (7%)</option>
+                        <option value="M" <?= $defaultEC == 'M' ? 'selected' : '' ?>>Medium (15%)</option>
+                        <option value="Q" <?= $defaultEC == 'Q' ? 'selected' : '' ?>>Quartile (25%)</option>
+                        <option value="H" <?= $defaultEC == 'H' ? 'selected' : '' ?>>High (30%)</option>
                     </select>
                 </div>
             </div>
@@ -452,19 +490,28 @@
             <div class="grid grid-2" style="gap: 15px;">
                 <div class="form-group">
                     <label class="form-label">Foreground Color</label>
-                    <input type="color" name="foreground_color" id="qrColor" value="#000000" class="form-input color-input">
+                    <?php 
+                    $defaultFgColor = !empty($settings) ? ($settings['default_foreground_color'] ?? '#000000') : '#000000';
+                    ?>
+                    <input type="color" name="foreground_color" id="qrColor" value="<?= htmlspecialchars($defaultFgColor) ?>" class="form-input color-input">
                 </div>
                 
                 <div class="form-group">
                     <label class="form-label">Background Color</label>
-                    <input type="color" name="background_color" id="qrBgColor" value="#ffffff" class="form-input color-input">
+                    <?php 
+                    $defaultBgColor = !empty($settings) ? ($settings['default_background_color'] ?? '#ffffff') : '#ffffff';
+                    ?>
+                    <input type="color" name="background_color" id="qrBgColor" value="<?= htmlspecialchars($defaultBgColor) ?>" class="form-input color-input">
                 </div>
             </div>
             
             <!-- Gradient Toggle for Foreground -->
             <div class="feature-toggle">
                 <label class="toggle-label">
-                    <input type="checkbox" name="gradient_enabled" id="gradientEnabled" value="1" class="toggle-input">
+                    <?php 
+                    $defaultGradientEnabled = !empty($settings) ? (!empty($settings['default_gradient_enabled']) ? 'checked' : '') : '';
+                    ?>
+                    <input type="checkbox" name="gradient_enabled" id="gradientEnabled" value="1" class="toggle-input" <?= $defaultGradientEnabled ?>>
                     <span class="toggle-slider"></span>
                     <span class="toggle-text">
                         <strong><i class="fas fa-palette"></i> Gradient Foreground</strong>
@@ -475,7 +522,10 @@
             
             <div class="form-group" id="gradientColorGroup" style="display: none;">
                 <label class="form-label"><i class="fas fa-palette"></i> Gradient End Color</label>
-                <input type="color" name="gradient_color" id="gradientColor" value="#9945ff" class="form-input color-input">
+                <?php 
+                $defaultGradientColor = !empty($settings) ? ($settings['default_gradient_color'] ?? '#9945ff') : '#9945ff';
+                ?>
+                <input type="color" name="gradient_color" id="gradientColor" value="<?= htmlspecialchars($defaultGradientColor) ?>" class="form-input color-input">
                 <small class="help-text">
                     <i class="fas fa-magic"></i> Creates a smooth gradient from foreground color to this color.
                 </small>
@@ -484,7 +534,10 @@
             <!-- Transparent Background Toggle -->
             <div class="feature-toggle">
                 <label class="toggle-label">
-                    <input type="checkbox" name="transparent_bg" id="transparentBg" value="1" class="toggle-input">
+                    <?php 
+                    $defaultTransparentBg = !empty($settings) ? (!empty($settings['default_transparent_bg']) ? 'checked' : '') : '';
+                    ?>
+                    <input type="checkbox" name="transparent_bg" id="transparentBg" value="1" class="toggle-input" <?= $defaultTransparentBg ?>>
                     <span class="toggle-slider"></span>
                     <span class="toggle-text">
                         <strong>Transparent Background</strong>
@@ -3540,3 +3593,133 @@ small {
     box-shadow: 0 4px 12px rgba(153, 69, 255, 0.4);
 }
 </style>
+
+<script>
+// Apply user settings defaults if available
+<?php if (!empty($settings)): ?>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Applying user default settings...');
+    
+    // Basic defaults
+    const sizeSelect = document.getElementById('qrSize');
+    if (sizeSelect && <?= (int)($settings['default_size'] ?? 300) ?>) {
+        sizeSelect.value = '<?= (int)($settings['default_size'] ?? 300) ?>';
+    }
+    
+    const errorCorrection = document.getElementById('errorCorrection');
+    if (errorCorrection) {
+        errorCorrection.value = '<?= htmlspecialchars($settings['default_error_correction'] ?? 'H') ?>';
+    }
+    
+    const fgColor = document.getElementById('qrFgColor');
+    if (fgColor) {
+        fgColor.value = '<?= htmlspecialchars($settings['default_foreground_color'] ?? '#000000') ?>';
+    }
+    
+    const bgColor = document.getElementById('qrBgColor');
+    if (bgColor) {
+        bgColor.value = '<?= htmlspecialchars($settings['default_background_color'] ?? '#ffffff') ?>';
+    }
+    
+    // Design defaults
+    const dotStyle = document.getElementById('dotStyle');
+    if (dotStyle) {
+        dotStyle.value = '<?= htmlspecialchars($settings['default_dot_style'] ?? 'square') ?>';
+        // Update visual selection if exists
+        const dotOption = document.querySelector('[data-preset="dotStyle"][data-value="<?= htmlspecialchars($settings['default_dot_style'] ?? 'square') ?>"]');
+        if (dotOption) {
+            document.querySelectorAll('[data-preset="dotStyle"]').forEach(el => el.classList.remove('active'));
+            dotOption.classList.add('active');
+        }
+    }
+    
+    const cornerStyle = document.getElementById('cornerStyle');
+    if (cornerStyle) {
+        cornerStyle.value = '<?= htmlspecialchars($settings['default_corner_style'] ?? 'square') ?>';
+        // Update visual selection if exists
+        const cornerOption = document.querySelector('[data-preset="cornerStyle"][data-value="<?= htmlspecialchars($settings['default_corner_style'] ?? 'square') ?>"]');
+        if (cornerOption) {
+            document.querySelectorAll('[data-preset="cornerStyle"]').forEach(el => el.classList.remove('active'));
+            cornerOption.classList.add('active');
+        }
+    }
+    
+    const markerBorderStyle = document.getElementById('markerBorderStyle');
+    if (markerBorderStyle) {
+        markerBorderStyle.value = '<?= htmlspecialchars($settings['default_marker_border_style'] ?? 'square') ?>';
+        const markerBorderOption = document.querySelector('[data-preset="markerBorderStyle"][data-value="<?= htmlspecialchars($settings['default_marker_border_style'] ?? 'square') ?>"]');
+        if (markerBorderOption) {
+            document.querySelectorAll('[data-preset="markerBorderStyle"]').forEach(el => el.classList.remove('active'));
+            markerBorderOption.classList.add('active');
+        }
+    }
+    
+    const markerCenterStyle = document.getElementById('markerCenterStyle');
+    if (markerCenterStyle) {
+        markerCenterStyle.value = '<?= htmlspecialchars($settings['default_marker_center_style'] ?? 'square') ?>';
+        const markerCenterOption = document.querySelector('[data-preset="markerCenterStyle"][data-value="<?= htmlspecialchars($settings['default_marker_center_style'] ?? 'square') ?>"]');
+        if (markerCenterOption) {
+            document.querySelectorAll('[data-preset="markerCenterStyle"]').forEach(el => el.classList.remove('active'));
+            markerCenterOption.classList.add('active');
+        }
+    }
+    
+    // Logo defaults
+    const logoColor = document.getElementById('logoColor');
+    if (logoColor) {
+        logoColor.value = '<?= htmlspecialchars($settings['default_logo_color'] ?? '#9945ff') ?>';
+    }
+    
+    const logoSize = document.getElementById('logoSize');
+    if (logoSize) {
+        logoSize.value = '<?= floatval($settings['default_logo_size'] ?? 0.30) ?>';
+        // Update display if there's a connected element
+        const logoSizeDisplay = document.getElementById('logoSizeValue');
+        if (logoSizeDisplay) {
+            logoSizeDisplay.textContent = '<?= floatval($settings['default_logo_size'] ?? 0.30) ?>';
+        }
+    }
+    
+    const logoRemoveBg = document.getElementById('logoRemoveBg');
+    if (logoRemoveBg) {
+        logoRemoveBg.checked = <?= !empty($settings['default_logo_remove_bg']) ? 'true' : 'false' ?>;
+    }
+    
+    // Advanced defaults
+    const gradientEnabled = document.getElementById('gradientEnabled');
+    if (gradientEnabled) {
+        gradientEnabled.checked = <?= !empty($settings['default_gradient_enabled']) ? 'true' : 'false' ?>;
+        const gradientColorGroup = document.getElementById('gradientColorGroup');
+        if (gradientColorGroup) {
+            gradientColorGroup.style.display = gradientEnabled.checked ? 'block' : 'none';
+        }
+    }
+    
+    const gradientColor = document.getElementById('gradientColor');
+    if (gradientColor) {
+        gradientColor.value = '<?= htmlspecialchars($settings['default_gradient_color'] ?? '#9945ff') ?>';
+    }
+    
+    const transparentBg = document.getElementById('transparentBg');
+    if (transparentBg) {
+        transparentBg.checked = <?= !empty($settings['default_transparent_bg']) ? 'true' : 'false' ?>;
+    }
+    
+    const customMarkerColor = document.getElementById('customMarkerColor');
+    if (customMarkerColor) {
+        customMarkerColor.checked = <?= !empty($settings['default_custom_marker_color']) ? 'true' : 'false' ?>;
+        const markerColorGroup = document.getElementById('markerColorGroup');
+        if (markerColorGroup) {
+            markerColorGroup.style.display = customMarkerColor.checked ? 'block' : 'none';
+        }
+    }
+    
+    const markerColor = document.getElementById('markerColor');
+    if (markerColor) {
+        markerColor.value = '<?= htmlspecialchars($settings['default_marker_color'] ?? '#9945ff') ?>';
+    }
+    
+    console.log('User default settings applied successfully');
+});
+<?php endif; ?>
+</script>

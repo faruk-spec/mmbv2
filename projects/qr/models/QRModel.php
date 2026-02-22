@@ -249,6 +249,84 @@ class QRModel
     }
     
     /**
+     * Get scan statistics for dashboard
+     * 
+     * @param int $userId User ID
+     * @return array Statistics array with today, this_week, this_month, total
+     */
+    public function getScanStats(int $userId): array
+    {
+        $sql = "SELECT 
+                    SUM(scan_count) as total_scans,
+                    SUM(CASE WHEN DATE(created_at) = CURDATE() THEN scan_count ELSE 0 END) as scans_today,
+                    SUM(CASE WHEN YEARWEEK(created_at, 1) = YEARWEEK(CURDATE(), 1) THEN scan_count ELSE 0 END) as scans_this_week,
+                    SUM(CASE WHEN YEAR(created_at) = YEAR(CURDATE()) AND MONTH(created_at) = MONTH(CURDATE()) THEN scan_count ELSE 0 END) as scans_this_month
+                FROM qr_codes 
+                WHERE user_id = ? AND deleted_at IS NULL";
+        
+        try {
+            $result = $this->db->fetch($sql, [$userId]);
+            return [
+                'total' => (int)($result['total_scans'] ?? 0),
+                'today' => (int)($result['scans_today'] ?? 0),
+                'this_week' => (int)($result['scans_this_week'] ?? 0),
+                'this_month' => (int)($result['scans_this_month'] ?? 0)
+            ];
+        } catch (\Exception $e) {
+            \Core\Logger::error('Failed to get scan stats: ' . $e->getMessage());
+            return ['total' => 0, 'today' => 0, 'this_week' => 0, 'this_month' => 0];
+        }
+    }
+    
+    /**
+     * Get recent QR codes for dashboard
+     * 
+     * @param int $userId User ID
+     * @param int $limit Number of records to fetch
+     * @return array Recent QR codes
+     */
+    public function getRecentByUser(int $userId, int $limit = 10): array
+    {
+        $sql = "SELECT id, content, type, scan_count, created_at 
+                FROM qr_codes 
+                WHERE user_id = ? AND deleted_at IS NULL
+                ORDER BY created_at DESC 
+                LIMIT ?";
+        
+        try {
+            $results = $this->db->fetchAll($sql, [$userId, $limit]);
+            return $results ?: [];
+        } catch (\Exception $e) {
+            \Core\Logger::error('Failed to fetch recent QR codes: ' . $e->getMessage());
+            return [];
+        }
+    }
+    
+    /**
+     * Get top performing QR codes by scan count
+     * 
+     * @param int $userId User ID
+     * @param int $limit Number of records to fetch
+     * @return array Top QR codes
+     */
+    public function getTopByScans(int $userId, int $limit = 5): array
+    {
+        $sql = "SELECT id, content, type, scan_count, created_at 
+                FROM qr_codes 
+                WHERE user_id = ? AND deleted_at IS NULL AND scan_count > 0
+                ORDER BY scan_count DESC 
+                LIMIT ?";
+        
+        try {
+            $results = $this->db->fetchAll($sql, [$userId, $limit]);
+            return $results ?: [];
+        } catch (\Exception $e) {
+            \Core\Logger::error('Failed to fetch top QR codes: ' . $e->getMessage());
+            return [];
+        }
+    }
+    
+    /**
      * Update scan count for a QR code
      * 
      * @param int $id QR code ID
@@ -397,6 +475,127 @@ class QRModel
             \Core\Logger::error('Failed to track QR code scan: ' . $e->getMessage());
             // Don't fail the entire request if tracking fails
             return false;
+        }
+    }
+    
+    /**
+     * Get all QR codes for a user with date filter
+     * 
+     * @param int $userId User ID
+     * @param int $limit Number of records to fetch
+     * @param int $offset Offset for pagination
+     * @param string|null $startDate Start date filter (Y-m-d)
+     * @param string|null $endDate End date filter (Y-m-d)
+     * @return array QR codes
+     */
+    public function getAllByUserWithDateFilter(int $userId, int $limit = 50, int $offset = 0, ?string $startDate = null, ?string $endDate = null): array
+    {
+        $sql = "SELECT * FROM qr_codes WHERE user_id = ?";
+        $params = [$userId];
+        
+        if ($startDate) {
+            $sql .= " AND DATE(created_at) >= ?";
+            $params[] = $startDate;
+        }
+        
+        if ($endDate) {
+            $sql .= " AND DATE(created_at) <= ?";
+            $params[] = $endDate;
+        }
+        
+        $sql .= " ORDER BY created_at DESC LIMIT ? OFFSET ?";
+        $params[] = $limit;
+        $params[] = $offset;
+        
+        try {
+            $results = $this->db->fetchAll($sql, $params);
+            return $results ?: [];
+        } catch (\Exception $e) {
+            \Core\Logger::error('Failed to fetch QR codes with date filter: ' . $e->getMessage());
+            return [];
+        }
+    }
+    
+    /**
+     * Count QR codes for a user with date filter
+     * 
+     * @param int $userId User ID
+     * @param string|null $startDate Start date filter (Y-m-d)
+     * @param string|null $endDate End date filter (Y-m-d)
+     * @return int Count
+     */
+    public function countAllByUserWithDateFilter(int $userId, ?string $startDate = null, ?string $endDate = null): int
+    {
+        $sql = "SELECT COUNT(*) as count FROM qr_codes WHERE user_id = ?";
+        $params = [$userId];
+        
+        if ($startDate) {
+            $sql .= " AND DATE(created_at) >= ?";
+            $params[] = $startDate;
+        }
+        
+        if ($endDate) {
+            $sql .= " AND DATE(created_at) <= ?";
+            $params[] = $endDate;
+        }
+        
+        try {
+            $result = $this->db->fetch($sql, $params);
+            return (int)($result['count'] ?? 0);
+        } catch (\Exception $e) {
+            \Core\Logger::error('Failed to count QR codes with date filter: ' . $e->getMessage());
+            return 0;
+        }
+    }
+    
+    /**
+     * Get scan trends for chart (last N days)
+     * 
+     * @param int $userId User ID
+     * @param int $days Number of days to include
+     * @return array Scan trends data
+     */
+    public function getScanTrends(int $userId, int $days = 30): array
+    {
+        // Generate date range
+        $dates = [];
+        for ($i = $days - 1; $i >= 0; $i--) {
+            $dates[] = date('Y-m-d', strtotime("-$i days"));
+        }
+        
+        // Get scan counts by date
+        $sql = "SELECT DATE(created_at) as date, SUM(scan_count) as scans
+                FROM qr_codes
+                WHERE user_id = ? 
+                AND deleted_at IS NULL
+                AND DATE(created_at) >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
+                GROUP BY DATE(created_at)
+                ORDER BY date";
+        
+        try {
+            $results = $this->db->fetchAll($sql, [$userId, $days]);
+            
+            // Create a map of date => scans
+            $scanMap = [];
+            foreach ($results as $row) {
+                $scanMap[$row['date']] = (int)$row['scans'];
+            }
+            
+            // Fill in all dates with 0 for missing days
+            $data = [
+                'labels' => [],
+                'values' => []
+            ];
+            
+            foreach ($dates as $date) {
+                $data['labels'][] = date('M j', strtotime($date));
+                $data['values'][] = isset($scanMap[$date]) ? $scanMap[$date] : 0;
+            }
+            
+            return $data;
+        } catch (\Exception $e) {
+            \Core\Logger::error('Failed to get scan trends: ' . $e->getMessage());
+            return ['labels' => [], 'values' => []];
         }
     }
 }
