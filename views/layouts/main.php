@@ -1079,6 +1079,17 @@ try {
                                 <span class="nav-text">Settings</span>
                             </a>
                         </div>
+
+                        <!-- Plans & Subscriptions -->
+                        <div class="nav-section" style="margin-bottom: 8px;">
+                            <a href="/plans" class="nav-item" style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.85rem;<?= strpos($_SERVER['REQUEST_URI'] ?? '', '/plans') !== false ? ' background: rgba(153,69,255,0.15); color: var(--purple);' : '' ?>" onmouseover="this.style.background='rgba(153,69,255,0.15)'; this.style.color='var(--purple)'" onmouseout="this.style.background='<?= strpos($_SERVER['REQUEST_URI'] ?? '', '/plans') !== false ? 'rgba(153,69,255,0.15)' : 'transparent' ?>'; this.style.color='<?= strpos($_SERVER['REQUEST_URI'] ?? '', '/plans') !== false ? 'var(--purple)' : 'var(--text-primary)' ?>'">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                                    <line x1="1" y1="10" x2="23" y2="10"/>
+                                </svg>
+                                <span class="nav-text">Plans &amp; Subscriptions</span>
+                            </a>
+                        </div>
                         
                         <!-- Help Section (Admin Only) -->
                         <?php if (in_array(Auth::user()['role'] ?? '', ['admin', 'super_admin'])): ?>

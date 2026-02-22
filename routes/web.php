@@ -50,6 +50,9 @@ $router->get('/activity', 'DashboardController@activity', ['auth']);
 $router->get('/settings', 'DashboardController@settings', ['auth']);
 $router->post('/settings', 'DashboardController@updateSettings', ['auth']);
 
+// Plans & Subscriptions
+$router->get('/plans', 'PlansController@index', ['auth']);
+
 // 2FA routes
 // Two-Factor Authentication routes
 $router->get('/2fa/setup', 'TwoFactorController@setup', ['auth']);

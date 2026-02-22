@@ -1027,6 +1027,31 @@
                     </div>
                 </div>
 
+                <!-- Platform Plans (Universal Multi-App) -->
+                <div class="menu-section">
+                    <div class="menu-section-title">Platform Billing</div>
+
+                    <div class="menu-item menu-dropdown">
+                        <div class="menu-dropdown-toggle">
+                            <div class="left">
+                                <i class="fas fa-layer-group"></i>
+                                <span>Platform Plans</span>
+                            </div>
+                            <i class="fas fa-chevron-down arrow"></i>
+                        </div>
+                        <div class="menu-dropdown-content">
+                            <a href="/admin/platform-plans" class="menu-link <?= ($_SERVER['REQUEST_URI'] ?? '') === '/admin/platform-plans' ? 'active' : '' ?>">
+                                <i class="fas fa-list"></i>
+                                <span>All Plans</span>
+                            </a>
+                            <a href="/admin/platform-plans/create" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/platform-plans/create') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-plus-circle"></i>
+                                <span>Create Plan</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Projects Management -->
                 <div class="menu-section">
                     <div class="menu-section-title">Projects</div>

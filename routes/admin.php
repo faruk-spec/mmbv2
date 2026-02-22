@@ -9,6 +9,16 @@
 $router->get('/admin', 'Admin\\DashboardController@index', ['auth', 'admin']);
 $router->get('/admin/dashboard', 'Admin\\DashboardController@index', ['auth', 'admin']);
 
+// Platform Plans (Universal multi-app plans)
+$router->get('/admin/platform-plans', 'Admin\\PlatformPlansController@index', ['auth', 'admin']);
+$router->get('/admin/platform-plans/create', 'Admin\\PlatformPlansController@createForm', ['auth', 'admin']);
+$router->post('/admin/platform-plans/create', 'Admin\\PlatformPlansController@create', ['auth', 'admin']);
+$router->get('/admin/platform-plans/{id}/edit', 'Admin\\PlatformPlansController@editForm', ['auth', 'admin']);
+$router->post('/admin/platform-plans/{id}/update', 'Admin\\PlatformPlansController@update', ['auth', 'admin']);
+$router->post('/admin/platform-plans/{id}/delete', 'Admin\\PlatformPlansController@delete', ['auth', 'admin']);
+$router->post('/admin/platform-plans/assign-user', 'Admin\\PlatformPlansController@assignUser', ['auth', 'admin']);
+$router->post('/admin/platform-plans/revoke-user', 'Admin\\PlatformPlansController@revokeUser', ['auth', 'admin']);
+
 // QR Code Admin Management
 $router->get('/admin/qr', 'Admin\\QRAdminController@index', ['auth', 'admin']);
 $router->post('/admin/qr/{id}/block', 'Admin\\QRAdminController@blockQR', ['auth', 'admin']);
