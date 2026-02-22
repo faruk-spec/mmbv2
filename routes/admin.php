@@ -9,6 +9,26 @@
 $router->get('/admin', 'Admin\\DashboardController@index', ['auth', 'admin']);
 $router->get('/admin/dashboard', 'Admin\\DashboardController@index', ['auth', 'admin']);
 
+// QR Code Admin Management
+$router->get('/admin/qr', 'Admin\\QRAdminController@index', ['auth', 'admin']);
+$router->post('/admin/qr/{id}/block', 'Admin\\QRAdminController@blockQR', ['auth', 'admin']);
+$router->post('/admin/qr/{id}/unblock', 'Admin\\QRAdminController@unblockQR', ['auth', 'admin']);
+$router->get('/admin/qr/analytics', 'Admin\\QRAdminController@analytics', ['auth', 'admin']);
+$router->get('/admin/qr/blocked-links', 'Admin\\QRAdminController@blockedLinks', ['auth', 'admin']);
+$router->post('/admin/qr/blocked-links/add', 'Admin\\QRAdminController@blockLink', ['auth', 'admin']);
+$router->post('/admin/qr/blocked-links/{id}/remove', 'Admin\\QRAdminController@unblockLink', ['auth', 'admin']);
+$router->get('/admin/qr/storage', 'Admin\\QRAdminController@storage', ['auth', 'admin']);
+$router->get('/admin/qr/plans', 'Admin\\QRAdminController@plans', ['auth', 'admin']);
+$router->post('/admin/qr/plans/{id}/update', 'Admin\\QRAdminController@updatePlan', ['auth', 'admin']);
+$router->post('/admin/qr/plans/{id}/toggle-feature', 'Admin\\QRAdminController@togglePlanFeature', ['auth', 'admin']);
+$router->get('/admin/qr/abuse-reports', 'Admin\\QRAdminController@abuseReports', ['auth', 'admin']);
+$router->post('/admin/qr/abuse-reports/{id}/resolve', 'Admin\\QRAdminController@resolveAbuse', ['auth', 'admin']);
+$router->get('/admin/qr/roles', 'Admin\\QRAdminController@roles', ['auth', 'admin']);
+$router->post('/admin/qr/roles/set-role-feature', 'Admin\\QRAdminController@setRoleFeature', ['auth', 'admin']);
+$router->post('/admin/qr/roles/set-user-feature', 'Admin\\QRAdminController@setUserFeature', ['auth', 'admin']);
+$router->post('/admin/qr/roles/remove-user-features', 'Admin\\QRAdminController@removeUserFeatures', ['auth', 'admin']);
+$router->post('/admin/qr/roles/assign-plan', 'Admin\\QRAdminController@assignUserPlan', ['auth', 'admin']);
+
 // User management
 $router->get('/admin/users', 'Admin\\UserController@index', ['auth', 'admin']);
 $router->get('/admin/users/create', 'Admin\\UserController@create', ['auth', 'admin']);

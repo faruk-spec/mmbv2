@@ -981,7 +981,52 @@
                         </a>
                     </div>
                 </div>
-                
+
+                <!-- QR Code Admin -->
+                <div class="menu-section">
+                    <div class="menu-section-title">QR Code Admin</div>
+
+                    <div class="menu-item menu-dropdown">
+                        <div class="menu-dropdown-toggle">
+                            <div class="left">
+                                <i class="fas fa-qrcode"></i>
+                                <span>QR Codes</span>
+                            </div>
+                            <i class="fas fa-chevron-down arrow"></i>
+                        </div>
+                        <div class="menu-dropdown-content">
+                            <a href="/admin/qr" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/qr') === 0 && ($_SERVER['REQUEST_URI'] ?? '') === '/admin/qr' ? 'active' : '' ?>">
+                                <i class="fas fa-list"></i>
+                                <span>All QR Codes</span>
+                            </a>
+                            <a href="/admin/qr/analytics" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/qr/analytics') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-chart-line"></i>
+                                <span>Scan Analytics</span>
+                            </a>
+                            <a href="/admin/qr/blocked-links" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/qr/blocked-links') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-ban"></i>
+                                <span>Block Malicious Links</span>
+                            </a>
+                            <a href="/admin/qr/storage" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/qr/storage') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-hdd"></i>
+                                <span>Storage Monitor</span>
+                            </a>
+                            <a href="/admin/qr/plans" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/qr/plans') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-tags"></i>
+                                <span>Plan Limits</span>
+                            </a>
+                            <a href="/admin/qr/abuse-reports" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/qr/abuse-reports') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-flag"></i>
+                                <span>Abuse Reports</span>
+                            </a>
+                            <a href="/admin/qr/roles" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/qr/roles') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-users-cog"></i>
+                                <span>Roles &amp; Permissions</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Projects Management -->
                 <div class="menu-section">
                     <div class="menu-section-title">Projects</div>

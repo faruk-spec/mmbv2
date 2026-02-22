@@ -155,10 +155,31 @@ class UserController extends BaseController
             $this->redirect('/admin/users');
             return;
         }
-        
+
+        // QR subscription plans for plan-assignment dropdown
+        $qrPlans = [];
+        $userQrPlan = null;
+        try {
+            $qrPlans = $db->fetchAll(
+                "SELECT id, name, slug FROM qr_subscription_plans WHERE status = 'active' ORDER BY price ASC"
+            );
+            $userQrPlan = $db->fetch(
+                "SELECT s.plan_id, p.name AS plan_name
+                 FROM qr_user_subscriptions s
+                 JOIN qr_subscription_plans p ON p.id = s.plan_id
+                 WHERE s.user_id = ? AND s.status = 'active'
+                 LIMIT 1",
+                [(int) $id]
+            );
+        } catch (\Exception $e) {
+            // QR tables may not exist yet; silently ignore
+        }
+
         $this->view('admin/users/edit', [
-            'title' => 'Edit User',
-            'editUser' => $user
+            'title'      => 'Edit User',
+            'editUser'   => $user,
+            'qrPlans'    => $qrPlans,
+            'userQrPlan' => $userQrPlan,
         ]);
     }
     
