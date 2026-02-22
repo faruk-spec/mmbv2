@@ -23,16 +23,34 @@
         $customWidth = isset($_GET['customWidth']) ? intval($_GET['customWidth']) : null;
         $customHeight = isset($_GET['customHeight']) ? intval($_GET['customHeight']) : null;
         
-        // Handle custom QR size (per row)
+        // Handle custom QR size (per row or exact dimension)
         $customPerRow = isset($_GET['customPerRow']) ? intval($_GET['customPerRow']) : null;
+        $customQRDimension = isset($_GET['customQRDimension']) ? intval($_GET['customQRDimension']) : null;
         
         // Determine grid columns
-        if ($qrSize === 'custom' && $customPerRow) {
+        if ($qrSize === 'custom-grid' && $customPerRow) {
             $gridColumns = $customPerRow;
+        } elseif ($qrSize === 'custom-size') {
+            // Calculate grid columns based on custom QR dimension and page width
+            $pageWidthMm = $customWidth ?? ($pageSize === 'a3' ? 297 : 210);
+            $qrSizeMm = $customQRDimension ?? 120;
+            $marginMm = $margins === 'small' ? 10 : ($margins === 'large' ? 20 : 15);
+            $availableWidth = $pageWidthMm - (2 * $marginMm);
+            $gridColumns = max(1, floor($availableWidth / ($qrSizeMm + 20))); // 20mm gap
         } else {
             $gridColumns = $qrSize === 'small' ? 4 : 
                           ($qrSize === 'medium' ? 3 : 
                           ($qrSize === 'large' ? 2 : 1));
+        }
+        
+        // Determine QR image size
+        if ($qrSize === 'custom-size' && $customQRDimension) {
+            $qrImageSize = $customQRDimension . 'mm';
+        } else {
+            $qrImageSize = $qrSize === 'small' ? '120px' : 
+                          ($qrSize === 'medium' ? '180px' : 
+                          ($qrSize === 'large' ? '240px' : 
+                          ($qrSize === 'xlarge' ? '300px' : '180px')));
         }
         
         // Determine page dimensions
@@ -82,12 +100,7 @@
         
         .qr-image-container {
             width: 100%;
-            max-width: <?= 
-                $qrSize === 'small' ? '120px' : 
-                ($qrSize === 'medium' ? '180px' : 
-                ($qrSize === 'large' ? '240px' : 
-                ($qrSize === 'xlarge' ? '300px' : '180px'))) 
-            ?>;
+            max-width: <?= $qrImageSize ?>;
             height: auto;
             margin-bottom: <?= $showLabels ? '10px' : '0' ?>;
             display: flex;
@@ -151,6 +164,51 @@
             }
         }
         
+        /* Mobile responsive styles */
+        @media (max-width: 768px) {
+            .print-container {
+                padding: 10px;
+            }
+            
+            .qr-grid {
+                gap: 10px;
+            }
+            
+            .qr-item {
+                padding: 10px;
+            }
+            
+            .print-info h2 {
+                font-size: 1.25rem;
+            }
+            
+            .print-info p {
+                font-size: 0.75rem;
+            }
+            
+            .btn {
+                padding: 10px 16px;
+                font-size: 14px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .qr-grid {
+                grid-template-columns: 1fr !important;
+                gap: 15px;
+            }
+            
+            .print-info h2 {
+                font-size: 1rem;
+            }
+            
+            .btn {
+                display: block;
+                width: 100%;
+                margin: 5px 0;
+            }
+        }
+        
         .print-info {
             text-align: center;
             margin-bottom: 20px;
@@ -180,8 +238,10 @@
                 <?php else: ?>
                     Page: <?= ucfirst($pageSize) ?> | 
                 <?php endif; ?>
-                <?php if ($qrSize === 'custom'): ?>
+                <?php if ($qrSize === 'custom-grid'): ?>
                     Size: Custom (<?= $customPerRow ?> per row) | 
+                <?php elseif ($qrSize === 'custom-size'): ?>
+                    Size: Custom (<?= $customQRDimension ?>mm each) | 
                 <?php else: ?>
                     Size: <?= ucfirst($qrSize) ?> | 
                 <?php endif; ?>
@@ -232,10 +292,11 @@
                 
                 // Calculate cell size based on container size
                 const cellSize = <?= 
-                    $qrSize === 'small' ? '3' : 
+                    $qrSize === 'custom-size' ? '5' :
+                    ($qrSize === 'small' ? '3' : 
                     ($qrSize === 'medium' ? '5' : 
                     ($qrSize === 'large' ? '7' : 
-                    ($qrSize === 'xlarge' ? '9' : '5'))) 
+                    ($qrSize === 'xlarge' ? '9' : '5')))) 
                 ?>;
                 
                 // Generate QR code image
