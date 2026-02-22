@@ -73,8 +73,69 @@ class QRAdminController extends BaseController
                     INDEX `idx_reporter` (`reporter_id`)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             ");
+
+            // Seed default role-feature permissions if the table is empty.
+            // This runs once and ensures features work out-of-the-box.
+            $count = $this->db->fetchColumn("SELECT COUNT(*) FROM qr_role_features");
+            if ((int) $count === 0) {
+                $this->seedDefaultRoleFeatures();
+            }
         } catch (\Exception $e) {
             Logger::error('QRAdmin ensureTables error: ' . $e->getMessage());
+        }
+    }
+
+    private function seedDefaultRoleFeatures(): void
+    {
+        // user role — standard features (all QR types, analytics, password, expiry, downloads)
+        $userFeatures = [
+            'static_qr'          => 1,
+            'dynamic_qr'         => 1,
+            'analytics'          => 1,
+            'bulk_generation'    => 0,
+            'ai_design'          => 0,
+            'password_protection'=> 1,
+            'expiry_date'        => 1,
+            'campaigns'          => 1,
+            'api_access'         => 0,
+            'whitelabel'         => 0,
+            'team_roles'         => 0,
+            'download_png'       => 1,
+            'download_svg'       => 1,
+            'download_pdf'       => 0,
+            'custom_logo'        => 1,
+            'custom_colors'      => 1,
+            'frame_styles'       => 1,
+            'priority_support'   => 0,
+            'export_data'        => 0,
+        ];
+
+        // project_admin (Manager) — all standard + bulk, export
+        $managerFeatures = array_merge($userFeatures, [
+            'bulk_generation' => 1,
+            'download_pdf'    => 1,
+            'export_data'     => 1,
+            'team_roles'      => 1,
+        ]);
+
+        // super_admin / admin — all features; source from QRFeatureService::ALL_FEATURES
+        // so new features are automatically included even when $userFeatures is not updated.
+        $allFeatures = array_fill_keys(\Projects\QR\Services\QRFeatureService::ALL_FEATURES, 1);
+
+        $roleMap = [
+            'user'          => $userFeatures,
+            'project_admin' => $managerFeatures,
+            'super_admin'   => $allFeatures,
+            'admin'         => $allFeatures,
+        ];
+
+        foreach ($roleMap as $role => $featureSet) {
+            foreach ($featureSet as $feature => $enabled) {
+                $this->db->query(
+                    "INSERT IGNORE INTO qr_role_features (role, feature, enabled) VALUES (?, ?, ?)",
+                    [$role, $feature, $enabled]
+                );
+            }
         }
     }
 

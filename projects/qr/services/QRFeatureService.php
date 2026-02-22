@@ -23,7 +23,7 @@ class QRFeatureService
     private Database $db;
 
     // All known feature keys (matches QRAdminController::getAllFeatures())
-    private const ALL_FEATURES = [
+    public const ALL_FEATURES = [
         'static_qr',
         'dynamic_qr',
         'analytics',
@@ -53,17 +53,26 @@ class QRFeatureService
     /**
      * Resolve the full effective feature map for a user.
      * Returns ['feature_key' => bool, ...]
+     *
+     * Permission resolution order:
+     *   • When NO configuration exists at all (no plan, no role rows, no user overrides)
+     *     → all features are ALLOWED (open/permissive default)
+     *   • When ANY configuration exists → layered evaluation (plan → role → user overrides)
      */
     public function getFeatures(int $userId): array
     {
         // Start with defaults (all disabled)
         $features = array_fill_keys(self::ALL_FEATURES, false);
+        $hasAnyConfig = false;
 
         // Layer 1: Plan features
         $planFeatures = $this->getPlanFeatures($userId);
-        foreach ($planFeatures as $key => $val) {
-            if (array_key_exists($key, $features)) {
-                $features[$key] = (bool) $val;
+        if (!empty($planFeatures)) {
+            $hasAnyConfig = true;
+            foreach ($planFeatures as $key => $val) {
+                if (array_key_exists($key, $features)) {
+                    $features[$key] = (bool) $val;
+                }
             }
         }
 
@@ -71,19 +80,31 @@ class QRFeatureService
         $role = $this->getUserRole($userId);
         if ($role) {
             $roleFeatures = $this->getRoleFeatures($role);
-            foreach ($roleFeatures as $key => $val) {
-                if (array_key_exists($key, $features)) {
-                    $features[$key] = (bool) $val;
+            if (!empty($roleFeatures)) {
+                $hasAnyConfig = true;
+                foreach ($roleFeatures as $key => $val) {
+                    if (array_key_exists($key, $features)) {
+                        $features[$key] = (bool) $val;
+                    }
                 }
             }
         }
 
         // Layer 3: Per-user overrides (highest priority)
         $userOverrides = $this->getUserOverrides($userId);
-        foreach ($userOverrides as $key => $val) {
-            if (array_key_exists($key, $features)) {
-                $features[$key] = (bool) $val;
+        if (!empty($userOverrides)) {
+            $hasAnyConfig = true;
+            foreach ($userOverrides as $key => $val) {
+                if (array_key_exists($key, $features)) {
+                    $features[$key] = (bool) $val;
+                }
             }
+        }
+
+        // If no configuration exists at all, allow everything (permissive default).
+        // This ensures features work out-of-the-box before an admin configures plans/roles.
+        if (!$hasAnyConfig) {
+            return array_fill_keys(self::ALL_FEATURES, true);
         }
 
         return $features;
@@ -91,6 +112,7 @@ class QRFeatureService
 
     /**
      * Check whether a user has access to a specific feature.
+     * Unknown feature keys return false (deny by default).
      */
     public function can(int $userId, string $feature): bool
     {

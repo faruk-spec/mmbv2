@@ -994,13 +994,29 @@
                 <i class="fas fa-rocket"></i> Advanced Features
             </h4>
             
-            <div class="feature-toggle">
+            <?php
+            // Resolve feature availability — $userFeatures passed from controller;
+            // fall back to all-allowed so the form is never silently broken.
+            $canDynamic   = (bool) ($userFeatures['dynamic_qr']          ?? true);
+            $canPassword  = (bool) ($userFeatures['password_protection']  ?? true);
+            $canExpiry    = (bool) ($userFeatures['expiry_date']          ?? true);
+            ?>
+
+            <div class="feature-toggle <?= !$canDynamic ? 'feature-locked' : '' ?>">
                 <label class="toggle-label">
+                    <?php if ($canDynamic): ?>
                     <input type="checkbox" name="is_dynamic" id="isDynamic" value="1" class="toggle-input">
+                    <?php else: ?>
+                    <input type="checkbox" id="isDynamic" class="toggle-input" disabled>
+                    <?php endif; ?>
                     <span class="toggle-slider"></span>
                     <span class="toggle-text">
                         <strong>Dynamic QR Code</strong>
+                        <?php if ($canDynamic): ?>
                         <small>Change URL later without regenerating</small>
+                        <?php else: ?>
+                        <small class="feature-upgrade-note"><i class="fas fa-lock"></i> Upgrade your plan to unlock</small>
+                        <?php endif; ?>
                     </span>
                 </label>
             </div>
@@ -1011,23 +1027,32 @@
                 <small>This URL can be edited later</small>
             </div>
 
-            <!-- Password Protection (dynamic only) -->
+            <!-- Password Protection & Expiry Date (dynamic only) -->
             <div id="dynamicAdvancedGroup" style="display:none;">
-                <div class="form-group">
+                <div class="form-group <?= !$canPassword ? 'feature-locked' : '' ?>">
                     <label class="form-label">
                         <i class="fas fa-lock"></i> Password Protection
                         <small style="font-weight:normal;color:var(--text-secondary);margin-left:6px;">(leave blank for none)</small>
+                        <?php if (!$canPassword): ?>
+                        <span class="badge-plan-lock"><i class="fas fa-crown"></i> Upgrade</span>
+                        <?php endif; ?>
                     </label>
-                    <input type="password" name="qr_password" id="qrPassword" class="form-input" placeholder="Set a password to protect this QR" autocomplete="new-password">
-                    <small>Scanners must enter this password to access the link.</small>
+                    <input type="password" name="qr_password" id="qrPassword" class="form-input"
+                           placeholder="Set a password to protect this QR" autocomplete="new-password"
+                           <?= !$canPassword ? 'disabled' : '' ?>>
+                    <small><?= $canPassword ? 'Scanners must enter this password to access the link.' : 'Not available on your current plan.' ?></small>
                 </div>
-                <div class="form-group">
+                <div class="form-group <?= !$canExpiry ? 'feature-locked' : '' ?>">
                     <label class="form-label">
                         <i class="fas fa-calendar-times"></i> Expiry Date
                         <small style="font-weight:normal;color:var(--text-secondary);margin-left:6px;">(optional)</small>
+                        <?php if (!$canExpiry): ?>
+                        <span class="badge-plan-lock"><i class="fas fa-crown"></i> Upgrade</span>
+                        <?php endif; ?>
                     </label>
-                    <input type="datetime-local" name="expires_at" id="expiresAt" class="form-input">
-                    <small>QR code will stop working after this date/time.</small>
+                    <input type="datetime-local" name="expires_at" id="expiresAt" class="form-input"
+                           <?= !$canExpiry ? 'disabled' : '' ?>>
+                    <small><?= $canExpiry ? 'QR code will stop working after this date/time.' : 'Not available on your current plan.' ?></small>
                 </div>
             </div>
             
@@ -2765,6 +2790,33 @@ html[data-theme="dark"] .form-select optgroup {
 /* Feature Toggles */
 .feature-toggle {
     margin-bottom: 0.5rem; /* More compact spacing */
+}
+
+/* Locked feature visual treatment */
+.feature-locked {
+    opacity: 0.6;
+    pointer-events: none;
+}
+.feature-locked .form-input,
+.feature-locked .toggle-input {
+    cursor: not-allowed;
+}
+.feature-upgrade-note {
+    color: #f59e0b;
+    font-size: 12px;
+}
+.badge-plan-lock {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: linear-gradient(135deg, #f59e0b, #ef4444);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 20px;
+    margin-left: 6px;
+    vertical-align: middle;
 }
 
 .toggle-label {

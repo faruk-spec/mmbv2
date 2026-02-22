@@ -49,12 +49,19 @@ class QRController
         if ($presetSettings) {
             $settings = array_merge($settings, $presetSettings);
         }
+
+        // Resolve user features so the view can show/lock UI elements.
+        // For guests (not logged in), allow all features (permissive default).
+        $userFeatures = $userId
+            ? $this->featureService->getFeatures($userId)
+            : array_fill_keys(QRFeatureService::ALL_FEATURES, true);
         
         $this->render('generate', [
-            'title' => 'Generate QR Code',
-            'user' => Auth::user(),
-            'settings' => $settings,
-            'preset' => $preset
+            'title'        => 'Generate QR Code',
+            'user'         => Auth::user(),
+            'settings'     => $settings,
+            'preset'       => $preset,
+            'userFeatures' => $userFeatures,
         ]);
     }
     
