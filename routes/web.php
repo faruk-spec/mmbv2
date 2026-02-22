@@ -52,6 +52,8 @@ $router->post('/settings', 'DashboardController@updateSettings', ['auth']);
 
 // Plans & Subscriptions
 $router->get('/plans', 'PlansController@index', ['auth']);
+$router->get('/plans/subscribe/{slug}', 'PlansController@subscribe', ['auth']);
+$router->post('/plans/subscribe/{slug}', 'PlansController@processSubscribe', ['auth']);
 
 // 2FA routes
 // Two-Factor Authentication routes

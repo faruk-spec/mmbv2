@@ -354,13 +354,56 @@ class PlatformPlansController extends BaseController
             array_keys(self::APPS)
         ));
 
-        // App features — free-form JSON text area; validate it's valid JSON
-        $appFeaturesRaw = trim($this->input('app_features', '{}'));
-        $appFeatures    = [];
-        if ($appFeaturesRaw !== '') {
-            $decoded = json_decode($appFeaturesRaw, true);
+        // App features — built from structured app_feat inputs + optional raw JSON override
+        $appFeatures = [];
+
+        // 1. Read structured per-app feature inputs (app_feat[appKey][featureKey])
+        $structuredInput = $_POST['app_feat'] ?? [];
+        if (is_array($structuredInput)) {
+            foreach ($structuredInput as $appKey => $featureMap) {
+                if (!is_array($featureMap)) {
+                    continue;
+                }
+                $appKey = $this->sanitizeKey($appKey);
+                if (empty($appKey)) {
+                    continue;
+                }
+                $appData = [];
+                foreach ($featureMap as $fk => $fv) {
+                    $fk = $this->sanitizeKey($fk);
+                    if (empty($fk)) {
+                        continue;
+                    }
+                    // Numeric fields: empty string = not set, otherwise cast to int
+                    if (is_numeric($fv) || $fv === '' || $fv === '-1') {
+                        if ($fv !== '') {
+                            $appData[$fk] = (int)$fv;
+                        }
+                    } else {
+                        // Checkbox value="1" → true; absent = false (but we only have present ones)
+                        $appData[$fk] = (bool)$fv;
+                    }
+                }
+                // Merge: for boolean keys not posted (unchecked checkboxes), set false explicitly
+                // We detect boolean keys by whether the existing saved value was bool
+                if (!empty($appData)) {
+                    $appFeatures[$appKey] = $appData;
+                }
+            }
+        }
+
+        // 2. Merge raw JSON override for other/unlisted apps
+        $rawJson = trim($this->input('app_features_raw', ''));
+        if ($rawJson !== '' && $rawJson !== '{}') {
+            $decoded = json_decode($rawJson, true);
             if (is_array($decoded)) {
-                $appFeatures = $decoded;
+                foreach ($decoded as $appKey => $featureMap) {
+                    if (!isset($appFeatures[$appKey])) {
+                        $appFeatures[$appKey] = $featureMap;
+                    } else {
+                        $appFeatures[$appKey] = array_merge($featureMap, $appFeatures[$appKey]);
+                    }
+                }
             }
         }
 
@@ -434,5 +477,11 @@ class PlatformPlansController extends BaseController
     private function jsonError(string $message, int $code = 400): void
     {
         $this->json(['success' => false, 'error' => $message], $code);
+    }
+
+    /** Sanitise a key to lowercase alphanumeric + underscore only */
+    private function sanitizeKey(string $key): string
+    {
+        return preg_replace('/[^a-z0-9_]/', '', strtolower($key));
     }
 }

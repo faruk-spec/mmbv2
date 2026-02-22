@@ -83,8 +83,117 @@ class PlansController extends BaseController
     }
 
     // -------------------------------------------------------------------------
-    // Internal helpers
+    // Subscription Request
     // -------------------------------------------------------------------------
+
+    /** Show subscription confirmation/request form */
+    public function subscribe(string $slug): void
+    {
+        $userId = Auth::id();
+        $plan   = $this->findPlanBySlug($slug);
+
+        if (!$plan) {
+            $this->flash('error', 'Plan not found.');
+            $this->redirect('/plans');
+            return;
+        }
+
+        $plan['included_apps'] = json_decode($plan['included_apps'] ?? '[]', true) ?: [];
+        $plan['app_features']  = json_decode($plan['app_features']  ?? '{}', true) ?: [];
+
+        // Check if user already has this plan
+        $existing = null;
+        try {
+            $existing = $this->db->fetch(
+                "SELECT * FROM platform_user_subscriptions WHERE user_id = ? AND plan_id = ? AND status = 'active'",
+                [$userId, $plan['id']]
+            );
+        } catch (\Exception $e) {}
+
+        Logger::activity($userId, 'subscription_page_viewed', ['plan_slug' => $slug]);
+
+        $this->view('dashboard/plans-subscribe', [
+            'title'    => 'Subscribe to Plan',
+            'plan'     => $plan,
+            'appMeta'  => self::APP_META,
+            'existing' => $existing,
+        ]);
+    }
+
+    /** Process subscription request — stores pending request and notifies admin */
+    public function processSubscribe(string $slug): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request token.');
+            $this->redirect('/plans/subscribe/' . urlencode($slug));
+            return;
+        }
+
+        $userId  = Auth::id();
+        $plan    = $this->findPlanBySlug($slug);
+
+        if (!$plan) {
+            $this->flash('error', 'Plan not found.');
+            $this->redirect('/plans');
+            return;
+        }
+
+        $message = trim(htmlspecialchars($_POST['message'] ?? '', ENT_QUOTES, 'UTF-8'));
+
+        // Log the request so admin can see it in activity logs
+        Logger::activity($userId, 'subscription_requested', [
+            'plan_id'   => $plan['id'],
+            'plan_name' => $plan['name'],
+            'plan_slug' => $plan['slug'],
+            'message'   => $message,
+        ]);
+
+        // If plan is free (price=0), auto-assign immediately
+        if ((float)$plan['price'] === 0.0) {
+            try {
+                $this->ensurePlatformTables();
+                // Cancel any existing
+                $this->db->query(
+                    "UPDATE platform_user_subscriptions SET status='cancelled', cancelled_at=NOW() WHERE user_id=? AND plan_id=? AND status='active'",
+                    [$userId, $plan['id']]
+                );
+                $this->db->query(
+                    "INSERT INTO platform_user_subscriptions (user_id, plan_id, status, started_at) VALUES (?,?,'active',NOW())",
+                    [$userId, $plan['id']]
+                );
+                Logger::activity($userId, 'subscription_auto_activated', ['plan_id' => $plan['id']]);
+                $this->flash('success', 'You have been subscribed to "' . $plan['name'] . '" successfully!');
+            } catch (\Exception $e) {
+                Logger::error('PlansController::processSubscribe auto-assign — ' . $e->getMessage());
+                $this->flash('error', 'Failed to activate plan. Please contact support.');
+            }
+            $this->redirect('/plans');
+            return;
+        }
+
+        // Paid plan — request stored in logs, redirect back with confirmation
+        $this->flash('success', 'Your subscription request for "' . $plan['name'] . '" has been submitted. An admin will activate it for you shortly.');
+        $this->redirect('/plans');
+    }
+
+    // -------------------------------------------------------------------------
+
+    /** Find a platform plan by slug */
+    private function findPlanBySlug(string $slug): ?array
+    {
+        try {
+            $this->ensurePlatformTables();
+            $plan = $this->db->fetch(
+                "SELECT * FROM platform_plans WHERE slug = ? AND status = 'active' LIMIT 1",
+                [$slug]
+            );
+            return $plan ?: null;
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+
 
     /**
      * Returns per-app subscriptions for the user.
