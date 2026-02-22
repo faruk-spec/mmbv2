@@ -17,26 +17,53 @@
             color: black;
         }
         
+        <?php
+        // Handle custom page size
+        $orientation = $_GET['orientation'] ?? 'portrait';
+        $customWidth = isset($_GET['customWidth']) ? intval($_GET['customWidth']) : null;
+        $customHeight = isset($_GET['customHeight']) ? intval($_GET['customHeight']) : null;
+        
+        // Handle custom QR size (per row)
+        $customPerRow = isset($_GET['customPerRow']) ? intval($_GET['customPerRow']) : null;
+        
+        // Determine grid columns
+        if ($qrSize === 'custom' && $customPerRow) {
+            $gridColumns = $customPerRow;
+        } else {
+            $gridColumns = $qrSize === 'small' ? 4 : 
+                          ($qrSize === 'medium' ? 3 : 
+                          ($qrSize === 'large' ? 2 : 1));
+        }
+        
+        // Determine page dimensions
+        if ($pageSize === 'custom' && $customWidth && $customHeight) {
+            $pageDimension = "{$customWidth}mm {$customHeight}mm";
+            $maxWidth = "{$customWidth}mm";
+        } else {
+            $pageDimension = $pageSize === 'letter' ? 'letter' : 
+                            ($pageSize === 'a3' ? 'A3' : 
+                            ($pageSize === 'legal' ? 'legal' : 'A4'));
+            $maxWidth = $pageSize === 'a3' ? '297mm' : 
+                       ($pageSize === 'letter' || $pageSize === 'legal' ? '8.5in' : '210mm');
+        }
+        ?>
+        
         /* Page size configurations */
         @page {
             margin: <?= $margins === 'small' ? '10mm' : ($margins === 'large' ? '20mm' : '15mm') ?>;
-            size: <?= $pageSize === 'letter' ? 'letter portrait' : ($pageSize === 'a3' ? 'A3 portrait' : ($pageSize === 'legal' ? 'legal portrait' : 'A4 portrait')) ?>;
+            size: <?= $pageDimension ?> <?= $orientation ?>;
         }
         
         .print-container {
             width: 100%;
-            max-width: <?= $pageSize === 'a3' ? '297mm' : ($pageSize === 'letter' || $pageSize === 'legal' ? '8.5in' : '210mm') ?>;
+            max-width: <?= $maxWidth ?>;
             margin: 0 auto;
             padding: 20px;
         }
         
         .qr-grid {
             display: grid;
-            grid-template-columns: repeat(<?= 
-                $qrSize === 'small' ? '4' : 
-                ($qrSize === 'medium' ? '3' : 
-                ($qrSize === 'large' ? '2' : '1')) 
-            ?>, 1fr);
+            grid-template-columns: repeat(<?= $gridColumns ?>, 1fr);
             gap: 20px;
             margin-bottom: 20px;
         }
@@ -53,15 +80,24 @@
             background: white;
         }
         
-        .qr-image {
+        .qr-image-container {
             width: 100%;
             max-width: <?= 
                 $qrSize === 'small' ? '120px' : 
                 ($qrSize === 'medium' ? '180px' : 
-                ($qrSize === 'large' ? '240px' : '300px')) 
+                ($qrSize === 'large' ? '240px' : 
+                ($qrSize === 'xlarge' ? '300px' : '180px'))) 
             ?>;
             height: auto;
             margin-bottom: <?= $showLabels ? '10px' : '0' ?>;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .qr-image-container img {
+            width: 100%;
+            height: auto;
         }
         
         .qr-label {
@@ -139,9 +175,18 @@
         <div class="print-info">
             <h2>Print Preview - <?= count($qrCodes) ?> QR Code(s)</h2>
             <p>
-                Page: <?= ucfirst($pageSize) ?> | 
-                Size: <?= ucfirst($qrSize) ?> | 
-                Margins: <?= ucfirst($margins) ?>
+                <?php if ($pageSize === 'custom'): ?>
+                    Page: Custom (<?= $customWidth ?>×<?= $customHeight ?> mm) | 
+                <?php else: ?>
+                    Page: <?= ucfirst($pageSize) ?> | 
+                <?php endif; ?>
+                <?php if ($qrSize === 'custom'): ?>
+                    Size: Custom (<?= $customPerRow ?> per row) | 
+                <?php else: ?>
+                    Size: <?= ucfirst($qrSize) ?> | 
+                <?php endif; ?>
+                Margins: <?= ucfirst($margins) ?> |
+                Orientation: <?= ucfirst($orientation) ?>
                 <?= $removeBg ? ' | Background Removed' : '' ?>
                 <?= $showLabels ? ' | Labels Shown' : '' ?>
             </p>
@@ -158,27 +203,11 @@
     
     <div class="print-container">
         <div class="qr-grid">
-            <?php foreach ($qrCodes as $qr): ?>
+            <?php foreach ($qrCodes as $index => $qr): ?>
                 <div class="qr-item">
-                    <?php if (!empty($qr['qr_data_url'])): ?>
-                        <?php 
-                        $qrDataUrl = $qr['qr_data_url'];
-                        // If remove background is enabled, we'd need to process the image
-                        // For now, we'll just use the data URL as is
-                        if ($removeBg) {
-                            // In a full implementation, you'd process the image to remove background
-                            // For now, we'll just add a white background explicitly
-                        }
-                        ?>
-                        <img src="<?= htmlspecialchars($qrDataUrl) ?>" 
-                             alt="QR Code" 
-                             class="qr-image"
-                             style="<?= $removeBg ? 'background: white; padding: 5px;' : '' ?>">
-                    <?php else: ?>
-                        <div style="width: 100%; max-width: 200px; height: 200px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; border-radius: 8px;">
-                            <span style="color: #999;">QR Code</span>
-                        </div>
-                    <?php endif; ?>
+                    <div class="qr-image-container" id="qr-container-<?= $index ?>" style="<?= $removeBg ? 'background: white; padding: 5px;' : '' ?>">
+                        <!-- QR code will be generated here -->
+                    </div>
                     
                     <?php if ($showLabels): ?>
                         <div class="qr-label">
@@ -190,9 +219,35 @@
         </div>
     </div>
     
+    <!-- Include QR Code Generator Library -->
+    <script src="https://unpkg.com/qrcode-generator@1.4.4/qrcode.js"></script>
     <script>
-        // Auto-print option (commented out by default)
-        // window.onload = function() { window.print(); }
+        // Generate QR codes for each item
+        <?php foreach ($qrCodes as $index => $qr): ?>
+        (function() {
+            try {
+                const qr = qrcode(0, 'H'); // High error correction
+                qr.addData(<?= json_encode($qr['content']) ?>);
+                qr.make();
+                
+                // Calculate cell size based on container size
+                const cellSize = <?= 
+                    $qrSize === 'small' ? '3' : 
+                    ($qrSize === 'medium' ? '5' : 
+                    ($qrSize === 'large' ? '7' : 
+                    ($qrSize === 'xlarge' ? '9' : '5'))) 
+                ?>;
+                
+                // Generate QR code image
+                const img = qr.createImgTag(cellSize, 0);
+                document.getElementById('qr-container-<?= $index ?>').innerHTML = img;
+            } catch (e) {
+                console.error('Failed to generate QR code:', e);
+                document.getElementById('qr-container-<?= $index ?>').innerHTML = 
+                    '<div style="color: #999;">Error generating QR</div>';
+            }
+        })();
+        <?php endforeach; ?>
     </script>
 </body>
 </html>

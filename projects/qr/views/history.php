@@ -506,10 +506,10 @@ function openBulkPrintDialog() {
 function showPrintDialog(qrIds) {
     const dialog = document.createElement('div');
     dialog.id = 'printDialog';
-    dialog.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 10000; backdrop-filter: blur(5px);';
+    dialog.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 10000; backdrop-filter: blur(5px); overflow-y: auto;';
     
     dialog.innerHTML = `
-        <div style="background: var(--card-bg); border-radius: 16px; padding: 30px; max-width: 500px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.5); animation: slideIn 0.3s ease-out;">
+        <div style="background: var(--card-bg); border-radius: 16px; padding: 30px; max-width: 550px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.5); animation: slideIn 0.3s ease-out; margin: 20px auto; max-height: 90vh; overflow-y: auto;">
             <h3 style="margin: 0 0 20px 0; display: flex; align-items: center; gap: 10px; color: var(--text-primary);">
                 <i class="fas fa-print" style="color: var(--purple);"></i>
                 Bulk Print QR Codes (${qrIds.length} selected)
@@ -519,11 +519,34 @@ function showPrintDialog(qrIds) {
                 <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary);">
                     <i class="fas fa-file"></i> Page Size
                 </label>
-                <select id="pageSize" class="form-select" style="width: 100%;">
+                <select id="pageSize" class="form-select" style="width: 100%;" onchange="toggleCustomSize()">
                     <option value="a4">A4 (210 × 297 mm)</option>
                     <option value="letter">Letter (8.5 × 11 in)</option>
                     <option value="a3">A3 (297 × 420 mm)</option>
                     <option value="legal">Legal (8.5 × 14 in)</option>
+                    <option value="custom">Custom Size</option>
+                </select>
+                <div id="customSizeInputs" style="display: none; margin-top: 10px; padding: 10px; background: rgba(102, 126, 234, 0.05); border-radius: 6px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div>
+                            <label style="display: block; margin-bottom: 4px; font-size: 0.85rem; color: var(--text-secondary);">Width (mm)</label>
+                            <input type="number" id="customWidth" class="form-control" value="210" min="50" max="500" style="width: 100%;">
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 4px; font-size: 0.85rem; color: var(--text-secondary);">Height (mm)</label>
+                            <input type="number" id="customHeight" class="form-control" value="297" min="50" max="500" style="width: 100%;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary);">
+                    <i class="fas fa-tablet-alt"></i> Orientation
+                </label>
+                <select id="orientation" class="form-select" style="width: 100%;">
+                    <option value="portrait">Portrait (Vertical)</option>
+                    <option value="landscape">Landscape (Horizontal)</option>
                 </select>
             </div>
             
@@ -531,12 +554,17 @@ function showPrintDialog(qrIds) {
                 <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary);">
                     <i class="fas fa-expand-arrows-alt"></i> QR Code Size
                 </label>
-                <select id="qrSize" class="form-select" style="width: 100%;">
+                <select id="qrSize" class="form-select" style="width: 100%;" onchange="toggleCustomQRSize()">
                     <option value="small">Small (4 per row)</option>
                     <option value="medium" selected>Medium (3 per row)</option>
                     <option value="large">Large (2 per row)</option>
                     <option value="xlarge">Extra Large (1 per row)</option>
+                    <option value="custom">Custom (specify per row)</option>
                 </select>
+                <div id="customQRSizeInput" style="display: none; margin-top: 10px; padding: 10px; background: rgba(102, 126, 234, 0.05); border-radius: 6px;">
+                    <label style="display: block; margin-bottom: 4px; font-size: 0.85rem; color: var(--text-secondary);">QR Codes per Row</label>
+                    <input type="number" id="customPerRow" class="form-control" value="3" min="1" max="10" style="width: 100%;">
+                </div>
             </div>
             
             <div style="margin-bottom: 20px;">
@@ -602,6 +630,18 @@ function showPrintDialog(qrIds) {
     });
 }
 
+function toggleCustomSize() {
+    const pageSize = document.getElementById('pageSize').value;
+    const customInputs = document.getElementById('customSizeInputs');
+    customInputs.style.display = pageSize === 'custom' ? 'block' : 'none';
+}
+
+function toggleCustomQRSize() {
+    const qrSize = document.getElementById('qrSize').value;
+    const customInput = document.getElementById('customQRSizeInput');
+    customInput.style.display = qrSize === 'custom' ? 'block' : 'none';
+}
+
 function closePrintDialog() {
     const dialog = document.getElementById('printDialog');
     if (dialog) {
@@ -615,6 +655,7 @@ function doBulkPrint() {
     const pageSize = document.getElementById('pageSize').value;
     const qrSize = document.getElementById('qrSize').value;
     const margins = document.getElementById('margins').value;
+    const orientation = document.getElementById('orientation').value;
     const removeBg = document.getElementById('removeBg').checked;
     const showLabels = document.getElementById('showLabels').checked;
     
@@ -624,9 +665,20 @@ function doBulkPrint() {
         pageSize: pageSize,
         qrSize: qrSize,
         margins: margins,
+        orientation: orientation,
         removeBg: removeBg ? '1' : '0',
         showLabels: showLabels ? '1' : '0'
     });
+    
+    // Add custom dimensions if applicable
+    if (pageSize === 'custom') {
+        params.append('customWidth', document.getElementById('customWidth').value);
+        params.append('customHeight', document.getElementById('customHeight').value);
+    }
+    
+    if (qrSize === 'custom') {
+        params.append('customPerRow', document.getElementById('customPerRow').value);
+    }
     
     // Open print page in new window
     window.open('/projects/qr/bulk-print?' + params.toString(), '_blank');
