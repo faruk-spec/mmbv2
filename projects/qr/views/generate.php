@@ -1010,6 +1010,26 @@
                 <input type="url" name="redirect_url" id="redirectUrl" class="form-input" placeholder="https://example.com">
                 <small>This URL can be edited later</small>
             </div>
+
+            <!-- Password Protection (dynamic only) -->
+            <div id="dynamicAdvancedGroup" style="display:none;">
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-lock"></i> Password Protection
+                        <small style="font-weight:normal;color:var(--text-secondary);margin-left:6px;">(leave blank for none)</small>
+                    </label>
+                    <input type="password" name="qr_password" id="qrPassword" class="form-input" placeholder="Set a password to protect this QR" autocomplete="new-password">
+                    <small>Scanners must enter this password to access the link.</small>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-calendar-times"></i> Expiry Date
+                        <small style="font-weight:normal;color:var(--text-secondary);margin-left:6px;">(optional)</small>
+                    </label>
+                    <input type="datetime-local" name="expires_at" id="expiresAt" class="form-input">
+                    <small>QR code will stop working after this date/time.</small>
+                </div>
+            </div>
             
             <div class="divider"></div>
             
@@ -1545,6 +1565,10 @@ if (isDynamicEl) {
         const redirectUrlGroup = document.getElementById('redirectUrlGroup');
         if (redirectUrlGroup) {
             redirectUrlGroup.style.display = this.checked ? 'block' : 'none';
+        }
+        const dynamicAdvancedGroup = document.getElementById('dynamicAdvancedGroup');
+        if (dynamicAdvancedGroup) {
+            dynamicAdvancedGroup.style.display = this.checked ? 'block' : 'none';
         }
     });
 }

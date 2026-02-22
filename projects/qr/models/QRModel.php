@@ -166,6 +166,40 @@ class QRModel
             return 0;
         }
     }
+
+    /**
+     * Count active static QR codes for a user (is_dynamic = 0)
+     */
+    public function countStaticByUser(int $userId): int
+    {
+        try {
+            $result = $this->db->fetch(
+                "SELECT COUNT(*) AS count FROM qr_codes WHERE user_id = ? AND is_dynamic = 0 AND deleted_at IS NULL",
+                [$userId]
+            );
+            return (int) ($result['count'] ?? 0);
+        } catch (\Exception $e) {
+            \Core\Logger::error('Failed to count static QR codes: ' . $e->getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * Count active dynamic QR codes for a user (is_dynamic = 1)
+     */
+    public function countDynamicByUser(int $userId): int
+    {
+        try {
+            $result = $this->db->fetch(
+                "SELECT COUNT(*) AS count FROM qr_codes WHERE user_id = ? AND is_dynamic = 1 AND deleted_at IS NULL",
+                [$userId]
+            );
+            return (int) ($result['count'] ?? 0);
+        } catch (\Exception $e) {
+            \Core\Logger::error('Failed to count dynamic QR codes: ' . $e->getMessage());
+            return 0;
+        }
+    }
     
     /**
      * Get a single QR code by ID

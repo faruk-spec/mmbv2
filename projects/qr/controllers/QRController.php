@@ -13,16 +13,19 @@ use Core\Helpers;
 use Core\Logger;
 use Projects\QR\Models\QRModel;
 use Projects\QR\Models\SettingsModel;
+use Projects\QR\Services\QRFeatureService;
 
 class QRController
 {
     private QRModel $qrModel;
     private SettingsModel $settingsModel;
+    private QRFeatureService $featureService;
     
     public function __construct()
     {
         $this->qrModel = new QRModel();
         $this->settingsModel = new SettingsModel();
+        $this->featureService = new QRFeatureService();
     }
     
     /**
@@ -119,7 +122,53 @@ class QRController
             Helpers::redirect('/projects/qr/generate');
             return;
         }
-        
+
+        $userId = Auth::id();
+
+        // ── Feature & plan enforcement (logged-in users only) ─────────────
+        if ($userId) {
+            $isDynamicRequested = isset($_POST['is_dynamic']);
+            $passwordRequested  = !empty($_POST['qr_password']);
+            $expiryRequested    = !empty($_POST['expires_at']);
+
+            // Check feature locks
+            if ($isDynamicRequested && !$this->featureService->can($userId, 'dynamic_qr')) {
+                Helpers::flash('error', 'Dynamic QR codes are not available on your current plan.');
+                Helpers::redirect('/projects/qr/generate');
+                return;
+            }
+            if ($passwordRequested && !$this->featureService->can($userId, 'password_protection')) {
+                Helpers::flash('error', 'Password protection is not available on your current plan.');
+                Helpers::redirect('/projects/qr/generate');
+                return;
+            }
+            if ($expiryRequested && !$this->featureService->can($userId, 'expiry_date')) {
+                Helpers::flash('error', 'Expiry date is not available on your current plan.');
+                Helpers::redirect('/projects/qr/generate');
+                return;
+            }
+
+            // Check plan limits
+            $limits = $this->featureService->getPlanLimits($userId);
+            if ($limits) {
+                if ($isDynamicRequested) {
+                    $maxDynamic = (int) $limits['max_dynamic_qr'];
+                    if ($maxDynamic !== -1 && $this->qrModel->countDynamicByUser($userId) >= $maxDynamic) {
+                        Helpers::flash('error', "You have reached your plan limit of {$maxDynamic} dynamic QR code(s).");
+                        Helpers::redirect('/projects/qr/generate');
+                        return;
+                    }
+                } else {
+                    $maxStatic = (int) $limits['max_static_qr'];
+                    if ($maxStatic !== -1 && $this->qrModel->countStaticByUser($userId) >= $maxStatic) {
+                        Helpers::flash('error', "You have reached your plan limit of {$maxStatic} static QR code(s).");
+                        Helpers::redirect('/projects/qr/generate');
+                        return;
+                    }
+                }
+            }
+        }
+
         // Get content based on type
         $type = Security::sanitize($_POST['type'] ?? 'text');
         $content = $this->buildContent($type, $_POST);
@@ -163,8 +212,31 @@ class QRController
         $logoRemoveBg = isset($_POST['logo_remove_bg']) ? 1 : 0;
         
         // Advanced features
-        $isDynamic = isset($_POST['is_dynamic']) ? 1 : 0;
+        $isDynamic  = isset($_POST['is_dynamic']) ? 1 : 0;
         $redirectUrl = $isDynamic ? Security::sanitize($_POST['redirect_url'] ?? '') : null;
+
+        // Password protection — enforce minimum length of 4 characters
+        $rawPassword = $_POST['qr_password'] ?? '';
+        if ($isDynamic && $rawPassword !== '' && strlen($rawPassword) < 4) {
+            Helpers::flash('error', 'QR password must be at least 4 characters long.');
+            Helpers::redirect('/projects/qr/generate');
+            return;
+        }
+        $passwordHash = ($isDynamic && $rawPassword !== '') ? password_hash($rawPassword, PASSWORD_DEFAULT) : null;
+        $hasPassword  = $passwordHash !== null ? 1 : 0;
+
+        // Expiry date — validate format and ensure it's in the future
+        $expiresAtRaw = Security::sanitize($_POST['expires_at'] ?? '');
+        $expiresAt    = null;
+        if ($isDynamic && $expiresAtRaw !== '') {
+            $parsedExpiry = strtotime($expiresAtRaw);
+            if ($parsedExpiry === false || $parsedExpiry <= time()) {
+                Helpers::flash('error', 'Expiry date must be a valid date/time in the future.');
+                Helpers::redirect('/projects/qr/generate');
+                return;
+            }
+            $expiresAt = date('Y-m-d H:i:s', $parsedExpiry);
+        }
         
         // Campaign (can come from URL or form)
         $campaignId = !empty($_POST['campaign_id']) ? (int) $_POST['campaign_id'] : null;
@@ -180,23 +252,22 @@ class QRController
         
         // Store in session for immediate display
         $_SESSION['generated_qr'] = [
-            'content' => $content,
-            'type' => $type,
-            'size' => $size,
+            'content'          => $content,
+            'type'             => $type,
+            'size'             => $size,
             'foreground_color' => $foregroundColor,
             'background_color' => $backgroundColor,
             'error_correction' => $errorCorrection,
             'gradient_enabled' => $gradientEnabled,
-            'gradient_color' => $gradientColor,
-            'frame_style' => $frameStyle,
-            'is_dynamic' => $isDynamic,
-            'has_password' => $hasPassword,
-            'expires_at' => $expiresAt,
-            'created_at' => date('Y-m-d H:i:s')
+            'gradient_color'   => $gradientColor,
+            'frame_style'      => $frameStyle,
+            'is_dynamic'       => $isDynamic,
+            'has_password'     => $hasPassword,
+            'expires_at'       => $expiresAt,
+            'created_at'       => date('Y-m-d H:i:s'),
         ];
         
         // Save to database
-        $userId = Auth::id();
         if ($userId) {
             $qrId = $this->qrModel->save($userId, [
                 'content' => $content,
@@ -224,6 +295,8 @@ class QRController
                 'logo_remove_bg' => $logoRemoveBg,
                 'is_dynamic' => $isDynamic,
                 'redirect_url' => $redirectUrl,
+                'password_hash' => $passwordHash,
+                'expires_at' => $expiresAt,
                 'campaign_id' => $campaignId,
                 'status' => 'active'
             ]);
@@ -707,33 +780,112 @@ class QRController
     }
     
     /**
-     * Show access form for dynamic QR codes
+     * Show access form for dynamic QR codes — enforces expiry, scan limit, and password protection
      */
     public function showAccessForm(string $code): void
     {
-        // Find QR code by short code
         $qr = $this->qrModel->getByShortCode($code);
         
         if (!$qr) {
-            Helpers::flash('error', 'QR code not found.');
             http_response_code(404);
             echo "QR code not found";
             return;
         }
-        
-        // No protection, redirect directly
-        $this->redirectQR($qr);
+
+        // Block check
+        if (!empty($qr['status']) && $qr['status'] === 'blocked') {
+            http_response_code(403);
+            echo "This QR code has been blocked.";
+            return;
+        }
+
+        // Expiry check — use DateTime to avoid strtotime() returning false for corrupt data
+        if (!empty($qr['expires_at'])) {
+            $expiryTs = strtotime($qr['expires_at']);
+            if ($expiryTs !== false && $expiryTs < time()) {
+                $this->render('expired', ['title' => 'QR Code Expired', 'qr' => $qr]);
+                return;
+            }
+        }
+
+        // Scan-limit check
+        $scanLimit = isset($qr['scan_limit']) ? (int) $qr['scan_limit'] : -1;
+        if ($scanLimit !== -1 && (int) ($qr['scan_count'] ?? 0) >= $scanLimit) {
+            http_response_code(410);
+            echo "This QR code has reached its maximum number of scans.";
+            return;
+        }
+
+        // Password protection check
+        if (!empty($qr['password_hash'])) {
+            $this->render('access', ['title' => 'Protected QR Code', 'qr' => $qr, 'code' => $code]);
+            return;
+        }
+
+        // All checks passed — track scan and redirect
+        $this->trackAndRedirect($qr);
     }
-    
+
     /**
-     * Verify access to QR code (kept for backward compatibility but not used)
+     * Verify password submission for a password-protected QR code
      */
     public function verifyAccess(string $code): void
     {
-        // Simply redirect to the QR code
-        $this->showAccessForm($code);
+        $qr = $this->qrModel->getByShortCode($code);
+
+        if (!$qr) {
+            http_response_code(404);
+            echo "QR code not found";
+            return;
+        }
+
+        // Re-run expiry / block checks even on POST
+        if (!empty($qr['status']) && $qr['status'] === 'blocked') {
+            http_response_code(403);
+            echo "This QR code has been blocked.";
+            return;
+        }
+        if (!empty($qr['expires_at'])) {
+            $expiryTs = strtotime($qr['expires_at']);
+            if ($expiryTs !== false && $expiryTs < time()) {
+                $this->render('expired', ['title' => 'QR Code Expired', 'qr' => $qr]);
+                return;
+            }
+        }
+
+        // If no password required, just redirect
+        if (empty($qr['password_hash'])) {
+            $this->trackAndRedirect($qr);
+            return;
+        }
+
+        // Verify submitted password
+        $submitted = $_POST['password'] ?? '';
+        if (!Security::verifyCsrfToken($_POST['_csrf_token'] ?? '')) {
+            $this->render('access', ['title' => 'Protected QR Code', 'qr' => $qr, 'code' => $code, 'error' => 'Invalid request.']);
+            return;
+        }
+
+        if (password_verify($submitted, $qr['password_hash'])) {
+            $this->trackAndRedirect($qr);
+        } else {
+            $this->render('access', ['title' => 'Protected QR Code', 'qr' => $qr, 'code' => $code, 'error' => 'Incorrect password. Please try again.']);
+        }
     }
     
+    /**
+     * Track scan and redirect to QR code destination
+     */
+    private function trackAndRedirect(array $qr): void
+    {
+        // Track the scan
+        $this->qrModel->trackScan((int) $qr['id'], [
+            'ip'         => $_SERVER['REMOTE_ADDR'] ?? '',
+            'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? '',
+        ]);
+        $this->redirectQR($qr);
+    }
+
     /**
      * Redirect QR code to its destination
      */

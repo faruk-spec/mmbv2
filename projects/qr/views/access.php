@@ -18,6 +18,12 @@
         <form method="POST" action="/projects/qr/access/<?= htmlspecialchars($code) ?>" class="access-form">
             <input type="hidden" name="_csrf_token" value="<?= \Core\Security::generateCsrfToken() ?>">
             
+            <?php if (!empty($error)): ?>
+                <div class="alert alert-error" style="margin-bottom:16px;">
+                    <i class="fas fa-exclamation-circle"></i> <?= htmlspecialchars($error) ?>
+                </div>
+            <?php endif; ?>
+            
             <div class="form-group">
                 <label class="form-label">
                     <i class="fas fa-key"></i> Password
@@ -38,6 +44,19 @@
 </div>
 
 <style>
+.alert {
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.alert-error {
+    background: rgba(255, 71, 87, 0.1);
+    color: #ff4757;
+    border: 1px solid rgba(255, 71, 87, 0.3);
+}
 .access-container {
     min-height: 80vh;
     display: flex;
