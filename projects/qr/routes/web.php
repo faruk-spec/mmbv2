@@ -242,6 +242,12 @@ switch ($segments[0]) {
             $controller->index();
         }
         break;
+
+    case 'plan':
+        require_once PROJECT_PATH . '/controllers/DashboardController.php';
+        $controller = new \Projects\QR\Controllers\DashboardController();
+        $controller->plan();
+        break;
         
     default:
         http_response_code(404);

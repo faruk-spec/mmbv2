@@ -135,6 +135,14 @@ class View
             self::$currentSection = null;
         }
     }
+
+    /**
+     * Alias for endSection() — convenience shorthand used in views
+     */
+    public static function end(): void
+    {
+        self::endSection();
+    }
     
     /**
      * Yield a section
