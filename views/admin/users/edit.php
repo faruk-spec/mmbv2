@@ -99,7 +99,7 @@
                 <div style="display: flex; gap: 10px; align-items: flex-end;">
                     <div style="flex: 1;">
                         <label style="display:block;margin-bottom:5px;font-size:13px;color:var(--text-secondary);">Assign Plan</label>
-                        <select name="plan_id" class="form-input" required>
+                        <select name="plan_id" class="form-input">
                             <option value="">— Select plan —</option>
                             <?php foreach ($qrPlans as $p): ?>
                                 <option value="<?= $p['id'] ?>" <?= ($userQrPlan && $userQrPlan['plan_id'] == $p['id']) ? 'selected' : '' ?>>

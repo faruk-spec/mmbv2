@@ -42,7 +42,8 @@ input:checked + .toggle-slider:before { transform:translateX(22px); }
                     <th style="min-width:200px;">Feature</th>
                     <?php foreach ($roles as $role): ?>
                         <th style="min-width:120px;">
-                            <span class="badge badge-info"><?= ucfirst($role) ?></span>
+                            <span class="badge badge-info"><?= View::e($roleLabels[$role] ?? ucfirst($role)) ?></span>
+                            <div style="font-size:10px;color:var(--text-secondary);margin-top:2px;"><?= View::e($role) ?></div>
                         </th>
                     <?php endforeach; ?>
                 </tr>
@@ -77,7 +78,7 @@ input:checked + .toggle-slider:before { transform:translateX(22px); }
         <?= \Core\Security::csrfField() ?>
         <div style="flex:2;min-width:200px;">
             <label style="display:block;margin-bottom:5px;font-size:13px;color:var(--text-secondary);">Select User</label>
-            <select name="user_id" class="form-control" required>
+            <select name="user_id" class="form-input" required>
                 <option value="">— Choose user —</option>
                 <?php foreach ($users as $u): ?>
                     <option value="<?= $u['id'] ?>">
@@ -89,7 +90,7 @@ input:checked + .toggle-slider:before { transform:translateX(22px); }
         </div>
         <div style="flex:1;min-width:160px;">
             <label style="display:block;margin-bottom:5px;font-size:13px;color:var(--text-secondary);">Plan</label>
-            <select name="plan_id" class="form-control" required>
+            <select name="plan_id" class="form-input" required>
                 <option value="">— Choose plan —</option>
                 <?php foreach ($plans as $p): ?>
                     <option value="<?= $p['id'] ?>"><?= View::e($p['name']) ?></option>
@@ -115,7 +116,7 @@ input:checked + .toggle-slider:before { transform:translateX(22px); }
         <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;" id="addOverrideForm">
             <div style="flex:2;min-width:200px;">
                 <label style="display:block;margin-bottom:5px;font-size:13px;color:var(--text-secondary);">User</label>
-                <select id="ov_user" class="form-control">
+                <select id="ov_user" class="form-input">
                     <option value="">— Select user —</option>
                     <?php foreach ($users as $u): ?>
                         <option value="<?= $u['id'] ?>"><?= View::e($u['name']) ?> (<?= View::e($u['email']) ?>)</option>
@@ -124,7 +125,7 @@ input:checked + .toggle-slider:before { transform:translateX(22px); }
             </div>
             <div style="flex:2;min-width:180px;">
                 <label style="display:block;margin-bottom:5px;font-size:13px;color:var(--text-secondary);">Feature</label>
-                <select id="ov_feature" class="form-control">
+                <select id="ov_feature" class="form-input">
                     <?php foreach ($allFeatures as $k => $label): ?>
                         <option value="<?= $k ?>"><?= View::e($label) ?></option>
                     <?php endforeach; ?>
@@ -132,7 +133,7 @@ input:checked + .toggle-slider:before { transform:translateX(22px); }
             </div>
             <div style="flex:1;min-width:120px;">
                 <label style="display:block;margin-bottom:5px;font-size:13px;color:var(--text-secondary);">Access</label>
-                <select id="ov_enabled" class="form-control">
+                <select id="ov_enabled" class="form-input">
                     <option value="1">Enable</option>
                     <option value="0">Disable</option>
                 </select>

@@ -513,7 +513,7 @@ class QRAdminController extends BaseController
         $planId  = (int) $id;
         $feature = $this->input('feature', '');
 
-        $allowed = ['analytics', 'bulk', 'ai', 'password_protection', 'campaigns', 'api', 'whitelabel', 'priority_support', 'team_roles'];
+        $allowed = array_keys($this->getAllFeatures());
         if (!in_array($feature, $allowed, true)) {
             $this->json(['success' => false, 'message' => 'Invalid feature.'], 400);
             return;
@@ -697,13 +697,20 @@ class QRAdminController extends BaseController
             $userPlanMap  = [];
         }
 
-        $roles = ['user', 'manager', 'owner', 'admin'];
+        $roles = ['user', 'project_admin', 'super_admin', 'admin'];
+        $roleLabels = [
+            'user'         => 'User',
+            'project_admin'=> 'Manager',
+            'super_admin'  => 'Owner',
+            'admin'        => 'Admin',
+        ];
 
         $this->view('admin/qr/roles', [
             'title'       => 'Roles & Feature Permissions',
             'subtitle'    => 'Set feature access by role or individual user',
             'allFeatures' => $allFeatures,
             'roles'       => $roles,
+            'roleLabels'  => $roleLabels,
             'roleFeatures'=> $roleFeatures,
             'userFeatures'=> $userFeatures,
             'users'       => $users,
@@ -726,7 +733,7 @@ class QRAdminController extends BaseController
         $feature = $this->input('feature', '');
         $enabled = (bool) $this->input('enabled', false);
 
-        $validRoles    = ['user', 'manager', 'owner', 'admin'];
+        $validRoles    = ['user', 'project_admin', 'super_admin', 'admin'];
         $validFeatures = array_keys($this->getAllFeatures());
 
         if (!in_array($role, $validRoles, true) || !in_array($feature, $validFeatures, true)) {
