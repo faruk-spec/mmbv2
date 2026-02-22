@@ -466,6 +466,7 @@ class QRController
         
         if ($id && $userId) {
             if ($this->qrModel->delete($id, $userId)) {
+                Logger::activity($userId, 'qr_deleted', ['qr_id' => $id]);
                 Helpers::flash('success', 'QR code deleted successfully.');
             } else {
                 Helpers::flash('error', 'Failed to delete QR code.');
@@ -505,6 +506,7 @@ class QRController
         }
         
         if ($deleted > 0) {
+            Logger::activity($userId, 'qr_bulk_deleted', ['count' => $deleted, 'ids' => array_map('intval', $ids)]);
             Helpers::flash('success', "$deleted QR code(s) deleted successfully.");
         } else {
             Helpers::flash('error', 'Failed to delete QR codes.');

@@ -25,6 +25,57 @@ class QRAdminController extends BaseController
         $this->requireAuth();
         $this->requireAdmin();
         $this->db = Database::getInstance();
+        $this->ensureTables();
+    }
+
+    /**
+     * Ensure required admin QR tables exist (auto-migration)
+     */
+    private function ensureTables(): void
+    {
+        try {
+            $this->db->query("
+                CREATE TABLE IF NOT EXISTS `qr_role_features` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `role` VARCHAR(50) NOT NULL,
+                    `feature` VARCHAR(80) NOT NULL,
+                    `enabled` TINYINT(1) DEFAULT 0,
+                    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    UNIQUE KEY `unique_role_feature` (`role`, `feature`),
+                    INDEX `idx_role` (`role`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+
+            $this->db->query("
+                CREATE TABLE IF NOT EXISTS `qr_user_features` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `user_id` INT UNSIGNED NOT NULL,
+                    `feature` VARCHAR(80) NOT NULL,
+                    `enabled` TINYINT(1) DEFAULT 0,
+                    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    UNIQUE KEY `unique_user_feature` (`user_id`, `feature`),
+                    INDEX `idx_user_id` (`user_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+
+            $this->db->query("
+                CREATE TABLE IF NOT EXISTS `qr_abuse_reports` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `qr_id` INT UNSIGNED NOT NULL,
+                    `reporter_id` INT UNSIGNED NULL,
+                    `reason` VARCHAR(500) NULL,
+                    `status` ENUM('pending','resolved','dismissed') DEFAULT 'pending',
+                    `resolved_by` INT UNSIGNED NULL,
+                    `resolved_at` TIMESTAMP NULL,
+                    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    INDEX `idx_qr_id` (`qr_id`),
+                    INDEX `idx_status` (`status`),
+                    INDEX `idx_reporter` (`reporter_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+        } catch (\Exception $e) {
+            Logger::error('QRAdmin ensureTables error: ' . $e->getMessage());
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -454,18 +505,19 @@ class QRAdminController extends BaseController
                 return;
             }
 
-            $features = [
-                'downloads'           => array_filter(explode(',', $this->input('feature_downloads', ''))),
-                'analytics'           => (bool) $this->input('feature_analytics', false),
-                'bulk'                => (bool) $this->input('feature_bulk', false),
-                'ai'                  => (bool) $this->input('feature_ai', false),
-                'password_protection' => (bool) $this->input('feature_password', false),
-                'campaigns'           => (bool) $this->input('feature_campaigns', false),
-                'api'                 => (bool) $this->input('feature_api', false),
-                'whitelabel'          => (bool) $this->input('feature_whitelabel', false),
-                'priority_support'    => (bool) $this->input('feature_priority_support', false),
-                'team_roles'          => (bool) $this->input('feature_team_roles', false),
-            ];
+            // Preserve existing features and overlay posted boolean flags
+            $existing = json_decode($plan['features'] ?? '{}', true) ?: [];
+            $planFeatureKeys = array_keys($this->getPlanFeatures());
+            foreach ($planFeatureKeys as $key) {
+                $existing[$key] = (bool) $this->input('feature_' . $key, false);
+            }
+            // downloads is an array field (e.g. ['png','svg','pdf']), handle separately
+            $downloadInput = trim($this->input('feature_downloads', ''));
+            if ($downloadInput !== '') {
+                $existing['downloads'] = array_values(array_filter(array_map('trim', explode(',', $downloadInput))));
+            } else {
+                $existing['downloads'] = $existing['downloads'] ?? [];
+            }
 
             $this->db->query(
                 "UPDATE qr_subscription_plans SET
@@ -484,7 +536,7 @@ class QRAdminController extends BaseController
                     (int) $this->input('max_dynamic_qr', $plan['max_dynamic_qr']),
                     (int) $this->input('max_scans_per_month', $plan['max_scans_per_month']),
                     (int) $this->input('max_bulk_generation', $plan['max_bulk_generation']),
-                    json_encode($features),
+                    json_encode($existing),
                     $this->input('status', 'active'),
                     $planId,
                 ]
@@ -513,7 +565,7 @@ class QRAdminController extends BaseController
         $planId  = (int) $id;
         $feature = $this->input('feature', '');
 
-        $allowed = array_keys($this->getAllFeatures());
+        $allowed = array_keys($this->getPlanFeatures());
         if (!in_array($feature, $allowed, true)) {
             $this->json(['success' => false, 'message' => 'Invalid feature.'], 400);
             return;
@@ -526,8 +578,8 @@ class QRAdminController extends BaseController
                 return;
             }
 
-            $features          = json_decode($plan['features'] ?? '{}', true) ?: [];
-            $current           = (bool) ($features[$feature] ?? false);
+            $features           = json_decode($plan['features'] ?? '{}', true) ?: [];
+            $current            = (bool) ($features[$feature] ?? false);
             $features[$feature] = !$current;
 
             $this->db->query(
@@ -887,6 +939,7 @@ class QRAdminController extends BaseController
 
     /**
      * Returns the full list of QR features with human-readable labels
+     * Used for qr_role_features / qr_user_features tables
      */
     private function getAllFeatures(): array
     {
@@ -909,6 +962,26 @@ class QRAdminController extends BaseController
             'custom_colors'       => 'Custom Colors',
             'frame_styles'        => 'Frame Styles',
             'priority_support'    => 'Priority Support',
+            'export_data'         => 'Export Scan Data',
+        ];
+    }
+
+    /**
+     * Returns plan-level feature keys that match the JSON stored in qr_subscription_plans.features
+     * These are the boolean flags toggled directly on the plan record
+     */
+    private function getPlanFeatures(): array
+    {
+        return [
+            'analytics'           => 'Scan Analytics',
+            'bulk'                => 'Bulk Generation',
+            'ai'                  => 'AI Design',
+            'password_protection' => 'Password Protection',
+            'campaigns'           => 'Campaign Management',
+            'api'                 => 'API Access',
+            'whitelabel'          => 'White-Label / Custom Domain',
+            'priority_support'    => 'Priority Support',
+            'team_roles'          => 'Team Roles',
             'export_data'         => 'Export Scan Data',
         ];
     }

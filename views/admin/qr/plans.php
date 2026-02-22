@@ -4,7 +4,7 @@
 <?php View::section('styles'); ?>
 <style>
 .plan-card { background:var(--bg-card); border:1px solid var(--border-color); border-radius:12px; margin-bottom:24px; overflow:hidden; }
-.plan-header { padding:20px 24px; border-bottom:1px solid var(--border-color); display:flex; align-items:center; justify-content:space-between; }
+.plan-header { padding:20px 24px; border-bottom:1px solid var(--border-color); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; }
 .plan-body { padding:20px 24px; }
 .feature-toggle { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border-color); }
 .feature-toggle:last-child { border-bottom:none; }
@@ -14,10 +14,17 @@
 .toggle-slider:before { content:""; position:absolute; width:16px; height:16px; left:3px; bottom:3px; background:#fff; border-radius:50%; transition:.2s; }
 input:checked + .toggle-slider { background:var(--cyan); }
 input:checked + .toggle-slider:before { transform:translateX(22px); }
+.plan-toggle-feedback { position:fixed; bottom:20px; right:20px; padding:10px 18px; border-radius:8px; font-size:13px; font-weight:600; z-index:9999; opacity:0; transition:opacity .3s; pointer-events:none; }
+.plan-toggle-feedback.show { opacity:1; }
+.plan-toggle-feedback.ok  { background:rgba(0,255,136,.15); border:1px solid var(--green); color:var(--green); }
+.plan-toggle-feedback.err { background:rgba(255,107,107,.15); border:1px solid var(--red); color:var(--red); }
 </style>
 <?php View::endSection(); ?>
 
 <?php View::section('content'); ?>
+
+<!-- Always-available CSRF token for JS -->
+<input type="hidden" id="global_csrf" value="<?= \Core\Security::generateCsrfToken() ?>">
 
 <?php if (Helpers::hasFlash('success')): ?>
     <div style="background:rgba(0,255,136,.1);border:1px solid var(--green);color:var(--green);padding:12px 16px;border-radius:8px;margin-bottom:20px;">
@@ -30,6 +37,12 @@ input:checked + .toggle-slider:before { transform:translateX(22px); }
     </div>
 <?php endif; ?>
 
+<?php if (empty($plans)): ?>
+    <div class="card">
+        <p style="color:var(--text-secondary);text-align:center;padding:30px;">No subscription plans found. Check the QR database schema.</p>
+    </div>
+<?php endif; ?>
+
 <?php foreach ($plans as $plan): ?>
     <?php $features = json_decode($plan['features'] ?? '{}', true) ?: []; ?>
     <div class="plan-card">
@@ -38,7 +51,7 @@ input:checked + .toggle-slider:before { transform:translateX(22px); }
                 <h3 style="margin:0;font-size:1.2rem;"><?= View::e($plan['name']) ?></h3>
                 <p style="margin:4px 0 0;font-size:13px;color:var(--text-secondary);">
                     Slug: <code><?= View::e($plan['slug']) ?></code> &bull;
-                    <?= $plan['subscriber_count'] ?> active subscriber(s) &bull;
+                    <?= (int)($plan['subscriber_count'] ?? 0) ?> active subscriber(s) &bull;
                     <span class="badge <?= $plan['status'] === 'active' ? 'badge-success' : 'badge-danger' ?>"><?= ucfirst($plan['status']) ?></span>
                 </p>
             </div>
@@ -82,18 +95,18 @@ input:checked + .toggle-slider:before { transform:translateX(22px); }
                 </div>
                 <div style="margin-bottom:12px;">
                     <label style="font-size:12px;color:var(--text-secondary);">Download Formats (comma-separated: png,svg,pdf)</label>
-                    <input type="text" name="feature_downloads" class="form-control" value="<?= View::e(implode(',', $features['downloads'] ?? [])) ?>" placeholder="png,svg,pdf">
+                    <input type="text" name="feature_downloads" class="form-control" value="<?= View::e(implode(',', (array)($features['downloads'] ?? []))) ?>" placeholder="png,svg,pdf">
                 </div>
                 <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-save"></i> Save Limits</button>
             </form>
         </div>
 
-        <!-- Per-feature toggles -->
+        <!-- Per-feature toggles — keys must match getPlanFeatures() in QRAdminController -->
         <div class="plan-body">
-            <h4 style="margin:0 0 12px;font-size:0.95rem;color:var(--text-secondary);">Feature Flags — click to toggle, changes save instantly</h4>
+            <h4 style="margin:0 0 12px;font-size:0.95rem;color:var(--text-secondary);">Feature Flags — click to toggle, saves instantly</h4>
             <div class="grid grid-2" style="gap:0;">
                 <?php
-                $featureLabels = [
+                $planFeatureLabels = [
                     'analytics'           => ['icon'=>'fas fa-chart-line', 'label'=>'Scan Analytics'],
                     'bulk'                => ['icon'=>'fas fa-layer-group', 'label'=>'Bulk Generation'],
                     'ai'                  => ['icon'=>'fas fa-robot',       'label'=>'AI Design'],
@@ -106,13 +119,16 @@ input:checked + .toggle-slider:before { transform:translateX(22px); }
                     'export_data'         => ['icon'=>'fas fa-download',    'label'=>'Export Scan Data'],
                 ];
                 ?>
-                <?php foreach ($featureLabels as $key => $meta): ?>
+                <?php foreach ($planFeatureLabels as $key => $meta): ?>
                     <div class="feature-toggle">
-                        <span style="font-size:14px;"><i class="<?= $meta['icon'] ?>" style="width:18px;color:var(--cyan);"></i> <?= $meta['label'] ?></span>
+                        <span style="font-size:14px;">
+                            <i class="<?= $meta['icon'] ?>" style="width:18px;color:var(--cyan);"></i>
+                            <?= $meta['label'] ?>
+                        </span>
                         <label class="toggle-switch">
-                            <input type="checkbox" <?= !empty($features[$key]) ? 'checked' : '' ?>
-                                onchange="togglePlanFeature(<?= $plan['id'] ?>,'<?= $key ?>',this)"
-                                data-plan="<?= $plan['id'] ?>" data-feature="<?= $key ?>">
+                            <input type="checkbox"
+                                <?= !empty($features[$key]) ? 'checked' : '' ?>
+                                onchange="togglePlanFeature(<?= $plan['id'] ?>,'<?= $key ?>',this)">
                             <span class="toggle-slider"></span>
                         </label>
                     </div>
@@ -122,38 +138,49 @@ input:checked + .toggle-slider:before { transform:translateX(22px); }
     </div>
 <?php endforeach; ?>
 
+<!-- Toast feedback element -->
+<div class="plan-toggle-feedback" id="planFeedback"></div>
+
 <?php View::endSection(); ?>
 
 <?php View::section('scripts'); ?>
 <script>
+const _csrf = document.getElementById('global_csrf').value;
+
 function togglePlanForm(id) {
     const el = document.getElementById('plan-form-' + id);
     el.style.display = el.style.display === 'none' ? 'block' : 'none';
 }
 
+function showFeedback(msg, ok) {
+    const el = document.getElementById('planFeedback');
+    el.textContent = msg;
+    el.className = 'plan-toggle-feedback show ' + (ok ? 'ok' : 'err');
+    clearTimeout(el._t);
+    el._t = setTimeout(() => { el.className = 'plan-toggle-feedback'; }, 2500);
+}
+
 function togglePlanFeature(planId, feature, checkbox) {
     const enabled = checkbox.checked;
-    const formData = new FormData();
-    formData.append('feature', feature);
-    formData.append('enabled', enabled ? '1' : '0');
-    formData.append('_csrf_token', document.querySelector('input[name="_csrf_token"]') ?
-        document.querySelector('input[name="_csrf_token"]').value : '');
+    const fd = new FormData();
+    fd.append('feature', feature);
+    fd.append('enabled', enabled ? '1' : '0');
+    fd.append('_csrf_token', _csrf);
 
-    fetch('/admin/qr/plans/' + planId + '/toggle-feature', {
-        method: 'POST',
-        headers: { 'X-CSRF-Token': document.querySelector('meta[name=csrf-token]')?.content || '' },
-        body: formData
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (!data.success) {
-            checkbox.checked = !enabled; // revert
-            alert('Failed to update feature: ' + (data.message || 'Unknown error'));
-        }
-    })
-    .catch(() => {
-        checkbox.checked = !enabled;
-    });
+    fetch('/admin/qr/plans/' + planId + '/toggle-feature', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showFeedback((enabled ? '✓ Enabled: ' : '✗ Disabled: ') + feature, true);
+            } else {
+                checkbox.checked = !enabled;
+                showFeedback('Error: ' + (data.message || 'Unknown error'), false);
+            }
+        })
+        .catch(() => {
+            checkbox.checked = !enabled;
+            showFeedback('Network error — please retry.', false);
+        });
 }
 </script>
 <?php View::endSection(); ?>

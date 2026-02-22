@@ -9,6 +9,7 @@
 namespace Projects\QR\Controllers;
 
 use Core\Auth;
+use Core\Logger;
 use Projects\QR\Models\TemplateModel;
 
 class TemplatesController
@@ -64,6 +65,7 @@ class TemplatesController
             $templateId = $this->model->create($userId, $data);
             
             if ($templateId) {
+                Logger::activity($userId, 'qr_template_created', ['template_id' => $templateId, 'name' => $data['name']]);
                 echo json_encode(['success' => true, 'id' => $templateId, 'message' => 'Template saved successfully']);
             } else {
                 echo json_encode(['success' => false, 'message' => 'Failed to save template']);
@@ -127,6 +129,7 @@ class TemplatesController
         ];
         
         if ($this->model->update($templateId, $userId, $data)) {
+            Logger::activity($userId, 'qr_template_updated', ['template_id' => $templateId, 'name' => $data['name']]);
             echo json_encode(['success' => true, 'message' => 'Template updated successfully']);
         } else {
             echo json_encode(['success' => false, 'message' => 'Failed to update template']);
@@ -154,6 +157,7 @@ class TemplatesController
         }
         
         if ($this->model->delete($templateId, $userId)) {
+            Logger::activity($userId, 'qr_template_deleted', ['template_id' => $templateId]);
             echo json_encode(['success' => true, 'message' => 'Template deleted successfully']);
         } else {
             echo json_encode(['success' => false, 'message' => 'Failed to delete template']);

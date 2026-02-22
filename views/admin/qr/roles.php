@@ -13,6 +13,10 @@
 input:checked + .toggle-slider { background:var(--cyan); }
 input:checked + .toggle-slider:before { transform:translateX(22px); }
 .section-title { font-size:1.1rem; font-weight:600; margin:0 0 16px; color:var(--text-primary); border-left:3px solid var(--cyan); padding-left:10px; }
+.role-feedback { position:fixed; bottom:20px; right:20px; padding:10px 18px; border-radius:8px; font-size:13px; font-weight:600; z-index:9999; opacity:0; transition:opacity .3s; pointer-events:none; }
+.role-feedback.show { opacity:1; }
+.role-feedback.ok  { background:rgba(0,255,136,.15); border:1px solid var(--green); color:var(--green); }
+.role-feedback.err { background:rgba(255,107,107,.15); border:1px solid var(--red); color:var(--red); }
 </style>
 <?php View::endSection(); ?>
 
@@ -82,7 +86,7 @@ input:checked + .toggle-slider:before { transform:translateX(22px); }
                 <option value="">— Choose user —</option>
                 <?php foreach ($users as $u): ?>
                     <option value="<?= $u['id'] ?>">
-                        <?= View::e($u['name']) ?> (<?= View::e($u['email']) ?>) –
+                        <?= View::e($u['name']) ?> (<?= View::e($u['email']) ?>) —
                         <?= isset($userPlanMap[$u['id']]) ? View::e($userPlanMap[$u['id']]['plan_name']) : 'No plan' ?>
                     </option>
                 <?php endforeach; ?>
@@ -90,7 +94,7 @@ input:checked + .toggle-slider:before { transform:translateX(22px); }
         </div>
         <div style="flex:1;min-width:160px;">
             <label style="display:block;margin-bottom:5px;font-size:13px;color:var(--text-secondary);">Plan</label>
-            <select name="plan_id" class="form-input" required>
+            <select name="plan_id" class="form-input">
                 <option value="">— Choose plan —</option>
                 <?php foreach ($plans as $p): ?>
                     <option value="<?= $p['id'] ?>"><?= View::e($p['name']) ?></option>
@@ -180,6 +184,9 @@ input:checked + .toggle-slider:before { transform:translateX(22px); }
     <?php endif; ?>
 </div>
 
+<!-- Toast feedback -->
+<div class="role-feedback" id="roleFeedback"></div>
+
 <!-- Hidden CSRF token for JS requests -->
 <input type="hidden" id="csrf_token" value="<?= \Core\Security::generateCsrfToken() ?>">
 
@@ -188,6 +195,14 @@ input:checked + .toggle-slider:before { transform:translateX(22px); }
 <?php View::section('scripts'); ?>
 <script>
 const csrfToken = document.getElementById('csrf_token').value;
+
+function showFeedback(msg, ok) {
+    const el = document.getElementById('roleFeedback');
+    el.textContent = msg;
+    el.className = 'role-feedback show ' + (ok ? 'ok' : 'err');
+    clearTimeout(el._t);
+    el._t = setTimeout(() => { el.className = 'role-feedback'; }, 2500);
+}
 
 function setRoleFeature(role, feature, checkbox) {
     const enabled = checkbox.checked;
@@ -200,12 +215,17 @@ function setRoleFeature(role, feature, checkbox) {
     fetch('/admin/qr/roles/set-role-feature', { method: 'POST', body: fd })
         .then(r => r.json())
         .then(data => {
-            if (!data.success) {
+            if (data.success) {
+                showFeedback('✓ Saved: ' + role + ' / ' + feature, true);
+            } else {
                 checkbox.checked = !enabled;
-                alert('Failed: ' + (data.message || 'Unknown error'));
+                showFeedback('Error: ' + (data.message || 'Unknown error'), false);
             }
         })
-        .catch(() => { checkbox.checked = !enabled; });
+        .catch(() => {
+            checkbox.checked = !enabled;
+            showFeedback('Network error — please retry.', false);
+        });
 }
 
 function applyUserOverride() {
@@ -213,7 +233,7 @@ function applyUserOverride() {
     const feature = document.getElementById('ov_feature').value;
     const enabled = document.getElementById('ov_enabled').value;
 
-    if (!userId) { alert('Please select a user.'); return; }
+    if (!userId) { showFeedback('Please select a user.', false); return; }
 
     const fd = new FormData();
     fd.append('user_id', userId);
@@ -227,10 +247,10 @@ function applyUserOverride() {
             if (data.success) {
                 location.reload();
             } else {
-                alert('Failed: ' + (data.message || 'Unknown error'));
+                showFeedback('Error: ' + (data.message || 'Unknown error'), false);
             }
         })
-        .catch(() => alert('Request failed.'));
+        .catch(() => showFeedback('Network error — please retry.', false));
 }
 
 function removeUserOverrides(userId) {
@@ -246,10 +266,11 @@ function removeUserOverrides(userId) {
             if (data.success) {
                 location.reload();
             } else {
-                alert('Failed: ' + (data.message || 'Unknown error'));
+                showFeedback('Error: ' + (data.message || 'Unknown error'), false);
             }
         })
-        .catch(() => alert('Request failed.'));
+        .catch(() => showFeedback('Network error — please retry.', false));
 }
 </script>
 <?php View::endSection(); ?>
+

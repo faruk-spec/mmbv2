@@ -9,6 +9,7 @@
 namespace Projects\QR\Controllers;
 
 use Core\Auth;
+use Core\Logger;
 use Projects\QR\Models\BulkJobModel;
 use Projects\QR\Models\QRModel;
 use Projects\QR\Models\CampaignModel;
@@ -112,6 +113,8 @@ class BulkController
             echo json_encode(['success' => false, 'message' => 'Failed to create bulk job']);
             exit;
         }
+
+        Logger::activity($userId, 'qr_bulk_upload', ['job_id' => $jobId, 'total' => count($rows), 'campaign_id' => $campaignId]);
         
         // Store CSV data in session for processing
         $_SESSION['bulk_job_' . $jobId] = [
@@ -219,6 +222,7 @@ class BulkController
             'qr_ids' => $qrIds,
             'message' => "Generated {$completed} QR codes successfully"
         ]);
+        Logger::activity($userId, 'qr_bulk_generated', ['job_id' => $jobId, 'completed' => $completed, 'failed' => $failed]);
         exit;
     }
     

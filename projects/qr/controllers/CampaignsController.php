@@ -9,6 +9,7 @@
 namespace Projects\QR\Controllers;
 
 use Core\Auth;
+use Core\Logger;
 use Projects\QR\Models\CampaignModel;
 
 class CampaignsController
@@ -102,6 +103,7 @@ class CampaignsController
             $campaignId = $this->model->create($userId, $data);
             
             if ($campaignId) {
+                Logger::activity($userId, 'qr_campaign_created', ['campaign_id' => $campaignId, 'name' => $data['name']]);
                 $_SESSION['success'] = 'Campaign created successfully';
                 header('Location: /projects/qr/campaigns');
             } else {
@@ -152,6 +154,7 @@ class CampaignsController
             ];
             
             if ($this->model->update($campaignId, $userId, $data)) {
+                Logger::activity($userId, 'qr_campaign_updated', ['campaign_id' => $campaignId, 'name' => $data['name']]);
                 $_SESSION['success'] = 'Campaign updated successfully';
                 header('Location: /projects/qr/campaigns');
             } else {
@@ -188,6 +191,7 @@ class CampaignsController
         }
         
         if ($this->model->delete($campaignId, $userId)) {
+            Logger::activity($userId, 'qr_campaign_deleted', ['campaign_id' => $campaignId]);
             echo json_encode(['success' => true, 'message' => 'Campaign deleted successfully']);
         } else {
             echo json_encode(['success' => false, 'message' => 'Failed to delete campaign']);
