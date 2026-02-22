@@ -331,6 +331,19 @@ class PlatformPlansController extends BaseController
         }
     }
 
+    /**
+     * Known boolean feature keys per app.
+     * Must be kept in sync with $appFeatureDefs in views/admin/platform-plans/form.php.
+     * @see views/admin/platform-plans/form.php $appFeatureDefs['booleans']
+     */
+    private const APP_BOOLEAN_KEYS = [
+        'qr'        => ['dynamic_qr','analytics','password_protection','expiry_date','bulk_generation','ai_design','api_access','white_label','custom_colors','campaigns','team_roles','export_pdf'],
+        'whatsapp'  => ['bulk_messaging','auto_reply','media_messages','api_access','webhooks','analytics','multi_device'],
+        'proshare'  => ['password_protected','expiry_links','analytics','custom_domain','api_access'],
+        'codexpro'  => ['ai_completion','private_snippets','team_sharing','api_access'],
+        'imgtxt'    => ['batch_processing','high_accuracy','api_access'],
+    ];
+
     /** Sanitise and build plan data array from POST */
     private function sanitizePlanInput(): array
     {
@@ -380,12 +393,20 @@ class PlatformPlansController extends BaseController
                             $appData[$fk] = (int)$fv;
                         }
                     } else {
-                        // Checkbox value="1" → true; absent = false (but we only have present ones)
+                        // Checkbox value="1" → true
                         $appData[$fk] = (bool)$fv;
                     }
                 }
-                // Merge: for boolean keys not posted (unchecked checkboxes), set false explicitly
-                // We detect boolean keys by whether the existing saved value was bool
+
+                // For known boolean keys: if a checkbox was NOT posted (unchecked), set it
+                // explicitly to false so toggling off actually persists.
+                $knownBooleans = self::APP_BOOLEAN_KEYS[$appKey] ?? [];
+                foreach ($knownBooleans as $bk) {
+                    if (!array_key_exists($bk, $appData)) {
+                        $appData[$bk] = false;
+                    }
+                }
+
                 if (!empty($appData)) {
                     $appFeatures[$appKey] = $appData;
                 }

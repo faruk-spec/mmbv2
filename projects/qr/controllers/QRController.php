@@ -399,62 +399,152 @@ class QRController
             case 'url':
             case 'text':
                 return Security::sanitize($data['content'] ?? '');
-                
+
             case 'email':
-                return 'mailto:' . Security::sanitize($data['content'] ?? '');
-                
+                // Use dedicated email fields from the form
+                $to      = Security::sanitize($data['email_to'] ?? ($data['content'] ?? ''));
+                $subject = Security::sanitize($data['email_subject'] ?? '');
+                $body    = Security::sanitize($data['email_body'] ?? '');
+                $params  = [];
+                if ($subject !== '') $params[] = 'subject=' . rawurlencode($subject);
+                if ($body    !== '') $params[] = 'body='    . rawurlencode($body);
+                return 'mailto:' . $to . ($params ? '?' . implode('&', $params) : '');
+
             case 'phone':
-                return 'tel:' . Security::sanitize($data['content'] ?? '');
-                
+                // Combine country code + number from dedicated fields
+                $country = Security::sanitize($data['phone_country'] ?? '');
+                $number  = preg_replace('/\D/', '', $data['phone_number'] ?? ($data['content'] ?? ''));
+                $full    = $country . $number;
+                return 'tel:' . ($full ?: Security::sanitize($data['content'] ?? ''));
+
             case 'sms':
-                $smsData = explode(':', $data['content'] ?? '');
-                $phone = $smsData[0] ?? '';
-                $message = $smsData[1] ?? '';
+                // Use dedicated sms fields from the form
+                $country = Security::sanitize($data['sms_country'] ?? '');
+                $number  = preg_replace('/\D/', '', $data['sms_number'] ?? '');
+                $message = Security::sanitize($data['sms_message'] ?? '');
+                $phone   = $country . $number;
+                if (empty($phone)) {
+                    // Fallback: legacy content field format phone:message
+                    $parts   = explode(':', $data['content'] ?? '');
+                    $phone   = $parts[0] ?? '';
+                    $message = $message ?: ($parts[1] ?? '');
+                }
                 return 'sms:' . $phone . ($message ? '?body=' . urlencode($message) : '');
-                
+
             case 'whatsapp':
-                $phone = preg_replace('/\D/', '', $data['whatsapp_phone'] ?? '');
+                $country = Security::sanitize($data['whatsapp_country'] ?? '');
+                $number  = preg_replace('/\D/', '', $data['whatsapp_phone'] ?? '');
+                $phone   = $country . $number;
                 $message = $data['whatsapp_message'] ?? '';
                 return 'https://wa.me/' . $phone . ($message ? '?text=' . urlencode($message) : '');
-                
+
+            case 'skype':
+                $action   = Security::sanitize($data['skype_action'] ?? 'chat');
+                $username = Security::sanitize($data['skype_username'] ?? ($data['content'] ?? ''));
+                return 'skype:' . $username . '?' . $action;
+
+            case 'zoom':
+                $meetingId = preg_replace('/\s+/', '', $data['zoom_meeting_id'] ?? ($data['content'] ?? ''));
+                $pwd       = Security::sanitize($data['zoom_password'] ?? '');
+                $url       = 'https://zoom.us/j/' . $meetingId;
+                return $url . ($pwd ? '?pwd=' . urlencode($pwd) : '');
+
             case 'wifi':
-                $ssid = Security::sanitize($data['wifi_ssid'] ?? '');
-                $password = Security::sanitize($data['wifi_password'] ?? '');
+                $ssid       = Security::sanitize($data['wifi_ssid'] ?? '');
+                $password   = Security::sanitize($data['wifi_password'] ?? '');
                 $encryption = Security::sanitize($data['wifi_encryption'] ?? 'WPA');
                 return "WIFI:T:$encryption;S:$ssid;P:$password;;";
-                
+
             case 'vcard':
-                $name = Security::sanitize($data['vcard_name'] ?? '');
-                $phone = Security::sanitize($data['vcard_phone'] ?? '');
-                $email = Security::sanitize($data['vcard_email'] ?? '');
-                $org = Security::sanitize($data['vcard_org'] ?? '');
-                return "BEGIN:VCARD\nVERSION:3.0\nFN:$name\nTEL:$phone\nEMAIL:$email" . ($org ? "\nORG:$org" : '') . "\nEND:VCARD";
-                
+                // Use the split first/last name fields (or combined vcard_name fallback)
+                $first  = Security::sanitize($data['vcard_firstname'] ?? '');
+                $last   = Security::sanitize($data['vcard_lastname']  ?? '');
+                $name   = trim("$first $last") ?: Security::sanitize($data['vcard_name'] ?? '');
+                $title  = Security::sanitize($data['vcard_title']    ?? '');
+                $phoneH = Security::sanitize($data['vcard_phone_home']   ?? ($data['vcard_phone'] ?? ''));
+                $phoneM = Security::sanitize($data['vcard_phone_mobile'] ?? '');
+                $phoneO = Security::sanitize($data['vcard_phone_office'] ?? '');
+                $email  = Security::sanitize($data['vcard_email']    ?? '');
+                $org    = Security::sanitize($data['vcard_company']  ?? ($data['vcard_org'] ?? ''));
+                $job    = Security::sanitize($data['vcard_jobtitle'] ?? '');
+                $url    = Security::sanitize($data['vcard_website']  ?? '');
+                $addr   = Security::sanitize($data['vcard_address']  ?? '');
+                $city   = Security::sanitize($data['vcard_city']     ?? '');
+                $state  = Security::sanitize($data['vcard_state']    ?? '');
+                $zip    = Security::sanitize($data['vcard_postcode'] ?? '');
+                $country = Security::sanitize($data['vcard_country'] ?? '');
+
+                $vc  = "BEGIN:VCARD\nVERSION:3.0\n";
+                $vc .= "FN:$name\n";
+                if ($title)  $vc .= "TITLE:$title\n";
+                if ($org)    $vc .= "ORG:$org\n";
+                if ($job)    $vc .= "ROLE:$job\n";
+                if ($phoneH) $vc .= "TEL;TYPE=HOME:$phoneH\n";
+                if ($phoneM) $vc .= "TEL;TYPE=CELL:$phoneM\n";
+                if ($phoneO) $vc .= "TEL;TYPE=WORK:$phoneO\n";
+                if ($email)  $vc .= "EMAIL:$email\n";
+                if ($url)    $vc .= "URL:$url\n";
+                if ($addr || $city || $state || $zip || $country) {
+                    $vc .= "ADR;TYPE=HOME:;;$addr;$city;$state;$zip;$country\n";
+                }
+                $vc .= "END:VCARD";
+                return $vc;
+
             case 'location':
                 $lat = Security::sanitize($data['location_lat'] ?? '');
                 $lng = Security::sanitize($data['location_lng'] ?? '');
                 return "geo:$lat,$lng";
-                
+
             case 'event':
-                $title = Security::sanitize($data['event_title'] ?? '');
-                $start = str_replace(['-', ':', ' '], '', $data['event_start'] ?? '');
-                $end = str_replace(['-', ':', ' '], '', $data['event_end'] ?? '');
+                $evTitle  = Security::sanitize($data['event_title']    ?? '');
+                $start    = str_replace(['-', ':', ' '], '', $data['event_start'] ?? '');
+                $end      = str_replace(['-', ':', ' '], '', $data['event_end']   ?? '');
                 $location = Security::sanitize($data['event_location'] ?? '');
-                return "BEGIN:VEVENT\nSUMMARY:$title\nDTSTART:$start\nDTEND:$end" . ($location ? "\nLOCATION:$location" : '') . "\nEND:VEVENT";
-                
+                $notes    = Security::sanitize($data['event_notes']    ?? '');
+                $evUrl    = Security::sanitize($data['event_link']     ?? '');
+                $ical  = "BEGIN:VEVENT\nSUMMARY:$evTitle\nDTSTART:$start\nDTEND:$end";
+                if ($location) $ical .= "\nLOCATION:$location";
+                if ($notes)    $ical .= "\nDESCRIPTION:$notes";
+                if ($evUrl)    $ical .= "\nURL:$evUrl";
+                $ical .= "\nEND:VEVENT";
+                return $ical;
+
+            case 'paypal':
+                // Dedicated PayPal form fields
+                $ppEmail    = Security::sanitize($data['paypal_email']     ?? '');
+                $ppType     = Security::sanitize($data['paypal_type']      ?? 'buynow');
+                $ppItem     = Security::sanitize($data['paypal_item_name'] ?? '');
+                $ppItemId   = Security::sanitize($data['paypal_item_id']   ?? '');
+                $ppPrice    = Security::sanitize($data['paypal_price']     ?? '');
+                $ppCurrency = Security::sanitize($data['paypal_currency']  ?? 'USD');
+                $ppShipping = Security::sanitize($data['paypal_shipping']  ?? '');
+                $ppTax      = Security::sanitize($data['paypal_tax']       ?? '');
+                if (empty($ppEmail)) return ''; // triggers "Please enter content" flash, consistent with other types
+                $params = [
+                    'business' => $ppEmail,
+                    'cmd'      => '_' . $ppType,
+                ];
+                if ($ppItem)     $params['item_name']   = $ppItem;
+                if ($ppItemId)   $params['item_number']  = $ppItemId;
+                if ($ppPrice)    $params['amount']       = $ppPrice;
+                if ($ppCurrency) $params['currency_code'] = $ppCurrency;
+                if ($ppShipping) $params['shipping']     = $ppShipping;
+                if ($ppTax)      $params['tax_rate']     = $ppTax;
+                return 'https://www.paypal.com/cgi-bin/webscr?' . http_build_query($params);
+
             case 'payment':
+                // UPI / local payment wallets
                 $payType = Security::sanitize($data['payment_type'] ?? 'upi');
-                $address = Security::sanitize($data['payment_address'] ?? '');
-                $amount = Security::sanitize($data['payment_amount'] ?? '');
-                
-                if ($payType === 'upi') {
-                    return 'upi://pay?pa=' . $address . ($amount ? '&am=' . $amount : '');
-                } elseif ($payType === 'paypal') {
-                    return 'https://paypal.me/' . $address . ($amount ? '/' . $amount : '');
-                } elseif ($payType === 'bitcoin') {
-                    return 'bitcoin:' . $address . ($amount ? '?amount=' . $amount : '');
-                }
-                break;
+                // Form uses payment_upi_id for the UPI address field
+                $upiId   = Security::sanitize($data['payment_upi_id']  ?? ($data['payment_address'] ?? ''));
+                $amount  = Security::sanitize($data['payment_amount']  ?? '');
+                $name    = Security::sanitize($data['payment_name']    ?? '');
+                $note    = Security::sanitize($data['payment_note']    ?? '');
+                $params  = ['pa' => $upiId];
+                if ($name)   $params['pn'] = $name;
+                if ($amount) $params['am'] = $amount;
+                if ($note)   $params['tn'] = $note;
+                return 'upi://pay?' . http_build_query($params);
 
             case 'social':
                 $platform = Security::sanitize($data['social_platform'] ?? 'custom');

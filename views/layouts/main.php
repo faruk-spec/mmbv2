@@ -18,6 +18,7 @@ try {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="MyMultiBranch - Multi-Project Platform">
+    <meta name="csrf-token" content="<?= Security::generateCsrfToken() ?>">
     <title><?= View::e($title ?? 'MyMultiBranch') ?> - <?= APP_NAME ?></title>
     
     <!-- Fonts -->
