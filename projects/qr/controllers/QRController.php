@@ -514,6 +514,57 @@ class QRController
     }
     
     /**
+     * Bulk print QR codes
+     */
+    public function bulkPrint(): void
+    {
+        $userId = Auth::id();
+        
+        if (!$userId) {
+            header('Location: /login');
+            exit;
+        }
+        
+        // Get parameters
+        $ids = isset($_GET['ids']) ? explode(',', $_GET['ids']) : [];
+        $pageSize = $_GET['pageSize'] ?? 'a4';
+        $qrSize = $_GET['qrSize'] ?? 'medium';
+        $margins = $_GET['margins'] ?? 'normal';
+        $removeBg = isset($_GET['removeBg']) && $_GET['removeBg'] === '1';
+        $showLabels = isset($_GET['showLabels']) && $_GET['showLabels'] === '1';
+        
+        if (empty($ids)) {
+            echo "No QR codes selected.";
+            return;
+        }
+        
+        // Fetch QR codes
+        $qrCodes = [];
+        foreach ($ids as $id) {
+            $qr = $this->qrModel->getById((int)$id, $userId);
+            if ($qr) {
+                $qrCodes[] = $qr;
+            }
+        }
+        
+        if (empty($qrCodes)) {
+            echo "No valid QR codes found.";
+            return;
+        }
+        
+        // Render print view
+        $this->render('bulk-print', [
+            'title' => 'Print QR Codes',
+            'qrCodes' => $qrCodes,
+            'pageSize' => $pageSize,
+            'qrSize' => $qrSize,
+            'margins' => $margins,
+            'removeBg' => $removeBg,
+            'showLabels' => $showLabels
+        ]);
+    }
+    
+    /**
      * Update QR code campaign assignment
      */
     public function updateCampaign(): void

@@ -78,16 +78,48 @@
     </div>
     
     <!-- AI Suggestions -->
-    <div style="background: rgba(0, 0, 0, 0.2); padding: 15px; border-radius: 10px; border-left: 3px solid var(--cyan);">
-        <div style="display: flex; align-items: start; gap: 12px;">
-            <i class="fas fa-lightbulb" style="color: var(--cyan); font-size: 1.2rem; margin-top: 2px;"></i>
-            <div style="flex: 1;">
-                <div style="font-weight: 600; margin-bottom: 8px; font-size: 0.95rem;">AI Design Tip</div>
-                <div style="font-size: 0.85rem; line-height: 1.5; color: var(--text-secondary);">
-                    Based on your usage patterns, we recommend using <strong style="color: var(--cyan);">rounded corners</strong> and <strong style="color: var(--purple);">gradient colors</strong> for better scan rates. Try the "Modern" preset!
+    <div id="aiInsightsContainer">
+        <?php if (!empty($aiInsights)): ?>
+            <?php foreach ($aiInsights as $insight): ?>
+                <div style="background: rgba(0, 0, 0, 0.2); padding: 15px; border-radius: 10px; border-left: 3px solid <?= 
+                    $insight['type'] === 'success' ? 'var(--green)' : 
+                    ($insight['type'] === 'warning' ? '#f59e0b' : 
+                    ($insight['type'] === 'info' ? '#3b82f6' : 'var(--cyan)')) 
+                ?>; margin-bottom: 12px;">
+                    <div style="display: flex; align-items: start; gap: 12px;">
+                        <i class="fas <?= htmlspecialchars($insight['icon']) ?>" style="color: <?= 
+                            $insight['type'] === 'success' ? 'var(--green)' : 
+                            ($insight['type'] === 'warning' ? '#f59e0b' : 
+                            ($insight['type'] === 'info' ? '#3b82f6' : 'var(--cyan)')) 
+                        ?>; font-size: 1.2rem; margin-top: 2px;"></i>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; margin-bottom: 8px; font-size: 0.95rem;"><?= htmlspecialchars($insight['title']) ?></div>
+                            <div style="font-size: 0.85rem; line-height: 1.5; color: var(--text-secondary); margin-bottom: <?= $insight['action'] ? '10px' : '0' ?>;">
+                                <?= $insight['message'] ?>
+                            </div>
+                            <?php if ($insight['action'] && $insight['link']): ?>
+                                <a href="<?= htmlspecialchars($insight['link']) ?>" 
+                                   style="display: inline-block; padding: 6px 14px; background: rgba(102, 126, 234, 0.2); color: var(--cyan); border-radius: 6px; text-decoration: none; font-size: 0.8rem; font-weight: 600; border: 1px solid rgba(102, 126, 234, 0.4); transition: all 0.2s;">
+                                    <?= htmlspecialchars($insight['action']) ?> <i class="fas fa-arrow-right" style="font-size: 0.7rem;"></i>
+                                </a>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        <?php else: ?>
+            <div style="background: rgba(0, 0, 0, 0.2); padding: 15px; border-radius: 10px; border-left: 3px solid var(--cyan);">
+                <div style="display: flex; align-items: start; gap: 12px;">
+                    <i class="fas fa-lightbulb" style="color: var(--cyan); font-size: 1.2rem; margin-top: 2px;"></i>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600; margin-bottom: 8px; font-size: 0.95rem;">AI Design Tip</div>
+                        <div style="font-size: 0.85rem; line-height: 1.5; color: var(--text-secondary);">
+                            Based on your usage patterns, we recommend using <strong style="color: var(--cyan);">rounded corners</strong> and <strong style="color: var(--purple);">gradient colors</strong> for better scan rates. Try the "Modern" preset!
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
+        <?php endif; ?>
     </div>
 </div>
 

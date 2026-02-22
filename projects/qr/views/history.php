@@ -184,6 +184,18 @@ if ($userId) {
 .btn-success:hover {
     opacity: 0.9;
 }
+
+/* Print dialog animation */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
 </style>
 
 <div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: nowrap; gap: 15px;">
@@ -209,7 +221,7 @@ if ($userId) {
     <?php else: ?>
         <!-- Controls -->
         <div class="controls-wrapper" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: nowrap; gap: 15px;">
-            <form method="POST" action="/projects/qr/bulk-delete" id="bulkDeleteForm" style="display: flex; align-items: center; gap: 10px;">
+            <form method="POST" action="/projects/qr/bulk-delete" id="bulkDeleteForm" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                 <input type="hidden" name="_csrf_token" value="<?= \Core\Security::generateCsrfToken() ?>">
                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                     <input type="checkbox" id="selectAll" style="width: 18px; height: 18px; cursor: pointer;">
@@ -217,6 +229,9 @@ if ($userId) {
                 </label>
                 <button type="button" onclick="confirmBulkDelete()" class="btn btn-danger btn-sm" id="bulkDeleteBtn" style="display: none;">
                     <i class="fas fa-trash"></i> Delete Selected
+                </button>
+                <button type="button" onclick="openBulkPrintDialog()" class="btn btn-primary btn-sm" id="bulkPrintBtn" style="display: none; background: linear-gradient(135deg, #667eea, #764ba2);">
+                    <i class="fas fa-print"></i> Print Selected
                 </button>
             </form>
             
@@ -436,17 +451,18 @@ function changePerPage(perPage) {
 document.getElementById('selectAll')?.addEventListener('change', function() {
     const checkboxes = document.querySelectorAll('.qr-checkbox');
     checkboxes.forEach(cb => cb.checked = this.checked);
-    toggleBulkDeleteBtn();
+    toggleBulkActionBtns();
 });
 
 // Show/hide bulk delete button
 document.querySelectorAll('.qr-checkbox').forEach(cb => {
-    cb.addEventListener('change', toggleBulkDeleteBtn);
+    cb.addEventListener('change', toggleBulkActionBtns);
 });
 
-function toggleBulkDeleteBtn() {
+function toggleBulkActionBtns() {
     const checked = document.querySelectorAll('.qr-checkbox:checked').length;
     document.getElementById('bulkDeleteBtn').style.display = checked > 0 ? 'block' : 'none';
+    document.getElementById('bulkPrintBtn').style.display = checked > 0 ? 'block' : 'none';
 }
 
 // Bulk delete confirmation
@@ -465,6 +481,157 @@ function confirmBulkDelete() {
     if (confirm(`Are you sure you want to delete ${checked} QR code(s)?`)) {
         document.getElementById('bulkDeleteForm').submit();
     }
+}
+
+// Open bulk print dialog
+function openBulkPrintDialog() {
+    const checked = document.querySelectorAll('.qr-checkbox:checked');
+    if (checked.length === 0) {
+        const msg = document.createElement('div');
+        msg.textContent = 'No QR codes selected. Please select at least one QR code to print.';
+        msg.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #ef4444; color: white; padding: 15px 20px; border-radius: 8px; z-index: 9999; box-shadow: 0 4px 6px rgba(0,0,0,0.1);';
+        document.body.appendChild(msg);
+        setTimeout(() => msg.remove(), 3000);
+        return;
+    }
+    
+    // Get selected QR IDs
+    const qrIds = Array.from(checked).map(cb => cb.value);
+    
+    // Create and show print options dialog
+    showPrintDialog(qrIds);
+}
+
+// Show print dialog with options
+function showPrintDialog(qrIds) {
+    const dialog = document.createElement('div');
+    dialog.id = 'printDialog';
+    dialog.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 10000; backdrop-filter: blur(5px);';
+    
+    dialog.innerHTML = `
+        <div style="background: var(--card-bg); border-radius: 16px; padding: 30px; max-width: 500px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.5); animation: slideIn 0.3s ease-out;">
+            <h3 style="margin: 0 0 20px 0; display: flex; align-items: center; gap: 10px; color: var(--text-primary);">
+                <i class="fas fa-print" style="color: var(--purple);"></i>
+                Bulk Print QR Codes (${qrIds.length} selected)
+            </h3>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary);">
+                    <i class="fas fa-file"></i> Page Size
+                </label>
+                <select id="pageSize" class="form-select" style="width: 100%;">
+                    <option value="a4">A4 (210 × 297 mm)</option>
+                    <option value="letter">Letter (8.5 × 11 in)</option>
+                    <option value="a3">A3 (297 × 420 mm)</option>
+                    <option value="legal">Legal (8.5 × 14 in)</option>
+                </select>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary);">
+                    <i class="fas fa-expand-arrows-alt"></i> QR Code Size
+                </label>
+                <select id="qrSize" class="form-select" style="width: 100%;">
+                    <option value="small">Small (4 per row)</option>
+                    <option value="medium" selected>Medium (3 per row)</option>
+                    <option value="large">Large (2 per row)</option>
+                    <option value="xlarge">Extra Large (1 per row)</option>
+                </select>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary);">
+                    <i class="fas fa-ruler-combined"></i> Margins
+                </label>
+                <select id="margins" class="form-select" style="width: 100%;">
+                    <option value="normal" selected>Normal (15mm)</option>
+                    <option value="small">Small (10mm)</option>
+                    <option value="large">Large (20mm)</option>
+                </select>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 12px; background: rgba(102, 126, 234, 0.1); border-radius: 8px; border: 1px solid rgba(102, 126, 234, 0.3);">
+                    <input type="checkbox" id="removeBg" style="width: 18px; height: 18px; cursor: pointer;">
+                    <div>
+                        <div style="font-weight: 600; color: var(--text-primary);">
+                            <i class="fas fa-eraser"></i> Remove Background
+                        </div>
+                        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 2px;">
+                            Print QR codes without background colors
+                        </div>
+                    </div>
+                </label>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 12px; background: rgba(102, 126, 234, 0.1); border-radius: 8px; border: 1px solid rgba(102, 126, 234, 0.3);">
+                    <input type="checkbox" id="showLabels" checked style="width: 18px; height: 18px; cursor: pointer;">
+                    <div>
+                        <div style="font-weight: 600; color: var(--text-primary);">
+                            <i class="fas fa-tag"></i> Show Labels
+                        </div>
+                        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 2px;">
+                            Print content text below each QR code
+                        </div>
+                    </div>
+                </label>
+            </div>
+            
+            <div style="display: flex; gap: 10px; margin-top: 25px;">
+                <button onclick="closePrintDialog()" class="btn" style="flex: 1; background: var(--bg-secondary); color: var(--text-primary);">
+                    Cancel
+                </button>
+                <button onclick="doBulkPrint()" class="btn btn-primary" style="flex: 1; background: linear-gradient(135deg, #667eea, #764ba2);">
+                    <i class="fas fa-print"></i> Print
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(dialog);
+    
+    // Store QR IDs in a data attribute
+    dialog.dataset.qrIds = JSON.stringify(qrIds);
+    
+    // Close on background click
+    dialog.addEventListener('click', function(e) {
+        if (e.target === dialog) {
+            closePrintDialog();
+        }
+    });
+}
+
+function closePrintDialog() {
+    const dialog = document.getElementById('printDialog');
+    if (dialog) {
+        dialog.remove();
+    }
+}
+
+function doBulkPrint() {
+    const dialog = document.getElementById('printDialog');
+    const qrIds = JSON.parse(dialog.dataset.qrIds);
+    const pageSize = document.getElementById('pageSize').value;
+    const qrSize = document.getElementById('qrSize').value;
+    const margins = document.getElementById('margins').value;
+    const removeBg = document.getElementById('removeBg').checked;
+    const showLabels = document.getElementById('showLabels').checked;
+    
+    // Build URL with parameters
+    const params = new URLSearchParams({
+        ids: qrIds.join(','),
+        pageSize: pageSize,
+        qrSize: qrSize,
+        margins: margins,
+        removeBg: removeBg ? '1' : '0',
+        showLabels: showLabels ? '1' : '0'
+    });
+    
+    // Open print page in new window
+    window.open('/projects/qr/bulk-print?' + params.toString(), '_blank');
+    
+    closePrintDialog();
 }
 
 // Update campaign assignment

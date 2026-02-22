@@ -174,6 +174,12 @@ switch ($segments[0]) {
         }
         break;
         
+    case 'bulk-print':
+        require_once PROJECT_PATH . '/controllers/QRController.php';
+        $controller = new \Projects\QR\Controllers\QRController();
+        $controller->bulkPrint();
+        break;
+        
     case 'bulk':
         require_once PROJECT_PATH . '/controllers/BulkController.php';
         $controller = new \Projects\QR\Controllers\BulkController();
