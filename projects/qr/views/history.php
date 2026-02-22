@@ -25,10 +25,39 @@ if ($userId) {
 
 /* Mobile Responsive Styles */
 @media (max-width: 768px) {
+    /* Make header responsive */
+    .page-header {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 1rem !important;
+    }
+    
+    .page-header h1 {
+        font-size: 1.5rem !important;
+    }
+    
+    .page-header .btn {
+        width: 100% !important;
+        justify-content: center !important;
+    }
+    
     /* Make controls stack vertically on mobile */
     .controls-wrapper {
         flex-direction: column !important;
         align-items: stretch !important;
+        gap: 1rem !important;
+    }
+    
+    .controls-wrapper > * {
+        width: 100% !important;
+    }
+    
+    .controls-wrapper form {
+        width: 100% !important;
+    }
+    
+    .controls-wrapper > div {
+        justify-content: space-between !important;
     }
     
     /* Enhanced mobile table scrolling */
@@ -46,6 +75,11 @@ if ($userId) {
         font-size: 0.875rem;
     }
     
+    .history-table th,
+    .history-table td {
+        padding: 0.5rem !important;
+    }
+    
     /* Add scroll hint text */
     .scroll-hint {
         display: block !important;
@@ -53,42 +87,31 @@ if ($userId) {
         padding: 0.5rem;
         font-size: 0.75rem;
         color: var(--text-secondary);
-        background: var(--background-tertiary);
+        background: rgba(153, 69, 255, 0.1);
+        border: 1px solid rgba(153, 69, 255, 0.2);
         border-radius: 0.375rem;
         margin-bottom: 1rem;
-    }
-    
-    /* Stack action buttons vertically */
-    .action-buttons {
-        flex-direction: column !important;
-        align-items: stretch !important;
-    }
-    
-    .action-buttons > * {
-        width: 100% !important;
-        justify-content: center;
     }
     
     /* Make pagination stack on mobile */
     .pagination-wrapper {
         flex-direction: column !important;
         gap: 15px !important;
+        align-items: center !important;
+    }
+    
+    .pagination-controls {
+        flex-wrap: wrap !important;
+        justify-content: center !important;
     }
     
     /* Adjust button sizes for mobile */
     .btn-sm {
-        padding: 0.5rem !important;
-        font-size: 0.875rem !important;
+        padding: 0.5rem 0.75rem !important;
+        font-size: 0.8rem !important;
     }
     
-    /* Hide less important columns on small screens */
-    @media (max-width: 640px) {
-        .hide-on-mobile {
-            display: none !important;
-        }
-    }
-    
-    /* Mobile optimization for action buttons */
+    /* Mobile optimization for action buttons in table */
     .icon-only-btn {
         min-width: 2rem !important;
         width: 2rem !important;
@@ -109,6 +132,26 @@ if ($userId) {
     .action-buttons {
         gap: 0.25rem !important;
         flex-wrap: nowrap !important;
+    }
+}
+
+/* Small mobile specific */
+@media (max-width: 640px) {
+    .hide-on-mobile {
+        display: none !important;
+    }
+    
+    .page-header h1 {
+        font-size: 1.25rem !important;
+    }
+    
+    .history-table {
+        font-size: 0.75rem !important;
+    }
+    
+    .btn-sm {
+        padding: 0.375rem 0.5rem !important;
+        font-size: 0.75rem !important;
     }
 }
 
@@ -198,7 +241,7 @@ if ($userId) {
 }
 </style>
 
-<div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: nowrap; gap: 15px;">
+<div class="page-header" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: nowrap; gap: 15px;">
     <h1 style="margin: 0;">QR Code History</h1>
     <a href="/projects/qr" class="btn btn-secondary">
         <i class="fas fa-arrow-left"></i> Back to Dashboard

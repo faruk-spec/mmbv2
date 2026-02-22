@@ -26,11 +26,95 @@
     border-collapse: collapse;
 }
 
+/* Compact Stat Card Styles with Rounded Squares */
+.stat-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    transition: all 0.3s ease;
+}
+
+.stat-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+    flex-shrink: 0;
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-content h3 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0 0 0.25rem 0;
+    color: var(--text-primary);
+}
+
+.stat-content p {
+    font-size: 0.875rem;
+    margin: 0;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+/* Date filter responsive */
+#dateFilterForm {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-md);
+    align-items: end;
+}
+
+@media (max-width: 768px) {
+    #dateFilterForm {
+        flex-direction: column;
+        align-items: stretch !important;
+    }
+    
+    #dateFilterForm > div {
+        width: 100% !important;
+        flex: none !important;
+    }
+    
+    #dateFilterForm button {
+        width: 100% !important;
+    }
+}
+
 /* Mobile Responsive Styles for Analytics */
 @media (max-width: 768px) {
-    /* Stack stat cards vertically on mobile */
+    /* Grid for stats - 2 columns on tablet */
     .grid-3 {
-        grid-template-columns: 1fr !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+    
+    /* Compact stat cards for mobile */
+    .stat-card {
+        padding: 0.75rem;
+        gap: 0.75rem;
+    }
+    
+    .stat-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+        font-size: 1.25rem;
+    }
+    
+    .stat-content h3 {
+        font-size: 1.5rem;
+    }
+    
+    .stat-content p {
+        font-size: 0.75rem;
     }
     
     /* Make controls responsive */
@@ -65,21 +149,9 @@
         flex-wrap: nowrap;
     }
     
-    /* Hide less important columns on small screens */
-    @media (max-width: 640px) {
-        .hide-on-mobile {
-            display: none !important;
-        }
-        
-        .stat-card {
-            padding: 1rem !important;
-        }
-        
-        .stat-icon {
-            width: 40px !important;
-            height: 40px !important;
-            font-size: 1.25rem !important;
-        }
+    /* Charts responsive */
+    .grid-2 {
+        grid-template-columns: 1fr !important;
     }
     
     /* Mobile optimization for action buttons */
@@ -98,6 +170,38 @@
     td:last-child {
         white-space: nowrap !important;
     }
+}
+
+/* Small mobile - single column */
+@media (max-width: 640px) {
+    .grid-3 {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .hide-on-mobile {
+        display: none !important;
+    }
+    
+    .stat-card {
+        padding: 0.625rem !important;
+        gap: 0.625rem !important;
+    }
+    
+    .stat-icon {
+        width: 38px !important;
+        height: 38px !important;
+        font-size: 1.125rem !important;
+        border-radius: 8px !important;
+    }
+    
+    .stat-content h3 {
+        font-size: 1.25rem !important;
+    }
+    
+    .stat-content p {
+        font-size: 0.7rem !important;
+    }
+}
 }
 
 /* Improve button styling */
