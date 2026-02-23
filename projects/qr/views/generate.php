@@ -1,6 +1,21 @@
 <?php
 // Production-Ready QR Code Generator with AI Design
 // Futuristic UI with theme integration and live preview
+
+// Resolve feature availability — $userFeatures is passed from the controller via
+// QRFeatureService::getFeatures(). The service itself guarantees a populated array
+// (defaults to role features; falls back to all-allowed only when no configuration
+// exists at all, i.e., a fresh install). The ?? true fallback here is a defence-in-depth
+// guard so a view rendering error never silently blocks a user from a blank form.
+$canDynamic       = (bool) ($userFeatures['dynamic_qr']          ?? true);
+$canPassword      = (bool) ($userFeatures['password_protection']  ?? true);
+$canExpiry        = (bool) ($userFeatures['expiry_date']          ?? true);
+$canScanLimit     = (bool) ($userFeatures['scan_limit']           ?? true);
+$canQrLabel       = (bool) ($userFeatures['qr_label']             ?? true);
+$canContentType   = (bool) ($userFeatures['content_type']         ?? true);
+$canDesignPresets = (bool) ($userFeatures['design_presets']       ?? true);
+$canLogoRemoveBg  = (bool) ($userFeatures['logo_remove_bg']       ?? true);
+$canUtm           = (bool) ($userFeatures['utm_tracking']         ?? true);
 ?>
 
 <?php if (isset($preset) && $preset): ?>
@@ -1125,19 +1140,6 @@
                 <i class="fas fa-rocket"></i> Advanced Features
             </h4>
             
-            <?php
-            // Resolve feature availability — $userFeatures passed from controller;
-            // fall back to all-allowed so the form is never silently broken.
-            $canDynamic      = (bool) ($userFeatures['dynamic_qr']          ?? true);
-            $canPassword     = (bool) ($userFeatures['password_protection']  ?? true);
-            $canExpiry       = (bool) ($userFeatures['expiry_date']          ?? true);
-            $canScanLimit    = (bool) ($userFeatures['scan_limit']           ?? true);
-            $canQrLabel      = (bool) ($userFeatures['qr_label']             ?? true);
-            $canContentType  = (bool) ($userFeatures['content_type']         ?? true);
-            $canDesignPresets= (bool) ($userFeatures['design_presets']       ?? true);
-            $canLogoRemoveBg = (bool) ($userFeatures['logo_remove_bg']       ?? true);
-            ?>
-
             <div class="feature-toggle <?= !$canDynamic ? 'feature-locked' : '' ?>">
                 <label class="toggle-label">
                     <?php if ($canDynamic): ?>
@@ -1210,7 +1212,6 @@
 
             <!-- UTM Parameters (URL type only) — moved here after Protection -->
             <div id="utmGroup" style="display:none;margin-top:14px;">
-                <?php $canUtm = (bool) ($userFeatures['utm_tracking'] ?? true); ?>
                 <h4 class="subsection-title collapsible-header <?= !$canUtm ? 'feature-locked' : '' ?>" <?= $canUtm ? "onclick=\"toggleSection('utmOptions')\"" : '' ?> style="margin-top:0;cursor:<?= $canUtm ? 'pointer' : 'default' ?>">
                     <span><i class="fas fa-chart-line"></i> UTM Tracking Parameters
                         <?php if (!$canUtm): ?>
