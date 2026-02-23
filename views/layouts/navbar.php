@@ -251,7 +251,7 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
                             <div style="padding:20px;text-align:center;color:var(--text-secondary);font-size:13px;">Loading…</div>
                         </div>
                         <div class="notif-panel-footer">
-                            <a href="/dashboard" style="font-size:12px;color:var(--cyan);">View Dashboard</a>
+                            <a href="/notifications" style="font-size:12px;color:var(--cyan);">View All Notifications</a>
                         </div>
                     </div>
                 </div>

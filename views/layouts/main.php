@@ -934,7 +934,7 @@ try {
     <main class="main">
         <?php 
         // Check if this is a dashboard page that needs sidebar
-        $isDashboardPage = isset($title) && in_array($title, ['Dashboard', 'Profile', 'Security Settings', 'Activity Log', 'Settings', 'My Plans', 'Subscribe to Plan']);
+        $isDashboardPage = isset($title) && in_array($title, ['Dashboard', 'Profile', 'Security Settings', 'Activity Log', 'Settings', 'My Plans', 'Subscribe to Plan', 'All Notifications']);
         ?>
         
         <?php if ($isDashboardPage): ?>

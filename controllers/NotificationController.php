@@ -48,7 +48,29 @@ class NotificationController extends BaseController
     }
 
     /**
-     * GET /api/notifications
+     * GET /notifications
+     * Renders the full notifications page for the logged-in user.
+     */
+    public function viewAll(): void
+    {
+        $userId        = Auth::id();
+        $notifications = Notification::getForUser($userId, false, 100);
+
+        foreach ($notifications as &$n) {
+            $n['data'] = !empty($n['data']) ? json_decode($n['data'], true) : null;
+        }
+        unset($n);
+
+        // Mark all as read now that the user is viewing them
+        Notification::markAllAsRead($userId);
+
+        $this->view('notifications/index', [
+            'title'         => 'All Notifications',
+            'notifications' => $notifications,
+        ]);
+    }
+
+    /**
      * Returns the latest 15 notifications for the logged-in user as JSON.
      */
     public function getList(): void

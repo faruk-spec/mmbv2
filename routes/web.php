@@ -59,6 +59,7 @@ $router->post('/plans/subscribe/{slug}', 'PlansController@processSubscribe', ['a
 $router->get('/api/notifications', 'NotificationController@getList', ['auth']);
 $router->post('/api/notifications/mark-read', 'NotificationController@markRead', ['auth']);
 $router->post('/api/notifications/mark-all-read', 'NotificationController@markAllRead', ['auth']);
+$router->get('/notifications', 'NotificationController@viewAll', ['auth']);
 
 // 2FA routes
 // Two-Factor Authentication routes
