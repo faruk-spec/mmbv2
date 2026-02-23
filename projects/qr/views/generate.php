@@ -49,11 +49,14 @@
             <?php endif; ?>
             
             <!-- QR Type Selection -->
-            <div class="form-group">
+            <div class="form-group <?= !$canContentType ? 'feature-locked' : '' ?>">
                 <label class="form-label">
                     <i class="fas fa-tag"></i> Content Type
+                    <?php if (!$canContentType): ?>
+                    <span class="badge-plan-lock"><i class="fas fa-crown"></i> Upgrade</span>
+                    <?php endif; ?>
                 </label>
-                <select name="type" class="form-select" id="qrType">
+                <select name="type" class="form-select" id="qrType" <?= !$canContentType ? 'disabled' : '' ?>>
                     <optgroup label="Basic">
                         <option value="url">🌐 URL / Website</option>
                         <option value="text">📄 Plain Text</option>
@@ -85,6 +88,9 @@
                         <option value="crypto">₿ Cryptocurrency</option>
                     </optgroup>
                 </select>
+                <?php if (!$canContentType): ?>
+                <small style="color:var(--text-secondary);">Content type selection is locked. Upgrade your plan to unlock.</small>
+                <?php endif; ?>
             </div>
             
             <!-- Simple Content Field -->
@@ -661,11 +667,17 @@
             <div class="divider"></div>
             
             <!-- Design Customization with Visual Presets -->
-            <h4 class="subsection-title collapsible-header" onclick="toggleSection('designPresets')">
-                <span><i class="fas fa-shapes"></i> Design Presets</span>
+            <h4 class="subsection-title collapsible-header <?= !$canDesignPresets ? 'feature-locked' : '' ?>"
+                <?= $canDesignPresets ? "onclick=\"toggleSection('designPresets')\"" : '' ?>
+                style="cursor:<?= $canDesignPresets ? 'pointer' : 'default' ?>">
+                <span><i class="fas fa-shapes"></i> Design Presets
+                    <?php if (!$canDesignPresets): ?>
+                    <span class="badge-plan-lock" style="margin-left:8px;"><i class="fas fa-crown"></i> Upgrade</span>
+                    <?php endif; ?>
+                </span>
                 <i class="fas fa-chevron-right collapse-icon"></i>
             </h4>
-            <div id="designPresets" class="collapsible-content collapsed">
+            <div id="designPresets" class="collapsible-content collapsed" <?= !$canDesignPresets ? 'style="pointer-events:none;opacity:.45;"' : '' ?>>
             
             <!-- Dot Pattern Presets -->
             <div class="form-group">
@@ -1031,13 +1043,21 @@
                 </div>
                 
                 <!-- Remove Background Toggle -->
-                <div class="feature-toggle">
+                <div class="feature-toggle <?= !$canLogoRemoveBg ? 'feature-locked' : '' ?>">
                     <label class="toggle-label">
+                        <?php if ($canLogoRemoveBg): ?>
                         <input type="checkbox" name="logo_remove_bg" id="logoRemoveBg" value="1" class="toggle-input">
+                        <?php else: ?>
+                        <input type="checkbox" id="logoRemoveBg" class="toggle-input" disabled>
+                        <?php endif; ?>
                         <span class="toggle-slider"></span>
                         <span class="toggle-text">
                             <strong>Remove Background Behind Logo</strong>
+                            <?php if ($canLogoRemoveBg): ?>
                             <small>Clear area behind logo for better visibility</small>
+                            <?php else: ?>
+                            <small class="feature-upgrade-note"><i class="fas fa-lock"></i> Upgrade to unlock</small>
+                            <?php endif; ?>
                         </span>
                     </label>
                 </div>
@@ -1108,10 +1128,14 @@
             <?php
             // Resolve feature availability — $userFeatures passed from controller;
             // fall back to all-allowed so the form is never silently broken.
-            $canDynamic   = (bool) ($userFeatures['dynamic_qr']          ?? true);
-            $canPassword  = (bool) ($userFeatures['password_protection']  ?? true);
-            $canExpiry    = (bool) ($userFeatures['expiry_date']          ?? true);
-            $canScanLimit = (bool) ($userFeatures['scan_limit']           ?? true);
+            $canDynamic      = (bool) ($userFeatures['dynamic_qr']          ?? true);
+            $canPassword     = (bool) ($userFeatures['password_protection']  ?? true);
+            $canExpiry       = (bool) ($userFeatures['expiry_date']          ?? true);
+            $canScanLimit    = (bool) ($userFeatures['scan_limit']           ?? true);
+            $canQrLabel      = (bool) ($userFeatures['qr_label']             ?? true);
+            $canContentType  = (bool) ($userFeatures['content_type']         ?? true);
+            $canDesignPresets= (bool) ($userFeatures['design_presets']       ?? true);
+            $canLogoRemoveBg = (bool) ($userFeatures['logo_remove_bg']       ?? true);
             ?>
 
             <div class="feature-toggle <?= !$canDynamic ? 'feature-locked' : '' ?>">
@@ -1224,9 +1248,20 @@
             </div>
 
             <!-- QR Label / Note (universal, always shown) -->
-            <div class="form-group" style="margin-top:14px;">
-                <label class="form-label"><i class="fas fa-tag"></i> QR Label / Note <small style="font-weight:normal;color:var(--text-secondary);">(optional, for your own reference)</small></label>
-                <input type="text" name="qr_label" id="qrLabel" class="form-input" placeholder="e.g. Product A flyer, Store entrance..." maxlength="120">
+            <div class="form-group <?= !$canQrLabel ? 'feature-locked' : '' ?>" style="margin-top:14px;">
+                <label class="form-label">
+                    <i class="fas fa-tag"></i> QR Label / Note
+                    <small style="font-weight:normal;color:var(--text-secondary);">(optional, for your own reference)</small>
+                    <?php if (!$canQrLabel): ?>
+                    <span class="badge-plan-lock"><i class="fas fa-crown"></i> Upgrade</span>
+                    <?php endif; ?>
+                </label>
+                <input type="text" name="qr_label" id="qrLabel" class="form-input"
+                       placeholder="e.g. Product A flyer, Store entrance..." maxlength="120"
+                       <?= !$canQrLabel ? 'disabled' : '' ?>>
+                <?php if (!$canQrLabel): ?>
+                <small style="color:var(--text-secondary);">QR Label is not available on your current plan.</small>
+                <?php endif; ?>
             </div>
             
             <div class="divider"></div>

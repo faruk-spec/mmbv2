@@ -75,6 +75,21 @@ details summary:hover { color:var(--cyan); }
 
     <!-- Per-user feature toggles (shown after user is selected) -->
     <div id="userFeaturePanel">
+        <!-- USE PLAN SETTINGS master toggle -->
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(0,212,255,.06);border:1px solid rgba(0,212,255,.2);border-radius:8px;margin-bottom:14px;">
+            <div>
+                <strong style="font-size:13px;"><i class="fas fa-crown" style="color:var(--cyan);margin-right:6px;"></i> Use Plan Settings</strong>
+                <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">
+                    <span id="usePlanHint">ON = plan features apply (overrides disabled) &bull; OFF = custom overrides apply (plan ignored)</span>
+                </div>
+            </div>
+            <label class="toggle-switch" title="Use Plan Settings">
+                <input type="checkbox" id="usePlanToggle" checked
+                       onchange="setUsePlanMode(document.getElementById('featureUserId').value, this)">
+                <span class="toggle-slider"></span>
+            </label>
+        </div>
+
         <p class="section-title" style="margin-bottom:12px;">Effective Feature Access <small style="font-size:12px;font-weight:400;color:var(--text-secondary);">(resolved: role &rarr; plan &rarr; per-user)</small></p>
         <div class="feat-grid" id="userFeatureGrid">
             <?php foreach ($allFeatures as $fk => $flabel): ?>
@@ -90,7 +105,8 @@ details summary:hover { color:var(--cyan); }
         </div>
         <p style="margin-top:12px;font-size:11px;color:var(--text-secondary);">
             <i class="fas fa-info-circle"></i>
-            Toggles save instantly as per-user overrides. They always take the highest priority.
+            When <strong>Use Plan Settings</strong> is ON, toggles show effective plan+role features (read-only).
+            Switch it OFF to enable per-user custom overrides.
         </p>
     </div>
 </div>
@@ -253,7 +269,16 @@ function loadUserFeatures(userId) {
         .then(r => r.json())
         .then(data => {
             if (data.success) {
-                applyFeaturesToUI(data.features);
+                const usePlan = data.use_plan !== false; // default true
+                document.getElementById('usePlanToggle').checked = usePlan;
+                if (usePlan) {
+                    // Plan mode: show resolved features, disable toggles
+                    applyFeaturesToUI(data.features, true);
+                } else {
+                    // Override mode: show raw overrides, enable toggles
+                    applyFeaturesToUI(data.raw_overrides || {}, false);
+                }
+                updateFeatureGridState(usePlan);
                 panel.style.display = 'block';
             } else {
                 showFeedback('Could not load user features.', false);
@@ -262,11 +287,51 @@ function loadUserFeatures(userId) {
         .catch(() => showFeedback('Network error loading features.', false));
 }
 
-function applyFeaturesToUI(features) {
+function applyFeaturesToUI(features, readonly) {
+    // Set all checkboxes to false first
+    document.querySelectorAll('#userFeatureGrid input[type="checkbox"]').forEach(cb => {
+        cb.checked = false;
+    });
+    // Apply provided values
     Object.keys(features).forEach(fk => {
         const cb = document.getElementById('feat_' + fk);
         if (cb) cb.checked = !!features[fk];
     });
+}
+
+/**
+ * Enable or disable the per-feature toggles based on plan mode.
+ * In plan mode (usePlan=true): toggles are disabled (plan controls them).
+ * In override mode (usePlan=false): toggles are enabled.
+ */
+function updateFeatureGridState(usePlan) {
+    document.querySelectorAll('#userFeatureGrid input[type="checkbox"]').forEach(cb => {
+        cb.disabled = usePlan;
+        cb.closest('.feat-row').style.opacity = usePlan ? '0.55' : '1';
+    });
+}
+
+function setUsePlanMode(userId, checkbox) {
+    if (!userId) { showFeedback('Please select a user first.', false); checkbox.checked = !checkbox.checked; return; }
+    const enabled = checkbox.checked;
+    const fd = new FormData();
+    fd.append('user_id', userId);
+    fd.append('enabled', enabled ? '1' : '0');
+    fd.append('_csrf_token', csrfToken);
+
+    fetch('/admin/qr/roles/set-use-plan', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showFeedback(enabled ? '✓ Plan mode ON — plan features applied' : '✓ Override mode ON — custom overrides apply', true);
+                // Reload features for this user to update the grid
+                loadUserFeatures(userId);
+            } else {
+                checkbox.checked = !enabled;
+                showFeedback('Error: ' + (data.message || 'Unknown error'), false);
+            }
+        })
+        .catch(() => { checkbox.checked = !enabled; showFeedback('Network error — please retry.', false); });
 }
 
 function applyUserFeature(userId, feature, checkbox) {

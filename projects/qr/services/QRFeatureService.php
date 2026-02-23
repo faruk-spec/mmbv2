@@ -45,6 +45,10 @@ class QRFeatureService
         'export_data',
         'scan_limit',
         'utm_tracking',
+        'qr_label',
+        'content_type',
+        'design_presets',
+        'logo_remove_bg',
     ];
 
     public function __construct()
@@ -56,14 +60,16 @@ class QRFeatureService
      * Resolve the full effective feature map for a user.
      * Returns ['feature_key' => bool, ...]
      *
-     * Permission resolution order (lowest → highest priority):
-     *   1. Role features  — base defaults for the user's role
-     *   2. Plan features  — active subscription overlays role (plan beats role)
-     *   3. User overrides — per-user admin grants (always final)
+     * Two modes, controlled by the '_use_plan' flag in qr_user_features:
      *
-     * When NO configuration exists at all (no role rows, no plan, no user
-     * overrides) → all features are ALLOWED (permissive default so the
-     * system works out-of-the-box before an admin configures anything).
+     *   Plan mode (default / _use_plan = 1):
+     *     role features → plan features overlay → per-user overrides SKIPPED
+     *
+     *   Override mode (_use_plan = 0):
+     *     role features → plan SKIPPED → per-user overrides overlay
+     *
+     * When NO configuration exists at all → all features ALLOWED (permissive
+     * default so the system works out-of-the-box before admin configures anything).
      */
     public function getFeatures(int $userId): array
     {
@@ -71,7 +77,7 @@ class QRFeatureService
         $features = array_fill_keys(self::ALL_FEATURES, false);
         $hasAnyConfig = false;
 
-        // Layer 1: Role features (base)
+        // Layer 1: Role features (always applied as base)
         $role = $this->getUserRole($userId);
         if ($role) {
             $roleFeatures = $this->getRoleFeatures($role);
@@ -85,30 +91,34 @@ class QRFeatureService
             }
         }
 
-        // Layer 2: Plan features (subscription overrides role)
-        $planFeatures = $this->getPlanFeatures($userId);
-        if (!empty($planFeatures)) {
-            $hasAnyConfig = true;
-            foreach ($planFeatures as $key => $val) {
-                if (array_key_exists($key, $features)) {
-                    $features[$key] = (bool) $val;
+        // Determine mode
+        $usePlanMode = $this->getUserPlanMode($userId);
+
+        if ($usePlanMode) {
+            // Layer 2: Plan features override role (user overrides skipped)
+            $planFeatures = $this->getPlanFeatures($userId);
+            if (!empty($planFeatures)) {
+                $hasAnyConfig = true;
+                foreach ($planFeatures as $key => $val) {
+                    if (array_key_exists($key, $features)) {
+                        $features[$key] = (bool) $val;
+                    }
                 }
             }
-        }
-
-        // Layer 3: Per-user overrides (highest priority)
-        $userOverrides = $this->getUserOverrides($userId);
-        if (!empty($userOverrides)) {
-            $hasAnyConfig = true;
-            foreach ($userOverrides as $key => $val) {
-                if (array_key_exists($key, $features)) {
-                    $features[$key] = (bool) $val;
+        } else {
+            // Layer 3: Per-user overrides override role (plan skipped)
+            $userOverrides = $this->getUserOverrides($userId);
+            if (!empty($userOverrides)) {
+                $hasAnyConfig = true;
+                foreach ($userOverrides as $key => $val) {
+                    if (array_key_exists($key, $features)) {
+                        $features[$key] = (bool) $val;
+                    }
                 }
             }
         }
 
         // If no configuration exists at all, allow everything (permissive default).
-        // This ensures features work out-of-the-box before an admin configures plans/roles.
         if (!$hasAnyConfig) {
             return array_fill_keys(self::ALL_FEATURES, true);
         }
@@ -168,6 +178,17 @@ class QRFeatureService
                  LIMIT 1",
                 [$userId]
             );
+
+            // Fallback: if user has no active subscription, apply the 'free' default plan
+            // so that plan-level feature toggles always affect users without subscriptions.
+            if (!$row || empty($row['features'])) {
+                $row = $this->db->fetch(
+                    "SELECT features FROM qr_subscription_plans
+                     WHERE slug IN ('free', 'default') AND status = 'active'
+                     ORDER BY price ASC LIMIT 1"
+                );
+            }
+
             if (!$row || empty($row['features'])) {
                 return [];
             }
@@ -182,6 +203,31 @@ class QRFeatureService
         } catch (\Exception $e) {
             Logger::error('QRFeatureService::getPlanFeatures error: ' . $e->getMessage());
             return [];
+        }
+    }
+
+    /**
+     * Returns true when the user is in "plan mode" (default):
+     *   - plan features overlay role defaults; per-user overrides are skipped
+     * Returns false when the user is in "custom override mode":
+     *   - per-user overrides overlay role defaults; plan features are skipped
+     *
+     * Stored as feature = '_use_plan' in qr_user_features.
+     * Missing row = true (default to plan mode).
+     */
+    private function getUserPlanMode(int $userId): bool
+    {
+        try {
+            $row = $this->db->fetch(
+                "SELECT enabled FROM qr_user_features WHERE user_id = ? AND feature = '_use_plan' LIMIT 1",
+                [$userId]
+            );
+            if ($row === null || $row === false) {
+                return true; // default: use plan settings
+            }
+            return (bool) $row['enabled'];
+        } catch (\Exception $e) {
+            return true; // default to plan mode on error
         }
     }
 
@@ -218,7 +264,7 @@ class QRFeatureService
     {
         try {
             $rows = $this->db->fetchAll(
-                "SELECT feature, enabled FROM qr_user_features WHERE user_id = ?",
+                "SELECT feature, enabled FROM qr_user_features WHERE user_id = ? AND feature != '_use_plan'",
                 [$userId]
             );
             $result = [];

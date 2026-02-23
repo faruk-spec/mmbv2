@@ -132,6 +132,12 @@ class QRAdminController extends BaseController
             'ai_design'          => 0,
             'password_protection'=> 1,
             'expiry_date'        => 1,
+            'scan_limit'         => 1,
+            'utm_tracking'       => 1,
+            'qr_label'           => 1,
+            'content_type'       => 1,
+            'design_presets'     => 1,
+            'logo_remove_bg'     => 1,
             'campaigns'          => 1,
             'api_access'         => 0,
             'whitelabel'         => 0,
@@ -144,8 +150,6 @@ class QRAdminController extends BaseController
             'frame_styles'       => 1,
             'priority_support'   => 0,
             'export_data'        => 0,
-            'scan_limit'         => 1,
-            'utm_tracking'       => 1,
         ];
 
         // project_admin (Manager) — all standard + bulk, export
@@ -995,9 +999,72 @@ class QRAdminController extends BaseController
         try {
             $svc      = new \Projects\QR\Services\QRFeatureService();
             $features = $svc->getFeatures($userId);
-            $this->json(['success' => true, 'features' => $features]);
+
+            // Raw per-user overrides (excluding _use_plan control key)
+            $overrideRows = $this->db->fetchAll(
+                "SELECT feature, enabled FROM qr_user_features WHERE user_id = ? AND feature != '_use_plan'",
+                [$userId]
+            );
+            $rawOverrides = [];
+            foreach ($overrideRows as $r) {
+                $rawOverrides[$r['feature']] = (bool) $r['enabled'];
+            }
+
+            // Plan-mode flag
+            $planModeRow = $this->db->fetch(
+                "SELECT enabled FROM qr_user_features WHERE user_id = ? AND feature = '_use_plan' LIMIT 1",
+                [$userId]
+            );
+            $usePlan = ($planModeRow === null || $planModeRow === false) ? true : (bool) $planModeRow['enabled'];
+
+            $this->json([
+                'success'      => true,
+                'features'     => $features,
+                'raw_overrides'=> $rawOverrides,
+                'use_plan'     => $usePlan,
+            ]);
         } catch (\Exception $e) {
             Logger::error('getUserFeaturesApi error: ' . $e->getMessage());
+            $this->json(['success' => false, 'message' => 'Server error.'], 500);
+        }
+    }
+
+    /**
+     * Set whether a user uses plan settings or custom per-user overrides.
+     * Stores as feature='_use_plan' in qr_user_features.
+     * POST /admin/qr/roles/set-use-plan
+     */
+    public function setUsePlanSettings(): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->json(['success' => false, 'message' => 'Invalid request.'], 403);
+            return;
+        }
+
+        $userId  = (int) $this->input('user_id', 0);
+        $enabled = (bool) $this->input('enabled', true);
+
+        if (!$userId) {
+            $this->json(['success' => false, 'message' => 'Invalid user.'], 400);
+            return;
+        }
+
+        try {
+            $this->db->query(
+                "INSERT INTO qr_user_features (user_id, feature, enabled, updated_at)
+                 VALUES (?, '_use_plan', ?, NOW())
+                 ON DUPLICATE KEY UPDATE enabled = VALUES(enabled), updated_at = NOW()",
+                [$userId, $enabled ? 1 : 0]
+            );
+
+            Logger::activity(Auth::id(), 'admin_qr_user_plan_mode_set', [
+                'user_id'  => $userId,
+                'use_plan' => $enabled,
+            ]);
+
+            $this->json(['success' => true, 'use_plan' => $enabled]);
+        } catch (\Exception $e) {
+            Logger::error('setUsePlanSettings error: ' . $e->getMessage());
             $this->json(['success' => false, 'message' => 'Server error.'], 500);
         }
     }
@@ -1076,6 +1143,12 @@ class QRAdminController extends BaseController
             'ai_design'           => 'AI-Powered Design',
             'password_protection' => 'Password Protection',
             'expiry_date'         => 'Expiry Date',
+            'scan_limit'          => 'Max Scan Limit',
+            'utm_tracking'        => 'UTM Tracking Parameters',
+            'qr_label'            => 'QR Label / Note',
+            'content_type'        => 'Content Type Selection',
+            'design_presets'      => 'Design Presets',
+            'logo_remove_bg'      => 'Remove Logo Background',
             'campaigns'           => 'Campaign Management',
             'api_access'          => 'API Access',
             'whitelabel'          => 'White-Label / Custom Domain',
@@ -1108,10 +1181,14 @@ class QRAdminController extends BaseController
             'expiry_date'         => 'Expiry Date',
             'scan_limit'          => 'Max Scan Limit',
             'utm_tracking'        => 'UTM Tracking Parameters',
+            'qr_label'            => 'QR Label / Note',
+            'content_type'        => 'Content Type Selection',
             // Design features
             'custom_colors'       => 'Custom Colors',
             'custom_logo'         => 'Custom Logo / Branding',
             'frame_styles'        => 'Frame Styles',
+            'design_presets'      => 'Design Presets',
+            'logo_remove_bg'      => 'Remove Logo Background',
             // Download formats
             'download_png'        => 'Download PNG',
             'download_svg'        => 'Download SVG',

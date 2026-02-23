@@ -117,10 +117,14 @@ input:checked + .toggle-slider:before { transform:translateX(22px); }
                     'expiry_date'         => ['icon'=>'fas fa-calendar-times','label'=>'Expiry Date'],
                     'scan_limit'          => ['icon'=>'fas fa-eye-slash',     'label'=>'Max Scan Limit'],
                     'utm_tracking'        => ['icon'=>'fas fa-chart-bar',     'label'=>'UTM Tracking Parameters'],
+                    'qr_label'            => ['icon'=>'fas fa-tag',           'label'=>'QR Label / Note'],
+                    'content_type'        => ['icon'=>'fas fa-list-alt',      'label'=>'Content Type Selection'],
                     // Design
                     'custom_colors'       => ['icon'=>'fas fa-palette',       'label'=>'Custom Colors'],
                     'custom_logo'         => ['icon'=>'fas fa-image',         'label'=>'Custom Logo / Branding'],
                     'frame_styles'        => ['icon'=>'fas fa-border-all',    'label'=>'Frame Styles'],
+                    'design_presets'      => ['icon'=>'fas fa-shapes',        'label'=>'Design Presets'],
+                    'logo_remove_bg'      => ['icon'=>'fas fa-eraser',        'label'=>'Remove Logo Background'],
                     // Downloads
                     'download_png'        => ['icon'=>'fas fa-file-image',    'label'=>'Download PNG'],
                     'download_svg'        => ['icon'=>'fas fa-file-code',     'label'=>'Download SVG'],

@@ -39,6 +39,7 @@ $router->post('/admin/qr/roles/set-role-feature', 'Admin\\QRAdminController@setR
 $router->post('/admin/qr/roles/set-user-feature', 'Admin\\QRAdminController@setUserFeature', ['auth', 'admin']);
 $router->post('/admin/qr/roles/remove-user-features', 'Admin\\QRAdminController@removeUserFeatures', ['auth', 'admin']);
 $router->post('/admin/qr/roles/assign-plan', 'Admin\\QRAdminController@assignUserPlan', ['auth', 'admin']);
+$router->post('/admin/qr/roles/set-use-plan', 'Admin\\QRAdminController@setUsePlanSettings', ['auth', 'admin']);
 
 // User management
 $router->get('/admin/users', 'Admin\\UserController@index', ['auth', 'admin']);
