@@ -62,11 +62,24 @@ class Notification
     {
         try {
             $db = Database::getInstance();
-            
-            // Check if notifications table exists
-            // In production, create this table during installation
+
+            // Auto-create notifications table on first use so that notifications
+            // work even before NotificationController is ever visited.
+            $db->query("CREATE TABLE IF NOT EXISTS notifications (
+                id         INT AUTO_INCREMENT PRIMARY KEY,
+                user_id    INT NOT NULL,
+                type       VARCHAR(100) NOT NULL DEFAULT 'info',
+                message    TEXT NOT NULL,
+                data       TEXT NULL,
+                is_read    TINYINT(1) NOT NULL DEFAULT 0,
+                read_at    DATETIME NULL,
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_user_unread (user_id, is_read),
+                INDEX idx_user_created (user_id, created_at)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
             $table = 'notifications';
-            
+
             $result = $db->insert($table, [
                 'user_id' => $userId,
                 'type' => $type,

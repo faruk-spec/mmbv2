@@ -74,12 +74,12 @@ class QRAdminController extends BaseController
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             ");
 
-            // Seed default role-feature permissions if the table is empty.
-            // This runs once and ensures features work out-of-the-box.
-            $count = $this->db->fetchColumn("SELECT COUNT(*) FROM qr_role_features");
-            if ((int) $count === 0) {
-                $this->seedDefaultRoleFeatures();
-            }
+            // Seed default role-feature permissions using INSERT IGNORE.
+            // This runs on every admin panel load but only inserts MISSING rows
+            // (the UNIQUE KEY on role+feature prevents overwriting admin overrides).
+            // This ensures new features added to ALL_FEATURES are automatically
+            // propagated to existing roles without wiping custom settings.
+            $this->seedDefaultRoleFeatures();
         } catch (\Exception $e) {
             Logger::error('QRAdmin ensureTables error: ' . $e->getMessage());
         }
@@ -108,6 +108,8 @@ class QRAdminController extends BaseController
             'frame_styles'       => 1,
             'priority_support'   => 0,
             'export_data'        => 0,
+            'scan_limit'         => 1,
+            'utm_tracking'       => 1,
         ];
 
         // project_admin (Manager) — all standard + bulk, export
@@ -1034,15 +1036,31 @@ class QRAdminController extends BaseController
     private function getPlanFeatures(): array
     {
         return [
+            // QR type access
+            'static_qr'           => 'Static QR Codes',
+            'dynamic_qr'          => 'Dynamic QR Codes',
+            // Core features
             'analytics'           => 'Scan Analytics',
+            'campaigns'           => 'Campaign Management',
+            'password_protection' => 'Password Protection',
+            'expiry_date'         => 'Expiry Date',
+            'scan_limit'          => 'Max Scan Limit',
+            'utm_tracking'        => 'UTM Tracking Parameters',
+            // Design features
+            'custom_colors'       => 'Custom Colors',
+            'custom_logo'         => 'Custom Logo / Branding',
+            'frame_styles'        => 'Frame Styles',
+            // Download formats
+            'download_png'        => 'Download PNG',
+            'download_svg'        => 'Download SVG',
+            'download_pdf'        => 'Download PDF',
+            // Advanced / paid features
             'bulk'                => 'Bulk Generation',
             'ai'                  => 'AI Design',
-            'password_protection' => 'Password Protection',
-            'campaigns'           => 'Campaign Management',
             'api'                 => 'API Access',
             'whitelabel'          => 'White-Label / Custom Domain',
-            'priority_support'    => 'Priority Support',
             'team_roles'          => 'Team Roles',
+            'priority_support'    => 'Priority Support',
             'export_data'         => 'Export Scan Data',
         ];
     }

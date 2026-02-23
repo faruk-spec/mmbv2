@@ -107,16 +107,32 @@ input:checked + .toggle-slider:before { transform:translateX(22px); }
             <div class="grid grid-2" style="gap:0;">
                 <?php
                 $planFeatureLabels = [
-                    'analytics'           => ['icon'=>'fas fa-chart-line', 'label'=>'Scan Analytics'],
-                    'bulk'                => ['icon'=>'fas fa-layer-group', 'label'=>'Bulk Generation'],
-                    'ai'                  => ['icon'=>'fas fa-robot',       'label'=>'AI Design'],
-                    'password_protection' => ['icon'=>'fas fa-lock',        'label'=>'Password Protection'],
-                    'campaigns'           => ['icon'=>'fas fa-bullhorn',    'label'=>'Campaigns'],
-                    'api'                 => ['icon'=>'fas fa-plug',        'label'=>'API Access'],
-                    'whitelabel'          => ['icon'=>'fas fa-tag',         'label'=>'White-Label'],
-                    'priority_support'    => ['icon'=>'fas fa-headset',     'label'=>'Priority Support'],
-                    'team_roles'          => ['icon'=>'fas fa-users-cog',   'label'=>'Team Roles'],
-                    'export_data'         => ['icon'=>'fas fa-download',    'label'=>'Export Scan Data'],
+                    // QR type access
+                    'static_qr'           => ['icon'=>'fas fa-qrcode',        'label'=>'Static QR Codes'],
+                    'dynamic_qr'          => ['icon'=>'fas fa-sync-alt',      'label'=>'Dynamic QR Codes'],
+                    // Core features
+                    'analytics'           => ['icon'=>'fas fa-chart-line',    'label'=>'Scan Analytics'],
+                    'campaigns'           => ['icon'=>'fas fa-bullhorn',      'label'=>'Campaign Management'],
+                    'password_protection' => ['icon'=>'fas fa-lock',          'label'=>'Password Protection'],
+                    'expiry_date'         => ['icon'=>'fas fa-calendar-times','label'=>'Expiry Date'],
+                    'scan_limit'          => ['icon'=>'fas fa-eye-slash',     'label'=>'Max Scan Limit'],
+                    'utm_tracking'        => ['icon'=>'fas fa-chart-bar',     'label'=>'UTM Tracking Parameters'],
+                    // Design
+                    'custom_colors'       => ['icon'=>'fas fa-palette',       'label'=>'Custom Colors'],
+                    'custom_logo'         => ['icon'=>'fas fa-image',         'label'=>'Custom Logo / Branding'],
+                    'frame_styles'        => ['icon'=>'fas fa-border-all',    'label'=>'Frame Styles'],
+                    // Downloads
+                    'download_png'        => ['icon'=>'fas fa-file-image',    'label'=>'Download PNG'],
+                    'download_svg'        => ['icon'=>'fas fa-file-code',     'label'=>'Download SVG'],
+                    'download_pdf'        => ['icon'=>'fas fa-file-pdf',      'label'=>'Download PDF'],
+                    // Advanced / paid
+                    'bulk'                => ['icon'=>'fas fa-layer-group',   'label'=>'Bulk Generation'],
+                    'ai'                  => ['icon'=>'fas fa-robot',         'label'=>'AI Design'],
+                    'api'                 => ['icon'=>'fas fa-plug',          'label'=>'API Access'],
+                    'whitelabel'          => ['icon'=>'fas fa-tag',           'label'=>'White-Label / Custom Domain'],
+                    'team_roles'          => ['icon'=>'fas fa-users-cog',     'label'=>'Team Roles'],
+                    'priority_support'    => ['icon'=>'fas fa-headset',       'label'=>'Priority Support'],
+                    'export_data'         => ['icon'=>'fas fa-download',      'label'=>'Export Scan Data'],
                 ];
                 ?>
                 <?php foreach ($planFeatureLabels as $key => $meta): ?>
