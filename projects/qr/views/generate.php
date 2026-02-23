@@ -16,6 +16,21 @@ $canContentType   = (bool) ($userFeatures['content_type']         ?? true);
 $canDesignPresets = (bool) ($userFeatures['design_presets']       ?? true);
 $canLogoRemoveBg  = (bool) ($userFeatures['logo_remove_bg']       ?? true);
 $canUtm           = (bool) ($userFeatures['utm_tracking']         ?? true);
+// Additional feature flags for all 25 plan features
+$canCustomColors  = (bool) ($userFeatures['custom_colors']        ?? true);
+$canCustomLogo    = (bool) ($userFeatures['custom_logo']          ?? true);
+$canFrameStyles   = (bool) ($userFeatures['frame_styles']         ?? true);
+$canDownloadPng   = (bool) ($userFeatures['download_png']         ?? true);
+$canDownloadSvg   = (bool) ($userFeatures['download_svg']         ?? true);
+$canDownloadPdf   = (bool) ($userFeatures['download_pdf']         ?? false);
+$canBulkGen       = (bool) ($userFeatures['bulk_generation']      ?? false);
+$canAiDesign      = (bool) ($userFeatures['ai_design']            ?? false);
+$canAnalytics     = (bool) ($userFeatures['analytics']            ?? true);
+$canCampaigns     = (bool) ($userFeatures['campaigns']            ?? true);
+$canExportData    = (bool) ($userFeatures['export_data']          ?? false);
+$canWhitelabel    = (bool) ($userFeatures['whitelabel']           ?? false);
+$canTeamRoles     = (bool) ($userFeatures['team_roles']           ?? false);
+$canPriority      = (bool) ($userFeatures['priority_support']     ?? false);
 ?>
 
 <?php if (isset($preset) && $preset): ?>
@@ -615,9 +630,13 @@ $canUtm           = (bool) ($userFeatures['utm_tracking']         ?? true);
             </div>
             
             <!-- Color Customization -->
-            <h4 class="subsection-title">
+            <h4 class="subsection-title <?= !$canCustomColors ? 'feature-locked' : '' ?>">
                 <i class="fas fa-palette"></i> Colors
+                <?php if (!$canCustomColors): ?>
+                <span class="badge-plan-lock" style="margin-left:8px;font-size:.7rem;"><i class="fas fa-crown"></i> Upgrade</span>
+                <?php endif; ?>
             </h4>
+            <div <?= !$canCustomColors ? 'style="pointer-events:none;opacity:.45;"' : '' ?>>
             
             <div class="grid grid-2" style="gap: 15px;">
                 <div class="form-group">
@@ -677,6 +696,7 @@ $canUtm           = (bool) ($userFeatures['utm_tracking']         ?? true);
                     </span>
                 </label>
             </div>
+            </div><!-- End custom_colors wrapper -->
             </div><!-- End Design Options collapsible -->
             
             <div class="divider"></div>
@@ -905,11 +925,17 @@ $canUtm           = (bool) ($userFeatures['utm_tracking']         ?? true);
             <div class="divider"></div>
             
             <!-- Logo Options -->
-            <h4 class="subsection-title collapsible-header" onclick="toggleSection('logoOptions')">
-                <span><i class="fas fa-image"></i> Logo</span>
+            <h4 class="subsection-title collapsible-header <?= !$canCustomLogo ? 'feature-locked' : '' ?>"
+                <?= $canCustomLogo ? "onclick=\"toggleSection('logoOptions')\"" : '' ?>
+                style="cursor:<?= $canCustomLogo ? 'pointer' : 'default' ?>">
+                <span><i class="fas fa-image"></i> Logo
+                    <?php if (!$canCustomLogo): ?>
+                    <span class="badge-plan-lock" style="margin-left:8px;"><i class="fas fa-crown"></i> Upgrade</span>
+                    <?php endif; ?>
+                </span>
                 <i class="fas fa-chevron-right collapse-icon"></i>
             </h4>
-            <div id="logoOptions" class="collapsible-content collapsed">
+            <div id="logoOptions" class="collapsible-content collapsed" <?= !$canCustomLogo ? 'style="pointer-events:none;opacity:.45;"' : '' ?>>
             
             <div class="form-group">
                 <label class="form-label">Logo Options</label>
@@ -1089,10 +1115,14 @@ $canUtm           = (bool) ($userFeatures['utm_tracking']         ?? true);
             <div class="divider"></div>
             
             <!-- Frame Options -->
-            <h4 class="subsection-title">
+            <h4 class="subsection-title <?= !$canFrameStyles ? 'feature-locked' : '' ?>">
                 <i class="fas fa-border-all"></i> Frame
+                <?php if (!$canFrameStyles): ?>
+                <span class="badge-plan-lock" style="margin-left:8px;font-size:.7rem;"><i class="fas fa-crown"></i> Upgrade</span>
+                <?php endif; ?>
             </h4>
-            
+            <div <?= !$canFrameStyles ? 'style="pointer-events:none;opacity:.45;"' : '' ?>>
+
             <div class="form-group">
                 <label class="form-label">
                     <i class="fas fa-border-style"></i> Frame Style
@@ -1132,7 +1162,8 @@ $canUtm           = (bool) ($userFeatures['utm_tracking']         ?? true);
                 <label class="form-label">Custom Frame Color</label>
                 <input type="color" name="frame_color" id="frameColor" value="#9945ff" class="form-input color-input">
             </div>
-            
+            </div><!-- End frame_styles wrapper -->
+
             <div class="divider"></div>
             
             <!-- Advanced Features -->
@@ -2025,39 +2056,82 @@ const defaultLogos = {
 // Add download button
 function addDownloadButton(qrCodeInstance) {
     const container = document.getElementById('qrPreviewContainer');
-    
+
     // Check if buttons already exist
     if (container.querySelector('.btn-download')) {
         return;
     }
-    
-    // Create button container for side-by-side buttons
+
+    // Feature flags from PHP (exposed to JS)
+    const canPng = <?= $canDownloadPng ? 'true' : 'false' ?>;
+    const canSvg = <?= $canDownloadSvg ? 'true' : 'false' ?>;
+    const canPdf = <?= $canDownloadPdf ? 'true' : 'false' ?>;
+
+    // Create button container
     const buttonContainer = document.createElement('div');
     buttonContainer.className = 'qr-action-buttons';
-    buttonContainer.style.cssText = 'display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap;';
-    
-    // Download QR Code button
+    buttonContainer.style.cssText = 'display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; width: 100%;';
+
+    // Download button with format picker
+    const dlWrap = document.createElement('div');
+    dlWrap.style.cssText = 'position:relative;flex:1;';
+
     const downloadBtn = document.createElement('button');
     downloadBtn.className = 'btn btn-download';
-    downloadBtn.innerHTML = '<i class="fas fa-download"></i> Download QR Code';
+    downloadBtn.innerHTML = '<i class="fas fa-download"></i> Download';
+    downloadBtn.style.cssText = 'width:100%;';
     downloadBtn.onclick = function(e) {
         e.preventDefault();
-        if (qrCodeInstance) {
-            qrCodeInstance.download({ name: 'qrcode-' + Date.now(), extension: 'png' });
-            showNotification('QR code downloaded successfully!', 'success');
-        }
+        e.stopPropagation();
+        const menu = document.getElementById('dlFormatMenu');
+        menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
     };
-    
+
+    const fmtMenu = document.createElement('div');
+    fmtMenu.id = 'dlFormatMenu';
+    fmtMenu.style.cssText = 'display:none;position:absolute;bottom:110%;left:0;background:var(--bg-card);border:1px solid var(--border-color);border-radius:8px;overflow:hidden;z-index:100;min-width:160px;box-shadow:0 8px 24px rgba(0,0,0,.4);';
+
+    const formats = [
+        { ext: 'png', label: '📷 PNG Image',  can: canPng },
+        { ext: 'svg', label: '🎨 SVG Vector', can: canSvg },
+        { ext: 'pdf', label: '📄 PDF Document', can: canPdf },
+    ];
+    formats.forEach(({ext, label, can}) => {
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.innerHTML = label + (can ? '' : ' <span style="font-size:.7rem;background:rgba(153,69,255,.2);color:var(--purple);padding:1px 5px;border-radius:3px;margin-left:4px;">Upgrade</span>');
+        item.style.cssText = 'display:block;width:100%;padding:10px 16px;text-align:left;background:none;border:none;color:' + (can ? 'var(--text-primary)' : 'var(--text-secondary)') + ';font-size:.85rem;cursor:' + (can ? 'pointer' : 'default') + ';border-bottom:1px solid rgba(255,255,255,.05);';
+        if (can) {
+            item.onmouseover = () => item.style.background = 'rgba(255,255,255,.05)';
+            item.onmouseout  = () => item.style.background = 'none';
+            item.onclick = () => {
+                fmtMenu.style.display = 'none';
+                if (qrCodeInstance) {
+                    qrCodeInstance.download({ name: 'qrcode-' + Date.now(), extension: ext });
+                    showNotification('QR code downloaded as ' + ext.toUpperCase() + '!', 'success');
+                }
+            };
+        }
+        fmtMenu.appendChild(item);
+    });
+
+    // Close menu on outside click
+    document.addEventListener('click', () => { fmtMenu.style.display = 'none'; });
+
+    dlWrap.appendChild(downloadBtn);
+    dlWrap.appendChild(fmtMenu);
+
     // Save as Template button
     const saveTemplateBtn = document.createElement('button');
     saveTemplateBtn.className = 'btn btn-save-template';
     saveTemplateBtn.innerHTML = '<i class="fas fa-save"></i> Save as Template';
+    saveTemplateBtn.style.cssText = 'flex:1;';
     saveTemplateBtn.onclick = function(e) {
         e.preventDefault();
         showSaveTemplateModal();
     };
-    
-    buttonContainer.appendChild(downloadBtn);
+
+    buttonContainer.appendChild(dlWrap);
     buttonContainer.appendChild(saveTemplateBtn);
     container.appendChild(buttonContainer);
 }

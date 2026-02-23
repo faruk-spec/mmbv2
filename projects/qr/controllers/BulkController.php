@@ -13,6 +13,7 @@ use Core\Logger;
 use Projects\QR\Models\BulkJobModel;
 use Projects\QR\Models\QRModel;
 use Projects\QR\Models\CampaignModel;
+use Projects\QR\Services\QRFeatureService;
 
 class BulkController
 {
@@ -44,12 +45,18 @@ class BulkController
         
         // Get campaigns for dropdown
         $campaigns = $this->campaignModel->getByUser($userId);
-        
+
+        $featureService = new QRFeatureService();
+        $userFeatures   = $featureService->getFeatures($userId);
+        $canBulk        = $featureService->can($userId, 'bulk_generation');
+
         $this->render('bulk', [
             'title' => 'Bulk Generate',
             'user' => Auth::user(),
             'jobs' => $jobs,
-            'campaigns' => $campaigns
+            'campaigns' => $campaigns,
+            'userFeatures' => $userFeatures,
+            'canBulk' => $canBulk,
         ]);
     }
     

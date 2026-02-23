@@ -120,9 +120,15 @@ use Core\Security;
                         <div style="font-size:.75rem;color:var(--text-secondary);"><?= View::e($k['email'] ?? '') ?></div>
                     </td>
                     <td style="padding:10px 14px;">
-                        <code style="background:rgba(0,0,0,.3);padding:3px 8px;border-radius:5px;font-size:.75rem;">
+                        <div style="display:flex;align-items:center;gap:6px;">
+                        <code id="masked-<?= $k['id'] ?>" style="background:rgba(0,0,0,.3);padding:3px 8px;border-radius:5px;font-size:.75rem;">
                             <?= substr(View::e($k['api_key']), 0, 12) ?>••••••
                         </code>
+                        <button onclick="copyMaskedKey('<?= htmlspecialchars(substr($k['api_key'], 0, 12), ENT_QUOTES) ?>••••••')"
+                            title="Copy masked key" style="padding:3px 7px;background:rgba(0,240,255,.08);border:1px solid rgba(0,240,255,.25);color:var(--cyan);border-radius:5px;font-size:.72rem;cursor:pointer;white-space:nowrap;">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                        </div>
                     </td>
                     <td style="padding:10px 14px;"><?= number_format((int)$k['request_count']) ?></td>
                     <td style="padding:10px 14px;color:var(--text-secondary);">
@@ -158,6 +164,18 @@ use Core\Security;
 </div>
 
 <script>
+function copyMaskedKey(val) {
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(val).then(() => showToast('Copied to clipboard!', 'success'))
+            .catch(() => showToast('Copy failed.', 'error'));
+    } else {
+        const ta = document.createElement('textarea');
+        ta.value = val; document.body.appendChild(ta); ta.select();
+        document.execCommand('copy') ? showToast('Copied!', 'success') : showToast('Copy failed.', 'error');
+        document.body.removeChild(ta);
+    }
+}
+
 function filterKeys(q) {
     q = q.toLowerCase();
     document.querySelectorAll('#keysTable .key-row').forEach(row => {

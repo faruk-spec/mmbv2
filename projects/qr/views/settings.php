@@ -40,9 +40,6 @@
         <button class="settings-tab" onclick="switchTab('preferences')" id="tab-preferences">
             <i class="fas fa-cog"></i> Preferences
         </button>
-        <button class="settings-tab" onclick="switchTab('api')" id="tab-api">
-            <i class="fas fa-key"></i> API
-        </button>
         <button class="settings-tab" onclick="switchTab('notifications')" id="tab-notifications">
             <i class="fas fa-bell"></i> Notifications
         </button>
@@ -317,50 +314,6 @@
         </div>
         </div><!-- End Notifications Tab -->
         
-        <!-- Tab Content: API -->
-        <div class="tab-content" id="content-api">
-        <!-- API Settings -->
-        <div class="settings-section">
-            <h4 class="settings-heading">
-                <i class="fas fa-key"></i> API Settings
-            </h4>
-            <p class="settings-description">
-                Generate an API key to access QR code generation programmatically.
-            </p>
-            
-            <?php if (!empty($settings['api_key']) && $settings['api_enabled']): ?>
-                <div class="api-key-display">
-                    <div class="form-group">
-                        <label>Your API Key</label>
-                        <div class="api-key-input">
-                            <input type="text" id="apiKeyDisplay" value="<?= $settings['api_key'] ?>" 
-                                   readonly class="form-control" style="flex: 1;">
-                            <button type="button" class="btn-secondary" onclick="copyApiKey()">
-                                <i class="fas fa-copy"></i> Copy
-                            </button>
-                        </div>
-                        <small class="form-help" style="color: #ff9f40;">
-                            <i class="fas fa-exclamation-triangle"></i> Keep this key secret! Do not share it publicly.
-                        </small>
-                    </div>
-                    
-                    <div style="display: flex; gap: 10px;">
-                        <button type="button" class="btn-secondary" onclick="regenerateApiKey()">
-                            <i class="fas fa-sync"></i> Regenerate Key
-                        </button>
-                        <button type="button" class="btn-danger" onclick="disableApi()">
-                            <i class="fas fa-times"></i> Disable API
-                        </button>
-                    </div>
-                </div>
-            <?php else: ?>
-                <button type="button" class="btn-primary" onclick="generateApiKey()">
-                    <i class="fas fa-plus"></i> Generate API Key
-                </button>
-            <?php endif; ?>
-        </div>
-        </div><!-- End API Tab -->
-        
         <div class="form-actions" style="margin-top: var(--space-xl); padding-top: var(--space-xl); border-top: 1px solid rgba(255,255,255,0.1);">
             <button type="submit" class="btn-primary">
                 <i class="fas fa-save"></i> Save Settings
@@ -620,81 +573,5 @@ function showSettingsToast(msg, type) {
     setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 3200);
 }
 
-function copyApiKey() {
-    const apiKeyInput = document.getElementById('apiKeyDisplay');
-    apiKeyInput.select();
-    if (navigator.clipboard) {
-        navigator.clipboard.writeText(apiKeyInput.value).then(() => {
-            showSettingsToast('API key copied to clipboard!', 'success');
-        }).catch(() => {
-            showSettingsToast('Copy failed. Please copy the key manually.', 'error');
-        });
-    } else {
-        const ok = document.execCommand('copy');
-        ok ? showSettingsToast('API key copied!', 'success')
-           : showSettingsToast('Copy failed. Please copy the key manually.', 'error');
-    }
-}
 
-async function generateApiKey() {
-    if (!confirm('Generate a new API key? This will allow programmatic access to your QR generator.')) {
-        return;
-    }
-    
-    try {
-        const csrf = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
-        const response = await fetch('/projects/qr/settings/generate-api-key', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            body: '_csrf_token=' + encodeURIComponent(csrf)
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            showSettingsToast('API key generated successfully!', 'success');
-            setTimeout(() => location.reload(), 1200);
-        } else {
-            showSettingsToast(data.message || 'Failed to generate API key', 'error');
-        }
-    } catch (error) {
-        showSettingsToast('Error generating API key. Please try again.', 'error');
-        console.error(error);
-    }
-}
-
-async function regenerateApiKey() {
-    if (!confirm('Regenerate API key? Your old key will stop working immediately!')) {
-        return;
-    }
-    
-    await generateApiKey();
-}
-
-async function disableApi() {
-    if (!confirm('Disable API access? Your API key will stop working.')) {
-        return;
-    }
-    
-    try {
-        const csrf = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
-        const response = await fetch('/projects/qr/settings/disable-api', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            body: '_csrf_token=' + encodeURIComponent(csrf)
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            showSettingsToast('API access disabled', 'success');
-            setTimeout(() => location.reload(), 1200);
-        } else {
-            showSettingsToast(data.message || 'Failed to disable API', 'error');
-        }
-    } catch (error) {
-        showSettingsToast('Error disabling API. Please try again.', 'error');
-        console.error(error);
-    }
-}
 </script>

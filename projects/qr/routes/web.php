@@ -259,6 +259,12 @@ switch ($segments[0]) {
         $controller->plan();
         break;
 
+    case 'docs':
+        require_once PROJECT_PATH . '/controllers/DashboardController.php';
+        $controller = new \Projects\QR\Controllers\DashboardController();
+        $controller->docs();
+        break;
+
     case 'api':
         require_once PROJECT_PATH . '/controllers/QRApiUserController.php';
         $controller = new \Projects\QR\Controllers\QRApiUserController();

@@ -291,6 +291,23 @@ class DashboardController
     }
 
     /**
+     * Documentation page
+     */
+    public function docs(): void
+    {
+        $userId = Auth::id();
+        $userFeatures = $userId
+            ? (new \Projects\QR\Services\QRFeatureService())->getFeatures($userId)
+            : array_fill_keys(\Projects\QR\Services\QRFeatureService::ALL_FEATURES, true);
+
+        $this->render('docs', [
+            'title'        => 'Documentation',
+            'user'         => Auth::user(),
+            'userFeatures' => $userFeatures,
+        ]);
+    }
+
+    /**
      * Render a project view
      */
     protected function render(string $view, array $data = []): void
