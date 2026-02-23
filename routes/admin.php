@@ -44,6 +44,7 @@ $router->post('/admin/qr/roles/set-use-plan', 'Admin\\QRAdminController@setUsePl
 // QR API Keys management
 $router->get('/admin/qr/api-keys', 'Admin\\QRAdminController@qrApiKeys', ['auth', 'admin']);
 $router->post('/admin/qr/api-keys/revoke', 'Admin\\QRAdminController@revokeQrApiKey', ['auth', 'admin']);
+$router->post('/admin/qr/api-keys/generate', 'Admin\\QRAdminController@adminGenerateApiKey', ['auth', 'admin']);
 
 // User management
 $router->get('/admin/users', 'Admin\\UserController@index', ['auth', 'admin']);

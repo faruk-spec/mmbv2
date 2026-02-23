@@ -9,6 +9,7 @@
 namespace Projects\QR\Controllers;
 
 use Core\Auth;
+use Core\Security;
 use Projects\QR\Models\SettingsModel;
 
 class SettingsController
@@ -106,15 +107,22 @@ class SettingsController
      */
     public function generateApiKey(): void
     {
+        header('Content-Type: application/json');
         $userId = Auth::id();
-        
+
         if (!$userId) {
             echo json_encode(['success' => false, 'message' => 'Not authenticated']);
             exit;
         }
-        
+
+        if (!Security::validateCsrfToken($_POST['_csrf_token'] ?? '')) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Invalid request token.']);
+            exit;
+        }
+
         $apiKey = $this->model->generateApiKey($userId);
-        
+
         if ($apiKey) {
             echo json_encode(['success' => true, 'api_key' => $apiKey]);
         } else {
@@ -122,19 +130,26 @@ class SettingsController
         }
         exit;
     }
-    
+
     /**
      * Disable API
      */
     public function disableApi(): void
     {
+        header('Content-Type: application/json');
         $userId = Auth::id();
-        
+
         if (!$userId) {
             echo json_encode(['success' => false, 'message' => 'Not authenticated']);
             exit;
         }
-        
+
+        if (!Security::validateCsrfToken($_POST['_csrf_token'] ?? '')) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Invalid request token.']);
+            exit;
+        }
+
         if ($this->model->disableApi($userId)) {
             echo json_encode(['success' => true, 'message' => 'API access disabled']);
         } else {

@@ -1630,6 +1630,10 @@
                                 <i class="fas fa-toggle-on"></i>
                                 <span>Feature Flags</span>
                             </a>
+                            <a href="/admin/settings#timezone" class="menu-link">
+                                <i class="fas fa-globe"></i>
+                                <span>Timezone</span>
+                            </a>
                         </div>
                     </div>
                 </div>

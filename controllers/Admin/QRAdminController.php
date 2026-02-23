@@ -1376,6 +1376,16 @@ class QRAdminController extends BaseController
             $keys = [];
         }
 
+        try {
+            $allUsers = $db->fetchAll(
+                // Limit to 1000 most recent active users for the modal dropdown.
+                // For large installations, the client-side search box filters this list.
+                "SELECT id, name, email FROM users WHERE is_active = 1 ORDER BY name ASC LIMIT 1000"
+            );
+        } catch (\Exception $e) {
+            $allUsers = [];
+        }
+
         $totalKeys     = count($keys);
         $activeKeys    = count(array_filter($keys, fn($k) => $k['is_active']));
         $totalRequests = array_sum(array_column($keys, 'request_count'));
@@ -1383,6 +1393,7 @@ class QRAdminController extends BaseController
         $this->view('admin/qr/api-keys', [
             'title'         => 'QR API Keys',
             'keys'          => $keys,
+            'allUsers'      => $allUsers,
             'totalKeys'     => $totalKeys,
             'activeKeys'    => $activeKeys,
             'totalRequests' => $totalRequests,
@@ -1419,6 +1430,61 @@ class QRAdminController extends BaseController
         } catch (\Exception $e) {
             Logger::error('Admin revokeQrApiKey: ' . $e->getMessage());
             $this->json(['success' => false, 'error' => 'Server error'], 500);
+        }
+    }
+
+    /**
+     * POST /admin/qr/api-keys/generate
+     * Admin generates an API key on behalf of a user.
+     */
+    public function adminGenerateApiKey(): void
+    {
+        $userId = (int) $this->input('user_id', '0');
+        $name   = trim(Security::sanitize($this->input('name', '')));
+
+        if (!$userId || empty($name)) {
+            $this->json(['success' => false, 'error' => 'User ID and key name are required.'], 400);
+            return;
+        }
+
+        $user = $this->db->fetch("SELECT id, name, email FROM users WHERE id = ? LIMIT 1", [$userId]);
+        if (!$user) {
+            $this->json(['success' => false, 'error' => 'User not found.'], 404);
+            return;
+        }
+
+        // Count existing active keys for this user
+        $count = (int) ($this->db->fetch(
+            "SELECT COUNT(*) AS cnt FROM api_keys WHERE user_id = ? AND is_active = 1",
+            [$userId]
+        )['cnt'] ?? 0);
+
+        if ($count >= 10) {
+            $this->json(['success' => false, 'error' => 'User already has 10 active API keys. Revoke one first.'], 409);
+            return;
+        }
+
+        try {
+            $keyData = \Core\API\ApiAuth::generateKey(
+                $userId,
+                $name,
+                ['qr:read', 'qr:write', 'qr:delete']
+            );
+
+            Logger::activity(Auth::id(), 'admin_qr_api_key_generated_for_user', [
+                'target_user_id'   => $userId,
+                'target_user_name' => $user['name'],
+                'key_name'         => $name,
+            ]);
+
+            $this->json([
+                'success' => true,
+                'api_key' => $keyData['api_key'],
+                'message' => 'API key generated for ' . $user['name'],
+            ]);
+        } catch (\Exception $e) {
+            Logger::error('Admin adminGenerateApiKey: ' . $e->getMessage());
+            $this->json(['success' => false, 'error' => 'Server error generating key.'], 500);
         }
     }
 

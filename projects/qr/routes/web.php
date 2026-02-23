@@ -236,7 +236,17 @@ switch ($segments[0]) {
     case 'settings':
         require_once PROJECT_PATH . '/controllers/SettingsController.php';
         $controller = new \Projects\QR\Controllers\SettingsController();
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (isset($segments[1])) {
+            // Sub-routes handled by settings controller
+            if ($segments[1] === 'generate-api-key' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+                $controller->generateApiKey();
+            } elseif ($segments[1] === 'disable-api' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+                $controller->disableApi();
+            } else {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => 'Not found']);
+            }
+        } elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $controller->update();
         } else {
             $controller->index();

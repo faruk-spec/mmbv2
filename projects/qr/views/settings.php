@@ -608,11 +608,32 @@ document.getElementById('customMarkerColor')?.addEventListener('change', functio
     document.getElementById('markerColorGroup').style.display = this.checked ? 'block' : 'none';
 });
 
+// ── Toast helper ───────────────────────────────────────────────────────────
+function showSettingsToast(msg, type) {
+    const t = document.createElement('div');
+    t.textContent = msg;
+    t.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:99999;padding:10px 18px;border-radius:8px;font-size:.85rem;font-weight:600;pointer-events:none;transition:opacity .3s;'
+        + (type === 'success'
+            ? 'background:rgba(0,255,136,.15);border:1px solid #00ff88;color:#00ff88;'
+            : 'background:rgba(255,107,107,.15);border:1px solid #ff6b6b;color:#ff6b6b;');
+    document.body.appendChild(t);
+    setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 3200);
+}
+
 function copyApiKey() {
     const apiKeyInput = document.getElementById('apiKeyDisplay');
     apiKeyInput.select();
-    document.execCommand('copy');
-    alert('API key copied to clipboard!');
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(apiKeyInput.value).then(() => {
+            showSettingsToast('API key copied to clipboard!', 'success');
+        }).catch(() => {
+            showSettingsToast('Copy failed. Please copy the key manually.', 'error');
+        });
+    } else {
+        const ok = document.execCommand('copy');
+        ok ? showSettingsToast('API key copied!', 'success')
+           : showSettingsToast('Copy failed. Please copy the key manually.', 'error');
+    }
 }
 
 async function generateApiKey() {
@@ -621,20 +642,23 @@ async function generateApiKey() {
     }
     
     try {
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
         const response = await fetch('/projects/qr/settings/generate-api-key', {
-            method: 'POST'
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: '_csrf_token=' + encodeURIComponent(csrf)
         });
         
         const data = await response.json();
         
         if (data.success) {
-            alert('API key generated successfully!');
-            location.reload();
+            showSettingsToast('API key generated successfully!', 'success');
+            setTimeout(() => location.reload(), 1200);
         } else {
-            alert(data.message || 'Failed to generate API key');
+            showSettingsToast(data.message || 'Failed to generate API key', 'error');
         }
     } catch (error) {
-        alert('Error generating API key');
+        showSettingsToast('Error generating API key. Please try again.', 'error');
         console.error(error);
     }
 }
@@ -653,20 +677,23 @@ async function disableApi() {
     }
     
     try {
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
         const response = await fetch('/projects/qr/settings/disable-api', {
-            method: 'POST'
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: '_csrf_token=' + encodeURIComponent(csrf)
         });
         
         const data = await response.json();
         
         if (data.success) {
-            alert('API access disabled');
-            location.reload();
+            showSettingsToast('API access disabled', 'success');
+            setTimeout(() => location.reload(), 1200);
         } else {
-            alert(data.message || 'Failed to disable API');
+            showSettingsToast(data.message || 'Failed to disable API', 'error');
         }
     } catch (error) {
-        alert('Error disabling API');
+        showSettingsToast('Error disabling API. Please try again.', 'error');
         console.error(error);
     }
 }

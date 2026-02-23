@@ -19,6 +19,7 @@ use Core\Database;
 use Core\Logger;
 use Core\Security;
 use Core\API\ApiAuth;
+use Projects\QR\Services\QRFeatureService;
 
 class QRApiUserController
 {
@@ -60,6 +61,18 @@ class QRApiUserController
             $this->flash('error', 'Invalid request token.');
             header('Location: /projects/qr/api');
             exit;
+        }
+
+        // Enforce api_access feature flag
+        try {
+            $featureService = new QRFeatureService();
+            if (!$featureService->can($this->userId, 'api_access')) {
+                $this->flash('error', 'API access is not available on your current plan. Please upgrade to generate API keys.');
+                header('Location: /projects/qr/api');
+                exit;
+            }
+        } catch (\Exception $e) {
+            Logger::error('QRApiUserController feature check error: ' . $e->getMessage());
         }
 
         $name = trim(Security::sanitize($_POST['name'] ?? ''));
