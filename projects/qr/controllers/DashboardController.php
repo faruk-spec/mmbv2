@@ -248,6 +248,25 @@ class DashboardController
             $activePlatformPlanIds = array_column($subs, 'plan_id');
         } catch (\Exception $e) { /* ignore */ }
 
+        // ── QR-specific upgrade plans ────────────────────────────────────────
+        // All active QR subscription plans (shown as upgrade options to users without a subscription)
+        $qrUpgradePlans = [];
+        try {
+            $qrUpgradePlans = $db->fetchAll(
+                "SELECT id, name, slug, price, billing_cycle, max_static_qr, max_dynamic_qr,
+                        max_scans_per_month, features, description
+                 FROM qr_subscription_plans
+                 WHERE status = 'active'
+                 ORDER BY price ASC, sort_order ASC, id ASC"
+            ) ?: [];
+            foreach ($qrUpgradePlans as &$p) {
+                $p['features_arr'] = is_string($p['features'])
+                    ? (json_decode($p['features'], true) ?: [])
+                    : [];
+            }
+            unset($p);
+        } catch (\Exception $e) { /* ignore */ }
+
         // ── Contact email ────────────────────────────────────────────────────
         $contactEmail = 'support@mmbtech.online';
         try {
@@ -266,6 +285,7 @@ class DashboardController
             'dynamicCount'          => $dynamicCount,
             'platformPlans'         => $platformPlans,
             'activePlatformPlanIds' => $activePlatformPlanIds,
+            'qrUpgradePlans'        => $qrUpgradePlans,
             'contactEmail'          => $contactEmail,
         ]);
     }

@@ -51,7 +51,21 @@ class QRApiUserController
         $newKey = $_SESSION['qr_api_new_key'] ?? null;
         unset($_SESSION['qr_api_new_key']);
 
+        $title   = 'API Access';
+        $content_vars = [
+            'keys'    => $keys,
+            'baseUrl' => $baseUrl,
+            'newKey'  => $newKey,
+            'title'   => $title,
+        ];
+
+        // Buffer the view content then wrap in layout.php (navbar + sidebar).
+        ob_start();
+        extract($content_vars);
         require PROJECT_PATH . '/views/api.php';
+        $content = ob_get_clean();
+
+        require PROJECT_PATH . '/views/layout.php';
     }
 
     /** POST /projects/qr/api – generate a new API key */

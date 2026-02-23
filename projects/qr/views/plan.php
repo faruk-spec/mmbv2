@@ -97,7 +97,7 @@ use Core\Auth;
                 <?php if ($dynamicCount > 0): ?>, <?= $dynamicCount ?> dynamic<?php endif; ?>
             </div>
         </div>
-        <a href="#platform-plans" style="padding:9px 18px;background:linear-gradient(135deg,var(--purple),var(--cyan));border-radius:8px;font-size:.85rem;font-weight:700;color:#fff;text-decoration:none;">
+        <a href="#qr-plans" style="padding:9px 18px;background:linear-gradient(135deg,var(--purple),var(--cyan));border-radius:8px;font-size:.85rem;font-weight:700;color:#fff;text-decoration:none;">
             Upgrade Plan
         </a>
     </div>
@@ -105,7 +105,98 @@ use Core\Auth;
 </section>
 
 <!-- ═══════════════════════════════════════════════════════════════════════
-     SECTION 2 — Platform / Bundle plans
+     SECTION 2 — QR Generator specific plans
+═══════════════════════════════════════════════════════════════════════════ -->
+<?php if (!empty($qrUpgradePlans)): ?>
+<section id="qr-plans" style="margin-bottom:32px;">
+    <h2 style="font-size:1rem;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:8px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+        </svg>
+        QR Generator Plans
+    </h2>
+    <p style="color:var(--text-secondary);font-size:.85rem;margin-bottom:18px;">
+        Upgrade your QR Generator to unlock more features and higher limits.
+    </p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;">
+    <?php foreach ($qrUpgradePlans as $qrPlan):
+        $isCurrent = $qrSub && ((int)($qrSub['plan_id'] ?? 0) === (int)$qrPlan['id']);
+        $isFree = ($qrPlan['price'] == 0);
+        $feats = $qrPlan['features_arr'] ?? [];
+        $planSlug = $qrPlan['slug'] ?? $qrPlan['id'];
+    ?>
+    <div style="background:var(--bg-card);border:2px solid <?= $isCurrent ? 'var(--purple)' : 'var(--border-color)' ?>;border-radius:12px;overflow:hidden;transition:border-color .2s;"
+         onmouseover="this.style.borderColor='var(--purple)'" onmouseout="this.style.borderColor='<?= $isCurrent ? 'var(--purple)' : 'var(--border-color)' ?>'">
+        <div style="background:linear-gradient(135deg,rgba(153,69,255,.12),rgba(0,240,255,.06));padding:18px;border-bottom:1px solid var(--border-color);">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                <div>
+                    <div style="font-weight:700;font-size:1rem;color:var(--purple);"><?= htmlspecialchars($qrPlan['name']) ?></div>
+                    <div style="font-size:1.3rem;font-weight:800;margin-top:4px;">
+                        <?= $isFree ? 'Free' : ('$' . number_format((float)$qrPlan['price'], 2)) ?>
+                        <?php if (!$isFree): ?>
+                        <span style="font-size:.75rem;font-weight:400;color:var(--text-secondary);">/ <?= htmlspecialchars($qrPlan['billing_cycle'] ?? 'month') ?></span>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <?php if ($isCurrent): ?>
+                <span style="padding:3px 10px;background:rgba(0,255,136,.15);color:var(--green);border-radius:20px;font-size:.72rem;font-weight:600;">Current</span>
+                <?php endif; ?>
+            </div>
+            <?php if (!empty($qrPlan['description'])): ?>
+            <p style="font-size:.8rem;color:var(--text-secondary);margin-top:8px;line-height:1.5;"><?= htmlspecialchars($qrPlan['description']) ?></p>
+            <?php endif; ?>
+        </div>
+        <div style="padding:14px 18px;">
+            <!-- Limits -->
+            <div style="font-size:.72rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Limits</div>
+            <ul style="list-style:none;padding:0;margin:0 0 12px;font-size:.8rem;color:var(--text-secondary);">
+                <?php if ((int)$qrPlan['max_static_qr'] > 0): ?>
+                <li>▸ <?= number_format((int)$qrPlan['max_static_qr']) ?> static QR codes</li>
+                <?php elseif ((int)$qrPlan['max_static_qr'] === -1): ?>
+                <li style="color:var(--green);">▸ Unlimited static QR codes</li>
+                <?php endif; ?>
+                <?php if ((int)$qrPlan['max_dynamic_qr'] > 0): ?>
+                <li>▸ <?= number_format((int)$qrPlan['max_dynamic_qr']) ?> dynamic QR codes</li>
+                <?php elseif ((int)$qrPlan['max_dynamic_qr'] === -1): ?>
+                <li style="color:var(--green);">▸ Unlimited dynamic QR codes</li>
+                <?php endif; ?>
+            </ul>
+            <!-- Included features -->
+            <?php $enabledFeats = array_keys(array_filter($feats)); if (!empty($enabledFeats)): ?>
+            <div style="font-size:.72rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Includes</div>
+            <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px;">
+                <?php foreach (array_slice($enabledFeats, 0, 8) as $fk): ?>
+                <span style="padding:2px 8px;background:rgba(153,69,255,.12);color:var(--purple);border-radius:20px;font-size:.7rem;font-weight:600;"><?= htmlspecialchars(ucwords(str_replace('_', ' ', $fk))) ?></span>
+                <?php endforeach; ?>
+                <?php if (count($enabledFeats) > 8): ?>
+                <span style="padding:2px 8px;background:rgba(0,240,255,.08);color:var(--cyan);border-radius:20px;font-size:.7rem;">+<?= count($enabledFeats) - 8 ?> more</span>
+                <?php endif; ?>
+            </div>
+            <?php endif; ?>
+            <!-- CTA -->
+            <?php if ($isCurrent): ?>
+            <div style="padding:8px;background:rgba(0,255,136,.1);border-radius:6px;text-align:center;font-size:.8rem;color:var(--green);font-weight:600;">
+                ✓ Your current plan
+            </div>
+            <?php elseif ($isFree): ?>
+            <div style="padding:8px;background:rgba(255,255,255,.05);border-radius:6px;text-align:center;font-size:.8rem;color:var(--text-secondary);">
+                Default free tier
+            </div>
+            <?php else: ?>
+            <a href="/plans/subscribe/<?= urlencode($planSlug) ?>?app=qr"
+               style="display:block;width:100%;padding:9px;background:linear-gradient(135deg,var(--purple),var(--cyan));border-radius:6px;text-align:center;font-size:.82rem;font-weight:700;color:#000;text-decoration:none;">
+                Upgrade to <?= htmlspecialchars($qrPlan['name']) ?>
+            </a>
+            <?php endif; ?>
+        </div>
+    </div>
+    <?php endforeach; ?>
+    </div>
+</section>
+<?php endif; ?>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     SECTION 3 — Platform / Bundle plans
 ═══════════════════════════════════════════════════════════════════════════ -->
 <section id="platform-plans">
     <h2 style="font-size:1rem;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:8px;">

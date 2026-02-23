@@ -221,13 +221,30 @@ class QRAdminController extends BaseController
                 $feats = [];
             }
 
-            // If every stored feature is falsy, reset to proper defaults.
+            $defaults = $this->getDefaultFreePlanFeatures();
+
+            // If every stored feature is falsy, reset to full defaults.
             $hasAnyEnabled = !empty(array_filter($feats));
             if (!$hasAnyEnabled) {
-                $defaults = $this->getDefaultFreePlanFeatures();
                 $this->db->query(
                     "UPDATE qr_subscription_plans SET features = ?, is_default = 1, updated_at = NOW() WHERE id = ?",
                     [json_encode($defaults), $row['id']]
+                );
+                return;
+            }
+
+            // Merge in any missing keys from defaults (new features added after initial seed).
+            $changed = false;
+            foreach ($defaults as $key => $val) {
+                if (!array_key_exists($key, $feats)) {
+                    $feats[$key] = $val;
+                    $changed = true;
+                }
+            }
+            if ($changed) {
+                $this->db->query(
+                    "UPDATE qr_subscription_plans SET features = ?, updated_at = NOW() WHERE id = ?",
+                    [json_encode($feats), $row['id']]
                 );
             }
         } catch (\Exception $e) {
@@ -257,7 +274,7 @@ class QRAdminController extends BaseController
             'design_presets'      => true,
             'logo_remove_bg'      => true,
             'campaigns'           => true,
-            'api_access'          => false,
+            'api_access'          => true,
             'whitelabel'          => false,
             'team_roles'          => false,
             'download_png'        => true,
@@ -289,7 +306,7 @@ class QRAdminController extends BaseController
             'design_presets'     => 1,
             'logo_remove_bg'     => 1,
             'campaigns'          => 1,
-            'api_access'         => 0,
+            'api_access'         => 1,
             'whitelabel'         => 0,
             'team_roles'         => 0,
             'download_png'       => 1,
@@ -324,7 +341,8 @@ class QRAdminController extends BaseController
         foreach ($roleMap as $role => $featureSet) {
             foreach ($featureSet as $feature => $enabled) {
                 $this->db->query(
-                    "INSERT IGNORE INTO qr_role_features (role, feature, enabled) VALUES (?, ?, ?)",
+                    "INSERT INTO qr_role_features (role, feature, enabled) VALUES (?, ?, ?)
+                     ON DUPLICATE KEY UPDATE enabled = VALUES(enabled)",
                     [$role, $feature, $enabled]
                 );
             }
@@ -1380,7 +1398,8 @@ class QRAdminController extends BaseController
             $allUsers = $db->fetchAll(
                 // Limit to 1000 most recent active users for the modal dropdown.
                 // For large installations, the client-side search box filters this list.
-                "SELECT id, name, email FROM users WHERE is_active = 1 ORDER BY name ASC LIMIT 1000"
+                // users table uses `status` column (not `is_active`).
+                "SELECT id, name, email FROM users WHERE status != 'banned' ORDER BY name ASC LIMIT 1000"
             );
         } catch (\Exception $e) {
             $allUsers = [];
