@@ -10,6 +10,7 @@ namespace Projects\QR\Controllers;
 
 use Core\Auth;
 use Projects\QR\Models\QRModel;
+use Projects\QR\Services\QRFeatureService;
 
 class AnalyticsController
 {
@@ -80,7 +81,9 @@ class AnalyticsController
             'offset' => $offset,
             'startDate' => $startDate,
             'endDate' => $endDate,
-            'quickFilter' => $quickFilter
+            'quickFilter' => $quickFilter,
+            'userFeatures' => (new QRFeatureService())->getFeatures($userId),
+            'canExportData' => (new QRFeatureService())->can($userId, 'export_data'),
         ]);
     }
     

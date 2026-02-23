@@ -1,6 +1,36 @@
 <?php
 // Production-Ready QR Code Generator with AI Design
 // Futuristic UI with theme integration and live preview
+
+// Resolve feature availability — $userFeatures is passed from the controller via
+// QRFeatureService::getFeatures(). The service itself guarantees a populated array
+// (defaults to role features; falls back to all-allowed only when no configuration
+// exists at all, i.e., a fresh install). The ?? true fallback here is a defence-in-depth
+// guard so a view rendering error never silently blocks a user from a blank form.
+$canDynamic       = (bool) ($userFeatures['dynamic_qr']          ?? true);
+$canPassword      = (bool) ($userFeatures['password_protection']  ?? true);
+$canExpiry        = (bool) ($userFeatures['expiry_date']          ?? true);
+$canScanLimit     = (bool) ($userFeatures['scan_limit']           ?? true);
+$canQrLabel       = (bool) ($userFeatures['qr_label']             ?? true);
+$canContentType   = (bool) ($userFeatures['content_type']         ?? true);
+$canDesignPresets = (bool) ($userFeatures['design_presets']       ?? true);
+$canLogoRemoveBg  = (bool) ($userFeatures['logo_remove_bg']       ?? true);
+$canUtm           = (bool) ($userFeatures['utm_tracking']         ?? true);
+// Additional feature flags for all 25 plan features
+$canCustomColors  = (bool) ($userFeatures['custom_colors']        ?? true);
+$canCustomLogo    = (bool) ($userFeatures['custom_logo']          ?? true);
+$canFrameStyles   = (bool) ($userFeatures['frame_styles']         ?? true);
+$canDownloadPng   = (bool) ($userFeatures['download_png']         ?? true);
+$canDownloadSvg   = (bool) ($userFeatures['download_svg']         ?? true);
+$canDownloadPdf   = (bool) ($userFeatures['download_pdf']         ?? false);
+$canBulkGen       = (bool) ($userFeatures['bulk_generation']      ?? false);
+$canAiDesign      = (bool) ($userFeatures['ai_design']            ?? false);
+$canAnalytics     = (bool) ($userFeatures['analytics']            ?? true);
+$canCampaigns     = (bool) ($userFeatures['campaigns']            ?? true);
+$canExportData    = (bool) ($userFeatures['export_data']          ?? false);
+$canWhitelabel    = (bool) ($userFeatures['whitelabel']           ?? false);
+$canTeamRoles     = (bool) ($userFeatures['team_roles']           ?? false);
+$canPriority      = (bool) ($userFeatures['priority_support']     ?? false);
 ?>
 
 <?php if (isset($preset) && $preset): ?>
@@ -49,26 +79,48 @@
             <?php endif; ?>
             
             <!-- QR Type Selection -->
-            <div class="form-group">
+            <div class="form-group <?= !$canContentType ? 'feature-locked' : '' ?>">
                 <label class="form-label">
                     <i class="fas fa-tag"></i> Content Type
+                    <?php if (!$canContentType): ?>
+                    <span class="badge-plan-lock"><i class="fas fa-crown"></i> Upgrade</span>
+                    <?php endif; ?>
                 </label>
-                <select name="type" class="form-select" id="qrType">
-                    <option value="url"><i class="fas fa-globe"></i> URL / Website</option>
-                    <option value="text"><i class="fas fa-file-alt"></i> Plain Text</option>
-                    <option value="email"><i class="fas fa-envelope"></i> Email Address</option>
-                    <option value="location"><i class="fas fa-map-marker-alt"></i> Location</option>
-                    <option value="phone"><i class="fas fa-phone"></i> Phone Number</option>
-                    <option value="sms"><i class="fas fa-sms"></i> SMS Message</option>
-                    <option value="whatsapp"><i class="fab fa-whatsapp"></i> WhatsApp</option>
-                    <option value="skype"><i class="fab fa-skype"></i> Skype</option>
-                    <option value="zoom"><i class="fas fa-video"></i> Zoom</option>
-                    <option value="wifi"><i class="fas fa-wifi"></i> WiFi Network</option>
-                    <option value="vcard"><i class="fas fa-id-card"></i> vCard (Contact)</option>
-                    <option value="event"><i class="fas fa-calendar-alt"></i> Event (Calendar)</option>
-                    <option value="paypal"><i class="fab fa-paypal"></i> PayPal</option>
-                    <option value="payment"><i class="fas fa-credit-card"></i> Payment (UPI)</option>
+                <select name="type" class="form-select" id="qrType" <?= !$canContentType ? 'disabled' : '' ?>>
+                    <optgroup label="Basic">
+                        <option value="url">🌐 URL / Website</option>
+                        <option value="text">📄 Plain Text</option>
+                    </optgroup>
+                    <optgroup label="Communication">
+                        <option value="email">✉️ Email Address</option>
+                        <option value="phone">📞 Phone Number</option>
+                        <option value="sms">💬 SMS Message</option>
+                        <option value="whatsapp">📱 WhatsApp</option>
+                        <option value="skype">🎥 Skype</option>
+                        <option value="zoom">🖥️ Zoom</option>
+                    </optgroup>
+                    <optgroup label="Social Media">
+                        <option value="social">🔗 Social Media Profile</option>
+                    </optgroup>
+                    <optgroup label="Contact &amp; Location">
+                        <option value="vcard">🪪 vCard (Contact)</option>
+                        <option value="location">📍 Location</option>
+                        <option value="wifi">📶 WiFi Network</option>
+                    </optgroup>
+                    <optgroup label="Events &amp; Apps">
+                        <option value="event">📅 Event (Calendar)</option>
+                        <option value="app_store">📲 App Store Link</option>
+                        <option value="menu">🍽️ Restaurant Menu</option>
+                    </optgroup>
+                    <optgroup label="Payments">
+                        <option value="paypal">💸 PayPal</option>
+                        <option value="payment">💳 Payment (UPI)</option>
+                        <option value="crypto">₿ Cryptocurrency</option>
+                    </optgroup>
                 </select>
+                <?php if (!$canContentType): ?>
+                <small style="color:var(--text-secondary);">Content type selection is locked. Upgrade your plan to unlock.</small>
+                <?php endif; ?>
             </div>
             
             <!-- Simple Content Field -->
@@ -443,9 +495,104 @@
                     <input type="text" name="payment_note" id="paymentNote" class="form-input" placeholder="Payment for...">
                 </div>
             </div>
-            
+
+            <!-- Social Media Profile Fields -->
+            <div id="socialFields" style="display: none;">
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-share-alt"></i> Platform</label>
+                    <select name="social_platform" id="socialPlatform" class="form-select">
+                        <option value="facebook">Facebook</option>
+                        <option value="instagram">Instagram</option>
+                        <option value="twitter">Twitter / X</option>
+                        <option value="linkedin">LinkedIn</option>
+                        <option value="youtube">YouTube</option>
+                        <option value="tiktok">TikTok</option>
+                        <option value="snapchat">Snapchat</option>
+                        <option value="discord">Discord</option>
+                        <option value="telegram">Telegram</option>
+                        <option value="github">GitHub</option>
+                        <option value="custom">Custom URL</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" id="socialInputLabel">Profile URL / Username</label>
+                    <input type="text" name="social_handle" id="socialHandle" class="form-input" placeholder="e.g. yourprofile">
+                    <small id="socialHint" style="color:var(--text-secondary);">Enter your username or full profile URL</small>
+                </div>
+            </div>
+
+            <!-- App Store Fields -->
+            <div id="appStoreFields" style="display: none;">
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-mobile-alt"></i> Platform</label>
+                    <select name="app_platform" id="appPlatform" class="form-select">
+                        <option value="both">Both Stores (Smart Link)</option>
+                        <option value="ios">iOS App Store</option>
+                        <option value="android">Google Play</option>
+                    </select>
+                </div>
+                <div class="form-group" id="appIosGroup">
+                    <label class="form-label"><i class="fab fa-apple"></i> App Store URL</label>
+                    <input type="url" name="app_ios_url" id="appIosUrl" class="form-input" placeholder="https://apps.apple.com/app/id...">
+                </div>
+                <div class="form-group" id="appAndroidGroup">
+                    <label class="form-label"><i class="fab fa-android"></i> Google Play URL</label>
+                    <input type="url" name="app_android_url" id="appAndroidUrl" class="form-input" placeholder="https://play.google.com/store/apps/details?id=...">
+                </div>
+                <div class="form-group" id="appNameGroup">
+                    <label class="form-label">App Name (for smart link page)</label>
+                    <input type="text" name="app_name" id="appName" class="form-input" placeholder="My Awesome App">
+                </div>
+            </div>
+
+            <!-- Cryptocurrency Fields -->
+            <div id="cryptoFields" style="display: none;">
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-coins"></i> Cryptocurrency</label>
+                    <select name="crypto_coin" id="cryptoCoin" class="form-select">
+                        <option value="bitcoin">Bitcoin (BTC)</option>
+                        <option value="ethereum">Ethereum (ETH)</option>
+                        <option value="litecoin">Litecoin (LTC)</option>
+                        <option value="dogecoin">Dogecoin (DOGE)</option>
+                        <option value="usdt">USDT (TRC20 / ERC20)</option>
+                        <option value="bnb">BNB (BSC)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Wallet Address</label>
+                    <input type="text" name="crypto_address" id="cryptoAddress" class="form-input" placeholder="Enter wallet address">
+                </div>
+                <div class="grid grid-2" style="gap:15px;">
+                    <div class="form-group">
+                        <label class="form-label">Amount (Optional)</label>
+                        <input type="number" step="0.00000001" name="crypto_amount" id="cryptoAmount" class="form-input" placeholder="0.001">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Label / Note (Optional)</label>
+                        <input type="text" name="crypto_label" id="cryptoLabel" class="form-input" placeholder="Donation">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Restaurant Menu Fields -->
+            <div id="menuFields" style="display: none;">
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-utensils"></i> Menu URL</label>
+                    <input type="url" name="menu_url" id="menuUrl" class="form-input" placeholder="https://yourrestaurant.com/menu">
+                    <small style="color:var(--text-secondary);">URL to your digital menu (PDF, web page, or ordering system)</small>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Restaurant / Outlet Name</label>
+                    <input type="text" name="menu_name" id="menuName" class="form-input" placeholder="The Grand Bistro">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Table / Location Label (Optional)</label>
+                    <input type="text" name="menu_table" id="menuTable" class="form-input" placeholder="Table 5 or Takeaway Counter">
+                </div>
+            </div>
+
             <div class="divider"></div>
-            
+
             <!-- Design Options -->
             <h4 class="subsection-title collapsible-header" onclick="toggleSection('designOptions')">
                 <span><i class="fas fa-palette"></i> Design Options</span>
@@ -483,9 +630,13 @@
             </div>
             
             <!-- Color Customization -->
-            <h4 class="subsection-title">
+            <h4 class="subsection-title <?= !$canCustomColors ? 'feature-locked' : '' ?>">
                 <i class="fas fa-palette"></i> Colors
+                <?php if (!$canCustomColors): ?>
+                <span class="badge-plan-lock" style="margin-left:8px;font-size:.7rem;"><i class="fas fa-crown"></i> Upgrade</span>
+                <?php endif; ?>
             </h4>
+            <div <?= !$canCustomColors ? 'style="pointer-events:none;opacity:.45;"' : '' ?>>
             
             <div class="grid grid-2" style="gap: 15px;">
                 <div class="form-group">
@@ -545,16 +696,23 @@
                     </span>
                 </label>
             </div>
+            </div><!-- End custom_colors wrapper -->
             </div><!-- End Design Options collapsible -->
             
             <div class="divider"></div>
             
             <!-- Design Customization with Visual Presets -->
-            <h4 class="subsection-title collapsible-header" onclick="toggleSection('designPresets')">
-                <span><i class="fas fa-shapes"></i> Design Presets</span>
+            <h4 class="subsection-title collapsible-header <?= !$canDesignPresets ? 'feature-locked' : '' ?>"
+                <?= $canDesignPresets ? "onclick=\"toggleSection('designPresets')\"" : '' ?>
+                style="cursor:<?= $canDesignPresets ? 'pointer' : 'default' ?>">
+                <span><i class="fas fa-shapes"></i> Design Presets
+                    <?php if (!$canDesignPresets): ?>
+                    <span class="badge-plan-lock" style="margin-left:8px;"><i class="fas fa-crown"></i> Upgrade</span>
+                    <?php endif; ?>
+                </span>
                 <i class="fas fa-chevron-right collapse-icon"></i>
             </h4>
-            <div id="designPresets" class="collapsible-content collapsed">
+            <div id="designPresets" class="collapsible-content collapsed" <?= !$canDesignPresets ? 'style="pointer-events:none;opacity:.45;"' : '' ?>>
             
             <!-- Dot Pattern Presets -->
             <div class="form-group">
@@ -767,11 +925,17 @@
             <div class="divider"></div>
             
             <!-- Logo Options -->
-            <h4 class="subsection-title collapsible-header" onclick="toggleSection('logoOptions')">
-                <span><i class="fas fa-image"></i> Logo</span>
+            <h4 class="subsection-title collapsible-header <?= !$canCustomLogo ? 'feature-locked' : '' ?>"
+                <?= $canCustomLogo ? "onclick=\"toggleSection('logoOptions')\"" : '' ?>
+                style="cursor:<?= $canCustomLogo ? 'pointer' : 'default' ?>">
+                <span><i class="fas fa-image"></i> Logo
+                    <?php if (!$canCustomLogo): ?>
+                    <span class="badge-plan-lock" style="margin-left:8px;"><i class="fas fa-crown"></i> Upgrade</span>
+                    <?php endif; ?>
+                </span>
                 <i class="fas fa-chevron-right collapse-icon"></i>
             </h4>
-            <div id="logoOptions" class="collapsible-content collapsed">
+            <div id="logoOptions" class="collapsible-content collapsed" <?= !$canCustomLogo ? 'style="pointer-events:none;opacity:.45;"' : '' ?>>
             
             <div class="form-group">
                 <label class="form-label">Logo Options</label>
@@ -920,13 +1084,21 @@
                 </div>
                 
                 <!-- Remove Background Toggle -->
-                <div class="feature-toggle">
+                <div class="feature-toggle <?= !$canLogoRemoveBg ? 'feature-locked' : '' ?>">
                     <label class="toggle-label">
+                        <?php if ($canLogoRemoveBg): ?>
                         <input type="checkbox" name="logo_remove_bg" id="logoRemoveBg" value="1" class="toggle-input">
+                        <?php else: ?>
+                        <input type="checkbox" id="logoRemoveBg" class="toggle-input" disabled>
+                        <?php endif; ?>
                         <span class="toggle-slider"></span>
                         <span class="toggle-text">
                             <strong>Remove Background Behind Logo</strong>
+                            <?php if ($canLogoRemoveBg): ?>
                             <small>Clear area behind logo for better visibility</small>
+                            <?php else: ?>
+                            <small class="feature-upgrade-note"><i class="fas fa-lock"></i> Upgrade to unlock</small>
+                            <?php endif; ?>
                         </span>
                     </label>
                 </div>
@@ -943,10 +1115,14 @@
             <div class="divider"></div>
             
             <!-- Frame Options -->
-            <h4 class="subsection-title">
+            <h4 class="subsection-title <?= !$canFrameStyles ? 'feature-locked' : '' ?>">
                 <i class="fas fa-border-all"></i> Frame
+                <?php if (!$canFrameStyles): ?>
+                <span class="badge-plan-lock" style="margin-left:8px;font-size:.7rem;"><i class="fas fa-crown"></i> Upgrade</span>
+                <?php endif; ?>
             </h4>
-            
+            <div <?= !$canFrameStyles ? 'style="pointer-events:none;opacity:.45;"' : '' ?>>
+
             <div class="form-group">
                 <label class="form-label">
                     <i class="fas fa-border-style"></i> Frame Style
@@ -986,7 +1162,8 @@
                 <label class="form-label">Custom Frame Color</label>
                 <input type="color" name="frame_color" id="frameColor" value="#9945ff" class="form-input color-input">
             </div>
-            
+            </div><!-- End frame_styles wrapper -->
+
             <div class="divider"></div>
             
             <!-- Advanced Features -->
@@ -994,13 +1171,21 @@
                 <i class="fas fa-rocket"></i> Advanced Features
             </h4>
             
-            <div class="feature-toggle">
+            <div class="feature-toggle <?= !$canDynamic ? 'feature-locked' : '' ?>">
                 <label class="toggle-label">
+                    <?php if ($canDynamic): ?>
                     <input type="checkbox" name="is_dynamic" id="isDynamic" value="1" class="toggle-input">
+                    <?php else: ?>
+                    <input type="checkbox" id="isDynamic" class="toggle-input" disabled>
+                    <?php endif; ?>
                     <span class="toggle-slider"></span>
                     <span class="toggle-text">
                         <strong>Dynamic QR Code</strong>
+                        <?php if ($canDynamic): ?>
                         <small>Change URL later without regenerating</small>
+                        <?php else: ?>
+                        <small class="feature-upgrade-note"><i class="fas fa-lock"></i> Upgrade your plan to unlock</small>
+                        <?php endif; ?>
                     </span>
                 </label>
             </div>
@@ -1009,6 +1194,106 @@
                 <label class="form-label">Redirect URL</label>
                 <input type="url" name="redirect_url" id="redirectUrl" class="form-input" placeholder="https://example.com">
                 <small>This URL can be edited later</small>
+            </div>
+
+            <!-- Protection: Password + Expiry (available for ALL types, not just dynamic) -->
+            <h4 class="subsection-title collapsible-header" onclick="toggleSection('protectionOptions')" style="margin-top:14px;">
+                <span><i class="fas fa-shield-alt"></i> Protection &amp; Limits</span>
+                <i class="fas fa-chevron-right collapse-icon"></i>
+            </h4>
+            <div id="protectionOptions" class="collapsible-content collapsed">
+                <div class="form-group <?= !$canPassword ? 'feature-locked' : '' ?>">
+                    <label class="form-label">
+                        <i class="fas fa-lock"></i> Password Protection
+                        <small style="font-weight:normal;color:var(--text-secondary);margin-left:6px;">(leave blank for none)</small>
+                        <?php if (!$canPassword): ?>
+                        <span class="badge-plan-lock"><i class="fas fa-crown"></i> Upgrade</span>
+                        <?php endif; ?>
+                    </label>
+                    <input type="password" name="qr_password" id="qrPassword" class="form-input"
+                           placeholder="Set a password to protect this QR" autocomplete="new-password"
+                           <?= !$canPassword ? 'disabled' : '' ?>>
+                    <small><?= $canPassword ? 'Scanners must enter this password to view the content.' : 'Not available on your current plan.' ?></small>
+                </div>
+                <div class="form-group <?= !$canExpiry ? 'feature-locked' : '' ?>">
+                    <label class="form-label">
+                        <i class="fas fa-calendar-times"></i> Expiry Date
+                        <small style="font-weight:normal;color:var(--text-secondary);margin-left:6px;">(optional)</small>
+                        <?php if (!$canExpiry): ?>
+                        <span class="badge-plan-lock"><i class="fas fa-crown"></i> Upgrade</span>
+                        <?php endif; ?>
+                    </label>
+                    <input type="datetime-local" name="expires_at" id="expiresAt" class="form-input"
+                           <?= !$canExpiry ? 'disabled' : '' ?>>
+                    <small><?= $canExpiry ? 'QR code will stop working after this date/time.' : 'Not available on your current plan.' ?></small>
+                </div>
+                <div class="form-group <?= !$canScanLimit ? 'feature-locked' : '' ?>">
+                    <label class="form-label">
+                        <i class="fas fa-eye-slash"></i> Max Scan Limit
+                        <small style="font-weight:normal;color:var(--text-secondary);margin-left:6px;">(leave blank for unlimited)</small>
+                        <?php if (!$canScanLimit): ?>
+                        <span class="badge-plan-lock"><i class="fas fa-crown"></i> Upgrade</span>
+                        <?php endif; ?>
+                    </label>
+                    <input type="number" min="1" name="scan_limit" id="scanLimit" class="form-input"
+                           placeholder="e.g. 100" <?= !$canScanLimit ? 'disabled' : '' ?>>
+                    <small><?= $canScanLimit ? 'QR code will be deactivated after this many scans.' : 'Not available on your current plan.' ?></small>
+                </div>
+            </div>
+
+            <!-- UTM Parameters (URL type only) — moved here after Protection -->
+            <div id="utmGroup" style="display:none;margin-top:14px;">
+                <h4 class="subsection-title collapsible-header <?= !$canUtm ? 'feature-locked' : '' ?>" <?= $canUtm ? "onclick=\"toggleSection('utmOptions')\"" : '' ?> style="margin-top:0;cursor:<?= $canUtm ? 'pointer' : 'default' ?>">
+                    <span><i class="fas fa-chart-line"></i> UTM Tracking Parameters
+                        <?php if (!$canUtm): ?>
+                        <span class="badge-plan-lock" style="margin-left:8px;"><i class="fas fa-crown"></i> Upgrade</span>
+                        <?php endif; ?>
+                    </span>
+                    <i class="fas fa-chevron-right collapse-icon"></i>
+                </h4>
+                <div id="utmOptions" class="collapsible-content collapsed">
+                    <div class="grid grid-2" style="gap:15px;">
+                        <div class="form-group">
+                            <label class="form-label">UTM Source</label>
+                            <input type="text" name="utm_source" id="utmSource" class="form-input" placeholder="e.g. newsletter" <?= !$canUtm ? 'disabled' : '' ?>>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">UTM Medium</label>
+                            <input type="text" name="utm_medium" id="utmMedium" class="form-input" placeholder="e.g. email" <?= !$canUtm ? 'disabled' : '' ?>>
+                        </div>
+                    </div>
+                    <div class="grid grid-2" style="gap:15px;">
+                        <div class="form-group">
+                            <label class="form-label">UTM Campaign</label>
+                            <input type="text" name="utm_campaign" id="utmCampaign" class="form-input" placeholder="e.g. spring_sale" <?= !$canUtm ? 'disabled' : '' ?>>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">UTM Term (Optional)</label>
+                            <input type="text" name="utm_term" id="utmTerm" class="form-input" placeholder="e.g. running+shoes" <?= !$canUtm ? 'disabled' : '' ?>>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">UTM Content (Optional)</label>
+                        <input type="text" name="utm_content" id="utmContent" class="form-input" placeholder="e.g. banner_top" <?= !$canUtm ? 'disabled' : '' ?>>
+                    </div>
+                </div>
+            </div>
+
+            <!-- QR Label / Note (universal, always shown) -->
+            <div class="form-group <?= !$canQrLabel ? 'feature-locked' : '' ?>" style="margin-top:14px;">
+                <label class="form-label">
+                    <i class="fas fa-tag"></i> QR Label / Note
+                    <small style="font-weight:normal;color:var(--text-secondary);">(optional, for your own reference)</small>
+                    <?php if (!$canQrLabel): ?>
+                    <span class="badge-plan-lock"><i class="fas fa-crown"></i> Upgrade</span>
+                    <?php endif; ?>
+                </label>
+                <input type="text" name="qr_label" id="qrLabel" class="form-input"
+                       placeholder="e.g. Product A flyer, Store entrance..." maxlength="120"
+                       <?= !$canQrLabel ? 'disabled' : '' ?>>
+                <?php if (!$canQrLabel): ?>
+                <small style="color:var(--text-secondary);">QR Label is not available on your current plan.</small>
+                <?php endif; ?>
             </div>
             
             <div class="divider"></div>
@@ -1463,10 +1748,25 @@ if (qrTypeElement) {
     document.getElementById('eventFields').style.display = 'none';
     document.getElementById('paypalFields').style.display = 'none';
     document.getElementById('paymentFields').style.display = 'none';
+    // New type groups
+    const socialFields = document.getElementById('socialFields');
+    const appStoreFields = document.getElementById('appStoreFields');
+    const cryptoFields = document.getElementById('cryptoFields');
+    const menuFields = document.getElementById('menuFields');
+    const utmGroup = document.getElementById('utmGroup');
+    if (socialFields) socialFields.style.display = 'none';
+    if (appStoreFields) appStoreFields.style.display = 'none';
+    if (cryptoFields) cryptoFields.style.display = 'none';
+    if (menuFields) menuFields.style.display = 'none';
+    if (utmGroup) utmGroup.style.display = 'none';
     
     // Show relevant fields
     switch(type) {
         case 'url':
+            document.getElementById('simpleContent').style.display = 'block';
+            if (utmGroup) utmGroup.style.display = 'block';
+            updateContentLabel(type);
+            break;
         case 'text':
             document.getElementById('simpleContent').style.display = 'block';
             updateContentLabel(type);
@@ -1507,12 +1807,67 @@ if (qrTypeElement) {
         case 'payment':
             document.getElementById('paymentFields').style.display = 'block';
             break;
+        case 'social':
+            if (socialFields) socialFields.style.display = 'block';
+            updateSocialHint();
+            break;
+        case 'app_store':
+            if (appStoreFields) appStoreFields.style.display = 'block';
+            updateAppStoreVisibility();
+            break;
+        case 'crypto':
+            if (cryptoFields) cryptoFields.style.display = 'block';
+            break;
+        case 'menu':
+            if (menuFields) menuFields.style.display = 'block';
+            break;
     }
     
     // Trigger live preview
     debouncedPreview();
     });
 }
+
+// Social platform hint updater
+function updateSocialHint() {
+    const platform = document.getElementById('socialPlatform');
+    const hint = document.getElementById('socialHint');
+    const label = document.getElementById('socialInputLabel');
+    if (!platform || !hint) return;
+    const hints = {
+        facebook: ['Facebook username or page name', 'facebook.com/'],
+        instagram: ['Instagram handle (without @)', 'instagram.com/'],
+        twitter: ['Twitter/X handle (without @)', 'twitter.com/'],
+        linkedin: ['LinkedIn profile URL or company name', 'linkedin.com/in/'],
+        youtube: ['YouTube channel URL or @handle', 'youtube.com/'],
+        tiktok: ['TikTok @username', 'tiktok.com/@'],
+        snapchat: ['Snapchat username', 'snapchat.com/add/'],
+        discord: ['Discord invite link or server ID', 'discord.gg/'],
+        telegram: ['Telegram @username or group link', 't.me/'],
+        github: ['GitHub username or repo', 'github.com/'],
+        custom: ['Full profile URL', ''],
+    };
+    const h = hints[platform.value] || ['Profile URL', ''];
+    hint.textContent = h[1] ? 'e.g. ' + h[1] + 'yourhandle' : 'Enter full URL';
+    if (label) label.textContent = h[0];
+}
+const socialPlatformEl = document.getElementById('socialPlatform');
+if (socialPlatformEl) socialPlatformEl.addEventListener('change', updateSocialHint);
+
+// App Store platform visibility
+function updateAppStoreVisibility() {
+    const plat = document.getElementById('appPlatform');
+    if (!plat) return;
+    const v = plat.value;
+    const ios = document.getElementById('appIosGroup');
+    const and = document.getElementById('appAndroidGroup');
+    const name = document.getElementById('appNameGroup');
+    if (ios) ios.style.display = (v === 'ios' || v === 'both') ? 'block' : 'none';
+    if (and) and.style.display = (v === 'android' || v === 'both') ? 'block' : 'none';
+    if (name) name.style.display = v === 'both' ? 'block' : 'none';
+}
+const appPlatformEl = document.getElementById('appPlatform');
+if (appPlatformEl) appPlatformEl.addEventListener('change', updateAppStoreVisibility);
 
 function updateContentLabel(type) {
     const label = document.getElementById('contentLabel');
@@ -1545,6 +1900,10 @@ if (isDynamicEl) {
         const redirectUrlGroup = document.getElementById('redirectUrlGroup');
         if (redirectUrlGroup) {
             redirectUrlGroup.style.display = this.checked ? 'block' : 'none';
+        }
+        const dynamicAdvancedGroup = document.getElementById('dynamicAdvancedGroup');
+        if (dynamicAdvancedGroup) {
+            dynamicAdvancedGroup.style.display = this.checked ? 'block' : 'none';
         }
     });
 }
@@ -1697,39 +2056,82 @@ const defaultLogos = {
 // Add download button
 function addDownloadButton(qrCodeInstance) {
     const container = document.getElementById('qrPreviewContainer');
-    
+
     // Check if buttons already exist
     if (container.querySelector('.btn-download')) {
         return;
     }
-    
-    // Create button container for side-by-side buttons
+
+    // Feature flags from PHP (exposed to JS)
+    const canPng = <?= $canDownloadPng ? 'true' : 'false' ?>;
+    const canSvg = <?= $canDownloadSvg ? 'true' : 'false' ?>;
+    const canPdf = <?= $canDownloadPdf ? 'true' : 'false' ?>;
+
+    // Create button container
     const buttonContainer = document.createElement('div');
     buttonContainer.className = 'qr-action-buttons';
-    buttonContainer.style.cssText = 'display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap;';
-    
-    // Download QR Code button
+    buttonContainer.style.cssText = 'display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; width: 100%;';
+
+    // Download button with format picker
+    const dlWrap = document.createElement('div');
+    dlWrap.style.cssText = 'position:relative;flex:1;';
+
     const downloadBtn = document.createElement('button');
     downloadBtn.className = 'btn btn-download';
-    downloadBtn.innerHTML = '<i class="fas fa-download"></i> Download QR Code';
+    downloadBtn.innerHTML = '<i class="fas fa-download"></i> Download';
+    downloadBtn.style.cssText = 'width:100%;';
     downloadBtn.onclick = function(e) {
         e.preventDefault();
-        if (qrCodeInstance) {
-            qrCodeInstance.download({ name: 'qrcode-' + Date.now(), extension: 'png' });
-            showNotification('QR code downloaded successfully!', 'success');
-        }
+        e.stopPropagation();
+        const menu = document.getElementById('dlFormatMenu');
+        menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
     };
-    
+
+    const fmtMenu = document.createElement('div');
+    fmtMenu.id = 'dlFormatMenu';
+    fmtMenu.style.cssText = 'display:none;position:absolute;bottom:110%;left:0;background:var(--bg-card);border:1px solid var(--border-color);border-radius:8px;overflow:hidden;z-index:100;min-width:160px;box-shadow:0 8px 24px rgba(0,0,0,.4);';
+
+    const formats = [
+        { ext: 'png', label: '📷 PNG Image',  can: canPng },
+        { ext: 'svg', label: '🎨 SVG Vector', can: canSvg },
+        { ext: 'pdf', label: '📄 PDF Document', can: canPdf },
+    ];
+    formats.forEach(({ext, label, can}) => {
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.innerHTML = label + (can ? '' : ' <span style="font-size:.7rem;background:rgba(153,69,255,.2);color:var(--purple);padding:1px 5px;border-radius:3px;margin-left:4px;">Upgrade</span>');
+        item.style.cssText = 'display:block;width:100%;padding:10px 16px;text-align:left;background:none;border:none;color:' + (can ? 'var(--text-primary)' : 'var(--text-secondary)') + ';font-size:.85rem;cursor:' + (can ? 'pointer' : 'default') + ';border-bottom:1px solid rgba(255,255,255,.05);';
+        if (can) {
+            item.onmouseover = () => item.style.background = 'rgba(255,255,255,.05)';
+            item.onmouseout  = () => item.style.background = 'none';
+            item.onclick = () => {
+                fmtMenu.style.display = 'none';
+                if (qrCodeInstance) {
+                    qrCodeInstance.download({ name: 'qrcode-' + Date.now(), extension: ext });
+                    showNotification('QR code downloaded as ' + ext.toUpperCase() + '!', 'success');
+                }
+            };
+        }
+        fmtMenu.appendChild(item);
+    });
+
+    // Close menu on outside click
+    document.addEventListener('click', () => { fmtMenu.style.display = 'none'; });
+
+    dlWrap.appendChild(downloadBtn);
+    dlWrap.appendChild(fmtMenu);
+
     // Save as Template button
     const saveTemplateBtn = document.createElement('button');
     saveTemplateBtn.className = 'btn btn-save-template';
     saveTemplateBtn.innerHTML = '<i class="fas fa-save"></i> Save as Template';
+    saveTemplateBtn.style.cssText = 'flex:1;';
     saveTemplateBtn.onclick = function(e) {
         e.preventDefault();
         showSaveTemplateModal();
     };
-    
-    buttonContainer.appendChild(downloadBtn);
+
+    buttonContainer.appendChild(dlWrap);
     buttonContainer.appendChild(saveTemplateBtn);
     container.appendChild(buttonContainer);
 }
@@ -1832,11 +2234,15 @@ window.saveCurrentTemplate = async function() {
     };
     
     try {
+        const csrfMeta = document.querySelector('meta[name="csrf-token"]');
         const formData = new FormData();
         formData.append('name', templateName);
         formData.append('settings', JSON.stringify(settings));
         if (isPublic) {
             formData.append('is_public', '1');
+        }
+        if (csrfMeta) {
+            formData.append('_csrf_token', csrfMeta.content);
         }
         
         const response = await fetch('/projects/qr/templates/create', {
@@ -2743,6 +3149,33 @@ html[data-theme="dark"] .form-select optgroup {
     margin-bottom: 0.5rem; /* More compact spacing */
 }
 
+/* Locked feature visual treatment */
+.feature-locked {
+    opacity: 0.6;
+    pointer-events: none;
+}
+.feature-locked .form-input,
+.feature-locked .toggle-input {
+    cursor: not-allowed;
+}
+.feature-upgrade-note {
+    color: #f59e0b;
+    font-size: 12px;
+}
+.badge-plan-lock {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: linear-gradient(135deg, #f59e0b, #ef4444);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 20px;
+    margin-left: 6px;
+    vertical-align: middle;
+}
+
 .toggle-label {
     display: flex;
     align-items: center;
@@ -3055,7 +3488,11 @@ html[data-theme="dark"] .form-select optgroup {
 
 .qr-action-buttons .btn {
     flex: 1;
-    min-width: 200px;
+    min-width: 140px;
+}
+
+.qr-action-buttons {
+    width: 100%;
 }
 
 /* Template Save Modal */

@@ -9,6 +9,9 @@
 namespace Projects\QR\Controllers;
 
 use Core\Auth;
+use Core\Logger;
+use Core\Security;
+use Core\Helpers;
 use Projects\QR\Models\CampaignModel;
 
 class CampaignsController
@@ -93,6 +96,11 @@ class CampaignsController
         }
         
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!Security::verifyCsrfToken($_POST['_csrf_token'] ?? '')) {
+                $_SESSION['error'] = 'Invalid request.';
+                header('Location: /projects/qr/campaigns');
+                exit;
+            }
             $data = [
                 'name' => $_POST['name'] ?? '',
                 'description' => $_POST['description'] ?? '',
@@ -102,6 +110,7 @@ class CampaignsController
             $campaignId = $this->model->create($userId, $data);
             
             if ($campaignId) {
+                Logger::activity($userId, 'qr_campaign_created', ['campaign_id' => $campaignId, 'name' => $data['name']]);
                 $_SESSION['success'] = 'Campaign created successfully';
                 header('Location: /projects/qr/campaigns');
             } else {
@@ -145,6 +154,11 @@ class CampaignsController
         }
         
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!Security::verifyCsrfToken($_POST['_csrf_token'] ?? '')) {
+                $_SESSION['error'] = 'Invalid request.';
+                header('Location: /projects/qr/campaigns');
+                exit;
+            }
             $data = [
                 'name' => $_POST['name'] ?? '',
                 'description' => $_POST['description'] ?? '',
@@ -152,6 +166,7 @@ class CampaignsController
             ];
             
             if ($this->model->update($campaignId, $userId, $data)) {
+                Logger::activity($userId, 'qr_campaign_updated', ['campaign_id' => $campaignId, 'name' => $data['name']]);
                 $_SESSION['success'] = 'Campaign updated successfully';
                 header('Location: /projects/qr/campaigns');
             } else {
@@ -179,6 +194,13 @@ class CampaignsController
             echo json_encode(['success' => false, 'message' => 'Not authenticated']);
             exit;
         }
+
+        $csrfToken = $_POST['_csrf_token'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
+        if (!Security::verifyCsrfToken($csrfToken)) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Invalid request token.']);
+            exit;
+        }
         
         $campaignId = $_POST['id'] ?? null;
         
@@ -188,6 +210,7 @@ class CampaignsController
         }
         
         if ($this->model->delete($campaignId, $userId)) {
+            Logger::activity($userId, 'qr_campaign_deleted', ['campaign_id' => $campaignId]);
             echo json_encode(['success' => true, 'message' => 'Campaign deleted successfully']);
         } else {
             echo json_encode(['success' => false, 'message' => 'Failed to delete campaign']);

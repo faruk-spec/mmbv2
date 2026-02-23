@@ -18,6 +18,7 @@ try {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="MyMultiBranch - Multi-Project Platform">
+    <meta name="csrf-token" content="<?= Security::generateCsrfToken() ?>">
     <title><?= View::e($title ?? 'MyMultiBranch') ?> - <?= APP_NAME ?></title>
     
     <!-- Fonts -->
@@ -928,12 +929,18 @@ try {
     <?php View::yield('styles'); ?>
 </head>
 <body>
-    <?php include BASE_PATH . '/views/layouts/navbar.php'; ?>
+    <?php
+    // Initialise user timezone for all date displays in dashboard pages.
+    if (\Core\Auth::check()) {
+        \Core\Timezone::init(\Core\Auth::id());
+    }
+    include BASE_PATH . '/views/layouts/navbar.php';
+    ?>
     
     <main class="main">
         <?php 
         // Check if this is a dashboard page that needs sidebar
-        $isDashboardPage = isset($title) && in_array($title, ['Dashboard', 'Profile', 'Security Settings', 'Activity Log', 'Settings']);
+        $isDashboardPage = isset($title) && in_array($title, ['Dashboard', 'Profile', 'Security Settings', 'Activity Log', 'Settings', 'My Plans', 'Subscribe to Plan', 'All Notifications']);
         ?>
         
         <?php if ($isDashboardPage): ?>
@@ -1077,6 +1084,17 @@ try {
                                     <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                                 </svg>
                                 <span class="nav-text">Settings</span>
+                            </a>
+                        </div>
+
+                        <!-- Plans & Subscriptions -->
+                        <div class="nav-section" style="margin-bottom: 8px;">
+                            <a href="/plans" class="nav-item" style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.85rem;<?= strpos($_SERVER['REQUEST_URI'] ?? '', '/plans') !== false ? ' background: rgba(153,69,255,0.15); color: var(--purple);' : '' ?>" onmouseover="this.style.background='rgba(153,69,255,0.15)'; this.style.color='var(--purple)'" onmouseout="this.style.background='<?= strpos($_SERVER['REQUEST_URI'] ?? '', '/plans') !== false ? 'rgba(153,69,255,0.15)' : 'transparent' ?>'; this.style.color='<?= strpos($_SERVER['REQUEST_URI'] ?? '', '/plans') !== false ? 'var(--purple)' : 'var(--text-primary)' ?>'">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                                    <line x1="1" y1="10" x2="23" y2="10"/>
+                                </svg>
+                                <span class="nav-text">Plans &amp; Subscriptions</span>
                             </a>
                         </div>
                         

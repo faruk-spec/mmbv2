@@ -28,6 +28,7 @@ header("Expires: 0");
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
+    <meta name="csrf-token" content="<?= \Core\Security::generateCsrfToken() ?>">
     <title><?= htmlspecialchars($title ?? 'QR Generator') ?> - MyMultiBranch</title>
     
     <!-- Font Awesome Icons -->
@@ -668,7 +669,23 @@ header("Expires: 0");
     </style>
 </head>
 <body>
-    <?php include BASE_PATH . '/views/layouts/navbar.php'; ?>
+    <?php
+    // Initialise user timezone for all date displays in QR project views.
+    \Core\Timezone::init(\Core\Auth::id());
+    include BASE_PATH . '/views/layouts/navbar.php';
+
+    // Resolve sidebar feature flags (uses $userFeatures if passed from controller,
+    // otherwise falls back to QRFeatureService for the current user).
+    if (empty($userFeatures) && \Core\Auth::check()) {
+        try {
+            $userFeatures = (new \Projects\QR\Services\QRFeatureService())->getFeatures(\Core\Auth::id());
+        } catch (\Exception $e) {
+            $userFeatures = [];
+        }
+    }
+    $sf = $userFeatures ?? [];
+    $sfGet = fn(string $k, bool $default = true): bool => (bool)($sf[$k] ?? $default);
+    ?>
     
     <div class="qr-dashboard">
         <!-- Sidebar -->
@@ -707,28 +724,39 @@ header("Expires: 0");
             <div class="sidebar-section">
                 <div class="sidebar-title">Advanced</div>
                 <nav class="sidebar-nav">
-                    <a href="/projects/qr/analytics" class="<?= strpos($_SERVER['REQUEST_URI'], '/analytics') !== false ? 'active' : '' ?>">
+                    <a href="/projects/qr/analytics" class="<?= strpos($_SERVER['REQUEST_URI'], '/analytics') !== false ? 'active' : '' ?>"
+                       <?= !$sfGet('analytics') ? 'title="Upgrade to unlock Analytics"' : '' ?>>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M3 3v18h18"/>
                             <path d="M18 17l-5-5-5 5-5-5"/>
                         </svg>
-                        Analytics
+                        Analytics<?= !$sfGet('analytics') ? ' <span style="font-size:.6rem;vertical-align:middle;color:var(--purple);">&#x1F451;</span>' : '' ?>
                     </a>
-                    <a href="/projects/qr/campaigns" class="<?= strpos($_SERVER['REQUEST_URI'], '/campaigns') !== false ? 'active' : '' ?>">
+                    <a href="/projects/qr/campaigns" class="<?= strpos($_SERVER['REQUEST_URI'], '/campaigns') !== false ? 'active' : '' ?>"
+                       <?= !$sfGet('campaigns') ? 'title="Upgrade to unlock Campaigns"' : '' ?>>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
                             <polyline points="22,6 12,13 2,6"/>
                         </svg>
-                        Campaigns
+                        Campaigns<?= !$sfGet('campaigns') ? ' <span style="font-size:.6rem;vertical-align:middle;color:var(--purple);">&#x1F451;</span>' : '' ?>
                     </a>
-                    <a href="/projects/qr/bulk" class="<?= strpos($_SERVER['REQUEST_URI'], '/bulk') !== false ? 'active' : '' ?>">
+                    <a href="/projects/qr/bulk" class="<?= strpos($_SERVER['REQUEST_URI'], '/bulk') !== false ? 'active' : '' ?>"
+                       <?= !$sfGet('bulk_generation', false) ? 'title="Upgrade to unlock Bulk Generation"' : '' ?>>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                             <polyline points="14 2 14 8 20 8"/>
                             <line x1="12" y1="18" x2="12" y2="12"/>
                             <line x1="9" y1="15" x2="15" y2="15"/>
                         </svg>
-                        Bulk Generate
+                        Bulk Generate<?= !$sfGet('bulk_generation', false) ? ' <span style="font-size:.6rem;vertical-align:middle;color:var(--purple);">&#x1F451;</span>' : '' ?>
+                    </a>
+                    <a href="/projects/qr/api" class="<?= strpos($_SERVER['REQUEST_URI'], '/projects/qr/api') !== false ? 'active' : '' ?>"
+                       <?= !$sfGet('api_access') ? 'title="Upgrade to unlock API Access"' : '' ?>>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="16 18 22 12 16 6"/>
+                            <polyline points="8 6 2 12 8 18"/>
+                        </svg>
+                        API Access<?= !$sfGet('api_access') ? ' <span style="font-size:.6rem;vertical-align:middle;color:var(--purple);">&#x1F451;</span>' : '' ?>
                     </a>
                 </nav>
             </div>
@@ -749,6 +777,20 @@ header("Expires: 0");
                             <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"/>
                         </svg>
                         Settings
+                    </a>
+                    <a href="/projects/qr/plan" class="<?= strpos($_SERVER['REQUEST_URI'], '/projects/qr/plan') !== false ? 'active' : '' ?>">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                            <line x1="1" y1="10" x2="23" y2="10"/>
+                        </svg>
+                        My Plan
+                    </a>
+                    <a href="/projects/qr/docs" class="<?= strpos($_SERVER['REQUEST_URI'], '/projects/qr/docs') !== false ? 'active' : '' ?>">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                        </svg>
+                        Documentation
                     </a>
                 </nav>
             </div>

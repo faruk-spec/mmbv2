@@ -9,9 +9,12 @@
 namespace Projects\QR\Controllers;
 
 use Core\Auth;
+use Core\Logger;
+use Core\Security;
 use Projects\QR\Models\BulkJobModel;
 use Projects\QR\Models\QRModel;
 use Projects\QR\Models\CampaignModel;
+use Projects\QR\Services\QRFeatureService;
 
 class BulkController
 {
@@ -43,12 +46,18 @@ class BulkController
         
         // Get campaigns for dropdown
         $campaigns = $this->campaignModel->getByUser($userId);
-        
+
+        $featureService = new QRFeatureService();
+        $userFeatures   = $featureService->getFeatures($userId);
+        $canBulk        = $featureService->can($userId, 'bulk_generation');
+
         $this->render('bulk', [
             'title' => 'Bulk Generate',
             'user' => Auth::user(),
             'jobs' => $jobs,
-            'campaigns' => $campaigns
+            'campaigns' => $campaigns,
+            'userFeatures' => $userFeatures,
+            'canBulk' => $canBulk,
         ]);
     }
     
@@ -63,6 +72,13 @@ class BulkController
             echo json_encode(['success' => false, 'message' => 'Not authenticated']);
             exit;
         }
+
+        // CSRF check (token sent as POST field or X-CSRF-Token header)
+        $csrfToken = $_POST['_csrf_token'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
+        if (!Security::verifyCsrfToken($csrfToken)) {
+            echo json_encode(['success' => false, 'message' => 'Invalid request token.']);
+            exit;
+        }
         
         if (!isset($_FILES['csv_file']) || $_FILES['csv_file']['error'] !== UPLOAD_ERR_OK) {
             echo json_encode(['success' => false, 'message' => 'No file uploaded or upload error']);
@@ -73,10 +89,12 @@ class BulkController
         // Campaign ID is optional - convert empty string to null
         $campaignId = !empty($_POST['campaign_id']) ? (int) $_POST['campaign_id'] : null;
         
-        // Validate file type
-        $fileExt = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-        if (!in_array($fileExt, ['csv', 'txt'])) {
-            echo json_encode(['success' => false, 'message' => 'Only CSV files are allowed']);
+        // Validate file type via finfo (server-side, not client-supplied header)
+        $finfo   = new \finfo(FILEINFO_MIME_TYPE);
+        $mime    = $finfo->file($file['tmp_name']);
+        $allowed = ['text/plain', 'text/csv', 'application/csv'];
+        if (!in_array($mime, $allowed, true)) {
+            echo json_encode(['success' => false, 'message' => 'Only CSV/text files are allowed.']);
             exit;
         }
         
@@ -112,6 +130,8 @@ class BulkController
             echo json_encode(['success' => false, 'message' => 'Failed to create bulk job']);
             exit;
         }
+
+        Logger::activity($userId, 'qr_bulk_upload', ['job_id' => $jobId, 'total' => count($rows), 'campaign_id' => $campaignId]);
         
         // Store CSV data in session for processing
         $_SESSION['bulk_job_' . $jobId] = [
@@ -138,6 +158,12 @@ class BulkController
         
         if (!$userId) {
             echo json_encode(['success' => false, 'message' => 'Not authenticated']);
+            exit;
+        }
+
+        $csrfToken = $_POST['_csrf_token'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
+        if (!Security::verifyCsrfToken($csrfToken)) {
+            echo json_encode(['success' => false, 'message' => 'Invalid request token.']);
             exit;
         }
         
@@ -196,7 +222,7 @@ class BulkController
                 $this->qrModel->updateShortCode($qrId, $shortCode);
                 
                 // Update content to access URL for dynamic QRs
-                $accessUrl = 'https://' . $_SERVER['HTTP_HOST'] . '/projects/qr/access/' . $shortCode;
+                $accessUrl = APP_URL . '/projects/qr/access/' . $shortCode;
                 $this->qrModel->update($qrId, $userId, ['content' => $accessUrl]);
             } else {
                 $failed++;
@@ -219,6 +245,7 @@ class BulkController
             'qr_ids' => $qrIds,
             'message' => "Generated {$completed} QR codes successfully"
         ]);
+        Logger::activity($userId, 'qr_bulk_generated', ['job_id' => $jobId, 'completed' => $completed, 'failed' => $failed]);
         exit;
     }
     

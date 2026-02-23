@@ -309,4 +309,46 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+
+<!-- ── Timezone Card ──────────────────────────────────────────────────────── -->
+<div style="margin-top:16px;">
+    <div class="card" style="border-radius:10px;border:1px solid var(--border-color);overflow:hidden;">
+        <div class="card-header" style="background:linear-gradient(135deg,rgba(0,255,136,.1),rgba(0,240,255,.1));border-bottom:1px solid var(--border-color);padding:12px;">
+            <h3 class="card-title" style="font-size:.9rem;display:flex;align-items:center;gap:6px;margin:0;font-weight:600;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                </svg>
+                Timezone
+            </h3>
+        </div>
+        <div style="padding:16px;">
+            <form method="POST" action="/settings">
+                <?= \Core\Security::csrfField() ?>
+                <input type="hidden" name="setting_type" value="timezone">
+                <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:8px;color:var(--text-secondary);">Your Display Timezone</label>
+                <select name="timezone" style="width:100%;padding:9px 12px;border-radius:7px;border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-size:.85rem;margin-bottom:12px;">
+                    <?php foreach (($tzGroups ?? \Core\Timezone::getGroupedTimezones()) as $region => $zones): ?>
+                    <optgroup label="<?= htmlspecialchars($region, ENT_QUOTES, 'UTF-8') ?>">
+                        <?php foreach ($zones as $tz): ?>
+                        <option value="<?= htmlspecialchars($tz, ENT_QUOTES, 'UTF-8') ?>"
+                            <?= ($userTimezone ?? 'UTC') === $tz ? 'selected' : '' ?>>
+                            <?= htmlspecialchars(str_replace('_', ' ', $tz), ENT_QUOTES, 'UTF-8') ?>
+                        </option>
+                        <?php endforeach; ?>
+                    </optgroup>
+                    <?php endforeach; ?>
+                </select>
+                <p style="font-size:.75rem;color:var(--text-secondary);margin-bottom:12px;">
+                    Dates and times throughout the QR dashboard will be shown in your selected timezone.
+                    The system timezone is <code style="background:rgba(0,240,255,.1);padding:1px 5px;border-radius:3px;"><?= htmlspecialchars(\Core\Timezone::getSystemTz(), ENT_QUOTES, 'UTF-8') ?></code>.
+                </p>
+                <button type="submit" style="width:100%;padding:9px;background:linear-gradient(135deg,var(--green),var(--cyan));border:none;border-radius:7px;color:#000;font-weight:700;font-size:.85rem;cursor:pointer;">
+                    Save Timezone
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
 <?php View::endSection(); ?>

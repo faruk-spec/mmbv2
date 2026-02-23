@@ -17,6 +17,28 @@ class QRModel
     public function __construct()
     {
         $this->db = Database::getInstance();
+        $this->ensureColumns();
+    }
+
+    /**
+     * Add note and scan_limit columns if they do not exist yet.
+     * Uses SHOW COLUMNS for MySQL <8 compatibility (ADD COLUMN IF NOT EXISTS
+     * is only available in MySQL 8.0.20+ / MariaDB 10.2+).
+     */
+    private function ensureColumns(): void
+    {
+        try {
+            $existing = $this->db->fetchAll("SHOW COLUMNS FROM qr_codes");
+            $cols = array_column($existing, 'Field');
+            if (!in_array('note', $cols, true)) {
+                $this->db->query("ALTER TABLE qr_codes ADD COLUMN note VARCHAR(255) NULL");
+            }
+            if (!in_array('scan_limit', $cols, true)) {
+                $this->db->query("ALTER TABLE qr_codes ADD COLUMN scan_limit INT NULL");
+            }
+        } catch (\Exception $e) {
+            // Table may not exist yet or DB error — safe to ignore
+        }
     }
     
     /**
@@ -37,8 +59,8 @@ class QRModel
             frame_style, frame_label, frame_font, frame_color,
             logo_path, logo_color, logo_size, logo_remove_bg,
             is_dynamic, redirect_url, password_hash, expires_at,
-            campaign_id, status, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', NOW())";
+            campaign_id, note, scan_limit, status, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', NOW())";
         
         $params = [
             $userId,
@@ -69,7 +91,9 @@ class QRModel
             $data['redirect_url'] ?? null,
             $data['password_hash'] ?? null,
             $data['expires_at'] ?? null,
-            $data['campaign_id'] ?? null
+            $data['campaign_id'] ?? null,
+            $data['note'] ?? null,
+            $data['scan_limit'] ?? null,
         ];
         
         try {
@@ -163,6 +187,40 @@ class QRModel
             return (int)($result['count'] ?? 0);
         } catch (\Exception $e) {
             \Core\Logger::error('Failed to count QR codes: ' . $e->getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * Count active static QR codes for a user (is_dynamic = 0)
+     */
+    public function countStaticByUser(int $userId): int
+    {
+        try {
+            $result = $this->db->fetch(
+                "SELECT COUNT(*) AS count FROM qr_codes WHERE user_id = ? AND is_dynamic = 0 AND deleted_at IS NULL",
+                [$userId]
+            );
+            return (int) ($result['count'] ?? 0);
+        } catch (\Exception $e) {
+            \Core\Logger::error('Failed to count static QR codes: ' . $e->getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * Count active dynamic QR codes for a user (is_dynamic = 1)
+     */
+    public function countDynamicByUser(int $userId): int
+    {
+        try {
+            $result = $this->db->fetch(
+                "SELECT COUNT(*) AS count FROM qr_codes WHERE user_id = ? AND is_dynamic = 1 AND deleted_at IS NULL",
+                [$userId]
+            );
+            return (int) ($result['count'] ?? 0);
+        } catch (\Exception $e) {
+            \Core\Logger::error('Failed to count dynamic QR codes: ' . $e->getMessage());
             return 0;
         }
     }

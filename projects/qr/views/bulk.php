@@ -2,7 +2,18 @@
 /**
  * Bulk Generate View
  */
+$canBulk = $canBulk ?? true; // default permissive if not passed
 ?>
+<?php if (!$canBulk): ?>
+<div class="glass-card" style="text-align:center;padding:3rem 2rem;">
+    <div style="font-size:3rem;margin-bottom:1rem;">🔒</div>
+    <h3 style="color:var(--text-primary);margin-bottom:.5rem;">Bulk Generation Requires Upgrade</h3>
+    <p style="color:var(--text-secondary);margin-bottom:1.5rem;">Generate hundreds of QR codes at once from a CSV file. Available on Pro and higher plans.</p>
+    <a href="/projects/qr/plan" class="btn-primary" style="text-decoration:none;display:inline-flex;align-items:center;gap:8px;padding:10px 24px;border-radius:8px;">
+        <i class="fas fa-crown"></i> View Plans &amp; Upgrade
+    </a>
+</div>
+<?php else: ?>
 
 <div class="glass-card">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-xl); flex-wrap: wrap; gap: var(--space-md);">
@@ -451,3 +462,4 @@ function resetForm() {
     document.getElementById('bulkUploadForm').reset();
 }
 </script>
+<?php endif; ?>

@@ -22,7 +22,8 @@ Thumbs.db
 # Dependencies (if using Composer)
 /vendor/
 
-# Compiled files
-*.cache
-composer.lock
-vendor/
+# Backup view files (never commit)
+*-backup*.php
+*-backup-*.php
+*-old.php
+

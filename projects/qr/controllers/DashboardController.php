@@ -183,6 +183,131 @@ class DashboardController
     }
     
     /**
+     * Show the user's QR plan / subscription page
+     */
+    public function plan(): void
+    {
+        $userId = Auth::id();
+        $db     = Database::getInstance();
+
+        // ── QR-specific subscription ────────────────────────────────────────
+        $qrSub = null;
+        try {
+            $qrSub = $db->fetch(
+                "SELECT s.*, p.name plan_name, p.slug plan_slug, p.price, p.billing_cycle,
+                        p.max_static_qr, p.max_dynamic_qr, p.max_scans_per_month, p.features
+                 FROM qr_user_subscriptions s
+                 JOIN qr_subscription_plans p ON p.id = s.plan_id
+                 WHERE s.user_id = ? AND s.status = 'active'
+                 ORDER BY s.started_at DESC LIMIT 1",
+                [$userId]
+            );
+        } catch (\Exception $e) {
+            // Table may not exist yet
+        }
+
+        // Decode features JSON if present
+        if ($qrSub && !empty($qrSub['features'])) {
+            $decoded = json_decode($qrSub['features'], true);
+            $qrSub['features'] = is_array($decoded) ? $decoded : [];
+        }
+
+        // ── QR usage counts ─────────────────────────────────────────────────
+        $staticCount  = 0;
+        $dynamicCount = 0;
+        try {
+            $staticCount  = (int) ($db->fetch(
+                "SELECT COUNT(*) c FROM qr_codes WHERE user_id = ? AND is_dynamic = 0 AND deleted_at IS NULL",
+                [$userId]
+            )['c'] ?? 0);
+            $dynamicCount = (int) ($db->fetch(
+                "SELECT COUNT(*) c FROM qr_codes WHERE user_id = ? AND is_dynamic = 1 AND deleted_at IS NULL",
+                [$userId]
+            )['c'] ?? 0);
+        } catch (\Exception $e) { /* ignore */ }
+
+        // ── Platform (universal) plans ──────────────────────────────────────
+        $platformPlans = [];
+        try {
+            $rows = $db->fetchAll(
+                "SELECT * FROM platform_plans WHERE status = 'active' ORDER BY sort_order ASC, price ASC"
+            );
+            foreach ($rows as &$p) {
+                $p['included_apps'] = json_decode($p['included_apps'] ?? '[]', true) ?: [];
+            }
+            $platformPlans = $rows;
+        } catch (\Exception $e) { /* table may not exist */ }
+
+        // ── User's active platform subscriptions ────────────────────────────
+        $activePlatformPlanIds = [];
+        try {
+            $subs = $db->fetchAll(
+                "SELECT plan_id FROM platform_user_subscriptions WHERE user_id = ? AND status = 'active'",
+                [$userId]
+            );
+            $activePlatformPlanIds = array_column($subs, 'plan_id');
+        } catch (\Exception $e) { /* ignore */ }
+
+        // ── QR-specific upgrade plans ────────────────────────────────────────
+        // All active QR subscription plans (shown as upgrade options to users without a subscription)
+        $qrUpgradePlans = [];
+        try {
+            $qrUpgradePlans = $db->fetchAll(
+                "SELECT id, name, slug, price, billing_cycle, max_static_qr, max_dynamic_qr,
+                        max_scans_per_month, features, description
+                 FROM qr_subscription_plans
+                 WHERE status = 'active'
+                 ORDER BY price ASC, sort_order ASC, id ASC"
+            ) ?: [];
+            foreach ($qrUpgradePlans as &$p) {
+                $p['features_arr'] = is_string($p['features'])
+                    ? (json_decode($p['features'], true) ?: [])
+                    : [];
+            }
+            unset($p);
+        } catch (\Exception $e) { /* ignore */ }
+
+        // ── Contact email ────────────────────────────────────────────────────
+        $contactEmail = 'support@mmbtech.online';
+        try {
+            $row = $db->fetch("SELECT value FROM settings WHERE `key` = 'maintenance_contact_email' LIMIT 1");
+            if ($row && !empty($row['value'])) {
+                $contactEmail = $row['value'];
+            }
+        } catch (\Exception $e) { /* use fallback */ }
+
+        \Core\Logger::activity($userId, 'qr_plan_viewed');
+
+        $this->render('plan', [
+            'title'                 => 'My QR Plan',
+            'qrSub'                 => $qrSub,
+            'staticCount'           => $staticCount,
+            'dynamicCount'          => $dynamicCount,
+            'platformPlans'         => $platformPlans,
+            'activePlatformPlanIds' => $activePlatformPlanIds,
+            'qrUpgradePlans'        => $qrUpgradePlans,
+            'contactEmail'          => $contactEmail,
+        ]);
+    }
+
+    /**
+     * Documentation page
+     */
+    public function docs(): void
+    {
+        $userId = Auth::id();
+        $userFeatures = $userId
+            ? (new \Projects\QR\Services\QRFeatureService())->getFeatures($userId)
+            : array_fill_keys(\Projects\QR\Services\QRFeatureService::ALL_FEATURES, true);
+
+        $this->render('docs', [
+            'title'        => 'Documentation',
+            'user'         => Auth::user(),
+            'userFeatures' => $userFeatures,
+        ]);
+    }
+
+    /**
      * Render a project view
      */
     protected function render(string $view, array $data = []): void

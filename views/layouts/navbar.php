@@ -223,6 +223,40 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
                     <a href="/admin" class="nav-link">Admin</a>
                 <?php endif; ?>
                 
+                <!-- Notification Bell -->
+                <?php if ($isLoggedIn):
+                    try {
+                        $notifUnreadCount = \Core\Notification::getUnreadCount($user['id']);
+                    } catch (\Exception $e) {
+                        $notifUnreadCount = 0;
+                    }
+                ?>
+                <div class="notif-bell-wrap nav-item" id="notifDropdown">
+                    <button class="nav-link notif-bell-btn" id="notifBellBtn" aria-label="Notifications" title="Notifications">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                        </svg>
+                        <span class="notif-badge<?= $notifUnreadCount > 0 ? ' has-unread' : '' ?>" id="notifBadge"
+                              style="<?= $notifUnreadCount > 0 ? '' : 'display:none' ?>">
+                            <?= min($notifUnreadCount, 99) ?>
+                        </span>
+                    </button>
+                    <div class="dropdown-menu notif-panel" id="notifPanel" style="min-width:320px;padding:0;">
+                        <div class="notif-panel-header">
+                            <span><strong>Notifications</strong></span>
+                            <button class="notif-mark-all-btn" id="notifMarkAll" title="Mark all as read">Mark all read</button>
+                        </div>
+                        <div class="notif-panel-list" id="notifPanelList">
+                            <div style="padding:20px;text-align:center;color:var(--text-secondary);font-size:13px;">Loading…</div>
+                        </div>
+                        <div class="notif-panel-footer">
+                            <a href="/notifications" style="font-size:12px;color:var(--cyan);">View All Notifications</a>
+                        </div>
+                    </div>
+                </div>
+                <?php endif; ?>
+
                 <!-- Profile Dropdown -->
                 <?php if ($navbarSettings['show_profile_link']): ?>
                 <div class="dropdown nav-item" id="profileDropdown">
@@ -406,6 +440,119 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
     }
 })();
 </script>
+<script>
+// Notification Bell Widget
+(function() {
+    const bell   = document.getElementById('notifBellBtn');
+    const panel  = document.getElementById('notifPanel');
+    const list   = document.getElementById('notifPanelList');
+    const badge  = document.getElementById('notifBadge');
+    const markAllBtn = document.getElementById('notifMarkAll');
+    if (!bell) return;
+
+    let loaded = false;
+    const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+    const csrf = csrfMeta ? csrfMeta.content : '';
+
+    function formatTimeAgo(dateStr) {
+        const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
+        if (diff < 60) return 'just now';
+        if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+        if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
+        return Math.floor(diff/86400) + 'd ago';
+    }
+
+    function renderNotifications(items) {
+        if (!items || items.length === 0) {
+            list.innerHTML = '<div class="notif-empty">No notifications yet</div>';
+            return;
+        }
+        list.innerHTML = items.map(n => `
+            <div class="notif-item ${n.is_read === 1 ? 'read' : 'unread'}" data-id="${n.id}">
+                <div class="notif-item-dot"></div>
+                <div class="notif-item-body">
+                    <div class="notif-item-msg">${n.message}</div>
+                    <div class="notif-item-time">${formatTimeAgo(n.created_at)}</div>
+                </div>
+            </div>`).join('');
+        // Mark as read on click
+        list.querySelectorAll('.notif-item.unread').forEach(el => {
+            el.addEventListener('click', function() {
+                const id = this.dataset.id;
+                fetch('/api/notifications/mark-read', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                    body: '_csrf_token=' + encodeURIComponent(csrf) + '&id=' + id
+                }).then(r => r.json()).then(data => {
+                    this.classList.replace('unread', 'read');
+                    updateBadge(data.unread_count);
+                }).catch(() => {});
+            });
+        });
+    }
+
+    function updateBadge(count) {
+        if (badge) {
+            badge.textContent = Math.min(count, 99);
+            badge.style.display = count > 0 ? '' : 'none';
+        }
+    }
+
+    function loadNotifications() {
+        list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-secondary,#888);font-size:13px;">Loading…</div>';
+        fetch('/api/notifications')
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    renderNotifications(data.notifications);
+                    updateBadge(data.unread_count);
+                }
+            }).catch(() => {
+                list.innerHTML = '<div class="notif-empty">Could not load notifications.</div>';
+            });
+    }
+
+    // Toggle panel on bell click
+    bell.addEventListener('click', function(e) {
+        e.stopPropagation();
+        const drop = bell.closest('.dropdown, .notif-bell-wrap');
+        const isOpen = drop && drop.classList.contains('active');
+        // Close other dropdowns
+        document.querySelectorAll('.dropdown.active').forEach(d => d.classList.remove('active'));
+        if (!isOpen) {
+            drop && drop.classList.add('active');
+            if (!loaded) { loadNotifications(); loaded = true; }
+        }
+    });
+
+    // Mark all read
+    if (markAllBtn) {
+        markAllBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            fetch('/api/notifications/mark-all-read', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: '_csrf_token=' + encodeURIComponent(csrf)
+            }).then(r => r.json()).then(data => {
+                if (data.success) {
+                    updateBadge(0);
+                    list.querySelectorAll('.notif-item.unread').forEach(el => el.classList.replace('unread','read'));
+                }
+            }).catch(() => {});
+        });
+    }
+
+    // Reload every 60s when tab is visible
+    setInterval(function() {
+        if (!document.hidden) {
+            fetch('/api/notifications')
+                .then(r => r.json())
+                .then(data => { if (data.success) updateBadge(data.unread_count); })
+                .catch(() => {});
+        }
+    }, 60000);
+})();
+</script>
 
 <style>
 /* Universal Navbar Styles */
@@ -573,6 +720,50 @@ body {
     font-size: 12px;
     font-weight: 600;
 }
+
+/* Notification Bell */
+.notif-bell-wrap { position: relative; }
+/* Show the panel when the wrapper has the .active class.
+   The generic dropdown rule only covers .dropdown.active, so we need
+   this additional selector for the notification bell wrapper. */
+.notif-bell-wrap.active .dropdown-menu { display: block !important; }
+.notif-bell-btn { position: relative; padding: 8px 10px !important; }
+.notif-badge {
+    position: absolute; top: 2px; right: 2px;
+    background: #e53e3e; color: #fff; font-size: 10px; font-weight: 700;
+    min-width: 16px; height: 16px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0 3px; pointer-events: none;
+}
+.notif-panel-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 16px; border-bottom: 1px solid var(--border-color);
+    font-size: 14px;
+}
+.notif-mark-all-btn {
+    background: none; border: none; cursor: pointer; font-size: 12px;
+    color: var(--cyan); font-family: inherit; padding: 0;
+}
+.notif-mark-all-btn:hover { text-decoration: underline; }
+.notif-panel-list { max-height: 340px; overflow-y: auto; }
+.notif-item {
+    display: flex; gap: 10px; align-items: flex-start;
+    padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.05);
+    cursor: pointer; transition: background 0.15s; font-size: 13px;
+}
+.notif-item:hover { background: var(--hover-bg, rgba(255,255,255,0.05)); }
+.notif-item.unread { background: rgba(0,240,255,0.04); }
+.notif-item-dot {
+    width: 8px; height: 8px; border-radius: 50%; background: var(--cyan);
+    flex-shrink: 0; margin-top: 5px;
+}
+.notif-item.read .notif-item-dot { background: transparent; }
+.notif-item-body { flex: 1; min-width: 0; }
+.notif-item-msg { color: var(--text-primary); line-height: 1.4; }
+.notif-item-time { color: var(--text-secondary); font-size: 11px; margin-top: 2px; }
+.notif-empty { padding: 24px; text-align: center; color: var(--text-secondary); font-size: 13px; }
+.notif-panel-footer { padding: 10px 16px; border-top: 1px solid var(--border-color); text-align: center; }
+[data-theme="light"] .notif-item.unread { background: rgba(0,120,255,0.04); }
 
 /* Theme Toggle */
 .theme-toggle {

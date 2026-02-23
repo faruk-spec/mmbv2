@@ -40,9 +40,6 @@
         <button class="settings-tab" onclick="switchTab('preferences')" id="tab-preferences">
             <i class="fas fa-cog"></i> Preferences
         </button>
-        <button class="settings-tab" onclick="switchTab('api')" id="tab-api">
-            <i class="fas fa-key"></i> API
-        </button>
         <button class="settings-tab" onclick="switchTab('notifications')" id="tab-notifications">
             <i class="fas fa-bell"></i> Notifications
         </button>
@@ -317,50 +314,6 @@
         </div>
         </div><!-- End Notifications Tab -->
         
-        <!-- Tab Content: API -->
-        <div class="tab-content" id="content-api">
-        <!-- API Settings -->
-        <div class="settings-section">
-            <h4 class="settings-heading">
-                <i class="fas fa-key"></i> API Settings
-            </h4>
-            <p class="settings-description">
-                Generate an API key to access QR code generation programmatically.
-            </p>
-            
-            <?php if (!empty($settings['api_key']) && $settings['api_enabled']): ?>
-                <div class="api-key-display">
-                    <div class="form-group">
-                        <label>Your API Key</label>
-                        <div class="api-key-input">
-                            <input type="text" id="apiKeyDisplay" value="<?= $settings['api_key'] ?>" 
-                                   readonly class="form-control" style="flex: 1;">
-                            <button type="button" class="btn-secondary" onclick="copyApiKey()">
-                                <i class="fas fa-copy"></i> Copy
-                            </button>
-                        </div>
-                        <small class="form-help" style="color: #ff9f40;">
-                            <i class="fas fa-exclamation-triangle"></i> Keep this key secret! Do not share it publicly.
-                        </small>
-                    </div>
-                    
-                    <div style="display: flex; gap: 10px;">
-                        <button type="button" class="btn-secondary" onclick="regenerateApiKey()">
-                            <i class="fas fa-sync"></i> Regenerate Key
-                        </button>
-                        <button type="button" class="btn-danger" onclick="disableApi()">
-                            <i class="fas fa-times"></i> Disable API
-                        </button>
-                    </div>
-                </div>
-            <?php else: ?>
-                <button type="button" class="btn-primary" onclick="generateApiKey()">
-                    <i class="fas fa-plus"></i> Generate API Key
-                </button>
-            <?php endif; ?>
-        </div>
-        </div><!-- End API Tab -->
-        
         <div class="form-actions" style="margin-top: var(--space-xl); padding-top: var(--space-xl); border-top: 1px solid rgba(255,255,255,0.1);">
             <button type="submit" class="btn-primary">
                 <i class="fas fa-save"></i> Save Settings
@@ -608,66 +561,17 @@ document.getElementById('customMarkerColor')?.addEventListener('change', functio
     document.getElementById('markerColorGroup').style.display = this.checked ? 'block' : 'none';
 });
 
-function copyApiKey() {
-    const apiKeyInput = document.getElementById('apiKeyDisplay');
-    apiKeyInput.select();
-    document.execCommand('copy');
-    alert('API key copied to clipboard!');
+// ── Toast helper ───────────────────────────────────────────────────────────
+function showSettingsToast(msg, type) {
+    const t = document.createElement('div');
+    t.textContent = msg;
+    t.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:99999;padding:10px 18px;border-radius:8px;font-size:.85rem;font-weight:600;pointer-events:none;transition:opacity .3s;'
+        + (type === 'success'
+            ? 'background:rgba(0,255,136,.15);border:1px solid #00ff88;color:#00ff88;'
+            : 'background:rgba(255,107,107,.15);border:1px solid #ff6b6b;color:#ff6b6b;');
+    document.body.appendChild(t);
+    setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 3200);
 }
 
-async function generateApiKey() {
-    if (!confirm('Generate a new API key? This will allow programmatic access to your QR generator.')) {
-        return;
-    }
-    
-    try {
-        const response = await fetch('/projects/qr/settings/generate-api-key', {
-            method: 'POST'
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            alert('API key generated successfully!');
-            location.reload();
-        } else {
-            alert(data.message || 'Failed to generate API key');
-        }
-    } catch (error) {
-        alert('Error generating API key');
-        console.error(error);
-    }
-}
 
-async function regenerateApiKey() {
-    if (!confirm('Regenerate API key? Your old key will stop working immediately!')) {
-        return;
-    }
-    
-    await generateApiKey();
-}
-
-async function disableApi() {
-    if (!confirm('Disable API access? Your API key will stop working.')) {
-        return;
-    }
-    
-    try {
-        const response = await fetch('/projects/qr/settings/disable-api', {
-            method: 'POST'
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            alert('API access disabled');
-            location.reload();
-        } else {
-            alert(data.message || 'Failed to disable API');
-        }
-    } catch (error) {
-        alert('Error disabling API');
-        console.error(error);
-    }
-}
 </script>

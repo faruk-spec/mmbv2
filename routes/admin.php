@@ -9,6 +9,43 @@
 $router->get('/admin', 'Admin\\DashboardController@index', ['auth', 'admin']);
 $router->get('/admin/dashboard', 'Admin\\DashboardController@index', ['auth', 'admin']);
 
+// Platform Plans (Universal multi-app plans)
+$router->get('/admin/platform-plans', 'Admin\\PlatformPlansController@index', ['auth', 'admin']);
+$router->get('/admin/platform-plans/create', 'Admin\\PlatformPlansController@createForm', ['auth', 'admin']);
+$router->post('/admin/platform-plans/create', 'Admin\\PlatformPlansController@create', ['auth', 'admin']);
+$router->get('/admin/platform-plans/{id}/edit', 'Admin\\PlatformPlansController@editForm', ['auth', 'admin']);
+$router->post('/admin/platform-plans/{id}/update', 'Admin\\PlatformPlansController@update', ['auth', 'admin']);
+$router->post('/admin/platform-plans/{id}/delete', 'Admin\\PlatformPlansController@delete', ['auth', 'admin']);
+$router->post('/admin/platform-plans/assign-user', 'Admin\\PlatformPlansController@assignUser', ['auth', 'admin']);
+$router->post('/admin/platform-plans/revoke-user', 'Admin\\PlatformPlansController@revokeUser', ['auth', 'admin']);
+
+// QR Code Admin Management
+$router->get('/admin/qr', 'Admin\\QRAdminController@index', ['auth', 'admin']);
+$router->post('/admin/qr/{id}/block', 'Admin\\QRAdminController@blockQR', ['auth', 'admin']);
+$router->post('/admin/qr/{id}/unblock', 'Admin\\QRAdminController@unblockQR', ['auth', 'admin']);
+$router->get('/admin/qr/analytics', 'Admin\\QRAdminController@analytics', ['auth', 'admin']);
+$router->get('/admin/qr/blocked-links', 'Admin\\QRAdminController@blockedLinks', ['auth', 'admin']);
+$router->post('/admin/qr/blocked-links/add', 'Admin\\QRAdminController@blockLink', ['auth', 'admin']);
+$router->post('/admin/qr/blocked-links/{id}/remove', 'Admin\\QRAdminController@unblockLink', ['auth', 'admin']);
+$router->get('/admin/qr/storage', 'Admin\\QRAdminController@storage', ['auth', 'admin']);
+$router->get('/admin/qr/plans', 'Admin\\QRAdminController@plans', ['auth', 'admin']);
+$router->post('/admin/qr/plans/{id}/update', 'Admin\\QRAdminController@updatePlan', ['auth', 'admin']);
+$router->post('/admin/qr/plans/{id}/toggle-feature', 'Admin\\QRAdminController@togglePlanFeature', ['auth', 'admin']);
+$router->get('/admin/qr/abuse-reports', 'Admin\\QRAdminController@abuseReports', ['auth', 'admin']);
+$router->post('/admin/qr/abuse-reports/{id}/resolve', 'Admin\\QRAdminController@resolveAbuse', ['auth', 'admin']);
+$router->get('/admin/qr/roles', 'Admin\\QRAdminController@roles', ['auth', 'admin']);
+$router->get('/admin/qr/roles/user-features/{id}', 'Admin\\QRAdminController@getUserFeaturesApi', ['auth', 'admin']);
+$router->post('/admin/qr/roles/set-role-feature', 'Admin\\QRAdminController@setRoleFeature', ['auth', 'admin']);
+$router->post('/admin/qr/roles/set-user-feature', 'Admin\\QRAdminController@setUserFeature', ['auth', 'admin']);
+$router->post('/admin/qr/roles/remove-user-features', 'Admin\\QRAdminController@removeUserFeatures', ['auth', 'admin']);
+$router->post('/admin/qr/roles/assign-plan', 'Admin\\QRAdminController@assignUserPlan', ['auth', 'admin']);
+$router->post('/admin/qr/roles/set-use-plan', 'Admin\\QRAdminController@setUsePlanSettings', ['auth', 'admin']);
+
+// QR API Keys management
+$router->get('/admin/qr/api-keys', 'Admin\\QRAdminController@qrApiKeys', ['auth', 'admin']);
+$router->post('/admin/qr/api-keys/revoke', 'Admin\\QRAdminController@revokeQrApiKey', ['auth', 'admin']);
+$router->post('/admin/qr/api-keys/generate', 'Admin\\QRAdminController@adminGenerateApiKey', ['auth', 'admin']);
+
 // User management
 $router->get('/admin/users', 'Admin\\UserController@index', ['auth', 'admin']);
 $router->get('/admin/users/create', 'Admin\\UserController@create', ['auth', 'admin']);

@@ -346,8 +346,11 @@
             <button type="submit" class="btn-primary btn-sm" id="applyFilterBtn">
                 <i class="fas fa-check"></i> Apply
             </button>
-            <button type="button" class="btn-secondary btn-sm" onclick="exportCSV()" id="exportBtn">
+            <button type="button" class="btn-secondary btn-sm" <?= !($canExportData ?? true) ? 'disabled title="Upgrade your plan to export data"' : 'onclick="exportCSV()"' ?> id="exportBtn">
                 <i class="fas fa-download"></i> Export CSV
+                <?php if (!($canExportData ?? true)): ?>
+                <span style="font-size:.65rem;background:rgba(153,69,255,.2);color:var(--purple);padding:1px 4px;border-radius:3px;margin-left:3px;"><i class="fas fa-crown"></i></span>
+                <?php endif; ?>
             </button>
         </div>
     </form>

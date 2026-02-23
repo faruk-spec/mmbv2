@@ -236,13 +236,47 @@ switch ($segments[0]) {
     case 'settings':
         require_once PROJECT_PATH . '/controllers/SettingsController.php';
         $controller = new \Projects\QR\Controllers\SettingsController();
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (isset($segments[1])) {
+            // Sub-routes handled by settings controller
+            if ($segments[1] === 'generate-api-key' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+                $controller->generateApiKey();
+            } elseif ($segments[1] === 'disable-api' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+                $controller->disableApi();
+            } else {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => 'Not found']);
+            }
+        } elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $controller->update();
         } else {
             $controller->index();
         }
         break;
-        
+
+    case 'plan':
+        require_once PROJECT_PATH . '/controllers/DashboardController.php';
+        $controller = new \Projects\QR\Controllers\DashboardController();
+        $controller->plan();
+        break;
+
+    case 'docs':
+        require_once PROJECT_PATH . '/controllers/DashboardController.php';
+        $controller = new \Projects\QR\Controllers\DashboardController();
+        $controller->docs();
+        break;
+
+    case 'api':
+        require_once PROJECT_PATH . '/controllers/QRApiUserController.php';
+        $controller = new \Projects\QR\Controllers\QRApiUserController();
+        if (isset($segments[1]) && $segments[1] === 'revoke') {
+            $controller->revoke();
+        } elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $controller->generate();
+        } else {
+            $controller->index();
+        }
+        break;
+
     default:
         http_response_code(404);
         echo "Page not found";
