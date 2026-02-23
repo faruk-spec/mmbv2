@@ -49,6 +49,14 @@ class Security
     {
         return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
     }
+
+    /**
+     * Validate CSRF token — alias for verifyCsrfToken()
+     */
+    public static function validateCsrfToken(string $token): bool
+    {
+        return self::verifyCsrfToken($token);
+    }
     
     /**
      * Get CSRF token field

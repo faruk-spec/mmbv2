@@ -179,7 +179,7 @@ use Core\Auth;
                 ✓ You're subscribed
             </div>
             <?php else: ?>
-            <a href="mailto:<?= htmlspecialchars($contactEmail) ?>?subject=Upgrade+to+<?= urlencode($plan['name']) ?>&body=Hi,+I'd+like+to+upgrade+to+the+<?= urlencode($plan['name']) ?>+plan.+User:+<?= urlencode(Auth::user()['email'] ?? '') ?>"
+            <a href="/plans/subscribe/<?= urlencode($plan['slug'] ?? $plan['id']) ?>"
                style="display:block;width:100%;padding:9px;background:linear-gradient(135deg,<?= $planColor ?>,<?= $planColor ?>aa);border-radius:6px;text-align:center;font-size:.82rem;font-weight:700;color:#fff;text-decoration:none;">
                 Upgrade to <?= htmlspecialchars($plan['name']) ?>
             </a>

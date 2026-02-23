@@ -10,6 +10,31 @@ use Core\Auth;
 $csrfToken  = Security::generateCsrfToken();
 $currentUser = Auth::user();
 ?>
+<style>
+.qr-api-grid { display:grid; grid-template-columns:1fr; gap:20px; align-items:start; }
+@media(min-width:900px){ .qr-api-grid { grid-template-columns:1fr 1fr; } }
+.api-card {
+    border-radius:10px;
+    border:1px solid var(--border-color);
+    background:var(--bg-card);
+    overflow:hidden;
+}
+.api-card-header {
+    padding:12px 16px;
+    background:linear-gradient(135deg,rgba(0,240,255,.1),rgba(255,46,196,.1));
+    border-bottom:1px solid var(--border-color);
+}
+.api-card-header h3 {
+    margin:0;font-size:.9rem;font-weight:700;
+    display:flex;align-items:center;gap:8px;
+}
+.api-card-body { padding:16px; }
+#apiToast {
+    display:none;position:fixed;bottom:24px;right:24px;z-index:99999;
+    padding:10px 18px;border-radius:8px;font-size:.85rem;font-weight:600;pointer-events:none;
+}
+</style>
+<div id="apiToast"></div>
 
 <!-- ── Page heading ──────────────────────────────────────────────────────── -->
 <div style="margin-bottom:24px;">
@@ -50,12 +75,12 @@ $currentUser = Auth::user();
 </div>
 <?php endif; ?>
 
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;">
+<div style="display:grid;grid-template-columns:1fr;gap:20px;align-items:start;" class="qr-api-grid">
 
 <!-- ── LEFT: API Keys ──────────────────────────────────────────────────── -->
 <div>
     <!-- Generate key card -->
-    <div class="card" style="border-radius:10px;border:1px solid var(--border-color);margin-bottom:20px;overflow:hidden;">
+    <div class="api-card" style="margin-bottom:20px;">
         <div style="padding:12px 16px;background:linear-gradient(135deg,rgba(0,240,255,.1),rgba(255,46,196,.1));border-bottom:1px solid var(--border-color);">
             <h3 style="margin:0;font-size:.9rem;font-weight:700;display:flex;align-items:center;gap:8px;">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
@@ -69,7 +94,7 @@ $currentUser = Auth::user();
                 <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
                 <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:6px;color:var(--text-secondary);">Key Name / Description</label>
                 <input type="text" name="name" required maxlength="80" placeholder="e.g. My App Integration"
-                    style="width:100%;padding:9px 12px;border-radius:7px;border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-size:.85rem;margin-bottom:12px;">
+                    style="width:100%;padding:9px 12px;border-radius:7px;border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-size:.85rem;margin-bottom:12px;box-sizing:border-box;">
                 <p style="font-size:.75rem;color:var(--text-secondary);margin-bottom:12px;">
                     Keys are scoped to <code style="background:rgba(0,240,255,.1);padding:1px 5px;border-radius:4px;">qr:read</code>
                     <code style="background:rgba(0,240,255,.1);padding:1px 5px;border-radius:4px;">qr:write</code>
@@ -84,7 +109,7 @@ $currentUser = Auth::user();
     </div>
 
     <!-- Existing keys -->
-    <div class="card" style="border-radius:10px;border:1px solid var(--border-color);overflow:hidden;">
+    <div class="api-card">
         <div style="padding:12px 16px;background:linear-gradient(135deg,rgba(0,240,255,.1),rgba(255,46,196,.1));border-bottom:1px solid var(--border-color);">
             <h3 style="margin:0;font-size:.9rem;font-weight:700;display:flex;align-items:center;gap:8px;">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2">
@@ -143,7 +168,7 @@ $currentUser = Auth::user();
 </div>
 
 <!-- ── RIGHT: API Documentation ─────────────────────────────────────────── -->
-<div class="card" style="border-radius:10px;border:1px solid var(--border-color);overflow:hidden;">
+<div class="api-card">
     <div style="padding:12px 16px;background:linear-gradient(135deg,rgba(153,69,255,.15),rgba(0,240,255,.08));border-bottom:1px solid var(--border-color);">
         <h3 style="margin:0;font-size:.9rem;font-weight:700;display:flex;align-items:center;gap:8px;">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2">
@@ -296,13 +321,24 @@ $currentUser = Auth::user();
 </div><!-- /grid -->
 
 <script>
+function showApiToast(msg, type) {
+    const t = document.getElementById('apiToast');
+    t.textContent = msg;
+    t.style.cssText = 'display:block;position:fixed;bottom:24px;right:24px;z-index:99999;'
+        + 'padding:10px 18px;border-radius:8px;font-size:.85rem;font-weight:600;pointer-events:none;'
+        + (type === 'success'
+            ? 'background:rgba(0,255,136,.15);border:1px solid var(--green);color:var(--green);'
+            : 'background:rgba(255,107,107,.15);border:1px solid var(--red);color:var(--red);');
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => { t.style.display = 'none'; }, 3500);
+}
 function copyKey(elId, btn, rawVal) {
     const text = rawVal || document.getElementById(elId).textContent.trim();
     navigator.clipboard.writeText(text).then(() => {
         const orig = btn.textContent;
         btn.textContent = 'Copied!';
         setTimeout(() => { btn.textContent = orig; }, 2000);
-    });
+    }).catch(() => showApiToast('Copy failed — please copy manually.', 'error'));
 }
 function copyEl(elId, btn) {
     const text = document.getElementById(elId).textContent.trim();
@@ -310,7 +346,7 @@ function copyEl(elId, btn) {
         const orig = btn.textContent;
         btn.textContent = '✓';
         setTimeout(() => { btn.textContent = orig; }, 2000);
-    });
+    }).catch(() => showApiToast('Copy failed.', 'error'));
 }
 function revokeKey(keyId, btn) {
     if (!confirm('Revoke this API key? Any applications using it will lose access immediately.')) return;
@@ -327,13 +363,13 @@ function revokeKey(keyId, btn) {
         if (d.success) {
             location.reload();
         } else {
-            alert(d.error || 'Failed to revoke key.');
+            showApiToast(d.error || 'Failed to revoke key.', 'error');
             btn.disabled = false;
             btn.textContent = 'Revoke';
         }
     })
     .catch(() => {
-        alert('Network error. Please try again.');
+        showApiToast('Network error. Please try again.', 'error');
         btn.disabled = false;
         btn.textContent = 'Revoke';
     });
