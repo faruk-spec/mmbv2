@@ -42,8 +42,7 @@ sort($allFormats);
         </div>
         <div style="font-size:.78rem;color:var(--text-secondary);">AI enhancement has been pre-selected for you</div>
     </div>
-    <a href="/projects/convertx/convert" style="margin-left:auto;padding:.4rem .875rem;background:rgba(255,255,255,.08);border:1px solid var(--border-color);border-radius:.4rem;text-decoration:none;font-size:.8rem;font-weight:500;color:var(--text-primary);transition:all .2s;"
-       onmouseover="this.style.background='rgba(255,255,255,.14)'" onmouseout="this.style.background='rgba(255,255,255,.08)'">
+    <a href="/projects/convertx/convert" class="cx-clear-btn">
         Clear
     </a>
 </div>

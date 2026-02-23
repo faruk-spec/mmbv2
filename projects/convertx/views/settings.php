@@ -76,7 +76,7 @@ $csrfToken   = \Core\Security::generateCsrfToken();
         <div class="card-header">
             <i class="fa-solid fa-terminal"></i> Quick Start
         </div>
-        <pre style="background:rgba(0,0,0,.5);border:1px solid var(--border-color);border-radius:.5rem;padding:1rem;font-size:.78rem;overflow-x:auto;line-height:1.6;"><span style="color:var(--cx-primary);">curl</span> -X POST https://yourdomain.com/projects/convertx/api/convert \
+        <pre style="background:var(--cx-code-bg);border:1px solid var(--border-color);border-radius:.5rem;padding:1rem;font-size:.78rem;overflow-x:auto;line-height:1.6;"><span style="color:var(--cx-primary);">curl</span> -X POST https://yourdomain.com/projects/convertx/api/convert \
   -H <span style="color:var(--cx-accent);">"X-Api-Key: <?= $apiKey ? htmlspecialchars($apiKey) : 'cx_your_api_key' ?>"</span> \
   -F <span style="color:var(--cx-success);">"file=@document.pdf"</span> \
   -F <span style="color:var(--cx-success);">"output_format=docx"</span></pre>

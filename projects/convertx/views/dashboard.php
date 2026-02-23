@@ -83,9 +83,7 @@ $currentView = 'dashboard';
 
     <!-- AI capabilities grid -->
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.75rem;">
-        <a href="/projects/convertx/convert?ai=ocr" style="text-decoration:none;padding:1rem;background:rgba(255,255,255,.04);border:1px solid var(--border-color);border-radius:.625rem;text-align:center;transition:all .3s;cursor:pointer;"
-           onmouseover="this.style.borderColor='var(--cx-primary)';this.style.background='rgba(99,102,241,.1)'"
-           onmouseout="this.style.borderColor='var(--border-color)';this.style.background='rgba(255,255,255,.04)'">
+        <a href="/projects/convertx/convert?ai=ocr" class="cx-ai-tile">
             <div style="width:36px;height:36px;margin:0 auto .5rem;background:linear-gradient(135deg,var(--cx-primary),var(--cx-secondary));border-radius:.5rem;display:flex;align-items:center;justify-content:center;">
                 <i class="fa-solid fa-eye" style="color:#fff;font-size:.9rem;"></i>
             </div>
@@ -93,9 +91,7 @@ $currentView = 'dashboard';
             <div style="font-size:.7rem;color:var(--text-secondary);">Extract text from images</div>
         </a>
 
-        <a href="/projects/convertx/convert?ai=summarize" style="text-decoration:none;padding:1rem;background:rgba(255,255,255,.04);border:1px solid var(--border-color);border-radius:.625rem;text-align:center;transition:all .3s;cursor:pointer;"
-           onmouseover="this.style.borderColor='#7c3aed';this.style.background='rgba(124,58,237,.1)'"
-           onmouseout="this.style.borderColor='var(--border-color)';this.style.background='rgba(255,255,255,.04)'">
+        <a href="/projects/convertx/convert?ai=summarize" class="cx-ai-tile">
             <div style="width:36px;height:36px;margin:0 auto .5rem;background:linear-gradient(135deg,#7c3aed,#06b6d4);border-radius:.5rem;display:flex;align-items:center;justify-content:center;">
                 <i class="fa-solid fa-list-check" style="color:#fff;font-size:.9rem;"></i>
             </div>
@@ -103,9 +99,7 @@ $currentView = 'dashboard';
             <div style="font-size:.7rem;color:var(--text-secondary);">AI document summary</div>
         </a>
 
-        <a href="/projects/convertx/convert?ai=translate" style="text-decoration:none;padding:1rem;background:rgba(255,255,255,.04);border:1px solid var(--border-color);border-radius:.625rem;text-align:center;transition:all .3s;cursor:pointer;"
-           onmouseover="this.style.borderColor='#0891b2';this.style.background='rgba(8,145,178,.1)'"
-           onmouseout="this.style.borderColor='var(--border-color)';this.style.background='rgba(255,255,255,.04)'">
+        <a href="/projects/convertx/convert?ai=translate" class="cx-ai-tile">
             <div style="width:36px;height:36px;margin:0 auto .5rem;background:linear-gradient(135deg,#0891b2,#10b981);border-radius:.5rem;display:flex;align-items:center;justify-content:center;">
                 <i class="fa-solid fa-language" style="color:#fff;font-size:.9rem;"></i>
             </div>
@@ -113,9 +107,7 @@ $currentView = 'dashboard';
             <div style="font-size:.7rem;color:var(--text-secondary);">10+ languages</div>
         </a>
 
-        <a href="/projects/convertx/convert?ai=classify" style="text-decoration:none;padding:1rem;background:rgba(255,255,255,.04);border:1px solid var(--border-color);border-radius:.625rem;text-align:center;transition:all .3s;cursor:pointer;"
-           onmouseover="this.style.borderColor='#f59e0b';this.style.background='rgba(245,158,11,.08)'"
-           onmouseout="this.style.borderColor='var(--border-color)';this.style.background='rgba(255,255,255,.04)'">
+        <a href="/projects/convertx/convert?ai=classify" class="cx-ai-tile">
             <div style="width:36px;height:36px;margin:0 auto .5rem;background:linear-gradient(135deg,#f59e0b,#ef4444);border-radius:.5rem;display:flex;align-items:center;justify-content:center;">
                 <i class="fa-solid fa-tags" style="color:#fff;font-size:.9rem;"></i>
             </div>

@@ -68,6 +68,18 @@ try {
             --cyan:    #8b5cf6;
             --magenta: #06b6d4;
 
+            /* Explicit dark-mode structural variables (makes layout
+               self-contained; mirrors universal-theme.css dark defaults) */
+            --bg-primary:    #06060a;
+            --bg-secondary:  #0c0c12;
+            --bg-card:       #0f0f18;
+            --text-primary:  #e8eefc;
+            --text-secondary: #8892a6;
+            --border-color:  rgba(255,255,255,0.1);
+
+            /* Code block backgrounds */
+            --cx-code-bg: rgba(0,0,0,0.45);
+
             /* Layout */
             --sidebar-width: 15rem;
             --navbar-height: 3.75rem;
@@ -92,13 +104,25 @@ try {
         }
 
         [data-theme="light"] {
+            /* ConvertX brand – slightly deeper for readability on white */
             --cx-primary:    #4f46e5;
             --cx-secondary:  #7c3aed;
             --cx-accent:     #0891b2;
             --purple:  #4f46e5;
             --cyan:    #7c3aed;
             --magenta: #0891b2;
-            --text-muted: #666666;
+
+            /* Structural variables for light mode */
+            --bg-primary:    #f8f9fa;
+            --bg-secondary:  #ffffff;
+            --bg-card:       #ffffff;
+            --text-primary:  #1a1a1a;
+            --text-secondary: #666666;
+            --border-color:  rgba(0,0,0,0.1);
+            --text-muted:    #666666;
+
+            /* Code block background for light mode */
+            --cx-code-bg: rgba(0,0,0,0.05);
         }
 
         /* Body font overrides universal-theme.css default Poppins to stay consistent */
@@ -113,7 +137,13 @@ try {
         body::before {
             background:
                 radial-gradient(ellipse at 15% 0%,   rgba(99,102,241,0.12) 0%, transparent 50%),
-                radial-gradient(ellipse at 85% 100%,  rgba(139,92,246,0.10) 0%, transparent 50%) !important;
+                radial-gradient(ellipse at 85% 100%,  rgba(139,92,246,0.10) 0%, transparent 50%);
+        }
+
+        [data-theme="light"] body::before {
+            background:
+                radial-gradient(ellipse at 15% 0%,   rgba(99,102,241,0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 85% 100%,  rgba(139,92,246,0.04) 0%, transparent 50%);
         }
 
         /* ── Keyframe animations ── */
@@ -335,7 +365,7 @@ try {
         }
 
         .glass-card {
-            background: rgba(15,15,24,0.8);
+            background: var(--bg-card);
             border: 1px solid var(--border-color);
             border-radius: 0.75rem;
             padding: var(--space-xl);
@@ -662,6 +692,46 @@ try {
             display: inline-flex;
             align-items: center;
             gap: 0.25rem;
+        }
+
+        /* ── AI capability tile (dashboard) – theme-aware ── */
+        .cx-ai-tile {
+            display: block;
+            text-decoration: none;
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 0.625rem;
+            text-align: center;
+            transition: border-color 0.3s, background 0.3s, transform 0.2s;
+            cursor: pointer;
+        }
+
+        .cx-ai-tile:hover {
+            border-color: var(--cx-primary);
+            background: rgba(99,102,241,0.1);
+            transform: translateY(-2px);
+        }
+
+        /* ── Clear-preset button (convert page) – theme-aware ── */
+        .cx-clear-btn {
+            margin-left: auto;
+            padding: 0.4rem 0.875rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 0.4rem;
+            text-decoration: none;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            transition: background 0.2s, color 0.2s;
+            flex-shrink: 0;
+            display: inline-block;
+        }
+
+        .cx-clear-btn:hover {
+            background: var(--bg-card);
+            color: var(--text-primary);
         }
 
         /* ── Responsive ── */

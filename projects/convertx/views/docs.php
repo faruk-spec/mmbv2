@@ -15,7 +15,7 @@ $baseUrl     = (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . ($_SERVER
 
     <!-- Authentication -->
     <h3 style="font-size:1rem;font-weight:600;margin-bottom:.75rem;">Authentication</h3>
-    <pre style="background:rgba(0,0,0,.4);border-radius:8px;padding:1rem;font-size:.8rem;overflow-x:auto;margin-bottom:1.5rem;">X-Api-Key: cx_your_api_key_here
+    <pre style="background:var(--cx-code-bg);border:1px solid var(--border-color);border-radius:8px;padding:1rem;font-size:.8rem;overflow-x:auto;margin-bottom:1.5rem;">X-Api-Key: cx_your_api_key_here
 # OR
 Authorization: Bearer cx_your_api_key_here</pre>
 
@@ -32,7 +32,7 @@ Authorization: Bearer cx_your_api_key_here</pre>
             <tr><td>webhook_url</td><td>url</td><td></td><td>POST callback when job completes</td></tr>
         </tbody>
     </table>
-    <pre style="background:rgba(0,0,0,.4);border-radius:8px;padding:1rem;font-size:.8rem;overflow-x:auto;margin-bottom:1.5rem;">curl -X POST <?= htmlspecialchars($baseUrl) ?>/projects/convertx/api/convert \
+    <pre style="background:var(--cx-code-bg);border:1px solid var(--border-color);border-radius:8px;padding:1rem;font-size:.8rem;overflow-x:auto;margin-bottom:1.5rem;">curl -X POST <?= htmlspecialchars($baseUrl) ?>/projects/convertx/api/convert \
   -H "X-Api-Key: cx_your_key" \
   -F "file=@document.pdf" \
   -F "output_format=docx" \
@@ -49,7 +49,7 @@ Authorization: Bearer cx_your_api_key_here</pre>
     <!-- Endpoint: Status -->
     <h3 style="font-size:1rem;font-weight:600;margin-bottom:.75rem;color:var(--cx-primary);">GET /projects/convertx/api/status/{job_id}</h3>
     <p style="font-size:.85rem;color:var(--text-muted);margin-bottom:.5rem;">Poll the status of a conversion job.</p>
-    <pre style="background:rgba(0,0,0,.4);border-radius:8px;padding:1rem;font-size:.8rem;overflow-x:auto;margin-bottom:1.5rem;">curl <?= htmlspecialchars($baseUrl) ?>/projects/convertx/api/status/42 \
+    <pre style="background:var(--cx-code-bg);border:1px solid var(--border-color);border-radius:8px;padding:1rem;font-size:.8rem;overflow-x:auto;margin-bottom:1.5rem;">curl <?= htmlspecialchars($baseUrl) ?>/projects/convertx/api/status/42 \
   -H "X-Api-Key: cx_your_key"
 
 # Response
@@ -68,19 +68,19 @@ Authorization: Bearer cx_your_api_key_here</pre>
     <!-- Endpoint: Download -->
     <h3 style="font-size:1rem;font-weight:600;margin-bottom:.75rem;color:var(--cx-primary);">GET /projects/convertx/api/download/{job_id}</h3>
     <p style="font-size:.85rem;color:var(--text-muted);margin-bottom:.5rem;">Download the converted file (binary stream).</p>
-    <pre style="background:rgba(0,0,0,.4);border-radius:8px;padding:1rem;font-size:.8rem;overflow-x:auto;margin-bottom:1.5rem;">curl -O -J <?= htmlspecialchars($baseUrl) ?>/projects/convertx/api/download/42 \
+    <pre style="background:var(--cx-code-bg);border:1px solid var(--border-color);border-radius:8px;padding:1rem;font-size:.8rem;overflow-x:auto;margin-bottom:1.5rem;">curl -O -J <?= htmlspecialchars($baseUrl) ?>/projects/convertx/api/download/42 \
   -H "X-Api-Key: cx_your_key"</pre>
 
     <!-- Endpoint: History -->
     <h3 style="font-size:1rem;font-weight:600;margin-bottom:.75rem;color:var(--cx-primary);">GET /projects/convertx/api/history</h3>
     <p style="font-size:.85rem;color:var(--text-muted);margin-bottom:.5rem;">List your past conversion jobs (paginated).</p>
-    <pre style="background:rgba(0,0,0,.4);border-radius:8px;padding:1rem;font-size:.8rem;overflow-x:auto;margin-bottom:1.5rem;">curl "<?= htmlspecialchars($baseUrl) ?>/projects/convertx/api/history?page=1" \
+    <pre style="background:var(--cx-code-bg);border:1px solid var(--border-color);border-radius:8px;padding:1rem;font-size:.8rem;overflow-x:auto;margin-bottom:1.5rem;">curl "<?= htmlspecialchars($baseUrl) ?>/projects/convertx/api/history?page=1" \
   -H "X-Api-Key: cx_your_key"</pre>
 
     <!-- Endpoint: Usage -->
     <h3 style="font-size:1rem;font-weight:600;margin-bottom:.75rem;color:var(--cx-primary);">GET /projects/convertx/api/usage</h3>
     <p style="font-size:.85rem;color:var(--text-muted);margin-bottom:.5rem;">Get your usage statistics for the current month.</p>
-    <pre style="background:rgba(0,0,0,.4);border-radius:8px;padding:1rem;font-size:.8rem;overflow-x:auto;margin-bottom:1.5rem;">curl <?= htmlspecialchars($baseUrl) ?>/projects/convertx/api/usage \
+    <pre style="background:var(--cx-code-bg);border:1px solid var(--border-color);border-radius:8px;padding:1rem;font-size:.8rem;overflow-x:auto;margin-bottom:1.5rem;">curl <?= htmlspecialchars($baseUrl) ?>/projects/convertx/api/usage \
   -H "X-Api-Key: cx_your_key"
 
 # Response
@@ -108,7 +108,7 @@ Authorization: Bearer cx_your_api_key_here</pre>
 
     <!-- Webhook payload -->
     <h3 style="font-size:1rem;font-weight:600;margin-bottom:.75rem;">Webhook Payload</h3>
-    <pre style="background:rgba(0,0,0,.4);border-radius:8px;padding:1rem;font-size:.8rem;overflow-x:auto;">{
+    <pre style="background:var(--cx-code-bg);border:1px solid var(--border-color);border-radius:8px;padding:1rem;font-size:.8rem;overflow-x:auto;">{
   "job_id": 42,
   "status": "completed",
   "event": "job.completed",
