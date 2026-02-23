@@ -266,10 +266,43 @@ class QRController
             $expiresAt = date('Y-m-d H:i:s', $parsedExpiry);
         }
         
-        // Campaign (can come from URL or form)
+        // Validate redirect URL for dynamic QR — must be http/https only
+        if ($isDynamic && $redirectUrl !== null && $redirectUrl !== '') {
+            if (!filter_var($redirectUrl, FILTER_VALIDATE_URL) ||
+                !in_array(strtolower(parse_url($redirectUrl, PHP_URL_SCHEME) ?? ''), ['http', 'https'], true)) {
+                Helpers::flash('error', 'Redirect URL must be a valid http or https URL.');
+                Helpers::redirect('/projects/qr/generate');
+                return;
+            }
+        }
+
+        // Validate error correction level
+        if (!in_array($errorCorrection, ['L', 'M', 'Q', 'H'], true)) {
+            $errorCorrection = 'H';
+        }
+
+        // Clamp logo size to a safe range
+        $logoSize = max(0.1, min(0.5, $logoSize));
+
+        // Campaign — verify ownership to prevent attaching QR to another user's campaign
         $campaignId = !empty($_POST['campaign_id']) ? (int) $_POST['campaign_id'] : null;
         if (!$campaignId && !empty($_GET['campaign_id'])) {
             $campaignId = (int) $_GET['campaign_id'];
+        }
+        if ($campaignId && $userId) {
+            // Confirm the campaign belongs to this user
+            try {
+                $campaignCheck = \Core\Database::getInstance()->fetch(
+                    "SELECT id FROM qr_campaigns WHERE id = ? AND user_id = ? LIMIT 1",
+                    [$campaignId, $userId]
+                );
+                if (!$campaignCheck) {
+                    Logger::error("QR generate: user {$userId} attempted to use campaign {$campaignId} which does not belong to them.");
+                    $campaignId = null;
+                }
+            } catch (\Exception $e) {
+                $campaignId = null;
+            }
         }
         
         // Handle logo upload
@@ -337,7 +370,7 @@ class QRController
                 if ($needsAccessUrl) {
                     $shortCode = $this->generateShortCode($qrId);
                     $this->qrModel->updateShortCode($qrId, $shortCode);
-                    $accessUrl = 'https://' . $_SERVER['HTTP_HOST'] . '/projects/qr/access/' . $shortCode;
+                    $accessUrl = APP_URL . '/projects/qr/access/' . $shortCode;
                     $this->qrModel->update($qrId, $userId, ['content' => $accessUrl]);
                     $_SESSION['generated_qr']['content'] = $accessUrl;
                     $_SESSION['generated_qr']['short_code'] = $shortCode;
@@ -350,7 +383,7 @@ class QRController
                     $this->qrModel->updateShortCode($qrId, $shortCode);
                     
                     // Build access URL
-                    $accessUrl = 'https://' . $_SERVER['HTTP_HOST'] . '/projects/qr/access/' . $shortCode;
+                    $accessUrl = APP_URL . '/projects/qr/access/' . $shortCode;
                     
                     // Update the content field to the access URL for dynamic QRs
                     $this->qrModel->update($qrId, $userId, ['content' => $accessUrl]);
@@ -376,7 +409,7 @@ class QRController
 
                 $message = 'QR code generated successfully!';
                 if ($isDynamic && isset($shortCode)) {
-                    $message .= ' Access URL: https://' . $_SERVER['HTTP_HOST'] . '/projects/qr/access/' . $shortCode;
+                    $message .= ' Access URL: ' . APP_URL . '/projects/qr/access/' . $shortCode;
                 }
                 Helpers::flash('success', $message);
             } else {
@@ -615,37 +648,44 @@ class QRController
      */
     private function handleLogoUpload(array $file): ?string
     {
-        // Validate file
-        $allowedTypes = ['image/png', 'image/jpeg', 'image/jpg'];
-        $maxSize = 2 * 1024 * 1024; // 2MB
-        
-        if (!in_array($file['type'], $allowedTypes)) {
-            Helpers::flash('warning', 'Logo must be PNG or JPG format.');
-            return null;
-        }
-        
+        $maxSize = 2 * 1024 * 1024; // 2 MB
+
         if ($file['size'] > $maxSize) {
             Helpers::flash('warning', 'Logo file size must be less than 2MB.');
             return null;
         }
-        
+
+        // Use finfo to detect actual MIME type from file content (not client-supplied header).
+        $finfo    = new \finfo(FILEINFO_MIME_TYPE);
+        $mimeType = $finfo->file($file['tmp_name']);
+
+        $mimeToExt = [
+            'image/png'  => 'png',
+            'image/jpeg' => 'jpg',
+        ];
+
+        if (!isset($mimeToExt[$mimeType])) {
+            Helpers::flash('warning', 'Logo must be a PNG or JPG image.');
+            return null;
+        }
+
+        // Extension derived from verified MIME — never from the original filename.
+        $extension = $mimeToExt[$mimeType];
+
         // Create upload directory if it doesn't exist
         $uploadDir = __DIR__ . '/../../../storage/qr_logos/' . date('Y/m');
         if (!is_dir($uploadDir)) {
             mkdir($uploadDir, 0755, true);
         }
-        
-        // Generate unique filename
-        $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-        $filename = uniqid('logo_') . '.' . $extension;
+
+        $filename = uniqid('logo_', true) . '.' . $extension;
         $filepath = $uploadDir . '/' . $filename;
-        
+
         // Move uploaded file
         if (move_uploaded_file($file['tmp_name'], $filepath)) {
-            // Return relative path for storage
             return '/storage/qr_logos/' . date('Y/m') . '/' . $filename;
         }
-        
+
         Helpers::flash('warning', 'Failed to upload logo.');
         return null;
     }
@@ -1088,20 +1128,36 @@ class QRController
     /**
      * Redirect QR code to its destination
      */
+    /**
+     * Return true only for safe http/https URLs (prevents open-redirect to
+     * javascript:/data:/ftp: schemes and CRLF header injection).
+     */
+    private function isSafeUrl(string $url): bool
+    {
+        if (!filter_var($url, FILTER_VALIDATE_URL)) {
+            return false;
+        }
+        $scheme = strtolower(parse_url($url, PHP_URL_SCHEME) ?? '');
+        return in_array($scheme, ['http', 'https'], true);
+    }
+
     private function redirectQR(array $qr): void
     {
         // For dynamic QR codes, use redirect_url
         if ($qr['is_dynamic'] && !empty($qr['redirect_url'])) {
-            header('Location: ' . $qr['redirect_url']);
-            exit;
+            if ($this->isSafeUrl($qr['redirect_url'])) {
+                header('Location: ' . $qr['redirect_url']);
+                exit;
+            }
+            // Unsafe stored URL — render content page instead of redirecting
         }
         
         // For static QR codes, redirect to content directly
         // Handle different content types
         $content = $qr['content'];
         
-        // If it's already a URL, redirect
-        if (filter_var($content, FILTER_VALIDATE_URL)) {
+        // If it's already a safe URL, redirect
+        if ($this->isSafeUrl($content)) {
             header('Location: ' . $content);
             exit;
         }

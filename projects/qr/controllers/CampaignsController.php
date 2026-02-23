@@ -10,6 +10,8 @@ namespace Projects\QR\Controllers;
 
 use Core\Auth;
 use Core\Logger;
+use Core\Security;
+use Core\Helpers;
 use Projects\QR\Models\CampaignModel;
 
 class CampaignsController
@@ -94,6 +96,11 @@ class CampaignsController
         }
         
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!Security::verifyCsrfToken($_POST['_csrf_token'] ?? '')) {
+                $_SESSION['error'] = 'Invalid request.';
+                header('Location: /projects/qr/campaigns');
+                exit;
+            }
             $data = [
                 'name' => $_POST['name'] ?? '',
                 'description' => $_POST['description'] ?? '',
@@ -147,6 +154,11 @@ class CampaignsController
         }
         
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!Security::verifyCsrfToken($_POST['_csrf_token'] ?? '')) {
+                $_SESSION['error'] = 'Invalid request.';
+                header('Location: /projects/qr/campaigns');
+                exit;
+            }
             $data = [
                 'name' => $_POST['name'] ?? '',
                 'description' => $_POST['description'] ?? '',
@@ -180,6 +192,13 @@ class CampaignsController
         
         if (!$userId) {
             echo json_encode(['success' => false, 'message' => 'Not authenticated']);
+            exit;
+        }
+
+        $csrfToken = $_POST['_csrf_token'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
+        if (!Security::verifyCsrfToken($csrfToken)) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Invalid request token.']);
             exit;
         }
         

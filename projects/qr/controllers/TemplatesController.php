@@ -10,6 +10,7 @@ namespace Projects\QR\Controllers;
 
 use Core\Auth;
 use Core\Logger;
+use Core\Security;
 use Projects\QR\Models\TemplateModel;
 
 class TemplatesController
@@ -56,6 +57,12 @@ class TemplatesController
         }
         
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $csrfToken = $_POST['_csrf_token'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
+            if (!Security::verifyCsrfToken($csrfToken)) {
+                http_response_code(403);
+                echo json_encode(['success' => false, 'message' => 'Invalid request token.']);
+                exit;
+            }
             $data = [
                 'name' => $_POST['name'] ?? 'Untitled Template',
                 'settings' => json_decode($_POST['settings'] ?? '{}', true),
@@ -114,6 +121,13 @@ class TemplatesController
             echo json_encode(['success' => false, 'message' => 'Not authenticated']);
             exit;
         }
+
+        $csrfToken = $_POST['_csrf_token'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
+        if (!Security::verifyCsrfToken($csrfToken)) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Invalid request token.']);
+            exit;
+        }
         
         $templateId = $_POST['id'] ?? null;
         
@@ -146,6 +160,13 @@ class TemplatesController
         
         if (!$userId) {
             echo json_encode(['success' => false, 'message' => 'Not authenticated']);
+            exit;
+        }
+
+        $csrfToken = $_POST['_csrf_token'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
+        if (!Security::verifyCsrfToken($csrfToken)) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Invalid request token.']);
             exit;
         }
         
