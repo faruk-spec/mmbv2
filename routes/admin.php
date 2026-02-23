@@ -34,6 +34,7 @@ $router->post('/admin/qr/plans/{id}/toggle-feature', 'Admin\\QRAdminController@t
 $router->get('/admin/qr/abuse-reports', 'Admin\\QRAdminController@abuseReports', ['auth', 'admin']);
 $router->post('/admin/qr/abuse-reports/{id}/resolve', 'Admin\\QRAdminController@resolveAbuse', ['auth', 'admin']);
 $router->get('/admin/qr/roles', 'Admin\\QRAdminController@roles', ['auth', 'admin']);
+$router->get('/admin/qr/roles/user-features/{id}', 'Admin\\QRAdminController@getUserFeaturesApi', ['auth', 'admin']);
 $router->post('/admin/qr/roles/set-role-feature', 'Admin\\QRAdminController@setRoleFeature', ['auth', 'admin']);
 $router->post('/admin/qr/roles/set-user-feature', 'Admin\\QRAdminController@setUserFeature', ['auth', 'admin']);
 $router->post('/admin/qr/roles/remove-user-features', 'Admin\\QRAdminController@removeUserFeatures', ['auth', 'admin']);

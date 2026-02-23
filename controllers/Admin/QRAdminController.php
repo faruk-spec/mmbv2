@@ -80,8 +80,44 @@ class QRAdminController extends BaseController
             // This ensures new features added to ALL_FEATURES are automatically
             // propagated to existing roles without wiping custom settings.
             $this->seedDefaultRoleFeatures();
+
+            // Migrate any plan features JSON that used old short keys (bulk/ai/api)
+            // to the canonical keys (bulk_generation/ai_design/api_access).
+            $this->migratePlanFeatureKeys();
         } catch (\Exception $e) {
             Logger::error('QRAdmin ensureTables error: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * One-time fix: rename old short plan feature keys to canonical names.
+     * Safe to run repeatedly (idempotent).
+     */
+    private function migratePlanFeatureKeys(): void
+    {
+        try {
+            $plans = $this->db->fetchAll("SELECT id, features FROM qr_subscription_plans WHERE features IS NOT NULL");
+            foreach ($plans as $plan) {
+                $feats = json_decode($plan['features'], true);
+                if (!is_array($feats)) continue;
+                $changed = false;
+                $keyMap = ['bulk' => 'bulk_generation', 'ai' => 'ai_design', 'api' => 'api_access'];
+                foreach ($keyMap as $old => $new) {
+                    if (array_key_exists($old, $feats) && !array_key_exists($new, $feats)) {
+                        $feats[$new] = $feats[$old];
+                        unset($feats[$old]);
+                        $changed = true;
+                    }
+                }
+                if ($changed) {
+                    $this->db->query(
+                        "UPDATE qr_subscription_plans SET features = ? WHERE id = ?",
+                        [json_encode($feats), $plan['id']]
+                    );
+                }
+            }
+        } catch (\Exception $e) {
+            Logger::error('QRAdmin migratePlanFeatureKeys error: ' . $e->getMessage());
         }
     }
 
@@ -946,6 +982,27 @@ class QRAdminController extends BaseController
     }
 
     /**
+     * API endpoint: return effective feature map for a specific user (JSON)
+     * GET /admin/qr/roles/user-features/{id}
+     */
+    public function getUserFeaturesApi(string $id): void
+    {
+        $userId = (int) $id;
+        if (!$userId) {
+            $this->json(['success' => false, 'message' => 'Invalid user.'], 400);
+            return;
+        }
+        try {
+            $svc      = new \Projects\QR\Services\QRFeatureService();
+            $features = $svc->getFeatures($userId);
+            $this->json(['success' => true, 'features' => $features]);
+        } catch (\Exception $e) {
+            Logger::error('getUserFeaturesApi error: ' . $e->getMessage());
+            $this->json(['success' => false, 'message' => 'Server error.'], 500);
+        }
+    }
+
+    /**
      * Assign / change a user's QR subscription plan
      */
     public function assignUserPlan(): void
@@ -959,8 +1016,8 @@ class QRAdminController extends BaseController
         $userId = (int) $this->input('user_id', 0);
         $planId = (int) $this->input('plan_id', 0);
 
-        if (!$userId || !$planId) {
-            $this->flash('error', 'User and plan are required.');
+        if (!$userId) {
+            $this->flash('error', 'Please select a user.');
             $this->redirect('/admin/qr/roles');
             return;
         }
@@ -972,25 +1029,30 @@ class QRAdminController extends BaseController
                 [$userId]
             );
 
-            // Insert new subscription
-            $this->db->query(
-                "INSERT INTO qr_user_subscriptions (user_id, plan_id, status, started_at)
-                 VALUES (?, ?, 'active', NOW())",
-                [$userId, $planId]
-            );
+            if ($planId) {
+                // Insert new subscription
+                $this->db->query(
+                    "INSERT INTO qr_user_subscriptions (user_id, plan_id, status, started_at)
+                     VALUES (?, ?, 'active', NOW())",
+                    [$userId, $planId]
+                );
 
-            $plan = $this->db->fetch("SELECT name FROM qr_subscription_plans WHERE id = ?", [$planId]);
+                $plan = $this->db->fetch("SELECT name FROM qr_subscription_plans WHERE id = ?", [$planId]);
 
-            Logger::activity(Auth::id(), 'admin_qr_user_plan_assigned', [
-                'user_id'   => $userId,
-                'plan_id'   => $planId,
-                'plan_name' => $plan['name'] ?? '',
-            ]);
+                Logger::activity(Auth::id(), 'admin_qr_user_plan_assigned', [
+                    'user_id'   => $userId,
+                    'plan_id'   => $planId,
+                    'plan_name' => $plan['name'] ?? '',
+                ]);
 
-            $this->flash('success', 'Plan assigned successfully.');
+                $this->flash('success', 'Plan assigned successfully.');
+            } else {
+                Logger::activity(Auth::id(), 'admin_qr_user_plan_removed', ['user_id' => $userId]);
+                $this->flash('success', 'Plan removed — user is now on the free tier.');
+            }
         } catch (\Exception $e) {
             Logger::error('Assign user plan error: ' . $e->getMessage());
-            $this->flash('error', 'Failed to assign plan.');
+            $this->flash('error', 'Failed to update plan.');
         }
 
         $this->redirect('/admin/qr/roles');
@@ -1055,9 +1117,9 @@ class QRAdminController extends BaseController
             'download_svg'        => 'Download SVG',
             'download_pdf'        => 'Download PDF',
             // Advanced / paid features
-            'bulk'                => 'Bulk Generation',
-            'ai'                  => 'AI Design',
-            'api'                 => 'API Access',
+            'bulk_generation'     => 'Bulk Generation',
+            'ai_design'           => 'AI Design',
+            'api_access'          => 'API Access',
             'whitelabel'          => 'White-Label / Custom Domain',
             'team_roles'          => 'Team Roles',
             'priority_support'    => 'Priority Support',

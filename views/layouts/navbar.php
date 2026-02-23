@@ -723,6 +723,10 @@ body {
 
 /* Notification Bell */
 .notif-bell-wrap { position: relative; }
+/* Show the panel when the wrapper has the .active class.
+   The generic dropdown rule only covers .dropdown.active, so we need
+   this additional selector for the notification bell wrapper. */
+.notif-bell-wrap.active .dropdown-menu { display: block !important; }
 .notif-bell-btn { position: relative; padding: 8px 10px !important; }
 .notif-badge {
     position: absolute; top: 2px; right: 2px;
