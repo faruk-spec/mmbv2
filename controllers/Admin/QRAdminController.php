@@ -87,6 +87,58 @@ class QRAdminController extends BaseController
         } catch (\Exception $e) {
             Logger::error('QRAdmin ensureTables error: ' . $e->getMessage());
         }
+
+        // Ensure subscription tables exist separately (may fail on restricted DB users
+        // without FOREIGN KEY privileges; that's acceptable — feature service falls back gracefully).
+        try {
+            $this->db->query("
+                CREATE TABLE IF NOT EXISTS `qr_subscription_plans` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `name` VARCHAR(100) NOT NULL,
+                    `slug` VARCHAR(50) NOT NULL,
+                    `price` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+                    `billing_cycle` ENUM('monthly','yearly','lifetime') DEFAULT 'lifetime',
+                    `max_static_qr` INT DEFAULT 10,
+                    `max_dynamic_qr` INT DEFAULT 0,
+                    `max_scans_per_month` INT DEFAULT 1000,
+                    `max_bulk_generation` INT DEFAULT 0,
+                    `features` TEXT NULL,
+                    `status` ENUM('active','inactive') DEFAULT 'active',
+                    `sort_order` INT DEFAULT 0,
+                    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    `updated_at` TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP,
+                    UNIQUE KEY `unique_slug` (`slug`),
+                    INDEX `idx_status` (`status`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+
+            // Seed a 'free' default plan so getPlanFeatures() fallback always finds one.
+            $freeFeatures = array_fill_keys(array_keys($this->getPlanFeatures()), false);
+            $this->db->query(
+                "INSERT IGNORE INTO `qr_subscription_plans`
+                    (`name`,`slug`,`price`,`billing_cycle`,`max_static_qr`,`max_dynamic_qr`,
+                     `max_scans_per_month`,`features`,`status`,`sort_order`)
+                 VALUES (?,?,0.00,'lifetime',5,0,500,?,'active',0)",
+                ['Free', 'free', json_encode($freeFeatures)]
+            );
+
+            $this->db->query("
+                CREATE TABLE IF NOT EXISTS `qr_user_subscriptions` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `user_id` INT UNSIGNED NOT NULL,
+                    `plan_id` INT UNSIGNED NOT NULL,
+                    `status` ENUM('active','cancelled','expired','trial') DEFAULT 'active',
+                    `started_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    `expires_at` TIMESTAMP NULL,
+                    `updated_at` TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP,
+                    INDEX `idx_user_id` (`user_id`),
+                    INDEX `idx_plan_id` (`plan_id`),
+                    INDEX `idx_status` (`status`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+        } catch (\Exception $e) {
+            Logger::error('QRAdmin ensureTables (subscriptions) error: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -101,7 +153,12 @@ class QRAdminController extends BaseController
                 $feats = json_decode($plan['features'], true);
                 if (!is_array($feats)) continue;
                 $changed = false;
-                $keyMap = ['bulk' => 'bulk_generation', 'ai' => 'ai_design', 'api' => 'api_access'];
+                $keyMap = [
+                    'bulk'   => 'bulk_generation',
+                    'ai'     => 'ai_design',
+                    'api'    => 'api_access',
+                    'expiry' => 'expiry_date',     // missed in previous migration
+                ];
                 foreach ($keyMap as $old => $new) {
                     if (array_key_exists($old, $feats) && !array_key_exists($new, $feats)) {
                         $feats[$new] = $feats[$old];
@@ -581,6 +638,33 @@ class QRAdminController extends BaseController
             $plans = [];
         }
 
+        // Pre-populate any plan JSON that is missing canonical feature keys.
+        // This ensures every toggle in the admin UI represents a real saved value
+        // (not a "key absent → defaults to false" ambiguity). Idempotent.
+        $allFeatureKeys = array_keys($this->getPlanFeatures());
+        foreach ($plans as &$plan) {
+            $feats   = json_decode($plan['features'] ?? '{}', true) ?: [];
+            $changed = false;
+            foreach ($allFeatureKeys as $key) {
+                if (!array_key_exists($key, $feats)) {
+                    $feats[$key] = false;
+                    $changed     = true;
+                }
+            }
+            if ($changed) {
+                try {
+                    $this->db->query(
+                        "UPDATE qr_subscription_plans SET features = ?, updated_at = NOW() WHERE id = ?",
+                        [json_encode($feats), $plan['id']]
+                    );
+                } catch (\Exception $e) {
+                    Logger::error('QRAdmin plans init features error: ' . $e->getMessage());
+                }
+                $plan['features'] = json_encode($feats);
+            }
+        }
+        unset($plan);
+
         $this->view('admin/qr/plans', [
             'title'    => 'QR Subscription Plans',
             'subtitle' => 'Manage plan limits and feature access for QR generator',
@@ -667,6 +751,10 @@ class QRAdminController extends BaseController
 
         $planId  = (int) $id;
         $feature = $this->input('feature', '');
+        // Use the value the admin explicitly set (1 = enable, 0 = disable).
+        // Do NOT flip the current DB value — that caused inversions when the key
+        // was absent from the JSON (absent ≡ false, !false = true → wrong direction).
+        $enabled = (bool)(int)$this->input('enabled', '0');
 
         $allowed = array_keys($this->getPlanFeatures());
         if (!in_array($feature, $allowed, true)) {
@@ -682,8 +770,7 @@ class QRAdminController extends BaseController
             }
 
             $features           = json_decode($plan['features'] ?? '{}', true) ?: [];
-            $current            = (bool) ($features[$feature] ?? false);
-            $features[$feature] = !$current;
+            $features[$feature] = $enabled;
 
             $this->db->query(
                 "UPDATE qr_subscription_plans SET features = ?, updated_at = NOW() WHERE id = ?",
@@ -693,10 +780,10 @@ class QRAdminController extends BaseController
             Logger::activity(Auth::id(), 'admin_qr_plan_feature_toggled', [
                 'plan_id' => $planId,
                 'feature' => $feature,
-                'enabled' => !$current,
+                'enabled' => $enabled,
             ]);
 
-            $this->json(['success' => true, 'enabled' => !$current]);
+            $this->json(['success' => true, 'enabled' => $enabled]);
         } catch (\Exception $e) {
             Logger::error('Toggle plan feature error: ' . $e->getMessage());
             $this->json(['success' => false, 'message' => 'Server error.'], 500);

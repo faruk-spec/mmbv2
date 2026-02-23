@@ -168,6 +168,8 @@ class QRFeatureService
 
     private function getPlanFeatures(int $userId): array
     {
+        // Step 1: look for the user's active subscription.
+        $row = null;
         try {
             $row = $this->db->fetch(
                 "SELECT p.features
@@ -178,32 +180,39 @@ class QRFeatureService
                  LIMIT 1",
                 [$userId]
             );
+        } catch (\Exception $e) {
+            // Table may not exist yet on this install — fall through to default plan.
+            Logger::error('QRFeatureService::getPlanFeatures subscription query error: ' . $e->getMessage());
+        }
 
-            // Fallback: if user has no active subscription, apply the 'free' default plan
-            // so that plan-level feature toggles always affect users without subscriptions.
-            if (!$row || empty($row['features'])) {
+        // Step 2: fallback — apply the cheapest active plan as the default tier.
+        // Deliberately avoids hard-coding slug names so it works on any installation.
+        if (!$row || empty($row['features'])) {
+            try {
                 $row = $this->db->fetch(
                     "SELECT features FROM qr_subscription_plans
-                     WHERE slug IN ('free', 'default') AND status = 'active'
-                     ORDER BY price ASC LIMIT 1"
+                     WHERE status = 'active'
+                     ORDER BY price ASC, sort_order ASC, id ASC
+                     LIMIT 1"
                 );
+            } catch (\Exception $e) {
+                Logger::error('QRFeatureService::getPlanFeatures fallback query error: ' . $e->getMessage());
+                return [];
             }
+        }
 
-            if (!$row || empty($row['features'])) {
-                return [];
-            }
-            $decoded = json_decode($row['features'], true);
-            if (!is_array($decoded)) {
-                if (json_last_error() !== JSON_ERROR_NONE) {
-                    Logger::error('QRFeatureService: corrupt plan features JSON — ' . json_last_error_msg());
-                }
-                return [];
-            }
-            return $decoded;
-        } catch (\Exception $e) {
-            Logger::error('QRFeatureService::getPlanFeatures error: ' . $e->getMessage());
+        if (!$row || empty($row['features'])) {
             return [];
         }
+
+        $decoded = json_decode($row['features'], true);
+        if (!is_array($decoded)) {
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                Logger::error('QRFeatureService: corrupt plan features JSON — ' . json_last_error_msg());
+            }
+            return [];
+        }
+        return $decoded;
     }
 
     /**
