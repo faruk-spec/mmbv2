@@ -22,14 +22,22 @@ class QRModel
 
     /**
      * Add note and scan_limit columns if they do not exist yet.
+     * Uses SHOW COLUMNS for MySQL <8 compatibility (ADD COLUMN IF NOT EXISTS
+     * is only available in MySQL 8.0.20+ / MariaDB 10.2+).
      */
     private function ensureColumns(): void
     {
         try {
-            $this->db->query("ALTER TABLE qr_codes ADD COLUMN IF NOT EXISTS note VARCHAR(255) NULL");
-            $this->db->query("ALTER TABLE qr_codes ADD COLUMN IF NOT EXISTS scan_limit INT NULL");
+            $existing = $this->db->fetchAll("SHOW COLUMNS FROM qr_codes");
+            $cols = array_column($existing, 'Field');
+            if (!in_array('note', $cols, true)) {
+                $this->db->query("ALTER TABLE qr_codes ADD COLUMN note VARCHAR(255) NULL");
+            }
+            if (!in_array('scan_limit', $cols, true)) {
+                $this->db->query("ALTER TABLE qr_codes ADD COLUMN scan_limit INT NULL");
+            }
         } catch (\Exception $e) {
-            // Columns may already exist or DB does not support IF NOT EXISTS — safe to ignore
+            // Table may not exist yet or DB error — safe to ignore
         }
     }
     

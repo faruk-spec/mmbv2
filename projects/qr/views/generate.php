@@ -555,46 +555,6 @@
                 </div>
             </div>
 
-            <!-- UTM Parameters (URL type only) -->
-            <div id="utmGroup" style="display:none;">
-                <h4 class="subsection-title collapsible-header" onclick="toggleSection('utmOptions')" style="margin-top:12px;">
-                    <span><i class="fas fa-chart-line"></i> UTM Tracking Parameters</span>
-                    <i class="fas fa-chevron-right collapse-icon"></i>
-                </h4>
-                <div id="utmOptions" class="collapsible-content collapsed">
-                    <div class="grid grid-2" style="gap:15px;">
-                        <div class="form-group">
-                            <label class="form-label">UTM Source</label>
-                            <input type="text" name="utm_source" id="utmSource" class="form-input" placeholder="e.g. newsletter">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">UTM Medium</label>
-                            <input type="text" name="utm_medium" id="utmMedium" class="form-input" placeholder="e.g. email">
-                        </div>
-                    </div>
-                    <div class="grid grid-2" style="gap:15px;">
-                        <div class="form-group">
-                            <label class="form-label">UTM Campaign</label>
-                            <input type="text" name="utm_campaign" id="utmCampaign" class="form-input" placeholder="e.g. spring_sale">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">UTM Term (Optional)</label>
-                            <input type="text" name="utm_term" id="utmTerm" class="form-input" placeholder="e.g. running+shoes">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">UTM Content (Optional)</label>
-                        <input type="text" name="utm_content" id="utmContent" class="form-input" placeholder="e.g. banner_top">
-                    </div>
-                </div>
-            </div>
-
-            <!-- QR Label / Note (universal, always shown) -->
-            <div class="form-group" style="margin-top:12px;">
-                <label class="form-label"><i class="fas fa-tag"></i> QR Label / Note <small style="font-weight:normal;color:var(--text-secondary);">(optional, for your own reference)</small></label>
-                <input type="text" name="qr_label" id="qrLabel" class="form-input" placeholder="e.g. Product A flyer, Store entrance..." maxlength="120">
-            </div>
-
             <div class="divider"></div>
 
             <!-- Design Options -->
@@ -1222,6 +1182,51 @@
                            placeholder="e.g. 100" <?= !$canScanLimit ? 'disabled' : '' ?>>
                     <small><?= $canScanLimit ? 'QR code will be deactivated after this many scans.' : 'Not available on your current plan.' ?></small>
                 </div>
+            </div>
+
+            <!-- UTM Parameters (URL type only) — moved here after Protection -->
+            <div id="utmGroup" style="display:none;margin-top:14px;">
+                <?php $canUtm = (bool) ($userFeatures['utm_tracking'] ?? true); ?>
+                <h4 class="subsection-title collapsible-header <?= !$canUtm ? 'feature-locked' : '' ?>" <?= $canUtm ? "onclick=\"toggleSection('utmOptions')\"" : '' ?> style="margin-top:0;cursor:<?= $canUtm ? 'pointer' : 'default' ?>">
+                    <span><i class="fas fa-chart-line"></i> UTM Tracking Parameters
+                        <?php if (!$canUtm): ?>
+                        <span class="badge-plan-lock" style="margin-left:8px;"><i class="fas fa-crown"></i> Upgrade</span>
+                        <?php endif; ?>
+                    </span>
+                    <i class="fas fa-chevron-right collapse-icon"></i>
+                </h4>
+                <div id="utmOptions" class="collapsible-content collapsed">
+                    <div class="grid grid-2" style="gap:15px;">
+                        <div class="form-group">
+                            <label class="form-label">UTM Source</label>
+                            <input type="text" name="utm_source" id="utmSource" class="form-input" placeholder="e.g. newsletter" <?= !$canUtm ? 'disabled' : '' ?>>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">UTM Medium</label>
+                            <input type="text" name="utm_medium" id="utmMedium" class="form-input" placeholder="e.g. email" <?= !$canUtm ? 'disabled' : '' ?>>
+                        </div>
+                    </div>
+                    <div class="grid grid-2" style="gap:15px;">
+                        <div class="form-group">
+                            <label class="form-label">UTM Campaign</label>
+                            <input type="text" name="utm_campaign" id="utmCampaign" class="form-input" placeholder="e.g. spring_sale" <?= !$canUtm ? 'disabled' : '' ?>>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">UTM Term (Optional)</label>
+                            <input type="text" name="utm_term" id="utmTerm" class="form-input" placeholder="e.g. running+shoes" <?= !$canUtm ? 'disabled' : '' ?>>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">UTM Content (Optional)</label>
+                        <input type="text" name="utm_content" id="utmContent" class="form-input" placeholder="e.g. banner_top" <?= !$canUtm ? 'disabled' : '' ?>>
+                    </div>
+                </div>
+            </div>
+
+            <!-- QR Label / Note (universal, always shown) -->
+            <div class="form-group" style="margin-top:14px;">
+                <label class="form-label"><i class="fas fa-tag"></i> QR Label / Note <small style="font-weight:normal;color:var(--text-secondary);">(optional, for your own reference)</small></label>
+                <input type="text" name="qr_label" id="qrLabel" class="form-input" placeholder="e.g. Product A flyer, Store entrance..." maxlength="120">
             </div>
             
             <div class="divider"></div>
@@ -2119,11 +2124,15 @@ window.saveCurrentTemplate = async function() {
     };
     
     try {
+        const csrfMeta = document.querySelector('meta[name="csrf-token"]');
         const formData = new FormData();
         formData.append('name', templateName);
         formData.append('settings', JSON.stringify(settings));
         if (isPublic) {
             formData.append('is_public', '1');
+        }
+        if (csrfMeta) {
+            formData.append('_csrf_token', csrfMeta.content);
         }
         
         const response = await fetch('/projects/qr/templates/create', {
@@ -3369,7 +3378,11 @@ html[data-theme="dark"] .form-select optgroup {
 
 .qr-action-buttons .btn {
     flex: 1;
-    min-width: 200px;
+    min-width: 140px;
+}
+
+.qr-action-buttons {
+    width: 100%;
 }
 
 /* Template Save Modal */

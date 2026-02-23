@@ -56,10 +56,14 @@ class QRFeatureService
      * Resolve the full effective feature map for a user.
      * Returns ['feature_key' => bool, ...]
      *
-     * Permission resolution order:
-     *   • When NO configuration exists at all (no plan, no role rows, no user overrides)
-     *     → all features are ALLOWED (open/permissive default)
-     *   • When ANY configuration exists → layered evaluation (plan → role → user overrides)
+     * Permission resolution order (lowest → highest priority):
+     *   1. Role features  — base defaults for the user's role
+     *   2. Plan features  — active subscription overlays role (plan beats role)
+     *   3. User overrides — per-user admin grants (always final)
+     *
+     * When NO configuration exists at all (no role rows, no plan, no user
+     * overrides) → all features are ALLOWED (permissive default so the
+     * system works out-of-the-box before an admin configures anything).
      */
     public function getFeatures(int $userId): array
     {
@@ -67,18 +71,7 @@ class QRFeatureService
         $features = array_fill_keys(self::ALL_FEATURES, false);
         $hasAnyConfig = false;
 
-        // Layer 1: Plan features
-        $planFeatures = $this->getPlanFeatures($userId);
-        if (!empty($planFeatures)) {
-            $hasAnyConfig = true;
-            foreach ($planFeatures as $key => $val) {
-                if (array_key_exists($key, $features)) {
-                    $features[$key] = (bool) $val;
-                }
-            }
-        }
-
-        // Layer 2: Role features
+        // Layer 1: Role features (base)
         $role = $this->getUserRole($userId);
         if ($role) {
             $roleFeatures = $this->getRoleFeatures($role);
@@ -88,6 +81,17 @@ class QRFeatureService
                     if (array_key_exists($key, $features)) {
                         $features[$key] = (bool) $val;
                     }
+                }
+            }
+        }
+
+        // Layer 2: Plan features (subscription overrides role)
+        $planFeatures = $this->getPlanFeatures($userId);
+        if (!empty($planFeatures)) {
+            $hasAnyConfig = true;
+            foreach ($planFeatures as $key => $val) {
+                if (array_key_exists($key, $features)) {
+                    $features[$key] = (bool) $val;
                 }
             }
         }
