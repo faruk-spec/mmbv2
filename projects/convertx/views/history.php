@@ -7,17 +7,13 @@ $jobs        = $result['jobs']     ?? [];
 $total       = $result['total']    ?? 0;
 $page        = $result['page']     ?? 1;
 $perPage     = $result['per_page'] ?? 20;
-$totalPages  = $perPage > 0 ? (int) ceil($total / $perPage) : 1;
+$totalPages  = $perPage > 0 ? (int)ceil($total / $perPage) : 1;
 ?>
 
 <!-- Page header -->
-<div class="page-header" style="margin-bottom:1.5rem;text-align:center;">
-    <h1 style="font-size:2rem;font-weight:700;background:linear-gradient(135deg,var(--cx-primary),var(--cx-accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
-        Conversion History
-    </h1>
-    <p style="color:var(--text-secondary);margin-top:.4rem;">
-        <?= number_format($total) ?> total conversion<?= $total !== 1 ? 's' : '' ?>
-    </p>
+<div class="page-header">
+    <h1>Conversion History</h1>
+    <p><?= number_format($total) ?> total conversion<?= $total !== 1 ? 's' : '' ?></p>
 </div>
 
 <div class="card">
@@ -53,8 +49,8 @@ $totalPages  = $perPage > 0 ? (int) ceil($total / $perPage) : 1;
                 <tbody>
                     <?php foreach ($jobs as $job): ?>
                     <tr>
-                        <td style="color:var(--text-secondary);"><?= (int) $job['id'] ?></td>
-                        <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                        <td style="color:var(--text-secondary);"><?= (int)$job['id'] ?></td>
+                        <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-primary);">
                             <?= htmlspecialchars($job['input_filename'] ?? '') ?>
                         </td>
                         <td>
@@ -65,9 +61,10 @@ $totalPages  = $perPage > 0 ? (int) ceil($total / $perPage) : 1;
                         <td>
                             <?php
                             $tasks = json_decode($job['ai_tasks'] ?? '[]', true);
-                            foreach ((array) $tasks as $task) {
+                            foreach ((array)$tasks as $task) {
                                 $lbl = explode(':', $task)[0];
-                                echo '<span style="font-size:.7rem;background:rgba(99,102,241,.15);color:var(--cx-primary);padding:.15rem .45rem;border-radius:4px;margin-right:.2rem;display:inline-block;">' . htmlspecialchars($lbl) . '</span>';
+                                echo '<span style="font-size:.7rem;background:rgba(99,102,241,.15);color:var(--cx-primary);padding:.15rem .45rem;border-radius:4px;margin-right:.2rem;display:inline-block;">'
+                                   . htmlspecialchars($lbl) . '</span>';
                             }
                             ?>
                         </td>
@@ -75,12 +72,12 @@ $totalPages  = $perPage > 0 ? (int) ceil($total / $perPage) : 1;
                         <td style="color:var(--text-secondary);font-size:.78rem;"><?= htmlspecialchars(substr($job['created_at'] ?? '', 0, 16)) ?></td>
                         <td>
                             <?php if ($job['status'] === 'completed'): ?>
-                                <a href="/projects/convertx/job/<?= (int) $job['id'] ?>/download"
+                                <a href="/projects/convertx/job/<?= (int)$job['id'] ?>/download"
                                    class="btn btn-success btn-sm">
                                     <i class="fa-solid fa-download"></i>
                                 </a>
                             <?php elseif ($job['status'] === 'pending'): ?>
-                                <button onclick="cancelJob(<?= (int) $job['id'] ?>)"
+                                <button onclick="cancelJob(<?= (int)$job['id'] ?>)"
                                         class="btn btn-danger btn-sm">
                                     <i class="fa-solid fa-xmark"></i>
                                 </button>
@@ -114,13 +111,13 @@ $totalPages  = $perPage > 0 ? (int) ceil($total / $perPage) : 1;
 <script>
 async function cancelJob(jobId) {
     if (!confirm('Cancel job #' + jobId + '?')) return;
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-    const res  = await fetch('/projects/convertx/job/' + jobId + '/cancel', {
+    var csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    var res  = await fetch('/projects/convertx/job/' + jobId + '/cancel', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: '_token=' + encodeURIComponent(csrfToken)
     });
-    const data = await res.json();
+    var data = await res.json();
     if (data.success) location.reload();
     else alert(data.error || 'Could not cancel job');
 }

@@ -7,13 +7,9 @@ $csrfToken   = \Core\Security::generateCsrfToken();
 ?>
 
 <!-- Page header -->
-<div class="page-header" style="margin-bottom:1.5rem;text-align:center;">
-    <h1 style="font-size:2rem;font-weight:700;background:linear-gradient(135deg,var(--cx-primary),var(--cx-accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
-        API Keys
-    </h1>
-    <p style="color:var(--text-secondary);margin-top:.4rem;">
-        Authenticate your API requests with your personal key
-    </p>
+<div class="page-header">
+    <h1>API Keys</h1>
+    <p>Authenticate your API requests with your personal key</p>
 </div>
 
 <div style="max-width:660px;">
