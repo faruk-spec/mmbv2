@@ -929,7 +929,13 @@ try {
     <?php View::yield('styles'); ?>
 </head>
 <body>
-    <?php include BASE_PATH . '/views/layouts/navbar.php'; ?>
+    <?php
+    // Initialise user timezone for all date displays in dashboard pages.
+    if (\Core\Auth::check()) {
+        \Core\Timezone::init(\Core\Auth::id());
+    }
+    include BASE_PATH . '/views/layouts/navbar.php';
+    ?>
     
     <main class="main">
         <?php 

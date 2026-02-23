@@ -12,6 +12,7 @@ use Core\Database;
 use Core\Security;
 use Core\Helpers;
 use Core\Logger;
+use Core\Timezone;
 
 class DashboardController extends BaseController
 {
@@ -354,8 +355,11 @@ class DashboardController extends BaseController
      */
     public function settings(): void
     {
+        Timezone::init(Auth::id());
         $this->view('dashboard/settings', [
-            'title' => 'Settings'
+            'title'           => 'Settings',
+            'userTimezone'    => Timezone::getTz(),
+            'tzGroups'        => Timezone::getGroupedTimezones(),
         ]);
     }
     
@@ -478,10 +482,19 @@ class DashboardController extends BaseController
                     }
                     break;
                     
+                case 'timezone':
+                    $tz = Security::sanitize($this->input('timezone', 'UTC'));
+                    if (Timezone::saveUserTimezone(Auth::id(), $tz)) {
+                        Logger::activity(Auth::id(), 'timezone_changed', ['timezone' => $tz]);
+                        $this->flash('success', 'Timezone updated to ' . $tz . '.');
+                    } else {
+                        $this->flash('error', 'Invalid timezone identifier.');
+                    }
+                    break;
+
                 default:
                     $this->flash('error', 'Invalid setting type.');
             }
-            
         } catch (\Exception $e) {
             Logger::error('Settings update error: ' . $e->getMessage());
             $this->flash('error', 'An error occurred. Please try again.');

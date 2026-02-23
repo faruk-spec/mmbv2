@@ -248,7 +248,19 @@ switch ($segments[0]) {
         $controller = new \Projects\QR\Controllers\DashboardController();
         $controller->plan();
         break;
-        
+
+    case 'api':
+        require_once PROJECT_PATH . '/controllers/QRApiUserController.php';
+        $controller = new \Projects\QR\Controllers\QRApiUserController();
+        if (isset($segments[1]) && $segments[1] === 'revoke') {
+            $controller->revoke();
+        } elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $controller->generate();
+        } else {
+            $controller->index();
+        }
+        break;
+
     default:
         http_response_code(404);
         echo "Page not found";

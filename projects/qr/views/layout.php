@@ -669,7 +669,11 @@ header("Expires: 0");
     </style>
 </head>
 <body>
-    <?php include BASE_PATH . '/views/layouts/navbar.php'; ?>
+    <?php
+    // Initialise user timezone for all date displays in QR project views.
+    \Core\Timezone::init(\Core\Auth::id());
+    include BASE_PATH . '/views/layouts/navbar.php';
+    ?>
     
     <div class="qr-dashboard">
         <!-- Sidebar -->
@@ -730,6 +734,13 @@ header("Expires: 0");
                             <line x1="9" y1="15" x2="15" y2="15"/>
                         </svg>
                         Bulk Generate
+                    </a>
+                    <a href="/projects/qr/api" class="<?= strpos($_SERVER['REQUEST_URI'], '/projects/qr/api') !== false ? 'active' : '' ?>">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="16 18 22 12 16 6"/>
+                            <polyline points="8 6 2 12 8 18"/>
+                        </svg>
+                        API Access
                     </a>
                 </nav>
             </div>

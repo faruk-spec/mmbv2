@@ -1348,10 +1348,85 @@ class QRAdminController extends BaseController
         ];
     }
 
+
+    // =========================================================================
+    // QR API Keys Admin
+    // =========================================================================
+
+    /**
+     * GET /admin/qr/api-keys
+     * Shows all API keys that have QR permissions.
+     */
+    public function qrApiKeys(): void
+    {
+        $db = Database::getInstance();
+
+        try {
+            $keys = $db->fetchAll(
+                "SELECT ak.*, u.name AS user_name, u.email
+                 FROM api_keys ak
+                 LEFT JOIN users u ON ak.user_id = u.id
+                 WHERE ak.permissions LIKE '%qr%'
+                    OR ak.name LIKE '%qr%'
+                    OR ak.name LIKE '%QR%'
+                 ORDER BY ak.created_at DESC
+                 LIMIT 500"
+            );
+        } catch (\Exception $e) {
+            $keys = [];
+        }
+
+        $totalKeys     = count($keys);
+        $activeKeys    = count(array_filter($keys, fn($k) => $k['is_active']));
+        $totalRequests = array_sum(array_column($keys, 'request_count'));
+
+        $this->view('admin/qr/api-keys', [
+            'title'         => 'QR API Keys',
+            'keys'          => $keys,
+            'totalKeys'     => $totalKeys,
+            'activeKeys'    => $activeKeys,
+            'totalRequests' => $totalRequests,
+        ]);
+    }
+
+    /**
+     * POST /admin/qr/api-keys/revoke
+     * Admin revokes any QR API key.
+     */
+    public function revokeQrApiKey(): void
+    {
+        $keyId = (int) $this->input('key_id', '0');
+        if (!$keyId) {
+            $this->json(['success' => false, 'error' => 'Key ID required'], 400);
+            return;
+        }
+
+        try {
+            $db  = Database::getInstance();
+            $key = $db->fetch("SELECT id, name, user_id FROM api_keys WHERE id = ?", [$keyId]);
+            if (!$key) {
+                $this->json(['success' => false, 'error' => 'Key not found'], 404);
+                return;
+            }
+
+            \Core\API\ApiAuth::revokeKey($keyId);
+            Logger::activity(
+                \Core\Auth::id(),
+                'admin_qr_api_key_revoked',
+                ['key_id' => $keyId, 'key_name' => $key['name'], 'owner_id' => $key['user_id']]
+            );
+            $this->json(['success' => true, 'message' => 'Key revoked.']);
+        } catch (\Exception $e) {
+            Logger::error('Admin revokeQrApiKey: ' . $e->getMessage());
+            $this->json(['success' => false, 'error' => 'Server error'], 500);
+        }
+    }
+
     /**
      * Returns plan-level feature keys that match the JSON stored in qr_subscription_plans.features
      * These are the boolean flags toggled directly on the plan record
      */
+
     private function getPlanFeatures(): array
     {
         return [

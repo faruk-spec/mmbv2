@@ -1024,6 +1024,10 @@
                                 <i class="fas fa-users-cog"></i>
                                 <span>Roles &amp; Permissions</span>
                             </a>
+                            <a href="/admin/qr/api-keys" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/qr/api-keys') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-key"></i>
+                                <span>QR API Keys</span>
+                            </a>
                         </div>
                     </div>
                 </div>
