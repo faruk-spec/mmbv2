@@ -103,6 +103,7 @@ class QRAdminController extends BaseController
                     `max_scans_per_month` INT DEFAULT 1000,
                     `max_bulk_generation` INT DEFAULT 0,
                     `features` TEXT NULL,
+                    `is_default` TINYINT(1) DEFAULT 0,
                     `status` ENUM('active','inactive') DEFAULT 'active',
                     `sort_order` INT DEFAULT 0,
                     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -112,15 +113,37 @@ class QRAdminController extends BaseController
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             ");
 
-            // Seed a 'free' default plan so getPlanFeatures() fallback always finds one.
-            $freeFeatures = array_fill_keys(array_keys($this->getPlanFeatures()), false);
+            // Add is_default column to existing installations that don't have it yet.
+            try {
+                $cols = array_column($this->db->fetchAll("SHOW COLUMNS FROM qr_subscription_plans"), 'Field');
+                if (!in_array('is_default', $cols, true)) {
+                    $this->db->query("ALTER TABLE qr_subscription_plans ADD COLUMN `is_default` TINYINT(1) DEFAULT 0 AFTER `features`");
+                }
+            } catch (\Exception $e) {
+                Logger::error('QRAdmin add is_default column: ' . $e->getMessage());
+            }
+
+            // Seed a 'free' default plan with ENABLED features (same as user-role defaults).
+            // This is the baseline plan for all unsubscribed users.  Admin can then toggle
+            // individual features OFF in the plans page to restrict them for free-tier users.
+            $freeFeatures = $this->getDefaultFreePlanFeatures();
             $this->db->query(
                 "INSERT IGNORE INTO `qr_subscription_plans`
                     (`name`,`slug`,`price`,`billing_cycle`,`max_static_qr`,`max_dynamic_qr`,
-                     `max_scans_per_month`,`features`,`status`,`sort_order`)
-                 VALUES (?,?,0.00,'lifetime',5,0,500,?,'active',0)",
+                     `max_scans_per_month`,`features`,`is_default`,`status`,`sort_order`)
+                 VALUES (?,?,0.00,'lifetime',10,5,1000,?,1,'active',0)",
                 ['Free', 'free', json_encode($freeFeatures)]
             );
+
+            // Mark the 'free' plan as is_default in case it was already inserted without the flag.
+            $this->db->query(
+                "UPDATE qr_subscription_plans SET is_default = 1 WHERE slug = 'free' AND is_default = 0 LIMIT 1"
+            );
+
+            // Migrate existing 'free' plans that were seeded with all-false features.
+            // If ALL features in the plan are false/0, it means the old bad seed was used —
+            // reset to proper defaults so admin toggles actually work.
+            $this->migrateFreePlanFeatures();
 
             $this->db->query("
                 CREATE TABLE IF NOT EXISTS `qr_user_subscriptions` (
@@ -176,6 +199,76 @@ class QRAdminController extends BaseController
         } catch (\Exception $e) {
             Logger::error('QRAdmin migratePlanFeatureKeys error: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Fix existing 'free' plan rows that were seeded with all features = false
+     * (the old bad seeding behaviour). If ALL boolean features are false/0 we
+     * assume it is the default bad-seed and reset to proper defaults so that
+     * admin toggles actually have an observable effect on free-tier users.
+     * Idempotent — skipped if any feature is already true.
+     */
+    private function migrateFreePlanFeatures(): void
+    {
+        try {
+            $row = $this->db->fetch(
+                "SELECT id, features FROM qr_subscription_plans WHERE slug = 'free' LIMIT 1"
+            );
+            if (!$row) return;
+
+            $feats = json_decode($row['features'] ?? '{}', true);
+            if (!is_array($feats)) {
+                $feats = [];
+            }
+
+            // If every stored feature is falsy, reset to proper defaults.
+            $hasAnyEnabled = !empty(array_filter($feats));
+            if (!$hasAnyEnabled) {
+                $defaults = $this->getDefaultFreePlanFeatures();
+                $this->db->query(
+                    "UPDATE qr_subscription_plans SET features = ?, is_default = 1, updated_at = NOW() WHERE id = ?",
+                    [json_encode($defaults), $row['id']]
+                );
+            }
+        } catch (\Exception $e) {
+            Logger::error('QRAdmin migrateFreePlanFeatures error: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Default feature flags for the free / unsubscribed tier.
+     * Mirrors the 'user' role defaults (see seedDefaultRoleFeatures).
+     * All basic features enabled; advanced/paid features disabled.
+     */
+    private function getDefaultFreePlanFeatures(): array
+    {
+        return [
+            'static_qr'           => true,
+            'dynamic_qr'          => true,
+            'analytics'           => true,
+            'bulk_generation'     => false,
+            'ai_design'           => false,
+            'password_protection' => true,
+            'expiry_date'         => true,
+            'scan_limit'          => true,
+            'utm_tracking'        => true,
+            'qr_label'            => true,
+            'content_type'        => true,
+            'design_presets'      => true,
+            'logo_remove_bg'      => true,
+            'campaigns'           => true,
+            'api_access'          => false,
+            'whitelabel'          => false,
+            'team_roles'          => false,
+            'download_png'        => true,
+            'download_svg'        => true,
+            'download_pdf'        => false,
+            'custom_logo'         => true,
+            'custom_colors'       => true,
+            'frame_styles'        => true,
+            'priority_support'    => false,
+            'export_data'         => false,
+        ];
     }
 
     private function seedDefaultRoleFeatures(): void
@@ -639,15 +732,19 @@ class QRAdminController extends BaseController
         }
 
         // Pre-populate any plan JSON that is missing canonical feature keys.
-        // This ensures every toggle in the admin UI represents a real saved value
-        // (not a "key absent → defaults to false" ambiguity). Idempotent.
-        $allFeatureKeys = array_keys($this->getPlanFeatures());
+        // For the default free plan, missing keys default to the free-plan defaults
+        // (mostly true). For paid plans, missing keys default to false.
+        // Idempotent — only writes when keys are actually missing.
+        $allFeatureKeys  = array_keys($this->getPlanFeatures());
+        $freePlanDefaults = $this->getDefaultFreePlanFeatures();
         foreach ($plans as &$plan) {
-            $feats   = json_decode($plan['features'] ?? '{}', true) ?: [];
-            $changed = false;
+            $feats      = json_decode($plan['features'] ?? '{}', true) ?: [];
+            $isDefault  = !empty($plan['is_default']);
+            $changed    = false;
             foreach ($allFeatureKeys as $key) {
                 if (!array_key_exists($key, $feats)) {
-                    $feats[$key] = false;
+                    // Default plan: use free-plan defaults; paid: false
+                    $feats[$key] = $isDefault ? ($freePlanDefaults[$key] ?? false) : false;
                     $changed     = true;
                 }
             }

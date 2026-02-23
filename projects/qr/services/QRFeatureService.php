@@ -168,17 +168,14 @@ class QRFeatureService
 
     /**
      * Return plan feature flags for a user's ACTIVE subscription.
-     * Returns [] when the user has no active subscription — in that case
-     * the caller relies on role features only (role layer is the base default
-     * for unsubscribed / free users).
-     *
-     * NOTE: the fallback to "cheapest active plan" was deliberately removed.
-     * That fallback caused the free plan (seeded with all features=false) to
-     * override role features for every unsubscribed user, making role and plan
-     * admin settings both appear to have no effect on the user side.
+     * When the user has no active subscription, falls back to the plan marked
+     * is_default = 1 (the 'free' plan) so that admin toggles on the plans page
+     * have an effect on all unsubscribed users.
+     * Returns [] only when neither a subscription nor a default plan is found.
      */
     private function getPlanFeatures(int $userId): array
     {
+        // Try active subscription first.
         try {
             $row = $this->db->fetch(
                 "SELECT p.features
@@ -190,14 +187,27 @@ class QRFeatureService
                 [$userId]
             );
         } catch (\Exception $e) {
-            // Table may not exist yet on this install — treat as no subscription.
-            Logger::error('QRFeatureService::getPlanFeatures query error: ' . $e->getMessage());
-            return [];
+            // Table may not exist yet on this install — fall through to default plan.
+            Logger::error('QRFeatureService::getPlanFeatures subscription query error: ' . $e->getMessage());
+            $row = null;
+        }
+
+        // No active subscription — use the default plan (is_default = 1).
+        if (!$row || empty($row['features'])) {
+            try {
+                $row = $this->db->fetch(
+                    "SELECT features FROM qr_subscription_plans
+                     WHERE is_default = 1 AND status = 'active'
+                     LIMIT 1"
+                );
+            } catch (\Exception $e) {
+                // Default plan table not ready yet.
+                Logger::error('QRFeatureService::getPlanFeatures default plan query error: ' . $e->getMessage());
+                return [];
+            }
         }
 
         if (!$row || empty($row['features'])) {
-            // No active subscription found — return empty so the plan layer is skipped
-            // entirely and role features remain the effective base (see getFeatures()).
             return [];
         }
 

@@ -31,3 +31,11 @@ $router->get('/api/projects/{name}', 'Api\\ProjectController@show', ['auth']);
 $router->get('/api/admin/stats', 'Api\\AdminController@stats', ['auth', 'admin']);
 $router->get('/api/admin/users', 'Api\\AdminController@users', ['auth', 'admin']);
 $router->get('/api/admin/activity', 'Api\\AdminController@activity', ['auth', 'admin']);
+
+// QR Code API
+// Supports Bearer token (api_keys table) and session authentication.
+// The api_access feature flag must be enabled on the user's plan.
+$router->get('/api/qr', 'Api\\QRController@list');
+$router->post('/api/qr', 'Api\\QRController@create');
+$router->get('/api/qr/{code}', 'Api\\QRController@show');
+$router->delete('/api/qr/{code}', 'Api\\QRController@delete');
