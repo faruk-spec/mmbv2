@@ -49,6 +49,21 @@ foreach ($groupedFormats as $group => $fmts) {
     <p>Upload any document, image or spreadsheet and convert it instantly</p>
 </div>
 
+<?php $suggestions = [
+    ['from'=>'PDF',  'to'=>'DOCX', 'icon'=>'fa-file-pdf',        'color'=>'#ef4444', 'desc'=>'Edit PDF content'],
+    ['from'=>'DOCX', 'to'=>'PDF',  'icon'=>'fa-file-word',        'color'=>'#2563eb', 'desc'=>'Share as PDF'],
+    ['from'=>'XLSX', 'to'=>'CSV',  'icon'=>'fa-file-excel',       'color'=>'#16a34a', 'desc'=>'Export data'],
+    ['from'=>'PNG',  'to'=>'JPG',  'icon'=>'fa-file-image',       'color'=>'#7c3aed', 'desc'=>'Reduce file size'],
+    ['from'=>'JPG',  'to'=>'WEBP', 'icon'=>'fa-image',            'color'=>'#0891b2', 'desc'=>'Web optimised'],
+    ['from'=>'PPTX', 'to'=>'PDF',  'icon'=>'fa-file-powerpoint',  'color'=>'#ea580c', 'desc'=>'Present anywhere'],
+    ['from'=>'CSV',  'to'=>'XLSX', 'icon'=>'fa-table',            'color'=>'#059669', 'desc'=>'Spreadsheet format'],
+    ['from'=>'SVG',  'to'=>'PNG',  'icon'=>'fa-vector-square',    'color'=>'#8b5cf6', 'desc'=>'Rasterise vector'],
+    ['from'=>'JPG',  'to'=>'PDF',  'icon'=>'fa-image',            'color'=>'#dc2626', 'desc'=>'Create PDF'],
+    ['from'=>'HTML', 'to'=>'PDF',  'icon'=>'fa-code',             'color'=>'#0ea5e9', 'desc'=>'Print to PDF'],
+    ['from'=>'EPUB', 'to'=>'PDF',  'icon'=>'fa-book',             'color'=>'#7c3aed', 'desc'=>'Convert ebook'],
+    ['from'=>'BMP',  'to'=>'PNG',  'icon'=>'fa-file-image',       'color'=>'#9333ea', 'desc'=>'Modern format'],
+]; ?>
+
 <!-- ── Popular Converter Suggestions (desktop: before grid, mobile: after grid via CSS order) ── -->
 <div class="cx-suggestions-section cx-suggestions-desktop">
     <div class="cx-suggestions-title">
@@ -57,20 +72,6 @@ foreach ($groupedFormats as $group => $fmts) {
     </div>
     <div class="cx-suggestions-grid">
         <?php
-        $suggestions = [
-            ['from'=>'PDF',  'to'=>'DOCX', 'icon'=>'fa-file-pdf',        'color'=>'#ef4444', 'desc'=>'Edit PDF content'],
-            ['from'=>'DOCX', 'to'=>'PDF',  'icon'=>'fa-file-word',        'color'=>'#2563eb', 'desc'=>'Share as PDF'],
-            ['from'=>'XLSX', 'to'=>'CSV',  'icon'=>'fa-file-excel',       'color'=>'#16a34a', 'desc'=>'Export data'],
-            ['from'=>'PNG',  'to'=>'JPG',  'icon'=>'fa-file-image',       'color'=>'#7c3aed', 'desc'=>'Reduce file size'],
-            ['from'=>'JPG',  'to'=>'WEBP', 'icon'=>'fa-image',            'color'=>'#0891b2', 'desc'=>'Web optimised'],
-            ['from'=>'PPTX', 'to'=>'PDF',  'icon'=>'fa-file-powerpoint',  'color'=>'#ea580c', 'desc'=>'Present anywhere'],
-            ['from'=>'CSV',  'to'=>'XLSX', 'icon'=>'fa-table',            'color'=>'#059669', 'desc'=>'Spreadsheet format'],
-            ['from'=>'SVG',  'to'=>'PNG',  'icon'=>'fa-vector-square',    'color'=>'#8b5cf6', 'desc'=>'Rasterise vector'],
-            ['from'=>'JPG',  'to'=>'PDF',  'icon'=>'fa-image',            'color'=>'#dc2626', 'desc'=>'Create PDF'],
-            ['from'=>'HTML', 'to'=>'PDF',  'icon'=>'fa-code',             'color'=>'#0ea5e9', 'desc'=>'Print to PDF'],
-            ['from'=>'EPUB', 'to'=>'PDF',  'icon'=>'fa-book',             'color'=>'#7c3aed', 'desc'=>'Convert ebook'],
-            ['from'=>'BMP',  'to'=>'PNG',  'icon'=>'fa-file-image',       'color'=>'#9333ea', 'desc'=>'Modern format'],
-        ];
         foreach ($suggestions as $s): ?>
         <button type="button" class="cx-suggestion-card"
                 onclick="applySuggestion('<?= strtolower($s['to']) ?>')"
@@ -315,28 +316,13 @@ foreach ($groupedFormats as $group => $fmts) {
 </div><!-- .cx-convert-grid -->
 
 <!-- ── Popular Conversions (mobile only, shown after the grid) ── -->
-<div class="cx-suggestions-section cx-suggestions-mobile" aria-hidden="true">
+<div class="cx-suggestions-section cx-suggestions-mobile">
     <div class="cx-suggestions-title">
         <i class="fa-solid fa-bolt-lightning" style="color:var(--cx-primary);"></i>
         Popular Conversions
     </div>
     <div class="cx-suggestions-grid">
-        <?php
-        $suggestions = [
-            ['from'=>'PDF',  'to'=>'DOCX', 'icon'=>'fa-file-pdf',        'color'=>'#ef4444', 'desc'=>'Edit PDF content'],
-            ['from'=>'DOCX', 'to'=>'PDF',  'icon'=>'fa-file-word',        'color'=>'#2563eb', 'desc'=>'Share as PDF'],
-            ['from'=>'XLSX', 'to'=>'CSV',  'icon'=>'fa-file-excel',       'color'=>'#16a34a', 'desc'=>'Export data'],
-            ['from'=>'PNG',  'to'=>'JPG',  'icon'=>'fa-file-image',       'color'=>'#7c3aed', 'desc'=>'Reduce file size'],
-            ['from'=>'JPG',  'to'=>'WEBP', 'icon'=>'fa-image',            'color'=>'#0891b2', 'desc'=>'Web optimised'],
-            ['from'=>'PPTX', 'to'=>'PDF',  'icon'=>'fa-file-powerpoint',  'color'=>'#ea580c', 'desc'=>'Present anywhere'],
-            ['from'=>'CSV',  'to'=>'XLSX', 'icon'=>'fa-table',            'color'=>'#059669', 'desc'=>'Spreadsheet format'],
-            ['from'=>'SVG',  'to'=>'PNG',  'icon'=>'fa-vector-square',    'color'=>'#8b5cf6', 'desc'=>'Rasterise vector'],
-            ['from'=>'JPG',  'to'=>'PDF',  'icon'=>'fa-image',            'color'=>'#dc2626', 'desc'=>'Create PDF'],
-            ['from'=>'HTML', 'to'=>'PDF',  'icon'=>'fa-code',             'color'=>'#0ea5e9', 'desc'=>'Print to PDF'],
-            ['from'=>'EPUB', 'to'=>'PDF',  'icon'=>'fa-book',             'color'=>'#7c3aed', 'desc'=>'Convert ebook'],
-            ['from'=>'BMP',  'to'=>'PNG',  'icon'=>'fa-file-image',       'color'=>'#9333ea', 'desc'=>'Modern format'],
-        ];
-        foreach ($suggestions as $s): ?>
+        <?php foreach ($suggestions as $s): ?>
         <button type="button" class="cx-suggestion-card"
                 onclick="applySuggestion('<?= strtolower($s['to']) ?>')"
                 title="Convert <?= $s['from'] ?> to <?= $s['to'] ?>">
