@@ -193,9 +193,38 @@ class ConversionService
             return $this->convertWithPhp($inputPath, $inputFormat, $outputFormat, $outputPath);
         }
 
-        // 2. Image ↔ image: try GD first, then ImageMagick
-        $imageFormats = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'svg'];
-        if (in_array($inputFormat, $imageFormats, true) && in_array($outputFormat, $imageFormats, true)) {
+        // ── Cross-family compatibility guard ─────────────────────────────────
+        // LibreOffice crashes (SIGABRT/exit 134) when fed an image file and asked
+        // to export using a Calc or Writer filter. Catch invalid combinations here
+        // and surface a human-readable error before any exec() is attempted.
+        $imageFormats  = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'svg'];
+        $isInputImage  = in_array($inputFormat, $imageFormats, true);
+        $isOutputImage = in_array($outputFormat, $imageFormats, true);
+
+        if ($isInputImage && !$isOutputImage && $outputFormat !== 'pdf') {
+            throw new \RuntimeException(
+                "Cannot convert '{$inputFormat}' to '{$outputFormat}'. "
+                . "Image files can only be converted to other image formats "
+                . "(JPG, PNG, GIF, WebP, BMP) or to PDF. "
+                . "To extract text from this image, enable the OCR option."
+            );
+        }
+
+        if (!$isInputImage && $isOutputImage && $inputFormat !== 'pdf') {
+            throw new \RuntimeException(
+                "Cannot convert '{$inputFormat}' to '{$outputFormat}'. "
+                . "Document/spreadsheet/presentation files cannot be converted "
+                . "directly to image formats. Convert to PDF first, then PDF to image."
+            );
+        }
+
+        // 2a. Image → PDF: ImageMagick handles this cleanly (no LibreOffice needed)
+        if ($isInputImage && $outputFormat === 'pdf') {
+            return $this->convertWithImageMagick($inputPath, $outputPath, $options);
+        }
+
+        // 2b. Image ↔ image: try GD first, then ImageMagick
+        if ($isInputImage && $isOutputImage) {
             if ($this->convertWithGD($inputPath, $outputPath, $options)) {
                 return true;
             }

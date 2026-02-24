@@ -210,16 +210,21 @@ foreach ($groupedFormats as $group => $fmts) {
                     <option value="">— Select format —</option>
                     <?php foreach ($groupedFormats as $group => $fmts): ?>
                     <?php $available = $groupAvailable[$group] ?? true; ?>
-                    <optgroup label="<?= htmlspecialchars($groupLabels[$group] ?? ucfirst($group)) . ($available ? '' : ' (requires LibreOffice)') ?>">
+                    <optgroup label="<?= htmlspecialchars($groupLabels[$group] ?? ucfirst($group)) . ($available ? '' : ' (requires LibreOffice)') ?>"
+                              data-group="<?= htmlspecialchars($group) ?>">
                         <?php foreach ($fmts as $fmt): ?>
                         <option value="<?= htmlspecialchars($fmt) ?>"
-                                <?= $available ? '' : 'disabled' ?>>
+                                data-fmt="<?= htmlspecialchars($fmt) ?>"
+                                <?= $available ? '' : 'disabled data-lo-required="1"' ?>>
                             <?= strtoupper(htmlspecialchars($fmt)) ?>
                         </option>
                         <?php endforeach; ?>
                     </optgroup>
                     <?php endforeach; ?>
                 </select>
+                <div id="compatHint" style="display:none;margin-top:.35rem;font-size:.78rem;padding:.4rem .6rem;border-radius:.4rem;background:rgba(239,68,68,.1);color:var(--cx-danger);border:1px solid rgba(239,68,68,.25);">
+                    <i class="fa-solid fa-circle-exclamation"></i> <span id="compatHintText"></span>
+                </div>
             </div>
 
             <!-- Quality slider (image output only) -->
@@ -305,6 +310,59 @@ function updateAdvancedOptions(fmt) {
     document.getElementById('dpiGroup').style.display     = isImage ? '' : 'none';
 }
 
+/**
+ * Mirror of ConversionService::dispatch() cross-family guard.
+ * Disables output <option>s that would cause a server-side crash.
+ * Called when the user selects a file.
+ */
+function filterOutputFormats(inputExt) {
+    var ext      = inputExt.toLowerCase();
+    var isInImg  = IMAGE_FORMATS.indexOf(ext) !== -1;
+    var select   = document.getElementById('outputFormat');
+    var hint     = document.getElementById('compatHint');
+    var hintText = document.getElementById('compatHintText');
+    var blocked  = 0;
+
+    var options  = select.querySelectorAll('option[data-fmt]');
+    options.forEach(function (opt) {
+        var outFmt  = opt.getAttribute('data-fmt');
+        var isOutImg = IMAGE_FORMATS.indexOf(outFmt) !== -1;
+        var loReq    = opt.getAttribute('data-lo-required') === '1';
+
+        // Keep LibreOffice-required options disabled even when compatible
+        var incompatible = false;
+        if (isInImg && !isOutImg && outFmt !== 'pdf') {
+            incompatible = true;  // image → doc/spreadsheet/presentation
+        } else if (!isInImg && isOutImg && ext !== 'pdf') {
+            incompatible = true;  // doc/spreadsheet → image
+        }
+
+        if (incompatible) {
+            opt.disabled = true;
+            opt.style.color = 'var(--text-muted)';
+            blocked++;
+        } else if (!loReq) {
+            opt.disabled = false;
+            opt.style.color = '';
+        }
+    });
+
+    // Reset the selected value if it became incompatible
+    if (select.value) {
+        var sel = select.querySelector('option[value="' + select.value + '"]');
+        if (sel && sel.disabled) {
+            select.value = '';
+        }
+    }
+
+    if (isInImg && blocked > 0) {
+        hintText.textContent = ext.toUpperCase() + ' images can only convert to other image formats or PDF.';
+        hint.style.display = '';
+    } else {
+        hint.style.display = 'none';
+    }
+}
+
 function toggleAiOptions() {
     var box  = document.getElementById('aiOptions');
     var icon = document.getElementById('aiChevron');
@@ -343,6 +401,9 @@ function toggleAiOptions() {
             label.style.display = 'block';
             zone.classList.add('has-file');
             zone.classList.remove('drag-over');
+            // Filter output dropdown to only show compatible formats
+            var ext = f.name.includes('.') ? f.name.split('.').pop() : '';
+            if (ext) filterOutputFormats(ext);
         }
     }
 
