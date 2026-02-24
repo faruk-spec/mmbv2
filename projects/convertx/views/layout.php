@@ -1180,6 +1180,9 @@ include BASE_PATH . '/views/layouts/navbar.php';
             </div>
         <?php endif; ?>
 
+        <!-- Toast notification container -->
+        <div id="cx-toast-container" style="position:fixed;bottom:1.5rem;right:1.5rem;z-index:10000;display:flex;flex-direction:column;gap:.625rem;max-width:360px;pointer-events:none;"></div>
+
         <?php
         $viewFile = PROJECT_PATH . '/views/' . $currentView . '.php';
         if (file_exists($viewFile)) {
@@ -1235,5 +1238,60 @@ include BASE_PATH . '/views/layouts/navbar.php';
     });
 })();
 </script>
+<script>
+/**
+ * CX Notification System
+ * Usage: CXNotify.success('Message') | CXNotify.error('Message') | CXNotify.info('Message') | CXNotify.warning('Message')
+ */
+var CXNotify = (function () {
+    var container;
+    function getContainer() {
+        if (!container) container = document.getElementById('cx-toast-container');
+        return container;
+    }
+    function show(message, type, duration) {
+        type = type || 'info';
+        duration = duration || 4000;
+        var colours = {
+            success: { bg: 'rgba(16,185,129,.12)', border: 'rgba(16,185,129,.4)', text: '#10b981', icon: 'fa-circle-check' },
+            error:   { bg: 'rgba(239,68,68,.12)',  border: 'rgba(239,68,68,.4)',  text: '#ef4444', icon: 'fa-circle-xmark' },
+            warning: { bg: 'rgba(245,158,11,.12)', border: 'rgba(245,158,11,.4)', text: '#f59e0b', icon: 'fa-triangle-exclamation' },
+            info:    { bg: 'rgba(99,102,241,.12)', border: 'rgba(99,102,241,.4)', text: '#6366f1', icon: 'fa-circle-info' },
+        };
+        var c = colours[type] || colours.info;
+        var toast = document.createElement('div');
+        toast.style.cssText = [
+            'display:flex;align-items:flex-start;gap:.625rem;',
+            'background:' + c.bg + ';',
+            'border:1px solid ' + c.border + ';',
+            'border-radius:.625rem;padding:.75rem 1rem;',
+            'font-size:.875rem;color:' + c.text + ';',
+            'box-shadow:0 4px 20px rgba(0,0,0,.25);',
+            'pointer-events:all;',
+            'animation:cx-toast-in .3s ease;',
+            'backdrop-filter:blur(8px);',
+            'max-width:360px;word-break:break-word;',
+        ].join('');
+        toast.innerHTML = '<i class="fa-solid ' + c.icon + '" style="flex-shrink:0;margin-top:.1rem;"></i>'
+                        + '<span style="flex:1;">' + message.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</span>'
+                        + '<button onclick="this.parentNode.remove()" style="background:none;border:none;color:' + c.text + ';cursor:pointer;font-size:1rem;padding:0;margin-left:.25rem;line-height:1;opacity:.7;">&times;</button>';
+        getContainer().appendChild(toast);
+        setTimeout(function () {
+            toast.style.animation = 'cx-toast-out .3s ease forwards';
+            setTimeout(function () { toast.remove(); }, 300);
+        }, duration);
+    }
+    return {
+        success: function (m, d) { show(m, 'success', d); },
+        error:   function (m, d) { show(m, 'error',   d); },
+        warning: function (m, d) { show(m, 'warning', d); },
+        info:    function (m, d) { show(m, 'info',    d); },
+    };
+})();
+</script>
+<style>
+@keyframes cx-toast-in  { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+@keyframes cx-toast-out { from { opacity:1; transform:translateY(0); }    to { opacity:0; transform:translateY(8px); } }
+</style>
 </body>
 </html>

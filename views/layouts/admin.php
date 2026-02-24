@@ -1106,9 +1106,13 @@
                                 <i class="fas fa-cog"></i>
                                 <span>Settings</span>
                             </a>
-                            <a href="/admin/projects/convertx/schema" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/convertx/schema') === 0 ? 'active' : '' ?>">
-                                <i class="fas fa-table"></i>
-                                <span>SQL Schema</span>
+                            <a href="/admin/projects/convertx/storage" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/convertx/storage') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-hdd"></i>
+                                <span>Storage</span>
+                            </a>
+                            <a href="/admin/projects/convertx/plans" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/convertx/plans') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-tags"></i>
+                                <span>Plans</span>
                             </a>
                         </div>
                     </div>

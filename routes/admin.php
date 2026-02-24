@@ -70,8 +70,17 @@ $router->post('/admin/projects/convertx/jobs/delete', 'Admin\\ConvertXAdminContr
 $router->get('/admin/projects/convertx/users', 'Admin\\ConvertXAdminController@users', ['auth', 'admin']);
 $router->get('/admin/projects/convertx/api-keys', 'Admin\\ConvertXAdminController@apiKeys', ['auth', 'admin']);
 $router->post('/admin/projects/convertx/api-keys/revoke', 'Admin\\ConvertXAdminController@revokeApiKey', ['auth', 'admin']);
+$router->post('/admin/projects/convertx/api-keys/generate', 'Admin\\ConvertXAdminController@generateApiKeyForUser', ['auth', 'admin']);
 $router->get('/admin/projects/convertx/settings', 'Admin\\ConvertXAdminController@settings', ['auth', 'admin']);
 $router->post('/admin/projects/convertx/settings', 'Admin\\ConvertXAdminController@updateSettings', ['auth', 'admin']);
+$router->post('/admin/projects/convertx/settings/create-provider', 'Admin\\ConvertXAdminController@createProvider', ['auth', 'admin']);
+$router->post('/admin/projects/convertx/settings/edit-provider', 'Admin\\ConvertXAdminController@editProvider', ['auth', 'admin']);
+$router->post('/admin/projects/convertx/settings/delete-provider', 'Admin\\ConvertXAdminController@deleteProvider', ['auth', 'admin']);
+$router->get('/admin/projects/convertx/storage', 'Admin\\ConvertXAdminController@storage', ['auth', 'admin']);
+$router->get('/admin/projects/convertx/plans', 'Admin\\ConvertXAdminController@plans', ['auth', 'admin']);
+$router->post('/admin/projects/convertx/plans/create', 'Admin\\ConvertXAdminController@createPlan', ['auth', 'admin']);
+$router->post('/admin/projects/convertx/plans/update', 'Admin\\ConvertXAdminController@updatePlan', ['auth', 'admin']);
+$router->post('/admin/projects/convertx/plans/delete', 'Admin\\ConvertXAdminController@deletePlan', ['auth', 'admin']);
 $router->get('/admin/projects/convertx/schema', 'Admin\\ConvertXAdminController@schema', ['auth', 'admin']);
 
 // CodeXPro admin routes

@@ -549,21 +549,25 @@ function toggleAiOptions() {
 
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<i class="fa-solid fa-spinner" style="animation:cx-spin 1s linear infinite;"></i> Uploading…';
+        showConvertingOverlay();
 
         var fd = new FormData(form);
         try {
             var res  = await fetch('/projects/convertx/convert', { method: 'POST', body: fd });
             var data = await res.json();
             if (data.success) {
+                hideConvertingOverlay();
                 statusDiv.style.display = 'block';
                 statusDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 pollJobStatus(data.job_id);
             } else {
+                hideConvertingOverlay();
                 alert('Error: ' + (data.error || 'Unknown error'));
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = '<i class="fa-solid fa-arrow-right-arrow-left"></i> Start Conversion';
             }
         } catch (err) {
+            hideConvertingOverlay();
             alert('Network error: ' + err.message);
             submitBtn.disabled = false;
             submitBtn.innerHTML = '<i class="fa-solid fa-arrow-right-arrow-left"></i> Start Conversion';
@@ -583,6 +587,7 @@ function toggleAiOptions() {
                     setTimeout(poll, 1500);
                 } else {
                     hdrDiv.innerHTML = '<i class="fa-solid fa-circle-check" style="color:var(--cx-success);"></i> Job Complete';
+                    hideConvertingOverlay();
                     submitBtn.disabled = false;
                     submitBtn.innerHTML = '<i class="fa-solid fa-arrow-right-arrow-left"></i> Convert Another File';
                 }
@@ -602,11 +607,14 @@ function toggleAiOptions() {
         var html = '<p style="font-size:.9rem;color:var(--text-primary);">Job <strong>#' + jobId + '</strong> &nbsp; <span class="badge ' + badgeClass + '">' + data.status.toUpperCase() + '</span></p>';
 
         if (data.status === 'processing') {
+            showConvertingOverlay('Processing your file…', 'AI analysis and conversion in progress');
             html += '<div style="margin-top:.75rem;height:4px;background:var(--border-color);border-radius:4px;overflow:hidden;">'
                   + '<div style="height:100%;width:60%;background:linear-gradient(90deg,var(--cx-primary),var(--cx-accent));border-radius:4px;animation:cx-progress 1.2s ease-in-out infinite;"></div></div>';
         }
 
         if (data.status === 'completed') {
+            hideConvertingOverlay();
+            if (typeof CXNotify !== 'undefined') CXNotify.success('Conversion complete! Your file is ready.');
             html += '<div style="margin-top:1rem;display:flex;gap:.75rem;flex-wrap:wrap;">';
             html += '<a href="/projects/convertx/job/' + jobId + '/download" class="btn btn-success"><i class="fa-solid fa-download"></i> Download ' + (data.output_filename || 'File') + '</a>';
             html += '</div>';
@@ -622,10 +630,65 @@ function toggleAiOptions() {
         }
 
         if (data.status === 'failed') {
+            hideConvertingOverlay();
+            if (typeof CXNotify !== 'undefined') CXNotify.error('Conversion failed: ' + (data.error_message || 'Unknown error'));
             html += '<p style="color:var(--cx-danger);margin-top:.5rem;font-size:.875rem;"><i class="fa-solid fa-circle-xmark"></i> ' + (data.error_message || 'Conversion failed') + '</p>';
         }
 
         detailDiv.innerHTML = html;
     }
 })();
+</script>
+
+<!-- Conversion Animation Overlay -->
+<div id="convertingOverlay" style="display:none;position:fixed;inset:0;background:rgba(6,6,10,0.85);z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:1.5rem;backdrop-filter:blur(6px);">
+    <div style="text-align:center;">
+        <div id="convOrb" style="width:80px;height:80px;margin:0 auto 1.25rem;border-radius:50%;background:linear-gradient(135deg,var(--cx-primary,#6366f1),var(--cx-accent,#06b6d4));display:flex;align-items:center;justify-content:center;animation:cx-orb-pulse 1.6s ease-in-out infinite;box-shadow:0 0 40px rgba(99,102,241,0.6);">
+            <i class="fa-solid fa-shuffle" style="font-size:2rem;color:#fff;animation:cx-spin 2s linear infinite;"></i>
+        </div>
+        <div style="font-size:1.2rem;font-weight:700;color:#fff;margin-bottom:.5rem;" id="convOverlayMsg">Converting your file…</div>
+        <div style="font-size:.85rem;color:rgba(255,255,255,.6);" id="convOverlaySub">Please wait while we process your document</div>
+        <!-- Animated progress bar -->
+        <div style="width:280px;height:4px;background:rgba(255,255,255,.15);border-radius:4px;margin:1.25rem auto 0;overflow:hidden;">
+            <div style="height:100%;width:40%;background:linear-gradient(90deg,var(--cx-primary,#6366f1),var(--cx-accent,#06b6d4));border-radius:4px;animation:cx-progress-bar 1.8s ease-in-out infinite;"></div>
+        </div>
+        <!-- Animated dots -->
+        <div style="display:flex;gap:.5rem;justify-content:center;margin-top:1rem;">
+            <span style="width:8px;height:8px;background:var(--cx-primary,#6366f1);border-radius:50%;animation:cx-dot-bounce 1.4s ease-in-out infinite;animation-delay:0s;"></span>
+            <span style="width:8px;height:8px;background:var(--cx-accent,#06b6d4);border-radius:50%;animation:cx-dot-bounce 1.4s ease-in-out infinite;animation-delay:.2s;"></span>
+            <span style="width:8px;height:8px;background:var(--cx-secondary,#8b5cf6);border-radius:50%;animation:cx-dot-bounce 1.4s ease-in-out infinite;animation-delay:.4s;"></span>
+        </div>
+    </div>
+</div>
+
+<style>
+@keyframes cx-orb-pulse {
+    0%,100% { transform: scale(1);   box-shadow: 0 0 40px rgba(99,102,241,0.5); }
+    50%      { transform: scale(1.08); box-shadow: 0 0 70px rgba(99,102,241,0.9); }
+}
+@keyframes cx-progress-bar {
+    0%   { transform: translateX(-100%); }
+    50%  { transform: translateX(150%); }
+    100% { transform: translateX(-100%); }
+}
+@keyframes cx-dot-bounce {
+    0%,80%,100% { transform: translateY(0); opacity: 0.5; }
+    40%          { transform: translateY(-8px); opacity: 1; }
+}
+</style>
+
+<script>
+function showConvertingOverlay(msg, sub) {
+    var overlay = document.getElementById('convertingOverlay');
+    if (!overlay) return;
+    var msgEl = document.getElementById('convOverlayMsg');
+    var subEl = document.getElementById('convOverlaySub');
+    if (msgEl) msgEl.textContent = msg || 'Converting your file…';
+    if (subEl) subEl.textContent = sub || 'Please wait while we process your document';
+    overlay.style.display = 'flex';
+}
+function hideConvertingOverlay() {
+    var overlay = document.getElementById('convertingOverlay');
+    if (overlay) overlay.style.display = 'none';
+}
 </script>

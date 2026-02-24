@@ -158,6 +158,7 @@ class ConvertXAdminController extends BaseController
             "SELECT k.*, u.name AS user_name, u.email AS user_email
                FROM api_keys k
                LEFT JOIN users u ON u.id = k.user_id
+              WHERE k.api_key LIKE 'cx_%'
               ORDER BY k.created_at DESC"
         );
 
@@ -236,6 +237,414 @@ class ConvertXAdminController extends BaseController
             'title'  => 'ConvertX Admin — SQL Schema',
             'schema' => $schema,
         ]);
+    }
+
+    // ------------------------------------------------------------------ //
+    //  Generate API Key for User                                          //
+    // ------------------------------------------------------------------ //
+
+    public function generateApiKeyForUser(): void
+    {
+        if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
+            $this->json(['success' => false, 'error' => 'Invalid token'], 403);
+            return;
+        }
+        $userId = (int) ($_POST['user_id'] ?? 0);
+        if (!$userId) {
+            $_SESSION['_flash']['error'] = 'Invalid user ID.';
+            $this->redirect('/admin/projects/convertx/api-keys');
+            return;
+        }
+        // Check user exists
+        $user = $this->db->fetch("SELECT id, name, email FROM users WHERE id=:id", ['id' => $userId]);
+        if (!$user) {
+            $_SESSION['_flash']['error'] = 'User not found.';
+            $this->redirect('/admin/projects/convertx/api-keys');
+            return;
+        }
+        $key = 'cx_' . bin2hex(random_bytes(20));
+        try {
+            $this->db->query(
+                "CREATE TABLE IF NOT EXISTS api_keys (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id INT NOT NULL,
+                    api_key VARCHAR(64) NOT NULL,
+                    is_active TINYINT(1) NOT NULL DEFAULT 1,
+                    created_at DATETIME NOT NULL,
+                    INDEX idx_user (user_id),
+                    UNIQUE KEY uniq_key (api_key)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+            );
+            $this->db->query(
+                "UPDATE api_keys SET is_active=0 WHERE user_id=:uid AND api_key LIKE 'cx_%'",
+                ['uid' => $userId]
+            );
+            $this->db->query(
+                "INSERT INTO api_keys (user_id, api_key, is_active, created_at) VALUES (:uid, :key, 1, NOW())",
+                ['uid' => $userId, 'key' => $key]
+            );
+            $_SESSION['_flash']['success'] = 'API key generated for ' . $user['name'] . ': ' . $key;
+            $_SESSION['_flash']['new_key'] = $key;
+            $_SESSION['_flash']['new_key_user'] = $user['name'];
+        } catch (\Exception $e) {
+            Logger::error('ConvertX Admin generateApiKeyForUser: ' . $e->getMessage());
+            $_SESSION['_flash']['error'] = 'Failed to generate API key.';
+        }
+        $this->redirect('/admin/projects/convertx/api-keys');
+    }
+
+    // ------------------------------------------------------------------ //
+    //  AI Provider CRUD                                                    //
+    // ------------------------------------------------------------------ //
+
+    public function createProvider(): void
+    {
+        if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
+            $_SESSION['_flash']['error'] = 'Invalid token.';
+            $this->redirect('/admin/projects/convertx/settings');
+            return;
+        }
+        $name     = trim($_POST['name'] ?? '');
+        $slug     = strtolower(trim(preg_replace('/[^a-z0-9_-]/i', '-', $_POST['slug'] ?? '')));
+        $baseUrl  = trim($_POST['base_url'] ?? '');
+        $apiKey   = trim($_POST['api_key'] ?? '');
+        $model    = trim($_POST['model'] ?? '');
+        $priority = max(1, min(100, (int) ($_POST['priority'] ?? 10)));
+        $cost     = max(0, (float) ($_POST['cost_per_1k_tokens'] ?? 0));
+        $caps     = array_filter(array_map('trim', explode(',', $_POST['capabilities'] ?? '')));
+        $tiers    = array_filter(array_map('trim', explode(',', $_POST['allowed_tiers'] ?? 'free,pro,enterprise')));
+
+        if (!$name || !$slug) {
+            $_SESSION['_flash']['error'] = 'Name and slug are required.';
+            $this->redirect('/admin/projects/convertx/settings');
+            return;
+        }
+        try {
+            $this->db->query(
+                "INSERT INTO convertx_ai_providers
+                    (name, slug, base_url, api_key, model, capabilities, allowed_tiers, priority, cost_per_1k_tokens, is_active, created_at)
+                 VALUES (:name, :slug, :url, :key, :model, :caps, :tiers, :pri, :cost, 1, NOW())",
+                [
+                    'name'  => $name,
+                    'slug'  => $slug,
+                    'url'   => $baseUrl ?: null,
+                    'key'   => $apiKey ?: null,
+                    'model' => $model ?: null,
+                    'caps'  => json_encode(array_values($caps)),
+                    'tiers' => json_encode(array_values($tiers)),
+                    'pri'   => $priority,
+                    'cost'  => $cost,
+                ]
+            );
+            $_SESSION['_flash']['success'] = 'Provider created.';
+        } catch (\Exception $e) {
+            Logger::error('ConvertX createProvider: ' . $e->getMessage());
+            $_SESSION['_flash']['error'] = 'Failed to create provider: ' . $e->getMessage();
+        }
+        $this->redirect('/admin/projects/convertx/settings');
+    }
+
+    public function editProvider(): void
+    {
+        if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
+            $_SESSION['_flash']['error'] = 'Invalid token.';
+            $this->redirect('/admin/projects/convertx/settings');
+            return;
+        }
+        $id       = (int) ($_POST['provider_id'] ?? 0);
+        $name     = trim($_POST['name'] ?? '');
+        $baseUrl  = trim($_POST['base_url'] ?? '');
+        $apiKey   = trim($_POST['api_key'] ?? '');
+        $model    = trim($_POST['model'] ?? '');
+        $priority = max(1, min(100, (int) ($_POST['priority'] ?? 10)));
+        $cost     = max(0, (float) ($_POST['cost_per_1k_tokens'] ?? 0));
+        $caps     = array_filter(array_map('trim', explode(',', $_POST['capabilities'] ?? '')));
+        $tiers    = array_filter(array_map('trim', explode(',', $_POST['allowed_tiers'] ?? 'free,pro,enterprise')));
+
+        if (!$id || !$name) {
+            $_SESSION['_flash']['error'] = 'Invalid request.';
+            $this->redirect('/admin/projects/convertx/settings');
+            return;
+        }
+        try {
+            $this->db->query(
+                "UPDATE convertx_ai_providers SET
+                    name=:name, base_url=:url, api_key=:key, model=:model,
+                    capabilities=:caps, allowed_tiers=:tiers, priority=:pri,
+                    cost_per_1k_tokens=:cost
+                 WHERE id=:id",
+                [
+                    'name'  => $name,
+                    'url'   => $baseUrl ?: null,
+                    'key'   => $apiKey ?: null,
+                    'model' => $model ?: null,
+                    'caps'  => json_encode(array_values($caps)),
+                    'tiers' => json_encode(array_values($tiers)),
+                    'pri'   => $priority,
+                    'cost'  => $cost,
+                    'id'    => $id,
+                ]
+            );
+            $_SESSION['_flash']['success'] = 'Provider updated.';
+        } catch (\Exception $e) {
+            Logger::error('ConvertX editProvider: ' . $e->getMessage());
+            $_SESSION['_flash']['error'] = 'Failed to update provider.';
+        }
+        $this->redirect('/admin/projects/convertx/settings');
+    }
+
+    public function deleteProvider(): void
+    {
+        if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
+            $_SESSION['_flash']['error'] = 'Invalid token.';
+            $this->redirect('/admin/projects/convertx/settings');
+            return;
+        }
+        $id = (int) ($_POST['provider_id'] ?? 0);
+        if ($id) {
+            try {
+                $this->db->query("DELETE FROM convertx_ai_providers WHERE id=:id", ['id' => $id]);
+                $_SESSION['_flash']['success'] = 'Provider deleted.';
+            } catch (\Exception $e) {
+                $_SESSION['_flash']['error'] = 'Failed to delete provider.';
+            }
+        }
+        $this->redirect('/admin/projects/convertx/settings');
+    }
+
+    // ------------------------------------------------------------------ //
+    //  Storage Monitor                                                     //
+    // ------------------------------------------------------------------ //
+
+    public function storage(): void
+    {
+        $uploadDir = BASE_PATH . '/storage/uploads/convertx';
+        $diskUsed  = 0;
+        $fileCount = 0;
+        if (is_dir($uploadDir)) {
+            foreach (new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($uploadDir, \RecursiveDirectoryIterator::SKIP_DOTS)) as $file) {
+                if ($file->isFile()) {
+                    $diskUsed  += $file->getSize();
+                    $fileCount++;
+                }
+            }
+        }
+
+        $outputDir  = BASE_PATH . '/storage/converted';
+        $outputUsed  = 0;
+        $outputCount = 0;
+        if (is_dir($outputDir)) {
+            foreach (new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($outputDir, \RecursiveDirectoryIterator::SKIP_DOTS)) as $file) {
+                if ($file->isFile()) {
+                    $outputUsed  += $file->getSize();
+                    $outputCount++;
+                }
+            }
+        }
+
+        $userStats = [];
+        try {
+            $userStats = $this->db->fetchAll(
+                "SELECT u.id, u.name, u.email,
+                        COUNT(j.id) AS total_jobs,
+                        SUM(CASE WHEN j.status='completed' THEN 1 ELSE 0 END) AS completed
+                   FROM users u
+                   LEFT JOIN convertx_jobs j ON j.user_id = u.id
+                  GROUP BY u.id, u.name, u.email
+                 HAVING total_jobs > 0
+                  ORDER BY total_jobs DESC
+                  LIMIT 50"
+            );
+        } catch (\Exception $e) {}
+
+        $this->view('admin/projects/convertx/storage', [
+            'title'       => 'ConvertX — Storage Monitor',
+            'diskUsed'    => $diskUsed,
+            'fileCount'   => $fileCount,
+            'outputUsed'  => $outputUsed,
+            'outputCount' => $outputCount,
+            'userStats'   => $userStats,
+        ]);
+    }
+
+    // ------------------------------------------------------------------ //
+    //  Subscription Plans CRUD                                            //
+    // ------------------------------------------------------------------ //
+
+    public function plans(): void
+    {
+        $this->ensurePlansTables();
+        $plans = [];
+        try {
+            $plans = $this->db->fetchAll(
+                "SELECT p.*, COUNT(s.id) AS subscriber_count
+                   FROM convertx_subscription_plans p
+                   LEFT JOIN convertx_user_subscriptions s ON s.plan_id=p.id AND s.status='active'
+                  GROUP BY p.id
+                  ORDER BY p.sort_order ASC, p.price ASC"
+            );
+        } catch (\Exception $e) {}
+
+        $this->view('admin/projects/convertx/plans', [
+            'title' => 'ConvertX — Subscription Plans',
+            'plans' => $plans,
+        ]);
+    }
+
+    public function createPlan(): void
+    {
+        if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
+            $_SESSION['_flash']['error'] = 'Invalid token.';
+            $this->redirect('/admin/projects/convertx/plans');
+            return;
+        }
+        $name       = trim($_POST['name'] ?? '');
+        $slug       = strtolower(trim(preg_replace('/[^a-z0-9_-]/', '-', $_POST['slug'] ?? '')));
+        $desc       = trim($_POST['description'] ?? '');
+        $price      = max(0, (float) ($_POST['price'] ?? 0));
+        $billing    = in_array($_POST['billing_cycle'] ?? '', ['monthly','yearly','lifetime']) ? $_POST['billing_cycle'] : 'monthly';
+        $maxJobs    = (int) ($_POST['max_jobs_per_month'] ?? 50);
+        $maxFile    = (int) ($_POST['max_file_size_mb'] ?? 10);
+        $maxBatch   = (int) ($_POST['max_batch_size'] ?? 5);
+        $aiAccess   = !empty($_POST['ai_access']) ? 1 : 0;
+        $apiAccess  = !empty($_POST['api_access']) ? 1 : 0;
+        $batchConv  = !empty($_POST['batch_convert']) ? 1 : 0;
+        $priority   = !empty($_POST['priority_processing']) ? 1 : 0;
+        $status     = $_POST['status'] ?? 'active';
+        $sortOrder  = (int) ($_POST['sort_order'] ?? 0);
+
+        if (!$name || !$slug) {
+            $_SESSION['_flash']['error'] = 'Name and slug are required.';
+            $this->redirect('/admin/projects/convertx/plans');
+            return;
+        }
+        try {
+            $this->db->query(
+                "INSERT INTO convertx_subscription_plans
+                    (name,slug,description,price,billing_cycle,max_jobs_per_month,max_file_size_mb,max_batch_size,ai_access,api_access,batch_convert,priority_processing,status,sort_order)
+                 VALUES (:name,:slug,:desc,:price,:billing,:jobs,:file,:batch,:ai,:api,:bconv,:prio,:status,:sort)",
+                [
+                    'name'=>$name,'slug'=>$slug,'desc'=>$desc,'price'=>$price,'billing'=>$billing,
+                    'jobs'=>$maxJobs,'file'=>$maxFile,'batch'=>$maxBatch,'ai'=>$aiAccess,
+                    'api'=>$apiAccess,'bconv'=>$batchConv,'prio'=>$priority,'status'=>$status,'sort'=>$sortOrder
+                ]
+            );
+            $_SESSION['_flash']['success'] = 'Plan created.';
+        } catch (\Exception $e) {
+            Logger::error('ConvertX createPlan: ' . $e->getMessage());
+            $_SESSION['_flash']['error'] = 'Failed to create plan: ' . $e->getMessage();
+        }
+        $this->redirect('/admin/projects/convertx/plans');
+    }
+
+    public function updatePlan(): void
+    {
+        if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
+            $_SESSION['_flash']['error'] = 'Invalid token.';
+            $this->redirect('/admin/projects/convertx/plans');
+            return;
+        }
+        $id         = (int) ($_POST['plan_id'] ?? 0);
+        $name       = trim($_POST['name'] ?? '');
+        $desc       = trim($_POST['description'] ?? '');
+        $price      = max(0, (float) ($_POST['price'] ?? 0));
+        $billing    = in_array($_POST['billing_cycle'] ?? '', ['monthly','yearly','lifetime']) ? $_POST['billing_cycle'] : 'monthly';
+        $maxJobs    = (int) ($_POST['max_jobs_per_month'] ?? 50);
+        $maxFile    = (int) ($_POST['max_file_size_mb'] ?? 10);
+        $maxBatch   = (int) ($_POST['max_batch_size'] ?? 5);
+        $aiAccess   = !empty($_POST['ai_access']) ? 1 : 0;
+        $apiAccess  = !empty($_POST['api_access']) ? 1 : 0;
+        $batchConv  = !empty($_POST['batch_convert']) ? 1 : 0;
+        $priority   = !empty($_POST['priority_processing']) ? 1 : 0;
+        $status     = $_POST['status'] ?? 'active';
+
+        if (!$id || !$name) {
+            $_SESSION['_flash']['error'] = 'Invalid request.';
+            $this->redirect('/admin/projects/convertx/plans');
+            return;
+        }
+        try {
+            $this->db->query(
+                "UPDATE convertx_subscription_plans SET
+                    name=:name, description=:desc, price=:price, billing_cycle=:billing,
+                    max_jobs_per_month=:jobs, max_file_size_mb=:file, max_batch_size=:batch,
+                    ai_access=:ai, api_access=:api, batch_convert=:bconv, priority_processing=:prio, status=:status
+                 WHERE id=:id",
+                [
+                    'name'=>$name,'desc'=>$desc,'price'=>$price,'billing'=>$billing,
+                    'jobs'=>$maxJobs,'file'=>$maxFile,'batch'=>$maxBatch,'ai'=>$aiAccess,
+                    'api'=>$apiAccess,'bconv'=>$batchConv,'prio'=>$priority,'status'=>$status,'id'=>$id
+                ]
+            );
+            $_SESSION['_flash']['success'] = 'Plan updated.';
+        } catch (\Exception $e) {
+            $_SESSION['_flash']['error'] = 'Failed to update plan.';
+        }
+        $this->redirect('/admin/projects/convertx/plans');
+    }
+
+    public function deletePlan(): void
+    {
+        if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
+            $_SESSION['_flash']['error'] = 'Invalid token.';
+            $this->redirect('/admin/projects/convertx/plans');
+            return;
+        }
+        $id = (int) ($_POST['plan_id'] ?? 0);
+        if ($id) {
+            try {
+                $this->db->query("DELETE FROM convertx_subscription_plans WHERE id=:id", ['id' => $id]);
+                $_SESSION['_flash']['success'] = 'Plan deleted.';
+            } catch (\Exception $e) {
+                $_SESSION['_flash']['error'] = 'Failed to delete plan.';
+            }
+        }
+        $this->redirect('/admin/projects/convertx/plans');
+    }
+
+    private function ensurePlansTables(): void
+    {
+        try {
+            $this->db->query("CREATE TABLE IF NOT EXISTS convertx_subscription_plans (
+                id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(100) NOT NULL,
+                slug VARCHAR(50) NOT NULL UNIQUE,
+                description TEXT NULL,
+                price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+                billing_cycle ENUM('monthly','yearly','lifetime') DEFAULT 'monthly',
+                max_jobs_per_month INT NOT NULL DEFAULT 50,
+                max_file_size_mb INT NOT NULL DEFAULT 10,
+                max_batch_size INT NOT NULL DEFAULT 5,
+                ai_access TINYINT(1) NOT NULL DEFAULT 0,
+                api_access TINYINT(1) NOT NULL DEFAULT 0,
+                batch_convert TINYINT(1) NOT NULL DEFAULT 1,
+                priority_processing TINYINT(1) NOT NULL DEFAULT 0,
+                status ENUM('active','inactive') DEFAULT 'active',
+                sort_order INT DEFAULT 0,
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+                INDEX idx_status (status)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+            $this->db->query("CREATE TABLE IF NOT EXISTS convertx_user_subscriptions (
+                id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                user_id INT UNSIGNED NOT NULL,
+                plan_id INT UNSIGNED NOT NULL,
+                status ENUM('active','cancelled','expired','trial') DEFAULT 'active',
+                started_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                expires_at DATETIME NULL,
+                assigned_by INT UNSIGNED NULL,
+                notes VARCHAR(500) NULL,
+                updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+                INDEX idx_user_id (user_id),
+                INDEX idx_plan_id (plan_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+            $this->db->query("INSERT IGNORE INTO convertx_subscription_plans
+                (name,slug,description,price,billing_cycle,max_jobs_per_month,max_file_size_mb,max_batch_size,ai_access,api_access,batch_convert,priority_processing,status,sort_order)
+                VALUES
+                ('Free','free','Basic conversion, limited monthly jobs.',0.00,'monthly',50,10,5,0,0,1,0,'active',1),
+                ('Pro','pro','Unlimited conversions with AI and API access.',9.99,'monthly',-1,100,50,1,1,1,1,'active',2),
+                ('Enterprise','enterprise','Full access, custom limits, priority support.',29.99,'monthly',-1,500,100,1,1,1,1,'active',3)");
+        } catch (\Exception $e) {}
     }
 
     // ------------------------------------------------------------------ //
