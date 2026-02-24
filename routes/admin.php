@@ -62,6 +62,18 @@ $router->post('/admin/projects/{name}/toggle', 'Admin\\ProjectController@toggle'
 $router->get('/admin/projects/{name}/settings', 'Admin\\ProjectController@settings', ['auth', 'admin']);
 $router->post('/admin/projects/{name}/settings', 'Admin\\ProjectController@updateSettings', ['auth', 'admin']);
 
+// ConvertX admin routes
+$router->get('/admin/projects/convertx', 'Admin\\ConvertXAdminController@overview', ['auth', 'admin']);
+$router->get('/admin/projects/convertx/jobs', 'Admin\\ConvertXAdminController@jobs', ['auth', 'admin']);
+$router->post('/admin/projects/convertx/jobs/cancel', 'Admin\\ConvertXAdminController@cancelJob', ['auth', 'admin']);
+$router->post('/admin/projects/convertx/jobs/delete', 'Admin\\ConvertXAdminController@deleteJob', ['auth', 'admin']);
+$router->get('/admin/projects/convertx/users', 'Admin\\ConvertXAdminController@users', ['auth', 'admin']);
+$router->get('/admin/projects/convertx/api-keys', 'Admin\\ConvertXAdminController@apiKeys', ['auth', 'admin']);
+$router->post('/admin/projects/convertx/api-keys/revoke', 'Admin\\ConvertXAdminController@revokeApiKey', ['auth', 'admin']);
+$router->get('/admin/projects/convertx/settings', 'Admin\\ConvertXAdminController@settings', ['auth', 'admin']);
+$router->post('/admin/projects/convertx/settings', 'Admin\\ConvertXAdminController@updateSettings', ['auth', 'admin']);
+$router->get('/admin/projects/convertx/schema', 'Admin\\ConvertXAdminController@schema', ['auth', 'admin']);
+
 // CodeXPro admin routes
 $router->get('/admin/projects/codexpro', 'Admin\\CodeXProAdminController@overview', ['auth', 'admin']);
 $router->get('/admin/projects/codexpro/settings', 'Admin\\CodeXProAdminController@settings', ['auth', 'admin']);

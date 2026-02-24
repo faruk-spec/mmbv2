@@ -73,8 +73,11 @@ class SettingsController
         $action = $_POST['action'] ?? '';
 
         if ($action === 'generate_api_key') {
-            $this->generateApiKey($userId);
+            $newKey = $this->generateApiKey($userId);
             $_SESSION['_flash']['success'] = 'New API key generated successfully.';
+            if ($newKey) {
+                $_SESSION['_new_api_key'] = $newKey;
+            }
             header('Location: /projects/convertx/apikeys?tab=apikey');
             exit;
         }
@@ -119,7 +122,7 @@ class SettingsController
         }
     }
 
-    private function generateApiKey(int $userId): void
+    private function generateApiKey(int $userId): ?string
     {
         $key = 'cx_' . bin2hex(random_bytes(20));
         try {
@@ -145,8 +148,10 @@ class SettingsController
                  VALUES (:uid, :key, 1, NOW())",
                 ['uid' => $userId, 'key' => $key]
             );
+            return $key;
         } catch (\Exception $e) {
             // Silently continue — key generated but DB may not be set up yet
+            return null;
         }
     }
 

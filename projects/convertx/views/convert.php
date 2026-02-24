@@ -49,6 +49,40 @@ foreach ($groupedFormats as $group => $fmts) {
     <p>Upload any document, image or spreadsheet and convert it instantly</p>
 </div>
 
+<!-- ── Popular Converter Suggestions ── -->
+<div class="cx-suggestions-section">
+    <div class="cx-suggestions-title">
+        <i class="fa-solid fa-bolt-lightning" style="color:var(--cx-primary);"></i>
+        Popular Conversions
+    </div>
+    <div class="cx-suggestions-grid">
+        <?php
+        $suggestions = [
+            ['from'=>'PDF',  'to'=>'DOCX', 'icon'=>'fa-file-pdf',        'color'=>'#ef4444', 'desc'=>'Edit PDF content'],
+            ['from'=>'DOCX', 'to'=>'PDF',  'icon'=>'fa-file-word',        'color'=>'#2563eb', 'desc'=>'Share as PDF'],
+            ['from'=>'XLSX', 'to'=>'CSV',  'icon'=>'fa-file-excel',       'color'=>'#16a34a', 'desc'=>'Export data'],
+            ['from'=>'PNG',  'to'=>'JPG',  'icon'=>'fa-file-image',       'color'=>'#7c3aed', 'desc'=>'Reduce file size'],
+            ['from'=>'JPG',  'to'=>'WEBP', 'icon'=>'fa-image',            'color'=>'#0891b2', 'desc'=>'Web optimised'],
+            ['from'=>'PPTX', 'to'=>'PDF',  'icon'=>'fa-file-powerpoint',  'color'=>'#ea580c', 'desc'=>'Present anywhere'],
+            ['from'=>'CSV',  'to'=>'XLSX', 'icon'=>'fa-table',            'color'=>'#059669', 'desc'=>'Spreadsheet format'],
+            ['from'=>'SVG',  'to'=>'PNG',  'icon'=>'fa-vector-square',    'color'=>'#8b5cf6', 'desc'=>'Rasterise vector'],
+        ];
+        foreach ($suggestions as $s): ?>
+        <button type="button" class="cx-suggestion-card"
+                onclick="applySuggestion('<?= strtolower($s['to']) ?>')"
+                title="Convert <?= $s['from'] ?> to <?= $s['to'] ?>">
+            <i class="fa-solid <?= $s['icon'] ?>" style="color:<?= $s['color'] ?>;font-size:1.25rem;margin-bottom:.35rem;"></i>
+            <span class="cx-sug-route">
+                <span style="color:var(--text-secondary);"><?= $s['from'] ?></span>
+                <i class="fa-solid fa-arrow-right" style="font-size:.6rem;color:var(--cx-primary);"></i>
+                <span style="color:var(--cx-primary);font-weight:600;"><?= $s['to'] ?></span>
+            </span>
+            <span class="cx-sug-desc"><?= $s['desc'] ?></span>
+        </button>
+        <?php endforeach; ?>
+    </div>
+</div>
+
 <?php if (!$hasLibreOffice): ?>
 <!-- Server capability notice -->
 <div class="cx-notice">
@@ -299,10 +333,85 @@ foreach ($groupedFormats as $group => $fmts) {
     0%   { transform: translateX(-100%); }
     100% { transform: translateX(200%); }
 }
+
+/* Popular Converter Suggestions */
+.cx-suggestions-section {
+    margin-bottom: 1.5rem;
+}
+.cx-suggestions-title {
+    font-size: .8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    margin-bottom: .75rem;
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+}
+.cx-suggestions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: .5rem;
+}
+.cx-suggestion-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: .625rem;
+    padding: .625rem .5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .1rem;
+    cursor: pointer;
+    transition: border-color .2s, box-shadow .2s, transform .2s;
+    font-family: inherit;
+    text-align: center;
+}
+.cx-suggestion-card:hover {
+    border-color: var(--border-hover);
+    box-shadow: 0 4px 16px rgba(99,102,241,.16);
+    transform: translateY(-2px);
+}
+.cx-sug-route {
+    display: flex;
+    align-items: center;
+    gap: .25rem;
+    font-size: .73rem;
+    font-weight: 600;
+    margin-top: .1rem;
+}
+.cx-sug-desc {
+    font-size: .67rem;
+    color: var(--text-muted);
+    line-height: 1.3;
+    margin-top: .15rem;
+}
+@media (max-width: 600px) {
+    .cx-suggestions-grid { grid-template-columns: repeat(4, 1fr); }
+}
 </style>
 
 <script>
 var IMAGE_FORMATS = <?= json_encode(array_values($imageFormats)) ?>;
+
+/**
+ * Apply a suggestion card: pre-selects the output format dropdown.
+ */
+function applySuggestion(fmt) {
+    var select = document.getElementById('outputFormat');
+    var opt = select.querySelector('option[value="' + fmt + '"]');
+    if (opt && !opt.disabled) {
+        select.value = fmt;
+        updateAdvancedOptions(fmt);
+        // Scroll to the form
+        select.closest('.card').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        // Briefly highlight the select
+        select.style.borderColor = 'var(--cx-primary)';
+        select.style.boxShadow = '0 0 0 3px rgba(99,102,241,.25)';
+        setTimeout(function () { select.style.borderColor = ''; select.style.boxShadow = ''; }, 1500);
+    }
+}
 
 function updateAdvancedOptions(fmt) {
     var isImage = IMAGE_FORMATS.indexOf(fmt) !== -1;

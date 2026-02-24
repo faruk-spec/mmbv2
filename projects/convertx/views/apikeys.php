@@ -24,6 +24,20 @@ foreach ($activity as $row) {
     $activityMap[$row['day']] = (int) $row['cnt'];
 }
 $sparkMax = max(1, ...($activityMap ? array_values($activityMap) : [1]));
+
+// Check for newly generated key stored in session
+$newlyGeneratedKey = null;
+if (!empty($_SESSION['_new_api_key'])) {
+    $newlyGeneratedKey = $_SESSION['_new_api_key'];
+    unset($_SESSION['_new_api_key']);
+}
+
+// Flash messages
+$flashSuccess = null;
+if (!empty($_SESSION['_flash']['success'])) {
+    $flashSuccess = $_SESSION['_flash']['success'];
+    unset($_SESSION['_flash']['success']);
+}
 ?>
 
 <!-- Page header -->
@@ -31,6 +45,32 @@ $sparkMax = max(1, ...($activityMap ? array_values($activityMap) : [1]));
     <h1>API Keys &amp; Analytics</h1>
     <p>Manage your API credentials and track usage</p>
 </div>
+
+<?php if ($flashSuccess): ?>
+<div style="background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.4);border-radius:.625rem;padding:.875rem 1rem;margin-bottom:1.25rem;display:flex;align-items:center;gap:.625rem;font-size:.875rem;color:var(--cx-success);">
+    <i class="fa-solid fa-circle-check"></i>
+    <span><?= htmlspecialchars($flashSuccess) ?></span>
+</div>
+<?php endif; ?>
+
+<?php if ($newlyGeneratedKey): ?>
+<div style="background:linear-gradient(135deg,rgba(99,102,241,.15),rgba(6,182,212,.10));border:1px solid rgba(99,102,241,.45);border-radius:.75rem;padding:1rem 1.25rem;margin-bottom:1.25rem;animation:cx-neon-pulse 2s ease infinite;">
+    <div style="display:flex;align-items:center;gap:.625rem;margin-bottom:.625rem;">
+        <i class="fa-solid fa-key" style="color:var(--cx-primary);font-size:1.1rem;"></i>
+        <strong style="color:var(--text-primary);font-size:.9rem;">Your New API Key — Copy it now!</strong>
+        <span style="font-size:.72rem;color:var(--cx-warning);background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);padding:.15rem .5rem;border-radius:.375rem;margin-left:auto;">
+            <i class="fa-solid fa-triangle-exclamation"></i> Shown only once
+        </span>
+    </div>
+    <div style="display:flex;gap:.5rem;align-items:center;">
+        <input type="text" id="newKeyDisplay" value="<?= htmlspecialchars($newlyGeneratedKey) ?>"
+               readonly style="flex:1;font-family:monospace;font-size:.82rem;letter-spacing:.04em;background:var(--cx-code-bg);border:1px solid rgba(99,102,241,.35);border-radius:.5rem;padding:.5rem .75rem;color:var(--cx-primary);">
+        <button type="button" onclick="copyNewKey(event)" class="btn btn-primary btn-sm" style="flex-shrink:0;">
+            <i class="fa-solid fa-copy"></i> Copy
+        </button>
+    </div>
+</div>
+<?php endif; ?>
 
 <!-- ── Tab nav ── -->
 <div class="cx-tab-nav" role="tablist">
@@ -371,6 +411,16 @@ function copyKey(event) {
         var btn = event.currentTarget;
         btn.innerHTML = '<i class="fa-solid fa-check"></i>';
         setTimeout(function () { btn.innerHTML = '<i class="fa-solid fa-copy"></i>'; }, 1500);
+    });
+}
+
+function copyNewKey(event) {
+    var input = document.getElementById('newKeyDisplay');
+    if (!input) return;
+    navigator.clipboard.writeText(input.value).then(function () {
+        var btn = event.currentTarget;
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+        setTimeout(function () { btn.innerHTML = '<i class="fa-solid fa-copy"></i> Copy'; }, 2000);
     });
 }
 </script>
