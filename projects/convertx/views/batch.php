@@ -5,6 +5,11 @@
 $currentView = 'batch';
 $csrfToken   = \Core\Security::generateCsrfToken();
 
+// Server capability flags
+$backends       = $backends ?? ['php' => true, 'gd' => false, 'libreoffice' => false, 'imagemagick' => false, 'pandoc' => false];
+$hasLibreOffice = !empty($backends['libreoffice']);
+
+// Build flat format list for accept attribute
 $allFormats = [];
 foreach (($formats ?? []) as $formats_list) {
     foreach ($formats_list as $fmt) {
@@ -13,6 +18,20 @@ foreach (($formats ?? []) as $formats_list) {
 }
 $allFormats = array_unique($allFormats);
 sort($allFormats);
+
+// Grouped formats for optgroup
+$groupedFormats = $formats ?? [];
+$officeGroups   = ['document', 'spreadsheet', 'presentation'];
+$groupLabels    = [
+    'document'     => 'Documents',
+    'spreadsheet'  => 'Spreadsheets',
+    'presentation' => 'Presentations',
+    'image'        => 'Images',
+];
+$groupAvailable = [];
+foreach ($groupedFormats as $group => $fmts) {
+    $groupAvailable[$group] = $hasLibreOffice || !in_array($group, $officeGroups, true);
+}
 ?>
 
 <!-- Page header -->
@@ -20,6 +39,17 @@ sort($allFormats);
     <h1>Batch Convert</h1>
     <p>Upload up to 50 files — convert them all to the same format in one go</p>
 </div>
+
+<?php if (!$hasLibreOffice): ?>
+<div class="cx-notice">
+    <i class="fa-solid fa-triangle-exclamation"></i>
+    <div>
+        <strong>LibreOffice is not installed on this server</strong>
+        Batch conversions are limited to text/markup (TXT, HTML, MD, CSV) and image-to-image formats.
+        Document formats (PDF, DOCX, XLSX…) require LibreOffice to be installed.
+    </div>
+</div>
+<?php endif; ?>
 
 <div class="cx-batch-grid">
 
@@ -38,7 +68,7 @@ sort($allFormats);
                     Upload Files
                     <span style="font-size:.73rem;font-weight:400;color:var(--text-muted);margin-left:.4rem;">Max 50 per batch</span>
                 </label>
-                <div class="upload-zone" id="uploadZone" style="padding:1.5rem .75rem;">
+                <div class="upload-zone" id="uploadZone">
                     <i class="fa-solid fa-files upload-icon" style="font-size:1.75rem;"></i>
                     <p style="font-weight:600;font-size:.875rem;margin:.35rem 0 .2rem;">Drag &amp; drop files or <strong>click to browse</strong></p>
                     <p style="font-size:.73rem;color:var(--text-muted);">Select multiple files at once</p>
@@ -63,8 +93,16 @@ sort($allFormats);
                 </label>
                 <select class="form-control" id="outputFormat" name="output_format" required form="batchForm">
                     <option value="">— Select output format —</option>
-                    <?php foreach ($allFormats as $fmt): ?>
-                        <option value="<?= htmlspecialchars($fmt) ?>"><?= strtoupper(htmlspecialchars($fmt)) ?></option>
+                    <?php foreach ($groupedFormats as $group => $fmts): ?>
+                    <?php $available = $groupAvailable[$group] ?? true; ?>
+                    <optgroup label="<?= htmlspecialchars($groupLabels[$group] ?? ucfirst($group)) . ($available ? '' : ' (requires LibreOffice)') ?>">
+                        <?php foreach ($fmts as $fmt): ?>
+                        <option value="<?= htmlspecialchars($fmt) ?>"
+                                <?= $available ? '' : 'disabled' ?>>
+                            <?= strtoupper(htmlspecialchars($fmt)) ?>
+                        </option>
+                        <?php endforeach; ?>
+                    </optgroup>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -121,6 +159,7 @@ sort($allFormats);
     input.addEventListener('change', function () {
         if (input.files.length) {
             fileList.innerHTML = '<i class="fa-solid fa-check-circle" style="color:var(--cx-success);"></i> ' + input.files.length + ' file(s) selected';
+            zone.classList.add('has-file');
         }
     });
 
@@ -131,6 +170,17 @@ sort($allFormats);
 
     form.addEventListener('submit', async function (e) {
         e.preventDefault();
+
+        // Client-side validation
+        if (!input.files || !input.files.length) {
+            zone.style.borderColor = 'var(--cx-danger)';
+            zone.style.animation   = 'none';
+            fileList.innerHTML = '<i class="fa-solid fa-circle-xmark" style="color:var(--cx-danger);"></i>'
+                               + ' <strong style="color:var(--cx-danger);">Please select at least one file.</strong>';
+            setTimeout(function () { zone.style.borderColor = ''; zone.style.animation = ''; }, 2500);
+            return;
+        }
+
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<i class="fa-solid fa-spinner" style="animation:cx-spin 1s linear infinite;"></i> Uploading…';
 

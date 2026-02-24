@@ -47,6 +47,42 @@ class ConversionService
     private const OCR_CANDIDATE_FORMATS = ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'bmp', 'tiff', 'webp'];
 
     /**
+     * Detect which conversion backends are available on this server.
+     * Results are cached in a static variable so shell calls happen once per request.
+     *
+     * @return array{php:bool, gd:bool, libreoffice:bool, imagemagick:bool, pandoc:bool}
+     */
+    public function getAvailableBackends(): array
+    {
+        static $cache = null;
+        if ($cache !== null) {
+            return $cache;
+        }
+
+        $loRaw = trim((string) shell_exec('which libreoffice 2>/dev/null'));
+        if (empty($loRaw)) {
+            $loRaw = trim((string) shell_exec('which soffice 2>/dev/null'));
+        }
+
+        $imRaw = trim((string) shell_exec('which convert 2>/dev/null'));
+        if (empty($imRaw)) {
+            $imRaw = trim((string) shell_exec('which magick 2>/dev/null'));
+        }
+
+        $pandoc = trim((string) shell_exec('which pandoc 2>/dev/null'));
+
+        $cache = [
+            'php'          => true,
+            'gd'           => extension_loaded('gd'),
+            'libreoffice'  => !empty($loRaw),
+            'imagemagick'  => !empty($imRaw),
+            'pandoc'       => !empty($pandoc),
+        ];
+
+        return $cache;
+    }
+
+    /**
      * Detect the format of an uploaded file.
      *
      * @param string $filePath  Absolute path on disk

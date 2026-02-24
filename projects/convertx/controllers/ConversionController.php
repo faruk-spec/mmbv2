@@ -45,9 +45,10 @@ class ConversionController
     {
         $config = require PROJECT_PATH . '/config.php';
         $this->render('convert', [
-            'title'   => 'Convert File',
-            'user'    => Auth::user(),
-            'formats' => $config['formats'],
+            'title'    => 'Convert File',
+            'user'     => Auth::user(),
+            'formats'  => $config['formats'],
+            'backends' => $this->conversionService->getAvailableBackends(),
         ]);
     }
 
@@ -70,8 +71,22 @@ class ConversionController
         }
 
         // Validate upload
-        if (empty($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
-            $this->jsonError('File upload failed or no file provided', 400);
+        if (empty($_FILES['file'])) {
+            $this->jsonError('No file was selected. Please choose a file before submitting.', 400);
+            return;
+        }
+        $uploadError = (int) $_FILES['file']['error'];
+        if ($uploadError !== UPLOAD_ERR_OK) {
+            $uploadMessages = [
+                UPLOAD_ERR_INI_SIZE   => 'File exceeds the server upload size limit.',
+                UPLOAD_ERR_FORM_SIZE  => 'File exceeds the maximum allowed size.',
+                UPLOAD_ERR_PARTIAL    => 'File was only partially uploaded — please try again.',
+                UPLOAD_ERR_NO_FILE    => 'No file was selected.',
+                UPLOAD_ERR_NO_TMP_DIR => 'Server is missing a temp directory.',
+                UPLOAD_ERR_CANT_WRITE => 'Server failed to write the temp file.',
+                UPLOAD_ERR_EXTENSION  => 'Upload blocked by a server extension.',
+            ];
+            $this->jsonError($uploadMessages[$uploadError] ?? 'File upload failed (error ' . $uploadError . ').', 400);
             return;
         }
 

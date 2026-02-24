@@ -40,9 +40,10 @@ class BatchController
     {
         $config = require PROJECT_PATH . '/config.php';
         $this->render('batch', [
-            'title'   => 'Batch Conversion',
-            'user'    => Auth::user(),
-            'formats' => $config['formats'],
+            'title'    => 'Batch Conversion',
+            'user'     => Auth::user(),
+            'formats'  => $config['formats'],
+            'backends' => $this->conversionService->getAvailableBackends(),
         ]);
     }
 

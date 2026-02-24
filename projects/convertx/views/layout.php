@@ -157,6 +157,24 @@ try {
                 radial-gradient(ellipse at 85% 100%,  rgba(139,92,246,0.04) 0%, transparent 50%);
         }
 
+        /* ── Neural-network grid overlay ── */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(99,102,241,0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(99,102,241,0.04) 1px, transparent 1px);
+            background-size: 52px 52px;
+            pointer-events: none;
+            z-index: -1;
+        }
+        [data-theme="light"] body::after {
+            background-image:
+                linear-gradient(rgba(99,102,241,0.07) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(99,102,241,0.07) 1px, transparent 1px);
+        }
+
         /* ── Keyframe animations ── */
         @keyframes cx-fade-up {
             from { opacity: 0; transform: translateY(16px); }
@@ -178,6 +196,24 @@ try {
         @keyframes cx-progress {
             0%   { transform: translateX(-100%); }
             100% { transform: translateX(200%); }
+        }
+
+        /* Upload zone subtle pulse */
+        @keyframes cx-upload-pulse {
+            0%, 100% { border-color: var(--border-color); }
+            50%       { border-color: rgba(99,102,241,0.50); box-shadow: 0 0 18px rgba(99,102,241,0.10); }
+        }
+
+        /* AI badge shimmer */
+        @keyframes cx-shimmer {
+            0%   { background-position: -200% center; }
+            100% { background-position:  200% center; }
+        }
+
+        /* Neon glow pulse for featured items */
+        @keyframes cx-neon-pulse {
+            0%, 100% { box-shadow: 0 0 8px rgba(99,102,241,0.35), 0 0 24px rgba(99,102,241,0.10); }
+            50%       { box-shadow: 0 0 16px rgba(99,102,241,0.60), 0 0 40px rgba(99,102,241,0.20); }
         }
 
         /* ── Page wrapper ── */
@@ -370,7 +406,7 @@ try {
         }
         .card:hover, .glass-card:hover {
             border-color: var(--border-hover);
-            box-shadow: 0 8px 28px rgba(99,102,241,0.10);
+            box-shadow: 0 8px 32px rgba(99,102,241,0.14), 0 0 0 1px rgba(99,102,241,0.10);
             transform: translateY(-2px);
         }
         .glass-card {
@@ -435,10 +471,24 @@ try {
             text-align: center;
             transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s;
             will-change: transform;
+            position: relative;
+            overflow: hidden;
+        }
+        /* Glow orb inside each stat card */
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 80px;
+            background: radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%);
+            pointer-events: none;
         }
         .stat-card:hover {
             border-color: var(--border-hover);
-            box-shadow: 0 6px 20px rgba(99,102,241,0.12);
+            box-shadow: 0 6px 20px rgba(99,102,241,0.16), 0 0 0 1px rgba(99,102,241,0.12);
             transform: translateY(-3px);
         }
         .stat-card .stat-icon {
@@ -574,15 +624,20 @@ try {
             border: 2px dashed var(--border-color);
             border-radius: 0.75rem;
             padding: 2.5rem 1.5rem;
+            min-height: 10rem;
             text-align: center;
             cursor: pointer;
-            transition: border-color 0.25s, background 0.25s, transform 0.25s;
+            transition: border-color 0.25s, background 0.25s, transform 0.25s, box-shadow 0.25s;
             color: var(--text-secondary);
+            animation: cx-upload-pulse 3.5s ease-in-out infinite;
+            position: relative;
         }
         .upload-zone:hover, .upload-zone.drag-over {
             border-color: var(--cx-primary);
-            background: rgba(99,102,241,0.05);
+            background: rgba(99,102,241,0.06);
             transform: scale(1.01);
+            box-shadow: 0 0 24px rgba(99,102,241,0.14);
+            animation: none;
         }
         .upload-zone .upload-icon {
             font-size: 2.5rem;
@@ -595,6 +650,11 @@ try {
         }
         .upload-zone p { color: var(--text-secondary); font-size: var(--font-sm); margin: 0.25rem 0; }
         .upload-zone strong { color: var(--cx-primary); }
+        .upload-zone.has-file {
+            border-color: var(--cx-success);
+            background: rgba(16,185,129,0.05);
+            animation: none;
+        }
 
         /* ── Badges ── */
         .badge {
@@ -611,9 +671,18 @@ try {
         .badge-failed     { background: rgba(239,68,68,.15);   color: var(--cx-danger);  }
         .badge-cancelled  { background: rgba(136,146,166,.15); color: var(--text-secondary); }
 
-        /* ── AI badge ── */
+        /* ── AI badge – shimmer sweep ── */
         .ai-badge {
-            background: linear-gradient(135deg, var(--cx-primary), var(--cx-secondary));
+            background: linear-gradient(
+                90deg,
+                var(--cx-primary)   0%,
+                var(--cx-secondary) 40%,
+                var(--cx-accent)    60%,
+                var(--cx-secondary) 80%,
+                var(--cx-primary)   100%
+            );
+            background-size: 200% auto;
+            animation: cx-shimmer 2.8s linear infinite;
             color: #fff;
             padding: 0.2rem 0.65rem;
             border-radius: 20px;
@@ -624,6 +693,46 @@ try {
             align-items: center;
             gap: 0.25rem;
         }
+
+        /* ── Server capability notice panel ── */
+        .cx-notice {
+            --cx-warning-text: #e0a000;
+            background: rgba(245,158,11,0.07);
+            border: 1px solid rgba(245,158,11,0.35);
+            border-radius: 0.625rem;
+            padding: 0.875rem 1.125rem;
+            margin-bottom: 1.25rem;
+            color: var(--cx-warning-text);
+            font-size: var(--font-sm);
+            display: flex;
+            align-items: flex-start;
+            gap: 0.625rem;
+            animation: cx-slide-down 0.35s ease both;
+            line-height: 1.5;
+        }
+        [data-theme="light"] .cx-notice { --cx-warning-text: #b45309; background: rgba(245,158,11,0.10); }
+        .cx-notice > i { flex-shrink: 0; margin-top: 0.15rem; }
+        .cx-notice strong { font-weight: 600; display: block; margin-bottom: 0.25rem; }
+        .cx-notice .cx-notice-formats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.375rem;
+            margin-top: 0.5rem;
+        }
+        .cx-notice .cx-notice-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.175rem 0.55rem;
+            border-radius: 20px;
+            font-size: var(--font-xs);
+            font-weight: 600;
+        }
+        .cx-notice-tag.available   { background: rgba(16,185,129,0.12); color: var(--cx-success); }
+        .cx-notice-tag.unavailable { background: rgba(239,68,68,0.10);  color: var(--cx-danger);  }
+
+        /* Disabled optgroup label (client-side JS sets class) */
+        select optgroup.cx-disabled { color: var(--text-muted); }
 
         /* ── Table ── */
         .cx-table { width: 100%; border-collapse: collapse; }

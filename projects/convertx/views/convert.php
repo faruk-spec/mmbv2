@@ -16,6 +16,14 @@ $allFormatArrays = array_filter(array_values($groupedFormats), 'is_array');
 $allFormats     = $allFormatArrays ? array_unique(array_merge(...$allFormatArrays)) : [];
 sort($allFormats);
 
+// Server capability flags
+$backends        = $backends ?? ['php' => true, 'gd' => false, 'libreoffice' => false, 'imagemagick' => false, 'pandoc' => false];
+$hasLibreOffice  = !empty($backends['libreoffice']);
+$hasImageMagick  = !empty($backends['imagemagick']) || !empty($backends['gd']);
+
+// Groups that require LibreOffice
+$officeGroups    = ['document', 'spreadsheet', 'presentation'];
+
 // Format category labels (plain text, no emoji — <optgroup> can't render HTML)
 $groupLabels = [
     'document'     => 'Documents',
@@ -23,6 +31,16 @@ $groupLabels = [
     'presentation' => 'Presentations',
     'image'        => 'Images',
 ];
+
+// Which groups are available?
+$groupAvailable = [];
+foreach ($groupedFormats as $group => $fmts) {
+    if (in_array($group, $officeGroups, true)) {
+        $groupAvailable[$group] = $hasLibreOffice;
+    } else {
+        $groupAvailable[$group] = true; // images via GD/ImageMagick
+    }
+}
 ?>
 
 <!-- Page header -->
@@ -30,6 +48,22 @@ $groupLabels = [
     <h1>Convert a File</h1>
     <p>Upload any document, image or spreadsheet and convert it instantly</p>
 </div>
+
+<?php if (!$hasLibreOffice): ?>
+<!-- Server capability notice -->
+<div class="cx-notice">
+    <i class="fa-solid fa-triangle-exclamation"></i>
+    <div>
+        <strong>LibreOffice is not installed on this server</strong>
+        Only the following conversions are available without additional server software:
+        <div class="cx-notice-formats">
+            <span class="cx-notice-tag available"><i class="fa-solid fa-check-circle"></i> TXT, HTML, MD, CSV (text/markup)</span>
+            <span class="cx-notice-tag available"><i class="fa-solid fa-check-circle"></i> JPG, PNG, GIF, WebP, BMP (images)</span>
+            <span class="cx-notice-tag unavailable"><i class="fa-solid fa-xmark-circle"></i> PDF, DOCX, XLSX, PPTX … (requires LibreOffice)</span>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
 
 <?php if ($presetAi): ?>
 <div class="cx-ai-panel" style="margin-bottom:1.5rem;animation:cx-slide-down 0.4s ease both;">
@@ -68,14 +102,14 @@ $groupLabels = [
                 <label class="form-label">
                     <i class="fa-solid fa-cloud-arrow-up" style="color:var(--cx-primary);"></i> Source File
                 </label>
-                <div class="upload-zone" id="uploadZone" style="padding:1.25rem .75rem;">
+                <div class="upload-zone" id="uploadZone">
                     <i class="fa-solid fa-cloud-arrow-up upload-icon" style="font-size:1.75rem;"></i>
                     <p style="font-weight:600;font-size:.875rem;margin:.35rem 0 .2rem;">Drag &amp; drop or <strong>click to browse</strong></p>
                     <p style="font-size:.73rem;color:var(--text-muted);">PDF, DOCX, XLSX, PNG, JPG and more</p>
                     <input type="file" name="file" id="fileInput" style="display:none;"
                            accept="<?= implode(',', array_map(fn($f) => '.' . $f, $allFormats)) ?>">
                 </div>
-                <div id="selectedFile" style="margin-top:.4rem;font-size:.82rem;color:var(--cx-success);display:none;"></div>
+                <div id="selectedFile" style="margin-top:.4rem;font-size:.82rem;display:none;"></div>
             </div>
 
             <!-- AI enhancement panel -->
@@ -175,9 +209,13 @@ $groupLabels = [
                         form="convertForm" onchange="updateAdvancedOptions(this.value)">
                     <option value="">— Select format —</option>
                     <?php foreach ($groupedFormats as $group => $fmts): ?>
-                    <optgroup label="<?= htmlspecialchars($groupLabels[$group] ?? ucfirst($group)) ?>">
+                    <?php $available = $groupAvailable[$group] ?? true; ?>
+                    <optgroup label="<?= htmlspecialchars($groupLabels[$group] ?? ucfirst($group)) . ($available ? '' : ' (requires LibreOffice)') ?>">
                         <?php foreach ($fmts as $fmt): ?>
-                        <option value="<?= htmlspecialchars($fmt) ?>"><?= strtoupper(htmlspecialchars($fmt)) ?></option>
+                        <option value="<?= htmlspecialchars($fmt) ?>"
+                                <?= $available ? '' : 'disabled' ?>>
+                            <?= strtoupper(htmlspecialchars($fmt)) ?>
+                        </option>
                         <?php endforeach; ?>
                     </optgroup>
                     <?php endforeach; ?>
@@ -296,10 +334,20 @@ function toggleAiOptions() {
 
     function updateLabel() {
         if (input.files.length) {
+            var f    = input.files[0];
+            var size = f.size >= 1048576
+                ? (f.size / 1048576).toFixed(1) + ' MB'
+                : (f.size / 1024).toFixed(1) + ' KB';
             label.innerHTML = '<i class="fa-solid fa-check-circle" style="color:var(--cx-success);"></i> '
-                            + input.files[0].name + ' (' + (input.files[0].size / 1024).toFixed(1) + ' KB)';
+                            + htmlEsc(f.name) + ' <span style="color:var(--text-muted);">(' + size + ')</span>';
             label.style.display = 'block';
+            zone.classList.add('has-file');
+            zone.classList.remove('drag-over');
         }
+    }
+
+    function htmlEsc(str) {
+        return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
     // ── Translate language toggle ──
@@ -318,6 +366,21 @@ function toggleAiOptions() {
 
     form.addEventListener('submit', async function (e) {
         e.preventDefault();
+
+        // ── Client-side validation ──
+        if (!input.files || !input.files.length) {
+            zone.style.borderColor = 'var(--cx-danger)';
+            zone.style.animation   = 'none';
+            label.innerHTML = '<i class="fa-solid fa-circle-xmark" style="color:var(--cx-danger);"></i>'
+                            + ' <strong style="color:var(--cx-danger);">Please select a file first.</strong>';
+            label.style.display = 'block';
+            setTimeout(function () {
+                zone.style.borderColor = '';
+                zone.style.animation   = '';
+            }, 2500);
+            return;
+        }
+
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<i class="fa-solid fa-spinner" style="animation:cx-spin 1s linear infinite;"></i> Uploading…';
 
