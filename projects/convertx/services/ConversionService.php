@@ -193,37 +193,11 @@ class ConversionService
             return $this->convertWithPhp($inputPath, $inputFormat, $outputFormat, $outputPath);
         }
 
-        // ── Cross-family compatibility guard ─────────────────────────────────
-        // LibreOffice crashes (SIGABRT/exit 134) when fed an image file and asked
-        // to export using a Calc or Writer filter. Catch invalid combinations here
-        // and surface a human-readable error before any exec() is attempted.
         $imageFormats  = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'svg'];
         $isInputImage  = in_array($inputFormat, $imageFormats, true);
         $isOutputImage = in_array($outputFormat, $imageFormats, true);
 
-        if ($isInputImage && !$isOutputImage && $outputFormat !== 'pdf') {
-            throw new \RuntimeException(
-                "Cannot convert '{$inputFormat}' to '{$outputFormat}'. "
-                . "Image files can only be converted to other image formats "
-                . "(JPG, PNG, GIF, WebP, BMP) or to PDF. "
-                . "To extract text from this image, enable the OCR option."
-            );
-        }
-
-        if (!$isInputImage && $isOutputImage && $inputFormat !== 'pdf') {
-            throw new \RuntimeException(
-                "Cannot convert '{$inputFormat}' to '{$outputFormat}'. "
-                . "Document/spreadsheet/presentation files cannot be converted "
-                . "directly to image formats. Convert to PDF first, then PDF to image."
-            );
-        }
-
-        // 2a. Image → PDF: ImageMagick handles this cleanly (no LibreOffice needed)
-        if ($isInputImage && $outputFormat === 'pdf') {
-            return $this->convertWithImageMagick($inputPath, $outputPath, $options);
-        }
-
-        // 2b. Image ↔ image: try GD first, then ImageMagick
+        // 2. Image ↔ image: try GD first, then ImageMagick
         if ($isInputImage && $isOutputImage) {
             if ($this->convertWithGD($inputPath, $outputPath, $options)) {
                 return true;
@@ -231,7 +205,29 @@ class ConversionService
             return $this->convertWithImageMagick($inputPath, $outputPath, $options);
         }
 
-        // 3. Document / office formats → LibreOffice
+        // 3. Image → PDF: ImageMagick (native, no LibreOffice needed)
+        if ($isInputImage && $outputFormat === 'pdf') {
+            return $this->convertWithImageMagick($inputPath, $outputPath, $options);
+        }
+
+        // 4. PDF → image: ImageMagick (e.g. pdf → jpg page rasterisation)
+        if ($inputFormat === 'pdf' && $isOutputImage) {
+            return $this->convertWithImageMagick($inputPath, $outputPath, $options);
+        }
+
+        // 5. Cross-family: image → office/text (non-pdf)
+        //    Chain: image → PDF (ImageMagick) → target (LibreOffice)
+        if ($isInputImage && !$isOutputImage) {
+            return $this->convertViaChain($inputPath, $inputFormat, $outputFormat, $outputPath, $options);
+        }
+
+        // 6. Cross-family: office/text → image (non-pdf input)
+        //    Chain: input → PDF (LibreOffice) → image (ImageMagick)
+        if (!$isInputImage && $isOutputImage) {
+            return $this->convertViaChain($inputPath, $inputFormat, $outputFormat, $outputPath, $options);
+        }
+
+        // 7. Document / office formats → LibreOffice
         // Note: 'csv' is intentionally excluded from this list — CSV ↔ plain-text
         // pairs are already handled by the PHP engine above (step 1).  CSV → XLSX/ODS
         // is caught here because 'xlsx'/'ods' appear in $officeFormats as output.
@@ -240,7 +236,7 @@ class ConversionService
             return $this->convertWithLibreOffice($inputPath, $inputFormat, $outputFormat, $outputPath);
         }
 
-        // 4. Remaining plain-text variants → Pandoc
+        // 8. Remaining plain-text variants → Pandoc
         $pandocFormats = ['md', 'html', 'txt', 'rst'];
         if (in_array($inputFormat, $pandocFormats, true) || in_array($outputFormat, $pandocFormats, true)) {
             return $this->convertWithPandoc($inputPath, $inputFormat, $outputFormat, $outputPath);
@@ -444,6 +440,57 @@ class ConversionService
 
         // Fall back to bare extension if not in map (LibreOffice will try auto-detect)
         return $map[$outputFormat] ?? $outputFormat;
+    }
+
+    /**
+     * Two-step PDF-bridge conversion for cross-family formats.
+     *
+     * image  → office : image → PDF (ImageMagick) → office (LibreOffice)
+     * office → image  : office → PDF (LibreOffice) → image (ImageMagick)
+     * text   → image  : text  → PDF (LibreOffice) → image (ImageMagick)
+     *
+     * The intermediate PDF is written to the system temp directory and
+     * deleted in the `finally` block regardless of success or failure.
+     */
+    private function convertViaChain(
+        string $inputPath,
+        string $inputFormat,
+        string $outputFormat,
+        string $outputPath,
+        array  $options
+    ): bool {
+        $imageFormats = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'svg'];
+        $isInputImage = in_array($inputFormat, $imageFormats, true);
+
+        // Unique intermediate PDF in system temp dir
+        $tmpPdf = sys_get_temp_dir() . '/cx_chain_' . getmypid() . '_' . uniqid() . '.pdf';
+
+        try {
+            // ── Step 1: convert input to intermediate PDF ──────────────────
+            if ($isInputImage) {
+                $step1ok = $this->convertWithImageMagick($inputPath, $tmpPdf, $options);
+            } else {
+                $step1ok = $this->convertWithLibreOffice($inputPath, $inputFormat, 'pdf', $tmpPdf);
+            }
+
+            if (!$step1ok || !file_exists($tmpPdf)) {
+                throw new \RuntimeException(
+                    "Two-step conversion failed at step 1 ({$inputFormat} → PDF). "
+                    . "Check that ImageMagick or LibreOffice is installed."
+                );
+            }
+
+            // ── Step 2: convert intermediate PDF to target ─────────────────
+            if (in_array($outputFormat, $imageFormats, true)) {
+                return $this->convertWithImageMagick($tmpPdf, $outputPath, $options);
+            }
+            return $this->convertWithLibreOffice($tmpPdf, 'pdf', $outputFormat, $outputPath);
+
+        } finally {
+            if (file_exists($tmpPdf)) {
+                @unlink($tmpPdf);
+            }
+        }
     }
 
     private function convertWithLibreOffice(

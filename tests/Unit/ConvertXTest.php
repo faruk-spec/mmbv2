@@ -333,4 +333,75 @@ class ConvertXTest extends TestCase
         $this->assertEquals('failed',     \Projects\ConvertX\Models\ConversionJobModel::STATUS_FAILED);
         $this->assertEquals('cancelled',  \Projects\ConvertX\Models\ConversionJobModel::STATUS_CANCELLED);
     }
+
+    // ------------------------------------------------------------------ //
+    //  ConversionService: cross-family "any-to-any" chain routing          //
+    // ------------------------------------------------------------------ //
+
+    /**
+     * Verify cross-family conversions no longer throw a RuntimeException
+     * at the routing stage (they now route to convertViaChain which will
+     * fail gracefully with a RuntimeException only if the external tools
+     * are missing — the SIGABRT LibreOffice crash no longer happens).
+     *
+     * We test with missing input files so that convertWithImageMagick /
+     * convertWithLibreOffice return false / throw, and convert() returns
+     * ['success'=>false] instead of crashing the process.
+     */
+    public function testImageToOfficeReturnsFailNotCrash(): void
+    {
+        // A non-existent PNG → XLSX should return success=false (tool not found
+        // or file missing), not throw an uncaught exception.
+        $result = $this->conversionService->convert(
+            '/tmp/cx_nonexistent_test.png',
+            'png',
+            'xlsx'
+        );
+
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('success', $result);
+        // Should be false (file doesn't exist / no ImageMagick in CI)
+        // but must NOT throw a "Cannot convert" RuntimeException anymore.
+        $this->assertFalse($result['success']);
+        $this->assertStringNotContainsString(
+            'Image files can only be converted to other image formats',
+            $result['error'],
+            'The old cross-family guard message must not appear'
+        );
+    }
+
+    public function testOfficeToImageReturnsFailNotCrash(): void
+    {
+        $result = $this->conversionService->convert(
+            '/tmp/cx_nonexistent_test.docx',
+            'docx',
+            'png'
+        );
+
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('success', $result);
+        $this->assertFalse($result['success']);
+        $this->assertStringNotContainsString(
+            'Document/spreadsheet/presentation files cannot be converted',
+            $result['error'],
+            'The old cross-family guard message must not appear'
+        );
+    }
+
+    public function testGetSupportedOutputFormatsContainsImages(): void
+    {
+        // Now that any-to-any is supported, image formats must appear as
+        // valid output choices for a document input (e.g. docx).
+        $formats = $this->conversionService->getSupportedOutputFormats('docx');
+        $this->assertContains('jpg', $formats, 'docx should list jpg as a supported output');
+        $this->assertContains('png', $formats, 'docx should list png as a supported output');
+    }
+
+    public function testGetSupportedOutputFormatsImageInputIncludesOffice(): void
+    {
+        // Image inputs should also offer office outputs now (via chain).
+        $formats = $this->conversionService->getSupportedOutputFormats('png');
+        $this->assertContains('xlsx', $formats, 'png should list xlsx as a supported output');
+        $this->assertContains('docx', $formats, 'png should list docx as a supported output');
+    }
 }

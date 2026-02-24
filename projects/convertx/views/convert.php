@@ -222,8 +222,8 @@ foreach ($groupedFormats as $group => $fmts) {
                     </optgroup>
                     <?php endforeach; ?>
                 </select>
-                <div id="compatHint" style="display:none;margin-top:.35rem;font-size:.78rem;padding:.4rem .6rem;border-radius:.4rem;background:rgba(239,68,68,.1);color:var(--cx-danger);border:1px solid rgba(239,68,68,.25);">
-                    <i class="fa-solid fa-circle-exclamation"></i> <span id="compatHintText"></span>
+                <div id="compatHint" style="display:none;margin-top:.35rem;font-size:.78rem;padding:.4rem .6rem;border-radius:.4rem;">
+                    <i class="fa-solid fa-circle-info"></i> <span id="compatHintText"></span>
                 </div>
             </div>
 
@@ -311,9 +311,10 @@ function updateAdvancedOptions(fmt) {
 }
 
 /**
- * Mirror of ConversionService::dispatch() cross-family guard.
- * Disables output <option>s that would cause a server-side crash.
- * Called when the user selects a file.
+ * Enable all compatible output formats for the chosen input file.
+ * Cross-family conversions (image → office, office → image) are now
+ * supported via a 2-step PDF bridge on the server, so we only disable
+ * options that genuinely can't run (LibreOffice not installed).
  */
 function filterOutputFormats(inputExt) {
     var ext      = inputExt.toLowerCase();
@@ -321,42 +322,37 @@ function filterOutputFormats(inputExt) {
     var select   = document.getElementById('outputFormat');
     var hint     = document.getElementById('compatHint');
     var hintText = document.getElementById('compatHintText');
-    var blocked  = 0;
 
-    var options  = select.querySelectorAll('option[data-fmt]');
-    options.forEach(function (opt) {
-        var outFmt  = opt.getAttribute('data-fmt');
-        var isOutImg = IMAGE_FORMATS.indexOf(outFmt) !== -1;
-        var loReq    = opt.getAttribute('data-lo-required') === '1';
-
-        // Keep LibreOffice-required options disabled even when compatible
-        var incompatible = false;
-        if (isInImg && !isOutImg && outFmt !== 'pdf') {
-            incompatible = true;  // image → doc/spreadsheet/presentation
-        } else if (!isInImg && isOutImg && ext !== 'pdf') {
-            incompatible = true;  // doc/spreadsheet → image
-        }
-
-        if (incompatible) {
-            opt.disabled = true;
-            opt.style.color = 'var(--text-muted)';
-            blocked++;
-        } else if (!loReq) {
-            opt.disabled = false;
+    // Re-enable every option that isn't blocked by a missing server tool
+    select.querySelectorAll('option[data-fmt]').forEach(function (opt) {
+        if (opt.getAttribute('data-lo-required') !== '1') {
+            opt.disabled   = false;
             opt.style.color = '';
         }
     });
 
-    // Reset the selected value if it became incompatible
+    // Reset the selected value if it became disabled
     if (select.value) {
         var sel = select.querySelector('option[value="' + select.value + '"]');
-        if (sel && sel.disabled) {
-            select.value = '';
-        }
+        if (sel && sel.disabled) { select.value = ''; }
     }
 
-    if (isInImg && blocked > 0) {
-        hintText.textContent = ext.toUpperCase() + ' images can only convert to other image formats or PDF.';
+    // Informational hint for cross-family conversions (2-step PDF chain)
+    if (isInImg) {
+        hintText.textContent = ext.toUpperCase()
+            + ' → document/spreadsheet formats use a 2-step chain: image \u2192 PDF \u2192 target.';
+        hint.style.background   = 'rgba(99,102,241,.1)';
+        hint.style.color        = 'var(--cx-primary)';
+        hint.style.border       = '1px solid rgba(99,102,241,.25)';
+        hint.querySelector('i').className = 'fa-solid fa-circle-info';
+        hint.style.display = '';
+    } else if (ext && !isInImg) {
+        hintText.textContent = ext.toUpperCase()
+            + ' \u2192 image formats use a 2-step chain: document \u2192 PDF \u2192 image.';
+        hint.style.background   = 'rgba(99,102,241,.1)';
+        hint.style.color        = 'var(--cx-primary)';
+        hint.style.border       = '1px solid rgba(99,102,241,.25)';
+        hint.querySelector('i').className = 'fa-solid fa-circle-info';
         hint.style.display = '';
     } else {
         hint.style.display = 'none';
