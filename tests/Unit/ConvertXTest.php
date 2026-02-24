@@ -151,13 +151,104 @@ class ConvertXTest extends TestCase
             @unlink($txtPath);
         }
 
-        // We can only assert the result is a valid structure;
-        // the actual conversion may fail if LibreOffice / Pandoc are absent
+        // CSV→TXT is now handled by the pure-PHP engine so it must succeed
         $this->assertIsArray($result);
-        $this->assertArrayHasKey('success', $result);
-        $this->assertArrayHasKey('output_path', $result);
-        $this->assertArrayHasKey('error', $result);
-        $this->assertIsBool($result['success']);
+        $this->assertTrue($result['success'], 'csv→txt pure-PHP conversion should succeed');
+        $this->assertNotEmpty($result['output_path']);
+    }
+
+    // ------------------------------------------------------------------ //
+    //  Pure-PHP text conversion engine                                     //
+    // ------------------------------------------------------------------ //
+
+    public function testTxtToHtmlConversion(): void
+    {
+        $txtPath = tempnam(sys_get_temp_dir(), 'cx_txt_') . '.txt';
+        file_put_contents($txtPath, "Hello World\nLine 2");
+
+        $result = $this->conversionService->convert($txtPath, 'txt', 'html');
+
+        @unlink($txtPath);
+        if (!empty($result['output_path']) && file_exists($result['output_path'])) {
+            $html = file_get_contents($result['output_path']);
+            @unlink($result['output_path']);
+            $this->assertStringContainsString('Hello World', $html);
+        }
+
+        $this->assertTrue($result['success'], 'txt→html should succeed via pure-PHP engine');
+    }
+
+    public function testHtmlToTxtConversion(): void
+    {
+        $htmlPath = tempnam(sys_get_temp_dir(), 'cx_html_') . '.html';
+        file_put_contents($htmlPath, '<html><body><h1>Title</h1><p>Paragraph</p></body></html>');
+
+        $result = $this->conversionService->convert($htmlPath, 'html', 'txt');
+
+        @unlink($htmlPath);
+        if (!empty($result['output_path']) && file_exists($result['output_path'])) {
+            $txt = file_get_contents($result['output_path']);
+            @unlink($result['output_path']);
+            $this->assertStringContainsString('Title', $txt);
+            $this->assertStringContainsString('Paragraph', $txt);
+        }
+
+        $this->assertTrue($result['success'], 'html→txt should succeed via pure-PHP engine');
+    }
+
+    public function testMarkdownToHtmlConversion(): void
+    {
+        $mdPath = tempnam(sys_get_temp_dir(), 'cx_md_') . '.md';
+        file_put_contents($mdPath, "# My Title\n\nSome **bold** text.\n");
+
+        $result = $this->conversionService->convert($mdPath, 'md', 'html');
+
+        @unlink($mdPath);
+        if (!empty($result['output_path']) && file_exists($result['output_path'])) {
+            $html = file_get_contents($result['output_path']);
+            @unlink($result['output_path']);
+            $this->assertStringContainsString('<h1>', $html);
+            $this->assertStringContainsString('My Title', $html);
+        }
+
+        $this->assertTrue($result['success'], 'md→html should succeed via pure-PHP engine');
+    }
+
+    public function testMarkdownToTxtConversion(): void
+    {
+        $mdPath = tempnam(sys_get_temp_dir(), 'cx_md_') . '.md';
+        file_put_contents($mdPath, "# Header\n\n**Bold** and *italic*.\n");
+
+        $result = $this->conversionService->convert($mdPath, 'md', 'txt');
+
+        @unlink($mdPath);
+        if (!empty($result['output_path']) && file_exists($result['output_path'])) {
+            $txt = file_get_contents($result['output_path']);
+            @unlink($result['output_path']);
+            // Markdown syntax stripped
+            $this->assertStringNotContainsString('**', $txt);
+            $this->assertStringNotContainsString('# ', $txt);
+            $this->assertStringContainsString('Bold', $txt);
+        }
+
+        $this->assertTrue($result['success'], 'md→txt should succeed via pure-PHP engine');
+    }
+
+    public function testSameFormatCopy(): void
+    {
+        $txtPath = tempnam(sys_get_temp_dir(), 'cx_copy_') . '.txt';
+        file_put_contents($txtPath, 'Hello copy test');
+
+        $result = $this->conversionService->convert($txtPath, 'txt', 'txt');
+
+        @unlink($txtPath);
+        if (!empty($result['output_path']) && file_exists($result['output_path'])) {
+            $content = file_get_contents($result['output_path']);
+            @unlink($result['output_path']);
+            $this->assertEquals('Hello copy test', $content);
+        }
+
+        $this->assertTrue($result['success'], 'txt→txt same-format copy should succeed');
     }
 
     // ------------------------------------------------------------------ //

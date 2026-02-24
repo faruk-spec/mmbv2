@@ -83,7 +83,7 @@ class SettingsController
                 "UPDATE api_keys SET is_active = 0 WHERE user_id = :uid",
                 ['uid' => $userId]
             );
-            $db->insert(
+            $db->query(
                 "INSERT INTO api_keys (user_id, api_key, is_active, created_at)
                  VALUES (:uid, :key, 1, NOW())",
                 ['uid' => $userId, 'key' => $key]

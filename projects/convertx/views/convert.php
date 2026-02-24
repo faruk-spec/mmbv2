@@ -9,15 +9,20 @@ $csrfToken   = \Core\Security::generateCsrfToken();
 $allowedPresets = ['ocr', 'summarize', 'translate', 'classify'];
 $presetAi = in_array($_GET['ai'] ?? '', $allowedPresets, true) ? ($_GET['ai']) : '';
 
-// Flatten all supported formats
-$allFormats = [];
-foreach (($formats ?? []) as $formats_list) {
-    foreach ($formats_list as $fmt) {
-        $allFormats[] = $fmt;
-    }
-}
-$allFormats = array_unique($allFormats);
+// Flatten and keep grouped formats for the optgroup selector
+$groupedFormats = $formats ?? [];
+$imageFormats   = $groupedFormats['image'] ?? ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'svg'];
+$allFormatArrays = array_filter(array_values($groupedFormats), 'is_array');
+$allFormats     = $allFormatArrays ? array_unique(array_merge(...$allFormatArrays)) : [];
 sort($allFormats);
+
+// Format category labels
+$groupLabels = [
+    'document'     => '📄 Documents',
+    'spreadsheet'  => '📊 Spreadsheets',
+    'presentation' => '📽 Presentations',
+    'image'        => '🖼 Images',
+];
 ?>
 
 <!-- Page header -->
@@ -72,16 +77,48 @@ sort($allFormats);
                 <div id="selectedFile" style="margin-top:.5rem;font-size:.875rem;color:var(--cx-success);display:none;"></div>
             </div>
 
-            <!-- Output format -->
+            <!-- Output format (grouped by category) -->
             <div class="form-group">
                 <label class="form-label" for="outputFormat">
                     <i class="fa-solid fa-file-export" style="color:var(--cx-primary);"></i> Convert To
                 </label>
-                <select class="form-control" id="outputFormat" name="output_format" required>
+                <select class="form-control" id="outputFormat" name="output_format" required onchange="updateAdvancedOptions(this.value)">
                     <option value="">— Select output format —</option>
-                    <?php foreach ($allFormats as $fmt): ?>
+                    <?php foreach ($groupedFormats as $group => $fmts): ?>
+                    <optgroup label="<?= htmlspecialchars($groupLabels[$group] ?? ucfirst($group)) ?>">
+                        <?php foreach ($fmts as $fmt): ?>
                         <option value="<?= htmlspecialchars($fmt) ?>"><?= strtoupper(htmlspecialchars($fmt)) ?></option>
+                        <?php endforeach; ?>
+                    </optgroup>
                     <?php endforeach; ?>
+                </select>
+            </div>
+
+            <!-- Quality slider (shown for image output) -->
+            <div class="form-group" id="qualityGroup" style="display:none;">
+                <label class="form-label">
+                    <i class="fa-solid fa-sliders" style="color:var(--cx-primary);"></i>
+                    Image Quality: <strong id="qualityVal">85</strong>%
+                </label>
+                <input type="range" name="quality" id="qualitySlider" min="10" max="100" value="85"
+                       style="width:100%;accent-color:var(--cx-primary);"
+                       oninput="document.getElementById('qualityVal').textContent=this.value">
+                <div style="display:flex;justify-content:space-between;font-size:.72rem;color:var(--text-muted);margin-top:.2rem;">
+                    <span>10% — Small file</span><span>85% — Balanced</span><span>100% — Max quality</span>
+                </div>
+            </div>
+
+            <!-- DPI select (shown for image output) -->
+            <div class="form-group" id="dpiGroup" style="display:none;">
+                <label class="form-label" for="dpiSelect">
+                    <i class="fa-solid fa-expand" style="color:var(--cx-primary);"></i> Output DPI / Resolution
+                </label>
+                <select class="form-control" name="dpi" id="dpiSelect">
+                    <option value="72">72 DPI — Screen / web</option>
+                    <option value="96">96 DPI — Standard</option>
+                    <option value="150" selected>150 DPI — Good quality</option>
+                    <option value="300">300 DPI — Print quality</option>
+                    <option value="600">600 DPI — High-res print</option>
                 </select>
             </div>
 
@@ -111,15 +148,48 @@ sort($allFormats);
                             <span>Translate document</span>
                         </label>
                         <div id="langSelect" style="<?= $presetAi === 'translate' ? '' : 'display:none;' ?>margin-left:2.25rem;">
-                            <select class="form-control" name="target_lang" style="width:200px;font-size:.85rem;">
-                                <option value="fr">🇫🇷 French</option>
-                                <option value="de">🇩🇪 German</option>
-                                <option value="es">🇪🇸 Spanish</option>
-                                <option value="ar">🇸🇦 Arabic</option>
-                                <option value="zh">🇨🇳 Chinese</option>
-                                <option value="ja">🇯🇵 Japanese</option>
-                                <option value="pt">🇵🇹 Portuguese</option>
-                                <option value="it">🇮🇹 Italian</option>
+                            <select class="form-control" name="target_lang" style="font-size:.85rem;">
+                                <optgroup label="European">
+                                    <option value="fr">🇫🇷 French</option>
+                                    <option value="de">🇩🇪 German</option>
+                                    <option value="es">🇪🇸 Spanish</option>
+                                    <option value="it">🇮🇹 Italian</option>
+                                    <option value="pt">🇵🇹 Portuguese</option>
+                                    <option value="nl">🇳🇱 Dutch</option>
+                                    <option value="pl">🇵🇱 Polish</option>
+                                    <option value="ru">🇷🇺 Russian</option>
+                                    <option value="uk">🇺🇦 Ukrainian</option>
+                                    <option value="sv">🇸🇪 Swedish</option>
+                                    <option value="no">🇳🇴 Norwegian</option>
+                                    <option value="da">🇩🇰 Danish</option>
+                                    <option value="fi">🇫🇮 Finnish</option>
+                                    <option value="cs">🇨🇿 Czech</option>
+                                    <option value="ro">🇷🇴 Romanian</option>
+                                    <option value="hu">🇭🇺 Hungarian</option>
+                                    <option value="el">🇬🇷 Greek</option>
+                                    <option value="tr">🇹🇷 Turkish</option>
+                                </optgroup>
+                                <optgroup label="Middle East &amp; Africa">
+                                    <option value="ar">🇸🇦 Arabic</option>
+                                    <option value="he">🇮🇱 Hebrew</option>
+                                    <option value="fa">🇮🇷 Persian</option>
+                                    <option value="sw">🇰🇪 Swahili</option>
+                                </optgroup>
+                                <optgroup label="Asia">
+                                    <option value="zh">🇨🇳 Chinese (Simplified)</option>
+                                    <option value="zh-TW">🇹🇼 Chinese (Traditional)</option>
+                                    <option value="ja">🇯🇵 Japanese</option>
+                                    <option value="ko">🇰🇷 Korean</option>
+                                    <option value="hi">🇮🇳 Hindi</option>
+                                    <option value="bn">🇧🇩 Bengali</option>
+                                    <option value="id">🇮🇩 Indonesian</option>
+                                    <option value="ms">🇲🇾 Malay</option>
+                                    <option value="th">🇹🇭 Thai</option>
+                                    <option value="vi">🇻🇳 Vietnamese</option>
+                                </optgroup>
+                                <optgroup label="Americas">
+                                    <option value="en">🇺🇸 English</option>
+                                </optgroup>
                             </select>
                         </div>
                         <label class="cx-ai-option">
@@ -165,6 +235,14 @@ sort($allFormats);
 </style>
 
 <script>
+var IMAGE_FORMATS = <?= json_encode(array_values($imageFormats)) ?>;
+
+function updateAdvancedOptions(fmt) {
+    var isImage = IMAGE_FORMATS.indexOf(fmt) !== -1;
+    document.getElementById('qualityGroup').style.display = isImage ? '' : 'none';
+    document.getElementById('dpiGroup').style.display     = isImage ? '' : 'none';
+}
+
 function toggleAiOptions() {
     var box  = document.getElementById('aiOptions');
     var icon = document.getElementById('aiChevron');

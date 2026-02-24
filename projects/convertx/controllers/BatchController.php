@@ -135,6 +135,13 @@ class BatchController
             }
         }
 
+        if (!empty($jobIds)) {
+            // Process all batch jobs synchronously (no background worker required).
+            // Suppressed because set_time_limit() is a no-op in CLI/safe_mode environments.
+            @set_time_limit(300);
+            $this->queueService->processPending(count($jobIds));
+        }
+
         header('Content-Type: application/json');
         echo json_encode([
             'success'  => !empty($jobIds),

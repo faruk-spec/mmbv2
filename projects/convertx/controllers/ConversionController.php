@@ -136,7 +136,7 @@ class ConversionController
                 'input_filename' => $originalName,
                 'input_format'   => $inputFormat,
                 'output_format'  => $outputFormat,
-                'options'        => ['quality' => (int) ($_POST['quality'] ?? 85)],
+                'options'        => ['quality' => (int) ($_POST['quality'] ?? 85), 'dpi' => (int) ($_POST['dpi'] ?? 150)],
                 'ai_tasks'       => $aiTasks,
                 'webhook_url'    => Security::sanitize($_POST['webhook_url'] ?? ''),
                 'plan_tier'      => $plan,
@@ -145,6 +145,15 @@ class ConversionController
             Logger::error('ConversionController::submit - ' . $e->getMessage());
             $this->jsonError('Could not enqueue job', 500);
             return;
+        }
+
+        // Process the job synchronously (no background worker required).
+        // Extend PHP execution time to allow for large-file conversions;
+        // suppressed because set_time_limit() is a no-op in CLI/safe_mode environments.
+        @set_time_limit(300);
+        $job = $this->jobModel->find($jobId);
+        if ($job) {
+            $this->queueService->processJob($job);
         }
 
         header('Content-Type: application/json');

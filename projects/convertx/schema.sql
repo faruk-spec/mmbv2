@@ -1,7 +1,7 @@
 -- ConvertX Database Schema
 -- AI-powered document conversion platform
 --
--- Run this against the mmb_convertx database.
+-- Run against the application's main database (same DB as qr_codes, users, etc.).
 
 SET NAMES utf8mb4;
 SET time_zone = '+00:00';
@@ -97,6 +97,39 @@ CREATE TABLE IF NOT EXISTS convertx_provider_usage (
 
     INDEX idx_provider  (provider_id),
     INDEX idx_recorded  (recorded_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- ------------------------------------------------------------------ --
+--  API Keys                                                            --
+--  Used by SettingsController to issue per-user REST API tokens.       --
+-- ------------------------------------------------------------------ --
+CREATE TABLE IF NOT EXISTS api_keys (
+    id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id    INT UNSIGNED  NOT NULL,
+    api_key    VARCHAR(100)  NOT NULL UNIQUE,
+    is_active  TINYINT(1)    NOT NULL DEFAULT 1,
+    created_at DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    INDEX idx_user_id (user_id),
+    INDEX idx_api_key (api_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- ------------------------------------------------------------------ --
+--  ConvertX User Settings                                              --
+-- ------------------------------------------------------------------ --
+CREATE TABLE IF NOT EXISTS convertx_user_settings (
+    id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id       INT UNSIGNED  NOT NULL UNIQUE,
+    default_quality TINYINT UNSIGNED NOT NULL DEFAULT 85
+                    COMMENT 'Default image quality 1-100',
+    default_dpi   SMALLINT UNSIGNED NOT NULL DEFAULT 150
+                    COMMENT 'Default DPI for image output',
+    notify_on_complete TINYINT(1) NOT NULL DEFAULT 0,
+    updated_at    DATETIME      NULL ON UPDATE CURRENT_TIMESTAMP,
+
+    INDEX idx_user_id (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 

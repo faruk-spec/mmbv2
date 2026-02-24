@@ -40,24 +40,27 @@ class ConversionJobModel
         $sql = "INSERT INTO convertx_jobs
                     (user_id, input_path, input_filename, input_format,
                      output_format, options, ai_tasks, webhook_url,
-                     batch_id, status, created_at)
+                     batch_id, plan_tier, status, created_at)
                 VALUES
                     (:user_id, :input_path, :input_filename, :input_format,
                      :output_format, :options, :ai_tasks, :webhook_url,
-                     :batch_id, :status, NOW())";
+                     :batch_id, :plan_tier, :status, NOW())";
 
-        return $this->db->insert($sql, [
+        $this->db->query($sql, [
             'user_id'        => $userId,
             'input_path'     => $data['input_path']     ?? '',
             'input_filename' => $data['input_filename'] ?? '',
             'input_format'   => $data['input_format']   ?? '',
             'output_format'  => $data['output_format']  ?? '',
-            'options'        => isset($data['options'])   ? json_encode($data['options'])   : '{}',
-            'ai_tasks'       => isset($data['ai_tasks'])  ? json_encode($data['ai_tasks'])  : '[]',
+            'options'        => isset($data['options'])  ? json_encode($data['options'])  : '{}',
+            'ai_tasks'       => isset($data['ai_tasks']) ? json_encode($data['ai_tasks']) : '[]',
             'webhook_url'    => $data['webhook_url']    ?? null,
             'batch_id'       => $data['batch_id']       ?? null,
+            'plan_tier'      => $data['plan_tier']      ?? 'free',
             'status'         => self::STATUS_PENDING,
         ]);
+
+        return $this->db->lastInsertId();
     }
 
     /**

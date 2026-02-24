@@ -137,6 +137,12 @@ class ConversionService
     /**
      * Dispatch conversion to the right backend tool.
      *
+     * Priority order:
+     *   1. Pure-PHP text conversions (always available, no external tools)
+     *   2. Image ↔ image: GD (built-in) then ImageMagick fallback
+     *   3. Office / document formats: LibreOffice
+     *   4. Plain-text variants: Pandoc
+     *
      * @throws \RuntimeException if no suitable backend is found
      */
     private function dispatch(
@@ -146,32 +152,176 @@ class ConversionService
         string $outputPath,
         array  $options
     ): bool {
-        // Document / office formats → LibreOffice
+        // 1. Pure-PHP text/markup conversions (no external dependencies)
+        if ($this->canConvertWithPhp($inputFormat, $outputFormat)) {
+            return $this->convertWithPhp($inputPath, $inputFormat, $outputFormat, $outputPath);
+        }
+
+        // 2. Image ↔ image: try GD first, then ImageMagick
+        $imageFormats = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'svg'];
+        if (in_array($inputFormat, $imageFormats, true) && in_array($outputFormat, $imageFormats, true)) {
+            if ($this->convertWithGD($inputPath, $outputPath, $options)) {
+                return true;
+            }
+            return $this->convertWithImageMagick($inputPath, $outputPath, $options);
+        }
+
+        // 3. Document / office formats → LibreOffice
         $officeFormats = ['pdf', 'docx', 'doc', 'odt', 'rtf', 'xlsx', 'xls', 'ods', 'csv', 'pptx', 'ppt', 'odp'];
         if (in_array($inputFormat, $officeFormats, true) || in_array($outputFormat, $officeFormats, true)) {
             return $this->convertWithLibreOffice($inputPath, $outputFormat, $outputPath);
         }
 
-        // Image ↔ image → ImageMagick
-        $imageFormats = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'svg'];
-        if (in_array($inputFormat, $imageFormats, true) && in_array($outputFormat, $imageFormats, true)) {
-            return $this->convertWithImageMagick($inputPath, $outputPath, $options);
-        }
-
-        // Plain-text variants → Pandoc
+        // 4. Remaining plain-text variants → Pandoc
         $pandocFormats = ['md', 'html', 'txt', 'rst'];
         if (in_array($inputFormat, $pandocFormats, true) || in_array($outputFormat, $pandocFormats, true)) {
             return $this->convertWithPandoc($inputPath, $inputFormat, $outputFormat, $outputPath);
         }
 
-        // CSV ↔ TXT (built-in)
+        throw new \RuntimeException(
+            "No conversion backend for {$inputFormat} → {$outputFormat}"
+        );
+    }
+
+    /**
+     * Return true if both formats can be handled with built-in PHP (no external tools).
+     */
+    private function canConvertWithPhp(string $inputFormat, string $outputFormat): bool
+    {
+        $phpFormats = ['txt', 'html', 'md', 'csv'];
+        return in_array($inputFormat, $phpFormats, true)
+            && in_array($outputFormat, $phpFormats, true);
+    }
+
+    /**
+     * Pure-PHP conversion between text/markup formats.
+     * Handles: txt↔html, txt↔csv, md→html, md→txt, csv→txt, same-format copy.
+     */
+    private function convertWithPhp(
+        string $inputPath,
+        string $inputFormat,
+        string $outputFormat,
+        string $outputPath
+    ): bool {
+        $content = file_get_contents($inputPath);
+        if ($content === false) {
+            return false;
+        }
+
+        // Same format – direct copy
+        if ($inputFormat === $outputFormat) {
+            return file_put_contents($outputPath, $content) !== false;
+        }
+
+        // HTML → TXT
+        if ($inputFormat === 'html' && $outputFormat === 'txt') {
+            return file_put_contents($outputPath, strip_tags($content)) !== false;
+        }
+
+        // TXT → HTML
+        if ($inputFormat === 'txt' && $outputFormat === 'html') {
+            $html = '<!DOCTYPE html><html><body><pre>'
+                  . htmlspecialchars($content, ENT_QUOTES | ENT_SUBSTITUTE)
+                  . '</pre></body></html>';
+            return file_put_contents($outputPath, $html) !== false;
+        }
+
+        // MD → HTML
+        if ($inputFormat === 'md' && $outputFormat === 'html') {
+            return file_put_contents($outputPath, $this->basicMarkdownToHtml($content)) !== false;
+        }
+
+        // MD → TXT
+        if ($inputFormat === 'md' && $outputFormat === 'txt') {
+            // Strip common markdown syntax
+            $text = preg_replace('/^#{1,6}\s+/m', '', $content);    // headers
+            $text = preg_replace('/(\*\*|__|~~)(.*?)\1/', '$2', $text);   // bold/strike
+            $text = preg_replace('/(\*|_)(.*?)\1/', '$2', $text);         // italic
+            $text = preg_replace('/`{1,3}.*?`{1,3}/s', '', $text);        // code
+            $text = preg_replace('/\[([^\]]+)\]\([^\)]+\)/', '$1', $text); // links
+            return file_put_contents($outputPath, $text) !== false;
+        }
+
+        // CSV → TXT
         if ($inputFormat === 'csv' && $outputFormat === 'txt') {
             return $this->csvToText($inputPath, $outputPath);
         }
 
-        throw new \RuntimeException(
-            "No conversion backend for {$inputFormat} → {$outputFormat}"
-        );
+        // TXT → CSV (single-column)
+        if ($inputFormat === 'txt' && $outputFormat === 'csv') {
+            $lines  = explode("\n", str_replace("\r\n", "\n", $content));
+            $output = implode("\n", array_map(fn($l) => '"' . str_replace('"', '""', $l) . '"', $lines));
+            return file_put_contents($outputPath, $output) !== false;
+        }
+
+        // HTML → MD (basic)
+        if ($inputFormat === 'html' && $outputFormat === 'md') {
+            $text = strip_tags(
+                preg_replace(['/<h[1-6][^>]*>/i', '/<\/h[1-6]>/i', '/<br\s*\/?>/i', '/<p[^>]*>/i'],
+                             ['## ', "\n", "\n", "\n"], $content)
+            );
+            return file_put_contents($outputPath, trim($text)) !== false;
+        }
+
+        return false;
+    }
+
+    /**
+     * Basic Markdown → HTML converter (no external library needed).
+     */
+    private function basicMarkdownToHtml(string $md): string
+    {
+        $lines  = explode("\n", str_replace("\r\n", "\n", $md));
+        $html   = '';
+        foreach ($lines as $line) {
+            if (preg_match('/^### (.+)/', $line, $m)) {
+                $html .= '<h3>' . htmlspecialchars($m[1]) . "</h3>\n";
+            } elseif (preg_match('/^## (.+)/', $line, $m)) {
+                $html .= '<h2>' . htmlspecialchars($m[1]) . "</h2>\n";
+            } elseif (preg_match('/^# (.+)/', $line, $m)) {
+                $html .= '<h1>' . htmlspecialchars($m[1]) . "</h1>\n";
+            } elseif (trim($line) === '') {
+                $html .= "<br>\n";
+            } else {
+                $escaped = htmlspecialchars($line, ENT_QUOTES | ENT_SUBSTITUTE);
+                $escaped = preg_replace('/\*\*(.+?)\*\*/', '<strong>$1</strong>', $escaped);
+                $escaped = preg_replace('/\*(.+?)\*/',     '<em>$1</em>',         $escaped);
+                $escaped = preg_replace('/`(.+?)`/',       '<code>$1</code>',     $escaped);
+                $html   .= '<p>' . $escaped . "</p>\n";
+            }
+        }
+        return '<!DOCTYPE html><html><body>' . "\n" . $html . '</body></html>';
+    }
+
+    /**
+     * Convert image using PHP's built-in GD extension.
+     * Supports JPG, PNG, GIF, WebP, BMP output formats.
+     */
+    private function convertWithGD(string $inputPath, string $outputPath, array $options): bool
+    {
+        if (!extension_loaded('gd') || !file_exists($inputPath)) {
+            return false;
+        }
+
+        $image = @imagecreatefromstring((string) file_get_contents($inputPath));
+        if ($image === false) {
+            return false;
+        }
+
+        $quality      = max(1, min(100, (int) ($options['quality'] ?? 85)));
+        $outputFormat = strtolower(pathinfo($outputPath, PATHINFO_EXTENSION));
+
+        $result = match ($outputFormat) {
+            'jpg', 'jpeg' => imagejpeg($image, $outputPath, $quality),
+            'png'  => imagepng($image, $outputPath, max(0, min(9, (int) round(9 - $quality / 11.2)))),
+            'gif'  => imagegif($image, $outputPath),
+            'webp' => function_exists('imagewebp') ? imagewebp($image, $outputPath, $quality) : false,
+            'bmp'  => function_exists('imagebmp')  ? imagebmp($image, $outputPath)            : false,
+            default => false,
+        };
+
+        imagedestroy($image);
+        return (bool) $result;
     }
 
     // ------------------------------------------------------------------ //
@@ -183,17 +333,26 @@ class ConversionService
         string $outputFormat,
         string $outputPath
     ): bool {
-        $outDir   = escapeshellarg(dirname($outputPath));
-        $inFile   = escapeshellarg($inputPath);
-        $fmt      = escapeshellarg($outputFormat);
-        $cmd      = "libreoffice --headless --convert-to {$fmt} {$inFile} --outdir {$outDir} 2>&1";
+        $outDirReal = dirname($inputPath);
+        $outDirEsc  = escapeshellarg($outDirReal);
+        $inFile     = escapeshellarg($inputPath);
+        $fmt        = escapeshellarg($outputFormat);
+        $cmd        = "libreoffice --headless --convert-to {$fmt} {$inFile} --outdir {$outDirEsc} 2>&1";
         exec($cmd, $output, $code);
 
         if ($code !== 0) {
             Logger::warning('LibreOffice conversion failed: ' . implode("\n", $output));
             return false;
         }
-        return true;
+
+        // LibreOffice names the output: {inputBasename}.{outputFormat}
+        // Our expected path has the '_converted' suffix — rename if needed.
+        $libreOutput = $outDirReal . '/' . pathinfo($inputPath, PATHINFO_FILENAME) . '.' . $outputFormat;
+        if ($libreOutput !== $outputPath && file_exists($libreOutput)) {
+            rename($libreOutput, $outputPath);
+        }
+
+        return file_exists($outputPath);
     }
 
     private function convertWithImageMagick(
