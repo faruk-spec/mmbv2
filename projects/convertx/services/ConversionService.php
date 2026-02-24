@@ -203,7 +203,10 @@ class ConversionService
         }
 
         // 3. Document / office formats → LibreOffice
-        $officeFormats = ['pdf', 'docx', 'doc', 'odt', 'rtf', 'xlsx', 'xls', 'ods', 'csv', 'pptx', 'ppt', 'odp'];
+        // Note: 'csv' is intentionally excluded from this list — CSV ↔ plain-text
+        // pairs are already handled by the PHP engine above (step 1).  CSV → XLSX/ODS
+        // is caught here because 'xlsx'/'ods' appear in $officeFormats as output.
+        $officeFormats = ['pdf', 'docx', 'doc', 'odt', 'rtf', 'xlsx', 'xls', 'ods', 'pptx', 'ppt', 'odp'];
         if (in_array($inputFormat, $officeFormats, true) || in_array($outputFormat, $officeFormats, true)) {
             return $this->convertWithLibreOffice($inputPath, $outputFormat, $outputPath);
         }
@@ -384,12 +387,23 @@ class ConversionService
         $outDirEsc  = escapeshellarg($outDirReal);
         $inFile     = escapeshellarg($inputPath);
         $fmt        = escapeshellarg($outputFormat);
-        $cmd        = "{$lo} --headless --convert-to {$fmt} {$inFile} --outdir {$outDirEsc} 2>&1";
+
+        // HOME=/tmp is required on many web servers where the web user (www-data)
+        // has no writable home directory.  --norestore prevents the "recover
+        // documents" dialog; --nolockcheck avoids stale lock-file errors when
+        // multiple requests run concurrently.
+        $cmd = "HOME=/tmp {$lo} --headless --norestore --nolockcheck "
+             . "--convert-to {$fmt} {$inFile} --outdir {$outDirEsc} 2>&1";
         exec($cmd, $output, $code);
 
         if ($code !== 0) {
+            // Surface the real error so users and logs show what went wrong.
+            $detail = trim(implode(' | ', array_filter(array_slice($output, 0, 6))));
             Logger::warning('LibreOffice conversion failed: ' . implode("\n", $output));
-            return false;
+            throw new \RuntimeException(
+                "LibreOffice conversion failed (exit {$code})"
+                . ($detail ? ": {$detail}" : '.')
+            );
         }
 
         // LibreOffice names the output: {inputBasename}.{outputFormat}

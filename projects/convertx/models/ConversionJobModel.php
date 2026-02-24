@@ -25,6 +25,48 @@ class ConversionJobModel
     public function __construct()
     {
         $this->db = Database::getInstance();
+        $this->ensureSchema();
+    }
+
+    /**
+     * Create the convertx_jobs table if it does not exist yet.
+     * This lets the app work on first install without running schema.sql manually.
+     */
+    private function ensureSchema(): void
+    {
+        try {
+            $this->db->query(
+                "CREATE TABLE IF NOT EXISTS convertx_jobs (
+                    id               INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id          INT          NOT NULL,
+                    input_path       VARCHAR(512) NOT NULL DEFAULT '',
+                    input_filename   VARCHAR(255) NOT NULL DEFAULT '',
+                    input_format     VARCHAR(32)  NOT NULL DEFAULT '',
+                    output_format    VARCHAR(32)  NOT NULL DEFAULT '',
+                    output_path      VARCHAR(512)          DEFAULT NULL,
+                    output_filename  VARCHAR(255)          DEFAULT NULL,
+                    options          TEXT                  DEFAULT NULL,
+                    ai_tasks         TEXT                  DEFAULT NULL,
+                    ai_result        LONGTEXT              DEFAULT NULL,
+                    webhook_url      VARCHAR(512)          DEFAULT NULL,
+                    batch_id         VARCHAR(64)           DEFAULT NULL,
+                    plan_tier        VARCHAR(32)  NOT NULL DEFAULT 'free',
+                    status           VARCHAR(32)  NOT NULL DEFAULT 'pending',
+                    error_message    TEXT                  DEFAULT NULL,
+                    provider_used    VARCHAR(64)           DEFAULT NULL,
+                    tokens_used      INT                   DEFAULT 0,
+                    retry_count      INT          NOT NULL DEFAULT 0,
+                    created_at       DATETIME     NOT NULL,
+                    started_at       DATETIME              DEFAULT NULL,
+                    updated_at       DATETIME              DEFAULT NULL,
+                    completed_at     DATETIME              DEFAULT NULL,
+                    INDEX idx_user_status (user_id, status),
+                    INDEX idx_batch (batch_id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+            );
+        } catch (\Exception $e) {
+            // Table may already exist or DB may be read-only — silently continue
+        }
     }
 
     /**
@@ -148,22 +190,34 @@ class ConversionJobModel
     }
 
     /**
-     * Paginated job history for a user.
+     * Paginated job history for a user with optional status filter.
+     *
+     * @param int    $userId
+     * @param int    $page
+     * @param int    $perPage
+     * @param string $status  '' = all, or one of the STATUS_* constants
      */
-    public function getHistory(int $userId, int $page = 1, int $perPage = 20): array
+    public function getHistory(int $userId, int $page = 1, int $perPage = 20, string $status = ''): array
     {
         $offset = ($page - 1) * $perPage;
-        $rows   = $this->db->fetchAll(
-            "SELECT * FROM convertx_jobs
-             WHERE user_id = :uid
+        $where  = 'WHERE user_id = :uid';
+        $bind   = ['uid' => $userId];
+
+        if ($status !== '') {
+            $where        .= ' AND status = :status';
+            $bind['status'] = $status;
+        }
+
+        $rows = $this->db->fetchAll(
+            "SELECT * FROM convertx_jobs {$where}
              ORDER BY created_at DESC
              LIMIT :limit OFFSET :offset",
-            ['uid' => $userId, 'limit' => $perPage, 'offset' => $offset]
+            array_merge($bind, ['limit' => $perPage, 'offset' => $offset])
         );
 
         $total = $this->db->fetch(
-            "SELECT COUNT(*) AS cnt FROM convertx_jobs WHERE user_id = :uid",
-            ['uid' => $userId]
+            "SELECT COUNT(*) AS cnt FROM convertx_jobs {$where}",
+            $bind
         )['cnt'] ?? 0;
 
         return ['jobs' => $rows ?: [], 'total' => (int) $total, 'page' => $page, 'per_page' => $perPage];

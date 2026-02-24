@@ -280,12 +280,27 @@ class ConversionController
         }
 
         $page   = max(1, (int) ($_GET['page'] ?? 1));
-        $result = $this->jobModel->getHistory($userId, $page);
+
+        // Validate status filter against the known status constants
+        $allowedStatuses = [
+            ConversionJobModel::STATUS_PENDING,
+            ConversionJobModel::STATUS_PROCESSING,
+            ConversionJobModel::STATUS_COMPLETED,
+            ConversionJobModel::STATUS_FAILED,
+            ConversionJobModel::STATUS_CANCELLED,
+        ];
+        $statusFilter = $_GET['status'] ?? '';
+        if (!in_array($statusFilter, $allowedStatuses, true)) {
+            $statusFilter = '';
+        }
+
+        $result = $this->jobModel->getHistory($userId, $page, 20, $statusFilter);
 
         $this->render('history', [
-            'title'  => 'Conversion History',
-            'user'   => Auth::user(),
-            'result' => $result,
+            'title'        => 'Conversion History',
+            'user'         => Auth::user(),
+            'result'       => $result,
+            'statusFilter' => $statusFilter,
         ]);
     }
 

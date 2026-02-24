@@ -124,6 +124,18 @@ class SettingsController
         $key = 'cx_' . bin2hex(random_bytes(20));
         try {
             $db = Database::getInstance();
+            // Auto-create api_keys table if not present
+            $db->query(
+                "CREATE TABLE IF NOT EXISTS api_keys (
+                    id         INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id    INT          NOT NULL,
+                    api_key    VARCHAR(64)  NOT NULL,
+                    is_active  TINYINT(1)   NOT NULL DEFAULT 1,
+                    created_at DATETIME     NOT NULL,
+                    INDEX idx_user (user_id),
+                    UNIQUE KEY uniq_key (api_key)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+            );
             $db->query(
                 "UPDATE api_keys SET is_active = 0 WHERE user_id = :uid",
                 ['uid' => $userId]
@@ -169,6 +181,16 @@ class SettingsController
     {
         try {
             $db = Database::getInstance();
+            // Auto-create settings table if not present
+            $db->query(
+                "CREATE TABLE IF NOT EXISTS convertx_user_settings (
+                    user_id            INT         NOT NULL PRIMARY KEY,
+                    default_quality    INT         NOT NULL DEFAULT 85,
+                    default_dpi        INT         NOT NULL DEFAULT 150,
+                    notify_on_complete TINYINT(1)  NOT NULL DEFAULT 0,
+                    updated_at         DATETIME             DEFAULT NULL
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+            );
             // Use VALUES(col) so each named param appears only once – PDO does not
             // allow the same named placeholder to appear twice in a statement.
             $db->query(
