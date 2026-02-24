@@ -36,9 +36,13 @@ class AIService
      */
     public function ocr(string $filePath, string $planTier = 'free'): array
     {
-        return $this->dispatch('ocr', $planTier, function (array $provider) use ($filePath): array {
+        $result = $this->dispatch('ocr', $planTier, function (array $provider) use ($filePath): array {
             return $this->callOCR($provider, $filePath);
         });
+        if (!$result['success']) {
+            return $this->cmdOCR($filePath);
+        }
+        return $result;
     }
 
     /**
@@ -51,9 +55,13 @@ class AIService
      */
     public function summarize(string $text, string $planTier = 'free', array $options = []): array
     {
-        return $this->dispatch('summarization', $planTier, function (array $provider) use ($text, $options): array {
+        $result = $this->dispatch('summarization', $planTier, function (array $provider) use ($text, $options): array {
             return $this->callSummarize($provider, $text, $options);
         });
+        if (!$result['success']) {
+            return $this->phpNativeSummarize($text, $options);
+        }
+        return $result;
     }
 
     /**
@@ -66,9 +74,13 @@ class AIService
      */
     public function translate(string $text, string $targetLang, string $planTier = 'pro'): array
     {
-        return $this->dispatch('translation', $planTier, function (array $provider) use ($text, $targetLang): array {
+        $result = $this->dispatch('translation', $planTier, function (array $provider) use ($text, $targetLang): array {
             return $this->callTranslate($provider, $text, $targetLang);
         });
+        if (!$result['success']) {
+            return $this->myMemoryTranslate($text, $targetLang);
+        }
+        return $result;
     }
 
     /**
@@ -80,9 +92,13 @@ class AIService
      */
     public function classify(string $text, string $planTier = 'pro'): array
     {
-        return $this->dispatch('classification', $planTier, function (array $provider) use ($text): array {
+        $result = $this->dispatch('classification', $planTier, function (array $provider) use ($text): array {
             return $this->callClassify($provider, $text);
         });
+        if (!$result['success']) {
+            return $this->phpNativeClassify($text);
+        }
+        return $result;
     }
 
     // ------------------------------------------------------------------ //
@@ -448,5 +464,169 @@ class AIService
     public function estimateTokens(string $text): int
     {
         return (int) ceil(mb_strlen($text) / 4);
+    }
+
+    // ------------------------------------------------------------------ //
+    //  PHP-native AI fallbacks (zero-config, no API key required)          //
+    // ------------------------------------------------------------------ //
+
+    /**
+     * Extractive summarization: extract the leading sentences up to $maxWords.
+     * Always available — no network, no API key, no external binary needed.
+     *
+     * Note: sentence splitting is based on `.!?` punctuation and will break on
+     * abbreviations like "Dr." or "U.S.A." — this is acceptable for a zero-config
+     * fallback; configure an API-backed provider for higher-quality summaries.
+     */
+    private function phpNativeSummarize(string $text, array $options = []): array
+    {
+        if (empty(trim($text))) {
+            return ['success' => false, 'summary' => '', 'tokens' => 0, 'provider' => 'php_native',
+                    'error' => 'No text to summarize'];
+        }
+        $maxWords  = max(10, (int) ($options['max_length'] ?? 200));
+        $sentences = preg_split('/(?<=[.!?])\s+/u', trim($text), -1, PREG_SPLIT_NO_EMPTY) ?: [trim($text)];
+        $summary   = '';
+        $wordCount = 0;
+        foreach ($sentences as $s) {
+            $cnt = str_word_count($s);
+            if ($wordCount > 0 && $wordCount + $cnt > $maxWords) {
+                break;
+            }
+            $summary   .= ($summary !== '' ? ' ' : '') . trim($s);
+            $wordCount += $cnt;
+        }
+        if ($summary === '') {
+            $summary = implode(' ', array_slice(preg_split('/\s+/u', trim($text)) ?: [], 0, $maxWords));
+        }
+        // Safety net: if a single very long "sentence" was added in full,
+        // truncate the summary to maxWords.
+        $allWords = preg_split('/\s+/u', $summary) ?: [];
+        if (count($allWords) > $maxWords) {
+            $summary = implode(' ', array_slice($allWords, 0, $maxWords));
+        }
+        return ['success' => true, 'summary' => $summary, 'tokens' => 0, 'provider' => 'php_native', 'error' => ''];
+    }
+
+    /**
+     * Keyword-based document classification.
+     * Always available — no network, no API key, no external binary needed.
+     */
+    private function phpNativeClassify(string $text): array
+    {
+        if (empty(trim($text))) {
+            return ['success' => true, 'category' => 'other', 'confidence' => 1.0,
+                    'tokens' => 0, 'provider' => 'php_native', 'error' => ''];
+        }
+        $lower    = mb_strtolower($text);
+        $keywords = [
+            'invoice'  => ['invoice', 'bill to', 'amount due', 'subtotal', 'payment terms', 'due date', 'receipt'],
+            'contract' => ['agreement', 'this agreement', 'parties', 'whereas', 'hereby', 'terms and conditions'],
+            'report'   => ['executive summary', 'findings', 'conclusion', 'analysis', 'quarterly', 'annual report'],
+            'letter'   => ['dear ', 'sincerely', 'best regards', 'to whom it may concern', 'yours faithfully'],
+            'form'     => ['please fill', 'signature:', 'date of birth', 'full name:', 'check one'],
+        ];
+        $scores = ['other' => 1];
+        foreach ($keywords as $cat => $terms) {
+            $score = 0;
+            foreach ($terms as $term) {
+                $score += substr_count($lower, $term);
+            }
+            $scores[$cat] = $score;
+        }
+        arsort($scores);
+        $category   = (string) array_key_first($scores);
+        $total      = max(1, array_sum($scores));
+        $confidence = (float) min(1.0, round($scores[$category] / $total, 2));
+        return ['success' => true, 'category' => $category, 'confidence' => $confidence,
+                'tokens' => 0, 'provider' => 'php_native', 'error' => ''];
+    }
+
+    /**
+     * Free translation via the MyMemory API (no API key for low volume).
+     * Limit: ~5 000 chars/request, ~100 requests/day on the anonymous tier.
+     */
+    private function myMemoryTranslate(string $text, string $targetLang): array
+    {
+        if (empty(trim($text))) {
+            return ['success' => false, 'translated' => '', 'tokens' => 0, 'provider' => 'mymemory',
+                    'error' => 'No text to translate'];
+        }
+        $chunk = mb_substr($text, 0, 4000);
+        $url   = 'https://api.mymemory.translated.net/get?q=' . rawurlencode($chunk)
+               . '&langpair=en|' . rawurlencode($targetLang);
+        $ctx   = stream_context_create(['http' => [
+            'timeout' => 15, 'method' => 'GET',
+            'header'  => "User-Agent: ConvertX/1.0\r\n",
+        ]]);
+        $resp = @file_get_contents($url, false, $ctx);
+        if ($resp === false) {
+            return ['success' => false, 'translated' => '', 'tokens' => 0, 'provider' => 'mymemory',
+                    'error' => 'Translation API unreachable — check server outbound HTTP access'];
+        }
+        $data = json_decode($resp, true);
+        $translated = $data['responseData']['translatedText'] ?? '';
+        if (($data['responseStatus'] ?? 0) !== 200 || empty($translated)) {
+            return ['success' => false, 'translated' => '', 'tokens' => 0, 'provider' => 'mymemory',
+                    'error' => $data['responseDetails'] ?? 'Translation failed'];
+        }
+        return ['success' => true, 'translated' => $translated, 'tokens' => 0, 'provider' => 'mymemory', 'error' => ''];
+    }
+
+    /**
+     * Command-line OCR fallback.
+     *
+     * Tries (in order):
+     *   1. pdftotext (poppler-utils) — fast text extraction for digital PDFs
+     *   2. LibreOffice --cat — extracts plain text from any LO-supported format
+     *
+     * Neither requires an API key or Tesseract.
+     */
+    private function cmdOCR(string $filePath): array
+    {
+        $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+
+        // 1. pdftotext — best for digital (non-scanned) PDFs
+        if ($ext === 'pdf') {
+            $pdftotext = trim((string) shell_exec('which pdftotext 2>/dev/null'));
+            if ($pdftotext) {
+                $tmp = tempnam(sys_get_temp_dir(), 'cx_ptt_');
+                exec(escapeshellarg($pdftotext) . ' ' . escapeshellarg($filePath)
+                     . ' ' . escapeshellarg($tmp) . ' 2>/dev/null', $_, $code);
+                if ($code === 0 && file_exists($tmp)) {
+                    $text = (string) file_get_contents($tmp);
+                    @unlink($tmp);
+                    if (!empty(trim($text))) {
+                        return ['success' => true, 'text' => $text, 'tokens' => 0,
+                                'provider' => 'pdftotext', 'error' => ''];
+                    }
+                }
+            }
+        }
+
+        // 2. LibreOffice --cat — works on any document LO can open
+        $lo = trim((string) shell_exec('which libreoffice 2>/dev/null'))
+           ?: trim((string) shell_exec('which soffice 2>/dev/null'));
+        if ($lo && file_exists($filePath)) {
+            $pid  = getmypid();
+            $cmd  = 'DISPLAY= HOME=/tmp ' . escapeshellarg($lo) . ' --headless --cat '
+                  . '-env:UserInstallation=file:///tmp/lo-' . $pid . ' '
+                  . escapeshellarg($filePath) . ' 2>/dev/null';
+            exec($cmd, $lines, $code);
+            $text = trim(implode("\n", $lines));
+            if (!empty($text)) {
+                return ['success' => true, 'text' => $text, 'tokens' => 0,
+                        'provider' => 'libreoffice_cat', 'error' => ''];
+            }
+        }
+
+        return [
+            'success'  => false,
+            'text'     => '',
+            'tokens'   => 0,
+            'provider' => 'none',
+            'error'    => 'OCR requires Tesseract, pdftotext (poppler-utils), or an OpenAI API key. '
+                        . 'Install with: apt-get install tesseract-ocr poppler-utils',
+        ];
     }
 }

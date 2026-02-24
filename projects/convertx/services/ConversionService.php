@@ -197,12 +197,23 @@ class ConversionService
         $isInputImage  = in_array($inputFormat, $imageFormats, true);
         $isOutputImage = in_array($outputFormat, $imageFormats, true);
 
-        // 2. Image ↔ image: try GD first, then ImageMagick
+        // 2. Image ↔ image: try GD first, then ImageMagick, then LibreOffice Draw.
+        //    GD is skipped for SVG/TIFF (it cannot decode those formats).
+        //    LibreOffice Draw handles SVG natively and is a reliable fallback for
+        //    formats that ImageMagick's policy.xml may block on Debian/Ubuntu.
         if ($isInputImage && $isOutputImage) {
             if ($this->convertWithGD($inputPath, $outputPath, $options)) {
                 return true;
             }
-            return $this->convertWithImageMagick($inputPath, $outputPath, $options);
+            if ($this->convertWithImageMagick($inputPath, $outputPath, $options)) {
+                return true;
+            }
+            // LibreOffice Draw as final fallback (handles SVG, TIFF, BMP, etc.)
+            try {
+                return $this->convertWithLibreOffice($inputPath, $inputFormat, $outputFormat, $outputPath);
+            } catch (\RuntimeException $e) {
+                return false; // LO not installed; all three backends failed
+            }
         }
 
         // 3. Image → PDF: try ImageMagick first; fall back to LibreOffice Draw.
@@ -261,7 +272,10 @@ class ConversionService
         // Note: 'csv' is intentionally excluded from this list — CSV ↔ plain-text
         // pairs are already handled by the PHP engine above (step 1).  CSV → XLSX/ODS
         // is caught here because 'xlsx'/'ods' appear in $officeFormats as output.
-        $officeFormats = ['pdf', 'docx', 'doc', 'odt', 'rtf', 'xlsx', 'xls', 'ods', 'pptx', 'ppt', 'odp'];
+        // 'html' is included so that docx→html and xlsx→html use LibreOffice's
+        // HTML export filter rather than falling through to Pandoc (step 8), which
+        // may not be installed.
+        $officeFormats = ['pdf', 'docx', 'doc', 'odt', 'rtf', 'html', 'xlsx', 'xls', 'ods', 'pptx', 'ppt', 'odp'];
         if (in_array($inputFormat, $officeFormats, true) || in_array($outputFormat, $officeFormats, true)) {
             return $this->convertWithLibreOffice($inputPath, $inputFormat, $outputFormat, $outputPath);
         }
@@ -397,6 +411,13 @@ class ConversionService
             return false;
         }
 
+        // GD cannot reliably decode SVG (vector) or TIFF (LibTIFF not always compiled in).
+        // Let ImageMagick or LibreOffice Draw handle these formats.
+        $inputExt = strtolower(pathinfo($inputPath, PATHINFO_EXTENSION));
+        if (in_array($inputExt, ['svg', 'tiff', 'tif'], true)) {
+            return false;
+        }
+
         $image = @imagecreatefromstring((string) file_get_contents($inputPath));
         if ($image === false) {
             return false;
@@ -439,7 +460,7 @@ class ConversionService
         if ($outputFormat === 'pdf') {
             $calcInputs    = ['xlsx', 'xls', 'ods', 'csv'];
             $impressInputs = ['pptx', 'ppt', 'odp'];
-            $drawInputs    = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'svg'];
+            $drawInputs    = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'tif', 'svg'];
             if (in_array($inputFormat, $calcInputs, true)) {
                 return 'pdf:calc_pdf_Export';
             }
@@ -450,6 +471,24 @@ class ConversionService
                 return 'pdf:draw_pdf_Export';
             }
             return 'pdf:writer_pdf_Export';
+        }
+
+        // Image output from LibreOffice Draw.
+        // Used when SVG or TIFF is opened in Draw and exported to a raster format
+        // (the image↔image LibreOffice Draw fallback in dispatch() step 2).
+        $drawInputs = ['svg', 'tiff', 'tif'];
+        if (in_array($inputFormat, $drawInputs, true)) {
+            $drawMap = [
+                'png'  => 'png:draw_png_Export',
+                'jpg'  => 'jpg:draw_jpg_Export',
+                'jpeg' => 'jpg:draw_jpg_Export',
+                'bmp'  => 'bmp:draw_bmp_Export',
+                'gif'  => 'gif:draw_gif_Export',
+                'webp' => 'webp:draw_webp_Export',
+            ];
+            if (isset($drawMap[$outputFormat])) {
+                return $drawMap[$outputFormat];
+            }
         }
 
         $map = [

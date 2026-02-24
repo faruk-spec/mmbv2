@@ -104,7 +104,7 @@ class JobQueueService
             // 2. Run AI tasks if requested
             $aiTasks = json_decode($job['ai_tasks'] ?? '[]', true);
             if (!empty($aiTasks)) {
-                $aiResult = $this->runAITasks($job, $outputPath, $aiTasks);
+                $aiResult = $this->runAITasks($job, $outputPath, $aiTasks, $job['input_path'] ?? '');
             }
 
             // 3. Mark job as completed
@@ -136,9 +136,10 @@ class JobQueueService
      * @param array  $job
      * @param string $outputPath  Path to the converted file
      * @param array  $tasks       e.g. ['ocr', 'summarize', 'translate:fr']
+     * @param string $inputPath   Original uploaded file path (used for OCR so we scan the source)
      * @return array  Keyed results from each task
      */
-    private function runAITasks(array $job, string $outputPath, array $tasks): array
+    private function runAITasks(array $job, string $outputPath, array $tasks, string $inputPath = ''): array
     {
         $planTier = $job['plan_tier'] ?? 'free';
         $results  = [];
@@ -149,13 +150,17 @@ class JobQueueService
 
             switch ($taskName) {
                 case 'ocr':
-                    $res  = $this->aiService->ocr($outputPath, $planTier);
+                    // OCR the original uploaded input (scanned image/PDF), not the
+                    // converted output — the output may be a binary DOCX which cannot
+                    // be OCR'd meaningfully.
+                    $ocrTarget = ($inputPath && file_exists($inputPath)) ? $inputPath : $outputPath;
+                    $res  = $this->aiService->ocr($ocrTarget, $planTier);
                     $text = $res['text'] ?? '';
                     $results['ocr'] = $res;
                     break;
 
                 case 'summarize':
-                    // Use OCR text if available, otherwise read file
+                    // Use OCR text if available, otherwise extract text from the output file
                     $srcText = $text ?: $this->readTextContent($outputPath);
                     $results['summarize'] = $this->aiService->summarize($srcText, $planTier);
                     break;
@@ -180,8 +185,59 @@ class JobQueueService
         if (!file_exists($path)) {
             return '';
         }
+        $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+
+        // Plain text / markup — read directly
+        if (in_array($ext, ['txt', 'csv', 'md', 'rst', 'text'], true)) {
+            return (string) file_get_contents($path);
+        }
+        if (in_array($ext, ['html', 'htm', 'xml'], true)) {
+            return strip_tags((string) file_get_contents($path));
+        }
+
+        // PDF — pdftotext (poppler-utils) is fast and accurate for digital PDFs
+        if ($ext === 'pdf') {
+            $pdftotext = trim((string) shell_exec('which pdftotext 2>/dev/null'));
+            if ($pdftotext) {
+                $tmp = tempnam(sys_get_temp_dir(), 'cx_ptt_');
+                exec(escapeshellarg($pdftotext) . ' ' . escapeshellarg($path)
+                     . ' ' . escapeshellarg($tmp) . ' 2>/dev/null', $_, $code);
+                if ($code === 0 && file_exists($tmp)) {
+                    $text = (string) file_get_contents($tmp);
+                    @unlink($tmp);
+                    if (!empty(trim($text))) {
+                        return $text;
+                    }
+                }
+            }
+        }
+
+        // Office / document formats — LibreOffice --cat extracts plain text
+        $loFormats = ['docx', 'doc', 'odt', 'rtf', 'xlsx', 'xls', 'ods', 'pptx', 'ppt', 'odp', 'pdf'];
+        if (in_array($ext, $loFormats, true)) {
+            $lo = trim((string) shell_exec('which libreoffice 2>/dev/null'))
+               ?: trim((string) shell_exec('which soffice 2>/dev/null'));
+            if ($lo) {
+                $pid = getmypid();
+                $cmd = 'DISPLAY= HOME=/tmp ' . escapeshellarg($lo) . ' --headless --cat '
+                     . '-env:UserInstallation=file:///tmp/lo-' . $pid . ' '
+                     . escapeshellarg($path) . ' 2>/dev/null';
+                exec($cmd, $lines, $code);
+                $text = trim(implode("\n", $lines));
+                if (!empty($text)) {
+                    return $text;
+                }
+            }
+        }
+
+        // Fallback: read raw and strip non-printable bytes.
+        // Keep: \x09 (tab), \x0A (LF), \x0D (CR), \x20-\x7E (printable ASCII),
+        //        \xA0-\xFF (Latin-1 / extended ASCII).
         $content = file_get_contents($path);
-        return $content !== false ? $content : '';
+        if ($content === false) {
+            return '';
+        }
+        return preg_replace('/[^\x09\x0A\x0D\x20-\x7E\xA0-\xFF]/', '', $content);
     }
 
     // ------------------------------------------------------------------ //

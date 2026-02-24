@@ -19,6 +19,90 @@ class AIProviderModel
     public function __construct()
     {
         $this->db = Database::getInstance();
+        $this->ensureSchema();
+    }
+
+    /**
+     * Create the AI provider tables if they do not yet exist, then seed defaults.
+     * Runs silently so a missing table never crashes the first request.
+     */
+    private function ensureSchema(): void
+    {
+        try {
+            $this->db->query(
+                "CREATE TABLE IF NOT EXISTS convertx_ai_providers (
+                    id                  INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    name                VARCHAR(100)  NOT NULL,
+                    slug                VARCHAR(50)   NOT NULL,
+                    base_url            VARCHAR(512)  NULL,
+                    api_key             VARCHAR(512)  NULL,
+                    model               VARCHAR(100)  NULL,
+                    capabilities        TEXT          NOT NULL DEFAULT '[]',
+                    allowed_tiers       TEXT          NOT NULL DEFAULT '[\"free\",\"pro\",\"enterprise\"]',
+                    priority            TINYINT       NOT NULL DEFAULT 10,
+                    cost_per_1k_tokens  DECIMAL(10,6) NOT NULL DEFAULT 0.002000,
+                    is_active           TINYINT(1)    NOT NULL DEFAULT 1,
+                    is_healthy          TINYINT(1)    NOT NULL DEFAULT 1,
+                    total_tokens_used   BIGINT        NOT NULL DEFAULT 0,
+                    total_cost_usd      DECIMAL(12,4) NOT NULL DEFAULT 0,
+                    last_used_at        DATETIME      NULL,
+                    health_checked_at   DATETIME      NULL,
+                    created_at          DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE KEY uq_slug (slug),
+                    INDEX idx_active (is_active, priority)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+            );
+            $this->db->query(
+                "CREATE TABLE IF NOT EXISTS convertx_provider_usage (
+                    id          BIGINT AUTO_INCREMENT PRIMARY KEY,
+                    provider_id INT UNSIGNED    NOT NULL,
+                    tokens_used INT             NOT NULL DEFAULT 0,
+                    cost_usd    DECIMAL(10,6)   NOT NULL DEFAULT 0,
+                    recorded_at DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    INDEX idx_provider (provider_id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+            );
+            $this->seedDefaultProviders();
+        } catch (\Exception $e) {
+            // Log at warning level — schema creation failures are recoverable
+            // (tables may already exist, or DB may be temporarily unavailable).
+            Logger::warning('AIProviderModel::ensureSchema - ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Seed the three default providers (OpenAI, HuggingFace, Tesseract) via
+     * INSERT IGNORE — idempotent; does nothing if the rows already exist.
+     * Tesseract is seeded as active only when the binary is present on disk.
+     */
+    private function seedDefaultProviders(): void
+    {
+        // Use a static flag so we only shell_exec once per request
+        static $seeded = false;
+        if ($seeded) {
+            return;
+        }
+        $seeded = true;
+
+        $tessActive = !empty(trim((string) shell_exec('which tesseract 2>/dev/null'))) ? 1 : 0;
+
+        $this->db->query(
+            "INSERT IGNORE INTO convertx_ai_providers
+                 (name, slug, base_url, model, capabilities, allowed_tiers, priority, cost_per_1k_tokens, is_active)
+             VALUES
+                 ('OpenAI',           'openai',      'https://api.openai.com',
+                  'gpt-4o-mini',
+                  '[\"ocr\",\"summarization\",\"translation\",\"classification\"]',
+                  '[\"pro\",\"enterprise\"]', 1, 0.000150, 1),
+                 ('HuggingFace',      'huggingface', 'https://api-inference.huggingface.co',
+                  'facebook/bart-large-cnn',
+                  '[\"summarization\",\"classification\"]',
+                  '[\"free\",\"pro\",\"enterprise\"]', 5, 0.000010, 1),
+                 ('Tesseract (Local)','tesseract',   NULL, NULL,
+                  '[\"ocr\"]',
+                  '[\"free\",\"pro\",\"enterprise\"]', 3, 0.000000, :tessActive)",
+            ['tessActive' => $tessActive]
+        );
     }
 
     /**

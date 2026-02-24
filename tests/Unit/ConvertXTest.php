@@ -490,4 +490,94 @@ class ConvertXTest extends TestCase
             @unlink($result['output_path']);
         }
     }
+
+    // ------------------------------------------------------------------ //
+    //  AIService PHP-native fallbacks (via reflection — no DB needed)      //
+    // ------------------------------------------------------------------ //
+
+    /**
+     * Helper: create a bare AIService mock with constructor disabled so we can
+     * call private fallback methods directly via ReflectionMethod.
+     */
+    private function makeAiServiceMock(): \Projects\ConvertX\Services\AIService
+    {
+        return $this->getMockBuilder(\Projects\ConvertX\Services\AIService::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods([])
+            ->getMock();
+    }
+
+    /** @param string $method Private method name */
+    private function invokePrivate(object $obj, string $method, array $args = []): mixed
+    {
+        $ref = new \ReflectionMethod($obj, $method);
+        $ref->setAccessible(true);
+        return $ref->invokeArgs($obj, $args);
+    }
+
+    public function testPhpNativeSummarizeReturnsSentences(): void
+    {
+        $ai     = $this->makeAiServiceMock();
+        $result = $this->invokePrivate($ai, 'phpNativeSummarize',
+            ['This is sentence one. This is sentence two. This is sentence three.', []]);
+
+        $this->assertIsArray($result);
+        $this->assertTrue($result['success'], 'PHP-native summarize should always succeed on non-empty text');
+        $this->assertNotEmpty($result['summary']);
+        $this->assertEquals('php_native', $result['provider']);
+        $this->assertStringContainsString('sentence', $result['summary']);
+    }
+
+    public function testPhpNativeSummarizeEmptyText(): void
+    {
+        $ai     = $this->makeAiServiceMock();
+        $result = $this->invokePrivate($ai, 'phpNativeSummarize', ['', []]);
+
+        $this->assertFalse($result['success'], 'Empty text should return success=false');
+        $this->assertEmpty($result['summary']);
+    }
+
+    public function testPhpNativeSummarizeRespectsMaxLength(): void
+    {
+        $ai = $this->makeAiServiceMock();
+        // 100 sentences of 4 words each = 400 words total (with sentence boundaries)
+        $text   = str_repeat('This is a test. ', 100);
+        $result = $this->invokePrivate($ai, 'phpNativeSummarize', [$text, ['max_length' => 20]]);
+
+        $this->assertTrue($result['success']);
+        // max_length=20 → summary should be ≤ 25 words (at most 20 + slack from sentence rounding)
+        $this->assertLessThan(30, str_word_count($result['summary']),
+            'Summary should be capped at roughly max_length words');
+    }
+
+    public function testPhpNativeClassifyInvoice(): void
+    {
+        $ai   = $this->makeAiServiceMock();
+        $text = 'Please pay this invoice. Total amount due: $150.00. Bill to: John Doe.';
+        $result = $this->invokePrivate($ai, 'phpNativeClassify', [$text]);
+
+        $this->assertTrue($result['success']);
+        $this->assertEquals('invoice', $result['category']);
+        $this->assertGreaterThan(0, $result['confidence']);
+        $this->assertEquals('php_native', $result['provider']);
+    }
+
+    public function testPhpNativeClassifyContract(): void
+    {
+        $ai   = $this->makeAiServiceMock();
+        $text = 'This agreement is entered into by the parties. Whereas the parties hereby agree to the terms and conditions.';
+        $result = $this->invokePrivate($ai, 'phpNativeClassify', [$text]);
+
+        $this->assertTrue($result['success']);
+        $this->assertEquals('contract', $result['category']);
+    }
+
+    public function testPhpNativeClassifyEmptyFallsToOther(): void
+    {
+        $ai     = $this->makeAiServiceMock();
+        $result = $this->invokePrivate($ai, 'phpNativeClassify', ['']);
+
+        $this->assertTrue($result['success']);
+        $this->assertEquals('other', $result['category']);
+    }
 }
