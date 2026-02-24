@@ -409,11 +409,15 @@ class ConversionService
         if ($outputFormat === 'pdf') {
             $calcInputs    = ['xlsx', 'xls', 'ods', 'csv'];
             $impressInputs = ['pptx', 'ppt', 'odp'];
+            $drawInputs    = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'svg'];
             if (in_array($inputFormat, $calcInputs, true)) {
                 return 'pdf:calc_pdf_Export';
             }
             if (in_array($inputFormat, $impressInputs, true)) {
                 return 'pdf:impress_pdf_Export';
+            }
+            if (in_array($inputFormat, $drawInputs, true)) {
+                return 'pdf:draw_pdf_Export';
             }
             return 'pdf:writer_pdf_Export';
         }
@@ -467,16 +471,37 @@ class ConversionService
 
         try {
             // ── Step 1: convert input to intermediate PDF ──────────────────
+            $step1Error = '';
             if ($isInputImage) {
+                // Try ImageMagick first. It may fail if the server's ImageMagick
+                // policy.xml has rights="none" for the PDF coder (Ubuntu/Debian default).
+                // In that case fall back to LibreOffice Draw, which can open most
+                // image formats and export them to PDF via draw_pdf_Export.
                 $step1ok = $this->convertWithImageMagick($inputPath, $tmpPdf, $options);
+                if (!$step1ok || !file_exists($tmpPdf)) {
+                    try {
+                        $step1ok = $this->convertWithLibreOffice($inputPath, $inputFormat, 'pdf', $tmpPdf);
+                    } catch (\RuntimeException $e) {
+                        $step1ok    = false;
+                        $step1Error = $e->getMessage();
+                    }
+                }
             } else {
-                $step1ok = $this->convertWithLibreOffice($inputPath, $inputFormat, 'pdf', $tmpPdf);
+                try {
+                    $step1ok = $this->convertWithLibreOffice($inputPath, $inputFormat, 'pdf', $tmpPdf);
+                } catch (\RuntimeException $e) {
+                    $step1ok    = false;
+                    $step1Error = $e->getMessage();
+                }
             }
 
             if (!$step1ok || !file_exists($tmpPdf)) {
+                $hint = $step1Error
+                    ? "Step 1 error: {$step1Error}"
+                    : "Ensure both LibreOffice and ImageMagick are installed and that "
+                      . "ImageMagick policy.xml allows PDF output.";
                 throw new \RuntimeException(
-                    "Two-step conversion failed at step 1 ({$inputFormat} → PDF). "
-                    . "Check that ImageMagick or LibreOffice is installed."
+                    "Two-step conversion failed at step 1 ({$inputFormat} → PDF). {$hint}"
                 );
             }
 
@@ -491,6 +516,22 @@ class ConversionService
                 @unlink($tmpPdf);
             }
         }
+    }
+
+    /**
+     * Move a file, falling back to copy+unlink when rename() would cross device boundaries.
+     */
+    private function safeMoveFile(string $from, string $to): bool
+    {
+        if (@rename($from, $to)) {
+            return true;
+        }
+        // rename() fails across filesystems (e.g. /var/www → /tmp on separate mounts)
+        if (@copy($from, $to)) {
+            @unlink($from);
+            return true;
+        }
+        return false;
     }
 
     private function convertWithLibreOffice(
@@ -545,7 +586,7 @@ class ConversionService
         // Our expected path has the '_converted' suffix — rename if needed.
         $libreOutput = $outDirReal . '/' . pathinfo($inputPath, PATHINFO_FILENAME) . '.' . $outputFormat;
         if ($libreOutput !== $outputPath && file_exists($libreOutput)) {
-            rename($libreOutput, $outputPath);
+            $this->safeMoveFile($libreOutput, $outputPath);
         }
 
         return file_exists($outputPath);
