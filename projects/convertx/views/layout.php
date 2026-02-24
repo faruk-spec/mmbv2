@@ -1,10 +1,12 @@
-<!DOCTYPE html>
 <?php
 // ── Cache busting ──────────────────────────────────────────────────────────
 $uiVersion = '20260223235900';
 header("Cache-Control: no-cache, no-store, must-revalidate, max-age=0");
 header("Pragma: no-cache");
 header("Expires: 0");
+?>
+<!DOCTYPE html>
+<?php
 
 // ── Current view (set by the controller via extract()) ─────────────────────
 $currentView = $view ?? 'dashboard';

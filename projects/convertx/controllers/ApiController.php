@@ -37,10 +37,12 @@ class ApiController
 
     public function __construct()
     {
+        ob_start(); // capture any stray PHP warnings before JSON is sent
         $this->jobModel          = new ConversionJobModel();
         $this->conversionService = new ConversionService();
         $this->queueService      = new JobQueueService();
 
+        ob_end_clean();
         header('Content-Type: application/json');
         header('X-Api-Version: ' . self::API_VERSION);
     }

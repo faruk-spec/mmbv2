@@ -53,6 +53,8 @@ class BatchController
      */
     public function submit(): void
     {
+        ob_start(); // capture any stray PHP warnings before JSON is sent
+
         if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
             $this->jsonError('Invalid request token', 403);
             return;
@@ -162,6 +164,7 @@ class BatchController
             }
         }
 
+        ob_end_clean();
         header('Content-Type: application/json');
         echo json_encode([
             'success'  => !empty($jobIds),
@@ -211,6 +214,9 @@ class BatchController
 
     private function jsonError(string $message, int $code = 400): void
     {
+        if (ob_get_level() > 0) {
+            ob_end_clean();
+        }
         http_response_code($code);
         header('Content-Type: application/json');
         echo json_encode(['success' => false, 'error' => $message]);

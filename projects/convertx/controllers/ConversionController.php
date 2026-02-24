@@ -58,6 +58,8 @@ class ConversionController
 
     public function submit(): void
     {
+        ob_start(); // capture any stray PHP warnings before JSON is sent
+
         // CSRF check
         if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
             $this->jsonError('Invalid request token', 403);
@@ -183,6 +185,7 @@ class ConversionController
         }
 
         header('Content-Type: application/json');
+        ob_end_clean();
         echo json_encode([
             'success' => true,
             'job_id'  => $jobId,
@@ -196,6 +199,7 @@ class ConversionController
 
     public function status(int $jobId): void
     {
+        ob_start();
         $userId = Auth::id();
         $job    = $userId
             ? $this->jobModel->findForUser($jobId, $userId)
@@ -207,6 +211,7 @@ class ConversionController
         }
 
         header('Content-Type: application/json');
+        ob_end_clean();
         echo json_encode([
             'success'    => true,
             'job_id'     => $job['id'],
@@ -256,6 +261,7 @@ class ConversionController
 
     public function cancel(int $jobId): void
     {
+        ob_start();
         $userId = Auth::id();
         if (!$userId) {
             $this->jsonError('Authentication required', 401);
@@ -263,6 +269,7 @@ class ConversionController
         }
 
         $this->jobModel->cancel($jobId, $userId);
+        ob_end_clean();
         header('Content-Type: application/json');
         echo json_encode(['success' => true, 'message' => 'Job cancelled']);
     }
@@ -331,6 +338,9 @@ class ConversionController
 
     private function jsonError(string $message, int $code = 400): void
     {
+        if (ob_get_level() > 0) {
+            ob_end_clean();
+        }
         http_response_code($code);
         header('Content-Type: application/json');
         echo json_encode(['success' => false, 'error' => $message]);
