@@ -222,3 +222,12 @@ VALUES
     ('Free', 'free', 'Basic file conversion, limited monthly jobs.', 0.00, 'monthly', 50, 10, 5, 0, 0, 1, 0, 'active', 1),
     ('Pro', 'pro', 'Unlimited conversions, AI tasks, API access.', 9.99, 'monthly', -1, 100, 50, 1, 1, 1, 1, 'active', 2),
     ('Enterprise', 'enterprise', 'Full access, custom limits, priority support.', 29.99, 'monthly', -1, 500, 100, 1, 1, 1, 1, 'active', 3);
+
+-- ------------------------------------------------------------------ --
+--  Seed ConvertX into home_projects (idempotent)                       --
+-- ------------------------------------------------------------------ --
+INSERT IGNORE INTO `home_projects`
+    (`project_key`, `name`, `description`, `icon`, `color`, `is_enabled`, `sort_order`, `database_name`, `url`)
+VALUES
+    ('convertx', 'ConvertX', 'AI-powered file conversion and document processing platform',
+     'file-export', '#6366f1', 1, 10, 'mmb_convertx', '/projects/convertx');

@@ -41,10 +41,14 @@ class ConversionService
         'image/bmp'                                                          => 'bmp',
         'image/tiff'                                                         => 'tiff',
         'image/svg+xml'                                                      => 'svg',
+        'image/x-icon'                                                       => 'ico',
+        'image/vnd.microsoft.icon'                                           => 'ico',
+        'application/epub+zip'                                               => 'epub',
+        'text/tab-separated-values'                                          => 'tsv',
     ];
 
     // Formats that may contain scanned (rasterised) content → trigger OCR
-    private const OCR_CANDIDATE_FORMATS = ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'bmp', 'tiff', 'webp'];
+    private const OCR_CANDIDATE_FORMATS = ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'bmp', 'tiff', 'webp', 'ico'];
 
     /**
      * Detect which conversion backends are available on this server.

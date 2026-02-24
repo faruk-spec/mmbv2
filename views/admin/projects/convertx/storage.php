@@ -87,19 +87,44 @@ View::extend('admin');
                 <div class="table-responsive">
                     <table class="table table-sm table-hover mb-0">
                         <thead>
-                            <tr><th>ID</th><th>Name</th><th>Email</th><th>Total Jobs</th><th>Completed</th></tr>
+                            <tr>
+                                <th>ID</th><th>Name</th><th>Email</th>
+                                <th>Total Jobs</th><th>Completed</th>
+                                <th>Upload Storage</th><th>Output Storage</th><th>Total Storage</th>
+                            </tr>
                         </thead>
                         <tbody>
                         <?php if (empty($userStats)): ?>
-                            <tr><td colspan="5" class="text-center text-muted py-3">No conversion activity yet</td></tr>
+                            <tr><td colspan="8" class="text-center text-muted py-3">No conversion activity yet</td></tr>
                         <?php else: ?>
                             <?php foreach ($userStats as $u): ?>
+                            <?php
+                                // Calculate per-user disk usage
+                                $userUploadDir  = (defined('BASE_PATH') ? BASE_PATH : '') . '/storage/uploads/convertx/' . (int)$u['id'];
+                                $userConvertDir = (defined('BASE_PATH') ? BASE_PATH : '') . '/storage/converted/' . (int)$u['id'];
+                                $userUploadSize = 0;
+                                $userOutputSize = 0;
+                                if (is_dir($userUploadDir)) {
+                                    foreach (new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($userUploadDir, \RecursiveDirectoryIterator::SKIP_DOTS)) as $f) {
+                                        if ($f->isFile()) $userUploadSize += $f->getSize();
+                                    }
+                                }
+                                if (is_dir($userConvertDir)) {
+                                    foreach (new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($userConvertDir, \RecursiveDirectoryIterator::SKIP_DOTS)) as $f) {
+                                        if ($f->isFile()) $userOutputSize += $f->getSize();
+                                    }
+                                }
+                                $userTotal = $userUploadSize + $userOutputSize;
+                            ?>
                             <tr>
                                 <td><?= (int)$u['id'] ?></td>
                                 <td><?= htmlspecialchars($u['name'] ?? '') ?></td>
                                 <td><?= htmlspecialchars($u['email'] ?? '') ?></td>
                                 <td><span class="badge badge-info"><?= (int)$u['total_jobs'] ?></span></td>
                                 <td><span class="badge badge-success"><?= (int)$u['completed'] ?></span></td>
+                                <td><?= fmtBytes($userUploadSize) ?></td>
+                                <td><?= fmtBytes($userOutputSize) ?></td>
+                                <td><strong><?= fmtBytes($userTotal) ?></strong></td>
                             </tr>
                             <?php endforeach; ?>
                         <?php endif; ?>

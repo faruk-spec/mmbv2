@@ -22,17 +22,17 @@ return [
 
     // Supported input/output formats grouped by category
     'formats' => [
-        'document' => ['pdf', 'docx', 'doc', 'odt', 'rtf', 'txt', 'html', 'md'],
-        'spreadsheet' => ['xlsx', 'xls', 'ods', 'csv'],
+        'document'     => ['pdf', 'docx', 'doc', 'odt', 'rtf', 'txt', 'html', 'md', 'epub'],
+        'spreadsheet'  => ['xlsx', 'xls', 'ods', 'csv', 'tsv'],
         'presentation' => ['pptx', 'ppt', 'odp'],
-        'image' => ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'svg'],
+        'image'        => ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'svg', 'ico'],
     ],
 
     // Maximum file size per plan tier (bytes)
     'upload_limits' => [
-        'free'       => 10 * 1024 * 1024,   // 10 MB
-        'pro'        => 100 * 1024 * 1024,  // 100 MB
-        'enterprise' => 500 * 1024 * 1024,  // 500 MB
+        'free'       => 25 * 1024 * 1024,   // 25 MB
+        'pro'        => 200 * 1024 * 1024,  // 200 MB
+        'enterprise' => 1000 * 1024 * 1024, // 1 GB
     ],
 
     // Async job settings

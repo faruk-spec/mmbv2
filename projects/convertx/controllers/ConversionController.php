@@ -24,10 +24,10 @@ class ConversionController
 
     /** Allowed file extensions (flat list) */
     private const ALLOWED_EXTENSIONS = [
-        'pdf', 'docx', 'doc', 'odt', 'rtf', 'txt', 'html', 'md',
-        'xlsx', 'xls', 'ods', 'csv',
+        'pdf', 'docx', 'doc', 'odt', 'rtf', 'txt', 'html', 'md', 'epub',
+        'xlsx', 'xls', 'ods', 'csv', 'tsv',
         'pptx', 'ppt', 'odp',
-        'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'svg',
+        'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'svg', 'ico',
     ];
 
     public function __construct()

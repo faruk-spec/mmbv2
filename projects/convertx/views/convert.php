@@ -49,8 +49,8 @@ foreach ($groupedFormats as $group => $fmts) {
     <p>Upload any document, image or spreadsheet and convert it instantly</p>
 </div>
 
-<!-- ── Popular Converter Suggestions ── -->
-<div class="cx-suggestions-section">
+<!-- ── Popular Converter Suggestions (desktop: before grid, mobile: after grid via CSS order) ── -->
+<div class="cx-suggestions-section cx-suggestions-desktop">
     <div class="cx-suggestions-title">
         <i class="fa-solid fa-bolt-lightning" style="color:var(--cx-primary);"></i>
         Popular Conversions
@@ -66,6 +66,10 @@ foreach ($groupedFormats as $group => $fmts) {
             ['from'=>'PPTX', 'to'=>'PDF',  'icon'=>'fa-file-powerpoint',  'color'=>'#ea580c', 'desc'=>'Present anywhere'],
             ['from'=>'CSV',  'to'=>'XLSX', 'icon'=>'fa-table',            'color'=>'#059669', 'desc'=>'Spreadsheet format'],
             ['from'=>'SVG',  'to'=>'PNG',  'icon'=>'fa-vector-square',    'color'=>'#8b5cf6', 'desc'=>'Rasterise vector'],
+            ['from'=>'JPG',  'to'=>'PDF',  'icon'=>'fa-image',            'color'=>'#dc2626', 'desc'=>'Create PDF'],
+            ['from'=>'HTML', 'to'=>'PDF',  'icon'=>'fa-code',             'color'=>'#0ea5e9', 'desc'=>'Print to PDF'],
+            ['from'=>'EPUB', 'to'=>'PDF',  'icon'=>'fa-book',             'color'=>'#7c3aed', 'desc'=>'Convert ebook'],
+            ['from'=>'BMP',  'to'=>'PNG',  'icon'=>'fa-file-image',       'color'=>'#9333ea', 'desc'=>'Modern format'],
         ];
         foreach ($suggestions as $s): ?>
         <button type="button" class="cx-suggestion-card"
@@ -310,6 +314,44 @@ foreach ($groupedFormats as $group => $fmts) {
 
 </div><!-- .cx-convert-grid -->
 
+<!-- ── Popular Conversions (mobile only, shown after the grid) ── -->
+<div class="cx-suggestions-section cx-suggestions-mobile" aria-hidden="true">
+    <div class="cx-suggestions-title">
+        <i class="fa-solid fa-bolt-lightning" style="color:var(--cx-primary);"></i>
+        Popular Conversions
+    </div>
+    <div class="cx-suggestions-grid">
+        <?php
+        $suggestions = [
+            ['from'=>'PDF',  'to'=>'DOCX', 'icon'=>'fa-file-pdf',        'color'=>'#ef4444', 'desc'=>'Edit PDF content'],
+            ['from'=>'DOCX', 'to'=>'PDF',  'icon'=>'fa-file-word',        'color'=>'#2563eb', 'desc'=>'Share as PDF'],
+            ['from'=>'XLSX', 'to'=>'CSV',  'icon'=>'fa-file-excel',       'color'=>'#16a34a', 'desc'=>'Export data'],
+            ['from'=>'PNG',  'to'=>'JPG',  'icon'=>'fa-file-image',       'color'=>'#7c3aed', 'desc'=>'Reduce file size'],
+            ['from'=>'JPG',  'to'=>'WEBP', 'icon'=>'fa-image',            'color'=>'#0891b2', 'desc'=>'Web optimised'],
+            ['from'=>'PPTX', 'to'=>'PDF',  'icon'=>'fa-file-powerpoint',  'color'=>'#ea580c', 'desc'=>'Present anywhere'],
+            ['from'=>'CSV',  'to'=>'XLSX', 'icon'=>'fa-table',            'color'=>'#059669', 'desc'=>'Spreadsheet format'],
+            ['from'=>'SVG',  'to'=>'PNG',  'icon'=>'fa-vector-square',    'color'=>'#8b5cf6', 'desc'=>'Rasterise vector'],
+            ['from'=>'JPG',  'to'=>'PDF',  'icon'=>'fa-image',            'color'=>'#dc2626', 'desc'=>'Create PDF'],
+            ['from'=>'HTML', 'to'=>'PDF',  'icon'=>'fa-code',             'color'=>'#0ea5e9', 'desc'=>'Print to PDF'],
+            ['from'=>'EPUB', 'to'=>'PDF',  'icon'=>'fa-book',             'color'=>'#7c3aed', 'desc'=>'Convert ebook'],
+            ['from'=>'BMP',  'to'=>'PNG',  'icon'=>'fa-file-image',       'color'=>'#9333ea', 'desc'=>'Modern format'],
+        ];
+        foreach ($suggestions as $s): ?>
+        <button type="button" class="cx-suggestion-card"
+                onclick="applySuggestion('<?= strtolower($s['to']) ?>')"
+                title="Convert <?= $s['from'] ?> to <?= $s['to'] ?>">
+            <i class="fa-solid <?= $s['icon'] ?>" style="color:<?= $s['color'] ?>;font-size:1.25rem;margin-bottom:.35rem;"></i>
+            <span class="cx-sug-route">
+                <span style="color:var(--text-secondary);"><?= $s['from'] ?></span>
+                <i class="fa-solid fa-arrow-right" style="font-size:.6rem;color:var(--cx-primary);"></i>
+                <span style="color:var(--cx-primary);font-weight:600;"><?= $s['to'] ?></span>
+            </span>
+            <span class="cx-sug-desc"><?= $s['desc'] ?></span>
+        </button>
+        <?php endforeach; ?>
+    </div>
+</div>
+
 <!-- Job status card (shown after submission) -->
 <div id="jobStatus" class="card" style="display:none;margin-top:1.25rem;">
     <div class="card-header" id="jobStatusHeader">
@@ -389,6 +431,13 @@ foreach ($groupedFormats as $group => $fmts) {
 }
 @media (max-width: 600px) {
     .cx-suggestions-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* Mobile layout: hide desktop suggestions, show mobile copy after grid */
+.cx-suggestions-mobile { display: none; }
+@media (max-width: 768px) {
+    .cx-suggestions-desktop { display: none; }
+    .cx-suggestions-mobile  { display: block; }
 }
 </style>
 
