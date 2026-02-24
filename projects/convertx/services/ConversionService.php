@@ -232,8 +232,21 @@ class ConversionService
             );
         }
 
+        // 4b. Image → writer format (docx / odt / rtf): create a proper document
+        //     that embeds the image using PHP ZipArchive — no external tools needed.
+        //     This is far more reliable than the 2-step chain (image→PDF→DOCX) which
+        //     requires the optional libreoffice-pdfimport package for the PDF→Writer
+        //     leg, and often silently produces empty output when that package is absent.
+        $phpWriterFormats = ['docx', 'odt', 'rtf'];
+        if ($isInputImage && in_array($outputFormat, $phpWriterFormats, true)) {
+            if ($this->convertImageToDocumentWithPhp($inputPath, $inputFormat, $outputFormat, $outputPath)) {
+                return true;
+            }
+            // ZipArchive unavailable or failed — fall through to chain
+        }
+
         // 5. Cross-family: image → office/text (non-pdf)
-        //    Chain: image → PDF (ImageMagick) → target (LibreOffice)
+        //    Chain: image → PDF (ImageMagick or LO Draw) → target (LibreOffice)
         if ($isInputImage && !$isOutputImage) {
             return $this->convertViaChain($inputPath, $inputFormat, $outputFormat, $outputPath, $options);
         }
@@ -551,6 +564,281 @@ class ConversionService
         return false;
     }
 
+    // ------------------------------------------------------------------ //
+    //  PHP-native document builders (no external tools)                    //
+    // ------------------------------------------------------------------ //
+
+    /**
+     * Embed a source image directly inside a writer-format document using
+     * PHP's built-in ZipArchive extension — no LibreOffice or ImageMagick needed.
+     *
+     * Supported output formats: docx, odt, rtf.
+     *
+     * This bypasses the unreliable image→PDF→DOCX two-step chain whose second
+     * leg (PDF→DOCX via LibreOffice) requires the optional libreoffice-pdfimport
+     * package and often produces empty output when that package is absent.
+     */
+    private function convertImageToDocumentWithPhp(
+        string $inputPath,
+        string $inputFormat,
+        string $outputFormat,
+        string $outputPath
+    ): bool {
+        if (!file_exists($inputPath)) {
+            return false;
+        }
+        return match ($outputFormat) {
+            'docx' => $this->convertImageToDocxWithPhp($inputPath, $inputFormat, $outputPath),
+            'odt'  => $this->convertImageToOdtWithPhp($inputPath, $inputFormat, $outputPath),
+            'rtf'  => $this->convertImageToRtfWithPhp($inputPath, $inputFormat, $outputPath),
+            default => false,
+        };
+    }
+
+    /**
+     * Create a minimal but fully valid DOCX file with the image embedded.
+     * A DOCX is a ZIP archive (Open Packaging Convention) containing XML files.
+     */
+    private function convertImageToDocxWithPhp(
+        string $inputPath,
+        string $inputFormat,
+        string $outputPath
+    ): bool {
+        if (!class_exists('ZipArchive')) {
+            return false;
+        }
+
+        $imgData  = @getimagesize($inputPath);
+        $pxW      = $imgData ? max(1, (int) $imgData[0]) : 800;
+        $pxH      = $imgData ? max(1, (int) $imgData[1]) : 600;
+
+        // Convert pixels → EMU (1 in = 914400 EMU; assume 96 DPI)
+        // Cap at A4 content width: 6 in = 5 486 400 EMU
+        $maxEmuW  = 5486400;
+        $emuPerPx = 914400.0 / 96.0;
+        $emuW     = (int) min($maxEmuW, round($pxW * $emuPerPx));
+        $emuH     = (int) round($emuW * $pxH / $pxW);
+
+        $mimeMap  = [
+            'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png'  => 'image/png',
+            'gif' => 'image/gif',  'webp' => 'image/webp', 'bmp'  => 'image/bmp',
+            'tiff' => 'image/tiff', 'svg' => 'image/svg+xml',
+        ];
+        $imgExt   = strtolower(pathinfo($inputPath, PATHINFO_EXTENSION)) ?: strtolower($inputFormat);
+        $mime     = $mimeMap[$imgExt] ?? 'image/png';
+        $media    = 'image1.' . $imgExt;
+        $imgName  = htmlspecialchars(basename($inputPath), ENT_QUOTES | ENT_XML1);
+
+        $contentTypes =
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+            . '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+            . '<Default Extension="xml" ContentType="application/xml"/>'
+            . '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>'
+            . '<Override PartName="/word/media/' . $media . '" ContentType="' . $mime . '"/>'
+            . '</Types>';
+
+        $relsMain =
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            . '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>'
+            . '</Relationships>';
+
+        $relsDoc =
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            . '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/' . $media . '"/>'
+            . '</Relationships>';
+
+        $document =
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<w:document'
+            . ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"'
+            . ' xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"'
+            . ' xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"'
+            . ' xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"'
+            . ' xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+            . '<w:body><w:p><w:r><w:drawing>'
+            . '<wp:inline distT="0" distB="0" distL="0" distR="0">'
+            . '<wp:extent cx="' . $emuW . '" cy="' . $emuH . '"/>'
+            . '<wp:effectExtent l="0" t="0" r="0" b="0"/>'
+            . '<wp:docPr id="1" name="Picture 1" descr="' . $imgName . '"/>'
+            . '<wp:cNvGraphicFramePr><a:graphicFrameLocks noChangeAspectRatio="1"/></wp:cNvGraphicFramePr>'
+            . '<a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">'
+            . '<pic:pic>'
+            . '<pic:nvPicPr><pic:cNvPr id="0" name="' . $imgName . '"/><pic:cNvPicPr/></pic:nvPicPr>'
+            . '<pic:blipFill><a:blip r:embed="rId1"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>'
+            . '<pic:spPr>'
+            . '<a:xfrm><a:off x="0" y="0"/><a:ext cx="' . $emuW . '" cy="' . $emuH . '"/></a:xfrm>'
+            . '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom>'
+            . '</pic:spPr>'
+            . '</pic:pic>'
+            . '</a:graphicData></a:graphic>'
+            . '</wp:inline>'
+            . '</w:drawing></w:r></w:p>'
+            . '<w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440"/></w:sectPr>'
+            . '</w:body></w:document>';
+
+        $zip = new \ZipArchive();
+        if ($zip->open($outputPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
+            return false;
+        }
+        $zip->addFromString('[Content_Types].xml',         $contentTypes);
+        $zip->addFromString('_rels/.rels',                 $relsMain);
+        $zip->addFromString('word/document.xml',           $document);
+        $zip->addFromString('word/_rels/document.xml.rels', $relsDoc);
+        $zip->addFile($inputPath, 'word/media/' . $media);
+        $zip->close();
+
+        return file_exists($outputPath) && filesize($outputPath) > 100;
+    }
+
+    /**
+     * Create a minimal but valid ODT (ODF Text Document) with the image embedded.
+     * An ODT is a ZIP archive following the ODF specification.
+     */
+    private function convertImageToOdtWithPhp(
+        string $inputPath,
+        string $inputFormat,
+        string $outputPath
+    ): bool {
+        if (!class_exists('ZipArchive')) {
+            return false;
+        }
+
+        $imgData  = @getimagesize($inputPath);
+        $pxW      = $imgData ? max(1, (int) $imgData[0]) : 800;
+        $pxH      = $imgData ? max(1, (int) $imgData[1]) : 600;
+
+        // Fit to A4 content width (16 cm) at 96 DPI
+        $maxCmW   = 16.0;
+        $cmPerPx  = 2.54 / 96.0;
+        $cmW      = min($maxCmW, round($pxW * $cmPerPx, 3));
+        $cmH      = round($cmW * $pxH / $pxW, 3);
+
+        $mimeMap  = [
+            'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png'  => 'image/png',
+            'gif' => 'image/gif',  'webp' => 'image/webp', 'bmp'  => 'image/bmp',
+            'tiff' => 'image/tiff', 'svg' => 'image/svg+xml',
+        ];
+        $imgExt   = strtolower(pathinfo($inputPath, PATHINFO_EXTENSION)) ?: strtolower($inputFormat);
+        $mime     = $mimeMap[$imgExt] ?? 'image/png';
+        $media    = 'Pictures/image.' . $imgExt;
+
+        $manifest =
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            . '<manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0" manifest:version="1.3">'
+            . '<manifest:file-entry manifest:full-path="/" manifest:version="1.3" manifest:media-type="application/vnd.oasis.opendocument.text"/>'
+            . '<manifest:file-entry manifest:full-path="content.xml" manifest:media-type="text/xml"/>'
+            . '<manifest:file-entry manifest:full-path="' . $media . '" manifest:media-type="' . $mime . '"/>'
+            . '</manifest:manifest>';
+
+        $content =
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            . '<office:document-content'
+            . ' xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"'
+            . ' xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"'
+            . ' xmlns:draw="urn:oasis:names:tc:opendocument:xmlns:drawing:1.0"'
+            . ' xmlns:svg="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0"'
+            . ' xmlns:xlink="http://www.w3.org/1999/xlink"'
+            . ' xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0">'
+            . '<office:automatic-styles>'
+            . '<style:style style:name="fr1" style:family="graphic">'
+            . '<style:graphic-properties style:run-through="foreground" style:wrap="none"'
+            . ' style:vertical-pos="top" style:vertical-rel="paragraph"'
+            . ' style:horizontal-pos="from-left" style:horizontal-rel="paragraph"/>'
+            . '</style:style>'
+            . '</office:automatic-styles>'
+            . '<office:body><office:text><text:p>'
+            . '<draw:frame draw:style-name="fr1" draw:name="Image1"'
+            . ' svg:width="' . $cmW . 'cm" svg:height="' . $cmH . 'cm"'
+            . ' text:anchor-type="paragraph">'
+            . '<draw:image xlink:href="' . $media . '" xlink:type="simple" xlink:show="embed" xlink:actuate="onLoad"/>'
+            . '</draw:frame>'
+            . '</text:p></office:text></office:body>'
+            . '</office:document-content>';
+
+        $zip = new \ZipArchive();
+        if ($zip->open($outputPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
+            return false;
+        }
+        // ODF spec: 'mimetype' MUST be the first entry and STORED (not compressed)
+        $zip->addFromString('mimetype', 'application/vnd.oasis.opendocument.text');
+        if (method_exists($zip, 'setCompressionName')) {
+            $zip->setCompressionName('mimetype', \ZipArchive::CM_STORE);
+        }
+        $zip->addFromString('META-INF/manifest.xml', $manifest);
+        $zip->addFromString('content.xml',           $content);
+        $zip->addFile($inputPath, $media);
+        $zip->close();
+
+        return file_exists($outputPath) && filesize($outputPath) > 100;
+    }
+
+    /**
+     * Create a minimal RTF document with the image embedded as a hex binary.
+     * Natively supports PNG and JPEG; other formats are converted via GD first.
+     */
+    private function convertImageToRtfWithPhp(
+        string $inputPath,
+        string $inputFormat,
+        string $outputPath
+    ): bool {
+        $imgExt  = strtolower(pathinfo($inputPath, PATHINFO_EXTENSION)) ?: strtolower($inputFormat);
+        $rtfType = match ($imgExt) {
+            'png'         => 'pngblip',
+            'jpg', 'jpeg' => 'jpegblip',
+            default       => null,
+        };
+
+        $workPath = $inputPath;
+        $tmpPng   = null;
+
+        if ($rtfType === null) {
+            // Convert to PNG via GD so it can be embedded as pngblip
+            if (!extension_loaded('gd')) {
+                return false;
+            }
+            $img = @imagecreatefromstring((string) file_get_contents($inputPath));
+            if ($img === false) {
+                return false;
+            }
+            $tmpPng = tempnam(sys_get_temp_dir(), 'cx_rtf_') . '.png';
+            if (!imagepng($img, $tmpPng)) {
+                imagedestroy($img);
+                return false;
+            }
+            imagedestroy($img);
+            $workPath = $tmpPng;
+            $rtfType  = 'pngblip';
+        }
+
+        try {
+            $imgData  = @getimagesize($workPath);
+            $pxW      = $imgData ? max(1, (int) $imgData[0]) : 800;
+            $pxH      = $imgData ? max(1, (int) $imgData[1]) : 600;
+            // RTF dimensions in twips (1 in = 1440 twips; 96 DPI → 15 twips/pixel)
+            $twipPerPx = 1440.0 / 96.0;
+            $twW      = (int) round($pxW * $twipPerPx);
+            $twH      = (int) round($pxH * $twipPerPx);
+            $hexData  = bin2hex((string) file_get_contents($workPath));
+
+            $rtf = '{\rtf1\ansi\deff0{\fonttbl{\f0 Arial;}}' . "\n"
+                 . '\pard\sa0' . "\n"
+                 . '{\pict\\' . $rtfType
+                 . '\picw' . $pxW  . '\pich' . $pxH
+                 . '\picwgoal' . $twW . '\pichgoal' . $twH . "\n"
+                 . $hexData . "}\n"
+                 . '}';
+
+            return file_put_contents($outputPath, $rtf) !== false;
+        } finally {
+            if ($tmpPng !== null && file_exists($tmpPng)) {
+                @unlink($tmpPng);
+            }
+        }
+    }
+
     private function convertWithLibreOffice(
         string $inputPath,
         string $inputFormat,
@@ -583,9 +871,16 @@ class ConversionService
         //   don't corrupt each other's profile directory.
         //   NOTE: single dash (-env:) is the correct LibreOffice syntax; double
         //   dash (--env:) is rejected by LibreOffice 7.x with "Error in option".
-        $pid = getmypid();
+        // --infilter "draw_pdf_import" – force PDF Import filter when input is PDF.
+        //   Without this, headless LO on some installs fails to select the filter
+        //   automatically, producing empty or corrupt output.
+        $pid      = getmypid();
+        $infilter = ($inputFormat === 'pdf')
+            ? '--infilter ' . escapeshellarg('draw_pdf_import') . ' '
+            : '';
         $cmd = "DISPLAY= HOME=/tmp {$lo} --headless --norestore --nolockcheck "
              . "-env:UserInstallation=file:///tmp/lo-{$pid} "
+             . $infilter
              . "--convert-to {$filterSpec} {$inFile} --outdir {$outDirEsc} 2>&1";
         exec($cmd, $output, $code);
 
@@ -604,6 +899,16 @@ class ConversionService
         $libreOutput = $outDirReal . '/' . pathinfo($inputPath, PATHINFO_FILENAME) . '.' . $outputFormat;
         if ($libreOutput !== $outputPath && file_exists($libreOutput)) {
             $this->safeMoveFile($libreOutput, $outputPath);
+        }
+
+        // Reject empty/tiny output — LibreOffice can silently produce 0-byte files
+        // when the PDF import filter is missing or a cross-component export fails.
+        if (file_exists($outputPath) && filesize($outputPath) < 10) {
+            @unlink($outputPath);
+            throw new \RuntimeException(
+                "LibreOffice produced an empty output for {$inputFormat} → {$outputFormat}. "
+                . "For PDF input, ensure the libreoffice-pdfimport package is installed."
+            );
         }
 
         return file_exists($outputPath);

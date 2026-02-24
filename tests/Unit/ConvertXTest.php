@@ -404,4 +404,90 @@ class ConvertXTest extends TestCase
         $this->assertContains('xlsx', $formats, 'png should list xlsx as a supported output');
         $this->assertContains('docx', $formats, 'png should list docx as a supported output');
     }
+
+    // ------------------------------------------------------------------ //
+    //  PHP-native image → writer format (ZipArchive)                       //
+    // ------------------------------------------------------------------ //
+
+    public function testImageToDocxWithPhpCreatesValidZip(): void
+    {
+        if (!class_exists('ZipArchive')) {
+            $this->markTestSkipped('ZipArchive extension not available');
+        }
+        if (!extension_loaded('gd')) {
+            $this->markTestSkipped('GD extension not available');
+        }
+
+        $pngPath = tempnam(sys_get_temp_dir(), 'cx_img_') . '.png';
+        $img = imagecreatetruecolor(10, 10);
+        $this->assertNotFalse($img, 'Failed to create GD image');
+        imagefill($img, 0, 0, imagecolorallocate($img, 255, 255, 255));
+        imagepng($img, $pngPath);
+        imagedestroy($img);
+
+        $result = $this->conversionService->convert($pngPath, 'png', 'docx');
+        @unlink($pngPath);
+
+        $this->assertIsArray($result);
+        $this->assertTrue($result['success'],
+            'PNG → DOCX via PHP ZipArchive should succeed; error: ' . ($result['error'] ?? ''));
+
+        if (!empty($result['output_path']) && file_exists($result['output_path'])) {
+            $this->assertGreaterThan(100, filesize($result['output_path']),
+                'DOCX output should be > 100 bytes');
+
+            $zip    = new \ZipArchive();
+            $opened = $zip->open($result['output_path']);
+            $this->assertTrue($opened === true, 'DOCX output must be a valid ZIP archive');
+            if ($opened === true) {
+                $this->assertNotFalse($zip->locateName('[Content_Types].xml'),
+                    'DOCX must contain [Content_Types].xml');
+                $this->assertNotFalse($zip->locateName('word/document.xml'),
+                    'DOCX must contain word/document.xml');
+                $zip->close();
+            }
+            @unlink($result['output_path']);
+        }
+    }
+
+    public function testImageToOdtWithPhpCreatesValidZip(): void
+    {
+        if (!class_exists('ZipArchive')) {
+            $this->markTestSkipped('ZipArchive extension not available');
+        }
+        if (!extension_loaded('gd')) {
+            $this->markTestSkipped('GD extension not available');
+        }
+
+        $pngPath = tempnam(sys_get_temp_dir(), 'cx_odt_') . '.png';
+        $img = imagecreatetruecolor(10, 10);
+        $this->assertNotFalse($img, 'Failed to create GD image');
+        imagefill($img, 0, 0, imagecolorallocate($img, 200, 200, 200));
+        imagepng($img, $pngPath);
+        imagedestroy($img);
+
+        $result = $this->conversionService->convert($pngPath, 'png', 'odt');
+        @unlink($pngPath);
+
+        $this->assertIsArray($result);
+        $this->assertTrue($result['success'],
+            'PNG → ODT via PHP ZipArchive should succeed; error: ' . ($result['error'] ?? ''));
+
+        if (!empty($result['output_path']) && file_exists($result['output_path'])) {
+            $this->assertGreaterThan(100, filesize($result['output_path']),
+                'ODT output should be > 100 bytes');
+
+            $zip    = new \ZipArchive();
+            $opened = $zip->open($result['output_path']);
+            $this->assertTrue($opened === true, 'ODT output must be a valid ZIP archive');
+            if ($opened === true) {
+                $this->assertNotFalse($zip->locateName('content.xml'),
+                    'ODT must contain content.xml');
+                $this->assertNotFalse($zip->locateName('META-INF/manifest.xml'),
+                    'ODT must contain META-INF/manifest.xml');
+                $zip->close();
+            }
+            @unlink($result['output_path']);
+        }
+    }
 }
