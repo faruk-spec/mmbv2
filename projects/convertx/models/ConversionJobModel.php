@@ -204,8 +204,42 @@ class ConversionJobModel
     }
 
     /**
-     * Delete jobs older than $ttlSeconds that belong to $userId and are completed.
+     * Breakdown of output formats for a user (for analytics).
+     *
+     * @return array  e.g. [['output_format' => 'pdf', 'cnt' => 12], ...]
      */
+    public function getFormatBreakdown(int $userId, int $limit = 8): array
+    {
+        return $this->db->fetchAll(
+            "SELECT output_format, COUNT(*) AS cnt
+             FROM convertx_jobs
+             WHERE user_id = :uid AND status = 'completed'
+             GROUP BY output_format
+             ORDER BY cnt DESC
+             LIMIT :limit",
+            ['uid' => $userId, 'limit' => $limit]
+        ) ?: [];
+    }
+
+    /**
+     * Daily job counts for the last N days (for the analytics sparkline).
+     *
+     * @return array  e.g. [['day' => '2026-02-20', 'cnt' => 5], ...]
+     */
+    public function getDailyActivity(int $userId, int $days = 14): array
+    {
+        return $this->db->fetchAll(
+            "SELECT DATE(created_at) AS day, COUNT(*) AS cnt
+             FROM convertx_jobs
+             WHERE user_id = :uid
+               AND created_at >= DATE_SUB(CURDATE(), INTERVAL :days DAY)
+             GROUP BY DATE(created_at)
+             ORDER BY day ASC",
+            ['uid' => $userId, 'days' => $days]
+        ) ?: [];
+    }
+
+
     public function deleteExpired(int $userId, int $ttlSeconds): int
     {
         $threshold = date('Y-m-d H:i:s', time() - $ttlSeconds);

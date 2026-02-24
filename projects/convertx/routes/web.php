@@ -95,6 +95,16 @@ switch ($segments[0]) {
         }
         break;
 
+    case 'apikeys':
+        require_once PROJECT_PATH . '/controllers/SettingsController.php';
+        $ctrl = new \Projects\ConvertX\Controllers\SettingsController();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $ctrl->update();
+        } else {
+            $ctrl->apikeys();
+        }
+        break;
+
     default:
         http_response_code(404);
         echo 'Page not found';

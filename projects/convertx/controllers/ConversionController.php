@@ -147,13 +147,24 @@ class ConversionController
             return;
         }
 
-        // Process the job synchronously (no background worker required).
-        // Extend PHP execution time to allow for large-file conversions;
-        // suppressed because set_time_limit() is a no-op in CLI/safe_mode environments.
+        // Process the job synchronously. Loop up to max-retry times so that
+        // the job always reaches a terminal state (completed/failed) in this
+        // request rather than staying 'pending' due to the retry-queue mechanism.
         @set_time_limit(300);
-        $job = $this->jobModel->find($jobId);
-        if ($job) {
-            $this->queueService->processJob($job);
+        for ($attempt = 0; $attempt < 3; $attempt++) {
+            $job = $this->jobModel->find($jobId);
+            if (!$job || $job['status'] !== ConversionJobModel::STATUS_PENDING) {
+                break;
+            }
+            try {
+                $this->queueService->processJob($job);
+            } catch (\Throwable $e) {
+                Logger::error('ConversionController: processJob threw - ' . $e->getMessage());
+                $this->jobModel->updateStatus($jobId, ConversionJobModel::STATUS_FAILED, [
+                    'error_message' => $e->getMessage(),
+                ]);
+                break;
+            }
         }
 
         header('Content-Type: application/json');

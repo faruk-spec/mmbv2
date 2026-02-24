@@ -21,7 +21,7 @@ sort($allFormats);
     <p>Upload up to 50 files — convert them all to the same format in one go</p>
 </div>
 
-<div style="max-width:760px;">
+<div>
     <div class="card">
         <div class="card-header">
             <i class="fa-solid fa-layer-group"></i> Batch Conversion Settings

@@ -16,12 +16,12 @@ $allFormatArrays = array_filter(array_values($groupedFormats), 'is_array');
 $allFormats     = $allFormatArrays ? array_unique(array_merge(...$allFormatArrays)) : [];
 sort($allFormats);
 
-// Format category labels
+// Format category labels (plain text, no emoji — <optgroup> can't render HTML)
 $groupLabels = [
-    'document'     => '📄 Documents',
-    'spreadsheet'  => '📊 Spreadsheets',
-    'presentation' => '📽 Presentations',
-    'image'        => '🖼 Images',
+    'document'     => 'Documents',
+    'spreadsheet'  => 'Spreadsheets',
+    'presentation' => 'Presentations',
+    'image'        => 'Images',
 ];
 ?>
 
@@ -51,7 +51,7 @@ $groupLabels = [
 </div>
 <?php endif; ?>
 
-<div style="display:grid;grid-template-columns:1fr;gap:1.5rem;max-width:760px;">
+<div style="display:grid;grid-template-columns:1fr;gap:1.5rem;">
 
     <!-- Main conversion card -->
     <div class="card">

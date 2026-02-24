@@ -82,10 +82,9 @@ class JobQueueService
     {
         $jobId = (int) $job['id'];
 
-        // Claim the job
-        $this->jobModel->updateStatus($jobId, ConversionJobModel::STATUS_PROCESSING);
-
         try {
+            // Claim the job (inside try-catch so a column issue doesn't leave job as 'pending')
+            $this->jobModel->updateStatus($jobId, ConversionJobModel::STATUS_PROCESSING);
             // 1. Perform core file conversion
             $convResult = $this->conversionService->convert(
                 $job['input_path'],

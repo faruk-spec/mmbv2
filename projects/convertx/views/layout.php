@@ -896,9 +896,9 @@ include BASE_PATH . '/views/layouts/navbar.php';
                    class="<?= ($currentView === 'docs') ? 'active' : '' ?>">
                     <i class="fa-solid fa-book-open"></i> API Docs
                 </a>
-                <a href="/projects/convertx/settings"
-                   class="<?= ($currentView === 'settings') ? 'active' : '' ?>">
-                    <i class="fa-solid fa-key"></i> API Keys
+                <a href="/projects/convertx/apikeys"
+                   class="<?= ($currentView === 'apikeys') ? 'active' : '' ?>">
+                    <i class="fa-solid fa-key"></i> API Keys &amp; Analytics
                 </a>
             </nav>
         </div>
@@ -909,6 +909,10 @@ include BASE_PATH . '/views/layouts/navbar.php';
                 <a href="/projects/convertx/plan"
                    class="<?= ($currentView === 'plan') ? 'active' : '' ?>">
                     <i class="fa-solid fa-star"></i> Plans &amp; Pricing
+                </a>
+                <a href="/projects/convertx/settings"
+                   class="<?= ($currentView === 'settings') ? 'active' : '' ?>">
+                    <i class="fa-solid fa-gear"></i> Settings
                 </a>
             </nav>
         </div>

@@ -11,7 +11,7 @@ $currentView = 'plan';
     <p>Choose the plan that fits your needs. Upgrade or downgrade at any time.</p>
 </div>
 
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1.5rem;max-width:960px;">
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1.5rem;">
 
     <!-- Free -->
     <div class="cx-price-card">

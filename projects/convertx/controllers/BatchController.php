@@ -12,6 +12,7 @@ namespace Projects\ConvertX\Controllers;
 use Core\Auth;
 use Core\Security;
 use Core\Logger;
+use Projects\ConvertX\Models\ConversionJobModel;
 use Projects\ConvertX\Services\ConversionService;
 use Projects\ConvertX\Services\JobQueueService;
 
@@ -19,6 +20,7 @@ class BatchController
 {
     private ConversionService $conversionService;
     private JobQueueService   $queueService;
+    private ConversionJobModel $jobModel;
 
     private const ALLOWED_EXTENSIONS = [
         'pdf', 'docx', 'doc', 'odt', 'rtf', 'txt', 'html', 'md',
@@ -31,6 +33,7 @@ class BatchController
     {
         $this->conversionService = new ConversionService();
         $this->queueService      = new JobQueueService();
+        $this->jobModel          = new ConversionJobModel();
     }
 
     public function showForm(): void
@@ -136,10 +139,26 @@ class BatchController
         }
 
         if (!empty($jobIds)) {
-            // Process all batch jobs synchronously (no background worker required).
-            // Suppressed because set_time_limit() is a no-op in CLI/safe_mode environments.
+            // Process each specific job synchronously to terminal state.
+            // Loop up to 3 times per job to handle the retry-queue mechanism.
             @set_time_limit(300);
-            $this->queueService->processPending(count($jobIds));
+            foreach ($jobIds as $jid) {
+                for ($attempt = 0; $attempt < 3; $attempt++) {
+                    $job = $this->jobModel->find((int) $jid);
+                    if (!$job || $job['status'] !== ConversionJobModel::STATUS_PENDING) {
+                        break;
+                    }
+                    try {
+                        $this->queueService->processJob($job);
+                    } catch (\Throwable $e) {
+                        Logger::error('BatchController: processJob threw - ' . $e->getMessage());
+                        $this->jobModel->updateStatus((int) $jid, ConversionJobModel::STATUS_FAILED, [
+                            'error_message' => $e->getMessage(),
+                        ]);
+                        break;
+                    }
+                }
+            }
         }
 
         header('Content-Type: application/json');

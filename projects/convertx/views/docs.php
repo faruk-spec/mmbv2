@@ -12,7 +12,7 @@ $baseUrl     = (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . ($_SERVER
     <p>Integrate ConvertX into any application using our REST API</p>
 </div>
 
-<div class="card" style="max-width:860px;">
+<div class="card">
     <div class="card-header"><i class="fa-solid fa-book-open"></i> ConvertX REST API (v1)</div>
     <p style="font-size:.875rem;color:var(--text-secondary);margin-bottom:1.5rem;">
         Authenticate with your API key from the <a href="/projects/convertx/settings" style="color:var(--cx-primary);">Settings</a> page.
