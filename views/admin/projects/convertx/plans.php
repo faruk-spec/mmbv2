@@ -156,7 +156,7 @@ View::extend('admin');
                         <i class="fas fa-edit"></i> Edit
                     </button>
                     <form method="POST" action="/admin/projects/convertx/plans/delete" style="display:inline;"
-                          onsubmit="return confirm('Delete plan <?= htmlspecialchars($plan['name']) ?>?')">
+                          onsubmit="return confirm('Delete plan ' + <?= json_encode($plan['name'], JSON_HEX_APOS | JSON_HEX_QUOT) ?> + '?')">
                         <input type="hidden" name="_token" value="<?= htmlspecialchars(\Core\Security::generateCsrfToken()) ?>">
                         <input type="hidden" name="plan_id" value="<?= (int)$plan['id'] ?>">
                         <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-trash"></i> Delete</button>

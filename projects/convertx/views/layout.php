@@ -1272,9 +1272,19 @@ var CXNotify = (function () {
             'backdrop-filter:blur(8px);',
             'max-width:360px;word-break:break-word;',
         ].join('');
-        toast.innerHTML = '<i class="fa-solid ' + c.icon + '" style="flex-shrink:0;margin-top:.1rem;"></i>'
-                        + '<span style="flex:1;">' + message.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</span>'
-                        + '<button onclick="this.parentNode.remove()" style="background:none;border:none;color:' + c.text + ';cursor:pointer;font-size:1rem;padding:0;margin-left:.25rem;line-height:1;opacity:.7;">&times;</button>';
+        var icon = document.createElement('i');
+        icon.className = 'fa-solid ' + c.icon;
+        icon.style.cssText = 'flex-shrink:0;margin-top:.1rem;';
+        var msgSpan = document.createElement('span');
+        msgSpan.style.flex = '1';
+        msgSpan.textContent = message;  // textContent prevents XSS
+        var closeBtn = document.createElement('button');
+        closeBtn.style.cssText = 'background:none;border:none;color:' + c.text + ';cursor:pointer;font-size:1rem;padding:0;margin-left:.25rem;line-height:1;opacity:.7;';
+        closeBtn.textContent = '\u00d7';
+        closeBtn.addEventListener('click', function () { toast.remove(); });
+        toast.appendChild(icon);
+        toast.appendChild(msgSpan);
+        toast.appendChild(closeBtn);
         getContainer().appendChild(toast);
         setTimeout(function () {
             toast.style.animation = 'cx-toast-out .3s ease forwards';

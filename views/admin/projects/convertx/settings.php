@@ -154,7 +154,7 @@ View::extend('admin');
                                 </button>
                                 <!-- Delete -->
                                 <form method="POST" action="/admin/projects/convertx/settings/delete-provider" style="display:inline;"
-                                      onsubmit="return confirm('Delete provider <?= htmlspecialchars($p['name']) ?>?')">
+                                      onsubmit="return confirm('Delete provider ' + <?= json_encode($p['name'], JSON_HEX_APOS | JSON_HEX_QUOT) ?> + '?')">
                                     <input type="hidden" name="_token" value="<?= htmlspecialchars(\Core\Security::generateCsrfToken()) ?>">
                                     <input type="hidden" name="provider_id" value="<?= (int)$p['id'] ?>">
                                     <button type="submit" class="btn btn-xs btn-danger"><i class="fas fa-trash"></i></button>

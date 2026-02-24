@@ -305,7 +305,7 @@ class ConvertXAdminController extends BaseController
             return;
         }
         $name     = trim($_POST['name'] ?? '');
-        $slug     = strtolower(trim(preg_replace('/[^a-z0-9_-]/i', '-', $_POST['slug'] ?? '')));
+        $slug     = strtolower(trim(preg_replace('/[^a-z0-9_\-]/i', '-', $_POST['slug'] ?? '')));
         $baseUrl  = trim($_POST['base_url'] ?? '');
         $apiKey   = trim($_POST['api_key'] ?? '');
         $model    = trim($_POST['model'] ?? '');
@@ -450,7 +450,7 @@ class ConvertXAdminController extends BaseController
                         SUM(CASE WHEN j.status='completed' THEN 1 ELSE 0 END) AS completed
                    FROM users u
                    LEFT JOIN convertx_jobs j ON j.user_id = u.id
-                  GROUP BY u.id, u.name, u.email
+                  GROUP BY u.id
                  HAVING total_jobs > 0
                   ORDER BY total_jobs DESC
                   LIMIT 50"
@@ -499,7 +499,7 @@ class ConvertXAdminController extends BaseController
             return;
         }
         $name       = trim($_POST['name'] ?? '');
-        $slug       = strtolower(trim(preg_replace('/[^a-z0-9_-]/', '-', $_POST['slug'] ?? '')));
+        $slug       = strtolower(trim(preg_replace('/[^a-z0-9_\-]/', '-', $_POST['slug'] ?? '')));
         $desc       = trim($_POST['description'] ?? '');
         $price      = max(0, (float) ($_POST['price'] ?? 0));
         $billing    = in_array($_POST['billing_cycle'] ?? '', ['monthly','yearly','lifetime']) ? $_POST['billing_cycle'] : 'monthly';
