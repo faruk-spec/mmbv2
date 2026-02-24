@@ -334,14 +334,20 @@ class ApiController
     public function formats(): void
     {
         $config = require PROJECT_PATH . '/config.php';
+        $limits = [];
+        foreach ($config['upload_limits'] as $tier => $bytes) {
+            if ($bytes >= 1073741824) {
+                $limits[$tier] = number_format($bytes / 1073741824, 0) . ' GB';
+            } elseif ($bytes >= 1048576) {
+                $limits[$tier] = number_format($bytes / 1048576, 0) . ' MB';
+            } else {
+                $limits[$tier] = number_format($bytes / 1024, 0) . ' KB';
+            }
+        }
         echo json_encode([
             'success' => true,
             'formats' => $config['formats'],
-            'upload_limits' => [
-                'free'       => '25 MB',
-                'pro'        => '200 MB',
-                'enterprise' => '1 GB',
-            ],
+            'upload_limits' => $limits,
         ]);
     }
 
