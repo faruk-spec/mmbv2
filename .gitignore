@@ -27,3 +27,8 @@ Thumbs.db
 *-backup-*.php
 *-old.php
 
+# PHPUnit
+.phpunit.result.cache
+tests/results/
+tests/coverage/
+
