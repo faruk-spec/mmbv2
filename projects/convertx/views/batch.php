@@ -21,10 +21,12 @@ sort($allFormats);
     <p>Upload up to 50 files — convert them all to the same format in one go</p>
 </div>
 
-<div>
+<div class="cx-batch-grid">
+
+    <!-- Left: file upload -->
     <div class="card">
         <div class="card-header">
-            <i class="fa-solid fa-layer-group"></i> Batch Conversion Settings
+            <i class="fa-solid fa-files"></i> Select Files
         </div>
 
         <form id="batchForm" enctype="multipart/form-data">
@@ -32,24 +34,34 @@ sort($allFormats);
 
             <div class="form-group">
                 <label class="form-label">
-                    <i class="fa-solid fa-files" style="color:var(--cx-primary);"></i> Select Files
-                    <span style="font-size:.75rem;font-weight:400;color:var(--text-muted);margin-left:.5rem;">Max 50 files per batch</span>
+                    <i class="fa-solid fa-file-circle-plus" style="color:var(--cx-primary);"></i>
+                    Upload Files
+                    <span style="font-size:.73rem;font-weight:400;color:var(--text-muted);margin-left:.4rem;">Max 50 per batch</span>
                 </label>
-                <div class="upload-zone" id="uploadZone">
-                    <i class="fa-solid fa-files upload-icon"></i>
-                    <p style="font-weight:600;margin-bottom:.25rem;">Drag &amp; drop files or <strong>click to browse</strong></p>
-                    <p style="font-size:.78rem;">Select multiple files at once</p>
+                <div class="upload-zone" id="uploadZone" style="padding:1.5rem .75rem;">
+                    <i class="fa-solid fa-files upload-icon" style="font-size:1.75rem;"></i>
+                    <p style="font-weight:600;font-size:.875rem;margin:.35rem 0 .2rem;">Drag &amp; drop files or <strong>click to browse</strong></p>
+                    <p style="font-size:.73rem;color:var(--text-muted);">Select multiple files at once</p>
                     <input type="file" name="files[]" id="fileInput" multiple style="display:none;"
                            accept="<?= implode(',', array_map(fn($f) => '.' . $f, $allFormats)) ?>">
                 </div>
-                <div id="fileList" style="margin-top:.5rem;font-size:.8rem;color:var(--cx-success);"></div>
+                <div id="fileList" style="margin-top:.4rem;font-size:.82rem;color:var(--cx-success);"></div>
             </div>
+        <!-- form continues right column -->
+
+    </div><!-- left card -->
+
+    <!-- Right: output options + submit -->
+    <div class="card">
+        <div class="card-header">
+            <i class="fa-solid fa-file-export"></i> Output Options
+        </div>
 
             <div class="form-group">
                 <label class="form-label" for="outputFormat">
-                    <i class="fa-solid fa-file-export" style="color:var(--cx-primary);"></i> Convert All To
+                    <i class="fa-solid fa-arrow-right-arrow-left" style="color:var(--cx-primary);"></i> Convert All To
                 </label>
-                <select class="form-control" id="outputFormat" name="output_format" required>
+                <select class="form-control" id="outputFormat" name="output_format" required form="batchForm">
                     <option value="">— Select output format —</option>
                     <?php foreach ($allFormats as $fmt): ?>
                         <option value="<?= htmlspecialchars($fmt) ?>"><?= strtoupper(htmlspecialchars($fmt)) ?></option>
@@ -57,26 +69,40 @@ sort($allFormats);
                 </select>
             </div>
 
-            <details style="margin-bottom:1.25rem;">
-                <summary style="cursor:pointer;color:var(--text-secondary);font-size:.8rem;padding:.5rem 0;display:flex;align-items:center;gap:.4rem;list-style:none;">
-                    <i class="fa-solid fa-link"></i> Webhook callback URL <span style="font-size:.7rem;opacity:.7;">(optional)</span>
+            <details style="margin-bottom:1rem;">
+                <summary style="cursor:pointer;color:var(--text-secondary);font-size:.8rem;padding:.4rem 0;display:flex;align-items:center;gap:.4rem;list-style:none;">
+                    <i class="fa-solid fa-link"></i> Webhook URL <span style="font-size:.7rem;opacity:.6;">(optional)</span>
                 </summary>
-                <div style="padding:.5rem 0 0;">
-                    <input type="url" class="form-control" name="webhook_url" placeholder="https://yourapp.com/webhook">
+                <div style="padding:.4rem 0 0;">
+                    <input type="url" class="form-control" name="webhook_url" form="batchForm" placeholder="https://yourapp.com/webhook">
                 </div>
             </details>
 
-            <button type="submit" class="btn btn-primary" id="submitBtn" style="width:100%;justify-content:center;padding:.875rem;">
+            <button type="submit" form="batchForm" class="btn btn-primary" id="submitBtn"
+                    style="width:100%;justify-content:center;padding:.825rem;">
                 <i class="fa-solid fa-layer-group"></i> Start Batch Conversion
             </button>
-        </form>
-    </div>
 
-    <div id="batchResult" class="card" style="display:none;">
-        <div class="card-header"><i class="fa-solid fa-list-check"></i> Batch Job Status</div>
-        <div id="batchDetails"></div>
-    </div>
+    </div><!-- right card -->
+
+</div><!-- .cx-batch-grid -->
+
+<div id="batchResult" class="card" style="display:none;margin-top:1.25rem;">
+    <div class="card-header"><i class="fa-solid fa-list-check"></i> Batch Job Status</div>
+    <div id="batchDetails"></div>
 </div>
+
+<style>
+.cx-batch-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 1.25rem;
+    align-items: start;
+}
+@media (max-width: 768px) {
+    .cx-batch-grid { grid-template-columns: 1fr; }
+}
+</style>
 
 <script>
 (function () {

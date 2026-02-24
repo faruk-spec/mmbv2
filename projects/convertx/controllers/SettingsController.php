@@ -73,17 +73,17 @@ class SettingsController
         $action = $_POST['action'] ?? '';
 
         if ($action === 'generate_api_key') {
-            $key = $this->generateApiKey($userId);
-            header('Content-Type: application/json');
-            echo json_encode(['success' => true, 'api_key' => $key]);
-            return;
+            $this->generateApiKey($userId);
+            $_SESSION['_flash']['success'] = 'New API key generated successfully.';
+            header('Location: /projects/convertx/apikeys?tab=apikey');
+            exit;
         }
 
         if ($action === 'revoke_api_key') {
             $this->revokeApiKey($userId);
-            header('Content-Type: application/json');
-            echo json_encode(['success' => true, 'message' => 'API key revoked']);
-            return;
+            $_SESSION['_flash']['success'] = 'API key revoked.';
+            header('Location: /projects/convertx/apikeys?tab=apikey');
+            exit;
         }
 
         if ($action === 'save_settings') {
@@ -119,7 +119,7 @@ class SettingsController
         }
     }
 
-    private function generateApiKey(int $userId): string
+    private function generateApiKey(int $userId): void
     {
         $key = 'cx_' . bin2hex(random_bytes(20));
         try {
@@ -134,9 +134,8 @@ class SettingsController
                 ['uid' => $userId, 'key' => $key]
             );
         } catch (\Exception $e) {
-            // Silently continue — return the key so the UI can show it
+            // Silently continue — key generated but DB may not be set up yet
         }
-        return $key;
     }
 
     private function revokeApiKey(int $userId): void
@@ -170,16 +169,20 @@ class SettingsController
     {
         try {
             $db = Database::getInstance();
+            // Use VALUES(col) so each named param appears only once – PDO does not
+            // allow the same named placeholder to appear twice in a statement.
             $db->query(
                 "INSERT INTO convertx_user_settings
                      (user_id, default_quality, default_dpi, notify_on_complete)
                  VALUES (:uid, :q, :d, :n)
                  ON DUPLICATE KEY UPDATE
-                     default_quality = :q, default_dpi = :d, notify_on_complete = :n",
+                     default_quality    = VALUES(default_quality),
+                     default_dpi        = VALUES(default_dpi),
+                     notify_on_complete = VALUES(notify_on_complete)",
                 ['uid' => $userId, 'q' => $quality, 'd' => $dpi, 'n' => $notify]
             );
         } catch (\Exception $e) {
-            // Silently continue
+            // Silently continue – table may not exist yet; schema.sql must be run
         }
     }
 

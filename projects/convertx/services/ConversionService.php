@@ -333,11 +333,22 @@ class ConversionService
         string $outputFormat,
         string $outputPath
     ): bool {
+        // Check LibreOffice is available before attempting exec
+        $lo = trim((string) shell_exec('which libreoffice 2>/dev/null'))
+           ?: trim((string) shell_exec('which soffice 2>/dev/null'));
+        if (!$lo) {
+            throw new \RuntimeException(
+                "LibreOffice is not installed on this server. "
+                . "Only text/markup conversions (TXT, HTML, MD, CSV) and "
+                . "image-to-image conversions are available without additional tools."
+            );
+        }
+
         $outDirReal = dirname($inputPath);
         $outDirEsc  = escapeshellarg($outDirReal);
         $inFile     = escapeshellarg($inputPath);
         $fmt        = escapeshellarg($outputFormat);
-        $cmd        = "libreoffice --headless --convert-to {$fmt} {$inFile} --outdir {$outDirEsc} 2>&1";
+        $cmd        = "{$lo} --headless --convert-to {$fmt} {$inFile} --outdir {$outDirEsc} 2>&1";
         exec($cmd, $output, $code);
 
         if ($code !== 0) {
@@ -360,10 +371,19 @@ class ConversionService
         string $outputPath,
         array  $options
     ): bool {
+        $im = trim((string) shell_exec('which convert 2>/dev/null'))
+           ?: trim((string) shell_exec('which magick 2>/dev/null'));
+        if (!$im) {
+            throw new \RuntimeException(
+                "ImageMagick is not installed on this server. "
+                . "Image-to-image conversion requires ImageMagick or PHP GD (GD failed too)."
+            );
+        }
+
         $quality = (int) ($options['quality'] ?? 85);
         $in      = escapeshellarg($inputPath);
         $out     = escapeshellarg($outputPath);
-        $cmd     = "convert {$in} -quality {$quality} {$out} 2>&1";
+        $cmd     = "{$im} {$in} -quality {$quality} {$out} 2>&1";
         exec($cmd, $output, $code);
 
         if ($code !== 0) {
@@ -379,11 +399,19 @@ class ConversionService
         string $outputFormat,
         string $outputPath
     ): bool {
+        $pandoc = trim((string) shell_exec('which pandoc 2>/dev/null'));
+        if (!$pandoc) {
+            throw new \RuntimeException(
+                "Pandoc is not installed on this server. "
+                . "Plain-text markup conversion (MD, RST, HTML) requires Pandoc."
+            );
+        }
+
         $in  = escapeshellarg($inputPath);
         $out = escapeshellarg($outputPath);
         $inf = escapeshellarg($inputFormat);
         $outf = escapeshellarg($outputFormat);
-        $cmd = "pandoc -f {$inf} -t {$outf} {$in} -o {$out} 2>&1";
+        $cmd = "{$pandoc} -f {$inf} -t {$outf} {$in} -o {$out} 2>&1";
         exec($cmd, $output, $code);
 
         if ($code !== 0) {

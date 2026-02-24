@@ -51,12 +51,13 @@ $groupLabels = [
 </div>
 <?php endif; ?>
 
-<div style="display:grid;grid-template-columns:1fr;gap:1.5rem;">
+<!-- Two-column form grid: upload+AI on left, options+submit on right -->
+<div class="cx-convert-grid">
 
-    <!-- Main conversion card -->
+    <!-- ── Left column: upload + AI ── -->
     <div class="card">
         <div class="card-header">
-            <i class="fa-solid fa-arrow-right-arrow-left"></i> Conversion Settings
+            <i class="fa-solid fa-file-arrow-up"></i> Upload &amp; AI
         </div>
 
         <form id="convertForm" enctype="multipart/form-data">
@@ -65,77 +66,32 @@ $groupLabels = [
             <!-- Upload zone -->
             <div class="form-group">
                 <label class="form-label">
-                    <i class="fa-solid fa-file-arrow-up" style="color:var(--cx-primary);"></i> Upload File
+                    <i class="fa-solid fa-cloud-arrow-up" style="color:var(--cx-primary);"></i> Source File
                 </label>
-                <div class="upload-zone" id="uploadZone">
-                    <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
-                    <p style="font-weight:600;margin-bottom:.25rem;">Drag &amp; drop or <strong>click to browse</strong></p>
-                    <p style="font-size:.78rem;">Supports PDF, DOCX, XLSX, PPTX, PNG, JPG and more</p>
+                <div class="upload-zone" id="uploadZone" style="padding:1.25rem .75rem;">
+                    <i class="fa-solid fa-cloud-arrow-up upload-icon" style="font-size:1.75rem;"></i>
+                    <p style="font-weight:600;font-size:.875rem;margin:.35rem 0 .2rem;">Drag &amp; drop or <strong>click to browse</strong></p>
+                    <p style="font-size:.73rem;color:var(--text-muted);">PDF, DOCX, XLSX, PNG, JPG and more</p>
                     <input type="file" name="file" id="fileInput" style="display:none;"
                            accept="<?= implode(',', array_map(fn($f) => '.' . $f, $allFormats)) ?>">
                 </div>
-                <div id="selectedFile" style="margin-top:.5rem;font-size:.875rem;color:var(--cx-success);display:none;"></div>
-            </div>
-
-            <!-- Output format (grouped by category) -->
-            <div class="form-group">
-                <label class="form-label" for="outputFormat">
-                    <i class="fa-solid fa-file-export" style="color:var(--cx-primary);"></i> Convert To
-                </label>
-                <select class="form-control" id="outputFormat" name="output_format" required onchange="updateAdvancedOptions(this.value)">
-                    <option value="">— Select output format —</option>
-                    <?php foreach ($groupedFormats as $group => $fmts): ?>
-                    <optgroup label="<?= htmlspecialchars($groupLabels[$group] ?? ucfirst($group)) ?>">
-                        <?php foreach ($fmts as $fmt): ?>
-                        <option value="<?= htmlspecialchars($fmt) ?>"><?= strtoupper(htmlspecialchars($fmt)) ?></option>
-                        <?php endforeach; ?>
-                    </optgroup>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-
-            <!-- Quality slider (shown for image output) -->
-            <div class="form-group" id="qualityGroup" style="display:none;">
-                <label class="form-label">
-                    <i class="fa-solid fa-sliders" style="color:var(--cx-primary);"></i>
-                    Image Quality: <strong id="qualityVal">85</strong>%
-                </label>
-                <input type="range" name="quality" id="qualitySlider" min="10" max="100" value="85"
-                       style="width:100%;accent-color:var(--cx-primary);"
-                       oninput="document.getElementById('qualityVal').textContent=this.value">
-                <div style="display:flex;justify-content:space-between;font-size:.72rem;color:var(--text-muted);margin-top:.2rem;">
-                    <span>10% — Small file</span><span>85% — Balanced</span><span>100% — Max quality</span>
-                </div>
-            </div>
-
-            <!-- DPI select (shown for image output) -->
-            <div class="form-group" id="dpiGroup" style="display:none;">
-                <label class="form-label" for="dpiSelect">
-                    <i class="fa-solid fa-expand" style="color:var(--cx-primary);"></i> Output DPI / Resolution
-                </label>
-                <select class="form-control" name="dpi" id="dpiSelect">
-                    <option value="72">72 DPI — Screen / web</option>
-                    <option value="96">96 DPI — Standard</option>
-                    <option value="150" selected>150 DPI — Good quality</option>
-                    <option value="300">300 DPI — Print quality</option>
-                    <option value="600">600 DPI — High-res print</option>
-                </select>
+                <div id="selectedFile" style="margin-top:.4rem;font-size:.82rem;color:var(--cx-success);display:none;"></div>
             </div>
 
             <!-- AI enhancement panel -->
             <div class="cx-ai-panel">
                 <div class="cx-ai-panel-header" onclick="toggleAiOptions()">
                     <i class="fa-solid fa-wand-magic-sparkles" style="color:var(--cx-primary);"></i>
-                    <span>AI Enhancement Options</span>
-                    <span class="ai-badge" style="margin-left:.375rem;">✨ AI</span>
+                    <span>AI Enhancements</span>
+                    <span class="ai-badge" style="margin-left:.375rem;">AI</span>
                     <i class="fa-solid fa-chevron-down cx-chevron" id="aiChevron"></i>
                 </div>
                 <div id="aiOptions">
-                    <div style="display:flex;flex-direction:column;gap:.375rem;">
+                    <div style="display:flex;flex-direction:column;gap:.3rem;">
                         <label class="cx-ai-option">
                             <input type="checkbox" name="ai_ocr" value="1" <?= $presetAi === 'ocr' ? 'checked' : '' ?>>
                             <i class="fa-solid fa-eye"></i>
-                            <span>OCR — extract text from scanned content</span>
+                            <span>OCR (extract text from scanned)</span>
                         </label>
                         <label class="cx-ai-option">
                             <input type="checkbox" name="ai_summarize" value="1" <?= $presetAi === 'summarize' ? 'checked' : '' ?>>
@@ -147,48 +103,48 @@ $groupLabels = [
                             <i class="fa-solid fa-language"></i>
                             <span>Translate document</span>
                         </label>
-                        <div id="langSelect" style="<?= $presetAi === 'translate' ? '' : 'display:none;' ?>margin-left:2.25rem;">
-                            <select class="form-control" name="target_lang" style="font-size:.85rem;">
+                        <div id="langSelect" style="<?= $presetAi === 'translate' ? '' : 'display:none;' ?>margin-left:2rem;margin-top:.2rem;">
+                            <select class="form-control" name="target_lang" style="font-size:.82rem;">
                                 <optgroup label="European">
-                                    <option value="fr">🇫🇷 French</option>
-                                    <option value="de">🇩🇪 German</option>
-                                    <option value="es">🇪🇸 Spanish</option>
-                                    <option value="it">🇮🇹 Italian</option>
-                                    <option value="pt">🇵🇹 Portuguese</option>
-                                    <option value="nl">🇳🇱 Dutch</option>
-                                    <option value="pl">🇵🇱 Polish</option>
-                                    <option value="ru">🇷🇺 Russian</option>
-                                    <option value="uk">🇺🇦 Ukrainian</option>
-                                    <option value="sv">🇸🇪 Swedish</option>
-                                    <option value="no">🇳🇴 Norwegian</option>
-                                    <option value="da">🇩🇰 Danish</option>
-                                    <option value="fi">🇫🇮 Finnish</option>
-                                    <option value="cs">🇨🇿 Czech</option>
-                                    <option value="ro">🇷🇴 Romanian</option>
-                                    <option value="hu">🇭🇺 Hungarian</option>
-                                    <option value="el">🇬🇷 Greek</option>
-                                    <option value="tr">🇹🇷 Turkish</option>
+                                    <option value="fr">French</option>
+                                    <option value="de">German</option>
+                                    <option value="es">Spanish</option>
+                                    <option value="it">Italian</option>
+                                    <option value="pt">Portuguese</option>
+                                    <option value="nl">Dutch</option>
+                                    <option value="pl">Polish</option>
+                                    <option value="ru">Russian</option>
+                                    <option value="uk">Ukrainian</option>
+                                    <option value="sv">Swedish</option>
+                                    <option value="no">Norwegian</option>
+                                    <option value="da">Danish</option>
+                                    <option value="fi">Finnish</option>
+                                    <option value="cs">Czech</option>
+                                    <option value="ro">Romanian</option>
+                                    <option value="hu">Hungarian</option>
+                                    <option value="el">Greek</option>
+                                    <option value="tr">Turkish</option>
                                 </optgroup>
                                 <optgroup label="Middle East &amp; Africa">
-                                    <option value="ar">🇸🇦 Arabic</option>
-                                    <option value="he">🇮🇱 Hebrew</option>
-                                    <option value="fa">🇮🇷 Persian</option>
-                                    <option value="sw">🇰🇪 Swahili</option>
+                                    <option value="ar">Arabic</option>
+                                    <option value="he">Hebrew</option>
+                                    <option value="fa">Persian</option>
+                                    <option value="sw">Swahili</option>
                                 </optgroup>
                                 <optgroup label="Asia">
-                                    <option value="zh">🇨🇳 Chinese (Simplified)</option>
-                                    <option value="zh-TW">🇹🇼 Chinese (Traditional)</option>
-                                    <option value="ja">🇯🇵 Japanese</option>
-                                    <option value="ko">🇰🇷 Korean</option>
-                                    <option value="hi">🇮🇳 Hindi</option>
-                                    <option value="bn">🇧🇩 Bengali</option>
-                                    <option value="id">🇮🇩 Indonesian</option>
-                                    <option value="ms">🇲🇾 Malay</option>
-                                    <option value="th">🇹🇭 Thai</option>
-                                    <option value="vi">🇻🇳 Vietnamese</option>
+                                    <option value="zh">Chinese (Simplified)</option>
+                                    <option value="zh-TW">Chinese (Traditional)</option>
+                                    <option value="ja">Japanese</option>
+                                    <option value="ko">Korean</option>
+                                    <option value="hi">Hindi</option>
+                                    <option value="bn">Bengali</option>
+                                    <option value="id">Indonesian</option>
+                                    <option value="ms">Malay</option>
+                                    <option value="th">Thai</option>
+                                    <option value="vi">Vietnamese</option>
                                 </optgroup>
                                 <optgroup label="Americas">
-                                    <option value="en">🇺🇸 English</option>
+                                    <option value="en">English</option>
                                 </optgroup>
                             </select>
                         </div>
@@ -200,34 +156,102 @@ $groupLabels = [
                     </div>
                 </div>
             </div>
+        <!-- form continues in right column -->
 
-            <!-- Webhook (collapsible) -->
-            <details style="margin-bottom:1.25rem;">
-                <summary style="cursor:pointer;color:var(--text-secondary);font-size:.8rem;padding:.5rem 0;list-style:none;display:flex;align-items:center;gap:.4rem;">
-                    <i class="fa-solid fa-link"></i> Webhook callback URL <span style="font-size:.7rem;opacity:.7;">(optional)</span>
+    </div><!-- left card -->
+
+    <!-- ── Right column: format + options + submit ── -->
+    <div class="card">
+        <div class="card-header">
+            <i class="fa-solid fa-file-export"></i> Output Options
+        </div>
+
+            <!-- Output format -->
+            <div class="form-group">
+                <label class="form-label" for="outputFormat">
+                    <i class="fa-solid fa-arrow-right-arrow-left" style="color:var(--cx-primary);"></i> Convert To
+                </label>
+                <select class="form-control" id="outputFormat" name="output_format" required
+                        form="convertForm" onchange="updateAdvancedOptions(this.value)">
+                    <option value="">— Select format —</option>
+                    <?php foreach ($groupedFormats as $group => $fmts): ?>
+                    <optgroup label="<?= htmlspecialchars($groupLabels[$group] ?? ucfirst($group)) ?>">
+                        <?php foreach ($fmts as $fmt): ?>
+                        <option value="<?= htmlspecialchars($fmt) ?>"><?= strtoupper(htmlspecialchars($fmt)) ?></option>
+                        <?php endforeach; ?>
+                    </optgroup>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <!-- Quality slider (image output only) -->
+            <div class="form-group" id="qualityGroup" style="display:none;">
+                <label class="form-label">
+                    <i class="fa-solid fa-sliders" style="color:var(--cx-primary);"></i>
+                    Quality: <strong id="qualityVal">85</strong>%
+                </label>
+                <input type="range" name="quality" id="qualitySlider" form="convertForm"
+                       min="10" max="100" value="85"
+                       style="width:100%;accent-color:var(--cx-primary);"
+                       oninput="document.getElementById('qualityVal').textContent=this.value">
+                <div style="display:flex;justify-content:space-between;font-size:.7rem;color:var(--text-muted);margin-top:.15rem;">
+                    <span>Small</span><span>Balanced</span><span>Max</span>
+                </div>
+            </div>
+
+            <!-- DPI select (image output only) -->
+            <div class="form-group" id="dpiGroup" style="display:none;">
+                <label class="form-label" for="dpiSelect">
+                    <i class="fa-solid fa-expand" style="color:var(--cx-primary);"></i> Resolution (DPI)
+                </label>
+                <select class="form-control" name="dpi" id="dpiSelect" form="convertForm">
+                    <option value="72">72 DPI — Screen</option>
+                    <option value="96">96 DPI — Standard</option>
+                    <option value="150" selected>150 DPI — Good</option>
+                    <option value="300">300 DPI — Print</option>
+                    <option value="600">600 DPI — High-res</option>
+                </select>
+            </div>
+
+            <!-- Webhook -->
+            <details style="margin-bottom:1rem;">
+                <summary style="cursor:pointer;color:var(--text-secondary);font-size:.8rem;padding:.4rem 0;list-style:none;display:flex;align-items:center;gap:.4rem;">
+                    <i class="fa-solid fa-link"></i> Webhook URL <span style="font-size:.7rem;opacity:.6;">(optional)</span>
                 </summary>
-                <div style="padding:.5rem 0 0;">
-                    <input type="url" class="form-control" name="webhook_url" placeholder="https://yourapp.com/webhook">
+                <div style="padding:.4rem 0 0;">
+                    <input type="url" class="form-control" name="webhook_url"
+                           form="convertForm" placeholder="https://yourapp.com/webhook">
                 </div>
             </details>
 
-            <button type="submit" class="btn btn-primary" id="submitBtn" style="width:100%;justify-content:center;padding:.875rem;">
+            <button type="submit" form="convertForm" class="btn btn-primary" id="submitBtn"
+                    style="width:100%;justify-content:center;padding:.825rem;">
                 <i class="fa-solid fa-arrow-right-arrow-left"></i> Start Conversion
             </button>
-        </form>
-    </div>
 
-    <!-- Job status card (shown after submission) -->
-    <div id="jobStatus" class="card" style="display:none;">
-        <div class="card-header" id="jobStatusHeader">
-            <i class="fa-solid fa-spinner" style="animation:cx-spin 1s linear infinite;"></i> Job Progress
-        </div>
-        <div id="jobDetails"></div>
-    </div>
+    </div><!-- right card -->
 
+</div><!-- .cx-convert-grid -->
+
+<!-- Job status card (shown after submission) -->
+<div id="jobStatus" class="card" style="display:none;margin-top:1.25rem;">
+    <div class="card-header" id="jobStatusHeader">
+        <i class="fa-solid fa-spinner" style="animation:cx-spin 1s linear infinite;"></i> Job Progress
+    </div>
+    <div id="jobDetails"></div>
 </div>
 
 <style>
+/* Convert page 2-column grid */
+.cx-convert-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 1.25rem;
+    align-items: start;
+}
+@media (max-width: 768px) {
+    .cx-convert-grid { grid-template-columns: 1fr; }
+}
 @keyframes cx-progress {
     0%   { transform: translateX(-100%); }
     100% { transform: translateX(200%); }
