@@ -208,7 +208,7 @@ class ConversionService
         // is caught here because 'xlsx'/'ods' appear in $officeFormats as output.
         $officeFormats = ['pdf', 'docx', 'doc', 'odt', 'rtf', 'xlsx', 'xls', 'ods', 'pptx', 'ppt', 'odp'];
         if (in_array($inputFormat, $officeFormats, true) || in_array($outputFormat, $officeFormats, true)) {
-            return $this->convertWithLibreOffice($inputPath, $outputFormat, $outputPath);
+            return $this->convertWithLibreOffice($inputPath, $inputFormat, $outputFormat, $outputPath);
         }
 
         // 4. Remaining plain-text variants → Pandoc
@@ -367,8 +367,59 @@ class ConversionService
     //  Backend helpers                                                      //
     // ------------------------------------------------------------------ //
 
+    /**
+     * Map an output format to the explicit LibreOffice filter name.
+     *
+     * Using an explicit filter (e.g. "xlsx:Calc MS Excel 2007 XML") is far more
+     * reliable than leaving LibreOffice to auto-detect; without it some server
+     * installs silently produce empty files or fail with exit 0.
+     *
+     * @param string $outputFormat  e.g. 'xlsx'
+     * @param string $inputFormat   e.g. 'ods' — used only to pick the right PDF filter
+     * @return string  Argument for --convert-to, e.g. "xlsx:Calc MS Excel 2007 XML"
+     */
+    private static function getLibreOfficeFilter(string $outputFormat, string $inputFormat): string
+    {
+        // PDF export: LibreOffice has separate filters per application family
+        if ($outputFormat === 'pdf') {
+            $calcInputs    = ['xlsx', 'xls', 'ods', 'csv'];
+            $impressInputs = ['pptx', 'ppt', 'odp'];
+            if (in_array($inputFormat, $calcInputs, true)) {
+                return 'pdf:calc_pdf_Export';
+            }
+            if (in_array($inputFormat, $impressInputs, true)) {
+                return 'pdf:impress_pdf_Export';
+            }
+            return 'pdf:writer_pdf_Export';
+        }
+
+        $map = [
+            // Writer / text
+            'docx' => 'docx:MS Word 2007 XML',
+            'doc'  => 'doc:MS Word 97',
+            'odt'  => 'odt:writer8',
+            'rtf'  => 'rtf:Rich Text Format',
+            'txt'  => 'txt:Text',
+            // Calc / spreadsheet
+            'xlsx' => 'xlsx:Calc MS Excel 2007 XML',
+            'xls'  => 'xls:MS Excel 97',
+            'ods'  => 'ods:calc8',
+            'csv'  => 'csv:Text - txt - csv (StarCalc)',
+            // Impress / presentation
+            'pptx' => 'pptx:Impress MS PowerPoint 2007 XML',
+            'ppt'  => 'ppt:MS PowerPoint 97',
+            'odp'  => 'odp:impress8',
+            // HTML
+            'html' => 'html:HTML (StarWriter)',
+        ];
+
+        // Fall back to bare extension if not in map (LibreOffice will try auto-detect)
+        return $map[$outputFormat] ?? $outputFormat;
+    }
+
     private function convertWithLibreOffice(
         string $inputPath,
+        string $inputFormat,
         string $outputFormat,
         string $outputPath
     ): bool {
@@ -386,19 +437,25 @@ class ConversionService
         $outDirReal = dirname($inputPath);
         $outDirEsc  = escapeshellarg($outDirReal);
         $inFile     = escapeshellarg($inputPath);
-        $fmt        = escapeshellarg($outputFormat);
 
-        // HOME=/tmp is required on many web servers where the web user (www-data)
-        // has no writable home directory.  --norestore prevents the "recover
-        // documents" dialog; --nolockcheck avoids stale lock-file errors when
-        // multiple requests run concurrently.
-        $cmd = "HOME=/tmp {$lo} --headless --norestore --nolockcheck "
-             . "--convert-to {$fmt} {$inFile} --outdir {$outDirEsc} 2>&1";
+        // Explicit filter spec (e.g. "xlsx:Calc MS Excel 2007 XML") is far more
+        // reliable than bare format names on many server configurations.
+        $filterSpec = escapeshellarg(self::getLibreOfficeFilter($outputFormat, $inputFormat));
+
+        // DISPLAY=   – prevents LibreOffice from connecting to any X display.
+        // HOME=/tmp  – required when web user (www-data) has no writable home.
+        // --norestore / --nolockcheck – skip recovery dialogs and stale lock files.
+        // --env:UserInstallation – per-process profile so concurrent conversions
+        //   don't corrupt each other's profile directory.
+        $pid = getmypid();
+        $cmd = "DISPLAY= HOME=/tmp {$lo} --headless --norestore --nolockcheck "
+             . "--env:UserInstallation=file:///tmp/lo-{$pid} "
+             . "--convert-to {$filterSpec} {$inFile} --outdir {$outDirEsc} 2>&1";
         exec($cmd, $output, $code);
 
         if ($code !== 0) {
-            // Surface the real error so users and logs show what went wrong.
-            $detail = trim(implode(' | ', array_filter(array_slice($output, 0, 6))));
+            // Surface the full LibreOffice output so users and logs show what went wrong.
+            $detail = trim(implode(' | ', array_filter($output)));
             Logger::warning('LibreOffice conversion failed: ' . implode("\n", $output));
             throw new \RuntimeException(
                 "LibreOffice conversion failed (exit {$code})"
