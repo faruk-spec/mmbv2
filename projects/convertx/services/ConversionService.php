@@ -445,11 +445,13 @@ class ConversionService
         // DISPLAY=   – prevents LibreOffice from connecting to any X display.
         // HOME=/tmp  – required when web user (www-data) has no writable home.
         // --norestore / --nolockcheck – skip recovery dialogs and stale lock files.
-        // --env:UserInstallation – per-process profile so concurrent conversions
+        // -env:UserInstallation – per-process profile so concurrent conversions
         //   don't corrupt each other's profile directory.
+        //   NOTE: single dash (-env:) is the correct LibreOffice syntax; double
+        //   dash (--env:) is rejected by LibreOffice 7.x with "Error in option".
         $pid = getmypid();
         $cmd = "DISPLAY= HOME=/tmp {$lo} --headless --norestore --nolockcheck "
-             . "--env:UserInstallation=file:///tmp/lo-{$pid} "
+             . "-env:UserInstallation=file:///tmp/lo-{$pid} "
              . "--convert-to {$filterSpec} {$inFile} --outdir {$outDirEsc} 2>&1";
         exec($cmd, $output, $code);
 
