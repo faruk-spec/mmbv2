@@ -163,7 +163,7 @@ class ConversionService
             if ($result) {
                 return ['success' => true, 'output_path' => $outputPath, 'error' => ''];
             }
-            return ['success' => false, 'output_path' => '', 'error' => 'Conversion failed'];
+            return ['success' => false, 'output_path' => '', 'error' => "Conversion did not produce an output file for {$inputFormat} → {$outputFormat}. Check that the required tool (LibreOffice / ImageMagick) is installed and accessible by the web server."];
         } catch (\Exception $e) {
             Logger::error('ConversionService::convert - ' . $e->getMessage());
             return ['success' => false, 'output_path' => '', 'error' => $e->getMessage()];
@@ -205,14 +205,31 @@ class ConversionService
             return $this->convertWithImageMagick($inputPath, $outputPath, $options);
         }
 
-        // 3. Image → PDF: ImageMagick (native, no LibreOffice needed)
+        // 3. Image → PDF: try ImageMagick first; fall back to LibreOffice Draw.
+        //    ImageMagick often fails on Debian/Ubuntu where policy.xml sets
+        //    rights="none" for the PDF coder.  LibreOffice Draw can open common
+        //    image formats (PNG, JPG, GIF, WebP, BMP, SVG) and export to PDF
+        //    via draw_pdf_Export without the policy restriction.
         if ($isInputImage && $outputFormat === 'pdf') {
-            return $this->convertWithImageMagick($inputPath, $outputPath, $options);
+            if ($this->convertWithImageMagick($inputPath, $outputPath, $options)) {
+                return true;
+            }
+            // ImageMagick failed — try LibreOffice Draw as fallback
+            return $this->convertWithLibreOffice($inputPath, $inputFormat, 'pdf', $outputPath);
         }
 
-        // 4. PDF → image: ImageMagick (e.g. pdf → jpg page rasterisation)
+        // 4. PDF → image: ImageMagick (rasterisation).
+        //    Throws a clear RuntimeException when IM is blocked/unavailable so
+        //    the error message surfaces to the user instead of "Conversion failed".
         if ($inputFormat === 'pdf' && $isOutputImage) {
-            return $this->convertWithImageMagick($inputPath, $outputPath, $options);
+            if ($this->convertWithImageMagick($inputPath, $outputPath, $options)) {
+                return true;
+            }
+            throw new \RuntimeException(
+                "PDF to image conversion requires ImageMagick. "
+                . "If ImageMagick is installed, check that /etc/ImageMagick-*/policy.xml "
+                . "does not have rights=\"none\" for the PDF coder."
+            );
         }
 
         // 5. Cross-family: image → office/text (non-pdf)
