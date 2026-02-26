@@ -1,15 +1,22 @@
--- Migration: api_keys + convertx_jobs JSON column fixes
+-- Migration: convertx_api_keys + convertx_jobs JSON column fixes
 -- Run this against the main application database.
 --
 -- This migration is idempotent (safe to run multiple times).
+--
+-- NOTE: If you previously ran an older version of this migration that
+-- created an `api_keys` table for ConvertX, any existing API key rows
+-- stored there will NOT be migrated automatically.  Users will simply
+-- need to regenerate their API key once after this migration is applied.
 
 SET NAMES utf8mb4;
 
 -- ------------------------------------------------------------------ --
---  API Keys table                                                       --
---  Required for ConvertX API-key generation feature.                   --
+--  ConvertX API Keys table                                             --
+--  Uses a dedicated table name to avoid conflicting with the          --
+--  platform's api_keys table (which has extra NOT NULL columns like   --
+--  name and permissions that ConvertX does not use).                  --
 -- ------------------------------------------------------------------ --
-CREATE TABLE IF NOT EXISTS `api_keys` (
+CREATE TABLE IF NOT EXISTS `convertx_api_keys` (
     `id`         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `user_id`    INT UNSIGNED  NOT NULL,
     `api_key`    VARCHAR(100)  NOT NULL UNIQUE,

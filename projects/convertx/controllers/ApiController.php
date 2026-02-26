@@ -288,7 +288,7 @@ class ApiController
         try {
             $db  = Database::getInstance();
             $row = $db->fetch(
-                "SELECT user_id FROM api_keys WHERE api_key = :key AND is_active = 1 LIMIT 1",
+                "SELECT user_id FROM convertx_api_keys WHERE api_key = :key AND is_active = 1 LIMIT 1",
                 ['key' => $key]
             );
             if ($row) {

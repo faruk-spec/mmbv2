@@ -101,10 +101,11 @@ CREATE TABLE IF NOT EXISTS convertx_provider_usage (
 
 
 -- ------------------------------------------------------------------ --
---  API Keys                                                            --
---  Used by SettingsController to issue per-user REST API tokens.       --
+--  ConvertX API Keys                                                  --
+--  Separate from the platform's api_keys table to avoid schema       --
+--  conflicts (platform table has extra NOT NULL columns).             --
 -- ------------------------------------------------------------------ --
-CREATE TABLE IF NOT EXISTS api_keys (
+CREATE TABLE IF NOT EXISTS convertx_api_keys (
     id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     user_id    INT UNSIGNED  NOT NULL,
     api_key    VARCHAR(100)  NOT NULL UNIQUE,
