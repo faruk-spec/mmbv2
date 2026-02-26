@@ -57,15 +57,46 @@ View::extend('admin');
         <h3 class="card-title"><i class="fas fa-plus-circle"></i> Generate API Key for User</h3>
       </div>
       <div class="card-body">
-        <form method="POST" action="/admin/projects/convertx/api-keys/generate" class="form-inline">
+        <form method="POST" action="/admin/projects/convertx/api-keys/generate">
           <input type="hidden" name="_token" value="<?= htmlspecialchars(\Core\Security::generateCsrfToken()) ?>">
-          <div class="form-group mr-3">
-            <label class="mr-2">User ID:</label>
-            <input type="number" name="user_id" class="form-control" placeholder="Enter user ID" required min="1">
+          <div class="form-row align-items-end">
+            <div class="col-md-5 mb-2">
+              <label class="form-label font-weight-bold">Select User</label>
+              <?php if (!empty($users)): ?>
+              <select name="user_id" class="form-control" required id="userSelectDropdown">
+                <option value="">— choose a user —</option>
+                <?php foreach ($users as $u): ?>
+                <option value="<?= (int)$u['id'] ?>">
+                  <?= htmlspecialchars($u['name']) ?> &lt;<?= htmlspecialchars($u['email']) ?>&gt; (#<?= (int)$u['id'] ?>)
+                </option>
+                <?php endforeach; ?>
+              </select>
+              <?php else: ?>
+              <input type="number" name="user_id" class="form-control" placeholder="Enter user ID" required min="1">
+              <small class="text-muted">No users found — enter user ID manually.</small>
+              <?php endif; ?>
+            </div>
+            <div class="col-md-4 mb-2">
+              <label class="form-label font-weight-bold">Search / filter</label>
+              <input type="text" id="userSearchInput" class="form-control" placeholder="Type to filter users…" oninput="filterUserSelect(this.value)">
+            </div>
+            <div class="col-auto mb-2">
+              <button type="submit" class="btn btn-primary"><i class="fas fa-key"></i> Generate Key</button>
+            </div>
           </div>
-          <button type="submit" class="btn btn-primary"><i class="fas fa-key"></i> Generate Key</button>
-          <small class="ml-3 text-muted">This will revoke any existing ConvertX API key for the user and create a new one.</small>
+          <small class="text-muted">This will revoke any existing ConvertX API key for the selected user and create a new one.</small>
         </form>
+        <script>
+        function filterUserSelect(query) {
+            const sel = document.getElementById('userSelectDropdown');
+            if (!sel) return;
+            const q = query.toLowerCase();
+            for (let i = 0; i < sel.options.length; i++) {
+                const opt = sel.options[i];
+                opt.hidden = q.length > 0 && opt.value !== '' && opt.text.toLowerCase().indexOf(q) === -1;
+            }
+        }
+        </script>
       </div>
     </div>
 

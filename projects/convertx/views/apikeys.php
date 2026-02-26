@@ -38,6 +38,11 @@ if (!empty($_SESSION['_flash']['success'])) {
     $flashSuccess = $_SESSION['_flash']['success'];
     unset($_SESSION['_flash']['success']);
 }
+$flashError = null;
+if (!empty($_SESSION['_flash']['error'])) {
+    $flashError = $_SESSION['_flash']['error'];
+    unset($_SESSION['_flash']['error']);
+}
 ?>
 
 <!-- Page header -->
@@ -50,6 +55,13 @@ if (!empty($_SESSION['_flash']['success'])) {
 <div style="background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.4);border-radius:.625rem;padding:.875rem 1rem;margin-bottom:1.25rem;display:flex;align-items:center;gap:.625rem;font-size:.875rem;color:var(--cx-success);">
     <i class="fa-solid fa-circle-check"></i>
     <span><?= htmlspecialchars($flashSuccess) ?></span>
+</div>
+<?php endif; ?>
+
+<?php if ($flashError): ?>
+<div style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.4);border-radius:.625rem;padding:.875rem 1rem;margin-bottom:1.25rem;display:flex;align-items:center;gap:.625rem;font-size:.875rem;color:var(--cx-danger,#ef4444);">
+    <i class="fa-solid fa-circle-xmark"></i>
+    <span><?= htmlspecialchars($flashError) ?></span>
 </div>
 <?php endif; ?>
 

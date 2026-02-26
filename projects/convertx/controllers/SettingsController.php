@@ -74,9 +74,11 @@ class SettingsController
 
         if ($action === 'generate_api_key') {
             $newKey = $this->generateApiKey($userId);
-            $_SESSION['_flash']['success'] = 'New API key generated successfully.';
             if ($newKey) {
+                $_SESSION['_flash']['success'] = 'New API key generated successfully.';
                 $_SESSION['_new_api_key'] = $newKey;
+            } else {
+                $_SESSION['_flash']['error'] = 'Failed to generate API key. Please try again or contact support.';
             }
             header('Location: /projects/convertx/apikeys?tab=apikey');
             exit;

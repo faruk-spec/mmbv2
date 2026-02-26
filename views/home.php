@@ -309,16 +309,21 @@ if ($showStats):
     
     <div class="grid grid-3" id="projectsGrid">
         <?php 
-        // Fetch enabled projects from database
+        // Fetch enabled projects from database, then merge any config projects not yet in DB
+        $_configProjects = require BASE_PATH . '/config/projects.php';
         try {
-            $projects = $db->fetchAll("SELECT * FROM home_projects WHERE is_enabled = 1 ORDER BY sort_order ASC");
+            $_dbRows  = $db->fetchAll("SELECT * FROM home_projects WHERE is_enabled = 1 ORDER BY sort_order ASC");
+            $projects = [];
+            foreach ($_dbRows as $_row) {
+                $projects[$_row['project_key']] = $_row;
+            }
         } catch (Exception $e) {
-            // Fallback to config file if database query fails
-            $projects = require BASE_PATH . '/config/projects.php';
-            // Filter only enabled projects
-            $projects = array_filter($projects, function($project) {
-                return isset($project['enabled']) && $project['enabled'] === true;
-            });
+            $projects = [];
+        }
+        foreach ($_configProjects as $_key => $_cfg) {
+            if (!empty($_cfg['enabled']) && !isset($projects[$_key])) {
+                $projects[$_key] = array_merge($_cfg, ['project_key' => $_key]);
+            }
         }
         
         $delay = 0;

@@ -162,9 +162,20 @@ class ConvertXAdminController extends BaseController
               ORDER BY k.created_at DESC"
         );
 
+        // Fetch all users for the dropdown
+        $users = [];
+        try {
+            $users = $this->db->fetchAll(
+                "SELECT id, name, email FROM users ORDER BY name ASC"
+            );
+        } catch (\Exception $e) {
+            // Non-fatal
+        }
+
         $this->view('admin/projects/convertx/api-keys', [
             'title' => 'ConvertX Admin — API Keys',
             'keys'  => $keys,
+            'users' => $users,
         ]);
     }
 

@@ -23,23 +23,23 @@ class DashboardController extends BaseController
     {
         $db = Database::getInstance();
         
-        // Get projects from database or config
+        // Get projects: merge DB records with config so new projects (e.g. ConvertX)
+        // appear immediately even before the DB migration has been run.
+        $configProjects = require BASE_PATH . '/config/projects.php';
         try {
-            $projects = $db->fetchAll("SELECT * FROM home_projects WHERE is_enabled = 1 ORDER BY sort_order ASC");
-            
-            // Convert to associative array format
-            $projectsList = [];
-            foreach ($projects as $project) {
-                $projectsList[$project['project_key']] = $project;
+            $dbRows = $db->fetchAll("SELECT * FROM home_projects WHERE is_enabled = 1 ORDER BY sort_order ASC");
+            $projects = [];
+            foreach ($dbRows as $row) {
+                $projects[$row['project_key']] = $row;
             }
-            $projects = $projectsList;
         } catch (\Exception $e) {
-            // Fallback to config if database query fails
-            $projects = require BASE_PATH . '/config/projects.php';
-            // Filter only enabled projects
-            $projects = array_filter($projects, function($project) {
-                return $project['enabled'] ?? true;
-            });
+            $projects = [];
+        }
+        // Merge any config project that is enabled but not yet in the DB
+        foreach ($configProjects as $key => $cfg) {
+            if (!empty($cfg['enabled']) && !isset($projects[$key])) {
+                $projects[$key] = array_merge($cfg, ['project_key' => $key]);
+            }
         }
         
         // Get user activity
