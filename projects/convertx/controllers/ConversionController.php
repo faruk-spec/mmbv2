@@ -185,7 +185,9 @@ class ConversionController
         }
 
         header('Content-Type: application/json');
-        ob_end_clean();
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
         echo json_encode([
             'success' => true,
             'job_id'  => $jobId,
@@ -211,7 +213,9 @@ class ConversionController
         }
 
         header('Content-Type: application/json');
-        ob_end_clean();
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
         echo json_encode([
             'success'    => true,
             'job_id'     => $job['id'],
@@ -269,7 +273,9 @@ class ConversionController
         }
 
         $this->jobModel->cancel($jobId, $userId);
-        ob_end_clean();
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
         header('Content-Type: application/json');
         echo json_encode(['success' => true, 'message' => 'Job cancelled']);
     }
@@ -338,7 +344,7 @@ class ConversionController
 
     private function jsonError(string $message, int $code = 400): void
     {
-        if (ob_get_level() > 0) {
+        while (ob_get_level() > 0) {
             ob_end_clean();
         }
         http_response_code($code);

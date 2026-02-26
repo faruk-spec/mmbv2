@@ -127,9 +127,12 @@ class SettingsController
     private function generateApiKey(int $userId): ?string
     {
         $key = 'cx_' . bin2hex(random_bytes(20));
+        $db  = Database::getInstance();
+
+        // Attempt to auto-create the api_keys table; ignore if it already exists
+        // or if the DB user lacks CREATE privilege — the INSERT below will still
+        // succeed if the table was created by schema.sql.
         try {
-            $db = Database::getInstance();
-            // Auto-create api_keys table if not present
             $db->query(
                 "CREATE TABLE IF NOT EXISTS api_keys (
                     id         INT AUTO_INCREMENT PRIMARY KEY,
@@ -141,6 +144,12 @@ class SettingsController
                     UNIQUE KEY uniq_key (api_key)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
             );
+        } catch (\Exception $e) {
+            // CREATE TABLE failed (e.g. permission denied); the table may still
+            // exist from schema.sql — proceed to INSERT anyway.
+        }
+
+        try {
             $db->query(
                 "UPDATE api_keys SET is_active = 0 WHERE user_id = :uid",
                 ['uid' => $userId]
@@ -152,7 +161,6 @@ class SettingsController
             );
             return $key;
         } catch (\Exception $e) {
-            // Silently continue — key generated but DB may not be set up yet
             return null;
         }
     }
