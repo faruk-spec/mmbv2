@@ -111,7 +111,9 @@ class JobQueueService
             $this->jobModel->updateStatus($jobId, ConversionJobModel::STATUS_COMPLETED, [
                 'output_path'     => $outputPath,
                 'output_filename' => basename($outputPath),
-                'ai_result'       => !empty($aiResult) ? json_encode($aiResult) : null,
+                // json_encode can return false for non-UTF8 content; use null fallback
+                // to ensure we never store an empty string in a JSON/LONGTEXT column.
+                'ai_result'       => !empty($aiResult) ? (json_encode($aiResult) ?: null) : null,
             ]);
 
             Logger::info("ConvertX: job #{$jobId} completed");
