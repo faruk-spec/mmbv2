@@ -73,8 +73,13 @@ class SettingsController
         $action = $_POST['action'] ?? '';
 
         if ($action === 'generate_api_key') {
-            $this->generateApiKey($userId);
-            $_SESSION['_flash']['success'] = 'New API key generated successfully.';
+            $newKey = $this->generateApiKey($userId);
+            if ($newKey) {
+                $_SESSION['_flash']['success'] = 'New API key generated successfully.';
+                $_SESSION['_new_api_key'] = $newKey;
+            } else {
+                $_SESSION['_flash']['error'] = 'Failed to generate API key. Please try again or contact support.';
+            }
             header('Location: /projects/convertx/apikeys?tab=apikey');
             exit;
         }
@@ -110,7 +115,7 @@ class SettingsController
         try {
             $db  = Database::getInstance();
             $row = $db->fetch(
-                "SELECT api_key FROM api_keys WHERE user_id = :uid AND is_active = 1 LIMIT 1",
+                "SELECT api_key FROM convertx_api_keys WHERE user_id = :uid AND is_active = 1 LIMIT 1",
                 ['uid' => $userId]
             );
             return $row['api_key'] ?? null;
@@ -119,34 +124,46 @@ class SettingsController
         }
     }
 
-    private function generateApiKey(int $userId): void
+    private function generateApiKey(int $userId): ?string
     {
         $key = 'cx_' . bin2hex(random_bytes(20));
+        $db  = Database::getInstance();
+
+        // Ensure the ConvertX-specific API keys table exists.
+        // Uses a separate table name (convertx_api_keys) to avoid colliding with
+        // the platform's api_keys table (which has extra NOT NULL columns).
         try {
-            $db = Database::getInstance();
-            // Auto-create api_keys table if not present
             $db->query(
-                "CREATE TABLE IF NOT EXISTS api_keys (
-                    id         INT AUTO_INCREMENT PRIMARY KEY,
-                    user_id    INT          NOT NULL,
-                    api_key    VARCHAR(64)  NOT NULL,
+                "CREATE TABLE IF NOT EXISTS convertx_api_keys (
+                    id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    user_id    INT UNSIGNED NOT NULL,
+                    api_key    VARCHAR(100) NOT NULL,
                     is_active  TINYINT(1)   NOT NULL DEFAULT 1,
-                    created_at DATETIME     NOT NULL,
+                    created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     INDEX idx_user (user_id),
                     UNIQUE KEY uniq_key (api_key)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
             );
+        } catch (\Exception $e) {
+            // CREATE failed (permission denied or similar); the table may have
+            // been created by the migration — proceeding to INSERT attempt.
+            \Core\Logger::error('ConvertX: convertx_api_keys CREATE TABLE failed (INSERT will be attempted anyway): ' . $e->getMessage());
+        }
+
+        try {
             $db->query(
-                "UPDATE api_keys SET is_active = 0 WHERE user_id = :uid",
+                "UPDATE convertx_api_keys SET is_active = 0 WHERE user_id = :uid",
                 ['uid' => $userId]
             );
             $db->query(
-                "INSERT INTO api_keys (user_id, api_key, is_active, created_at)
+                "INSERT INTO convertx_api_keys (user_id, api_key, is_active, created_at)
                  VALUES (:uid, :key, 1, NOW())",
                 ['uid' => $userId, 'key' => $key]
             );
+            return $key;
         } catch (\Exception $e) {
-            // Silently continue — key generated but DB may not be set up yet
+            \Core\Logger::error('ConvertX: generateApiKey failed: ' . $e->getMessage());
+            return null;
         }
     }
 
@@ -155,7 +172,7 @@ class SettingsController
         try {
             $db = Database::getInstance();
             $db->query(
-                "UPDATE api_keys SET is_active = 0 WHERE user_id = :uid",
+                "UPDATE convertx_api_keys SET is_active = 0 WHERE user_id = :uid",
                 ['uid' => $userId]
             );
         } catch (\Exception $e) {

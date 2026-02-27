@@ -1076,6 +1076,47 @@
                         </a>
                     </div>
                     
+                    <!-- ConvertX Admin -->
+                    <div class="menu-item menu-dropdown">
+                        <div class="menu-dropdown-toggle <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/convertx') === 0 ? 'active' : '' ?>">
+                            <div class="left">
+                                <i class="fas fa-file-export"></i>
+                                <span>ConvertX</span>
+                            </div>
+                            <i class="fas fa-chevron-down arrow"></i>
+                        </div>
+                        <div class="menu-dropdown-content">
+                            <a href="/admin/projects/convertx" class="menu-link <?= ($_SERVER['REQUEST_URI'] ?? '') === '/admin/projects/convertx' ? 'active' : '' ?>">
+                                <i class="fas fa-chart-line"></i>
+                                <span>Overview</span>
+                            </a>
+                            <a href="/admin/projects/convertx/jobs" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/convertx/jobs') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-tasks"></i>
+                                <span>All Jobs</span>
+                            </a>
+                            <a href="/admin/projects/convertx/users" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/convertx/users') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-users"></i>
+                                <span>Users</span>
+                            </a>
+                            <a href="/admin/projects/convertx/api-keys" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/convertx/api-keys') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-key"></i>
+                                <span>API Keys</span>
+                            </a>
+                            <a href="/admin/projects/convertx/settings" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/convertx/settings') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-cog"></i>
+                                <span>Settings</span>
+                            </a>
+                            <a href="/admin/projects/convertx/storage" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/convertx/storage') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-hdd"></i>
+                                <span>Storage</span>
+                            </a>
+                            <a href="/admin/projects/convertx/plans" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/convertx/plans') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-tags"></i>
+                                <span>Plans</span>
+                            </a>
+                        </div>
+                    </div>
+                    
                     <!-- CodeXPro -->
                     <div class="menu-item menu-dropdown">
                         <div class="menu-dropdown-toggle">

@@ -23,23 +23,29 @@ class DashboardController extends BaseController
     {
         $db = Database::getInstance();
         
-        // Get projects from database or config
+        // Get projects: show all enabled DB rows plus any config project that has
+        // NO row in the DB yet (i.e. the migration hasn't been run for it).
+        // Projects that ARE in the DB with is_enabled=0 must NOT be re-added from config.
+        $configProjects = require BASE_PATH . '/config/projects.php';
         try {
-            $projects = $db->fetchAll("SELECT * FROM home_projects WHERE is_enabled = 1 ORDER BY sort_order ASC");
-            
-            // Convert to associative array format
-            $projectsList = [];
-            foreach ($projects as $project) {
-                $projectsList[$project['project_key']] = $project;
+            $allDbRows = $db->fetchAll("SELECT * FROM home_projects ORDER BY sort_order ASC");
+            $projects  = [];
+            $dbKeys    = [];
+            foreach ($allDbRows as $row) {
+                $dbKeys[] = $row['project_key'];
+                if ((int) $row['is_enabled'] === 1) {
+                    $projects[$row['project_key']] = $row;
+                }
             }
-            $projects = $projectsList;
         } catch (\Exception $e) {
-            // Fallback to config if database query fails
-            $projects = require BASE_PATH . '/config/projects.php';
-            // Filter only enabled projects
-            $projects = array_filter($projects, function($project) {
-                return $project['enabled'] ?? true;
-            });
+            $projects = [];
+            $dbKeys   = [];
+        }
+        // Merge only config projects that have NO record in DB at all
+        foreach ($configProjects as $key => $cfg) {
+            if (!empty($cfg['enabled']) && !in_array($key, $dbKeys, true)) {
+                $projects[$key] = array_merge($cfg, ['project_key' => $key]);
+            }
         }
         
         // Get user activity

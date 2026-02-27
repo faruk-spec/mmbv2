@@ -71,6 +71,9 @@ switch ($segments[0]) {
             'download' => $ctrl->download($segments[2] ?? ''),
             'history'  => $ctrl->history(),
             'usage'    => $ctrl->usage(),
+            'formats'  => $ctrl->formats(),
+            'plans'    => $ctrl->plans(),
+            'jobs'     => $ctrl->cancelJob($segments[2] ?? ''),
             default    => $ctrl->index(),
         };
         break;

@@ -958,6 +958,134 @@ try {
             .form-actions { flex-direction: column; width: 100%; }
             .form-actions .btn { width: 100%; }
         }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           Futuristic AI UI Enhancements
+        ═══════════════════════════════════════════════════════════════════ */
+
+        /* Scanning line effect on upload zone */
+        @keyframes cx-scan-line {
+            0%   { top: -2px; }
+            100% { top: 100%; }
+        }
+        .upload-zone::before {
+            content: '';
+            position: absolute;
+            left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--cx-primary), var(--cx-accent), transparent);
+            top: -2px;
+            border-radius: inherit;
+            animation: cx-scan-line 3.5s linear infinite;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .upload-zone:hover::before, .upload-zone.drag-over::before { opacity: 1; }
+
+        /* Holographic card effect */
+        .card.cx-holo {
+            background: linear-gradient(135deg,
+                rgba(99,102,241,0.08) 0%,
+                var(--bg-card) 40%,
+                rgba(6,182,212,0.06) 100%);
+            border-color: rgba(99,102,241,0.25);
+        }
+
+        /* Page header glow subtitle */
+        .page-header p {
+            font-size: var(--font-sm);
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: .375rem;
+        }
+        .page-header p::before {
+            content: '';
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--cx-primary);
+            box-shadow: 0 0 8px var(--cx-primary);
+            animation: cx-pulse-glow 2s ease infinite;
+            flex-shrink: 0;
+        }
+
+        /* Sidebar nav — neon left accent on active */
+        .sidebar-nav a.active {
+            position: relative;
+        }
+        .sidebar-nav a.active::after {
+            content: '';
+            position: absolute;
+            right: 0; top: 15%; bottom: 15%;
+            width: 3px;
+            border-radius: 3px;
+            background: var(--cx-accent);
+            box-shadow: 0 0 8px var(--cx-accent);
+        }
+
+        /* Stat cards — animate value number in */
+        @keyframes cx-count-up {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .stat-card .value { animation: cx-count-up 0.55s ease both; animation-delay: 0.2s; }
+
+        /* Button primary — gradient border glow on hover */
+        .btn-primary::after {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: inherit;
+            background: linear-gradient(135deg, var(--cx-primary), var(--cx-accent));
+            z-index: -1;
+            opacity: 0;
+            transition: opacity .25s;
+            filter: blur(6px);
+        }
+        .btn { position: relative; }
+        .btn-primary:hover:not(:disabled)::after { opacity: 0.6; }
+
+        /* Futuristic sidebar logo pulse */
+        .cx-sidebar-logo .logo-icon {
+            animation: cx-neon-pulse 3s ease infinite;
+        }
+
+        /* Card header — left accent bar */
+        .card-header {
+            position: relative;
+            padding-left: calc(var(--space-md) + 3px);
+        }
+        .card-header::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 20%;
+            bottom: 20%;
+            width: 3px;
+            border-radius: 3px;
+            background: linear-gradient(180deg, var(--cx-primary), var(--cx-accent));
+        }
+
+        /* Glowing separator line */
+        .cx-separator {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--cx-primary), var(--cx-accent), transparent);
+            margin: 1.25rem 0;
+            opacity: 0.4;
+        }
+
+        /* Terminal-style code display */
+        pre, code {
+            font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+        }
+
+        /* Futuristic input focus ring */
+        .form-control:focus, .form-input:focus, .form-select:focus {
+            border-color: var(--cx-primary);
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.15), 0 0 16px rgba(99,102,241,0.10);
+        }
     </style>
 </head>
 <body>
@@ -1052,6 +1180,9 @@ include BASE_PATH . '/views/layouts/navbar.php';
             </div>
         <?php endif; ?>
 
+        <!-- Toast notification container -->
+        <div id="cx-toast-container" style="position:fixed;bottom:1.5rem;right:1.5rem;z-index:10000;display:flex;flex-direction:column;gap:.625rem;max-width:360px;pointer-events:none;"></div>
+
         <?php
         $viewFile = PROJECT_PATH . '/views/' . $currentView . '.php';
         if (file_exists($viewFile)) {
@@ -1107,5 +1238,70 @@ include BASE_PATH . '/views/layouts/navbar.php';
     });
 })();
 </script>
+<script>
+/**
+ * CX Notification System
+ * Usage: CXNotify.success('Message') | CXNotify.error('Message') | CXNotify.info('Message') | CXNotify.warning('Message')
+ */
+var CXNotify = (function () {
+    var container;
+    function getContainer() {
+        if (!container) container = document.getElementById('cx-toast-container');
+        return container;
+    }
+    function show(message, type, duration) {
+        type = type || 'info';
+        duration = duration || 4000;
+        var colours = {
+            success: { bg: 'rgba(16,185,129,.12)', border: 'rgba(16,185,129,.4)', text: '#10b981', icon: 'fa-circle-check' },
+            error:   { bg: 'rgba(239,68,68,.12)',  border: 'rgba(239,68,68,.4)',  text: '#ef4444', icon: 'fa-circle-xmark' },
+            warning: { bg: 'rgba(245,158,11,.12)', border: 'rgba(245,158,11,.4)', text: '#f59e0b', icon: 'fa-triangle-exclamation' },
+            info:    { bg: 'rgba(99,102,241,.12)', border: 'rgba(99,102,241,.4)', text: '#6366f1', icon: 'fa-circle-info' },
+        };
+        var c = colours[type] || colours.info;
+        var toast = document.createElement('div');
+        toast.style.cssText = [
+            'display:flex;align-items:flex-start;gap:.625rem;',
+            'background:' + c.bg + ';',
+            'border:1px solid ' + c.border + ';',
+            'border-radius:.625rem;padding:.75rem 1rem;',
+            'font-size:.875rem;color:' + c.text + ';',
+            'box-shadow:0 4px 20px rgba(0,0,0,.25);',
+            'pointer-events:all;',
+            'animation:cx-toast-in .3s ease;',
+            'backdrop-filter:blur(8px);',
+            'max-width:360px;word-break:break-word;',
+        ].join('');
+        var icon = document.createElement('i');
+        icon.className = 'fa-solid ' + c.icon;
+        icon.style.cssText = 'flex-shrink:0;margin-top:.1rem;';
+        var msgSpan = document.createElement('span');
+        msgSpan.style.flex = '1';
+        msgSpan.textContent = message;  // textContent prevents XSS
+        var closeBtn = document.createElement('button');
+        closeBtn.style.cssText = 'background:none;border:none;color:' + c.text + ';cursor:pointer;font-size:1rem;padding:0;margin-left:.25rem;line-height:1;opacity:.7;';
+        closeBtn.textContent = '\u00d7';
+        closeBtn.addEventListener('click', function () { toast.remove(); });
+        toast.appendChild(icon);
+        toast.appendChild(msgSpan);
+        toast.appendChild(closeBtn);
+        getContainer().appendChild(toast);
+        setTimeout(function () {
+            toast.style.animation = 'cx-toast-out .3s ease forwards';
+            setTimeout(function () { toast.remove(); }, 300);
+        }, duration);
+    }
+    return {
+        success: function (m, d) { show(m, 'success', d); },
+        error:   function (m, d) { show(m, 'error',   d); },
+        warning: function (m, d) { show(m, 'warning', d); },
+        info:    function (m, d) { show(m, 'info',    d); },
+    };
+})();
+</script>
+<style>
+@keyframes cx-toast-in  { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+@keyframes cx-toast-out { from { opacity:1; transform:translateY(0); }    to { opacity:0; transform:translateY(8px); } }
+</style>
 </body>
 </html>

@@ -49,6 +49,45 @@ foreach ($groupedFormats as $group => $fmts) {
     <p>Upload any document, image or spreadsheet and convert it instantly</p>
 </div>
 
+<?php $suggestions = [
+    ['from'=>'PDF',  'to'=>'DOCX', 'icon'=>'fa-file-pdf',        'color'=>'#ef4444', 'desc'=>'Edit PDF content'],
+    ['from'=>'DOCX', 'to'=>'PDF',  'icon'=>'fa-file-word',        'color'=>'#2563eb', 'desc'=>'Share as PDF'],
+    ['from'=>'XLSX', 'to'=>'CSV',  'icon'=>'fa-file-excel',       'color'=>'#16a34a', 'desc'=>'Export data'],
+    ['from'=>'PNG',  'to'=>'JPG',  'icon'=>'fa-file-image',       'color'=>'#7c3aed', 'desc'=>'Reduce file size'],
+    ['from'=>'JPG',  'to'=>'WEBP', 'icon'=>'fa-image',            'color'=>'#0891b2', 'desc'=>'Web optimised'],
+    ['from'=>'PPTX', 'to'=>'PDF',  'icon'=>'fa-file-powerpoint',  'color'=>'#ea580c', 'desc'=>'Present anywhere'],
+    ['from'=>'CSV',  'to'=>'XLSX', 'icon'=>'fa-table',            'color'=>'#059669', 'desc'=>'Spreadsheet format'],
+    ['from'=>'SVG',  'to'=>'PNG',  'icon'=>'fa-vector-square',    'color'=>'#8b5cf6', 'desc'=>'Rasterise vector'],
+    ['from'=>'JPG',  'to'=>'PDF',  'icon'=>'fa-image',            'color'=>'#dc2626', 'desc'=>'Create PDF'],
+    ['from'=>'HTML', 'to'=>'PDF',  'icon'=>'fa-code',             'color'=>'#0ea5e9', 'desc'=>'Print to PDF'],
+    ['from'=>'EPUB', 'to'=>'PDF',  'icon'=>'fa-book',             'color'=>'#7c3aed', 'desc'=>'Convert ebook'],
+    ['from'=>'BMP',  'to'=>'PNG',  'icon'=>'fa-file-image',       'color'=>'#9333ea', 'desc'=>'Modern format'],
+]; ?>
+
+<!-- ── Popular Converter Suggestions (desktop: before grid, mobile: after grid via CSS order) ── -->
+<div class="cx-suggestions-section cx-suggestions-desktop">
+    <div class="cx-suggestions-title">
+        <i class="fa-solid fa-bolt-lightning" style="color:var(--cx-primary);"></i>
+        Popular Conversions
+    </div>
+    <div class="cx-suggestions-grid">
+        <?php
+        foreach ($suggestions as $s): ?>
+        <button type="button" class="cx-suggestion-card"
+                onclick="applySuggestion('<?= strtolower($s['to']) ?>')"
+                title="Convert <?= $s['from'] ?> to <?= $s['to'] ?>">
+            <i class="fa-solid <?= $s['icon'] ?>" style="color:<?= $s['color'] ?>;font-size:1.25rem;margin-bottom:.35rem;"></i>
+            <span class="cx-sug-route">
+                <span style="color:var(--text-secondary);"><?= $s['from'] ?></span>
+                <i class="fa-solid fa-arrow-right" style="font-size:.6rem;color:var(--cx-primary);"></i>
+                <span style="color:var(--cx-primary);font-weight:600;"><?= $s['to'] ?></span>
+            </span>
+            <span class="cx-sug-desc"><?= $s['desc'] ?></span>
+        </button>
+        <?php endforeach; ?>
+    </div>
+</div>
+
 <?php if (!$hasLibreOffice): ?>
 <!-- Server capability notice -->
 <div class="cx-notice">
@@ -276,6 +315,29 @@ foreach ($groupedFormats as $group => $fmts) {
 
 </div><!-- .cx-convert-grid -->
 
+<!-- ── Popular Conversions (mobile only, shown after the grid) ── -->
+<div class="cx-suggestions-section cx-suggestions-mobile">
+    <div class="cx-suggestions-title">
+        <i class="fa-solid fa-bolt-lightning" style="color:var(--cx-primary);"></i>
+        Popular Conversions
+    </div>
+    <div class="cx-suggestions-grid">
+        <?php foreach ($suggestions as $s): ?>
+        <button type="button" class="cx-suggestion-card"
+                onclick="applySuggestion('<?= strtolower($s['to']) ?>')"
+                title="Convert <?= $s['from'] ?> to <?= $s['to'] ?>">
+            <i class="fa-solid <?= $s['icon'] ?>" style="color:<?= $s['color'] ?>;font-size:1.25rem;margin-bottom:.35rem;"></i>
+            <span class="cx-sug-route">
+                <span style="color:var(--text-secondary);"><?= $s['from'] ?></span>
+                <i class="fa-solid fa-arrow-right" style="font-size:.6rem;color:var(--cx-primary);"></i>
+                <span style="color:var(--cx-primary);font-weight:600;"><?= $s['to'] ?></span>
+            </span>
+            <span class="cx-sug-desc"><?= $s['desc'] ?></span>
+        </button>
+        <?php endforeach; ?>
+    </div>
+</div>
+
 <!-- Job status card (shown after submission) -->
 <div id="jobStatus" class="card" style="display:none;margin-top:1.25rem;">
     <div class="card-header" id="jobStatusHeader">
@@ -299,10 +361,92 @@ foreach ($groupedFormats as $group => $fmts) {
     0%   { transform: translateX(-100%); }
     100% { transform: translateX(200%); }
 }
+
+/* Popular Converter Suggestions */
+.cx-suggestions-section {
+    margin-bottom: 1.5rem;
+}
+.cx-suggestions-title {
+    font-size: .8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    margin-bottom: .75rem;
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+}
+.cx-suggestions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: .5rem;
+}
+.cx-suggestion-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: .625rem;
+    padding: .625rem .5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .1rem;
+    cursor: pointer;
+    transition: border-color .2s, box-shadow .2s, transform .2s;
+    font-family: inherit;
+    text-align: center;
+}
+.cx-suggestion-card:hover {
+    border-color: var(--border-hover);
+    box-shadow: 0 4px 16px rgba(99,102,241,.16);
+    transform: translateY(-2px);
+}
+.cx-sug-route {
+    display: flex;
+    align-items: center;
+    gap: .25rem;
+    font-size: .73rem;
+    font-weight: 600;
+    margin-top: .1rem;
+}
+.cx-sug-desc {
+    font-size: .67rem;
+    color: var(--text-muted);
+    line-height: 1.3;
+    margin-top: .15rem;
+}
+@media (max-width: 600px) {
+    .cx-suggestions-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* Mobile layout: hide desktop suggestions, show mobile copy after grid */
+.cx-suggestions-mobile { display: none; }
+@media (max-width: 768px) {
+    .cx-suggestions-desktop { display: none; }
+    .cx-suggestions-mobile  { display: block; }
+}
 </style>
 
 <script>
 var IMAGE_FORMATS = <?= json_encode(array_values($imageFormats)) ?>;
+
+/**
+ * Apply a suggestion card: pre-selects the output format dropdown.
+ */
+function applySuggestion(fmt) {
+    var select = document.getElementById('outputFormat');
+    var opt = select.querySelector('option[value="' + fmt + '"]');
+    if (opt && !opt.disabled) {
+        select.value = fmt;
+        updateAdvancedOptions(fmt);
+        // Scroll to the form
+        select.closest('.card').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        // Briefly highlight the select
+        select.style.borderColor = 'var(--cx-primary)';
+        select.style.boxShadow = '0 0 0 3px rgba(99,102,241,.25)';
+        setTimeout(function () { select.style.borderColor = ''; select.style.boxShadow = ''; }, 1500);
+    }
+}
 
 function updateAdvancedOptions(fmt) {
     var isImage = IMAGE_FORMATS.indexOf(fmt) !== -1;
@@ -440,21 +584,25 @@ function toggleAiOptions() {
 
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<i class="fa-solid fa-spinner" style="animation:cx-spin 1s linear infinite;"></i> Uploading…';
+        showConvertingOverlay();
 
         var fd = new FormData(form);
         try {
             var res  = await fetch('/projects/convertx/convert', { method: 'POST', body: fd });
             var data = await res.json();
             if (data.success) {
+                hideConvertingOverlay();
                 statusDiv.style.display = 'block';
                 statusDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 pollJobStatus(data.job_id);
             } else {
+                hideConvertingOverlay();
                 alert('Error: ' + (data.error || 'Unknown error'));
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = '<i class="fa-solid fa-arrow-right-arrow-left"></i> Start Conversion';
             }
         } catch (err) {
+            hideConvertingOverlay();
             alert('Network error: ' + err.message);
             submitBtn.disabled = false;
             submitBtn.innerHTML = '<i class="fa-solid fa-arrow-right-arrow-left"></i> Start Conversion';
@@ -474,6 +622,7 @@ function toggleAiOptions() {
                     setTimeout(poll, 1500);
                 } else {
                     hdrDiv.innerHTML = '<i class="fa-solid fa-circle-check" style="color:var(--cx-success);"></i> Job Complete';
+                    hideConvertingOverlay();
                     submitBtn.disabled = false;
                     submitBtn.innerHTML = '<i class="fa-solid fa-arrow-right-arrow-left"></i> Convert Another File';
                 }
@@ -493,11 +642,14 @@ function toggleAiOptions() {
         var html = '<p style="font-size:.9rem;color:var(--text-primary);">Job <strong>#' + jobId + '</strong> &nbsp; <span class="badge ' + badgeClass + '">' + data.status.toUpperCase() + '</span></p>';
 
         if (data.status === 'processing') {
+            showConvertingOverlay('Processing your file…', 'AI analysis and conversion in progress');
             html += '<div style="margin-top:.75rem;height:4px;background:var(--border-color);border-radius:4px;overflow:hidden;">'
                   + '<div style="height:100%;width:60%;background:linear-gradient(90deg,var(--cx-primary),var(--cx-accent));border-radius:4px;animation:cx-progress 1.2s ease-in-out infinite;"></div></div>';
         }
 
         if (data.status === 'completed') {
+            hideConvertingOverlay();
+            if (typeof CXNotify !== 'undefined') CXNotify.success('Conversion complete! Your file is ready.');
             html += '<div style="margin-top:1rem;display:flex;gap:.75rem;flex-wrap:wrap;">';
             html += '<a href="/projects/convertx/job/' + jobId + '/download" class="btn btn-success"><i class="fa-solid fa-download"></i> Download ' + (data.output_filename || 'File') + '</a>';
             html += '</div>';
@@ -513,10 +665,65 @@ function toggleAiOptions() {
         }
 
         if (data.status === 'failed') {
+            hideConvertingOverlay();
+            if (typeof CXNotify !== 'undefined') CXNotify.error('Conversion failed: ' + (data.error_message || 'Unknown error'));
             html += '<p style="color:var(--cx-danger);margin-top:.5rem;font-size:.875rem;"><i class="fa-solid fa-circle-xmark"></i> ' + (data.error_message || 'Conversion failed') + '</p>';
         }
 
         detailDiv.innerHTML = html;
     }
 })();
+</script>
+
+<!-- Conversion Animation Overlay -->
+<div id="convertingOverlay" style="display:none;position:fixed;inset:0;background:rgba(6,6,10,0.85);z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:1.5rem;backdrop-filter:blur(6px);">
+    <div style="text-align:center;">
+        <div id="convOrb" style="width:80px;height:80px;margin:0 auto 1.25rem;border-radius:50%;background:linear-gradient(135deg,var(--cx-primary,#6366f1),var(--cx-accent,#06b6d4));display:flex;align-items:center;justify-content:center;animation:cx-orb-pulse 1.6s ease-in-out infinite;box-shadow:0 0 40px rgba(99,102,241,0.6);">
+            <i class="fa-solid fa-shuffle" style="font-size:2rem;color:#fff;animation:cx-spin 2s linear infinite;"></i>
+        </div>
+        <div style="font-size:1.2rem;font-weight:700;color:#fff;margin-bottom:.5rem;" id="convOverlayMsg">Converting your file…</div>
+        <div style="font-size:.85rem;color:rgba(255,255,255,.6);" id="convOverlaySub">Please wait while we process your document</div>
+        <!-- Animated progress bar -->
+        <div style="width:280px;height:4px;background:rgba(255,255,255,.15);border-radius:4px;margin:1.25rem auto 0;overflow:hidden;">
+            <div style="height:100%;width:40%;background:linear-gradient(90deg,var(--cx-primary,#6366f1),var(--cx-accent,#06b6d4));border-radius:4px;animation:cx-progress-bar 1.8s ease-in-out infinite;"></div>
+        </div>
+        <!-- Animated dots -->
+        <div style="display:flex;gap:.5rem;justify-content:center;margin-top:1rem;">
+            <span style="width:8px;height:8px;background:var(--cx-primary,#6366f1);border-radius:50%;animation:cx-dot-bounce 1.4s ease-in-out infinite;animation-delay:0s;"></span>
+            <span style="width:8px;height:8px;background:var(--cx-accent,#06b6d4);border-radius:50%;animation:cx-dot-bounce 1.4s ease-in-out infinite;animation-delay:.2s;"></span>
+            <span style="width:8px;height:8px;background:var(--cx-secondary,#8b5cf6);border-radius:50%;animation:cx-dot-bounce 1.4s ease-in-out infinite;animation-delay:.4s;"></span>
+        </div>
+    </div>
+</div>
+
+<style>
+@keyframes cx-orb-pulse {
+    0%,100% { transform: scale(1);   box-shadow: 0 0 40px rgba(99,102,241,0.5); }
+    50%      { transform: scale(1.08); box-shadow: 0 0 70px rgba(99,102,241,0.9); }
+}
+@keyframes cx-progress-bar {
+    0%   { transform: translateX(-100%); }
+    50%  { transform: translateX(150%); }
+    100% { transform: translateX(-100%); }
+}
+@keyframes cx-dot-bounce {
+    0%,80%,100% { transform: translateY(0); opacity: 0.5; }
+    40%          { transform: translateY(-8px); opacity: 1; }
+}
+</style>
+
+<script>
+function showConvertingOverlay(msg, sub) {
+    var overlay = document.getElementById('convertingOverlay');
+    if (!overlay) return;
+    var msgEl = document.getElementById('convOverlayMsg');
+    var subEl = document.getElementById('convOverlaySub');
+    if (msgEl) msgEl.textContent = msg || 'Converting your file…';
+    if (subEl) subEl.textContent = sub || 'Please wait while we process your document';
+    overlay.style.display = 'flex';
+}
+function hideConvertingOverlay() {
+    var overlay = document.getElementById('convertingOverlay');
+    if (overlay) overlay.style.display = 'none';
+}
 </script>

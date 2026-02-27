@@ -194,22 +194,66 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
                         }
                         
                         try {
-                            $projects = require BASE_PATH . '/config/projects.php';
-                            foreach ($projects as $key => $project): 
+                            // Query DB for enabled projects; fall back to config for projects
+                            // that have no DB row yet (e.g. before a migration is run).
+                            $db = \Core\Database::getInstance();
+                            $allDbRows = $db->fetchAll(
+                                "SELECT * FROM home_projects ORDER BY sort_order ASC"
+                            );
+                            $_navDbKeys = [];
+                            $_navProjects = [];
+                            foreach ($allDbRows as $_row) {
+                                $_navDbKeys[] = $_row['project_key'];
+                                if ((int) $_row['is_enabled'] === 1) {
+                                    $_navProjects[] = [
+                                        'name'  => $_row['name'],
+                                        'url'   => $_row['url'] ?? '/projects/' . $_row['project_key'],
+                                        'color' => $_row['color'] ?? '#00f0ff',
+                                    ];
+                                }
+                            }
+                            // Merge config-only projects not yet in DB
+                            $_configProjects = require BASE_PATH . '/config/projects.php';
+                            foreach ($_configProjects as $_key => $_cfg) {
+                                if (!empty($_cfg['enabled']) && !in_array($_key, $_navDbKeys, true)) {
+                                    $_navProjects[] = [
+                                        'name'  => $_cfg['name'],
+                                        'url'   => $_cfg['url'] ?? '/projects/' . $_key,
+                                        'color' => $_cfg['color'] ?? '#00f0ff',
+                                    ];
+                                }
+                            }
+                        } catch (\Exception $e) {
+                            // DB unavailable — fall back to config (show all config-enabled projects)
+                            $_navProjects = [];
+                            try {
+                                $_configProjects = require BASE_PATH . '/config/projects.php';
+                                foreach ($_configProjects as $_key => $_cfg) {
+                                    if (!empty($_cfg['enabled'])) {
+                                        $_navProjects[] = [
+                                            'name'  => $_cfg['name'],
+                                            'url'   => $_cfg['url'] ?? '/projects/' . $_key,
+                                            'color' => $_cfg['color'] ?? '#00f0ff',
+                                        ];
+                                    }
+                                }
+                            } catch (\Exception $e2) {
+                                // config also unavailable
+                            }
+                        }
+                        foreach ($_navProjects as $_p):
                         ?>
-                            <a href="<?= $project['url'] ?>" class="dropdown-item">
-                                <div class="project-icon" style="background: <?= $project['color'] ?>20; color: <?= $project['color'] ?>">
-                                    <?= strtoupper(substr($project['name'], 0, 1)) ?>
+                            <a href="<?= htmlspecialchars($_p['url']) ?>" class="dropdown-item">
+                                <div class="project-icon" style="background: <?= htmlspecialchars($_p['color']) ?>20; color: <?= htmlspecialchars($_p['color']) ?>">
+                                    <?= htmlspecialchars(strtoupper(substr($_p['name'], 0, 1))) ?>
                                 </div>
-                                <?= $project['name'] ?>
+                                <?= htmlspecialchars($_p['name']) ?>
                             </a>
                         <?php 
-                            endforeach;
-                        } catch (\Exception $e) {
-                            error_log("Projects config error: " . $e->getMessage());
-                            // Show fallback message
-                            echo '<div class="dropdown-item" style="color: var(--text-secondary); font-size: 13px;">Projects unavailable</div>';
-                        }
+                        endforeach;
+                        if (empty($_navProjects)):
+                            echo '<div class="dropdown-item" style="color: var(--text-secondary); font-size: 13px;">No projects available</div>';
+                        endif;
                         ?>
                     </div>
                 </div>

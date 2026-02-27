@@ -74,5 +74,14 @@ return [
         'enabled' => true,
         'database' => 'mmb_whatsapp',
         'url' => '/projects/whatsapp'
-    ]
+    ],
+    'convertx' => [
+        'name' => 'ConvertX',
+        'description' => 'AI-powered file conversion and document processing platform',
+        'icon' => 'file-export',
+        'color' => '#6366f1',
+        'enabled' => true,
+        'database' => 'mmb_convertx',
+        'url' => '/projects/convertx'
+    ],
 ];

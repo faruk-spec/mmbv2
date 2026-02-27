@@ -173,3 +173,62 @@ VALUES
         0.000000,
         1
     );
+
+
+-- ------------------------------------------------------------------ --
+--  ConvertX Subscription Plans                                         --
+-- ------------------------------------------------------------------ --
+CREATE TABLE IF NOT EXISTS convertx_subscription_plans (
+    id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    name            VARCHAR(100) NOT NULL,
+    slug            VARCHAR(50)  NOT NULL UNIQUE,
+    description     TEXT NULL,
+    price           DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    billing_cycle   ENUM('monthly','yearly','lifetime') DEFAULT 'monthly',
+    max_jobs_per_month  INT NOT NULL DEFAULT 50   COMMENT '-1 = unlimited',
+    max_file_size_mb    INT NOT NULL DEFAULT 10   COMMENT 'Max upload size in MB',
+    max_batch_size      INT NOT NULL DEFAULT 5    COMMENT 'Max files per batch',
+    ai_access           TINYINT(1) NOT NULL DEFAULT 0,
+    api_access          TINYINT(1) NOT NULL DEFAULT 0,
+    batch_convert       TINYINT(1) NOT NULL DEFAULT 1,
+    priority_processing TINYINT(1) NOT NULL DEFAULT 0,
+    status          ENUM('active','inactive') DEFAULT 'active',
+    sort_order      INT DEFAULT 0,
+    created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_status (status),
+    INDEX idx_slug   (slug)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ConvertX User Subscriptions
+CREATE TABLE IF NOT EXISTS convertx_user_subscriptions (
+    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id     INT UNSIGNED NOT NULL,
+    plan_id     INT UNSIGNED NOT NULL,
+    status      ENUM('active','cancelled','expired','trial') DEFAULT 'active',
+    started_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    expires_at  DATETIME NULL,
+    assigned_by INT UNSIGNED NULL COMMENT 'Admin user ID',
+    notes       VARCHAR(500) NULL,
+    updated_at  DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_user_id (user_id),
+    INDEX idx_plan_id (plan_id),
+    INDEX idx_status  (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Seed default plans
+INSERT IGNORE INTO convertx_subscription_plans
+    (name, slug, description, price, billing_cycle, max_jobs_per_month, max_file_size_mb, max_batch_size, ai_access, api_access, batch_convert, priority_processing, status, sort_order)
+VALUES
+    ('Free', 'free', 'Basic file conversion, limited monthly jobs.', 0.00, 'monthly', 50, 10, 5, 0, 0, 1, 0, 'active', 1),
+    ('Pro', 'pro', 'Unlimited conversions, AI tasks, API access.', 9.99, 'monthly', -1, 100, 50, 1, 1, 1, 1, 'active', 2),
+    ('Enterprise', 'enterprise', 'Full access, custom limits, priority support.', 29.99, 'monthly', -1, 500, 100, 1, 1, 1, 1, 'active', 3);
+
+-- ------------------------------------------------------------------ --
+--  Seed ConvertX into home_projects (idempotent)                       --
+-- ------------------------------------------------------------------ --
+INSERT IGNORE INTO `home_projects`
+    (`project_key`, `name`, `description`, `icon`, `color`, `is_enabled`, `sort_order`, `database_name`, `url`)
+VALUES
+    ('convertx', 'ConvertX', 'AI-powered file conversion and document processing platform',
+     'file-export', '#6366f1', 1, 10, 'mmb_convertx', '/projects/convertx');

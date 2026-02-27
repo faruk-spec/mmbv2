@@ -29,10 +29,10 @@ class ApiController
     private const RATE_LIMIT_PER_MIN  = 60;
 
     private const ALLOWED_EXTENSIONS = [
-        'pdf', 'docx', 'doc', 'odt', 'rtf', 'txt', 'html', 'md',
-        'xlsx', 'xls', 'ods', 'csv',
+        'pdf', 'docx', 'doc', 'odt', 'rtf', 'txt', 'html', 'md', 'epub',
+        'xlsx', 'xls', 'ods', 'csv', 'tsv',
         'pptx', 'ppt', 'odp',
-        'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'svg',
+        'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'svg', 'ico',
     ];
 
     public function __construct()
@@ -57,11 +57,14 @@ class ApiController
             'api'     => 'ConvertX',
             'version' => self::API_VERSION,
             'endpoints' => [
-                'POST /projects/convertx/api/convert'        => 'Submit a conversion job',
-                'GET  /projects/convertx/api/status/{token}' => 'Poll job status',
-                'GET  /projects/convertx/api/download/{token}' => 'Download converted file',
-                'GET  /projects/convertx/api/history'        => 'List your jobs',
-                'GET  /projects/convertx/api/usage'          => 'Show monthly usage',
+                'POST /projects/convertx/api/convert'           => 'Submit a conversion job',
+                'GET  /projects/convertx/api/status/{id}'       => 'Poll job status by ID',
+                'GET  /projects/convertx/api/download/{id}'     => 'Download converted file',
+                'DELETE /projects/convertx/api/jobs/{id}'       => 'Cancel a pending job',
+                'GET  /projects/convertx/api/history'           => 'List your jobs (paged)',
+                'GET  /projects/convertx/api/usage'             => 'Show monthly usage stats',
+                'GET  /projects/convertx/api/formats'           => 'List supported formats',
+                'GET  /projects/convertx/api/plans'             => 'List subscription plans',
             ],
         ]);
     }
@@ -285,7 +288,7 @@ class ApiController
         try {
             $db  = Database::getInstance();
             $row = $db->fetch(
-                "SELECT user_id FROM api_keys WHERE api_key = :key AND is_active = 1 LIMIT 1",
+                "SELECT user_id FROM convertx_api_keys WHERE api_key = :key AND is_active = 1 LIMIT 1",
                 ['key' => $key]
             );
             if ($row) {
@@ -322,5 +325,92 @@ class ApiController
     {
         http_response_code($code);
         echo json_encode(['success' => false, 'error' => $message]);
+    }
+
+    // ------------------------------------------------------------------ //
+    //  List supported formats                                              //
+    // ------------------------------------------------------------------ //
+
+    public function formats(): void
+    {
+        $config = require PROJECT_PATH . '/config.php';
+        $limits = [];
+        foreach ($config['upload_limits'] as $tier => $bytes) {
+            if ($bytes >= 1073741824) {
+                $limits[$tier] = number_format($bytes / 1073741824, 0) . ' GB';
+            } elseif ($bytes >= 1048576) {
+                $limits[$tier] = number_format($bytes / 1048576, 0) . ' MB';
+            } else {
+                $limits[$tier] = number_format($bytes / 1024, 0) . ' KB';
+            }
+        }
+        echo json_encode([
+            'success' => true,
+            'formats' => $config['formats'],
+            'upload_limits' => $limits,
+        ]);
+    }
+
+    // ------------------------------------------------------------------ //
+    //  List plans                                                          //
+    // ------------------------------------------------------------------ //
+
+    public function plans(): void
+    {
+        try {
+            $db    = Database::getInstance();
+            $plans = $db->fetchAll(
+                "SELECT name, slug, description, price, billing_cycle,
+                        max_jobs_per_month, max_file_size_mb, ai_access, api_access
+                   FROM convertx_subscription_plans
+                  WHERE status = 'active'
+                  ORDER BY sort_order ASC, price ASC"
+            );
+        } catch (\Exception $e) {
+            $plans = [];
+        }
+        echo json_encode(['success' => true, 'plans' => $plans]);
+    }
+
+    // ------------------------------------------------------------------ //
+    //  Cancel a pending job                                                //
+    // ------------------------------------------------------------------ //
+
+    public function cancelJob(string $jobId): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'DELETE' && $_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->error('Method not allowed', 405);
+            return;
+        }
+
+        $userId = $this->authenticateApiKey();
+        if (!$userId) {
+            return;
+        }
+
+        $id  = (int) $jobId;
+        $job = $id ? $this->jobModel->findForUser($id, $userId) : null;
+
+        if (!$job) {
+            $this->error('Job not found', 404);
+            return;
+        }
+
+        if (!in_array($job['status'], ['pending', 'processing'], true)) {
+            $this->error('Job cannot be cancelled in its current state', 409);
+            return;
+        }
+
+        try {
+            $db = Database::getInstance();
+            $db->query(
+                "UPDATE convertx_jobs SET status='cancelled', updated_at=NOW() WHERE id=:id AND user_id=:uid",
+                ['id' => $id, 'uid' => $userId]
+            );
+            echo json_encode(['success' => true, 'message' => 'Job cancelled']);
+        } catch (\Exception $e) {
+            Logger::error('ConvertX API cancelJob: ' . $e->getMessage());
+            $this->error('Failed to cancel job', 500);
+        }
     }
 }

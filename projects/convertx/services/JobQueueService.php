@@ -111,7 +111,10 @@ class JobQueueService
             $this->jobModel->updateStatus($jobId, ConversionJobModel::STATUS_COMPLETED, [
                 'output_path'     => $outputPath,
                 'output_filename' => basename($outputPath),
-                'ai_result'       => !empty($aiResult) ? json_encode($aiResult) : null,
+                // json_encode can return false for non-UTF8 content; use null fallback
+                // to ensure we never store an empty string in a JSON/LONGTEXT column.
+                // JSON_INVALID_UTF8_SUBSTITUTE replaces any remaining bad bytes with U+FFFD.
+                'ai_result'       => !empty($aiResult) ? (json_encode($aiResult, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE) ?: null) : null,
             ]);
 
             Logger::info("ConvertX: job #{$jobId} completed");
@@ -160,18 +163,26 @@ class JobQueueService
                     break;
 
                 case 'summarize':
-                    // Use OCR text if available, otherwise extract text from the output file
-                    $srcText = $text ?: $this->readTextContent($outputPath);
+                    // Use OCR text if available; otherwise try the input file first
+                    // (it's often easier to extract text from than the converted output),
+                    // then fall back to the output file.
+                    $srcText = $text
+                        ?: ($inputPath && file_exists($inputPath) ? $this->readTextContent($inputPath) : '')
+                        ?: $this->readTextContent($outputPath);
                     $results['summarize'] = $this->aiService->summarize($srcText, $planTier);
                     break;
 
                 case 'translate':
-                    $srcText = $text ?: $this->readTextContent($outputPath);
+                    $srcText = $text
+                        ?: ($inputPath && file_exists($inputPath) ? $this->readTextContent($inputPath) : '')
+                        ?: $this->readTextContent($outputPath);
                     $results['translate'] = $this->aiService->translate($srcText, $taskParam ?? 'en', $planTier);
                     break;
 
                 case 'classify':
-                    $srcText = $text ?: $this->readTextContent($outputPath);
+                    $srcText = $text
+                        ?: ($inputPath && file_exists($inputPath) ? $this->readTextContent($inputPath) : '')
+                        ?: $this->readTextContent($outputPath);
                     $results['classify'] = $this->aiService->classify($srcText, $planTier);
                     break;
             }
@@ -230,14 +241,19 @@ class JobQueueService
             }
         }
 
-        // Fallback: read raw and strip non-printable bytes.
-        // Keep: \x09 (tab), \x0A (LF), \x0D (CR), \x20-\x7E (printable ASCII),
-        //        \xA0-\xFF (Latin-1 / extended ASCII).
+        // Fallback: read raw bytes and keep only printable ASCII + whitespace.
+        // The \xA0-\xFF range (Latin-1 high bytes) is intentionally excluded here
+        // because those bytes are NOT valid standalone UTF-8, and json_encode()
+        // would return false for a string that contains them — silently discarding
+        // all AI results. mb_convert_encoding maps them to proper UTF-8 sequences.
         $content = file_get_contents($path);
         if ($content === false) {
             return '';
         }
-        return preg_replace('/[^\x09\x0A\x0D\x20-\x7E\xA0-\xFF]/', '', $content);
+        // Strip control bytes and other non-printable characters, keep printable
+        // ASCII + Latin-1 supplement (\xA0-\xFF), then encode as valid UTF-8.
+        $latin1 = preg_replace('/[^\x09\x0A\x0D\x20-\x7E\xA0-\xFF]/', '', $content);
+        return mb_convert_encoding((string) $latin1, 'UTF-8', 'ISO-8859-1');
     }
 
     // ------------------------------------------------------------------ //

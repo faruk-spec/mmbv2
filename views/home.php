@@ -309,16 +309,27 @@ if ($showStats):
     
     <div class="grid grid-3" id="projectsGrid">
         <?php 
-        // Fetch enabled projects from database
+        // Show enabled DB rows; merge config projects that have NO DB row at all.
+        // Projects in DB with is_enabled=0 must not be re-added from config.
+        $_configProjects = require BASE_PATH . '/config/projects.php';
         try {
-            $projects = $db->fetchAll("SELECT * FROM home_projects WHERE is_enabled = 1 ORDER BY sort_order ASC");
+            $_allDbRows = $db->fetchAll("SELECT * FROM home_projects ORDER BY sort_order ASC");
+            $projects   = [];
+            $_dbKeys    = [];
+            foreach ($_allDbRows as $_row) {
+                $_dbKeys[] = $_row['project_key'];
+                if ((int) $_row['is_enabled'] === 1) {
+                    $projects[$_row['project_key']] = $_row;
+                }
+            }
         } catch (Exception $e) {
-            // Fallback to config file if database query fails
-            $projects = require BASE_PATH . '/config/projects.php';
-            // Filter only enabled projects
-            $projects = array_filter($projects, function($project) {
-                return isset($project['enabled']) && $project['enabled'] === true;
-            });
+            $projects = [];
+            $_dbKeys  = [];
+        }
+        foreach ($_configProjects as $_key => $_cfg) {
+            if (!empty($_cfg['enabled']) && !in_array($_key, $_dbKeys, true)) {
+                $projects[$_key] = array_merge($_cfg, ['project_key' => $_key]);
+            }
         }
         
         $delay = 0;
