@@ -11,6 +11,7 @@
 namespace Projects\ConvertX\Models;
 
 use Core\Database;
+use Core\Logger;
 
 class AIProviderModel
 {
