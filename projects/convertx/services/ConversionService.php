@@ -247,12 +247,14 @@ class ConversionService
             );
         }
 
-        // 4b. Image → writer format (docx / odt / rtf): create a proper document
+        // 4b. Image → writer format (docx / odt / rtf / doc): create a proper document
         //     that embeds the image using PHP ZipArchive — no external tools needed.
         //     This is far more reliable than the 2-step chain (image→PDF→DOCX) which
         //     requires the optional libreoffice-pdfimport package for the PDF→Writer
         //     leg, and often silently produces empty output when that package is absent.
-        $phpWriterFormats = ['docx', 'odt', 'rtf'];
+        //     'doc' (binary OLE format) is handled by building a temp DOCX in PHP then
+        //     converting DOCX→DOC via LibreOffice (same Writer family, no --infilter).
+        $phpWriterFormats = ['docx', 'odt', 'rtf', 'doc'];
         if ($isInputImage && in_array($outputFormat, $phpWriterFormats, true)) {
             if ($this->convertImageToDocumentWithPhp($inputPath, $inputFormat, $outputFormat, $outputPath)) {
                 return true;
@@ -634,6 +636,7 @@ class ConversionService
             'docx' => $this->convertImageToDocxWithPhp($inputPath, $inputFormat, $outputPath),
             'odt'  => $this->convertImageToOdtWithPhp($inputPath, $inputFormat, $outputPath),
             'rtf'  => $this->convertImageToRtfWithPhp($inputPath, $inputFormat, $outputPath),
+            'doc'  => $this->convertImageToDocViaDocx($inputPath, $inputFormat, $outputPath),
             default => false,
         };
     }
@@ -878,6 +881,34 @@ class ConversionService
         } finally {
             if ($tmpPng !== null && file_exists($tmpPng)) {
                 @unlink($tmpPng);
+            }
+        }
+    }
+
+    /**
+     * Convert an image to a legacy .doc file (OLE binary format) by:
+     *   1. Building a DOCX in a temp file using convertImageToDocxWithPhp()
+     *   2. Having LibreOffice convert the DOCX → DOC (same Writer family;
+     *      no --infilter, no PDF intermediate, no libreoffice-pdfimport needed).
+     */
+    private function convertImageToDocViaDocx(
+        string $inputPath,
+        string $inputFormat,
+        string $outputPath
+    ): bool {
+        // Generate a unique temp path with .docx extension.
+        // tempnam() creates a 0-byte file; unlink it so ZipArchive can create the DOCX.
+        $tmpBase = tempnam(sys_get_temp_dir(), 'cx_doc_');
+        @unlink($tmpBase);
+        $tmpDocx = $tmpBase . '.docx';
+        try {
+            if (!$this->convertImageToDocxWithPhp($inputPath, $inputFormat, $tmpDocx)) {
+                return false;
+            }
+            return $this->convertWithLibreOffice($tmpDocx, 'docx', 'doc', $outputPath);
+        } finally {
+            if (file_exists($tmpDocx)) {
+                @unlink($tmpDocx);
             }
         }
     }

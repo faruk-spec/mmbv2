@@ -378,23 +378,29 @@ class ConvertXAdminController extends BaseController
             return;
         }
         try {
+            // Only update api_key when the admin explicitly typed a new value.
+            // An empty submission means "keep existing" — this prevents wiping
+            // a configured key when editing other fields.
+            $updateFields = "name=:name, base_url=:url, model=:model, "
+                          . "capabilities=:caps, allowed_tiers=:tiers, priority=:pri, "
+                          . "cost_per_1k_tokens=:cost";
+            $params = [
+                'name'  => $name,
+                'url'   => $baseUrl ?: null,
+                'model' => $model ?: null,
+                'caps'  => json_encode(array_values($caps)),
+                'tiers' => json_encode(array_values($tiers)),
+                'pri'   => $priority,
+                'cost'  => $cost,
+                'id'    => $id,
+            ];
+            if ($apiKey !== '') {
+                $updateFields .= ', api_key=:key';
+                $params['key'] = $apiKey;
+            }
             $this->db->query(
-                "UPDATE convertx_ai_providers SET
-                    name=:name, base_url=:url, api_key=:key, model=:model,
-                    capabilities=:caps, allowed_tiers=:tiers, priority=:pri,
-                    cost_per_1k_tokens=:cost
-                 WHERE id=:id",
-                [
-                    'name'  => $name,
-                    'url'   => $baseUrl ?: null,
-                    'key'   => $apiKey ?: null,
-                    'model' => $model ?: null,
-                    'caps'  => json_encode(array_values($caps)),
-                    'tiers' => json_encode(array_values($tiers)),
-                    'pri'   => $priority,
-                    'cost'  => $cost,
-                    'id'    => $id,
-                ]
+                "UPDATE convertx_ai_providers SET {$updateFields} WHERE id=:id",
+                $params
             );
             $_SESSION['_flash']['success'] = 'Provider updated.';
         } catch (\Exception $e) {
