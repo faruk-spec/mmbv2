@@ -59,6 +59,16 @@ class BillController
         $currency   = Security::sanitize($_POST['currency']    ?? 'INR');
         $taxPct     = (float)($_POST['tax_percent']      ?? 0);
         $discount   = (float)($_POST['discount_amount']  ?? 0);
+        $saveAction = Security::sanitize($_POST['save_action'] ?? 'view');
+
+        // Collect template_data from td_* POST fields (type-specific extras: CGST, SGST, vehicle, etc.)
+        // Only accept scalar string values to prevent injection of unexpected data types.
+        $templateData = [];
+        foreach ($_POST as $k => $v) {
+            if (strncmp($k, 'td_', 3) === 0 && is_string($v)) {
+                $templateData[substr($k, 3)] = Security::sanitize($v);
+            }
+        }
 
         // Validate bill type
         if (!array_key_exists($billType, $config['bill_types'])) {
@@ -106,12 +116,19 @@ class BillController
             'total_amount'    => $total,
             'notes'           => $notes,
             'currency'        => $currency,
+            'template_data'   => $templateData ? json_encode($templateData) : null,
             'status'          => 'generated',
         ]);
 
         if ($id) {
             Logger::activity($userId, 'billx_bill_created', ['bill_id' => $id, 'type' => $billType]);
-            header('Location: /projects/billx/view/' . $id);
+            if ($saveAction === 'save') {
+                header('Location: /projects/billx/history?saved=1');
+            } elseif ($saveAction === 'print') {
+                header('Location: /projects/billx/view/' . $id . '?autoprint=1');
+            } else {
+                header('Location: /projects/billx/view/' . $id);
+            }
             exit;
         }
 
