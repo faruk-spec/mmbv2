@@ -914,12 +914,15 @@ class ConversionService
         //   don't corrupt each other's profile directory.
         //   NOTE: single dash (-env:) is the correct LibreOffice syntax; double
         //   dash (--env:) is rejected by LibreOffice 7.x with "Error in option".
-        // --infilter "draw_pdf_import" – force PDF Import filter when input is PDF.
+        // --infilter={filter} – force PDF Import filter when input is PDF.
         //   Without this, headless LO on some installs fails to select the filter
         //   automatically, producing empty or corrupt output.
+        //   NOTE: LibreOffice requires equals-sign syntax (--infilter={filter}),
+        //   NOT space-separated (--infilter filter) — the latter causes exit 1
+        //   with "Error in option: --infilter".
         $pid      = getmypid();
         $infilter = ($inputFormat === 'pdf')
-            ? '--infilter ' . escapeshellarg('draw_pdf_import') . ' '
+            ? '--infilter=' . escapeshellarg('draw_pdf_import') . ' '
             : '';
         $cmd = "DISPLAY= HOME=/tmp {$lo} --headless --norestore --nolockcheck "
              . "-env:UserInstallation=file:///tmp/lo-{$pid} "
