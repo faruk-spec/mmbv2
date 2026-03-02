@@ -5,6 +5,7 @@ $selectedType = htmlspecialchars($_GET['type'] ?? 'general');
 if (!array_key_exists($selectedType, $config['bill_types'])) $selectedType = 'general';
 $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2hex(random_bytes(3))), 0, 6);
 ?>
+<link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
 
 <a href="/projects/billx" class="back-link"><i class="fas fa-arrow-left"></i> Dashboard</a>
 
@@ -67,7 +68,7 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
                         <select name="td_template_style" id="td_template_style" class="form-select" onchange="updatePreview()">
                             <option value="1">Style 1 — Default</option>
                             <option value="2">Style 2 — Classic</option>
-                            <option value="3">Style 3 — Minimal</option>
+                            <option value="3">Style 3 — Thermal Printer</option>
                         </select>
                     </div>
                 </div>
@@ -78,7 +79,7 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
                 </h4>
                 <div class="grid grid-2" style="gap:12px;">
                     <div>
-                        <p style="font-size:0.78rem;font-weight:600;color:var(--text-secondary);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em;">From (Issuer)</p>
+                        <p id="fromLabel" style="font-size:0.78rem;font-weight:600;color:var(--text-secondary);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em;">From (Issuer)</p>
                         <div class="form-group" style="margin-bottom:8px;">
                             <label class="form-label">Name *</label>
                             <input type="text" name="from_name" id="from_name" class="form-input" placeholder="Your name / company" required>
@@ -97,7 +98,7 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
                         </div>
                     </div>
                     <div>
-                        <p style="font-size:0.78rem;font-weight:600;color:var(--text-secondary);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em;">To (Recipient)</p>
+                        <p id="toLabel" style="font-size:0.78rem;font-weight:600;color:var(--text-secondary);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em;">To (Recipient)</p>
                         <div class="form-group" style="margin-bottom:8px;">
                             <label class="form-label">Name *</label>
                             <input type="text" name="to_name" id="to_name" class="form-input" placeholder="Recipient name" required>
@@ -349,9 +350,9 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
         </div>
 
         <!-- ====== RIGHT PANEL: Live Preview ====== -->
-        <div style="position:sticky;top:80px;">
-            <div class="card" style="padding:0;overflow:hidden;">
-                <div style="background:var(--bg-secondary);padding:12px 16px;border-bottom:1px solid var(--border-color);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+        <div style="position:sticky;top:80px;max-height:calc(100vh - 100px);display:flex;flex-direction:column;">
+            <div class="card" style="padding:0;display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;">
+                <div style="background:var(--bg-secondary);padding:12px 16px;border-bottom:1px solid var(--border-color);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;flex-shrink:0;">
                     <span style="font-size:0.85rem;font-weight:600;color:var(--text-secondary);">
                         <i class="fas fa-eye"></i> Live Preview
                     </span>
@@ -363,7 +364,7 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
                         <span id="previewTypeBadge" style="font-size:0.7rem;padding:3px 10px;border-radius:12px;background:#f59e0b;color:white;font-weight:600;"></span>
                     </div>
                 </div>
-                <div style="padding:16px;background:#f5f5f5;min-height:600px;" id="billPreviewWrapper">
+                <div style="padding:16px;background:#f5f5f5;flex:1;overflow-y:auto;min-height:0;" id="billPreviewWrapper">
                     <div id="billPreview" style="background:white;max-width:520px;margin:0 auto;font-family:'Poppins',sans-serif;font-size:13px;color:#333;box-shadow:0 2px 16px rgba(0,0,0,0.12);border-radius:4px;overflow:hidden;">
                         <!-- Preview rendered by JS -->
                     </div>
@@ -393,18 +394,43 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
     font-size: 0.9rem; padding: 4px; line-height: 1;
 }
 .remove-item-btn:hover { color: #ff4757; }
-/* ── Crumpled paper effect (white paper) ─────────────────── */
-#billPreviewWrapper.crambled { background: #c8c8c8 !important; }
+/* ── Crumpled paper effect ─────────────────────────────── */
+#billPreviewWrapper.crambled {
+    background-color: #9e9b96 !important;
+    background-image:
+        repeating-linear-gradient(
+            157deg,
+            transparent 0, transparent 88px,
+            rgba(0,0,0,.065) 88px, rgba(255,255,255,.55) 89px,
+            rgba(0,0,0,.025) 90px, transparent 91px
+        ),
+        repeating-linear-gradient(
+            -53deg,
+            transparent 0, transparent 110px,
+            rgba(0,0,0,.05) 110px, rgba(255,255,255,.45) 111px,
+            rgba(0,0,0,.02) 112px, transparent 113px
+        ),
+        repeating-linear-gradient(
+            73deg,
+            transparent 0, transparent 148px,
+            rgba(0,0,0,.04) 148px, rgba(255,255,255,.38) 149px,
+            transparent 150px
+        ),
+        repeating-linear-gradient(
+            180deg,
+            rgba(255,255,255,.018) 0, rgba(255,255,255,.018) 1px,
+            transparent 1px, transparent 3px
+        ) !important;
+}
 #billPreviewWrapper.crambled #billPreview {
     position: relative;
-    background: #fdfdfd !important;
+    background: #fdfcfa !important;
     box-shadow:
-        -4px 2px 18px rgba(0,0,0,.18),
-        4px -2px 12px rgba(0,0,0,.12),
-        0 8px 32px rgba(0,0,0,.22),
-        inset 0 0 80px rgba(0,0,0,.02);
-    transform: rotate(0.4deg) skew(-0.15deg, 0.08deg);
-    filter: brightness(0.985) contrast(1.015);
+        -6px 4px 22px rgba(0,0,0,.22),
+        6px -3px 16px rgba(0,0,0,.15),
+        0 12px 40px rgba(0,0,0,.28);
+    transform: rotate(0.45deg) skew(-0.12deg, 0.1deg);
+    filter: brightness(0.99) contrast(1.02);
 }
 #billPreviewWrapper.crambled #billPreview::before {
     content: '';
@@ -413,17 +439,11 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
     pointer-events: none;
     z-index: 9999;
     background:
-        linear-gradient(152deg, transparent 36%, rgba(0,0,0,.038) 36.4%, rgba(255,255,255,.72) 36.8%, rgba(0,0,0,.018) 37.2%, transparent 37.6%),
-        linear-gradient(152deg, transparent 60%, rgba(0,0,0,.028) 60.3%, rgba(255,255,255,.55) 60.6%, transparent 61%),
-        linear-gradient(-46deg, transparent 43%, rgba(0,0,0,.032) 43.4%, rgba(255,255,255,.65) 43.8%, rgba(0,0,0,.015) 44.2%, transparent 44.6%),
-        linear-gradient(-46deg, transparent 72%, rgba(0,0,0,.022) 72.3%, rgba(255,255,255,.45) 72.6%, transparent 73%),
-        linear-gradient(71deg, transparent 24%, rgba(0,0,0,.028) 24.4%, rgba(255,255,255,.58) 24.8%, transparent 25.2%),
-        radial-gradient(ellipse 85% 8% at 50% 37%, rgba(0,0,0,.042) 0%, transparent 100%),
-        radial-gradient(ellipse 65% 6% at 38% 61%, rgba(0,0,0,.032) 0%, transparent 100%),
-        radial-gradient(ellipse 45% 10% at 72% 44%, rgba(0,0,0,.028) 0%, transparent 100%),
-        radial-gradient(ellipse 32% 32% at 2% 2%, rgba(0,0,0,.06) 0%, transparent 100%),
-        radial-gradient(ellipse 28% 28% at 99% 99%, rgba(0,0,0,.05) 0%, transparent 100%),
-        radial-gradient(ellipse 20% 20% at 98% 1%, rgba(0,0,0,.04) 0%, transparent 100%);
+        linear-gradient(148deg, transparent 37%, rgba(0,0,0,.042) 37.3%, rgba(255,255,255,.82) 37.7%, rgba(0,0,0,.018) 38%, transparent 38.4%),
+        linear-gradient(-46deg, transparent 44%, rgba(0,0,0,.035) 44.3%, rgba(255,255,255,.7) 44.7%, rgba(0,0,0,.015) 45%, transparent 45.4%),
+        linear-gradient(71deg, transparent 23%, rgba(0,0,0,.028) 23.3%, rgba(255,255,255,.6) 23.7%, transparent 24.1%),
+        radial-gradient(ellipse 35% 30% at 0% 0%, rgba(0,0,0,.08) 0%, transparent 100%),
+        radial-gradient(ellipse 30% 25% at 100% 100%, rgba(0,0,0,.06) 0%, transparent 100%);
     mix-blend-mode: multiply;
 }
 #crambleBtn.active {
@@ -454,6 +474,16 @@ function getGroup(type){for(const[g,a]of Object.entries(BILL_GROUPS))if(a.includ
 const TYPE_LABELS={fuel:'Fuel Bill',driver:'Driver Salary',helper:'Daily Helper Bill',rent:'Rent Receipt',book:'Book Invoice',internet:'Internet Invoice',restaurant:'Restaurant Bill',lta:'LTA Receipt',ecom:'E-Com Invoice',general:'General Bill',recharge:'Recharge Receipt',medical:'Medical Bill',stationary:'Stationary Bill',cab:'Cab & Travel Bill',mart:'Mart Bill',gym:'Gym Bill',hotel:'Hotel Bill',newspaper:'Newspaper Bill'};
 const TYPE_COLORS={fuel:'#e65000',driver:'#1565c0',helper:'#546e7a',rent:'#6a1b9a',book:'#5d4037',internet:'#0277bd',restaurant:'#c62828',lta:'#2e7d32',ecom:'#1565c0',general:'#37474f',recharge:'#00838f',medical:'#0077b6',stationary:'#bf360c',cab:'#e65100',mart:'#1b5e20',gym:'#212121',hotel:'#7d5a00',newspaper:'#1a1a1a'};
 
+// ─── Category-specific party labels ──────────────────────────────────────────
+const FROM_LABELS={restaurant:'Restaurant / Diner',recharge:'Service Provider',mart:'Store / Mart',newspaper:'Publisher / Agent',driver:'Employer / Company',helper:'Employer / Company',fuel:'Fuel Station',cab:'Cab Company',rent:'Landlord / Owner',lta:'Employer / Company',medical:'Hospital / Clinic',hotel:'Hotel / Resort',gym:'Fitness Center / Gym',book:'Publisher / Seller',internet:'ISP / Provider',ecom:'Online Store',general:'Seller / Issuer',stationary:'Stationery Shop'};
+const TO_LABELS={restaurant:'Customer',recharge:'Customer',mart:'Customer',newspaper:'Subscriber',driver:'Employee / Driver',helper:'Employee / Helper',fuel:'Vehicle Owner',cab:'Passenger',rent:'Tenant',lta:'Employee',medical:'Patient',hotel:'Guest',gym:'Member',book:'Buyer / Student',internet:'Subscriber',ecom:'Buyer',general:'Buyer / Recipient',stationary:'Customer'};
+function updateFormLabels(type){
+    const fl=document.getElementById('fromLabel');
+    const tl=document.getElementById('toLabel');
+    if(fl)fl.textContent=FROM_LABELS[type]||'From (Issuer)';
+    if(tl)tl.textContent=TO_LABELS[type]||'To (Recipient)';
+}
+
 // ─── Extra-fields per group ───────────────────────────────────────────────────
 const GROUP_FIELDSETS={thermal:'fields_thermal',payslip:'fields_payslip',fuel:'fields_fuel',cab:'fields_cab',official:'fields_official',medical:'fields_medical',hotel:'fields_hotel',gym:'fields_gym',invoice:'fields_invoice'};
 const EXTRA_LABELS={thermal:'Restaurant / Store Details',payslip:'Employee Details',fuel:'Fuel & Vehicle Details',cab:'Cab & Driver Details',official:'Property / Official Details',medical:'Patient & Hospital Details',hotel:'Hotel & Room Details',gym:'Gym & Membership Details',invoice:'GST & Invoice Details'};
@@ -466,6 +496,7 @@ function syncExtraFields(type){
     });
     const lbl=document.getElementById('extraFieldsLabel');
     if(lbl)lbl.textContent=EXTRA_LABELS[group]||'Additional Details';
+    updateFormLabels(type);
 }
 function getExtraFields(){
     const type=document.getElementById('bill_type').value;
@@ -540,25 +571,50 @@ ${d.notes?`<div style="padding:6px 12px;font-size:10px;color:#555;border-top:1px
 </div>`;
     }
     if (style === '3') {
-    // Style 3: Ultra-minimal receipt
-    const mode=d.td.payment_mode||'Cash'; const tableNo=d.td.table_number||'';
-    const rows=d.items.map(it=>`<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dotted #ccc;font-size:11px;"><span>${it.qty}x ${escHtml(it.description||'-')}</span><span style="font-weight:600;">${d.sym}${it.amount.toFixed(2)}</span></div>`).join('');
-    return `<div style="font-family:'Courier New',monospace;background:#fff;max-width:300px;margin:0 auto;padding:16px;border:1px solid #e0e0e0;">
-<div style="text-align:center;margin-bottom:10px;">
-<div style="font-size:15px;font-weight:700;letter-spacing:1px;">${escHtml(d.fromName)}</div>
-${d.fromPhone?`<div style="font-size:10px;color:#666;">${escHtml(d.fromPhone)}</div>`:''}
-<div style="font-size:10px;color:#666;">${fmtDate(d.billDate)} ${nowTime()}</div>
-${tableNo?`<div style="font-size:10px;">Table: ${escHtml(tableNo)}</div>`:''}
+    // Style 3: Real Thermal POS Printer Receipt (80mm roll, VT323 font)
+    const cgst=parseFloat(d.td.cgst_pct)||0; const sgst=parseFloat(d.td.sgst_pct)||0;
+    const cgstAmt=d.subtotal*cgst/100; const sgstAmt=d.subtotal*sgst/100;
+    const mode=d.td.payment_mode||''; const tableNo=d.td.table_number||'';
+    const zigW=32; const zigPts=Array.from({length:zigW},(_,i)=>`${i*9+4},${i%2===0?12:0}`).join(' ');
+    const itemRows=d.items.map(it=>`<div style="padding:2px 0;border-bottom:1px dotted #ccc;"><div style="font-size:12px;">${escHtml((it.description||'-'))}</div><div style="display:flex;justify-content:space-between;font-size:11px;color:#555;"><span>${it.qty}&times;${d.sym}${it.rate.toFixed(2)}</span><span style="font-weight:700;color:#111;">${d.sym}${it.amount.toFixed(2)}</span></div></div>`).join('');
+    return `<style>@import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');</style>
+<div style="font-family:'VT323','Courier New',monospace;background:#fff;width:290px;margin:0 auto;color:#111;box-shadow:0 3px 12px rgba(0,0,0,.18);letter-spacing:.4px;">
+<svg width="290" height="12" viewBox="0 0 288 12" style="display:block;" preserveAspectRatio="none"><polyline points="${zigPts}" fill="none" stroke="#ddd" stroke-width="1.2"/><polygon points="0,12 0,0 ${zigPts} 288,0 288,12" fill="#fff"/></svg>
+<div style="padding:12px 14px 10px;">
+<div style="text-align:center;border-bottom:2px solid #111;padding-bottom:6px;margin-bottom:6px;">
+<div style="font-size:22px;font-weight:700;letter-spacing:3px;line-height:1.1;">${escHtml(d.fromName.toUpperCase())}</div>
+${d.fromAddr?`<div style="font-size:12px;color:#444;margin-top:2px;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}
+${d.fromPhone?`<div style="font-size:12px;color:#444;">Ph: ${escHtml(d.fromPhone)}</div>`:''}
+${d.fromEmail?`<div style="font-size:11px;color:#666;">${escHtml(d.fromEmail)}</div>`:''}
 </div>
-<div style="border-top:2px solid #111;border-bottom:1px solid #ccc;padding:4px 0;margin-bottom:8px;font-size:10px;display:flex;justify-content:space-between;"><span>Bill: ${escHtml(d.billNo)}</span><span>Cashier</span></div>
-${rows||'<div style="color:#aaa;font-size:11px;">No items</div>'}
-<div style="margin-top:8px;border-top:1px solid #ccc;padding-top:6px;font-size:11px;">
-${d.discount>0?`<div style="display:flex;justify-content:space-between;"><span>Discount</span><span>-${d.sym}${d.discount.toFixed(2)}</span></div>`:''}
-<div style="display:flex;justify-content:space-between;font-size:13px;font-weight:900;border-top:2px solid #111;margin-top:4px;padding-top:4px;"><span>TOTAL</span><span>${d.sym}${d.total.toFixed(2)}</span></div>
-<div style="font-size:10px;margin-top:4px;">Paid by: ${escHtml(mode)}</div>
+<div style="font-size:12px;border-bottom:1px dashed #555;padding-bottom:5px;margin-bottom:5px;">
+<div style="display:flex;justify-content:space-between;"><span>Bill#: <b>${escHtml(d.billNo)}</b></span><span>${fmtDate(d.billDate)}</span></div>
+<div style="display:flex;justify-content:space-between;"><span>Cust: <b>${escHtml(d.toName)}</b></span><span>Time: ${nowTime()}</span></div>
+${tableNo?`<div>Table: <b>#${escHtml(tableNo)}</b>${mode?' | Pay: <b>'+escHtml(mode)+'</b>':''}</div>`:''}
 </div>
-${d.notes?`<div style="font-size:10px;color:#666;margin-top:6px;border-top:1px dotted #ccc;padding-top:4px;">${escHtml(d.notes)}</div>`:''}
-<div style="text-align:center;font-size:9px;color:#aaa;margin-top:8px;">*** Thank You ***</div>
+<div style="border-bottom:1px dashed #555;padding-bottom:5px;margin-bottom:4px;">
+<div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700;padding:2px 0;border-bottom:1px solid #ccc;"><span>ITEM</span><span>QTY&times;RATE</span><span>AMT</span></div>
+${itemRows||'<div style="font-size:11px;color:#aaa;padding:4px 0;text-align:center;">No items added</div>'}
+</div>
+<div style="font-size:12px;padding:2px 0;">
+<div style="display:flex;justify-content:space-between;padding:1px 0;"><span>Sub-Total:</span><span>${d.sym}${d.subtotal.toFixed(2)}</span></div>
+${cgst>0?`<div style="display:flex;justify-content:space-between;padding:1px 0;"><span>CGST ${cgst}%:</span><span>${d.sym}${cgstAmt.toFixed(2)}</span></div>`:''}
+${sgst>0?`<div style="display:flex;justify-content:space-between;padding:1px 0;"><span>SGST ${sgst}%:</span><span>${d.sym}${sgstAmt.toFixed(2)}</span></div>`:''}
+${d.taxPct>0&&cgst===0&&sgst===0?`<div style="display:flex;justify-content:space-between;padding:1px 0;"><span>Tax ${d.taxPct}%:</span><span>${d.sym}${d.taxAmt.toFixed(2)}</span></div>`:''}
+${d.discount>0?`<div style="display:flex;justify-content:space-between;padding:1px 0;"><span>Discount:</span><span>-${d.sym}${d.discount.toFixed(2)}</span></div>`:''}
+</div>
+<div style="border-top:2px solid #111;padding:4px 0;margin-top:2px;">
+<div style="display:flex;justify-content:space-between;font-size:18px;font-weight:900;"><span>** TOTAL</span><span>${d.sym}${d.total.toFixed(2)}</span></div>
+${mode&&!tableNo?`<div style="font-size:12px;color:#555;">Payment: ${escHtml(mode)}</div>`:''}
+</div>
+${d.notes?`<div style="border-top:1px dashed #555;padding-top:4px;margin-top:3px;font-size:11px;color:#555;text-align:center;">${escHtml(d.notes)}</div>`:''}
+<div style="border-top:1px dashed #555;padding-top:6px;margin-top:5px;text-align:center;font-size:13px;">
+<div style="font-weight:700;letter-spacing:1px;">THANK YOU! VISIT AGAIN!</div>
+<div style="font-size:12px;color:#555;">** SAVE PAPER ~ SAVE NATURE **</div>
+<div style="font-size:11px;color:#888;margin-top:3px;">Powered by BillX</div>
+</div>
+</div>
+<svg width="290" height="12" viewBox="0 0 288 12" style="display:block;" preserveAspectRatio="none"><polyline points="${zigPts.split(' ').map(p=>{const[x,y]=p.split(',');return x+','+(12-parseInt(y));}).join(' ')}" fill="none" stroke="#ddd" stroke-width="1.2"/><polygon points="0,0 0,12 ${zigPts.split(' ').map(p=>{const[x,y]=p.split(',');return x+','+(12-parseInt(y));}).join(' ')} 288,12 288,0" fill="#fff"/></svg>
 </div>`;
     }
     const c=TYPE_COLORS[d.type]||'#333';

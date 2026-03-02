@@ -753,18 +753,43 @@ $autoprint = !empty($_GET['autoprint']);
 </div>
 
 <style>
-/* ── Crumpled paper effect (white paper) ─────────────────────────── */
-#billDocWrapper.crambled { background: #c8c8c8 !important; }
+/* ── Crumpled paper effect ─────────────────────────────────────────── */
+#billDocWrapper.crambled {
+    background-color: #9e9b96 !important;
+    background-image:
+        repeating-linear-gradient(
+            157deg,
+            transparent 0, transparent 88px,
+            rgba(0,0,0,.065) 88px, rgba(255,255,255,.55) 89px,
+            rgba(0,0,0,.025) 90px, transparent 91px
+        ),
+        repeating-linear-gradient(
+            -53deg,
+            transparent 0, transparent 110px,
+            rgba(0,0,0,.05) 110px, rgba(255,255,255,.45) 111px,
+            rgba(0,0,0,.02) 112px, transparent 113px
+        ),
+        repeating-linear-gradient(
+            73deg,
+            transparent 0, transparent 148px,
+            rgba(0,0,0,.04) 148px, rgba(255,255,255,.38) 149px,
+            transparent 150px
+        ),
+        repeating-linear-gradient(
+            180deg,
+            rgba(255,255,255,.018) 0, rgba(255,255,255,.018) 1px,
+            transparent 1px, transparent 3px
+        ) !important;
+}
 #billDocWrapper.crambled #billDocument {
     position: relative;
-    background: #fdfdfd;
+    background: #fdfcfa;
     box-shadow:
-        -4px 2px 18px rgba(0,0,0,.18),
-        4px -2px 12px rgba(0,0,0,.12),
-        0 8px 32px rgba(0,0,0,.22),
-        inset 0 0 80px rgba(0,0,0,.02);
-    transform: rotate(0.4deg) skew(-0.15deg, 0.08deg);
-    filter: brightness(0.985) contrast(1.015);
+        -6px 4px 22px rgba(0,0,0,.22),
+        6px -3px 16px rgba(0,0,0,.15),
+        0 12px 40px rgba(0,0,0,.28);
+    transform: rotate(0.45deg) skew(-0.12deg, 0.1deg);
+    filter: brightness(0.99) contrast(1.02);
 }
 #billDocWrapper.crambled #billDocument::before {
     content: '';
@@ -773,17 +798,11 @@ $autoprint = !empty($_GET['autoprint']);
     pointer-events: none;
     z-index: 9999;
     background:
-        linear-gradient(152deg, transparent 36%, rgba(0,0,0,.038) 36.4%, rgba(255,255,255,.72) 36.8%, rgba(0,0,0,.018) 37.2%, transparent 37.6%),
-        linear-gradient(152deg, transparent 60%, rgba(0,0,0,.028) 60.3%, rgba(255,255,255,.55) 60.6%, transparent 61%),
-        linear-gradient(-46deg, transparent 43%, rgba(0,0,0,.032) 43.4%, rgba(255,255,255,.65) 43.8%, rgba(0,0,0,.015) 44.2%, transparent 44.6%),
-        linear-gradient(-46deg, transparent 72%, rgba(0,0,0,.022) 72.3%, rgba(255,255,255,.45) 72.6%, transparent 73%),
-        linear-gradient(71deg, transparent 24%, rgba(0,0,0,.028) 24.4%, rgba(255,255,255,.58) 24.8%, transparent 25.2%),
-        radial-gradient(ellipse 85% 8% at 50% 37%, rgba(0,0,0,.042) 0%, transparent 100%),
-        radial-gradient(ellipse 65% 6% at 38% 61%, rgba(0,0,0,.032) 0%, transparent 100%),
-        radial-gradient(ellipse 45% 10% at 72% 44%, rgba(0,0,0,.028) 0%, transparent 100%),
-        radial-gradient(ellipse 32% 32% at 2% 2%, rgba(0,0,0,.06) 0%, transparent 100%),
-        radial-gradient(ellipse 28% 28% at 99% 99%, rgba(0,0,0,.05) 0%, transparent 100%),
-        radial-gradient(ellipse 20% 20% at 98% 1%, rgba(0,0,0,.04) 0%, transparent 100%);
+        linear-gradient(148deg, transparent 37%, rgba(0,0,0,.042) 37.3%, rgba(255,255,255,.82) 37.7%, rgba(0,0,0,.018) 38%, transparent 38.4%),
+        linear-gradient(-46deg, transparent 44%, rgba(0,0,0,.035) 44.3%, rgba(255,255,255,.7) 44.7%, rgba(0,0,0,.015) 45%, transparent 45.4%),
+        linear-gradient(71deg, transparent 23%, rgba(0,0,0,.028) 23.3%, rgba(255,255,255,.6) 23.7%, transparent 24.1%),
+        radial-gradient(ellipse 35% 30% at 0% 0%, rgba(0,0,0,.08) 0%, transparent 100%),
+        radial-gradient(ellipse 30% 25% at 100% 100%, rgba(0,0,0,.06) 0%, transparent 100%);
     mix-blend-mode: multiply;
 }
 #crambleBtn.active {
