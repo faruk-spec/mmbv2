@@ -35,7 +35,11 @@ class BillController
     /** POST /projects/billx/generate */
     public function generate(): void
     {
-        Security::validateCsrfToken($_POST['csrf_token'] ?? '');
+        if (!Security::validateCsrfToken($_POST['csrf_token'] ?? '')) {
+            http_response_code(403);
+            echo "Invalid CSRF token.";
+            return;
+        }
 
         $userId = Auth::id();
         $config = require PROJECT_PATH . '/config.php';
@@ -200,7 +204,10 @@ class BillController
     /** POST /projects/billx/delete */
     public function delete(): void
     {
-        Security::validateCsrfToken($_POST['csrf_token'] ?? '');
+        if (!Security::validateCsrfToken($_POST['csrf_token'] ?? '')) {
+            header('Location: /projects/billx/history?error=csrf');
+            exit;
+        }
 
         $userId = Auth::id();
         $id     = (int)($_POST['id'] ?? 0);

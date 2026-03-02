@@ -1,5 +1,5 @@
 -- BillX Project Database Schema
--- Database: mmb_billx
+-- Table created in the main application database (auto-migrated by BillModel on first use)
 
 CREATE TABLE IF NOT EXISTS `billx_bills` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

@@ -15,21 +15,13 @@ use Core\Logger;
 
 class BillXAdminController extends BaseController
 {
-    private $db;
-    private $billxDb;
+    private Database $db;
 
     public function __construct()
     {
         $this->requireAuth();
         $this->requireAdmin();
         $this->db = Database::getInstance();
-
-        try {
-            $this->billxDb = Database::getProjectInstance('billx');
-        } catch (\Exception $e) {
-            $this->billxDb = null;
-            Logger::error('BillXAdmin: could not connect to billx DB — ' . $e->getMessage());
-        }
     }
 
     // ------------------------------------------------------------------ //
@@ -49,7 +41,7 @@ class BillXAdminController extends BaseController
             'byType'      => $byType,
             'recentBills' => $recentBills,
             'activeUsers' => $activeUsers,
-            'dbConnected' => $this->billxDb !== null,
+            'dbConnected' => true,
         ]);
     }
 
@@ -67,34 +59,32 @@ class BillXAdminController extends BaseController
         $total = 0;
         $bills = [];
 
-        if ($this->billxDb) {
-            try {
-                $where  = '1=1';
-                $params = [];
+        try {
+            $where  = '1=1';
+            $params = [];
 
-                if ($billType !== '') {
-                    $where           .= ' AND b.bill_type = ?';
-                    $params[]         = $billType;
-                }
-
-                $countRow = $this->billxDb->fetch(
-                    "SELECT COUNT(*) AS c FROM billx_bills b WHERE $where",
-                    $params
-                );
-                $total = (int)($countRow['c'] ?? 0);
-
-                $bills = $this->billxDb->fetchAll(
-                    "SELECT b.*, u.name AS user_name, u.email AS user_email
-                       FROM billx_bills b
-                       LEFT JOIN mmb_main.users u ON b.user_id = u.id
-                      WHERE $where
-                      ORDER BY b.created_at DESC
-                      LIMIT $perPage OFFSET $offset",
-                    $params
-                );
-            } catch (\Exception $e) {
-                Logger::error('BillXAdmin bills query: ' . $e->getMessage());
+            if ($billType !== '') {
+                $where   .= ' AND b.bill_type = ?';
+                $params[] = $billType;
             }
+
+            $countRow = $this->db->fetch(
+                "SELECT COUNT(*) AS c FROM billx_bills b WHERE $where",
+                $params
+            );
+            $total = (int)($countRow['c'] ?? 0);
+
+            $bills = $this->db->fetchAll(
+                "SELECT b.*, u.name AS user_name, u.email AS user_email
+                   FROM billx_bills b
+                   LEFT JOIN users u ON b.user_id = u.id
+                  WHERE $where
+                  ORDER BY b.created_at DESC
+                  LIMIT $perPage OFFSET $offset",
+                $params
+            ) ?: [];
+        } catch (\Exception $e) {
+            Logger::error('BillXAdmin bills query: ' . $e->getMessage());
         }
 
         $billTypes = $this->getBillTypesList();
@@ -107,7 +97,7 @@ class BillXAdminController extends BaseController
             'perPage'  => $perPage,
             'billType' => $billType,
             'billTypes'=> $billTypes,
-            'dbConnected' => $this->billxDb !== null,
+            'dbConnected' => true,
         ]);
     }
 
@@ -128,13 +118,8 @@ class BillXAdminController extends BaseController
             return;
         }
 
-        if (!$this->billxDb) {
-            $this->redirect('/admin/projects/billx/bills?error=db_unavailable');
-            return;
-        }
-
         try {
-            $this->billxDb->query("DELETE FROM billx_bills WHERE id = ?", [$id]);
+            $this->db->query("DELETE FROM billx_bills WHERE id = ?", [$id]);
             Logger::activity(Auth::id(), 'admin_delete_bill', ['bill_id' => $id]);
             $this->redirect('/admin/projects/billx/bills?deleted=1');
         } catch (\Exception $e) {
@@ -155,19 +140,18 @@ class BillXAdminController extends BaseController
                 $this->view('admin/projects/billx/settings', [
                     'title'      => 'BillX Admin — Settings',
                     'error'      => 'Invalid CSRF token.',
-                    'dbConnected'=> $this->billxDb !== null,
+                    'dbConnected'=> true,
                     'saved'      => false,
                 ]);
                 return;
             }
-            // Settings are informational; nothing to persist right now.
             $saved = true;
             Logger::activity(Auth::id(), 'admin_billx_settings_updated');
         }
 
         $this->view('admin/projects/billx/settings', [
             'title'      => 'BillX Admin — Settings',
-            'dbConnected'=> $this->billxDb !== null,
+            'dbConnected'=> true,
             'saved'      => $saved,
         ]);
     }
@@ -178,11 +162,8 @@ class BillXAdminController extends BaseController
 
     private function getStats(): array
     {
-        if (!$this->billxDb) {
-            return ['total' => 0, 'today' => 0, 'this_month' => 0];
-        }
         try {
-            $r = $this->billxDb->fetch(
+            $r = $this->db->fetch(
                 "SELECT
                     COUNT(*) AS total,
                     SUM(CASE WHEN DATE(created_at) = CURDATE() THEN 1 ELSE 0 END) AS today,
@@ -198,9 +179,8 @@ class BillXAdminController extends BaseController
 
     private function getBillsByType(): array
     {
-        if (!$this->billxDb) return [];
         try {
-            return $this->billxDb->fetchAll(
+            return $this->db->fetchAll(
                 "SELECT bill_type, COUNT(*) AS cnt
                    FROM billx_bills
                   GROUP BY bill_type
@@ -214,12 +194,11 @@ class BillXAdminController extends BaseController
 
     private function getRecentBills(int $limit = 10): array
     {
-        if (!$this->billxDb) return [];
         try {
-            return $this->billxDb->fetchAll(
+            return $this->db->fetchAll(
                 "SELECT b.*, u.name AS user_name, u.email AS user_email
                    FROM billx_bills b
-                   LEFT JOIN mmb_main.users u ON b.user_id = u.id
+                   LEFT JOIN users u ON b.user_id = u.id
                   ORDER BY b.created_at DESC
                   LIMIT ?",
                 [$limit]
@@ -232,9 +211,8 @@ class BillXAdminController extends BaseController
 
     private function getActiveUsersCount(): int
     {
-        if (!$this->billxDb) return 0;
         try {
-            $r = $this->billxDb->fetch(
+            $r = $this->db->fetch(
                 "SELECT COUNT(DISTINCT user_id) AS cnt FROM billx_bills"
             );
             return (int)($r['cnt'] ?? 0);
@@ -246,9 +224,8 @@ class BillXAdminController extends BaseController
 
     private function getBillTypesList(): array
     {
-        if (!$this->billxDb) return [];
         try {
-            $rows = $this->billxDb->fetchAll(
+            $rows = $this->db->fetchAll(
                 "SELECT DISTINCT bill_type FROM billx_bills ORDER BY bill_type"
             ) ?: [];
             return array_column($rows, 'bill_type');
