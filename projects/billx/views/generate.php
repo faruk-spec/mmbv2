@@ -575,7 +575,9 @@ ${d.notes?`<div style="padding:6px 12px;font-size:10px;color:#555;border-top:1px
     const cgst=parseFloat(d.td.cgst_pct)||0; const sgst=parseFloat(d.td.sgst_pct)||0;
     const cgstAmt=d.subtotal*cgst/100; const sgstAmt=d.subtotal*sgst/100;
     const mode=d.td.payment_mode||''; const tableNo=d.td.table_number||'';
+    // zigW teeth, spaced 9px apart, offset 4px from left, amplitude 12px (down on even, up on odd)
     const zigW=32; const zigPts=Array.from({length:zigW},(_,i)=>`${i*9+4},${i%2===0?12:0}`).join(' ');
+    const zigPtsFlipped=zigPts.split(' ').map(p=>{const[x,y]=p.split(',');return x+','+(12-parseInt(y));}).join(' ');
     const itemRows=d.items.map(it=>`<div style="padding:2px 0;border-bottom:1px dotted #ccc;"><div style="font-size:12px;">${escHtml((it.description||'-'))}</div><div style="display:flex;justify-content:space-between;font-size:11px;color:#555;"><span>${it.qty}&times;${d.sym}${it.rate.toFixed(2)}</span><span style="font-weight:700;color:#111;">${d.sym}${it.amount.toFixed(2)}</span></div></div>`).join('');
     return `<style>@import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');</style>
 <div style="font-family:'VT323','Courier New',monospace;background:#fff;width:290px;margin:0 auto;color:#111;box-shadow:0 3px 12px rgba(0,0,0,.18);letter-spacing:.4px;">
@@ -614,7 +616,7 @@ ${d.notes?`<div style="border-top:1px dashed #555;padding-top:4px;margin-top:3px
 <div style="font-size:11px;color:#888;margin-top:3px;">Powered by BillX</div>
 </div>
 </div>
-<svg width="290" height="12" viewBox="0 0 288 12" style="display:block;" preserveAspectRatio="none"><polyline points="${zigPts.split(' ').map(p=>{const[x,y]=p.split(',');return x+','+(12-parseInt(y));}).join(' ')}" fill="none" stroke="#ddd" stroke-width="1.2"/><polygon points="0,0 0,12 ${zigPts.split(' ').map(p=>{const[x,y]=p.split(',');return x+','+(12-parseInt(y));}).join(' ')} 288,12 288,0" fill="#fff"/></svg>
+<svg width="290" height="12" viewBox="0 0 288 12" style="display:block;" preserveAspectRatio="none"><polyline points="${zigPtsFlipped}" fill="none" stroke="#ddd" stroke-width="1.2"/><polygon points="0,0 0,12 ${zigPtsFlipped} 288,12 288,0" fill="#fff"/></svg>
 </div>`;
     }
     const c=TYPE_COLORS[d.type]||'#333';
