@@ -173,50 +173,6 @@
         z-index: 1;
     }
 
-    /* Light mode: animated futuristic background */
-    [data-theme="light"] body {
-        background: #f0f4ff !important;
-    }
-
-    [data-theme="light"] body::before {
-        content: '';
-        position: fixed;
-        inset: 0;
-        z-index: -1;
-        background:
-            radial-gradient(ellipse at 15% 15%, rgba(124, 58, 237, 0.10) 0%, transparent 50%),
-            radial-gradient(ellipse at 85% 85%, rgba(0, 153, 204, 0.10) 0%, transparent 50%),
-            radial-gradient(ellipse at 50% 50%, rgba(124, 58, 237, 0.04) 0%, transparent 60%);
-        animation: hp-light-bg 14s ease-in-out infinite alternate !important;
-    }
-
-    @keyframes hp-light-bg {
-        0%   {
-            background:
-                radial-gradient(ellipse at 15% 15%, rgba(124, 58, 237, 0.10) 0%, transparent 50%),
-                radial-gradient(ellipse at 85% 85%, rgba(0, 153, 204, 0.10) 0%, transparent 50%),
-                radial-gradient(ellipse at 50% 50%, rgba(124, 58, 237, 0.04) 0%, transparent 60%);
-        }
-        33%  {
-            background:
-                radial-gradient(ellipse at 80% 20%, rgba(124, 58, 237, 0.12) 0%, transparent 50%),
-                radial-gradient(ellipse at 20% 80%, rgba(0, 153, 204, 0.12) 0%, transparent 50%),
-                radial-gradient(ellipse at 60% 40%, rgba(0, 245, 255, 0.04) 0%, transparent 55%);
-        }
-        66%  {
-            background:
-                radial-gradient(ellipse at 40% 80%, rgba(0, 153, 204, 0.10) 0%, transparent 50%),
-                radial-gradient(ellipse at 60% 10%, rgba(124, 58, 237, 0.10) 0%, transparent 50%),
-                radial-gradient(ellipse at 30% 40%, rgba(124, 58, 237, 0.04) 0%, transparent 55%);
-        }
-        100% {
-            background:
-                radial-gradient(ellipse at 15% 15%, rgba(124, 58, 237, 0.10) 0%, transparent 50%),
-                radial-gradient(ellipse at 85% 85%, rgba(0, 153, 204, 0.10) 0%, transparent 50%),
-                radial-gradient(ellipse at 50% 50%, rgba(124, 58, 237, 0.04) 0%, transparent 60%);
-        }
-    }
-
     /* Light mode card text stays readable */
     [data-theme="light"] .card {
         color: #1a1a1a !important;
@@ -973,7 +929,7 @@ $timelineItems = $db->fetchAll("SELECT * FROM home_timeline WHERE is_active = 1 
 <?php endif; ?>
 
 <script>
-/* Homepage: Particles + Mouse Glow */
+/* Homepage: Particles (constellation) + Mouse Glow */
 (function() {
     var isDark = function() {
         return document.documentElement.getAttribute('data-theme') !== 'light';
@@ -992,62 +948,98 @@ $timelineItems = $db->fetchAll("SELECT * FROM home_timeline WHERE is_active = 1 
         });
     }
 
-    /* ---- Particles ---- */
+    /* ---- Constellation Particles ---- */
     var canvas = document.getElementById('hp-particles');
     if (!canvas) return;
     var ctx = canvas.getContext('2d');
     var particles = [];
     var raf;
+    var time = 0;
+    var CONNECT_DIST = 130;
 
     function resize() {
         canvas.width  = window.innerWidth;
         canvas.height = window.innerHeight;
     }
 
-    function randomBetween(a, b) { return a + Math.random() * (b - a); }
+    function rnd(a, b) { return a + Math.random() * (b - a); }
 
     function createParticle() {
         return {
-            x:     Math.random() * canvas.width,
-            y:     Math.random() * canvas.height,
-            r:     randomBetween(1, 2.5),
-            dx:    randomBetween(-0.25, 0.25),
-            dy:    randomBetween(-0.4, -0.1),
-            alpha: randomBetween(0.2, 0.7),
-            hue:   Math.random() < 0.5 ? 270 : 185   /* purple or cyan */
+            x:         Math.random() * canvas.width,
+            y:         Math.random() * canvas.height,
+            r:         rnd(0.8, 2.2),
+            dx:        rnd(-0.18, 0.18),
+            dy:        rnd(-0.28, -0.05),
+            baseAlpha: rnd(0.35, 0.85),
+            phase:     Math.random() * Math.PI * 2,   /* twinkling offset */
+            hue:       Math.random() < 0.6 ? 270 : 185  /* purple:cyan ~60:40 */
         };
     }
 
     function init() {
         particles = [];
-        var count = Math.min(80, Math.floor(canvas.width * canvas.height / 12000));
-        for (var i = 0; i < count; i++) {
-            particles.push(createParticle());
-        }
+        /* ~1 particle per 13 000 px² gives a balanced density at all viewport sizes */
+        var count = Math.min(65, Math.floor(canvas.width * canvas.height / 13000));
+        for (var i = 0; i < count; i++) particles.push(createParticle());
     }
 
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         var dark = isDark();
+        time += 0.016;
+
+        /* --- connection lines --- */
+        for (var i = 0; i < particles.length - 1; i++) {
+            for (var j = i + 1; j < particles.length; j++) {
+                var ax = particles[i].x - particles[j].x;
+                var ay = particles[i].y - particles[j].y;
+                var dist = Math.sqrt(ax * ax + ay * ay);
+                if (dist < CONNECT_DIST) {
+                    /* max line alpha: 0.22 dark / 0.10 light — subtle constellation effect */
+                    var lineA = (1 - dist / CONNECT_DIST) * (dark ? 0.22 : 0.10);
+                    var lineHue = (particles[i].hue + particles[j].hue) / 2;
+                    ctx.beginPath();
+                    ctx.moveTo(particles[i].x, particles[i].y);
+                    ctx.lineTo(particles[j].x, particles[j].y);
+                    ctx.strokeStyle = dark
+                        ? 'hsla(' + lineHue + ',100%,70%,' + lineA + ')'
+                        : 'hsla(' + lineHue + ',75%,40%,' + lineA + ')';
+                    ctx.lineWidth = 0.6;
+                    ctx.stroke();
+                }
+            }
+        }
+
+        /* --- glowing dots --- */
         particles.forEach(function(p) {
+            /* oscillate alpha between 55 % and 100 % of baseAlpha at 1.4 rad/s for twinkling */
+            var twinkle = p.baseAlpha * (0.55 + 0.45 * Math.sin(time * 1.4 + p.phase));
+            if (!dark) twinkle *= 0.55; /* dimmer in light mode */
+
+            ctx.save();
+            ctx.shadowBlur  = p.r * 7;
+            ctx.shadowColor = dark
+                ? 'hsla(' + p.hue + ',100%,70%,0.9)'
+                : 'hsla(' + p.hue + ',80%,45%,0.5)';
             ctx.beginPath();
             ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-            if (dark) {
-                ctx.fillStyle = 'hsla(' + p.hue + ',100%,70%,' + p.alpha + ')';
-            } else {
-                ctx.fillStyle = 'hsla(' + p.hue + ',80%,50%,' + (p.alpha * 0.5) + ')';
-            }
+            ctx.fillStyle = dark
+                ? 'hsla(' + p.hue + ',100%,78%,' + twinkle + ')'
+                : 'hsla(' + p.hue + ',75%,45%,' + twinkle + ')';
             ctx.fill();
+            ctx.restore();
 
             /* drift */
             p.x += p.dx;
             p.y += p.dy;
 
-            /* wrap around */
+            /* wrap */
             if (p.y < -5) { p.y = canvas.height + 5; p.x = Math.random() * canvas.width; }
             if (p.x < -5) { p.x = canvas.width + 5; }
             if (p.x > canvas.width + 5) { p.x = -5; }
         });
+
         raf = requestAnimationFrame(draw);
     }
 

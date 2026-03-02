@@ -50,62 +50,59 @@ try {
         
         /* Light Theme */
         [data-theme="light"] {
-            --bg-primary: #f8f9fa;
+            --bg-primary: #f0f4ff;
             --bg-secondary: #ffffff;
             --bg-card: #ffffff;
             --text-primary: #1a1a1a;
             --text-secondary: #666666;
             --border-color: rgba(0, 0, 0, 0.1);
-            --shadow-glow: 0 0 20px rgba(0, 0, 0, 0.1);
-            --hover-bg: rgba(0, 153, 204, 0.1);
-            --shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            --shadow-glow: 0 0 20px rgba(124, 58, 237, 0.12);
+            --hover-bg: rgba(124, 58, 237, 0.08);
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
         }
-        
+
+        /* Animated light-mode background */
+        [data-theme="light"] body {
+            background: #f0f4ff;
+        }
+
         [data-theme="light"] body::before {
             content: '';
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            inset: 0;
+            pointer-events: none;
             z-index: -1;
-            background: 
-                radial-gradient(ellipse at 20% 0%, rgba(0, 240, 255, 0.08) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 100%, rgba(255, 46, 196, 0.08) 0%, transparent 50%),
-                repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(0, 240, 255, 0.03) 35px, rgba(0, 240, 255, 0.03) 70px);
-            animation: techBgMove 20s ease-in-out infinite;
+            animation: lightBgFlow 16s ease-in-out infinite alternate;
         }
-        
-        @keyframes techBgMove {
-            0%, 100% {
-                transform: translateY(0) scale(1);
-            }
-            50% {
-                transform: translateY(-20px) scale(1.05);
-            }
-        }
-        
+
         [data-theme="light"] body::after {
-            content: '';
-            position: fixed;
-            top: -50%;
-            left: -50%;
-            right: -50%;
-            bottom: -50%;
-            z-index: -2;
-            background-image: 
-                radial-gradient(circle at 20% 80%, rgba(0, 240, 255, 0.06) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(153, 69, 255, 0.06) 0%, transparent 50%),
-                radial-gradient(circle at 40% 40%, rgba(255, 170, 0, 0.04) 0%, transparent 30%);
-            animation: techBgRotate 30s linear infinite;
+            display: none;
         }
-        
-        @keyframes techBgRotate {
-            from {
-                transform: rotate(0deg);
+
+        @keyframes lightBgFlow {
+            0% {
+                background:
+                    radial-gradient(ellipse at 10% 10%, rgba(124, 58, 237, 0.14) 0%, transparent 50%),
+                    radial-gradient(ellipse at 90% 90%, rgba(0, 153, 204, 0.12) 0%, transparent 50%),
+                    radial-gradient(ellipse at 60% 50%, rgba(0, 245, 255, 0.06) 0%, transparent 40%);
             }
-            to {
-                transform: rotate(360deg);
+            33% {
+                background:
+                    radial-gradient(ellipse at 85% 15%, rgba(124, 58, 237, 0.12) 0%, transparent 50%),
+                    radial-gradient(ellipse at 15% 85%, rgba(0, 153, 204, 0.14) 0%, transparent 50%),
+                    radial-gradient(ellipse at 40% 20%, rgba(0, 245, 255, 0.07) 0%, transparent 40%);
+            }
+            66% {
+                background:
+                    radial-gradient(ellipse at 50% 90%, rgba(0, 153, 204, 0.10) 0%, transparent 50%),
+                    radial-gradient(ellipse at 60% 10%, rgba(124, 58, 237, 0.14) 0%, transparent 50%),
+                    radial-gradient(ellipse at 20% 50%, rgba(0, 245, 255, 0.06) 0%, transparent 40%);
+            }
+            100% {
+                background:
+                    radial-gradient(ellipse at 10% 10%, rgba(124, 58, 237, 0.14) 0%, transparent 50%),
+                    radial-gradient(ellipse at 90% 90%, rgba(0, 153, 204, 0.12) 0%, transparent 50%),
+                    radial-gradient(ellipse at 60% 50%, rgba(0, 245, 255, 0.06) 0%, transparent 40%);
             }
         }
         

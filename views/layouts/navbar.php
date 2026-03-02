@@ -947,6 +947,44 @@ body {
         border-left: 2px solid var(--cyan);
         padding-left: 20px;
     }
+
+    /* Notification panel mobile override – professional card look */
+    .notif-panel {
+        position: static !important;
+        min-width: 0 !important;
+        width: 100% !important;
+        margin-top: 10px;
+        border-left: none !important;
+        padding-left: 0 !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 14px !important;
+        overflow: hidden;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.25) !important;
+    }
+
+    .notif-panel-header {
+        border-radius: 14px 14px 0 0;
+        padding: 14px 16px;
+        font-size: 15px;
+    }
+
+    .notif-panel-footer {
+        border-radius: 0 0 14px 14px;
+        padding: 12px 16px;
+    }
+
+    .notif-item {
+        padding: 14px 16px;   /* larger touch targets on mobile */
+        font-size: 13px;
+    }
+
+    .notif-item-msg {
+        font-size: 13px;
+    }
+
+    .notif-panel-list {
+        max-height: 50vh;
+    }
     
     .mobile-menu-btn {
         display: block;

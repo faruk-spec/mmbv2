@@ -56,32 +56,68 @@
         
         /* Light Theme */
         :root[data-theme="light"] {
-            --bg-primary: #f8f9fa;
+            --bg-primary: #f0f4ff;
             --bg-secondary: #ffffff;
             --bg-card: #ffffff;
             --cyan: #0099cc;
             --magenta: #cc0066;
             --green: #00aa55;
             --orange: #ff8800;
-            --purple: #7722cc;
+            --purple: #7C3AED;
             --red: #dc3545;
             --text-primary: #212529;
             --text-secondary: #6c757d;
             --border-color: rgba(0, 0, 0, 0.1);
-            --shadow-glow: 0 0 20px rgba(0, 153, 204, 0.15);
+            --shadow-glow: 0 0 20px rgba(124, 58, 237, 0.12);
             --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             --sidebar-width: 280px;
-            --bg-gradient-start: rgba(0, 153, 204, 0.05);
-            --bg-gradient-end: rgba(204, 0, 102, 0.05);
+            --bg-gradient-start: rgba(124, 58, 237, 0.08);
+            --bg-gradient-end: rgba(0, 153, 204, 0.08);
             --overlay-bg: rgba(0, 0, 0, 0.3);
             --dropdown-bg: rgba(0, 0, 0, 0.05);
-            --shadow: rgba(0, 0, 0, 0.15);
-            --hover-bg: rgba(0, 153, 204, 0.08);
-            --active-bg: rgba(0, 153, 204, 0.15);
+            --shadow: rgba(0, 0, 0, 0.12);
+            --hover-bg: rgba(124, 58, 237, 0.08);
+            --active-bg: rgba(124, 58, 237, 0.12);
             --badge-success-bg: rgba(0, 170, 85, 0.15);
             --badge-danger-bg: rgba(220, 53, 69, 0.15);
             --badge-info-bg: rgba(0, 153, 204, 0.15);
             --badge-warning-bg: rgba(255, 136, 0, 0.15);
+        }
+
+        /* Animated light-mode background */
+        [data-theme="light"] body {
+            background: #f0f4ff;
+        }
+
+        [data-theme="light"] body::before {
+            animation: lightBgFlow 16s ease-in-out infinite alternate !important;
+        }
+
+        @keyframes lightBgFlow {
+            0% {
+                background:
+                    radial-gradient(ellipse at 10% 10%, rgba(124, 58, 237, 0.14) 0%, transparent 50%),
+                    radial-gradient(ellipse at 90% 90%, rgba(0, 153, 204, 0.12) 0%, transparent 50%),
+                    radial-gradient(ellipse at 60% 50%, rgba(0, 245, 255, 0.06) 0%, transparent 40%);
+            }
+            33% {
+                background:
+                    radial-gradient(ellipse at 85% 15%, rgba(124, 58, 237, 0.12) 0%, transparent 50%),
+                    radial-gradient(ellipse at 15% 85%, rgba(0, 153, 204, 0.14) 0%, transparent 50%),
+                    radial-gradient(ellipse at 40% 20%, rgba(0, 245, 255, 0.07) 0%, transparent 40%);
+            }
+            66% {
+                background:
+                    radial-gradient(ellipse at 50% 90%, rgba(0, 153, 204, 0.10) 0%, transparent 50%),
+                    radial-gradient(ellipse at 60% 10%, rgba(124, 58, 237, 0.14) 0%, transparent 50%),
+                    radial-gradient(ellipse at 20% 50%, rgba(0, 245, 255, 0.06) 0%, transparent 40%);
+            }
+            100% {
+                background:
+                    radial-gradient(ellipse at 10% 10%, rgba(124, 58, 237, 0.14) 0%, transparent 50%),
+                    radial-gradient(ellipse at 90% 90%, rgba(0, 153, 204, 0.12) 0%, transparent 50%),
+                    radial-gradient(ellipse at 60% 50%, rgba(0, 245, 255, 0.06) 0%, transparent 40%);
+            }
         }
         
         * {
