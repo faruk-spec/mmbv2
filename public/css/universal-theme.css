@@ -28,11 +28,16 @@
     --bg-card: #ffffff;
     --card-inner-bg: rgba(255, 255, 255, 0.90); /* inner fill for the rotating border animation */
     --text-primary: #1a1a1a;
-    --text-secondary: #666666;
+    --text-secondary: #555555;
     --border-color: rgba(0, 0, 0, 0.1);
     --shadow-glow: 0 0 20px rgba(124, 58, 237, 0.12);
-    /* Override neon cyan with a dark, readable teal for light backgrounds */
+    /* Override neon colours with WCAG-accessible values for light backgrounds */
     --cyan: #0369a1;
+    --magenta: #c026d3;
+    --green: #059669;
+    --orange: #d97706;
+    --purple: #7c3aed;
+    --red: #dc2626;
 }
 
 [data-theme="light"] body {

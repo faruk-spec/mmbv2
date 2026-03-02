@@ -179,6 +179,53 @@
         color: #1a1a1a !important;
     }
 
+    /* Light mode — home page specific fixes */
+    [data-theme="light"] .hero h1 {
+        background: linear-gradient(135deg, #7C3AED, #0369a1) !important;
+        -webkit-background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
+        background-clip: text !important;
+    }
+
+    [data-theme="light"] .hp-grad-text {
+        background: linear-gradient(135deg, #7C3AED, #0369a1);
+    }
+
+    [data-theme="light"] .stat-value {
+        background: linear-gradient(135deg, #7C3AED, #0369a1) !important;
+    }
+
+    [data-theme="light"] .btn-primary {
+        background: linear-gradient(135deg, #7C3AED, #0369a1) !important;
+        box-shadow: 0 4px 15px rgba(124, 58, 237, 0.30) !important;
+    }
+
+    [data-theme="light"] .timeline-badge {
+        background: linear-gradient(135deg, #7C3AED, #0369a1) !important;
+    }
+
+    [data-theme="light"] .toggle-details {
+        background: rgba(0, 0, 0, 0.04) !important;
+        border-color: rgba(0, 0, 0, 0.12) !important;
+    }
+
+    [data-theme="light"] .project-details > div {
+        background: rgba(124, 58, 237, 0.04) !important;
+    }
+
+    [data-theme="light"] .project-card:hover {
+        box-shadow: 0 12px 40px rgba(124, 58, 237, 0.20) !important;
+    }
+
+    [data-theme="light"] #hp-mouse-glow {
+        background: radial-gradient(circle, rgba(124, 58, 237, 0.10) 0%, rgba(3, 105, 161, 0.04) 40%, transparent 70%);
+    }
+
+    [data-theme="light"] .card:hover {
+        border-color: rgba(124, 58, 237, 0.30) !important;
+        box-shadow: 0 12px 36px rgba(124, 58, 237, 0.18), 0 0 0 1px rgba(124, 58, 237, 0.08) !important;
+    }
+
     @media (max-width: 768px) {
         .grid-3, .grid-4 {
             grid-template-columns: 1fr;

@@ -56,8 +56,13 @@ try {
             --bg-card: #ffffff;
             --card-inner-bg: rgba(255, 255, 255, 0.90);
             --cyan: #0369a1;
+            --magenta: #c026d3;
+            --green: #059669;
+            --orange: #d97706;
+            --purple: #7c3aed;
+            --red: #dc2626;
             --text-primary: #1a1a1a;
-            --text-secondary: #666666;
+            --text-secondary: #555555;
             --border-color: rgba(0, 0, 0, 0.1);
             --shadow-glow: 0 0 20px rgba(124, 58, 237, 0.12);
             --hover-bg: rgba(124, 58, 237, 0.08);
@@ -949,6 +954,65 @@ try {
             display: flex;
         }
         
+        /* ===== Light Mode Component Overrides ===== */
+        [data-theme="light"] .header {
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        [data-theme="light"] .nav a:hover,
+        [data-theme="light"] .nav a.active,
+        [data-theme="light"] .nav-link:hover {
+            background: rgba(124, 58, 237, 0.08);
+            color: var(--purple);
+        }
+
+        [data-theme="light"] .theme-toggle:hover {
+            background: rgba(124, 58, 237, 0.08);
+            border-color: var(--purple);
+        }
+
+        [data-theme="light"] .dropdown-item:hover {
+            background: rgba(124, 58, 237, 0.08);
+            color: var(--purple);
+        }
+
+        [data-theme="light"] .user-menu-trigger:hover {
+            border-color: var(--purple);
+        }
+
+        [data-theme="light"] .user-menu-item:hover {
+            background: rgba(124, 58, 237, 0.06);
+            color: var(--purple);
+        }
+
+        [data-theme="light"] .user-menu-dropdown {
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        [data-theme="light"] .table tr:hover td {
+            background: rgba(0, 0, 0, 0.03);
+        }
+
+        [data-theme="light"] .form-input:focus {
+            box-shadow: 0 0 0 3px rgba(3, 105, 161, 0.15);
+        }
+
+        [data-theme="light"] .badge-info {
+            background: rgba(3, 105, 161, 0.10);
+        }
+
+        [data-theme="light"] .btn-secondary:hover {
+            box-shadow: 0 0 15px rgba(124, 58, 237, 0.15);
+        }
+
+        @media (max-width: 768px) {
+            [data-theme="light"] .nav {
+                background: rgba(255, 255, 255, 0.98);
+                box-shadow: -5px 0 20px rgba(0, 0, 0, 0.12);
+            }
+        }
+
         /* Dashboard Layout Styles */
         .full-dashboard-layout {
             display: grid;
