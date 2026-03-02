@@ -2,15 +2,12 @@
 <?php View::extend('main'); ?>
 
 <?php View::section('styles'); ?>
-<!-- particles.js -->
-<script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
-<!-- three.js -->
-<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <style>
     /* ── Futuristic Home Page Theme ── */
 
-    /* Override background for homepage */
-    body.home-page {
+    /* Dark theme: override background for homepage */
+    [data-theme="dark"] body.home-page,
+    :root:not([data-theme="light"]) body.home-page {
         background: #0b0f19 !important;
     }
 
@@ -166,6 +163,35 @@
         .grid-3, .grid-4 { grid-template-columns: 1fr; }
         .hero h1 { font-size: 1.8rem !important; }
         .hero h2 { font-size: 1.2rem !important; }
+    }
+
+    /* ── Light theme overrides ── */
+    [data-theme="light"] #home-particles,
+    [data-theme="light"] #home-mouse-glow {
+        display: none !important;
+    }
+
+    [data-theme="light"] .home-page .card {
+        background: rgba(255, 255, 255, 0.95) !important;
+        border: 1px solid rgba(124, 58, 237, 0.2) !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
+    }
+
+    [data-theme="light"] .home-page .card:hover {
+        box-shadow: 0 8px 30px rgba(124, 58, 237, 0.15) !important;
+        border-color: rgba(124, 58, 237, 0.4) !important;
+    }
+
+    [data-theme="light"] .home-page .hero h1,
+    [data-theme="light"] .home-page .stat-value {
+        background: linear-gradient(135deg, #6d28d9, #0891b2) !important;
+        -webkit-background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
+        background-clip: text !important;
+    }
+
+    [data-theme="light"] .home-page .btn-primary {
+        box-shadow: 0 0 15px rgba(109, 40, 217, 0.25) !important;
     }
 </style>
 <?php View::endSection(); ?>
@@ -908,94 +934,166 @@ $timelineItems = $db->fetchAll("SELECT * FROM home_timeline WHERE is_active = 1 
     // Add home-page class to body for scoped CSS
     document.body.classList.add('home-page');
 
-    // ── Particles.js background ──
-    var pDiv = document.createElement('div');
-    pDiv.id = 'home-particles';
-    document.body.insertBefore(pDiv, document.body.firstChild);
+    var isDark = document.documentElement.getAttribute('data-theme') !== 'light';
 
-    if (typeof particlesJS !== 'undefined') {
-        particlesJS('home-particles', {
-            particles: {
-                number: { value: 70, density: { enable: true, value_area: 900 } },
-                color: { value: ['#7C3AED', '#00F5FF', '#a855f7'] },
-                shape: { type: 'circle' },
-                opacity: { value: 0.5, random: true, anim: { enable: true, speed: 0.5, opacity_min: 0.1, sync: false } },
-                size: { value: 2.5, random: true },
-                line_linked: { enable: true, distance: 140, color: '#7C3AED', opacity: 0.2, width: 1 },
-                move: { enable: true, speed: 1.2, direction: 'none', random: true, straight: false, out_mode: 'out' }
-            },
-            interactivity: {
-                detect_on: 'canvas',
-                events: { onhover: { enable: true, mode: 'grab' }, onclick: { enable: false }, resize: true },
-                modes: { grab: { distance: 140, line_linked: { opacity: 0.5 } } }
-            },
-            retina_detect: true
+    // ── Pure-JS canvas particle system (no external dependency) ──
+    var pCanvas = document.createElement('canvas');
+    pCanvas.id = 'home-particles';
+    pCanvas.style.cssText = 'position:fixed;inset:0;z-index:0;pointer-events:none;';
+    document.body.insertBefore(pCanvas, document.body.firstChild);
+
+    if (isDark) {
+        var ctx = pCanvas.getContext('2d');
+        var particles = [];
+        var COLORS = ['#7C3AED', '#00F5FF', '#a855f7'];
+
+        function resizeParticles() {
+            pCanvas.width  = window.innerWidth;
+            pCanvas.height = window.innerHeight;
+        }
+
+        function mkParticle() {
+            return {
+                x: Math.random() * pCanvas.width,
+                y: Math.random() * pCanvas.height,
+                vx: (Math.random() - 0.5) * 1.2,
+                vy: (Math.random() - 0.5) * 1.2,
+                r:  Math.random() * 2 + 0.5,
+                op: Math.random() * 0.4 + 0.15,
+                color: COLORS[Math.floor(Math.random() * COLORS.length)]
+            };
+        }
+
+        function initParticles() {
+            resizeParticles();
+            particles = Array.from({ length: 70 }, mkParticle);
+        }
+
+        function drawParticles() {
+            ctx.clearRect(0, 0, pCanvas.width, pCanvas.height);
+            var len = particles.length;
+            for (var i = 0; i < len; i++) {
+                var p = particles[i];
+                p.x += p.vx;  p.y += p.vy;
+                if (p.x < 0 || p.x > pCanvas.width)  { p.vx *= -1; p.x = Math.max(0, Math.min(p.x, pCanvas.width)); }
+                if (p.y < 0 || p.y > pCanvas.height) { p.vy *= -1; p.y = Math.max(0, Math.min(p.y, pCanvas.height)); }
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = p.op;
+                ctx.fill();
+                for (var j = i + 1; j < len; j++) {
+                    var q = particles[j];
+                    var dx = p.x - q.x, dy = p.y - q.y;
+                    var dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < 140) {
+                        ctx.beginPath();
+                        ctx.moveTo(p.x, p.y);
+                        ctx.lineTo(q.x, q.y);
+                        ctx.strokeStyle = 'rgba(124,58,237,' + (0.18 * (1 - dist / 140)) + ')';
+                        ctx.globalAlpha = 1;
+                        ctx.lineWidth = 0.7;
+                        ctx.stroke();
+                    }
+                }
+            }
+            requestAnimationFrame(drawParticles);
+        }
+
+        initParticles();
+        drawParticles();
+        window.addEventListener('resize', function() {
+            resizeParticles();
+            particles.forEach(function(p) {
+                p.x = Math.min(p.x, pCanvas.width);
+                p.y = Math.min(p.y, pCanvas.height);
+            });
+        });
+
+        // ── Radial mouse glow (throttled to rAF) ──
+        var glowEl = document.createElement('div');
+        glowEl.id = 'home-mouse-glow';
+        document.body.insertBefore(glowEl, document.body.firstChild);
+        var rafPending = false;
+        document.addEventListener('mousemove', function(e) {
+            if (!rafPending) {
+                rafPending = true;
+                requestAnimationFrame(function() {
+                    glowEl.style.setProperty('--mx', e.clientX + 'px');
+                    glowEl.style.setProperty('--my', e.clientY + 'px');
+                    rafPending = false;
+                });
+            }
         });
     }
 
-    // ── Radial mouse glow (throttled to rAF) ──
-    var glowEl = document.createElement('div');
-    glowEl.id = 'home-mouse-glow';
-    document.body.insertBefore(glowEl, document.body.firstChild);
-
-    var rafPending = false;
-    document.addEventListener('mousemove', function(e) {
-        if (!rafPending) {
-            rafPending = true;
-            requestAnimationFrame(function() {
-                glowEl.style.setProperty('--mx', e.clientX + 'px');
-                glowEl.style.setProperty('--my', e.clientY + 'px');
-                rafPending = false;
-            });
-        }
+    // Listen for theme changes to show/hide particle effects
+    document.addEventListener('themeChanged', function(e) {
+        var dark = e.detail.theme === 'dark';
+        if (pCanvas) pCanvas.style.display = dark ? '' : 'none';
+        var glow = document.getElementById('home-mouse-glow');
+        if (glow) glow.style.display = dark ? '' : 'none';
     });
 
-    // ── Rotating wireframe Three.js sphere ──
-    if (typeof THREE !== 'undefined') {
-        // Find the hero right column placeholder
-        var heroPlaceholder = document.querySelector('[data-home-sphere-target]');
-        if (heroPlaceholder) {
-            // Replace the SVG placeholder with a Three.js canvas
-            heroPlaceholder.innerHTML = '';
-            var sphereCanvas = document.createElement('canvas');
-            sphereCanvas.id = 'home-sphere-canvas';
-            heroPlaceholder.appendChild(sphereCanvas);
+    // ── Pure-JS canvas wireframe sphere (no Three.js dependency) ──
+    var heroPlaceholder = document.querySelector('[data-home-sphere-target]');
+    if (heroPlaceholder) {
+        heroPlaceholder.innerHTML = '';
+        var sphCanvas = document.createElement('canvas');
+        sphCanvas.id = 'home-sphere-canvas';
+        sphCanvas.style.cssText = 'width:100%;height:100%;border-radius:12px;display:block;';
+        heroPlaceholder.style.background = 'transparent';
+        heroPlaceholder.appendChild(sphCanvas);
 
-            var renderer = new THREE.WebGLRenderer({ canvas: sphereCanvas, alpha: true, antialias: true });
-            renderer.setPixelRatio(window.devicePixelRatio);
-            renderer.setSize(heroPlaceholder.offsetWidth, heroPlaceholder.offsetHeight);
+        var sc = sphCanvas.getContext('2d');
+        var sphAngle = 0;
 
-            var scene = new THREE.Scene();
-            var camera = new THREE.PerspectiveCamera(50, heroPlaceholder.offsetWidth / heroPlaceholder.offsetHeight, 0.1, 100);
-            camera.position.z = 3;
-
-            var geo = new THREE.SphereGeometry(1.2, 20, 20);
-            var wire = new THREE.WireframeGeometry(geo);
-            var mat = new THREE.LineBasicMaterial({ color: 0x7C3AED, opacity: 0.7, transparent: true });
-            var sphere = new THREE.LineSegments(wire, mat);
-            scene.add(sphere);
-
-            // Inner glow sphere
-            var innerGeo = new THREE.SphereGeometry(1.19, 20, 20);
-            var innerMat = new THREE.MeshBasicMaterial({ color: 0x00F5FF, wireframe: true, opacity: 0.08, transparent: true });
-            scene.add(new THREE.Mesh(innerGeo, innerMat));
-
-            function animateSphere() {
-                requestAnimationFrame(animateSphere);
-                sphere.rotation.x += 0.003;
-                sphere.rotation.y += 0.005;
-                renderer.render(scene, camera);
-            }
-            animateSphere();
-
-            window.addEventListener('resize', function() {
-                var w = heroPlaceholder.offsetWidth;
-                var h = heroPlaceholder.offsetHeight;
-                renderer.setSize(w, h);
-                camera.aspect = w / h;
-                camera.updateProjectionMatrix();
-            });
+        function resizeSphere() {
+            sphCanvas.width  = heroPlaceholder.offsetWidth  || 400;
+            sphCanvas.height = heroPlaceholder.offsetHeight || 260;
         }
+
+        function drawSphere() {
+            var W = sphCanvas.width, H = sphCanvas.height;
+            sc.clearRect(0, 0, W, H);
+            var cx = W / 2, cy = H / 2;
+            var R  = Math.min(cx, cy) * 0.78;
+            var a  = sphAngle;
+
+            // Latitude rings
+            for (var lat = -75; lat <= 75; lat += 25) {
+                var phi   = lat * Math.PI / 180;
+                var rRing = R * Math.cos(phi);
+                var yRing = cy + R * Math.sin(phi);
+                var xScale = Math.abs(Math.cos(a));
+                sc.beginPath();
+                sc.ellipse(cx, yRing, rRing, rRing * 0.28 * xScale, 0, 0, Math.PI * 2); /* 0.28: perspective foreshortening for rings viewed at ~73° inclination */
+                sc.strokeStyle = 'rgba(124,58,237,' + (0.25 + 0.45 * Math.abs(Math.cos(phi))) + ')';
+                sc.lineWidth = 0.9;
+                sc.stroke();
+            }
+
+            // Meridian rings (vertical)
+            for (var lng = 0; lng < 180; lng += 30) {
+                var theta  = (lng * Math.PI / 180) + a;
+                var xScale2 = Math.abs(Math.cos(theta));
+                sc.beginPath();
+                sc.ellipse(cx, cy, R * xScale2, R, 0, 0, Math.PI * 2);
+                sc.strokeStyle = 'rgba(0,245,255,' + (0.08 + 0.3 * xScale2) + ')';
+                sc.lineWidth = 0.9;
+                sc.stroke();
+            }
+        }
+
+        function animateSphereCanvas() {
+            sphAngle += 0.008;
+            drawSphere();
+            requestAnimationFrame(animateSphereCanvas);
+        }
+
+        resizeSphere();
+        animateSphereCanvas();
+        window.addEventListener('resize', resizeSphere);
     }
 })();
 </script>

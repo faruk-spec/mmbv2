@@ -610,6 +610,9 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
 /* Universal Navbar Styles */
 html {
     scroll-behavior: smooth;
+    /* Use 'clip' instead of 'hidden' to prevent sticky positioning from breaking.
+       overflow-x: clip does not create a scroll container, so position:sticky works. */
+    overflow-x: clip;
 }
 
 body {

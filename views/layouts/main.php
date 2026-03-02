@@ -116,10 +116,15 @@ try {
         }
         
         html {
-            font-size: clamp(10px, 0.85vw, 14px);
+            font-size: 62.5%; /* 1rem = 10px; body text (1.4rem) = 14px; headings scale proportionally */
         }
         
-        html, body {
+        html {
+            overflow-x: clip; /* 'clip' doesn't create a scroll container — keeps position:sticky working */
+            width: 100%;
+        }
+        
+        body {
             width: 100%;
             overflow-x: hidden;
             position: relative;
