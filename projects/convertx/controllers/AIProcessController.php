@@ -349,6 +349,6 @@ class AIProcessController
     private function render(string $view, array $data = []): void
     {
         extract($data);
-        require PROJECT_PATH . '/views/' . $view . '.php';
+        require PROJECT_PATH . '/views/layout.php';
     }
 }
