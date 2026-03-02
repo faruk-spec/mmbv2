@@ -662,7 +662,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 16px 0;
+    padding: 10px 0;
     max-width: 1400px;
     margin: 0 auto;
     padding-left: 20px;
@@ -670,7 +670,7 @@ body {
 }
 
 .universal-header .logo {
-    font-size: 1.9rem;
+    font-size: 1.2rem;
     font-weight: 800;
     letter-spacing: -0.02em;
     background: linear-gradient(135deg, var(--cyan), var(--magenta));
@@ -693,14 +693,12 @@ body {
 .universal-nav .nav-link {
     color: var(--text-secondary);
     font-weight: 500;
-    padding: 9px 14px;
+    padding: 7px 12px;
     position: relative;
     display: flex;
     align-items: center;
     gap: 6px;
-    /* html { font-size: 62.5% } → 1rem = 10px; zoom: 0.85 applied on <html>
-       1.8rem = 18px pre-zoom → ≈15.3px visual (vs old 14px px which was 11.9px visual) */
-    font-size: 1.8rem;
+    font-size: 0.9rem;
     cursor: pointer;
     border-radius: 6px;
     transition: var(--transition);
@@ -829,13 +827,13 @@ body {
     background: var(--bg-card);
     border: 1px solid var(--border-color);
     color: var(--text-primary);
-    padding: 9px 14px;
+    padding: 7px 12px;
     border-radius: 6px;
     cursor: pointer;
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: 1.8rem; /* 1rem = 10px (62.5% base); 1.8rem = 18px → ~15.3px visual at zoom 0.85 */
+    font-size: 0.9rem;
     transition: var(--transition);
     font-family: inherit;
 }

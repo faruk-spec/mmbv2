@@ -60,7 +60,36 @@ try {
             --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.12);
             --hover-bg: rgba(99, 102, 241, 0.08);
             --shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+            /* ── Darker accent colours so they stay visible on light backgrounds ── */
+            --cyan:    #0369a1; /* sky-700    */
+            --magenta: #be185d; /* pink-700   */
+            --green:   #15803d; /* green-700  */
+            --orange:  #b45309; /* amber-700  */
+            --purple:  #6d28d9; /* violet-700 */
+            --red:     #b91c1c; /* red-700    */
         }
+
+        /* Light-mode: ensure coloured card/badge/alert text is dark enough to read */
+        [data-theme="light"] .badge-info    { background: rgba(3, 105, 161, 0.10); color: var(--cyan); }
+        [data-theme="light"] .badge-success { background: rgba(21, 128, 61, 0.10); color: var(--green); }
+        [data-theme="light"] .badge-warning { background: rgba(180, 83, 9, 0.10);  color: var(--orange); }
+        [data-theme="light"] .badge-danger  { background: rgba(185, 28, 28, 0.10); color: var(--red); }
+        [data-theme="light"] .alert-success { background: rgba(21, 128, 61, 0.08); border-color: var(--green); color: var(--green); }
+        [data-theme="light"] .alert-error   { background: rgba(185, 28, 28, 0.08); border-color: var(--red);   color: var(--red); }
+        [data-theme="light"] .alert-warning { background: rgba(180, 83, 9, 0.08);  border-color: var(--orange);color: var(--orange); }
+        [data-theme="light"] .alert-info    { background: rgba(3, 105, 161, 0.08); border-color: var(--cyan);  color: var(--cyan); }
+        [data-theme="light"] .card {
+            background: #ffffff;
+            border-color: rgba(99, 102, 241, 0.2);
+            box-shadow: 0 2px 12px rgba(99, 102, 241, 0.07);
+        }
+        [data-theme="light"] .card:hover {
+            border-color: rgba(99, 102, 241, 0.4);
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.12);
+        }
+        [data-theme="light"] a { color: var(--cyan); }
+        [data-theme="light"] a:hover { color: var(--purple); }
+        [data-theme="light"] .btn-primary { color: #ffffff; }
 
         /* ── Light-mode animated mesh background ── */
         [data-theme="light"] body::before {
@@ -109,13 +138,7 @@ try {
         }
         
         html {
-            font-size: 62.5%; /* 1rem = 10px base */
-            /* CSS `zoom` is now a W3C standard (CSS View Transitions / Zoom Level spec),
-               supported in Chrome, Edge, Safari, and Firefox 126+ (June 2024).
-               zoom: 0.85 scales the entire page to ~85%, matching the ~70-80% browser
-               zoom that the site was designed to look best at. Font sizes below are
-               increased to compensate so text remains readable. */
-            zoom: 0.85;
+            font-size: 100%; /* 1rem = 16px browser default — keeps all inline rem values readable */
         }
         
         html {
@@ -135,16 +158,19 @@ try {
             color: var(--text-primary);
             min-height: 100vh;
             line-height: 1.6;
-            font-size: 1.65rem; /* 16.5px * 0.85 ≈ 14px visual */
+            font-size: 0.975rem; /* ~15.6px — comfortable reading size */
             overflow-y: auto;
+            /* Sticky footer: push footer to viewport bottom when content is short */
+            display: flex;
+            flex-direction: column;
         }
         
-        /* Scaled-up headings to keep visual size readable at zoom 0.85 */
-        h1 { font-size: 2.65rem; }  /* 26.5px * 0.85 ≈ 22.5px visual */
-        h2 { font-size: 2rem; }     /* 20px  * 0.85 ≈ 17px visual */
-        h3 { font-size: 1.75rem; }  /* 17.5px * 0.85 ≈ 14.9px visual */
-        h4 { font-size: 1.5rem; }   /* 15px  * 0.85 ≈ 12.75px visual */
-        p  { font-size: 1.65rem; }  /* same as body */
+        /* Headings — standard scale for 1rem = 16px */
+        h1 { font-size: 1.65rem; }  /* 26.4px */
+        h2 { font-size: 1.3rem; }   /* 20.8px */
+        h3 { font-size: 1.1rem; }   /* 17.6px */
+        h4 { font-size: 0.95rem; }  /* 15.2px */
+        p  { font-size: 0.975rem; } /* ≈ 15.6px, same as body */
         
         /* ── Dark-mode ambient glow ── */
         body::before {
@@ -775,17 +801,18 @@ try {
         /* Main Content */
         .main {
             padding: 30px 0;
-            min-height: calc(100vh - 120px);
+            flex: 1; /* fill available height so footer is always at bottom */
         }
         
         /* Footer */
         .footer {
             background: var(--bg-secondary);
             border-top: 1px solid var(--border-color);
-            padding: 16px 0;
+            padding: 14px 0;
             text-align: center;
             color: var(--text-secondary);
-            font-size: 13px;
+            font-size: 0.83rem;
+            flex-shrink: 0; /* never shrink — always visible at page bottom */
         }
         
         /* Grid */
@@ -845,12 +872,12 @@ try {
             }
             
             body {
-                font-size: 13px;
+                font-size: 0.9rem;
             }
             
-            h1 { font-size: 1.5rem; }
-            h2 { font-size: 1.25rem; }
-            h3 { font-size: 1.1rem; }
+            h1 { font-size: 1.35rem; }
+            h2 { font-size: 1.15rem; }
+            h3 { font-size: 1rem; }
         }
         
         /* Utility Classes */
@@ -933,6 +960,144 @@ try {
             overflow-x: hidden;
             padding: 20px;
             min-width: 0;
+        }
+
+        /* ── Auth Pages (login / register) ── */
+        .auth-page-wrap {
+            min-height: calc(100vh - 120px);
+            display: flex;
+            align-items: stretch;
+        }
+        .auth-brand-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 40px;
+            background: linear-gradient(145deg, rgba(99,102,241,0.18) 0%, rgba(139,92,246,0.12) 50%, rgba(0,245,255,0.08) 100%);
+            border-right: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+        .auth-brand-panel::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 60% 50% at 20% 30%, rgba(99,102,241,0.20) 0%, transparent 60%),
+                radial-gradient(ellipse 50% 40% at 80% 70%, rgba(0,245,255,0.12) 0%, transparent 60%);
+            pointer-events: none;
+        }
+        .auth-brand-logo {
+            font-size: 2.2rem;
+            font-weight: 900;
+            letter-spacing: -0.03em;
+            background: linear-gradient(135deg, var(--cyan), var(--magenta));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .auth-brand-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+            text-align: center;
+            position: relative;
+        }
+        .auth-brand-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            text-align: center;
+            max-width: 320px;
+            line-height: 1.7;
+            position: relative;
+        }
+        .auth-brand-dots {
+            position: absolute;
+            bottom: 40px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+        }
+        .auth-brand-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--border-color);
+        }
+        .auth-brand-dot.active {
+            background: var(--cyan);
+            box-shadow: 0 0 8px var(--cyan);
+        }
+        .auth-form-panel {
+            width: 480px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 48px;
+        }
+        .auth-form-inner {
+            width: 100%;
+            max-width: 360px;
+        }
+        .auth-form-heading {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+        }
+        .auth-form-sub {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 28px;
+        }
+        .auth-divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 18px 0;
+            color: var(--text-secondary);
+            font-size: 0.82rem;
+        }
+        .auth-divider::before,
+        .auth-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border-color);
+        }
+        .auth-google-btn {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 10px 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: var(--transition);
+        }
+        .auth-google-btn:hover {
+            border-color: var(--cyan);
+            color: var(--text-primary);
+            background: var(--hover-bg);
+        }
+        @media (max-width: 768px) {
+            .auth-brand-panel { display: none; }
+            .auth-form-panel { width: 100%; padding: 40px 24px; }
         }
     </style>
     
