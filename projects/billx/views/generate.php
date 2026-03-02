@@ -3,7 +3,7 @@
 $csrfToken = \Core\Security::generateCsrfToken();
 $selectedType = htmlspecialchars($_GET['type'] ?? 'general');
 if (!array_key_exists($selectedType, $config['bill_types'])) $selectedType = 'general';
-$billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . rand(100, 999);
+$billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2hex(random_bytes(3))), 0, 6);
 ?>
 
 <a href="/projects/billx" class="back-link"><i class="fas fa-arrow-left"></i> Dashboard</a>

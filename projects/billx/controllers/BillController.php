@@ -188,7 +188,8 @@ class BillController
         include PROJECT_PATH . '/views/view.php';
         $html = ob_get_clean();
 
-        $filename = 'bill-' . preg_replace('/[^a-zA-Z0-9_-]/', '', $bill['bill_number']) . '.html';
+        $safeBase = preg_replace('/[^a-zA-Z0-9_-]/', '', basename($bill['bill_number']));
+        $filename = 'bill-' . ($safeBase ?: (string)$id) . '.html';
         header('Content-Type: text/html; charset=utf-8');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
         echo $html;
