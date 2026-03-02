@@ -425,10 +425,11 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
         if (toggle) {
             toggle.addEventListener('click', (e) => {
                 e.stopPropagation();
-                // Close other dropdowns
+                // Close other dropdowns and the notification bell
                 dropdowns.forEach(d => {
                     if (d !== dropdown) d.classList.remove('active');
                 });
+                document.querySelectorAll('.notif-bell-wrap.active').forEach(w => w.classList.remove('active'));
                 dropdown.classList.toggle('active');
             });
         }
@@ -985,12 +986,17 @@ body {
         display: none;
     }
 
-    /* Notif panel on mobile: constrained width, anchored to right edge */
+    /* Notif panel on mobile: fixed to viewport so body overflow-x:hidden can't clip it */
     .notif-panel {
-        width: min(340px, calc(100vw - 20px)) !important;
+        position: fixed !important;
+        top: 64px !important;
+        right: 8px !important;
+        left: 8px !important;
+        width: auto !important;
         min-width: 0 !important;
-        right: 0 !important;
-        left: auto !important;
+        max-height: 70vh;
+        overflow-y: auto;
+        z-index: 10000;
     }
 
     /* Profile dropdown on mobile: constrained width */

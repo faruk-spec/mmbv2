@@ -929,7 +929,7 @@ $timelineItems = $db->fetchAll("SELECT * FROM home_timeline WHERE is_active = 1 
 <?php endif; ?>
 
 <script>
-/* Homepage: AI Network (data packets, depth parallax, hue shift) + Mouse Glow */
+/* Homepage: AI Network — gradient synapses, comet packets, node pulses, depth parallax */
 (function() {
     var isDark = function() {
         return document.documentElement.getAttribute('data-theme') !== 'light';
@@ -943,21 +943,16 @@ $timelineItems = $db->fetchAll("SELECT * FROM home_timeline WHERE is_active = 1 
             glow.style.top  = e.clientY + 'px';
             glow.style.opacity = isDark() ? '1' : '0.5';
         });
-        document.addEventListener('mouseleave', function() {
-            glow.style.opacity = '0';
-        });
+        document.addEventListener('mouseleave', function() { glow.style.opacity = '0'; });
     }
 
     /* ---- AI Network ---- */
     var canvas = document.getElementById('hp-particles');
     if (!canvas) return;
-    var ctx    = canvas.getContext('2d');
-    var nodes   = [];   /* neuron nodes */
-    var packets = [];   /* data packets traveling along edges */
-    var raf;
-    var time        = 0;
-    var CONNECT_DIST = 120;  /* max distance (px) for two nodes to form a synapse edge */
-    var MAX_PACKETS  = 28;   /* cap on simultaneous data packets for performance */
+    var ctx = canvas.getContext('2d');
+    var nodes = [], packets = [], raf, time = 0;
+    var CONNECT_DIST = 160;  /* max px for a synapse edge */
+    var MAX_PACKETS  = 45;   /* simultaneous data packets */
 
     function resize() {
         canvas.width  = window.innerWidth;
@@ -966,32 +961,49 @@ $timelineItems = $db->fetchAll("SELECT * FROM home_timeline WHERE is_active = 1 
 
     function rnd(a, b) { return a + Math.random() * (b - a); }
 
-    /* Global hue slowly oscillates: purple (270°) ↔ cyan (185°), period ~180 s */
-    function globalHue() { return 185 + 85 * (0.5 + 0.5 * Math.sin(time * 0.035)); }
+    /* Hue oscillates: cyan 185° ↔ purple 270°, ~250 s period (2π / 0.025 ≈ 251 s) */
+    function globalHue() { return 185 + 85 * (0.5 + 0.5 * Math.sin(time * 0.025)); }
 
     function createNode() {
-        /* depth 0 = near (big, fast, bright)  depth 2 = far (small, slow, dim) */
+        /* 3 depth layers: 0 = near (large/fast/bright), 2 = far (small/slow/dim) */
         var depth = Math.floor(Math.random() * 3);
-        var sf    = 1 - depth * 0.3;   /* speed/brightness scale: 1.0 / 0.7 / 0.4 */
+        var sf    = 1 - depth * 0.3;   /* speed scale per layer */
         return {
-            x:         Math.random() * canvas.width,
-            y:         Math.random() * canvas.height,
+            x:         rnd(0, canvas.width),
+            y:         rnd(0, canvas.height),
             depth:     depth,
-            /* depth=0 adds +1.1r, depth=1 adds +0.55r, depth=2 adds +0 — size parallax */
-            r:         rnd(0.7, 1.5) + (2 - depth) * 0.55,
-            dx:        rnd(-0.14, 0.14) * sf,
-            dy:        rnd(-0.20, -0.04) * sf,
-            baseAlpha: rnd(0.35, 0.70) + (2 - depth) * 0.12,
+            r:         rnd(1.0, 2.5) + (2 - depth) * 0.6,  /* size parallax */
+            dx:        rnd(-0.28, 0.28) * sf,
+            dy:        rnd(-0.28, 0.28) * sf,               /* all directions */
+            baseAlpha: rnd(0.4, 0.75) + (2 - depth) * 0.1,
             phase:     rnd(0, Math.PI * 2),
+            pulse:     0,   /* 0–1: glow boost when a packet departs/arrives */
         };
     }
 
     function init() {
-        nodes   = [];
-        packets = [];
-        /* ~1 node per 14 000 px², max 65 */
-        var count = Math.min(65, Math.floor(canvas.width * canvas.height / 14000));
+        nodes = []; packets = [];
+        /* ~1 node per 10,000 px², max 80 */
+        var count = Math.min(80, Math.floor(canvas.width * canvas.height / 10000));
         for (var i = 0; i < count; i++) nodes.push(createNode());
+    }
+
+    /* Draw a gradient line — purple hue on one end, cyan on the other */
+    function gradientLine(x1, y1, h1, x2, y2, h2, alpha, lineW, dark) {
+        var grad = ctx.createLinearGradient(x1, y1, x2, y2);
+        if (dark) {
+            grad.addColorStop(0, 'hsla(' + h1 + ',100%,65%,' + alpha + ')');
+            grad.addColorStop(1, 'hsla(' + h2 + ',100%,65%,' + alpha + ')');
+        } else {
+            grad.addColorStop(0, 'hsla(' + h1 + ',70%,42%,' + alpha + ')');
+            grad.addColorStop(1, 'hsla(' + h2 + ',70%,42%,' + alpha + ')');
+        }
+        ctx.lineWidth   = lineW;
+        ctx.strokeStyle = grad;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
     }
 
     function draw() {
@@ -1000,8 +1012,8 @@ $timelineItems = $db->fetchAll("SELECT * FROM home_timeline WHERE is_active = 1 
         time += 0.016;
         var gHue = globalHue();
 
-        /* ---- synapse lines — build edge list for packet spawning ---- */
-        var edges = [];   /* flat array of index pairs [i0,j0, i1,j1, …] */
+        /* ---- synapse lines — also builds edge list for packet spawning ---- */
+        var edges = [];
         for (var ii = 0; ii < nodes.length - 1; ii++) {
             for (var jj = ii + 1; jj < nodes.length; jj++) {
                 var na = nodes[ii], nb = nodes[jj];
@@ -1009,86 +1021,112 @@ $timelineItems = $db->fetchAll("SELECT * FROM home_timeline WHERE is_active = 1 
                 var dist = Math.sqrt(ddx * ddx + ddy * ddy);
                 if (dist < CONNECT_DIST) {
                     var dDepth = Math.abs(na.depth - nb.depth);
-                    /* same-depth connections are brighter */
-                    var lineA = (1 - dist / CONNECT_DIST)
-                                * (dark ? 0.28 : 0.12)
-                                * (1 - dDepth * 0.25);
-                    /* hue varies per edge pair for visual richness */
-                    var eHue = gHue + (ii % 5 - 2) * 18;
-                    ctx.beginPath();
-                    ctx.moveTo(na.x, na.y);
-                    ctx.lineTo(nb.x, nb.y);
-                    ctx.strokeStyle = dark
-                        ? 'hsla(' + eHue + ',100%,65%,' + lineA + ')'
-                        : 'hsla(' + eHue + ',70%,38%,' + lineA + ')';
-                    ctx.lineWidth = 0.55 - dDepth * 0.05;
-                    ctx.stroke();
+                    var lineA  = (1 - dist / CONNECT_DIST)
+                                 * (dark ? 0.38 : 0.15)
+                                 * (1 - dDepth * 0.2);
+                    /* pulse-brighten edges connected to active nodes */
+                    var pulseBoost = 1 + Math.max(na.pulse, nb.pulse) * 2;
+                    lineA = Math.min(lineA * pulseBoost, dark ? 0.75 : 0.35);
+                    var lineW = (0.75 - dDepth * 0.12)
+                                * (1 + Math.max(na.pulse, nb.pulse) * 0.6);
+                    /* per-node hue offset for colour variety along the network */
+                    var h1 = gHue + (ii % 7 - 3) * 12;
+                    var h2 = gHue + (jj % 7 - 3) * 12;
+                    gradientLine(na.x, na.y, h1, nb.x, nb.y, h2, lineA, lineW, dark);
                     edges.push(ii, jj);
                 }
             }
         }
 
-        /* ---- occasionally spawn a new data packet on a random edge ---- */
-        if (packets.length < MAX_PACKETS && edges.length > 0 && Math.random() < 0.05) {
+        /* ---- spawn data packets ---- */
+        if (packets.length < MAX_PACKETS && edges.length > 0 && Math.random() < 0.09) {
             var pick = Math.floor(Math.random() * (edges.length / 2)) * 2;
+            var ai   = edges[pick], bi = edges[pick + 1];
             packets.push({
-                ai:    edges[pick],
-                bi:    edges[pick + 1],
+                ai:    ai,
+                bi:    bi,
                 t:     0,
-                speed: rnd(0.010, 0.022),
-                hue:   gHue + rnd(-30, 30),
+                speed: rnd(0.012, 0.030),
+                hue:   gHue + rnd(-45, 45),
+                trail: [],   /* [{x,y}] for comet effect, max 8 points */
             });
+            if (nodes[ai]) nodes[ai].pulse = 1;   /* source node fires */
         }
 
-        /* ---- advance & draw data packets ---- */
+        /* ---- draw data packets with comet trail ---- */
         for (var k = packets.length - 1; k >= 0; k--) {
             var pk  = packets[k];
             var pna = nodes[pk.ai], pnb = nodes[pk.bi];
             if (!pna || !pnb) { packets.splice(k, 1); continue; }
             pk.t += pk.speed;
-            if (pk.t >= 1) { packets.splice(k, 1); continue; }
+            if (pk.t >= 1) {
+                if (pnb) pnb.pulse = 1;   /* destination node lights up */
+                packets.splice(k, 1);
+                continue;
+            }
             var px = pna.x + (pnb.x - pna.x) * pk.t;
             var py = pna.y + (pnb.y - pna.y) * pk.t;
-            /* bright core with soft glow halo */
+
+            /* store trail, keep last 8 positions */
+            pk.trail.push({ x: px, y: py });
+            if (pk.trail.length > 8) pk.trail.shift();
+
+            /* draw fading comet tail */
+            for (var ti = 0; ti < pk.trail.length; ti++) {
+                var tf = (ti + 1) / pk.trail.length;   /* fade factor: older→newer, opacity increases toward packet head */
+                ctx.save();
+                ctx.globalAlpha = tf * (dark ? 0.55 : 0.28);
+                ctx.beginPath();
+                ctx.arc(pk.trail[ti].x, pk.trail[ti].y, 1.4 * tf, 0, Math.PI * 2);
+                ctx.fillStyle = 'hsla(' + pk.hue + ',100%,82%,1)';
+                ctx.fill();
+                ctx.restore();
+            }
+
+            /* bright packet head */
             ctx.save();
-            ctx.shadowBlur  = 10;
-            ctx.shadowColor = 'hsla(' + pk.hue + ',100%,80%,0.9)';
+            ctx.shadowBlur  = 14;
+            ctx.shadowColor = 'hsla(' + pk.hue + ',100%,85%,1)';
             ctx.beginPath();
-            ctx.arc(px, py, 2.2, 0, Math.PI * 2);
+            ctx.arc(px, py, 2.6, 0, Math.PI * 2);
             ctx.fillStyle = dark
-                ? 'hsla(' + pk.hue + ',100%,88%,0.95)'
-                : 'hsla(' + pk.hue + ',85%,52%,0.85)';
+                ? 'hsla(' + pk.hue + ',100%,92%,1)'
+                : 'hsla(' + pk.hue + ',90%,55%,0.95)';
             ctx.fill();
             ctx.restore();
         }
 
-        /* ---- glowing neuron nodes ---- */
+        /* ---- neuron nodes ---- */
         for (var ni = 0; ni < nodes.length; ni++) {
-            var p   = nodes[ni];
-            /* twinkling: each node oscillates independently */
-            var tw  = p.baseAlpha * (0.55 + 0.45 * Math.sin(time * 1.4 + p.phase));
+            var p = nodes[ni];
+            var tw = p.baseAlpha * (0.55 + 0.45 * Math.sin(time * 1.4 + p.phase));
             if (!dark) tw *= 0.55;
-            /* per-node hue offset by depth layer creates colour depth */
-            var nHue = gHue + (p.depth - 1) * 28;
+            var nHue     = gHue + (p.depth - 1) * 28;
+            var glowMult = 1 + p.pulse * 3.5;   /* dramatic pulse flare */
+
             ctx.save();
-            ctx.shadowBlur  = p.r * 8;
+            ctx.shadowBlur  = p.r * 9 * glowMult;
             ctx.shadowColor = dark
-                ? 'hsla(' + nHue + ',100%,70%,0.9)'
-                : 'hsla(' + nHue + ',80%,45%,0.5)';
+                ? 'hsla(' + nHue + ',100%,72%,' + Math.min(0.9 * glowMult, 1) + ')'
+                : 'hsla(' + nHue + ',80%,45%,0.55)';
             ctx.beginPath();
-            ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+            ctx.arc(p.x, p.y, p.r * (1 + p.pulse * 0.6), 0, Math.PI * 2);
             ctx.fillStyle = dark
-                ? 'hsla(' + nHue + ',100%,78%,' + tw + ')'
-                : 'hsla(' + nHue + ',75%,45%,' + tw + ')';
+                ? 'hsla(' + nHue + ',100%,80%,' + Math.min(tw + p.pulse * 0.45, 1) + ')'
+                : 'hsla(' + nHue + ',75%,46%,' + tw + ')';
             ctx.fill();
             ctx.restore();
 
-            /* parallax: depth-0 nodes have higher dx/dy set at creation */
+            /* decay pulse */
+            if (p.pulse > 0) p.pulse = Math.max(0, p.pulse - 0.035);
+
+            /* drift — bidirectional, wrap all four edges */
             p.x += p.dx;
             p.y += p.dy;
-            if (p.y < -5)               { p.y = canvas.height + 5; p.x = Math.random() * canvas.width; }
-            if (p.x < -5)               { p.x = canvas.width  + 5; }
-            if (p.x > canvas.width + 5) { p.x = -5; }
+            if (p.x < -10)               p.x = canvas.width  + 10;
+            if (p.x > canvas.width  + 10) p.x = -10;
+            if (p.y < -10)               p.y = canvas.height + 10;
+            if (p.y > canvas.height + 10) p.y = -10;
         }
 
         raf = requestAnimationFrame(draw);
