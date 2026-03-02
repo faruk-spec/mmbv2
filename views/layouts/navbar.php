@@ -117,14 +117,6 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
             <a href="/" class="logo" <?php if ($navbarSettings['navbar_text_color']): ?>style="color: <?= htmlspecialchars($navbarSettings['navbar_text_color']) ?>;"<?php endif; ?>><?= htmlspecialchars($navbarSettings['logo_text']) ?></a>
         <?php endif; ?>
         
-        <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle menu">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="3" y1="6" x2="21" y2="6"></line>
-                <line x1="3" y1="12" x2="21" y2="12"></line>
-                <line x1="3" y1="18" x2="21" y2="18"></line>
-            </svg>
-        </button>
-        
         <nav class="universal-nav" id="mainNav">
             <?php if ($navbarSettings['show_home_link']): ?>
             <a href="/" class="nav-link">Home</a>
@@ -266,96 +258,108 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
                 <?php if ($navbarSettings['show_admin_link'] && Auth::isAdmin()): ?>
                     <a href="/admin" class="nav-link">Admin</a>
                 <?php endif; ?>
-                
-                <!-- Notification Bell -->
-                <?php if ($isLoggedIn):
-                    try {
-                        $notifUnreadCount = \Core\Notification::getUnreadCount($user['id']);
-                    } catch (\Exception $e) {
-                        $notifUnreadCount = 0;
-                    }
-                ?>
-                <div class="notif-bell-wrap nav-item" id="notifDropdown">
-                    <button class="nav-link notif-bell-btn" id="notifBellBtn" aria-label="Notifications" title="Notifications">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-                        </svg>
-                        <span class="notif-badge<?= $notifUnreadCount > 0 ? ' has-unread' : '' ?>" id="notifBadge"
-                              style="<?= $notifUnreadCount > 0 ? '' : 'display:none' ?>">
-                            <?= min($notifUnreadCount, 99) ?>
-                        </span>
-                    </button>
-                    <div class="dropdown-menu notif-panel" id="notifPanel" style="min-width:320px;padding:0;">
-                        <div class="notif-panel-header">
-                            <span><strong>Notifications</strong></span>
-                            <button class="notif-mark-all-btn" id="notifMarkAll" title="Mark all as read">Mark all read</button>
-                        </div>
-                        <div class="notif-panel-list" id="notifPanelList">
-                            <div style="padding:20px;text-align:center;color:var(--text-secondary);font-size:13px;">Loading…</div>
-                        </div>
-                        <div class="notif-panel-footer">
-                            <a href="/notifications" style="font-size:12px;color:var(--cyan);">View All Notifications</a>
-                        </div>
-                    </div>
-                </div>
-                <?php endif; ?>
 
-                <!-- Profile Dropdown -->
-                <?php if ($navbarSettings['show_profile_link']): ?>
-                <div class="dropdown nav-item" id="profileDropdown">
-                    <button class="nav-link dropdown-toggle">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                            <circle cx="12" cy="7" r="4"/>
-                        </svg>
-                        <?= htmlspecialchars($user['username'] ?? 'User') ?>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M6 9l6 6 6-6"/>
-                        </svg>
-                    </button>
-                    <div class="dropdown-menu">
-                        <a href="/profile" class="dropdown-item">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                                <circle cx="12" cy="7" r="4"/>
-                            </svg>
-                            Profile
-                        </a>
-                        <a href="/settings" class="dropdown-item">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="3"/>
-                                <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"/>
-                            </svg>
-                            Settings
-                        </a>
-                        <div class="dropdown-divider"></div>
-                        <a href="/logout" class="dropdown-item">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                                <polyline points="16 17 21 12 16 7"/>
-                                <line x1="21" y1="12" x2="9" y2="12"/>
-                            </svg>
-                            Logout
-                        </a>
-                    </div>
-                </div>
-                <?php endif; ?>
             <?php else: ?>
                 <a href="/login" class="nav-link">Login</a>
                 <a href="/register" class="nav-link">Register</a>
             <?php endif; ?>
-            
-            <!-- Theme Toggle -->
+        </nav>
+
+        <!-- Always-visible header actions: notification, profile, theme icon, hamburger -->
+        <div class="header-end-actions">
+            <?php if ($isLoggedIn):
+                try {
+                    $notifUnreadCount = \Core\Notification::getUnreadCount($user['id']);
+                } catch (\Exception $e) {
+                    $notifUnreadCount = 0;
+                }
+            ?>
+            <!-- Notification Bell -->
+            <div class="notif-bell-wrap" id="notifDropdown">
+                <button class="nav-link notif-bell-btn" id="notifBellBtn" aria-label="Notifications" title="Notifications">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                    </svg>
+                    <span class="notif-badge<?= $notifUnreadCount > 0 ? ' has-unread' : '' ?>" id="notifBadge"
+                          style="<?= $notifUnreadCount > 0 ? '' : 'display:none' ?>">
+                        <?= min($notifUnreadCount, 99) ?>
+                    </span>
+                </button>
+                <div class="dropdown-menu notif-panel" id="notifPanel" style="min-width:320px;padding:0;">
+                    <div class="notif-panel-header">
+                        <span><strong>Notifications</strong></span>
+                        <button class="notif-mark-all-btn" id="notifMarkAll" title="Mark all as read">Mark all read</button>
+                    </div>
+                    <div class="notif-panel-list" id="notifPanelList">
+                        <div style="padding:20px;text-align:center;color:var(--text-secondary);font-size:13px;">Loading…</div>
+                    </div>
+                    <div class="notif-panel-footer">
+                        <a href="/notifications" style="font-size:12px;color:var(--cyan);">View All Notifications</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Dropdown -->
+            <?php if ($navbarSettings['show_profile_link']): ?>
+            <div class="dropdown" id="profileDropdown">
+                <button class="nav-link dropdown-toggle">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                    <span class="profile-username"><?= htmlspecialchars($user['username'] ?? 'User') ?></span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M6 9l6 6 6-6"/>
+                    </svg>
+                </button>
+                <div class="dropdown-menu">
+                    <a href="/profile" class="dropdown-item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                        Profile
+                    </a>
+                    <a href="/settings" class="dropdown-item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"/>
+                        </svg>
+                        Settings
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <a href="/logout" class="dropdown-item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                            <polyline points="16 17 21 12 16 7"/>
+                            <line x1="21" y1="12" x2="9" y2="12"/>
+                        </svg>
+                        Logout
+                    </a>
+                </div>
+            </div>
+            <?php endif; ?>
+            <?php endif; ?>
+
+            <!-- Theme Toggle (icon only) -->
             <?php if ($navbarSettings['show_theme_toggle']): ?>
             <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
                 <svg id="themeIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
                 </svg>
-                <span id="themeText">Light</span>
             </button>
             <?php endif; ?>
-        </nav>
+
+            <!-- Hamburger (mobile only) -->
+            <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle menu">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+        </div>
     </div>
 </header>
 
@@ -395,13 +399,13 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
     }
     
     function updateThemeUI(theme) {
-        if (!themeIcon || !themeText) return;
+        if (!themeIcon) return;
         if (theme === 'light') {
             themeIcon.innerHTML = '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
-            themeText.textContent = 'Dark';
+            if (themeText) themeText.textContent = 'Dark';
         } else {
             themeIcon.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
-            themeText.textContent = 'Light';
+            if (themeText) themeText.textContent = 'Light';
         }
     }
     
@@ -679,9 +683,34 @@ body {
     display: flex;
     gap: 20px;
     align-items: center;
+    margin-left: auto;  /* push nav (and everything after it) to the right */
 }
 
 .nav-item {
+    position: relative;
+}
+
+/* Always-visible header end actions (notif + profile + theme + hamburger) */
+.header-end-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Theme toggle: icon-only (no text) in the header */
+.header-end-actions .theme-toggle {
+    padding: 8px 10px;
+    gap: 0;
+}
+
+/* On desktop, show username in profile button; hide on mobile to save space */
+.profile-username {
+    display: inline;
+}
+
+/* Notification bell & profile dropdown position relative to their wrappers */
+.notif-bell-wrap,
+.header-end-actions .dropdown {
     position: relative;
 }
 
@@ -892,7 +921,8 @@ body {
         pointer-events: auto;
     }
     
-    .nav-item, .universal-nav .nav-link {
+    .universal-nav .nav-item,
+    .universal-nav .nav-link {
         width: 100%;
         justify-content: flex-start;
         /* Stagger animation for menu items */
@@ -934,12 +964,8 @@ body {
         z-index: 1000;
     }
     
-    .nav-item, .universal-nav .nav-link {
-        width: 100%;
-        justify-content: flex-start;
-    }
-    
-    .dropdown-menu {
+    /* Only items inside the collapsible nav get static full-width dropdowns */
+    .universal-nav .dropdown-menu {
         position: static;
         margin-top: 8px;
         box-shadow: none;
@@ -948,42 +974,33 @@ body {
         padding-left: 20px;
     }
 
-    /* Notification panel mobile override – professional card look */
+    /* header-end-actions: push to the right (nav is display:none so no auto margin from it) */
+    .header-end-actions {
+        margin-left: auto;
+        gap: 2px;
+    }
+
+    /* Hide username in profile button on mobile — icon only */
+    .profile-username {
+        display: none;
+    }
+
+    /* Notif panel on mobile: constrained width, anchored to right edge */
     .notif-panel {
-        position: static !important;
+        width: min(340px, calc(100vw - 20px)) !important;
         min-width: 0 !important;
-        width: 100% !important;
-        margin-top: 10px;
-        border-left: none !important;
-        padding-left: 0 !important;
-        border: 1px solid var(--border-color) !important;
-        border-radius: 14px !important;
-        overflow: hidden;
-        box-shadow: 0 4px 24px rgba(0,0,0,0.25) !important;
+        right: 0 !important;
+        left: auto !important;
     }
 
-    .notif-panel-header {
-        border-radius: 14px 14px 0 0;
-        padding: 14px 16px;
-        font-size: 15px;
-    }
-
-    .notif-panel-footer {
-        border-radius: 0 0 14px 14px;
-        padding: 12px 16px;
-    }
-
-    .notif-item {
-        padding: 14px 16px;   /* larger touch targets on mobile */
-        font-size: 13px;
-    }
-
-    .notif-item-msg {
-        font-size: 13px;
-    }
-
-    .notif-panel-list {
-        max-height: 50vh;
+    /* Profile dropdown on mobile: constrained width */
+    .header-end-actions .dropdown .dropdown-menu {
+        position: absolute !important;
+        width: min(220px, calc(100vw - 20px));
+        right: 0 !important;
+        left: auto !important;
+        border-left: none;
+        padding-left: 0;
     }
     
     .mobile-menu-btn {

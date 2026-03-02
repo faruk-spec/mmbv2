@@ -929,7 +929,7 @@ $timelineItems = $db->fetchAll("SELECT * FROM home_timeline WHERE is_active = 1 
 <?php endif; ?>
 
 <script>
-/* Homepage: Particles (constellation) + Mouse Glow */
+/* Homepage: AI Network (data packets, depth parallax, hue shift) + Mouse Glow */
 (function() {
     var isDark = function() {
         return document.documentElement.getAttribute('data-theme') !== 'light';
@@ -948,14 +948,16 @@ $timelineItems = $db->fetchAll("SELECT * FROM home_timeline WHERE is_active = 1 
         });
     }
 
-    /* ---- Constellation Particles ---- */
+    /* ---- AI Network ---- */
     var canvas = document.getElementById('hp-particles');
     if (!canvas) return;
-    var ctx = canvas.getContext('2d');
-    var particles = [];
+    var ctx    = canvas.getContext('2d');
+    var nodes   = [];   /* neuron nodes */
+    var packets = [];   /* data packets traveling along edges */
     var raf;
-    var time = 0;
-    var CONNECT_DIST = 130;
+    var time        = 0;
+    var CONNECT_DIST = 120;  /* max distance (px) for two nodes to form a synapse edge */
+    var MAX_PACKETS  = 28;   /* cap on simultaneous data packets for performance */
 
     function resize() {
         canvas.width  = window.innerWidth;
@@ -964,95 +966,136 @@ $timelineItems = $db->fetchAll("SELECT * FROM home_timeline WHERE is_active = 1 
 
     function rnd(a, b) { return a + Math.random() * (b - a); }
 
-    function createParticle() {
+    /* Global hue slowly oscillates: purple (270°) ↔ cyan (185°), period ~180 s */
+    function globalHue() { return 185 + 85 * (0.5 + 0.5 * Math.sin(time * 0.035)); }
+
+    function createNode() {
+        /* depth 0 = near (big, fast, bright)  depth 2 = far (small, slow, dim) */
+        var depth = Math.floor(Math.random() * 3);
+        var sf    = 1 - depth * 0.3;   /* speed/brightness scale: 1.0 / 0.7 / 0.4 */
         return {
             x:         Math.random() * canvas.width,
             y:         Math.random() * canvas.height,
-            r:         rnd(0.8, 2.2),
-            dx:        rnd(-0.18, 0.18),
-            dy:        rnd(-0.28, -0.05),
-            baseAlpha: rnd(0.35, 0.85),
-            phase:     Math.random() * Math.PI * 2,   /* twinkling offset */
-            hue:       Math.random() < 0.6 ? 270 : 185  /* purple:cyan ~60:40 */
+            depth:     depth,
+            /* depth=0 adds +1.1r, depth=1 adds +0.55r, depth=2 adds +0 — size parallax */
+            r:         rnd(0.7, 1.5) + (2 - depth) * 0.55,
+            dx:        rnd(-0.14, 0.14) * sf,
+            dy:        rnd(-0.20, -0.04) * sf,
+            baseAlpha: rnd(0.35, 0.70) + (2 - depth) * 0.12,
+            phase:     rnd(0, Math.PI * 2),
         };
     }
 
     function init() {
-        particles = [];
-        /* ~1 particle per 13 000 px² gives a balanced density at all viewport sizes */
-        var count = Math.min(65, Math.floor(canvas.width * canvas.height / 13000));
-        for (var i = 0; i < count; i++) particles.push(createParticle());
+        nodes   = [];
+        packets = [];
+        /* ~1 node per 14 000 px², max 65 */
+        var count = Math.min(65, Math.floor(canvas.width * canvas.height / 14000));
+        for (var i = 0; i < count; i++) nodes.push(createNode());
     }
 
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         var dark = isDark();
         time += 0.016;
+        var gHue = globalHue();
 
-        /* --- connection lines --- */
-        for (var i = 0; i < particles.length - 1; i++) {
-            for (var j = i + 1; j < particles.length; j++) {
-                var ax = particles[i].x - particles[j].x;
-                var ay = particles[i].y - particles[j].y;
-                var dist = Math.sqrt(ax * ax + ay * ay);
+        /* ---- synapse lines — build edge list for packet spawning ---- */
+        var edges = [];   /* flat array of index pairs [i0,j0, i1,j1, …] */
+        for (var ii = 0; ii < nodes.length - 1; ii++) {
+            for (var jj = ii + 1; jj < nodes.length; jj++) {
+                var na = nodes[ii], nb = nodes[jj];
+                var ddx = na.x - nb.x, ddy = na.y - nb.y;
+                var dist = Math.sqrt(ddx * ddx + ddy * ddy);
                 if (dist < CONNECT_DIST) {
-                    /* max line alpha: 0.22 dark / 0.10 light — subtle constellation effect */
-                    var lineA = (1 - dist / CONNECT_DIST) * (dark ? 0.22 : 0.10);
-                    var lineHue = (particles[i].hue + particles[j].hue) / 2;
+                    var dDepth = Math.abs(na.depth - nb.depth);
+                    /* same-depth connections are brighter */
+                    var lineA = (1 - dist / CONNECT_DIST)
+                                * (dark ? 0.28 : 0.12)
+                                * (1 - dDepth * 0.25);
+                    /* hue varies per edge pair for visual richness */
+                    var eHue = gHue + (ii % 5 - 2) * 18;
                     ctx.beginPath();
-                    ctx.moveTo(particles[i].x, particles[i].y);
-                    ctx.lineTo(particles[j].x, particles[j].y);
+                    ctx.moveTo(na.x, na.y);
+                    ctx.lineTo(nb.x, nb.y);
                     ctx.strokeStyle = dark
-                        ? 'hsla(' + lineHue + ',100%,70%,' + lineA + ')'
-                        : 'hsla(' + lineHue + ',75%,40%,' + lineA + ')';
-                    ctx.lineWidth = 0.6;
+                        ? 'hsla(' + eHue + ',100%,65%,' + lineA + ')'
+                        : 'hsla(' + eHue + ',70%,38%,' + lineA + ')';
+                    ctx.lineWidth = 0.55 - dDepth * 0.05;
                     ctx.stroke();
+                    edges.push(ii, jj);
                 }
             }
         }
 
-        /* --- glowing dots --- */
-        particles.forEach(function(p) {
-            /* oscillate alpha between 55 % and 100 % of baseAlpha at 1.4 rad/s for twinkling */
-            var twinkle = p.baseAlpha * (0.55 + 0.45 * Math.sin(time * 1.4 + p.phase));
-            if (!dark) twinkle *= 0.55; /* dimmer in light mode */
+        /* ---- occasionally spawn a new data packet on a random edge ---- */
+        if (packets.length < MAX_PACKETS && edges.length > 0 && Math.random() < 0.05) {
+            var pick = Math.floor(Math.random() * (edges.length / 2)) * 2;
+            packets.push({
+                ai:    edges[pick],
+                bi:    edges[pick + 1],
+                t:     0,
+                speed: rnd(0.010, 0.022),
+                hue:   gHue + rnd(-30, 30),
+            });
+        }
 
+        /* ---- advance & draw data packets ---- */
+        for (var k = packets.length - 1; k >= 0; k--) {
+            var pk  = packets[k];
+            var pna = nodes[pk.ai], pnb = nodes[pk.bi];
+            if (!pna || !pnb) { packets.splice(k, 1); continue; }
+            pk.t += pk.speed;
+            if (pk.t >= 1) { packets.splice(k, 1); continue; }
+            var px = pna.x + (pnb.x - pna.x) * pk.t;
+            var py = pna.y + (pnb.y - pna.y) * pk.t;
+            /* bright core with soft glow halo */
             ctx.save();
-            ctx.shadowBlur  = p.r * 7;
+            ctx.shadowBlur  = 10;
+            ctx.shadowColor = 'hsla(' + pk.hue + ',100%,80%,0.9)';
+            ctx.beginPath();
+            ctx.arc(px, py, 2.2, 0, Math.PI * 2);
+            ctx.fillStyle = dark
+                ? 'hsla(' + pk.hue + ',100%,88%,0.95)'
+                : 'hsla(' + pk.hue + ',85%,52%,0.85)';
+            ctx.fill();
+            ctx.restore();
+        }
+
+        /* ---- glowing neuron nodes ---- */
+        for (var ni = 0; ni < nodes.length; ni++) {
+            var p   = nodes[ni];
+            /* twinkling: each node oscillates independently */
+            var tw  = p.baseAlpha * (0.55 + 0.45 * Math.sin(time * 1.4 + p.phase));
+            if (!dark) tw *= 0.55;
+            /* per-node hue offset by depth layer creates colour depth */
+            var nHue = gHue + (p.depth - 1) * 28;
+            ctx.save();
+            ctx.shadowBlur  = p.r * 8;
             ctx.shadowColor = dark
-                ? 'hsla(' + p.hue + ',100%,70%,0.9)'
-                : 'hsla(' + p.hue + ',80%,45%,0.5)';
+                ? 'hsla(' + nHue + ',100%,70%,0.9)'
+                : 'hsla(' + nHue + ',80%,45%,0.5)';
             ctx.beginPath();
             ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
             ctx.fillStyle = dark
-                ? 'hsla(' + p.hue + ',100%,78%,' + twinkle + ')'
-                : 'hsla(' + p.hue + ',75%,45%,' + twinkle + ')';
+                ? 'hsla(' + nHue + ',100%,78%,' + tw + ')'
+                : 'hsla(' + nHue + ',75%,45%,' + tw + ')';
             ctx.fill();
             ctx.restore();
 
-            /* drift */
+            /* parallax: depth-0 nodes have higher dx/dy set at creation */
             p.x += p.dx;
             p.y += p.dy;
-
-            /* wrap */
-            if (p.y < -5) { p.y = canvas.height + 5; p.x = Math.random() * canvas.width; }
-            if (p.x < -5) { p.x = canvas.width + 5; }
+            if (p.y < -5)               { p.y = canvas.height + 5; p.x = Math.random() * canvas.width; }
+            if (p.x < -5)               { p.x = canvas.width  + 5; }
             if (p.x > canvas.width + 5) { p.x = -5; }
-        });
+        }
 
         raf = requestAnimationFrame(draw);
     }
 
-    resize();
-    init();
-    draw();
-
-    window.addEventListener('resize', function() {
-        cancelAnimationFrame(raf);
-        resize();
-        init();
-        draw();
-    });
+    resize(); init(); draw();
+    window.addEventListener('resize', function() { cancelAnimationFrame(raf); resize(); init(); draw(); });
 })();
 </script>
 <?php View::endSection(); ?>
