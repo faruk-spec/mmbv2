@@ -24,7 +24,7 @@ try {
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- Icons - No external dependencies needed, using inline SVG -->
     
@@ -116,7 +116,13 @@ try {
         }
         
         html {
-            font-size: 62.5%; /* 1rem = 10px; body text (1.4rem) = 14px; headings scale proportionally */
+            font-size: 62.5%; /* 1rem = 10px base */
+            /* CSS `zoom` is now a W3C standard (CSS View Transitions / Zoom Level spec),
+               supported in Chrome, Edge, Safari, and Firefox 126+ (June 2024).
+               zoom: 0.85 scales the entire page to ~85%, matching the ~70-80% browser
+               zoom that the site was designed to look best at. Font sizes below are
+               increased to compensate so text remains readable. */
+            zoom: 0.85;
         }
         
         html {
@@ -131,20 +137,21 @@ try {
         }
         
         body {
-            font-family: 'Poppins', sans-serif;
+            font-family: 'Inter', sans-serif;
             background: var(--bg-primary);
             color: var(--text-primary);
             min-height: 100vh;
             line-height: 1.6;
-            font-size: 1.4rem;
+            font-size: 1.65rem; /* 16.5px * 0.85 ≈ 14px visual */
             overflow-y: auto;
         }
         
-        h1 { font-size: 2rem; }
-        h2 { font-size: 1.5rem; }
-        h3 { font-size: 1.25rem; }
-        h4 { font-size: 1.1rem; }
-        p { font-size: 1.4rem; }
+        /* Scaled-up headings to keep visual size readable at zoom 0.85 */
+        h1 { font-size: 2.65rem; }  /* 26.5px * 0.85 ≈ 22.5px visual */
+        h2 { font-size: 2rem; }     /* 20px  * 0.85 ≈ 17px visual */
+        h3 { font-size: 1.75rem; }  /* 17.5px * 0.85 ≈ 14.9px visual */
+        h4 { font-size: 1.5rem; }   /* 15px  * 0.85 ≈ 12.75px visual */
+        p  { font-size: 1.65rem; }  /* same as body */
         
         /* Background Effects */
         body::before {
