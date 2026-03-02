@@ -36,7 +36,7 @@ $currentView = 'dashboard';
 </div>
 
 <!-- ── Quick actions ── -->
-<div style="display:flex;gap:1rem;margin-bottom:2rem;flex-wrap:wrap;">
+<div class="cx-dash-quick-row">
     <a href="/projects/convertx/convert"
        class="cx-quick-card"
        style="background:linear-gradient(135deg,var(--cx-primary),var(--cx-secondary));box-shadow:0 4px 16px rgba(99,102,241,.35);">
@@ -44,9 +44,16 @@ $currentView = 'dashboard';
         <strong>Convert File</strong>
         <p>Upload &amp; transform any format</p>
     </a>
+    <a href="/projects/convertx/ai-process"
+       class="cx-quick-card"
+       style="background:linear-gradient(135deg,#7c3aed,#a855f7);box-shadow:0 4px 16px rgba(124,58,237,.3);">
+        <i class="fa-solid fa-wand-magic-sparkles qc-icon"></i>
+        <strong>AI Process</strong>
+        <p>Process files with AI</p>
+    </a>
     <a href="/projects/convertx/batch"
        class="cx-quick-card"
-       style="background:linear-gradient(135deg,#7c3aed,#06b6d4);box-shadow:0 4px 16px rgba(124,58,237,.3);">
+       style="background:linear-gradient(135deg,#0891b2,#06b6d4);box-shadow:0 4px 16px rgba(8,145,178,.3);">
         <i class="fa-solid fa-layer-group qc-icon"></i>
         <strong>Batch Convert</strong>
         <p>Process 50 files at once</p>
@@ -164,3 +171,26 @@ $currentView = 'dashboard';
         </div>
     <?php endif; ?>
 </div>
+
+<style>
+.cx-dash-quick-row {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+.cx-dash-quick-row .cx-quick-card {
+    flex: 1;
+    min-width: 150px;
+}
+@media (max-width: 37.5rem) {
+    .cx-dash-quick-row { gap: .625rem; }
+    .cx-dash-quick-row .cx-quick-card {
+        min-width: calc(50% - .3125rem);
+        max-width: calc(50% - .3125rem);
+    }
+}
+@media (max-width: 22.5rem) {
+    .cx-dash-quick-row .cx-quick-card { min-width: 100%; max-width: 100%; }
+}
+</style>

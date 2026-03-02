@@ -942,22 +942,32 @@ try {
                 margin-left: 0;
                 max-width: 100vw;
                 padding: var(--space-lg) 0.9375rem;
+                padding-bottom: 5.5rem; /* prevent .sidebar-toggle overlap */
                 overflow-x: auto !important;
             }
             .sidebar-toggle { display: flex; }
             .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
             .stats-grid { grid-template-columns: repeat(2, 1fr); }
             .card, .glass-card { padding: var(--space-lg); }
-            .cx-quick-card { min-width: 0; max-width: 100%; }
+            /* Quick-action cards: 2 per row on tablet */
+            .cx-quick-card { min-width: calc(50% - .5rem); max-width: calc(50% - .5rem); }
+            /* Card headers: wrap long meta text */
+            .card-header { flex-wrap: wrap; }
         }
 
         @media (max-width: 30rem) {
-            .cx-main { padding: 0.75rem 0.625rem; }
-            .btn:not(.btn-sm) { width: 100%; justify-content: center; padding: 0.75rem 1rem; }
+            .cx-main { padding: 0.75rem 0.625rem 5.5rem; }
             .stats-grid { grid-template-columns: 1fr; }
             .form-actions { flex-direction: column; width: 100%; }
             .form-actions .btn { width: 100%; }
+            /* Quick-action cards: full width on phone */
+            .cx-quick-card { min-width: 100%; max-width: 100%; }
+            /* Tables: make scrollable on small screens */
+            .cx-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
         }
+
+        /* btn-block helper (used in ai-process and convert pages) */
+        .btn-block { width: 100%; justify-content: center; }
 
         /* ═══════════════════════════════════════════════════════════════════
            Futuristic AI UI Enhancements

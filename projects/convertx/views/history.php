@@ -60,19 +60,19 @@ $statusLabels = [
             <table class="cx-table">
                 <thead>
                     <tr>
-                        <th>#</th>
+                        <th class="cx-history-hide-sm">#</th>
                         <th>File</th>
                         <th>Conversion</th>
-                        <th>AI Tasks</th>
+                        <th class="cx-history-hide-sm">AI Tasks</th>
                         <th>Status</th>
-                        <th>Created</th>
+                        <th class="cx-history-hide-sm">Created</th>
                         <th style="text-align:right;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php foreach ($jobs as $job): ?>
                     <tr>
-                        <td style="color:var(--text-secondary);"><?= (int)$job['id'] ?></td>
+                        <td class="cx-history-hide-sm" style="color:var(--text-secondary);"><?= (int)$job['id'] ?></td>
                         <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-primary);">
                             <?= htmlspecialchars($job['input_filename'] ?? '') ?>
                         </td>
@@ -81,7 +81,7 @@ $statusLabels = [
                             <i class="fa-solid fa-arrow-right" style="font-size:.6rem;margin:0 .3rem;color:var(--text-secondary);"></i>
                             <span style="color:var(--cx-accent);font-weight:600;font-size:.8rem;"><?= htmlspecialchars(strtoupper($job['output_format'] ?? '')) ?></span>
                         </td>
-                        <td>
+                        <td class="cx-history-hide-sm">
                             <?php
                             $tasks = json_decode($job['ai_tasks'] ?? '[]', true);
                             foreach ((array)$tasks as $task) {
@@ -101,7 +101,7 @@ $statusLabels = [
                             </span>
                             <?php endif; ?>
                         </td>
-                        <td style="color:var(--text-secondary);font-size:.78rem;"><?= htmlspecialchars(substr($job['created_at'] ?? '', 0, 16)) ?></td>
+                        <td class="cx-history-hide-sm" style="color:var(--text-secondary);font-size:.78rem;"><?= htmlspecialchars(substr($job['created_at'] ?? '', 0, 16)) ?></td>
                         <td style="text-align:right;white-space:nowrap;">
                             <?php if ($job['status'] === 'completed'): ?>
                                 <a href="/projects/convertx/job/<?= (int)$job['id'] ?>/download"
@@ -166,6 +166,7 @@ $statusLabels = [
     color: var(--text-secondary);
     text-decoration: none;
     transition: background .18s, color .18s, border-color .18s;
+    white-space: nowrap;
 }
 .cx-filter-chip:hover {
     border-color: var(--cx-primary);
@@ -181,6 +182,11 @@ $statusLabels = [
     padding: .3rem 1rem .6rem;
     background: rgba(239,68,68,.05);
     border-top: none !important;
+}
+/* On small screens hide less-important columns */
+@media (max-width: 37.5rem) {
+    .cx-history-hide-sm { display: none; }
+    .cx-table th, .cx-table td { padding: .5rem .6rem; font-size: .75rem; }
 }
 </style>
 
