@@ -29,6 +29,8 @@
     --text-secondary: #666666;
     --border-color: rgba(0, 0, 0, 0.1);
     --shadow-glow: 0 0 20px rgba(124, 58, 237, 0.12);
+    /* Override neon cyan with a dark, readable teal for light backgrounds */
+    --cyan: #0369a1;
 }
 
 [data-theme="light"] body {

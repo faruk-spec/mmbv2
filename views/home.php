@@ -405,16 +405,16 @@ if ($showStats):
     
     <!-- Filter Buttons -->
     <div style="display: flex; justify-content: center; gap: 12px; margin-bottom: 40px; flex-wrap: wrap;">
-        <button class="filter-btn active" data-filter="all" style="padding: 10px 24px; border-radius: 25px; border: 2px solid var(--cyan); background: var(--cyan); color: var(--bg-primary); font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 14px;">
+        <button class="filter-btn active" data-filter="all">
             All Tools
         </button>
-        <button class="filter-btn" data-filter="free" style="padding: 10px 24px; border-radius: 25px; border: 2px solid var(--border-color); background: transparent; color: var(--text-primary); font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 14px;">
+        <button class="filter-btn" data-filter="free">
             Free Tools
         </button>
-        <button class="filter-btn" data-filter="freemium" style="padding: 10px 24px; border-radius: 25px; border: 2px solid var(--border-color); background: transparent; color: var(--text-primary); font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 14px;">
+        <button class="filter-btn" data-filter="freemium">
             Freemium
         </button>
-        <button class="filter-btn" data-filter="enterprise" style="padding: 10px 24px; border-radius: 25px; border: 2px solid var(--border-color); background: transparent; color: var(--text-primary); font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 14px;">
+        <button class="filter-btn" data-filter="enterprise">
             Enterprise Grade
         </button>
     </div>
@@ -550,15 +550,31 @@ if ($showStats):
 
 <style>
 /* Filter Buttons Styles */
+.filter-btn {
+    padding: 10px 24px;
+    border-radius: 25px;
+    border: 2px solid var(--border-color);
+    background: transparent;
+    color: var(--text-primary);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 14px;
+}
+
 .filter-btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 240, 255, 0.3);
 }
 
+[data-theme="light"] .filter-btn:hover {
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--cyan) 25%, transparent);
+}
+
 .filter-btn.active {
     background: var(--cyan) !important;
     border-color: var(--cyan) !important;
-    color: var(--bg-primary) !important;
+    color: #ffffff !important;
 }
 
 /* Project Card Enhancements */
