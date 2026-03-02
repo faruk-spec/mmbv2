@@ -3,63 +3,96 @@
 
 <?php View::section('styles'); ?>
 <style>
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
+    /* ===== FUTURISTIC HOMEPAGE DESIGN SYSTEM ===== */
+
+    /* Dark mode: futuristic background base */
+    [data-theme="dark"] body,
+    html:not([data-theme="light"]) body {
+        background: #0b0f19 !important;
     }
-    
-    .animate-fade-in {
-        animation: fadeIn 0.6s ease-out forwards;
-        opacity: 0;
+
+    /* Gradient text: purple → cyan */
+    .hp-grad-text {
+        background: linear-gradient(135deg, #7C3AED, #00F5FF);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
     }
-    
+
+    /* Hero h1 gradient override */
+    .hero h1 {
+        background: linear-gradient(135deg, #7C3AED, #00F5FF) !important;
+        -webkit-background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
+        background-clip: text !important;
+    }
+
+    /* Stat value gradient override */
+    .stat-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #7C3AED, #00F5FF) !important;
+        -webkit-background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
+        background-clip: text !important;
+        margin-bottom: 8px;
+        animation: fadeIn 1s ease-out;
+    }
+
+    /* Glassmorphism cards - dark mode */
+    [data-theme="dark"] .card,
+    html:not([data-theme="light"]) .card {
+        background: rgba(11, 15, 25, 0.6) !important;
+        backdrop-filter: blur(14px) !important;
+        -webkit-backdrop-filter: blur(14px) !important;
+        border: 1px solid rgba(124, 58, 237, 0.2) !important;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(124, 58, 237, 0.1) !important;
+    }
+
+    /* Glassmorphism cards - light mode */
+    [data-theme="light"] .card {
+        background: rgba(255, 255, 255, 0.7) !important;
+        backdrop-filter: blur(12px) !important;
+        -webkit-backdrop-filter: blur(12px) !important;
+        border: 1px solid rgba(124, 58, 237, 0.15) !important;
+        box-shadow: 0 4px 20px rgba(124, 58, 237, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+    }
+
+    /* Smooth card hover transitions with neon accent */
+    .card {
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                    box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                    border-color 0.3s ease !important;
+    }
+
+    .card:hover {
+        transform: translateY(-5px) !important;
+        border-color: rgba(0, 245, 255, 0.35) !important;
+        box-shadow: 0 12px 36px rgba(124, 58, 237, 0.25), 0 0 0 1px rgba(0, 245, 255, 0.1) !important;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 36px rgba(124, 58, 237, 0.25) !important;
+    }
+
+    /* Hero banner neon glow */
     .hero-banner {
         max-width: 100%;
         height: auto;
         border-radius: 12px;
-        box-shadow: var(--shadow-glow);
+        box-shadow: 0 0 40px rgba(124, 58, 237, 0.3) !important;
         margin-bottom: 30px;
         animation: fadeIn 0.8s ease-out;
     }
-    
-    .stat-card {
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-    
-    .stat-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 30px rgba(0, 240, 255, 0.3);
-    }
-    
-    .stat-value {
-        font-size: 2.5rem;
-        font-weight: 700;
-        background: linear-gradient(135deg, var(--cyan), var(--magenta));
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        margin-bottom: 8px;
-        animation: fadeIn 1s ease-out;
-    }
-    
-    .timeline-item {
-        position: relative;
-        padding-left: 70px;
-        margin-bottom: 30px;
-    }
-    
+
+    /* Timeline badge with neon pulse */
     .timeline-badge {
         position: absolute;
         left: 0;
         width: 50px;
         height: 50px;
-        background: linear-gradient(135deg, var(--cyan), var(--magenta));
+        background: linear-gradient(135deg, #7C3AED, #00F5FF) !important;
         border-radius: 50%;
         display: flex;
         align-items: center;
@@ -67,17 +100,137 @@
         font-weight: 700;
         color: white;
         font-size: 13px;
+        animation: hp-pulse 2.5s ease-in-out infinite;
     }
-    
+
+    /* Subtle pulse animation */
+    @keyframes hp-pulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.5); }
+        50% { box-shadow: 0 0 0 10px rgba(124, 58, 237, 0); }
+    }
+
+    /* Primary button: purple → cyan gradient */
+    .btn-primary {
+        background: linear-gradient(135deg, #7C3AED, #00F5FF) !important;
+        box-shadow: 0 4px 15px rgba(124, 58, 237, 0.35) !important;
+        color: #fff !important;
+    }
+
+    .btn-primary:hover {
+        box-shadow: 0 6px 25px rgba(124, 58, 237, 0.55) !important;
+        transform: translateY(-2px) !important;
+        -webkit-text-fill-color: #fff !important;
+    }
+
+    /* Animate fade in */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-fade-in {
+        animation: fadeIn 0.6s ease-out forwards;
+        opacity: 0;
+    }
+
+    /* Timeline item */
+    .timeline-item {
+        position: relative;
+        padding-left: 70px;
+        margin-bottom: 30px;
+    }
+
+    /* Mouse glow layer */
+    #hp-mouse-glow {
+        position: fixed;
+        width: 480px;
+        height: 480px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(124, 58, 237, 0.18) 0%, rgba(0, 245, 255, 0.06) 40%, transparent 70%);
+        pointer-events: none;
+        transform: translate(-50%, -50%);
+        z-index: 0;
+        opacity: 0;
+        transition: opacity 0.4s ease;
+    }
+
+    /* Particles canvas */
+    #hp-particles {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    /* Keep content above background layers */
+    .hero, .grid, .card, section,
+    [style*="max-width: 1400px"],
+    [style*="max-width:1400px"] {
+        position: relative;
+        z-index: 1;
+    }
+
+    /* Light mode: animated futuristic background */
+    [data-theme="light"] body {
+        background: #f0f4ff !important;
+    }
+
+    [data-theme="light"] body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        background:
+            radial-gradient(ellipse at 15% 15%, rgba(124, 58, 237, 0.10) 0%, transparent 50%),
+            radial-gradient(ellipse at 85% 85%, rgba(0, 153, 204, 0.10) 0%, transparent 50%),
+            radial-gradient(ellipse at 50% 50%, rgba(124, 58, 237, 0.04) 0%, transparent 60%);
+        animation: hp-light-bg 14s ease-in-out infinite alternate !important;
+    }
+
+    @keyframes hp-light-bg {
+        0%   {
+            background:
+                radial-gradient(ellipse at 15% 15%, rgba(124, 58, 237, 0.10) 0%, transparent 50%),
+                radial-gradient(ellipse at 85% 85%, rgba(0, 153, 204, 0.10) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(124, 58, 237, 0.04) 0%, transparent 60%);
+        }
+        33%  {
+            background:
+                radial-gradient(ellipse at 80% 20%, rgba(124, 58, 237, 0.12) 0%, transparent 50%),
+                radial-gradient(ellipse at 20% 80%, rgba(0, 153, 204, 0.12) 0%, transparent 50%),
+                radial-gradient(ellipse at 60% 40%, rgba(0, 245, 255, 0.04) 0%, transparent 55%);
+        }
+        66%  {
+            background:
+                radial-gradient(ellipse at 40% 80%, rgba(0, 153, 204, 0.10) 0%, transparent 50%),
+                radial-gradient(ellipse at 60% 10%, rgba(124, 58, 237, 0.10) 0%, transparent 50%),
+                radial-gradient(ellipse at 30% 40%, rgba(124, 58, 237, 0.04) 0%, transparent 55%);
+        }
+        100% {
+            background:
+                radial-gradient(ellipse at 15% 15%, rgba(124, 58, 237, 0.10) 0%, transparent 50%),
+                radial-gradient(ellipse at 85% 85%, rgba(0, 153, 204, 0.10) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(124, 58, 237, 0.04) 0%, transparent 60%);
+        }
+    }
+
+    /* Light mode card text stays readable */
+    [data-theme="light"] .card {
+        color: #1a1a1a !important;
+    }
+
     @media (max-width: 768px) {
         .grid-3, .grid-4 {
             grid-template-columns: 1fr;
         }
-        
+
         .hero h1 {
             font-size: 1.8rem !important;
         }
-        
+
         .hero h2 {
             font-size: 1.2rem !important;
         }
@@ -86,6 +239,9 @@
 <?php View::endSection(); ?>
 
 <?php View::section('content'); ?>
+<!-- Particles canvas & mouse glow for homepage -->
+<canvas id="hp-particles"></canvas>
+<div id="hp-mouse-glow"></div>
 <?php 
 // Get hero content from database with error handling
 $db = Database::getInstance();
@@ -815,4 +971,96 @@ $timelineItems = $db->fetchAll("SELECT * FROM home_timeline WHERE is_active = 1 
 }
 </style>
 <?php endif; ?>
+
+<script>
+/* Homepage: Particles + Mouse Glow */
+(function() {
+    var isDark = function() {
+        return document.documentElement.getAttribute('data-theme') !== 'light';
+    };
+
+    /* ---- Mouse Glow ---- */
+    var glow = document.getElementById('hp-mouse-glow');
+    if (glow) {
+        document.addEventListener('mousemove', function(e) {
+            glow.style.left = e.clientX + 'px';
+            glow.style.top  = e.clientY + 'px';
+            glow.style.opacity = isDark() ? '1' : '0.5';
+        });
+        document.addEventListener('mouseleave', function() {
+            glow.style.opacity = '0';
+        });
+    }
+
+    /* ---- Particles ---- */
+    var canvas = document.getElementById('hp-particles');
+    if (!canvas) return;
+    var ctx = canvas.getContext('2d');
+    var particles = [];
+    var raf;
+
+    function resize() {
+        canvas.width  = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+
+    function randomBetween(a, b) { return a + Math.random() * (b - a); }
+
+    function createParticle() {
+        return {
+            x:     Math.random() * canvas.width,
+            y:     Math.random() * canvas.height,
+            r:     randomBetween(1, 2.5),
+            dx:    randomBetween(-0.25, 0.25),
+            dy:    randomBetween(-0.4, -0.1),
+            alpha: randomBetween(0.2, 0.7),
+            hue:   Math.random() < 0.5 ? 270 : 185   /* purple or cyan */
+        };
+    }
+
+    function init() {
+        particles = [];
+        var count = Math.min(80, Math.floor(canvas.width * canvas.height / 12000));
+        for (var i = 0; i < count; i++) {
+            particles.push(createParticle());
+        }
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        var dark = isDark();
+        particles.forEach(function(p) {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+            if (dark) {
+                ctx.fillStyle = 'hsla(' + p.hue + ',100%,70%,' + p.alpha + ')';
+            } else {
+                ctx.fillStyle = 'hsla(' + p.hue + ',80%,50%,' + (p.alpha * 0.5) + ')';
+            }
+            ctx.fill();
+
+            /* drift */
+            p.x += p.dx;
+            p.y += p.dy;
+
+            /* wrap around */
+            if (p.y < -5) { p.y = canvas.height + 5; p.x = Math.random() * canvas.width; }
+            if (p.x < -5) { p.x = canvas.width + 5; }
+            if (p.x > canvas.width + 5) { p.x = -5; }
+        });
+        raf = requestAnimationFrame(draw);
+    }
+
+    resize();
+    init();
+    draw();
+
+    window.addEventListener('resize', function() {
+        cancelAnimationFrame(raf);
+        resize();
+        init();
+        draw();
+    });
+})();
+</script>
 <?php View::endSection(); ?>
