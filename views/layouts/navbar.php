@@ -300,6 +300,15 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
                 </div>
             </div>
 
+            <!-- Theme Toggle (icon only) — between notification and user -->
+            <?php if ($navbarSettings['show_theme_toggle']): ?>
+            <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+                <svg id="themeIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                </svg>
+            </button>
+            <?php endif; ?>
+
             <!-- Profile Dropdown -->
             <?php if ($navbarSettings['show_profile_link']): ?>
             <div class="dropdown" id="profileDropdown">
@@ -340,15 +349,6 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
                 </div>
             </div>
             <?php endif; ?>
-            <?php endif; ?>
-
-            <!-- Theme Toggle (icon only) -->
-            <?php if ($navbarSettings['show_theme_toggle']): ?>
-            <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
-                <svg id="themeIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-                </svg>
-            </button>
             <?php endif; ?>
 
             <!-- Hamburger (mobile only) -->
@@ -418,6 +418,10 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
         }
     }
     
+    // Mobile menu elements (declared early so dropdown handlers can reference them)
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const mainNav = document.getElementById('mainNav');
+
     // Dropdown functionality
     const dropdowns = document.querySelectorAll('.dropdown');
     dropdowns.forEach(dropdown => {
@@ -425,11 +429,15 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
         if (toggle) {
             toggle.addEventListener('click', (e) => {
                 e.stopPropagation();
-                // Close other dropdowns and the notification bell
+                // Close other dropdowns, notification bell, and mobile menu
                 dropdowns.forEach(d => {
                     if (d !== dropdown) d.classList.remove('active');
                 });
                 document.querySelectorAll('.notif-bell-wrap.active').forEach(w => w.classList.remove('active'));
+                if (mainNav && mainNav.classList.contains('active')) {
+                    mainNav.classList.remove('active');
+                    document.body.classList.remove('mobile-menu-open');
+                }
                 dropdown.classList.toggle('active');
             });
         }
@@ -456,12 +464,16 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
     });
     
     // Mobile menu toggle
-    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-    const mainNav = document.getElementById('mainNav');
     if (mobileMenuBtn && mainNav) {
-        // Toggle menu on button click
+        // Toggle menu on button click — close all other panels first
         mobileMenuBtn.addEventListener('click', (e) => {
-            e.stopPropagation(); // Prevent immediate close
+            e.stopPropagation();
+            const opening = !mainNav.classList.contains('active');
+            if (opening) {
+                // Close all dropdowns and notification bell before opening the menu
+                dropdowns.forEach(d => d.classList.remove('active'));
+                document.querySelectorAll('.notif-bell-wrap.active').forEach(w => w.classList.remove('active'));
+            }
             mainNav.classList.toggle('active');
             document.body.classList.toggle('mobile-menu-open');
         });
@@ -566,8 +578,13 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
         e.stopPropagation();
         const drop = bell.closest('.dropdown, .notif-bell-wrap');
         const isOpen = drop && drop.classList.contains('active');
-        // Close other dropdowns
+        // Close other dropdowns and mobile menu
         document.querySelectorAll('.dropdown.active').forEach(d => d.classList.remove('active'));
+        const mobileNav = document.getElementById('mainNav');
+        if (mobileNav && mobileNav.classList.contains('active')) {
+            mobileNav.classList.remove('active');
+            document.body.classList.remove('mobile-menu-open');
+        }
         if (!isOpen) {
             drop && drop.classList.add('active');
             if (!loaded) { loadNotifications(); loaded = true; }
