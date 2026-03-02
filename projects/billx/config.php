@@ -1,0 +1,33 @@
+<?php
+return [
+    'name' => 'BillX',
+    'version' => '1.0.0',
+    'description' => 'On-the-go bill and receipt generator',
+    'database' => [
+        'host' => 'localhost',
+        'port' => '3306',
+        'database' => 'mmb_billx',
+        'username' => 'root',
+        'password' => '',
+    ],
+    'bill_types' => [
+        'fuel'       => 'Fuel Bill',
+        'driver'     => 'Driver Salary',
+        'helper'     => 'Daily Helper Bill',
+        'rent'       => 'Rent Receipt',
+        'book'       => 'Book Invoice',
+        'internet'   => 'Internet Invoice',
+        'restaurant' => 'Restaurant Bill',
+        'lta'        => 'LTA Receipt',
+        'ecom'       => 'E-Com Invoice',
+        'general'    => 'General Bill',
+        'recharge'   => 'Recharge Receipt',
+        'medical'    => 'Medical Bill',
+        'stationary' => 'Stationary Bill',
+        'cab'        => 'Cab & Travel Bill',
+        'mart'       => 'Mart Bill',
+        'gym'        => 'Gym Bill',
+        'hotel'      => 'Hotel Bill',
+        'newspaper'  => 'News Paper Bill',
+    ],
+];

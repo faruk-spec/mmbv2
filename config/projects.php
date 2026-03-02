@@ -84,4 +84,13 @@ return [
         'database' => 'mmb_convertx',
         'url' => '/projects/convertx'
     ],
+    'billx' => [
+        'name' => 'BillX',
+        'description' => 'On-the-go bill & receipt generator with live preview',
+        'icon' => 'file-text',
+        'color' => '#f59e0b',
+        'enabled' => true,
+        'database' => 'mmb_billx',
+        'url' => '/projects/billx'
+    ],
 ];
