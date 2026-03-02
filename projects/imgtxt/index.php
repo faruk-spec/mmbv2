@@ -43,6 +43,13 @@ if (!SSO::validateProjectRequest('imgtxt')) {
     SSO::redirectToLogin($_SERVER['REQUEST_URI']);
 }
 
+// Defensive: block access if project has been disabled in admin
+if (!\Core\Helpers::isProjectEnabled('imgtxt')) {
+    http_response_code(503);
+    \Core\View::render('errors/project-disabled', ['project' => 'imgtxt']);
+    exit;
+}
+
 // Load project config
 $projectConfig = require PROJECT_PATH . '/config.php';
 

@@ -28,6 +28,36 @@ class HomeContentController extends BaseController
     {
         $db = Database::getInstance();
         
+        // Auto-sync: insert any project from config that is not yet in home_projects
+        try {
+            $configProjects  = require BASE_PATH . '/config/projects.php';
+            $existingKeys    = $db->fetchAll("SELECT project_key FROM home_projects");
+            $existingKeySet  = array_column($existingKeys, 'project_key');
+            $maxOrder        = (int) ($db->fetch("SELECT MAX(sort_order) AS m FROM home_projects")['m'] ?? 0);
+            foreach ($configProjects as $key => $cfg) {
+                if (!in_array($key, $existingKeySet, true)) {
+                    $maxOrder++;
+                    $db->query(
+                        "INSERT IGNORE INTO home_projects
+                             (project_key, name, description, icon, color, is_enabled, sort_order, database_name, url)
+                         VALUES (:k, :n, :d, :i, :c, 1, :s, :db, :u)",
+                        [
+                            'k'  => $key,
+                            'n'  => $cfg['name']        ?? $key,
+                            'd'  => $cfg['description'] ?? '',
+                            'i'  => $cfg['icon']        ?? 'box',
+                            'c'  => $cfg['color']       ?? '#00f0ff',
+                            's'  => $maxOrder,
+                            'db' => $cfg['database']    ?? '',
+                            'u'  => $cfg['url']         ?? '/projects/' . $key,
+                        ]
+                    );
+                }
+            }
+        } catch (\Exception $e) {
+            // Non-fatal: table may not exist yet — proceed without syncing
+        }
+        
         // Get hero section content
         $heroContent = $db->fetch("SELECT * FROM home_content WHERE section = 'hero'");
         

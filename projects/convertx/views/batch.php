@@ -75,7 +75,7 @@ foreach ($groupedFormats as $group => $fmts) {
                     <input type="file" name="files[]" id="fileInput" multiple style="display:none;"
                            accept="<?= implode(',', array_map(fn($f) => '.' . $f, $allFormats)) ?>">
                 </div>
-                <div id="fileList" style="margin-top:.4rem;font-size:.82rem;color:var(--cx-success);"></div>
+                <div id="fileList" style="margin-top:.75rem;display:flex;flex-direction:column;gap:.35rem;"></div>
             </div>
         <!-- form continues right column -->
 
@@ -140,6 +140,49 @@ foreach ($groupedFormats as $group => $fmts) {
 @media (max-width: 768px) {
     .cx-batch-grid { grid-template-columns: 1fr; }
 }
+.cx-file-item {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .45rem .625rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: .45rem;
+    font-size: .8rem;
+    color: var(--text-primary);
+    transition: border-color .2s;
+}
+.cx-file-item:hover { border-color: var(--border-hover); }
+.cx-file-item .cx-file-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.cx-file-item .cx-file-size {
+    color: var(--text-muted);
+    flex-shrink: 0;
+    font-size: .73rem;
+}
+.cx-file-remove {
+    background: none;
+    border: none;
+    color: var(--cx-danger);
+    cursor: pointer;
+    padding: .2rem .35rem;
+    border-radius: .35rem;
+    flex-shrink: 0;
+    line-height: 1;
+    font-size: .8rem;
+    opacity: .7;
+    transition: opacity .15s, background .15s;
+}
+.cx-file-remove:hover { opacity: 1; background: rgba(239,68,68,.1); }
+.cx-file-count {
+    font-size: .78rem;
+    color: var(--text-secondary);
+    margin-top: .25rem;
+}
 </style>
 
 <script>
@@ -147,21 +190,78 @@ foreach ($groupedFormats as $group => $fmts) {
     var zone     = document.getElementById('uploadZone');
     var input    = document.getElementById('fileInput');
     var fileList = document.getElementById('fileList');
+    var MAX_FILES = 50;
 
-    zone.addEventListener('click', function () { input.click(); });
+    // Maintain our own array of selected files
+    var selectedFiles = [];
+
+    zone.addEventListener('click', function (e) {
+        if (e.target.classList.contains('cx-file-remove')) return;
+        input.click();
+    });
     zone.addEventListener('dragover', function (e) { e.preventDefault(); zone.classList.add('drag-over'); });
     zone.addEventListener('dragleave', function () { zone.classList.remove('drag-over'); });
     zone.addEventListener('drop', function (e) {
         e.preventDefault();
         zone.classList.remove('drag-over');
-        fileList.innerHTML = '<i class="fa-solid fa-circle-info"></i> ' + e.dataTransfer.files.length + ' file(s) ready — use Browse to confirm selection';
+        addFiles(Array.from(e.dataTransfer.files));
     });
     input.addEventListener('change', function () {
-        if (input.files.length) {
-            fileList.innerHTML = '<i class="fa-solid fa-check-circle" style="color:var(--cx-success);"></i> ' + input.files.length + ' file(s) selected';
-            zone.classList.add('has-file');
-        }
+        addFiles(Array.from(input.files));
+        // Reset input so same file can be re-added after removal
+        input.value = '';
     });
+
+    function addFiles(files) {
+        files.forEach(function (f) {
+            // Prevent duplicates by name + size + lastModified
+            var exists = selectedFiles.some(function (sf) {
+                return sf.name === f.name && sf.size === f.size && sf.lastModified === f.lastModified;
+            });
+            if (!exists && selectedFiles.length < MAX_FILES) {
+                selectedFiles.push(f);
+            }
+        });
+        renderList();
+    }
+
+    function removeFile(idx) {
+        selectedFiles.splice(idx, 1);
+        renderList();
+    }
+
+    function renderList() {
+        fileList.innerHTML = '';
+        if (!selectedFiles.length) {
+            zone.classList.remove('has-file');
+            return;
+        }
+        zone.classList.add('has-file');
+        selectedFiles.forEach(function (f, i) {
+            var size = f.size >= 1048576
+                ? (f.size / 1048576).toFixed(1) + ' MB'
+                : (f.size / 1024).toFixed(1) + ' KB';
+            var item = document.createElement('div');
+            item.className = 'cx-file-item';
+            item.innerHTML = '<i class="fa-solid fa-file" style="color:var(--cx-primary);flex-shrink:0;font-size:.8rem;"></i>'
+                           + '<span class="cx-file-name" title="' + htmlEsc(f.name) + '">' + htmlEsc(f.name) + '</span>'
+                           + '<span class="cx-file-size">' + size + '</span>'
+                           + '<button type="button" class="cx-file-remove" data-idx="' + i + '" title="Remove"><i class="fa-solid fa-xmark"></i></button>';
+            item.querySelector('.cx-file-remove').addEventListener('click', function () {
+                removeFile(parseInt(this.getAttribute('data-idx')));
+            });
+            fileList.appendChild(item);
+        });
+        var count = document.createElement('div');
+        count.className = 'cx-file-count';
+        count.innerHTML = '<i class="fa-solid fa-check-circle" style="color:var(--cx-success);"></i> '
+                        + selectedFiles.length + ' file(s) selected';
+        fileList.appendChild(count);
+    }
+
+    function htmlEsc(str) {
+        return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
 
     var form      = document.getElementById('batchForm');
     var resultDiv = document.getElementById('batchResult');
@@ -172,11 +272,11 @@ foreach ($groupedFormats as $group => $fmts) {
         e.preventDefault();
 
         // Client-side validation
-        if (!input.files || !input.files.length) {
+        if (!selectedFiles.length) {
             zone.style.borderColor = 'var(--cx-danger)';
             zone.style.animation   = 'none';
-            fileList.innerHTML = '<i class="fa-solid fa-circle-xmark" style="color:var(--cx-danger);"></i>'
-                               + ' <strong style="color:var(--cx-danger);">Please select at least one file.</strong>';
+            fileList.innerHTML = '<div style="font-size:.82rem;color:var(--cx-danger);"><i class="fa-solid fa-circle-xmark"></i>'
+                               + ' <strong>Please select at least one file.</strong></div>';
             setTimeout(function () { zone.style.borderColor = ''; zone.style.animation = ''; }, 2500);
             return;
         }
@@ -184,7 +284,13 @@ foreach ($groupedFormats as $group => $fmts) {
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<i class="fa-solid fa-spinner" style="animation:cx-spin 1s linear infinite;"></i> Uploading…';
 
-        var fd = new FormData(form);
+        var fd = new FormData();
+        fd.append('_token', form.querySelector('[name="_token"]').value);
+        fd.append('output_format', form.querySelector('[name="output_format"]').value);
+        var webhookInput = form.querySelector('[name="webhook_url"]');
+        if (webhookInput) fd.append('webhook_url', webhookInput.value);
+        selectedFiles.forEach(function (f) { fd.append('files[]', f); });
+
         try {
             var res  = await fetch('/projects/convertx/batch', { method: 'POST', body: fd });
             var data = await res.json();

@@ -41,10 +41,14 @@ class ConversionService
         'image/bmp'                                                          => 'bmp',
         'image/tiff'                                                         => 'tiff',
         'image/svg+xml'                                                      => 'svg',
+        'image/x-icon'                                                       => 'ico',
+        'image/vnd.microsoft.icon'                                           => 'ico',
+        'application/epub+zip'                                               => 'epub',
+        'text/tab-separated-values'                                          => 'tsv',
     ];
 
     // Formats that may contain scanned (rasterised) content → trigger OCR
-    private const OCR_CANDIDATE_FORMATS = ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'bmp', 'tiff', 'webp'];
+    private const OCR_CANDIDATE_FORMATS = ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'bmp', 'tiff', 'webp', 'ico'];
 
     /**
      * Detect which conversion backends are available on this server.
@@ -193,7 +197,7 @@ class ConversionService
             return $this->convertWithPhp($inputPath, $inputFormat, $outputFormat, $outputPath);
         }
 
-        $imageFormats  = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'svg'];
+        $imageFormats  = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'svg', 'ico'];
         $isInputImage  = in_array($inputFormat, $imageFormats, true);
         $isOutputImage = in_array($outputFormat, $imageFormats, true);
 
@@ -243,17 +247,28 @@ class ConversionService
             );
         }
 
-        // 4b. Image → writer format (docx / odt / rtf): create a proper document
+        // 4b. Image → writer format (docx / odt / rtf / doc): create a proper document
         //     that embeds the image using PHP ZipArchive — no external tools needed.
         //     This is far more reliable than the 2-step chain (image→PDF→DOCX) which
         //     requires the optional libreoffice-pdfimport package for the PDF→Writer
         //     leg, and often silently produces empty output when that package is absent.
-        $phpWriterFormats = ['docx', 'odt', 'rtf'];
+        //     'doc' (binary OLE format) is handled by building a temp DOCX in PHP then
+        //     converting DOCX→DOC via LibreOffice (same Writer family, no --infilter).
+        $phpWriterFormats = ['docx', 'odt', 'rtf', 'doc'];
         if ($isInputImage && in_array($outputFormat, $phpWriterFormats, true)) {
             if ($this->convertImageToDocumentWithPhp($inputPath, $inputFormat, $outputFormat, $outputPath)) {
                 return true;
             }
             // ZipArchive unavailable or failed — fall through to chain
+        }
+
+        // 4c. Image → plain-text formats (txt / html / md / csv): use Tesseract OCR
+        //     to extract text and write it to the output file.
+        //     Going through the PDF chain here is unreliable — pdfimport produces
+        //     unreadable output and LibreOffice Calc crashes on PDF→csv.
+        $textOutputFormats = ['txt', 'html', 'md', 'csv'];
+        if ($isInputImage && in_array($outputFormat, $textOutputFormats, true)) {
+            return $this->convertImageToTextWithOcr($inputPath, $outputFormat, $outputPath);
         }
 
         // 5. Cross-family: image → office/text (non-pdf)
@@ -275,8 +290,20 @@ class ConversionService
         // 'html' is included so that docx→html and xlsx→html use LibreOffice's
         // HTML export filter rather than falling through to Pandoc (step 8), which
         // may not be installed.
-        $officeFormats = ['pdf', 'docx', 'doc', 'odt', 'rtf', 'html', 'xlsx', 'xls', 'ods', 'pptx', 'ppt', 'odp'];
+        // 'epub' is handled by LibreOffice Writer (requires the epub export extension).
+        $officeFormats = ['pdf', 'docx', 'doc', 'odt', 'rtf', 'html', 'xlsx', 'xls', 'ods', 'pptx', 'ppt', 'odp', 'epub'];
         if (in_array($inputFormat, $officeFormats, true) || in_array($outputFormat, $officeFormats, true)) {
+            // Guard: LibreOffice crashes (SIGABRT/exit 134) when importing a PDF
+            // into Calc or Impress — the same crash that happens in convertViaChain.
+            if ($inputFormat === 'pdf'
+                && in_array($outputFormat, ['xlsx', 'xls', 'ods', 'csv', 'pptx', 'ppt', 'odp'], true)
+            ) {
+                throw new \RuntimeException(
+                    "Direct PDF to {$outputFormat} conversion is not supported — LibreOffice cannot "
+                    . "reliably import PDFs into Calc or Impress. "
+                    . "Consider converting to a Writer format (docx/odt/txt) first."
+                );
+            }
             return $this->convertWithLibreOffice($inputPath, $inputFormat, $outputFormat, $outputPath);
         }
 
@@ -296,7 +323,7 @@ class ConversionService
      */
     private function canConvertWithPhp(string $inputFormat, string $outputFormat): bool
     {
-        $phpFormats = ['txt', 'html', 'md', 'csv'];
+        $phpFormats = ['txt', 'html', 'md', 'csv', 'tsv'];
         return in_array($inputFormat, $phpFormats, true)
             && in_array($outputFormat, $phpFormats, true);
     }
@@ -355,11 +382,45 @@ class ConversionService
             return $this->csvToText($inputPath, $outputPath);
         }
 
-        // TXT → CSV (single-column)
+        // TSV → TXT
+        if ($inputFormat === 'tsv' && $outputFormat === 'txt') {
+            return $this->csvToText($inputPath, $outputPath, "\t");
+        }
+
+        // TXT → CSV (single-column) — RFC 4180 via fputcsv
         if ($inputFormat === 'txt' && $outputFormat === 'csv') {
-            $lines  = explode("\n", str_replace("\r\n", "\n", $content));
-            $output = implode("\n", array_map(fn($l) => '"' . str_replace('"', '""', $l) . '"', $lines));
-            return file_put_contents($outputPath, $output) !== false;
+            $lines = preg_split('/\r\n|\r|\n/', $content) ?: [];
+            $fh = fopen($outputPath, 'w');
+            if (!$fh) {
+                return false;
+            }
+            foreach ($lines as $line) {
+                fputcsv($fh, [$line]);
+            }
+            fclose($fh);
+            return file_exists($outputPath);
+        }
+
+        // CSV ↔ TSV — change delimiter
+        if (in_array($inputFormat, ['csv', 'tsv'], true) && in_array($outputFormat, ['csv', 'tsv'], true)) {
+            $inDelim  = ($inputFormat  === 'tsv') ? "\t" : ',';
+            $outDelim = ($outputFormat === 'tsv') ? "\t" : ',';
+            $fhIn  = fopen($inputPath,  'r');
+            $fhOut = fopen($outputPath, 'w');
+            if (!$fhIn || !$fhOut) {
+                return false;
+            }
+            while (($row = fgetcsv($fhIn, 0, $inDelim)) !== false) {
+                fputcsv($fhOut, $row, $outDelim);
+            }
+            fclose($fhIn);
+            fclose($fhOut);
+            return file_exists($outputPath);
+        }
+
+        // TSV → any other format: treat same as CSV conversion via TSV delimiter
+        if ($inputFormat === 'tsv') {
+            return $this->csvToText($inputPath, $outputPath, "\t");
         }
 
         // HTML → MD (basic)
@@ -498,6 +559,7 @@ class ConversionService
             'odt'  => 'odt:writer8',
             'rtf'  => 'rtf:Rich Text Format',
             'txt'  => 'txt:Text',
+            'epub' => 'epub:EPUB Export',
             // Calc / spreadsheet
             'xlsx' => 'xlsx:Calc MS Excel 2007 XML',
             'xls'  => 'xls:MS Excel 97',
@@ -532,11 +594,11 @@ class ConversionService
         string $outputPath,
         array  $options
     ): bool {
-        $imageFormats = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'svg'];
+        $imageFormats = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'svg', 'ico'];
         $isInputImage = in_array($inputFormat, $imageFormats, true);
 
         // Unique intermediate PDF in system temp dir
-        $tmpPdf = sys_get_temp_dir() . '/cx_chain_' . getmypid() . '_' . uniqid() . '.pdf';
+        $tmpPdf = sys_get_temp_dir() . '/cx_chain_' . getmypid() . '_' . bin2hex(random_bytes(8)) . '.pdf';
 
         try {
             // ── Step 1: convert input to intermediate PDF ──────────────────
@@ -578,6 +640,19 @@ class ConversionService
             if (in_array($outputFormat, $imageFormats, true)) {
                 return $this->convertWithImageMagick($tmpPdf, $outputPath, $options);
             }
+
+            // LibreOffice crashes (SIGABRT / exit 134) when asked to import a PDF
+            // into Calc or Impress.  These families are not PDF-import capable in
+            // the headless mode used here.  Throw a clear error instead of crashing.
+            $pdfUnsafeTargets = ['xlsx', 'xls', 'ods', 'csv', 'pptx', 'ppt', 'odp'];
+            if (in_array($outputFormat, $pdfUnsafeTargets, true)) {
+                throw new \RuntimeException(
+                    "Converting an image to {$outputFormat} via PDF intermediate is not supported — "
+                    . "LibreOffice cannot reliably import PDFs into Calc/Impress. "
+                    . "To extract data from an image spreadsheet, enable AI OCR on the conversion."
+                );
+            }
+
             return $this->convertWithLibreOffice($tmpPdf, 'pdf', $outputFormat, $outputPath);
 
         } finally {
@@ -630,6 +705,7 @@ class ConversionService
             'docx' => $this->convertImageToDocxWithPhp($inputPath, $inputFormat, $outputPath),
             'odt'  => $this->convertImageToOdtWithPhp($inputPath, $inputFormat, $outputPath),
             'rtf'  => $this->convertImageToRtfWithPhp($inputPath, $inputFormat, $outputPath),
+            'doc'  => $this->convertImageToDocViaDocx($inputPath, $inputFormat, $outputPath),
             default => false,
         };
     }
@@ -878,6 +954,101 @@ class ConversionService
         }
     }
 
+    /**
+     * Convert an image to a legacy .doc file (OLE binary format) by:
+     *   1. Building a DOCX in a temp file using convertImageToDocxWithPhp()
+     *   2. Having LibreOffice convert the DOCX → DOC (same Writer family;
+     *      no --infilter, no PDF intermediate, no libreoffice-pdfimport needed).
+     */
+    private function convertImageToDocViaDocx(
+        string $inputPath,
+        string $inputFormat,
+        string $outputPath
+    ): bool {
+        // Generate a unique temp path with .docx extension.
+        // tempnam() creates a 0-byte file; unlink it so ZipArchive can create the DOCX.
+        $tmpBase = tempnam(sys_get_temp_dir(), 'cx_doc_');
+        @unlink($tmpBase);
+        $tmpDocx = $tmpBase . '.docx';
+        try {
+            if (!$this->convertImageToDocxWithPhp($inputPath, $inputFormat, $tmpDocx)) {
+                return false;
+            }
+            return $this->convertWithLibreOffice($tmpDocx, 'docx', 'doc', $outputPath);
+        } finally {
+            if (file_exists($tmpDocx)) {
+                @unlink($tmpDocx);
+            }
+        }
+    }
+
+    /**
+     * Extract text from an image using Tesseract OCR, then write the result
+     * to a plain-text output file in the requested format (txt/html/md/csv).
+     *
+     * Falls back to LibreOffice Draw's --cat if Tesseract is absent (rare
+     * success — only works for SVG; returns empty for raster images) and then
+     * to an explicit error rather than silently producing garbage.
+     */
+    private function convertImageToTextWithOcr(
+        string $inputPath,
+        string $outputFormat,
+        string $outputPath
+    ): bool {
+        $text = '';
+
+        // 1. Tesseract (best for raster OCR) — cryptographically unique temp path,
+        //    no pre-created placeholder file, no tempnam race condition.
+        $tess = trim((string) shell_exec('which tesseract 2>/dev/null'));
+        if ($tess) {
+            $tmpBase = sys_get_temp_dir() . '/cx_tess_' . getmypid() . '_' . bin2hex(random_bytes(8));
+            $lang = 'eng';
+            exec(
+                escapeshellarg($tess) . ' ' . escapeshellarg($inputPath)
+                . ' ' . escapeshellarg($tmpBase) . ' -l ' . escapeshellarg($lang) . ' 2>/dev/null',
+                $_lines, $tessCode
+            );
+            $tessOut = $tmpBase . '.txt';
+            if ($tessCode === 0 && file_exists($tessOut)) {
+                $text = (string) file_get_contents($tessOut);
+                @unlink($tessOut);
+            }
+        }
+
+        // 2. If no Tesseract text, give a meaningful error rather than garbage
+        if (empty(trim($text))) {
+            throw new \RuntimeException(
+                "Image to text conversion requires Tesseract OCR. "
+                . "Install with: apt-get install tesseract-ocr"
+            );
+        }
+
+        // 3. Write extracted text to the target format
+        $text = mb_convert_encoding($text, 'UTF-8', 'UTF-8');
+        switch ($outputFormat) {
+            case 'html':
+                $body    = nl2br(htmlspecialchars($text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'));
+                $content = "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"></head><body><p>{$body}</p></body></html>";
+                return file_put_contents($outputPath, $content) !== false;
+            case 'md':
+                return file_put_contents($outputPath, $text) !== false;
+            case 'csv':
+                // Each non-empty line becomes a single-column RFC 4180 CSV row
+                $fh = fopen($outputPath, 'w');
+                if (!$fh) {
+                    return false;
+                }
+                $lines = preg_split('/\r\n|\r|\n/', trim($text)) ?: [];
+                foreach ($lines as $line) {
+                    fputcsv($fh, [$line]);
+                }
+                fclose($fh);
+                return file_exists($outputPath);
+            default: // txt
+                return file_put_contents($outputPath, $text) !== false;
+        }
+    }
+
     private function convertWithLibreOffice(
         string $inputPath,
         string $inputFormat,
@@ -910,12 +1081,15 @@ class ConversionService
         //   don't corrupt each other's profile directory.
         //   NOTE: single dash (-env:) is the correct LibreOffice syntax; double
         //   dash (--env:) is rejected by LibreOffice 7.x with "Error in option".
-        // --infilter "draw_pdf_import" – force PDF Import filter when input is PDF.
+        // --infilter={filter} – force PDF Import filter when input is PDF.
         //   Without this, headless LO on some installs fails to select the filter
         //   automatically, producing empty or corrupt output.
+        //   NOTE: LibreOffice requires equals-sign syntax (--infilter={filter}),
+        //   NOT space-separated (--infilter filter) — the latter causes exit 1
+        //   with "Error in option: --infilter".
         $pid      = getmypid();
         $infilter = ($inputFormat === 'pdf')
-            ? '--infilter ' . escapeshellarg('draw_pdf_import') . ' '
+            ? '--infilter=' . escapeshellarg('draw_pdf_import') . ' '
             : '';
         $cmd = "DISPLAY= HOME=/tmp {$lo} --headless --norestore --nolockcheck "
              . "-env:UserInstallation=file:///tmp/lo-{$pid} "
@@ -1008,14 +1182,14 @@ class ConversionService
         return true;
     }
 
-    private function csvToText(string $inputPath, string $outputPath): bool
+    private function csvToText(string $inputPath, string $outputPath, string $delimiter = ','): bool
     {
         $lines = file($inputPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
         if ($lines === false) {
             return false;
         }
-        $text = implode("\n", array_map(function ($line) {
-            return implode("\t", str_getcsv($line));
+        $text = implode("\n", array_map(function ($line) use ($delimiter) {
+            return implode("\t", str_getcsv($line, $delimiter));
         }, $lines));
         return file_put_contents($outputPath, $text) !== false;
     }

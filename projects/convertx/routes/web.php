@@ -29,6 +29,16 @@ switch ($segments[0]) {
         }
         break;
 
+    case 'ai-process':
+        require_once PROJECT_PATH . '/controllers/AIProcessController.php';
+        $ctrl = new \Projects\ConvertX\Controllers\AIProcessController();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $ctrl->process();
+        } else {
+            $ctrl->show();
+        }
+        break;
+
     case 'job':
         require_once PROJECT_PATH . '/controllers/ConversionController.php';
         $ctrl = new \Projects\ConvertX\Controllers\ConversionController();
@@ -71,6 +81,9 @@ switch ($segments[0]) {
             'download' => $ctrl->download($segments[2] ?? ''),
             'history'  => $ctrl->history(),
             'usage'    => $ctrl->usage(),
+            'formats'  => $ctrl->formats(),
+            'plans'    => $ctrl->plans(),
+            'jobs'     => $ctrl->cancelJob($segments[2] ?? ''),
             default    => $ctrl->index(),
         };
         break;
