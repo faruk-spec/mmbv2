@@ -439,6 +439,10 @@ class ConvertXAdminController extends BaseController
      */
     public function testProvider(): void
     {
+        // Prevent any accidental buffered output from leaking into the JSON
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
         header('Content-Type: application/json');
 
         if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
@@ -463,6 +467,14 @@ class ConvertXAdminController extends BaseController
 
         $apiKey  = $row['api_key']  ?? '';
         $baseUrl = rtrim($row['base_url'] ?? '', '/');
+        if (empty($baseUrl)) {
+            // Apply sensible defaults so the test works even when base_url was never saved
+            $defaults = [
+                'openai'      => 'https://api.openai.com',
+                'huggingface' => 'https://api-inference.huggingface.co',
+            ];
+            $baseUrl = $defaults[$row['slug'] ?? ''] ?? '';
+        }
         $slug    = $row['slug'] ?? '';
         $start   = microtime(true);
 
@@ -478,11 +490,19 @@ class ConvertXAdminController extends BaseController
                     CURLOPT_RETURNTRANSFER => true,
                     CURLOPT_HTTPHEADER     => ['Authorization: Bearer ' . $apiKey],
                     CURLOPT_TIMEOUT        => 15,
+                    CURLOPT_SSL_VERIFYPEER => true,
+                    CURLOPT_SSL_VERIFYHOST => 2,
+                    CURLOPT_FOLLOWLOCATION => true,
                 ]);
-                $body     = curl_exec($ch);
+                $body     = (string) curl_exec($ch);
+                $curlErr  = curl_error($ch);
                 $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
                 curl_close($ch);
                 $latency  = (int) round((microtime(true) - $start) * 1000);
+                if ($curlErr) {
+                    echo json_encode(['success' => false, 'message' => 'Connection error: ' . $curlErr, 'latency_ms' => $latency]);
+                    return;
+                }
                 if ($httpCode === 200) {
                     $data = json_decode($body, true);
                     $cnt  = count($data['data'] ?? []);
@@ -513,11 +533,19 @@ class ConvertXAdminController extends BaseController
                     CURLOPT_RETURNTRANSFER => true,
                     CURLOPT_HTTPHEADER     => ['Authorization: Bearer ' . $apiKey],
                     CURLOPT_TIMEOUT        => 15,
+                    CURLOPT_SSL_VERIFYPEER => true,
+                    CURLOPT_SSL_VERIFYHOST => 2,
+                    CURLOPT_FOLLOWLOCATION => true,
                 ]);
-                $body     = curl_exec($ch);
+                $body     = (string) curl_exec($ch);
+                $curlErr  = curl_error($ch);
                 $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
                 curl_close($ch);
                 $latency  = (int) round((microtime(true) - $start) * 1000);
+                if ($curlErr) {
+                    echo json_encode(['success' => false, 'message' => 'Connection error: ' . $curlErr, 'latency_ms' => $latency]);
+                    break;
+                }
                 if ($httpCode === 200) {
                     $data = json_decode($body, true);
                     $name = $data['name'] ?? 'unknown';
@@ -528,11 +556,12 @@ class ConvertXAdminController extends BaseController
                     echo json_encode(['success' => true,
                         'message' => "Connected as @{$name}", 'latency_ms' => $latency]);
                 } else {
+                    $errMsg = json_decode($body, true)['error'] ?? "HTTP {$httpCode}";
                     $this->db->query(
                         "UPDATE convertx_ai_providers SET is_healthy=0, health_checked_at=NOW() WHERE id=:id",
                         ['id' => $id]
                     );
-                    echo json_encode(['success' => false, 'message' => "HTTP {$httpCode}", 'latency_ms' => $latency]);
+                    echo json_encode(['success' => false, 'message' => $errMsg, 'latency_ms' => $latency]);
                 }
                 break;
 

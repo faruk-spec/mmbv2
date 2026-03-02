@@ -280,6 +280,12 @@ View::extend('admin');
                                 </form>
                             </td>
                         </tr>
+                        <!-- Test result row (shown after clicking test button) -->
+                        <tr id="test-result-row-<?= (int)$p['id'] ?>" style="display:none;background:#fff3cd;">
+                            <td colspan="9" style="padding:6px 24px;">
+                                <span id="test-result-<?= (int)$p['id'] ?>" class="small"></span>
+                            </td>
+                        </tr>
                         <!-- Inline edit row -->
                         <tr id="edit-provider-<?= (int)$p['id'] ?>" style="display:none;background:#f8f9fa;">
                             <td colspan="9" style="padding:16px 24px;">
@@ -338,7 +344,6 @@ View::extend('admin');
                                             onclick="testConnection(<?= (int)$p['id'] ?>, <?= json_encode(\Core\Security::generateCsrfToken(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>)">
                                         <i class="fas fa-plug"></i> Test Connection
                                     </button>
-                                    <span id="test-result-<?= (int)$p['id'] ?>" class="ml-2 small"></span>
                                 </form>
                             </td>
                         </tr>
@@ -398,8 +403,9 @@ function fillQuickAdd(data) {
 }
 
 function testConnection(providerId, csrfToken) {
-    const resultEl = document.getElementById('test-result-' + providerId);
-    const btnEls   = [
+    const resultEl  = document.getElementById('test-result-' + providerId);
+    const resultRow = document.getElementById('test-result-row-' + providerId);
+    const btnEls    = [
         document.getElementById('test-btn-' + providerId),
         document.getElementById('test-btn-edit-' + providerId),
     ];
@@ -409,29 +415,39 @@ function testConnection(providerId, csrfToken) {
     }
 
     setButtons(true, '<i class="fas fa-spinner fa-spin"></i>');
-    if (resultEl) resultEl.innerHTML = '';
+    if (resultEl) resultEl.innerHTML = '<i class="fas fa-spinner fa-spin text-muted"></i> Testing…';
+    if (resultRow) resultRow.style.display = 'table-row';
 
     fetch('/admin/projects/convertx/settings/test-provider', {
         method: 'POST',
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: '_token=' + encodeURIComponent(csrfToken) + '&provider_id=' + providerId,
     })
-    .then(function(r) { return r.json(); })
+    .then(function(r) {
+        if (!r.ok) {
+            return r.text().then(function(t) { throw new Error('HTTP ' + r.status + ': ' + t.substring(0, 200)); });
+        }
+        return r.json();
+    })
     .then(function(data) {
         const icon    = data.success ? '✅' : '❌';
         const latency = data.latency_ms !== undefined ? ' (' + data.latency_ms + 'ms)' : '';
         const color   = data.success ? 'text-success' : 'text-danger';
         if (resultEl) {
-            resultEl.className = 'ml-2 small ' + color;
+            resultEl.className = 'small ' + color;
             resultEl.textContent = icon + ' ' + (data.message || '') + latency;
+        }
+        if (resultRow) {
+            resultRow.style.background = data.success ? '#d4edda' : '#f8d7da';
         }
         setButtons(false, '<i class="fas fa-plug"></i>');
     })
-    .catch(function() {
+    .catch(function(err) {
         if (resultEl) {
-            resultEl.className = 'ml-2 small text-danger';
-            resultEl.textContent = '❌ Request failed';
+            resultEl.className = 'small text-danger';
+            resultEl.textContent = '❌ ' + (err.message || 'Request failed');
         }
+        if (resultRow) resultRow.style.background = '#f8d7da';
         setButtons(false, '<i class="fas fa-plug"></i>');
     });
 }

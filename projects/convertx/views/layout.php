@@ -1117,6 +1117,10 @@ include BASE_PATH . '/views/layouts/navbar.php';
                    class="<?= ($currentView === 'convert') ? 'active' : '' ?>">
                     <i class="fa-solid fa-arrow-right-arrow-left"></i> Convert File
                 </a>
+                <a href="/projects/convertx/ai-process"
+                   class="<?= ($currentView === 'ai-process') ? 'active' : '' ?>">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> AI Process
+                </a>
                 <a href="/projects/convertx/batch"
                    class="<?= ($currentView === 'batch') ? 'active' : '' ?>">
                     <i class="fa-solid fa-layer-group"></i> Batch Convert
