@@ -577,16 +577,44 @@ class AIService
      * Command-line OCR fallback.
      *
      * Tries (in order):
-     *   1. pdftotext (poppler-utils) — fast text extraction for digital PDFs
-     *   2. LibreOffice --cat — extracts plain text from any LO-supported format
-     *
-     * Neither requires an API key or Tesseract.
+     *   1. Tesseract — real OCR for raster images and scanned PDFs
+     *   2. pdftotext (poppler-utils) — fast text extraction for digital PDFs
+     *   3. LibreOffice --cat — extracts plain text from office documents only
+     *                          (explicitly skipped for image files to avoid returning
+     *                           binary metadata / C2PA certificate garbage)
      */
     private function cmdOCR(string $filePath): array
     {
         $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
 
-        // 1. pdftotext — best for digital (non-scanned) PDFs
+        // Image file extensions that must NOT go through LibreOffice --cat
+        $imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'tif', 'svg', 'ico'];
+        $isImage   = in_array($ext, $imageExts, true);
+
+        // 1. Tesseract — proper OCR for raster images and scanned PDFs
+        $tess = trim((string) shell_exec('which tesseract 2>/dev/null'));
+        if ($tess) {
+            $tmpBase = tempnam(sys_get_temp_dir(), 'cx_tess_');
+            @unlink($tmpBase);
+            exec(
+                escapeshellarg($tess) . ' ' . escapeshellarg($filePath)
+                . ' ' . escapeshellarg($tmpBase) . ' -l eng 2>/dev/null',
+                $_lines, $tessCode
+            );
+            $tessOut = $tmpBase . '.txt';
+            if ($tessCode === 0 && file_exists($tessOut)) {
+                $text = (string) file_get_contents($tessOut);
+                @unlink($tessOut);
+                @unlink($tmpBase);
+                if (!empty(trim($text))) {
+                    return ['success' => true, 'text' => $text, 'tokens' => 0,
+                            'provider' => 'tesseract', 'error' => ''];
+                }
+            }
+            @unlink($tmpBase);
+        }
+
+        // 2. pdftotext — best for digital (non-scanned) PDFs
         if ($ext === 'pdf') {
             $pdftotext = trim((string) shell_exec('which pdftotext 2>/dev/null'));
             if ($pdftotext) {
@@ -604,10 +632,12 @@ class AIService
             }
         }
 
-        // 2. LibreOffice --cat — works on any document LO can open
+        // 3. LibreOffice --cat — works on office documents only.
+        //    NEVER run on image files: LO outputs raw binary metadata (XMP, C2PA
+        //    certificates, EXIF) which is useless garbage, not OCR'd text.
         $lo = trim((string) shell_exec('which libreoffice 2>/dev/null'))
            ?: trim((string) shell_exec('which soffice 2>/dev/null'));
-        if ($lo && file_exists($filePath)) {
+        if ($lo && file_exists($filePath) && !$isImage) {
             $pid  = getmypid();
             $cmd  = 'DISPLAY= HOME=/tmp ' . escapeshellarg($lo) . ' --headless --cat '
                   . '-env:UserInstallation=file:///tmp/lo-' . $pid . ' '
@@ -620,13 +650,17 @@ class AIService
             }
         }
 
+        $hint = $isImage
+            ? 'Install Tesseract for image OCR: apt-get install tesseract-ocr'
+            : 'OCR requires Tesseract, pdftotext (poppler-utils), or an OpenAI API key. '
+              . 'Install with: apt-get install tesseract-ocr poppler-utils';
+
         return [
             'success'  => false,
             'text'     => '',
             'tokens'   => 0,
             'provider' => 'none',
-            'error'    => 'OCR requires Tesseract, pdftotext (poppler-utils), or an OpenAI API key. '
-                        . 'Install with: apt-get install tesseract-ocr poppler-utils',
+            'error'    => $hint,
         ];
     }
 }

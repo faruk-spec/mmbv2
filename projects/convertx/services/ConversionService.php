@@ -262,6 +262,15 @@ class ConversionService
             // ZipArchive unavailable or failed — fall through to chain
         }
 
+        // 4c. Image → plain-text formats (txt / html / md / csv): use Tesseract OCR
+        //     to extract text and write it to the output file.
+        //     Going through the PDF chain here is unreliable — pdfimport produces
+        //     unreadable output and LibreOffice Calc crashes on PDF→csv.
+        $textOutputFormats = ['txt', 'html', 'md', 'csv'];
+        if ($isInputImage && in_array($outputFormat, $textOutputFormats, true)) {
+            return $this->convertImageToTextWithOcr($inputPath, $outputFormat, $outputPath);
+        }
+
         // 5. Cross-family: image → office/text (non-pdf)
         //    Chain: image → PDF (ImageMagick or LO Draw) → target (LibreOffice)
         if ($isInputImage && !$isOutputImage) {
@@ -584,6 +593,19 @@ class ConversionService
             if (in_array($outputFormat, $imageFormats, true)) {
                 return $this->convertWithImageMagick($tmpPdf, $outputPath, $options);
             }
+
+            // LibreOffice crashes (SIGABRT / exit 134) when asked to import a PDF
+            // into Calc or Impress.  These families are not PDF-import capable in
+            // the headless mode used here.  Throw a clear error instead of crashing.
+            $pdfUnsafeTargets = ['xlsx', 'xls', 'ods', 'csv', 'pptx', 'ppt', 'odp'];
+            if (in_array($outputFormat, $pdfUnsafeTargets, true)) {
+                throw new \RuntimeException(
+                    "Converting an image to {$outputFormat} via PDF intermediate is not supported — "
+                    . "LibreOffice cannot reliably import PDFs into Calc/Impress. "
+                    . "To extract data from an image spreadsheet, enable AI OCR on the conversion."
+                );
+            }
+
             return $this->convertWithLibreOffice($tmpPdf, 'pdf', $outputFormat, $outputPath);
 
         } finally {
@@ -911,6 +933,73 @@ class ConversionService
                 @unlink($tmpDocx);
             }
         }
+    }
+
+    /**
+     * Extract text from an image using Tesseract OCR, then write the result
+     * to a plain-text output file in the requested format (txt/html/md/csv).
+     *
+     * Falls back to LibreOffice Draw's --cat if Tesseract is absent (rare
+     * success — only works for SVG; returns empty for raster images) and then
+     * to an explicit error rather than silently producing garbage.
+     */
+    private function convertImageToTextWithOcr(
+        string $inputPath,
+        string $outputFormat,
+        string $outputPath
+    ): bool {
+        $text = '';
+
+        // 1. Tesseract (best for raster OCR)
+        $tess = trim((string) shell_exec('which tesseract 2>/dev/null'));
+        if ($tess) {
+            $tmpBase = tempnam(sys_get_temp_dir(), 'cx_tess_');
+            @unlink($tmpBase);
+            // tesseract writes <base>.txt automatically
+            $lang = 'eng';
+            exec(
+                escapeshellarg($tess) . ' ' . escapeshellarg($inputPath)
+                . ' ' . escapeshellarg($tmpBase) . ' -l ' . escapeshellarg($lang) . ' 2>/dev/null',
+                $_lines, $tessCode
+            );
+            $tessOut = $tmpBase . '.txt';
+            if ($tessCode === 0 && file_exists($tessOut)) {
+                $text = (string) file_get_contents($tessOut);
+                @unlink($tessOut);
+            }
+            @unlink($tmpBase);
+        }
+
+        // 2. If no Tesseract text, give a meaningful error rather than garbage
+        if (empty(trim($text))) {
+            throw new \RuntimeException(
+                "Image to text conversion requires Tesseract OCR. "
+                . "Install with: apt-get install tesseract-ocr"
+            );
+        }
+
+        // 3. Write extracted text to the target format
+        $text = mb_convert_encoding($text, 'UTF-8', 'UTF-8');
+        switch ($outputFormat) {
+            case 'html':
+                $body = nl2br(htmlspecialchars($text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'));
+                $content = "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"></head><body><p>{$body}</p></body></html>";
+                break;
+            case 'md':
+                $content = $text;
+                break;
+            case 'csv':
+                // Each non-empty line becomes a single-column CSV row
+                $lines   = preg_split('/\r\n|\r|\n/', trim($text)) ?: [];
+                $rows    = array_map(fn($l) => '"' . str_replace('"', '""', $l) . '"', $lines);
+                $content = implode("\n", $rows) . "\n";
+                break;
+            default: // txt
+                $content = $text;
+                break;
+        }
+
+        return file_put_contents($outputPath, $content) !== false;
     }
 
     private function convertWithLibreOffice(

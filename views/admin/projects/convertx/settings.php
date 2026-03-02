@@ -196,6 +196,7 @@ View::extend('admin');
                                 <th>Tiers</th>
                                 <th class="text-center">Priority</th>
                                 <th class="text-center">API Key</th>
+                                <th class="text-center">Usage</th>
                                 <th class="text-center">Status</th>
                                 <th class="text-right">Actions</th>
                             </tr>
@@ -230,6 +231,17 @@ View::extend('admin');
                                 <span class="badge badge-warning"><i class="fas fa-exclamation-triangle"></i> None</span>
                                 <?php endif; ?>
                             </td>
+                            <td class="text-center" style="font-size:.8rem;">
+                                <?php
+                                $tokens = (int)($p['total_tokens_used'] ?? 0);
+                                $cost   = (float)($p['total_cost_usd'] ?? 0);
+                                ?>
+                                <span title="<?= number_format($tokens) ?> tokens">
+                                    <?= $tokens > 1000 ? number_format($tokens / 1000, 1) . 'K' : $tokens ?>
+                                    <small class="text-muted">tok</small>
+                                </span><br>
+                                <small class="text-muted">$<?= number_format($cost, 4) ?></small>
+                            </td>
                             <td class="text-center">
                                 <?php if ($p['is_active']): ?>
                                 <span class="badge badge-success">Active</span>
@@ -253,6 +265,13 @@ View::extend('admin');
                                 <button type="button" class="btn btn-xs btn-info" onclick="toggleEditProvider(<?= (int)$p['id'] ?>)" title="Edit">
                                     <i class="fas fa-edit"></i>
                                 </button>
+                                <!-- Test connection -->
+                                <button type="button" class="btn btn-xs btn-secondary"
+                                        id="test-btn-<?= (int)$p['id'] ?>"
+                                        onclick="testConnection(<?= (int)$p['id'] ?>, <?= json_encode(\Core\Security::generateCsrfToken(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>)"
+                                        title="Test connection">
+                                    <i class="fas fa-plug"></i>
+                                </button>
                                 <form method="POST" action="/admin/projects/convertx/settings/delete-provider" style="display:inline;"
                                       onsubmit="return confirm('Delete provider ' + <?= json_encode($p['name'], JSON_HEX_APOS | JSON_HEX_QUOT) ?> + '? This cannot be undone.')">
                                     <input type="hidden" name="_token" value="<?= htmlspecialchars(\Core\Security::generateCsrfToken()) ?>">
@@ -263,7 +282,7 @@ View::extend('admin');
                         </tr>
                         <!-- Inline edit row -->
                         <tr id="edit-provider-<?= (int)$p['id'] ?>" style="display:none;background:#f8f9fa;">
-                            <td colspan="8" style="padding:16px 24px;">
+                            <td colspan="9" style="padding:16px 24px;">
                                 <form method="POST" action="/admin/projects/convertx/settings/edit-provider">
                                     <input type="hidden" name="_token" value="<?= htmlspecialchars(\Core\Security::generateCsrfToken()) ?>">
                                     <input type="hidden" name="provider_id" value="<?= (int)$p['id'] ?>">
@@ -314,6 +333,12 @@ View::extend('admin');
                                     </div>
                                     <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-save"></i> Save Changes</button>
                                     <button type="button" class="btn btn-secondary btn-sm" onclick="toggleEditProvider(<?= (int)$p['id'] ?>)">Cancel</button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm ml-2"
+                                            id="test-btn-edit-<?= (int)$p['id'] ?>"
+                                            onclick="testConnection(<?= (int)$p['id'] ?>, <?= json_encode(\Core\Security::generateCsrfToken(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>)">
+                                        <i class="fas fa-plug"></i> Test Connection
+                                    </button>
+                                    <span id="test-result-<?= (int)$p['id'] ?>" class="ml-2 small"></span>
                                 </form>
                             </td>
                         </tr>
@@ -370,6 +395,45 @@ function fillQuickAdd(data) {
     if (costEl && data.cost !== undefined) costEl.value = data.cost;
     document.getElementById('qa-name').focus();
     cardEl.scrollIntoView({behavior: 'smooth', block: 'start'});
+}
+
+function testConnection(providerId, csrfToken) {
+    const resultEl = document.getElementById('test-result-' + providerId);
+    const btnEls   = [
+        document.getElementById('test-btn-' + providerId),
+        document.getElementById('test-btn-edit-' + providerId),
+    ];
+
+    function setButtons(disabled, iconHtml) {
+        btnEls.forEach(function(b) { if (b) { b.disabled = disabled; b.innerHTML = iconHtml; } });
+    }
+
+    setButtons(true, '<i class="fas fa-spinner fa-spin"></i>');
+    if (resultEl) resultEl.innerHTML = '';
+
+    fetch('/admin/projects/convertx/settings/test-provider', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: '_token=' + encodeURIComponent(csrfToken) + '&provider_id=' + providerId,
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        const icon    = data.success ? '✅' : '❌';
+        const latency = data.latency_ms !== undefined ? ' (' + data.latency_ms + 'ms)' : '';
+        const color   = data.success ? 'text-success' : 'text-danger';
+        if (resultEl) {
+            resultEl.className = 'ml-2 small ' + color;
+            resultEl.textContent = icon + ' ' + (data.message || '') + latency;
+        }
+        setButtons(false, '<i class="fas fa-plug"></i>');
+    })
+    .catch(function() {
+        if (resultEl) {
+            resultEl.className = 'ml-2 small text-danger';
+            resultEl.textContent = '❌ Request failed';
+        }
+        setButtons(false, '<i class="fas fa-plug"></i>');
+    });
 }
 </script>
 <?php View::endSection(); ?>

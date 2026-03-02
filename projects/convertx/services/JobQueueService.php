@@ -198,6 +198,16 @@ class JobQueueService
         }
         $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
 
+        // Image files cannot yield text via file_get_contents — their bytes are
+        // binary raster data, not text.  Returning empty string here prevents
+        // garbage binary content (including raw XMP / C2PA certificate bytes)
+        // from being fed to the AI providers or the PHP-native summarizer.
+        // Images are OCR'd separately via the 'ocr' AI task, not here.
+        $imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'tif', 'svg', 'ico'];
+        if (in_array($ext, $imageExts, true)) {
+            return '';
+        }
+
         // Plain text / markup — read directly
         if (in_array($ext, ['txt', 'csv', 'md', 'rst', 'text'], true)) {
             return (string) file_get_contents($path);

@@ -430,6 +430,161 @@ class ConvertXAdminController extends BaseController
     }
 
     // ------------------------------------------------------------------ //
+    //  Test AI Provider Connection                                         //
+    // ------------------------------------------------------------------ //
+
+    /**
+     * POST /admin/projects/convertx/settings/test-provider
+     * Returns JSON: { success, message, latency_ms }
+     */
+    public function testProvider(): void
+    {
+        header('Content-Type: application/json');
+
+        if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
+            echo json_encode(['success' => false, 'message' => 'Invalid CSRF token']);
+            return;
+        }
+
+        $id = (int) ($_POST['provider_id'] ?? 0);
+        if (!$id) {
+            echo json_encode(['success' => false, 'message' => 'Missing provider ID']);
+            return;
+        }
+
+        $row = $this->db->fetch(
+            "SELECT * FROM convertx_ai_providers WHERE id = :id LIMIT 1",
+            ['id' => $id]
+        );
+        if (!$row) {
+            echo json_encode(['success' => false, 'message' => 'Provider not found']);
+            return;
+        }
+
+        $apiKey  = $row['api_key']  ?? '';
+        $baseUrl = rtrim($row['base_url'] ?? '', '/');
+        $slug    = $row['slug'] ?? '';
+        $start   = microtime(true);
+
+        switch ($slug) {
+            case 'openai':
+                if (empty($apiKey)) {
+                    echo json_encode(['success' => false, 'message' => 'No API key configured']);
+                    return;
+                }
+                // List models — lightweight, authenticated GET
+                $ch = curl_init($baseUrl . '/v1/models');
+                curl_setopt_array($ch, [
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_HTTPHEADER     => ['Authorization: Bearer ' . $apiKey],
+                    CURLOPT_TIMEOUT        => 15,
+                ]);
+                $body     = curl_exec($ch);
+                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                curl_close($ch);
+                $latency  = (int) round((microtime(true) - $start) * 1000);
+                if ($httpCode === 200) {
+                    $data = json_decode($body, true);
+                    $cnt  = count($data['data'] ?? []);
+                    $this->db->query(
+                        "UPDATE convertx_ai_providers SET is_healthy=1, health_checked_at=NOW() WHERE id=:id",
+                        ['id' => $id]
+                    );
+                    echo json_encode(['success' => true,
+                        'message' => "Connected — {$cnt} model(s) available", 'latency_ms' => $latency]);
+                } else {
+                    $err = json_decode($body, true)['error']['message'] ?? "HTTP {$httpCode}";
+                    $this->db->query(
+                        "UPDATE convertx_ai_providers SET is_healthy=0, health_checked_at=NOW() WHERE id=:id",
+                        ['id' => $id]
+                    );
+                    echo json_encode(['success' => false, 'message' => $err, 'latency_ms' => $latency]);
+                }
+                break;
+
+            case 'huggingface':
+                if (empty($apiKey)) {
+                    echo json_encode(['success' => false, 'message' => 'No API key configured']);
+                    return;
+                }
+                // Validate token via whoami endpoint
+                $ch = curl_init('https://huggingface.co/api/whoami-v2');
+                curl_setopt_array($ch, [
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_HTTPHEADER     => ['Authorization: Bearer ' . $apiKey],
+                    CURLOPT_TIMEOUT        => 15,
+                ]);
+                $body     = curl_exec($ch);
+                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                curl_close($ch);
+                $latency  = (int) round((microtime(true) - $start) * 1000);
+                if ($httpCode === 200) {
+                    $data = json_decode($body, true);
+                    $name = $data['name'] ?? 'unknown';
+                    $this->db->query(
+                        "UPDATE convertx_ai_providers SET is_healthy=1, health_checked_at=NOW() WHERE id=:id",
+                        ['id' => $id]
+                    );
+                    echo json_encode(['success' => true,
+                        'message' => "Connected as @{$name}", 'latency_ms' => $latency]);
+                } else {
+                    $this->db->query(
+                        "UPDATE convertx_ai_providers SET is_healthy=0, health_checked_at=NOW() WHERE id=:id",
+                        ['id' => $id]
+                    );
+                    echo json_encode(['success' => false, 'message' => "HTTP {$httpCode}", 'latency_ms' => $latency]);
+                }
+                break;
+
+            case 'tesseract':
+                $tess    = trim((string) shell_exec('which tesseract 2>/dev/null'));
+                $latency = (int) round((microtime(true) - $start) * 1000);
+                if ($tess) {
+                    $ver = trim((string) shell_exec('tesseract --version 2>&1 | head -1'));
+                    $this->db->query(
+                        "UPDATE convertx_ai_providers SET is_healthy=1, health_checked_at=NOW() WHERE id=:id",
+                        ['id' => $id]
+                    );
+                    echo json_encode(['success' => true,
+                        'message' => "Tesseract found: {$ver}", 'latency_ms' => $latency]);
+                } else {
+                    $this->db->query(
+                        "UPDATE convertx_ai_providers SET is_healthy=0, health_checked_at=NOW() WHERE id=:id",
+                        ['id' => $id]
+                    );
+                    echo json_encode(['success' => false, 'message' => 'Tesseract not found in PATH', 'latency_ms' => $latency]);
+                }
+                break;
+
+            default:
+                // Generic: try a HEAD request to the base URL if set
+                if ($baseUrl && $apiKey) {
+                    $ch = curl_init($baseUrl);
+                    curl_setopt_array($ch, [
+                        CURLOPT_RETURNTRANSFER => true,
+                        CURLOPT_NOBODY         => true,
+                        CURLOPT_HTTPHEADER     => ['Authorization: Bearer ' . $apiKey],
+                        CURLOPT_TIMEOUT        => 15,
+                    ]);
+                    curl_exec($ch);
+                    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                    curl_close($ch);
+                    $latency  = (int) round((microtime(true) - $start) * 1000);
+                    $ok = $httpCode > 0 && $httpCode < 500;
+                    $this->db->query(
+                        "UPDATE convertx_ai_providers SET is_healthy=:h, health_checked_at=NOW() WHERE id=:id",
+                        ['h' => (int) $ok, 'id' => $id]
+                    );
+                    echo json_encode(['success' => $ok,
+                        'message' => "HTTP {$httpCode}", 'latency_ms' => $latency]);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'No base URL or API key to test']);
+                }
+                break;
+        }
+    }
+
+    // ------------------------------------------------------------------ //
     //  Storage Monitor                                                     //
     // ------------------------------------------------------------------ //
 
