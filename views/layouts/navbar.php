@@ -620,10 +620,10 @@ body {
 }
 
 .universal-header {
-    background: rgba(12, 12, 18, 0.98) !important;
-    backdrop-filter: blur(20px) !important;
-    -webkit-backdrop-filter: blur(20px) !important;
-    border-bottom: 1px solid var(--border-color) !important;
+    background: rgba(10, 10, 28, 0.97) !important;
+    backdrop-filter: blur(24px) !important;
+    -webkit-backdrop-filter: blur(24px) !important;
+    border-bottom: 1px solid rgba(100, 120, 255, 0.18) !important;
     <?php if (!isset($navbarSettings['navbar_sticky']) || $navbarSettings['navbar_sticky']): ?>
     /* Sticky positioning enabled (default) */
     position: -webkit-sticky !important;
@@ -653,15 +653,16 @@ body {
 <?php endif; ?>
 
 [data-theme="light"] .universal-header {
-    background: rgba(255, 255, 255, 0.98) !important;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1) !important;
+    background: rgba(240, 242, 255, 0.95) !important;
+    border-bottom: 1px solid rgba(99, 102, 241, 0.2) !important;
+    box-shadow: 0 2px 16px rgba(99, 102, 241, 0.1) !important;
 }
 
 .universal-header .header-content {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 0;
+    padding: 16px 0;
     max-width: 1400px;
     margin: 0 auto;
     padding-left: 20px;
@@ -669,8 +670,9 @@ body {
 }
 
 .universal-header .logo {
-    font-size: 1.3rem;
-    font-weight: 700;
+    font-size: 1.9rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
     background: linear-gradient(135deg, var(--cyan), var(--magenta));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -691,12 +693,14 @@ body {
 .universal-nav .nav-link {
     color: var(--text-secondary);
     font-weight: 500;
-    padding: 8px 12px;
+    padding: 9px 14px;
     position: relative;
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: 14px;
+    /* html { font-size: 62.5% } → 1rem = 10px; zoom: 0.85 applied on <html>
+       1.8rem = 18px pre-zoom → ≈15.3px visual (vs old 14px px which was 11.9px visual) */
+    font-size: 1.8rem;
     cursor: pointer;
     border-radius: 6px;
     transition: var(--transition);
@@ -825,13 +829,13 @@ body {
     background: var(--bg-card);
     border: 1px solid var(--border-color);
     color: var(--text-primary);
-    padding: 8px 12px;
+    padding: 9px 14px;
     border-radius: 6px;
     cursor: pointer;
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: 14px;
+    font-size: 1.8rem; /* 1rem = 10px (62.5% base); 1.8rem = 18px → ~15.3px visual at zoom 0.85 */
     transition: var(--transition);
     font-family: inherit;
 }

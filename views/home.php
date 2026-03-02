@@ -5,10 +5,10 @@
 <style>
     /* ── Futuristic Home Page Theme ── */
 
-    /* Dark theme: override background for homepage */
+    /* Dark theme: override background for homepage — matches new indigo-black palette */
     [data-theme="dark"] body.home-page,
     :root:not([data-theme="light"]) body.home-page {
-        background: #0b0f19 !important;
+        background: #08091a !important;
     }
 
     /* Particles layer */
@@ -50,11 +50,11 @@
 
     /* ── Glassmorphism cards ── */
     .home-page .card {
-        background: rgba(15, 15, 30, 0.6) !important;
-        backdrop-filter: blur(14px) !important;
-        -webkit-backdrop-filter: blur(14px) !important;
-        border: 1px solid rgba(124, 58, 237, 0.25) !important;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255,255,255,0.04) !important;
+        background: rgba(12, 13, 36, 0.65) !important;
+        backdrop-filter: blur(16px) !important;
+        -webkit-backdrop-filter: blur(16px) !important;
+        border: 1px solid rgba(100, 120, 255, 0.2) !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255,255,255,0.03) !important;
         transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease !important;
     }
 
@@ -168,31 +168,32 @@
     /* ── Light theme overrides ── */
     /* Particles show in light mode too, with light-appropriate colors */
     [data-theme="light"] .home-page .card {
-        background: rgba(255, 255, 255, 0.95) !important;
-        border: 1px solid rgba(124, 58, 237, 0.2) !important;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
+        background: rgba(255, 255, 255, 0.88) !important;
+        border: 1px solid rgba(99, 102, 241, 0.22) !important;
+        box-shadow: 0 4px 20px rgba(99, 102, 241, 0.08) !important;
+        backdrop-filter: blur(10px) !important;
     }
 
     [data-theme="light"] .home-page .card:hover {
-        box-shadow: 0 8px 30px rgba(124, 58, 237, 0.15) !important;
-        border-color: rgba(124, 58, 237, 0.4) !important;
+        box-shadow: 0 8px 32px rgba(99, 102, 241, 0.18) !important;
+        border-color: rgba(99, 102, 241, 0.45) !important;
     }
 
     [data-theme="light"] .home-page .hero h1,
     [data-theme="light"] .home-page .stat-value {
-        background: linear-gradient(135deg, #6d28d9, #0891b2) !important;
+        background: linear-gradient(135deg, #6366f1, #0891b2) !important;
         -webkit-background-clip: text !important;
         -webkit-text-fill-color: transparent !important;
         background-clip: text !important;
     }
 
     [data-theme="light"] .home-page .btn-primary {
-        box-shadow: 0 0 15px rgba(109, 40, 217, 0.25) !important;
+        box-shadow: 0 0 15px rgba(99, 102, 241, 0.3) !important;
     }
 
-    /* Light-mode mouse glow uses softer, inward gradient */
+    /* Light-mode mouse glow uses softer indigo tint */
     [data-theme="light"] #home-mouse-glow {
-        background: radial-gradient(500px circle at var(--mx, 50%) var(--my, 50%), rgba(109, 40, 217, 0.07) 0%, transparent 70%) !important;
+        background: radial-gradient(500px circle at var(--mx, 50%) var(--my, 50%), rgba(99, 102, 241, 0.08) 0%, transparent 70%) !important;
     }
 </style>
 <?php View::endSection(); ?>

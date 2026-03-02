@@ -30,83 +30,76 @@ try {
     
     <style>
         :root {
-            --bg-primary: #06060a;
-            --bg-secondary: #0c0c12;
-            --bg-card: #0f0f18;
-            --cyan: #00f0ff;
+            /* ── Futuristic dark palette ── */
+            --bg-primary: #08091a;   /* deep indigo-black */
+            --bg-secondary: #0d0e22; /* slightly lighter indigo */
+            --bg-card: #111230;      /* card: dark navy */
+            --cyan: #00f5ff;
             --magenta: #ff2ec4;
             --green: #00ff88;
             --orange: #ffaa00;
             --purple: #9945ff;
             --red: #ff6b6b;
-            --text-primary: #e8eefc;
-            --text-secondary: #8892a6;
-            --border-color: rgba(255, 255, 255, 0.1);
-            --shadow-glow: 0 0 20px rgba(0, 240, 255, 0.2);
+            --text-primary: #eaeffd;
+            --text-secondary: #7a86a8;
+            --border-color: rgba(100, 120, 255, 0.15);
+            --shadow-glow: 0 0 24px rgba(0, 245, 255, 0.22);
             --transition: all 0.3s ease;
-            --hover-bg: rgba(0, 240, 255, 0.1);
-            --shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            --hover-bg: rgba(0, 245, 255, 0.08);
+            --shadow: 0 4px 24px rgba(0, 0, 0, 0.45);
         }
         
-        /* Light Theme */
+        /* ── Futuristic light palette ── */
         [data-theme="light"] {
-            --bg-primary: #f8f9fa;
-            --bg-secondary: #ffffff;
+            --bg-primary: #f0f2ff;   /* soft lavender-white */
+            --bg-secondary: #f8f9ff; /* near-white with blue tint */
             --bg-card: #ffffff;
-            --text-primary: #1a1a1a;
-            --text-secondary: #666666;
-            --border-color: rgba(0, 0, 0, 0.1);
-            --shadow-glow: 0 0 20px rgba(0, 0, 0, 0.1);
-            --hover-bg: rgba(0, 153, 204, 0.1);
-            --shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            --text-primary: #0f1229;
+            --text-secondary: #4a5270;
+            --border-color: rgba(99, 102, 241, 0.18);
+            --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.12);
+            --hover-bg: rgba(99, 102, 241, 0.08);
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
         }
-        
+
+        /* ── Light-mode animated mesh background ── */
         [data-theme="light"] body::before {
             content: '';
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            inset: 0;
             z-index: -1;
-            background: 
-                radial-gradient(ellipse at 20% 0%, rgba(0, 240, 255, 0.08) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 100%, rgba(255, 46, 196, 0.08) 0%, transparent 50%),
-                repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(0, 240, 255, 0.03) 35px, rgba(0, 240, 255, 0.03) 70px);
-            animation: techBgMove 20s ease-in-out infinite;
+            background:
+                /* primary aurora blobs */
+                radial-gradient(ellipse 80% 60% at 15% 10%, rgba(99, 102, 241, 0.18) 0%, transparent 55%),
+                radial-gradient(ellipse 70% 55% at 85% 90%, rgba(139, 92, 246, 0.15) 0%, transparent 55%),
+                radial-gradient(ellipse 60% 50% at 50% 50%, rgba(14, 165, 233, 0.10) 0%, transparent 60%),
+                /* dot-grid mesh */
+                radial-gradient(circle, rgba(99,102,241,0.25) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 100% 100%, 28px 28px;
+            animation: lightBgPulse 18s ease-in-out infinite;
         }
-        
-        @keyframes techBgMove {
-            0%, 100% {
-                transform: translateY(0) scale(1);
-            }
-            50% {
-                transform: translateY(-20px) scale(1.05);
-            }
+
+        @keyframes lightBgPulse {
+            0%, 100% { opacity: 1;   transform: scale(1); }
+            50%       { opacity: 0.85; transform: scale(1.03); }
         }
-        
+
+        /* Extra shimmer layer */
         [data-theme="light"] body::after {
             content: '';
             position: fixed;
-            top: -50%;
-            left: -50%;
-            right: -50%;
-            bottom: -50%;
+            top: -40%; left: -40%; right: -40%; bottom: -40%;
             z-index: -2;
-            background-image: 
-                radial-gradient(circle at 20% 80%, rgba(0, 240, 255, 0.06) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(153, 69, 255, 0.06) 0%, transparent 50%),
-                radial-gradient(circle at 40% 40%, rgba(255, 170, 0, 0.04) 0%, transparent 30%);
-            animation: techBgRotate 30s linear infinite;
+            background-image:
+                radial-gradient(circle at 25% 75%, rgba(14, 165, 233, 0.10) 0%, transparent 45%),
+                radial-gradient(circle at 75% 25%, rgba(139, 92, 246, 0.10) 0%, transparent 45%),
+                radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.06) 0%, transparent 40%);
+            animation: lightBgRotate 35s linear infinite;
         }
-        
-        @keyframes techBgRotate {
-            from {
-                transform: rotate(0deg);
-            }
-            to {
-                transform: rotate(360deg);
-            }
+
+        @keyframes lightBgRotate {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
         }
         
         * {
@@ -153,7 +146,7 @@ try {
         h4 { font-size: 1.5rem; }   /* 15px  * 0.85 ≈ 12.75px visual */
         p  { font-size: 1.65rem; }  /* same as body */
         
-        /* Background Effects */
+        /* ── Dark-mode ambient glow ── */
         body::before {
             content: '';
             position: fixed;
@@ -162,8 +155,9 @@ try {
             width: 100%;
             height: 100%;
             background: 
-                radial-gradient(ellipse at 20% 0%, rgba(0, 240, 255, 0.1) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 100%, rgba(255, 46, 196, 0.1) 0%, transparent 50%);
+                radial-gradient(ellipse 70% 60% at 15% 5%,  rgba(99, 102, 241, 0.14) 0%, transparent 55%),
+                radial-gradient(ellipse 60% 55% at 85% 95%, rgba(139, 92, 246, 0.12) 0%, transparent 55%),
+                radial-gradient(ellipse 50% 40% at 50% 50%, rgba(0, 245, 255, 0.06) 0%, transparent 60%);
             pointer-events: none;
             z-index: -1;
         }
