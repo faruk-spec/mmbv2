@@ -242,7 +242,7 @@ $featuresSubheading = $sections['features']['subheading'] ?? 'Powerful capabilit
                 <img src="<?= htmlspecialchars($heroBanner) ?>" alt="Hero Banner" class="hero-banner" style="max-width: 100%; height: auto; border-radius: 12px; box-shadow: var(--shadow-glow);">
             <?php else: ?>
                 <!-- Placeholder if no image -->
-                <div style="width: 100%; aspect-ratio: 16/10; background: linear-gradient(135deg, rgba(0, 240, 255, 0.1), rgba(255, 46, 196, 0.1)); border-radius: 12px; display: flex; align-items: center; justify-content: center; border: 2px dashed var(--border-color);">
+                <div data-home-sphere-target style="width: 100%; aspect-ratio: 16/10; background: linear-gradient(135deg, rgba(0, 240, 255, 0.1), rgba(255, 46, 196, 0.1)); border-radius: 12px; display: flex; align-items: center; justify-content: center; border: 2px dashed var(--border-color);">
                     <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.5">
                         <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
                         <circle cx="8.5" cy="8.5" r="1.5"></circle>
@@ -933,20 +933,27 @@ $timelineItems = $db->fetchAll("SELECT * FROM home_timeline WHERE is_active = 1 
         });
     }
 
-    // ── Radial mouse glow ──
+    // ── Radial mouse glow (throttled to rAF) ──
     var glowEl = document.createElement('div');
     glowEl.id = 'home-mouse-glow';
     document.body.insertBefore(glowEl, document.body.firstChild);
 
+    var rafPending = false;
     document.addEventListener('mousemove', function(e) {
-        glowEl.style.setProperty('--mx', e.clientX + 'px');
-        glowEl.style.setProperty('--my', e.clientY + 'px');
+        if (!rafPending) {
+            rafPending = true;
+            requestAnimationFrame(function() {
+                glowEl.style.setProperty('--mx', e.clientX + 'px');
+                glowEl.style.setProperty('--my', e.clientY + 'px');
+                rafPending = false;
+            });
+        }
     });
 
     // ── Rotating wireframe Three.js sphere ──
     if (typeof THREE !== 'undefined') {
         // Find the hero right column placeholder
-        var heroPlaceholder = document.querySelector('.hero [style*="aspect-ratio"]');
+        var heroPlaceholder = document.querySelector('[data-home-sphere-target]');
         if (heroPlaceholder) {
             // Replace the SVG placeholder with a Three.js canvas
             heroPlaceholder.innerHTML = '';
