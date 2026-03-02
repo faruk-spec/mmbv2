@@ -61,6 +61,18 @@ switch ($segments[0]) {
         }
         break;
 
+    case 'pdf':
+        require_once PROJECT_PATH . '/controllers/BillController.php';
+        $controller = new \Projects\BillX\Controllers\BillController();
+        $id = (int)($segments[1] ?? 0);
+        if ($id) {
+            $controller->pdf($id);
+        } else {
+            http_response_code(404);
+            echo "Invalid bill ID";
+        }
+        break;
+
     case 'delete':
         require_once PROJECT_PATH . '/controllers/BillController.php';
         $controller = new \Projects\BillX\Controllers\BillController();

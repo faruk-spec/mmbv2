@@ -1,14 +1,9 @@
 <?php
-/** @var array $bill @var array $config @var array $user */
-$csrfToken = \Core\Security::generateCsrfToken();
-
+/** @var array $bill @var array $config */
 $typeLabel = $config['bill_types'][$bill['bill_type']] ?? ucfirst($bill['bill_type']);
-$sym = ['INR' => '₹', 'USD' => '$', 'EUR' => '€', 'GBP' => '£'][$bill['currency']] ?? $bill['currency'] . ' ';
-
-// Layout group and accent colour come from config (bill_groups / bill_colors).
+$sym = ['INR'=>'₹','USD'=>'$','EUR'=>'€','GBP'=>'£'][$bill['currency']] ?? $bill['currency'].' ';
 $group = $config['bill_groups'][$bill['bill_type']] ?? 'invoice';
 $c     = $config['bill_colors'][$bill['bill_type']] ?? '#37474f';
-
 $items    = $bill['items'];
 $subtotal = (float)$bill['subtotal'];
 $taxPct   = (float)$bill['tax_percent'];
@@ -16,44 +11,24 @@ $taxAmt   = (float)$bill['tax_amount'];
 $discount = (float)$bill['discount_amount'];
 $total    = (float)$bill['total_amount'];
 $billDate = $bill['bill_date'] ? date('d M Y', strtotime($bill['bill_date'])) : '';
-
-// Template-data extras (CGST, SGST, vehicle, table, etc.)
 $td = json_decode($bill['template_data'] ?? '{}', true) ?: [];
-$autoprint = !empty($_GET['autoprint']);
-?>
-
-<a href="/projects/billx/history" class="back-link"><i class="fas fa-arrow-left"></i> Bill History</a>
-
-<!-- Action bar -->
-<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
-    <h2 style="font-size:1.4rem;font-weight:700;">
-        <span style="color:var(--amber);"><?= htmlspecialchars($typeLabel) ?></span>
-        &nbsp;—&nbsp;#<?= htmlspecialchars($bill['bill_number']) ?>
-    </h2>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <a href="/projects/billx/generate" class="btn btn-primary btn-sm">
-            <i class="fas fa-plus"></i> New Bill
-        </a>
-        <button type="button" class="btn btn-secondary btn-sm" id="crambleBtn" onclick="toggleCrambled()">
-            <i class="fas fa-scroll"></i> Crumpled View
-        </button>
-        <button type="button" class="btn btn-secondary btn-sm" onclick="window.print()">
-            <i class="fas fa-print"></i> Print
-        </button>
-        <a href="/projects/billx/pdf/<?= (int)$bill['id'] ?>" target="_blank" class="btn btn-secondary btn-sm">
-            <i class="fas fa-file-pdf"></i> Print / Save as PDF
-        </a>
-        <button type="button" class="btn btn-danger btn-sm"
-                onclick="document.getElementById('deleteModal').style.display='flex'">
-            <i class="fas fa-trash"></i> Delete
-        </button>
-    </div>
-</div>
-
-<!-- Bill document wrapper -->
-<div style="background:#f0f0f0;padding:24px;border-radius:12px;" id="billDocWrapper">
-<div id="billDocument" style="max-width:700px;margin:0 auto;">
-
+?><!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title><?= htmlspecialchars($typeLabel) ?> - <?= htmlspecialchars($bill['bill_number']) ?></title>
+<style>
+@page { size: <?= in_array($group,['thermal']) ? '80mm auto' : 'A4 portrait' ?>; margin: <?= $group==='thermal' ? '4mm 3mm' : '15mm' ?>; }
+* { box-sizing: border-box; }
+body { margin: 0; padding: 0; background: #fff; }
+@media screen { body { background: #f5f5f5; padding: 20px; } }
+.print-btn { position: fixed; top: 12px; right: 12px; padding: 8px 20px; background: #f59e0b; color: #fff; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; font-weight: 600; }
+@media print { .print-btn { display: none; } }
+</style>
+</head>
+<body>
+<button class="print-btn" onclick="window.print()">🖨 Save as PDF</button>
+<div id="billDocument" style="max-width:<?= $group==='thermal'?'340px':'700px' ?>;margin:0 auto;">
 <?php if ($group === 'thermal'): ?>
 <!-- ============================================================
      THERMAL / POS RECEIPT  (restaurant, recharge, mart, newspaper)
@@ -66,51 +41,7 @@ $autoprint = !empty($_GET['autoprint']);
     $tableNo  = $td['table_number'] ?? '';
     $payMode  = $td['payment_mode'] ?? '';
     $billTime = $bill['created_at'] ? date('H:i', strtotime($bill['created_at'])) : date('H:i');
-    $tplStyle = $td['template_style'] ?? '1';
 ?>
-<?php if ($tplStyle === '2'): ?>
-<?php $tplColor = $c; ?>
-<div style="font-family:Arial,sans-serif;background:#fff;max-width:360px;margin:0 auto;border:1px solid #ddd;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.12);">
-    <div style="background:<?= htmlspecialchars($tplColor) ?>;color:#fff;padding:12px 16px;text-align:center;">
-        <div style="font-size:18px;font-weight:700;"><?= htmlspecialchars($bill['from_name']) ?></div>
-        <?php if ($bill['from_address']): ?><div style="font-size:10px;opacity:.85;margin-top:2px;"><?= htmlspecialchars(str_replace("\n",' | ',$bill['from_address'])) ?></div><?php endif; ?>
-        <?php if ($bill['from_phone']): ?><div style="font-size:10px;opacity:.85;">Ph: <?= htmlspecialchars($bill['from_phone']) ?></div><?php endif; ?>
-    </div>
-    <div style="padding:8px 12px;background:#f5f5f5;border-bottom:1px solid #ddd;display:flex;justify-content:space-between;font-size:11px;">
-        <span>Bill No: <b><?= htmlspecialchars($bill['bill_number']) ?></b></span>
-        <?php if ($tableNo): ?><span>Table: <b>#<?= htmlspecialchars($tableNo) ?></b></span><?php endif; ?>
-        <span><?= $billDate ?></span>
-    </div>
-    <div style="padding:6px 12px;font-size:11px;border-bottom:1px solid #eee;">Customer: <b><?= htmlspecialchars($bill['to_name']) ?></b><?= $payMode ? ' | Mode: <b>'.htmlspecialchars($payMode).'</b>' : '' ?></div>
-    <table style="width:100%;border-collapse:collapse;">
-        <thead><tr style="background:<?= htmlspecialchars($tplColor) ?>;color:#fff;">
-            <th style="padding:5px 8px;text-align:left;font-size:11px;">Item</th>
-            <th style="padding:5px 8px;text-align:center;font-size:11px;">Qty</th>
-            <th style="padding:5px 8px;text-align:right;font-size:11px;">Rate</th>
-            <th style="padding:5px 8px;text-align:right;font-size:11px;">Amt</th>
-        </tr></thead>
-        <tbody>
-        <?php foreach ($items as $i => $item): ?>
-        <tr style="background:<?= $i%2===0?'#fafafa':'#fff' ?>;">
-            <td style="padding:5px 8px;font-size:12px;"><?= htmlspecialchars($item['description']??'-') ?></td>
-            <td style="padding:5px 8px;text-align:center;font-size:11px;"><?= (float)($item['qty']??1) ?></td>
-            <td style="padding:5px 8px;text-align:right;font-size:12px;"><?= $sym.number_format((float)($item['rate']??0),2) ?></td>
-            <td style="padding:5px 8px;text-align:right;font-weight:700;font-size:12px;"><?= $sym.number_format((float)($item['amount']??0),2) ?></td>
-        </tr>
-        <?php endforeach; ?>
-        </tbody>
-    </table>
-    <div style="padding:8px 12px;background:#f9f9f9;border-top:1px solid #ddd;font-size:11px;">
-        <div style="display:flex;justify-content:space-between;padding:2px 0;"><span>Sub-Total</span><span><?= $sym.number_format($subtotal,2) ?></span></div>
-        <?php if ($cgstPct > 0): ?><div style="display:flex;justify-content:space-between;padding:2px 0;"><span>CGST <?= $cgstPct ?>%</span><span><?= $sym.number_format($cgstAmt,2) ?></span></div><?php endif; ?>
-        <?php if ($sgstPct > 0): ?><div style="display:flex;justify-content:space-between;padding:2px 0;"><span>SGST <?= $sgstPct ?>%</span><span><?= $sym.number_format($sgstAmt,2) ?></span></div><?php endif; ?>
-        <?php if ($discount > 0): ?><div style="display:flex;justify-content:space-between;padding:2px 0;"><span>Discount</span><span>-<?= $sym.number_format($discount,2) ?></span></div><?php endif; ?>
-        <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:900;border-top:2px solid <?= htmlspecialchars($tplColor) ?>;margin-top:4px;padding-top:4px;color:<?= htmlspecialchars($tplColor) ?>;"><span>TOTAL</span><span><?= $sym.number_format($total,2) ?></span></div>
-    </div>
-    <?php if ($bill['notes']): ?><div style="padding:6px 12px;font-size:10px;color:#555;border-top:1px solid #eee;"><?= htmlspecialchars($bill['notes']) ?></div><?php endif; ?>
-    <div style="padding:6px;text-align:center;font-size:9px;color:#999;background:#f0f0f0;">Thank you! Visit again | Time: <?= $billTime ?></div>
-</div>
-<?php else: ?>
 <div style="font-family:'Courier New',Courier,monospace;background:#fff;max-width:340px;margin:0 auto;padding:14px 18px;font-size:11px;color:#111;border:1px solid #ccc;box-shadow:1px 2px 8px rgba(0,0,0,.15);">
     <div style="border-top:1px dashed #888;margin:4px 0;"></div>
     <div style="text-align:center;letter-spacing:6px;font-size:11px;font-weight:700;margin:2px 0;">RECEIPT</div>
@@ -171,7 +102,6 @@ $autoprint = !empty($_GET['autoprint']);
     <div style="border-top:1px dashed #888;margin:6px 0;"></div>
     <div style="text-align:center;font-size:9px;color:#888;">Powered by BillX</div>
 </div>
-<?php endif; ?>
 
 <?php elseif ($group === 'payslip'): ?>
 <!-- ============================================================
@@ -553,117 +483,7 @@ $autoprint = !empty($_GET['autoprint']);
     $pos     = $td['place_of_supply'] ?? '';
     $cgstAmt = round($subtotal * $cgstPct / 100, 2);
     $sgstAmt = round($subtotal * $sgstPct / 100, 2);
-    $tplStyle = $td['template_style'] ?? '1';
 ?>
-<?php if ($tplStyle === '2'): ?>
-<div style="font-family:Arial,sans-serif;background:#fff;font-size:12px;color:#222;border:1px solid #ddd;max-width:680px;">
-    <div style="padding:16px 24px;border-bottom:3px solid <?= htmlspecialchars($c) ?>;">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-            <div>
-                <div style="font-size:20px;font-weight:700;color:<?= htmlspecialchars($c) ?>;"><?= htmlspecialchars($bill['from_name']) ?></div>
-                <?php if ($bill['from_address']): ?><div style="font-size:10px;color:#666;margin-top:2px;"><?= htmlspecialchars(str_replace("\n",' | ',$bill['from_address'])) ?></div><?php endif; ?>
-                <div style="font-size:10px;color:#666;"><?= $bill['from_phone']?'Ph: '.htmlspecialchars($bill['from_phone']).($bill['from_email']?' | ':''):''; echo $bill['from_email']?htmlspecialchars($bill['from_email']):'' ?></div>
-                <?php if ($gstin): ?><div style="font-size:10px;color:#666;">GSTIN: <b><?= htmlspecialchars($gstin) ?></b></div><?php endif; ?>
-            </div>
-            <div style="text-align:right;">
-                <div style="font-size:22px;font-weight:900;letter-spacing:1px;color:<?= htmlspecialchars($c) ?>;"><?= strtoupper(htmlspecialchars($typeLabel)) ?></div>
-                <div style="font-size:11px;color:#666;"># <?= htmlspecialchars($bill['bill_number']) ?></div>
-                <div style="font-size:11px;color:#666;">Date: <?= $billDate ?></div>
-            </div>
-        </div>
-    </div>
-    <div style="padding:10px 24px;background:#fafafa;border-bottom:1px solid #ddd;display:flex;justify-content:space-between;">
-        <div>
-            <div style="font-size:10px;color:#888;text-transform:uppercase;font-weight:600;margin-bottom:2px;">Bill To</div>
-            <div style="font-size:14px;font-weight:700;"><?= htmlspecialchars($bill['to_name']) ?></div>
-            <?php if ($bill['to_address']): ?><div style="font-size:11px;color:#666;"><?= htmlspecialchars(str_replace("\n",' | ',$bill['to_address'])) ?></div><?php endif; ?>
-        </div>
-    </div>
-    <table style="width:100%;border-collapse:collapse;margin:0;">
-        <thead><tr style="background:#f5f5f5;">
-            <th style="padding:7px 8px;border:1px solid #ddd;text-align:center;font-size:11px;width:30px;">#</th>
-            <th style="padding:7px 8px;border:1px solid #ddd;text-align:left;font-size:11px;">Description</th>
-            <?php if ($hsnCode): ?><th style="padding:7px 8px;border:1px solid #ddd;text-align:center;font-size:11px;width:70px;">HSN</th><?php endif; ?>
-            <th style="padding:7px 8px;border:1px solid #ddd;text-align:center;font-size:11px;width:50px;">Qty</th>
-            <th style="padding:7px 8px;border:1px solid #ddd;text-align:right;font-size:11px;width:80px;">Rate</th>
-            <th style="padding:7px 8px;border:1px solid #ddd;text-align:right;font-size:11px;width:90px;">Amount</th>
-        </tr></thead>
-        <tbody>
-        <?php foreach ($items as $i => $item): ?>
-        <tr>
-            <td style="padding:6px 8px;border:1px solid #ddd;font-size:12px;text-align:center;"><?= $i+1 ?></td>
-            <td style="padding:6px 8px;border:1px solid #ddd;font-size:12px;"><?= htmlspecialchars($item['description']??'-') ?></td>
-            <?php if ($hsnCode): ?><td style="padding:6px 8px;border:1px solid #ddd;font-size:11px;text-align:center;"><?= htmlspecialchars($hsnCode) ?></td><?php endif; ?>
-            <td style="padding:6px 8px;border:1px solid #ddd;text-align:center;font-size:12px;"><?= (float)($item['qty']??1) ?></td>
-            <td style="padding:6px 8px;border:1px solid #ddd;text-align:right;font-size:12px;"><?= $sym.number_format((float)($item['rate']??0),2) ?></td>
-            <td style="padding:6px 8px;border:1px solid #ddd;text-align:right;font-weight:700;font-size:12px;"><?= $sym.number_format((float)($item['amount']??0),2) ?></td>
-        </tr>
-        <?php endforeach; ?>
-        </tbody>
-    </table>
-    <div style="padding:12px 24px;display:flex;justify-content:flex-end;background:#fafafa;border-top:1px solid #ddd;">
-        <div style="min-width:240px;font-size:12px;">
-            <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #ddd;"><span style="color:#666;">Subtotal</span><span style="font-weight:600;"><?= $sym.number_format($subtotal,2) ?></span></div>
-            <?php if ($cgstPct > 0): ?><div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #ddd;"><span style="color:#666;">CGST <?= $cgstPct ?>%</span><span><?= $sym.number_format($cgstAmt,2) ?></span></div><?php endif; ?>
-            <?php if ($sgstPct > 0): ?><div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #ddd;"><span style="color:#666;">SGST <?= $sgstPct ?>%</span><span><?= $sym.number_format($sgstAmt,2) ?></span></div><?php endif; ?>
-            <?php if ($taxPct > 0 && $cgstPct == 0 && $sgstPct == 0): ?><div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #ddd;"><span style="color:#666;">Tax <?= $taxPct ?>%</span><span><?= $sym.number_format($taxAmt,2) ?></span></div><?php endif; ?>
-            <?php if ($discount > 0): ?><div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #ddd;"><span style="color:#666;">Discount</span><span style="color:#e53935;">-<?= $sym.number_format($discount,2) ?></span></div><?php endif; ?>
-            <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:900;border-top:2px solid <?= htmlspecialchars($c) ?>;padding-top:6px;margin-top:4px;color:<?= htmlspecialchars($c) ?>;"><span>Total</span><span><?= $sym.number_format($total,2) ?></span></div>
-        </div>
-    </div>
-    <?php if ($bill['notes']): ?><div style="margin:0 24px 12px;padding:8px;background:#fff8e1;border-left:3px solid #ffc107;font-size:11px;color:#555;"><b>Notes:</b> <?= htmlspecialchars($bill['notes']) ?></div><?php endif; ?>
-    <div style="padding:8px 24px;border-top:1px solid #ddd;display:flex;justify-content:space-between;font-size:10px;color:#999;"><span>Signature: _______________</span><span>Thank you for your business!</span></div>
-</div>
-<?php elseif ($tplStyle === '3'): ?>
-<div style="font-family:'Times New Roman',Times,serif;background:#fff;border:2px solid #222;font-size:12px;color:#111;max-width:680px;">
-    <div style="border-bottom:2px solid #222;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;">
-        <div>
-            <div style="font-size:18px;font-weight:700;"><?= htmlspecialchars($bill['from_name']) ?></div>
-            <?php if ($bill['from_address']): ?><div style="font-size:10px;color:#444;"><?= htmlspecialchars(str_replace("\n",' | ',$bill['from_address'])) ?></div><?php endif; ?>
-        </div>
-        <div style="text-align:center;border:2px solid #222;padding:8px 16px;">
-            <div style="font-size:16px;font-weight:900;letter-spacing:2px;"><?= strtoupper(htmlspecialchars($typeLabel)) ?></div>
-            <div style="font-size:11px;">#<?= htmlspecialchars($bill['bill_number']) ?></div>
-            <div style="font-size:11px;"><?= $billDate ?></div>
-        </div>
-    </div>
-    <div style="border-bottom:1px solid #ccc;padding:8px 20px;display:flex;justify-content:space-between;font-size:11px;">
-        <div><b>Bill To:</b> <?= htmlspecialchars($bill['to_name']) ?><?= $bill['to_address'] ? ' | '.htmlspecialchars(str_replace("\n",', ',$bill['to_address'])) : '' ?></div>
-        <?php if ($gstin): ?><div><b>GSTIN:</b> <?= htmlspecialchars($gstin) ?></div><?php endif; ?>
-    </div>
-    <table style="width:100%;border-collapse:collapse;font-size:12px;">
-        <thead><tr style="background:#222;color:#fff;">
-            <th style="padding:6px 10px;text-align:center;">#</th>
-            <th style="padding:6px 10px;text-align:left;">Description</th>
-            <?php if ($hsnCode): ?><th style="padding:6px 10px;text-align:center;">HSN</th><?php endif; ?>
-            <th style="padding:6px 10px;text-align:center;">Qty</th>
-            <th style="padding:6px 10px;text-align:right;">Rate</th>
-            <th style="padding:6px 10px;text-align:right;">Amount</th>
-        </tr></thead>
-        <tbody>
-        <?php foreach ($items as $i => $item): ?>
-        <tr style="background:<?= $i%2===0?'#f9f9f9':'#fff' ?>;border-bottom:1px solid #e0e0e0;">
-            <td style="padding:6px 10px;text-align:center;"><?= $i+1 ?></td>
-            <td style="padding:6px 10px;"><?= htmlspecialchars($item['description']??'-') ?></td>
-            <?php if ($hsnCode): ?><td style="padding:6px 10px;text-align:center;"><?= htmlspecialchars($hsnCode) ?></td><?php endif; ?>
-            <td style="padding:6px 10px;text-align:center;"><?= (float)($item['qty']??1) ?></td>
-            <td style="padding:6px 10px;text-align:right;"><?= $sym.number_format((float)($item['rate']??0),2) ?></td>
-            <td style="padding:6px 10px;text-align:right;font-weight:700;"><?= $sym.number_format((float)($item['amount']??0),2) ?></td>
-        </tr>
-        <?php endforeach; ?>
-        </tbody>
-    </table>
-    <div style="border-top:2px solid #222;padding:10px 20px;display:flex;justify-content:space-between;align-items:flex-end;">
-        <div style="font-size:11px;"><?= $bill['notes'] ? '<b>Notes:</b> '.htmlspecialchars($bill['notes']) : '&nbsp;' ?></div>
-        <div style="text-align:right;font-size:12px;">
-            <?php if ($discount > 0): ?><div style="display:flex;justify-content:space-between;gap:24px;"><span>Discount</span><span>-<?= $sym.number_format($discount,2) ?></span></div><?php endif; ?>
-            <?php if ($cgstPct > 0): ?><div style="display:flex;justify-content:space-between;gap:24px;"><span>CGST <?= $cgstPct ?>%</span><span><?= $sym.number_format($cgstAmt,2) ?></span></div><?php endif; ?>
-            <?php if ($sgstPct > 0): ?><div style="display:flex;justify-content:space-between;gap:24px;"><span>SGST <?= $sgstPct ?>%</span><span><?= $sym.number_format($sgstAmt,2) ?></span></div><?php endif; ?>
-            <div style="display:flex;justify-content:space-between;gap:24px;font-size:15px;font-weight:900;border-top:2px solid #222;padding-top:4px;margin-top:4px;"><span>TOTAL</span><span><?= $sym.number_format($total,2) ?></span></div>
-        </div>
-    </div>
-</div>
-<?php else: ?>
 <div style="font-family:Arial,sans-serif;background:#fff;font-size:12px;color:#222;border:1px solid #ddd;box-shadow:0 2px 12px rgba(0,0,0,.1);">
     <div style="background:<?= htmlspecialchars($c) ?>;color:#fff;padding:20px 24px;">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;">
@@ -726,86 +546,20 @@ $autoprint = !empty($_GET['autoprint']);
     <?php if ($bill['notes']): ?><div style="margin:0 24px 16px;background:#f5f5f5;border-radius:4px;padding:10px;font-size:11px;color:#555;border-left:3px solid <?= htmlspecialchars($c) ?>;"><b>Terms & Notes:</b> <?= htmlspecialchars($bill['notes']) ?></div><?php endif; ?>
     <div style="background:<?= htmlspecialchars($c) ?>;color:rgba(255,255,255,.7);padding:8px 24px;text-align:center;font-size:10px;">Thank you for your business! | BillX</div>
 </div>
-<?php endif; ?>
 
 <?php endif; ?>
 
 </div><!-- /billDocument -->
-</div><!-- /wrapper -->
-
-<!-- Delete modal -->
-<div id="deleteModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;align-items:center;justify-content:center;">
-    <div class="card" style="max-width:400px;width:90%;padding:28px;">
-        <h3 style="margin-bottom:12px;"><i class="fas fa-exclamation-triangle" style="color:#ff6b6b;"></i> Delete Bill</h3>
-        <p style="color:var(--text-secondary);margin-bottom:20px;">
-            Delete bill <strong>#<?= htmlspecialchars($bill['bill_number']) ?></strong>? This cannot be undone.
-        </p>
-        <form method="POST" action="/projects/billx/delete">
-            <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
-            <input type="hidden" name="id" value="<?= (int)$bill['id'] ?>">
-            <div class="form-actions">
-                <button type="submit" class="btn btn-danger"><i class="fas fa-trash"></i> Delete</button>
-                <button type="button" class="btn btn-secondary"
-                        onclick="document.getElementById('deleteModal').style.display='none'">Cancel</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<style>
-/* ── Crumpled paper effect (white paper) ─────────────────────────── */
-#billDocWrapper.crambled { background: #c8c8c8 !important; }
-#billDocWrapper.crambled #billDocument {
-    position: relative;
-    background: #fdfdfd;
-    box-shadow:
-        -4px 2px 18px rgba(0,0,0,.18),
-        4px -2px 12px rgba(0,0,0,.12),
-        0 8px 32px rgba(0,0,0,.22),
-        inset 0 0 80px rgba(0,0,0,.02);
-    transform: rotate(0.4deg) skew(-0.15deg, 0.08deg);
-    filter: brightness(0.985) contrast(1.015);
-}
-#billDocWrapper.crambled #billDocument::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    z-index: 9999;
-    background:
-        linear-gradient(152deg, transparent 36%, rgba(0,0,0,.038) 36.4%, rgba(255,255,255,.72) 36.8%, rgba(0,0,0,.018) 37.2%, transparent 37.6%),
-        linear-gradient(152deg, transparent 60%, rgba(0,0,0,.028) 60.3%, rgba(255,255,255,.55) 60.6%, transparent 61%),
-        linear-gradient(-46deg, transparent 43%, rgba(0,0,0,.032) 43.4%, rgba(255,255,255,.65) 43.8%, rgba(0,0,0,.015) 44.2%, transparent 44.6%),
-        linear-gradient(-46deg, transparent 72%, rgba(0,0,0,.022) 72.3%, rgba(255,255,255,.45) 72.6%, transparent 73%),
-        linear-gradient(71deg, transparent 24%, rgba(0,0,0,.028) 24.4%, rgba(255,255,255,.58) 24.8%, transparent 25.2%),
-        radial-gradient(ellipse 85% 8% at 50% 37%, rgba(0,0,0,.042) 0%, transparent 100%),
-        radial-gradient(ellipse 65% 6% at 38% 61%, rgba(0,0,0,.032) 0%, transparent 100%),
-        radial-gradient(ellipse 45% 10% at 72% 44%, rgba(0,0,0,.028) 0%, transparent 100%),
-        radial-gradient(ellipse 32% 32% at 2% 2%, rgba(0,0,0,.06) 0%, transparent 100%),
-        radial-gradient(ellipse 28% 28% at 99% 99%, rgba(0,0,0,.05) 0%, transparent 100%),
-        radial-gradient(ellipse 20% 20% at 98% 1%, rgba(0,0,0,.04) 0%, transparent 100%);
-    mix-blend-mode: multiply;
-}
-#crambleBtn.active {
-    background: var(--amber) !important;
-    color: #fff !important;
-    border-color: var(--amber) !important;
-}
-@media print {
-    .back-link, .btn, #deleteModal, .billx-sidebar, .sidebar-toggle, nav { display: none !important; }
-    .billx-main { margin-left: 0 !important; padding: 0 !important; }
-    #billDocWrapper { background: white !important; padding: 0 !important; }
-}
-</style>
-
 <script>
-function toggleCrambled(){
-    const w = document.getElementById('billDocWrapper');
-    const btn = document.getElementById('crambleBtn');
-    w.classList.toggle('crambled');
-    btn.classList.toggle('active');
-}
-<?php if ($autoprint): ?>
-window.addEventListener('load', function(){ setTimeout(function(){ window.print(); }, 600); });
-<?php endif; ?>
+window.addEventListener('load', function() {
+    // Wait for fonts to fully render before opening print dialog
+    var trigger = function(){ setTimeout(function(){ window.print(); }, 300); };
+    if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(trigger);
+    } else {
+        setTimeout(trigger, 800);
+    }
+});
 </script>
+</body>
+</html>

@@ -189,6 +189,28 @@ class BillController
         ]);
     }
 
+    /** GET /projects/billx/pdf/{id} — standalone print/PDF view */
+    public function pdf(int $id): void
+    {
+        $userId = Auth::id();
+        $bill   = $this->model->getById($id);
+
+        if (!$bill || (int)$bill['user_id'] !== $userId) {
+            http_response_code(404);
+            echo "Bill not found.";
+            return;
+        }
+
+        $bill['items'] = json_decode($bill['items'] ?? '[]', true) ?: [];
+        $config = require PROJECT_PATH . '/config.php';
+
+        header('Content-Type: text/html; charset=utf-8');
+        // Render standalone PDF-print page (no site layout)
+        extract(['bill' => $bill, 'config' => $config]);
+        include PROJECT_PATH . '/views/pdf.php';
+        Logger::activity($userId, 'billx_bill_pdf', ['bill_id' => $id]);
+    }
+
     /** GET /projects/billx/download/{id} */
     public function download(int $id): void
     {

@@ -62,10 +62,16 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
                             <option value="GBP">GBP £</option>
                         </select>
                     </div>
+                    <div class="form-group" style="margin:0;">
+                        <label class="form-label">Template Style</label>
+                        <select name="td_template_style" id="td_template_style" class="form-select" onchange="updatePreview()">
+                            <option value="1">Style 1 — Default</option>
+                            <option value="2">Style 2 — Classic</option>
+                            <option value="3">Style 3 — Minimal</option>
+                        </select>
+                    </div>
                 </div>
             </div>
-
-            <!-- From / To -->
             <div class="card">
                 <h4 style="font-size:0.9rem;font-weight:600;margin-bottom:12px;color:var(--amber);">
                     <i class="fas fa-users"></i> Parties
@@ -387,30 +393,38 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
     font-size: 0.9rem; padding: 4px; line-height: 1;
 }
 .remove-item-btn:hover { color: #ff4757; }
-/* ── Crambled (crumpled paper) effect ─────────────────── */
-#billPreviewWrapper.crambled { background: #cdc8bf !important; }
+/* ── Crumpled paper effect (white paper) ─────────────────── */
+#billPreviewWrapper.crambled { background: #c8c8c8 !important; }
 #billPreviewWrapper.crambled #billPreview {
     position: relative;
-    filter: sepia(14%) brightness(0.96) contrast(0.97);
-    transform: rotate(-0.25deg);
+    background: #fdfdfd !important;
+    box-shadow:
+        -4px 2px 18px rgba(0,0,0,.18),
+        4px -2px 12px rgba(0,0,0,.12),
+        0 8px 32px rgba(0,0,0,.22),
+        inset 0 0 80px rgba(0,0,0,.02);
+    transform: rotate(0.4deg) skew(-0.15deg, 0.08deg);
+    filter: brightness(0.985) contrast(1.015);
 }
-#billPreviewWrapper.crambled #billPreview::after {
+#billPreviewWrapper.crambled #billPreview::before {
     content: '';
     position: absolute;
     inset: 0;
     pointer-events: none;
     z-index: 9999;
     background:
-        radial-gradient(ellipse 75% 45% at 28% 18%, rgba(80,60,40,.34) 0%, transparent 100%),
-        radial-gradient(ellipse 55% 78% at 80% 70%, rgba(60,45,30,.28) 0%, transparent 100%),
-        radial-gradient(ellipse 88% 38% at 52% 46%, rgba(90,70,50,.18) 0%, transparent 100%),
-        radial-gradient(ellipse 30% 70% at 14% 68%, rgba(70,55,38,.30) 0%, transparent 100%),
-        radial-gradient(ellipse 42% 50% at 88% 22%, rgba(78,62,45,.24) 0%, transparent 100%),
-        radial-gradient(ellipse 62% 32% at 44% 94%, rgba(82,65,48,.26) 0%, transparent 100%),
-        repeating-linear-gradient(13deg, transparent 0,transparent 50px,rgba(55,42,30,.055) 50px,rgba(55,42,30,.055) 51px),
-        repeating-linear-gradient(-9deg, transparent 0,transparent 66px,rgba(62,50,38,.045) 66px,rgba(62,50,38,.045) 67px);
-    mix-blend-mode: soft-light;
-    opacity: .9;
+        linear-gradient(152deg, transparent 36%, rgba(0,0,0,.038) 36.4%, rgba(255,255,255,.72) 36.8%, rgba(0,0,0,.018) 37.2%, transparent 37.6%),
+        linear-gradient(152deg, transparent 60%, rgba(0,0,0,.028) 60.3%, rgba(255,255,255,.55) 60.6%, transparent 61%),
+        linear-gradient(-46deg, transparent 43%, rgba(0,0,0,.032) 43.4%, rgba(255,255,255,.65) 43.8%, rgba(0,0,0,.015) 44.2%, transparent 44.6%),
+        linear-gradient(-46deg, transparent 72%, rgba(0,0,0,.022) 72.3%, rgba(255,255,255,.45) 72.6%, transparent 73%),
+        linear-gradient(71deg, transparent 24%, rgba(0,0,0,.028) 24.4%, rgba(255,255,255,.58) 24.8%, transparent 25.2%),
+        radial-gradient(ellipse 85% 8% at 50% 37%, rgba(0,0,0,.042) 0%, transparent 100%),
+        radial-gradient(ellipse 65% 6% at 38% 61%, rgba(0,0,0,.032) 0%, transparent 100%),
+        radial-gradient(ellipse 45% 10% at 72% 44%, rgba(0,0,0,.028) 0%, transparent 100%),
+        radial-gradient(ellipse 32% 32% at 2% 2%, rgba(0,0,0,.06) 0%, transparent 100%),
+        radial-gradient(ellipse 28% 28% at 99% 99%, rgba(0,0,0,.05) 0%, transparent 100%),
+        radial-gradient(ellipse 20% 20% at 98% 1%, rgba(0,0,0,.04) 0%, transparent 100%);
+    mix-blend-mode: multiply;
 }
 #crambleBtn.active {
     background: var(--amber) !important;
@@ -459,6 +473,8 @@ function getExtraFields(){
     const fs=document.getElementById(GROUP_FIELDSETS[group]);
     const td={};
     if(fs)fs.querySelectorAll('input,select,textarea').forEach(el=>{if(el.name&&el.name.startsWith('td_'))td[el.name.slice(3)]=el.value;});
+    const tplStyleEl=document.getElementById('td_template_style');
+    if(tplStyleEl)td.template_style=tplStyleEl.value;
     return td;
 }
 
@@ -491,6 +507,60 @@ function collectData(){
 // ─── RENDERER 1: Thermal / POS Receipt ───────────────────────────────────────
 // (restaurant, recharge, mart, newspaper)
 function renderThermal(d){
+    const style = d.td.template_style || '1';
+    if (style === '2') {
+    // Style 2: Clean restaurant bill (sans-serif, colored header)
+    const cgst=parseFloat(d.td.cgst_pct)||0; const sgst=parseFloat(d.td.sgst_pct)||0;
+    const cgstAmt=d.subtotal*cgst/100; const sgstAmt=d.subtotal*sgst/100;
+    const mode=d.td.payment_mode||''; const tableNo=d.td.table_number||'';
+    const c=TYPE_COLORS[d.type]||'#c62828';
+    const rows=d.items.map((it,i)=>`<tr style="background:${i%2===0?'#fafafa':'#fff'};"><td style="padding:5px 8px;font-size:12px;">${escHtml(it.description||'-')}</td><td style="padding:5px 8px;text-align:center;font-size:11px;">${it.qty}</td><td style="padding:5px 8px;text-align:right;font-size:12px;">${d.sym}${it.rate.toFixed(2)}</td><td style="padding:5px 8px;text-align:right;font-weight:700;font-size:12px;">${d.sym}${it.amount.toFixed(2)}</td></tr>`).join('');
+    return `<div style="font-family:Arial,sans-serif;background:#fff;max-width:360px;margin:0 auto;border:1px solid #ddd;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.12);">
+<div style="background:${c};color:#fff;padding:12px 16px;text-align:center;">
+<div style="font-size:18px;font-weight:700;">${escHtml(d.fromName)}</div>
+${d.fromAddr?`<div style="font-size:10px;opacity:.85;margin-top:2px;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}
+${d.fromPhone?`<div style="font-size:10px;opacity:.85;">Ph: ${escHtml(d.fromPhone)}</div>`:''}
+</div>
+<div style="padding:8px 12px;background:#f5f5f5;border-bottom:1px solid #ddd;display:flex;justify-content:space-between;font-size:11px;">
+<span>Bill No: <b>${escHtml(d.billNo)}</b></span>${tableNo?`<span>Table: <b>#${escHtml(tableNo)}</b></span>`:''}
+<span>${fmtDate(d.billDate)}</span>
+</div>
+<div style="padding:6px 12px;font-size:11px;border-bottom:1px solid #eee;">Customer: <b>${escHtml(d.toName)}</b>${mode?` | Mode: <b>${escHtml(mode)}</b>`:''}</div>
+<table style="width:100%;border-collapse:collapse;"><thead><tr style="background:${c};color:#fff;"><th style="padding:5px 8px;text-align:left;font-size:11px;">Item</th><th style="padding:5px 8px;text-align:center;font-size:11px;">Qty</th><th style="padding:5px 8px;text-align:right;font-size:11px;">Rate</th><th style="padding:5px 8px;text-align:right;font-size:11px;">Amt</th></tr></thead>
+<tbody>${rows||'<tr><td colspan="4" style="padding:8px;text-align:center;color:#aaa;">No items</td></tr>'}</tbody></table>
+<div style="padding:8px 12px;background:#f9f9f9;border-top:1px solid #ddd;font-size:11px;">
+<div style="display:flex;justify-content:space-between;padding:2px 0;"><span>Sub-Total</span><span>${d.sym}${d.subtotal.toFixed(2)}</span></div>
+${cgst>0?`<div style="display:flex;justify-content:space-between;padding:2px 0;"><span>CGST ${cgst}%</span><span>${d.sym}${cgstAmt.toFixed(2)}</span></div>`:''}
+${sgst>0?`<div style="display:flex;justify-content:space-between;padding:2px 0;"><span>SGST ${sgst}%</span><span>${d.sym}${sgstAmt.toFixed(2)}</span></div>`:''}
+${d.discount>0?`<div style="display:flex;justify-content:space-between;padding:2px 0;"><span>Discount</span><span>-${d.sym}${d.discount.toFixed(2)}</span></div>`:''}
+<div style="display:flex;justify-content:space-between;font-size:14px;font-weight:900;border-top:2px solid ${c};margin-top:4px;padding-top:4px;color:${c};"><span>TOTAL</span><span>${d.sym}${d.total.toFixed(2)}</span></div>
+</div>
+${d.notes?`<div style="padding:6px 12px;font-size:10px;color:#555;border-top:1px solid #eee;">${escHtml(d.notes)}</div>`:''}
+<div style="padding:6px;text-align:center;font-size:9px;color:#999;background:#f0f0f0;">Thank you! Visit again | Time: ${nowTime()}</div>
+</div>`;
+    }
+    if (style === '3') {
+    // Style 3: Ultra-minimal receipt
+    const mode=d.td.payment_mode||'Cash'; const tableNo=d.td.table_number||'';
+    const rows=d.items.map(it=>`<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dotted #ccc;font-size:11px;"><span>${it.qty}x ${escHtml(it.description||'-')}</span><span style="font-weight:600;">${d.sym}${it.amount.toFixed(2)}</span></div>`).join('');
+    return `<div style="font-family:'Courier New',monospace;background:#fff;max-width:300px;margin:0 auto;padding:16px;border:1px solid #e0e0e0;">
+<div style="text-align:center;margin-bottom:10px;">
+<div style="font-size:15px;font-weight:700;letter-spacing:1px;">${escHtml(d.fromName)}</div>
+${d.fromPhone?`<div style="font-size:10px;color:#666;">${escHtml(d.fromPhone)}</div>`:''}
+<div style="font-size:10px;color:#666;">${fmtDate(d.billDate)} ${nowTime()}</div>
+${tableNo?`<div style="font-size:10px;">Table: ${escHtml(tableNo)}</div>`:''}
+</div>
+<div style="border-top:2px solid #111;border-bottom:1px solid #ccc;padding:4px 0;margin-bottom:8px;font-size:10px;display:flex;justify-content:space-between;"><span>Bill: ${escHtml(d.billNo)}</span><span>Cashier</span></div>
+${rows||'<div style="color:#aaa;font-size:11px;">No items</div>'}
+<div style="margin-top:8px;border-top:1px solid #ccc;padding-top:6px;font-size:11px;">
+${d.discount>0?`<div style="display:flex;justify-content:space-between;"><span>Discount</span><span>-${d.sym}${d.discount.toFixed(2)}</span></div>`:''}
+<div style="display:flex;justify-content:space-between;font-size:13px;font-weight:900;border-top:2px solid #111;margin-top:4px;padding-top:4px;"><span>TOTAL</span><span>${d.sym}${d.total.toFixed(2)}</span></div>
+<div style="font-size:10px;margin-top:4px;">Paid by: ${escHtml(mode)}</div>
+</div>
+${d.notes?`<div style="font-size:10px;color:#666;margin-top:6px;border-top:1px dotted #ccc;padding-top:4px;">${escHtml(d.notes)}</div>`:''}
+<div style="text-align:center;font-size:9px;color:#aaa;margin-top:8px;">*** Thank You ***</div>
+</div>`;
+    }
     const c=TYPE_COLORS[d.type]||'#333';
     const dash='<div style="border-top:1px dashed #888;margin:6px 0;"></div>';
     const cgst=parseFloat(d.td.cgst_pct)||0;const sgst=parseFloat(d.td.sgst_pct)||0;
@@ -522,6 +592,37 @@ ${dash}
 
 // ─── RENDERER 2: Driver Salary / Helper (formal letter style) ─────────────────
 function renderPayslip(d){
+    const style = d.td.template_style || '1';
+    if (style === '2') {
+    // Style 2: Traditional payslip table (earnings vs deductions)
+    const c2=TYPE_COLORS[d.type]||'#1565c0';
+    const month=d.td.salary_month||fmtDate(d.billDate).replace(/\d{2} /,'');
+    const empName=d.td.employer_name||d.fromName;
+    const earnings=d.items.filter((_,i)=>i%2===0);
+    const deductions=d.items.filter((_,i)=>i%2!==0);
+    const maxR=Math.max(earnings.length,deductions.length,1);
+    const totalDed=deductions.reduce((s,it)=>s+it.amount,0);
+    const rows=Array.from({length:maxR},(_,i)=>`<tr style="border-bottom:1px solid #e0e0e0;"><td style="padding:5px 8px;font-size:11px;">${earnings[i]?escHtml(earnings[i].description):'&nbsp;'}</td><td style="padding:5px 8px;text-align:right;font-size:11px;font-weight:600;">${earnings[i]?d.sym+earnings[i].amount.toFixed(2):'&nbsp;'}</td><td style="padding:5px 8px;border-left:2px solid #ddd;font-size:11px;">${deductions[i]?escHtml(deductions[i].description):'&nbsp;'}</td><td style="padding:5px 8px;text-align:right;font-size:11px;font-weight:600;color:#e53935;">${deductions[i]?'-'+d.sym+deductions[i].amount.toFixed(2):'&nbsp;'}</td></tr>`).join('');
+    return `<div style="font-family:Arial,sans-serif;background:#fff;font-size:12px;color:#222;border:1px solid #ccc;max-width:580px;box-shadow:0 2px 10px rgba(0,0,0,.1);">
+<div style="background:${c2};color:#fff;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;">
+<div><div style="font-size:18px;font-weight:700;">${escHtml(d.fromName)}</div>${d.fromAddr?`<div style="font-size:10px;opacity:.8;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}</div>
+<div style="text-align:right;"><div style="font-size:14px;font-weight:900;letter-spacing:1px;">SALARY SLIP</div><div style="font-size:10px;opacity:.85;">Pay Period: ${escHtml(month)}</div><div style="font-size:10px;opacity:.85;">#${escHtml(d.billNo)}</div></div>
+</div>
+<div style="background:#e8eaf6;padding:8px 20px;display:flex;justify-content:space-between;border-bottom:2px solid ${c2};font-size:11px;">
+<div><span style="color:#666;display:block;font-size:10px;text-transform:uppercase;">Employee</span><span style="font-size:14px;font-weight:700;">${escHtml(d.toName)}</span>${d.toPhone?`<span style="font-size:10px;color:#666;display:block;">${escHtml(d.toPhone)}</span>`:''}</div>
+<div style="text-align:right;"><span style="color:#666;display:block;font-size:10px;text-transform:uppercase;">Employer</span><span style="font-size:13px;font-weight:700;">${escHtml(empName)}</span><span style="font-size:10px;color:#666;display:block;">${fmtDate(d.billDate)}</span></div>
+</div>
+<table style="width:100%;border-collapse:collapse;">
+<thead><tr style="background:#f3f3f3;"><th style="padding:6px 8px;text-align:left;font-size:11px;color:${c2};">Earnings</th><th style="padding:6px 8px;text-align:right;font-size:11px;color:${c2};">Amount</th><th style="padding:6px 8px;text-align:left;font-size:11px;color:#e53935;border-left:2px solid #ddd;">Deductions</th><th style="padding:6px 8px;text-align:right;font-size:11px;color:#e53935;">Amount</th></tr></thead>
+<tbody>${rows}</tbody>
+</table>
+<div style="padding:10px 20px;background:#f8f8f8;border-top:2px solid #ddd;display:flex;justify-content:space-between;align-items:center;font-size:11px;">
+<span>Total Deductions: <b style="color:#e53935;">${d.sym}${totalDed.toFixed(2)}</b></span>
+</div>
+<div style="background:${c2};color:#fff;padding:10px 20px;display:flex;justify-content:space-between;font-size:14px;font-weight:900;"><span>NET SALARY</span><span>${d.sym}${d.total.toFixed(2)}</span></div>
+<div style="padding:12px 20px;display:flex;justify-content:space-between;font-size:11px;border-top:1px solid #eee;"><div><div style="border-top:1px solid #555;width:120px;padding-top:4px;margin-top:20px;">Employee Signature</div></div><div><div style="border-top:1px solid #555;width:120px;padding-top:4px;margin-top:20px;">Authorised Signatory</div></div></div>
+</div>`;
+    }
     const c=TYPE_COLORS[d.type]||'#1565c0';
     const month=d.td.salary_month||fmtDate(d.billDate).replace(/\d{2} /,'');
     const vehicleNo=d.td.vehicle_number||'__________';
@@ -543,6 +644,32 @@ ${d.notes?`<div style="margin-top:12px;font-size:11px;color:#555;border-top:1px 
 
 // ─── RENDERER 3: Fuel Receipt (formal two-column) ─────────────────────────────
 function renderFuel(d){
+    const style = d.td.template_style || '1';
+    if (style === '2') {
+    // Style 2: Compact pump slip
+    const vehicleNo=d.td.vehicle_number||''; const vehicleType=d.td.vehicle_type||''; const payMode=d.td.payment_mode||'Cash';
+    const billTime=nowTime();
+    const rows=d.items.map(it=>`<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dashed #ddd;font-size:12px;"><span>${escHtml(it.description||'Fuel')}</span><span>${it.qty} L × ${d.sym}${it.rate.toFixed(2)}</span><span style="font-weight:700;">${d.sym}${it.amount.toFixed(2)}</span></div>`).join('');
+    return `<div style="font-family:'Courier New',monospace;background:#fff;max-width:320px;margin:0 auto;padding:14px 16px;border:1px solid #ccc;font-size:11px;color:#111;">
+<div style="text-align:center;border-bottom:2px solid #333;padding-bottom:8px;margin-bottom:8px;">
+<div style="font-size:13px;font-weight:700;">${escHtml(d.fromName)}</div>
+${d.fromAddr?`<div style="font-size:10px;color:#555;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}
+${d.fromPhone?`<div style="font-size:10px;color:#555;">${escHtml(d.fromPhone)}</div>`:''}
+<div style="font-size:11px;font-weight:600;margin-top:4px;">FUEL RECEIPT</div>
+</div>
+<div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span>Receipt#: <b>${escHtml(d.billNo)}</b></span><span>${fmtDate(d.billDate)}</span></div>
+<div style="margin-bottom:4px;">Customer: <b>${escHtml(d.toName)}</b></div>
+${vehicleNo?`<div style="margin-bottom:2px;">Vehicle: <b>${escHtml(vehicleNo)}</b>${vehicleType?' ('+escHtml(vehicleType)+')':''}</div>`:''}
+<div style="border-top:1px dashed #888;margin:6px 0;"></div>
+${rows||`<div style="font-size:11px;color:#aaa;">No fuel items</div>`}
+<div style="border-top:1px dashed #888;margin:6px 0;"></div>
+${d.discount>0?`<div style="display:flex;justify-content:space-between;"><span>Discount</span><span>-${d.sym}${d.discount.toFixed(2)}</span></div>`:''}
+<div style="display:flex;justify-content:space-between;font-size:13px;font-weight:900;border-top:2px solid #111;padding-top:4px;margin-top:4px;"><span>TOTAL</span><span>${d.sym}${d.total.toFixed(2)}</span></div>
+<div style="margin-top:4px;font-size:10px;">Payment: ${escHtml(payMode)} | Time: ${billTime}</div>
+${d.notes?`<div style="font-size:10px;color:#555;margin-top:4px;">${escHtml(d.notes)}</div>`:''}
+<div style="text-align:center;font-size:9px;color:#888;margin-top:8px;border-top:1px dashed #ccc;padding-top:4px;">SAVE FUEL, SECURE THE FUTURE</div>
+</div>`;
+    }
     const vehicleNo=d.td.vehicle_number||'';const vehicleType=d.td.vehicle_type||'';const fuelType=d.td.fuel_type||'Petrol';const payMode=d.td.payment_mode||'';
     const items=d.items.map(it=>`<tr style="border-bottom:1px solid #e0e0e0;"><td style="padding:6px 8px;font-size:12px;">${d.sym}${it.rate.toFixed(2)}</td><td style="padding:6px 8px;text-align:center;font-size:12px;">${it.qty} lt.</td><td style="padding:6px 8px;text-align:right;font-weight:700;font-size:12px;">${d.sym}${it.amount.toFixed(2)}</td></tr>`).join('');
     return`<div style="font-family:Arial,sans-serif;background:#fff;padding:24px 28px;font-size:12px;color:#111;border:1px solid #ddd;max-width:520px;box-shadow:0 2px 8px rgba(0,0,0,.08);">
@@ -584,6 +711,35 @@ ${d.taxPct>0?`<div style="text-align:right;font-size:11px;color:#666;margin-bott
 
 // ─── RENDERER 4: Cab / Travel ─────────────────────────────────────────────────
 function renderCab(d){
+    const style = d.td.template_style || '1';
+    if (style === '2') {
+    // Style 2: Clean white cab receipt
+    const vehicleNo=d.td.vehicle_number||''; const driverName=d.td.driver_name||'';
+    const pickup=d.td.pickup||''; const drop=d.td.drop||'';
+    const rows=d.items.map((it,i)=>`<tr style="background:${i%2===0?'#fafafa':'#fff'};border-bottom:1px solid #eee;"><td style="padding:5px 8px;font-size:12px;">${escHtml(it.description||'-')}</td><td style="padding:5px 8px;text-align:right;font-weight:700;font-size:12px;">${d.sym}${it.amount.toFixed(2)}</td></tr>`).join('');
+    return `<div style="font-family:Arial,sans-serif;background:#fff;font-size:12px;color:#222;border:1px solid #ddd;max-width:400px;box-shadow:0 2px 10px rgba(0,0,0,.1);">
+<div style="background:#fff7e6;padding:12px 16px;border-bottom:3px solid #f5a623;">
+<div style="display:flex;justify-content:space-between;align-items:flex-start;">
+<div><div style="font-size:16px;font-weight:700;">🚕 ${escHtml(d.fromName)}</div>${d.fromPhone?`<div style="font-size:11px;color:#666;">Ph: ${escHtml(d.fromPhone)}</div>`:''}</div>
+<div style="text-align:right;"><div style="font-size:12px;font-weight:700;color:#f5a623;">RIDE RECEIPT</div><div style="font-size:11px;color:#666;">${escHtml(d.billNo)}</div><div style="font-size:11px;color:#666;">${fmtDate(d.billDate)}</div></div>
+</div>
+</div>
+<div style="padding:8px 16px;border-bottom:1px solid #eee;background:#fffbf3;">
+<div style="font-size:11px;color:#888;text-transform:uppercase;font-weight:600;">Passenger</div>
+<div style="font-size:13px;font-weight:700;">${escHtml(d.toName)}</div>${d.toPhone?`<div style="font-size:11px;color:#666;">${escHtml(d.toPhone)}</div>`:''}
+${pickup||drop?`<div style="font-size:11px;color:#555;margin-top:4px;">${pickup?'From: '+escHtml(pickup):''} ${drop?'→ To: '+escHtml(drop):''}</div>`:''}
+${vehicleNo?`<div style="font-size:11px;color:#666;margin-top:2px;">Vehicle: ${escHtml(vehicleNo)}${driverName?' | Driver: '+escHtml(driverName):''}</div>`:''}
+</div>
+<table style="width:100%;border-collapse:collapse;"><thead><tr style="background:#f5f5f5;"><th style="padding:6px 8px;text-align:left;font-size:11px;">Description</th><th style="padding:6px 8px;text-align:right;font-size:11px;">Amount</th></tr></thead>
+<tbody>${rows||'<tr><td colspan="2" style="padding:10px;text-align:center;color:#aaa;">No items</td></tr>'}</tbody></table>
+<div style="padding:8px 16px;border-top:1px solid #ddd;background:#f9f9f9;">
+${d.discount>0?`<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;"><span>Discount</span><span>-${d.sym}${d.discount.toFixed(2)}</span></div>`:''}
+<div style="display:flex;justify-content:space-between;font-size:15px;font-weight:900;color:#f5a623;border-top:2px solid #f5a623;padding-top:6px;"><span>FARE TOTAL</span><span>${d.sym}${d.total.toFixed(2)}</span></div>
+</div>
+${d.notes?`<div style="padding:6px 16px;font-size:10px;color:#666;border-top:1px solid #eee;">${escHtml(d.notes)}</div>`:''}
+<div style="padding:6px;text-align:center;font-size:9px;color:#aaa;background:#fff7e6;">Safe Journey! ⭐ Rate your ride | BillX</div>
+</div>`;
+    }
     const vehicleNo=d.td.vehicle_number||'';const driverName=d.td.driver_name||'';
     const pickup=d.td.pickup||'';const drop=d.td.drop||'';
     const items=d.items.map(it=>`<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #333;font-size:12px;"><span>${escHtml(it.description||'-')}</span><span style="font-weight:700;">${d.sym}${it.amount.toFixed(2)}</span></div>`).join('');
@@ -617,6 +773,35 @@ ${d.notes?`<div style="padding:8px 16px;font-size:10px;color:#aaa;border-top:1px
 
 // ─── RENDERER 5: Official Receipt (rent, lta) ─────────────────────────────────
 function renderOfficial(d){
+    const style = d.td.template_style || '1';
+    if (style === '2') {
+    // Style 2: Simple acknowledgment receipt
+    const c2=TYPE_COLORS[d.type]||'#2e7d32'; const label=TYPE_LABELS[d.type]||'Receipt';
+    const pan=d.td.pan_number||''; const prop=d.td.property_info||'';
+    return `<div style="font-family:Arial,sans-serif;background:#fff;font-size:12px;color:#222;border:1px solid #ccc;max-width:560px;padding:20px 24px;">
+<div style="text-align:center;margin-bottom:16px;border-bottom:2px solid ${c2};padding-bottom:12px;">
+<div style="font-size:16px;font-weight:700;">${escHtml(d.fromName)}</div>
+${d.fromAddr?`<div style="font-size:10px;color:#666;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}
+${d.fromPhone?`<div style="font-size:10px;color:#666;">Ph: ${escHtml(d.fromPhone)}</div>`:''}
+</div>
+<div style="text-align:center;margin-bottom:14px;">
+<div style="font-size:18px;font-weight:700;text-decoration:underline;letter-spacing:1px;">${label.toUpperCase()}</div>
+<div style="font-size:11px;color:#666;">Receipt No: ${escHtml(d.billNo)} | Date: ${fmtDate(d.billDate)}</div>
+</div>
+<div style="background:#f9f9f9;border:1px solid #e0e0e0;padding:12px;margin-bottom:14px;border-radius:4px;">
+<p style="margin:0 0 8px;font-size:13px;">Received with thanks a sum of <b style="font-size:14px;color:${c2};">${d.sym}${d.total.toFixed(2)}</b> (${escHtml(d.toName)})</p>
+<p style="margin:0;font-size:11px;color:#555;">Towards: ${d.items.map(it=>escHtml(it.description)).join(', ')||escHtml(label)}</p>
+${prop?`<p style="margin:6px 0 0;font-size:11px;color:#555;">Property/Ref: ${escHtml(prop)}</p>`:''}
+${pan?`<p style="margin:4px 0 0;font-size:11px;color:#555;">PAN: ${escHtml(pan)}</p>`:''}
+</div>
+${d.notes?`<div style="font-size:11px;color:#555;font-style:italic;margin-bottom:12px;">Note: ${escHtml(d.notes)}</div>`:''}
+<div style="display:flex;justify-content:space-between;margin-top:20px;font-size:11px;">
+<div><div style="border-top:1px solid #555;width:120px;padding-top:4px;margin-top:24px;">Receiver</div></div>
+<div><div style="border-top:1px solid #555;width:120px;padding-top:4px;margin-top:24px;">Issuer's Signature</div></div>
+</div>
+<div style="text-align:center;font-size:9px;color:#aaa;margin-top:12px;border-top:1px dashed #ddd;padding-top:6px;">Computer-generated receipt | BillX</div>
+</div>`;
+    }
     const c=TYPE_COLORS[d.type]||'#2e7d32';const label=TYPE_LABELS[d.type]||'Receipt';
     const pan=d.td.pan_number||'';const prop=d.td.property_info||'';
     const items=d.items.map(it=>`<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dotted #bbb;font-size:12px;"><span>${escHtml(it.description||'-')}</span><span style="font-weight:600;">${d.sym}${it.amount.toFixed(2)}</span></div>`).join('');
@@ -657,6 +842,33 @@ ${d.notes?`<div style="margin-top:10px;font-size:11px;color:#555;font-style:ital
 
 // ─── RENDERER 6: Medical Bill (hospital invoice style) ────────────────────────
 function renderMedical(d){
+    const style = d.td.template_style || '1';
+    if (style === '2') {
+    // Style 2: Simple clinic / pharmacy receipt
+    const doctor=d.td.doctor_name||''; const issue=d.td.patient_issue||'';
+    const c2='#2e7d32';
+    const rows=d.items.map((it,i)=>`<tr style="background:${i%2===0?'#f1f8e9':'#fff'};border-bottom:1px solid #c8e6c9;"><td style="padding:5px 8px;font-size:12px;">${escHtml(it.description||'-')}</td><td style="padding:5px 8px;text-align:center;font-size:12px;">${it.qty}</td><td style="padding:5px 8px;text-align:right;font-size:12px;">${d.sym}${it.rate.toFixed(2)}</td><td style="padding:5px 8px;text-align:right;font-weight:700;font-size:12px;">${d.sym}${it.amount.toFixed(2)}</td></tr>`).join('');
+    return `<div style="font-family:Arial,sans-serif;background:#fff;font-size:12px;color:#111;border:2px solid ${c2};max-width:560px;overflow:hidden;">
+<div style="background:${c2};color:#fff;padding:12px 16px;text-align:center;">
+<div style="font-size:18px;font-weight:700;">✚ ${escHtml(d.fromName)}</div>
+${d.fromAddr?`<div style="font-size:10px;opacity:.85;margin-top:2px;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}
+${d.fromPhone?`<div style="font-size:10px;opacity:.85;">Ph: ${escHtml(d.fromPhone)}</div>`:''}
+</div>
+<div style="background:#e8f5e9;padding:8px 14px;border-bottom:1px solid #c8e6c9;display:flex;justify-content:space-between;font-size:11px;">
+<div><span style="font-weight:700;display:block;">Patient: ${escHtml(d.toName)}</span>${d.toPhone?`<span>Ph: ${escHtml(d.toPhone)}</span>`:''}${issue?`<span style="display:block;">Complaint: ${escHtml(issue)}</span>`:''}</div>
+<div style="text-align:right;"><span style="display:block;">Receipt #: <b>${escHtml(d.billNo)}</b></span><span style="display:block;">Date: ${fmtDate(d.billDate)}</span>${doctor?`<span style="display:block;">Dr: ${escHtml(doctor)}</span>`:''}</div>
+</div>
+<table style="width:100%;border-collapse:collapse;"><thead><tr style="background:${c2};color:#fff;"><th style="padding:6px 8px;text-align:left;font-size:11px;">Service / Medicine</th><th style="padding:6px 8px;text-align:center;font-size:11px;">Qty</th><th style="padding:6px 8px;text-align:right;font-size:11px;">Rate</th><th style="padding:6px 8px;text-align:right;font-size:11px;">Amount</th></tr></thead>
+<tbody>${rows||`<tr><td colspan="4" style="padding:10px;text-align:center;color:#aaa;">No services</td></tr>`}</tbody></table>
+<div style="padding:8px 14px;border-top:1px solid #c8e6c9;background:#f9fbe7;">
+${d.taxPct>0?`<div style="display:flex;justify-content:space-between;font-size:11px;"><span>Tax ${d.taxPct}%</span><span>${d.sym}${d.taxAmt.toFixed(2)}</span></div>`:''}
+${d.discount>0?`<div style="display:flex;justify-content:space-between;font-size:11px;"><span>Discount</span><span style="color:#e53935;">-${d.sym}${d.discount.toFixed(2)}</span></div>`:''}
+<div style="display:flex;justify-content:space-between;font-size:14px;font-weight:900;color:${c2};border-top:2px solid ${c2};padding-top:6px;margin-top:4px;"><span>Total Amount</span><span>${d.sym}${d.total.toFixed(2)}</span></div>
+</div>
+${d.notes?`<div style="padding:6px 14px;font-size:11px;color:#555;">${escHtml(d.notes)}</div>`:''}
+<div style="background:${c2};color:#fff;padding:6px 14px;text-align:center;font-size:10px;">Get Well Soon 🙏 | ${escHtml(d.fromName)}</div>
+</div>`;
+    }
     const doctor=d.td.doctor_name||'';const patId=d.td.patient_id||'';
     const issue=d.td.patient_issue||'';const guardian=d.td.guardian_name||'';
     const admitDate=d.td.admit_date?fmtDate(d.td.admit_date):'';
@@ -728,6 +940,35 @@ ${d.notes?`<div style="padding:8px 14px;border-top:1px solid #ddd;font-size:11px
 
 // ─── RENDERER 7: Hotel Folio ──────────────────────────────────────────────────
 function renderHotel(d){
+    const style = d.td.template_style || '1';
+    if (style === '2') {
+    // Style 2: Clean white hotel invoice
+    const roomNo=d.td.room_number||''; const gstin=d.td.gstin||'';
+    const checkin=d.td.checkin_date?fmtDate(d.td.checkin_date):''; const checkout=d.td.checkout_date?fmtDate(d.td.checkout_date):'';
+    const rows=d.items.map((it,i)=>`<tr style="background:${i%2===0?'#fafafa':'#fff'};border-bottom:1px solid #e0e0e0;"><td style="padding:7px 10px;font-size:12px;">${escHtml(it.description||'-')}</td><td style="padding:7px 10px;text-align:center;font-size:12px;">${it.qty}</td><td style="padding:7px 10px;text-align:right;font-size:12px;">${d.sym}${it.rate.toFixed(2)}</td><td style="padding:7px 10px;text-align:right;font-weight:700;font-size:12px;">${d.sym}${it.amount.toFixed(2)}</td></tr>`).join('');
+    return `<div style="font-family:Arial,sans-serif;background:#fff;font-size:12px;color:#222;border:1px solid #ccc;max-width:620px;box-shadow:0 2px 10px rgba(0,0,0,.1);">
+<div style="padding:16px 20px;border-bottom:2px solid #333;display:flex;justify-content:space-between;align-items:flex-start;">
+<div><div style="font-size:20px;font-weight:700;">${escHtml(d.fromName)}</div>${d.fromAddr?`<div style="font-size:10px;color:#666;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}<div style="font-size:10px;color:#666;">${d.fromPhone?'Ph: '+escHtml(d.fromPhone):''}</div>${gstin?`<div style="font-size:10px;color:#666;">GSTIN: ${escHtml(gstin)}</div>`:''}</div>
+<div style="text-align:right;"><div style="font-size:20px;font-weight:900;letter-spacing:1px;">HOTEL INVOICE</div><div style="font-size:11px;color:#666;">Folio #: ${escHtml(d.billNo)}</div><div style="font-size:11px;color:#666;">Date: ${fmtDate(d.billDate)}</div></div>
+</div>
+<div style="padding:10px 20px;background:#f5f5f5;border-bottom:1px solid #ddd;display:flex;justify-content:space-between;font-size:11px;">
+<div><div style="font-weight:600;margin-bottom:2px;">Guest: ${escHtml(d.toName)}</div>${d.toPhone?`<div>Ph: ${escHtml(d.toPhone)}</div>`:''}</div>
+<div style="text-align:right;">${roomNo?`<div>Room: <b>${escHtml(roomNo)}</b></div>`:''}<div>${checkin?'In: '+checkin:''} ${checkout?'→ Out: '+checkout:''}</div></div>
+</div>
+<table style="width:100%;border-collapse:collapse;"><thead><tr style="background:#333;color:#fff;"><th style="padding:7px 10px;text-align:left;font-size:11px;">Description</th><th style="padding:7px 10px;text-align:center;font-size:11px;width:70px;">Qty</th><th style="padding:7px 10px;text-align:right;font-size:11px;width:80px;">Rate</th><th style="padding:7px 10px;text-align:right;font-size:11px;width:90px;">Amount</th></tr></thead>
+<tbody>${rows||'<tr><td colspan="4" style="padding:12px;text-align:center;color:#aaa;">No charges</td></tr>'}</tbody></table>
+<div style="padding:10px 20px;background:#f9f9f9;border-top:1px solid #ddd;display:flex;justify-content:flex-end;">
+<div style="min-width:220px;font-size:12px;">
+${d.subtotal!==d.total?`<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #ddd;"><span style="color:#666;">Subtotal</span><span>${d.sym}${d.subtotal.toFixed(2)}</span></div>`:''}
+${d.taxPct>0?`<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #ddd;"><span style="color:#666;">Tax ${d.taxPct}%</span><span>${d.sym}${d.taxAmt.toFixed(2)}</span></div>`:''}
+${d.discount>0?`<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #ddd;"><span style="color:#666;">Discount</span><span style="color:#e53935;">-${d.sym}${d.discount.toFixed(2)}</span></div>`:''}
+<div style="display:flex;justify-content:space-between;font-size:15px;font-weight:900;border-top:2px solid #333;padding-top:6px;margin-top:4px;"><span>Total Amount</span><span>${d.sym}${d.total.toFixed(2)}</span></div>
+</div>
+</div>
+${d.notes?`<div style="padding:8px 20px;font-size:11px;color:#555;border-top:1px solid #eee;font-style:italic;">${escHtml(d.notes)}</div>`:''}
+<div style="padding:8px 20px;border-top:1px solid #ddd;display:flex;justify-content:space-between;font-size:10px;color:#999;"><span>Signature: _______________</span><span>Thank you for staying with us! 🌟</span></div>
+</div>`;
+    }
     const roomNo=d.td.room_number||'';const gstin=d.td.gstin||'';
     const checkin=d.td.checkin_date?fmtDate(d.td.checkin_date):'';const checkout=d.td.checkout_date?fmtDate(d.td.checkout_date):'';
     const items=d.items.map((it,i)=>`<tr style="background:${i%2===0?'#fdf8ee':'#fff'};border-bottom:1px solid #e8d89a;"><td style="padding:8px 12px;font-size:12px;">${escHtml(it.description||'-')}</td><td style="padding:8px 12px;text-align:center;font-size:12px;">${it.qty}</td><td style="padding:8px 12px;text-align:right;font-size:12px;">${d.sym}${it.rate.toFixed(2)}</td><td style="padding:8px 12px;text-align:right;font-weight:700;font-size:12px;">${d.sym}${it.amount.toFixed(2)}</td></tr>`).join('');
@@ -759,6 +1000,35 @@ ${d.notes?`<div style="padding:8px 24px;font-size:11px;color:#7d5a00;font-style:
 
 // ─── RENDERER 8: Gym Invoice ──────────────────────────────────────────────────
 function renderGym(d){
+    const style = d.td.template_style || '1';
+    if (style === '2') {
+    // Style 2: Clean membership receipt
+    const memberId=d.td.member_id||''; const plan=d.td.plan_name||'';
+    const rows=d.items.map((it,i)=>`<tr style="background:${i%2===0?'#f9f9f9':'#fff'};border-bottom:1px solid #e0e0e0;"><td style="padding:6px 10px;font-size:12px;">${escHtml(it.description||'-')}</td><td style="padding:6px 10px;text-align:right;font-weight:700;font-size:12px;">${d.sym}${it.amount.toFixed(2)}</td></tr>`).join('');
+    return `<div style="font-family:Arial,sans-serif;background:#fff;font-size:12px;color:#222;border:2px solid #ff6f00;max-width:460px;overflow:hidden;">
+<div style="padding:14px 16px;border-bottom:2px solid #ff6f00;">
+<div style="display:flex;justify-content:space-between;align-items:flex-start;">
+<div><div style="font-size:18px;font-weight:700;">💪 ${escHtml(d.fromName)}</div>${d.fromAddr?`<div style="font-size:10px;color:#666;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}<div style="font-size:10px;color:#666;">${d.fromPhone?'Ph: '+escHtml(d.fromPhone):''}</div></div>
+<div style="text-align:right;"><div style="font-size:14px;font-weight:900;color:#ff6f00;">GYM RECEIPT</div><div style="font-size:11px;color:#666;">#${escHtml(d.billNo)}</div><div style="font-size:11px;color:#666;">${fmtDate(d.billDate)}</div></div>
+</div>
+</div>
+<div style="padding:8px 16px;background:#fff8f0;border-bottom:1px solid #ffe0b2;font-size:11px;">
+<div style="font-weight:700;font-size:13px;">${escHtml(d.toName)}</div>
+${d.toPhone?`<div style="color:#666;">${escHtml(d.toPhone)}</div>`:''}
+${memberId?`<div>Member ID: <b>${escHtml(memberId)}</b></div>`:''}
+${plan?`<div style="color:#ff6f00;font-weight:600;">Plan: ${escHtml(plan)}</div>`:''}
+</div>
+<table style="width:100%;border-collapse:collapse;"><thead><tr style="background:#ff6f00;color:#fff;"><th style="padding:6px 10px;text-align:left;font-size:11px;">Description</th><th style="padding:6px 10px;text-align:right;font-size:11px;">Amount</th></tr></thead>
+<tbody>${rows||'<tr><td colspan="2" style="padding:10px;text-align:center;color:#aaa;">No items</td></tr>'}</tbody></table>
+<div style="padding:8px 16px;border-top:1px solid #ffe0b2;background:#fff8f0;">
+${d.taxPct>0?`<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;"><span>Tax ${d.taxPct}%</span><span>${d.sym}${d.taxAmt.toFixed(2)}</span></div>`:''}
+${d.discount>0?`<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;"><span>Discount</span><span style="color:#e53935;">-${d.sym}${d.discount.toFixed(2)}</span></div>`:''}
+<div style="display:flex;justify-content:space-between;font-size:15px;font-weight:900;color:#ff6f00;border-top:2px solid #ff6f00;padding-top:6px;margin-top:4px;"><span>TOTAL DUE</span><span>${d.sym}${d.total.toFixed(2)}</span></div>
+</div>
+${d.notes?`<div style="padding:6px 16px;font-size:10px;color:#666;border-top:1px solid #eee;">${escHtml(d.notes)}</div>`:''}
+<div style="padding:6px;text-align:center;font-size:9px;color:#ff6f00;background:#fff8f0;">Train Hard. Stay Strong! 💪 | BillX</div>
+</div>`;
+    }
     const memberId=d.td.member_id||'';const plan=d.td.plan_name||'';
     const items=d.items.map(it=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #333;font-size:12px;"><span>${escHtml(it.description||'-')}</span><span style="color:#ff6f00;font-weight:700;">${d.sym}${it.amount.toFixed(2)}</span></div>`).join('');
     return`<div style="font-family:Arial,sans-serif;background:#181818;color:#f0f0f0;font-size:12px;box-shadow:0 4px 20px rgba(0,0,0,.4);">
@@ -790,6 +1060,69 @@ ${d.notes?`<div style="padding:8px 20px;font-size:10px;color:#aaa;border-top:1px
 // ─── RENDERER 9: Professional Invoice (with GST breakdown) ───────────────────
 // (book, internet, ecom, general, stationary)
 function renderInvoice(d){
+    const style = d.td.template_style || '1';
+    if (style === '2') {
+    // Style 2: Classic letterhead / no color header
+    const c2=TYPE_COLORS[d.type]||'#333'; const label=TYPE_LABELS[d.type]||'Invoice';
+    const gstin=d.td.gstin||''; const hsn=d.td.hsn_code||'';
+    const cgst=parseFloat(d.td.cgst_pct)||0; const sgst=parseFloat(d.td.sgst_pct)||0;
+    const cgstAmt=d.subtotal*cgst/100; const sgstAmt=d.subtotal*sgst/100;
+    const rows=d.items.map((it,i)=>`<tr><td style="padding:6px 8px;border:1px solid #ddd;font-size:12px;text-align:center;">${i+1}</td><td style="padding:6px 8px;border:1px solid #ddd;font-size:12px;">${escHtml(it.description||'-')}</td>${hsn?`<td style="padding:6px 8px;border:1px solid #ddd;font-size:11px;text-align:center;">${escHtml(hsn)}</td>`:''}<td style="padding:6px 8px;border:1px solid #ddd;text-align:center;font-size:12px;">${it.qty}</td><td style="padding:6px 8px;border:1px solid #ddd;text-align:right;font-size:12px;">${d.sym}${it.rate.toFixed(2)}</td><td style="padding:6px 8px;border:1px solid #ddd;text-align:right;font-weight:700;font-size:12px;">${d.sym}${it.amount.toFixed(2)}</td></tr>`).join('');
+    return `<div style="font-family:Arial,sans-serif;background:#fff;font-size:12px;color:#222;border:1px solid #ddd;max-width:680px;">
+<div style="padding:16px 24px;border-bottom:3px solid ${c2};">
+<div style="display:flex;justify-content:space-between;align-items:flex-start;">
+<div><div style="font-size:20px;font-weight:700;color:${c2};">${escHtml(d.fromName)}</div>${d.fromAddr?`<div style="font-size:10px;color:#666;margin-top:2px;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}<div style="font-size:10px;color:#666;">${d.fromPhone?'Ph: '+escHtml(d.fromPhone):''} ${d.fromEmail?'| '+escHtml(d.fromEmail):''}</div>${gstin?`<div style="font-size:10px;color:#666;">GSTIN: <b>${escHtml(gstin)}</b></div>`:''}</div>
+<div style="text-align:right;"><div style="font-size:22px;font-weight:900;letter-spacing:1px;color:${c2};">${label.toUpperCase()}</div><div style="font-size:11px;color:#666;"># ${escHtml(d.billNo)}</div><div style="font-size:11px;color:#666;">Date: ${fmtDate(d.billDate)}</div></div>
+</div>
+</div>
+<div style="padding:10px 24px;background:#fafafa;border-bottom:1px solid #ddd;display:flex;justify-content:space-between;">
+<div><div style="font-size:10px;color:#888;text-transform:uppercase;font-weight:600;margin-bottom:2px;">Bill To</div><div style="font-size:14px;font-weight:700;">${escHtml(d.toName)}</div>${d.toAddr?`<div style="font-size:11px;color:#666;">${escHtml(d.toAddr).replace(/\n/g,' | ')}</div>`:''}</div>
+</div>
+<table style="width:100%;border-collapse:collapse;margin:0;"><thead><tr style="background:#f5f5f5;"><th style="padding:7px 8px;border:1px solid #ddd;text-align:center;font-size:11px;width:30px;">#</th><th style="padding:7px 8px;border:1px solid #ddd;text-align:left;font-size:11px;">Description</th>${hsn?`<th style="padding:7px 8px;border:1px solid #ddd;text-align:center;font-size:11px;width:70px;">HSN</th>`:''}<th style="padding:7px 8px;border:1px solid #ddd;text-align:center;font-size:11px;width:50px;">Qty</th><th style="padding:7px 8px;border:1px solid #ddd;text-align:right;font-size:11px;width:80px;">Rate</th><th style="padding:7px 8px;border:1px solid #ddd;text-align:right;font-size:11px;width:90px;">Amount</th></tr></thead>
+<tbody>${rows||'<tr><td colspan="6" style="padding:12px;text-align:center;color:#aaa;border:1px solid #ddd;">No items</td></tr>'}</tbody></table>
+<div style="padding:12px 24px;display:flex;justify-content:flex-end;background:#fafafa;border-top:1px solid #ddd;">
+<div style="min-width:240px;font-size:12px;">
+<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #ddd;"><span style="color:#666;">Subtotal</span><span style="font-weight:600;">${d.sym}${d.subtotal.toFixed(2)}</span></div>
+${cgst>0?`<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #ddd;"><span style="color:#666;">CGST ${cgst}%</span><span>${d.sym}${cgstAmt.toFixed(2)}</span></div>`:''}
+${sgst>0?`<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #ddd;"><span style="color:#666;">SGST ${sgst}%</span><span>${d.sym}${sgstAmt.toFixed(2)}</span></div>`:''}
+${d.taxPct>0&&cgst===0&&sgst===0?`<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #ddd;"><span style="color:#666;">Tax ${d.taxPct}%</span><span>${d.sym}${d.taxAmt.toFixed(2)}</span></div>`:''}
+${d.discount>0?`<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #ddd;"><span style="color:#666;">Discount</span><span style="color:#e53935;">-${d.sym}${d.discount.toFixed(2)}</span></div>`:''}
+<div style="display:flex;justify-content:space-between;font-size:15px;font-weight:900;border-top:2px solid ${c2};padding-top:6px;margin-top:4px;color:${c2};"><span>Total</span><span>${d.sym}${d.total.toFixed(2)}</span></div>
+</div>
+</div>
+${d.notes?`<div style="margin:0 24px 12px;padding:8px;background:#fff8e1;border-left:3px solid #ffc107;font-size:11px;color:#555;"><b>Notes:</b> ${escHtml(d.notes)}</div>`:''}
+<div style="padding:8px 24px;border-top:1px solid #ddd;display:flex;justify-content:space-between;font-size:10px;color:#999;"><span>Signature: _______________</span><span>Thank you for your business!</span></div>
+</div>`;
+    }
+    if (style === '3') {
+    // Style 3: Simple bordered classic invoice
+    const label=TYPE_LABELS[d.type]||'Invoice';
+    const gstin=d.td.gstin||''; const hsn=d.td.hsn_code||'';
+    const cgst=parseFloat(d.td.cgst_pct)||0; const sgst=parseFloat(d.td.sgst_pct)||0;
+    const cgstAmt=d.subtotal*cgst/100; const sgstAmt=d.subtotal*sgst/100;
+    const rows=d.items.map((it,i)=>`<tr style="background:${i%2===0?'#f9f9f9':'#fff'};border-bottom:1px solid #e0e0e0;"><td style="padding:6px 10px;text-align:center;">${i+1}</td><td style="padding:6px 10px;">${escHtml(it.description||'-')}</td>${hsn?`<td style="padding:6px 10px;text-align:center;">${escHtml(hsn)}</td>`:''}<td style="padding:6px 10px;text-align:center;">${it.qty}</td><td style="padding:6px 10px;text-align:right;">${d.sym}${it.rate.toFixed(2)}</td><td style="padding:6px 10px;text-align:right;font-weight:700;">${d.sym}${it.amount.toFixed(2)}</td></tr>`).join('');
+    return `<div style="font-family:'Times New Roman',Times,serif;background:#fff;border:2px solid #222;font-size:12px;color:#111;max-width:680px;">
+<div style="border-bottom:2px solid #222;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;">
+<div><div style="font-size:18px;font-weight:700;">${escHtml(d.fromName)}</div>${d.fromAddr?`<div style="font-size:10px;color:#444;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}</div>
+<div style="text-align:center;border:2px solid #222;padding:8px 16px;"><div style="font-size:16px;font-weight:900;letter-spacing:2px;">${label.toUpperCase()}</div><div style="font-size:11px;">#${escHtml(d.billNo)}</div><div style="font-size:11px;">${fmtDate(d.billDate)}</div></div>
+</div>
+<div style="border-bottom:1px solid #ccc;padding:8px 20px;display:flex;justify-content:space-between;font-size:11px;">
+<div><b>Bill To:</b> ${escHtml(d.toName)}${d.toAddr?` | ${escHtml(d.toAddr).replace(/\n/g,', ')}`:''}</div>
+${gstin?`<div><b>GSTIN:</b> ${escHtml(gstin)}</div>`:''}
+</div>
+<table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr style="background:#222;color:#fff;"><th style="padding:6px 10px;text-align:center;">#</th><th style="padding:6px 10px;text-align:left;">Description</th>${hsn?`<th style="padding:6px 10px;text-align:center;">HSN</th>`:''}<th style="padding:6px 10px;text-align:center;">Qty</th><th style="padding:6px 10px;text-align:right;">Rate</th><th style="padding:6px 10px;text-align:right;">Amount</th></tr></thead>
+<tbody>${rows||'<tr><td colspan="6" style="padding:12px;text-align:center;color:#aaa;">No items</td></tr>'}</tbody></table>
+<div style="border-top:2px solid #222;padding:10px 20px;display:flex;justify-content:space-between;align-items:flex-end;">
+<div style="font-size:11px;">${d.notes?`<b>Notes:</b> ${escHtml(d.notes)}`:'&nbsp;'}</div>
+<div style="text-align:right;font-size:12px;">
+${d.discount>0?`<div style="display:flex;justify-content:space-between;gap:24px;"><span>Discount</span><span>-${d.sym}${d.discount.toFixed(2)}</span></div>`:''}
+${cgst>0?`<div style="display:flex;justify-content:space-between;gap:24px;"><span>CGST ${cgst}%</span><span>${d.sym}${cgstAmt.toFixed(2)}</span></div>`:''}
+${sgst>0?`<div style="display:flex;justify-content:space-between;gap:24px;"><span>SGST ${sgst}%</span><span>${d.sym}${sgstAmt.toFixed(2)}</span></div>`:''}
+<div style="display:flex;justify-content:space-between;gap:24px;font-size:15px;font-weight:900;border-top:2px solid #222;padding-top:4px;margin-top:4px;"><span>TOTAL</span><span>${d.sym}${d.total.toFixed(2)}</span></div>
+</div>
+</div>
+</div>`;
+    }
     const c=TYPE_COLORS[d.type]||'#37474f';const label=TYPE_LABELS[d.type]||'Invoice';
     const gstin=d.td.gstin||'';const hsn=d.td.hsn_code||'';
     const cgst=parseFloat(d.td.cgst_pct)||0;const sgst=parseFloat(d.td.sgst_pct)||0;
@@ -869,7 +1202,7 @@ function submitBill(action){
 // ─── Wire up all live inputs ──────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded',()=>{
     addItem('',1,0);
-    const liveInputs=['bill_type','bill_number','bill_date','currency','from_name','from_address','from_phone','from_email','to_name','to_address','to_phone','to_email','tax_percent','discount_amount','notes'];
+    const liveInputs=['bill_type','bill_number','bill_date','currency','td_template_style','from_name','from_address','from_phone','from_email','to_name','to_address','to_phone','to_email','tax_percent','discount_amount','notes'];
     liveInputs.forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener('input',updatePreview);});
     // Bill type triggers extra-fields sync + preview
     const typeSelect=document.getElementById('bill_type');
