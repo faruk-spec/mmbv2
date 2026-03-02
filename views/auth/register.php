@@ -2,31 +2,18 @@
 <?php View::extend('main'); ?>
 
 <?php View::section('content'); ?>
-<div class="auth-page-wrap">
-    <!-- Brand panel -->
-    <div class="auth-brand-panel">
-        <div class="auth-brand-logo"><?= APP_NAME ?></div>
-        <div class="auth-brand-title">Create your account</div>
-        <div class="auth-brand-subtitle">Join thousands of users managing their applications and projects from a single, powerful platform.</div>
-        <div class="auth-brand-dots">
-            <span class="auth-brand-dot"></span>
-            <span class="auth-brand-dot"></span>
-            <span class="auth-brand-dot active"></span>
-        </div>
-    </div>
-
-    <!-- Form panel -->
-    <div class="auth-form-panel">
-        <div class="auth-form-inner">
-            <div class="auth-form-heading">Create Account</div>
-            <div class="auth-form-sub">Fill in the details below to get started</div>
-
-            <?php if (Helpers::hasFlash('error')): ?>
-                <div class="alert alert-error"><?= View::e(Helpers::getFlash('error')) ?></div>
-            <?php endif; ?>
-
-            <?php if (GoogleOAuth::isEnabled()): ?>
-            <a href="/auth/google?register=1" class="auth-google-btn">
+<div style="max-width: 400px; margin: 40px auto;">
+    <div class="card">
+        <h1 style="text-align: center; margin-bottom: 30px; font-size: 1.8rem;">Create Account</h1>
+        
+        <?php if (Helpers::hasFlash('error')): ?>
+            <div class="alert alert-error"><?= View::e(Helpers::getFlash('error')) ?></div>
+        <?php endif; ?>
+        
+        <?php if (GoogleOAuth::isEnabled()): ?>
+        <!-- Google Sign-In Button -->
+        <div style="margin-bottom: 20px;">
+            <a href="/auth/google?register=1" class="btn" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; background: #fff; color: #333; border: 1px solid #ddd;">
                 <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
                     <g fill="none" fill-rule="evenodd">
                         <path d="M17.64 9.205c0-.639-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
@@ -37,53 +24,56 @@
                 </svg>
                 Sign up with Google
             </a>
-            <div class="auth-divider">or</div>
-            <?php endif; ?>
-
-            <form method="POST" action="/register">
-                <?= \Core\Security::csrfField() ?>
-
-                <div class="form-group">
-                    <label class="form-label" for="name">Full Name</label>
-                    <input type="text" id="name" name="name" class="form-input"
-                           value="<?= View::old('name') ?>" placeholder="John Doe" required>
-                    <?php if (View::hasError('name')): ?>
-                        <div class="form-error"><?= View::error('name') ?></div>
-                    <?php endif; ?>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label" for="email">Email</label>
-                    <input type="email" id="email" name="email" class="form-input"
-                           value="<?= View::old('email') ?>" placeholder="you@example.com" required>
-                    <?php if (View::hasError('email')): ?>
-                        <div class="form-error"><?= View::error('email') ?></div>
-                    <?php endif; ?>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label" for="password">Password</label>
-                    <input type="password" id="password" name="password" class="form-input"
-                           placeholder="Min. 8 characters" required minlength="8">
-                    <?php if (View::hasError('password')): ?>
-                        <div class="form-error"><?= View::error('password') ?></div>
-                    <?php endif; ?>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label" for="password_confirmation">Confirm Password</label>
-                    <input type="password" id="password_confirmation" name="password_confirmation"
-                           class="form-input" placeholder="Repeat password" required>
-                </div>
-
-                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 0.95rem;">Create Account</button>
-            </form>
-
-            <p style="text-align: center; margin-top: 24px; color: var(--text-secondary); font-size: 0.88rem;">
-                Already have an account? <a href="/login">Sign In</a>
-            </p>
         </div>
+        
+        <div style="text-align: center; margin: 20px 0; color: var(--text-secondary); position: relative;">
+            <span style="background: var(--card-bg); padding: 0 10px; position: relative; z-index: 1;">or</span>
+            <div style="position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: var(--border-color); z-index: 0;"></div>
+        </div>
+        <?php endif; ?>
+        
+        <form method="POST" action="/register">
+            <?= \Core\Security::csrfField() ?>
+            
+            <div class="form-group">
+                <label class="form-label" for="name">Full Name</label>
+                <input type="text" id="name" name="name" class="form-input" 
+                       value="<?= View::old('name') ?>" placeholder="John Doe" required>
+                <?php if (View::hasError('name')): ?>
+                    <div class="form-error"><?= View::error('name') ?></div>
+                <?php endif; ?>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="email">Email</label>
+                <input type="email" id="email" name="email" class="form-input" 
+                       value="<?= View::old('email') ?>" placeholder="you@example.com" required>
+                <?php if (View::hasError('email')): ?>
+                    <div class="form-error"><?= View::error('email') ?></div>
+                <?php endif; ?>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="password">Password</label>
+                <input type="password" id="password" name="password" class="form-input" 
+                       placeholder="Min. 8 characters" required minlength="8">
+                <?php if (View::hasError('password')): ?>
+                    <div class="form-error"><?= View::error('password') ?></div>
+                <?php endif; ?>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="password_confirmation">Confirm Password</label>
+                <input type="password" id="password_confirmation" name="password_confirmation" 
+                       class="form-input" placeholder="Repeat password" required>
+            </div>
+            
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Create Account</button>
+        </form>
+        
+        <p style="text-align: center; margin-top: 20px; color: var(--text-secondary);">
+            Already have an account? <a href="/login">Sign In</a>
+        </p>
     </div>
 </div>
 <?php View::endSection(); ?>
-
