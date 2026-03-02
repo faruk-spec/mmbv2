@@ -7,6 +7,7 @@
     --bg-primary: #06060a;
     --bg-secondary: #0c0c12;
     --bg-card: #0f0f18;
+    --card-inner-bg: #0f0f18; /* inner fill for the rotating border animation */
     --cyan: #00f0ff;
     --magenta: #ff2ec4;
     --green: #00ff88;
@@ -25,6 +26,7 @@
     --bg-primary: #f0f4ff;
     --bg-secondary: #ffffff;
     --bg-card: #ffffff;
+    --card-inner-bg: rgba(255, 255, 255, 0.90); /* inner fill for the rotating border animation */
     --text-primary: #1a1a1a;
     --text-secondary: #666666;
     --border-color: rgba(0, 0, 0, 0.1);
@@ -188,11 +190,70 @@ body::before {
     border-radius: 10px;
     padding: 20px;
     transition: var(--transition);
+    /* Required by rotating border animation */
+    position: relative;
+    overflow: hidden;
 }
 
 .card:hover {
     border-color: rgba(0, 240, 255, 0.3);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* === Professional rotating border-light animation === */
+@keyframes card-border-spin {
+    from { transform: translate(-50%, -50%) rotate(0deg); }
+    to   { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* Rotating spotlight sweep — visible only at the card edge */
+.card::before {
+    content: '';
+    position: absolute;
+    width: 180%;
+    height: 180%;
+    top: 50%;
+    left: 50%;
+    background: conic-gradient(
+        from 0deg,
+        transparent 0deg 100deg,
+        rgba(124, 58, 237, 0.55) 100deg 160deg,
+        rgba(0, 245, 255, 0.45) 160deg 210deg,
+        rgba(255, 46, 196, 0.35) 210deg 250deg,
+        transparent 250deg 360deg
+    );
+    animation: card-border-spin 8s linear infinite;
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* Inner fill — hides the centre so only the 1 px border edge glows */
+.card::after {
+    content: '';
+    position: absolute;
+    inset: 1px;
+    border-radius: 9px;
+    background: var(--card-inner-bg);
+    z-index: 1;
+    pointer-events: none;
+}
+
+/* Raise all direct children above the animated border layers */
+.card > * {
+    position: relative;
+    z-index: 2;
+}
+
+/* Light-mode: softer, accessible palette for the sweep */
+[data-theme="light"] .card::before {
+    background: conic-gradient(
+        from 0deg,
+        transparent 0deg 100deg,
+        rgba(124, 58, 237, 0.35) 100deg 160deg,
+        rgba(3, 105, 161, 0.30) 160deg 210deg,
+        rgba(255, 46, 196, 0.20) 210deg 250deg,
+        transparent 250deg 360deg
+    );
 }
 
 .card-header {

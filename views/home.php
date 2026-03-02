@@ -42,6 +42,7 @@
     /* Glassmorphism cards - dark mode */
     [data-theme="dark"] .card,
     html:not([data-theme="light"]) .card {
+        --card-inner-bg: rgba(11, 15, 25, 0.92);
         background: rgba(11, 15, 25, 0.6) !important;
         backdrop-filter: blur(14px) !important;
         -webkit-backdrop-filter: blur(14px) !important;
