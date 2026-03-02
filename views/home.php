@@ -3,63 +3,97 @@
 
 <?php View::section('styles'); ?>
 <style>
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
+    /* ===== FUTURISTIC HOMEPAGE DESIGN SYSTEM ===== */
+
+    /* Dark mode: futuristic background base */
+    [data-theme="dark"] body,
+    html:not([data-theme="light"]) body {
+        background: #0b0f19 !important;
     }
-    
-    .animate-fade-in {
-        animation: fadeIn 0.6s ease-out forwards;
-        opacity: 0;
+
+    /* Gradient text: purple → cyan */
+    .hp-grad-text {
+        background: linear-gradient(135deg, #7C3AED, #00F5FF);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
     }
-    
+
+    /* Hero h1 gradient override */
+    .hero h1 {
+        background: linear-gradient(135deg, #7C3AED, #00F5FF) !important;
+        -webkit-background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
+        background-clip: text !important;
+    }
+
+    /* Stat value gradient override */
+    .stat-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #7C3AED, #00F5FF) !important;
+        -webkit-background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
+        background-clip: text !important;
+        margin-bottom: 8px;
+        animation: fadeIn 1s ease-out;
+    }
+
+    /* Glassmorphism cards - dark mode */
+    [data-theme="dark"] .card,
+    html:not([data-theme="light"]) .card {
+        --card-inner-bg: rgba(11, 15, 25, 0.92);
+        background: rgba(11, 15, 25, 0.6) !important;
+        backdrop-filter: blur(14px) !important;
+        -webkit-backdrop-filter: blur(14px) !important;
+        border: 1px solid rgba(124, 58, 237, 0.2) !important;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(124, 58, 237, 0.1) !important;
+    }
+
+    /* Glassmorphism cards - light mode */
+    [data-theme="light"] .card {
+        background: rgba(255, 255, 255, 0.7) !important;
+        backdrop-filter: blur(12px) !important;
+        -webkit-backdrop-filter: blur(12px) !important;
+        border: 1px solid rgba(124, 58, 237, 0.15) !important;
+        box-shadow: 0 4px 20px rgba(124, 58, 237, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+    }
+
+    /* Smooth card hover transitions with neon accent */
+    .card {
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                    box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                    border-color 0.3s ease !important;
+    }
+
+    .card:hover {
+        transform: translateY(-5px) !important;
+        border-color: rgba(0, 245, 255, 0.35) !important;
+        box-shadow: 0 12px 36px rgba(124, 58, 237, 0.25), 0 0 0 1px rgba(0, 245, 255, 0.1) !important;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 36px rgba(124, 58, 237, 0.25) !important;
+    }
+
+    /* Hero banner neon glow */
     .hero-banner {
         max-width: 100%;
         height: auto;
         border-radius: 12px;
-        box-shadow: var(--shadow-glow);
+        box-shadow: 0 0 40px rgba(124, 58, 237, 0.3) !important;
         margin-bottom: 30px;
         animation: fadeIn 0.8s ease-out;
     }
-    
-    .stat-card {
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-    
-    .stat-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 30px rgba(0, 240, 255, 0.3);
-    }
-    
-    .stat-value {
-        font-size: 2.5rem;
-        font-weight: 700;
-        background: linear-gradient(135deg, var(--cyan), var(--magenta));
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        margin-bottom: 8px;
-        animation: fadeIn 1s ease-out;
-    }
-    
-    .timeline-item {
-        position: relative;
-        padding-left: 70px;
-        margin-bottom: 30px;
-    }
-    
+
+    /* Timeline badge with neon pulse */
     .timeline-badge {
         position: absolute;
         left: 0;
         width: 50px;
         height: 50px;
-        background: linear-gradient(135deg, var(--cyan), var(--magenta));
+        background: linear-gradient(135deg, #7C3AED, #00F5FF) !important;
         border-radius: 50%;
         display: flex;
         align-items: center;
@@ -67,17 +101,140 @@
         font-weight: 700;
         color: white;
         font-size: 13px;
+        animation: hp-pulse 2.5s ease-in-out infinite;
     }
-    
+
+    /* Subtle pulse animation */
+    @keyframes hp-pulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.5); }
+        50% { box-shadow: 0 0 0 10px rgba(124, 58, 237, 0); }
+    }
+
+    /* Primary button: purple → cyan gradient */
+    .btn-primary {
+        background: linear-gradient(135deg, #7C3AED, #00F5FF) !important;
+        box-shadow: 0 4px 15px rgba(124, 58, 237, 0.35) !important;
+        color: #fff !important;
+    }
+
+    .btn-primary:hover {
+        box-shadow: 0 6px 25px rgba(124, 58, 237, 0.55) !important;
+        transform: translateY(-2px) !important;
+        -webkit-text-fill-color: #fff !important;
+    }
+
+    /* Animate fade in */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-fade-in {
+        animation: fadeIn 0.6s ease-out forwards;
+        opacity: 0;
+    }
+
+    /* Timeline item */
+    .timeline-item {
+        position: relative;
+        padding-left: 70px;
+        margin-bottom: 30px;
+    }
+
+    /* Mouse glow layer */
+    #hp-mouse-glow {
+        position: fixed;
+        width: 480px;
+        height: 480px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(124, 58, 237, 0.18) 0%, rgba(0, 245, 255, 0.06) 40%, transparent 70%);
+        pointer-events: none;
+        transform: translate(-50%, -50%);
+        z-index: 0;
+        opacity: 0;
+        transition: opacity 0.4s ease;
+    }
+
+    /* Particles canvas */
+    #hp-particles {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    /* Keep content above background layers */
+    .hero, .grid, .card, section,
+    [style*="max-width: 1400px"],
+    [style*="max-width:1400px"] {
+        position: relative;
+        z-index: 1;
+    }
+
+    /* Light mode card text stays readable */
+    [data-theme="light"] .card {
+        color: #1a1a1a !important;
+    }
+
+    /* Light mode — home page specific fixes */
+    [data-theme="light"] .hero h1 {
+        background: linear-gradient(135deg, #7C3AED, #0369a1) !important;
+        -webkit-background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
+        background-clip: text !important;
+    }
+
+    [data-theme="light"] .hp-grad-text {
+        background: linear-gradient(135deg, #7C3AED, #0369a1);
+    }
+
+    [data-theme="light"] .stat-value {
+        background: linear-gradient(135deg, #7C3AED, #0369a1) !important;
+    }
+
+    [data-theme="light"] .btn-primary {
+        background: linear-gradient(135deg, #7C3AED, #0369a1) !important;
+        box-shadow: 0 4px 15px rgba(124, 58, 237, 0.30) !important;
+    }
+
+    [data-theme="light"] .timeline-badge {
+        background: linear-gradient(135deg, #7C3AED, #0369a1) !important;
+    }
+
+    [data-theme="light"] .toggle-details {
+        background: rgba(0, 0, 0, 0.04) !important;
+        border-color: rgba(0, 0, 0, 0.12) !important;
+    }
+
+    [data-theme="light"] .project-details > div {
+        background: rgba(124, 58, 237, 0.04) !important;
+    }
+
+    [data-theme="light"] .project-card:hover {
+        box-shadow: 0 12px 40px rgba(124, 58, 237, 0.20) !important;
+    }
+
+    [data-theme="light"] #hp-mouse-glow {
+        background: radial-gradient(circle, rgba(124, 58, 237, 0.10) 0%, rgba(3, 105, 161, 0.04) 40%, transparent 70%);
+    }
+
+    [data-theme="light"] .card:hover {
+        border-color: rgba(124, 58, 237, 0.30) !important;
+        box-shadow: 0 12px 36px rgba(124, 58, 237, 0.18), 0 0 0 1px rgba(124, 58, 237, 0.08) !important;
+    }
+
     @media (max-width: 768px) {
         .grid-3, .grid-4 {
             grid-template-columns: 1fr;
         }
-        
+
         .hero h1 {
             font-size: 1.8rem !important;
         }
-        
+
         .hero h2 {
             font-size: 1.2rem !important;
         }
@@ -86,6 +243,9 @@
 <?php View::endSection(); ?>
 
 <?php View::section('content'); ?>
+<!-- Particles canvas & mouse glow for homepage -->
+<canvas id="hp-particles"></canvas>
+<div id="hp-mouse-glow"></div>
 <?php 
 // Get hero content from database with error handling
 $db = Database::getInstance();
@@ -293,16 +453,16 @@ if ($showStats):
     
     <!-- Filter Buttons -->
     <div style="display: flex; justify-content: center; gap: 12px; margin-bottom: 40px; flex-wrap: wrap;">
-        <button class="filter-btn active" data-filter="all" style="padding: 10px 24px; border-radius: 25px; border: 2px solid var(--cyan); background: var(--cyan); color: var(--bg-primary); font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 14px;">
+        <button class="filter-btn active" data-filter="all">
             All Tools
         </button>
-        <button class="filter-btn" data-filter="free" style="padding: 10px 24px; border-radius: 25px; border: 2px solid var(--border-color); background: transparent; color: var(--text-primary); font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 14px;">
+        <button class="filter-btn" data-filter="free">
             Free Tools
         </button>
-        <button class="filter-btn" data-filter="freemium" style="padding: 10px 24px; border-radius: 25px; border: 2px solid var(--border-color); background: transparent; color: var(--text-primary); font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 14px;">
+        <button class="filter-btn" data-filter="freemium">
             Freemium
         </button>
-        <button class="filter-btn" data-filter="enterprise" style="padding: 10px 24px; border-radius: 25px; border: 2px solid var(--border-color); background: transparent; color: var(--text-primary); font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 14px;">
+        <button class="filter-btn" data-filter="enterprise">
             Enterprise Grade
         </button>
     </div>
@@ -438,15 +598,31 @@ if ($showStats):
 
 <style>
 /* Filter Buttons Styles */
+.filter-btn {
+    padding: 10px 24px;
+    border-radius: 25px;
+    border: 2px solid var(--border-color);
+    background: transparent;
+    color: var(--text-primary);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 14px;
+}
+
 .filter-btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 240, 255, 0.3);
 }
 
+[data-theme="light"] .filter-btn:hover {
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--cyan) 25%, transparent);
+}
+
 .filter-btn.active {
     background: var(--cyan) !important;
     border-color: var(--cyan) !important;
-    color: var(--bg-primary) !important;
+    color: #ffffff !important;
 }
 
 /* Project Card Enhancements */
@@ -815,4 +991,213 @@ $timelineItems = $db->fetchAll("SELECT * FROM home_timeline WHERE is_active = 1 
 }
 </style>
 <?php endif; ?>
+
+<script>
+/* Homepage: AI Network — gradient synapses, comet packets, node pulses, depth parallax */
+(function() {
+    var isDark = function() {
+        return document.documentElement.getAttribute('data-theme') !== 'light';
+    };
+
+    /* ---- Mouse Glow ---- */
+    var glow = document.getElementById('hp-mouse-glow');
+    if (glow) {
+        document.addEventListener('mousemove', function(e) {
+            glow.style.left = e.clientX + 'px';
+            glow.style.top  = e.clientY + 'px';
+            glow.style.opacity = isDark() ? '1' : '0.5';
+        });
+        document.addEventListener('mouseleave', function() { glow.style.opacity = '0'; });
+    }
+
+    /* ---- AI Network ---- */
+    var canvas = document.getElementById('hp-particles');
+    if (!canvas) return;
+    var ctx = canvas.getContext('2d');
+    var nodes = [], packets = [], raf, time = 0;
+    var CONNECT_DIST = 160;  /* max px for a synapse edge */
+    var MAX_PACKETS  = 45;   /* simultaneous data packets */
+
+    function resize() {
+        canvas.width  = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+
+    function rnd(a, b) { return a + Math.random() * (b - a); }
+
+    /* Hue oscillates: cyan 185° ↔ purple 270°, ~250 s period (2π / 0.025 ≈ 251 s) */
+    function globalHue() { return 185 + 85 * (0.5 + 0.5 * Math.sin(time * 0.025)); }
+
+    function createNode() {
+        /* 3 depth layers: 0 = near (large/fast/bright), 2 = far (small/slow/dim) */
+        var depth = Math.floor(Math.random() * 3);
+        var sf    = 1 - depth * 0.3;   /* speed scale per layer */
+        return {
+            x:         rnd(0, canvas.width),
+            y:         rnd(0, canvas.height),
+            depth:     depth,
+            r:         rnd(1.0, 2.5) + (2 - depth) * 0.6,  /* size parallax */
+            dx:        rnd(-0.28, 0.28) * sf,
+            dy:        rnd(-0.28, 0.28) * sf,               /* all directions */
+            baseAlpha: rnd(0.4, 0.75) + (2 - depth) * 0.1,
+            phase:     rnd(0, Math.PI * 2),
+            pulse:     0,   /* 0–1: glow boost when a packet departs/arrives */
+        };
+    }
+
+    function init() {
+        nodes = []; packets = [];
+        /* ~1 node per 10,000 px², max 80 */
+        var count = Math.min(80, Math.floor(canvas.width * canvas.height / 10000));
+        for (var i = 0; i < count; i++) nodes.push(createNode());
+    }
+
+    /* Draw a gradient line — purple hue on one end, cyan on the other */
+    function gradientLine(x1, y1, h1, x2, y2, h2, alpha, lineW, dark) {
+        var grad = ctx.createLinearGradient(x1, y1, x2, y2);
+        if (dark) {
+            grad.addColorStop(0, 'hsla(' + h1 + ',100%,65%,' + alpha + ')');
+            grad.addColorStop(1, 'hsla(' + h2 + ',100%,65%,' + alpha + ')');
+        } else {
+            grad.addColorStop(0, 'hsla(' + h1 + ',70%,42%,' + alpha + ')');
+            grad.addColorStop(1, 'hsla(' + h2 + ',70%,42%,' + alpha + ')');
+        }
+        ctx.lineWidth   = lineW;
+        ctx.strokeStyle = grad;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        var dark = isDark();
+        time += 0.016;
+        var gHue = globalHue();
+
+        /* ---- synapse lines — also builds edge list for packet spawning ---- */
+        var edges = [];
+        for (var ii = 0; ii < nodes.length - 1; ii++) {
+            for (var jj = ii + 1; jj < nodes.length; jj++) {
+                var na = nodes[ii], nb = nodes[jj];
+                var ddx = na.x - nb.x, ddy = na.y - nb.y;
+                var dist = Math.sqrt(ddx * ddx + ddy * ddy);
+                if (dist < CONNECT_DIST) {
+                    var dDepth = Math.abs(na.depth - nb.depth);
+                    var lineA  = (1 - dist / CONNECT_DIST)
+                                 * (dark ? 0.38 : 0.15)
+                                 * (1 - dDepth * 0.2);
+                    /* pulse-brighten edges connected to active nodes */
+                    var pulseBoost = 1 + Math.max(na.pulse, nb.pulse) * 2;
+                    lineA = Math.min(lineA * pulseBoost, dark ? 0.75 : 0.35);
+                    var lineW = (0.75 - dDepth * 0.12)
+                                * (1 + Math.max(na.pulse, nb.pulse) * 0.6);
+                    /* per-node hue offset for colour variety along the network */
+                    var h1 = gHue + (ii % 7 - 3) * 12;
+                    var h2 = gHue + (jj % 7 - 3) * 12;
+                    gradientLine(na.x, na.y, h1, nb.x, nb.y, h2, lineA, lineW, dark);
+                    edges.push(ii, jj);
+                }
+            }
+        }
+
+        /* ---- spawn data packets ---- */
+        if (packets.length < MAX_PACKETS && edges.length > 0 && Math.random() < 0.09) {
+            var pick = Math.floor(Math.random() * (edges.length / 2)) * 2;
+            var ai   = edges[pick], bi = edges[pick + 1];
+            packets.push({
+                ai:    ai,
+                bi:    bi,
+                t:     0,
+                speed: rnd(0.012, 0.030),
+                hue:   gHue + rnd(-45, 45),
+                trail: [],   /* [{x,y}] for comet effect, max 8 points */
+            });
+            if (nodes[ai]) nodes[ai].pulse = 1;   /* source node fires */
+        }
+
+        /* ---- draw data packets with comet trail ---- */
+        for (var k = packets.length - 1; k >= 0; k--) {
+            var pk  = packets[k];
+            var pna = nodes[pk.ai], pnb = nodes[pk.bi];
+            if (!pna || !pnb) { packets.splice(k, 1); continue; }
+            pk.t += pk.speed;
+            if (pk.t >= 1) {
+                if (pnb) pnb.pulse = 1;   /* destination node lights up */
+                packets.splice(k, 1);
+                continue;
+            }
+            var px = pna.x + (pnb.x - pna.x) * pk.t;
+            var py = pna.y + (pnb.y - pna.y) * pk.t;
+
+            /* store trail, keep last 8 positions */
+            pk.trail.push({ x: px, y: py });
+            if (pk.trail.length > 8) pk.trail.shift();
+
+            /* draw fading comet tail */
+            for (var ti = 0; ti < pk.trail.length; ti++) {
+                var tf = (ti + 1) / pk.trail.length;   /* fade factor: older→newer, opacity increases toward packet head */
+                ctx.save();
+                ctx.globalAlpha = tf * (dark ? 0.55 : 0.28);
+                ctx.beginPath();
+                ctx.arc(pk.trail[ti].x, pk.trail[ti].y, 1.4 * tf, 0, Math.PI * 2);
+                ctx.fillStyle = 'hsla(' + pk.hue + ',100%,82%,1)';
+                ctx.fill();
+                ctx.restore();
+            }
+
+            /* bright packet head */
+            ctx.save();
+            ctx.shadowBlur  = 14;
+            ctx.shadowColor = 'hsla(' + pk.hue + ',100%,85%,1)';
+            ctx.beginPath();
+            ctx.arc(px, py, 2.6, 0, Math.PI * 2);
+            ctx.fillStyle = dark
+                ? 'hsla(' + pk.hue + ',100%,92%,1)'
+                : 'hsla(' + pk.hue + ',90%,55%,0.95)';
+            ctx.fill();
+            ctx.restore();
+        }
+
+        /* ---- neuron nodes ---- */
+        for (var ni = 0; ni < nodes.length; ni++) {
+            var p = nodes[ni];
+            var tw = p.baseAlpha * (0.55 + 0.45 * Math.sin(time * 1.4 + p.phase));
+            if (!dark) tw *= 0.55;
+            var nHue     = gHue + (p.depth - 1) * 28;
+            var glowMult = 1 + p.pulse * 3.5;   /* dramatic pulse flare */
+
+            ctx.save();
+            ctx.shadowBlur  = p.r * 9 * glowMult;
+            ctx.shadowColor = dark
+                ? 'hsla(' + nHue + ',100%,72%,' + Math.min(0.9 * glowMult, 1) + ')'
+                : 'hsla(' + nHue + ',80%,45%,0.55)';
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r * (1 + p.pulse * 0.6), 0, Math.PI * 2);
+            ctx.fillStyle = dark
+                ? 'hsla(' + nHue + ',100%,80%,' + Math.min(tw + p.pulse * 0.45, 1) + ')'
+                : 'hsla(' + nHue + ',75%,46%,' + tw + ')';
+            ctx.fill();
+            ctx.restore();
+
+            /* decay pulse */
+            if (p.pulse > 0) p.pulse = Math.max(0, p.pulse - 0.035);
+
+            /* drift — bidirectional, wrap all four edges */
+            p.x += p.dx;
+            p.y += p.dy;
+            if (p.x < -10)               p.x = canvas.width  + 10;
+            if (p.x > canvas.width  + 10) p.x = -10;
+            if (p.y < -10)               p.y = canvas.height + 10;
+            if (p.y > canvas.height + 10) p.y = -10;
+        }
+
+        raf = requestAnimationFrame(draw);
+    }
+
+    resize(); init(); draw();
+    window.addEventListener('resize', function() { cancelAnimationFrame(raf); resize(); init(); draw(); });
+})();
+</script>
 <?php View::endSection(); ?>

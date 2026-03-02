@@ -33,6 +33,7 @@ try {
             --bg-primary: #06060a;
             --bg-secondary: #0c0c12;
             --bg-card: #0f0f18;
+            --card-inner-bg: #0f0f18;
             --cyan: #00f0ff;
             --magenta: #ff2ec4;
             --green: #00ff88;
@@ -50,62 +51,66 @@ try {
         
         /* Light Theme */
         [data-theme="light"] {
-            --bg-primary: #f8f9fa;
+            --bg-primary: #f0f4ff;
             --bg-secondary: #ffffff;
             --bg-card: #ffffff;
+            --card-inner-bg: rgba(255, 255, 255, 0.90);
+            --cyan: #0369a1;
+            --magenta: #c026d3;
+            --green: #059669;
+            --orange: #d97706;
+            --purple: #7c3aed;
+            --red: #dc2626;
             --text-primary: #1a1a1a;
-            --text-secondary: #666666;
+            --text-secondary: #555555;
             --border-color: rgba(0, 0, 0, 0.1);
-            --shadow-glow: 0 0 20px rgba(0, 0, 0, 0.1);
-            --hover-bg: rgba(0, 153, 204, 0.1);
-            --shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            --shadow-glow: 0 0 20px rgba(124, 58, 237, 0.12);
+            --hover-bg: rgba(124, 58, 237, 0.08);
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
         }
-        
+
+        /* Animated light-mode background */
+        [data-theme="light"] body {
+            background: #f0f4ff;
+        }
+
         [data-theme="light"] body::before {
             content: '';
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            inset: 0;
+            pointer-events: none;
             z-index: -1;
-            background: 
-                radial-gradient(ellipse at 20% 0%, rgba(0, 240, 255, 0.08) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 100%, rgba(255, 46, 196, 0.08) 0%, transparent 50%),
-                repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(0, 240, 255, 0.03) 35px, rgba(0, 240, 255, 0.03) 70px);
-            animation: techBgMove 20s ease-in-out infinite;
+            animation: lightBgFlow 16s ease-in-out infinite alternate;
         }
-        
-        @keyframes techBgMove {
-            0%, 100% {
-                transform: translateY(0) scale(1);
-            }
-            50% {
-                transform: translateY(-20px) scale(1.05);
-            }
-        }
-        
+
         [data-theme="light"] body::after {
-            content: '';
-            position: fixed;
-            top: -50%;
-            left: -50%;
-            right: -50%;
-            bottom: -50%;
-            z-index: -2;
-            background-image: 
-                radial-gradient(circle at 20% 80%, rgba(0, 240, 255, 0.06) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(153, 69, 255, 0.06) 0%, transparent 50%),
-                radial-gradient(circle at 40% 40%, rgba(255, 170, 0, 0.04) 0%, transparent 30%);
-            animation: techBgRotate 30s linear infinite;
+            display: none;
         }
-        
-        @keyframes techBgRotate {
-            from {
-                transform: rotate(0deg);
+
+        @keyframes lightBgFlow {
+            0% {
+                background:
+                    radial-gradient(ellipse at 10% 10%, rgba(124, 58, 237, 0.14) 0%, transparent 50%),
+                    radial-gradient(ellipse at 90% 90%, rgba(0, 153, 204, 0.12) 0%, transparent 50%),
+                    radial-gradient(ellipse at 60% 50%, rgba(0, 245, 255, 0.06) 0%, transparent 40%);
             }
-            to {
-                transform: rotate(360deg);
+            33% {
+                background:
+                    radial-gradient(ellipse at 85% 15%, rgba(124, 58, 237, 0.12) 0%, transparent 50%),
+                    radial-gradient(ellipse at 15% 85%, rgba(0, 153, 204, 0.14) 0%, transparent 50%),
+                    radial-gradient(ellipse at 40% 20%, rgba(0, 245, 255, 0.07) 0%, transparent 40%);
+            }
+            66% {
+                background:
+                    radial-gradient(ellipse at 50% 90%, rgba(0, 153, 204, 0.10) 0%, transparent 50%),
+                    radial-gradient(ellipse at 60% 10%, rgba(124, 58, 237, 0.14) 0%, transparent 50%),
+                    radial-gradient(ellipse at 20% 50%, rgba(0, 245, 255, 0.06) 0%, transparent 40%);
+            }
+            100% {
+                background:
+                    radial-gradient(ellipse at 10% 10%, rgba(124, 58, 237, 0.14) 0%, transparent 50%),
+                    radial-gradient(ellipse at 90% 90%, rgba(0, 153, 204, 0.12) 0%, transparent 50%),
+                    radial-gradient(ellipse at 60% 50%, rgba(0, 245, 255, 0.06) 0%, transparent 40%);
             }
         }
         
@@ -606,11 +611,70 @@ try {
             border-radius: 10px;
             padding: 20px;
             transition: var(--transition);
+            /* Required by rotating border animation */
+            position: relative;
+            overflow: hidden;
         }
         
         .card:hover {
             border-color: rgba(0, 240, 255, 0.3);
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        /* === Professional rotating border-light animation === */
+        @keyframes card-border-spin {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to   { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        /* Rotating spotlight sweep — visible only at the card edge */
+        .card::before {
+            content: '';
+            position: absolute;
+            width: 180%;
+            height: 180%;
+            top: 50%;
+            left: 50%;
+            background: conic-gradient(
+                from 0deg,
+                transparent 0deg 100deg,
+                rgba(124, 58, 237, 0.55) 100deg 160deg,
+                rgba(0, 245, 255, 0.45) 160deg 210deg,
+                rgba(255, 46, 196, 0.35) 210deg 250deg,
+                transparent 250deg 360deg
+            );
+            animation: card-border-spin 8s linear infinite;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* Inner fill — hides the centre so only the 1 px border edge glows */
+        .card::after {
+            content: '';
+            position: absolute;
+            inset: 1px;
+            border-radius: 9px;
+            background: var(--card-inner-bg);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* Raise all direct children above the animated border layers */
+        .card > * {
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Light-mode: softer, accessible palette for the sweep */
+        [data-theme="light"] .card::before {
+            background: conic-gradient(
+                from 0deg,
+                transparent 0deg 100deg,
+                rgba(124, 58, 237, 0.35) 100deg 160deg,
+                rgba(3, 105, 161, 0.30) 160deg 210deg,
+                rgba(255, 46, 196, 0.20) 210deg 250deg,
+                transparent 250deg 360deg
+            );
         }
         
         .card-header {
@@ -890,6 +954,65 @@ try {
             display: flex;
         }
         
+        /* ===== Light Mode Component Overrides ===== */
+        [data-theme="light"] .header {
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        [data-theme="light"] .nav a:hover,
+        [data-theme="light"] .nav a.active,
+        [data-theme="light"] .nav-link:hover {
+            background: rgba(124, 58, 237, 0.08);
+            color: var(--purple);
+        }
+
+        [data-theme="light"] .theme-toggle:hover {
+            background: rgba(124, 58, 237, 0.08);
+            border-color: var(--purple);
+        }
+
+        [data-theme="light"] .dropdown-item:hover {
+            background: rgba(124, 58, 237, 0.08);
+            color: var(--purple);
+        }
+
+        [data-theme="light"] .user-menu-trigger:hover {
+            border-color: var(--purple);
+        }
+
+        [data-theme="light"] .user-menu-item:hover {
+            background: rgba(124, 58, 237, 0.06);
+            color: var(--purple);
+        }
+
+        [data-theme="light"] .user-menu-dropdown {
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        [data-theme="light"] .table tr:hover td {
+            background: rgba(0, 0, 0, 0.03);
+        }
+
+        [data-theme="light"] .form-input:focus {
+            box-shadow: 0 0 0 3px rgba(3, 105, 161, 0.15);
+        }
+
+        [data-theme="light"] .badge-info {
+            background: rgba(3, 105, 161, 0.10);
+        }
+
+        [data-theme="light"] .btn-secondary:hover {
+            box-shadow: 0 0 15px rgba(124, 58, 237, 0.15);
+        }
+
+        @media (max-width: 768px) {
+            [data-theme="light"] .nav {
+                background: rgba(255, 255, 255, 0.98);
+                box-shadow: -5px 0 20px rgba(0, 0, 0, 0.12);
+            }
+        }
+
         /* Dashboard Layout Styles */
         .full-dashboard-layout {
             display: grid;
