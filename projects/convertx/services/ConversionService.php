@@ -197,7 +197,7 @@ class ConversionService
             return $this->convertWithPhp($inputPath, $inputFormat, $outputFormat, $outputPath);
         }
 
-        $imageFormats  = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'svg'];
+        $imageFormats  = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'svg', 'ico'];
         $isInputImage  = in_array($inputFormat, $imageFormats, true);
         $isOutputImage = in_array($outputFormat, $imageFormats, true);
 
@@ -290,8 +290,20 @@ class ConversionService
         // 'html' is included so that docx→html and xlsx→html use LibreOffice's
         // HTML export filter rather than falling through to Pandoc (step 8), which
         // may not be installed.
-        $officeFormats = ['pdf', 'docx', 'doc', 'odt', 'rtf', 'html', 'xlsx', 'xls', 'ods', 'pptx', 'ppt', 'odp'];
+        // 'epub' is handled by LibreOffice Writer (requires the epub export extension).
+        $officeFormats = ['pdf', 'docx', 'doc', 'odt', 'rtf', 'html', 'xlsx', 'xls', 'ods', 'pptx', 'ppt', 'odp', 'epub'];
         if (in_array($inputFormat, $officeFormats, true) || in_array($outputFormat, $officeFormats, true)) {
+            // Guard: LibreOffice crashes (SIGABRT/exit 134) when importing a PDF
+            // into Calc or Impress — the same crash that happens in convertViaChain.
+            if ($inputFormat === 'pdf'
+                && in_array($outputFormat, ['xlsx', 'xls', 'ods', 'csv', 'pptx', 'ppt', 'odp'], true)
+            ) {
+                throw new \RuntimeException(
+                    "Direct PDF to {$outputFormat} conversion is not supported — LibreOffice cannot "
+                    . "reliably import PDFs into Calc or Impress. "
+                    . "Consider converting to a Writer format (docx/odt/txt) first."
+                );
+            }
             return $this->convertWithLibreOffice($inputPath, $inputFormat, $outputFormat, $outputPath);
         }
 
@@ -311,7 +323,7 @@ class ConversionService
      */
     private function canConvertWithPhp(string $inputFormat, string $outputFormat): bool
     {
-        $phpFormats = ['txt', 'html', 'md', 'csv'];
+        $phpFormats = ['txt', 'html', 'md', 'csv', 'tsv'];
         return in_array($inputFormat, $phpFormats, true)
             && in_array($outputFormat, $phpFormats, true);
     }
@@ -370,11 +382,45 @@ class ConversionService
             return $this->csvToText($inputPath, $outputPath);
         }
 
-        // TXT → CSV (single-column)
+        // TSV → TXT
+        if ($inputFormat === 'tsv' && $outputFormat === 'txt') {
+            return $this->csvToText($inputPath, $outputPath, "\t");
+        }
+
+        // TXT → CSV (single-column) — RFC 4180 via fputcsv
         if ($inputFormat === 'txt' && $outputFormat === 'csv') {
-            $lines  = explode("\n", str_replace("\r\n", "\n", $content));
-            $output = implode("\n", array_map(fn($l) => '"' . str_replace('"', '""', $l) . '"', $lines));
-            return file_put_contents($outputPath, $output) !== false;
+            $lines = preg_split('/\r\n|\r|\n/', $content) ?: [];
+            $fh = fopen($outputPath, 'w');
+            if (!$fh) {
+                return false;
+            }
+            foreach ($lines as $line) {
+                fputcsv($fh, [$line]);
+            }
+            fclose($fh);
+            return file_exists($outputPath);
+        }
+
+        // CSV ↔ TSV — change delimiter
+        if (in_array($inputFormat, ['csv', 'tsv'], true) && in_array($outputFormat, ['csv', 'tsv'], true)) {
+            $inDelim  = ($inputFormat  === 'tsv') ? "\t" : ',';
+            $outDelim = ($outputFormat === 'tsv') ? "\t" : ',';
+            $fhIn  = fopen($inputPath,  'r');
+            $fhOut = fopen($outputPath, 'w');
+            if (!$fhIn || !$fhOut) {
+                return false;
+            }
+            while (($row = fgetcsv($fhIn, 0, $inDelim)) !== false) {
+                fputcsv($fhOut, $row, $outDelim);
+            }
+            fclose($fhIn);
+            fclose($fhOut);
+            return file_exists($outputPath);
+        }
+
+        // TSV → any other format: treat same as CSV conversion via TSV delimiter
+        if ($inputFormat === 'tsv') {
+            return $this->csvToText($inputPath, $outputPath, "\t");
         }
 
         // HTML → MD (basic)
@@ -513,6 +559,7 @@ class ConversionService
             'odt'  => 'odt:writer8',
             'rtf'  => 'rtf:Rich Text Format',
             'txt'  => 'txt:Text',
+            'epub' => 'epub:EPUB Export',
             // Calc / spreadsheet
             'xlsx' => 'xlsx:Calc MS Excel 2007 XML',
             'xls'  => 'xls:MS Excel 97',
@@ -547,11 +594,11 @@ class ConversionService
         string $outputPath,
         array  $options
     ): bool {
-        $imageFormats = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'svg'];
+        $imageFormats = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'svg', 'ico'];
         $isInputImage = in_array($inputFormat, $imageFormats, true);
 
         // Unique intermediate PDF in system temp dir
-        $tmpPdf = sys_get_temp_dir() . '/cx_chain_' . getmypid() . '_' . uniqid() . '.pdf';
+        $tmpPdf = sys_get_temp_dir() . '/cx_chain_' . getmypid() . '_' . bin2hex(random_bytes(8)) . '.pdf';
 
         try {
             // ── Step 1: convert input to intermediate PDF ──────────────────
@@ -950,12 +997,11 @@ class ConversionService
     ): bool {
         $text = '';
 
-        // 1. Tesseract (best for raster OCR)
+        // 1. Tesseract (best for raster OCR) — cryptographically unique temp path,
+        //    no pre-created placeholder file, no tempnam race condition.
         $tess = trim((string) shell_exec('which tesseract 2>/dev/null'));
         if ($tess) {
-            $tmpBase = tempnam(sys_get_temp_dir(), 'cx_tess_');
-            @unlink($tmpBase);
-            // tesseract writes <base>.txt automatically
+            $tmpBase = sys_get_temp_dir() . '/cx_tess_' . getmypid() . '_' . bin2hex(random_bytes(8));
             $lang = 'eng';
             exec(
                 escapeshellarg($tess) . ' ' . escapeshellarg($inputPath)
@@ -967,7 +1013,6 @@ class ConversionService
                 $text = (string) file_get_contents($tessOut);
                 @unlink($tessOut);
             }
-            @unlink($tmpBase);
         }
 
         // 2. If no Tesseract text, give a meaningful error rather than garbage
@@ -982,24 +1027,26 @@ class ConversionService
         $text = mb_convert_encoding($text, 'UTF-8', 'UTF-8');
         switch ($outputFormat) {
             case 'html':
-                $body = nl2br(htmlspecialchars($text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'));
+                $body    = nl2br(htmlspecialchars($text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'));
                 $content = "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"></head><body><p>{$body}</p></body></html>";
-                break;
+                return file_put_contents($outputPath, $content) !== false;
             case 'md':
-                $content = $text;
-                break;
+                return file_put_contents($outputPath, $text) !== false;
             case 'csv':
-                // Each non-empty line becomes a single-column CSV row
-                $lines   = preg_split('/\r\n|\r|\n/', trim($text)) ?: [];
-                $rows    = array_map(fn($l) => '"' . str_replace('"', '""', $l) . '"', $lines);
-                $content = implode("\n", $rows) . "\n";
-                break;
+                // Each non-empty line becomes a single-column RFC 4180 CSV row
+                $fh = fopen($outputPath, 'w');
+                if (!$fh) {
+                    return false;
+                }
+                $lines = preg_split('/\r\n|\r|\n/', trim($text)) ?: [];
+                foreach ($lines as $line) {
+                    fputcsv($fh, [$line]);
+                }
+                fclose($fh);
+                return file_exists($outputPath);
             default: // txt
-                $content = $text;
-                break;
+                return file_put_contents($outputPath, $text) !== false;
         }
-
-        return file_put_contents($outputPath, $content) !== false;
     }
 
     private function convertWithLibreOffice(
@@ -1135,14 +1182,14 @@ class ConversionService
         return true;
     }
 
-    private function csvToText(string $inputPath, string $outputPath): bool
+    private function csvToText(string $inputPath, string $outputPath, string $delimiter = ','): bool
     {
         $lines = file($inputPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
         if ($lines === false) {
             return false;
         }
-        $text = implode("\n", array_map(function ($line) {
-            return implode("\t", str_getcsv($line));
+        $text = implode("\n", array_map(function ($line) use ($delimiter) {
+            return implode("\t", str_getcsv($line, $delimiter));
         }, $lines));
         return file_put_contents($outputPath, $text) !== false;
     }

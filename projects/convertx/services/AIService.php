@@ -594,8 +594,9 @@ class AIService
         // 1. Tesseract — proper OCR for raster images and scanned PDFs
         $tess = trim((string) shell_exec('which tesseract 2>/dev/null'));
         if ($tess) {
-            $tmpBase = tempnam(sys_get_temp_dir(), 'cx_tess_');
-            @unlink($tmpBase);
+            // Use a cryptographically unique path so Tesseract can write <base>.txt
+            // without a pre-created placeholder file (no tempnam race condition).
+            $tmpBase = sys_get_temp_dir() . '/cx_tess_' . getmypid() . '_' . bin2hex(random_bytes(8));
             exec(
                 escapeshellarg($tess) . ' ' . escapeshellarg($filePath)
                 . ' ' . escapeshellarg($tmpBase) . ' -l eng 2>/dev/null',
@@ -605,13 +606,11 @@ class AIService
             if ($tessCode === 0 && file_exists($tessOut)) {
                 $text = (string) file_get_contents($tessOut);
                 @unlink($tessOut);
-                @unlink($tmpBase);
                 if (!empty(trim($text))) {
                     return ['success' => true, 'text' => $text, 'tokens' => 0,
                             'provider' => 'tesseract', 'error' => ''];
                 }
             }
-            @unlink($tmpBase);
         }
 
         // 2. pdftotext — best for digital (non-scanned) PDFs

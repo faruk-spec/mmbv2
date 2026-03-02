@@ -540,7 +540,8 @@ class ConvertXAdminController extends BaseController
                 $tess    = trim((string) shell_exec('which tesseract 2>/dev/null'));
                 $latency = (int) round((microtime(true) - $start) * 1000);
                 if ($tess) {
-                    $ver = trim((string) shell_exec('tesseract --version 2>&1 | head -1'));
+                    exec('tesseract --version 2>&1', $verLines);
+                    $ver = trim($verLines[0] ?? 'unknown');
                     $this->db->query(
                         "UPDATE convertx_ai_providers SET is_healthy=1, health_checked_at=NOW() WHERE id=:id",
                         ['id' => $id]
