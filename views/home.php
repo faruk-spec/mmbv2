@@ -2,64 +2,120 @@
 <?php View::extend('main'); ?>
 
 <?php View::section('styles'); ?>
+<!-- particles.js -->
+<script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+<!-- three.js -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <style>
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
+    /* ── Futuristic Home Page Theme ── */
+
+    /* Override background for homepage */
+    body.home-page {
+        background: #0b0f19 !important;
     }
-    
+
+    /* Particles layer */
+    #home-particles {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+    }
+
+    /* Mouse glow overlay */
+    #home-mouse-glow {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        background: radial-gradient(600px circle at var(--mx, 50%) var(--my, 50%), rgba(124, 58, 237, 0.12) 0%, transparent 70%);
+        transition: background 0.05s ease;
+    }
+
+    /* Ensure content sits above particles */
+    .home-page > main,
+    .home-page .hero,
+    .home-page .card,
+    .home-page [class*="grid"],
+    .home-page footer {
+        position: relative;
+        z-index: 1;
+    }
+
+    /* ── Gradient text: purple → cyan ── */
+    .home-page .hero h1,
+    .home-page .stat-value {
+        background: linear-gradient(135deg, #7C3AED, #00F5FF) !important;
+        -webkit-background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
+        background-clip: text !important;
+    }
+
+    /* ── Glassmorphism cards ── */
+    .home-page .card {
+        background: rgba(15, 15, 30, 0.6) !important;
+        backdrop-filter: blur(14px) !important;
+        -webkit-backdrop-filter: blur(14px) !important;
+        border: 1px solid rgba(124, 58, 237, 0.25) !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255,255,255,0.04) !important;
+        transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease !important;
+    }
+
+    .home-page .card:hover {
+        transform: translateY(-6px) !important;
+        box-shadow: 0 16px 40px rgba(124, 58, 237, 0.3), 0 0 20px rgba(0, 245, 255, 0.15) !important;
+        border-color: rgba(0, 245, 255, 0.45) !important;
+    }
+
+    /* ── Neon stat value ── */
+    .home-page .stat-value {
+        text-shadow: 0 0 20px rgba(0, 245, 255, 0.4);
+    }
+
+    /* ── Pulse animation for stat values ── */
+    @keyframes homePulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.8; }
+    }
+
+    .home-page .stat-value {
+        animation: homePulse 3s ease-in-out infinite;
+    }
+
+    /* ── fadeIn animation ── */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
     .animate-fade-in {
         animation: fadeIn 0.6s ease-out forwards;
         opacity: 0;
     }
-    
+
+    /* ── Hero banner ── */
     .hero-banner {
         max-width: 100%;
         height: auto;
         border-radius: 12px;
-        box-shadow: var(--shadow-glow);
+        box-shadow: 0 0 40px rgba(124, 58, 237, 0.35);
         margin-bottom: 30px;
         animation: fadeIn 0.8s ease-out;
     }
-    
-    .stat-card {
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-    
-    .stat-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 30px rgba(0, 240, 255, 0.3);
-    }
-    
-    .stat-value {
-        font-size: 2.5rem;
-        font-weight: 700;
-        background: linear-gradient(135deg, var(--cyan), var(--magenta));
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        margin-bottom: 8px;
-        animation: fadeIn 1s ease-out;
-    }
-    
+
+    /* ── Timeline item ── */
     .timeline-item {
         position: relative;
         padding-left: 70px;
         margin-bottom: 30px;
     }
-    
+
     .timeline-badge {
         position: absolute;
         left: 0;
         width: 50px;
         height: 50px;
-        background: linear-gradient(135deg, var(--cyan), var(--magenta));
+        background: linear-gradient(135deg, #7C3AED, #00F5FF);
         border-radius: 50%;
         display: flex;
         align-items: center;
@@ -67,20 +123,49 @@
         font-weight: 700;
         color: white;
         font-size: 13px;
+        box-shadow: 0 0 15px rgba(124, 58, 237, 0.5);
     }
-    
+
+    /* ── Three.js sphere canvas ── */
+    #home-sphere-canvas {
+        width: 100% !important;
+        height: 100% !important;
+        border-radius: 12px;
+    }
+
+    /* ── Filter buttons neon style ── */
+    .home-page .filter-btn {
+        transition: all 0.3s ease !important;
+    }
+
+    .home-page .filter-btn.active {
+        box-shadow: 0 0 15px rgba(0, 245, 255, 0.5) !important;
+    }
+
+    /* ── Neon hover on project cards ── */
+    .home-page .project-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+    }
+
+    .home-page .project-card:hover {
+        box-shadow: 0 0 25px rgba(124, 58, 237, 0.4), 0 8px 30px rgba(0,0,0,0.4) !important;
+    }
+
+    /* ── Subtle neon glow on buttons ── */
+    .home-page .btn-primary {
+        box-shadow: 0 0 20px rgba(124, 58, 237, 0.4) !important;
+        transition: box-shadow 0.3s ease, transform 0.3s ease !important;
+    }
+
+    .home-page .btn-primary:hover {
+        box-shadow: 0 0 30px rgba(0, 245, 255, 0.6) !important;
+        transform: translateY(-2px) !important;
+    }
+
     @media (max-width: 768px) {
-        .grid-3, .grid-4 {
-            grid-template-columns: 1fr;
-        }
-        
-        .hero h1 {
-            font-size: 1.8rem !important;
-        }
-        
-        .hero h2 {
-            font-size: 1.2rem !important;
-        }
+        .grid-3, .grid-4 { grid-template-columns: 1fr; }
+        .hero h1 { font-size: 1.8rem !important; }
+        .hero h2 { font-size: 1.2rem !important; }
     }
 </style>
 <?php View::endSection(); ?>
@@ -815,4 +900,96 @@ $timelineItems = $db->fetchAll("SELECT * FROM home_timeline WHERE is_active = 1 
 }
 </style>
 <?php endif; ?>
+<?php View::endSection(); ?>
+
+<?php View::section('scripts'); ?>
+<script>
+(function() {
+    // Add home-page class to body for scoped CSS
+    document.body.classList.add('home-page');
+
+    // ── Particles.js background ──
+    var pDiv = document.createElement('div');
+    pDiv.id = 'home-particles';
+    document.body.insertBefore(pDiv, document.body.firstChild);
+
+    if (typeof particlesJS !== 'undefined') {
+        particlesJS('home-particles', {
+            particles: {
+                number: { value: 70, density: { enable: true, value_area: 900 } },
+                color: { value: ['#7C3AED', '#00F5FF', '#a855f7'] },
+                shape: { type: 'circle' },
+                opacity: { value: 0.5, random: true, anim: { enable: true, speed: 0.5, opacity_min: 0.1, sync: false } },
+                size: { value: 2.5, random: true },
+                line_linked: { enable: true, distance: 140, color: '#7C3AED', opacity: 0.2, width: 1 },
+                move: { enable: true, speed: 1.2, direction: 'none', random: true, straight: false, out_mode: 'out' }
+            },
+            interactivity: {
+                detect_on: 'canvas',
+                events: { onhover: { enable: true, mode: 'grab' }, onclick: { enable: false }, resize: true },
+                modes: { grab: { distance: 140, line_linked: { opacity: 0.5 } } }
+            },
+            retina_detect: true
+        });
+    }
+
+    // ── Radial mouse glow ──
+    var glowEl = document.createElement('div');
+    glowEl.id = 'home-mouse-glow';
+    document.body.insertBefore(glowEl, document.body.firstChild);
+
+    document.addEventListener('mousemove', function(e) {
+        glowEl.style.setProperty('--mx', e.clientX + 'px');
+        glowEl.style.setProperty('--my', e.clientY + 'px');
+    });
+
+    // ── Rotating wireframe Three.js sphere ──
+    if (typeof THREE !== 'undefined') {
+        // Find the hero right column placeholder
+        var heroPlaceholder = document.querySelector('.hero [style*="aspect-ratio"]');
+        if (heroPlaceholder) {
+            // Replace the SVG placeholder with a Three.js canvas
+            heroPlaceholder.innerHTML = '';
+            var sphereCanvas = document.createElement('canvas');
+            sphereCanvas.id = 'home-sphere-canvas';
+            heroPlaceholder.appendChild(sphereCanvas);
+
+            var renderer = new THREE.WebGLRenderer({ canvas: sphereCanvas, alpha: true, antialias: true });
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setSize(heroPlaceholder.offsetWidth, heroPlaceholder.offsetHeight);
+
+            var scene = new THREE.Scene();
+            var camera = new THREE.PerspectiveCamera(50, heroPlaceholder.offsetWidth / heroPlaceholder.offsetHeight, 0.1, 100);
+            camera.position.z = 3;
+
+            var geo = new THREE.SphereGeometry(1.2, 20, 20);
+            var wire = new THREE.WireframeGeometry(geo);
+            var mat = new THREE.LineBasicMaterial({ color: 0x7C3AED, opacity: 0.7, transparent: true });
+            var sphere = new THREE.LineSegments(wire, mat);
+            scene.add(sphere);
+
+            // Inner glow sphere
+            var innerGeo = new THREE.SphereGeometry(1.19, 20, 20);
+            var innerMat = new THREE.MeshBasicMaterial({ color: 0x00F5FF, wireframe: true, opacity: 0.08, transparent: true });
+            scene.add(new THREE.Mesh(innerGeo, innerMat));
+
+            function animateSphere() {
+                requestAnimationFrame(animateSphere);
+                sphere.rotation.x += 0.003;
+                sphere.rotation.y += 0.005;
+                renderer.render(scene, camera);
+            }
+            animateSphere();
+
+            window.addEventListener('resize', function() {
+                var w = heroPlaceholder.offsetWidth;
+                var h = heroPlaceholder.offsetHeight;
+                renderer.setSize(w, h);
+                camera.aspect = w / h;
+                camera.updateProjectionMatrix();
+            });
+        }
+    }
+})();
+</script>
 <?php View::endSection(); ?>

@@ -586,6 +586,14 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
         });
     }
 
+    // Close notification panel when clicking outside
+    document.addEventListener('click', function(e) {
+        const drop = document.getElementById('notifDropdown');
+        if (drop && drop.classList.contains('active') && !drop.contains(e.target)) {
+            drop.classList.remove('active');
+        }
+    });
+
     // Reload every 60s when tab is visible
     setInterval(function() {
         if (!document.hidden) {

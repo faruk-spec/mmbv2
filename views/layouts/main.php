@@ -115,6 +115,10 @@ try {
             box-sizing: border-box;
         }
         
+        html {
+            font-size: clamp(8px, 0.7vw, 10px);
+        }
+        
         html, body {
             width: 100%;
             overflow-x: hidden;
@@ -127,7 +131,7 @@ try {
             color: var(--text-primary);
             min-height: 100vh;
             line-height: 1.6;
-            font-size: 14px;
+            font-size: 1.4rem;
             overflow-y: auto;
         }
         
@@ -135,7 +139,7 @@ try {
         h2 { font-size: 1.5rem; }
         h3 { font-size: 1.25rem; }
         h4 { font-size: 1.1rem; }
-        p { font-size: 14px; }
+        p { font-size: 1.4rem; }
         
         /* Background Effects */
         body::before {
