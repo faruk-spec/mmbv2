@@ -146,6 +146,13 @@ $router->get('/admin/projects/proshare/notifications', 'Admin\\ProShareAdminCont
 // Analytics & Insights
 $router->get('/admin/projects/proshare/analytics', 'Admin\\ProShareAdminController@analytics', ['auth', 'admin']);
 
+// BillX admin routes
+$router->get('/admin/projects/billx', 'Admin\\BillXAdminController@overview', ['auth', 'admin']);
+$router->get('/admin/projects/billx/bills', 'Admin\\BillXAdminController@bills', ['auth', 'admin']);
+$router->post('/admin/projects/billx/bills/delete', 'Admin\\BillXAdminController@deleteBill', ['auth', 'admin']);
+$router->get('/admin/projects/billx/settings', 'Admin\\BillXAdminController@settings', ['auth', 'admin']);
+$router->post('/admin/projects/billx/settings', 'Admin\\BillXAdminController@settings', ['auth', 'admin']);
+
 // Project Database Setup routes
 $router->get('/admin/projects/database-setup', 'Admin\\ProjectDatabaseController@index', ['auth', 'admin']);
 $router->get('/admin/projects/database-setup/{project}', 'Admin\\ProjectDatabaseController@configure', ['auth', 'admin']);
