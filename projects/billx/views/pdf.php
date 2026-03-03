@@ -20,7 +20,7 @@ $tplStyle = $td['template_style'] ?? '1';
 <title><?= htmlspecialchars($typeLabel) ?> - <?= htmlspecialchars($bill['bill_number']) ?></title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=VT323&family=Inter:wght@400;500;600;700;900&family=Playfair+Display:wght@700&display=swap');
-@page { size: <?= $group==='thermal' ? '80mm auto' : 'A4 portrait' ?>; margin: <?= $group==='thermal' ? '0' : '12mm' ?>; }
+@page { size: <?= $group==='thermal' ? '80mm auto' : 'A4 portrait' ?>; margin: <?= $group==='thermal' ? '0' : '10mm 12mm' ?>; }
 * { box-sizing: border-box; }
 body { margin: 0; padding: 0; background: #fff; font-family: 'Inter', Arial, sans-serif; }
 @media screen { body { background: #e8e8e8; padding-top: 52px; padding-bottom: 20px; } }
@@ -41,8 +41,7 @@ body { margin: 0; padding: 0; background: #fff; font-family: 'Inter', Arial, san
 }
 .btn-download { background: #f59e0b; color: #fff; }
 .btn-download:hover { background: #d97706; }
-.btn-print-only { background: #37474f; color: #fff; }
-.btn-print-only:hover { background: #263238; }
+.btn-download:disabled { opacity: .65; cursor: not-allowed; }
 .btn-close-win { background: #e0e0e0; color: #333; }
 .btn-close-win:hover { background: #bdbdbd; }
 @media print {
@@ -57,8 +56,7 @@ body { margin: 0; padding: 0; background: #fff; font-family: 'Inter', Arial, san
 <div class="bill-action-bar">
     <span class="bill-info"><?= htmlspecialchars($typeLabel) ?> &mdash; #<?= htmlspecialchars($bill['bill_number']) ?></span>
     <button class="btn-close-win" onclick="history.length>1?history.back():window.location.href='/projects/billx/history'">&#8592; Back</button>
-    <button class="btn-print-only" onclick="window.print()">Print</button>
-    <button class="btn-download" onclick="window.print()">&#8659; Download PDF</button>
+    <button class="btn-download" id="downloadBtn" onclick="downloadBillPDF()">&#8659; Download PDF</button>
 </div>
 <div id="billDocument" style="<?= $group==='thermal' ? 'width:80mm;max-width:80mm;' : 'max-width:700px;' ?> margin:0 auto;">
 
@@ -650,7 +648,7 @@ body { margin: 0; padding: 0; background: #fff; font-family: 'Inter', Arial, san
     <?php if ($bill['from_address']): ?><div style="font-size:10px;opacity:.8;margin-top:5px;line-height:1.6;"><?= htmlspecialchars(str_replace("\n",' | ',$bill['from_address'])) ?></div><?php endif; ?>
     <?php if ($bill['from_phone']): ?><div style="font-size:10px;opacity:.8;">Tel: <?= htmlspecialchars($bill['from_phone']) ?></div><?php endif; ?>
     <?php if ($gstin): ?><div style="font-size:10px;opacity:.8;">GSTIN: <?= htmlspecialchars($gstin) ?></div><?php endif; ?>
-    <div style="font-size:11px;letter-spacing:4px;text-transform:uppercase;margin-top:10px;opacity:.85;">— Hotel Folio —</div>
+    <div style="font-size:11px;letter-spacing:4px;text-transform:uppercase;margin-top:10px;opacity:.85;">— <?= htmlspecialchars($typeLabel) ?> —</div>
   </div>
   <div style="background:#fdf0c0;padding:12px 28px;border-bottom:2px solid #c9a84c;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;">
     <div>
@@ -890,16 +888,90 @@ body { margin: 0; padding: 0; background: #fff; font-family: 'Inter', Arial, san
 <?php endif; ?>
 
 </div><!-- /billDocument -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous"
+    onerror="document.getElementById('downloadBtn').title='PDF library failed to load. Ensure internet access is available.'"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous"
+    onerror="document.getElementById('downloadBtn').title='PDF library failed to load. Ensure internet access is available.'"></script>
 <script>
+var _billGroup = <?= json_encode($group) ?>;
+var _billFilename = <?= json_encode(preg_replace('/[^a-zA-Z0-9._-]/', '-', ($typeLabel ?? 'bill') . '-' . ($bill['bill_number'] ?? 'bill')) . '.pdf') ?>;
+
+async function downloadBillPDF() {
+    if (typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined') {
+        alert('PDF download library not loaded. Please check your internet connection and refresh the page.');
+        return;
+    }
+    var btn = document.getElementById('downloadBtn');
+    var origText = btn.innerHTML;
+    btn.innerHTML = '&#8987; Generating&hellip;';
+    btn.disabled = true;
+    try {
+        var el = document.getElementById('billDocument');
+        // Temporarily hide action bar so it doesn't appear in PDF
+        var bar = document.querySelector('.bill-action-bar');
+        var barDisplay = bar ? bar.style.display : '';
+        if (bar) bar.style.display = 'none';
+
+        var canvas = await html2canvas(el, {
+            scale: 2,
+            useCORS: true,
+            logging: false,
+            backgroundColor: '#ffffff'
+        });
+        if (bar) bar.style.display = barDisplay;
+
+        var imgData = canvas.toDataURL('image/png');
+        var jsPDF = window.jspdf.jsPDF;
+        var pdf;
+
+        if (_billGroup === 'thermal') {
+            // 80mm roll: width = 80mm, height proportional
+            var mmWidth = 80;
+            var mmHeight = canvas.height * mmWidth / canvas.width;
+            pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [mmWidth, mmHeight] });
+            pdf.addImage(imgData, 'PNG', 0, 0, mmWidth, mmHeight);
+        } else {
+            pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+            var pageW = pdf.internal.pageSize.getWidth();
+            var pageH = pdf.internal.pageSize.getHeight();
+            var margin = 10;
+            var imgW = pageW - margin * 2;
+            var imgH = canvas.height * imgW / canvas.width;
+            var posY = margin;
+            if (imgH <= pageH - margin * 2) {
+                pdf.addImage(imgData, 'PNG', margin, posY, imgW, imgH);
+            } else {
+                // Multi-page
+                pdf.addImage(imgData, 'PNG', margin, posY, imgW, imgH);
+                var remaining = imgH - (pageH - margin);
+                while (remaining > 0) {
+                    pdf.addPage();
+                    posY -= (pageH - margin);
+                    pdf.addImage(imgData, 'PNG', margin, posY, imgW, imgH);
+                    remaining -= (pageH - margin);
+                }
+            }
+        }
+        pdf.save(_billFilename);
+    } catch (e) {
+        console.error('PDF error:', e);
+        alert('PDF generation failed: ' + e.message);
+    } finally {
+        btn.innerHTML = origText;
+        btn.disabled = false;
+    }
+}
+
 (function() {
     var params = new URLSearchParams(window.location.search);
-    var autoprint = params.get('autoprint') === '1' || params.get('download') === '1';
-    if (autoprint) {
-        var trigger = function() { setTimeout(function() { window.print(); }, 400); };
+    // ?download=1 triggers auto PDF download; ?autoprint=1 kept for backward compat from view.php links
+    if (params.get('download') === '1' || params.get('autoprint') === '1') {
+        var trigger = function() { setTimeout(downloadBillPDF, 800); };
         if (document.fonts && document.fonts.ready) {
             document.fonts.ready.then(trigger);
         } else {
-            window.addEventListener('load', function() { setTimeout(trigger, 500); });
+            window.addEventListener('load', function() { setTimeout(downloadBillPDF, 800); });
         }
     }
 })();

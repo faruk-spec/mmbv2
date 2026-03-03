@@ -20,13 +20,13 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
 <div class="alert alert-error"><i class="fas fa-exclamation-circle"></i> <?= htmlspecialchars($error) ?></div>
 <?php endif; ?>
 
-<form method="POST" action="/projects/billx/generate" id="billForm">
+<div id="generateLayout" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;height:calc(100vh - 90px);">
+
+    <!-- ====== LEFT PANEL: Scrollable Form ====== -->
+    <div id="leftFormPanel" style="overflow-y:auto;height:100%;padding-right:4px;">
+    <form method="POST" action="/projects/billx/generate" id="billForm">
     <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start;">
-
-        <!-- ====== LEFT PANEL: Form ====== -->
-        <div style="display:flex;flex-direction:column;gap:10px;">
+    <div style="display:flex;flex-direction:column;gap:10px;">
 
             <!-- Bill Type & Number -->
             <div class="card">
@@ -333,30 +333,24 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
             </div>
 
             <!-- Submit Actions -->
-            <input type="hidden" name="save_action" id="save_action" value="view">
+            <input type="hidden" name="save_action" id="save_action" value="save">
             <div class="form-actions" style="justify-content:flex-start;gap:8px;flex-wrap:wrap;">
-                <button type="button" class="btn btn-primary form-btn-compact"
-                        onclick="submitBill('view')">
-                    <i class="fas fa-eye"></i> Save &amp; View
+                <button type="button" class="btn btn-secondary form-btn-compact"
+                        onclick="submitBill('save')">
+                    <i class="fas fa-save"></i> Save
                 </button>
                 <button type="button" class="btn btn-success form-btn-compact"
                         onclick="submitBill('download')">
-                    <i class="fas fa-download"></i> Save &amp; Download PDF
+                    <i class="fas fa-file-pdf"></i> Download PDF
                 </button>
-                <button type="button" class="btn btn-secondary form-btn-compact"
-                        onclick="submitBill('print')">
-                    <i class="fas fa-print"></i> Save &amp; Print
-                </button>
-                <button type="button" class="btn btn-secondary form-btn-compact"
-                        onclick="submitBill('save')">
-                    <i class="fas fa-save"></i> Save Only
-                </button>
-                <a href="/projects/billx" class="btn btn-secondary form-btn-compact">Cancel</a>
             </div>
         </div>
+    </div><!-- /left form inner flex -->
+    </form>
+    </div><!-- /leftFormPanel -->
 
         <!-- ====== RIGHT PANEL: Live Preview ====== -->
-        <div style="position:sticky;top:70px;height:calc(100vh - 90px);display:flex;flex-direction:column;">
+        <div id="rightPreviewPanel" style="height:100%;display:flex;flex-direction:column;">
             <div class="card" style="padding:0;display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;">
                 <div style="background:var(--bg-secondary);padding:10px 14px;border-bottom:1px solid var(--border-color);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;flex-shrink:0;">
                     <span style="font-size:0.8rem;font-weight:600;color:var(--text-secondary);">
@@ -378,13 +372,19 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
             </div>
         </div>
 
-    </div><!-- /grid -->
-</form>
+    </div><!-- /rightPreviewPanel -->
+
+</div><!-- /generateLayout -->
 
 <style>
-/* Fix sticky preview: override billx-main overflow for this page */
+/* Generate page layout: two-pane scrolling, no billx-main overflow override needed */
 @media (min-width: 901px) {
-    .billx-main { overflow: visible !important; }
+    .billx-main { overflow: hidden !important; }
+}
+@media (max-width: 900px) {
+    #generateLayout { height: auto !important; grid-template-columns: 1fr !important; }
+    #leftFormPanel  { overflow-y: visible !important; height: auto !important; }
+    #rightPreviewPanel { height: 480px !important; }
 }
 /* Compact form overrides for generate page */
 #billForm .form-input,
@@ -509,12 +509,6 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
     border-color:var(--amber);color:var(--amber);font-weight:600;
 }
 .tpl-radio-label input[type="radio"] { accent-color:var(--amber); }
-@media (max-width: 900px) {
-    form > div[style*="grid-template-columns:1fr 1fr"] {
-        grid-template-columns: 1fr !important;
-    }
-    form > div > div:last-child { position: static !important; }
-}
 </style>
 
 <script>
@@ -1106,7 +1100,7 @@ ${d.notes?`<div style="padding:8px 20px;font-size:11px;color:#555;border-top:1px
 ${d.fromAddr?`<div style="font-size:10px;opacity:.85;margin-top:4px;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}
 ${d.fromPhone?`<div style="font-size:10px;opacity:.85;">📞 ${escHtml(d.fromPhone)}</div>`:''}
 ${gstin?`<div style="font-size:10px;opacity:.85;">GSTIN: ${escHtml(gstin)}</div>`:''}
-<div style="font-size:11px;letter-spacing:3px;text-transform:uppercase;margin-top:8px;opacity:.9;">— Hotel Folio —</div>
+<div style="font-size:11px;letter-spacing:3px;text-transform:uppercase;margin-top:8px;opacity:.9;">— ${escHtml(TYPE_LABELS[d.type]||d.type)} —</div>
 </div>
 <div style="background:#fdf0c0;padding:10px 24px;border-bottom:2px solid #c9a84c;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;">
 <div><span style="font-size:10px;color:#7d5a00;display:block;text-transform:uppercase;">Guest Name</span><span style="font-size:14px;font-weight:700;">${escHtml(d.toName)}</span>${d.toPhone?`<span style="font-size:10px;color:#7d5a00;display:block;">📞 ${escHtml(d.toPhone)}</span>`:''}</div>
