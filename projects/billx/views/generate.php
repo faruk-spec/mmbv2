@@ -544,7 +544,7 @@ function collectData(){
     const taxAmt=subtotal*taxPct/100;
     const total=subtotal+taxAmt-discount;
     const td=getExtraFields();
-    return{type,sym,currency,group:getGroup(type),billNo:document.getElementById('bill_number').value||'-',billDate:document.getElementById('bill_date').value||'',fromName:document.getElementById('from_name').value||'Issuer',fromAddr:document.getElementById('from_address').value||'',fromPhone:document.getElementById('from_phone').value||'',fromEmail:document.getElementById('from_email').value||'',toName:document.getElementById('to_name').value||'Customer',toAddr:document.getElementById('to_address').value||'',toPhone:document.getElementById('to_phone').value||'',toEmail:document.getElementById('to_email').value||'',taxPct,discount,taxAmt,subtotal,total,notes:document.getElementById('notes').value||'',items,td};
+    return{type,sym,currency,group:getGroup(type),billNo:document.getElementById('bill_number').value||'-',billDate:document.getElementById('bill_date').value||'',fromName:document.getElementById('from_name').value||'',fromAddr:document.getElementById('from_address').value||'',fromPhone:document.getElementById('from_phone').value||'',fromEmail:document.getElementById('from_email').value||'',toName:document.getElementById('to_name').value||'',toAddr:document.getElementById('to_address').value||'',toPhone:document.getElementById('to_phone').value||'',toEmail:document.getElementById('to_email').value||'',taxPct,discount,taxAmt,subtotal,total,notes:document.getElementById('notes').value||'',items,td};
 }
 
 // ─── RENDERER 1: Thermal / POS Receipt ───────────────────────────────────────
@@ -640,6 +640,7 @@ ${dash}<div style="text-align:center;letter-spacing:6px;font-size:11px;font-weig
 <div style="display:flex;justify-content:space-between;margin-bottom:2px;"><span>Name: <b>${escHtml(d.toName)}</b></span><span>Invoice No: <b>${escHtml(d.billNo)}</b></span></div>
 ${tableNo?`<div style="display:flex;justify-content:space-between;"><span>Table: <b>#${escHtml(tableNo)}</b></span><span>Date: ${fmtDate(d.billDate)}</span></div>`:`<div>Date: ${fmtDate(d.billDate)}</div>`}
 <div style="font-size:10px;margin-top:2px;">${escHtml(d.fromName)}${d.fromPhone?' | '+escHtml(d.fromPhone):''}</div>
+${d.fromAddr?`<div style="font-size:9px;color:#555;margin-top:1px;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}
 ${dash}
 <table style="width:100%;border-collapse:collapse;"><thead><tr style="border-bottom:1px dashed #555;"><th style="padding:2px 3px;text-align:left;font-size:10px;">Item</th><th style="padding:2px 3px;text-align:right;font-size:10px;">Price</th><th style="padding:2px 3px;text-align:center;font-size:10px;">Qty</th><th style="padding:2px 3px;text-align:right;font-size:10px;">Total</th></tr></thead><tbody>${items||'<tr><td colspan="4" style="text-align:center;padding:5px;color:#aaa;">No items</td></tr>'}</tbody></table>
 ${dash}

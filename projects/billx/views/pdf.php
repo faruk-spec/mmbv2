@@ -108,6 +108,7 @@ body { margin: 0; padding: 0; background: #fff; }
     </div>
     <?php else: ?><div style="font-size:11px;">Date: <?= $billDate ?></div><?php endif; ?>
     <div style="font-size:10px;margin-top:2px;"><?= htmlspecialchars($bill['from_name']) ?><?= $bill['from_phone'] ? ' | ' . htmlspecialchars($bill['from_phone']) : '' ?></div>
+    <?php if ($bill['from_address']): ?><div style="font-size:9px;color:#555;margin-top:1px;"><?= htmlspecialchars(str_replace("\n",' | ',$bill['from_address'])) ?></div><?php endif; ?>
     <div style="border-top:1px dashed #888;margin:6px 0;"></div>
     <table style="width:100%;border-collapse:collapse;">
         <thead><tr style="border-bottom:1px dashed #555;">
