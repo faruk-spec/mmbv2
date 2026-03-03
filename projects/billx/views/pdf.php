@@ -19,15 +19,12 @@ $tplStyle = $td['template_style'] ?? '1';
 <meta charset="utf-8">
 <title><?= htmlspecialchars($typeLabel) ?> - <?= htmlspecialchars($bill['bill_number']) ?></title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=VT323&family=Inter:wght@400;500;600;700;900&family=Playfair+Display:wght@700&display=swap');
 @page { size: <?= $group==='thermal' ? '80mm auto' : 'A4 portrait' ?>; margin: <?= $group==='thermal' ? '0' : '12mm' ?>; }
 * { box-sizing: border-box; }
-body { margin: 0; padding: 0; background: #fff; font-family: Arial, sans-serif; }
+body { margin: 0; padding: 0; background: #fff; font-family: 'Inter', Arial, sans-serif; }
 @media screen { body { background: #e8e8e8; padding-top: 52px; padding-bottom: 20px; } }
-/* Action bar – screen only */
-.bill-action-bar {
-    display: none;
-}
+.bill-action-bar { display: none; }
 @media screen {
     .bill-action-bar {
         display: flex; align-items: center; gap: 8px;
@@ -48,7 +45,6 @@ body { margin: 0; padding: 0; background: #fff; font-family: Arial, sans-serif; 
 .btn-print-only:hover { background: #263238; }
 .btn-close-win { background: #e0e0e0; color: #333; }
 .btn-close-win:hover { background: #bdbdbd; }
-/* Print – hide action bar, remove padding, exact sizing */
 @media print {
     .bill-action-bar { display: none !important; }
     body { background: #fff !important; padding: 0 !important; margin: 0 !important; }
@@ -65,9 +61,10 @@ body { margin: 0; padding: 0; background: #fff; font-family: Arial, sans-serif; 
     <button class="btn-download" onclick="window.print()">&#8659; Download PDF</button>
 </div>
 <div id="billDocument" style="<?= $group==='thermal' ? 'width:80mm;max-width:80mm;' : 'max-width:700px;' ?> margin:0 auto;">
+
 <?php if ($group === 'thermal'): ?>
 <!-- ============================================================
-     THERMAL / POS RECEIPT  (restaurant, recharge, mart, newspaper)
+     THERMAL / POS RECEIPT  (restaurant, mart, stationary, etc.)
      ============================================================ -->
 <?php
     $cgstPct  = (float)($td['cgst_pct'] ?? 0);
@@ -79,120 +76,124 @@ body { margin: 0; padding: 0; background: #fff; font-family: Arial, sans-serif; 
     $billTime = !empty($td['bill_time']) ? $td['bill_time'] : ($bill['created_at'] ? date('H:i', strtotime($bill['created_at'])) : date('H:i'));
 ?>
 <?php if ($tplStyle === '3'): ?>
-<div style="font-family:'VT323','Courier New',monospace;background:#fff;width:80mm;max-width:80mm;margin:0 auto;color:#111;box-shadow:0 3px 12px rgba(0,0,0,.18);letter-spacing:.4px;">
-<div style="padding:12px 14px 10px;">
-<div style="text-align:center;padding-bottom:4px;margin-bottom:4px;">
-    <div style="font-size:22px;font-weight:700;letter-spacing:4px;">WELCOME!!!</div>
-    <div style="font-size:14px;letter-spacing:2px;">Original Receipt</div>
-    <div style="border-top:1px dashed #555;margin:5px 0;"></div>
-    <div style="font-size:20px;font-weight:700;letter-spacing:2px;line-height:1.1;"><?= htmlspecialchars(strtoupper($bill['from_name'])) ?></div>
-    <?php if ($bill['from_address']): ?><div style="font-size:12px;color:#444;margin-top:2px;"><?= htmlspecialchars(str_replace("\n",' | ',$bill['from_address'])) ?></div><?php endif; ?>
+<!-- Style 3: VT323 retro POS look -->
+<div style="font-family:'VT323','Courier New',monospace;background:#fff;width:80mm;max-width:80mm;margin:0 auto;color:#111;letter-spacing:.4px;">
+<div style="padding:14px 16px 12px;">
+  <div style="text-align:center;margin-bottom:6px;">
+    <div style="font-size:24px;font-weight:700;letter-spacing:5px;text-transform:uppercase;">WELCOME!</div>
+    <div style="font-size:13px;letter-spacing:3px;text-transform:uppercase;color:#555;">Original Receipt</div>
+    <div style="border-top:1px dashed #555;margin:6px 0;"></div>
+    <div style="font-size:22px;font-weight:700;letter-spacing:2px;line-height:1.2;text-transform:uppercase;"><?= htmlspecialchars($bill['from_name']) ?></div>
+    <?php if ($bill['from_address']): ?><div style="font-size:12px;color:#444;margin-top:3px;"><?= htmlspecialchars(str_replace("\n",' | ',$bill['from_address'])) ?></div><?php endif; ?>
     <?php if ($bill['from_phone']): ?><div style="font-size:12px;color:#444;">Ph: <?= htmlspecialchars($bill['from_phone']) ?></div><?php endif; ?>
-    <div style="border-top:1px dashed #555;margin:5px 0;"></div>
-</div>
-<div style="font-size:14px;border-bottom:1px dashed #555;padding-bottom:5px;margin-bottom:5px;">
+    <div style="border-top:1px dashed #555;margin:6px 0;"></div>
+  </div>
+  <div style="font-size:13px;border-bottom:1px dashed #555;padding-bottom:6px;margin-bottom:6px;">
     <div style="display:flex;justify-content:space-between;"><span>Bill#: <b><?= htmlspecialchars($bill['bill_number']) ?></b></span><span><?= $billDate ?></span></div>
-    <div style="display:flex;justify-content:space-between;"><span>Cust: <b><?= htmlspecialchars($bill['to_name']) ?></b></span><span><?= htmlspecialchars($billTime) ?></span></div>
-    <?php if ($tableNo): ?><div>Table: <b>#<?= htmlspecialchars($tableNo) ?></b><?= $payMode ? ' | Pay: <b>'.htmlspecialchars($payMode).'</b>' : '' ?></div><?php endif; ?>
-</div>
-<div style="border-bottom:1px dashed #555;padding-bottom:5px;margin-bottom:4px;">
-    <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;padding:2px 0;border-bottom:1px solid #ccc;"><span>ITEM</span><span>QTY×RATE</span><span>AMT</span></div>
+    <div style="display:flex;justify-content:space-between;"><span>Customer: <b><?= htmlspecialchars($bill['to_name']) ?></b></span><span><?= htmlspecialchars($billTime) ?></span></div>
+    <?php if ($tableNo): ?><div>Table: <b>#<?= htmlspecialchars($tableNo) ?></b><?= $payMode ? '  |  Pay: <b>'.htmlspecialchars($payMode).'</b>' : '' ?></div><?php endif; ?>
+  </div>
+  <table style="width:100%;border-collapse:collapse;font-size:13px;border-bottom:1px dashed #555;margin-bottom:6px;">
+    <thead><tr style="border-bottom:1px solid #aaa;">
+      <th style="text-align:left;padding:3px 2px 3px 0;font-size:12px;">ITEM</th>
+      <th style="text-align:right;padding:3px 2px;font-size:12px;">QTY</th>
+      <th style="text-align:right;padding:3px 2px;font-size:12px;">RATE</th>
+      <th style="text-align:right;padding:3px 0 3px 2px;font-size:12px;">AMT</th>
+    </tr></thead>
+    <tbody>
     <?php foreach ($items as $item): ?>
-    <div style="padding:3px 0;border-bottom:1px dotted #ccc;">
-        <div style="font-size:15px;"><?= htmlspecialchars($item['description']??'-') ?></div>
-        <div style="display:flex;justify-content:space-between;font-size:13px;color:#555;">
-            <span><?= (float)($item['qty']??1) ?>×<?= $sym.number_format((float)($item['rate']??0),2) ?></span>
-            <span style="font-weight:700;color:#111;"><?= $sym.number_format((float)($item['amount']??0),2) ?></span>
-        </div>
-    </div>
+    <tr style="border-bottom:1px dotted #ccc;">
+      <td style="padding:3px 2px 3px 0;"><?= htmlspecialchars($item['description']??'-') ?></td>
+      <td style="padding:3px 2px;text-align:right;"><?= (float)($item['qty']??1) ?></td>
+      <td style="padding:3px 2px;text-align:right;"><?= $sym.number_format((float)($item['rate']??0),2) ?></td>
+      <td style="padding:3px 0 3px 2px;text-align:right;font-weight:700;"><?= $sym.number_format((float)($item['amount']??0),2) ?></td>
+    </tr>
     <?php endforeach; ?>
-</div>
-<div style="font-size:14px;padding:2px 0;">
+    </tbody>
+  </table>
+  <div style="font-size:13px;padding-bottom:4px;">
     <div style="display:flex;justify-content:space-between;padding:1px 0;"><span>Sub-Total:</span><span><?= $sym.number_format($subtotal,2) ?></span></div>
-    <?php if ($cgstPct > 0): ?><div style="display:flex;justify-content:space-between;padding:1px 0;"><span>CGST <?= $cgstPct ?>%:</span><span><?= $sym.number_format($cgstAmt,2) ?></span></div><?php endif; ?>
-    <?php if ($sgstPct > 0): ?><div style="display:flex;justify-content:space-between;padding:1px 0;"><span>SGST <?= $sgstPct ?>%:</span><span><?= $sym.number_format($sgstAmt,2) ?></span></div><?php endif; ?>
-    <?php if ($taxPct > 0 && $cgstPct == 0 && $sgstPct == 0): ?><div style="display:flex;justify-content:space-between;padding:1px 0;"><span>Tax <?= $taxPct ?>%:</span><span><?= $sym.number_format($taxAmt,2) ?></span></div><?php endif; ?>
-    <?php if ($discount > 0): ?><div style="display:flex;justify-content:space-between;padding:1px 0;"><span>Discount:</span><span>-<?= $sym.number_format($discount,2) ?></span></div><?php endif; ?>
+    <?php if ($cgstPct > 0): ?><div style="display:flex;justify-content:space-between;padding:1px 0;"><span>CGST <?= $cgstPct ?>%</span><span><?= $sym.number_format($cgstAmt,2) ?></span></div><?php endif; ?>
+    <?php if ($sgstPct > 0): ?><div style="display:flex;justify-content:space-between;padding:1px 0;"><span>SGST <?= $sgstPct ?>%</span><span><?= $sym.number_format($sgstAmt,2) ?></span></div><?php endif; ?>
+    <?php if ($taxPct > 0 && $cgstPct == 0 && $sgstPct == 0): ?><div style="display:flex;justify-content:space-between;padding:1px 0;"><span>Tax <?= $taxPct ?>%</span><span><?= $sym.number_format($taxAmt,2) ?></span></div><?php endif; ?>
+    <?php if ($discount > 0): ?><div style="display:flex;justify-content:space-between;padding:1px 0;"><span>Discount</span><span>-<?= $sym.number_format($discount,2) ?></span></div><?php endif; ?>
+  </div>
+  <div style="border-top:2px solid #111;padding:5px 0 3px;">
+    <div style="display:flex;justify-content:space-between;font-size:21px;font-weight:900;"><span>** TOTAL</span><span><?= $sym.number_format($total,2) ?></span></div>
+    <?php if ($payMode && !$tableNo): ?><div style="font-size:13px;color:#555;">Payment: <?= htmlspecialchars($payMode) ?></div><?php endif; ?>
+  </div>
+  <?php if ($bill['notes']): ?><div style="border-top:1px dashed #555;padding-top:5px;margin-top:4px;font-size:12px;color:#555;text-align:center;"><?= htmlspecialchars($bill['notes']) ?></div><?php endif; ?>
+  <div style="border-top:1px dashed #555;padding-top:7px;margin-top:6px;text-align:center;">
+    <div style="font-size:16px;font-weight:700;letter-spacing:2px;">THANK YOU! VISIT AGAIN!</div>
+    <div style="font-size:12px;color:#555;margin-top:2px;">** SAVE PAPER ~ SAVE NATURE **</div>
+    <div style="font-size:11px;color:#aaa;margin-top:4px;">Powered by BillX</div>
+  </div>
 </div>
-<div style="border-top:2px solid #111;padding:4px 0;margin-top:2px;">
-    <div style="display:flex;justify-content:space-between;font-size:20px;font-weight:900;"><span>** TOTAL</span><span><?= $sym.number_format($total,2) ?></span></div>
-    <?php if ($payMode && !$tableNo): ?><div style="font-size:14px;color:#555;">Payment: <?= htmlspecialchars($payMode) ?></div><?php endif; ?>
 </div>
-<?php if ($bill['notes']): ?><div style="border-top:1px dashed #555;padding-top:4px;margin-top:3px;font-size:13px;color:#555;text-align:center;"><?= htmlspecialchars($bill['notes']) ?></div><?php endif; ?>
-<div style="border-top:1px dashed #555;padding-top:6px;margin-top:5px;text-align:center;font-size:15px;">
-    <div style="font-weight:700;letter-spacing:1px;">THANK YOU! VISIT AGAIN!</div>
-    <div style="font-size:13px;color:#555;">** SAVE PAPER ~ SAVE NATURE **</div>
-    <div style="font-size:12px;color:#888;margin-top:3px;">Powered by BillX</div>
-</div>
-</div>
-</div>
+
 <?php else: ?>
-<div style="font-family:'Courier New',Courier,monospace;background:#fff;width:80mm;max-width:80mm;margin:0 auto;padding:14px 18px;font-size:11px;color:#111;border:1px solid #ccc;box-shadow:1px 2px 8px rgba(0,0,0,.15);">
-    <div style="border-top:1px dashed #888;margin:4px 0;"></div>
-    <div style="text-align:center;letter-spacing:6px;font-size:11px;font-weight:700;margin:2px 0;">RECEIPT</div>
-    <div style="border-top:1px dashed #888;margin:4px 0;"></div>
-    <div style="display:flex;justify-content:space-between;margin-bottom:2px;">
-        <span>Name: <b><?= htmlspecialchars($bill['to_name']) ?></b></span>
-        <span>Invoice No: <b><?= htmlspecialchars($bill['bill_number']) ?></b></span>
-    </div>
-    <?php if ($tableNo): ?>
-    <div style="display:flex;justify-content:space-between;">
-        <span>Table: <b>#<?= htmlspecialchars($tableNo) ?></b></span>
-        <span>Date: <?= $billDate ?></span>
-    </div>
-    <?php else: ?><div style="font-size:11px;">Date: <?= $billDate ?></div><?php endif; ?>
-    <div style="font-size:10px;margin-top:2px;"><?= htmlspecialchars($bill['from_name']) ?><?= $bill['from_phone'] ? ' | ' . htmlspecialchars($bill['from_phone']) : '' ?></div>
-    <?php if ($bill['from_address']): ?><div style="font-size:9px;color:#555;margin-top:1px;"><?= htmlspecialchars(str_replace("\n",' | ',$bill['from_address'])) ?></div><?php endif; ?>
-    <div style="border-top:1px dashed #888;margin:6px 0;"></div>
-    <table style="width:100%;border-collapse:collapse;">
-        <thead><tr style="border-bottom:1px dashed #555;">
-            <th style="padding:2px 3px;text-align:left;font-size:10px;">Item</th>
-            <th style="padding:2px 3px;text-align:right;font-size:10px;">Price</th>
-            <th style="padding:2px 3px;text-align:center;font-size:10px;">Qty</th>
-            <th style="padding:2px 3px;text-align:right;font-size:10px;">Total</th>
-        </tr></thead>
-        <tbody>
-        <?php foreach ($items as $item): ?>
-        <tr>
-            <td style="padding:2px 3px;font-size:11px;"><?= htmlspecialchars($item['description'] ?? '-') ?></td>
-            <td style="padding:2px 3px;text-align:right;font-size:11px;"><?= $sym ?><?= number_format((float)($item['rate']??0),2) ?></td>
-            <td style="padding:2px 3px;text-align:center;font-size:11px;"><?= (float)($item['qty']??1) ?></td>
-            <td style="padding:2px 3px;text-align:right;font-weight:700;font-size:11px;"><?= $sym ?><?= number_format((float)($item['amount']??0),2) ?></td>
-        </tr>
-        <?php endforeach; ?>
-        </tbody>
-    </table>
-    <div style="border-top:1px dashed #888;margin:6px 0;"></div>
-    <div style="display:flex;justify-content:space-between;padding:1px 0;"><span>Sub-Total:</span><span><?= $sym ?><?= number_format($subtotal,2) ?></span></div>
-    <?php if ($cgstPct > 0): ?>
-    <div style="display:flex;justify-content:space-between;padding:1px 0;"><span>CGST: <?= $cgstPct ?>%</span><span><?= $sym ?><?= number_format($cgstAmt,2) ?></span></div>
-    <?php endif; ?>
-    <?php if ($sgstPct > 0): ?>
-    <div style="display:flex;justify-content:space-between;padding:1px 0;"><span>SGST: <?= $sgstPct ?>%</span><span><?= $sym ?><?= number_format($sgstAmt,2) ?></span></div>
-    <?php endif; ?>
-    <?php if ($taxPct > 0 && $cgstPct == 0 && $sgstPct == 0): ?>
-    <div style="display:flex;justify-content:space-between;padding:1px 0;"><span>Tax <?= $taxPct ?>%</span><span><?= $sym ?><?= number_format($taxAmt,2) ?></span></div>
-    <?php endif; ?>
-    <?php if ($discount > 0): ?>
-    <div style="display:flex;justify-content:space-between;padding:1px 0;"><span>Discount</span><span>-<?= $sym ?><?= number_format($discount,2) ?></span></div>
-    <?php endif; ?>
-    <div style="border-top:1px dashed #888;margin:6px 0;"></div>
-    <div style="display:flex;justify-content:space-between;align-items:center;">
-        <span>Mode: <b><?= htmlspecialchars($payMode ?: '-') ?></b></span>
-        <span style="font-size:13px;font-weight:900;">Total: <?= $sym ?><?= number_format($total,2) ?></span>
-    </div>
-    <div style="border-top:1px dashed #888;margin:6px 0;"></div>
-    <?php if ($bill['notes']): ?><div style="font-size:10px;color:#555;text-align:center;margin-bottom:3px;"><?= htmlspecialchars($bill['notes']) ?></div><?php endif; ?>
-    <div style="text-align:center;font-size:11px;font-weight:700;margin-top:5px;">** SAVE PAPER SAVE NATURE !!</div>
-    <div style="text-align:center;font-size:10px;color:#666;margin-top:2px;">Time: <?= $billTime ?></div>
-    <div style="border-top:1px dashed #888;margin:6px 0;"></div>
-    <div style="text-align:center;font-size:9px;color:#888;">Powered by BillX</div>
+<!-- Style 1 & 2: Clean professional monospace POS receipt -->
+<div style="font-family:'Courier New',Courier,monospace;background:#fff;width:80mm;max-width:80mm;margin:0 auto;padding:16px 16px 14px;font-size:11px;color:#111;line-height:1.55;">
+  <div style="text-align:center;margin-bottom:6px;">
+    <div style="font-size:15px;font-weight:700;letter-spacing:3px;text-transform:uppercase;"><?= htmlspecialchars($bill['from_name']) ?></div>
+    <?php if ($bill['from_address']): ?><div style="font-size:9.5px;color:#444;margin-top:2px;line-height:1.4;"><?= htmlspecialchars(str_replace("\n",' | ',$bill['from_address'])) ?></div><?php endif; ?>
+    <?php if ($bill['from_phone']): ?><div style="font-size:9.5px;color:#444;">Tel: <?= htmlspecialchars($bill['from_phone']) ?></div><?php endif; ?>
+  </div>
+  <div style="border-top:1px dashed #888;margin:6px 0;"></div>
+  <div style="text-align:center;font-size:11px;font-weight:700;letter-spacing:5px;margin:4px 0;">RECEIPT</div>
+  <div style="border-top:1px dashed #888;margin:6px 0;"></div>
+  <div style="font-size:10px;margin-bottom:4px;">
+    <div style="display:flex;justify-content:space-between;"><span>Bill #: <b><?= htmlspecialchars($bill['bill_number']) ?></b></span><span><?= $billDate ?></span></div>
+    <div style="display:flex;justify-content:space-between;"><span>Cust: <b><?= htmlspecialchars($bill['to_name']) ?></b></span><span><?= htmlspecialchars($billTime) ?></span></div>
+    <?php if ($tableNo): ?><div>Table: <b>#<?= htmlspecialchars($tableNo) ?></b><?= $payMode ? '  |  Pay: <b>'.htmlspecialchars($payMode).'</b>' : '' ?></div><?php endif; ?>
+  </div>
+  <div style="border-top:1px dashed #888;margin:6px 0;"></div>
+  <table style="width:100%;border-collapse:collapse;font-size:10px;">
+    <thead>
+      <tr style="border-bottom:1px solid #888;">
+        <th style="text-align:left;padding:2px 2px 2px 0;font-weight:700;">Item</th>
+        <th style="text-align:right;padding:2px 2px;font-weight:700;">Qty</th>
+        <th style="text-align:right;padding:2px 2px;font-weight:700;">Rate</th>
+        <th style="text-align:right;padding:2px 0 2px 2px;font-weight:700;">Amt</th>
+      </tr>
+    </thead>
+    <tbody>
+    <?php foreach ($items as $item): ?>
+    <tr style="border-bottom:1px dotted #ccc;">
+      <td style="padding:3px 2px 3px 0;font-size:10.5px;"><?= htmlspecialchars($item['description']??'-') ?></td>
+      <td style="padding:3px 2px;text-align:right;"><?= (float)($item['qty']??1) ?></td>
+      <td style="padding:3px 2px;text-align:right;"><?= $sym.number_format((float)($item['rate']??0),2) ?></td>
+      <td style="padding:3px 0 3px 2px;text-align:right;font-weight:700;"><?= $sym.number_format((float)($item['amount']??0),2) ?></td>
+    </tr>
+    <?php endforeach; ?>
+    </tbody>
+  </table>
+  <div style="border-top:1px dashed #888;margin:6px 0;"></div>
+  <div style="font-size:10px;">
+    <div style="display:flex;justify-content:space-between;padding:1px 0;"><span>Sub-Total</span><span><?= $sym.number_format($subtotal,2) ?></span></div>
+    <?php if ($cgstPct > 0): ?><div style="display:flex;justify-content:space-between;padding:1px 0;"><span>CGST <?= $cgstPct ?>%</span><span><?= $sym.number_format($cgstAmt,2) ?></span></div><?php endif; ?>
+    <?php if ($sgstPct > 0): ?><div style="display:flex;justify-content:space-between;padding:1px 0;"><span>SGST <?= $sgstPct ?>%</span><span><?= $sym.number_format($sgstAmt,2) ?></span></div><?php endif; ?>
+    <?php if ($taxPct > 0 && $cgstPct == 0 && $sgstPct == 0): ?><div style="display:flex;justify-content:space-between;padding:1px 0;"><span>Tax <?= $taxPct ?>%</span><span><?= $sym.number_format($taxAmt,2) ?></span></div><?php endif; ?>
+    <?php if ($discount > 0): ?><div style="display:flex;justify-content:space-between;padding:1px 0;"><span>Discount</span><span>-<?= $sym.number_format($discount,2) ?></span></div><?php endif; ?>
+  </div>
+  <div style="border-top:2px solid #111;margin:5px 0 4px;"></div>
+  <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:900;">
+    <span>TOTAL</span><span><?= $sym.number_format($total,2) ?></span>
+  </div>
+  <?php if ($payMode): ?><div style="font-size:9.5px;color:#555;margin-top:2px;">Mode: <b><?= htmlspecialchars($payMode) ?></b></div><?php endif; ?>
+  <div style="border-top:1px dashed #888;margin:8px 0 6px;"></div>
+  <?php if ($bill['notes']): ?><div style="font-size:9.5px;color:#555;text-align:center;margin-bottom:5px;"><?= htmlspecialchars($bill['notes']) ?></div><?php endif; ?>
+  <div style="text-align:center;font-size:10.5px;font-weight:700;letter-spacing:1px;">-- THANK YOU! VISIT AGAIN --</div>
+  <div style="text-align:center;font-size:9px;color:#666;margin-top:2px;">Save Paper. Save Nature.</div>
+  <div style="border-top:1px dashed #888;margin:6px 0 4px;"></div>
+  <div style="text-align:center;font-size:8.5px;color:#aaa;">Powered by BillX</div>
 </div>
 <?php endif; // tplStyle === '3' ?>
 
+
 <?php elseif ($group === 'payslip'): ?>
 <!-- ============================================================
-     DRIVER SALARY / HELPER — formal letter style
+     PAYSLIP — professional salary slip
      ============================================================ -->
 <?php
     $vehicleNo   = $td['vehicle_number'] ?? '';
@@ -200,41 +201,108 @@ body { margin: 0; padding: 0; background: #fff; font-family: Arial, sans-serif; 
     $salaryMonth = $td['salary_month']   ?? date('F Y', strtotime($bill['bill_date']));
     $designation = $td['designation']    ?? 'Driver';
 ?>
-<div style="font-family:Arial,sans-serif;background:#fff;padding:24px 28px;font-size:12px;color:#111;border:1px solid #ccc;max-width:560px;margin:0 auto;line-height:1.7;">
-    <div style="text-align:right;font-size:12px;color:#333;margin-bottom:8px;">Date: <?= $billDate ?></div>
-    <div style="text-align:center;font-size:14px;font-weight:700;text-decoration:underline;margin-bottom:14px;"><?= htmlspecialchars($typeLabel) ?></div>
-    <p style="margin:0 0 12px;text-align:justify;">This is to certify that Mr./Ms. <b><?= htmlspecialchars($empName) ?></b> have paid <b><?= $sym.number_format($total,2) ?></b> to <?= htmlspecialchars($designation) ?> Mr/Ms <b><?= htmlspecialchars($bill['to_name']) ?></b> towards salary of the month of <b><?= htmlspecialchars($salaryMonth) ?></b> (Acknowledged receipt enclosed). I also declare that the <?= htmlspecialchars(strtolower($designation)) ?> is exclusively utilized for official purpose only</p>
-    <p style="margin:0 0 16px;text-align:justify;">Please reimburse the above amount. I further declare that what is stated above is correct and true.</p>
-    <?php if ($items): ?>
-    <table style="width:100%;border-collapse:collapse;margin-bottom:14px;font-size:11px;">
-        <thead><tr style="border-bottom:1px solid #ccc;"><th style="padding:4px 6px;text-align:left;">Description</th><th style="padding:4px 6px;text-align:right;">Amount</th></tr></thead>
-        <tbody>
-        <?php foreach ($items as $item): ?>
-        <tr style="border-bottom:1px solid #eee;">
-            <td style="padding:4px 6px;"><?= htmlspecialchars($item['description']??'-') ?></td>
-            <td style="padding:4px 6px;text-align:right;font-weight:600;"><?= $sym.number_format((float)($item['amount']??0),2) ?></td>
+<div style="font-family:'Inter',Arial,sans-serif;background:#fff;max-width:600px;margin:0 auto;border:1px solid #d0d5dd;font-size:12px;color:#1a1a2e;">
+  <div style="background:<?= htmlspecialchars($c) ?>;color:#fff;padding:20px 28px 16px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div>
+        <div style="font-size:20px;font-weight:700;letter-spacing:0.5px;"><?= htmlspecialchars($bill['from_name']) ?></div>
+        <?php if ($bill['from_address']): ?><div style="font-size:10px;opacity:.85;margin-top:4px;line-height:1.5;"><?= htmlspecialchars(str_replace("\n",' | ',$bill['from_address'])) ?></div><?php endif; ?>
+        <?php if ($bill['from_phone']): ?><div style="font-size:10px;opacity:.85;">Tel: <?= htmlspecialchars($bill['from_phone']) ?></div><?php endif; ?>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:16px;font-weight:700;letter-spacing:2px;text-transform:uppercase;opacity:.9;">SALARY SLIP</div>
+        <div style="font-size:11px;opacity:.8;margin-top:4px;"><?= htmlspecialchars($salaryMonth) ?></div>
+        <div style="font-size:10px;opacity:.75;">Slip # <?= htmlspecialchars($bill['bill_number']) ?></div>
+      </div>
+    </div>
+  </div>
+  <div style="padding:14px 28px;border-bottom:1px solid #e4e7ec;background:#f9fafb;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 20px;">
+      <div>
+        <div style="font-size:9.5px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">Employee Name</div>
+        <div style="font-weight:600;font-size:13px;"><?= htmlspecialchars($bill['to_name']) ?></div>
+      </div>
+      <div>
+        <div style="font-size:9.5px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">Designation</div>
+        <div style="font-weight:600;"><?= htmlspecialchars($designation) ?></div>
+      </div>
+      <div>
+        <div style="font-size:9.5px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">Employer</div>
+        <div style="font-weight:600;"><?= htmlspecialchars($empName) ?></div>
+      </div>
+      <?php if ($vehicleNo): ?>
+      <div>
+        <div style="font-size:9.5px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">Vehicle Number</div>
+        <div style="font-weight:600;"><?= htmlspecialchars($vehicleNo) ?></div>
+      </div>
+      <?php endif; ?>
+      <div>
+        <div style="font-size:9.5px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">Pay Period</div>
+        <div style="font-weight:600;"><?= htmlspecialchars($salaryMonth) ?></div>
+      </div>
+      <div>
+        <div style="font-size:9.5px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">Date of Issue</div>
+        <div style="font-weight:600;"><?= $billDate ?></div>
+      </div>
+    </div>
+  </div>
+  <?php if ($items): ?>
+  <div style="padding:14px 28px;border-bottom:1px solid #e4e7ec;">
+    <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:<?= htmlspecialchars($c) ?>;margin-bottom:8px;">Earnings &amp; Allowances</div>
+    <table style="width:100%;border-collapse:collapse;">
+      <thead>
+        <tr style="background:#f3f4f6;border-bottom:1px solid #e4e7ec;">
+          <th style="padding:7px 10px;text-align:left;font-size:10.5px;font-weight:600;color:#374151;">Description</th>
+          <th style="padding:7px 10px;text-align:right;font-size:10.5px;font-weight:600;color:#374151;width:120px;">Amount</th>
         </tr>
-        <?php endforeach; ?>
-        </tbody>
+      </thead>
+      <tbody>
+      <?php foreach ($items as $item): ?>
+      <tr style="border-bottom:1px solid #f3f4f6;">
+        <td style="padding:8px 10px;font-size:11.5px;"><?= htmlspecialchars($item['description']??'-') ?></td>
+        <td style="padding:8px 10px;text-align:right;font-weight:600;font-size:11.5px;"><?= $sym.number_format((float)($item['amount']??0),2) ?></td>
+      </tr>
+      <?php endforeach; ?>
+      </tbody>
     </table>
-    <?php endif; ?>
-    <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-        <div><b>Vehicle Number:</b> <?= htmlspecialchars($vehicleNo ?: '__________') ?></div>
-        <div><b>Date:</b> <?= $billDate ?></div>
+  </div>
+  <?php endif; ?>
+  <div style="padding:14px 28px;border-bottom:1px solid #e4e7ec;">
+    <div style="display:flex;justify-content:flex-end;">
+      <div style="min-width:260px;">
+        <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:11.5px;border-bottom:1px solid #e4e7ec;"><span style="color:#6b7280;">Gross Earnings</span><span style="font-weight:600;"><?= $sym.number_format($subtotal,2) ?></span></div>
+        <?php if ($taxPct > 0): ?><div style="display:flex;justify-content:space-between;padding:4px 0;font-size:11.5px;border-bottom:1px solid #e4e7ec;"><span style="color:#6b7280;">Deductions / Tax <?= $taxPct ?>%</span><span style="font-weight:600;color:#dc2626;">-<?= $sym.number_format($taxAmt,2) ?></span></div><?php endif; ?>
+        <?php if ($discount > 0): ?><div style="display:flex;justify-content:space-between;padding:4px 0;font-size:11.5px;border-bottom:1px solid #e4e7ec;"><span style="color:#6b7280;">Other Deductions</span><span style="font-weight:600;color:#dc2626;">-<?= $sym.number_format($discount,2) ?></span></div><?php endif; ?>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;background:<?= htmlspecialchars($c) ?>;color:#fff;padding:8px 12px;border-radius:4px;">
+          <span style="font-weight:700;font-size:12.5px;letter-spacing:.03em;">NET PAY</span>
+          <span style="font-weight:900;font-size:16px;"><?= $sym.number_format($total,2) ?></span>
+        </div>
+      </div>
     </div>
-    <div style="display:flex;justify-content:space-between;margin-bottom:18px;">
-        <div><b><?= htmlspecialchars($designation) ?> Name:</b> <?= htmlspecialchars($bill['to_name']) ?></div>
-        <div><b>Employee Name:</b> <?= htmlspecialchars($empName) ?></div>
+  </div>
+  <div style="padding:12px 28px;border-bottom:1px solid #e4e7ec;font-size:11px;color:#374151;line-height:1.65;">
+    <p style="margin:0 0 8px;">This is to certify that the above salary of <b><?= $sym.number_format($total,2) ?></b> has been paid to <b><?= htmlspecialchars($designation) ?> <?= htmlspecialchars($bill['to_name']) ?></b> for the month of <b><?= htmlspecialchars($salaryMonth) ?></b>. The <?= htmlspecialchars(strtolower($designation)) ?> is exclusively utilized for official purposes only.</p>
+    <p style="margin:0;">I declare that the above information is correct and true to the best of my knowledge.</p>
+  </div>
+  <div style="padding:16px 28px 20px;display:flex;justify-content:space-between;align-items:flex-end;">
+    <div>
+      <div style="width:72px;height:72px;border:1.5px dashed #9ca3af;border-radius:4px;display:flex;align-items:center;justify-content:center;text-align:center;color:#9ca3af;font-size:9px;line-height:1.4;">Revenue<br>Stamp</div>
     </div>
-    <div style="font-weight:700;margin-bottom:4px;">Revenue Stamp</div>
-    <div style="width:64px;height:64px;border:1px dashed #aaa;display:flex;align-items:center;justify-content:center;font-size:9px;color:#aaa;text-align:center;padding:4px;">Revenue<br>Stamp</div>
-    <?php if ($bill['notes']): ?><div style="margin-top:12px;font-size:11px;color:#555;border-top:1px dashed #ddd;padding-top:8px;"><?= htmlspecialchars($bill['notes']) ?></div><?php endif; ?>
-    <div style="text-align:center;font-size:9px;color:#aaa;margin-top:16px;border-top:1px dashed #ddd;padding-top:6px;">* This is a computer-generated receipt | BillX</div>
+    <div style="text-align:center;">
+      <div style="border-top:1px solid #555;width:140px;padding-top:5px;font-size:10.5px;color:#374151;margin-top:32px;">Employee Signature</div>
+    </div>
+    <div style="text-align:center;">
+      <div style="border-top:1px solid #555;width:140px;padding-top:5px;font-size:10.5px;color:#374151;margin-top:32px;">Authorized Signatory</div>
+    </div>
+  </div>
+  <?php if ($bill['notes']): ?><div style="margin:0 28px 14px;background:#f9fafb;border-left:3px solid <?= htmlspecialchars($c) ?>;padding:8px 12px;font-size:10.5px;color:#4b5563;"><?= htmlspecialchars($bill['notes']) ?></div><?php endif; ?>
+  <div style="background:#f9fafb;border-top:1px solid #e4e7ec;padding:7px 28px;text-align:center;font-size:9px;color:#9ca3af;">Computer-generated payslip — no physical signature required &nbsp;|&nbsp; BillX</div>
 </div>
+
 
 <?php elseif ($group === 'fuel'): ?>
 <!-- ============================================================
-     FUEL RECEIPT — formal two-column layout
+     FUEL RECEIPT
      ============================================================ -->
 <?php
     $vehicleNo   = $td['vehicle_number'] ?? '';
@@ -243,147 +311,238 @@ body { margin: 0; padding: 0; background: #fff; font-family: Arial, sans-serif; 
     $payMode     = $td['payment_mode']   ?? '';
     $billTime    = $bill['created_at'] ? date('H:i', strtotime($bill['created_at'])) : date('H:i');
 ?>
-<div style="font-family:Arial,sans-serif;background:#fff;padding:24px 28px;font-size:12px;color:#111;border:1px solid #ddd;max-width:560px;margin:0 auto;box-shadow:0 2px 8px rgba(0,0,0,.08);">
-    <h2 style="font-size:22px;font-weight:700;margin:0 0 16px;border-bottom:2px solid #333;padding-bottom:8px;">Fuel Receipt</h2>
-    <div style="display:flex;justify-content:space-between;margin-bottom:14px;">
-        <div></div>
-        <div style="text-align:right;">
-            <div style="font-weight:700;font-size:12px;margin-bottom:4px;">Receipt Details</div>
-            <div>Receipt Number: <b><?= htmlspecialchars($bill['bill_number']) ?></b></div>
-            <div>Date: <?= $billDate ?></div>
-            <div>Time: <?= $billTime ?></div>
+<div style="font-family:'Inter',Arial,sans-serif;background:#fff;max-width:560px;margin:0 auto;border:1px solid #d0d5dd;font-size:12px;color:#1a1a2e;">
+  <div style="background:<?= htmlspecialchars($c) ?>;color:#fff;padding:18px 24px 14px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div>
+        <div style="font-size:9.5px;letter-spacing:3px;text-transform:uppercase;opacity:.8;margin-bottom:4px;">FUEL RECEIPT</div>
+        <div style="font-size:20px;font-weight:700;"><?= htmlspecialchars($bill['from_name']) ?></div>
+        <?php if ($bill['from_address']): ?><div style="font-size:10px;opacity:.8;margin-top:3px;line-height:1.5;"><?= htmlspecialchars(str_replace("\n",', ',$bill['from_address'])) ?></div><?php endif; ?>
+        <?php if ($bill['from_phone']): ?><div style="font-size:10px;opacity:.8;">Tel: <?= htmlspecialchars($bill['from_phone']) ?></div><?php endif; ?>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:11px;opacity:.8;">Receipt #</div>
+        <div style="font-size:16px;font-weight:700;"><?= htmlspecialchars($bill['bill_number']) ?></div>
+        <div style="font-size:10px;opacity:.8;margin-top:4px;"><?= $billDate ?></div>
+        <div style="font-size:10px;opacity:.8;"><?= $billTime ?></div>
+      </div>
+    </div>
+  </div>
+  <div style="padding:12px 24px;background:#f8f9fa;border-bottom:1px solid #e4e7ec;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;">
+      <div>
+        <div style="font-size:9.5px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">Customer</div>
+        <div style="font-weight:600;font-size:13px;"><?= htmlspecialchars($bill['to_name']) ?></div>
+        <?php if ($bill['to_phone']): ?><div style="font-size:10px;color:#555;">Tel: <?= htmlspecialchars($bill['to_phone']) ?></div><?php endif; ?>
+      </div>
+      <div>
+        <div style="font-size:9.5px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">Vehicle</div>
+        <?php if ($vehicleNo): ?><div style="font-weight:600;font-size:13px;"><?= htmlspecialchars($vehicleNo) ?></div><?php endif; ?>
+        <?php if ($vehicleType): ?><div style="font-size:10px;color:#555;"><?= htmlspecialchars($vehicleType) ?></div><?php endif; ?>
+      </div>
+      <div>
+        <div style="font-size:9.5px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">Fuel Type</div>
+        <div style="font-weight:600;"><?= htmlspecialchars($fuelType) ?></div>
+      </div>
+      <?php if ($payMode): ?>
+      <div>
+        <div style="font-size:9.5px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">Payment Mode</div>
+        <div style="font-weight:600;"><?= htmlspecialchars($payMode) ?></div>
+      </div>
+      <?php endif; ?>
+    </div>
+  </div>
+  <table style="width:100%;border-collapse:collapse;">
+    <thead>
+      <tr style="background:#f3f4f6;border-bottom:2px solid <?= htmlspecialchars($c) ?>;">
+        <th style="padding:9px 16px;text-align:left;font-size:10.5px;font-weight:600;color:#374151;">Description</th>
+        <th style="padding:9px 12px;text-align:center;font-size:10.5px;font-weight:600;color:#374151;width:80px;">Qty (L)</th>
+        <th style="padding:9px 12px;text-align:right;font-size:10.5px;font-weight:600;color:#374151;width:90px;">Rate/L</th>
+        <th style="padding:9px 16px;text-align:right;font-size:10.5px;font-weight:600;color:#374151;width:100px;">Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+    <?php foreach ($items as $item): ?>
+    <tr style="border-bottom:1px solid #f3f4f6;">
+      <td style="padding:10px 16px;font-size:12px;"><?= htmlspecialchars($item['description']??$fuelType) ?></td>
+      <td style="padding:10px 12px;text-align:center;font-size:12px;"><?= number_format((float)($item['qty']??1),2) ?></td>
+      <td style="padding:10px 12px;text-align:right;font-size:12px;"><?= $sym.number_format((float)($item['rate']??0),2) ?></td>
+      <td style="padding:10px 16px;text-align:right;font-weight:700;font-size:12px;"><?= $sym.number_format((float)($item['amount']??0),2) ?></td>
+    </tr>
+    <?php endforeach; ?>
+    </tbody>
+  </table>
+  <div style="padding:10px 24px 12px;background:#f9fafb;border-top:1px solid #e4e7ec;">
+    <div style="display:flex;justify-content:flex-end;">
+      <div style="min-width:220px;">
+        <?php if ($subtotal !== $total): ?><div style="display:flex;justify-content:space-between;padding:3px 0;font-size:11px;color:#6b7280;"><span>Subtotal</span><span><?= $sym.number_format($subtotal,2) ?></span></div><?php endif; ?>
+        <?php if ($taxPct > 0): ?><div style="display:flex;justify-content:space-between;padding:3px 0;font-size:11px;color:#6b7280;"><span>Tax <?= $taxPct ?>%</span><span><?= $sym.number_format($taxAmt,2) ?></span></div><?php endif; ?>
+        <?php if ($discount > 0): ?><div style="display:flex;justify-content:space-between;padding:3px 0;font-size:11px;color:#6b7280;"><span>Discount</span><span>-<?= $sym.number_format($discount,2) ?></span></div><?php endif; ?>
+        <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:800;border-top:2px solid <?= htmlspecialchars($c) ?>;padding-top:7px;margin-top:5px;color:<?= htmlspecialchars($c) ?>;">
+          <span>TOTAL</span><span><?= $sym.number_format($total,2) ?></span>
         </div>
+      </div>
     </div>
-    <div style="display:flex;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
-        <div>
-            <div style="font-weight:700;margin-bottom:6px;font-size:12px;">Billed To</div>
-            <div>Customer Name: <b><?= htmlspecialchars($bill['to_name']) ?></b></div>
-            <div>Vehicle Number: <b><?= htmlspecialchars($vehicleNo) ?></b></div>
-            <div>Vehicle Type: <b><?= htmlspecialchars($vehicleType) ?></b></div>
-        </div>
-        <div style="text-align:right;">
-            <div style="font-weight:700;margin-bottom:6px;font-size:12px;">Fuel Station Details</div>
-            <div>Fuel Station Name: <b><?= htmlspecialchars($bill['from_name']) ?></b></div>
-            <?php if ($bill['from_address']): ?><div>Fuel Station Address: <?= htmlspecialchars(str_replace("\n",', ',$bill['from_address'])) ?></div><?php endif; ?>
-            <?php if ($bill['from_phone']): ?><div>📞 <?= htmlspecialchars($bill['from_phone']) ?></div><?php endif; ?>
-        </div>
-    </div>
-    <div style="text-align:right;font-weight:700;margin-bottom:10px;">Payment Method<?= $payMode ? ': '.htmlspecialchars($payMode) : '' ?></div>
-    <div style="border:1px solid #ddd;border-radius:4px;overflow:hidden;margin-bottom:12px;">
-        <div style="background:#f5f5f5;padding:6px 8px;font-weight:700;font-size:12px;border-bottom:1px solid #ddd;">Receipt Summary</div>
-        <table style="width:100%;border-collapse:collapse;">
-            <thead><tr style="background:#fafafa;border-bottom:1px solid #ddd;"><th style="padding:6px 8px;text-align:left;font-size:11px;">Fuel Rate</th><th style="padding:6px 8px;text-align:center;font-size:11px;">Quantity</th><th style="padding:6px 8px;text-align:right;font-size:11px;">Total Amount</th></tr></thead>
-            <tbody>
-            <?php foreach ($items as $item): ?>
-            <tr style="border-bottom:1px solid #e0e0e0;">
-                <td style="padding:6px 8px;font-size:12px;"><?= $sym ?><?= number_format((float)($item['rate']??0),2) ?></td>
-                <td style="padding:6px 8px;text-align:center;font-size:12px;"><?= (float)($item['qty']??1) ?> lt.</td>
-                <td style="padding:6px 8px;text-align:right;font-weight:700;font-size:12px;"><?= $sym ?><?= number_format((float)($item['amount']??0),2) ?></td>
-            </tr>
-            <?php endforeach; ?>
-            </tbody>
-        </table>
-    </div>
-    <?php if ($taxPct > 0): ?><div style="text-align:right;font-size:11px;color:#666;margin-bottom:4px;">Tax <?= $taxPct ?>%: <?= $sym.number_format($taxAmt,2) ?></div><?php endif; ?>
-    <div style="text-align:right;font-weight:700;font-size:13px;border-top:2px solid #333;padding-top:6px;margin-bottom:14px;">Total: <?= $sym.number_format($total,2) ?></div>
-    <div style="text-align:center;border-top:1px solid #ddd;padding-top:12px;">
-        <div style="font-weight:700;font-size:12px;margin-bottom:4px;">THANK YOU ! FOR FUELLING WITH US !</div>
-        <div style="font-size:11px;color:#555;margin-bottom:4px;">FOR ANY QUERIES AND COMPLAINTS VISIT OUR CUSTOMER CARE</div>
-        <div style="font-size:11px;font-weight:600;margin-bottom:4px;">SAVE FUEL, SECURE THE FUTURE!</div>
-        <div style="font-size:11px;color:#888;">TIME: <?= $billTime ?></div>
-    </div>
-    <?php if ($bill['notes']): ?><div style="margin-top:10px;font-size:11px;color:#555;border-top:1px dashed #ddd;padding-top:8px;"><?= htmlspecialchars($bill['notes']) ?></div><?php endif; ?>
+  </div>
+  <?php if ($bill['notes']): ?><div style="padding:8px 24px;font-size:10.5px;color:#555;border-top:1px dashed #e4e7ec;"><?= htmlspecialchars($bill['notes']) ?></div><?php endif; ?>
+  <div style="background:<?= htmlspecialchars($c) ?>;color:#fff;padding:10px 24px;text-align:center;">
+    <div style="font-size:11px;font-weight:600;margin-bottom:2px;">THANK YOU FOR FUELLING WITH US!</div>
+    <div style="font-size:9.5px;opacity:.8;">Save Fuel, Secure the Future &nbsp;|&nbsp; BillX</div>
+  </div>
 </div>
+
 
 <?php elseif ($group === 'cab'): ?>
 <!-- ============================================================
-     CAB & TRAVEL
+     CAB & TRAVEL RECEIPT
      ============================================================ -->
-<div style="font-family:Arial,sans-serif;background:#1a1a1a;color:#fff;max-width:380px;margin:0 auto;border-radius:8px;overflow:hidden;font-size:12px;box-shadow:0 4px 16px rgba(0,0,0,.4);">
-    <div style="background:#f5a623;padding:14px 16px;color:#1a1a1a;">
-        <div style="font-size:20px;font-weight:900;">🚕 <?= htmlspecialchars($bill['from_name']) ?></div>
-        <?php if ($bill['from_phone']): ?><div style="font-size:11px;">📞 <?= htmlspecialchars($bill['from_phone']) ?></div><?php endif; ?>
-        <?php if ($bill['from_address']): ?><div style="font-size:10px;"><?= htmlspecialchars(str_replace("\n",' | ',$bill['from_address'])) ?></div><?php endif; ?>
+<div style="font-family:'Inter',Arial,sans-serif;background:#fff;max-width:480px;margin:0 auto;border:1px solid #d0d5dd;font-size:12px;color:#1a1a2e;">
+  <div style="background:<?= htmlspecialchars($c) ?>;color:#fff;padding:18px 22px 14px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div>
+        <div style="font-size:9.5px;letter-spacing:3px;text-transform:uppercase;opacity:.8;margin-bottom:4px;">CAB &amp; TRAVEL RECEIPT</div>
+        <div style="font-size:20px;font-weight:700;"><?= htmlspecialchars($bill['from_name']) ?></div>
+        <?php if ($bill['from_address']): ?><div style="font-size:10px;opacity:.8;margin-top:3px;"><?= htmlspecialchars(str_replace("\n",' | ',$bill['from_address'])) ?></div><?php endif; ?>
+        <?php if ($bill['from_phone']): ?><div style="font-size:10px;opacity:.8;">Tel: <?= htmlspecialchars($bill['from_phone']) ?></div><?php endif; ?>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:10px;opacity:.8;">Receipt #</div>
+        <div style="font-size:15px;font-weight:700;"><?= htmlspecialchars($bill['bill_number']) ?></div>
+        <div style="font-size:10px;opacity:.8;margin-top:4px;"><?= $billDate ?></div>
+      </div>
     </div>
-    <div style="padding:10px 16px;background:#2a2a2a;border-bottom:1px solid #444;">
-        <div style="display:flex;justify-content:space-between;"><span style="font-size:11px;color:#f5a623;font-weight:700;">CAB & TRAVEL RECEIPT</span><span style="font-size:11px;color:#aaa;"><?= $billDate ?></span></div>
-        <div style="font-size:11px;color:#aaa;">Receipt#: <b style="color:#fff;"><?= htmlspecialchars($bill['bill_number']) ?></b></div>
+  </div>
+  <div style="padding:14px 22px;border-bottom:1px solid #e4e7ec;background:#f8f9fa;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;">
+      <div>
+        <div style="font-size:9.5px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">Passenger</div>
+        <div style="font-weight:600;font-size:13px;"><?= htmlspecialchars($bill['to_name']) ?></div>
+        <?php if ($bill['to_phone']): ?><div style="font-size:10px;color:#555;">Tel: <?= htmlspecialchars($bill['to_phone']) ?></div><?php endif; ?>
+      </div>
+      <?php if (!empty($td['vehicle_number'])): ?>
+      <div>
+        <div style="font-size:9.5px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">Cab / Vehicle</div>
+        <div style="font-weight:600;"><?= htmlspecialchars($td['vehicle_number']) ?></div>
+        <?php if (!empty($td['driver_name'])): ?><div style="font-size:10px;color:#555;">Driver: <?= htmlspecialchars($td['driver_name']) ?></div><?php endif; ?>
+      </div>
+      <?php endif; ?>
+      <?php if (!empty($td['pickup'])): ?>
+      <div>
+        <div style="font-size:9.5px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">Pickup</div>
+        <div style="font-weight:600;"><?= htmlspecialchars($td['pickup']) ?></div>
+      </div>
+      <?php endif; ?>
+      <?php if (!empty($td['drop'])): ?>
+      <div>
+        <div style="font-size:9.5px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">Drop</div>
+        <div style="font-weight:600;"><?= htmlspecialchars($td['drop']) ?></div>
+      </div>
+      <?php endif; ?>
     </div>
-    <div style="padding:10px 16px;background:#222;border-bottom:1px solid #444;">
-        <div style="font-size:10px;color:#f5a623;text-transform:uppercase;letter-spacing:.1em;">Passenger</div>
-        <div style="font-size:14px;font-weight:700;"><?= htmlspecialchars($bill['to_name']) ?></div>
-        <?php if ($bill['to_phone']): ?><div style="font-size:11px;color:#aaa;">📞 <?= htmlspecialchars($bill['to_phone']) ?></div><?php endif; ?>
-        <?php if (!empty($td['pickup'])): ?><div style="font-size:11px;color:#aaa;">From: <?= htmlspecialchars($td['pickup']) ?></div><?php endif; ?>
-        <?php if (!empty($td['drop'])): ?><div style="font-size:11px;color:#aaa;">To: <?= htmlspecialchars($td['drop']) ?></div><?php endif; ?>
-        <?php if (!empty($td['vehicle_number'])): ?><div style="font-size:11px;color:#aaa;">Cab#: <?= htmlspecialchars($td['vehicle_number']) ?><?= !empty($td['driver_name']) ? ' | Driver: '.htmlspecialchars($td['driver_name']) : '' ?></div><?php endif; ?>
-    </div>
-    <div style="padding:10px 16px;">
-        <?php foreach ($items as $item): ?>
-        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #333;font-size:12px;">
-            <span><?= htmlspecialchars($item['description']??'-') ?></span>
-            <span style="font-weight:700;"><?= $sym.number_format((float)($item['amount']??0),2) ?></span>
-        </div>
-        <?php endforeach; ?>
-        <?php if ($taxPct > 0): ?><div style="display:flex;justify-content:space-between;padding:4px 0;font-size:11px;color:#aaa;"><span>Tax <?= $taxPct ?>%</span><span><?= $sym.number_format($taxAmt,2) ?></span></div><?php endif; ?>
-        <?php if ($discount > 0): ?><div style="display:flex;justify-content:space-between;padding:4px 0;font-size:11px;color:#aaa;"><span>Discount</span><span>-<?= $sym.number_format($discount,2) ?></span></div><?php endif; ?>
-    </div>
-    <div style="background:#f5a623;color:#1a1a1a;padding:12px 16px;display:flex;justify-content:space-between;font-size:16px;font-weight:900;">
-        <span>FARE TOTAL</span><span><?= $sym.number_format($total,2) ?></span>
-    </div>
-    <?php if ($bill['notes']): ?><div style="padding:8px 16px;font-size:10px;color:#aaa;border-top:1px solid #444;"><?= htmlspecialchars($bill['notes']) ?></div><?php endif; ?>
-    <div style="text-align:center;padding:8px;font-size:9px;color:#666;">Safe Journey! | BillX</div>
+  </div>
+  <table style="width:100%;border-collapse:collapse;">
+    <thead>
+      <tr style="background:#f3f4f6;border-bottom:2px solid <?= htmlspecialchars($c) ?>;">
+        <th style="padding:8px 16px;text-align:left;font-size:10.5px;font-weight:600;color:#374151;">Description</th>
+        <th style="padding:8px 16px;text-align:right;font-size:10.5px;font-weight:600;color:#374151;width:110px;">Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+    <?php foreach ($items as $item): ?>
+    <tr style="border-bottom:1px solid #f3f4f6;">
+      <td style="padding:9px 16px;font-size:12px;"><?= htmlspecialchars($item['description']??'-') ?></td>
+      <td style="padding:9px 16px;text-align:right;font-weight:600;font-size:12px;"><?= $sym.number_format((float)($item['amount']??0),2) ?></td>
+    </tr>
+    <?php endforeach; ?>
+    <?php if ($taxPct > 0): ?>
+    <tr style="border-bottom:1px solid #f3f4f6;">
+      <td style="padding:7px 16px;font-size:11px;color:#6b7280;">Tax <?= $taxPct ?>%</td>
+      <td style="padding:7px 16px;text-align:right;font-size:11px;color:#6b7280;"><?= $sym.number_format($taxAmt,2) ?></td>
+    </tr>
+    <?php endif; ?>
+    <?php if ($discount > 0): ?>
+    <tr style="border-bottom:1px solid #f3f4f6;">
+      <td style="padding:7px 16px;font-size:11px;color:#16a34a;">Discount</td>
+      <td style="padding:7px 16px;text-align:right;font-size:11px;color:#16a34a;">-<?= $sym.number_format($discount,2) ?></td>
+    </tr>
+    <?php endif; ?>
+    </tbody>
+  </table>
+  <div style="background:<?= htmlspecialchars($c) ?>;color:#fff;padding:12px 22px;display:flex;justify-content:space-between;align-items:center;">
+    <span style="font-weight:700;font-size:13px;letter-spacing:.5px;">FARE TOTAL</span>
+    <span style="font-weight:900;font-size:18px;"><?= $sym.number_format($total,2) ?></span>
+  </div>
+  <?php if ($bill['notes']): ?><div style="padding:8px 22px;font-size:10.5px;color:#555;border-top:1px dashed #e4e7ec;"><?= htmlspecialchars($bill['notes']) ?></div><?php endif; ?>
+  <div style="padding:7px 22px;text-align:center;font-size:9.5px;color:#9ca3af;border-top:1px solid #e4e7ec;">Safe Journey! &nbsp;|&nbsp; BillX</div>
 </div>
+
 
 <?php elseif ($group === 'official'): ?>
 <!-- ============================================================
-     OFFICIAL RECEIPT  (rent, lta)
+     OFFICIAL RECEIPT  (rent, LTA)
      ============================================================ -->
 <?php $pan = $td['pan_number'] ?? ''; $prop = $td['property_info'] ?? ''; ?>
-<div style="font-family:Georgia,serif;background:#fff;padding:24px 28px;font-size:12px;color:#222;border:2px solid <?= htmlspecialchars($c) ?>;max-width:600px;margin:0 auto;position:relative;box-shadow:0 2px 12px rgba(0,0,0,.1);">
-    <div style="position:absolute;top:10px;right:12px;font-size:64px;color:<?= htmlspecialchars($c) ?>;opacity:.06;font-weight:900;pointer-events:none;user-select:none;">ORIGINAL</div>
-    <div style="text-align:center;margin-bottom:12px;">
-        <div style="font-size:11px;letter-spacing:3px;text-transform:uppercase;color:<?= htmlspecialchars($c) ?>;font-weight:700;">— Official —</div>
-        <div style="font-size:22px;font-weight:900;letter-spacing:1px;color:<?= htmlspecialchars($c) ?>;"><?= strtoupper(htmlspecialchars($typeLabel)) ?></div>
-        <div style="font-size:16px;font-weight:700;"><?= htmlspecialchars($bill['from_name']) ?></div>
-        <?php if ($bill['from_address']): ?><div style="font-size:11px;color:#555;"><?= htmlspecialchars(str_replace("\n",' | ',$bill['from_address'])) ?></div><?php endif; ?>
-        <?php if ($bill['from_phone']): ?><div style="font-size:11px;color:#555;">📞 <?= htmlspecialchars($bill['from_phone']) ?></div><?php endif; ?>
-        <?php if ($pan): ?><div style="font-size:11px;color:#555;">PAN: <b><?= htmlspecialchars($pan) ?></b></div><?php endif; ?>
+<div style="font-family:'Inter',Georgia,serif;background:#fff;max-width:600px;margin:0 auto;border:2px solid <?= htmlspecialchars($c) ?>;font-size:12px;color:#1a1a2e;position:relative;overflow:hidden;">
+  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-size:80px;font-weight:900;color:<?= htmlspecialchars($c) ?>;opacity:.04;pointer-events:none;user-select:none;white-space:nowrap;z-index:0;">ORIGINAL</div>
+  <div style="position:relative;z-index:1;border-bottom:3px double <?= htmlspecialchars($c) ?>;padding:18px 28px 14px;text-align:center;">
+    <div style="font-size:10px;letter-spacing:4px;text-transform:uppercase;color:<?= htmlspecialchars($c) ?>;font-weight:600;margin-bottom:4px;">— Official Document —</div>
+    <div style="font-size:22px;font-weight:700;color:<?= htmlspecialchars($c) ?>;letter-spacing:.5px;"><?= htmlspecialchars($bill['from_name']) ?></div>
+    <?php if ($bill['from_address']): ?><div style="font-size:10.5px;color:#555;margin-top:4px;"><?= htmlspecialchars(str_replace("\n",' | ',$bill['from_address'])) ?></div><?php endif; ?>
+    <?php if ($bill['from_phone']): ?><div style="font-size:10.5px;color:#555;">Tel: <?= htmlspecialchars($bill['from_phone']) ?></div><?php endif; ?>
+    <?php if ($pan): ?><div style="font-size:10.5px;color:#555;">PAN: <b><?= htmlspecialchars($pan) ?></b></div><?php endif; ?>
+  </div>
+  <div style="position:relative;z-index:1;padding:10px 28px;background:#f8f9fa;border-bottom:1px solid #e4e7ec;">
+    <div style="display:flex;justify-content:space-between;font-size:11.5px;">
+      <span>Receipt No.: <b><?= htmlspecialchars($bill['bill_number']) ?></b></span>
+      <span><b><?= htmlspecialchars(strtoupper($typeLabel)) ?></b></span>
+      <span>Date: <b><?= $billDate ?></b></span>
     </div>
-    <div style="border-top:3px double <?= htmlspecialchars($c) ?>;border-bottom:3px double <?= htmlspecialchars($c) ?>;padding:8px 0;margin-bottom:12px;">
-        <div style="display:flex;justify-content:space-between;"><span>Receipt No.: <b><?= htmlspecialchars($bill['bill_number']) ?></b></span><span>Date: <b><?= $billDate ?></b></span></div>
+  </div>
+  <div style="position:relative;z-index:1;padding:14px 28px;border-bottom:1px solid #e4e7ec;">
+    <div style="background:#f0f7f0;border-left:4px solid <?= htmlspecialchars($c) ?>;padding:10px 14px;border-radius:0 4px 4px 0;">
+      <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Received with thanks from</div>
+      <div style="font-size:15px;font-weight:700;color:#111;"><?= htmlspecialchars($bill['to_name']) ?></div>
+      <?php if ($bill['to_address']): ?><div style="font-size:10.5px;color:#555;margin-top:2px;"><?= htmlspecialchars(str_replace("\n",', ',$bill['to_address'])) ?></div><?php endif; ?>
+      <?php if ($bill['to_phone']): ?><div style="font-size:10.5px;color:#555;">Tel: <?= htmlspecialchars($bill['to_phone']) ?></div><?php endif; ?>
     </div>
-    <div style="margin-bottom:12px;padding:10px;background:#f9fdf9;border-left:4px solid <?= htmlspecialchars($c) ?>;">
-        <div style="font-size:11px;color:#666;margin-bottom:4px;">Received with thanks from:</div>
-        <div style="font-size:15px;font-weight:700;"><?= htmlspecialchars($bill['to_name']) ?></div>
-        <?php if ($bill['to_address']): ?><div style="font-size:11px;color:#555;"><?= htmlspecialchars(str_replace("\n",', ',$bill['to_address'])) ?></div><?php endif; ?>
-        <?php if ($bill['to_phone']): ?><div style="font-size:11px;color:#555;">Contact: <?= htmlspecialchars($bill['to_phone']) ?></div><?php endif; ?>
+    <?php if ($prop): ?><div style="font-size:11px;color:#555;margin-top:8px;">Property / Reference: <b><?= htmlspecialchars($prop) ?></b></div><?php endif; ?>
+  </div>
+  <div style="position:relative;z-index:1;padding:14px 28px;border-bottom:1px solid #e4e7ec;">
+    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:<?= htmlspecialchars($c) ?>;margin-bottom:8px;">Particulars</div>
+    <table style="width:100%;border-collapse:collapse;">
+      <?php foreach ($items as $item): ?>
+      <tr style="border-bottom:1px dotted #d1d5db;">
+        <td style="padding:6px 0;font-size:12px;"><?= htmlspecialchars($item['description']??'-') ?></td>
+        <td style="padding:6px 0;text-align:right;font-weight:600;font-size:12px;width:120px;"><?= $sym.number_format((float)($item['amount']??0),2) ?></td>
+      </tr>
+      <?php endforeach; ?>
+    </table>
+    <div style="margin-top:10px;border-top:1px solid #d1d5db;padding-top:8px;">
+      <?php if ($taxPct > 0): ?><div style="display:flex;justify-content:space-between;font-size:11px;color:#6b7280;padding:2px 0;"><span>Tax <?= $taxPct ?>%</span><span><?= $sym.number_format($taxAmt,2) ?></span></div><?php endif; ?>
+      <?php if ($discount > 0): ?><div style="display:flex;justify-content:space-between;font-size:11px;color:#6b7280;padding:2px 0;"><span>Discount</span><span>-<?= $sym.number_format($discount,2) ?></span></div><?php endif; ?>
+      <div style="display:flex;justify-content:space-between;font-size:16px;font-weight:800;border-top:2px solid <?= htmlspecialchars($c) ?>;padding-top:7px;margin-top:5px;color:<?= htmlspecialchars($c) ?>;">
+        <span>Total Amount Received</span><span><?= $sym.number_format($total,2) ?></span>
+      </div>
     </div>
-    <?php if ($prop): ?><div style="font-size:11px;color:#555;margin-bottom:8px;">Property / Office: <b><?= htmlspecialchars($prop) ?></b></div><?php endif; ?>
-    <div style="margin-bottom:8px;font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.05em;font-weight:600;">Particulars</div>
-    <?php foreach ($items as $item): ?>
-    <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dotted #bbb;font-size:12px;">
-        <span><?= htmlspecialchars($item['description']??'-') ?></span>
-        <span style="font-weight:600;"><?= $sym.number_format((float)($item['amount']??0),2) ?></span>
+  </div>
+  <?php if ($bill['notes']): ?><div style="position:relative;z-index:1;padding:10px 28px;border-bottom:1px solid #e4e7ec;font-size:11px;color:#4b5563;font-style:italic;"><b>Note:</b> <?= htmlspecialchars($bill['notes']) ?></div><?php endif; ?>
+  <div style="position:relative;z-index:1;padding:18px 28px 22px;display:flex;justify-content:space-between;">
+    <div style="text-align:center;">
+      <div style="height:36px;"></div>
+      <div style="border-top:1px solid #555;width:150px;padding-top:5px;font-size:10.5px;color:#374151;">Receiver's Signature</div>
     </div>
-    <?php endforeach; ?>
-    <div style="margin-top:12px;border-top:1px solid #ccc;padding-top:8px;">
-        <?php if ($taxPct > 0): ?><div style="display:flex;justify-content:space-between;font-size:11px;color:#666;margin-bottom:2px;"><span>Tax <?= $taxPct ?>%</span><span><?= $sym.number_format($taxAmt,2) ?></span></div><?php endif; ?>
-        <?php if ($discount > 0): ?><div style="display:flex;justify-content:space-between;font-size:11px;color:#666;margin-bottom:2px;"><span>Discount</span><span>-<?= $sym.number_format($discount,2) ?></span></div><?php endif; ?>
-        <div style="display:flex;justify-content:space-between;font-size:16px;font-weight:900;color:<?= htmlspecialchars($c) ?>;border-top:2px solid <?= htmlspecialchars($c) ?>;padding-top:6px;margin-top:4px;">
-            <span>Total Amount Received</span><span><?= $sym.number_format($total,2) ?></span>
-        </div>
+    <div style="text-align:center;">
+      <div style="height:36px;"></div>
+      <div style="border-top:1px solid #555;width:150px;padding-top:5px;font-size:10.5px;color:#374151;">Issuer's Signature</div>
     </div>
-    <?php if ($bill['notes']): ?><div style="margin-top:10px;font-size:11px;color:#555;font-style:italic;border-top:1px dashed #ccc;padding-top:8px;">Note: <?= htmlspecialchars($bill['notes']) ?></div><?php endif; ?>
-    <div style="margin-top:20px;display:flex;justify-content:space-between;font-size:11px;">
-        <div><div style="border-top:1px solid #555;width:130px;padding-top:4px;margin-top:30px;">Receiver's Signature</div></div>
-        <div style="text-align:right;"><div style="border-top:1px solid #555;width:130px;padding-top:4px;margin-top:30px;">Issuer's Signature</div></div>
-    </div>
-    <div style="text-align:center;font-size:9px;color:#aaa;margin-top:12px;border-top:1px dashed #ddd;padding-top:6px;">Generated by BillX | Computer-generated receipt</div>
+  </div>
+  <div style="position:relative;z-index:1;background:#f8f9fa;border-top:1px solid #e4e7ec;padding:7px 28px;text-align:center;font-size:9px;color:#9ca3af;">Computer-generated receipt &nbsp;|&nbsp; BillX</div>
 </div>
+
 
 <?php elseif ($group === 'medical'): ?>
 <!-- ============================================================
-     MEDICAL BILL — hospital invoice style
+     MEDICAL BILL — clinical invoice
      ============================================================ -->
 <?php
     $doctor    = $td['doctor_name']   ?? '';
@@ -398,68 +557,85 @@ body { margin: 0; padding: 0; background: #fff; font-family: Arial, sans-serif; 
     $sgstPct   = (float)($td['sgst_pct'] ?? 0);
     $cgstAmt   = round($subtotal * $cgstPct / 100, 2);
     $sgstAmt   = round($subtotal * $sgstPct / 100, 2);
-    $taxable   = $subtotal;
     $netAmt    = $subtotal + $cgstAmt + $sgstAmt - $discount;
     $billTime  = $bill['created_at'] ? date('H:i', strtotime($bill['created_at'])) : date('H:i');
 ?>
-<div style="font-family:Arial,sans-serif;background:#fff;font-size:12px;color:#111;border:1px solid #ccc;max-width:600px;margin:0 auto;">
-    <div style="padding:10px 14px;border-bottom:1px solid #ddd;">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-            <div>
-                <div style="font-size:16px;font-weight:700;"><?= htmlspecialchars($bill['from_name']) ?></div>
-                <?php if ($bill['from_address']): ?><div style="font-size:11px;color:#555;"><?= htmlspecialchars(str_replace("\n",' | ',$bill['from_address'])) ?></div><?php endif; ?>
-            </div>
-            <div style="text-align:right;"><div style="font-size:11px;font-weight:600;">Invoice No: <b><?= htmlspecialchars($bill['bill_number']) ?></b></div></div>
+<div style="font-family:'Inter',Arial,sans-serif;background:#fff;max-width:620px;margin:0 auto;border:1px solid #d0d5dd;font-size:12px;color:#1a1a2e;">
+  <div style="background:<?= htmlspecialchars($c) ?>;color:#fff;padding:18px 24px 14px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div>
+        <div style="font-size:9.5px;letter-spacing:3px;text-transform:uppercase;opacity:.8;margin-bottom:4px;">MEDICAL INVOICE</div>
+        <div style="font-size:20px;font-weight:700;"><?= htmlspecialchars($bill['from_name']) ?></div>
+        <?php if ($bill['from_address']): ?><div style="font-size:10px;opacity:.8;margin-top:3px;line-height:1.5;"><?= htmlspecialchars(str_replace("\n",' | ',$bill['from_address'])) ?></div><?php endif; ?>
+        <?php if ($bill['from_phone']): ?><div style="font-size:10px;opacity:.8;">Tel: <?= htmlspecialchars($bill['from_phone']) ?></div><?php endif; ?>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:10px;opacity:.8;">Invoice No.</div>
+        <div style="font-size:15px;font-weight:700;"><?= htmlspecialchars($bill['bill_number']) ?></div>
+        <div style="font-size:10px;opacity:.8;margin-top:6px;">Date: <?= $billDate ?></div>
+        <div style="font-size:10px;opacity:.8;">Time: <?= $billTime ?></div>
+      </div>
+    </div>
+  </div>
+  <div style="padding:12px 24px;border-bottom:1px solid #e4e7ec;background:#f8f9fa;">
+    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:<?= htmlspecialchars($c) ?>;margin-bottom:8px;">Patient Information</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px 12px;">
+      <div><div style="font-size:9px;color:#6b7280;text-transform:uppercase;margin-bottom:1px;">Patient Name</div><div style="font-weight:600;"><?= htmlspecialchars($bill['to_name']) ?></div></div>
+      <?php if ($patAge): ?><div><div style="font-size:9px;color:#6b7280;text-transform:uppercase;margin-bottom:1px;">Age</div><div style="font-weight:600;"><?= htmlspecialchars($patAge) ?></div></div><?php endif; ?>
+      <?php if ($patId): ?><div><div style="font-size:9px;color:#6b7280;text-transform:uppercase;margin-bottom:1px;">Patient ID</div><div style="font-weight:600;"><?= htmlspecialchars($patId) ?></div></div><?php endif; ?>
+      <?php if ($guardian): ?><div><div style="font-size:9px;color:#6b7280;text-transform:uppercase;margin-bottom:1px;">Guardian</div><div style="font-weight:600;"><?= htmlspecialchars($guardian) ?></div></div><?php endif; ?>
+      <?php if ($issue): ?><div><div style="font-size:9px;color:#6b7280;text-transform:uppercase;margin-bottom:1px;">Diagnosis / Issue</div><div style="font-weight:600;"><?= htmlspecialchars($issue) ?></div></div><?php endif; ?>
+      <?php if ($doctor): ?><div><div style="font-size:9px;color:#6b7280;text-transform:uppercase;margin-bottom:1px;">Consultant</div><div style="font-weight:600;"><?= htmlspecialchars($doctor) ?></div></div><?php endif; ?>
+      <?php if ($admitDate): ?><div><div style="font-size:9px;color:#6b7280;text-transform:uppercase;margin-bottom:1px;">Admit Date</div><div style="font-weight:600;"><?= $admitDate ?></div></div><?php endif; ?>
+      <div><div style="font-size:9px;color:#6b7280;text-transform:uppercase;margin-bottom:1px;">Discharge / Date</div><div style="font-weight:600;"><?= $billDate ?></div></div>
+      <div><div style="font-size:9px;color:#6b7280;text-transform:uppercase;margin-bottom:1px;">Room Category</div><div style="font-weight:600;"><?= htmlspecialchars($roomCat) ?></div></div>
+      <div><div style="font-size:9px;color:#6b7280;text-transform:uppercase;margin-bottom:1px;">Insurance</div><div style="font-weight:600;"><?= htmlspecialchars($insurance) ?></div></div>
+      <?php if ($bill['to_phone']): ?><div><div style="font-size:9px;color:#6b7280;text-transform:uppercase;margin-bottom:1px;">Contact</div><div style="font-weight:600;"><?= htmlspecialchars($bill['to_phone']) ?></div></div><?php endif; ?>
+      <?php if ($bill['to_address']): ?><div style="grid-column:span 2;"><div style="font-size:9px;color:#6b7280;text-transform:uppercase;margin-bottom:1px;">Address</div><div style="font-weight:600;"><?= htmlspecialchars($bill['to_address']) ?></div></div><?php endif; ?>
+    </div>
+  </div>
+  <table style="width:100%;border-collapse:collapse;">
+    <thead>
+      <tr style="background:#f3f4f6;border-bottom:2px solid <?= htmlspecialchars($c) ?>;">
+        <th style="padding:8px 16px;text-align:left;font-size:10.5px;font-weight:600;color:#374151;">#</th>
+        <th style="padding:8px 12px;text-align:left;font-size:10.5px;font-weight:600;color:#374151;">Treatment / Description</th>
+        <th style="padding:8px 12px;text-align:right;font-size:10.5px;font-weight:600;color:#374151;width:90px;">Rate</th>
+        <th style="padding:8px 16px;text-align:right;font-size:10.5px;font-weight:600;color:#374151;width:100px;">Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+    <?php foreach ($items as $i => $item): ?>
+    <tr style="border-bottom:1px solid #f3f4f6;background:<?= $i%2===0?'#fff':'#fafafa' ?>;">
+      <td style="padding:8px 16px;font-size:11px;color:#9ca3af;"><?= $i+1 ?></td>
+      <td style="padding:8px 12px;font-size:12px;"><?= htmlspecialchars($item['description']??'-') ?></td>
+      <td style="padding:8px 12px;text-align:right;font-size:12px;"><?= $sym.number_format((float)($item['rate']??0),2) ?></td>
+      <td style="padding:8px 16px;text-align:right;font-weight:600;font-size:12px;"><?= $sym.number_format((float)($item['amount']??0),2) ?></td>
+    </tr>
+    <?php endforeach; ?>
+    </tbody>
+  </table>
+  <div style="padding:12px 24px;background:#f9fafb;border-top:1px solid #e4e7ec;">
+    <div style="display:flex;justify-content:flex-end;">
+      <div style="min-width:260px;">
+        <div style="display:flex;justify-content:space-between;padding:3px 0;font-size:11px;color:#6b7280;border-bottom:1px solid #e4e7ec;"><span>Subtotal (Taxable Amount)</span><span><?= $sym.number_format($subtotal,2) ?></span></div>
+        <?php if ($cgstPct > 0): ?><div style="display:flex;justify-content:space-between;padding:3px 0;font-size:11px;color:#6b7280;border-bottom:1px solid #e4e7ec;"><span>CGST @ <?= $cgstPct ?>%</span><span><?= $sym.number_format($cgstAmt,2) ?></span></div><?php endif; ?>
+        <?php if ($sgstPct > 0): ?><div style="display:flex;justify-content:space-between;padding:3px 0;font-size:11px;color:#6b7280;border-bottom:1px solid #e4e7ec;"><span>SGST @ <?= $sgstPct ?>%</span><span><?= $sym.number_format($sgstAmt,2) ?></span></div><?php endif; ?>
+        <?php if ($taxPct > 0 && $cgstPct == 0 && $sgstPct == 0): ?><div style="display:flex;justify-content:space-between;padding:3px 0;font-size:11px;color:#6b7280;border-bottom:1px solid #e4e7ec;"><span>Tax <?= $taxPct ?>%</span><span><?= $sym.number_format($taxAmt,2) ?></span></div><?php endif; ?>
+        <?php if ($discount > 0): ?><div style="display:flex;justify-content:space-between;padding:3px 0;font-size:11px;color:#16a34a;border-bottom:1px solid #e4e7ec;"><span>Discount</span><span>-<?= $sym.number_format($discount,2) ?></span></div><?php endif; ?>
+        <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:800;border-top:2px solid <?= htmlspecialchars($c) ?>;padding-top:7px;margin-top:5px;color:<?= htmlspecialchars($c) ?>;">
+          <span>Net Amount</span><span><?= $sym.number_format($total,2) ?></span>
         </div>
+      </div>
     </div>
-    <div style="padding:8px 14px;border-bottom:1px solid #ddd;">
-        <div style="font-weight:700;margin-bottom:4px;">Hospital details:</div>
-        <?php if ($bill['from_phone']): ?><div style="font-size:11px;">Contact Details: <?= htmlspecialchars($bill['from_phone']) ?></div><?php endif; ?>
-        <div style="font-size:11px;">Discharge Date:</div>
-        <div style="font-size:11px;"><?= $billDate ?></div>
-    </div>
-    <div style="padding:8px 14px;border-bottom:1px solid #ddd;">
-        <div style="font-weight:700;margin-bottom:6px;">Patient Information</div>
-        <table style="width:100%;border-collapse:collapse;font-size:11px;">
-            <tr><td style="padding:3px 6px;"><b>Patient Name:</b> <?= htmlspecialchars($bill['to_name']) ?></td><td style="padding:3px 6px;"><b>Patient Issue:</b> <?= htmlspecialchars($issue) ?></td><td style="padding:3px 6px;"><b>Address:</b> <?= htmlspecialchars($bill['to_address'] ?? '') ?></td></tr>
-            <tr><td style="padding:3px 6px;"><b>Guardian Name:</b> <?= htmlspecialchars($guardian) ?></td><td style="padding:3px 6px;"><b>Admit Date:</b><br><?= $admitDate ?></td><td style="padding:3px 6px;"><b>Mobile:</b> <?= htmlspecialchars($bill['to_phone'] ?? '') ?></td></tr>
-            <tr><td style="padding:3px 6px;"><b>Insurance Avl:</b><br><?= htmlspecialchars($insurance) ?></td><td style="padding:3px 6px;"><b>Age:</b> <?= htmlspecialchars($patAge) ?></td><td></td></tr>
-            <tr><td style="padding:3px 6px;"><b>Consultant:</b> <?= htmlspecialchars($doctor) ?></td><td style="padding:3px 6px;"><b>Room Category:</b><br><?= htmlspecialchars($roomCat) ?></td><td style="padding:3px 6px;"><?= $patId ? '<b>Patient ID:</b> '.htmlspecialchars($patId) : '' ?></td></tr>
-        </table>
-    </div>
-    <table style="width:100%;border-collapse:collapse;font-size:12px;">
-        <thead><tr style="background:#f5f5f5;border-bottom:1px solid #ccc;border-top:1px solid #ccc;"><th style="padding:6px 8px;text-align:left;">Details</th><th style="padding:6px 8px;text-align:right;width:80px;">Price</th><th style="padding:6px 8px;text-align:right;width:80px;">Amount</th></tr></thead>
-        <tbody>
-        <?php foreach ($items as $item): ?>
-        <tr style="border-bottom:1px solid #eee;">
-            <td style="padding:5px 8px;"><?= htmlspecialchars($item['description']??'-') ?></td>
-            <td style="padding:5px 8px;text-align:right;"><?= $sym.number_format((float)($item['rate']??0),2) ?></td>
-            <td style="padding:5px 8px;text-align:right;font-weight:600;"><?= $sym.number_format((float)($item['amount']??0),2) ?></td>
-        </tr>
-        <?php endforeach; ?>
-        </tbody>
-    </table>
-    <div style="padding:8px 14px;border-top:1px solid #ddd;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;">
-        <div>
-            <div style="font-weight:700;margin-bottom:4px;">Pay By</div>
-            <div style="font-size:11px;">Amount: <?= $sym.number_format($total,2) ?></div>
-        </div>
-        <div style="text-align:right;font-size:11px;">
-            <div>Tax: <?= $taxPct ?>%</div>
-            <div>CGST: <?= $cgstPct ?>% - <?= $sym.number_format($cgstAmt,2) ?></div>
-            <div>SGST: <?= $sgstPct ?>% - <?= $sym.number_format($sgstAmt,2) ?></div>
-            <div><b>Taxable Amount: <?= $sym.number_format($taxable,2) ?></b></div>
-            <div><b>Net Amount: <?= number_format($netAmt,2) ?></b></div>
-            <div><b>Total Amount: <?= $sym.number_format($total,2) ?></b></div>
-        </div>
-    </div>
-    <?php if ($bill['notes']): ?><div style="padding:8px 14px;border-top:1px solid #ddd;font-size:11px;"><b>Remark:</b><br><?= htmlspecialchars($bill['notes']) ?></div><?php endif; ?>
-    <div style="padding:8px 14px;border-top:1px solid #ccc;font-size:10px;color:#555;font-style:italic;">* This is a computer-generated invoice. Signature not required. Created on <?= $billDate ?> at <?= $billTime ?>.</div>
+  </div>
+  <?php if ($bill['notes']): ?><div style="padding:8px 24px;border-top:1px dashed #e4e7ec;font-size:10.5px;color:#555;"><b>Remark:</b> <?= htmlspecialchars($bill['notes']) ?></div><?php endif; ?>
+  <div style="background:#f8f9fa;border-top:1px solid #e4e7ec;padding:7px 24px;text-align:center;font-size:9px;color:#9ca3af;">Computer-generated invoice — signature not required &nbsp;|&nbsp; BillX</div>
 </div>
+
 
 <?php elseif ($group === 'hotel'): ?>
 <!-- ============================================================
-     HOTEL FOLIO
+     HOTEL FOLIO — elegant guest bill
      ============================================================ -->
 <?php
     $roomNo   = $td['room_number']   ?? '';
@@ -467,100 +643,159 @@ body { margin: 0; padding: 0; background: #fff; font-family: Arial, sans-serif; 
     $checkin  = !empty($td['checkin_date'])  ? date('d M Y', strtotime($td['checkin_date']))  : '';
     $checkout = !empty($td['checkout_date']) ? date('d M Y', strtotime($td['checkout_date'])) : '';
 ?>
-<div style="font-family:Georgia,serif;background:#fffdf5;font-size:12px;color:#333;border:1px solid #c9a84c;box-shadow:0 4px 20px rgba(0,0,0,.15);">
-    <div style="background:linear-gradient(135deg,#7d5a00,#c9a84c);color:#fff;padding:20px 24px;text-align:center;">
-        <div style="font-size:10px;letter-spacing:4px;text-transform:uppercase;opacity:.8;margin-bottom:4px;">★ ★ ★</div>
-        <div style="font-size:22px;font-weight:700;letter-spacing:1px;"><?= htmlspecialchars($bill['from_name']) ?></div>
-        <?php if ($bill['from_address']): ?><div style="font-size:10px;opacity:.85;margin-top:4px;"><?= htmlspecialchars(str_replace("\n",' | ',$bill['from_address'])) ?></div><?php endif; ?>
-        <?php if ($bill['from_phone']): ?><div style="font-size:10px;opacity:.85;">📞 <?= htmlspecialchars($bill['from_phone']) ?></div><?php endif; ?>
-        <?php if ($gstin): ?><div style="font-size:10px;opacity:.85;">GSTIN: <?= htmlspecialchars($gstin) ?></div><?php endif; ?>
-        <div style="font-size:11px;letter-spacing:3px;text-transform:uppercase;margin-top:8px;opacity:.9;">— Hotel Folio —</div>
+<div style="font-family:'Inter',Georgia,serif;background:#fffdf5;font-size:12px;color:#2d2508;border:1px solid #c9a84c;">
+  <div style="background:linear-gradient(135deg,#6b4c00,#c9a84c);color:#fff;padding:22px 28px 18px;text-align:center;">
+    <div style="font-size:11px;letter-spacing:5px;text-transform:uppercase;opacity:.75;margin-bottom:6px;">&#9733; &#9733; &#9733;</div>
+    <div style="font-size:24px;font-weight:700;letter-spacing:.5px;font-family:'Playfair Display','Georgia',serif;"><?= htmlspecialchars($bill['from_name']) ?></div>
+    <?php if ($bill['from_address']): ?><div style="font-size:10px;opacity:.8;margin-top:5px;line-height:1.6;"><?= htmlspecialchars(str_replace("\n",' | ',$bill['from_address'])) ?></div><?php endif; ?>
+    <?php if ($bill['from_phone']): ?><div style="font-size:10px;opacity:.8;">Tel: <?= htmlspecialchars($bill['from_phone']) ?></div><?php endif; ?>
+    <?php if ($gstin): ?><div style="font-size:10px;opacity:.8;">GSTIN: <?= htmlspecialchars($gstin) ?></div><?php endif; ?>
+    <div style="font-size:11px;letter-spacing:4px;text-transform:uppercase;margin-top:10px;opacity:.85;">— Hotel Folio —</div>
+  </div>
+  <div style="background:#fdf0c0;padding:12px 28px;border-bottom:2px solid #c9a84c;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+    <div>
+      <div style="font-size:9px;color:#7d5a00;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Guest Name</div>
+      <div style="font-size:15px;font-weight:700;color:#2d2508;"><?= htmlspecialchars($bill['to_name']) ?></div>
+      <?php if ($bill['to_phone']): ?><div style="font-size:10px;color:#7d5a00;margin-top:2px;">Tel: <?= htmlspecialchars($bill['to_phone']) ?></div><?php endif; ?>
+      <?php if ($bill['to_address']): ?><div style="font-size:10px;color:#7d5a00;"><?= htmlspecialchars(str_replace("\n",', ',$bill['to_address'])) ?></div><?php endif; ?>
     </div>
-    <div style="background:#fdf0c0;padding:10px 24px;border-bottom:2px solid #c9a84c;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-        <div>
-            <span style="font-size:10px;color:#7d5a00;display:block;text-transform:uppercase;">Guest Name</span>
-            <span style="font-size:14px;font-weight:700;"><?= htmlspecialchars($bill['to_name']) ?></span>
-            <?php if ($bill['to_phone']): ?><span style="font-size:10px;color:#7d5a00;display:block;">📞 <?= htmlspecialchars($bill['to_phone']) ?></span><?php endif; ?>
-        </div>
-        <div style="text-align:right;">
-            <span style="font-size:10px;color:#7d5a00;display:block;text-transform:uppercase;">Folio Details</span>
-            <span style="font-size:12px;display:block;">Folio #: <b><?= htmlspecialchars($bill['bill_number']) ?></b></span>
-            <span style="font-size:12px;">Date: <?= $billDate ?></span>
-            <?php if ($roomNo): ?><span style="font-size:11px;display:block;">Room: <b><?= htmlspecialchars($roomNo) ?></b></span><?php endif; ?>
-            <?php if ($checkin): ?><span style="font-size:11px;display:block;">In: <?= $checkin ?><?= $checkout ? ' → '.$checkout : '' ?></span><?php endif; ?>
-        </div>
+    <div style="text-align:right;">
+      <div style="font-size:9px;color:#7d5a00;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Folio Details</div>
+      <div style="font-size:13px;font-weight:700;">Folio #: <?= htmlspecialchars($bill['bill_number']) ?></div>
+      <div style="font-size:11px;color:#7d5a00;margin-top:3px;">Date: <?= $billDate ?></div>
+      <?php if ($roomNo): ?><div style="font-size:11px;color:#7d5a00;">Room: <b><?= htmlspecialchars($roomNo) ?></b></div><?php endif; ?>
+      <?php if ($checkin): ?><div style="font-size:11px;color:#7d5a00;">Check-in: <?= $checkin ?></div><?php endif; ?>
+      <?php if ($checkout): ?><div style="font-size:11px;color:#7d5a00;">Check-out: <?= $checkout ?></div><?php endif; ?>
     </div>
-    <table style="width:100%;border-collapse:collapse;">
-        <thead><tr style="background:#c9a84c;color:#fff;"><th style="padding:8px 12px;text-align:left;font-size:11px;">Description</th><th style="padding:8px 12px;text-align:center;font-size:11px;width:70px;">Nights/Qty</th><th style="padding:8px 12px;text-align:right;font-size:11px;width:80px;">Rate</th><th style="padding:8px 12px;text-align:right;font-size:11px;width:90px;">Amount</th></tr></thead>
-        <tbody>
-            <?php foreach ($items as $i => $item): ?>
-            <tr style="background:<?= $i%2===0?'#fdf8ee':'#fff' ?>;border-bottom:1px solid #e8d89a;">
-                <td style="padding:8px 12px;font-size:12px;"><?= htmlspecialchars($item['description']??'-') ?></td>
-                <td style="padding:8px 12px;text-align:center;font-size:12px;"><?= (float)($item['qty']??1) ?></td>
-                <td style="padding:8px 12px;text-align:right;font-size:12px;"><?= $sym.number_format((float)($item['rate']??0),2) ?></td>
-                <td style="padding:8px 12px;text-align:right;font-weight:700;font-size:12px;"><?= $sym.number_format((float)($item['amount']??0),2) ?></td>
-            </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
-    <div style="padding:10px 24px;background:#fdf8ee;border-top:1px solid #e8d89a;"><div style="display:flex;justify-content:flex-end;"><div style="min-width:220px;">
-        <?php if ($subtotal !== $total): ?><div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-bottom:1px solid #e8d89a;"><span style="color:#777;">Subtotal</span><span><?= $sym.number_format($subtotal,2) ?></span></div><?php endif; ?>
-        <?php if ($taxPct > 0): ?><div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-bottom:1px solid #e8d89a;"><span style="color:#777;">Tax/Service <?= $taxPct ?>%</span><span><?= $sym.number_format($taxAmt,2) ?></span></div><?php endif; ?>
-        <?php if ($discount > 0): ?><div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-bottom:1px solid #e8d89a;"><span style="color:#777;">Discount</span><span style="color:#e53935;">-<?= $sym.number_format($discount,2) ?></span></div><?php endif; ?>
-        <div style="display:flex;justify-content:space-between;font-size:16px;font-weight:700;border-top:2px solid #c9a84c;padding-top:6px;margin-top:4px;color:#7d5a00;"><span>Total Amount</span><span><?= $sym.number_format($total,2) ?></span></div>
-    </div></div></div>
-    <?php if ($bill['notes']): ?><div style="padding:8px 24px;font-size:11px;color:#7d5a00;font-style:italic;border-top:1px solid #e8d89a;"><?= htmlspecialchars($bill['notes']) ?></div><?php endif; ?>
-    <div style="background:linear-gradient(135deg,#7d5a00,#c9a84c);color:#fff;padding:10px 24px;display:flex;justify-content:space-between;font-size:10px;"><span>Thank you for your stay! 🌟</span><span>BillX</span></div>
+  </div>
+  <table style="width:100%;border-collapse:collapse;">
+    <thead>
+      <tr style="background:#c9a84c;color:#fff;">
+        <th style="padding:9px 16px;text-align:left;font-size:10.5px;font-weight:600;">Description</th>
+        <th style="padding:9px 10px;text-align:center;font-size:10.5px;font-weight:600;width:80px;">Nights/Qty</th>
+        <th style="padding:9px 10px;text-align:right;font-size:10.5px;font-weight:600;width:90px;">Rate</th>
+        <th style="padding:9px 16px;text-align:right;font-size:10.5px;font-weight:600;width:100px;">Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+    <?php foreach ($items as $i => $item): ?>
+    <tr style="background:<?= $i%2===0?'#fdf8ee':'#fff' ?>;border-bottom:1px solid #e8d89a;">
+      <td style="padding:9px 16px;font-size:12px;"><?= htmlspecialchars($item['description']??'-') ?></td>
+      <td style="padding:9px 10px;text-align:center;font-size:12px;"><?= (float)($item['qty']??1) ?></td>
+      <td style="padding:9px 10px;text-align:right;font-size:12px;"><?= $sym.number_format((float)($item['rate']??0),2) ?></td>
+      <td style="padding:9px 16px;text-align:right;font-weight:700;font-size:12px;"><?= $sym.number_format((float)($item['amount']??0),2) ?></td>
+    </tr>
+    <?php endforeach; ?>
+    </tbody>
+  </table>
+  <div style="padding:12px 28px;background:#fdf8ee;border-top:1px solid #e8d89a;">
+    <div style="display:flex;justify-content:flex-end;">
+      <div style="min-width:240px;">
+        <?php if ($subtotal !== $total): ?><div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-bottom:1px solid #e8d89a;color:#7d5a00;"><span>Subtotal</span><span><?= $sym.number_format($subtotal,2) ?></span></div><?php endif; ?>
+        <?php if ($taxPct > 0): ?><div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-bottom:1px solid #e8d89a;color:#7d5a00;"><span>Tax / Service <?= $taxPct ?>%</span><span><?= $sym.number_format($taxAmt,2) ?></span></div><?php endif; ?>
+        <?php if ($discount > 0): ?><div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-bottom:1px solid #e8d89a;color:#16a34a;"><span>Discount</span><span>-<?= $sym.number_format($discount,2) ?></span></div><?php endif; ?>
+        <div style="display:flex;justify-content:space-between;font-size:17px;font-weight:800;border-top:2px solid #c9a84c;padding-top:7px;margin-top:5px;color:#7d5a00;">
+          <span>Total Amount</span><span><?= $sym.number_format($total,2) ?></span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <?php if ($bill['notes']): ?><div style="padding:8px 28px;font-size:10.5px;color:#7d5a00;font-style:italic;border-top:1px solid #e8d89a;"><?= htmlspecialchars($bill['notes']) ?></div><?php endif; ?>
+  <div style="background:linear-gradient(135deg,#6b4c00,#c9a84c);color:#fff;padding:10px 28px;display:flex;justify-content:space-between;align-items:center;font-size:10.5px;">
+    <span>Thank you for your stay! &#9733;</span>
+    <span style="opacity:.75;">BillX</span>
+  </div>
 </div>
+
 
 <?php elseif ($group === 'gym'): ?>
 <!-- ============================================================
-     GYM INVOICE
+     GYM INVOICE — modern fitness receipt
      ============================================================ -->
-<div style="font-family:Arial,sans-serif;background:#181818;color:#f0f0f0;font-size:12px;box-shadow:0 4px 20px rgba(0,0,0,.4);">
-    <div style="background:linear-gradient(135deg,#212121,#333);padding:16px 20px;border-bottom:3px solid #ff6f00;">
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-            <div>
-                <div style="font-size:22px;font-weight:900;letter-spacing:-0.5px;">💪 <?= htmlspecialchars($bill['from_name']) ?></div>
-                <?php if ($bill['from_address']): ?><div style="font-size:10px;color:#aaa;margin-top:2px;"><?= htmlspecialchars(str_replace("\n",' | ',$bill['from_address'])) ?></div><?php endif; ?>
-                <?php if ($bill['from_phone']): ?><div style="font-size:10px;color:#aaa;">📞 <?= htmlspecialchars($bill['from_phone']) ?></div><?php endif; ?>
-            </div>
-            <div style="text-align:right;">
-                <div style="font-size:13px;font-weight:900;color:#ff6f00;letter-spacing:2px;">GYM INVOICE</div>
-                <div style="font-size:10px;color:#aaa;">Inv # <?= htmlspecialchars($bill['bill_number']) ?></div>
-                <div style="font-size:10px;color:#aaa;"><?= $billDate ?></div>
-            </div>
+<div style="font-family:'Inter',Arial,sans-serif;background:#fff;max-width:520px;margin:0 auto;border:1px solid #d0d5dd;font-size:12px;color:#1a1a2e;">
+  <div style="background:<?= htmlspecialchars($c) ?>;color:#fff;padding:18px 24px 14px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div>
+        <div style="font-size:9.5px;letter-spacing:3px;text-transform:uppercase;opacity:.8;margin-bottom:4px;">FITNESS INVOICE</div>
+        <div style="font-size:22px;font-weight:800;letter-spacing:-.3px;"><?= htmlspecialchars($bill['from_name']) ?></div>
+        <?php if ($bill['from_address']): ?><div style="font-size:10px;opacity:.8;margin-top:3px;"><?= htmlspecialchars(str_replace("\n",' | ',$bill['from_address'])) ?></div><?php endif; ?>
+        <?php if ($bill['from_phone']): ?><div style="font-size:10px;opacity:.8;">Tel: <?= htmlspecialchars($bill['from_phone']) ?></div><?php endif; ?>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:10px;opacity:.8;">Invoice #</div>
+        <div style="font-size:15px;font-weight:700;"><?= htmlspecialchars($bill['bill_number']) ?></div>
+        <div style="font-size:10px;opacity:.8;margin-top:4px;"><?= $billDate ?></div>
+      </div>
+    </div>
+  </div>
+  <div style="padding:14px 24px;border-bottom:1px solid #e4e7ec;background:#f8f9fa;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;">
+      <div>
+        <div style="font-size:9.5px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">Member Name</div>
+        <div style="font-weight:700;font-size:14px;"><?= htmlspecialchars($bill['to_name']) ?></div>
+        <?php if ($bill['to_phone']): ?><div style="font-size:10px;color:#555;">Tel: <?= htmlspecialchars($bill['to_phone']) ?></div><?php endif; ?>
+      </div>
+      <?php if (!empty($td['member_id'])): ?>
+      <div>
+        <div style="font-size:9.5px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">Member ID</div>
+        <div style="font-weight:600;"><?= htmlspecialchars($td['member_id']) ?></div>
+      </div>
+      <?php endif; ?>
+      <?php if (!empty($td['plan_name'])): ?>
+      <div>
+        <div style="font-size:9.5px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">Membership Plan</div>
+        <div style="font-weight:600;color:<?= htmlspecialchars($c) ?>;"><?= htmlspecialchars($td['plan_name']) ?></div>
+      </div>
+      <?php endif; ?>
+      <div>
+        <div style="font-size:9.5px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">Invoice Date</div>
+        <div style="font-weight:600;"><?= $billDate ?></div>
+      </div>
+    </div>
+  </div>
+  <table style="width:100%;border-collapse:collapse;">
+    <thead>
+      <tr style="background:#f3f4f6;border-bottom:2px solid <?= htmlspecialchars($c) ?>;">
+        <th style="padding:8px 16px;text-align:left;font-size:10.5px;font-weight:600;color:#374151;">Service / Plan</th>
+        <th style="padding:8px 12px;text-align:center;font-size:10.5px;font-weight:600;color:#374151;width:60px;">Qty</th>
+        <th style="padding:8px 12px;text-align:right;font-size:10.5px;font-weight:600;color:#374151;width:90px;">Rate</th>
+        <th style="padding:8px 16px;text-align:right;font-size:10.5px;font-weight:600;color:#374151;width:100px;">Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+    <?php foreach ($items as $item): ?>
+    <tr style="border-bottom:1px solid #f3f4f6;">
+      <td style="padding:9px 16px;font-size:12px;"><?= htmlspecialchars($item['description']??'-') ?></td>
+      <td style="padding:9px 12px;text-align:center;font-size:12px;"><?= (float)($item['qty']??1) ?></td>
+      <td style="padding:9px 12px;text-align:right;font-size:12px;"><?= $sym.number_format((float)($item['rate']??0),2) ?></td>
+      <td style="padding:9px 16px;text-align:right;font-weight:700;font-size:12px;"><?= $sym.number_format((float)($item['amount']??0),2) ?></td>
+    </tr>
+    <?php endforeach; ?>
+    </tbody>
+  </table>
+  <div style="padding:12px 24px;background:#f9fafb;border-top:1px solid #e4e7ec;">
+    <div style="display:flex;justify-content:flex-end;">
+      <div style="min-width:240px;">
+        <?php if ($subtotal !== $total): ?><div style="display:flex;justify-content:space-between;padding:3px 0;font-size:11px;color:#6b7280;border-bottom:1px solid #e4e7ec;"><span>Subtotal</span><span><?= $sym.number_format($subtotal,2) ?></span></div><?php endif; ?>
+        <?php if ($taxPct > 0): ?><div style="display:flex;justify-content:space-between;padding:3px 0;font-size:11px;color:#6b7280;border-bottom:1px solid #e4e7ec;"><span>Tax <?= $taxPct ?>%</span><span><?= $sym.number_format($taxAmt,2) ?></span></div><?php endif; ?>
+        <?php if ($discount > 0): ?><div style="display:flex;justify-content:space-between;padding:3px 0;font-size:11px;color:#16a34a;border-bottom:1px solid #e4e7ec;"><span>Discount</span><span>-<?= $sym.number_format($discount,2) ?></span></div><?php endif; ?>
+        <div style="display:flex;justify-content:space-between;font-size:16px;font-weight:800;border-top:2px solid <?= htmlspecialchars($c) ?>;padding-top:7px;margin-top:5px;color:<?= htmlspecialchars($c) ?>;">
+          <span>TOTAL DUE</span><span><?= $sym.number_format($total,2) ?></span>
         </div>
+      </div>
     </div>
-    <div style="padding:10px 20px;background:#242424;border-bottom:1px solid #444;">
-        <span style="font-size:10px;color:#ff6f00;display:block;text-transform:uppercase;letter-spacing:.1em;">Member</span>
-        <span style="font-size:14px;font-weight:700;"><?= htmlspecialchars($bill['to_name']) ?></span>
-        <?php if ($bill['to_phone']): ?><span style="font-size:11px;color:#aaa;display:block;">📞 <?= htmlspecialchars($bill['to_phone']) ?></span><?php endif; ?>
-        <?php if (!empty($td['member_id'])): ?><span style="font-size:11px;color:#aaa;display:block;">Member ID: <?= htmlspecialchars($td['member_id']) ?></span><?php endif; ?>
-        <?php if (!empty($td['plan_name'])): ?><span style="font-size:11px;color:#ff6f00;display:block;">Plan: <?= htmlspecialchars($td['plan_name']) ?></span><?php endif; ?>
-    </div>
-    <div style="padding:12px 20px;border-bottom:1px solid #444;">
-        <?php foreach ($items as $item): ?>
-        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #333;font-size:12px;">
-            <span><?= htmlspecialchars($item['description']??'-') ?></span>
-            <span style="color:#ff6f00;font-weight:700;"><?= $sym.number_format((float)($item['amount']??0),2) ?></span>
-        </div>
-        <?php endforeach; ?>
-    </div>
-    <div style="padding:10px 20px;background:#242424;">
-        <?php if ($taxPct > 0): ?><div style="display:flex;justify-content:space-between;font-size:11px;color:#aaa;padding:2px 0;"><span>Tax <?= $taxPct ?>%</span><span><?= $sym.number_format($taxAmt,2) ?></span></div><?php endif; ?>
-        <?php if ($discount > 0): ?><div style="display:flex;justify-content:space-between;font-size:11px;color:#aaa;padding:2px 0;"><span>Discount</span><span>-<?= $sym.number_format($discount,2) ?></span></div><?php endif; ?>
-    </div>
-    <div style="background:#ff6f00;color:#fff;padding:12px 20px;display:flex;justify-content:space-between;font-size:16px;font-weight:900;letter-spacing:-0.5px;">
-        <span>TOTAL DUE</span><span><?= $sym.number_format($total,2) ?></span>
-    </div>
-    <?php if ($bill['notes']): ?><div style="padding:8px 20px;font-size:10px;color:#aaa;border-top:1px solid #444;"><?= htmlspecialchars($bill['notes']) ?></div><?php endif; ?>
-    <div style="text-align:center;padding:8px;font-size:9px;color:#555;background:#111;">Stay strong! 💪 | BillX</div>
+  </div>
+  <?php if ($bill['notes']): ?><div style="padding:8px 24px;font-size:10.5px;color:#555;border-top:1px dashed #e4e7ec;"><?= htmlspecialchars($bill['notes']) ?></div><?php endif; ?>
+  <div style="background:<?= htmlspecialchars($c) ?>;color:#fff;padding:9px 24px;text-align:center;">
+    <div style="font-size:11px;font-weight:600;">Stay Strong. Keep Pushing!</div>
+    <div style="font-size:9.5px;opacity:.8;margin-top:2px;">BillX</div>
+  </div>
 </div>
+
 
 <?php else: ?>
 <!-- ============================================================
-     STANDARD PROFESSIONAL INVOICE WITH GST  (book, internet, ecom, general, recharge, newspaper)
+     PROFESSIONAL GST INVOICE  (general, book, internet, ecom, recharge, newspaper)
      ============================================================ -->
 <?php
     $gstin   = $td['gstin']          ?? '';
@@ -571,67 +806,85 @@ body { margin: 0; padding: 0; background: #fff; font-family: Arial, sans-serif; 
     $cgstAmt = round($subtotal * $cgstPct / 100, 2);
     $sgstAmt = round($subtotal * $sgstPct / 100, 2);
 ?>
-<div style="font-family:Arial,sans-serif;background:#fff;font-size:12px;color:#222;border:1px solid #ddd;box-shadow:0 2px 12px rgba(0,0,0,.1);">
-    <div style="background:<?= htmlspecialchars($c) ?>;color:#fff;padding:20px 24px;">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-            <div>
-                <div style="font-size:22px;font-weight:700;"><?= htmlspecialchars($bill['from_name']) ?></div>
-                <?php if ($bill['from_address']): ?><div style="font-size:10px;opacity:.85;margin-top:4px;"><?= htmlspecialchars(str_replace("\n",' | ',$bill['from_address'])) ?></div><?php endif; ?>
-                <div style="font-size:10px;opacity:.85;"><?= $bill['from_phone']?'📞 '.htmlspecialchars($bill['from_phone']).'  ':'' ?><?= $bill['from_email']?'✉ '.htmlspecialchars($bill['from_email']):'' ?></div>
-                <?php if ($gstin): ?><div style="font-size:10px;opacity:.85;">GSTIN: <?= htmlspecialchars($gstin) ?></div><?php endif; ?>
-            </div>
-            <div style="text-align:right;">
-                <div style="font-size:26px;font-weight:900;letter-spacing:-1px;opacity:.9;">INVOICE</div>
-                <div style="font-size:11px;opacity:.85;"># <?= htmlspecialchars($bill['bill_number']) ?></div>
-                <div style="font-size:11px;opacity:.85;">Date: <?= $billDate ?></div>
-                <?php if ($pos): ?><div style="font-size:10px;opacity:.85;">Supply: <?= htmlspecialchars($pos) ?></div><?php endif; ?>
-                <div style="font-size:10px;margin-top:4px;background:rgba(255,255,255,.2);padding:2px 8px;border-radius:4px;"><?= htmlspecialchars($typeLabel) ?></div>
-            </div>
-        </div>
+<div style="font-family:'Inter',Arial,sans-serif;background:#fff;font-size:12px;color:#1a1a2e;border:1px solid #d0d5dd;">
+  <div style="background:<?= htmlspecialchars($c) ?>;color:#fff;padding:22px 28px 18px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div>
+        <div style="font-size:22px;font-weight:700;letter-spacing:-.3px;"><?= htmlspecialchars($bill['from_name']) ?></div>
+        <?php if ($bill['from_address']): ?><div style="font-size:10px;opacity:.8;margin-top:5px;line-height:1.6;"><?= htmlspecialchars(str_replace("\n",' | ',$bill['from_address'])) ?></div><?php endif; ?>
+        <div style="font-size:10px;opacity:.8;margin-top:2px;"><?= $bill['from_phone']?'Tel: '.htmlspecialchars($bill['from_phone']).'  ':'' ?><?= $bill['from_email']?'Email: '.htmlspecialchars($bill['from_email']):'' ?></div>
+        <?php if ($gstin): ?><div style="font-size:10px;opacity:.8;margin-top:2px;">GSTIN: <?= htmlspecialchars($gstin) ?></div><?php endif; ?>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:28px;font-weight:900;letter-spacing:-1px;opacity:.92;line-height:1;">INVOICE</div>
+        <div style="font-size:10px;opacity:.8;margin-top:5px;"># <?= htmlspecialchars($bill['bill_number']) ?></div>
+        <div style="font-size:10px;opacity:.8;">Date: <?= $billDate ?></div>
+        <?php if ($pos): ?><div style="font-size:10px;opacity:.8;">Place of Supply: <?= htmlspecialchars($pos) ?></div><?php endif; ?>
+        <div style="display:inline-block;margin-top:6px;background:rgba(255,255,255,.2);padding:3px 10px;border-radius:20px;font-size:10px;letter-spacing:.03em;"><?= htmlspecialchars($typeLabel) ?></div>
+      </div>
     </div>
-    <div style="padding:12px 24px;background:#f7f7f7;border-bottom:2px solid <?= htmlspecialchars($c) ?>;display:flex;justify-content:space-between;">
-        <div>
-            <span style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.05em;display:block;">Bill To</span>
-            <span style="font-size:14px;font-weight:700;"><?= htmlspecialchars($bill['to_name']) ?></span>
-            <?php if ($bill['to_address']): ?><span style="font-size:11px;color:#555;display:block;"><?= htmlspecialchars(str_replace("\n",' | ',$bill['to_address'])) ?></span><?php endif; ?>
-            <?php if ($bill['to_phone']): ?><span style="font-size:11px;color:#555;">📞 <?= htmlspecialchars($bill['to_phone']) ?></span><?php endif; ?>
-        </div>
-        <?php if ($bill['to_email']): ?><div style="text-align:right;"><span style="font-size:11px;color:#555;">✉ <?= htmlspecialchars($bill['to_email']) ?></span></div><?php endif; ?>
+  </div>
+  <div style="display:flex;border-bottom:2px solid <?= htmlspecialchars($c) ?>;">
+    <div style="flex:1;padding:14px 28px;border-right:1px solid #e4e7ec;">
+      <div style="font-size:9.5px;color:#6b7280;text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px;">Bill From</div>
+      <div style="font-weight:700;font-size:13px;"><?= htmlspecialchars($bill['from_name']) ?></div>
+      <?php if ($bill['from_address']): ?><div style="font-size:10.5px;color:#4b5563;margin-top:2px;"><?= htmlspecialchars(str_replace("\n",' | ',$bill['from_address'])) ?></div><?php endif; ?>
+      <?php if ($bill['from_phone']): ?><div style="font-size:10.5px;color:#4b5563;">Tel: <?= htmlspecialchars($bill['from_phone']) ?></div><?php endif; ?>
+      <?php if ($bill['from_email']): ?><div style="font-size:10.5px;color:#4b5563;"><?= htmlspecialchars($bill['from_email']) ?></div><?php endif; ?>
     </div>
-    <table style="width:100%;border-collapse:collapse;">
-        <thead><tr style="background:<?= htmlspecialchars($c) ?>;color:#fff;">
-            <th style="padding:8px 10px;text-align:center;font-size:11px;width:30px;">#</th>
-            <th style="padding:8px 10px;text-align:left;font-size:11px;">Description</th>
-            <?php if ($hsnCode): ?><th style="padding:8px 10px;text-align:center;font-size:11px;width:70px;">HSN/SAC</th><?php endif; ?>
-            <th style="padding:8px 10px;text-align:center;font-size:11px;width:50px;">Qty</th>
-            <th style="padding:8px 10px;text-align:right;font-size:11px;width:80px;">Rate</th>
-            <th style="padding:8px 10px;text-align:right;font-size:11px;width:90px;">Amount</th>
-        </tr></thead>
-        <tbody>
-            <?php foreach ($items as $i => $item): ?>
-            <tr style="background:<?= $i%2===0?'#fafafa':'#fff' ?>;">
-                <td style="padding:7px 10px;font-size:12px;border-bottom:1px solid #eee;text-align:center;"><?= $i+1 ?></td>
-                <td style="padding:7px 10px;font-size:12px;border-bottom:1px solid #eee;"><?= htmlspecialchars($item['description']??'-') ?></td>
-                <?php if ($hsnCode): ?><td style="padding:7px 10px;font-size:11px;border-bottom:1px solid #eee;text-align:center;"><?= htmlspecialchars($hsnCode) ?></td><?php endif; ?>
-                <td style="padding:7px 10px;text-align:center;font-size:12px;border-bottom:1px solid #eee;"><?= (float)($item['qty']??1) ?></td>
-                <td style="padding:7px 10px;text-align:right;font-size:12px;border-bottom:1px solid #eee;"><?= $sym.number_format((float)($item['rate']??0),2) ?></td>
-                <td style="padding:7px 10px;text-align:right;font-weight:700;font-size:12px;border-bottom:1px solid #eee;"><?= $sym.number_format((float)($item['amount']??0),2) ?></td>
-            </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
-    <div style="padding:12px 24px 16px;display:flex;justify-content:flex-end;background:#fafafa;border-top:1px solid #eee;">
-        <div style="min-width:240px;">
-            <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:1px solid #eee;"><span style="color:#666;">Subtotal</span><span style="font-weight:600;"><?= $sym.number_format($subtotal,2) ?></span></div>
-            <?php if ($cgstPct > 0): ?><div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:1px solid #eee;"><span style="color:#666;">CGST @ <?= $cgstPct ?>%</span><span style="font-weight:600;"><?= $sym.number_format($cgstAmt,2) ?></span></div><?php endif; ?>
-            <?php if ($sgstPct > 0): ?><div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:1px solid #eee;"><span style="color:#666;">SGST @ <?= $sgstPct ?>%</span><span style="font-weight:600;"><?= $sym.number_format($sgstAmt,2) ?></span></div><?php endif; ?>
-            <?php if ($taxPct > 0 && $cgstPct == 0 && $sgstPct == 0): ?><div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:1px solid #eee;"><span style="color:#666;">Tax <?= $taxPct ?>%</span><span style="font-weight:600;"><?= $sym.number_format($taxAmt,2) ?></span></div><?php endif; ?>
-            <?php if ($discount > 0): ?><div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:1px solid #eee;"><span style="color:#666;">Discount</span><span style="font-weight:600;color:#e53935;">-<?= $sym.number_format($discount,2) ?></span></div><?php endif; ?>
-            <div style="display:flex;justify-content:space-between;padding:8px 0 4px;font-size:16px;font-weight:900;border-top:2px solid <?= htmlspecialchars($c) ?>;color:<?= htmlspecialchars($c) ?>;"><span>Total</span><span><?= $sym.number_format($total,2) ?></span></div>
-        </div>
+    <div style="flex:1;padding:14px 28px;background:#f8f9fa;">
+      <div style="font-size:9.5px;color:#6b7280;text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px;">Bill To</div>
+      <div style="font-weight:700;font-size:13px;"><?= htmlspecialchars($bill['to_name']) ?></div>
+      <?php if ($bill['to_address']): ?><div style="font-size:10.5px;color:#4b5563;margin-top:2px;"><?= htmlspecialchars(str_replace("\n",' | ',$bill['to_address'])) ?></div><?php endif; ?>
+      <?php if ($bill['to_phone']): ?><div style="font-size:10.5px;color:#4b5563;">Tel: <?= htmlspecialchars($bill['to_phone']) ?></div><?php endif; ?>
+      <?php if ($bill['to_email']): ?><div style="font-size:10.5px;color:#4b5563;"><?= htmlspecialchars($bill['to_email']) ?></div><?php endif; ?>
     </div>
-    <?php if ($bill['notes']): ?><div style="margin:0 24px 16px;background:#f5f5f5;border-radius:4px;padding:10px;font-size:11px;color:#555;border-left:3px solid <?= htmlspecialchars($c) ?>;"><b>Terms & Notes:</b> <?= htmlspecialchars($bill['notes']) ?></div><?php endif; ?>
-    <div style="background:<?= htmlspecialchars($c) ?>;color:rgba(255,255,255,.7);padding:8px 24px;text-align:center;font-size:10px;">Thank you for your business! | BillX</div>
+  </div>
+  <table style="width:100%;border-collapse:collapse;">
+    <thead>
+      <tr style="background:<?= htmlspecialchars($c) ?>;color:#fff;">
+        <th style="padding:9px 12px;text-align:center;font-size:10.5px;font-weight:600;width:32px;">#</th>
+        <th style="padding:9px 12px;text-align:left;font-size:10.5px;font-weight:600;">Description</th>
+        <?php if ($hsnCode): ?><th style="padding:9px 10px;text-align:center;font-size:10.5px;font-weight:600;width:70px;">HSN/SAC</th><?php endif; ?>
+        <th style="padding:9px 10px;text-align:center;font-size:10.5px;font-weight:600;width:55px;">Qty</th>
+        <th style="padding:9px 12px;text-align:right;font-size:10.5px;font-weight:600;width:90px;">Rate</th>
+        <th style="padding:9px 16px;text-align:right;font-size:10.5px;font-weight:600;width:100px;">Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+    <?php foreach ($items as $i => $item): ?>
+    <tr style="background:<?= $i%2===0?'#fafafa':'#fff' ?>;border-bottom:1px solid #e4e7ec;">
+      <td style="padding:8px 12px;font-size:11px;text-align:center;color:#9ca3af;"><?= $i+1 ?></td>
+      <td style="padding:8px 12px;font-size:12px;"><?= htmlspecialchars($item['description']??'-') ?></td>
+      <?php if ($hsnCode): ?><td style="padding:8px 10px;font-size:11px;text-align:center;"><?= htmlspecialchars($hsnCode) ?></td><?php endif; ?>
+      <td style="padding:8px 10px;text-align:center;font-size:12px;"><?= (float)($item['qty']??1) ?></td>
+      <td style="padding:8px 12px;text-align:right;font-size:12px;"><?= $sym.number_format((float)($item['rate']??0),2) ?></td>
+      <td style="padding:8px 16px;text-align:right;font-weight:600;font-size:12px;"><?= $sym.number_format((float)($item['amount']??0),2) ?></td>
+    </tr>
+    <?php endforeach; ?>
+    </tbody>
+  </table>
+  <div style="padding:14px 28px 16px;display:flex;justify-content:space-between;align-items:flex-start;background:#f9fafb;border-top:1px solid #e4e7ec;gap:20px;">
+    <?php if ($bill['notes']): ?>
+    <div style="flex:1;background:#fff;border-left:3px solid <?= htmlspecialchars($c) ?>;padding:9px 12px;font-size:11px;color:#4b5563;border-radius:0 4px 4px 0;align-self:flex-start;"><b>Terms &amp; Notes:</b><br><?= htmlspecialchars($bill['notes']) ?></div>
+    <?php else: ?><div style="flex:1;"></div><?php endif; ?>
+    <div style="min-width:260px;">
+      <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:11.5px;border-bottom:1px solid #e4e7ec;"><span style="color:#6b7280;">Subtotal</span><span style="font-weight:600;"><?= $sym.number_format($subtotal,2) ?></span></div>
+      <?php if ($cgstPct > 0): ?><div style="display:flex;justify-content:space-between;padding:4px 0;font-size:11.5px;border-bottom:1px solid #e4e7ec;"><span style="color:#6b7280;">CGST @ <?= $cgstPct ?>%</span><span style="font-weight:600;"><?= $sym.number_format($cgstAmt,2) ?></span></div><?php endif; ?>
+      <?php if ($sgstPct > 0): ?><div style="display:flex;justify-content:space-between;padding:4px 0;font-size:11.5px;border-bottom:1px solid #e4e7ec;"><span style="color:#6b7280;">SGST @ <?= $sgstPct ?>%</span><span style="font-weight:600;"><?= $sym.number_format($sgstAmt,2) ?></span></div><?php endif; ?>
+      <?php if ($taxPct > 0 && $cgstPct == 0 && $sgstPct == 0): ?><div style="display:flex;justify-content:space-between;padding:4px 0;font-size:11.5px;border-bottom:1px solid #e4e7ec;"><span style="color:#6b7280;">Tax <?= $taxPct ?>%</span><span style="font-weight:600;"><?= $sym.number_format($taxAmt,2) ?></span></div><?php endif; ?>
+      <?php if ($discount > 0): ?><div style="display:flex;justify-content:space-between;padding:4px 0;font-size:11.5px;border-bottom:1px solid #e4e7ec;"><span style="color:#6b7280;">Discount</span><span style="font-weight:600;color:#16a34a;">-<?= $sym.number_format($discount,2) ?></span></div><?php endif; ?>
+      <div style="display:flex;justify-content:space-between;padding:8px 0 4px;font-size:17px;font-weight:900;border-top:2px solid <?= htmlspecialchars($c) ?>;color:<?= htmlspecialchars($c) ?>;"><span>Total</span><span><?= $sym.number_format($total,2) ?></span></div>
+    </div>
+  </div>
+  <div style="padding:14px 28px 18px;border-top:1px solid #e4e7ec;display:flex;justify-content:flex-end;">
+    <div style="text-align:center;min-width:180px;">
+      <div style="height:32px;"></div>
+      <div style="border-top:1px solid #555;padding-top:5px;font-size:10.5px;color:#4b5563;">Authorized Signatory</div>
+      <div style="font-size:10px;color:#9ca3af;margin-top:2px;"><?= htmlspecialchars($bill['from_name']) ?></div>
+    </div>
+  </div>
+  <div style="background:<?= htmlspecialchars($c) ?>;color:rgba(255,255,255,.8);padding:9px 28px;text-align:center;font-size:10px;">Thank you for your business! &nbsp;|&nbsp; BillX</div>
 </div>
 
 <?php endif; ?>
