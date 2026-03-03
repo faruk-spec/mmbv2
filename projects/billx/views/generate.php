@@ -23,10 +23,10 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
 <form method="POST" action="/projects/billx/generate" id="billForm">
     <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start;">
 
         <!-- ====== LEFT PANEL: Form ====== -->
-        <div style="display:flex;flex-direction:column;gap:16px;">
+        <div style="display:flex;flex-direction:column;gap:10px;">
 
             <!-- Bill Type & Number -->
             <div class="card">
@@ -334,39 +334,43 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
 
             <!-- Submit Actions -->
             <input type="hidden" name="save_action" id="save_action" value="view">
-            <div class="form-actions" style="justify-content:flex-start;gap:10px;flex-wrap:wrap;">
-                <button type="button" class="btn btn-primary" style="font-size:0.95rem;padding:10px 22px;"
+            <div class="form-actions" style="justify-content:flex-start;gap:8px;flex-wrap:wrap;">
+                <button type="button" class="btn btn-primary form-btn-compact"
                         onclick="submitBill('view')">
                     <i class="fas fa-eye"></i> Save &amp; View
                 </button>
-                <button type="button" class="btn btn-secondary" style="font-size:0.95rem;padding:10px 22px;"
-                        onclick="submitBill('save')">
-                    <i class="fas fa-save"></i> Save Only
+                <button type="button" class="btn btn-success form-btn-compact"
+                        onclick="submitBill('download')">
+                    <i class="fas fa-download"></i> Save &amp; Download PDF
                 </button>
-                <button type="button" class="btn btn-secondary" style="font-size:0.95rem;padding:10px 22px;"
+                <button type="button" class="btn btn-secondary form-btn-compact"
                         onclick="submitBill('print')">
                     <i class="fas fa-print"></i> Save &amp; Print
                 </button>
-                <a href="/projects/billx" class="btn btn-secondary">Cancel</a>
+                <button type="button" class="btn btn-secondary form-btn-compact"
+                        onclick="submitBill('save')">
+                    <i class="fas fa-save"></i> Save Only
+                </button>
+                <a href="/projects/billx" class="btn btn-secondary form-btn-compact">Cancel</a>
             </div>
         </div>
 
         <!-- ====== RIGHT PANEL: Live Preview ====== -->
-        <div style="position:sticky;top:80px;max-height:calc(100vh - 100px);display:flex;flex-direction:column;">
+        <div style="position:sticky;top:70px;height:calc(100vh - 90px);display:flex;flex-direction:column;">
             <div class="card" style="padding:0;display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;">
-                <div style="background:var(--bg-secondary);padding:12px 16px;border-bottom:1px solid var(--border-color);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;flex-shrink:0;">
-                    <span style="font-size:0.85rem;font-weight:600;color:var(--text-secondary);">
+                <div style="background:var(--bg-secondary);padding:10px 14px;border-bottom:1px solid var(--border-color);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;flex-shrink:0;">
+                    <span style="font-size:0.8rem;font-weight:600;color:var(--text-secondary);">
                         <i class="fas fa-eye"></i> Live Preview
                     </span>
-                    <div style="display:flex;align-items:center;gap:8px;">
+                    <div style="display:flex;align-items:center;gap:6px;">
                         <button type="button" id="crambleBtn" onclick="toggleCrambled()"
-                                style="font-size:0.72rem;padding:4px 10px;border-radius:12px;border:1px solid var(--border-color);background:transparent;color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;gap:4px;">
+                                style="font-size:0.7rem;padding:3px 9px;border-radius:12px;border:1px solid var(--border-color);background:transparent;color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;gap:4px;">
                             <i class="fas fa-scroll"></i> Crumpled
                         </button>
-                        <span id="previewTypeBadge" style="font-size:0.7rem;padding:3px 10px;border-radius:12px;background:#f59e0b;color:white;font-weight:600;"></span>
+                        <span id="previewTypeBadge" style="font-size:0.68rem;padding:3px 9px;border-radius:12px;background:#f59e0b;color:white;font-weight:600;"></span>
                     </div>
                 </div>
-                <div style="padding:16px;background:#f5f5f5;flex:1;overflow-y:auto;min-height:0;" id="billPreviewWrapper">
+                <div style="padding:12px;background:#f0f0f0;flex:1;overflow-y:auto;min-height:0;" id="billPreviewWrapper">
                     <div id="billPreview" style="background:white;max-width:520px;margin:0 auto;font-family:'Poppins',sans-serif;font-size:13px;color:#333;box-shadow:0 2px 16px rgba(0,0,0,0.12);border-radius:4px;overflow:hidden;">
                         <!-- Preview rendered by JS -->
                     </div>
@@ -378,6 +382,42 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
 </form>
 
 <style>
+/* Compact form overrides for generate page */
+#billForm .form-input,
+#billForm .form-select,
+#billForm .form-textarea,
+#billForm .form-control {
+    padding: 0.4rem 0.65rem;
+    font-size: 0.8rem;
+}
+#billForm .form-label {
+    font-size: 0.75rem;
+    margin-bottom: 3px;
+}
+#billForm .form-group {
+    margin-bottom: 8px;
+}
+#billForm .card {
+    padding: 10px 12px;
+}
+#billForm .card h4 {
+    font-size: 0.82rem !important;
+    margin-bottom: 8px !important;
+}
+/* Green download button */
+.btn-success {
+    background: linear-gradient(135deg, #10b981, #059669); color: white;
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: 0.375rem; border: none; border-radius: 0.5rem;
+    font-family: inherit; font-weight: 600; cursor: pointer;
+    transition: all 0.3s ease; text-decoration: none; white-space: nowrap;
+}
+.btn-success:hover:not(:disabled) { box-shadow: 0 0.375rem 1.5rem rgba(16,185,129,0.45); transform: translateY(-0.125rem); }
+/* Compact form action buttons */
+.form-btn-compact {
+    font-size: 0.875rem !important;
+    padding: 8px 16px !important;
+}
 .item-row td { padding: 4px 6px; }
 .item-row input[type="text"],
 .item-row input[type="number"] {
@@ -386,9 +426,9 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
     border: 1px solid var(--border-color);
     border-radius: 4px;
     color: var(--text-primary);
-    padding: 5px 8px;
+    padding: 4px 7px;
     font-family: inherit;
-    font-size: 0.8rem;
+    font-size: 0.79rem;
 }
 .item-row input:focus { outline: none; border-color: var(--amber); }
 .remove-item-btn {
@@ -457,9 +497,9 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
 #extraFieldsCard fieldset { border:none;padding:0;margin:0; }
 /* Template style radio pills */
 .tpl-radio-label {
-    display:flex;align-items:center;gap:6px;cursor:pointer;
-    padding:5px 12px;border-radius:20px;border:1px solid var(--border-color);
-    font-size:0.82rem;color:var(--text-secondary);transition:border-color .15s,color .15s;
+    display:flex;align-items:center;gap:5px;cursor:pointer;
+    padding:4px 10px;border-radius:20px;border:1px solid var(--border-color);
+    font-size:0.78rem;color:var(--text-secondary);transition:border-color .15s,color .15s;
 }
 .tpl-radio-label:has(input:checked) {
     border-color:var(--amber);color:var(--amber);font-weight:600;
@@ -558,7 +598,7 @@ function renderThermal(d){
     const mode=d.td.payment_mode||''; const tableNo=d.td.table_number||'';
     const c=TYPE_COLORS[d.type]||'#c62828';
     const rows=d.items.map((it,i)=>`<tr style="background:${i%2===0?'#fafafa':'#fff'};"><td style="padding:5px 8px;font-size:12px;">${escHtml(it.description||'-')}</td><td style="padding:5px 8px;text-align:center;font-size:11px;">${it.qty}</td><td style="padding:5px 8px;text-align:right;font-size:12px;">${d.sym}${it.rate.toFixed(2)}</td><td style="padding:5px 8px;text-align:right;font-weight:700;font-size:12px;">${d.sym}${it.amount.toFixed(2)}</td></tr>`).join('');
-    return `<div style="font-family:Arial,sans-serif;background:#fff;max-width:302px;margin:0 auto;border:1px solid #ddd;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.12);">
+    return `<div style="font-family:Arial,sans-serif;background:#fff;width:80mm;max-width:80mm;margin:0 auto;border:1px solid #ddd;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.12);">
 <div style="background:${c};color:#fff;padding:12px 16px;text-align:center;">
 <div style="font-size:18px;font-weight:700;">${escHtml(d.fromName)}</div>
 ${d.fromAddr?`<div style="font-size:10px;opacity:.85;margin-top:2px;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}
@@ -589,7 +629,7 @@ ${d.notes?`<div style="padding:6px 12px;font-size:10px;color:#555;border-top:1px
     const mode=d.td.payment_mode||''; const tableNo=d.td.table_number||'';
     const billTime=d.td.bill_time||nowTime();
     const itemRows=d.items.map(it=>`<div style="padding:3px 0;border-bottom:1px dotted #ccc;"><div style="font-size:15px;">${escHtml(it.description||'-')}</div><div style="display:flex;justify-content:space-between;font-size:13px;color:#555;"><span>${it.qty}&times;${d.sym}${it.rate.toFixed(2)}</span><span style="font-weight:700;color:#111;">${d.sym}${it.amount.toFixed(2)}</span></div></div>`).join('');
-    return `<div style="font-family:'VT323','Courier New',monospace;background:#fff;width:302px;margin:0 auto;color:#111;box-shadow:0 3px 12px rgba(0,0,0,.18);letter-spacing:.4px;">
+    return `<div style="font-family:'VT323','Courier New',monospace;background:#fff;width:80mm;max-width:80mm;margin:0 auto;color:#111;box-shadow:0 3px 12px rgba(0,0,0,.18);letter-spacing:.4px;">
 <div style="padding:12px 14px 10px;">
 <div style="text-align:center;padding-bottom:4px;margin-bottom:4px;">
 <div style="font-size:22px;font-weight:700;letter-spacing:4px;">WELCOME!!!</div>
@@ -635,7 +675,7 @@ ${d.notes?`<div style="border-top:1px dashed #555;padding-top:4px;margin-top:3px
     const cgstAmt=d.subtotal*cgst/100;const sgstAmt=d.subtotal*sgst/100;
     const mode=d.td.payment_mode||'';const tableNo=d.td.table_number||'';
     const items=d.items.map(it=>`<tr><td style="padding:2px 3px;font-size:11px;">${escHtml(it.description||'-')}</td><td style="padding:2px 3px;text-align:right;font-size:11px;">${d.sym}${it.rate.toFixed(2)}</td><td style="padding:2px 3px;text-align:center;font-size:11px;">${it.qty}</td><td style="padding:2px 3px;text-align:right;font-weight:700;font-size:11px;">${d.sym}${it.amount.toFixed(2)}</td></tr>`).join('');
-    return`<div style="font-family:'Courier New',monospace;background:#fff;max-width:302px;margin:0 auto;padding:14px 18px;font-size:11px;color:#111;border:1px solid #ccc;box-shadow:1px 2px 8px rgba(0,0,0,.15);">
+    return`<div style="font-family:'Courier New',monospace;background:#fff;width:80mm;max-width:80mm;margin:0 auto;padding:14px 18px;font-size:11px;color:#111;border:1px solid #ccc;box-shadow:1px 2px 8px rgba(0,0,0,.15);">
 ${dash}<div style="text-align:center;letter-spacing:6px;font-size:11px;font-weight:700;margin:2px 0;">RECEIPT</div>${dash}
 <div style="display:flex;justify-content:space-between;margin-bottom:2px;"><span>Name: <b>${escHtml(d.toName)}</b></span><span>Invoice No: <b>${escHtml(d.billNo)}</b></span></div>
 ${tableNo?`<div style="display:flex;justify-content:space-between;"><span>Table: <b>#${escHtml(tableNo)}</b></span><span>Date: ${fmtDate(d.billDate)}</span></div>`:`<div>Date: ${fmtDate(d.billDate)}</div>`}

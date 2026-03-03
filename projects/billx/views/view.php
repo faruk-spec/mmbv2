@@ -37,11 +37,11 @@ $autoprint = !empty($_GET['autoprint']);
         <button type="button" class="btn btn-secondary btn-sm" id="crambleBtn" onclick="toggleCrambled()">
             <i class="fas fa-scroll"></i> Crumpled View
         </button>
-        <button type="button" class="btn btn-secondary btn-sm" onclick="window.print()">
+        <a href="/projects/billx/pdf/<?= (int)$bill['id'] ?>?autoprint=1" target="_blank" class="btn btn-secondary btn-sm">
             <i class="fas fa-print"></i> Print
-        </button>
-        <a href="/projects/billx/pdf/<?= (int)$bill['id'] ?>" target="_blank" class="btn btn-secondary btn-sm">
-            <i class="fas fa-file-pdf"></i> Print / Save as PDF
+        </a>
+        <a href="/projects/billx/pdf/<?= (int)$bill['id'] ?>?download=1" target="_blank" class="btn btn-primary btn-sm">
+            <i class="fas fa-download"></i> Download PDF
         </a>
         <button type="button" class="btn btn-danger btn-sm"
                 onclick="document.getElementById('deleteModal').style.display='flex'">
@@ -70,7 +70,7 @@ $autoprint = !empty($_GET['autoprint']);
 ?>
 <?php if ($tplStyle === '2'): ?>
 <?php $tplColor = $c; ?>
-<div style="font-family:Arial,sans-serif;background:#fff;max-width:360px;margin:0 auto;border:1px solid #ddd;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.12);">
+<div style="font-family:Arial,sans-serif;background:#fff;width:80mm;max-width:80mm;margin:0 auto;border:1px solid #ddd;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.12);">
     <div style="background:<?= htmlspecialchars($tplColor) ?>;color:#fff;padding:12px 16px;text-align:center;">
         <div style="font-size:18px;font-weight:700;"><?= htmlspecialchars($bill['from_name']) ?></div>
         <?php if ($bill['from_address']): ?><div style="font-size:10px;opacity:.85;margin-top:2px;"><?= htmlspecialchars(str_replace("\n",' | ',$bill['from_address'])) ?></div><?php endif; ?>
@@ -111,7 +111,7 @@ $autoprint = !empty($_GET['autoprint']);
     <div style="padding:6px;text-align:center;font-size:9px;color:#999;background:#f0f0f0;">Thank you! Visit again | Time: <?= $billTime ?></div>
 </div>
 <?php elseif ($tplStyle === '3'): ?>
-<div style="font-family:'VT323','Courier New',monospace;background:#fff;max-width:302px;margin:0 auto;color:#111;box-shadow:0 3px 12px rgba(0,0,0,.18);letter-spacing:.4px;">
+<div style="font-family:'VT323','Courier New',monospace;background:#fff;width:80mm;max-width:80mm;margin:0 auto;color:#111;box-shadow:0 3px 12px rgba(0,0,0,.18);letter-spacing:.4px;">
 <div style="padding:12px 14px 10px;">
 <div style="text-align:center;padding-bottom:4px;margin-bottom:4px;">
     <div style="font-size:22px;font-weight:700;letter-spacing:4px;">WELCOME!!!</div>
@@ -159,7 +159,7 @@ $autoprint = !empty($_GET['autoprint']);
 </div>
 </div>
 <?php else: ?>
-<div style="font-family:'Courier New',Courier,monospace;background:#fff;max-width:302px;margin:0 auto;padding:14px 18px;font-size:11px;color:#111;border:1px solid #ccc;box-shadow:1px 2px 8px rgba(0,0,0,.15);">
+<div style="font-family:'Courier New',Courier,monospace;background:#fff;width:80mm;max-width:80mm;margin:0 auto;padding:14px 18px;font-size:11px;color:#111;border:1px solid #ccc;box-shadow:1px 2px 8px rgba(0,0,0,.15);">
     <div style="border-top:1px dashed #888;margin:4px 0;"></div>
     <div style="text-align:center;letter-spacing:6px;font-size:11px;font-weight:700;margin:2px 0;">RECEIPT</div>
     <div style="border-top:1px dashed #888;margin:4px 0;"></div>

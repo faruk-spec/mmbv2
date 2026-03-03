@@ -20,17 +20,50 @@ $tplStyle = $td['template_style'] ?? '1';
 <title><?= htmlspecialchars($typeLabel) ?> - <?= htmlspecialchars($bill['bill_number']) ?></title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
-@page { size: <?= in_array($group,['thermal']) ? '80mm auto' : 'A4 portrait' ?>; margin: <?= $group==='thermal' ? '4mm 3mm' : '15mm' ?>; }
+@page { size: <?= $group==='thermal' ? '80mm auto' : 'A4 portrait' ?>; margin: <?= $group==='thermal' ? '2mm 0' : '12mm' ?>; }
 * { box-sizing: border-box; }
-body { margin: 0; padding: 0; background: #fff; }
-@media screen { body { background: #f5f5f5; padding: 20px; } }
-.print-btn { position: fixed; top: 12px; right: 12px; padding: 8px 20px; background: #f59e0b; color: #fff; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; font-weight: 600; }
-@media print { .print-btn { display: none; } }
+body { margin: 0; padding: 0; background: #fff; font-family: Arial, sans-serif; }
+@media screen { body { background: #e8e8e8; padding-top: 52px; padding-bottom: 20px; } }
+/* Action bar – screen only */
+.bill-action-bar {
+    display: none;
+}
+@media screen {
+    .bill-action-bar {
+        display: flex; align-items: center; gap: 8px;
+        position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+        padding: 8px 16px; background: #fff;
+        box-shadow: 0 2px 8px rgba(0,0,0,.15);
+    }
+}
+.bill-action-bar .bill-info { font-size: 12px; color: #555; margin-right: auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bill-action-bar button, .bill-action-bar a {
+    padding: 6px 14px; border: none; border-radius: 5px; font-size: 13px;
+    cursor: pointer; font-weight: 600; white-space: nowrap;
+    display: inline-flex; align-items: center; gap: 5px; text-decoration: none;
+}
+.btn-download { background: #f59e0b; color: #fff; }
+.btn-download:hover { background: #d97706; }
+.btn-print-only { background: #37474f; color: #fff; }
+.btn-print-only:hover { background: #263238; }
+.btn-close-win { background: #e0e0e0; color: #333; }
+.btn-close-win:hover { background: #bdbdbd; }
+/* Print – hide action bar, remove padding */
+@media print {
+    .bill-action-bar { display: none !important; }
+    body { background: #fff !important; padding: 0 !important; margin: 0 !important; }
+    #billDocument { max-width: 100% !important; margin: 0 !important; box-shadow: none !important; }
+}
 </style>
 </head>
 <body>
-<button class="print-btn" onclick="window.print()">🖨 Save as PDF</button>
-<div id="billDocument" style="max-width:<?= $group==='thermal'?'302px':'700px' ?>;margin:0 auto;">
+<div class="bill-action-bar">
+    <span class="bill-info"><?= htmlspecialchars($typeLabel) ?> &mdash; #<?= htmlspecialchars($bill['bill_number']) ?></span>
+    <button class="btn-close-win" onclick="window.close()">✕ Close</button>
+    <button class="btn-print-only" onclick="window.print()">🖨 Print</button>
+    <button class="btn-download" onclick="(function(){document.title=<?= json_encode(preg_replace('/[^a-zA-Z0-9 _-]/', '', $typeLabel) . '-' . preg_replace('/[^a-zA-Z0-9_-]/', '', $bill['bill_number'])) ?>;window.print();})()">⬇ Download PDF</button>
+</div>
+<div id="billDocument" style="<?= $group==='thermal' ? 'width:80mm;max-width:80mm;' : 'max-width:700px;' ?> margin:0 auto;">
 <?php if ($group === 'thermal'): ?>
 <!-- ============================================================
      THERMAL / POS RECEIPT  (restaurant, recharge, mart, newspaper)
@@ -45,7 +78,7 @@ body { margin: 0; padding: 0; background: #fff; }
     $billTime = !empty($td['bill_time']) ? $td['bill_time'] : ($bill['created_at'] ? date('H:i', strtotime($bill['created_at'])) : date('H:i'));
 ?>
 <?php if ($tplStyle === '3'): ?>
-<div style="font-family:'VT323','Courier New',monospace;background:#fff;width:302px;margin:0 auto;color:#111;box-shadow:0 3px 12px rgba(0,0,0,.18);letter-spacing:.4px;">
+<div style="font-family:'VT323','Courier New',monospace;background:#fff;width:80mm;max-width:80mm;margin:0 auto;color:#111;box-shadow:0 3px 12px rgba(0,0,0,.18);letter-spacing:.4px;">
 <div style="padding:12px 14px 10px;">
 <div style="text-align:center;padding-bottom:4px;margin-bottom:4px;">
     <div style="font-size:22px;font-weight:700;letter-spacing:4px;">WELCOME!!!</div>
@@ -93,7 +126,7 @@ body { margin: 0; padding: 0; background: #fff; }
 </div>
 </div>
 <?php else: ?>
-<div style="font-family:'Courier New',Courier,monospace;background:#fff;max-width:302px;margin:0 auto;padding:14px 18px;font-size:11px;color:#111;border:1px solid #ccc;box-shadow:1px 2px 8px rgba(0,0,0,.15);">
+<div style="font-family:'Courier New',Courier,monospace;background:#fff;width:80mm;max-width:80mm;margin:0 auto;padding:14px 18px;font-size:11px;color:#111;border:1px solid #ccc;box-shadow:1px 2px 8px rgba(0,0,0,.15);">
     <div style="border-top:1px dashed #888;margin:4px 0;"></div>
     <div style="text-align:center;letter-spacing:6px;font-size:11px;font-weight:700;margin:2px 0;">RECEIPT</div>
     <div style="border-top:1px dashed #888;margin:4px 0;"></div>
@@ -604,15 +637,18 @@ body { margin: 0; padding: 0; background: #fff; }
 
 </div><!-- /billDocument -->
 <script>
-window.addEventListener('load', function() {
-    // Wait for fonts to fully render before opening print dialog
-    var trigger = function(){ setTimeout(function(){ window.print(); }, 300); };
-    if (document.fonts && document.fonts.ready) {
-        document.fonts.ready.then(trigger);
-    } else {
-        setTimeout(trigger, 800);
+(function() {
+    var params = new URLSearchParams(window.location.search);
+    var autoprint = params.get('autoprint') === '1' || params.get('download') === '1';
+    if (autoprint) {
+        var trigger = function() { setTimeout(function() { window.print(); }, 400); };
+        if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(trigger);
+        } else {
+            window.addEventListener('load', function() { setTimeout(trigger, 500); });
+        }
     }
-});
+})();
 </script>
 </body>
 </html>
