@@ -186,6 +186,8 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
                                 <option value="Cash">Cash</option><option value="Card">Card / Swipe</option>
                                 <option value="UPI">UPI</option><option value="Online">Online</option>
                             </select></div>
+                        <div class="form-group" style="margin:0;"><label class="form-label">Bill Time</label>
+                            <input type="time" name="td_bill_time" id="td_bill_time" class="form-input" oninput="updatePreview()"></div>
                         <div class="form-group" style="margin:0;"><label class="form-label">CGST %</label>
                             <input type="number" name="td_cgst_pct" class="form-input" value="0" min="0" max="50" step="0.01" oninput="updatePreview()"></div>
                         <div class="form-group" style="margin:0;"><label class="form-label">SGST %</label>
@@ -575,30 +577,20 @@ ${d.notes?`<div style="padding:6px 12px;font-size:10px;color:#555;border-top:1px
     const cgst=parseFloat(d.td.cgst_pct)||0; const sgst=parseFloat(d.td.sgst_pct)||0;
     const cgstAmt=d.subtotal*cgst/100; const sgstAmt=d.subtotal*sgst/100;
     const mode=d.td.payment_mode||''; const tableNo=d.td.table_number||'';
-    // zigW teeth, spaced 9px apart, offset 4px from left, amplitude 12px (down on even, up on odd)
-    const zigW=32; const zigPts=Array.from({length:zigW},(_,i)=>`${i*9+4},${i%2===0?12:0}`).join(' ');
-    const zigPtsFlipped=zigPts.split(' ').map(p=>{const[x,y]=p.split(',');return x+','+(12-parseInt(y));}).join(' ');
-    const itemRows=d.items.map(it=>`<div style="padding:2px 0;border-bottom:1px dotted #ccc;"><div style="font-size:12px;">${escHtml((it.description||'-'))}</div><div style="display:flex;justify-content:space-between;font-size:11px;color:#555;"><span>${it.qty}&times;${d.sym}${it.rate.toFixed(2)}</span><span style="font-weight:700;color:#111;">${d.sym}${it.amount.toFixed(2)}</span></div></div>`).join('');
-    return `<style>@import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');</style>
-<div style="font-family:'VT323','Courier New',monospace;background:#fff;width:290px;margin:0 auto;color:#111;box-shadow:0 3px 12px rgba(0,0,0,.18);letter-spacing:.4px;">
-<svg width="290" height="12" viewBox="0 0 288 12" style="display:block;" preserveAspectRatio="none"><polyline points="${zigPts}" fill="none" stroke="#ddd" stroke-width="1.2"/><polygon points="0,12 0,0 ${zigPts} 288,0 288,12" fill="#fff"/></svg>
+    const billTime=d.td.bill_time||nowTime();
+    const itemRows=d.items.map(it=>`<div style="padding:3px 0;border-bottom:1px dotted #ccc;"><div style="font-size:15px;">${escHtml(it.description||'-')}</div><div style="display:flex;justify-content:space-between;font-size:13px;color:#555;"><span>${it.qty}&times;${d.sym}${it.rate.toFixed(2)}</span><span style="font-weight:700;color:#111;">${d.sym}${it.amount.toFixed(2)}</span></div></div>`).join('');
+    return `<div style="font-family:'VT323','Courier New',monospace;background:#fff;width:290px;margin:0 auto;color:#111;box-shadow:0 3px 12px rgba(0,0,0,.18);letter-spacing:.4px;">
 <div style="padding:12px 14px 10px;">
-<div style="text-align:center;border-bottom:2px solid #111;padding-bottom:6px;margin-bottom:6px;">
-<div style="font-size:22px;font-weight:700;letter-spacing:3px;line-height:1.1;">${escHtml(d.fromName.toUpperCase())}</div>
-${d.fromAddr?`<div style="font-size:12px;color:#444;margin-top:2px;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}
-${d.fromPhone?`<div style="font-size:12px;color:#444;">Ph: ${escHtml(d.fromPhone)}</div>`:''}
-${d.fromEmail?`<div style="font-size:11px;color:#666;">${escHtml(d.fromEmail)}</div>`:''}
-</div>
-<div style="font-size:12px;border-bottom:1px dashed #555;padding-bottom:5px;margin-bottom:5px;">
+<div style="font-size:14px;border-bottom:1px dashed #555;padding-bottom:5px;margin-bottom:5px;">
 <div style="display:flex;justify-content:space-between;"><span>Bill#: <b>${escHtml(d.billNo)}</b></span><span>${fmtDate(d.billDate)}</span></div>
-<div style="display:flex;justify-content:space-between;"><span>Cust: <b>${escHtml(d.toName)}</b></span><span>Time: ${nowTime()}</span></div>
+<div style="display:flex;justify-content:space-between;"><span>Cust: <b>${escHtml(d.toName)}</b></span><span>${billTime}</span></div>
 ${tableNo?`<div>Table: <b>#${escHtml(tableNo)}</b>${mode?' | Pay: <b>'+escHtml(mode)+'</b>':''}</div>`:''}
 </div>
 <div style="border-bottom:1px dashed #555;padding-bottom:5px;margin-bottom:4px;">
-<div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700;padding:2px 0;border-bottom:1px solid #ccc;"><span>ITEM</span><span>QTY&times;RATE</span><span>AMT</span></div>
-${itemRows||'<div style="font-size:11px;color:#aaa;padding:4px 0;text-align:center;">No items added</div>'}
+<div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;padding:2px 0;border-bottom:1px solid #ccc;"><span>ITEM</span><span>QTY&times;RATE</span><span>AMT</span></div>
+${itemRows||'<div style="font-size:14px;color:#aaa;padding:4px 0;text-align:center;">No items added</div>'}
 </div>
-<div style="font-size:12px;padding:2px 0;">
+<div style="font-size:14px;padding:2px 0;">
 <div style="display:flex;justify-content:space-between;padding:1px 0;"><span>Sub-Total:</span><span>${d.sym}${d.subtotal.toFixed(2)}</span></div>
 ${cgst>0?`<div style="display:flex;justify-content:space-between;padding:1px 0;"><span>CGST ${cgst}%:</span><span>${d.sym}${cgstAmt.toFixed(2)}</span></div>`:''}
 ${sgst>0?`<div style="display:flex;justify-content:space-between;padding:1px 0;"><span>SGST ${sgst}%:</span><span>${d.sym}${sgstAmt.toFixed(2)}</span></div>`:''}
@@ -606,17 +598,16 @@ ${d.taxPct>0&&cgst===0&&sgst===0?`<div style="display:flex;justify-content:space
 ${d.discount>0?`<div style="display:flex;justify-content:space-between;padding:1px 0;"><span>Discount:</span><span>-${d.sym}${d.discount.toFixed(2)}</span></div>`:''}
 </div>
 <div style="border-top:2px solid #111;padding:4px 0;margin-top:2px;">
-<div style="display:flex;justify-content:space-between;font-size:18px;font-weight:900;"><span>** TOTAL</span><span>${d.sym}${d.total.toFixed(2)}</span></div>
-${mode&&!tableNo?`<div style="font-size:12px;color:#555;">Payment: ${escHtml(mode)}</div>`:''}
+<div style="display:flex;justify-content:space-between;font-size:20px;font-weight:900;"><span>** TOTAL</span><span>${d.sym}${d.total.toFixed(2)}</span></div>
+${mode&&!tableNo?`<div style="font-size:14px;color:#555;">Payment: ${escHtml(mode)}</div>`:''}
 </div>
-${d.notes?`<div style="border-top:1px dashed #555;padding-top:4px;margin-top:3px;font-size:11px;color:#555;text-align:center;">${escHtml(d.notes)}</div>`:''}
-<div style="border-top:1px dashed #555;padding-top:6px;margin-top:5px;text-align:center;font-size:13px;">
+${d.notes?`<div style="border-top:1px dashed #555;padding-top:4px;margin-top:3px;font-size:13px;color:#555;text-align:center;">${escHtml(d.notes)}</div>`:''}
+<div style="border-top:1px dashed #555;padding-top:6px;margin-top:5px;text-align:center;font-size:15px;">
 <div style="font-weight:700;letter-spacing:1px;">THANK YOU! VISIT AGAIN!</div>
-<div style="font-size:12px;color:#555;">** SAVE PAPER ~ SAVE NATURE **</div>
-<div style="font-size:11px;color:#888;margin-top:3px;">Powered by BillX</div>
+<div style="font-size:13px;color:#555;">** SAVE PAPER ~ SAVE NATURE **</div>
+<div style="font-size:12px;color:#888;margin-top:3px;">Powered by BillX</div>
 </div>
 </div>
-<svg width="290" height="12" viewBox="0 0 288 12" style="display:block;" preserveAspectRatio="none"><polyline points="${zigPtsFlipped}" fill="none" stroke="#ddd" stroke-width="1.2"/><polygon points="0,0 0,12 ${zigPtsFlipped} 288,12 288,0" fill="#fff"/></svg>
 </div>`;
     }
     const c=TYPE_COLORS[d.type]||'#333';

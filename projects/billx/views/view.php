@@ -65,7 +65,7 @@ $autoprint = !empty($_GET['autoprint']);
     $sgstAmt  = round($subtotal * $sgstPct / 100, 2);
     $tableNo  = $td['table_number'] ?? '';
     $payMode  = $td['payment_mode'] ?? '';
-    $billTime = $bill['created_at'] ? date('H:i', strtotime($bill['created_at'])) : date('H:i');
+    $billTime = !empty($td['bill_time']) ? $td['bill_time'] : ($bill['created_at'] ? date('H:i', strtotime($bill['created_at'])) : date('H:i'));
     $tplStyle = $td['template_style'] ?? '1';
 ?>
 <?php if ($tplStyle === '2'): ?>
@@ -109,6 +109,45 @@ $autoprint = !empty($_GET['autoprint']);
     </div>
     <?php if ($bill['notes']): ?><div style="padding:6px 12px;font-size:10px;color:#555;border-top:1px solid #eee;"><?= htmlspecialchars($bill['notes']) ?></div><?php endif; ?>
     <div style="padding:6px;text-align:center;font-size:9px;color:#999;background:#f0f0f0;">Thank you! Visit again | Time: <?= $billTime ?></div>
+</div>
+<?php elseif ($tplStyle === '3'): ?>
+<div style="font-family:'VT323','Courier New',monospace;background:#fff;max-width:290px;margin:0 auto;color:#111;box-shadow:0 3px 12px rgba(0,0,0,.18);letter-spacing:.4px;">
+<div style="padding:12px 14px 10px;">
+<div style="font-size:14px;border-bottom:1px dashed #555;padding-bottom:5px;margin-bottom:5px;">
+    <div style="display:flex;justify-content:space-between;"><span>Bill#: <b><?= htmlspecialchars($bill['bill_number']) ?></b></span><span><?= $billDate ?></span></div>
+    <div style="display:flex;justify-content:space-between;"><span>Cust: <b><?= htmlspecialchars($bill['to_name']) ?></b></span><span><?= htmlspecialchars($billTime) ?></span></div>
+    <?php if ($tableNo): ?><div>Table: <b>#<?= htmlspecialchars($tableNo) ?></b><?= $payMode ? ' | Pay: <b>'.htmlspecialchars($payMode).'</b>' : '' ?></div><?php endif; ?>
+</div>
+<div style="border-bottom:1px dashed #555;padding-bottom:5px;margin-bottom:4px;">
+    <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;padding:2px 0;border-bottom:1px solid #ccc;"><span>ITEM</span><span>QTY×RATE</span><span>AMT</span></div>
+    <?php foreach ($items as $item): ?>
+    <div style="padding:3px 0;border-bottom:1px dotted #ccc;">
+        <div style="font-size:15px;"><?= htmlspecialchars($item['description']??'-') ?></div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;color:#555;">
+            <span><?= (float)($item['qty']??1) ?>×<?= $sym.number_format((float)($item['rate']??0),2) ?></span>
+            <span style="font-weight:700;color:#111;"><?= $sym.number_format((float)($item['amount']??0),2) ?></span>
+        </div>
+    </div>
+    <?php endforeach; ?>
+</div>
+<div style="font-size:14px;padding:2px 0;">
+    <div style="display:flex;justify-content:space-between;padding:1px 0;"><span>Sub-Total:</span><span><?= $sym.number_format($subtotal,2) ?></span></div>
+    <?php if ($cgstPct > 0): ?><div style="display:flex;justify-content:space-between;padding:1px 0;"><span>CGST <?= $cgstPct ?>%:</span><span><?= $sym.number_format($cgstAmt,2) ?></span></div><?php endif; ?>
+    <?php if ($sgstPct > 0): ?><div style="display:flex;justify-content:space-between;padding:1px 0;"><span>SGST <?= $sgstPct ?>%:</span><span><?= $sym.number_format($sgstAmt,2) ?></span></div><?php endif; ?>
+    <?php if ($taxPct > 0 && $cgstPct == 0 && $sgstPct == 0): ?><div style="display:flex;justify-content:space-between;padding:1px 0;"><span>Tax <?= $taxPct ?>%:</span><span><?= $sym.number_format($taxAmt,2) ?></span></div><?php endif; ?>
+    <?php if ($discount > 0): ?><div style="display:flex;justify-content:space-between;padding:1px 0;"><span>Discount:</span><span>-<?= $sym.number_format($discount,2) ?></span></div><?php endif; ?>
+</div>
+<div style="border-top:2px solid #111;padding:4px 0;margin-top:2px;">
+    <div style="display:flex;justify-content:space-between;font-size:20px;font-weight:900;"><span>** TOTAL</span><span><?= $sym.number_format($total,2) ?></span></div>
+    <?php if ($payMode && !$tableNo): ?><div style="font-size:14px;color:#555;">Payment: <?= htmlspecialchars($payMode) ?></div><?php endif; ?>
+</div>
+<?php if ($bill['notes']): ?><div style="border-top:1px dashed #555;padding-top:4px;margin-top:3px;font-size:13px;color:#555;text-align:center;"><?= htmlspecialchars($bill['notes']) ?></div><?php endif; ?>
+<div style="border-top:1px dashed #555;padding-top:6px;margin-top:5px;text-align:center;font-size:15px;">
+    <div style="font-weight:700;letter-spacing:1px;">THANK YOU! VISIT AGAIN!</div>
+    <div style="font-size:13px;color:#555;">** SAVE PAPER ~ SAVE NATURE **</div>
+    <div style="font-size:12px;color:#888;margin-top:3px;">Powered by BillX</div>
+</div>
+</div>
 </div>
 <?php else: ?>
 <div style="font-family:'Courier New',Courier,monospace;background:#fff;max-width:340px;margin:0 auto;padding:14px 18px;font-size:11px;color:#111;border:1px solid #ccc;box-shadow:1px 2px 8px rgba(0,0,0,.15);">
