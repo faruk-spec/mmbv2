@@ -30,7 +30,7 @@ body { margin: 0; padding: 0; background: #fff; }
 </head>
 <body>
 <button class="print-btn" onclick="window.print()">🖨 Save as PDF</button>
-<div id="billDocument" style="max-width:<?= $group==='thermal'?'340px':'700px' ?>;margin:0 auto;">
+<div id="billDocument" style="max-width:<?= $group==='thermal'?'302px':'700px' ?>;margin:0 auto;">
 <?php if ($group === 'thermal'): ?>
 <!-- ============================================================
      THERMAL / POS RECEIPT  (restaurant, recharge, mart, newspaper)
@@ -45,8 +45,17 @@ body { margin: 0; padding: 0; background: #fff; }
     $billTime = !empty($td['bill_time']) ? $td['bill_time'] : ($bill['created_at'] ? date('H:i', strtotime($bill['created_at'])) : date('H:i'));
 ?>
 <?php if ($tplStyle === '3'): ?>
-<div style="font-family:'VT323','Courier New',monospace;background:#fff;width:290px;margin:0 auto;color:#111;box-shadow:0 3px 12px rgba(0,0,0,.18);letter-spacing:.4px;">
+<div style="font-family:'VT323','Courier New',monospace;background:#fff;width:302px;margin:0 auto;color:#111;box-shadow:0 3px 12px rgba(0,0,0,.18);letter-spacing:.4px;">
 <div style="padding:12px 14px 10px;">
+<div style="text-align:center;padding-bottom:4px;margin-bottom:4px;">
+    <div style="font-size:22px;font-weight:700;letter-spacing:4px;">WELCOME!!!</div>
+    <div style="font-size:14px;letter-spacing:2px;">Original Receipt</div>
+    <div style="border-top:1px dashed #555;margin:5px 0;"></div>
+    <div style="font-size:20px;font-weight:700;letter-spacing:2px;line-height:1.1;"><?= htmlspecialchars(strtoupper($bill['from_name'])) ?></div>
+    <?php if ($bill['from_address']): ?><div style="font-size:12px;color:#444;margin-top:2px;"><?= htmlspecialchars(str_replace("\n",' | ',$bill['from_address'])) ?></div><?php endif; ?>
+    <?php if ($bill['from_phone']): ?><div style="font-size:12px;color:#444;">Ph: <?= htmlspecialchars($bill['from_phone']) ?></div><?php endif; ?>
+    <div style="border-top:1px dashed #555;margin:5px 0;"></div>
+</div>
 <div style="font-size:14px;border-bottom:1px dashed #555;padding-bottom:5px;margin-bottom:5px;">
     <div style="display:flex;justify-content:space-between;"><span>Bill#: <b><?= htmlspecialchars($bill['bill_number']) ?></b></span><span><?= $billDate ?></span></div>
     <div style="display:flex;justify-content:space-between;"><span>Cust: <b><?= htmlspecialchars($bill['to_name']) ?></b></span><span><?= htmlspecialchars($billTime) ?></span></div>
@@ -84,7 +93,7 @@ body { margin: 0; padding: 0; background: #fff; }
 </div>
 </div>
 <?php else: ?>
-<div style="font-family:'Courier New',Courier,monospace;background:#fff;max-width:340px;margin:0 auto;padding:14px 18px;font-size:11px;color:#111;border:1px solid #ccc;box-shadow:1px 2px 8px rgba(0,0,0,.15);">
+<div style="font-family:'Courier New',Courier,monospace;background:#fff;max-width:302px;margin:0 auto;padding:14px 18px;font-size:11px;color:#111;border:1px solid #ccc;box-shadow:1px 2px 8px rgba(0,0,0,.15);">
     <div style="border-top:1px dashed #888;margin:4px 0;"></div>
     <div style="text-align:center;letter-spacing:6px;font-size:11px;font-weight:700;margin:2px 0;">RECEIPT</div>
     <div style="border-top:1px dashed #888;margin:4px 0;"></div>

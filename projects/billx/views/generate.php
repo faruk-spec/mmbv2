@@ -63,13 +63,13 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
                             <option value="GBP">GBP £</option>
                         </select>
                     </div>
-                    <div class="form-group" style="margin:0;">
+                    <div class="form-group" style="margin:0;grid-column:span 2;">
                         <label class="form-label">Template Style</label>
-                        <select name="td_template_style" id="td_template_style" class="form-select" onchange="updatePreview()">
-                            <option value="1">Style 1 — Default</option>
-                            <option value="2">Style 2 — Classic</option>
-                            <option value="3">Style 3 — Thermal Printer</option>
-                        </select>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;" id="tplStyleGroup">
+                            <label class="tpl-radio-label"><input type="radio" name="td_template_style" value="1" checked onchange="updatePreview()"> Style 1</label>
+                            <label class="tpl-radio-label"><input type="radio" name="td_template_style" value="2" onchange="updatePreview()"> Style 2</label>
+                            <label class="tpl-radio-label"><input type="radio" name="td_template_style" value="3" onchange="updatePreview()"> Style 3 — Thermal</label>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -455,6 +455,16 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
 }
 /* fieldset reset */
 #extraFieldsCard fieldset { border:none;padding:0;margin:0; }
+/* Template style radio pills */
+.tpl-radio-label {
+    display:flex;align-items:center;gap:6px;cursor:pointer;
+    padding:5px 12px;border-radius:20px;border:1px solid var(--border-color);
+    font-size:0.82rem;color:var(--text-secondary);transition:border-color .15s,color .15s;
+}
+.tpl-radio-label:has(input:checked) {
+    border-color:var(--amber);color:var(--amber);font-weight:600;
+}
+.tpl-radio-label input[type="radio"] { accent-color:var(--amber); }
 @media (max-width: 900px) {
     form > div[style*="grid-template-columns:1fr 1fr"] {
         grid-template-columns: 1fr !important;
@@ -506,7 +516,7 @@ function getExtraFields(){
     const fs=document.getElementById(GROUP_FIELDSETS[group]);
     const td={};
     if(fs)fs.querySelectorAll('input,select,textarea').forEach(el=>{if(el.name&&el.name.startsWith('td_'))td[el.name.slice(3)]=el.value;});
-    const tplStyleEl=document.getElementById('td_template_style');
+    const tplStyleEl=document.querySelector('input[name="td_template_style"]:checked');
     if(tplStyleEl)td.template_style=tplStyleEl.value;
     return td;
 }
@@ -548,7 +558,7 @@ function renderThermal(d){
     const mode=d.td.payment_mode||''; const tableNo=d.td.table_number||'';
     const c=TYPE_COLORS[d.type]||'#c62828';
     const rows=d.items.map((it,i)=>`<tr style="background:${i%2===0?'#fafafa':'#fff'};"><td style="padding:5px 8px;font-size:12px;">${escHtml(it.description||'-')}</td><td style="padding:5px 8px;text-align:center;font-size:11px;">${it.qty}</td><td style="padding:5px 8px;text-align:right;font-size:12px;">${d.sym}${it.rate.toFixed(2)}</td><td style="padding:5px 8px;text-align:right;font-weight:700;font-size:12px;">${d.sym}${it.amount.toFixed(2)}</td></tr>`).join('');
-    return `<div style="font-family:Arial,sans-serif;background:#fff;max-width:360px;margin:0 auto;border:1px solid #ddd;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.12);">
+    return `<div style="font-family:Arial,sans-serif;background:#fff;max-width:302px;margin:0 auto;border:1px solid #ddd;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.12);">
 <div style="background:${c};color:#fff;padding:12px 16px;text-align:center;">
 <div style="font-size:18px;font-weight:700;">${escHtml(d.fromName)}</div>
 ${d.fromAddr?`<div style="font-size:10px;opacity:.85;margin-top:2px;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}
@@ -579,8 +589,17 @@ ${d.notes?`<div style="padding:6px 12px;font-size:10px;color:#555;border-top:1px
     const mode=d.td.payment_mode||''; const tableNo=d.td.table_number||'';
     const billTime=d.td.bill_time||nowTime();
     const itemRows=d.items.map(it=>`<div style="padding:3px 0;border-bottom:1px dotted #ccc;"><div style="font-size:15px;">${escHtml(it.description||'-')}</div><div style="display:flex;justify-content:space-between;font-size:13px;color:#555;"><span>${it.qty}&times;${d.sym}${it.rate.toFixed(2)}</span><span style="font-weight:700;color:#111;">${d.sym}${it.amount.toFixed(2)}</span></div></div>`).join('');
-    return `<div style="font-family:'VT323','Courier New',monospace;background:#fff;width:290px;margin:0 auto;color:#111;box-shadow:0 3px 12px rgba(0,0,0,.18);letter-spacing:.4px;">
+    return `<div style="font-family:'VT323','Courier New',monospace;background:#fff;width:302px;margin:0 auto;color:#111;box-shadow:0 3px 12px rgba(0,0,0,.18);letter-spacing:.4px;">
 <div style="padding:12px 14px 10px;">
+<div style="text-align:center;padding-bottom:4px;margin-bottom:4px;">
+<div style="font-size:22px;font-weight:700;letter-spacing:4px;">WELCOME!!!</div>
+<div style="font-size:14px;letter-spacing:2px;">Original Receipt</div>
+<div style="border-top:1px dashed #555;margin:5px 0;"></div>
+<div style="font-size:20px;font-weight:700;letter-spacing:2px;line-height:1.1;">${escHtml(d.fromName.toUpperCase())}</div>
+${d.fromAddr?`<div style="font-size:12px;color:#444;margin-top:2px;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}
+${d.fromPhone?`<div style="font-size:12px;color:#444;">Ph: ${escHtml(d.fromPhone)}</div>`:''}
+<div style="border-top:1px dashed #555;margin:5px 0;"></div>
+</div>
 <div style="font-size:14px;border-bottom:1px dashed #555;padding-bottom:5px;margin-bottom:5px;">
 <div style="display:flex;justify-content:space-between;"><span>Bill#: <b>${escHtml(d.billNo)}</b></span><span>${fmtDate(d.billDate)}</span></div>
 <div style="display:flex;justify-content:space-between;"><span>Cust: <b>${escHtml(d.toName)}</b></span><span>${billTime}</span></div>
@@ -616,7 +635,7 @@ ${d.notes?`<div style="border-top:1px dashed #555;padding-top:4px;margin-top:3px
     const cgstAmt=d.subtotal*cgst/100;const sgstAmt=d.subtotal*sgst/100;
     const mode=d.td.payment_mode||'';const tableNo=d.td.table_number||'';
     const items=d.items.map(it=>`<tr><td style="padding:2px 3px;font-size:11px;">${escHtml(it.description||'-')}</td><td style="padding:2px 3px;text-align:right;font-size:11px;">${d.sym}${it.rate.toFixed(2)}</td><td style="padding:2px 3px;text-align:center;font-size:11px;">${it.qty}</td><td style="padding:2px 3px;text-align:right;font-weight:700;font-size:11px;">${d.sym}${it.amount.toFixed(2)}</td></tr>`).join('');
-    return`<div style="font-family:'Courier New',monospace;background:#fff;max-width:320px;margin:0 auto;padding:14px 18px;font-size:11px;color:#111;border:1px solid #ccc;box-shadow:1px 2px 8px rgba(0,0,0,.15);">
+    return`<div style="font-family:'Courier New',monospace;background:#fff;max-width:302px;margin:0 auto;padding:14px 18px;font-size:11px;color:#111;border:1px solid #ccc;box-shadow:1px 2px 8px rgba(0,0,0,.15);">
 ${dash}<div style="text-align:center;letter-spacing:6px;font-size:11px;font-weight:700;margin:2px 0;">RECEIPT</div>${dash}
 <div style="display:flex;justify-content:space-between;margin-bottom:2px;"><span>Name: <b>${escHtml(d.toName)}</b></span><span>Invoice No: <b>${escHtml(d.billNo)}</b></span></div>
 ${tableNo?`<div style="display:flex;justify-content:space-between;"><span>Table: <b>#${escHtml(tableNo)}</b></span><span>Date: ${fmtDate(d.billDate)}</span></div>`:`<div>Date: ${fmtDate(d.billDate)}</div>`}
@@ -1251,8 +1270,10 @@ function submitBill(action){
 // ─── Wire up all live inputs ──────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded',()=>{
     addItem('',1,0);
-    const liveInputs=['bill_type','bill_number','bill_date','currency','td_template_style','from_name','from_address','from_phone','from_email','to_name','to_address','to_phone','to_email','tax_percent','discount_amount','notes'];
-    liveInputs.forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener('input',updatePreview);});
+    const liveInputs=['bill_number','bill_date','currency','from_name','from_address','from_phone','from_email','to_name','to_address','to_phone','to_email','tax_percent','discount_amount','notes'];
+    liveInputs.forEach(id=>{const el=document.getElementById(id);if(!el)return;el.addEventListener(el.tagName==='SELECT'?'change':'input',updatePreview);});
+    // Template style radio buttons
+    document.querySelectorAll('input[name="td_template_style"]').forEach(r=>r.addEventListener('change',updatePreview));
     // Bill type triggers extra-fields sync + preview
     const typeSelect=document.getElementById('bill_type');
     typeSelect.addEventListener('change',()=>{syncExtraFields(typeSelect.value);updatePreview();});
