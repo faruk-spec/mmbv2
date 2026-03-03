@@ -127,7 +127,8 @@ class BillController
             } elseif ($saveAction === 'print') {
                 header('Location: /projects/billx/pdf/' . $id . '?autoprint=1');
             } elseif ($saveAction === 'download') {
-                header('Location: /projects/billx/pdf/' . $id . '?download=1');
+                // Redirect to the PDF view page with autoprint=1 so the browser print dialog opens
+                header('Location: /projects/billx/pdf/' . $id . '?autoprint=1');
             } else {
                 header('Location: /projects/billx/view/' . $id);
             }

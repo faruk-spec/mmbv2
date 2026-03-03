@@ -56,7 +56,7 @@ $autoprint = !empty($_GET['autoprint']);
 
 <?php if ($group === 'thermal'): ?>
 <!-- ============================================================
-     THERMAL / POS RECEIPT  (restaurant, recharge, mart, newspaper)
+     THERMAL / POS RECEIPT  (restaurant, mart, stationary)
      ============================================================ -->
 <?php
     $cgstPct  = (float)($td['cgst_pct'] ?? 0);
@@ -592,7 +592,7 @@ $autoprint = !empty($_GET['autoprint']);
 
 <?php else: ?>
 <!-- ============================================================
-     STANDARD PROFESSIONAL INVOICE WITH GST  (book, internet, ecom, general, stationary)
+     STANDARD PROFESSIONAL INVOICE WITH GST  (book, internet, ecom, general, recharge, newspaper)
      ============================================================ -->
 <?php
     $gstin   = $td['gstin']          ?? '';

@@ -68,7 +68,7 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
                         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;" id="tplStyleGroup">
                             <label class="tpl-radio-label"><input type="radio" name="td_template_style" value="1" checked onchange="updatePreview()"> Style 1</label>
                             <label class="tpl-radio-label"><input type="radio" name="td_template_style" value="2" onchange="updatePreview()"> Style 2</label>
-                            <label class="tpl-radio-label"><input type="radio" name="td_template_style" value="3" onchange="updatePreview()"> Style 3 — Thermal</label>
+                            <label class="tpl-radio-label" id="tplStyle3Label"><input type="radio" name="td_template_style" value="3" onchange="updatePreview()"> Style 3 &mdash; Thermal</label>
                         </div>
                     </div>
                 </div>
@@ -177,7 +177,7 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
                     <i class="fas fa-receipt"></i> <span id="extraFieldsLabel">Additional Details</span>
                 </h4>
                 <!-- Thermal: restaurant, recharge, mart, newspaper -->
-                <fieldset id="fields_thermal" style="border:none;padding:0;margin:0;" disabled>
+                <fieldset id="fields_thermal" style="border:none;padding:0;margin:0;">
                     <div class="grid grid-2" style="gap:12px;">
                         <div class="form-group" style="margin:0;"><label class="form-label">Table / Token #</label>
                             <input type="text" name="td_table_number" class="form-input" placeholder="e.g. 50" oninput="updatePreview()"></div>
@@ -195,7 +195,7 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
                     </div>
                 </fieldset>
                 <!-- Payslip: driver, helper -->
-                <fieldset id="fields_payslip" style="border:none;padding:0;margin:0;" disabled>
+                <fieldset id="fields_payslip" style="border:none;padding:0;margin:0;">
                     <div class="grid grid-2" style="gap:12px;">
                         <div class="form-group" style="margin:0;"><label class="form-label">Vehicle Number</label>
                             <input type="text" name="td_vehicle_number" class="form-input" placeholder="e.g. DL01AB-1234" oninput="updatePreview()"></div>
@@ -208,7 +208,7 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
                     </div>
                 </fieldset>
                 <!-- Fuel -->
-                <fieldset id="fields_fuel" style="border:none;padding:0;margin:0;" disabled>
+                <fieldset id="fields_fuel" style="border:none;padding:0;margin:0;">
                     <div class="grid grid-2" style="gap:12px;">
                         <div class="form-group" style="margin:0;"><label class="form-label">Vehicle Number</label>
                             <input type="text" name="td_vehicle_number" class="form-input" placeholder="e.g. DL01AB-1234" oninput="updatePreview()"></div>
@@ -230,7 +230,7 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
                     </div>
                 </fieldset>
                 <!-- Cab -->
-                <fieldset id="fields_cab" style="border:none;padding:0;margin:0;" disabled>
+                <fieldset id="fields_cab" style="border:none;padding:0;margin:0;">
                     <div class="grid grid-2" style="gap:12px;">
                         <div class="form-group" style="margin:0;"><label class="form-label">Cab / Vehicle Number</label>
                             <input type="text" name="td_vehicle_number" class="form-input" placeholder="e.g. MH02AB-5678" oninput="updatePreview()"></div>
@@ -243,7 +243,7 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
                     </div>
                 </fieldset>
                 <!-- Official: rent, lta -->
-                <fieldset id="fields_official" style="border:none;padding:0;margin:0;" disabled>
+                <fieldset id="fields_official" style="border:none;padding:0;margin:0;">
                     <div class="grid grid-2" style="gap:12px;">
                         <div class="form-group" style="margin:0;"><label class="form-label">PAN Number</label>
                             <input type="text" name="td_pan_number" class="form-input" placeholder="Landlord / Company PAN" oninput="updatePreview()"></div>
@@ -252,7 +252,7 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
                     </div>
                 </fieldset>
                 <!-- Medical -->
-                <fieldset id="fields_medical" style="border:none;padding:0;margin:0;" disabled>
+                <fieldset id="fields_medical" style="border:none;padding:0;margin:0;">
                     <div class="grid grid-2" style="gap:12px;">
                         <div class="form-group" style="margin:0;"><label class="form-label">Consultant / Doctor</label>
                             <input type="text" name="td_doctor_name" class="form-input" placeholder="Dr. Name" oninput="updatePreview()"></div>
@@ -282,7 +282,7 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
                     </div>
                 </fieldset>
                 <!-- Hotel -->
-                <fieldset id="fields_hotel" style="border:none;padding:0;margin:0;" disabled>
+                <fieldset id="fields_hotel" style="border:none;padding:0;margin:0;">
                     <div class="grid grid-2" style="gap:12px;">
                         <div class="form-group" style="margin:0;"><label class="form-label">Room Number / Type</label>
                             <input type="text" name="td_room_number" class="form-input" placeholder="e.g. 412 - Deluxe" oninput="updatePreview()"></div>
@@ -295,7 +295,7 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
                     </div>
                 </fieldset>
                 <!-- Gym -->
-                <fieldset id="fields_gym" style="border:none;padding:0;margin:0;" disabled>
+                <fieldset id="fields_gym" style="border:none;padding:0;margin:0;">
                     <div class="grid grid-2" style="gap:12px;">
                         <div class="form-group" style="margin:0;"><label class="form-label">Member ID</label>
                             <input type="text" name="td_member_id" class="form-input" placeholder="e.g. MBR-2026-045" oninput="updatePreview()"></div>
@@ -303,8 +303,8 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
                             <input type="text" name="td_plan_name" class="form-input" placeholder="e.g. 3-Month Premium" oninput="updatePreview()"></div>
                     </div>
                 </fieldset>
-                <!-- Invoice: book, internet, ecom, general, stationary -->
-                <fieldset id="fields_invoice" style="border:none;padding:0;margin:0;" disabled>
+                <!-- Invoice: book, internet, ecom, general, recharge, newspaper -->
+                <fieldset id="fields_invoice" style="border:none;padding:0;margin:0;">
                     <div class="grid grid-2" style="gap:12px;">
                         <div class="form-group" style="margin:0;"><label class="form-label">Seller GSTIN</label>
                             <input type="text" name="td_gstin" class="form-input" placeholder="e.g. 27ABCDE1234F1Z5" oninput="updatePreview()"></div>
@@ -382,6 +382,10 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
 </form>
 
 <style>
+/* Fix sticky preview: override billx-main overflow for this page */
+@media (min-width: 901px) {
+    .billx-main { overflow: visible !important; }
+}
 /* Compact form overrides for generate page */
 #billForm .form-input,
 #billForm .form-select,
@@ -521,7 +525,7 @@ function fmtDate(d){if(!d)return '';const p=d.split('-');const m=['Jan','Feb','M
 function nowTime(){return new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});}
 
 // ─── Bill group mapping ───────────────────────────────────────────────────────
-const BILL_GROUPS={thermal:['restaurant','recharge','mart','newspaper'],payslip:['driver','helper'],fuel:['fuel'],cab:['cab'],official:['rent','lta'],medical:['medical'],hotel:['hotel'],gym:['gym'],invoice:['book','internet','ecom','general','stationary']};
+const BILL_GROUPS={thermal:['restaurant','mart','stationary'],payslip:['driver','helper'],fuel:['fuel'],cab:['cab'],official:['rent','lta'],medical:['medical'],hotel:['hotel'],gym:['gym'],invoice:['book','internet','ecom','general','recharge','newspaper']};
 function getGroup(type){for(const[g,a]of Object.entries(BILL_GROUPS))if(a.includes(type))return g;return 'invoice';}
 const TYPE_LABELS={fuel:'Fuel Bill',driver:'Driver Salary',helper:'Daily Helper Bill',rent:'Rent Receipt',book:'Book Invoice',internet:'Internet Invoice',restaurant:'Restaurant Bill',lta:'LTA Receipt',ecom:'E-Com Invoice',general:'General Bill',recharge:'Recharge Receipt',medical:'Medical Bill',stationary:'Stationary Bill',cab:'Cab & Travel Bill',mart:'Mart Bill',gym:'Gym Bill',hotel:'Hotel Bill',newspaper:'Newspaper Bill'};
 const TYPE_COLORS={fuel:'#e65000',driver:'#1565c0',helper:'#546e7a',rent:'#6a1b9a',book:'#5d4037',internet:'#0277bd',restaurant:'#c62828',lta:'#2e7d32',ecom:'#1565c0',general:'#37474f',recharge:'#00838f',medical:'#0077b6',stationary:'#bf360c',cab:'#e65100',mart:'#1b5e20',gym:'#212121',hotel:'#7d5a00',newspaper:'#1a1a1a'};
@@ -538,17 +542,31 @@ function updateFormLabels(type){
 
 // ─── Extra-fields per group ───────────────────────────────────────────────────
 const GROUP_FIELDSETS={thermal:'fields_thermal',payslip:'fields_payslip',fuel:'fields_fuel',cab:'fields_cab',official:'fields_official',medical:'fields_medical',hotel:'fields_hotel',gym:'fields_gym',invoice:'fields_invoice'};
-const EXTRA_LABELS={thermal:'Restaurant / Store Details',payslip:'Employee Details',fuel:'Fuel & Vehicle Details',cab:'Cab & Driver Details',official:'Property / Official Details',medical:'Patient & Hospital Details',hotel:'Hotel & Room Details',gym:'Gym & Membership Details',invoice:'GST & Invoice Details'};
+const EXTRA_LABELS={thermal:'POS / Store Details (Restaurant, Mart, Stationary)',payslip:'Employee Details',fuel:'Fuel & Vehicle Details',cab:'Cab & Driver Details',official:'Property / Official Details',medical:'Patient & Hospital Details',hotel:'Hotel & Room Details',gym:'Gym & Membership Details',invoice:'GST & Invoice Details'};
 
 function syncExtraFields(type){
     const group=getGroup(type);
     Object.entries(GROUP_FIELDSETS).forEach(([g,id])=>{
         const fs=document.getElementById(id);if(!fs)return;
-        const active=g===group;fs.disabled=!active;fs.style.display=active?'':'none';
+        const active=g===group;fs.style.display=active?'':'none';
+        // Keep inputs in inactive sections visually hidden but not form-disabled
+        // so events fire correctly for the active group
+        fs.querySelectorAll('input,select,textarea').forEach(el=>{el.disabled=!active;});
     });
     const lbl=document.getElementById('extraFieldsLabel');
     if(lbl)lbl.textContent=EXTRA_LABELS[group]||'Additional Details';
     updateFormLabels(type);
+    // Show Style 3 (Thermal) option only for thermal bill types
+    const tpl3Label=document.getElementById('tplStyle3Label');
+    if(tpl3Label){
+        if(group==='thermal'){tpl3Label.style.display='';}
+        else{
+            tpl3Label.style.display='none';
+            // If style 3 was selected and type is now non-thermal, switch to style 1
+            const s3=document.querySelector('input[name="td_template_style"][value="3"]');
+            if(s3&&s3.checked){const s1=document.querySelector('input[name="td_template_style"][value="1"]');if(s1)s1.checked=true;}
+        }
+    }
 }
 function getExtraFields(){
     const type=document.getElementById('bill_type').value;
@@ -588,7 +606,7 @@ function collectData(){
 }
 
 // ─── RENDERER 1: Thermal / POS Receipt ───────────────────────────────────────
-// (restaurant, recharge, mart, newspaper)
+// (restaurant, mart, stationary)
 function renderThermal(d){
     const style = d.td.template_style || '1';
     if (style === '2') {
@@ -1167,7 +1185,7 @@ ${d.notes?`<div style="padding:8px 20px;font-size:10px;color:#aaa;border-top:1px
 </div>`;}
 
 // ─── RENDERER 9: Professional Invoice (with GST breakdown) ───────────────────
-// (book, internet, ecom, general, stationary)
+// (book, internet, ecom, general, recharge, newspaper)
 function renderInvoice(d){
     const style = d.td.template_style || '1';
     if (style === '2') {
@@ -1315,6 +1333,12 @@ document.addEventListener('DOMContentLoaded',()=>{
     liveInputs.forEach(id=>{const el=document.getElementById(id);if(!el)return;el.addEventListener(el.tagName==='SELECT'?'change':'input',updatePreview);});
     // Template style radio buttons
     document.querySelectorAll('input[name="td_template_style"]').forEach(r=>r.addEventListener('change',updatePreview));
+    // Event delegation: wire up all extra-field inputs via their shared parent card
+    const extraCard=document.getElementById('extraFieldsCard');
+    if(extraCard){
+        extraCard.addEventListener('input',updatePreview);
+        extraCard.addEventListener('change',updatePreview);
+    }
     // Bill type triggers extra-fields sync + preview
     const typeSelect=document.getElementById('bill_type');
     typeSelect.addEventListener('change',()=>{syncExtraFields(typeSelect.value);updatePreview();});

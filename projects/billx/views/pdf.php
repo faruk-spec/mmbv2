@@ -20,7 +20,7 @@ $tplStyle = $td['template_style'] ?? '1';
 <title><?= htmlspecialchars($typeLabel) ?> - <?= htmlspecialchars($bill['bill_number']) ?></title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
-@page { size: <?= $group==='thermal' ? '80mm auto' : 'A4 portrait' ?>; margin: <?= $group==='thermal' ? '2mm 0' : '12mm' ?>; }
+@page { size: <?= $group==='thermal' ? '80mm auto' : 'A4 portrait' ?>; margin: <?= $group==='thermal' ? '0' : '12mm' ?>; }
 * { box-sizing: border-box; }
 body { margin: 0; padding: 0; background: #fff; font-family: Arial, sans-serif; }
 @media screen { body { background: #e8e8e8; padding-top: 52px; padding-bottom: 20px; } }
@@ -48,20 +48,21 @@ body { margin: 0; padding: 0; background: #fff; font-family: Arial, sans-serif; 
 .btn-print-only:hover { background: #263238; }
 .btn-close-win { background: #e0e0e0; color: #333; }
 .btn-close-win:hover { background: #bdbdbd; }
-/* Print – hide action bar, remove padding */
+/* Print – hide action bar, remove padding, exact sizing */
 @media print {
     .bill-action-bar { display: none !important; }
     body { background: #fff !important; padding: 0 !important; margin: 0 !important; }
-    #billDocument { max-width: 100% !important; margin: 0 !important; box-shadow: none !important; }
+    #billDocument { max-width: 100% !important; width: 100% !important; margin: 0 !important; box-shadow: none !important; }
+    #billDocument * { box-shadow: none !important; }
 }
 </style>
 </head>
 <body>
 <div class="bill-action-bar">
     <span class="bill-info"><?= htmlspecialchars($typeLabel) ?> &mdash; #<?= htmlspecialchars($bill['bill_number']) ?></span>
-    <button class="btn-close-win" onclick="window.close()">✕ Close</button>
-    <button class="btn-print-only" onclick="window.print()">🖨 Print</button>
-    <button class="btn-download" onclick="(function(){document.title=<?= json_encode(preg_replace('/[^a-zA-Z0-9 _-]/', '', $typeLabel) . '-' . preg_replace('/[^a-zA-Z0-9_-]/', '', $bill['bill_number'])) ?>;window.print();})()">⬇ Download PDF</button>
+    <button class="btn-close-win" onclick="history.length>1?history.back():window.location.href='/projects/billx/history'">&#8592; Back</button>
+    <button class="btn-print-only" onclick="window.print()">Print</button>
+    <button class="btn-download" onclick="window.print()">&#8659; Download PDF</button>
 </div>
 <div id="billDocument" style="<?= $group==='thermal' ? 'width:80mm;max-width:80mm;' : 'max-width:700px;' ?> margin:0 auto;">
 <?php if ($group === 'thermal'): ?>
@@ -559,7 +560,7 @@ body { margin: 0; padding: 0; background: #fff; font-family: Arial, sans-serif; 
 
 <?php else: ?>
 <!-- ============================================================
-     STANDARD PROFESSIONAL INVOICE WITH GST  (book, internet, ecom, general, stationary)
+     STANDARD PROFESSIONAL INVOICE WITH GST  (book, internet, ecom, general, recharge, newspaper)
      ============================================================ -->
 <?php
     $gstin   = $td['gstin']          ?? '';
