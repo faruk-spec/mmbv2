@@ -658,8 +658,8 @@ body { margin: 0; padding: 0; background: #fff; font-family: 'Inter', Arial, san
       <?php if ($bill['to_address']): ?><div style="font-size:10px;color:#7d5a00;"><?= htmlspecialchars(str_replace("\n",', ',$bill['to_address'])) ?></div><?php endif; ?>
     </div>
     <div style="text-align:right;">
-      <div style="font-size:9px;color:#7d5a00;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Folio Details</div>
-      <div style="font-size:13px;font-weight:700;">Folio #: <?= htmlspecialchars($bill['bill_number']) ?></div>
+      <div style="font-size:9px;color:#7d5a00;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Bill Details</div>
+      <div style="font-size:13px;font-weight:700;">Bill #: <?= htmlspecialchars($bill['bill_number']) ?></div>
       <div style="font-size:11px;color:#7d5a00;margin-top:3px;">Date: <?= $billDate ?></div>
       <?php if ($roomNo): ?><div style="font-size:11px;color:#7d5a00;">Room: <b><?= htmlspecialchars($roomNo) ?></b></div><?php endif; ?>
       <?php if ($checkin): ?><div style="font-size:11px;color:#7d5a00;">Check-in: <?= $checkin ?></div><?php endif; ?>
@@ -910,48 +910,43 @@ async function downloadBillPDF() {
         var el = document.getElementById('billDocument');
         // Temporarily hide action bar so it doesn't appear in PDF
         var bar = document.querySelector('.bill-action-bar');
-        var barDisplay = bar ? bar.style.display : '';
+        var barOrigDisplay = bar ? bar.style.display : '';
         if (bar) bar.style.display = 'none';
 
         var canvas = await html2canvas(el, {
             scale: 2,
             useCORS: true,
             logging: false,
-            backgroundColor: '#ffffff'
+            backgroundColor: '#ffffff',
+            // Capture full scroll height to avoid cropping
+            scrollX: 0,
+            scrollY: 0,
+            width: el.scrollWidth,
+            height: el.scrollHeight,
+            windowWidth: el.scrollWidth,
+            windowHeight: el.scrollHeight
         });
-        if (bar) bar.style.display = barDisplay;
+        if (bar) bar.style.display = barOrigDisplay;
 
         var imgData = canvas.toDataURL('image/png');
         var jsPDF = window.jspdf.jsPDF;
         var pdf;
+        var margin = 8; // mm
 
         if (_billGroup === 'thermal') {
-            // 80mm roll: width = 80mm, height proportional
+            // 80mm roll: exact width, height proportional — no cropping
             var mmWidth = 80;
-            var mmHeight = canvas.height * mmWidth / canvas.width;
+            var mmHeight = (canvas.height / canvas.width) * mmWidth;
             pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [mmWidth, mmHeight] });
             pdf.addImage(imgData, 'PNG', 0, 0, mmWidth, mmHeight);
         } else {
-            pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-            var pageW = pdf.internal.pageSize.getWidth();
-            var pageH = pdf.internal.pageSize.getHeight();
-            var margin = 10;
+            // Use a custom-height page that fits the entire bill — no cropping
+            var pageW = 210; // A4 width in mm
             var imgW = pageW - margin * 2;
-            var imgH = canvas.height * imgW / canvas.width;
-            var posY = margin;
-            if (imgH <= pageH - margin * 2) {
-                pdf.addImage(imgData, 'PNG', margin, posY, imgW, imgH);
-            } else {
-                // Multi-page
-                pdf.addImage(imgData, 'PNG', margin, posY, imgW, imgH);
-                var remaining = imgH - (pageH - margin);
-                while (remaining > 0) {
-                    pdf.addPage();
-                    posY -= (pageH - margin);
-                    pdf.addImage(imgData, 'PNG', margin, posY, imgW, imgH);
-                    remaining -= (pageH - margin);
-                }
-            }
+            var imgH = (canvas.height / canvas.width) * imgW;
+            var pageH = imgH + margin * 2;
+            pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [pageW, pageH] });
+            pdf.addImage(imgData, 'PNG', margin, margin, imgW, imgH);
         }
         pdf.save(_billFilename);
     } catch (e) {

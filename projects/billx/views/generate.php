@@ -345,7 +345,6 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
                 </button>
             </div>
         </div>
-    </div><!-- /left form inner flex -->
     </form>
     </div><!-- /leftFormPanel -->
 
@@ -371,8 +370,6 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
                 </div>
             </div>
         </div>
-
-    </div><!-- /rightPreviewPanel -->
 
 </div><!-- /generateLayout -->
 
@@ -1070,7 +1067,7 @@ function renderHotel(d){
     return `<div style="font-family:Arial,sans-serif;background:#fff;font-size:12px;color:#222;border:1px solid #ccc;max-width:620px;box-shadow:0 2px 10px rgba(0,0,0,.1);">
 <div style="padding:16px 20px;border-bottom:2px solid #333;display:flex;justify-content:space-between;align-items:flex-start;">
 <div><div style="font-size:20px;font-weight:700;">${escHtml(d.fromName)}</div>${d.fromAddr?`<div style="font-size:10px;color:#666;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}<div style="font-size:10px;color:#666;">${d.fromPhone?'Ph: '+escHtml(d.fromPhone):''}</div>${gstin?`<div style="font-size:10px;color:#666;">GSTIN: ${escHtml(gstin)}</div>`:''}</div>
-<div style="text-align:right;"><div style="font-size:20px;font-weight:900;letter-spacing:1px;">HOTEL INVOICE</div><div style="font-size:11px;color:#666;">Folio #: ${escHtml(d.billNo)}</div><div style="font-size:11px;color:#666;">Date: ${fmtDate(d.billDate)}</div></div>
+<div style="text-align:right;"><div style="font-size:20px;font-weight:900;letter-spacing:1px;">HOTEL INVOICE</div><div style="font-size:11px;color:#666;">Bill #: ${escHtml(d.billNo)}</div><div style="font-size:11px;color:#666;">Date: ${fmtDate(d.billDate)}</div></div>
 </div>
 <div style="padding:10px 20px;background:#f5f5f5;border-bottom:1px solid #ddd;display:flex;justify-content:space-between;font-size:11px;">
 <div><div style="font-weight:600;margin-bottom:2px;">Guest: ${escHtml(d.toName)}</div>${d.toPhone?`<div>Ph: ${escHtml(d.toPhone)}</div>`:''}</div>
@@ -1104,7 +1101,7 @@ ${gstin?`<div style="font-size:10px;opacity:.85;">GSTIN: ${escHtml(gstin)}</div>
 </div>
 <div style="background:#fdf0c0;padding:10px 24px;border-bottom:2px solid #c9a84c;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;">
 <div><span style="font-size:10px;color:#7d5a00;display:block;text-transform:uppercase;">Guest Name</span><span style="font-size:14px;font-weight:700;">${escHtml(d.toName)}</span>${d.toPhone?`<span style="font-size:10px;color:#7d5a00;display:block;">📞 ${escHtml(d.toPhone)}</span>`:''}</div>
-<div style="text-align:right;"><span style="font-size:10px;color:#7d5a00;display:block;text-transform:uppercase;">Folio Details</span><span style="font-size:12px;display:block;">Folio #: <b>${escHtml(d.billNo)}</b></span><span style="font-size:12px;">Date: ${fmtDate(d.billDate)}</span>${roomNo?`<span style="font-size:11px;display:block;">Room: <b>${escHtml(roomNo)}</b></span>`:''}${checkin?`<span style="font-size:11px;display:block;">In: ${checkin}${checkout?' → '+checkout:''}</span>`:''}</div>
+<div style="text-align:right;"><span style="font-size:10px;color:#7d5a00;display:block;text-transform:uppercase;">Bill Details</span><span style="font-size:12px;display:block;">Bill #: <b>${escHtml(d.billNo)}</b></span><span style="font-size:12px;">Date: ${fmtDate(d.billDate)}</span>${roomNo?`<span style="font-size:11px;display:block;">Room: <b>${escHtml(roomNo)}</b></span>`:''}${checkin?`<span style="font-size:11px;display:block;">In: ${checkin}${checkout?' → '+checkout:''}</span>`:''}</div>
 </div>
 <table style="width:100%;border-collapse:collapse;"><thead><tr style="background:#c9a84c;color:#fff;"><th style="padding:8px 12px;text-align:left;font-size:11px;">Description</th><th style="padding:8px 12px;text-align:center;font-size:11px;width:70px;">Nights/Qty</th><th style="padding:8px 12px;text-align:right;font-size:11px;width:80px;">Rate</th><th style="padding:8px 12px;text-align:right;font-size:11px;width:90px;">Amount</th></tr></thead>
 <tbody>${items||'<tr><td colspan="4" style="padding:12px;text-align:center;color:#aaa;">No charges</td></tr>'}</tbody>
@@ -1316,8 +1313,63 @@ function toggleCrambled(){
 function submitBill(action){
     const chk=document.getElementById('policy_agree');
     if(!chk.checked){chk.reportValidity();chk.focus();return;}
+    if(action==='download'){
+        // Generate PDF from live preview first, then save silently to history
+        _downloadFromPreviewThenSave();
+        return;
+    }
     document.getElementById('save_action').value=action;
     document.getElementById('billForm').submit();
+}
+
+async function _downloadFromPreviewThenSave(){
+    const dlBtn=document.querySelector('button[onclick*="download"]');
+    if(dlBtn){dlBtn.disabled=true;dlBtn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Generating…';}
+    try{
+        const el=document.getElementById('billPreview');
+        if(window._pdfLibError||typeof html2canvas==='undefined'||typeof window.jspdf==='undefined'){
+            // Libraries not loaded, fall back to server-side redirect
+            document.getElementById('save_action').value='download';
+            document.getElementById('billForm').submit();
+            return;
+        }
+        const group=getGroup(document.getElementById('bill_type').value);
+        const billNo=(document.getElementById('bill_number').value||'bill').replace(/[^a-zA-Z0-9._-]/g,'-');
+        const typeLbl=(TYPE_LABELS[document.getElementById('bill_type').value]||'bill').replace(/[^a-zA-Z0-9._-]/g,'-');
+        const filename=typeLbl+'-'+billNo+'.pdf';
+        const canvas=await html2canvas(el,{
+            scale:2,useCORS:true,logging:false,backgroundColor:'#ffffff',
+            scrollX:0,scrollY:0,
+            width:el.scrollWidth,height:el.scrollHeight,
+            windowWidth:el.scrollWidth,windowHeight:el.scrollHeight
+        });
+        const imgData=canvas.toDataURL('image/png');
+        const jsPDF=window.jspdf.jsPDF;
+        var pdf;
+        const margin=8;
+        if(group==='thermal'){
+            const mmWidth=80;
+            const mmHeight=(canvas.height/canvas.width)*mmWidth;
+            pdf=new jsPDF({orientation:'portrait',unit:'mm',format:[mmWidth,mmHeight]});
+            pdf.addImage(imgData,'PNG',0,0,mmWidth,mmHeight);
+        }else{
+            const pageW=210;
+            const imgW=pageW-margin*2;
+            const imgH=(canvas.height/canvas.width)*imgW;
+            const pageH=imgH+margin*2;
+            pdf=new jsPDF({orientation:'portrait',unit:'mm',format:[pageW,pageH]});
+            pdf.addImage(imgData,'PNG',margin,margin,imgW,imgH);
+        }
+        pdf.save(filename);
+        // Now save the bill silently (redirects to history)
+        document.getElementById('save_action').value='save';
+        document.getElementById('billForm').submit();
+    }catch(e){
+        console.error('PDF generation error:',e);
+        // On error, fall back to server-side download
+        document.getElementById('save_action').value='download';
+        document.getElementById('billForm').submit();
+    }
 }
 
 // ─── Wire up all live inputs ──────────────────────────────────────────────────
@@ -1340,3 +1392,8 @@ document.addEventListener('DOMContentLoaded',()=>{
     updatePreview();
 });
 </script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous"
+    onerror="window._pdfLibError=true"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous"
+    onerror="window._pdfLibError=true"></script>
