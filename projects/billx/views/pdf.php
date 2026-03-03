@@ -557,7 +557,7 @@ body { margin: 0; padding: 0; background: #fff; font-family: 'Inter', Arial, san
     $sgstPct   = (float)($td['sgst_pct'] ?? 0);
     $cgstAmt   = round($subtotal * $cgstPct / 100, 2);
     $sgstAmt   = round($subtotal * $sgstPct / 100, 2);
-    $netAmt    = $subtotal + $cgstAmt + $sgstAmt - $discount;
+    $netAmt    = $subtotal + $cgstAmt + $sgstAmt + ($cgstPct === 0.0 && $sgstPct === 0.0 ? $taxAmt : 0.0) - $discount;
     $billTime  = $bill['created_at'] ? date('H:i', strtotime($bill['created_at'])) : date('H:i');
 ?>
 <div style="font-family:'Inter',Arial,sans-serif;background:#fff;max-width:620px;margin:0 auto;border:1px solid #d0d5dd;font-size:12px;color:#1a1a2e;">
