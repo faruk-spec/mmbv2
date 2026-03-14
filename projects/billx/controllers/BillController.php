@@ -92,8 +92,12 @@ class BillController
             $subtotal += $amount;
         }
 
+        $cgstPct   = (float)($templateData['cgst_pct'] ?? 0);
+        $sgstPct   = (float)($templateData['sgst_pct'] ?? 0);
+        $cgstAmt   = round($subtotal * $cgstPct / 100, 2);
+        $sgstAmt   = round($subtotal * $sgstPct / 100, 2);
         $taxAmount = round($subtotal * $taxPct / 100, 2);
-        $total     = round($subtotal + $taxAmount - $discount, 2);
+        $total     = round($subtotal + $taxAmount + $cgstAmt + $sgstAmt - $discount, 2);
 
         $id = $this->model->create([
             'user_id'         => $userId,
@@ -124,8 +128,9 @@ class BillController
             Logger::activity($userId, 'billx_bill_created', ['bill_id' => $id, 'type' => $billType]);
             if ($saveAction === 'save') {
                 header('Location: /projects/billx/history?saved=1');
-            } elseif ($saveAction === 'print') {
-                header('Location: /projects/billx/view/' . $id . '?autoprint=1');
+            } elseif ($saveAction === 'download') {
+                // Redirect to PDF page with download=1 so JS auto-triggers actual PDF download
+                header('Location: /projects/billx/pdf/' . $id . '?download=1');
             } else {
                 header('Location: /projects/billx/view/' . $id);
             }
@@ -223,21 +228,8 @@ class BillController
             return;
         }
 
-        $bill['items'] = json_decode($bill['items'] ?? '[]', true) ?: [];
-        $config = require PROJECT_PATH . '/config.php';
-
-        // Render bill HTML for download
-        ob_start();
-        include PROJECT_PATH . '/views/view.php';
-        $html = ob_get_clean();
-
-        $safeBase = preg_replace('/[^a-zA-Z0-9_-]/', '', basename($bill['bill_number']));
-        $filename = 'bill-' . ($safeBase ?: (string)$id) . '.html';
-        header('Content-Type: text/html; charset=utf-8');
-        header('Content-Disposition: attachment; filename="' . $filename . '"');
-        echo $html;
-
-        Logger::activity($userId, 'billx_bill_downloaded', ['bill_id' => $id]);
+        Logger::activity($userId, 'billx_bill_pdf_view', ['bill_id' => $id]);
+        header('Location: /projects/billx/pdf/' . $id . '?download=1');
     }
 
     /** POST /projects/billx/delete */

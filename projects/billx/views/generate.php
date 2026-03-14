@@ -20,13 +20,13 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
 <div class="alert alert-error"><i class="fas fa-exclamation-circle"></i> <?= htmlspecialchars($error) ?></div>
 <?php endif; ?>
 
-<form method="POST" action="/projects/billx/generate" id="billForm">
+<div id="generateLayout" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;height:calc(100vh - 90px);">
+
+    <!-- ====== LEFT PANEL: Scrollable Form ====== -->
+    <div id="leftFormPanel" style="overflow-y:auto;height:100%;padding-right:4px;">
+    <form method="POST" action="/projects/billx/generate" id="billForm">
     <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;">
-
-        <!-- ====== LEFT PANEL: Form ====== -->
-        <div style="display:flex;flex-direction:column;gap:16px;">
+    <div style="display:flex;flex-direction:column;gap:10px;">
 
             <!-- Bill Type & Number -->
             <div class="card">
@@ -68,7 +68,7 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
                         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;" id="tplStyleGroup">
                             <label class="tpl-radio-label"><input type="radio" name="td_template_style" value="1" checked onchange="updatePreview()"> Style 1</label>
                             <label class="tpl-radio-label"><input type="radio" name="td_template_style" value="2" onchange="updatePreview()"> Style 2</label>
-                            <label class="tpl-radio-label"><input type="radio" name="td_template_style" value="3" onchange="updatePreview()"> Style 3 — Thermal</label>
+                            <label class="tpl-radio-label" id="tplStyle3Label"><input type="radio" name="td_template_style" value="3" onchange="updatePreview()"> Style 3 &mdash; Thermal</label>
                         </div>
                     </div>
                 </div>
@@ -177,7 +177,7 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
                     <i class="fas fa-receipt"></i> <span id="extraFieldsLabel">Additional Details</span>
                 </h4>
                 <!-- Thermal: restaurant, recharge, mart, newspaper -->
-                <fieldset id="fields_thermal" style="border:none;padding:0;margin:0;" disabled>
+                <fieldset id="fields_thermal" style="border:none;padding:0;margin:0;">
                     <div class="grid grid-2" style="gap:12px;">
                         <div class="form-group" style="margin:0;"><label class="form-label">Table / Token #</label>
                             <input type="text" name="td_table_number" class="form-input" placeholder="e.g. 50" oninput="updatePreview()"></div>
@@ -195,7 +195,7 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
                     </div>
                 </fieldset>
                 <!-- Payslip: driver, helper -->
-                <fieldset id="fields_payslip" style="border:none;padding:0;margin:0;" disabled>
+                <fieldset id="fields_payslip" style="border:none;padding:0;margin:0;">
                     <div class="grid grid-2" style="gap:12px;">
                         <div class="form-group" style="margin:0;"><label class="form-label">Vehicle Number</label>
                             <input type="text" name="td_vehicle_number" class="form-input" placeholder="e.g. DL01AB-1234" oninput="updatePreview()"></div>
@@ -208,7 +208,7 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
                     </div>
                 </fieldset>
                 <!-- Fuel -->
-                <fieldset id="fields_fuel" style="border:none;padding:0;margin:0;" disabled>
+                <fieldset id="fields_fuel" style="border:none;padding:0;margin:0;">
                     <div class="grid grid-2" style="gap:12px;">
                         <div class="form-group" style="margin:0;"><label class="form-label">Vehicle Number</label>
                             <input type="text" name="td_vehicle_number" class="form-input" placeholder="e.g. DL01AB-1234" oninput="updatePreview()"></div>
@@ -230,7 +230,7 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
                     </div>
                 </fieldset>
                 <!-- Cab -->
-                <fieldset id="fields_cab" style="border:none;padding:0;margin:0;" disabled>
+                <fieldset id="fields_cab" style="border:none;padding:0;margin:0;">
                     <div class="grid grid-2" style="gap:12px;">
                         <div class="form-group" style="margin:0;"><label class="form-label">Cab / Vehicle Number</label>
                             <input type="text" name="td_vehicle_number" class="form-input" placeholder="e.g. MH02AB-5678" oninput="updatePreview()"></div>
@@ -243,7 +243,7 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
                     </div>
                 </fieldset>
                 <!-- Official: rent, lta -->
-                <fieldset id="fields_official" style="border:none;padding:0;margin:0;" disabled>
+                <fieldset id="fields_official" style="border:none;padding:0;margin:0;">
                     <div class="grid grid-2" style="gap:12px;">
                         <div class="form-group" style="margin:0;"><label class="form-label">PAN Number</label>
                             <input type="text" name="td_pan_number" class="form-input" placeholder="Landlord / Company PAN" oninput="updatePreview()"></div>
@@ -252,7 +252,7 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
                     </div>
                 </fieldset>
                 <!-- Medical -->
-                <fieldset id="fields_medical" style="border:none;padding:0;margin:0;" disabled>
+                <fieldset id="fields_medical" style="border:none;padding:0;margin:0;">
                     <div class="grid grid-2" style="gap:12px;">
                         <div class="form-group" style="margin:0;"><label class="form-label">Consultant / Doctor</label>
                             <input type="text" name="td_doctor_name" class="form-input" placeholder="Dr. Name" oninput="updatePreview()"></div>
@@ -282,7 +282,7 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
                     </div>
                 </fieldset>
                 <!-- Hotel -->
-                <fieldset id="fields_hotel" style="border:none;padding:0;margin:0;" disabled>
+                <fieldset id="fields_hotel" style="border:none;padding:0;margin:0;">
                     <div class="grid grid-2" style="gap:12px;">
                         <div class="form-group" style="margin:0;"><label class="form-label">Room Number / Type</label>
                             <input type="text" name="td_room_number" class="form-input" placeholder="e.g. 412 - Deluxe" oninput="updatePreview()"></div>
@@ -295,7 +295,7 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
                     </div>
                 </fieldset>
                 <!-- Gym -->
-                <fieldset id="fields_gym" style="border:none;padding:0;margin:0;" disabled>
+                <fieldset id="fields_gym" style="border:none;padding:0;margin:0;">
                     <div class="grid grid-2" style="gap:12px;">
                         <div class="form-group" style="margin:0;"><label class="form-label">Member ID</label>
                             <input type="text" name="td_member_id" class="form-input" placeholder="e.g. MBR-2026-045" oninput="updatePreview()"></div>
@@ -303,8 +303,8 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
                             <input type="text" name="td_plan_name" class="form-input" placeholder="e.g. 3-Month Premium" oninput="updatePreview()"></div>
                     </div>
                 </fieldset>
-                <!-- Invoice: book, internet, ecom, general, stationary -->
-                <fieldset id="fields_invoice" style="border:none;padding:0;margin:0;" disabled>
+                <!-- Invoice: book, internet, ecom, general, recharge, newspaper -->
+                <fieldset id="fields_invoice" style="border:none;padding:0;margin:0;">
                     <div class="grid grid-2" style="gap:12px;">
                         <div class="form-group" style="margin:0;"><label class="form-label">Seller GSTIN</label>
                             <input type="text" name="td_gstin" class="form-input" placeholder="e.g. 27ABCDE1234F1Z5" oninput="updatePreview()"></div>
@@ -333,40 +333,37 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
             </div>
 
             <!-- Submit Actions -->
-            <input type="hidden" name="save_action" id="save_action" value="view">
-            <div class="form-actions" style="justify-content:flex-start;gap:10px;flex-wrap:wrap;">
-                <button type="button" class="btn btn-primary" style="font-size:0.95rem;padding:10px 22px;"
-                        onclick="submitBill('view')">
-                    <i class="fas fa-eye"></i> Save &amp; View
-                </button>
-                <button type="button" class="btn btn-secondary" style="font-size:0.95rem;padding:10px 22px;"
+            <input type="hidden" name="save_action" id="save_action" value="save">
+            <div class="form-actions" style="justify-content:flex-start;gap:8px;flex-wrap:wrap;">
+                <button type="button" class="btn btn-secondary form-btn-compact"
                         onclick="submitBill('save')">
-                    <i class="fas fa-save"></i> Save Only
+                    <i class="fas fa-save"></i> Save
                 </button>
-                <button type="button" class="btn btn-secondary" style="font-size:0.95rem;padding:10px 22px;"
-                        onclick="submitBill('print')">
-                    <i class="fas fa-print"></i> Save &amp; Print
+                <button type="button" class="btn btn-success form-btn-compact"
+                        onclick="submitBill('download')">
+                    <i class="fas fa-file-pdf"></i> Download PDF
                 </button>
-                <a href="/projects/billx" class="btn btn-secondary">Cancel</a>
             </div>
         </div>
+    </form>
+    </div><!-- /leftFormPanel -->
 
         <!-- ====== RIGHT PANEL: Live Preview ====== -->
-        <div style="position:sticky;top:80px;max-height:calc(100vh - 100px);display:flex;flex-direction:column;">
+        <div id="rightPreviewPanel" style="height:100%;display:flex;flex-direction:column;">
             <div class="card" style="padding:0;display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;">
-                <div style="background:var(--bg-secondary);padding:12px 16px;border-bottom:1px solid var(--border-color);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;flex-shrink:0;">
-                    <span style="font-size:0.85rem;font-weight:600;color:var(--text-secondary);">
+                <div style="background:var(--bg-secondary);padding:10px 14px;border-bottom:1px solid var(--border-color);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;flex-shrink:0;">
+                    <span style="font-size:0.8rem;font-weight:600;color:var(--text-secondary);">
                         <i class="fas fa-eye"></i> Live Preview
                     </span>
-                    <div style="display:flex;align-items:center;gap:8px;">
+                    <div style="display:flex;align-items:center;gap:6px;">
                         <button type="button" id="crambleBtn" onclick="toggleCrambled()"
-                                style="font-size:0.72rem;padding:4px 10px;border-radius:12px;border:1px solid var(--border-color);background:transparent;color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;gap:4px;">
+                                style="font-size:0.7rem;padding:3px 9px;border-radius:12px;border:1px solid var(--border-color);background:transparent;color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;gap:4px;">
                             <i class="fas fa-scroll"></i> Crumpled
                         </button>
-                        <span id="previewTypeBadge" style="font-size:0.7rem;padding:3px 10px;border-radius:12px;background:#f59e0b;color:white;font-weight:600;"></span>
+                        <span id="previewTypeBadge" style="font-size:0.68rem;padding:3px 9px;border-radius:12px;background:#f59e0b;color:white;font-weight:600;"></span>
                     </div>
                 </div>
-                <div style="padding:16px;background:#f5f5f5;flex:1;overflow-y:auto;min-height:0;" id="billPreviewWrapper">
+                <div style="padding:12px;background:#f0f0f0;flex:1;overflow-y:auto;min-height:0;" id="billPreviewWrapper">
                     <div id="billPreview" style="background:white;max-width:520px;margin:0 auto;font-family:'Poppins',sans-serif;font-size:13px;color:#333;box-shadow:0 2px 16px rgba(0,0,0,0.12);border-radius:4px;overflow:hidden;">
                         <!-- Preview rendered by JS -->
                     </div>
@@ -374,10 +371,54 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
             </div>
         </div>
 
-    </div><!-- /grid -->
-</form>
+</div><!-- /generateLayout -->
 
 <style>
+/* Generate page layout: two-pane scrolling, no billx-main overflow override needed */
+@media (min-width: 901px) {
+    .billx-main { overflow: hidden !important; }
+}
+@media (max-width: 900px) {
+    #generateLayout { height: auto !important; grid-template-columns: 1fr !important; }
+    #leftFormPanel  { overflow-y: visible !important; height: auto !important; }
+    #rightPreviewPanel { height: 480px !important; }
+}
+/* Compact form overrides for generate page */
+#billForm .form-input,
+#billForm .form-select,
+#billForm .form-textarea,
+#billForm .form-control {
+    padding: 0.4rem 0.65rem;
+    font-size: 0.8rem;
+}
+#billForm .form-label {
+    font-size: 0.75rem;
+    margin-bottom: 3px;
+}
+#billForm .form-group {
+    margin-bottom: 8px;
+}
+#billForm .card {
+    padding: 10px 12px;
+}
+#billForm .card h4 {
+    font-size: 0.82rem !important;
+    margin-bottom: 8px !important;
+}
+/* Green download button */
+.btn-success {
+    background: linear-gradient(135deg, #10b981, #059669); color: white;
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: 0.375rem; border: none; border-radius: 0.5rem;
+    font-family: inherit; font-weight: 600; cursor: pointer;
+    transition: all 0.3s ease; text-decoration: none; white-space: nowrap;
+}
+.btn-success:hover:not(:disabled) { box-shadow: 0 0.375rem 1.5rem rgba(16,185,129,0.45); transform: translateY(-0.125rem); }
+/* Compact form action buttons */
+.form-btn-compact {
+    font-size: 0.875rem !important;
+    padding: 8px 16px !important;
+}
 .item-row td { padding: 4px 6px; }
 .item-row input[type="text"],
 .item-row input[type="number"] {
@@ -386,9 +427,9 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
     border: 1px solid var(--border-color);
     border-radius: 4px;
     color: var(--text-primary);
-    padding: 5px 8px;
+    padding: 4px 7px;
     font-family: inherit;
-    font-size: 0.8rem;
+    font-size: 0.79rem;
 }
 .item-row input:focus { outline: none; border-color: var(--amber); }
 .remove-item-btn {
@@ -457,20 +498,14 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
 #extraFieldsCard fieldset { border:none;padding:0;margin:0; }
 /* Template style radio pills */
 .tpl-radio-label {
-    display:flex;align-items:center;gap:6px;cursor:pointer;
-    padding:5px 12px;border-radius:20px;border:1px solid var(--border-color);
-    font-size:0.82rem;color:var(--text-secondary);transition:border-color .15s,color .15s;
+    display:flex;align-items:center;gap:5px;cursor:pointer;
+    padding:4px 10px;border-radius:20px;border:1px solid var(--border-color);
+    font-size:0.78rem;color:var(--text-secondary);transition:border-color .15s,color .15s;
 }
 .tpl-radio-label:has(input:checked) {
     border-color:var(--amber);color:var(--amber);font-weight:600;
 }
 .tpl-radio-label input[type="radio"] { accent-color:var(--amber); }
-@media (max-width: 900px) {
-    form > div[style*="grid-template-columns:1fr 1fr"] {
-        grid-template-columns: 1fr !important;
-    }
-    form > div > div:last-child { position: static !important; }
-}
 </style>
 
 <script>
@@ -481,7 +516,7 @@ function fmtDate(d){if(!d)return '';const p=d.split('-');const m=['Jan','Feb','M
 function nowTime(){return new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});}
 
 // ─── Bill group mapping ───────────────────────────────────────────────────────
-const BILL_GROUPS={thermal:['restaurant','recharge','mart','newspaper'],payslip:['driver','helper'],fuel:['fuel'],cab:['cab'],official:['rent','lta'],medical:['medical'],hotel:['hotel'],gym:['gym'],invoice:['book','internet','ecom','general','stationary']};
+const BILL_GROUPS={thermal:['restaurant','mart','stationary'],payslip:['driver','helper'],fuel:['fuel'],cab:['cab'],official:['rent','lta'],medical:['medical'],hotel:['hotel'],gym:['gym'],invoice:['book','internet','ecom','general','recharge','newspaper']};
 function getGroup(type){for(const[g,a]of Object.entries(BILL_GROUPS))if(a.includes(type))return g;return 'invoice';}
 const TYPE_LABELS={fuel:'Fuel Bill',driver:'Driver Salary',helper:'Daily Helper Bill',rent:'Rent Receipt',book:'Book Invoice',internet:'Internet Invoice',restaurant:'Restaurant Bill',lta:'LTA Receipt',ecom:'E-Com Invoice',general:'General Bill',recharge:'Recharge Receipt',medical:'Medical Bill',stationary:'Stationary Bill',cab:'Cab & Travel Bill',mart:'Mart Bill',gym:'Gym Bill',hotel:'Hotel Bill',newspaper:'Newspaper Bill'};
 const TYPE_COLORS={fuel:'#e65000',driver:'#1565c0',helper:'#546e7a',rent:'#6a1b9a',book:'#5d4037',internet:'#0277bd',restaurant:'#c62828',lta:'#2e7d32',ecom:'#1565c0',general:'#37474f',recharge:'#00838f',medical:'#0077b6',stationary:'#bf360c',cab:'#e65100',mart:'#1b5e20',gym:'#212121',hotel:'#7d5a00',newspaper:'#1a1a1a'};
@@ -498,17 +533,31 @@ function updateFormLabels(type){
 
 // ─── Extra-fields per group ───────────────────────────────────────────────────
 const GROUP_FIELDSETS={thermal:'fields_thermal',payslip:'fields_payslip',fuel:'fields_fuel',cab:'fields_cab',official:'fields_official',medical:'fields_medical',hotel:'fields_hotel',gym:'fields_gym',invoice:'fields_invoice'};
-const EXTRA_LABELS={thermal:'Restaurant / Store Details',payslip:'Employee Details',fuel:'Fuel & Vehicle Details',cab:'Cab & Driver Details',official:'Property / Official Details',medical:'Patient & Hospital Details',hotel:'Hotel & Room Details',gym:'Gym & Membership Details',invoice:'GST & Invoice Details'};
+const EXTRA_LABELS={thermal:'POS / Store Details (Restaurant, Mart, Stationary)',payslip:'Employee Details',fuel:'Fuel & Vehicle Details',cab:'Cab & Driver Details',official:'Property / Official Details',medical:'Patient & Hospital Details',hotel:'Hotel & Room Details',gym:'Gym & Membership Details',invoice:'GST & Invoice Details'};
 
 function syncExtraFields(type){
     const group=getGroup(type);
     Object.entries(GROUP_FIELDSETS).forEach(([g,id])=>{
         const fs=document.getElementById(id);if(!fs)return;
-        const active=g===group;fs.disabled=!active;fs.style.display=active?'':'none';
+        const active=g===group;fs.style.display=active?'':'none';
+        // Keep inputs in inactive sections visually hidden but not form-disabled
+        // so events fire correctly for the active group
+        fs.querySelectorAll('input,select,textarea').forEach(el=>{el.disabled=!active;});
     });
     const lbl=document.getElementById('extraFieldsLabel');
     if(lbl)lbl.textContent=EXTRA_LABELS[group]||'Additional Details';
     updateFormLabels(type);
+    // Show Style 3 (Thermal) option only for thermal bill types
+    const tpl3Label=document.getElementById('tplStyle3Label');
+    if(tpl3Label){
+        if(group==='thermal'){tpl3Label.style.display='';}
+        else{
+            tpl3Label.style.display='none';
+            // If style 3 was selected and type is now non-thermal, switch to style 1
+            const s3=document.querySelector('input[name="td_template_style"][value="3"]');
+            if(s3&&s3.checked){const s1=document.querySelector('input[name="td_template_style"][value="1"]');if(s1)s1.checked=true;}
+        }
+    }
 }
 function getExtraFields(){
     const type=document.getElementById('bill_type').value;
@@ -541,14 +590,16 @@ function collectData(){
     const subtotal=items.reduce((s,it)=>s+it.amount,0);
     const taxPct=parseFloat(document.getElementById('tax_percent').value)||0;
     const discount=parseFloat(document.getElementById('discount_amount').value)||0;
-    const taxAmt=subtotal*taxPct/100;
-    const total=subtotal+taxAmt-discount;
     const td=getExtraFields();
+    const cgstPct=parseFloat(td.cgst_pct)||0;const sgstPct=parseFloat(td.sgst_pct)||0;
+    const cgstAmtCalc=subtotal*cgstPct/100;const sgstAmtCalc=subtotal*sgstPct/100;
+    const taxAmt=subtotal*taxPct/100;
+    const total=subtotal+taxAmt+cgstAmtCalc+sgstAmtCalc-discount;
     return{type,sym,currency,group:getGroup(type),billNo:document.getElementById('bill_number').value||'-',billDate:document.getElementById('bill_date').value||'',fromName:document.getElementById('from_name').value||'',fromAddr:document.getElementById('from_address').value||'',fromPhone:document.getElementById('from_phone').value||'',fromEmail:document.getElementById('from_email').value||'',toName:document.getElementById('to_name').value||'',toAddr:document.getElementById('to_address').value||'',toPhone:document.getElementById('to_phone').value||'',toEmail:document.getElementById('to_email').value||'',taxPct,discount,taxAmt,subtotal,total,notes:document.getElementById('notes').value||'',items,td};
 }
 
 // ─── RENDERER 1: Thermal / POS Receipt ───────────────────────────────────────
-// (restaurant, recharge, mart, newspaper)
+// (restaurant, mart, stationary)
 function renderThermal(d){
     const style = d.td.template_style || '1';
     if (style === '2') {
@@ -558,17 +609,18 @@ function renderThermal(d){
     const mode=d.td.payment_mode||''; const tableNo=d.td.table_number||'';
     const c=TYPE_COLORS[d.type]||'#c62828';
     const rows=d.items.map((it,i)=>`<tr style="background:${i%2===0?'#fafafa':'#fff'};"><td style="padding:5px 8px;font-size:12px;">${escHtml(it.description||'-')}</td><td style="padding:5px 8px;text-align:center;font-size:11px;">${it.qty}</td><td style="padding:5px 8px;text-align:right;font-size:12px;">${d.sym}${it.rate.toFixed(2)}</td><td style="padding:5px 8px;text-align:right;font-weight:700;font-size:12px;">${d.sym}${it.amount.toFixed(2)}</td></tr>`).join('');
-    return `<div style="font-family:Arial,sans-serif;background:#fff;max-width:302px;margin:0 auto;border:1px solid #ddd;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.12);">
+    return `<div style="font-family:Arial,sans-serif;background:#fff;width:80mm;max-width:80mm;margin:0 auto;border:1px solid #ddd;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.12);">
 <div style="background:${c};color:#fff;padding:12px 16px;text-align:center;">
 <div style="font-size:18px;font-weight:700;">${escHtml(d.fromName)}</div>
 ${d.fromAddr?`<div style="font-size:10px;opacity:.85;margin-top:2px;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}
 ${d.fromPhone?`<div style="font-size:10px;opacity:.85;">Ph: ${escHtml(d.fromPhone)}</div>`:''}
+${d.fromEmail?`<div style="font-size:10px;opacity:.85;">${escHtml(d.fromEmail)}</div>`:''}
 </div>
 <div style="padding:8px 12px;background:#f5f5f5;border-bottom:1px solid #ddd;display:flex;justify-content:space-between;font-size:11px;">
 <span>Bill No: <b>${escHtml(d.billNo)}</b></span>${tableNo?`<span>Table: <b>#${escHtml(tableNo)}</b></span>`:''}
 <span>${fmtDate(d.billDate)}</span>
 </div>
-<div style="padding:6px 12px;font-size:11px;border-bottom:1px solid #eee;">Customer: <b>${escHtml(d.toName)}</b>${mode?` | Mode: <b>${escHtml(mode)}</b>`:''}</div>
+<div style="padding:6px 12px;font-size:11px;border-bottom:1px solid #eee;">Customer: <b>${escHtml(d.toName)}</b>${d.toPhone?` | Ph: ${escHtml(d.toPhone)}`:''}${mode?` | Mode: <b>${escHtml(mode)}</b>`:''}</div>
 <table style="width:100%;border-collapse:collapse;"><thead><tr style="background:${c};color:#fff;"><th style="padding:5px 8px;text-align:left;font-size:11px;">Item</th><th style="padding:5px 8px;text-align:center;font-size:11px;">Qty</th><th style="padding:5px 8px;text-align:right;font-size:11px;">Rate</th><th style="padding:5px 8px;text-align:right;font-size:11px;">Amt</th></tr></thead>
 <tbody>${rows||'<tr><td colspan="4" style="padding:8px;text-align:center;color:#aaa;">No items</td></tr>'}</tbody></table>
 <div style="padding:8px 12px;background:#f9f9f9;border-top:1px solid #ddd;font-size:11px;">
@@ -589,7 +641,7 @@ ${d.notes?`<div style="padding:6px 12px;font-size:10px;color:#555;border-top:1px
     const mode=d.td.payment_mode||''; const tableNo=d.td.table_number||'';
     const billTime=d.td.bill_time||nowTime();
     const itemRows=d.items.map(it=>`<div style="padding:3px 0;border-bottom:1px dotted #ccc;"><div style="font-size:15px;">${escHtml(it.description||'-')}</div><div style="display:flex;justify-content:space-between;font-size:13px;color:#555;"><span>${it.qty}&times;${d.sym}${it.rate.toFixed(2)}</span><span style="font-weight:700;color:#111;">${d.sym}${it.amount.toFixed(2)}</span></div></div>`).join('');
-    return `<div style="font-family:'VT323','Courier New',monospace;background:#fff;width:302px;margin:0 auto;color:#111;box-shadow:0 3px 12px rgba(0,0,0,.18);letter-spacing:.4px;">
+    return `<div style="font-family:'VT323','Courier New',monospace;background:#fff;width:80mm;max-width:80mm;margin:0 auto;color:#111;box-shadow:0 3px 12px rgba(0,0,0,.18);letter-spacing:.4px;">
 <div style="padding:12px 14px 10px;">
 <div style="text-align:center;padding-bottom:4px;margin-bottom:4px;">
 <div style="font-size:22px;font-weight:700;letter-spacing:4px;">WELCOME!!!</div>
@@ -598,11 +650,12 @@ ${d.notes?`<div style="padding:6px 12px;font-size:10px;color:#555;border-top:1px
 <div style="font-size:20px;font-weight:700;letter-spacing:2px;line-height:1.1;">${escHtml(d.fromName.toUpperCase())}</div>
 ${d.fromAddr?`<div style="font-size:12px;color:#444;margin-top:2px;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}
 ${d.fromPhone?`<div style="font-size:12px;color:#444;">Ph: ${escHtml(d.fromPhone)}</div>`:''}
+${d.fromEmail?`<div style="font-size:12px;color:#444;">${escHtml(d.fromEmail)}</div>`:''}
 <div style="border-top:1px dashed #555;margin:5px 0;"></div>
 </div>
 <div style="font-size:14px;border-bottom:1px dashed #555;padding-bottom:5px;margin-bottom:5px;">
 <div style="display:flex;justify-content:space-between;"><span>Bill#: <b>${escHtml(d.billNo)}</b></span><span>${fmtDate(d.billDate)}</span></div>
-<div style="display:flex;justify-content:space-between;"><span>Cust: <b>${escHtml(d.toName)}</b></span><span>${billTime}</span></div>
+<div style="display:flex;justify-content:space-between;"><span>Cust: <b>${escHtml(d.toName)}</b>${d.toPhone?` | ${escHtml(d.toPhone)}`:''}</span><span>${billTime}</span></div>
 ${tableNo?`<div>Table: <b>#${escHtml(tableNo)}</b>${mode?' | Pay: <b>'+escHtml(mode)+'</b>':''}</div>`:''}
 </div>
 <div style="border-bottom:1px dashed #555;padding-bottom:5px;margin-bottom:4px;">
@@ -635,12 +688,13 @@ ${d.notes?`<div style="border-top:1px dashed #555;padding-top:4px;margin-top:3px
     const cgstAmt=d.subtotal*cgst/100;const sgstAmt=d.subtotal*sgst/100;
     const mode=d.td.payment_mode||'';const tableNo=d.td.table_number||'';
     const items=d.items.map(it=>`<tr><td style="padding:2px 3px;font-size:11px;">${escHtml(it.description||'-')}</td><td style="padding:2px 3px;text-align:right;font-size:11px;">${d.sym}${it.rate.toFixed(2)}</td><td style="padding:2px 3px;text-align:center;font-size:11px;">${it.qty}</td><td style="padding:2px 3px;text-align:right;font-weight:700;font-size:11px;">${d.sym}${it.amount.toFixed(2)}</td></tr>`).join('');
-    return`<div style="font-family:'Courier New',monospace;background:#fff;max-width:302px;margin:0 auto;padding:14px 18px;font-size:11px;color:#111;border:1px solid #ccc;box-shadow:1px 2px 8px rgba(0,0,0,.15);">
+    return`<div style="font-family:'Courier New',monospace;background:#fff;width:80mm;max-width:80mm;margin:0 auto;padding:14px 18px;font-size:11px;color:#111;border:1px solid #ccc;box-shadow:1px 2px 8px rgba(0,0,0,.15);">
 ${dash}<div style="text-align:center;letter-spacing:6px;font-size:11px;font-weight:700;margin:2px 0;">RECEIPT</div>${dash}
-<div style="display:flex;justify-content:space-between;margin-bottom:2px;"><span>Name: <b>${escHtml(d.toName)}</b></span><span>Invoice No: <b>${escHtml(d.billNo)}</b></span></div>
+<div style="display:flex;justify-content:space-between;margin-bottom:2px;"><span>Name: <b>${escHtml(d.toName)}</b>${d.toPhone?` | Ph: ${escHtml(d.toPhone)}`:''}</span><span>Invoice No: <b>${escHtml(d.billNo)}</b></span></div>
 ${tableNo?`<div style="display:flex;justify-content:space-between;"><span>Table: <b>#${escHtml(tableNo)}</b></span><span>Date: ${fmtDate(d.billDate)}</span></div>`:`<div>Date: ${fmtDate(d.billDate)}</div>`}
 <div style="font-size:10px;margin-top:2px;">${escHtml(d.fromName)}${d.fromPhone?' | '+escHtml(d.fromPhone):''}</div>
 ${d.fromAddr?`<div style="font-size:9px;color:#555;margin-top:1px;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}
+${d.fromEmail?`<div style="font-size:9px;color:#555;">${escHtml(d.fromEmail)}</div>`:''}
 ${dash}
 <table style="width:100%;border-collapse:collapse;"><thead><tr style="border-bottom:1px dashed #555;"><th style="padding:2px 3px;text-align:left;font-size:10px;">Item</th><th style="padding:2px 3px;text-align:right;font-size:10px;">Price</th><th style="padding:2px 3px;text-align:center;font-size:10px;">Qty</th><th style="padding:2px 3px;text-align:right;font-size:10px;">Total</th></tr></thead><tbody>${items||'<tr><td colspan="4" style="text-align:center;padding:5px;color:#aaa;">No items</td></tr>'}</tbody></table>
 ${dash}
@@ -674,11 +728,11 @@ function renderPayslip(d){
     const rows=Array.from({length:maxR},(_,i)=>`<tr style="border-bottom:1px solid #e0e0e0;"><td style="padding:5px 8px;font-size:11px;">${earnings[i]?escHtml(earnings[i].description):'&nbsp;'}</td><td style="padding:5px 8px;text-align:right;font-size:11px;font-weight:600;">${earnings[i]?d.sym+earnings[i].amount.toFixed(2):'&nbsp;'}</td><td style="padding:5px 8px;border-left:2px solid #ddd;font-size:11px;">${deductions[i]?escHtml(deductions[i].description):'&nbsp;'}</td><td style="padding:5px 8px;text-align:right;font-size:11px;font-weight:600;color:#e53935;">${deductions[i]?'-'+d.sym+deductions[i].amount.toFixed(2):'&nbsp;'}</td></tr>`).join('');
     return `<div style="font-family:Arial,sans-serif;background:#fff;font-size:12px;color:#222;border:1px solid #ccc;max-width:580px;box-shadow:0 2px 10px rgba(0,0,0,.1);">
 <div style="background:${c2};color:#fff;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;">
-<div><div style="font-size:18px;font-weight:700;">${escHtml(d.fromName)}</div>${d.fromAddr?`<div style="font-size:10px;opacity:.8;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}</div>
+<div><div style="font-size:18px;font-weight:700;">${escHtml(d.fromName)}</div>${d.fromAddr?`<div style="font-size:10px;opacity:.8;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}${d.fromPhone?`<div style="font-size:10px;opacity:.8;">📞 ${escHtml(d.fromPhone)}</div>`:''}${d.fromEmail?`<div style="font-size:10px;opacity:.8;">${escHtml(d.fromEmail)}</div>`:''}</div>
 <div style="text-align:right;"><div style="font-size:14px;font-weight:900;letter-spacing:1px;">SALARY SLIP</div><div style="font-size:10px;opacity:.85;">Pay Period: ${escHtml(month)}</div><div style="font-size:10px;opacity:.85;">#${escHtml(d.billNo)}</div></div>
 </div>
 <div style="background:#e8eaf6;padding:8px 20px;display:flex;justify-content:space-between;border-bottom:2px solid ${c2};font-size:11px;">
-<div><span style="color:#666;display:block;font-size:10px;text-transform:uppercase;">Employee</span><span style="font-size:14px;font-weight:700;">${escHtml(d.toName)}</span>${d.toPhone?`<span style="font-size:10px;color:#666;display:block;">${escHtml(d.toPhone)}</span>`:''}</div>
+<div><span style="color:#666;display:block;font-size:10px;text-transform:uppercase;">Employee</span><span style="font-size:14px;font-weight:700;">${escHtml(d.toName)}</span>${d.toPhone?`<span style="font-size:10px;color:#666;display:block;">${escHtml(d.toPhone)}</span>`:''}${d.toAddr?`<span style="font-size:10px;color:#666;display:block;">${escHtml(d.toAddr).replace(/\n/g,', ')}</span>`:''}${d.toEmail?`<span style="font-size:10px;color:#666;display:block;">${escHtml(d.toEmail)}</span>`:''}</div>
 <div style="text-align:right;"><span style="color:#666;display:block;font-size:10px;text-transform:uppercase;">Employer</span><span style="font-size:13px;font-weight:700;">${escHtml(empName)}</span><span style="font-size:10px;color:#666;display:block;">${fmtDate(d.billDate)}</span></div>
 </div>
 <table style="width:100%;border-collapse:collapse;">
@@ -699,12 +753,14 @@ function renderPayslip(d){
     const designation=d.td.designation||'Driver';
     return`<div style="font-family:Arial,sans-serif;background:#fff;padding:24px 28px;font-size:12px;color:#111;border:1px solid #ccc;max-width:520px;line-height:1.7;">
 <div style="text-align:right;font-size:12px;color:#333;margin-bottom:8px;">Date: ${fmtDate(d.billDate)}</div>
+${d.fromAddr||d.fromPhone||d.fromEmail?`<div style="font-size:11px;margin-bottom:12px;border-left:3px solid ${c};padding-left:8px;"><b>${escHtml(d.fromName)}</b>${d.fromAddr?`<br>${escHtml(d.fromAddr).replace(/\n/g,', ')}`:''} ${d.fromPhone?`<br>Ph: ${escHtml(d.fromPhone)}`:''}${d.fromEmail?`<br>${escHtml(d.fromEmail)}`:''}</div>`:''}
 <div style="text-align:center;font-size:14px;font-weight:700;text-decoration:underline;margin-bottom:14px;">${TYPE_LABELS[d.type]||'Salary Receipt'}</div>
 <p style="margin:0 0 12px;text-align:justify;">This is to certify that Mr./Ms. <b>${escHtml(empName)}</b> have paid <b>${d.sym}${d.total.toFixed(2)}</b> to ${designation} Mr/Ms <b>${escHtml(d.toName)}</b> towards salary of the month of <b>${escHtml(month)}</b> (Acknowledged receipt enclosed). I also declare that the ${designation.toLowerCase()} is exclusively utilized for official purpose only</p>
 <p style="margin:0 0 16px;text-align:justify;">Please reimburse the above amount. I further declare that what is stated above is correct and true.</p>
 ${d.items.length>0?`<table style="width:100%;border-collapse:collapse;margin-bottom:14px;font-size:11px;"><thead><tr style="border-bottom:1px solid #ccc;"><th style="padding:4px 6px;text-align:left;">Description</th><th style="padding:4px 6px;text-align:right;">Amount</th></tr></thead><tbody>${d.items.map(it=>`<tr style="border-bottom:1px solid #eee;"><td style="padding:4px 6px;">${escHtml(it.description||'-')}</td><td style="padding:4px 6px;text-align:right;font-weight:600;">${d.sym}${it.amount.toFixed(2)}</td></tr>`).join('')}</tbody></table>`:''}
 <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><div><b>Vehicle Number:</b> ${escHtml(vehicleNo)}</div><div><b>Date:</b> ${fmtDate(d.billDate)}</div></div>
-<div style="display:flex;justify-content:space-between;margin-bottom:18px;"><div><b>Driver Name:</b> ${escHtml(d.toName)}</div><div><b>Employee Name:</b> ${escHtml(empName)}</div></div>
+<div style="display:flex;justify-content:space-between;margin-bottom:8px;"><div><b>Driver Name:</b> ${escHtml(d.toName)}</div><div><b>Employee Name:</b> ${escHtml(empName)}</div></div>
+${d.toPhone||d.toAddr||d.toEmail?`<div style="font-size:11px;margin-bottom:8px;color:#444;">${d.toPhone?`Ph: ${escHtml(d.toPhone)}  `:''}${d.toAddr?`Address: ${escHtml(d.toAddr).replace(/\n/g,', ')}  `:''}${d.toEmail?escHtml(d.toEmail):''}</div>`:''}
 <div style="font-weight:700;margin-bottom:4px;">Revenue Stamp</div>
 <div style="width:64px;height:64px;border:1px dashed #aaa;display:flex;align-items:center;justify-content:center;font-size:9px;color:#aaa;text-align:center;padding:4px;">Revenue<br>Stamp</div>
 ${d.notes?`<div style="margin-top:12px;font-size:11px;color:#555;border-top:1px dashed #ddd;padding-top:8px;">${escHtml(d.notes)}</div>`:''}
@@ -724,10 +780,13 @@ function renderFuel(d){
 <div style="font-size:13px;font-weight:700;">${escHtml(d.fromName)}</div>
 ${d.fromAddr?`<div style="font-size:10px;color:#555;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}
 ${d.fromPhone?`<div style="font-size:10px;color:#555;">${escHtml(d.fromPhone)}</div>`:''}
+${d.fromEmail?`<div style="font-size:10px;color:#555;">${escHtml(d.fromEmail)}</div>`:''}
 <div style="font-size:11px;font-weight:600;margin-top:4px;">FUEL RECEIPT</div>
 </div>
 <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span>Receipt#: <b>${escHtml(d.billNo)}</b></span><span>${fmtDate(d.billDate)}</span></div>
-<div style="margin-bottom:4px;">Customer: <b>${escHtml(d.toName)}</b></div>
+<div style="margin-bottom:4px;">Customer: <b>${escHtml(d.toName)}</b>${d.toPhone?` | 📞 ${escHtml(d.toPhone)}`:''}</div>
+${d.toAddr?`<div style="margin-bottom:2px;font-size:10px;color:#555;">Address: ${escHtml(d.toAddr).replace(/\n/g,', ')}</div>`:''}
+${d.toEmail?`<div style="margin-bottom:2px;font-size:10px;color:#555;">${escHtml(d.toEmail)}</div>`:''}
 ${vehicleNo?`<div style="margin-bottom:2px;">Vehicle: <b>${escHtml(vehicleNo)}</b>${vehicleType?' ('+escHtml(vehicleType)+')':''}</div>`:''}
 <div style="border-top:1px dashed #888;margin:6px 0;"></div>
 ${rows||`<div style="font-size:11px;color:#aaa;">No fuel items</div>`}
@@ -753,6 +812,9 @@ ${d.notes?`<div style="font-size:10px;color:#555;margin-top:4px;">${escHtml(d.no
 <div style="display:flex;justify-content:space-between;margin-bottom:14px;">
 <div><div style="font-weight:700;margin-bottom:6px;font-size:12px;">Billed To</div>
 <div>Customer Name: <b>${escHtml(d.toName)}</b></div>
+${d.toPhone?`<div>Ph: <b>${escHtml(d.toPhone)}</b></div>`:''}
+${d.toAddr?`<div style="font-size:11px;color:#555;">Address: ${escHtml(d.toAddr).replace(/\n/g,', ')}</div>`:''}
+${d.toEmail?`<div style="font-size:11px;color:#555;">${escHtml(d.toEmail)}</div>`:''}
 ${vehicleNo?`<div>Vehicle Number: <b>${escHtml(vehicleNo)}</b></div>`:'<div>Vehicle Number: </div>'}
 ${vehicleType?`<div>Vehicle Type: <b>${escHtml(vehicleType)}</b></div>`:'<div>Vehicle Type: </div>'}
 </div>
@@ -760,6 +822,7 @@ ${vehicleType?`<div>Vehicle Type: <b>${escHtml(vehicleType)}</b></div>`:'<div>Ve
 <div>Fuel Station Name: <b>${escHtml(d.fromName)}</b></div>
 ${d.fromAddr?`<div style="max-width:200px;text-align:right;">Fuel Station Address: ${escHtml(d.fromAddr).replace(/\n/g,', ')}</div>`:'<div>Fuel Station Address: </div>'}
 ${d.fromPhone?`<div>📞 ${escHtml(d.fromPhone)}</div>`:''}
+${d.fromEmail?`<div>${escHtml(d.fromEmail)}</div>`:''}
 </div>
 </div>
 ${payMode?`<div style="text-align:right;font-weight:700;margin-bottom:10px;">Payment Method: ${escHtml(payMode)}</div>`:'<div style="text-align:right;font-weight:700;margin-bottom:10px;">Payment Method</div>'}
@@ -789,13 +852,13 @@ function renderCab(d){
     return `<div style="font-family:Arial,sans-serif;background:#fff;font-size:12px;color:#222;border:1px solid #ddd;max-width:400px;box-shadow:0 2px 10px rgba(0,0,0,.1);">
 <div style="background:#fff7e6;padding:12px 16px;border-bottom:3px solid #f5a623;">
 <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-<div><div style="font-size:16px;font-weight:700;">🚕 ${escHtml(d.fromName)}</div>${d.fromPhone?`<div style="font-size:11px;color:#666;">Ph: ${escHtml(d.fromPhone)}</div>`:''}</div>
+<div><div style="font-size:16px;font-weight:700;">🚕 ${escHtml(d.fromName)}</div>${d.fromAddr?`<div style="font-size:10px;color:#666;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}${d.fromPhone?`<div style="font-size:11px;color:#666;">Ph: ${escHtml(d.fromPhone)}</div>`:''}${d.fromEmail?`<div style="font-size:10px;color:#666;">${escHtml(d.fromEmail)}</div>`:''}</div>
 <div style="text-align:right;"><div style="font-size:12px;font-weight:700;color:#f5a623;">RIDE RECEIPT</div><div style="font-size:11px;color:#666;">${escHtml(d.billNo)}</div><div style="font-size:11px;color:#666;">${fmtDate(d.billDate)}</div></div>
 </div>
 </div>
 <div style="padding:8px 16px;border-bottom:1px solid #eee;background:#fffbf3;">
 <div style="font-size:11px;color:#888;text-transform:uppercase;font-weight:600;">Passenger</div>
-<div style="font-size:13px;font-weight:700;">${escHtml(d.toName)}</div>${d.toPhone?`<div style="font-size:11px;color:#666;">${escHtml(d.toPhone)}</div>`:''}
+<div style="font-size:13px;font-weight:700;">${escHtml(d.toName)}</div>${d.toPhone?`<div style="font-size:11px;color:#666;">${escHtml(d.toPhone)}</div>`:''}${d.toAddr?`<div style="font-size:11px;color:#666;">${escHtml(d.toAddr).replace(/\n/g,', ')}</div>`:''}${d.toEmail?`<div style="font-size:11px;color:#666;">${escHtml(d.toEmail)}</div>`:''}
 ${pickup||drop?`<div style="font-size:11px;color:#555;margin-top:4px;">${pickup?'From: '+escHtml(pickup):''} ${drop?'→ To: '+escHtml(drop):''}</div>`:''}
 ${vehicleNo?`<div style="font-size:11px;color:#666;margin-top:2px;">Vehicle: ${escHtml(vehicleNo)}${driverName?' | Driver: '+escHtml(driverName):''}</div>`:''}
 </div>
@@ -817,6 +880,7 @@ ${d.notes?`<div style="padding:6px 16px;font-size:10px;color:#666;border-top:1px
 <div style="font-size:20px;font-weight:900;">🚕 ${escHtml(d.fromName)}</div>
 ${d.fromPhone?`<div style="font-size:11px;">📞 ${escHtml(d.fromPhone)}</div>`:''}
 ${d.fromAddr?`<div style="font-size:10px;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}
+${d.fromEmail?`<div style="font-size:10px;">${escHtml(d.fromEmail)}</div>`:''}
 </div>
 <div style="padding:10px 16px;background:#2a2a2a;border-bottom:1px solid #444;">
 <div style="display:flex;justify-content:space-between;"><span style="font-size:11px;color:#f5a623;font-weight:700;">CAB & TRAVEL RECEIPT</span><span style="font-size:11px;color:#aaa;">${fmtDate(d.billDate)}</span></div>
@@ -826,6 +890,8 @@ ${d.fromAddr?`<div style="font-size:10px;">${escHtml(d.fromAddr).replace(/\n/g,'
 <div style="font-size:10px;color:#f5a623;text-transform:uppercase;letter-spacing:.1em;">Passenger</div>
 <div style="font-size:14px;font-weight:700;">${escHtml(d.toName)}</div>
 ${d.toPhone?`<div style="font-size:11px;color:#aaa;">📞 ${escHtml(d.toPhone)}</div>`:''}
+${d.toAddr?`<div style="font-size:11px;color:#aaa;">${escHtml(d.toAddr).replace(/\n/g,', ')}</div>`:''}
+${d.toEmail?`<div style="font-size:11px;color:#aaa;">${escHtml(d.toEmail)}</div>`:''}
 ${pickup?`<div style="font-size:11px;color:#aaa;">From: ${escHtml(pickup)}</div>`:''}
 ${drop?`<div style="font-size:11px;color:#aaa;">To: ${escHtml(drop)}</div>`:''}
 ${vehicleNo?`<div style="font-size:11px;color:#aaa;">Cab#: ${escHtml(vehicleNo)}${driverName?' | Driver: '+escHtml(driverName):''}</div>`:''}
@@ -852,6 +918,7 @@ function renderOfficial(d){
 <div style="font-size:16px;font-weight:700;">${escHtml(d.fromName)}</div>
 ${d.fromAddr?`<div style="font-size:10px;color:#666;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}
 ${d.fromPhone?`<div style="font-size:10px;color:#666;">Ph: ${escHtml(d.fromPhone)}</div>`:''}
+${d.fromEmail?`<div style="font-size:10px;color:#666;">${escHtml(d.fromEmail)}</div>`:''}
 </div>
 <div style="text-align:center;margin-bottom:14px;">
 <div style="font-size:18px;font-weight:700;text-decoration:underline;letter-spacing:1px;">${label.toUpperCase()}</div>
@@ -859,6 +926,7 @@ ${d.fromPhone?`<div style="font-size:10px;color:#666;">Ph: ${escHtml(d.fromPhone
 </div>
 <div style="background:#f9f9f9;border:1px solid #e0e0e0;padding:12px;margin-bottom:14px;border-radius:4px;">
 <p style="margin:0 0 8px;font-size:13px;">Received with thanks a sum of <b style="font-size:14px;color:${c2};">${d.sym}${d.total.toFixed(2)}</b> (${escHtml(d.toName)})</p>
+${d.toPhone?`<p style="margin:0 0 4px;font-size:11px;color:#555;">Ph: ${escHtml(d.toPhone)}</p>`:''}${d.toAddr?`<p style="margin:0 0 4px;font-size:11px;color:#555;">Address: ${escHtml(d.toAddr).replace(/\n/g,', ')}</p>`:''}${d.toEmail?`<p style="margin:0 0 4px;font-size:11px;color:#555;">${escHtml(d.toEmail)}</p>`:''}
 <p style="margin:0;font-size:11px;color:#555;">Towards: ${d.items.map(it=>escHtml(it.description)).join(', ')||escHtml(label)}</p>
 ${prop?`<p style="margin:6px 0 0;font-size:11px;color:#555;">Property/Ref: ${escHtml(prop)}</p>`:''}
 ${pan?`<p style="margin:4px 0 0;font-size:11px;color:#555;">PAN: ${escHtml(pan)}</p>`:''}
@@ -882,6 +950,7 @@ ${d.notes?`<div style="font-size:11px;color:#555;font-style:italic;margin-bottom
 <div style="font-size:16px;font-weight:700;">${escHtml(d.fromName)}</div>
 ${d.fromAddr?`<div style="font-size:11px;color:#555;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}
 ${d.fromPhone?`<div style="font-size:11px;color:#555;">📞 ${escHtml(d.fromPhone)}</div>`:''}
+${d.fromEmail?`<div style="font-size:11px;color:#555;">${escHtml(d.fromEmail)}</div>`:''}
 ${pan?`<div style="font-size:11px;color:#555;">PAN: <b>${escHtml(pan)}</b></div>`:''}
 </div>
 <div style="border-top:3px double ${c};border-bottom:3px double ${c};padding:8px 0;margin-bottom:12px;">
@@ -892,6 +961,7 @@ ${pan?`<div style="font-size:11px;color:#555;">PAN: <b>${escHtml(pan)}</b></div>
 <div style="font-size:15px;font-weight:700;">${escHtml(d.toName)}</div>
 ${d.toAddr?`<div style="font-size:11px;color:#555;">${escHtml(d.toAddr).replace(/\n/g,', ')}</div>`:''}
 ${d.toPhone?`<div style="font-size:11px;color:#555;">Contact: ${escHtml(d.toPhone)}</div>`:''}
+${d.toEmail?`<div style="font-size:11px;color:#555;">${escHtml(d.toEmail)}</div>`:''}
 </div>
 ${prop?`<div style="font-size:11px;color:#555;margin-bottom:8px;">Property / Office: <b>${escHtml(prop)}</b></div>`:''}
 <div style="margin-bottom:8px;font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.05em;font-weight:600;">Particulars</div>
@@ -922,9 +992,10 @@ function renderMedical(d){
 <div style="font-size:18px;font-weight:700;">✚ ${escHtml(d.fromName)}</div>
 ${d.fromAddr?`<div style="font-size:10px;opacity:.85;margin-top:2px;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}
 ${d.fromPhone?`<div style="font-size:10px;opacity:.85;">Ph: ${escHtml(d.fromPhone)}</div>`:''}
+${d.fromEmail?`<div style="font-size:10px;opacity:.85;">${escHtml(d.fromEmail)}</div>`:''}
 </div>
 <div style="background:#e8f5e9;padding:8px 14px;border-bottom:1px solid #c8e6c9;display:flex;justify-content:space-between;font-size:11px;">
-<div><span style="font-weight:700;display:block;">Patient: ${escHtml(d.toName)}</span>${d.toPhone?`<span>Ph: ${escHtml(d.toPhone)}</span>`:''}${issue?`<span style="display:block;">Complaint: ${escHtml(issue)}</span>`:''}</div>
+<div><span style="font-weight:700;display:block;">Patient: ${escHtml(d.toName)}</span>${d.toPhone?`<span>Ph: ${escHtml(d.toPhone)}</span>`:''}${d.toAddr?`<span style="display:block;font-size:10px;color:#555;">${escHtml(d.toAddr).replace(/\n/g,', ')}</span>`:''}${d.toEmail?`<span style="display:block;font-size:10px;color:#555;">${escHtml(d.toEmail)}</span>`:''}${issue?`<span style="display:block;">Complaint: ${escHtml(issue)}</span>`:''}</div>
 <div style="text-align:right;"><span style="display:block;">Receipt #: <b>${escHtml(d.billNo)}</b></span><span style="display:block;">Date: ${fmtDate(d.billDate)}</span>${doctor?`<span style="display:block;">Dr: ${escHtml(doctor)}</span>`:''}</div>
 </div>
 <table style="width:100%;border-collapse:collapse;"><thead><tr style="background:${c2};color:#fff;"><th style="padding:6px 8px;text-align:left;font-size:11px;">Service / Medicine</th><th style="padding:6px 8px;text-align:center;font-size:11px;">Qty</th><th style="padding:6px 8px;text-align:right;font-size:11px;">Rate</th><th style="padding:6px 8px;text-align:right;font-size:11px;">Amount</th></tr></thead>
@@ -957,6 +1028,7 @@ ${d.notes?`<div style="padding:6px 14px;font-size:11px;color:#555;">${escHtml(d.
 <div style="padding:8px 14px;border-bottom:1px solid #ddd;">
 <div style="font-weight:700;margin-bottom:4px;">Hospital details:</div>
 ${d.fromPhone?`<div style="font-size:11px;">Contact Details: ${escHtml(d.fromPhone)}</div>`:''}
+${d.fromEmail?`<div style="font-size:11px;">${escHtml(d.fromEmail)}</div>`:''}
 <div style="font-size:11px;">Discharge Date:</div>
 <div style="font-size:11px;">${fmtDate(d.billDate)}</div>
 </div>
@@ -971,7 +1043,7 @@ ${d.fromPhone?`<div style="font-size:11px;">Contact Details: ${escHtml(d.fromPho
 <tr>
 <td style="padding:3px 6px;"><b>Guardian Name:</b> ${escHtml(guardian)}</td>
 <td style="padding:3px 6px;"><b>Admit Date:</b><br>${admitDate}</td>
-<td style="padding:3px 6px;"><b>Mobile:</b> ${escHtml(d.toPhone||'')}</td>
+<td style="padding:3px 6px;"><b>Mobile:</b> ${escHtml(d.toPhone||'')}${d.toEmail?`<br><b>Email:</b> ${escHtml(d.toEmail)}`:''}</td>
 </tr>
 <tr>
 <td style="padding:3px 6px;"><b>Insurance Avl:</b><br>${escHtml(insurance)}</td>
@@ -1017,11 +1089,11 @@ function renderHotel(d){
     const rows=d.items.map((it,i)=>`<tr style="background:${i%2===0?'#fafafa':'#fff'};border-bottom:1px solid #e0e0e0;"><td style="padding:7px 10px;font-size:12px;">${escHtml(it.description||'-')}</td><td style="padding:7px 10px;text-align:center;font-size:12px;">${it.qty}</td><td style="padding:7px 10px;text-align:right;font-size:12px;">${d.sym}${it.rate.toFixed(2)}</td><td style="padding:7px 10px;text-align:right;font-weight:700;font-size:12px;">${d.sym}${it.amount.toFixed(2)}</td></tr>`).join('');
     return `<div style="font-family:Arial,sans-serif;background:#fff;font-size:12px;color:#222;border:1px solid #ccc;max-width:620px;box-shadow:0 2px 10px rgba(0,0,0,.1);">
 <div style="padding:16px 20px;border-bottom:2px solid #333;display:flex;justify-content:space-between;align-items:flex-start;">
-<div><div style="font-size:20px;font-weight:700;">${escHtml(d.fromName)}</div>${d.fromAddr?`<div style="font-size:10px;color:#666;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}<div style="font-size:10px;color:#666;">${d.fromPhone?'Ph: '+escHtml(d.fromPhone):''}</div>${gstin?`<div style="font-size:10px;color:#666;">GSTIN: ${escHtml(gstin)}</div>`:''}</div>
-<div style="text-align:right;"><div style="font-size:20px;font-weight:900;letter-spacing:1px;">HOTEL INVOICE</div><div style="font-size:11px;color:#666;">Folio #: ${escHtml(d.billNo)}</div><div style="font-size:11px;color:#666;">Date: ${fmtDate(d.billDate)}</div></div>
+<div><div style="font-size:20px;font-weight:700;">${escHtml(d.fromName)}</div>${d.fromAddr?`<div style="font-size:10px;color:#666;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}<div style="font-size:10px;color:#666;">${d.fromPhone?'Ph: '+escHtml(d.fromPhone):''}${d.fromEmail?' | '+escHtml(d.fromEmail):''}</div>${gstin?`<div style="font-size:10px;color:#666;">GSTIN: ${escHtml(gstin)}</div>`:''}</div>
+<div style="text-align:right;"><div style="font-size:20px;font-weight:900;letter-spacing:1px;">HOTEL INVOICE</div><div style="font-size:11px;color:#666;">Bill #: ${escHtml(d.billNo)}</div><div style="font-size:11px;color:#666;">Date: ${fmtDate(d.billDate)}</div></div>
 </div>
 <div style="padding:10px 20px;background:#f5f5f5;border-bottom:1px solid #ddd;display:flex;justify-content:space-between;font-size:11px;">
-<div><div style="font-weight:600;margin-bottom:2px;">Guest: ${escHtml(d.toName)}</div>${d.toPhone?`<div>Ph: ${escHtml(d.toPhone)}</div>`:''}</div>
+<div><div style="font-weight:600;margin-bottom:2px;">Guest: ${escHtml(d.toName)}</div>${d.toPhone?`<div>Ph: ${escHtml(d.toPhone)}</div>`:''}${d.toAddr?`<div style="font-size:10px;color:#666;">${escHtml(d.toAddr).replace(/\n/g,', ')}</div>`:''}${d.toEmail?`<div style="font-size:10px;color:#666;">${escHtml(d.toEmail)}</div>`:''}</div>
 <div style="text-align:right;">${roomNo?`<div>Room: <b>${escHtml(roomNo)}</b></div>`:''}<div>${checkin?'In: '+checkin:''} ${checkout?'→ Out: '+checkout:''}</div></div>
 </div>
 <table style="width:100%;border-collapse:collapse;"><thead><tr style="background:#333;color:#fff;"><th style="padding:7px 10px;text-align:left;font-size:11px;">Description</th><th style="padding:7px 10px;text-align:center;font-size:11px;width:70px;">Qty</th><th style="padding:7px 10px;text-align:right;font-size:11px;width:80px;">Rate</th><th style="padding:7px 10px;text-align:right;font-size:11px;width:90px;">Amount</th></tr></thead>
@@ -1047,12 +1119,13 @@ ${d.notes?`<div style="padding:8px 20px;font-size:11px;color:#555;border-top:1px
 <div style="font-size:22px;font-weight:700;letter-spacing:1px;">${escHtml(d.fromName)}</div>
 ${d.fromAddr?`<div style="font-size:10px;opacity:.85;margin-top:4px;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}
 ${d.fromPhone?`<div style="font-size:10px;opacity:.85;">📞 ${escHtml(d.fromPhone)}</div>`:''}
+${d.fromEmail?`<div style="font-size:10px;opacity:.85;">${escHtml(d.fromEmail)}</div>`:''}
 ${gstin?`<div style="font-size:10px;opacity:.85;">GSTIN: ${escHtml(gstin)}</div>`:''}
-<div style="font-size:11px;letter-spacing:3px;text-transform:uppercase;margin-top:8px;opacity:.9;">— Hotel Folio —</div>
+<div style="font-size:11px;letter-spacing:3px;text-transform:uppercase;margin-top:8px;opacity:.9;">— ${escHtml(TYPE_LABELS[d.type]||d.type)} —</div>
 </div>
 <div style="background:#fdf0c0;padding:10px 24px;border-bottom:2px solid #c9a84c;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-<div><span style="font-size:10px;color:#7d5a00;display:block;text-transform:uppercase;">Guest Name</span><span style="font-size:14px;font-weight:700;">${escHtml(d.toName)}</span>${d.toPhone?`<span style="font-size:10px;color:#7d5a00;display:block;">📞 ${escHtml(d.toPhone)}</span>`:''}</div>
-<div style="text-align:right;"><span style="font-size:10px;color:#7d5a00;display:block;text-transform:uppercase;">Folio Details</span><span style="font-size:12px;display:block;">Folio #: <b>${escHtml(d.billNo)}</b></span><span style="font-size:12px;">Date: ${fmtDate(d.billDate)}</span>${roomNo?`<span style="font-size:11px;display:block;">Room: <b>${escHtml(roomNo)}</b></span>`:''}${checkin?`<span style="font-size:11px;display:block;">In: ${checkin}${checkout?' → '+checkout:''}</span>`:''}</div>
+<div><span style="font-size:10px;color:#7d5a00;display:block;text-transform:uppercase;">Guest Name</span><span style="font-size:14px;font-weight:700;">${escHtml(d.toName)}</span>${d.toPhone?`<span style="font-size:10px;color:#7d5a00;display:block;">📞 ${escHtml(d.toPhone)}</span>`:''}${d.toAddr?`<span style="font-size:10px;color:#7d5a00;display:block;">${escHtml(d.toAddr).replace(/\n/g,', ')}</span>`:''}${d.toEmail?`<span style="font-size:10px;color:#7d5a00;display:block;">${escHtml(d.toEmail)}</span>`:''}</div>
+<div style="text-align:right;"><span style="font-size:10px;color:#7d5a00;display:block;text-transform:uppercase;">Bill Details</span><span style="font-size:12px;display:block;">Bill #: <b>${escHtml(d.billNo)}</b></span><span style="font-size:12px;">Date: ${fmtDate(d.billDate)}</span>${roomNo?`<span style="font-size:11px;display:block;">Room: <b>${escHtml(roomNo)}</b></span>`:''}${checkin?`<span style="font-size:11px;display:block;">In: ${checkin}${checkout?' → '+checkout:''}</span>`:''}</div>
 </div>
 <table style="width:100%;border-collapse:collapse;"><thead><tr style="background:#c9a84c;color:#fff;"><th style="padding:8px 12px;text-align:left;font-size:11px;">Description</th><th style="padding:8px 12px;text-align:center;font-size:11px;width:70px;">Nights/Qty</th><th style="padding:8px 12px;text-align:right;font-size:11px;width:80px;">Rate</th><th style="padding:8px 12px;text-align:right;font-size:11px;width:90px;">Amount</th></tr></thead>
 <tbody>${items||'<tr><td colspan="4" style="padding:12px;text-align:center;color:#aaa;">No charges</td></tr>'}</tbody>
@@ -1077,13 +1150,15 @@ function renderGym(d){
     return `<div style="font-family:Arial,sans-serif;background:#fff;font-size:12px;color:#222;border:2px solid #ff6f00;max-width:460px;overflow:hidden;">
 <div style="padding:14px 16px;border-bottom:2px solid #ff6f00;">
 <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-<div><div style="font-size:18px;font-weight:700;">💪 ${escHtml(d.fromName)}</div>${d.fromAddr?`<div style="font-size:10px;color:#666;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}<div style="font-size:10px;color:#666;">${d.fromPhone?'Ph: '+escHtml(d.fromPhone):''}</div></div>
+<div><div style="font-size:18px;font-weight:700;">💪 ${escHtml(d.fromName)}</div>${d.fromAddr?`<div style="font-size:10px;color:#666;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}<div style="font-size:10px;color:#666;">${d.fromPhone?'Ph: '+escHtml(d.fromPhone):''}${d.fromEmail?' | '+escHtml(d.fromEmail):''}</div></div>
 <div style="text-align:right;"><div style="font-size:14px;font-weight:900;color:#ff6f00;">GYM RECEIPT</div><div style="font-size:11px;color:#666;">#${escHtml(d.billNo)}</div><div style="font-size:11px;color:#666;">${fmtDate(d.billDate)}</div></div>
 </div>
 </div>
 <div style="padding:8px 16px;background:#fff8f0;border-bottom:1px solid #ffe0b2;font-size:11px;">
 <div style="font-weight:700;font-size:13px;">${escHtml(d.toName)}</div>
 ${d.toPhone?`<div style="color:#666;">${escHtml(d.toPhone)}</div>`:''}
+${d.toAddr?`<div style="font-size:10px;color:#666;">${escHtml(d.toAddr).replace(/\n/g,', ')}</div>`:''}
+${d.toEmail?`<div style="font-size:10px;color:#666;">${escHtml(d.toEmail)}</div>`:''}
 ${memberId?`<div>Member ID: <b>${escHtml(memberId)}</b></div>`:''}
 ${plan?`<div style="color:#ff6f00;font-weight:600;">Plan: ${escHtml(plan)}</div>`:''}
 </div>
@@ -1103,7 +1178,7 @@ ${d.notes?`<div style="padding:6px 16px;font-size:10px;color:#666;border-top:1px
     return`<div style="font-family:Arial,sans-serif;background:#181818;color:#f0f0f0;font-size:12px;box-shadow:0 4px 20px rgba(0,0,0,.4);">
 <div style="background:linear-gradient(135deg,#212121,#333);padding:16px 20px;border-bottom:3px solid #ff6f00;">
 <div style="display:flex;justify-content:space-between;align-items:center;">
-<div><div style="font-size:22px;font-weight:900;">💪 ${escHtml(d.fromName)}</div>${d.fromAddr?`<div style="font-size:10px;color:#aaa;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}<div style="font-size:10px;color:#aaa;">${d.fromPhone?'📞 '+escHtml(d.fromPhone):''}</div></div>
+<div><div style="font-size:22px;font-weight:900;">💪 ${escHtml(d.fromName)}</div>${d.fromAddr?`<div style="font-size:10px;color:#aaa;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}<div style="font-size:10px;color:#aaa;">${d.fromPhone?'📞 '+escHtml(d.fromPhone)+'  ':''}${d.fromEmail?escHtml(d.fromEmail):''}</div></div>
 <div style="text-align:right;"><div style="font-size:13px;font-weight:900;color:#ff6f00;letter-spacing:2px;">GYM INVOICE</div><div style="font-size:10px;color:#aaa;">Inv # ${escHtml(d.billNo)}</div><div style="font-size:10px;color:#aaa;">${fmtDate(d.billDate)}</div></div>
 </div>
 </div>
@@ -1111,6 +1186,8 @@ ${d.notes?`<div style="padding:6px 16px;font-size:10px;color:#666;border-top:1px
 <span style="font-size:10px;color:#ff6f00;display:block;text-transform:uppercase;letter-spacing:.1em;">Member</span>
 <span style="font-size:14px;font-weight:700;">${escHtml(d.toName)}</span>
 ${d.toPhone?`<span style="font-size:11px;color:#aaa;display:block;">📞 ${escHtml(d.toPhone)}</span>`:''}
+${d.toAddr?`<span style="font-size:11px;color:#aaa;display:block;">${escHtml(d.toAddr).replace(/\n/g,', ')}</span>`:''}
+${d.toEmail?`<span style="font-size:11px;color:#aaa;display:block;">${escHtml(d.toEmail)}</span>`:''}
 ${memberId?`<span style="font-size:11px;color:#aaa;display:block;">Member ID: ${escHtml(memberId)}</span>`:''}
 ${plan?`<span style="font-size:11px;color:#ff6f00;display:block;">Plan: ${escHtml(plan)}</span>`:''}
 </div>
@@ -1127,7 +1204,7 @@ ${d.notes?`<div style="padding:8px 20px;font-size:10px;color:#aaa;border-top:1px
 </div>`;}
 
 // ─── RENDERER 9: Professional Invoice (with GST breakdown) ───────────────────
-// (book, internet, ecom, general, stationary)
+// (book, internet, ecom, general, recharge, newspaper)
 function renderInvoice(d){
     const style = d.td.template_style || '1';
     if (style === '2') {
@@ -1145,7 +1222,7 @@ function renderInvoice(d){
 </div>
 </div>
 <div style="padding:10px 24px;background:#fafafa;border-bottom:1px solid #ddd;display:flex;justify-content:space-between;">
-<div><div style="font-size:10px;color:#888;text-transform:uppercase;font-weight:600;margin-bottom:2px;">Bill To</div><div style="font-size:14px;font-weight:700;">${escHtml(d.toName)}</div>${d.toAddr?`<div style="font-size:11px;color:#666;">${escHtml(d.toAddr).replace(/\n/g,' | ')}</div>`:''}</div>
+<div><div style="font-size:10px;color:#888;text-transform:uppercase;font-weight:600;margin-bottom:2px;">Bill To</div><div style="font-size:14px;font-weight:700;">${escHtml(d.toName)}</div>${d.toAddr?`<div style="font-size:11px;color:#666;">${escHtml(d.toAddr).replace(/\n/g,' | ')}</div>`:''}${d.toPhone?`<div style="font-size:11px;color:#666;">📞 ${escHtml(d.toPhone)}</div>`:''}${d.toEmail?`<div style="font-size:11px;color:#666;">${escHtml(d.toEmail)}</div>`:''}</div>
 </div>
 <table style="width:100%;border-collapse:collapse;margin:0;"><thead><tr style="background:#f5f5f5;"><th style="padding:7px 8px;border:1px solid #ddd;text-align:center;font-size:11px;width:30px;">#</th><th style="padding:7px 8px;border:1px solid #ddd;text-align:left;font-size:11px;">Description</th>${hsn?`<th style="padding:7px 8px;border:1px solid #ddd;text-align:center;font-size:11px;width:70px;">HSN</th>`:''}<th style="padding:7px 8px;border:1px solid #ddd;text-align:center;font-size:11px;width:50px;">Qty</th><th style="padding:7px 8px;border:1px solid #ddd;text-align:right;font-size:11px;width:80px;">Rate</th><th style="padding:7px 8px;border:1px solid #ddd;text-align:right;font-size:11px;width:90px;">Amount</th></tr></thead>
 <tbody>${rows||'<tr><td colspan="6" style="padding:12px;text-align:center;color:#aaa;border:1px solid #ddd;">No items</td></tr>'}</tbody></table>
@@ -1172,11 +1249,11 @@ ${d.notes?`<div style="margin:0 24px 12px;padding:8px;background:#fff8e1;border-
     const rows=d.items.map((it,i)=>`<tr style="background:${i%2===0?'#f9f9f9':'#fff'};border-bottom:1px solid #e0e0e0;"><td style="padding:6px 10px;text-align:center;">${i+1}</td><td style="padding:6px 10px;">${escHtml(it.description||'-')}</td>${hsn?`<td style="padding:6px 10px;text-align:center;">${escHtml(hsn)}</td>`:''}<td style="padding:6px 10px;text-align:center;">${it.qty}</td><td style="padding:6px 10px;text-align:right;">${d.sym}${it.rate.toFixed(2)}</td><td style="padding:6px 10px;text-align:right;font-weight:700;">${d.sym}${it.amount.toFixed(2)}</td></tr>`).join('');
     return `<div style="font-family:'Times New Roman',Times,serif;background:#fff;border:2px solid #222;font-size:12px;color:#111;max-width:680px;">
 <div style="border-bottom:2px solid #222;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;">
-<div><div style="font-size:18px;font-weight:700;">${escHtml(d.fromName)}</div>${d.fromAddr?`<div style="font-size:10px;color:#444;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}</div>
+<div><div style="font-size:18px;font-weight:700;">${escHtml(d.fromName)}</div>${d.fromAddr?`<div style="font-size:10px;color:#444;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}<div style="font-size:10px;color:#444;">${d.fromPhone?'Ph: '+escHtml(d.fromPhone):''}${d.fromEmail?' | '+escHtml(d.fromEmail):''}</div></div>
 <div style="text-align:center;border:2px solid #222;padding:8px 16px;"><div style="font-size:16px;font-weight:900;letter-spacing:2px;">${label.toUpperCase()}</div><div style="font-size:11px;">#${escHtml(d.billNo)}</div><div style="font-size:11px;">${fmtDate(d.billDate)}</div></div>
 </div>
 <div style="border-bottom:1px solid #ccc;padding:8px 20px;display:flex;justify-content:space-between;font-size:11px;">
-<div><b>Bill To:</b> ${escHtml(d.toName)}${d.toAddr?` | ${escHtml(d.toAddr).replace(/\n/g,', ')}`:''}</div>
+<div><b>Bill To:</b> ${escHtml(d.toName)}${d.toAddr?` | ${escHtml(d.toAddr).replace(/\n/g,', ')}`:''}<br><span style="font-size:10px;color:#444;">${d.toPhone?escHtml(d.toPhone):''}${d.toPhone&&d.toEmail?' | ':''}${d.toEmail?escHtml(d.toEmail):''}</span></div>
 ${gstin?`<div><b>GSTIN:</b> ${escHtml(gstin)}</div>`:''}
 </div>
 <table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr style="background:#222;color:#fff;"><th style="padding:6px 10px;text-align:center;">#</th><th style="padding:6px 10px;text-align:left;">Description</th>${hsn?`<th style="padding:6px 10px;text-align:center;">HSN</th>`:''}<th style="padding:6px 10px;text-align:center;">Qty</th><th style="padding:6px 10px;text-align:right;">Rate</th><th style="padding:6px 10px;text-align:right;">Amount</th></tr></thead>
@@ -1210,6 +1287,7 @@ ${sgst>0?`<div style="display:flex;justify-content:space-between;gap:24px;"><spa
 <span style="font-size:14px;font-weight:700;">${escHtml(d.toName)}</span>
 ${d.toAddr?`<span style="font-size:11px;color:#555;display:block;">${escHtml(d.toAddr).replace(/\n/g,' | ')}</span>`:''}
 ${d.toPhone?`<span style="font-size:11px;color:#555;">📞 ${escHtml(d.toPhone)}</span>`:''}
+${d.toEmail?`<span style="font-size:11px;color:#555;display:block;">${escHtml(d.toEmail)}</span>`:''}
 </div>
 <table style="width:100%;border-collapse:collapse;"><thead><tr style="background:${c};color:#fff;"><th style="padding:8px 10px;text-align:center;font-size:11px;width:30px;">#</th><th style="padding:8px 10px;text-align:left;font-size:11px;">Description</th>${hsn?`<th style="padding:8px 10px;text-align:center;font-size:11px;width:70px;">HSN/SAC</th>`:''}<th style="padding:8px 10px;text-align:center;font-size:11px;width:50px;">Qty</th><th style="padding:8px 10px;text-align:right;font-size:11px;width:80px;">Rate</th><th style="padding:8px 10px;text-align:right;font-size:11px;width:90px;">Amount</th></tr></thead>
 <tbody>${items||'<tr><td colspan="6" style="padding:14px;text-align:center;color:#aaa;">No items</td></tr>'}</tbody></table>
@@ -1264,8 +1342,76 @@ function toggleCrambled(){
 function submitBill(action){
     const chk=document.getElementById('policy_agree');
     if(!chk.checked){chk.reportValidity();chk.focus();return;}
+    if(action==='download'){
+        // Generate PDF from live preview first, then save silently to history
+        _downloadFromPreviewThenSave();
+        return;
+    }
     document.getElementById('save_action').value=action;
     document.getElementById('billForm').submit();
+}
+
+async function _downloadFromPreviewThenSave(){
+    const dlBtn=document.querySelector('button[onclick*="download"]');
+    if(dlBtn){dlBtn.disabled=true;dlBtn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Generating…';}
+    try{
+        const el=document.getElementById('billPreview');
+        if(window._pdfLibError||typeof html2canvas==='undefined'||typeof window.jspdf==='undefined'){
+            // Libraries not loaded, fall back to server-side redirect
+            document.getElementById('save_action').value='download';
+            document.getElementById('billForm').submit();
+            return;
+        }
+        const group=getGroup(document.getElementById('bill_type').value);
+        const billNo=(document.getElementById('bill_number').value||'bill').replace(/[^a-zA-Z0-9._-]/g,'-');
+        const typeLbl=(TYPE_LABELS[document.getElementById('bill_type').value]||'bill').replace(/[^a-zA-Z0-9._-]/g,'-');
+        const filename=typeLbl+'-'+billNo+'.pdf';
+
+        // Scroll the preview wrapper so the top of the bill is in view
+        const wrapper=document.getElementById('billPreviewWrapper');
+        if(wrapper) wrapper.scrollTop=0;
+        // Wait for two paint frames to ensure layout is settled
+        await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+
+        // Measure full content dimensions (not clipped by the scroll container)
+        const fullW=el.scrollWidth||el.offsetWidth;
+        const fullH=el.scrollHeight||el.offsetHeight;
+        const winW=Math.max(document.documentElement.scrollWidth,fullW);
+        const winH=Math.max(document.documentElement.scrollHeight,fullH);
+
+        const canvas=await html2canvas(el,{
+            scale:2,useCORS:true,allowTaint:true,logging:false,backgroundColor:'#ffffff',
+            scrollX:0,scrollY:0,x:0,y:0,
+            width:fullW,height:fullH,
+            windowWidth:winW,windowHeight:winH
+        });
+        const imgData=canvas.toDataURL('image/png');
+        const jsPDF=window.jspdf.jsPDF;
+        var pdf;
+        const margin=8;
+        if(group==='thermal'){
+            const mmWidth=80;
+            const mmHeight=(canvas.height/canvas.width)*mmWidth;
+            pdf=new jsPDF({orientation:'portrait',unit:'mm',format:[mmWidth,mmHeight]});
+            pdf.addImage(imgData,'PNG',0,0,mmWidth,mmHeight);
+        }else{
+            const pageW=210;
+            const imgW=pageW-margin*2;
+            const imgH=(canvas.height/canvas.width)*imgW;
+            const pageH=imgH+margin*2;
+            pdf=new jsPDF({orientation:'portrait',unit:'mm',format:[pageW,pageH]});
+            pdf.addImage(imgData,'PNG',margin,margin,imgW,imgH);
+        }
+        pdf.save(filename);
+        // Now save the bill silently (redirects to history)
+        document.getElementById('save_action').value='save';
+        document.getElementById('billForm').submit();
+    }catch(e){
+        console.error('PDF generation error:',e);
+        // On error, fall back to server-side download
+        document.getElementById('save_action').value='download';
+        document.getElementById('billForm').submit();
+    }
 }
 
 // ─── Wire up all live inputs ──────────────────────────────────────────────────
@@ -1275,6 +1421,12 @@ document.addEventListener('DOMContentLoaded',()=>{
     liveInputs.forEach(id=>{const el=document.getElementById(id);if(!el)return;el.addEventListener(el.tagName==='SELECT'?'change':'input',updatePreview);});
     // Template style radio buttons
     document.querySelectorAll('input[name="td_template_style"]').forEach(r=>r.addEventListener('change',updatePreview));
+    // Event delegation: wire up all extra-field inputs via their shared parent card
+    const extraCard=document.getElementById('extraFieldsCard');
+    if(extraCard){
+        extraCard.addEventListener('input',updatePreview);
+        extraCard.addEventListener('change',updatePreview);
+    }
     // Bill type triggers extra-fields sync + preview
     const typeSelect=document.getElementById('bill_type');
     typeSelect.addEventListener('change',()=>{syncExtraFields(typeSelect.value);updatePreview();});
@@ -1282,3 +1434,8 @@ document.addEventListener('DOMContentLoaded',()=>{
     updatePreview();
 });
 </script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous"
+    onerror="window._pdfLibError=true"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous"
+    onerror="window._pdfLibError=true"></script>

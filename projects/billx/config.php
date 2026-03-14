@@ -55,9 +55,10 @@ return [
     // Layout group for each bill type — determines which print template is used.
     'bill_groups' => [
         'restaurant' => 'thermal',
-        'recharge'   => 'thermal',
         'mart'       => 'thermal',
-        'newspaper'  => 'thermal',
+        'stationary' => 'thermal',
+        'recharge'   => 'invoice',
+        'newspaper'  => 'invoice',
         'driver'     => 'payslip',
         'helper'     => 'payslip',
         'fuel'       => 'fuel',
@@ -71,6 +72,5 @@ return [
         'internet'   => 'invoice',
         'ecom'       => 'invoice',
         'general'    => 'invoice',
-        'stationary' => 'invoice',
     ],
 ];
