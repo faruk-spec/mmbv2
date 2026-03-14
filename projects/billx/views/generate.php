@@ -590,9 +590,11 @@ function collectData(){
     const subtotal=items.reduce((s,it)=>s+it.amount,0);
     const taxPct=parseFloat(document.getElementById('tax_percent').value)||0;
     const discount=parseFloat(document.getElementById('discount_amount').value)||0;
-    const taxAmt=subtotal*taxPct/100;
-    const total=subtotal+taxAmt-discount;
     const td=getExtraFields();
+    const cgstPct=parseFloat(td.cgst_pct)||0;const sgstPct=parseFloat(td.sgst_pct)||0;
+    const cgstAmtCalc=subtotal*cgstPct/100;const sgstAmtCalc=subtotal*sgstPct/100;
+    const taxAmt=subtotal*taxPct/100;
+    const total=subtotal+taxAmt+cgstAmtCalc+sgstAmtCalc-discount;
     return{type,sym,currency,group:getGroup(type),billNo:document.getElementById('bill_number').value||'-',billDate:document.getElementById('bill_date').value||'',fromName:document.getElementById('from_name').value||'',fromAddr:document.getElementById('from_address').value||'',fromPhone:document.getElementById('from_phone').value||'',fromEmail:document.getElementById('from_email').value||'',toName:document.getElementById('to_name').value||'',toAddr:document.getElementById('to_address').value||'',toPhone:document.getElementById('to_phone').value||'',toEmail:document.getElementById('to_email').value||'',taxPct,discount,taxAmt,subtotal,total,notes:document.getElementById('notes').value||'',items,td};
 }
 
@@ -612,12 +614,13 @@ function renderThermal(d){
 <div style="font-size:18px;font-weight:700;">${escHtml(d.fromName)}</div>
 ${d.fromAddr?`<div style="font-size:10px;opacity:.85;margin-top:2px;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}
 ${d.fromPhone?`<div style="font-size:10px;opacity:.85;">Ph: ${escHtml(d.fromPhone)}</div>`:''}
+${d.fromEmail?`<div style="font-size:10px;opacity:.85;">${escHtml(d.fromEmail)}</div>`:''}
 </div>
 <div style="padding:8px 12px;background:#f5f5f5;border-bottom:1px solid #ddd;display:flex;justify-content:space-between;font-size:11px;">
 <span>Bill No: <b>${escHtml(d.billNo)}</b></span>${tableNo?`<span>Table: <b>#${escHtml(tableNo)}</b></span>`:''}
 <span>${fmtDate(d.billDate)}</span>
 </div>
-<div style="padding:6px 12px;font-size:11px;border-bottom:1px solid #eee;">Customer: <b>${escHtml(d.toName)}</b>${mode?` | Mode: <b>${escHtml(mode)}</b>`:''}</div>
+<div style="padding:6px 12px;font-size:11px;border-bottom:1px solid #eee;">Customer: <b>${escHtml(d.toName)}</b>${d.toPhone?` | Ph: ${escHtml(d.toPhone)}`:''}${mode?` | Mode: <b>${escHtml(mode)}</b>`:''}</div>
 <table style="width:100%;border-collapse:collapse;"><thead><tr style="background:${c};color:#fff;"><th style="padding:5px 8px;text-align:left;font-size:11px;">Item</th><th style="padding:5px 8px;text-align:center;font-size:11px;">Qty</th><th style="padding:5px 8px;text-align:right;font-size:11px;">Rate</th><th style="padding:5px 8px;text-align:right;font-size:11px;">Amt</th></tr></thead>
 <tbody>${rows||'<tr><td colspan="4" style="padding:8px;text-align:center;color:#aaa;">No items</td></tr>'}</tbody></table>
 <div style="padding:8px 12px;background:#f9f9f9;border-top:1px solid #ddd;font-size:11px;">
@@ -647,11 +650,12 @@ ${d.notes?`<div style="padding:6px 12px;font-size:10px;color:#555;border-top:1px
 <div style="font-size:20px;font-weight:700;letter-spacing:2px;line-height:1.1;">${escHtml(d.fromName.toUpperCase())}</div>
 ${d.fromAddr?`<div style="font-size:12px;color:#444;margin-top:2px;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}
 ${d.fromPhone?`<div style="font-size:12px;color:#444;">Ph: ${escHtml(d.fromPhone)}</div>`:''}
+${d.fromEmail?`<div style="font-size:12px;color:#444;">${escHtml(d.fromEmail)}</div>`:''}
 <div style="border-top:1px dashed #555;margin:5px 0;"></div>
 </div>
 <div style="font-size:14px;border-bottom:1px dashed #555;padding-bottom:5px;margin-bottom:5px;">
 <div style="display:flex;justify-content:space-between;"><span>Bill#: <b>${escHtml(d.billNo)}</b></span><span>${fmtDate(d.billDate)}</span></div>
-<div style="display:flex;justify-content:space-between;"><span>Cust: <b>${escHtml(d.toName)}</b></span><span>${billTime}</span></div>
+<div style="display:flex;justify-content:space-between;"><span>Cust: <b>${escHtml(d.toName)}</b>${d.toPhone?` | ${escHtml(d.toPhone)}`:''}</span><span>${billTime}</span></div>
 ${tableNo?`<div>Table: <b>#${escHtml(tableNo)}</b>${mode?' | Pay: <b>'+escHtml(mode)+'</b>':''}</div>`:''}
 </div>
 <div style="border-bottom:1px dashed #555;padding-bottom:5px;margin-bottom:4px;">
@@ -686,10 +690,11 @@ ${d.notes?`<div style="border-top:1px dashed #555;padding-top:4px;margin-top:3px
     const items=d.items.map(it=>`<tr><td style="padding:2px 3px;font-size:11px;">${escHtml(it.description||'-')}</td><td style="padding:2px 3px;text-align:right;font-size:11px;">${d.sym}${it.rate.toFixed(2)}</td><td style="padding:2px 3px;text-align:center;font-size:11px;">${it.qty}</td><td style="padding:2px 3px;text-align:right;font-weight:700;font-size:11px;">${d.sym}${it.amount.toFixed(2)}</td></tr>`).join('');
     return`<div style="font-family:'Courier New',monospace;background:#fff;width:80mm;max-width:80mm;margin:0 auto;padding:14px 18px;font-size:11px;color:#111;border:1px solid #ccc;box-shadow:1px 2px 8px rgba(0,0,0,.15);">
 ${dash}<div style="text-align:center;letter-spacing:6px;font-size:11px;font-weight:700;margin:2px 0;">RECEIPT</div>${dash}
-<div style="display:flex;justify-content:space-between;margin-bottom:2px;"><span>Name: <b>${escHtml(d.toName)}</b></span><span>Invoice No: <b>${escHtml(d.billNo)}</b></span></div>
+<div style="display:flex;justify-content:space-between;margin-bottom:2px;"><span>Name: <b>${escHtml(d.toName)}</b>${d.toPhone?` | Ph: ${escHtml(d.toPhone)}`:''}</span><span>Invoice No: <b>${escHtml(d.billNo)}</b></span></div>
 ${tableNo?`<div style="display:flex;justify-content:space-between;"><span>Table: <b>#${escHtml(tableNo)}</b></span><span>Date: ${fmtDate(d.billDate)}</span></div>`:`<div>Date: ${fmtDate(d.billDate)}</div>`}
 <div style="font-size:10px;margin-top:2px;">${escHtml(d.fromName)}${d.fromPhone?' | '+escHtml(d.fromPhone):''}</div>
 ${d.fromAddr?`<div style="font-size:9px;color:#555;margin-top:1px;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}
+${d.fromEmail?`<div style="font-size:9px;color:#555;">${escHtml(d.fromEmail)}</div>`:''}
 ${dash}
 <table style="width:100%;border-collapse:collapse;"><thead><tr style="border-bottom:1px dashed #555;"><th style="padding:2px 3px;text-align:left;font-size:10px;">Item</th><th style="padding:2px 3px;text-align:right;font-size:10px;">Price</th><th style="padding:2px 3px;text-align:center;font-size:10px;">Qty</th><th style="padding:2px 3px;text-align:right;font-size:10px;">Total</th></tr></thead><tbody>${items||'<tr><td colspan="4" style="text-align:center;padding:5px;color:#aaa;">No items</td></tr>'}</tbody></table>
 ${dash}
@@ -723,11 +728,11 @@ function renderPayslip(d){
     const rows=Array.from({length:maxR},(_,i)=>`<tr style="border-bottom:1px solid #e0e0e0;"><td style="padding:5px 8px;font-size:11px;">${earnings[i]?escHtml(earnings[i].description):'&nbsp;'}</td><td style="padding:5px 8px;text-align:right;font-size:11px;font-weight:600;">${earnings[i]?d.sym+earnings[i].amount.toFixed(2):'&nbsp;'}</td><td style="padding:5px 8px;border-left:2px solid #ddd;font-size:11px;">${deductions[i]?escHtml(deductions[i].description):'&nbsp;'}</td><td style="padding:5px 8px;text-align:right;font-size:11px;font-weight:600;color:#e53935;">${deductions[i]?'-'+d.sym+deductions[i].amount.toFixed(2):'&nbsp;'}</td></tr>`).join('');
     return `<div style="font-family:Arial,sans-serif;background:#fff;font-size:12px;color:#222;border:1px solid #ccc;max-width:580px;box-shadow:0 2px 10px rgba(0,0,0,.1);">
 <div style="background:${c2};color:#fff;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;">
-<div><div style="font-size:18px;font-weight:700;">${escHtml(d.fromName)}</div>${d.fromAddr?`<div style="font-size:10px;opacity:.8;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}</div>
+<div><div style="font-size:18px;font-weight:700;">${escHtml(d.fromName)}</div>${d.fromAddr?`<div style="font-size:10px;opacity:.8;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}${d.fromPhone?`<div style="font-size:10px;opacity:.8;">📞 ${escHtml(d.fromPhone)}</div>`:''}${d.fromEmail?`<div style="font-size:10px;opacity:.8;">${escHtml(d.fromEmail)}</div>`:''}</div>
 <div style="text-align:right;"><div style="font-size:14px;font-weight:900;letter-spacing:1px;">SALARY SLIP</div><div style="font-size:10px;opacity:.85;">Pay Period: ${escHtml(month)}</div><div style="font-size:10px;opacity:.85;">#${escHtml(d.billNo)}</div></div>
 </div>
 <div style="background:#e8eaf6;padding:8px 20px;display:flex;justify-content:space-between;border-bottom:2px solid ${c2};font-size:11px;">
-<div><span style="color:#666;display:block;font-size:10px;text-transform:uppercase;">Employee</span><span style="font-size:14px;font-weight:700;">${escHtml(d.toName)}</span>${d.toPhone?`<span style="font-size:10px;color:#666;display:block;">${escHtml(d.toPhone)}</span>`:''}</div>
+<div><span style="color:#666;display:block;font-size:10px;text-transform:uppercase;">Employee</span><span style="font-size:14px;font-weight:700;">${escHtml(d.toName)}</span>${d.toPhone?`<span style="font-size:10px;color:#666;display:block;">${escHtml(d.toPhone)}</span>`:''}${d.toAddr?`<span style="font-size:10px;color:#666;display:block;">${escHtml(d.toAddr).replace(/\n/g,', ')}</span>`:''}${d.toEmail?`<span style="font-size:10px;color:#666;display:block;">${escHtml(d.toEmail)}</span>`:''}</div>
 <div style="text-align:right;"><span style="color:#666;display:block;font-size:10px;text-transform:uppercase;">Employer</span><span style="font-size:13px;font-weight:700;">${escHtml(empName)}</span><span style="font-size:10px;color:#666;display:block;">${fmtDate(d.billDate)}</span></div>
 </div>
 <table style="width:100%;border-collapse:collapse;">
@@ -748,12 +753,14 @@ function renderPayslip(d){
     const designation=d.td.designation||'Driver';
     return`<div style="font-family:Arial,sans-serif;background:#fff;padding:24px 28px;font-size:12px;color:#111;border:1px solid #ccc;max-width:520px;line-height:1.7;">
 <div style="text-align:right;font-size:12px;color:#333;margin-bottom:8px;">Date: ${fmtDate(d.billDate)}</div>
+${d.fromAddr||d.fromPhone||d.fromEmail?`<div style="font-size:11px;margin-bottom:12px;border-left:3px solid ${c};padding-left:8px;"><b>${escHtml(d.fromName)}</b>${d.fromAddr?`<br>${escHtml(d.fromAddr).replace(/\n/g,', ')}`:''} ${d.fromPhone?`<br>Ph: ${escHtml(d.fromPhone)}`:''}${d.fromEmail?`<br>${escHtml(d.fromEmail)}`:''}</div>`:''}
 <div style="text-align:center;font-size:14px;font-weight:700;text-decoration:underline;margin-bottom:14px;">${TYPE_LABELS[d.type]||'Salary Receipt'}</div>
 <p style="margin:0 0 12px;text-align:justify;">This is to certify that Mr./Ms. <b>${escHtml(empName)}</b> have paid <b>${d.sym}${d.total.toFixed(2)}</b> to ${designation} Mr/Ms <b>${escHtml(d.toName)}</b> towards salary of the month of <b>${escHtml(month)}</b> (Acknowledged receipt enclosed). I also declare that the ${designation.toLowerCase()} is exclusively utilized for official purpose only</p>
 <p style="margin:0 0 16px;text-align:justify;">Please reimburse the above amount. I further declare that what is stated above is correct and true.</p>
 ${d.items.length>0?`<table style="width:100%;border-collapse:collapse;margin-bottom:14px;font-size:11px;"><thead><tr style="border-bottom:1px solid #ccc;"><th style="padding:4px 6px;text-align:left;">Description</th><th style="padding:4px 6px;text-align:right;">Amount</th></tr></thead><tbody>${d.items.map(it=>`<tr style="border-bottom:1px solid #eee;"><td style="padding:4px 6px;">${escHtml(it.description||'-')}</td><td style="padding:4px 6px;text-align:right;font-weight:600;">${d.sym}${it.amount.toFixed(2)}</td></tr>`).join('')}</tbody></table>`:''}
 <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><div><b>Vehicle Number:</b> ${escHtml(vehicleNo)}</div><div><b>Date:</b> ${fmtDate(d.billDate)}</div></div>
-<div style="display:flex;justify-content:space-between;margin-bottom:18px;"><div><b>Driver Name:</b> ${escHtml(d.toName)}</div><div><b>Employee Name:</b> ${escHtml(empName)}</div></div>
+<div style="display:flex;justify-content:space-between;margin-bottom:8px;"><div><b>Driver Name:</b> ${escHtml(d.toName)}</div><div><b>Employee Name:</b> ${escHtml(empName)}</div></div>
+${d.toPhone||d.toAddr||d.toEmail?`<div style="font-size:11px;margin-bottom:8px;color:#444;">${d.toPhone?`Ph: ${escHtml(d.toPhone)}  `:''}${d.toAddr?`Address: ${escHtml(d.toAddr).replace(/\n/g,', ')}  `:''}${d.toEmail?escHtml(d.toEmail):''}</div>`:''}
 <div style="font-weight:700;margin-bottom:4px;">Revenue Stamp</div>
 <div style="width:64px;height:64px;border:1px dashed #aaa;display:flex;align-items:center;justify-content:center;font-size:9px;color:#aaa;text-align:center;padding:4px;">Revenue<br>Stamp</div>
 ${d.notes?`<div style="margin-top:12px;font-size:11px;color:#555;border-top:1px dashed #ddd;padding-top:8px;">${escHtml(d.notes)}</div>`:''}
@@ -773,10 +780,13 @@ function renderFuel(d){
 <div style="font-size:13px;font-weight:700;">${escHtml(d.fromName)}</div>
 ${d.fromAddr?`<div style="font-size:10px;color:#555;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}
 ${d.fromPhone?`<div style="font-size:10px;color:#555;">${escHtml(d.fromPhone)}</div>`:''}
+${d.fromEmail?`<div style="font-size:10px;color:#555;">${escHtml(d.fromEmail)}</div>`:''}
 <div style="font-size:11px;font-weight:600;margin-top:4px;">FUEL RECEIPT</div>
 </div>
 <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span>Receipt#: <b>${escHtml(d.billNo)}</b></span><span>${fmtDate(d.billDate)}</span></div>
-<div style="margin-bottom:4px;">Customer: <b>${escHtml(d.toName)}</b></div>
+<div style="margin-bottom:4px;">Customer: <b>${escHtml(d.toName)}</b>${d.toPhone?` | 📞 ${escHtml(d.toPhone)}`:''}</div>
+${d.toAddr?`<div style="margin-bottom:2px;font-size:10px;color:#555;">Address: ${escHtml(d.toAddr).replace(/\n/g,', ')}</div>`:''}
+${d.toEmail?`<div style="margin-bottom:2px;font-size:10px;color:#555;">${escHtml(d.toEmail)}</div>`:''}
 ${vehicleNo?`<div style="margin-bottom:2px;">Vehicle: <b>${escHtml(vehicleNo)}</b>${vehicleType?' ('+escHtml(vehicleType)+')':''}</div>`:''}
 <div style="border-top:1px dashed #888;margin:6px 0;"></div>
 ${rows||`<div style="font-size:11px;color:#aaa;">No fuel items</div>`}
@@ -802,6 +812,9 @@ ${d.notes?`<div style="font-size:10px;color:#555;margin-top:4px;">${escHtml(d.no
 <div style="display:flex;justify-content:space-between;margin-bottom:14px;">
 <div><div style="font-weight:700;margin-bottom:6px;font-size:12px;">Billed To</div>
 <div>Customer Name: <b>${escHtml(d.toName)}</b></div>
+${d.toPhone?`<div>Ph: <b>${escHtml(d.toPhone)}</b></div>`:''}
+${d.toAddr?`<div style="font-size:11px;color:#555;">Address: ${escHtml(d.toAddr).replace(/\n/g,', ')}</div>`:''}
+${d.toEmail?`<div style="font-size:11px;color:#555;">${escHtml(d.toEmail)}</div>`:''}
 ${vehicleNo?`<div>Vehicle Number: <b>${escHtml(vehicleNo)}</b></div>`:'<div>Vehicle Number: </div>'}
 ${vehicleType?`<div>Vehicle Type: <b>${escHtml(vehicleType)}</b></div>`:'<div>Vehicle Type: </div>'}
 </div>
@@ -809,6 +822,7 @@ ${vehicleType?`<div>Vehicle Type: <b>${escHtml(vehicleType)}</b></div>`:'<div>Ve
 <div>Fuel Station Name: <b>${escHtml(d.fromName)}</b></div>
 ${d.fromAddr?`<div style="max-width:200px;text-align:right;">Fuel Station Address: ${escHtml(d.fromAddr).replace(/\n/g,', ')}</div>`:'<div>Fuel Station Address: </div>'}
 ${d.fromPhone?`<div>📞 ${escHtml(d.fromPhone)}</div>`:''}
+${d.fromEmail?`<div>${escHtml(d.fromEmail)}</div>`:''}
 </div>
 </div>
 ${payMode?`<div style="text-align:right;font-weight:700;margin-bottom:10px;">Payment Method: ${escHtml(payMode)}</div>`:'<div style="text-align:right;font-weight:700;margin-bottom:10px;">Payment Method</div>'}
@@ -838,13 +852,13 @@ function renderCab(d){
     return `<div style="font-family:Arial,sans-serif;background:#fff;font-size:12px;color:#222;border:1px solid #ddd;max-width:400px;box-shadow:0 2px 10px rgba(0,0,0,.1);">
 <div style="background:#fff7e6;padding:12px 16px;border-bottom:3px solid #f5a623;">
 <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-<div><div style="font-size:16px;font-weight:700;">🚕 ${escHtml(d.fromName)}</div>${d.fromPhone?`<div style="font-size:11px;color:#666;">Ph: ${escHtml(d.fromPhone)}</div>`:''}</div>
+<div><div style="font-size:16px;font-weight:700;">🚕 ${escHtml(d.fromName)}</div>${d.fromAddr?`<div style="font-size:10px;color:#666;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}${d.fromPhone?`<div style="font-size:11px;color:#666;">Ph: ${escHtml(d.fromPhone)}</div>`:''}${d.fromEmail?`<div style="font-size:10px;color:#666;">${escHtml(d.fromEmail)}</div>`:''}</div>
 <div style="text-align:right;"><div style="font-size:12px;font-weight:700;color:#f5a623;">RIDE RECEIPT</div><div style="font-size:11px;color:#666;">${escHtml(d.billNo)}</div><div style="font-size:11px;color:#666;">${fmtDate(d.billDate)}</div></div>
 </div>
 </div>
 <div style="padding:8px 16px;border-bottom:1px solid #eee;background:#fffbf3;">
 <div style="font-size:11px;color:#888;text-transform:uppercase;font-weight:600;">Passenger</div>
-<div style="font-size:13px;font-weight:700;">${escHtml(d.toName)}</div>${d.toPhone?`<div style="font-size:11px;color:#666;">${escHtml(d.toPhone)}</div>`:''}
+<div style="font-size:13px;font-weight:700;">${escHtml(d.toName)}</div>${d.toPhone?`<div style="font-size:11px;color:#666;">${escHtml(d.toPhone)}</div>`:''}${d.toAddr?`<div style="font-size:11px;color:#666;">${escHtml(d.toAddr).replace(/\n/g,', ')}</div>`:''}${d.toEmail?`<div style="font-size:11px;color:#666;">${escHtml(d.toEmail)}</div>`:''}
 ${pickup||drop?`<div style="font-size:11px;color:#555;margin-top:4px;">${pickup?'From: '+escHtml(pickup):''} ${drop?'→ To: '+escHtml(drop):''}</div>`:''}
 ${vehicleNo?`<div style="font-size:11px;color:#666;margin-top:2px;">Vehicle: ${escHtml(vehicleNo)}${driverName?' | Driver: '+escHtml(driverName):''}</div>`:''}
 </div>
@@ -866,6 +880,7 @@ ${d.notes?`<div style="padding:6px 16px;font-size:10px;color:#666;border-top:1px
 <div style="font-size:20px;font-weight:900;">🚕 ${escHtml(d.fromName)}</div>
 ${d.fromPhone?`<div style="font-size:11px;">📞 ${escHtml(d.fromPhone)}</div>`:''}
 ${d.fromAddr?`<div style="font-size:10px;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}
+${d.fromEmail?`<div style="font-size:10px;">${escHtml(d.fromEmail)}</div>`:''}
 </div>
 <div style="padding:10px 16px;background:#2a2a2a;border-bottom:1px solid #444;">
 <div style="display:flex;justify-content:space-between;"><span style="font-size:11px;color:#f5a623;font-weight:700;">CAB & TRAVEL RECEIPT</span><span style="font-size:11px;color:#aaa;">${fmtDate(d.billDate)}</span></div>
@@ -875,6 +890,8 @@ ${d.fromAddr?`<div style="font-size:10px;">${escHtml(d.fromAddr).replace(/\n/g,'
 <div style="font-size:10px;color:#f5a623;text-transform:uppercase;letter-spacing:.1em;">Passenger</div>
 <div style="font-size:14px;font-weight:700;">${escHtml(d.toName)}</div>
 ${d.toPhone?`<div style="font-size:11px;color:#aaa;">📞 ${escHtml(d.toPhone)}</div>`:''}
+${d.toAddr?`<div style="font-size:11px;color:#aaa;">${escHtml(d.toAddr).replace(/\n/g,', ')}</div>`:''}
+${d.toEmail?`<div style="font-size:11px;color:#aaa;">${escHtml(d.toEmail)}</div>`:''}
 ${pickup?`<div style="font-size:11px;color:#aaa;">From: ${escHtml(pickup)}</div>`:''}
 ${drop?`<div style="font-size:11px;color:#aaa;">To: ${escHtml(drop)}</div>`:''}
 ${vehicleNo?`<div style="font-size:11px;color:#aaa;">Cab#: ${escHtml(vehicleNo)}${driverName?' | Driver: '+escHtml(driverName):''}</div>`:''}
@@ -901,6 +918,7 @@ function renderOfficial(d){
 <div style="font-size:16px;font-weight:700;">${escHtml(d.fromName)}</div>
 ${d.fromAddr?`<div style="font-size:10px;color:#666;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}
 ${d.fromPhone?`<div style="font-size:10px;color:#666;">Ph: ${escHtml(d.fromPhone)}</div>`:''}
+${d.fromEmail?`<div style="font-size:10px;color:#666;">${escHtml(d.fromEmail)}</div>`:''}
 </div>
 <div style="text-align:center;margin-bottom:14px;">
 <div style="font-size:18px;font-weight:700;text-decoration:underline;letter-spacing:1px;">${label.toUpperCase()}</div>
@@ -908,6 +926,7 @@ ${d.fromPhone?`<div style="font-size:10px;color:#666;">Ph: ${escHtml(d.fromPhone
 </div>
 <div style="background:#f9f9f9;border:1px solid #e0e0e0;padding:12px;margin-bottom:14px;border-radius:4px;">
 <p style="margin:0 0 8px;font-size:13px;">Received with thanks a sum of <b style="font-size:14px;color:${c2};">${d.sym}${d.total.toFixed(2)}</b> (${escHtml(d.toName)})</p>
+${d.toPhone?`<p style="margin:0 0 4px;font-size:11px;color:#555;">Ph: ${escHtml(d.toPhone)}</p>`:''}${d.toAddr?`<p style="margin:0 0 4px;font-size:11px;color:#555;">Address: ${escHtml(d.toAddr).replace(/\n/g,', ')}</p>`:''}${d.toEmail?`<p style="margin:0 0 4px;font-size:11px;color:#555;">${escHtml(d.toEmail)}</p>`:''}
 <p style="margin:0;font-size:11px;color:#555;">Towards: ${d.items.map(it=>escHtml(it.description)).join(', ')||escHtml(label)}</p>
 ${prop?`<p style="margin:6px 0 0;font-size:11px;color:#555;">Property/Ref: ${escHtml(prop)}</p>`:''}
 ${pan?`<p style="margin:4px 0 0;font-size:11px;color:#555;">PAN: ${escHtml(pan)}</p>`:''}
@@ -931,6 +950,7 @@ ${d.notes?`<div style="font-size:11px;color:#555;font-style:italic;margin-bottom
 <div style="font-size:16px;font-weight:700;">${escHtml(d.fromName)}</div>
 ${d.fromAddr?`<div style="font-size:11px;color:#555;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}
 ${d.fromPhone?`<div style="font-size:11px;color:#555;">📞 ${escHtml(d.fromPhone)}</div>`:''}
+${d.fromEmail?`<div style="font-size:11px;color:#555;">${escHtml(d.fromEmail)}</div>`:''}
 ${pan?`<div style="font-size:11px;color:#555;">PAN: <b>${escHtml(pan)}</b></div>`:''}
 </div>
 <div style="border-top:3px double ${c};border-bottom:3px double ${c};padding:8px 0;margin-bottom:12px;">
@@ -941,6 +961,7 @@ ${pan?`<div style="font-size:11px;color:#555;">PAN: <b>${escHtml(pan)}</b></div>
 <div style="font-size:15px;font-weight:700;">${escHtml(d.toName)}</div>
 ${d.toAddr?`<div style="font-size:11px;color:#555;">${escHtml(d.toAddr).replace(/\n/g,', ')}</div>`:''}
 ${d.toPhone?`<div style="font-size:11px;color:#555;">Contact: ${escHtml(d.toPhone)}</div>`:''}
+${d.toEmail?`<div style="font-size:11px;color:#555;">${escHtml(d.toEmail)}</div>`:''}
 </div>
 ${prop?`<div style="font-size:11px;color:#555;margin-bottom:8px;">Property / Office: <b>${escHtml(prop)}</b></div>`:''}
 <div style="margin-bottom:8px;font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.05em;font-weight:600;">Particulars</div>
@@ -971,9 +992,10 @@ function renderMedical(d){
 <div style="font-size:18px;font-weight:700;">✚ ${escHtml(d.fromName)}</div>
 ${d.fromAddr?`<div style="font-size:10px;opacity:.85;margin-top:2px;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}
 ${d.fromPhone?`<div style="font-size:10px;opacity:.85;">Ph: ${escHtml(d.fromPhone)}</div>`:''}
+${d.fromEmail?`<div style="font-size:10px;opacity:.85;">${escHtml(d.fromEmail)}</div>`:''}
 </div>
 <div style="background:#e8f5e9;padding:8px 14px;border-bottom:1px solid #c8e6c9;display:flex;justify-content:space-between;font-size:11px;">
-<div><span style="font-weight:700;display:block;">Patient: ${escHtml(d.toName)}</span>${d.toPhone?`<span>Ph: ${escHtml(d.toPhone)}</span>`:''}${issue?`<span style="display:block;">Complaint: ${escHtml(issue)}</span>`:''}</div>
+<div><span style="font-weight:700;display:block;">Patient: ${escHtml(d.toName)}</span>${d.toPhone?`<span>Ph: ${escHtml(d.toPhone)}</span>`:''}${d.toAddr?`<span style="display:block;font-size:10px;color:#555;">${escHtml(d.toAddr).replace(/\n/g,', ')}</span>`:''}${d.toEmail?`<span style="display:block;font-size:10px;color:#555;">${escHtml(d.toEmail)}</span>`:''}${issue?`<span style="display:block;">Complaint: ${escHtml(issue)}</span>`:''}</div>
 <div style="text-align:right;"><span style="display:block;">Receipt #: <b>${escHtml(d.billNo)}</b></span><span style="display:block;">Date: ${fmtDate(d.billDate)}</span>${doctor?`<span style="display:block;">Dr: ${escHtml(doctor)}</span>`:''}</div>
 </div>
 <table style="width:100%;border-collapse:collapse;"><thead><tr style="background:${c2};color:#fff;"><th style="padding:6px 8px;text-align:left;font-size:11px;">Service / Medicine</th><th style="padding:6px 8px;text-align:center;font-size:11px;">Qty</th><th style="padding:6px 8px;text-align:right;font-size:11px;">Rate</th><th style="padding:6px 8px;text-align:right;font-size:11px;">Amount</th></tr></thead>
@@ -1006,6 +1028,7 @@ ${d.notes?`<div style="padding:6px 14px;font-size:11px;color:#555;">${escHtml(d.
 <div style="padding:8px 14px;border-bottom:1px solid #ddd;">
 <div style="font-weight:700;margin-bottom:4px;">Hospital details:</div>
 ${d.fromPhone?`<div style="font-size:11px;">Contact Details: ${escHtml(d.fromPhone)}</div>`:''}
+${d.fromEmail?`<div style="font-size:11px;">${escHtml(d.fromEmail)}</div>`:''}
 <div style="font-size:11px;">Discharge Date:</div>
 <div style="font-size:11px;">${fmtDate(d.billDate)}</div>
 </div>
@@ -1020,7 +1043,7 @@ ${d.fromPhone?`<div style="font-size:11px;">Contact Details: ${escHtml(d.fromPho
 <tr>
 <td style="padding:3px 6px;"><b>Guardian Name:</b> ${escHtml(guardian)}</td>
 <td style="padding:3px 6px;"><b>Admit Date:</b><br>${admitDate}</td>
-<td style="padding:3px 6px;"><b>Mobile:</b> ${escHtml(d.toPhone||'')}</td>
+<td style="padding:3px 6px;"><b>Mobile:</b> ${escHtml(d.toPhone||'')}${d.toEmail?`<br><b>Email:</b> ${escHtml(d.toEmail)}`:''}</td>
 </tr>
 <tr>
 <td style="padding:3px 6px;"><b>Insurance Avl:</b><br>${escHtml(insurance)}</td>
@@ -1066,11 +1089,11 @@ function renderHotel(d){
     const rows=d.items.map((it,i)=>`<tr style="background:${i%2===0?'#fafafa':'#fff'};border-bottom:1px solid #e0e0e0;"><td style="padding:7px 10px;font-size:12px;">${escHtml(it.description||'-')}</td><td style="padding:7px 10px;text-align:center;font-size:12px;">${it.qty}</td><td style="padding:7px 10px;text-align:right;font-size:12px;">${d.sym}${it.rate.toFixed(2)}</td><td style="padding:7px 10px;text-align:right;font-weight:700;font-size:12px;">${d.sym}${it.amount.toFixed(2)}</td></tr>`).join('');
     return `<div style="font-family:Arial,sans-serif;background:#fff;font-size:12px;color:#222;border:1px solid #ccc;max-width:620px;box-shadow:0 2px 10px rgba(0,0,0,.1);">
 <div style="padding:16px 20px;border-bottom:2px solid #333;display:flex;justify-content:space-between;align-items:flex-start;">
-<div><div style="font-size:20px;font-weight:700;">${escHtml(d.fromName)}</div>${d.fromAddr?`<div style="font-size:10px;color:#666;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}<div style="font-size:10px;color:#666;">${d.fromPhone?'Ph: '+escHtml(d.fromPhone):''}</div>${gstin?`<div style="font-size:10px;color:#666;">GSTIN: ${escHtml(gstin)}</div>`:''}</div>
+<div><div style="font-size:20px;font-weight:700;">${escHtml(d.fromName)}</div>${d.fromAddr?`<div style="font-size:10px;color:#666;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}<div style="font-size:10px;color:#666;">${d.fromPhone?'Ph: '+escHtml(d.fromPhone):''}${d.fromEmail?' | '+escHtml(d.fromEmail):''}</div>${gstin?`<div style="font-size:10px;color:#666;">GSTIN: ${escHtml(gstin)}</div>`:''}</div>
 <div style="text-align:right;"><div style="font-size:20px;font-weight:900;letter-spacing:1px;">HOTEL INVOICE</div><div style="font-size:11px;color:#666;">Bill #: ${escHtml(d.billNo)}</div><div style="font-size:11px;color:#666;">Date: ${fmtDate(d.billDate)}</div></div>
 </div>
 <div style="padding:10px 20px;background:#f5f5f5;border-bottom:1px solid #ddd;display:flex;justify-content:space-between;font-size:11px;">
-<div><div style="font-weight:600;margin-bottom:2px;">Guest: ${escHtml(d.toName)}</div>${d.toPhone?`<div>Ph: ${escHtml(d.toPhone)}</div>`:''}</div>
+<div><div style="font-weight:600;margin-bottom:2px;">Guest: ${escHtml(d.toName)}</div>${d.toPhone?`<div>Ph: ${escHtml(d.toPhone)}</div>`:''}${d.toAddr?`<div style="font-size:10px;color:#666;">${escHtml(d.toAddr).replace(/\n/g,', ')}</div>`:''}${d.toEmail?`<div style="font-size:10px;color:#666;">${escHtml(d.toEmail)}</div>`:''}</div>
 <div style="text-align:right;">${roomNo?`<div>Room: <b>${escHtml(roomNo)}</b></div>`:''}<div>${checkin?'In: '+checkin:''} ${checkout?'→ Out: '+checkout:''}</div></div>
 </div>
 <table style="width:100%;border-collapse:collapse;"><thead><tr style="background:#333;color:#fff;"><th style="padding:7px 10px;text-align:left;font-size:11px;">Description</th><th style="padding:7px 10px;text-align:center;font-size:11px;width:70px;">Qty</th><th style="padding:7px 10px;text-align:right;font-size:11px;width:80px;">Rate</th><th style="padding:7px 10px;text-align:right;font-size:11px;width:90px;">Amount</th></tr></thead>
@@ -1096,11 +1119,12 @@ ${d.notes?`<div style="padding:8px 20px;font-size:11px;color:#555;border-top:1px
 <div style="font-size:22px;font-weight:700;letter-spacing:1px;">${escHtml(d.fromName)}</div>
 ${d.fromAddr?`<div style="font-size:10px;opacity:.85;margin-top:4px;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}
 ${d.fromPhone?`<div style="font-size:10px;opacity:.85;">📞 ${escHtml(d.fromPhone)}</div>`:''}
+${d.fromEmail?`<div style="font-size:10px;opacity:.85;">${escHtml(d.fromEmail)}</div>`:''}
 ${gstin?`<div style="font-size:10px;opacity:.85;">GSTIN: ${escHtml(gstin)}</div>`:''}
 <div style="font-size:11px;letter-spacing:3px;text-transform:uppercase;margin-top:8px;opacity:.9;">— ${escHtml(TYPE_LABELS[d.type]||d.type)} —</div>
 </div>
 <div style="background:#fdf0c0;padding:10px 24px;border-bottom:2px solid #c9a84c;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-<div><span style="font-size:10px;color:#7d5a00;display:block;text-transform:uppercase;">Guest Name</span><span style="font-size:14px;font-weight:700;">${escHtml(d.toName)}</span>${d.toPhone?`<span style="font-size:10px;color:#7d5a00;display:block;">📞 ${escHtml(d.toPhone)}</span>`:''}</div>
+<div><span style="font-size:10px;color:#7d5a00;display:block;text-transform:uppercase;">Guest Name</span><span style="font-size:14px;font-weight:700;">${escHtml(d.toName)}</span>${d.toPhone?`<span style="font-size:10px;color:#7d5a00;display:block;">📞 ${escHtml(d.toPhone)}</span>`:''}${d.toAddr?`<span style="font-size:10px;color:#7d5a00;display:block;">${escHtml(d.toAddr).replace(/\n/g,', ')}</span>`:''}${d.toEmail?`<span style="font-size:10px;color:#7d5a00;display:block;">${escHtml(d.toEmail)}</span>`:''}</div>
 <div style="text-align:right;"><span style="font-size:10px;color:#7d5a00;display:block;text-transform:uppercase;">Bill Details</span><span style="font-size:12px;display:block;">Bill #: <b>${escHtml(d.billNo)}</b></span><span style="font-size:12px;">Date: ${fmtDate(d.billDate)}</span>${roomNo?`<span style="font-size:11px;display:block;">Room: <b>${escHtml(roomNo)}</b></span>`:''}${checkin?`<span style="font-size:11px;display:block;">In: ${checkin}${checkout?' → '+checkout:''}</span>`:''}</div>
 </div>
 <table style="width:100%;border-collapse:collapse;"><thead><tr style="background:#c9a84c;color:#fff;"><th style="padding:8px 12px;text-align:left;font-size:11px;">Description</th><th style="padding:8px 12px;text-align:center;font-size:11px;width:70px;">Nights/Qty</th><th style="padding:8px 12px;text-align:right;font-size:11px;width:80px;">Rate</th><th style="padding:8px 12px;text-align:right;font-size:11px;width:90px;">Amount</th></tr></thead>
@@ -1126,13 +1150,15 @@ function renderGym(d){
     return `<div style="font-family:Arial,sans-serif;background:#fff;font-size:12px;color:#222;border:2px solid #ff6f00;max-width:460px;overflow:hidden;">
 <div style="padding:14px 16px;border-bottom:2px solid #ff6f00;">
 <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-<div><div style="font-size:18px;font-weight:700;">💪 ${escHtml(d.fromName)}</div>${d.fromAddr?`<div style="font-size:10px;color:#666;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}<div style="font-size:10px;color:#666;">${d.fromPhone?'Ph: '+escHtml(d.fromPhone):''}</div></div>
+<div><div style="font-size:18px;font-weight:700;">💪 ${escHtml(d.fromName)}</div>${d.fromAddr?`<div style="font-size:10px;color:#666;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}<div style="font-size:10px;color:#666;">${d.fromPhone?'Ph: '+escHtml(d.fromPhone):''}${d.fromEmail?' | '+escHtml(d.fromEmail):''}</div></div>
 <div style="text-align:right;"><div style="font-size:14px;font-weight:900;color:#ff6f00;">GYM RECEIPT</div><div style="font-size:11px;color:#666;">#${escHtml(d.billNo)}</div><div style="font-size:11px;color:#666;">${fmtDate(d.billDate)}</div></div>
 </div>
 </div>
 <div style="padding:8px 16px;background:#fff8f0;border-bottom:1px solid #ffe0b2;font-size:11px;">
 <div style="font-weight:700;font-size:13px;">${escHtml(d.toName)}</div>
 ${d.toPhone?`<div style="color:#666;">${escHtml(d.toPhone)}</div>`:''}
+${d.toAddr?`<div style="font-size:10px;color:#666;">${escHtml(d.toAddr).replace(/\n/g,', ')}</div>`:''}
+${d.toEmail?`<div style="font-size:10px;color:#666;">${escHtml(d.toEmail)}</div>`:''}
 ${memberId?`<div>Member ID: <b>${escHtml(memberId)}</b></div>`:''}
 ${plan?`<div style="color:#ff6f00;font-weight:600;">Plan: ${escHtml(plan)}</div>`:''}
 </div>
@@ -1152,7 +1178,7 @@ ${d.notes?`<div style="padding:6px 16px;font-size:10px;color:#666;border-top:1px
     return`<div style="font-family:Arial,sans-serif;background:#181818;color:#f0f0f0;font-size:12px;box-shadow:0 4px 20px rgba(0,0,0,.4);">
 <div style="background:linear-gradient(135deg,#212121,#333);padding:16px 20px;border-bottom:3px solid #ff6f00;">
 <div style="display:flex;justify-content:space-between;align-items:center;">
-<div><div style="font-size:22px;font-weight:900;">💪 ${escHtml(d.fromName)}</div>${d.fromAddr?`<div style="font-size:10px;color:#aaa;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}<div style="font-size:10px;color:#aaa;">${d.fromPhone?'📞 '+escHtml(d.fromPhone):''}</div></div>
+<div><div style="font-size:22px;font-weight:900;">💪 ${escHtml(d.fromName)}</div>${d.fromAddr?`<div style="font-size:10px;color:#aaa;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}<div style="font-size:10px;color:#aaa;">${d.fromPhone?'📞 '+escHtml(d.fromPhone)+'  ':''}${d.fromEmail?escHtml(d.fromEmail):''}</div></div>
 <div style="text-align:right;"><div style="font-size:13px;font-weight:900;color:#ff6f00;letter-spacing:2px;">GYM INVOICE</div><div style="font-size:10px;color:#aaa;">Inv # ${escHtml(d.billNo)}</div><div style="font-size:10px;color:#aaa;">${fmtDate(d.billDate)}</div></div>
 </div>
 </div>
@@ -1160,6 +1186,8 @@ ${d.notes?`<div style="padding:6px 16px;font-size:10px;color:#666;border-top:1px
 <span style="font-size:10px;color:#ff6f00;display:block;text-transform:uppercase;letter-spacing:.1em;">Member</span>
 <span style="font-size:14px;font-weight:700;">${escHtml(d.toName)}</span>
 ${d.toPhone?`<span style="font-size:11px;color:#aaa;display:block;">📞 ${escHtml(d.toPhone)}</span>`:''}
+${d.toAddr?`<span style="font-size:11px;color:#aaa;display:block;">${escHtml(d.toAddr).replace(/\n/g,', ')}</span>`:''}
+${d.toEmail?`<span style="font-size:11px;color:#aaa;display:block;">${escHtml(d.toEmail)}</span>`:''}
 ${memberId?`<span style="font-size:11px;color:#aaa;display:block;">Member ID: ${escHtml(memberId)}</span>`:''}
 ${plan?`<span style="font-size:11px;color:#ff6f00;display:block;">Plan: ${escHtml(plan)}</span>`:''}
 </div>
@@ -1194,7 +1222,7 @@ function renderInvoice(d){
 </div>
 </div>
 <div style="padding:10px 24px;background:#fafafa;border-bottom:1px solid #ddd;display:flex;justify-content:space-between;">
-<div><div style="font-size:10px;color:#888;text-transform:uppercase;font-weight:600;margin-bottom:2px;">Bill To</div><div style="font-size:14px;font-weight:700;">${escHtml(d.toName)}</div>${d.toAddr?`<div style="font-size:11px;color:#666;">${escHtml(d.toAddr).replace(/\n/g,' | ')}</div>`:''}</div>
+<div><div style="font-size:10px;color:#888;text-transform:uppercase;font-weight:600;margin-bottom:2px;">Bill To</div><div style="font-size:14px;font-weight:700;">${escHtml(d.toName)}</div>${d.toAddr?`<div style="font-size:11px;color:#666;">${escHtml(d.toAddr).replace(/\n/g,' | ')}</div>`:''}${d.toPhone?`<div style="font-size:11px;color:#666;">📞 ${escHtml(d.toPhone)}</div>`:''}${d.toEmail?`<div style="font-size:11px;color:#666;">${escHtml(d.toEmail)}</div>`:''}</div>
 </div>
 <table style="width:100%;border-collapse:collapse;margin:0;"><thead><tr style="background:#f5f5f5;"><th style="padding:7px 8px;border:1px solid #ddd;text-align:center;font-size:11px;width:30px;">#</th><th style="padding:7px 8px;border:1px solid #ddd;text-align:left;font-size:11px;">Description</th>${hsn?`<th style="padding:7px 8px;border:1px solid #ddd;text-align:center;font-size:11px;width:70px;">HSN</th>`:''}<th style="padding:7px 8px;border:1px solid #ddd;text-align:center;font-size:11px;width:50px;">Qty</th><th style="padding:7px 8px;border:1px solid #ddd;text-align:right;font-size:11px;width:80px;">Rate</th><th style="padding:7px 8px;border:1px solid #ddd;text-align:right;font-size:11px;width:90px;">Amount</th></tr></thead>
 <tbody>${rows||'<tr><td colspan="6" style="padding:12px;text-align:center;color:#aaa;border:1px solid #ddd;">No items</td></tr>'}</tbody></table>
@@ -1221,11 +1249,11 @@ ${d.notes?`<div style="margin:0 24px 12px;padding:8px;background:#fff8e1;border-
     const rows=d.items.map((it,i)=>`<tr style="background:${i%2===0?'#f9f9f9':'#fff'};border-bottom:1px solid #e0e0e0;"><td style="padding:6px 10px;text-align:center;">${i+1}</td><td style="padding:6px 10px;">${escHtml(it.description||'-')}</td>${hsn?`<td style="padding:6px 10px;text-align:center;">${escHtml(hsn)}</td>`:''}<td style="padding:6px 10px;text-align:center;">${it.qty}</td><td style="padding:6px 10px;text-align:right;">${d.sym}${it.rate.toFixed(2)}</td><td style="padding:6px 10px;text-align:right;font-weight:700;">${d.sym}${it.amount.toFixed(2)}</td></tr>`).join('');
     return `<div style="font-family:'Times New Roman',Times,serif;background:#fff;border:2px solid #222;font-size:12px;color:#111;max-width:680px;">
 <div style="border-bottom:2px solid #222;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;">
-<div><div style="font-size:18px;font-weight:700;">${escHtml(d.fromName)}</div>${d.fromAddr?`<div style="font-size:10px;color:#444;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}</div>
+<div><div style="font-size:18px;font-weight:700;">${escHtml(d.fromName)}</div>${d.fromAddr?`<div style="font-size:10px;color:#444;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}<div style="font-size:10px;color:#444;">${d.fromPhone?'Ph: '+escHtml(d.fromPhone):''}${d.fromEmail?' | '+escHtml(d.fromEmail):''}</div></div>
 <div style="text-align:center;border:2px solid #222;padding:8px 16px;"><div style="font-size:16px;font-weight:900;letter-spacing:2px;">${label.toUpperCase()}</div><div style="font-size:11px;">#${escHtml(d.billNo)}</div><div style="font-size:11px;">${fmtDate(d.billDate)}</div></div>
 </div>
 <div style="border-bottom:1px solid #ccc;padding:8px 20px;display:flex;justify-content:space-between;font-size:11px;">
-<div><b>Bill To:</b> ${escHtml(d.toName)}${d.toAddr?` | ${escHtml(d.toAddr).replace(/\n/g,', ')}`:''}</div>
+<div><b>Bill To:</b> ${escHtml(d.toName)}${d.toAddr?` | ${escHtml(d.toAddr).replace(/\n/g,', ')}`:''}<br><span style="font-size:10px;color:#444;">${d.toPhone?escHtml(d.toPhone):''}${d.toPhone&&d.toEmail?' | ':''}${d.toEmail?escHtml(d.toEmail):''}</span></div>
 ${gstin?`<div><b>GSTIN:</b> ${escHtml(gstin)}</div>`:''}
 </div>
 <table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr style="background:#222;color:#fff;"><th style="padding:6px 10px;text-align:center;">#</th><th style="padding:6px 10px;text-align:left;">Description</th>${hsn?`<th style="padding:6px 10px;text-align:center;">HSN</th>`:''}<th style="padding:6px 10px;text-align:center;">Qty</th><th style="padding:6px 10px;text-align:right;">Rate</th><th style="padding:6px 10px;text-align:right;">Amount</th></tr></thead>
@@ -1259,6 +1287,7 @@ ${sgst>0?`<div style="display:flex;justify-content:space-between;gap:24px;"><spa
 <span style="font-size:14px;font-weight:700;">${escHtml(d.toName)}</span>
 ${d.toAddr?`<span style="font-size:11px;color:#555;display:block;">${escHtml(d.toAddr).replace(/\n/g,' | ')}</span>`:''}
 ${d.toPhone?`<span style="font-size:11px;color:#555;">📞 ${escHtml(d.toPhone)}</span>`:''}
+${d.toEmail?`<span style="font-size:11px;color:#555;display:block;">${escHtml(d.toEmail)}</span>`:''}
 </div>
 <table style="width:100%;border-collapse:collapse;"><thead><tr style="background:${c};color:#fff;"><th style="padding:8px 10px;text-align:center;font-size:11px;width:30px;">#</th><th style="padding:8px 10px;text-align:left;font-size:11px;">Description</th>${hsn?`<th style="padding:8px 10px;text-align:center;font-size:11px;width:70px;">HSN/SAC</th>`:''}<th style="padding:8px 10px;text-align:center;font-size:11px;width:50px;">Qty</th><th style="padding:8px 10px;text-align:right;font-size:11px;width:80px;">Rate</th><th style="padding:8px 10px;text-align:right;font-size:11px;width:90px;">Amount</th></tr></thead>
 <tbody>${items||'<tr><td colspan="6" style="padding:14px;text-align:center;color:#aaa;">No items</td></tr>'}</tbody></table>

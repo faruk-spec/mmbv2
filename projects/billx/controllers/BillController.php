@@ -92,8 +92,12 @@ class BillController
             $subtotal += $amount;
         }
 
+        $cgstPct   = (float)($templateData['cgst_pct'] ?? 0);
+        $sgstPct   = (float)($templateData['sgst_pct'] ?? 0);
+        $cgstAmt   = round($subtotal * $cgstPct / 100, 2);
+        $sgstAmt   = round($subtotal * $sgstPct / 100, 2);
         $taxAmount = round($subtotal * $taxPct / 100, 2);
-        $total     = round($subtotal + $taxAmount - $discount, 2);
+        $total     = round($subtotal + $taxAmount + $cgstAmt + $sgstAmt - $discount, 2);
 
         $id = $this->model->create([
             'user_id'         => $userId,

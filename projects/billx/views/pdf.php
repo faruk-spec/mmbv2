@@ -136,6 +136,7 @@ body { margin: 0; padding: 0; background: #fff; font-family: 'Inter', Arial, san
     <div style="font-size:15px;font-weight:700;letter-spacing:3px;text-transform:uppercase;"><?= htmlspecialchars($bill['from_name']) ?></div>
     <?php if ($bill['from_address']): ?><div style="font-size:9.5px;color:#444;margin-top:2px;line-height:1.4;"><?= htmlspecialchars(str_replace("\n",' | ',$bill['from_address'])) ?></div><?php endif; ?>
     <?php if ($bill['from_phone']): ?><div style="font-size:9.5px;color:#444;">Tel: <?= htmlspecialchars($bill['from_phone']) ?></div><?php endif; ?>
+    <?php if ($bill['from_email']): ?><div style="font-size:9.5px;color:#444;"><?= htmlspecialchars($bill['from_email']) ?></div><?php endif; ?>
   </div>
   <div style="border-top:1px dashed #888;margin:6px 0;"></div>
   <div style="text-align:center;font-size:11px;font-weight:700;letter-spacing:5px;margin:4px 0;">RECEIPT</div>
@@ -205,7 +206,8 @@ body { margin: 0; padding: 0; background: #fff; font-family: 'Inter', Arial, san
       <div>
         <div style="font-size:20px;font-weight:700;letter-spacing:0.5px;"><?= htmlspecialchars($bill['from_name']) ?></div>
         <?php if ($bill['from_address']): ?><div style="font-size:10px;opacity:.85;margin-top:4px;line-height:1.5;"><?= htmlspecialchars(str_replace("\n",' | ',$bill['from_address'])) ?></div><?php endif; ?>
-        <?php if ($bill['from_phone']): ?><div style="font-size:10px;opacity:.85;">Tel: <?= htmlspecialchars($bill['from_phone']) ?></div><?php endif; ?>
+        <?php if ($bill['from_phone']): ?><div style="font-size:10px;opacity:.8;">Tel: <?= htmlspecialchars($bill['from_phone']) ?></div><?php endif; ?>
+        <?php if ($bill['from_email']): ?><div style="font-size:10px;opacity:.8;"><?= htmlspecialchars($bill['from_email']) ?></div><?php endif; ?>
       </div>
       <div style="text-align:right;">
         <div style="font-size:16px;font-weight:700;letter-spacing:2px;text-transform:uppercase;opacity:.9;">SALARY SLIP</div>
@@ -219,6 +221,9 @@ body { margin: 0; padding: 0; background: #fff; font-family: 'Inter', Arial, san
       <div>
         <div style="font-size:9.5px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">Employee Name</div>
         <div style="font-weight:600;font-size:13px;"><?= htmlspecialchars($bill['to_name']) ?></div>
+        <?php if ($bill['to_phone']): ?><div style="font-size:10px;color:#6b7280;">Tel: <?= htmlspecialchars($bill['to_phone']) ?></div><?php endif; ?>
+        <?php if ($bill['to_address']): ?><div style="font-size:10px;color:#6b7280;"><?= htmlspecialchars(str_replace("\n",', ',$bill['to_address'])) ?></div><?php endif; ?>
+        <?php if ($bill['to_email']): ?><div style="font-size:10px;color:#6b7280;"><?= htmlspecialchars($bill['to_email']) ?></div><?php endif; ?>
       </div>
       <div>
         <div style="font-size:9.5px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">Designation</div>
@@ -317,6 +322,7 @@ body { margin: 0; padding: 0; background: #fff; font-family: 'Inter', Arial, san
         <div style="font-size:20px;font-weight:700;"><?= htmlspecialchars($bill['from_name']) ?></div>
         <?php if ($bill['from_address']): ?><div style="font-size:10px;opacity:.8;margin-top:3px;line-height:1.5;"><?= htmlspecialchars(str_replace("\n",', ',$bill['from_address'])) ?></div><?php endif; ?>
         <?php if ($bill['from_phone']): ?><div style="font-size:10px;opacity:.8;">Tel: <?= htmlspecialchars($bill['from_phone']) ?></div><?php endif; ?>
+        <?php if ($bill['from_email']): ?><div style="font-size:10px;opacity:.8;"><?= htmlspecialchars($bill['from_email']) ?></div><?php endif; ?>
       </div>
       <div style="text-align:right;">
         <div style="font-size:11px;opacity:.8;">Receipt #</div>
@@ -332,6 +338,8 @@ body { margin: 0; padding: 0; background: #fff; font-family: 'Inter', Arial, san
         <div style="font-size:9.5px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">Customer</div>
         <div style="font-weight:600;font-size:13px;"><?= htmlspecialchars($bill['to_name']) ?></div>
         <?php if ($bill['to_phone']): ?><div style="font-size:10px;color:#555;">Tel: <?= htmlspecialchars($bill['to_phone']) ?></div><?php endif; ?>
+        <?php if ($bill['to_address']): ?><div style="font-size:10px;color:#555;"><?= htmlspecialchars(str_replace("\n",', ',$bill['to_address'])) ?></div><?php endif; ?>
+        <?php if ($bill['to_email']): ?><div style="font-size:10px;color:#555;"><?= htmlspecialchars($bill['to_email']) ?></div><?php endif; ?>
       </div>
       <div>
         <div style="font-size:9.5px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">Vehicle</div>
@@ -402,6 +410,7 @@ body { margin: 0; padding: 0; background: #fff; font-family: 'Inter', Arial, san
         <div style="font-size:20px;font-weight:700;"><?= htmlspecialchars($bill['from_name']) ?></div>
         <?php if ($bill['from_address']): ?><div style="font-size:10px;opacity:.8;margin-top:3px;"><?= htmlspecialchars(str_replace("\n",' | ',$bill['from_address'])) ?></div><?php endif; ?>
         <?php if ($bill['from_phone']): ?><div style="font-size:10px;opacity:.8;">Tel: <?= htmlspecialchars($bill['from_phone']) ?></div><?php endif; ?>
+        <?php if ($bill['from_email']): ?><div style="font-size:10px;opacity:.8;"><?= htmlspecialchars($bill['from_email']) ?></div><?php endif; ?>
       </div>
       <div style="text-align:right;">
         <div style="font-size:10px;opacity:.8;">Receipt #</div>
@@ -416,6 +425,8 @@ body { margin: 0; padding: 0; background: #fff; font-family: 'Inter', Arial, san
         <div style="font-size:9.5px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">Passenger</div>
         <div style="font-weight:600;font-size:13px;"><?= htmlspecialchars($bill['to_name']) ?></div>
         <?php if ($bill['to_phone']): ?><div style="font-size:10px;color:#555;">Tel: <?= htmlspecialchars($bill['to_phone']) ?></div><?php endif; ?>
+        <?php if ($bill['to_address']): ?><div style="font-size:10px;color:#555;"><?= htmlspecialchars(str_replace("\n",', ',$bill['to_address'])) ?></div><?php endif; ?>
+        <?php if ($bill['to_email']): ?><div style="font-size:10px;color:#555;"><?= htmlspecialchars($bill['to_email']) ?></div><?php endif; ?>
       </div>
       <?php if (!empty($td['vehicle_number'])): ?>
       <div>
@@ -487,6 +498,7 @@ body { margin: 0; padding: 0; background: #fff; font-family: 'Inter', Arial, san
     <div style="font-size:22px;font-weight:700;color:<?= htmlspecialchars($c) ?>;letter-spacing:.5px;"><?= htmlspecialchars($bill['from_name']) ?></div>
     <?php if ($bill['from_address']): ?><div style="font-size:10.5px;color:#555;margin-top:4px;"><?= htmlspecialchars(str_replace("\n",' | ',$bill['from_address'])) ?></div><?php endif; ?>
     <?php if ($bill['from_phone']): ?><div style="font-size:10.5px;color:#555;">Tel: <?= htmlspecialchars($bill['from_phone']) ?></div><?php endif; ?>
+    <?php if ($bill['from_email']): ?><div style="font-size:10.5px;color:#555;"><?= htmlspecialchars($bill['from_email']) ?></div><?php endif; ?>
     <?php if ($pan): ?><div style="font-size:10.5px;color:#555;">PAN: <b><?= htmlspecialchars($pan) ?></b></div><?php endif; ?>
   </div>
   <div style="position:relative;z-index:1;padding:10px 28px;background:#f8f9fa;border-bottom:1px solid #e4e7ec;">
@@ -502,6 +514,7 @@ body { margin: 0; padding: 0; background: #fff; font-family: 'Inter', Arial, san
       <div style="font-size:15px;font-weight:700;color:#111;"><?= htmlspecialchars($bill['to_name']) ?></div>
       <?php if ($bill['to_address']): ?><div style="font-size:10.5px;color:#555;margin-top:2px;"><?= htmlspecialchars(str_replace("\n",', ',$bill['to_address'])) ?></div><?php endif; ?>
       <?php if ($bill['to_phone']): ?><div style="font-size:10.5px;color:#555;">Tel: <?= htmlspecialchars($bill['to_phone']) ?></div><?php endif; ?>
+      <?php if ($bill['to_email']): ?><div style="font-size:10.5px;color:#555;"><?= htmlspecialchars($bill['to_email']) ?></div><?php endif; ?>
     </div>
     <?php if ($prop): ?><div style="font-size:11px;color:#555;margin-top:8px;">Property / Reference: <b><?= htmlspecialchars($prop) ?></b></div><?php endif; ?>
   </div>
@@ -566,6 +579,7 @@ body { margin: 0; padding: 0; background: #fff; font-family: 'Inter', Arial, san
         <div style="font-size:20px;font-weight:700;"><?= htmlspecialchars($bill['from_name']) ?></div>
         <?php if ($bill['from_address']): ?><div style="font-size:10px;opacity:.8;margin-top:3px;line-height:1.5;"><?= htmlspecialchars(str_replace("\n",' | ',$bill['from_address'])) ?></div><?php endif; ?>
         <?php if ($bill['from_phone']): ?><div style="font-size:10px;opacity:.8;">Tel: <?= htmlspecialchars($bill['from_phone']) ?></div><?php endif; ?>
+        <?php if ($bill['from_email']): ?><div style="font-size:10px;opacity:.8;"><?= htmlspecialchars($bill['from_email']) ?></div><?php endif; ?>
       </div>
       <div style="text-align:right;">
         <div style="font-size:10px;opacity:.8;">Invoice No.</div>
@@ -589,6 +603,7 @@ body { margin: 0; padding: 0; background: #fff; font-family: 'Inter', Arial, san
       <div><div style="font-size:9px;color:#6b7280;text-transform:uppercase;margin-bottom:1px;">Room Category</div><div style="font-weight:600;"><?= htmlspecialchars($roomCat) ?></div></div>
       <div><div style="font-size:9px;color:#6b7280;text-transform:uppercase;margin-bottom:1px;">Insurance</div><div style="font-weight:600;"><?= htmlspecialchars($insurance) ?></div></div>
       <?php if ($bill['to_phone']): ?><div><div style="font-size:9px;color:#6b7280;text-transform:uppercase;margin-bottom:1px;">Contact</div><div style="font-weight:600;"><?= htmlspecialchars($bill['to_phone']) ?></div></div><?php endif; ?>
+      <?php if ($bill['to_email']): ?><div><div style="font-size:9px;color:#6b7280;text-transform:uppercase;margin-bottom:1px;">Email</div><div style="font-weight:600;"><?= htmlspecialchars($bill['to_email']) ?></div></div><?php endif; ?>
       <?php if ($bill['to_address']): ?><div style="grid-column:span 2;"><div style="font-size:9px;color:#6b7280;text-transform:uppercase;margin-bottom:1px;">Address</div><div style="font-weight:600;"><?= htmlspecialchars($bill['to_address']) ?></div></div><?php endif; ?>
     </div>
   </div>
@@ -647,6 +662,7 @@ body { margin: 0; padding: 0; background: #fff; font-family: 'Inter', Arial, san
     <div style="font-size:24px;font-weight:700;letter-spacing:.5px;font-family:'Playfair Display','Georgia',serif;"><?= htmlspecialchars($bill['from_name']) ?></div>
     <?php if ($bill['from_address']): ?><div style="font-size:10px;opacity:.8;margin-top:5px;line-height:1.6;"><?= htmlspecialchars(str_replace("\n",' | ',$bill['from_address'])) ?></div><?php endif; ?>
     <?php if ($bill['from_phone']): ?><div style="font-size:10px;opacity:.8;">Tel: <?= htmlspecialchars($bill['from_phone']) ?></div><?php endif; ?>
+    <?php if ($bill['from_email']): ?><div style="font-size:10px;opacity:.8;"><?= htmlspecialchars($bill['from_email']) ?></div><?php endif; ?>
     <?php if ($gstin): ?><div style="font-size:10px;opacity:.8;">GSTIN: <?= htmlspecialchars($gstin) ?></div><?php endif; ?>
     <div style="font-size:11px;letter-spacing:4px;text-transform:uppercase;margin-top:10px;opacity:.85;">— <?= htmlspecialchars($typeLabel) ?> —</div>
   </div>
@@ -656,6 +672,7 @@ body { margin: 0; padding: 0; background: #fff; font-family: 'Inter', Arial, san
       <div style="font-size:15px;font-weight:700;color:#2d2508;"><?= htmlspecialchars($bill['to_name']) ?></div>
       <?php if ($bill['to_phone']): ?><div style="font-size:10px;color:#7d5a00;margin-top:2px;">Tel: <?= htmlspecialchars($bill['to_phone']) ?></div><?php endif; ?>
       <?php if ($bill['to_address']): ?><div style="font-size:10px;color:#7d5a00;"><?= htmlspecialchars(str_replace("\n",', ',$bill['to_address'])) ?></div><?php endif; ?>
+      <?php if ($bill['to_email']): ?><div style="font-size:10px;color:#7d5a00;"><?= htmlspecialchars($bill['to_email']) ?></div><?php endif; ?>
     </div>
     <div style="text-align:right;">
       <div style="font-size:9px;color:#7d5a00;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Bill Details</div>
@@ -718,6 +735,7 @@ body { margin: 0; padding: 0; background: #fff; font-family: 'Inter', Arial, san
         <div style="font-size:22px;font-weight:800;letter-spacing:-.3px;"><?= htmlspecialchars($bill['from_name']) ?></div>
         <?php if ($bill['from_address']): ?><div style="font-size:10px;opacity:.8;margin-top:3px;"><?= htmlspecialchars(str_replace("\n",' | ',$bill['from_address'])) ?></div><?php endif; ?>
         <?php if ($bill['from_phone']): ?><div style="font-size:10px;opacity:.8;">Tel: <?= htmlspecialchars($bill['from_phone']) ?></div><?php endif; ?>
+        <?php if ($bill['from_email']): ?><div style="font-size:10px;opacity:.8;"><?= htmlspecialchars($bill['from_email']) ?></div><?php endif; ?>
       </div>
       <div style="text-align:right;">
         <div style="font-size:10px;opacity:.8;">Invoice #</div>
@@ -732,6 +750,8 @@ body { margin: 0; padding: 0; background: #fff; font-family: 'Inter', Arial, san
         <div style="font-size:9.5px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">Member Name</div>
         <div style="font-weight:700;font-size:14px;"><?= htmlspecialchars($bill['to_name']) ?></div>
         <?php if ($bill['to_phone']): ?><div style="font-size:10px;color:#555;">Tel: <?= htmlspecialchars($bill['to_phone']) ?></div><?php endif; ?>
+        <?php if ($bill['to_address']): ?><div style="font-size:10px;color:#555;"><?= htmlspecialchars(str_replace("\n",', ',$bill['to_address'])) ?></div><?php endif; ?>
+        <?php if ($bill['to_email']): ?><div style="font-size:10px;color:#555;"><?= htmlspecialchars($bill['to_email']) ?></div><?php endif; ?>
       </div>
       <?php if (!empty($td['member_id'])): ?>
       <div>
