@@ -1347,6 +1347,35 @@
                         </div>
                     </div>
                     
+                    <!-- BillX -->
+                    <div class="menu-item menu-dropdown">
+                        <div class="menu-dropdown-toggle">
+                            <div class="left">
+                                <i class="fas fa-file-invoice"></i>
+                                <span>BillX</span>
+                            </div>
+                            <i class="fas fa-chevron-down arrow"></i>
+                        </div>
+                        <div class="menu-dropdown-content">
+                            <a href="/admin/projects/billx" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/billx') === 0 && ($_SERVER['REQUEST_URI'] ?? '') === '/admin/projects/billx' ? 'active' : '' ?>">
+                                <i class="fas fa-chart-line"></i>
+                                <span>Overview</span>
+                            </a>
+                            <a href="/admin/projects/billx/bills" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/billx/bills') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-list"></i>
+                                <span>All Bills</span>
+                            </a>
+                            <a href="/admin/projects/billx/bills/export" class="menu-link">
+                                <i class="fas fa-file-csv"></i>
+                                <span>Export CSV</span>
+                            </a>
+                            <a href="/admin/projects/billx/settings" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/billx/settings') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-cog"></i>
+                                <span>Settings</span>
+                            </a>
+                        </div>
+                    </div>
+
                     <!-- WhatsApp API -->
                     <div class="menu-item menu-dropdown">
                         <div class="menu-dropdown-toggle">
