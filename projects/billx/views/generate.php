@@ -1366,11 +1366,24 @@ async function _downloadFromPreviewThenSave(){
         const billNo=(document.getElementById('bill_number').value||'bill').replace(/[^a-zA-Z0-9._-]/g,'-');
         const typeLbl=(TYPE_LABELS[document.getElementById('bill_type').value]||'bill').replace(/[^a-zA-Z0-9._-]/g,'-');
         const filename=typeLbl+'-'+billNo+'.pdf';
+
+        // Scroll the preview wrapper so the top of the bill is in view
+        const wrapper=document.getElementById('billPreviewWrapper');
+        if(wrapper) wrapper.scrollTop=0;
+        // Wait for two paint frames to ensure layout is settled
+        await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+
+        // Measure full content dimensions (not clipped by the scroll container)
+        const fullW=el.scrollWidth||el.offsetWidth;
+        const fullH=el.scrollHeight||el.offsetHeight;
+        const winW=Math.max(document.documentElement.scrollWidth,fullW);
+        const winH=Math.max(document.documentElement.scrollHeight,fullH);
+
         const canvas=await html2canvas(el,{
-            scale:2,useCORS:true,logging:false,backgroundColor:'#ffffff',
-            scrollX:0,scrollY:0,
-            width:el.scrollWidth,height:el.scrollHeight,
-            windowWidth:el.scrollWidth,windowHeight:el.scrollHeight
+            scale:2,useCORS:true,allowTaint:true,logging:false,backgroundColor:'#ffffff',
+            scrollX:0,scrollY:0,x:0,y:0,
+            width:fullW,height:fullH,
+            windowWidth:winW,windowHeight:winH
         });
         const imgData=canvas.toDataURL('image/png');
         const jsPDF=window.jspdf.jsPDF;
