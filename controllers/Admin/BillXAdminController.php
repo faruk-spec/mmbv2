@@ -12,16 +12,19 @@ use Core\Database;
 use Core\Auth;
 use Core\Security;
 use Core\Logger;
+use Projects\BillX\Models\BillModel;
 
 class BillXAdminController extends BaseController
 {
     private Database $db;
+    private BillModel $model;
 
     public function __construct()
     {
         $this->requireAuth();
         $this->requireAdmin();
-        $this->db = Database::getInstance();
+        $this->db    = Database::getInstance();
+        $this->model = new BillModel();
     }
 
     // ------------------------------------------------------------------ //
@@ -30,14 +33,16 @@ class BillXAdminController extends BaseController
 
     public function overview(): void
     {
-        $stats      = $this->getStats();
-        $byType     = $this->getBillsByType();
-        $recentBills = $this->getRecentBills(10);
-        $activeUsers = $this->getActiveUsersCount();
+        $stats        = $this->getStats();
+        $revenue      = $this->model->getRevenueStats();
+        $byType       = $this->getBillsByType();
+        $recentBills  = $this->getRecentBills(10);
+        $activeUsers  = $this->getActiveUsersCount();
 
         $this->view('admin/projects/billx/overview', [
             'title'       => 'BillX Admin — Overview',
             'stats'       => $stats,
+            'revenue'     => $revenue,
             'byType'      => $byType,
             'recentBills' => $recentBills,
             'activeUsers' => $activeUsers,
@@ -54,35 +59,30 @@ class BillXAdminController extends BaseController
         $page     = max(1, (int)($_GET['page'] ?? 1));
         $perPage  = 30;
         $offset   = ($page - 1) * $perPage;
-        $billType = trim($_GET['bill_type'] ?? '');
 
-        $total = 0;
-        $bills = [];
+        $filters = [
+            'bill_type'   => trim($_GET['bill_type']    ?? ''),
+            'search'      => trim($_GET['search']       ?? ''),
+            'user_search' => trim($_GET['user_search']  ?? ''),
+            'date_from'   => trim($_GET['date_from']    ?? ''),
+            'date_to'     => trim($_GET['date_to']      ?? ''),
+        ];
 
-        try {
-            $where  = '1=1';
-            $params = [];
-
-            if ($billType !== '') {
-                $where   .= ' AND b.bill_type = ?';
-                $params[] = $billType;
+        // Validate date filters
+        foreach (['date_from', 'date_to'] as $k) {
+            if ($filters[$k] !== '') {
+                $d = \DateTime::createFromFormat('Y-m-d', $filters[$k]);
+                if (!$d || $d->format('Y-m-d') !== $filters[$k]) {
+                    $filters[$k] = '';
+                }
             }
+        }
 
-            $countRow = $this->db->fetch(
-                "SELECT COUNT(*) AS c FROM billx_bills b WHERE $where",
-                $params
-            );
-            $total = (int)($countRow['c'] ?? 0);
-
-            $bills = $this->db->fetchAll(
-                "SELECT b.*, u.name AS user_name, u.email AS user_email
-                   FROM billx_bills b
-                   LEFT JOIN users u ON b.user_id = u.id
-                  WHERE $where
-                  ORDER BY b.created_at DESC
-                  LIMIT $perPage OFFSET $offset",
-                $params
-            ) ?: [];
+        $total    = 0;
+        $bills    = [];
+        try {
+            $total = $this->model->countSearch($filters);
+            $bills = $this->model->searchBills($filters, $perPage, $offset);
         } catch (\Exception $e) {
             Logger::error('BillXAdmin bills query: ' . $e->getMessage());
         }
@@ -90,19 +90,65 @@ class BillXAdminController extends BaseController
         $billTypes = $this->getBillTypesList();
 
         $this->view('admin/projects/billx/bills', [
-            'title'    => 'BillX Admin — All Bills',
-            'bills'    => $bills,
-            'total'    => $total,
-            'page'     => $page,
-            'perPage'  => $perPage,
-            'billType' => $billType,
-            'billTypes'=> $billTypes,
+            'title'     => 'BillX Admin — All Bills',
+            'bills'     => $bills,
+            'total'     => $total,
+            'page'      => $page,
+            'perPage'   => $perPage,
+            'filters'   => $filters,
+            'billTypes' => $billTypes,
             'dbConnected' => true,
         ]);
     }
 
     // ------------------------------------------------------------------ //
-    //  Delete bill (POST)                                                  //
+    //  View single bill (GET)                                              //
+    // ------------------------------------------------------------------ //
+
+    public function viewBill(int $id): void
+    {
+        $bill = $this->model->getById($id);
+        if (!$bill) {
+            http_response_code(404);
+            $this->view('admin/projects/billx/bills', [
+                'title'     => 'BillX Admin — Bill Not Found',
+                'bills'     => [],
+                'total'     => 0,
+                'page'      => 1,
+                'perPage'   => 30,
+                'filters'   => [],
+                'billTypes' => [],
+                'dbConnected' => true,
+                'error'     => 'Bill #' . $id . ' not found.',
+            ]);
+            return;
+        }
+
+        $bill['items']         = json_decode($bill['items'] ?? '[]', true) ?: [];
+        $bill['template_data'] = json_decode($bill['template_data'] ?? '{}', true) ?: [];
+
+        // Fetch the user info separately if not already joined
+        $userRow = null;
+        try {
+            $userRow = $this->db->fetch(
+                "SELECT name, email FROM users WHERE id = ?",
+                [(int)$bill['user_id']]
+            );
+        } catch (\Exception $e) {}
+
+        $config = require BASE_PATH . '/projects/billx/config.php';
+
+        $this->view('admin/projects/billx/view', [
+            'title'      => 'BillX Admin — Bill #' . htmlspecialchars($bill['bill_number']),
+            'bill'       => $bill,
+            'user'       => $userRow,
+            'config'     => $config,
+            'dbConnected'=> true,
+        ]);
+    }
+
+    // ------------------------------------------------------------------ //
+    //  Delete single bill (POST)                                           //
     // ------------------------------------------------------------------ //
 
     public function deleteBill(): void
@@ -129,30 +175,157 @@ class BillXAdminController extends BaseController
     }
 
     // ------------------------------------------------------------------ //
+    //  Bulk delete (POST)                                                  //
+    // ------------------------------------------------------------------ //
+
+    public function bulkDelete(): void
+    {
+        if (!Security::validateCsrfToken($_POST['_csrf_token'] ?? '')) {
+            $this->redirect('/admin/projects/billx/bills?error=invalid_token');
+            return;
+        }
+
+        $rawIds = $_POST['ids'] ?? [];
+        if (!is_array($rawIds) || empty($rawIds)) {
+            $this->redirect('/admin/projects/billx/bills?error=no_ids');
+            return;
+        }
+
+        $ids = array_filter(array_map('intval', $rawIds), fn($id) => $id > 0);
+        if (empty($ids)) {
+            $this->redirect('/admin/projects/billx/bills?error=invalid_ids');
+            return;
+        }
+
+        // Limit bulk delete to 200 records at once to prevent accidental mass deletions
+        // and to avoid long-running queries
+        $ids = array_slice($ids, 0, 200);
+
+        try {
+            $count = $this->model->adminDeleteMultiple($ids);
+            Logger::activity(Auth::id(), 'admin_bulk_delete_bills', ['count' => $count, 'ids' => implode(',', $ids)]);
+            $this->redirect('/admin/projects/billx/bills?bulk_deleted=' . $count);
+        } catch (\Exception $e) {
+            Logger::error('BillXAdmin bulkDelete: ' . $e->getMessage());
+            $this->redirect('/admin/projects/billx/bills?error=db_error');
+        }
+    }
+
+    // ------------------------------------------------------------------ //
+    //  Export CSV (GET)                                                    //
+    // ------------------------------------------------------------------ //
+
+    public function exportCsv(): void
+    {
+        $filters = [
+            'bill_type'   => trim($_GET['bill_type']    ?? ''),
+            'search'      => trim($_GET['search']       ?? ''),
+            'user_search' => trim($_GET['user_search']  ?? ''),
+            'date_from'   => trim($_GET['date_from']    ?? ''),
+            'date_to'     => trim($_GET['date_to']      ?? ''),
+        ];
+
+        // Validate date filters
+        foreach (['date_from', 'date_to'] as $k) {
+            if ($filters[$k] !== '') {
+                $d = \DateTime::createFromFormat('Y-m-d', $filters[$k]);
+                if (!$d || $d->format('Y-m-d') !== $filters[$k]) {
+                    $filters[$k] = '';
+                }
+            }
+        }
+
+        try {
+            $rows = $this->model->getAllForExport($filters);
+        } catch (\Exception $e) {
+            Logger::error('BillXAdmin exportCsv: ' . $e->getMessage());
+            http_response_code(500);
+            echo "Export failed.";
+            return;
+        }
+
+        $filename = 'billx-export-' . date('Ymd-His') . '.csv';
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Cache-Control: no-cache, no-store, must-revalidate');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+
+        $out = fopen('php://output', 'w');
+        // BOM for Excel UTF-8 compatibility
+        fwrite($out, "\xEF\xBB\xBF");
+        fputcsv($out, [
+            'ID', 'Bill Number', 'Bill Type', 'Bill Date',
+            'From (Issuer)', 'To (Recipient)',
+            'Subtotal', 'Tax Amount', 'Discount', 'Total Amount', 'Currency',
+            'Status', 'User Name', 'User Email', 'Created At',
+        ]);
+
+        foreach ($rows as $row) {
+            fputcsv($out, [
+                $row['id'],
+                $row['bill_number'],
+                $row['bill_type'],
+                $row['bill_date'],
+                $row['from_name'],
+                $row['to_name'],
+                $row['subtotal'],
+                $row['tax_amount'],
+                $row['discount_amount'],
+                $row['total_amount'],
+                $row['currency'],
+                $row['status'],
+                $row['user_name'] ?? '',
+                $row['user_email'] ?? '',
+                $row['created_at'],
+            ]);
+        }
+        fclose($out);
+
+        Logger::activity(Auth::id(), 'admin_billx_export_csv', ['rows' => count($rows)]);
+        exit;
+    }
+
+    // ------------------------------------------------------------------ //
     //  Settings (GET / POST)                                               //
     // ------------------------------------------------------------------ //
 
     public function settings(): void
     {
         $saved = false;
+        $error = null;
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!Security::validateCsrfToken($_POST['_csrf_token'] ?? '')) {
                 $this->view('admin/projects/billx/settings', [
-                    'title'      => 'BillX Admin — Settings',
-                    'error'      => 'Invalid CSRF token.',
-                    'dbConnected'=> true,
-                    'saved'      => false,
+                    'title'       => 'BillX Admin — Settings',
+                    'error'       => 'Invalid CSRF token.',
+                    'dbConnected' => true,
+                    'saved'       => false,
+                    'settings'    => $this->loadSettings(),
                 ]);
                 return;
             }
+
+            // Collect and persist settings
+            $newSettings = [
+                'max_bills_per_user' => max(1, min(10000, (int)($_POST['max_bills_per_user'] ?? 500))),
+                'allowed_bill_types' => array_keys($_POST['allowed_types'] ?? []),
+                'default_currency'   => in_array($_POST['default_currency'] ?? 'INR', ['INR','USD','EUR','GBP'], true)
+                    ? $_POST['default_currency'] : 'INR',
+                'require_policy_agree' => !empty($_POST['require_policy_agree']) ? 1 : 0,
+            ];
+            $this->saveSettings($newSettings);
             $saved = true;
             Logger::activity(Auth::id(), 'admin_billx_settings_updated');
         }
 
         $this->view('admin/projects/billx/settings', [
-            'title'      => 'BillX Admin — Settings',
-            'dbConnected'=> true,
-            'saved'      => $saved,
+            'title'       => 'BillX Admin — Settings',
+            'dbConnected' => true,
+            'saved'       => $saved,
+            'error'       => $error,
+            'settings'    => $this->loadSettings(),
         ]);
     }
 
@@ -233,5 +406,67 @@ class BillXAdminController extends BaseController
             Logger::error('BillXAdmin getBillTypesList: ' . $e->getMessage());
             return [];
         }
+    }
+
+    private function loadSettings(): array
+    {
+        $defaults = [
+            'max_bills_per_user'   => 500,
+            'allowed_bill_types'   => [],  // empty = all allowed
+            'default_currency'     => 'INR',
+            'require_policy_agree' => 1,
+        ];
+        try {
+            $row = $this->db->fetch(
+                "SELECT setting_value FROM billx_settings WHERE setting_key = 'admin_config'"
+            );
+            if ($row && !empty($row['setting_value'])) {
+                $saved = json_decode($row['setting_value'], true);
+                if (is_array($saved)) {
+                    return array_merge($defaults, $saved);
+                }
+            }
+        } catch (\Exception $e) {
+            // Table may not exist yet — silently use defaults
+        }
+        return $defaults;
+    }
+
+    private function saveSettings(array $data): void
+    {
+        try {
+            $this->ensureSettingsTable();
+            $json = json_encode($data);
+            $existing = $this->db->fetch(
+                "SELECT id FROM billx_settings WHERE setting_key = 'admin_config'"
+            );
+            if ($existing) {
+                $this->db->query(
+                    "UPDATE billx_settings SET setting_value = ?, updated_at = NOW() WHERE setting_key = 'admin_config'",
+                    [$json]
+                );
+            } else {
+                $this->db->query(
+                    "INSERT INTO billx_settings (setting_key, setting_value) VALUES ('admin_config', ?)",
+                    [$json]
+                );
+            }
+        } catch (\Exception $e) {
+            Logger::error('BillXAdmin saveSettings: ' . $e->getMessage());
+        }
+    }
+
+    private function ensureSettingsTable(): void
+    {
+        $this->db->query("
+            CREATE TABLE IF NOT EXISTS `billx_settings` (
+                `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                `setting_key` VARCHAR(100) NOT NULL UNIQUE,
+                `setting_value` TEXT NULL,
+                `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                `updated_at` TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP,
+                INDEX `idx_billx_settings_key` (`setting_key`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        ");
     }
 }

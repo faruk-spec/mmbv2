@@ -380,8 +380,12 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
 }
 @media (max-width: 900px) {
     #generateLayout { height: auto !important; grid-template-columns: 1fr !important; }
-    #leftFormPanel  { overflow-y: visible !important; height: auto !important; }
-    #rightPreviewPanel { height: 480px !important; }
+    #leftFormPanel  { overflow-y: visible !important; height: auto !important; max-height: none !important; }
+    #rightPreviewPanel { height: 520px !important; min-height: 400px; }
+}
+@media (max-width: 480px) {
+    #generateLayout { gap: 10px !important; }
+    #rightPreviewPanel { height: 420px !important; }
 }
 /* Compact form overrides for generate page */
 #billForm .form-input,

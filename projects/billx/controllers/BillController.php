@@ -45,28 +45,59 @@ class BillController
         $config = require PROJECT_PATH . '/config.php';
 
         $billType   = Security::sanitize($_POST['bill_type']   ?? 'general');
-        $billNumber = Security::sanitize($_POST['bill_number'] ?? '');
-        $billDate   = Security::sanitize($_POST['bill_date']   ?? date('Y-m-d'));
-        $fromName   = Security::sanitize($_POST['from_name']   ?? '');
-        $fromAddr   = Security::sanitize($_POST['from_address'] ?? '');
-        $fromPhone  = Security::sanitize($_POST['from_phone']  ?? '');
-        $fromEmail  = Security::sanitize($_POST['from_email']  ?? '');
-        $toName     = Security::sanitize($_POST['to_name']     ?? '');
-        $toAddr     = Security::sanitize($_POST['to_address']  ?? '');
-        $toPhone    = Security::sanitize($_POST['to_phone']    ?? '');
-        $toEmail    = Security::sanitize($_POST['to_email']    ?? '');
-        $notes      = Security::sanitize($_POST['notes']       ?? '');
-        $currency   = Security::sanitize($_POST['currency']    ?? 'INR');
-        $taxPct     = (float)($_POST['tax_percent']      ?? 0);
-        $discount   = (float)($_POST['discount_amount']  ?? 0);
+        $billNumber = Security::sanitize(substr($_POST['bill_number'] ?? '', 0, 50));
+        $billDate   = $_POST['bill_date'] ?? date('Y-m-d');
+        $fromName   = Security::sanitize(substr($_POST['from_name']    ?? '', 0, 255));
+        $fromAddr   = Security::sanitize(substr($_POST['from_address'] ?? '', 0, 1000));
+        $fromPhone  = Security::sanitize(substr($_POST['from_phone']   ?? '', 0, 50));
+        $fromEmail  = Security::sanitize(substr($_POST['from_email']   ?? '', 0, 255));
+        $toName     = Security::sanitize(substr($_POST['to_name']      ?? '', 0, 255));
+        $toAddr     = Security::sanitize(substr($_POST['to_address']   ?? '', 0, 1000));
+        $toPhone    = Security::sanitize(substr($_POST['to_phone']     ?? '', 0, 50));
+        $toEmail    = Security::sanitize(substr($_POST['to_email']     ?? '', 0, 255));
+        $notes      = Security::sanitize(substr($_POST['notes']        ?? '', 0, 2000));
+        $currency   = Security::sanitize($_POST['currency'] ?? 'INR');
+        $taxPct     = (float)($_POST['tax_percent']     ?? 0);
+        $discount   = (float)($_POST['discount_amount'] ?? 0);
         $saveAction = Security::sanitize($_POST['save_action'] ?? 'view');
+
+        // Validate bill_date is a real calendar date in YYYY-MM-DD format
+        $parsedDate = \DateTime::createFromFormat('Y-m-d', $billDate);
+        if (!$parsedDate || $parsedDate->format('Y-m-d') !== $billDate) {
+            $billDate = date('Y-m-d');
+        }
+
+        // Clamp numeric fields to sane ranges
+        $taxPct   = max(0.0, min(100.0, $taxPct));
+        $discount = max(0.0, $discount);
+
+        // Validate currency against allowed list
+        $allowedCurrencies = ['INR', 'USD', 'EUR', 'GBP'];
+        if (!in_array($currency, $allowedCurrencies, true)) {
+            $currency = 'INR';
+        }
+
+        // Validate save_action
+        if (!in_array($saveAction, ['save', 'download', 'view'], true)) {
+            $saveAction = 'view';
+        }
+
+        // Validate email fields
+        if ($fromEmail !== '' && !filter_var($fromEmail, FILTER_VALIDATE_EMAIL)) {
+            $fromEmail = '';
+        }
+        if ($toEmail !== '' && !filter_var($toEmail, FILTER_VALIDATE_EMAIL)) {
+            $toEmail = '';
+        }
 
         // Collect template_data from td_* POST fields (type-specific extras: CGST, SGST, vehicle, etc.)
         // Only accept scalar string values to prevent injection of unexpected data types.
+        // Each field is truncated to 500 characters to prevent oversized DB entries.
+        $maxTdFieldLen = 500;
         $templateData = [];
         foreach ($_POST as $k => $v) {
             if (strncmp($k, 'td_', 3) === 0 && is_string($v)) {
-                $templateData[substr($k, 3)] = Security::sanitize($v);
+                $templateData[substr($k, 3)] = Security::sanitize(substr($v, 0, $maxTdFieldLen));
             }
         }
 
@@ -80,12 +111,14 @@ class BillController
         $quantities   = $_POST['item_qty']         ?? [];
         $rates        = $_POST['item_rate']        ?? [];
 
+        // Limit items to a reasonable count (prevent abuse)
+        $maxItems = 100;
         $items    = [];
         $subtotal = 0.0;
-        foreach ($descriptions as $i => $desc) {
-            $desc   = Security::sanitize($desc);
-            $qty    = (float)($quantities[$i] ?? 1);
-            $rate   = (float)($rates[$i]      ?? 0);
+        foreach (array_slice((array)$descriptions, 0, $maxItems) as $i => $desc) {
+            $desc   = Security::sanitize(substr((string)$desc, 0, 500));
+            $qty    = max(0.0, (float)($quantities[$i] ?? 1));
+            $rate   = max(0.0, (float)($rates[$i]      ?? 0));
             $amount = $qty * $rate;
             if ($desc === '' && $rate == 0) continue;
             $items[] = ['description' => $desc, 'qty' => $qty, 'rate' => $rate, 'amount' => $amount];
@@ -94,6 +127,8 @@ class BillController
 
         $cgstPct   = (float)($templateData['cgst_pct'] ?? 0);
         $sgstPct   = (float)($templateData['sgst_pct'] ?? 0);
+        $cgstPct   = max(0.0, min(50.0, $cgstPct));
+        $sgstPct   = max(0.0, min(50.0, $sgstPct));
         $cgstAmt   = round($subtotal * $cgstPct / 100, 2);
         $sgstAmt   = round($subtotal * $sgstPct / 100, 2);
         $taxAmount = round($subtotal * $taxPct / 100, 2);
@@ -228,7 +263,7 @@ class BillController
             return;
         }
 
-        Logger::activity($userId, 'billx_bill_pdf_view', ['bill_id' => $id]);
+        Logger::activity($userId, 'billx_bill_download', ['bill_id' => $id]);
         header('Location: /projects/billx/pdf/' . $id . '?download=1');
     }
 

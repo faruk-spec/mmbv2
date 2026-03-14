@@ -15,8 +15,8 @@
     </div>
 </div>
 
-<!-- Stats -->
-<div class="grid grid-4" style="margin-bottom:24px;">
+<!-- Stats Row 1: Counts -->
+<div class="grid grid-4" style="margin-bottom:20px;">
     <div class="stat-card" style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:20px;">
         <div style="font-size:2rem;font-weight:700;color:#f59e0b;"><?= number_format((int)($stats['total'] ?? 0)) ?></div>
         <div style="color:var(--text-secondary);font-size:13px;">Total Bills Generated</div>
@@ -34,6 +34,30 @@
         <div style="color:var(--text-secondary);font-size:13px;">Active Users</div>
     </div>
 </div>
+
+<!-- Stats Row 2: Revenue -->
+<?php if (!empty($revenue)): ?>
+<div class="grid grid-3" style="margin-bottom:24px;">
+    <div class="stat-card" style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:20px;">
+        <div style="font-size:1.6rem;font-weight:700;color:#f59e0b;">
+            ₹<?= number_format((float)($revenue['total_revenue'] ?? 0), 0) ?>
+        </div>
+        <div style="color:var(--text-secondary);font-size:13px;">Total Revenue (All Bills)</div>
+    </div>
+    <div class="stat-card" style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:20px;">
+        <div style="font-size:1.6rem;font-weight:700;color:var(--cyan);">
+            ₹<?= number_format((float)($revenue['today_revenue'] ?? 0), 0) ?>
+        </div>
+        <div style="color:var(--text-secondary);font-size:13px;">Revenue Today</div>
+    </div>
+    <div class="stat-card" style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:20px;">
+        <div style="font-size:1.6rem;font-weight:700;color:var(--green);">
+            ₹<?= number_format((float)($revenue['month_revenue'] ?? 0), 0) ?>
+        </div>
+        <div style="color:var(--text-secondary);font-size:13px;">Revenue This Month</div>
+    </div>
+</div>
+<?php endif; ?>
 
 <div class="grid grid-2" style="gap:20px;">
 
@@ -83,6 +107,7 @@
                         <th>Type</th>
                         <th>Amount</th>
                         <th>Date</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -95,6 +120,10 @@
                         <td><span class="badge badge-info"><?= View::e($bill['bill_type']) ?></span></td>
                         <td style="font-weight:600;"><?= View::e($bill['currency'] ?? 'INR') ?> <?= number_format((float)$bill['total_amount'], 2) ?></td>
                         <td style="font-size:12px;"><?= date('M j, Y', strtotime($bill['created_at'])) ?></td>
+                        <td>
+                            <a href="/admin/projects/billx/bills/view/<?= (int)$bill['id'] ?>"
+                               class="btn btn-sm btn-secondary" title="View"><i class="fas fa-eye"></i></a>
+                        </td>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>

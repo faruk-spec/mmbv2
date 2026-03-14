@@ -124,4 +124,104 @@ class BillModel
     {
         return (bool)$this->db->query("DELETE FROM billx_bills WHERE id = ?", [$id]);
     }
+
+    public function adminDeleteMultiple(array $ids): int
+    {
+        if (empty($ids)) {
+            return 0;
+        }
+        $ids = array_filter(array_map('intval', $ids), fn($id) => $id > 0);
+        if (empty($ids)) {
+            return 0;
+        }
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $this->db->query(
+            "DELETE FROM billx_bills WHERE id IN ($placeholders)",
+            array_values($ids)
+        );
+        return $stmt->rowCount();
+    }
+
+    public function searchBills(array $filters, int $limit = 30, int $offset = 0): array
+    {
+        [$where, $params] = $this->buildSearchWhere($filters);
+        return $this->db->fetchAll(
+            "SELECT b.*, u.name AS user_name, u.email AS user_email
+               FROM billx_bills b
+               LEFT JOIN users u ON b.user_id = u.id
+              WHERE $where
+              ORDER BY b.created_at DESC
+              LIMIT ? OFFSET ?",
+            array_merge($params, [$limit, $offset])
+        ) ?: [];
+    }
+
+    public function countSearch(array $filters): int
+    {
+        [$where, $params] = $this->buildSearchWhere($filters);
+        $r = $this->db->fetch(
+            "SELECT COUNT(*) AS c FROM billx_bills b WHERE $where",
+            $params
+        );
+        return (int)($r['c'] ?? 0);
+    }
+
+    private function buildSearchWhere(array $filters): array
+    {
+        $where  = '1=1';
+        $params = [];
+        if (!empty($filters['bill_type'])) {
+            $where   .= ' AND b.bill_type = ?';
+            $params[] = $filters['bill_type'];
+        }
+        if (!empty($filters['search'])) {
+            $like     = '%' . $filters['search'] . '%';
+            $where   .= ' AND (b.bill_number LIKE ? OR b.from_name LIKE ? OR b.to_name LIKE ?)';
+            $params[] = $like;
+            $params[] = $like;
+            $params[] = $like;
+        }
+        if (!empty($filters['user_search'])) {
+            $like     = '%' . $filters['user_search'] . '%';
+            $where   .= ' AND (u.name LIKE ? OR u.email LIKE ?)';
+            $params[] = $like;
+            $params[] = $like;
+        }
+        if (!empty($filters['date_from'])) {
+            $where   .= ' AND DATE(b.created_at) >= ?';
+            $params[] = $filters['date_from'];
+        }
+        if (!empty($filters['date_to'])) {
+            $where   .= ' AND DATE(b.created_at) <= ?';
+            $params[] = $filters['date_to'];
+        }
+        return [$where, $params];
+    }
+
+    public function getRevenueStats(): array
+    {
+        $r = $this->db->fetch(
+            "SELECT
+                COALESCE(SUM(total_amount), 0) AS total_revenue,
+                COALESCE(SUM(CASE WHEN DATE(created_at) = CURDATE() THEN total_amount ELSE 0 END), 0) AS today_revenue,
+                COALESCE(SUM(CASE WHEN MONTH(created_at) = MONTH(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE()) THEN total_amount ELSE 0 END), 0) AS month_revenue
+             FROM billx_bills"
+        );
+        return $r ?: ['total_revenue' => 0, 'today_revenue' => 0, 'month_revenue' => 0];
+    }
+
+    public function getAllForExport(array $filters = []): array
+    {
+        [$where, $params] = $this->buildSearchWhere($filters);
+        return $this->db->fetchAll(
+            "SELECT b.id, b.bill_number, b.bill_type, b.bill_date, b.from_name, b.to_name,
+                    b.subtotal, b.tax_amount, b.discount_amount, b.total_amount, b.currency,
+                    b.status, b.created_at, u.name AS user_name, u.email AS user_email
+               FROM billx_bills b
+               LEFT JOIN users u ON b.user_id = u.id
+              WHERE $where
+              ORDER BY b.created_at DESC",
+            $params
+        ) ?: [];
+    }
 }
