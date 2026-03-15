@@ -120,6 +120,18 @@ class BillController
         $discount   = (float)($_POST['discount_amount'] ?? 0);
         $saveAction = Security::sanitize($_POST['save_action'] ?? 'view');
 
+        // Enforce max bills per user limit from admin settings
+        $maxBills = (int)($config['admin_settings']['max_bills_per_user'] ?? 500);
+        if ($maxBills > 0 && $this->model->countByUser($userId) >= $maxBills) {
+            $this->render('generate', [
+                'title'  => 'Generate Bill',
+                'user'   => Auth::user(),
+                'config' => $config,
+                'error'  => "You have reached the maximum limit of {$maxBills} bills. Please delete older bills to continue.",
+            ]);
+            return;
+        }
+
         // Validate bill_date is a real calendar date in YYYY-MM-DD format
         $parsedDate = \DateTime::createFromFormat('Y-m-d', $billDate);
         if (!$parsedDate || $parsedDate->format('Y-m-d') !== $billDate) {

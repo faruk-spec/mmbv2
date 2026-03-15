@@ -37,6 +37,9 @@
   <div style="font-size:13px;border-bottom:1px dashed #555;padding-bottom:6px;margin-bottom:6px;">
     <div style="display:flex;justify-content:space-between;"><span>Bill#: <b><?= htmlspecialchars($bill['bill_number']) ?></b></span><span><?= $billDate ?></span></div>
     <div style="display:flex;justify-content:space-between;"><span>Customer: <b><?= htmlspecialchars($bill['to_name']) ?></b></span><span><?= htmlspecialchars($billTime) ?></span></div>
+    <?php if ($bill['to_phone']): ?><div style="font-size:12px;">Ph: <?= htmlspecialchars($bill['to_phone']) ?></div><?php endif; ?>
+    <?php if ($bill['to_address']): ?><div style="font-size:11px;color:#555;"><?= htmlspecialchars(str_replace("\n",' | ',$bill['to_address'])) ?></div><?php endif; ?>
+    <?php if ($bill['to_email']): ?><div style="font-size:11px;color:#555;"><?= htmlspecialchars($bill['to_email']) ?></div><?php endif; ?>
     <?php if ($tableNo): ?><div>Table: <b>#<?= htmlspecialchars($tableNo) ?></b><?= $payMode ? '  |  Pay: <b>'.htmlspecialchars($payMode).'</b>' : '' ?></div><?php endif; ?>
   </div>
   <table style="width:100%;border-collapse:collapse;font-size:13px;border-bottom:1px dashed #555;margin-bottom:6px;">
@@ -99,6 +102,8 @@
   </div>
   <div style="padding:6px 12px;font-size:11px;border-bottom:1px solid #eee;">
     Customer: <b><?= htmlspecialchars($bill['to_name']) ?></b><?= $bill['to_phone'] ? ' | Ph: '.htmlspecialchars($bill['to_phone']) : '' ?><?= $payMode ? ' | Mode: <b>'.htmlspecialchars($payMode).'</b>' : '' ?>
+    <?php if ($bill['to_address']): ?><div style="font-size:10px;color:#555;margin-top:2px;"><?= htmlspecialchars(str_replace("\n",' | ',$bill['to_address'])) ?></div><?php endif; ?>
+    <?php if ($bill['to_email']): ?><div style="font-size:10px;color:#555;"><?= htmlspecialchars($bill['to_email']) ?></div><?php endif; ?>
   </div>
   <table style="width:100%;border-collapse:collapse;">
     <thead>
@@ -150,6 +155,9 @@
   <div style="font-size:10px;margin-bottom:4px;">
     <div style="display:flex;justify-content:space-between;"><span>Bill #: <b><?= htmlspecialchars($bill['bill_number']) ?></b></span><span><?= $billDate ?></span></div>
     <div style="display:flex;justify-content:space-between;"><span>Cust: <b><?= htmlspecialchars($bill['to_name']) ?></b></span><span><?= htmlspecialchars($billTime) ?></span></div>
+    <?php if ($bill['to_phone']): ?><div>Ph: <?= htmlspecialchars($bill['to_phone']) ?></div><?php endif; ?>
+    <?php if ($bill['to_address']): ?><div style="font-size:9px;color:#555;"><?= htmlspecialchars(str_replace("\n",' | ',$bill['to_address'])) ?></div><?php endif; ?>
+    <?php if ($bill['to_email']): ?><div style="font-size:9px;color:#555;"><?= htmlspecialchars($bill['to_email']) ?></div><?php endif; ?>
     <?php if ($tableNo): ?><div>Table: <b>#<?= htmlspecialchars($tableNo) ?></b><?= $payMode ? '  |  Pay: <b>'.htmlspecialchars($payMode).'</b>' : '' ?></div><?php endif; ?>
   </div>
   <div style="border-top:1px dashed #888;margin:6px 0;"></div>
