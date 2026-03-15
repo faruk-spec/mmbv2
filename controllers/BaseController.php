@@ -109,6 +109,22 @@ abstract class BaseController
      */
     protected function requireAdmin(): void
     {
+        if (!Auth::hasAnyAdminPermission()) {
+            http_response_code(403);
+            View::render('errors/403');
+            exit;
+        }
+    }
+
+    /**
+     * Require the user to be a true role-based admin (admin / super_admin).
+     *
+     * Use this inside actions that must be restricted to real admins even if
+     * the user happens to have some entries in admin_user_permissions
+     * (e.g. managing permissions themselves, security settings, etc.).
+     */
+    protected function requireRoleAdmin(): void
+    {
         if (!Auth::isAdmin()) {
             http_response_code(403);
             View::render('errors/403');

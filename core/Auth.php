@@ -324,6 +324,63 @@ class Auth
     {
         return self::isAdmin() || self::hasRole('audit_viewer');
     }
+
+    /**
+     * Check if the current user has a specific granular admin permission.
+     *
+     * Returns true for super_admin / admin (implicit full access) or when
+     * the user has an explicit row in admin_user_permissions for $key.
+     */
+    public static function hasPermission(string $key): bool
+    {
+        if (self::isAdmin()) {
+            return true;
+        }
+
+        $userId = self::id();
+        if (!$userId) {
+            return false;
+        }
+
+        try {
+            $db = Database::getInstance();
+            return $db->fetch(
+                "SELECT id FROM admin_user_permissions WHERE user_id = ? AND permission_key = ?",
+                [$userId, $key]
+            ) !== null;
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Check if the current user has at least one entry in admin_user_permissions.
+     *
+     * Used as a gateway check: super_admin / admin always return true;
+     * non-admin users are allowed through only when an administrator has
+     * explicitly granted them at least one admin-panel permission.
+     */
+    public static function hasAnyAdminPermission(): bool
+    {
+        if (self::isAdmin()) {
+            return true;
+        }
+
+        $userId = self::id();
+        if (!$userId) {
+            return false;
+        }
+
+        try {
+            $db = Database::getInstance();
+            return (int) $db->fetchColumn(
+                "SELECT COUNT(*) FROM admin_user_permissions WHERE user_id = ?",
+                [$userId]
+            ) > 0;
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
     
     /**
      * Set user session

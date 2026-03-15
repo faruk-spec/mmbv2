@@ -32,7 +32,12 @@ class RoleController extends BaseController
     public function __construct()
     {
         $this->requireAuth();
-        $this->requireAdmin();
+        // Role management is a privileged operation: only true role-based admins
+        // (admin / super_admin) may create, edit or delete roles. Using
+        // requireRoleAdmin() (instead of requireAdmin()) ensures that users who
+        // have been granted granular admin_user_permissions but are not actual
+        // admins cannot tamper with the role definitions.
+        $this->requireRoleAdmin();
         $this->db = Database::getInstance();
         $this->ensureTables();
     }

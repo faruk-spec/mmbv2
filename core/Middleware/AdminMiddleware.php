@@ -14,12 +14,12 @@ class AdminMiddleware
 {
     public function handle(): bool
     {
-        if (!Auth::isAdmin()) {
+        if (!Auth::hasAnyAdminPermission()) {
             http_response_code(403);
             View::render('errors/403');
             return false;
         }
-        
+
         return true;
     }
 }

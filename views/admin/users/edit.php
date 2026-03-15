@@ -22,9 +22,23 @@
         </div>
         <form method="POST" action="/admin/users/<?= $editUser['id'] ?>/edit">
             <?= \Core\Security::csrfField() ?>
-            <!-- Role is not editable here; preserved to avoid overwriting on status/name updates.
-                 To change a user's role use the Admin Users Access page or a dedicated role-management feature. -->
-            <input type="hidden" name="role" value="<?= View::e($editUser['role']) ?>">
+            <!-- Role selector: changing the role takes immediate effect and overrides
+                 per-feature permissions (admin / super_admin gain full access automatically). -->
+            <div class="form-group">
+                <label class="form-label" for="role">Role</label>
+                <select id="role" name="role" class="form-input">
+                    <option value="user"          <?= $editUser['role'] === 'user'          ? 'selected' : '' ?>>User</option>
+                    <option value="project_admin" <?= $editUser['role'] === 'project_admin' ? 'selected' : '' ?>>Project Admin</option>
+                    <option value="admin"         <?= $editUser['role'] === 'admin'         ? 'selected' : '' ?>>Admin</option>
+                    <option value="super_admin"   <?= $editUser['role'] === 'super_admin'   ? 'selected' : '' ?>>Super Admin</option>
+                </select>
+                <small style="color: var(--text-secondary); display: block; margin-top: 4px;">
+                    <i class="fas fa-info-circle"></i>
+                    Roles <strong>admin</strong> and <strong>super_admin</strong> grant full panel access and override any
+                    per-feature permissions. For finer control use
+                    <a href="/admin/admin-access/<?= $editUser['id'] ?>/edit" style="color: var(--cyan);">Admin Access.</a>
+                </small>
+            </div>
 
             <div class="form-group">
                 <label class="form-label" for="name">Full Name</label>
