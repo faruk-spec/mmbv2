@@ -215,6 +215,128 @@ class AuditController extends BaseController
     }
 
     // ------------------------------------------------------------------ //
+    // Raw SQL endpoint
+    // ------------------------------------------------------------------ //
+
+    /**
+     * Execute a user-supplied raw SQL statement against the activity_logs table.
+     *
+     * Safety rules enforced server-side:
+     *  - Must be a single SELECT statement
+     *  - Must not reference any table other than activity_logs / users
+     *  - No DDL, DML, stored-procedure calls, or semicolons
+     *  - LIMIT is added / capped at 5000 rows
+     *
+     * Returns JSON: { sql, count, data }
+     */
+    public function rawSql(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->json(['error' => 'Method not allowed'], 405);
+            return;
+        }
+
+        // CSRF via header (Ajax call)
+        $csrfHeader = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+        if (!\Core\Security::validateCsrfToken($csrfHeader)) {
+            $this->json(['error' => 'Invalid CSRF token'], 403);
+            return;
+        }
+
+        $raw = file_get_contents('php://input');
+        $body = json_decode($raw, true);
+        if (!is_array($body)) {
+            $body = [];
+        }
+        $sql = trim((string)($body['sql'] ?? ''));
+
+        try {
+            $safeSql = $this->validateAndPrepareSql($sql);
+        } catch (\InvalidArgumentException $e) {
+            $this->json(['error' => $e->getMessage()], 400);
+            return;
+        }
+
+        try {
+            $db   = Database::getInstance();
+            $rows = $db->fetchAll($safeSql, []);
+
+            $this->json([
+                'sql'   => $safeSql,
+                'count' => count($rows),
+                'data'  => $rows,
+            ]);
+        } catch (\Exception $e) {
+            $this->json(['error' => 'Query failed: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Validate and prepare a raw SQL string for safe execution.
+     *
+     * @throws \InvalidArgumentException
+     */
+    private function validateAndPrepareSql(string $sql): string
+    {
+        if (empty($sql)) {
+            throw new \InvalidArgumentException('SQL query cannot be empty.');
+        }
+
+        // Normalize whitespace for pattern matching
+        $norm = preg_replace('/\s+/', ' ', strtoupper($sql));
+
+        // Must start with SELECT
+        if (!preg_match('/^\s*SELECT\s/i', $sql)) {
+            throw new \InvalidArgumentException('Only SELECT statements are permitted.');
+        }
+
+        // Block dangerous keywords (DDL / DML / exec)
+        $blocked = ['INSERT', 'UPDATE', 'DELETE', 'DROP', 'CREATE', 'ALTER', 'TRUNCATE',
+                    'EXEC', 'EXECUTE', 'CALL', 'LOAD', 'OUTFILE', 'INFILE', 'GRANT', 'REVOKE',
+                    'REPLACE', 'MERGE', 'PRAGMA', 'ATTACH', 'DETACH', 'UNION'];
+        foreach ($blocked as $kw) {
+            if (preg_match('/\b' . preg_quote($kw, '/') . '\b/', $norm)) {
+                throw new \InvalidArgumentException("Keyword '{$kw}' is not allowed in audit queries.");
+            }
+        }
+
+        // No semicolons (prevent statement stacking)
+        if (strpos($sql, ';') !== false) {
+            throw new \InvalidArgumentException('Semicolons are not permitted.');
+        }
+
+        // Only allowed table references
+        $allowedTables = ['activity_logs', 'users'];
+        preg_match_all('/\bFROM\s+([\w,\s]+?)(?:\s+WHERE|\s+JOIN|\s+LEFT|\s+RIGHT|\s+INNER|\s+GROUP|\s+ORDER|\s+LIMIT|$)/i', $sql, $froms);
+        preg_match_all('/\bJOIN\s+([\w]+)/i', $sql, $joins);
+        $fromTableNames = preg_split('/[\s,]+/', trim($froms[1][0] ?? ''));
+        $joinTableNames = $joins[1] ?? [];
+        $referencedTables = array_filter(array_map('trim', array_merge($fromTableNames, $joinTableNames)));
+        foreach ($referencedTables as $tbl) {
+            if ($tbl === '') {
+                continue;
+            }
+            // Strip alias (e.g., "activity_logs" if written as "activity_logs al" already split)
+            $tbl = preg_replace('/\s+\w+$/', '', $tbl);
+            if (!in_array(strtolower($tbl), $allowedTables, true)) {
+                throw new \InvalidArgumentException("Table '{$tbl}' is not allowed. Only 'activity_logs' and 'users' may be queried.");
+            }
+        }
+
+        // Enforce LIMIT cap — if the user didn't add a LIMIT, add one
+        if (!preg_match('/\bLIMIT\s+\d+/i', $sql)) {
+            $sql .= ' LIMIT 1000';
+        } else {
+            // Clamp existing LIMIT to 5000
+            $sql = preg_replace_callback('/\bLIMIT\s+(\d+)/i', function ($m) {
+                return 'LIMIT ' . min(5000, (int)$m[1]);
+            }, $sql);
+        }
+
+        return $sql;
+    }
+
+    // ------------------------------------------------------------------ //
     // Safe query builder
     // ------------------------------------------------------------------ //
 

@@ -206,6 +206,7 @@ $router->get('/admin/logs/system', 'Admin\\LogController@system', ['auth', 'admi
 // Audit Explorer – accessible to admin, super_admin, and audit_viewer roles
 $router->get('/admin/audit', 'Admin\\AuditController@index', ['auth']);
 $router->post('/admin/audit/query', 'Admin\\AuditController@query', ['auth']);
+$router->post('/admin/audit/sql', 'Admin\\AuditController@rawSql', ['auth']);
 $router->get('/admin/audit/export', 'Admin\\AuditController@export', ['auth']);
 
 // Navbar customization
