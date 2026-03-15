@@ -85,7 +85,13 @@ class SettingsController
                 ]);
             }
             
-            try { ActivityLogger::logUpdate($user['id'], 'imgtxt', 'settings', $user['id'], [], ['default_language' => $defaultLanguage, 'auto_download' => $autoDownload, 'output_format' => $outputFormat]); } catch (\Throwable $_) {}
+            try {
+                ActivityLogger::logUpdate($user['id'], 'imgtxt', 'settings', $user['id'], [], [
+                    'default_language' => $defaultLanguage,
+                    'auto_download' => $autoDownload,
+                    'output_format' => $outputFormat,
+                ]);
+            } catch (\Throwable $_) {}
             
             echo json_encode([
                 'success' => true,
