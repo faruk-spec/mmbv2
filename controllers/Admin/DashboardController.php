@@ -17,7 +17,7 @@ class DashboardController extends BaseController
     public function __construct()
     {
         $this->requireAuth();
-        $this->requirePermission('dashboard');
+        $this->requireAdmin();
     }
     
     /**

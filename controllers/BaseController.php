@@ -131,7 +131,7 @@ abstract class BaseController
     {
         if (!Auth::hasPermission($key)) {
             $this->flash('error', 'You do not have permission to access that section.');
-            $this->redirect('/admin/dashboard');
+            $this->redirect('/dashboard');
         }
     }
 
