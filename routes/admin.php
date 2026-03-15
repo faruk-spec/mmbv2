@@ -194,6 +194,8 @@ $router->get('/admin/sessions/login-history', 'Admin\\SessionController@loginHis
 // Activity logs
 $router->get('/admin/logs', 'Admin\\LogController@index', ['auth', 'admin']);
 $router->get('/admin/logs/activity', 'Admin\\LogController@activity', ['auth', 'admin']);
+$router->get('/admin/logs/activity/export', 'Admin\\LogController@export', ['auth', 'admin']);
+$router->get('/admin/logs/activity/api', 'Admin\\LogController@api', ['auth', 'admin']);
 $router->get('/admin/logs/system', 'Admin\\LogController@system', ['auth', 'admin']);
 
 // Navbar customization

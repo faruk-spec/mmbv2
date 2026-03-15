@@ -20,7 +20,7 @@
             </div>
             <div>
                 <h3>Activity Logs</h3>
-                <p style="color: var(--text-secondary); margin: 0;">User actions and events</p>
+                <p style="color: var(--text-secondary); margin: 0;">User actions, audit trail &amp; events</p>
             </div>
         </div>
     </a>
@@ -42,4 +42,20 @@
         </div>
     </a>
 </div>
+
+<div style="margin-top:24px;">
+    <h3 style="margin-bottom:14px;font-size:14px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;">Quick Actions</h3>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <a href="/admin/logs/activity/export?format=csv" class="btn btn-sm btn-secondary">
+            <i class="fas fa-file-csv"></i> Export All Logs (CSV)
+        </a>
+        <a href="/admin/logs/activity/export?format=json" class="btn btn-sm btn-secondary">
+            <i class="fas fa-file-code"></i> Export All Logs (JSON)
+        </a>
+        <a href="/admin/logs/activity/api" class="btn btn-sm btn-secondary" target="_blank">
+            <i class="fas fa-code"></i> JSON API Endpoint
+        </a>
+    </div>
+</div>
 <?php View::endSection(); ?>
+
