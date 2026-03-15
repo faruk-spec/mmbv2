@@ -40,6 +40,13 @@ use Core\Auth;
 class ActionLoggerMiddleware
 {
     /**
+     * Idempotency guard: only fire once per PHP process (HTTP request).
+     * Project sub-routers create their own Router instance and call dispatch()
+     * again, which would double-log without this guard.
+     */
+    private static bool $fired = false;
+
+    /**
      * HTTP methods we want to capture.
      * GET requests are high-volume page loads – we track those via TrafficTracker.
      */
@@ -123,12 +130,20 @@ class ActionLoggerMiddleware
      */
     public function handle(): bool
     {
+        // Only fire once per HTTP request even when multiple Router instances exist
+        if (self::$fired) {
+            return true;
+        }
+
         $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
 
         // Only care about mutating requests
         if (!in_array($method, self::MUTATING_METHODS, true)) {
             return true;
         }
+
+        // Mark as fired so sub-router dispatches are no-ops
+        self::$fired = true;
 
         $uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/';
 
