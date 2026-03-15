@@ -23,7 +23,7 @@ class BillXAdminController extends BaseController
     public function __construct()
     {
         $this->requireAuth();
-        $this->requireAdmin();
+        $this->requirePermission('billx');
         $this->db    = Database::getInstance();
         $this->model = new BillModel();
     }

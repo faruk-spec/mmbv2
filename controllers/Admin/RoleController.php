@@ -81,9 +81,11 @@ class RoleController extends BaseController
     public function createForm(): void
     {
         $this->view('admin/roles/form', [
-            'title'  => 'Create Role',
-            'role'   => null,
-            'action' => '/admin/roles/create',
+            'title'       => 'Create Role',
+            'role'        => null,
+            'action'      => '/admin/roles/create',
+            'permissions' => \Controllers\Admin\AdminUserAccessController::PERMISSIONS,
+            'grantedKeys' => [],
         ]);
     }
 
@@ -123,6 +125,10 @@ class RoleController extends BaseController
                  VALUES (?, ?, ?, ?, 0, ?, ?, NOW())",
                 [$name, $slug, $desc, $color, $status, $sortOrder]
             );
+            $roleId = (int) $this->db->lastInsertId();
+
+            $this->saveRolePermissions($roleId);
+
             Logger::activity(Auth::id(), 'role_created', ['slug' => $slug, 'name' => $name]);
             $this->flash('success', 'Role "' . $name . '" created successfully.');
         } catch (\Exception $e) {
@@ -146,10 +152,20 @@ class RoleController extends BaseController
             return;
         }
 
+        $grantedKeys = array_column(
+            $this->db->fetchAll(
+                "SELECT permission_key FROM user_role_permissions WHERE role_id = ?",
+                [$id]
+            ),
+            'permission_key'
+        );
+
         $this->view('admin/roles/form', [
-            'title'  => 'Edit Role: ' . htmlspecialchars($role['name']),
-            'role'   => $role,
-            'action' => '/admin/roles/' . $id . '/update',
+            'title'       => 'Edit Role: ' . htmlspecialchars($role['name']),
+            'role'        => $role,
+            'action'      => '/admin/roles/' . $id . '/update',
+            'permissions' => \Controllers\Admin\AdminUserAccessController::PERMISSIONS,
+            'grantedKeys' => $grantedKeys,
         ]);
     }
 
@@ -207,6 +223,9 @@ class RoleController extends BaseController
                  WHERE id = ?",
                 [$name, $slug, $desc, $color, $status, $sortOrder, $id]
             );
+
+            $this->saveRolePermissions($id);
+
             Logger::activity(Auth::id(), 'role_updated', ['role_id' => $id, 'name' => $name]);
             $this->flash('success', 'Role "' . $name . '" updated successfully.');
         } catch (\Exception $e) {
@@ -258,6 +277,28 @@ class RoleController extends BaseController
     // Internal
     // -------------------------------------------------------------------------
 
+    /**
+     * Persist the submitted permissions[] for a role, replacing the previous set.
+     */
+    private function saveRolePermissions(int $roleId): void
+    {
+        $submitted = (array) ($_POST['permissions'] ?? []);
+
+        // Whitelist against known permission keys
+        $valid = array_keys(\Controllers\Admin\AdminUserAccessController::PERMISSIONS);
+        $toSave = array_values(array_intersect($submitted, $valid));
+
+        // Replace all existing permissions for this role
+        $this->db->query("DELETE FROM user_role_permissions WHERE role_id = ?", [$roleId]);
+
+        foreach ($toSave as $key) {
+            $this->db->query(
+                "INSERT IGNORE INTO user_role_permissions (role_id, permission_key, created_at) VALUES (?, ?, NOW())",
+                [$roleId, $key]
+            );
+        }
+    }
+
     private function ensureTables(): void
     {
         try {
@@ -275,6 +316,18 @@ class RoleController extends BaseController
                     `updated_at` TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP,
                     INDEX `idx_slug` (`slug`),
                     INDEX `idx_status` (`status`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+
+            $this->db->query("
+                CREATE TABLE IF NOT EXISTS `user_role_permissions` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `role_id` INT UNSIGNED NOT NULL,
+                    `permission_key` VARCHAR(100) NOT NULL,
+                    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE KEY `uq_role_perm` (`role_id`, `permission_key`),
+                    INDEX `idx_role_id` (`role_id`),
+                    INDEX `idx_permission_key` (`permission_key`)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             ");
 

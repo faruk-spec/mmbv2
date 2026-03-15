@@ -17,7 +17,7 @@ class ProjectController extends BaseController
     public function __construct()
     {
         $this->requireAuth();
-        $this->requireAdmin();
+        $this->requirePermission('projects');
     }
     
     /**

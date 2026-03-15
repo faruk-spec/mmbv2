@@ -24,7 +24,7 @@ class CodeXProAdminController extends BaseController
     public function __construct()
     {
         $this->requireAuth();
-        $this->requireAdmin();
+        $this->requirePermission('codexpro');
         $this->projectDb = Database::projectConnection('codexpro');
         $this->mainDb = Database::getInstance();
         

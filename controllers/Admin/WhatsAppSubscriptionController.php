@@ -18,14 +18,19 @@ use Core\ActivityLogger;
 class WhatsAppSubscriptionController
 {
     private $db;
-    
+
     public function __construct()
     {
         $this->db = Database::getInstance();
-        
-        // Check if user is admin
-        if (!Auth::isAdmin()) {
-            header('Location: /dashboard');
+
+        if (!Auth::check()) {
+            header('Location: /login');
+            exit;
+        }
+
+        if (!Auth::hasPermission('whatsapp')) {
+            $_SESSION['flash_error'] = 'You do not have permission to access that section.';
+            header('Location: /admin/dashboard');
             exit;
         }
     }

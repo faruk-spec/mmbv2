@@ -23,7 +23,7 @@ class QRAdminController extends BaseController
     public function __construct()
     {
         $this->requireAuth();
-        $this->requireAdmin();
+        $this->requirePermission('qr');
         $this->db = Database::getInstance();
         $this->ensureTables();
     }

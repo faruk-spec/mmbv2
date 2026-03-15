@@ -21,7 +21,7 @@ class ConvertXAdminController extends BaseController
     public function __construct()
     {
         $this->requireAuth();
-        $this->requireAdmin();
+        $this->requirePermission('convertx');
         $this->db = Database::getInstance();
     }
 

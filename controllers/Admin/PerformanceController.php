@@ -18,7 +18,7 @@ class PerformanceController extends BaseController
     public function __construct()
     {
         $this->requireAuth();
-        $this->requireAdmin();
+        $this->requirePermission('performance');
     }
     
     /**

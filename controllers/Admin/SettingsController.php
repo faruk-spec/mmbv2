@@ -18,7 +18,7 @@ class SettingsController extends BaseController
     public function __construct()
     {
         $this->requireAuth();
-        $this->requireAdmin();
+        $this->requirePermission('settings');
     }
     
     /**

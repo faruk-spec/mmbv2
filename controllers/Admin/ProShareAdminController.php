@@ -22,7 +22,7 @@ class ProShareAdminController extends BaseController
     public function __construct()
     {
         $this->requireAuth();
-        $this->requireAdmin();
+        $this->requirePermission('proshare');
         $this->projectDb = Database::projectConnection('proshare');
         $this->mainDb = Database::getInstance();
         

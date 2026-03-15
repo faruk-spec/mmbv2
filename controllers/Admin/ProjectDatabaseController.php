@@ -13,7 +13,7 @@ class ProjectDatabaseController extends BaseController
     public function __construct()
     {
         $this->requireAuth();
-        $this->requireAdmin();
+        $this->requirePermission('projects');
         $this->configPath = BASE_PATH . '/config/projects_db.php';
     }
     

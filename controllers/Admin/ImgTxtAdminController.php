@@ -23,7 +23,7 @@ class ImgTxtAdminController extends BaseController
     public function __construct()
     {
         $this->requireAuth();
-        $this->requireAdmin();
+        $this->requirePermission('imgtxt');
         $this->projectDb = Database::projectConnection('imgtxt');
         $this->mainDb = Database::getInstance();
         

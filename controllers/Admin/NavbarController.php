@@ -15,7 +15,7 @@ class NavbarController extends BaseController
     public function __construct()
     {
         $this->requireAuth();
-        $this->requireAdmin();
+        $this->requirePermission('navbar');
         $this->db = Database::getInstance();
     }
 

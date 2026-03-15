@@ -117,6 +117,25 @@ abstract class BaseController
     }
 
     /**
+     * Require a specific granular admin permission.
+     *
+     * Checks Auth::hasPermission($key) which resolves via:
+     *  1. Role (admin / super_admin) → always pass
+     *  2. Explicit row in admin_user_permissions for this user
+     *  3. Row in user_role_permissions for the user's role
+     *
+     * On failure, flashes an error and redirects the already-authenticated
+     * admin user to the dashboard (avoids hard 403 within the admin panel).
+     */
+    protected function requirePermission(string $key): void
+    {
+        if (!Auth::hasPermission($key)) {
+            $this->flash('error', 'You do not have permission to access that section.');
+            $this->redirect('/admin/dashboard');
+        }
+    }
+
+    /**
      * Require the user to be a true role-based admin (admin / super_admin).
      *
      * Use this inside actions that must be restricted to real admins even if

@@ -328,8 +328,12 @@ class Auth
     /**
      * Check if the current user has a specific granular admin permission.
      *
-     * Returns true for super_admin / admin (implicit full access) or when
-     * the user has an explicit row in admin_user_permissions for $key.
+     * Returns true for super_admin / admin (implicit full access) or when:
+     *  1. the user has an explicit row in admin_user_permissions for $key, OR
+     *  2. the user's role has $key in user_role_permissions.
+     *
+     * Individual user permissions always take precedence (override) over
+     * role-level defaults.
      */
     public static function hasPermission(string $key): bool
     {
@@ -344,17 +348,39 @@ class Auth
 
         try {
             $db = Database::getInstance();
-            return $db->fetch(
+
+            // 1. Explicit per-user permission
+            if ($db->fetch(
                 "SELECT id FROM admin_user_permissions WHERE user_id = ? AND permission_key = ?",
                 [$userId, $key]
-            ) !== null;
+            ) !== null) {
+                return true;
+            }
+
+            // 2. Role-based permission
+            $user = self::user();
+            if ($user) {
+                $roleRow = $db->fetch(
+                    "SELECT r.id FROM user_roles r WHERE r.slug = ? AND r.status = 'active'",
+                    [$user['role']]
+                );
+                if ($roleRow && $db->fetch(
+                    "SELECT id FROM user_role_permissions WHERE role_id = ? AND permission_key = ?",
+                    [$roleRow['id'], $key]
+                ) !== null) {
+                    return true;
+                }
+            }
         } catch (\Exception $e) {
-            return false;
+            // user_roles / user_role_permissions may not exist yet
         }
+
+        return false;
     }
 
     /**
-     * Check if the current user has at least one entry in admin_user_permissions.
+     * Check if the current user has at least one entry in admin_user_permissions
+     * OR has at least one permission granted via their role.
      *
      * Used as a gateway check: super_admin / admin always return true;
      * non-admin users are allowed through only when an administrator has
@@ -373,13 +399,34 @@ class Auth
 
         try {
             $db = Database::getInstance();
-            return (int) $db->fetchColumn(
+
+            // 1. Direct user permissions
+            if ((int) $db->fetchColumn(
                 "SELECT COUNT(*) FROM admin_user_permissions WHERE user_id = ?",
                 [$userId]
-            ) > 0;
+            ) > 0) {
+                return true;
+            }
+
+            // 2. Role-based permissions
+            $user = self::user();
+            if ($user) {
+                $roleRow = $db->fetch(
+                    "SELECT r.id FROM user_roles r WHERE r.slug = ? AND r.status = 'active'",
+                    [$user['role']]
+                );
+                if ($roleRow && (int) $db->fetchColumn(
+                    "SELECT COUNT(*) FROM user_role_permissions WHERE role_id = ?",
+                    [$roleRow['id']]
+                ) > 0) {
+                    return true;
+                }
+            }
         } catch (\Exception $e) {
-            return false;
+            // Tables may not exist yet
         }
+
+        return false;
     }
     
     /**
