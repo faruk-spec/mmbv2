@@ -68,7 +68,7 @@ header("Expires: 0");
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; overflow-x: hidden; max-width: 100vw; }
+        html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; max-width: 100vw; }
         body {
             font-family: 'Poppins', sans-serif;
             background: var(--bg-primary);
@@ -76,11 +76,11 @@ header("Expires: 0");
             min-height: 100vh;
             font-size: var(--font-md);
             line-height: 1.5;
-            overflow-x: auto;
+            overflow-x: hidden;
             max-width: 100vw;
         }
 
-        .billx-dashboard { display: flex; min-height: calc(100vh - 3.75rem); margin-top: 3.75rem; }
+        .billx-dashboard { display: flex; min-height: calc(100vh - 3.75rem); }
 
         .billx-sidebar {
             width: var(--sidebar-width);

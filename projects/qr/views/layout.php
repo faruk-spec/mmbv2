@@ -92,8 +92,6 @@ header("Expires: 0");
             scroll-behavior: smooth;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
-            /* Prevent horizontal overflow only at root level */
-            overflow-x: hidden;
             max-width: 100vw;
         }
         
@@ -107,8 +105,7 @@ header("Expires: 0");
             /* Performance optimization */
             will-change: scroll-position;
             -webkit-overflow-scrolling: touch;
-            /* Allow horizontal scrolling when zoomed or on small screens */
-            overflow-x: auto;
+            overflow-x: hidden;
             max-width: 100vw;
         }
         
@@ -116,7 +113,6 @@ header("Expires: 0");
         .qr-dashboard {
             display: flex;
             min-height: calc(100vh - 3.75rem); /* 60px navbar */
-            margin-top: 3.75rem;
         }
         
         /* Sidebar - optimized with performance in mind */

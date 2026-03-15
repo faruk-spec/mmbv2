@@ -265,8 +265,17 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
             <?php endif; ?>
         </nav>
 
-        <!-- Always-visible header actions: notification, profile, theme icon, hamburger -->
+        <!-- Always-visible header actions: theme icon, notification, profile, hamburger -->
         <div class="header-end-actions">
+            <!-- Theme Toggle (icon only) — visible to all users -->
+            <?php if ($navbarSettings['show_theme_toggle']): ?>
+            <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+                <svg id="themeIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                </svg>
+            </button>
+            <?php endif; ?>
+
             <?php if ($isLoggedIn):
                 try {
                     $notifUnreadCount = \Core\Notification::getUnreadCount($user['id']);
@@ -276,8 +285,8 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
             ?>
             <!-- Notification Bell -->
             <div class="notif-bell-wrap" id="notifDropdown">
-                <button class="nav-link notif-bell-btn" id="notifBellBtn" aria-label="Notifications" title="Notifications">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <button class="notif-bell-btn" id="notifBellBtn" aria-label="Notifications" title="Notifications">
+                    <svg class="notif-bell-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
                         <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
                     </svg>
@@ -286,31 +295,32 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
                         <?= min($notifUnreadCount, 99) ?>
                     </span>
                 </button>
-                <div class="dropdown-menu notif-panel" id="notifPanel" style="min-width:320px;padding:0;">
+                <div class="dropdown-menu notif-panel" id="notifPanel">
                     <div class="notif-panel-header">
-                        <span><strong>Notifications</strong></span>
+                        <div class="notif-panel-title">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                            </svg>
+                            <strong>Notifications</strong>
+                        </div>
                         <button class="notif-mark-all-btn" id="notifMarkAll" title="Mark all as read">Mark all read</button>
                     </div>
                     <div class="notif-panel-list" id="notifPanelList">
                         <div style="padding:20px;text-align:center;color:var(--text-secondary);font-size:13px;">Loading…</div>
                     </div>
                     <div class="notif-panel-footer">
-                        <a href="/notifications" style="font-size:12px;color:var(--cyan);">View All Notifications</a>
+                        <a href="/notifications" class="notif-view-all">
+                            View All Notifications
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <path d="M5 12h14M12 5l7 7-7 7"/>
+                            </svg>
+                        </a>
                     </div>
                 </div>
             </div>
 
-            <!-- Theme Toggle (icon only) — between notification and user -->
-            <?php if ($navbarSettings['show_theme_toggle']): ?>
-            <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
-                <svg id="themeIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-                </svg>
-            </button>
-            <?php endif; ?>
-
-            <!-- Profile Dropdown -->
-            <?php if ($navbarSettings['show_profile_link']): ?>
+            <!-- Profile Dropdown — always shown for logged-in users -->
             <div class="dropdown" id="profileDropdown">
                 <button class="nav-link dropdown-toggle">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -348,7 +358,6 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
                     </a>
                 </div>
             </div>
-            <?php endif; ?>
             <?php endif; ?>
 
             <!-- Hamburger (mobile only) -->
@@ -434,7 +443,9 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
                     if (d !== dropdown) d.classList.remove('active');
                 });
                 document.querySelectorAll('.notif-bell-wrap.active').forEach(w => w.classList.remove('active'));
-                if (mainNav && mainNav.classList.contains('active')) {
+                // Only close the mobile menu when the toggle is NOT inside it
+                // (avoids closing the menu when expanding a sub-dropdown within it)
+                if (mainNav && mainNav.classList.contains('active') && !mainNav.contains(toggle)) {
                     mainNav.classList.remove('active');
                     document.body.classList.remove('mobile-menu-open');
                 }
@@ -772,13 +783,13 @@ body {
     position: absolute;
     top: 100%;
     right: 0;
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
+    background: var(--bg-card, #1c1c2a);
+    border: 1px solid var(--border-color, rgba(255,255,255,0.15));
     border-radius: 8px;
     min-width: 200px;
     margin-top: 8px;
     padding: 8px 0;
-    box-shadow: var(--shadow);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.06);
     display: none;
     z-index: 10001;
 }
@@ -792,21 +803,67 @@ body {
     align-items: center;
     gap: 10px;
     padding: 10px 16px;
-    color: var(--text-primary);
+    color: var(--text-primary, #e8eefc);
     text-decoration: none;
-    transition: var(--transition);
+    transition: var(--transition, all 0.3s ease);
     font-size: 14px;
 }
 
 .dropdown-item:hover {
-    background: var(--hover-bg);
-    color: var(--cyan);
+    background: var(--hover-bg, rgba(0,240,255,0.08));
+    color: var(--cyan, #00f0ff);
 }
 
 .dropdown-divider {
     height: 1px;
     background: var(--border-color);
     margin: 8px 0;
+}
+
+/* ── Universal-header dropdown: forced visible in dark mode ────────────────
+   These rules use the .universal-header scope + !important to win over ANY
+   project-specific CSS that might inherit or override colours on the navbar.
+   Light-mode rules are kept separate so they still apply correctly.          */
+
+/* Dark mode: dropdown toggle buttons (profile, projects) text & icon.
+   Intentionally NOT targeting .nav-link broadly so the notification bell
+   keeps its own colour styling. */
+html:not([data-theme="light"]) .universal-header .dropdown-toggle {
+    color: #e8eefc !important;
+}
+
+/* Dark mode: dropdown panel */
+html:not([data-theme="light"]) .universal-header .dropdown-menu {
+    background: #1c1c2a !important;
+    border-color: rgba(255,255,255,0.15) !important;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.08) !important;
+}
+
+/* Dark mode: dropdown items (links inside the panel) */
+html:not([data-theme="light"]) .universal-header .dropdown-item {
+    color: #e8eefc !important;
+    background: transparent !important;
+}
+
+html:not([data-theme="light"]) .universal-header .dropdown-item:hover {
+    background: rgba(0, 240, 255, 0.10) !important;
+    color: #00f0ff !important;
+}
+
+/* Light mode: ensure contrast on white panel */
+[data-theme="light"] .universal-header .dropdown-menu {
+    background: #ffffff !important;
+    border-color: rgba(0,0,0,0.12) !important;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12) !important;
+}
+
+[data-theme="light"] .universal-header .dropdown-item {
+    color: #1a1a1a !important;
+}
+
+[data-theme="light"] .universal-header .dropdown-item:hover {
+    background: rgba(0, 100, 200, 0.08) !important;
+    color: #0369a1 !important;
 }
 
 .project-icon {
@@ -820,49 +877,122 @@ body {
     font-weight: 600;
 }
 
-/* Notification Bell */
+/* ── Notification Bell ─────────────────────────────────────────────────── */
 .notif-bell-wrap { position: relative; }
-/* Show the panel when the wrapper has the .active class.
-   The generic dropdown rule only covers .dropdown.active, so we need
-   this additional selector for the notification bell wrapper. */
+/* Show the panel when the wrapper has the .active class */
 .notif-bell-wrap.active .dropdown-menu { display: block !important; }
-.notif-bell-btn { position: relative; padding: 8px 10px !important; }
+
+/* Bell button: icon-button style, never inherits wrong colours */
+.notif-bell-btn {
+    position: relative;
+    width: 38px; height: 38px; padding: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: none; border: none; border-radius: 10px;
+    color: var(--text-secondary, #8892a4);
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+    flex-shrink: 0;
+}
+.notif-bell-btn:hover {
+    background: var(--hover-bg, rgba(0,240,255,0.08));
+    color: var(--cyan, #00f0ff);
+    box-shadow: 0 0 0 1px rgba(0,240,255,0.18);
+}
+.notif-bell-btn .notif-bell-icon {
+    transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
+    flex-shrink: 0;
+}
+.notif-bell-btn:hover .notif-bell-icon {
+    transform: rotate(-14deg) scale(1.12);
+}
+/* Active/open state */
+.notif-bell-wrap.active .notif-bell-btn {
+    background: rgba(0,240,255,0.10);
+    color: var(--cyan, #00f0ff);
+    box-shadow: 0 0 0 1px rgba(0,240,255,0.22);
+}
+/* Light mode overrides */
+[data-theme="light"] .notif-bell-btn { color: #5a6785; }
+[data-theme="light"] .notif-bell-btn:hover { background: rgba(0,100,200,0.08); color: #0369a1; box-shadow: 0 0 0 1px rgba(0,100,200,0.15); }
+[data-theme="light"] .notif-bell-wrap.active .notif-bell-btn { background: rgba(0,100,200,0.10); color: #0369a1; box-shadow: 0 0 0 1px rgba(0,100,200,0.20); }
+
+/* Badge */
 .notif-badge {
-    position: absolute; top: 2px; right: 2px;
+    position: absolute; top: 3px; right: 3px;
     background: #e53e3e; color: #fff; font-size: 10px; font-weight: 700;
-    min-width: 16px; height: 16px; border-radius: 8px;
+    min-width: 17px; height: 17px; border-radius: 9px;
     display: flex; align-items: center; justify-content: center;
     padding: 0 3px; pointer-events: none;
+    border: 2px solid var(--bg-secondary, #12121a);
+    box-shadow: 0 2px 5px rgba(229,62,62,0.45);
+    transition: transform 0.2s ease;
 }
+.notif-badge.has-unread { animation: notif-badge-pop 0.4s cubic-bezier(0.34,1.56,0.64,1), notif-badge-pulse 2.5s 0.4s ease-in-out infinite; }
+@keyframes notif-badge-pop  { from { transform: scale(0); } to { transform: scale(1); } }
+@keyframes notif-badge-pulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(229,62,62,0.45), 0 2px 5px rgba(229,62,62,0.45); }
+    55%      { box-shadow: 0 0 0 5px rgba(229,62,62,0),  0 2px 5px rgba(229,62,62,0.45); }
+}
+[data-theme="light"] .notif-badge { border-color: #f0f4ff; }
+
+/* Panel */
+.notif-panel { min-width: 320px; padding: 0; overflow: hidden; }
 .notif-panel-header {
     display: flex; justify-content: space-between; align-items: center;
-    padding: 12px 16px; border-bottom: 1px solid var(--border-color);
-    font-size: 14px;
+    padding: 13px 16px 12px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-card, #1c1c2a);
 }
+.notif-panel-title {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 14px; font-weight: 600; color: var(--text-primary);
+}
+.notif-panel-title svg { color: var(--cyan, #00f0ff); flex-shrink: 0; }
 .notif-mark-all-btn {
     background: none; border: none; cursor: pointer; font-size: 12px;
-    color: var(--cyan); font-family: inherit; padding: 0;
+    color: var(--cyan, #00f0ff); font-family: inherit; padding: 3px 8px;
+    border-radius: 4px; transition: background 0.15s;
 }
-.notif-mark-all-btn:hover { text-decoration: underline; }
+.notif-mark-all-btn:hover { background: rgba(0,240,255,0.10); text-decoration: none; }
+[data-theme="light"] .notif-mark-all-btn:hover { background: rgba(0,100,200,0.08); }
+
 .notif-panel-list { max-height: 340px; overflow-y: auto; }
 .notif-item {
     display: flex; gap: 10px; align-items: flex-start;
     padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.05);
     cursor: pointer; transition: background 0.15s; font-size: 13px;
 }
+.notif-item:last-child { border-bottom: none; }
 .notif-item:hover { background: var(--hover-bg, rgba(255,255,255,0.05)); }
-.notif-item.unread { background: rgba(0,240,255,0.04); }
+.notif-item.unread { background: rgba(0,240,255,0.05); }
 .notif-item-dot {
-    width: 8px; height: 8px; border-radius: 50%; background: var(--cyan);
-    flex-shrink: 0; margin-top: 5px;
+    width: 8px; height: 8px; border-radius: 50%; background: var(--cyan, #00f0ff);
+    flex-shrink: 0; margin-top: 5px; transition: background 0.2s;
 }
-.notif-item.read .notif-item-dot { background: transparent; }
+.notif-item.read .notif-item-dot { background: transparent; border: 1.5px solid var(--border-color); }
 .notif-item-body { flex: 1; min-width: 0; }
-.notif-item-msg { color: var(--text-primary); line-height: 1.4; }
-.notif-item-time { color: var(--text-secondary); font-size: 11px; margin-top: 2px; }
-.notif-empty { padding: 24px; text-align: center; color: var(--text-secondary); font-size: 13px; }
-.notif-panel-footer { padding: 10px 16px; border-top: 1px solid var(--border-color); text-align: center; }
-[data-theme="light"] .notif-item.unread { background: rgba(0,120,255,0.04); }
+.notif-item-msg { color: var(--text-primary); line-height: 1.45; }
+.notif-item.unread .notif-item-msg { font-weight: 500; }
+.notif-item-time { color: var(--text-secondary); font-size: 11px; margin-top: 3px; }
+.notif-empty {
+    padding: 32px 24px; text-align: center; color: var(--text-secondary); font-size: 13px;
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+}
+.notif-panel-footer {
+    padding: 10px 16px; border-top: 1px solid var(--border-color);
+    background: var(--bg-card, #1c1c2a);
+    text-align: center;
+}
+.notif-view-all {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 12px; color: var(--cyan, #00f0ff); text-decoration: none;
+    padding: 4px 10px; border-radius: 5px; transition: background 0.15s;
+}
+.notif-view-all:hover { background: rgba(0,240,255,0.08); text-decoration: none; }
+[data-theme="light"] .notif-view-all:hover { background: rgba(0,100,200,0.07); }
+[data-theme="light"] .notif-item.unread { background: rgba(0,120,255,0.05); }
+[data-theme="light"] .notif-panel-header,
+[data-theme="light"] .notif-panel-footer { background: #f8faff; }
 
 /* Theme Toggle */
 .theme-toggle {
