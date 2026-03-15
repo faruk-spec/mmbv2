@@ -10,6 +10,7 @@ namespace Projects\QR\Controllers;
 
 use Core\Auth;
 use Core\Logger;
+use Core\ActivityLogger;
 use Core\Security;
 use Projects\QR\Models\TemplateModel;
 
@@ -73,6 +74,7 @@ class TemplatesController
             
             if ($templateId) {
                 Logger::activity($userId, 'qr_template_created', ['template_id' => $templateId, 'name' => $data['name']]);
+                try { ActivityLogger::logCreate($userId, 'qr', 'template', $templateId, ['name' => $data['name']]); } catch (\Throwable $_) {}
                 echo json_encode(['success' => true, 'id' => $templateId, 'message' => 'Template saved successfully']);
             } else {
                 echo json_encode(['success' => false, 'message' => 'Failed to save template']);
@@ -144,6 +146,7 @@ class TemplatesController
         
         if ($this->model->update($templateId, $userId, $data)) {
             Logger::activity($userId, 'qr_template_updated', ['template_id' => $templateId, 'name' => $data['name']]);
+            try { ActivityLogger::logUpdate($userId, 'qr', 'template', $templateId, [], $data); } catch (\Throwable $_) {}
             echo json_encode(['success' => true, 'message' => 'Template updated successfully']);
         } else {
             echo json_encode(['success' => false, 'message' => 'Failed to update template']);
@@ -179,6 +182,7 @@ class TemplatesController
         
         if ($this->model->delete($templateId, $userId)) {
             Logger::activity($userId, 'qr_template_deleted', ['template_id' => $templateId]);
+            try { ActivityLogger::logDelete($userId, 'qr', 'template', $templateId); } catch (\Throwable $_) {}
             echo json_encode(['success' => true, 'message' => 'Template deleted successfully']);
         } else {
             echo json_encode(['success' => false, 'message' => 'Failed to delete template']);

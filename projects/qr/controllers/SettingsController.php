@@ -9,6 +9,7 @@
 namespace Projects\QR\Controllers;
 
 use Core\Auth;
+use Core\ActivityLogger;
 use Core\Security;
 use Projects\QR\Models\SettingsModel;
 
@@ -88,6 +89,7 @@ class SettingsController
                 if ($this->model->save($userId, $data)) {
                     $_SESSION['success'] = 'Settings updated successfully';
                     \Core\Logger::info('User ' . $userId . ' successfully updated settings');
+                    try { ActivityLogger::logUpdate($userId, 'qr', 'settings', $userId, [], $data); } catch (\Throwable $_) {}
                 } else {
                     $_SESSION['error'] = 'Failed to update settings. Please check the logs or try again.';
                     \Core\Logger::error('Settings save returned false for user ' . $userId);
@@ -95,6 +97,7 @@ class SettingsController
             } catch (\Exception $e) {
                 $_SESSION['error'] = 'An error occurred: ' . $e->getMessage();
                 \Core\Logger::error('Exception during settings save for user ' . $userId . ': ' . $e->getMessage());
+                try { ActivityLogger::logFailure($userId, 'settings_update', $e->getMessage()); } catch (\Throwable $_) {}
             }
             
             header('Location: /projects/qr/settings');
@@ -124,6 +127,7 @@ class SettingsController
         $apiKey = $this->model->generateApiKey($userId);
 
         if ($apiKey) {
+            try { ActivityLogger::logCreate($userId, 'qr', 'api_key', $userId, ['source' => 'settings']); } catch (\Throwable $_) {}
             echo json_encode(['success' => true, 'api_key' => $apiKey]);
         } else {
             echo json_encode(['success' => false, 'message' => 'Failed to generate API key']);
@@ -151,6 +155,7 @@ class SettingsController
         }
 
         if ($this->model->disableApi($userId)) {
+            try { ActivityLogger::logUpdate($userId, 'qr', 'api_key', $userId, ['is_active' => 1], ['is_active' => 0]); } catch (\Throwable $_) {}
             echo json_encode(['success' => true, 'message' => 'API access disabled']);
         } else {
             echo json_encode(['success' => false, 'message' => 'Failed to disable API']);

@@ -11,6 +11,7 @@ use Core\Auth;
 use Core\Security;
 use Core\Helpers;
 use Core\Logger;
+use Core\ActivityLogger;
 use Projects\QR\Models\QRModel;
 use Projects\QR\Models\SettingsModel;
 use Projects\QR\Services\QRFeatureService;
@@ -396,6 +397,7 @@ class QRController
                 }
 
                 Logger::activity($userId, 'qr_generated', ['type' => $type, 'qr_id' => $qrId, 'is_dynamic' => $isDynamic, 'campaign_id' => $campaignId, 'label' => $qrLabel]);
+                try { ActivityLogger::logCreate($userId, 'qr', 'qr_code', $qrId, ['type' => $type, 'is_dynamic' => $isDynamic, 'campaign_id' => $campaignId]); } catch (\Throwable $_) {}
 
                 // Send in-app notification to user
                 try {
@@ -779,6 +781,7 @@ class QRController
         if ($id && $userId) {
             if ($this->qrModel->delete($id, $userId)) {
                 Logger::activity($userId, 'qr_deleted', ['qr_id' => $id]);
+                try { ActivityLogger::logDelete($userId, 'qr', 'qr_code', $id); } catch (\Throwable $_) {}
                 Helpers::flash('success', 'QR code deleted successfully.');
             } else {
                 Helpers::flash('error', 'Failed to delete QR code.');
@@ -819,6 +822,7 @@ class QRController
         
         if ($deleted > 0) {
             Logger::activity($userId, 'qr_bulk_deleted', ['count' => $deleted, 'ids' => array_map('intval', $ids)]);
+            try { ActivityLogger::log($userId, 'bulk_delete', ['module' => 'qr', 'resource_type' => 'qr_code', 'count' => $deleted, 'ids' => array_map('intval', $ids)]); } catch (\Throwable $_) {}
             Helpers::flash('success', "$deleted QR code(s) deleted successfully.");
         } else {
             Helpers::flash('error', 'Failed to delete QR codes.');
@@ -906,6 +910,7 @@ class QRController
         
         // Update campaign
         if ($this->qrModel->update($qrId, $userId, ['campaign_id' => $campaignId])) {
+            try { ActivityLogger::logUpdate($userId, 'qr', 'qr_code', $qrId, ['campaign_id' => $qr['campaign_id'] ?? null], ['campaign_id' => $campaignId]); } catch (\Throwable $_) {}
             echo json_encode(['success' => true, 'message' => 'Campaign updated successfully.']);
         } else {
             echo json_encode(['success' => false, 'message' => 'Failed to update campaign.']);
@@ -1010,6 +1015,7 @@ class QRController
         
         if ($this->qrModel->update($id, $userId, $updateData)) {
             Logger::activity($userId, 'qr_updated', ['qr_id' => $id]);
+            try { ActivityLogger::logUpdate($userId, 'qr', 'qr_code', $id, [], $updateData); } catch (\Throwable $_) {}
             Helpers::flash('success', 'QR code updated successfully!');
         } else {
             Helpers::flash('error', 'Failed to update QR code.');
