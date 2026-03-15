@@ -903,7 +903,7 @@ class AdminUserAccessController extends BaseController
             $db->beginTransaction();
 
             // Delete all existing permissions for this user, then batch re-insert
-            $db->execute(
+            $db->query(
                 "DELETE FROM admin_user_permissions WHERE user_id = ?",
                 [(int) $userId]
             );
@@ -916,7 +916,7 @@ class AdminUserAccessController extends BaseController
                 foreach ($newKeys as $key) {
                     array_push($params, (int) $userId, $key, $grantedBy, $now);
                 }
-                $db->execute(
+                $db->query(
                     "INSERT INTO admin_user_permissions (user_id, permission_key, granted_by, created_at)
                      VALUES {$placeholders}",
                     $params
