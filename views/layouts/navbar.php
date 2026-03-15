@@ -781,13 +781,6 @@ body {
     z-index: 10001;
 }
 
-/* Explicit dark-mode override so the dropdown is always legible in projects */
-html:not([data-theme="light"]) .dropdown-menu {
-    background: #1c1c2a;
-    border-color: rgba(255,255,255,0.15);
-    box-shadow: 0 8px 32px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.08);
-}
-
 .dropdown.active .dropdown-menu {
     display: block;
 }
@@ -803,11 +796,6 @@ html:not([data-theme="light"]) .dropdown-menu {
     font-size: 14px;
 }
 
-/* Ensure text is always readable in dark mode */
-html:not([data-theme="light"]) .dropdown-item {
-    color: #e8eefc;
-}
-
 .dropdown-item:hover {
     background: var(--hover-bg, rgba(0,240,255,0.08));
     color: var(--cyan, #00f0ff);
@@ -817,6 +805,51 @@ html:not([data-theme="light"]) .dropdown-item {
     height: 1px;
     background: var(--border-color);
     margin: 8px 0;
+}
+
+/* ── Universal-header dropdown: forced visible in dark mode ────────────────
+   These rules use the .universal-header scope + !important to win over ANY
+   project-specific CSS that might inherit or override colours on the navbar.
+   Light-mode rules are kept separate so they still apply correctly.          */
+
+/* Dark mode: profile button text & icon */
+html:not([data-theme="light"]) .universal-header .nav-link,
+html:not([data-theme="light"]) .universal-header .dropdown-toggle {
+    color: #e8eefc !important;
+}
+
+/* Dark mode: dropdown panel */
+html:not([data-theme="light"]) .universal-header .dropdown-menu {
+    background: #1c1c2a !important;
+    border-color: rgba(255,255,255,0.15) !important;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.08) !important;
+}
+
+/* Dark mode: dropdown items (links inside the panel) */
+html:not([data-theme="light"]) .universal-header .dropdown-item {
+    color: #e8eefc !important;
+    background: transparent !important;
+}
+
+html:not([data-theme="light"]) .universal-header .dropdown-item:hover {
+    background: rgba(0, 240, 255, 0.10) !important;
+    color: #00f0ff !important;
+}
+
+/* Light mode: ensure contrast on white panel */
+[data-theme="light"] .universal-header .dropdown-menu {
+    background: #ffffff !important;
+    border-color: rgba(0,0,0,0.12) !important;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12) !important;
+}
+
+[data-theme="light"] .universal-header .dropdown-item {
+    color: #1a1a1a !important;
+}
+
+[data-theme="light"] .universal-header .dropdown-item:hover {
+    background: rgba(0, 100, 200, 0.08) !important;
+    color: #0369a1 !important;
 }
 
 .project-icon {
