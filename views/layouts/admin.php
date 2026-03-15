@@ -1443,6 +1443,13 @@
                             <span>Admin Users Access</span>
                         </a>
                     </div>
+
+                    <div class="menu-item">
+                        <a href="/admin/roles" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/roles') === 0 ? 'active' : '' ?>">
+                            <i class="fas fa-user-tag"></i>
+                            <span>User Roles</span>
+                        </a>
+                    </div>
                 </div>
                 
                 <!-- Security -->

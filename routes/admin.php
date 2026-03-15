@@ -60,6 +60,14 @@ $router->get('/admin/admin-access', 'Admin\\AdminUserAccessController@index', ['
 $router->get('/admin/admin-access/{userId}/edit', 'Admin\\AdminUserAccessController@editForm', ['auth', 'admin']);
 $router->post('/admin/admin-access/{userId}/save', 'Admin\\AdminUserAccessController@save', ['auth', 'admin']);
 
+// User Roles
+$router->get('/admin/roles', 'Admin\\RoleController@index', ['auth', 'admin']);
+$router->get('/admin/roles/create', 'Admin\\RoleController@createForm', ['auth', 'admin']);
+$router->post('/admin/roles/create', 'Admin\\RoleController@create', ['auth', 'admin']);
+$router->get('/admin/roles/{id}/edit', 'Admin\\RoleController@editForm', ['auth', 'admin']);
+$router->post('/admin/roles/{id}/update', 'Admin\\RoleController@update', ['auth', 'admin']);
+$router->post('/admin/roles/{id}/delete', 'Admin\\RoleController@delete', ['auth', 'admin']);
+
 // Project management
 $router->get('/admin/projects', 'Admin\\ProjectController@index', ['auth', 'admin']);
 $router->get('/admin/projects/{name}', 'Admin\\ProjectController@show', ['auth', 'admin']);
