@@ -34,6 +34,16 @@ return [
                 'project.*'
             ]
         ],
+        'audit_viewer' => [
+            'label' => 'Audit Viewer',
+            'level' => 50,
+            'permissions' => [
+                'admin.access',
+                'admin.audit.access',
+                'admin.audit.query',
+                'admin.logs.view',
+            ]
+        ],
         'user' => [
             'label' => 'User',
             'level' => 10,
@@ -62,6 +72,8 @@ return [
         'admin.settings.edit' => 'Edit settings',
         'admin.logs.view' => 'View logs',
         'admin.security.manage' => 'Manage security',
+        'admin.audit.access' => 'Access audit explorer',
+        'admin.audit.query' => 'Run audit queries',
         
         // User permissions
         'dashboard.access' => 'Access dashboard',

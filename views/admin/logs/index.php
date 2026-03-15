@@ -41,6 +41,21 @@
             </div>
         </div>
     </a>
+
+    <a href="/admin/audit" class="card" style="text-decoration: none; color: inherit;">
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <div style="width: 50px; height: 50px; background: rgba(0, 200, 100, 0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    <line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>
+                </svg>
+            </div>
+            <div>
+                <h3>Audit Explorer</h3>
+                <p style="color: var(--text-secondary); margin: 0;">Visual query builder — run custom audit queries</p>
+            </div>
+        </div>
+    </a>
 </div>
 
 <div style="margin-top:24px;">

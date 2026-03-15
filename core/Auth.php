@@ -300,8 +300,8 @@ class Auth
             return true;
         }
         
-        // Admin has project_admin and user roles
-        if ($user['role'] === 'admin' && in_array($role, ['admin', 'project_admin', 'user'])) {
+        // Admin has project_admin, audit_viewer and user roles
+        if ($user['role'] === 'admin' && in_array($role, ['admin', 'project_admin', 'audit_viewer', 'user'])) {
             return true;
         }
         
@@ -314,6 +314,15 @@ class Auth
     public static function isAdmin(): bool
     {
         return self::hasRole('admin') || self::hasRole('super_admin');
+    }
+
+    /**
+     * Check if user can access the Audit Explorer
+     * (super_admin, admin, or audit_viewer role)
+     */
+    public static function canAccessAudit(): bool
+    {
+        return self::isAdmin() || self::hasRole('audit_viewer');
     }
     
     /**

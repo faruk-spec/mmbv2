@@ -90,12 +90,42 @@ class LogController extends BaseController
              FROM activity_logs"
         );
 
+        // 7-day trend
+        $trend = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $date  = date('Y-m-d', strtotime("-{$i} days"));
+            $row   = $db->fetch(
+                "SELECT COUNT(*) AS cnt FROM activity_logs WHERE DATE(created_at) = ?", [$date]
+            );
+            $trend[] = ['date' => date('M d', strtotime($date)), 'count' => (int)($row['cnt'] ?? 0)];
+        }
+
+        // Top 8 actions
+        $topActions = $db->fetchAll(
+            "SELECT action, COUNT(*) AS cnt FROM activity_logs GROUP BY action ORDER BY cnt DESC LIMIT 8"
+        );
+
+        // Module distribution
+        $moduleDistrib = $db->fetchAll(
+            "SELECT COALESCE(module, 'core') AS module, COUNT(*) AS cnt
+             FROM activity_logs GROUP BY module ORDER BY cnt DESC LIMIT 8"
+        );
+
+        // Status breakdown
+        $statusDistrib = $db->fetchAll(
+            "SELECT COALESCE(status,'success') AS status, COUNT(*) AS cnt FROM activity_logs GROUP BY status"
+        );
+
         $this->view('admin/logs/activity', [
             'title'               => 'Activity Logs',
             'logs'                => $logs,
             'actions'             => $actions,
             'modules'             => $modules,
             'stats'               => $stats,
+            'trend'               => $trend,
+            'topActions'          => $topActions,
+            'moduleDistrib'       => $moduleDistrib,
+            'statusDistrib'       => $statusDistrib,
             'currentAction'       => $action,
             'currentUserId'       => $userId,
             'currentModule'       => $module,

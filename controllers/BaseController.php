@@ -115,4 +115,16 @@ abstract class BaseController
             exit;
         }
     }
+
+    /**
+     * Check if user can access Audit Explorer (admin or audit_viewer role)
+     */
+    protected function requireAuditAccess(): void
+    {
+        if (!Auth::canAccessAudit()) {
+            http_response_code(403);
+            View::render('errors/403');
+            exit;
+        }
+    }
 }
