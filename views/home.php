@@ -1,4 +1,4 @@
-<?php use Core\View; use Core\Database; ?>
+<?php use Core\View; use Core\Database; use Core\Auth; ?>
 <?php View::extend('main'); ?>
 
 <?php View::section('styles'); ?>
@@ -301,7 +301,7 @@ $featuresSubheading = $sections['features']['subheading'] ?? 'Powerful capabilit
             </p>
             
             <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-                <?php if (isset($_SESSION['user'])): ?>
+                <?php if (Auth::check()): ?>
                     <a href="/dashboard" class="btn btn-primary">Go to Dashboard</a>
                     <a href="/projects" class="btn btn-secondary">Browse Projects</a>
                 <?php else: ?>
@@ -570,7 +570,7 @@ if ($showStats):
                 </svg>
             </button>
             
-            <?php if (isset($_SESSION['user'])): ?>
+            <?php if (Auth::check()): ?>
                 <a href="<?= htmlspecialchars($projectUrl) ?>" class="btn btn-primary" style="width: 100%; background: <?= $projectColor ?>; border-color: <?= $projectColor ?>;">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 6px;">
                         <line x1="5" y1="12" x2="19" y2="12"></line>

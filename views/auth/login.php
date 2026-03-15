@@ -40,7 +40,7 @@
         </div>
         <?php endif; ?>
         
-        <form method="POST" action="/login">
+        <form method="POST" action="/login<?= !empty($_GET['redirect']) ? '?redirect=' . urlencode($_GET['redirect']) : '' ?>">
             <?= \Core\Security::csrfField() ?>
             
             <div class="form-group">

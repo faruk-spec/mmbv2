@@ -265,8 +265,17 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
             <?php endif; ?>
         </nav>
 
-        <!-- Always-visible header actions: notification, profile, theme icon, hamburger -->
+        <!-- Always-visible header actions: theme icon, notification, profile, hamburger -->
         <div class="header-end-actions">
+            <!-- Theme Toggle (icon only) — visible to all users -->
+            <?php if ($navbarSettings['show_theme_toggle']): ?>
+            <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+                <svg id="themeIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                </svg>
+            </button>
+            <?php endif; ?>
+
             <?php if ($isLoggedIn):
                 try {
                     $notifUnreadCount = \Core\Notification::getUnreadCount($user['id']);
@@ -300,17 +309,7 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
                 </div>
             </div>
 
-            <!-- Theme Toggle (icon only) — between notification and user -->
-            <?php if ($navbarSettings['show_theme_toggle']): ?>
-            <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
-                <svg id="themeIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-                </svg>
-            </button>
-            <?php endif; ?>
-
-            <!-- Profile Dropdown -->
-            <?php if ($navbarSettings['show_profile_link']): ?>
+            <!-- Profile Dropdown — always shown for logged-in users -->
             <div class="dropdown" id="profileDropdown">
                 <button class="nav-link dropdown-toggle">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -348,7 +347,6 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
                     </a>
                 </div>
             </div>
-            <?php endif; ?>
             <?php endif; ?>
 
             <!-- Hamburger (mobile only) -->
