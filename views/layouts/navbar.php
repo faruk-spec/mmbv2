@@ -780,7 +780,7 @@ body {
     padding: 8px 0;
     box-shadow: var(--shadow);
     display: none;
-    z-index: 1000;
+    z-index: 10001;
 }
 
 .dropdown.active .dropdown-menu {
@@ -1016,14 +1016,16 @@ body {
         z-index: 10000;
     }
 
-    /* Profile dropdown on mobile: constrained width */
+    /* Profile dropdown on mobile: constrained width, fixed so it can't be clipped */
     .header-end-actions .dropdown .dropdown-menu {
-        position: absolute !important;
-        width: min(220px, calc(100vw - 20px));
-        right: 0 !important;
+        position: fixed !important;
+        top: 58px !important;
+        right: 8px !important;
         left: auto !important;
+        width: min(220px, calc(100vw - 20px));
         border-left: none;
         padding-left: 0;
+        z-index: 10002 !important;
     }
     
     .mobile-menu-btn {

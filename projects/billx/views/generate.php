@@ -56,11 +56,12 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
                     </div>
                     <div class="form-group" style="margin:0;">
                         <label class="form-label">Currency</label>
+                        <?php $defCurrency = $config['admin_settings']['default_currency'] ?? 'INR'; ?>
                         <select name="currency" id="currency" class="form-select">
-                            <option value="INR">INR ₹</option>
-                            <option value="USD">USD $</option>
-                            <option value="EUR">EUR €</option>
-                            <option value="GBP">GBP £</option>
+                            <option value="INR" <?= $defCurrency === 'INR' ? 'selected' : '' ?>>INR ₹</option>
+                            <option value="USD" <?= $defCurrency === 'USD' ? 'selected' : '' ?>>USD $</option>
+                            <option value="EUR" <?= $defCurrency === 'EUR' ? 'selected' : '' ?>>EUR €</option>
+                            <option value="GBP" <?= $defCurrency === 'GBP' ? 'selected' : '' ?>>GBP £</option>
                         </select>
                     </div>
                     <div class="form-group" style="margin:0;grid-column:span 2;">
@@ -321,9 +322,11 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
             </div>
 
             <!-- Policy Agreement -->
-            <div class="card">
+            <?php $requirePolicy = !empty($config['admin_settings']['require_policy_agree'] ?? 1); ?>
+            <div class="card" <?= !$requirePolicy ? 'style="display:none;"' : '' ?>>
                 <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;">
-                    <input type="checkbox" name="policy_agree" id="policy_agree" required
+                    <input type="checkbox" name="policy_agree" id="policy_agree"
+                           <?= $requirePolicy ? 'required' : '' ?>
                            style="margin-top:3px;width:16px;height:16px;accent-color:var(--amber);flex-shrink:0;">
                     <span style="font-size:0.85rem;color:var(--text-secondary);line-height:1.5;">
                         <strong style="color:var(--text-primary);">Policy Agreement</strong><br>
@@ -380,8 +383,12 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
 }
 @media (max-width: 900px) {
     #generateLayout { height: auto !important; grid-template-columns: 1fr !important; }
-    #leftFormPanel  { overflow-y: visible !important; height: auto !important; }
-    #rightPreviewPanel { height: 480px !important; }
+    #leftFormPanel  { overflow-y: visible !important; height: auto !important; max-height: none !important; }
+    #rightPreviewPanel { height: 520px !important; min-height: 400px; }
+}
+@media (max-width: 480px) {
+    #generateLayout { gap: 10px !important; }
+    #rightPreviewPanel { height: 420px !important; }
 }
 /* Compact form overrides for generate page */
 #billForm .form-input,
@@ -620,7 +627,7 @@ ${d.fromEmail?`<div style="font-size:10px;opacity:.85;">${escHtml(d.fromEmail)}<
 <span>Bill No: <b>${escHtml(d.billNo)}</b></span>${tableNo?`<span>Table: <b>#${escHtml(tableNo)}</b></span>`:''}
 <span>${fmtDate(d.billDate)}</span>
 </div>
-<div style="padding:6px 12px;font-size:11px;border-bottom:1px solid #eee;">Customer: <b>${escHtml(d.toName)}</b>${d.toPhone?` | Ph: ${escHtml(d.toPhone)}`:''}${mode?` | Mode: <b>${escHtml(mode)}</b>`:''}</div>
+<div style="padding:6px 12px;font-size:11px;border-bottom:1px solid #eee;">Customer: <b>${escHtml(d.toName)}</b>${d.toPhone?` | Ph: ${escHtml(d.toPhone)}`:''}${mode?` | Mode: <b>${escHtml(mode)}</b>`:''}${d.toAddr?`<div style="font-size:10px;color:#555;margin-top:2px;">${escHtml(d.toAddr).replace(/\n/g,' | ')}</div>`:''}${d.toEmail?`<div style="font-size:10px;color:#555;">${escHtml(d.toEmail)}</div>`:''}</div>
 <table style="width:100%;border-collapse:collapse;"><thead><tr style="background:${c};color:#fff;"><th style="padding:5px 8px;text-align:left;font-size:11px;">Item</th><th style="padding:5px 8px;text-align:center;font-size:11px;">Qty</th><th style="padding:5px 8px;text-align:right;font-size:11px;">Rate</th><th style="padding:5px 8px;text-align:right;font-size:11px;">Amt</th></tr></thead>
 <tbody>${rows||'<tr><td colspan="4" style="padding:8px;text-align:center;color:#aaa;">No items</td></tr>'}</tbody></table>
 <div style="padding:8px 12px;background:#f9f9f9;border-top:1px solid #ddd;font-size:11px;">
@@ -656,6 +663,8 @@ ${d.fromEmail?`<div style="font-size:12px;color:#444;">${escHtml(d.fromEmail)}</
 <div style="font-size:14px;border-bottom:1px dashed #555;padding-bottom:5px;margin-bottom:5px;">
 <div style="display:flex;justify-content:space-between;"><span>Bill#: <b>${escHtml(d.billNo)}</b></span><span>${fmtDate(d.billDate)}</span></div>
 <div style="display:flex;justify-content:space-between;"><span>Cust: <b>${escHtml(d.toName)}</b>${d.toPhone?` | ${escHtml(d.toPhone)}`:''}</span><span>${billTime}</span></div>
+${d.toAddr?`<div style="font-size:12px;color:#555;">${escHtml(d.toAddr).replace(/\n/g,' | ')}</div>`:''}
+${d.toEmail?`<div style="font-size:12px;color:#555;">${escHtml(d.toEmail)}</div>`:''}
 ${tableNo?`<div>Table: <b>#${escHtml(tableNo)}</b>${mode?' | Pay: <b>'+escHtml(mode)+'</b>':''}</div>`:''}
 </div>
 <div style="border-bottom:1px dashed #555;padding-bottom:5px;margin-bottom:4px;">
@@ -691,6 +700,8 @@ ${d.notes?`<div style="border-top:1px dashed #555;padding-top:4px;margin-top:3px
     return`<div style="font-family:'Courier New',monospace;background:#fff;width:80mm;max-width:80mm;margin:0 auto;padding:14px 18px;font-size:11px;color:#111;border:1px solid #ccc;box-shadow:1px 2px 8px rgba(0,0,0,.15);">
 ${dash}<div style="text-align:center;letter-spacing:6px;font-size:11px;font-weight:700;margin:2px 0;">RECEIPT</div>${dash}
 <div style="display:flex;justify-content:space-between;margin-bottom:2px;"><span>Name: <b>${escHtml(d.toName)}</b>${d.toPhone?` | Ph: ${escHtml(d.toPhone)}`:''}</span><span>Invoice No: <b>${escHtml(d.billNo)}</b></span></div>
+${d.toAddr?`<div style="font-size:9px;color:#555;margin-bottom:1px;">${escHtml(d.toAddr).replace(/\n/g,' | ')}</div>`:''}
+${d.toEmail?`<div style="font-size:9px;color:#555;margin-bottom:1px;">${escHtml(d.toEmail)}</div>`:''}
 ${tableNo?`<div style="display:flex;justify-content:space-between;"><span>Table: <b>#${escHtml(tableNo)}</b></span><span>Date: ${fmtDate(d.billDate)}</span></div>`:`<div>Date: ${fmtDate(d.billDate)}</div>`}
 <div style="font-size:10px;margin-top:2px;">${escHtml(d.fromName)}${d.fromPhone?' | '+escHtml(d.fromPhone):''}</div>
 ${d.fromAddr?`<div style="font-size:9px;color:#555;margin-top:1px;">${escHtml(d.fromAddr).replace(/\n/g,' | ')}</div>`:''}
@@ -1341,7 +1352,7 @@ function toggleCrambled(){
 // ─── Form submit dispatcher ───────────────────────────────────────────────────
 function submitBill(action){
     const chk=document.getElementById('policy_agree');
-    if(!chk.checked){chk.reportValidity();chk.focus();return;}
+    if(chk && chk.required && !chk.checked){chk.reportValidity();chk.focus();return;}
     if(action==='download'){
         // Generate PDF from live preview first, then save silently to history
         _downloadFromPreviewThenSave();

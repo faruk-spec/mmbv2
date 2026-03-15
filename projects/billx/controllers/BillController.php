@@ -10,6 +10,7 @@ namespace Projects\BillX\Controllers;
 use Core\Auth;
 use Core\Security;
 use Core\Logger;
+use Core\Database;
 use Projects\BillX\Models\BillModel;
 
 class BillController
@@ -21,10 +22,68 @@ class BillController
         $this->model = new BillModel();
     }
 
+    /**
+     * Load admin settings from billx_settings table.
+     * Returns defaults if table doesn't exist yet.
+     */
+    private function loadAdminSettings(): array
+    {
+        $defaults = [
+            'max_bills_per_user'   => 500,
+            'allowed_bill_types'   => [],  // empty = all allowed
+            'default_currency'     => 'INR',
+            'require_policy_agree' => 1,
+        ];
+        try {
+            $db = Database::getInstance();
+            $row = $db->fetch(
+                "SELECT setting_value FROM billx_settings WHERE setting_key = 'admin_config'"
+            );
+            if ($row && !empty($row['setting_value'])) {
+                $saved = json_decode($row['setting_value'], true);
+                if (is_array($saved)) {
+                    return array_merge($defaults, $saved);
+                }
+            }
+        } catch (\Exception $e) {
+            // Table may not exist yet — return defaults silently
+        }
+        return $defaults;
+    }
+
+    /**
+     * Merge admin settings into the bill config:
+     * - Filter bill_types to only allowed ones (if any restriction set)
+     * - Apply default currency from admin settings
+     * - Apply require_policy_agree flag
+     */
+    private function applyAdminSettings(array $config): array
+    {
+        $settings = $this->loadAdminSettings();
+
+        // Filter allowed bill types
+        if (!empty($settings['allowed_bill_types'])) {
+            $config['bill_types'] = array_filter(
+                $config['bill_types'],
+                fn($key) => in_array($key, $settings['allowed_bill_types'], true),
+                ARRAY_FILTER_USE_KEY
+            );
+            // If all types filtered out (bad config), restore all types
+            if (empty($config['bill_types'])) {
+                $config['bill_types'] = (require PROJECT_PATH . '/config.php')['bill_types'];
+            }
+        }
+
+        // Expose admin settings as config keys for the view
+        $config['admin_settings'] = $settings;
+
+        return $config;
+    }
+
     /** GET /projects/billx/generate */
     public function showForm(): void
     {
-        $config = require PROJECT_PATH . '/config.php';
+        $config = $this->applyAdminSettings(require PROJECT_PATH . '/config.php');
         $this->render('generate', [
             'title'  => 'Generate Bill',
             'user'   => Auth::user(),
@@ -42,31 +101,74 @@ class BillController
         }
 
         $userId = Auth::id();
-        $config = require PROJECT_PATH . '/config.php';
+        $config = $this->applyAdminSettings(require PROJECT_PATH . '/config.php');
 
         $billType   = Security::sanitize($_POST['bill_type']   ?? 'general');
-        $billNumber = Security::sanitize($_POST['bill_number'] ?? '');
-        $billDate   = Security::sanitize($_POST['bill_date']   ?? date('Y-m-d'));
-        $fromName   = Security::sanitize($_POST['from_name']   ?? '');
-        $fromAddr   = Security::sanitize($_POST['from_address'] ?? '');
-        $fromPhone  = Security::sanitize($_POST['from_phone']  ?? '');
-        $fromEmail  = Security::sanitize($_POST['from_email']  ?? '');
-        $toName     = Security::sanitize($_POST['to_name']     ?? '');
-        $toAddr     = Security::sanitize($_POST['to_address']  ?? '');
-        $toPhone    = Security::sanitize($_POST['to_phone']    ?? '');
-        $toEmail    = Security::sanitize($_POST['to_email']    ?? '');
-        $notes      = Security::sanitize($_POST['notes']       ?? '');
-        $currency   = Security::sanitize($_POST['currency']    ?? 'INR');
-        $taxPct     = (float)($_POST['tax_percent']      ?? 0);
-        $discount   = (float)($_POST['discount_amount']  ?? 0);
+        $billNumber = Security::sanitize(substr($_POST['bill_number'] ?? '', 0, 50));
+        $billDate   = $_POST['bill_date'] ?? date('Y-m-d');
+        $fromName   = Security::sanitize(substr($_POST['from_name']    ?? '', 0, 255));
+        $fromAddr   = Security::sanitize(substr($_POST['from_address'] ?? '', 0, 1000));
+        $fromPhone  = Security::sanitize(substr($_POST['from_phone']   ?? '', 0, 50));
+        $fromEmail  = Security::sanitize(substr($_POST['from_email']   ?? '', 0, 255));
+        $toName     = Security::sanitize(substr($_POST['to_name']      ?? '', 0, 255));
+        $toAddr     = Security::sanitize(substr($_POST['to_address']   ?? '', 0, 1000));
+        $toPhone    = Security::sanitize(substr($_POST['to_phone']     ?? '', 0, 50));
+        $toEmail    = Security::sanitize(substr($_POST['to_email']     ?? '', 0, 255));
+        $notes      = Security::sanitize(substr($_POST['notes']        ?? '', 0, 2000));
+        $currency   = Security::sanitize($_POST['currency'] ?? 'INR');
+        $taxPct     = (float)($_POST['tax_percent']     ?? 0);
+        $discount   = (float)($_POST['discount_amount'] ?? 0);
         $saveAction = Security::sanitize($_POST['save_action'] ?? 'view');
+
+        // Enforce max bills per user limit from admin settings
+        $maxBills = (int)($config['admin_settings']['max_bills_per_user'] ?? 500);
+        if ($maxBills > 0 && $this->model->countByUser($userId) >= $maxBills) {
+            $this->render('generate', [
+                'title'  => 'Generate Bill',
+                'user'   => Auth::user(),
+                'config' => $config,
+                'error'  => "You have reached the maximum limit of {$maxBills} bills. Please delete older bills to continue.",
+            ]);
+            return;
+        }
+
+        // Validate bill_date is a real calendar date in YYYY-MM-DD format
+        $parsedDate = \DateTime::createFromFormat('Y-m-d', $billDate);
+        if (!$parsedDate || $parsedDate->format('Y-m-d') !== $billDate) {
+            $billDate = date('Y-m-d');
+        }
+
+        // Clamp numeric fields to sane ranges
+        $taxPct   = max(0.0, min(100.0, $taxPct));
+        $discount = max(0.0, $discount);
+
+        // Validate currency against allowed list
+        $allowedCurrencies = ['INR', 'USD', 'EUR', 'GBP'];
+        if (!in_array($currency, $allowedCurrencies, true)) {
+            $currency = 'INR';
+        }
+
+        // Validate save_action
+        if (!in_array($saveAction, ['save', 'download', 'view'], true)) {
+            $saveAction = 'view';
+        }
+
+        // Validate email fields
+        if ($fromEmail !== '' && !filter_var($fromEmail, FILTER_VALIDATE_EMAIL)) {
+            $fromEmail = '';
+        }
+        if ($toEmail !== '' && !filter_var($toEmail, FILTER_VALIDATE_EMAIL)) {
+            $toEmail = '';
+        }
 
         // Collect template_data from td_* POST fields (type-specific extras: CGST, SGST, vehicle, etc.)
         // Only accept scalar string values to prevent injection of unexpected data types.
+        // Each field is truncated to 500 characters to prevent oversized DB entries.
+        $maxTdFieldLen = 500;
         $templateData = [];
         foreach ($_POST as $k => $v) {
             if (strncmp($k, 'td_', 3) === 0 && is_string($v)) {
-                $templateData[substr($k, 3)] = Security::sanitize($v);
+                $templateData[substr($k, 3)] = Security::sanitize(substr($v, 0, $maxTdFieldLen));
             }
         }
 
@@ -80,12 +182,14 @@ class BillController
         $quantities   = $_POST['item_qty']         ?? [];
         $rates        = $_POST['item_rate']        ?? [];
 
+        // Limit items to a reasonable count (prevent abuse)
+        $maxItems = 100;
         $items    = [];
         $subtotal = 0.0;
-        foreach ($descriptions as $i => $desc) {
-            $desc   = Security::sanitize($desc);
-            $qty    = (float)($quantities[$i] ?? 1);
-            $rate   = (float)($rates[$i]      ?? 0);
+        foreach (array_slice((array)$descriptions, 0, $maxItems) as $i => $desc) {
+            $desc   = Security::sanitize(substr((string)$desc, 0, 500));
+            $qty    = max(0.0, (float)($quantities[$i] ?? 1));
+            $rate   = max(0.0, (float)($rates[$i]      ?? 0));
             $amount = $qty * $rate;
             if ($desc === '' && $rate == 0) continue;
             $items[] = ['description' => $desc, 'qty' => $qty, 'rate' => $rate, 'amount' => $amount];
@@ -94,6 +198,8 @@ class BillController
 
         $cgstPct   = (float)($templateData['cgst_pct'] ?? 0);
         $sgstPct   = (float)($templateData['sgst_pct'] ?? 0);
+        $cgstPct   = max(0.0, min(50.0, $cgstPct));
+        $sgstPct   = max(0.0, min(50.0, $sgstPct));
         $cgstAmt   = round($subtotal * $cgstPct / 100, 2);
         $sgstAmt   = round($subtotal * $sgstPct / 100, 2);
         $taxAmount = round($subtotal * $taxPct / 100, 2);
@@ -174,10 +280,11 @@ class BillController
     /** GET /projects/billx/view/{id} */
     public function view(int $id): void
     {
-        $userId = Auth::id();
-        $bill   = $this->model->getById($id);
+        $userId  = Auth::id();
+        $isAdmin = Auth::isAdmin();
+        $bill    = $this->model->getById($id);
 
-        if (!$bill || (int)$bill['user_id'] !== $userId) {
+        if (!$bill || ((int)$bill['user_id'] !== $userId && !$isAdmin)) {
             http_response_code(404);
             echo "Bill not found.";
             return;
@@ -197,10 +304,12 @@ class BillController
     /** GET /projects/billx/pdf/{id} — standalone print/PDF view */
     public function pdf(int $id): void
     {
-        $userId = Auth::id();
-        $bill   = $this->model->getById($id);
+        $userId  = Auth::id();
+        $isAdmin = Auth::isAdmin();
+        $bill    = $this->model->getById($id);
 
-        if (!$bill || (int)$bill['user_id'] !== $userId) {
+        // Allow the bill owner OR any admin to view/print/PDF a bill
+        if (!$bill || ((int)$bill['user_id'] !== $userId && !$isAdmin)) {
             http_response_code(404);
             echo "Bill not found.";
             return;
@@ -219,16 +328,18 @@ class BillController
     /** GET /projects/billx/download/{id} */
     public function download(int $id): void
     {
-        $userId = Auth::id();
-        $bill   = $this->model->getById($id);
+        $userId  = Auth::id();
+        $isAdmin = Auth::isAdmin();
+        $bill    = $this->model->getById($id);
 
-        if (!$bill || (int)$bill['user_id'] !== $userId) {
+        // Allow the bill owner OR any admin to download a bill
+        if (!$bill || ((int)$bill['user_id'] !== $userId && !$isAdmin)) {
             http_response_code(404);
             echo "Bill not found.";
             return;
         }
 
-        Logger::activity($userId, 'billx_bill_pdf_view', ['bill_id' => $id]);
+        Logger::activity($userId, 'billx_bill_download', ['bill_id' => $id]);
         header('Location: /projects/billx/pdf/' . $id . '?download=1');
     }
 
