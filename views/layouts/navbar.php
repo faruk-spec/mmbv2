@@ -812,8 +812,9 @@ body {
    project-specific CSS that might inherit or override colours on the navbar.
    Light-mode rules are kept separate so they still apply correctly.          */
 
-/* Dark mode: profile button text & icon */
-html:not([data-theme="light"]) .universal-header .nav-link,
+/* Dark mode: dropdown toggle buttons (profile, projects) text & icon.
+   Intentionally NOT targeting .nav-link broadly so the notification bell
+   keeps its own colour styling. */
 html:not([data-theme="light"]) .universal-header .dropdown-toggle {
     color: #e8eefc !important;
 }
