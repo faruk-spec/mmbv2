@@ -11,6 +11,7 @@ use Controllers\BaseController;
 use Core\Database;
 use Core\Auth;
 use Core\Logger;
+use Core\ActivityLogger;
 
 class ImgTxtAdminController extends BaseController
 {
@@ -211,10 +212,12 @@ class ImgTxtAdminController extends BaseController
             
             // Log the activity
             Logger::activity(Auth::id(), 'imgtxt_settings_updated', $settings);
+            try { ActivityLogger::logUpdate(Auth::id(), 'imgtxt', 'settings', null, [], $settings); } catch (\Throwable $_) {}
             
             $_SESSION['flash_message'] = 'Settings updated successfully';
             $_SESSION['flash_type'] = 'success';
         } catch (\Exception $e) {
+            try { ActivityLogger::logFailure(Auth::id(), 'settings_update', $e->getMessage()); } catch (\Throwable $_) {}
             $_SESSION['flash_message'] = 'Failed to update settings: ' . $e->getMessage();
             $_SESSION['flash_type'] = 'danger';
         }
@@ -385,6 +388,7 @@ class ImgTxtAdminController extends BaseController
             ], 'id = ?', [$id]);
             
             Logger::activity(Auth::id(), 'imgtxt_job_retry', ['job_id' => $id]);
+            try { ActivityLogger::logUpdate(Auth::id(), 'imgtxt', 'ocr_job', $id, [], ['status' => 'pending']); } catch (\Throwable $_) {}
             $this->flash('success', 'Job queued for retry.');
         }
         
@@ -407,6 +411,7 @@ class ImgTxtAdminController extends BaseController
         if ($id > 0) {
             $this->projectDb->delete('ocr_jobs', 'id = ?', [$id]);
             Logger::activity(Auth::id(), 'imgtxt_job_deleted', ['job_id' => $id]);
+            try { ActivityLogger::logDelete(Auth::id(), 'imgtxt', 'ocr_job', $id); } catch (\Throwable $_) {}
             $this->flash('success', 'Job deleted successfully.');
         }
         

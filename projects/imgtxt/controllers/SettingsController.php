@@ -11,6 +11,7 @@ use Core\Database;
 use Core\View;
 use Core\Auth;
 use Core\Security;
+use Core\ActivityLogger;
 
 class SettingsController
 {
@@ -84,11 +85,14 @@ class SettingsController
                 ]);
             }
             
+            try { ActivityLogger::logUpdate($user['id'], 'imgtxt', 'settings', $user['id'], [], ['default_language' => $defaultLanguage, 'auto_download' => $autoDownload, 'output_format' => $outputFormat]); } catch (\Throwable $_) {}
+            
             echo json_encode([
                 'success' => true,
                 'message' => 'Settings saved successfully'
             ]);
         } catch (\Exception $e) {
+            try { ActivityLogger::logFailure($user['id'] ?? null, 'settings_update', $e->getMessage()); } catch (\Throwable $_) {}
             http_response_code(500);
             echo json_encode([
                 'success' => false,
