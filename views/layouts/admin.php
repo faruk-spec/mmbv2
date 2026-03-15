@@ -1436,6 +1436,13 @@
                             <span>Users</span>
                         </a>
                     </div>
+
+                    <div class="menu-item">
+                        <a href="/admin/admin-access" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/admin-access') === 0 ? 'active' : '' ?>">
+                            <i class="fas fa-user-shield"></i>
+                            <span>Admin Users Access</span>
+                        </a>
+                    </div>
                 </div>
                 
                 <!-- Security -->
@@ -1548,6 +1555,10 @@
                             <a href="/admin/logs/system" class="menu-link">
                                 <i class="fas fa-server"></i>
                                 <span>System Logs</span>
+                            </a>
+                            <a href="/admin/audit" class="menu-link">
+                                <i class="fas fa-search"></i>
+                                <span>Audit Explorer</span>
                             </a>
                         </div>
                     </div>

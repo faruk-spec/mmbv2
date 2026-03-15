@@ -53,6 +53,16 @@ class AuditController extends BaseController
     /**
      * Audit Explorer landing page
      */
+    /**
+     * All known platform modules — always shown in the filter dropdown
+     * even if no activity_logs rows exist for that module yet.
+     */
+    private const KNOWN_MODULES = [
+        'auth', 'admin', 'qr', 'whatsapp', 'proshare', 'codexpro',
+        'imgtxt', 'convertx', 'billx', 'resumex', 'devzone',
+        'settings', 'users', 'security', 'api', 'platform_plans', 'audit',
+    ];
+
     public function index(): void
     {
         $db = Database::getInstance();
@@ -69,11 +79,24 @@ class AuditController extends BaseController
 
         // Pre-populate filter dropdowns
         $actions = $db->fetchAll('SELECT DISTINCT action FROM activity_logs ORDER BY action');
-        $modules = $db->fetchAll(
+
+        // Merge DB modules with the hardcoded known-modules list so all
+        // options appear even before any log entries exist for that module.
+        $dbModules = $db->fetchAll(
             "SELECT DISTINCT module FROM activity_logs WHERE module IS NOT NULL AND module != '' ORDER BY module"
         );
+        $dbModuleValues = array_column($dbModules, 'module');
+        $allModules = array_unique(array_merge(self::KNOWN_MODULES, $dbModuleValues));
+        sort($allModules);
+        $modules = array_map(fn($m) => ['module' => $m], $allModules);
+
         $userRoles = $db->fetchAll(
             "SELECT DISTINCT user_role FROM activity_logs WHERE user_role IS NOT NULL AND user_role != '' ORDER BY user_role"
+        );
+
+        // Users list for the user-filter autocomplete (name + email)
+        $users = $db->fetchAll(
+            "SELECT id, name, email FROM users ORDER BY name LIMIT 500"
         );
 
         $this->view('admin/audit/index', [
@@ -82,6 +105,7 @@ class AuditController extends BaseController
             'actions'     => $actions,
             'modules'     => $modules,
             'userRoles'   => $userRoles,
+            'users'       => $users,
             'allowedCols' => self::ALLOWED_COLUMNS,
         ]);
     }

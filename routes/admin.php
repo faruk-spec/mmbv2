@@ -55,6 +55,11 @@ $router->post('/admin/users/{id}/edit', 'Admin\\UserController@update', ['auth',
 $router->post('/admin/users/{id}/delete', 'Admin\\UserController@delete', ['auth', 'admin']);
 $router->post('/admin/users/{id}/toggle', 'Admin\\UserController@toggle', ['auth', 'admin']);
 
+// Admin User Access — granular admin panel permissions
+$router->get('/admin/admin-access', 'Admin\\AdminUserAccessController@index', ['auth', 'admin']);
+$router->get('/admin/admin-access/{id}/edit', 'Admin\\AdminUserAccessController@editForm', ['auth', 'admin']);
+$router->post('/admin/admin-access/{id}/save', 'Admin\\AdminUserAccessController@save', ['auth', 'admin']);
+
 // Project management
 $router->get('/admin/projects', 'Admin\\ProjectController@index', ['auth', 'admin']);
 $router->get('/admin/projects/{name}', 'Admin\\ProjectController@show', ['auth', 'admin']);

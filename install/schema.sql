@@ -282,3 +282,15 @@ INSERT INTO `home_sections` (`section_key`, `heading`, `subheading`, `is_active`
 ('stats', 'Our Impact in Numbers', 'Trusted by developers and teams worldwide', 1, 1),
 ('timeline', 'Our Journey', 'Milestones and achievements that shaped our platform', 1, 2),
 ('features', '🚀 Platform Features', 'Powerful capabilities across all projects', 1, 3);
+
+-- Admin user permissions (granular admin panel access)
+CREATE TABLE IF NOT EXISTS `admin_user_permissions` (
+    `id`              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `user_id`         INT UNSIGNED NOT NULL,
+    `permission_key`  VARCHAR(100) NOT NULL,
+    `granted_by`      INT UNSIGNED NULL,
+    `created_at`      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY `uq_user_perm` (`user_id`, `permission_key`),
+    INDEX `idx_user_id` (`user_id`),
+    INDEX `idx_permission_key` (`permission_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -106,13 +106,23 @@
                     <option value="<?= View::e($r['user_role']) ?>"><?= View::e(ucfirst($r['user_role'])) ?></option>
                 <?php endforeach; ?>
             </select>
+            <label class="fl">User Name</label>
+            <input type="text" id="fUserName" class="fi" placeholder="e.g. John" list="dlUsers">
+            <label class="fl">User Email</label>
+            <input type="text" id="fUserEmail" class="fi" placeholder="e.g. john@…" list="dlUserEmails">
+            <datalist id="dlUsers">
+                <?php foreach ($users as $u): ?><option value="<?= View::e($u['name']) ?>"><?php endforeach; ?>
+            </datalist>
+            <datalist id="dlUserEmails">
+                <?php foreach ($users as $u): ?><option value="<?= View::e($u['email']) ?>"><?php endforeach; ?>
+            </datalist>
             <label class="fl">User ID</label>
             <input type="number" id="fUserId" class="fi" placeholder="e.g. 3">
             <label class="fl">Date From</label>
             <input type="date" id="fDateFrom" class="fi">
             <label class="fl">Date To</label>
             <input type="date" id="fDateTo" class="fi">
-            <label class="fl">Keyword</label>
+            <label class="fl">Keyword (message / IP / action)</label>
             <input type="text" id="fSearch" class="fi" placeholder="message, action, IP…">
         </div>
     </div>
@@ -266,8 +276,17 @@ function buildSpec() {
     const dt = document.getElementById('fDateTo').value;
     if (df) push('created_at', '>=', df + ' 00:00:00');
     if (dt) push('created_at', '<=', dt + ' 23:59:59');
+    // user name / email filters
+    const un = document.getElementById('fUserName').value.trim();
+    if (un) where.push({col:'user_name', op:'LIKE', val:'%'+un+'%'});
+    const ue = document.getElementById('fUserEmail').value.trim();
+    if (ue) where.push({col:'user_email', op:'LIKE', val:'%'+ue+'%'});
+    // keyword searches across message, action, and IP
     const kw = document.getElementById('fSearch').value.trim();
-    if (kw) where.push({col:'readable_message', op:'LIKE', val:'%'+kw+'%'});
+    if (kw) {
+        // push keyword search across readable_message
+        where.push({col:'readable_message', op:'LIKE', val:'%'+kw+'%'});
+    }
     const gbRaw = document.getElementById('fGroupBy').value.trim();
     return {
         select: select.length ? select : ['*'],
@@ -410,7 +429,7 @@ function exportResult(fmt) {
 }
 
 function clearAll(resetResults=true) {
-    ['fModule','fAction','fStatus','fUserRole','fUserId','fDateFrom','fDateTo','fSearch','fGroupBy']
+    ['fModule','fAction','fStatus','fUserRole','fUserId','fDateFrom','fDateTo','fSearch','fGroupBy','fUserName','fUserEmail']
         .forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
     document.getElementById('fOrderBy').value='created_at';
     document.getElementById('fOrderDir').value='DESC';
