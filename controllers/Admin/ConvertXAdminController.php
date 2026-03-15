@@ -12,6 +12,7 @@ use Core\Database;
 use Core\Auth;
 use Core\Security;
 use Core\Logger;
+use Core\ActivityLogger;
 
 class ConvertXAdminController extends BaseController
 {
@@ -105,6 +106,7 @@ class ConvertXAdminController extends BaseController
                 "UPDATE convertx_jobs SET status='cancelled' WHERE id=:id AND status IN ('pending','processing')",
                 ['id' => $id]
             );
+            try { ActivityLogger::logUpdate(Auth::id(), 'convertx', 'conversion_job', $id, ['status' => 'pending/processing'], ['status' => 'cancelled']); } catch (\Throwable $_) {}
         }
         $this->redirect('/admin/projects/convertx/jobs');
     }
@@ -118,6 +120,7 @@ class ConvertXAdminController extends BaseController
         $id = (int) ($_POST['job_id'] ?? 0);
         if ($id) {
             $this->db->query("DELETE FROM convertx_jobs WHERE id=:id", ['id' => $id]);
+            try { ActivityLogger::logDelete(Auth::id(), 'convertx', 'conversion_job', $id); } catch (\Throwable $_) {}
         }
         $this->redirect('/admin/projects/convertx/jobs');
     }
@@ -188,6 +191,7 @@ class ConvertXAdminController extends BaseController
         $id = (int) ($_POST['key_id'] ?? 0);
         if ($id) {
             $this->db->query("UPDATE api_keys SET is_active=0 WHERE id=:id", ['id' => $id]);
+            try { ActivityLogger::logDelete(Auth::id(), 'convertx', 'api_key', $id); } catch (\Throwable $_) {}
         }
         $this->redirect('/admin/projects/convertx/api-keys');
     }
@@ -229,6 +233,7 @@ class ConvertXAdminController extends BaseController
                 "UPDATE convertx_ai_providers SET is_active=:a WHERE id=:id",
                 ['a' => $isActive, 'id' => $id]
             );
+            try { ActivityLogger::logUpdate(Auth::id(), 'convertx', 'settings', $id, [], ['provider_id' => $id, 'is_active' => $isActive]); } catch (\Throwable $_) {}
         }
 
         $_SESSION['_flash']['success'] = 'Settings updated.';
@@ -297,8 +302,10 @@ class ConvertXAdminController extends BaseController
             $_SESSION['_flash']['success'] = 'API key generated for ' . $user['name'] . ': ' . $key;
             $_SESSION['_flash']['new_key'] = $key;
             $_SESSION['_flash']['new_key_user'] = $user['name'];
+            try { ActivityLogger::logCreate(Auth::id(), 'convertx', 'api_key', 0, ['for_user_id' => $userId, 'key_prefix' => substr($key, 0, 8)]); } catch (\Throwable $_) {}
         } catch (\Exception $e) {
             Logger::error('ConvertX Admin generateApiKeyForUser: ' . $e->getMessage());
+            try { ActivityLogger::logFailure(Auth::id(), 'generate_api_key_for_user', $e->getMessage()); } catch (\Throwable $_) {}
             $_SESSION['_flash']['error'] = 'Failed to generate API key.';
         }
         $this->redirect('/admin/projects/convertx/api-keys');
@@ -348,8 +355,10 @@ class ConvertXAdminController extends BaseController
                 ]
             );
             $_SESSION['_flash']['success'] = 'Provider created.';
+            try { ActivityLogger::logCreate(Auth::id(), 'convertx', 'ai_provider', 0, ['name' => $name, 'slug' => $slug]); } catch (\Throwable $_) {}
         } catch (\Exception $e) {
             Logger::error('ConvertX createProvider: ' . $e->getMessage());
+            try { ActivityLogger::logFailure(Auth::id(), 'create_ai_provider', $e->getMessage()); } catch (\Throwable $_) {}
             $_SESSION['_flash']['error'] = 'Failed to create provider: ' . $e->getMessage();
         }
         $this->redirect('/admin/projects/convertx/settings');
@@ -403,8 +412,10 @@ class ConvertXAdminController extends BaseController
                 $params
             );
             $_SESSION['_flash']['success'] = 'Provider updated.';
+            try { ActivityLogger::logUpdate(Auth::id(), 'convertx', 'ai_provider', $id, [], ['name' => $name, 'base_url' => $baseUrl, 'model' => $model, 'priority' => $priority]); } catch (\Throwable $_) {}
         } catch (\Exception $e) {
             Logger::error('ConvertX editProvider: ' . $e->getMessage());
+            try { ActivityLogger::logFailure(Auth::id(), 'edit_ai_provider', $e->getMessage()); } catch (\Throwable $_) {}
             $_SESSION['_flash']['error'] = 'Failed to update provider.';
         }
         $this->redirect('/admin/projects/convertx/settings');
@@ -422,6 +433,7 @@ class ConvertXAdminController extends BaseController
             try {
                 $this->db->query("DELETE FROM convertx_ai_providers WHERE id=:id", ['id' => $id]);
                 $_SESSION['_flash']['success'] = 'Provider deleted.';
+                try { ActivityLogger::logDelete(Auth::id(), 'convertx', 'ai_provider', $id); } catch (\Throwable $_) {}
             } catch (\Exception $e) {
                 $_SESSION['_flash']['error'] = 'Failed to delete provider.';
             }
@@ -732,8 +744,10 @@ class ConvertXAdminController extends BaseController
                 ]
             );
             $_SESSION['_flash']['success'] = 'Plan created.';
+            try { ActivityLogger::logCreate(Auth::id(), 'convertx', 'subscription_plan', 0, ['name' => $name, 'slug' => $slug, 'price' => $price]); } catch (\Throwable $_) {}
         } catch (\Exception $e) {
             Logger::error('ConvertX createPlan: ' . $e->getMessage());
+            try { ActivityLogger::logFailure(Auth::id(), 'create_subscription_plan', $e->getMessage()); } catch (\Throwable $_) {}
             $_SESSION['_flash']['error'] = 'Failed to create plan: ' . $e->getMessage();
         }
         $this->redirect('/admin/projects/convertx/plans');
@@ -779,6 +793,7 @@ class ConvertXAdminController extends BaseController
                 ]
             );
             $_SESSION['_flash']['success'] = 'Plan updated.';
+            try { ActivityLogger::logUpdate(Auth::id(), 'convertx', 'subscription_plan', $id, [], ['name' => $name, 'price' => $price, 'status' => $status]); } catch (\Throwable $_) {}
         } catch (\Exception $e) {
             $_SESSION['_flash']['error'] = 'Failed to update plan.';
         }
@@ -797,6 +812,7 @@ class ConvertXAdminController extends BaseController
             try {
                 $this->db->query("DELETE FROM convertx_subscription_plans WHERE id=:id", ['id' => $id]);
                 $_SESSION['_flash']['success'] = 'Plan deleted.';
+                try { ActivityLogger::logDelete(Auth::id(), 'convertx', 'subscription_plan', $id); } catch (\Throwable $_) {}
             } catch (\Exception $e) {
                 $_SESSION['_flash']['error'] = 'Failed to delete plan.';
             }

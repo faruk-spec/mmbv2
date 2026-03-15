@@ -10,6 +10,7 @@ namespace Projects\ConvertX\Controllers;
 use Core\Auth;
 use Core\Security;
 use Core\Database;
+use Core\ActivityLogger;
 use Projects\ConvertX\Models\ConversionJobModel;
 
 class SettingsController
@@ -160,9 +161,11 @@ class SettingsController
                  VALUES (:uid, :key, 1, NOW())",
                 ['uid' => $userId, 'key' => $key]
             );
+            try { ActivityLogger::logCreate($userId, 'convertx', 'api_key', 0, ['key_prefix' => substr($key, 0, 8)]); } catch (\Throwable $_) {}
             return $key;
         } catch (\Exception $e) {
             \Core\Logger::error('ConvertX: generateApiKey failed: ' . $e->getMessage());
+            try { ActivityLogger::logFailure($userId, 'generate_api_key', $e->getMessage()); } catch (\Throwable $_) {}
             return null;
         }
     }
@@ -175,6 +178,7 @@ class SettingsController
                 "UPDATE convertx_api_keys SET is_active = 0 WHERE user_id = :uid",
                 ['uid' => $userId]
             );
+            try { ActivityLogger::logDelete($userId, 'convertx', 'api_key', 0, ['user_id' => $userId]); } catch (\Throwable $_) {}
         } catch (\Exception $e) {
             // Silently continue
         }
@@ -220,6 +224,7 @@ class SettingsController
                      notify_on_complete = VALUES(notify_on_complete)",
                 ['uid' => $userId, 'q' => $quality, 'd' => $dpi, 'n' => $notify]
             );
+            try { ActivityLogger::logUpdate($userId, 'convertx', 'settings', $userId, [], ['default_quality' => $quality, 'default_dpi' => $dpi, 'notify_on_complete' => $notify]); } catch (\Throwable $_) {}
         } catch (\Exception $e) {
             // Silently continue – table may not exist yet; schema.sql must be run
         }
