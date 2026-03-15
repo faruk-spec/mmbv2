@@ -12,6 +12,7 @@ use Core\View;
 use Core\Auth;
 use Core\Security;
 use Core\Helpers;
+use Core\ActivityLogger;
 
 class UploadController
 {
@@ -191,6 +192,7 @@ class UploadController
                     'filename' => $file['name'],
                     'size' => $file['size']
                 ]);
+                try { ActivityLogger::logCreate($userId, 'proshare', 'file', $fileId ?? null, ['filename' => $file['name'] ?? null, 'size' => $file['size'] ?? null]); } catch (\Throwable $_) {}
                 
                 // Create backup if enabled
                 if ($user) {
@@ -215,6 +217,7 @@ class UploadController
             }
         } catch (\Exception $e) {
             error_log('Upload error: ' . $e->getMessage());
+            try { ActivityLogger::logFailure($userId ?? null, 'file_upload', $e->getMessage()); } catch (\Throwable $_) {}
             echo json_encode(['success' => false, 'error' => 'Upload failed: ' . $e->getMessage()]);
         }
     }

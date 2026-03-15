@@ -11,6 +11,7 @@ use Core\Database;
 use Core\View;
 use Core\Auth;
 use Core\Security;
+use Core\ActivityLogger;
 
 class TextShareController
 {
@@ -116,6 +117,7 @@ class TextShareController
                     'title' => $title,
                     'length' => strlen($content)
                 ]);
+                try { ActivityLogger::logCreate($userId, 'proshare', 'text_share', $textId ?? null, ['title' => $title ?? null]); } catch (\Throwable $_) {}
                 
                 // Build share URL - check if APP_URL is defined
                 $baseUrl = defined('APP_URL') ? APP_URL : ($_SERVER['REQUEST_SCHEME'] ?? 'https') . '://' . ($_SERVER['HTTP_HOST'] ?? '');
@@ -133,6 +135,7 @@ class TextShareController
             }
         } catch (\Exception $e) {
             error_log('Text share creation error: ' . $e->getMessage());
+            try { ActivityLogger::logFailure($userId ?? null, 'text_share_action', $e->getMessage()); } catch (\Throwable $_) {}
             echo json_encode(['success' => false, 'error' => 'Failed to create text share: ' . $e->getMessage()]);
         }
     }
