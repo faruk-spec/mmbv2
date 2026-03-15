@@ -1,473 +1,491 @@
-<?php use Core\View; use Core\Auth; ?>
+<?php use Core\View; use Core\Auth; use Core\Helpers; ?>
 <?php View::extend('admin'); ?>
 
 <?php View::section('content'); ?>
-
 <!-- ================================================================
-     AUDIT EXPLORER – Superset-style visual query builder
+     AUDIT EXPLORER  –  Apache Superset-inspired UI
+     Left sidebar: filter controls + saved queries + templates
+     Right panel:  SELECT builder, result table, SQL preview
      ================================================================ -->
-
 <style>
-.ae-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:24px;}
-.ae-stat{background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:16px 20px;flex:1;min-width:140px;}
-.ae-stat .val{font-size:1.6rem;font-weight:700;}
-.ae-stat .lbl{font-size:12px;color:var(--text-secondary);margin-top:2px;}
+/* ── Layout ── */
+.ae-wrap{display:grid;grid-template-columns:280px 1fr;gap:0;height:calc(100vh - 130px);min-height:500px;overflow:hidden;border:1px solid var(--border-color);border-radius:14px;}
 
-.qb-card{background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:20px;margin-bottom:16px;}
-.qb-title{font-size:13px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.7px;margin-bottom:12px;}
+/* ── Left sidebar ── */
+.ae-sidebar{background:var(--bg-secondary);border-right:1px solid var(--border-color);overflow-y:auto;display:flex;flex-direction:column;}
+.ae-sidebar-header{padding:16px 18px 12px;border-bottom:1px solid var(--border-color);flex-shrink:0;}
+.ae-sidebar-header h2{font-size:14px;font-weight:700;margin:0 0 2px;}
+.ae-sidebar-header p{font-size:11px;color:var(--text-secondary);margin:0;}
 
-.condition-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap;}
-.condition-row select,.condition-row input{flex:1;min-width:120px;}
+.ae-section{border-bottom:1px solid var(--border-color);}
+.ae-section-hdr{padding:10px 18px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;}
+.ae-section-hdr span{font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text-secondary);}
+.ae-section-hdr i{font-size:10px;color:var(--text-secondary);transition:.15s;}
+.ae-section-hdr.open i{transform:rotate(90deg);}
+.ae-section-body{padding:0 18px 14px;display:none;}
+.ae-section-body.open{display:block;}
 
-.result-table-wrap{overflow-x:auto;}
-.result-table{width:100%;border-collapse:collapse;font-size:12px;}
-.result-table th{background:var(--bg-secondary);padding:8px 12px;text-align:left;font-weight:600;white-space:nowrap;position:sticky;top:0;z-index:1;}
-.result-table td{padding:7px 12px;border-bottom:1px solid var(--border-color);white-space:nowrap;max-width:260px;overflow:hidden;text-overflow:ellipsis;}
-.result-table tbody tr:hover{background:var(--bg-secondary);}
+.ae-filter-label{font-size:11px;color:var(--text-secondary);margin:10px 0 4px;display:block;font-weight:600;}
+.ae-filter-input{width:100%;padding:6px 10px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-card);color:inherit;font-size:12px;}
+.ae-filter-input:focus{outline:none;border-color:var(--cyan);}
 
-.sql-preview{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:12px 16px;font-family:monospace;font-size:12px;color:var(--cyan);overflow-x:auto;white-space:pre-wrap;margin-top:12px;}
+.ae-run-btn{margin:14px 18px;background:var(--cyan);color:#000;border:none;border-radius:10px;padding:10px 0;font-weight:700;font-size:13px;cursor:pointer;width:calc(100% - 36px);letter-spacing:.3px;transition:.15s;}
+.ae-run-btn:hover{opacity:.88;}
+.ae-run-btn.loading{opacity:.6;cursor:not-allowed;}
 
-.tab-btn{padding:8px 16px;border:1px solid var(--border-color);background:transparent;color:var(--text-secondary);border-radius:8px;cursor:pointer;font-size:13px;transition:.15s;}
-.tab-btn.active{background:var(--cyan);border-color:var(--cyan);color:#000;font-weight:600;}
+.ae-saved-item{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:8px;cursor:pointer;transition:.1s;margin-bottom:2px;}
+.ae-saved-item:hover{background:var(--bg-card);}
+.ae-saved-item .name{flex:1;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ae-saved-load{background:none;border:1px solid var(--border-color);color:var(--text-secondary);border-radius:6px;padding:2px 7px;font-size:10px;cursor:pointer;}
+.ae-saved-del{background:none;border:none;color:#e74c3c;cursor:pointer;padding:0 2px;font-size:12px;}
 
-.saved-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;cursor:pointer;transition:.15s;}
-.saved-item:hover{background:var(--bg-secondary);}
-.saved-item .saved-name{flex:1;font-size:13px;}
+.ae-tpl-btn{display:block;width:100%;text-align:left;background:var(--bg-card);border:1px solid var(--border-color);border-radius:8px;padding:7px 10px;font-size:11px;cursor:pointer;margin-bottom:5px;color:inherit;transition:.1s;}
+.ae-tpl-btn:hover{border-color:var(--cyan);color:var(--cyan);}
 
-#runBtn{min-width:110px;}
-#runBtn .spinner{display:none;border:2px solid rgba(0,0,0,.3);border-top-color:#000;border-radius:50%;width:14px;height:14px;animation:spin .6s linear infinite;margin:0 auto;}
-@keyframes spin{to{transform:rotate(360deg);}}
-#runBtn.loading .btn-text{display:none;}
-#runBtn.loading .spinner{display:inline-block;}
+/* ── Right main panel ── */
+.ae-main{display:flex;flex-direction:column;overflow:hidden;background:var(--bg-card);}
+.ae-toolbar{padding:12px 16px;border-bottom:1px solid var(--border-color);display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex-shrink:0;}
+.ae-toolbar-title{font-size:13px;font-weight:600;color:var(--text-secondary);margin-right:8px;}
+.ae-result-meta{font-size:12px;color:var(--text-secondary);margin-left:auto;}
+
+/* SELECT builder */
+.ae-builder{padding:14px 16px;border-bottom:1px solid var(--border-color);flex-shrink:0;}
+.ae-builder-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;}
+.ae-builder-row label{font-size:11px;color:var(--text-secondary);font-weight:600;white-space:nowrap;min-width:60px;}
+.ae-builder-input{flex:1;min-width:120px;padding:5px 9px;border-radius:7px;border:1px solid var(--border-color);background:var(--bg-secondary);color:inherit;font-size:12px;}
+.ae-builder-input:focus{outline:none;border-color:var(--cyan);}
+.ae-small-btn{background:none;border:1px solid var(--border-color);color:var(--text-secondary);border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;}
+.ae-small-btn:hover{border-color:var(--cyan);color:var(--cyan);}
+
+/* SQL preview */
+.ae-sql{background:var(--bg-secondary);border-bottom:1px solid var(--border-color);padding:8px 16px;font-family:monospace;font-size:11px;color:var(--cyan);overflow-x:auto;white-space:nowrap;flex-shrink:0;display:none;}
+
+/* Results */
+.ae-results{flex:1;overflow:auto;}
+.ae-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--text-secondary);gap:8px;}
+.ae-placeholder i{font-size:2.5rem;opacity:.35;}
+
+.ae-table{width:100%;border-collapse:collapse;font-size:12px;}
+.ae-table th{background:var(--bg-secondary);padding:8px 12px;text-align:left;font-weight:600;white-space:nowrap;position:sticky;top:0;z-index:2;border-bottom:1px solid var(--border-color);}
+.ae-table td{padding:7px 12px;border-bottom:1px solid var(--border-color);white-space:nowrap;max-width:280px;overflow:hidden;text-overflow:ellipsis;}
+.ae-table tbody tr:hover{background:var(--bg-secondary);}
+
+.ae-stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:12px 16px;border-bottom:1px solid var(--border-color);flex-shrink:0;}
+.ae-stat-mini{text-align:center;}
+.ae-stat-mini .v{font-size:1.2rem;font-weight:700;}
+.ae-stat-mini .l{font-size:10px;color:var(--text-secondary);}
+
+@media(max-width:800px){.ae-wrap{grid-template-columns:1fr;height:auto;}.ae-sidebar{max-height:320px;}}
 </style>
 
-<!-- Header -->
-<div class="ae-header">
-    <div>
-        <h1 style="margin:0;font-size:1.5rem;">🔍 Audit Explorer</h1>
-        <p style="color:var(--text-secondary);margin:4px 0 0;font-size:13px;">
-            Visual query builder for <code>activity_logs</code> — no SQL knowledge required.
-            <?php if (Auth::isAdmin()): ?>
-                <a href="/admin/logs/activity" style="color:var(--cyan);margin-left:8px;">← Activity Timeline</a>
-            <?php endif; ?>
-        </p>
-    </div>
+<!-- Breadcrumb -->
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;font-size:13px;">
+    <a href="/admin/logs" style="color:var(--text-secondary);">Logs</a>
+    <span style="color:var(--text-secondary);">›</span>
+    <span style="font-weight:600;">Audit Explorer</span>
+    <a href="/admin/logs/activity" style="color:var(--cyan);margin-left:auto;font-size:12px;">← Activity Timeline</a>
 </div>
 
-<!-- Quick stats -->
-<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px;">
-    <div class="ae-stat"><div class="val" style="color:var(--cyan);"><?= number_format($stats['total'] ?? 0) ?></div><div class="lbl">Total Events</div></div>
-    <div class="ae-stat"><div class="val" style="color:var(--green);"><?= number_format($stats['unique_users'] ?? 0) ?></div><div class="lbl">Unique Users</div></div>
-    <div class="ae-stat"><div class="val" style="color:var(--orange);"><?= number_format($stats['unique_actions'] ?? 0) ?></div><div class="lbl">Action Types</div></div>
-    <div class="ae-stat"><div class="val" style="color:var(--magenta, #ff2ec4);"><?= number_format($stats['unique_modules'] ?? 0) ?></div><div class="lbl">Modules</div></div>
+<!-- Stats mini row above the explorer -->
+<div class="ae-stats-row" style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;margin-bottom:14px;">
+    <div class="ae-stat-mini"><div class="v" style="color:var(--cyan);"><?= number_format($stats['total'] ?? 0) ?></div><div class="l">Total Events</div></div>
+    <div class="ae-stat-mini"><div class="v" style="color:var(--green);"><?= number_format($stats['unique_users'] ?? 0) ?></div><div class="l">Users</div></div>
+    <div class="ae-stat-mini"><div class="v" style="color:var(--orange);"><?= number_format($stats['unique_actions'] ?? 0) ?></div><div class="l">Action Types</div></div>
+    <div class="ae-stat-mini"><div class="v" style="color:#ff2ec4;"><?= number_format($stats['unique_modules'] ?? 0) ?></div><div class="l">Modules</div></div>
 </div>
 
-<div style="display:grid;grid-template-columns:260px 1fr;gap:16px;align-items:start;">
+<!-- Main split layout -->
+<div class="ae-wrap">
 
-    <!-- ============ LEFT: Saved Queries ============ -->
-    <div>
-        <div class="qb-card">
-            <div class="qb-title">📁 Saved Queries</div>
-            <div id="savedList" style="display:flex;flex-direction:column;gap:4px;max-height:320px;overflow-y:auto;">
-                <!-- Populated from localStorage -->
-                <p id="noSaved" style="color:var(--text-secondary);font-size:12px;">No saved queries yet.</p>
-            </div>
-            <button class="btn btn-sm btn-secondary" style="width:100%;margin-top:10px;" onclick="saveQuery()">
-                💾 Save current query
-            </button>
+    <!-- ════════════ LEFT SIDEBAR ════════════ -->
+    <div class="ae-sidebar">
+        <div class="ae-sidebar-header">
+            <h2>🔍 Audit Explorer</h2>
+            <p>Filter, query and export audit data</p>
         </div>
 
-        <!-- Quick Templates -->
-        <div class="qb-card">
-            <div class="qb-title">⚡ Quick Templates</div>
-            <div style="display:flex;flex-direction:column;gap:6px;">
+        <!-- Run button (always visible) -->
+        <button class="ae-run-btn" id="runBtn" onclick="runQuery()">▶ Run Query</button>
+
+        <!-- ── Filters section ── -->
+        <div class="ae-section">
+            <div class="ae-section-hdr open" onclick="toggleSection(this)">
+                <span>⚡ Filters</span><i class="fas fa-chevron-right"></i>
+            </div>
+            <div class="ae-section-body open">
+                <label class="ae-filter-label">Module</label>
+                <select id="fModule" class="ae-filter-input">
+                    <option value="">All modules</option>
+                    <?php foreach ($modules as $m): ?>
+                        <option value="<?= View::e($m['module']) ?>"><?= View::e(ucfirst($m['module'])) ?></option>
+                    <?php endforeach; ?>
+                </select>
+
+                <label class="ae-filter-label">Action</label>
+                <select id="fAction" class="ae-filter-input">
+                    <option value="">All actions</option>
+                    <?php foreach ($actions as $a): ?>
+                        <option value="<?= View::e($a['action']) ?>"><?= View::e($a['action']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+
+                <label class="ae-filter-label">Status</label>
+                <select id="fStatus" class="ae-filter-input">
+                    <option value="">All statuses</option>
+                    <option value="success">Success</option>
+                    <option value="failure">Failure</option>
+                    <option value="pending">Pending</option>
+                </select>
+
+                <label class="ae-filter-label">User Role</label>
+                <select id="fUserRole" class="ae-filter-input">
+                    <option value="">All roles</option>
+                    <?php foreach ($userRoles as $r): ?>
+                        <option value="<?= View::e($r['user_role']) ?>"><?= View::e(ucfirst($r['user_role'])) ?></option>
+                    <?php endforeach; ?>
+                </select>
+
+                <label class="ae-filter-label">User ID</label>
+                <input type="number" id="fUserId" class="ae-filter-input" placeholder="e.g. 3">
+
+                <label class="ae-filter-label">Date From</label>
+                <input type="date" id="fDateFrom" class="ae-filter-input">
+
+                <label class="ae-filter-label">Date To</label>
+                <input type="date" id="fDateTo" class="ae-filter-input">
+
+                <label class="ae-filter-label">Search keyword</label>
+                <input type="text" id="fSearch" class="ae-filter-input" placeholder="action, message, IP…">
+            </div>
+        </div>
+
+        <!-- ── GROUP BY / ORDER section ── -->
+        <div class="ae-section">
+            <div class="ae-section-hdr" onclick="toggleSection(this)">
+                <span>📐 Group &amp; Sort</span><i class="fas fa-chevron-right"></i>
+            </div>
+            <div class="ae-section-body">
+                <label class="ae-filter-label">Group By</label>
+                <input type="text" id="fGroupBy" class="ae-filter-input" placeholder="e.g. action, module">
+
+                <label class="ae-filter-label">Order By</label>
+                <input type="text" id="fOrderBy" class="ae-filter-input" value="created_at">
+
+                <label class="ae-filter-label">Order Direction</label>
+                <select id="fOrderDir" class="ae-filter-input">
+                    <option value="DESC">Descending (newest first)</option>
+                    <option value="ASC">Ascending (oldest first)</option>
+                </select>
+
+                <label class="ae-filter-label">Limit</label>
+                <input type="number" id="fLimit" class="ae-filter-input" value="100" min="1" max="10000">
+            </div>
+        </div>
+
+        <!-- ── Templates section ── -->
+        <div class="ae-section">
+            <div class="ae-section-hdr" onclick="toggleSection(this)">
+                <span>⚡ Templates</span><i class="fas fa-chevron-right"></i>
+            </div>
+            <div class="ae-section-body">
                 <?php
                 $templates = [
-                    ['label'=>'Login events today',        'q'=>['select'=>['action','user_name','ip_address','created_at'],'where'=>[['col'=>'action','op'=>'=','val'=>'login'],['col'=>'created_at','op'=>'>=','val'=>date('Y-m-d')]],'order_by'=>'created_at','limit'=>100]],
-                    ['label'=>'Failures last 7 days',      'q'=>['select'=>['*'],'where'=>[['col'=>'status','op'=>'=','val'=>'failure'],['col'=>'created_at','op'=>'>=','val'=>date('Y-m-d',strtotime('-7 days'))]],'order_by'=>'created_at','limit'=>200]],
-                    ['label'=>'Top actions (grouped)',     'q'=>['select'=>['action','COUNT(*) AS cnt'],'where'=>[],'group_by'=>['action'],'order_by'=>'COUNT(*)','order_dir'=>'DESC','limit'=>20]],
-                    ['label'=>'Per-module counts',         'q'=>['select'=>['module','COUNT(*) AS cnt'],'where'=>[],'group_by'=>['module'],'order_by'=>'COUNT(*)','order_dir'=>'DESC','limit'=>20]],
-                    ['label'=>'Admin actions',             'q'=>['select'=>['*'],'where'=>[['col'=>'user_role','op'=>'=','val'=>'admin']],'order_by'=>'created_at','limit'=>100]],
-                    ['label'=>'Events by user',            'q'=>['select'=>['user_name','user_email','COUNT(*) AS cnt'],'where'=>[],'group_by'=>['user_name','user_email'],'order_by'=>'COUNT(*)','order_dir'=>'DESC','limit'=>50]],
+                    ['label'=>'Login events today',     'q'=>['select'=>['*'],'where'=>[['col'=>'action','op'=>'=','val'=>'login'],['col'=>'created_at','op'=>'>=','val'=>date('Y-m-d')]],'order_by'=>'created_at','limit'=>100]],
+                    ['label'=>'All failures',            'q'=>['select'=>['*'],'where'=>[['col'=>'status','op'=>'=','val'=>'failure']],'order_by'=>'created_at','limit'=>200]],
+                    ['label'=>'Top actions (grouped)',  'q'=>['select'=>['action','COUNT(*) AS cnt'],'where'=>[],'group_by'=>['action'],'order_by'=>'COUNT(*)','order_dir'=>'DESC','limit'=>20]],
+                    ['label'=>'Per-module counts',      'q'=>['select'=>['module','COUNT(*) AS cnt'],'where'=>[],'group_by'=>['module'],'order_by'=>'COUNT(*)','order_dir'=>'DESC','limit'=>20]],
+                    ['label'=>'Events by user',         'q'=>['select'=>['user_name','user_email','COUNT(*) AS cnt'],'where'=>[],'group_by'=>['user_name','user_email'],'order_by'=>'COUNT(*)','order_dir'=>'DESC','limit'=>50]],
+                    ['label'=>'WhatsApp events',        'q'=>['select'=>['*'],'where'=>[['col'=>'module','op'=>'=','val'=>'whatsapp']],'order_by'=>'created_at','limit'=>100]],
+                    ['label'=>'Admin actions',          'q'=>['select'=>['*'],'where'=>[['col'=>'user_role','op'=>'=','val'=>'admin']],'order_by'=>'created_at','limit'=>100]],
+                    ['label'=>'Failures last 7 days',   'q'=>['select'=>['*'],'where'=>[['col'=>'status','op'=>'=','val'=>'failure'],['col'=>'created_at','op'=>'>=','val'=>date('Y-m-d',strtotime('-7 days'))]],'order_by'=>'created_at','limit'=>200]],
                 ];
                 foreach ($templates as $t): ?>
-                    <button class="btn btn-sm btn-secondary" style="text-align:left;"
-                            onclick='loadTemplate(<?= htmlspecialchars(json_encode($t['q']), ENT_QUOTES) ?>)'>
-                        <?= htmlspecialchars($t['label']) ?>
-                    </button>
+                    <button class="ae-tpl-btn" onclick='loadTemplate(<?= htmlspecialchars(json_encode($t['q']), ENT_QUOTES) ?>)'><?= htmlspecialchars($t['label']) ?></button>
                 <?php endforeach; ?>
             </div>
         </div>
+
+        <!-- ── Saved queries section ── -->
+        <div class="ae-section">
+            <div class="ae-section-hdr" onclick="toggleSection(this)">
+                <span>💾 Saved Queries</span><i class="fas fa-chevron-right"></i>
+            </div>
+            <div class="ae-section-body">
+                <div id="savedList"><p id="noSaved" style="font-size:11px;color:var(--text-secondary);">No saved queries.</p></div>
+                <button class="ae-small-btn" style="width:100%;margin-top:6px;" onclick="saveQuery()">+ Save current query</button>
+            </div>
+        </div>
+
+        <!-- spacer -->
+        <div style="flex:1;"></div>
+
+        <!-- Export row -->
+        <div style="padding:12px 18px;border-top:1px solid var(--border-color);display:flex;gap:6px;">
+            <button class="ae-small-btn" style="flex:1;" onclick="exportResult('csv')">⬇ CSV</button>
+            <button class="ae-small-btn" style="flex:1;" onclick="exportResult('json')">⬇ JSON</button>
+            <button class="ae-small-btn" onclick="clearAll()" title="Reset">↺</button>
+        </div>
     </div>
 
-    <!-- ============ RIGHT: Query Builder ============ -->
-    <div>
-        <!-- SELECT -->
-        <div class="qb-card">
-            <div class="qb-title">SELECT columns / expressions</div>
-            <div id="selectList" style="display:flex;flex-direction:column;gap:6px;">
-                <div class="select-row" style="display:flex;gap:8px;">
-                    <input type="text" class="form-input select-expr" value="*" placeholder="column or COUNT(*)" style="flex:1;">
-                    <button class="btn btn-sm btn-secondary" onclick="removeRow(this)">✕</button>
-                </div>
+    <!-- ════════════ RIGHT MAIN PANEL ════════════ -->
+    <div class="ae-main">
+
+        <!-- SELECT columns toolbar -->
+        <div class="ae-toolbar">
+            <span class="ae-toolbar-title">SELECT</span>
+            <div id="selectList" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+                <input type="text" class="ae-builder-input select-expr" value="*" placeholder="column or COUNT(*)" style="width:180px;" list="dlCols">
             </div>
-            <button class="btn btn-sm btn-secondary" style="margin-top:8px;" onclick="addSelectRow()">+ Add column</button>
-            <div style="margin-top:10px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
-                <div style="display:flex;align-items:center;gap:8px;">
-                    <label style="font-size:12px;color:var(--text-secondary);">GROUP BY</label>
-                    <input type="text" id="groupByInput" class="form-input" placeholder="e.g. action, module" style="min-width:200px;">
-                </div>
-                <div style="display:flex;align-items:center;gap:8px;">
-                    <label style="font-size:12px;color:var(--text-secondary);">ORDER BY</label>
-                    <input type="text" id="orderByInput" class="form-input" value="created_at" style="min-width:130px;">
-                    <select id="orderDirInput" class="form-input" style="width:90px;">
-                        <option value="DESC">DESC</option>
-                        <option value="ASC">ASC</option>
-                    </select>
-                </div>
-                <div style="display:flex;align-items:center;gap:8px;">
-                    <label style="font-size:12px;color:var(--text-secondary);">LIMIT</label>
-                    <input type="number" id="limitInput" class="form-input" value="100" min="1" max="10000" style="width:80px;">
-                </div>
-            </div>
+            <button class="ae-small-btn" onclick="addSelectCol()">+ col</button>
+            <datalist id="dlCols">
+                <?php foreach ($allowedCols as $c): ?><option value="<?= View::e($c) ?>"><?php endforeach; ?>
+                <option value="COUNT(*)"><option value="COUNT(*) AS cnt">
+            </datalist>
+            <span class="ae-result-meta" id="resultMeta"></span>
         </div>
 
-        <!-- WHERE conditions -->
-        <div class="qb-card">
-            <div class="qb-title">WHERE conditions <span style="font-weight:400;font-size:11px;">(joined with AND)</span></div>
-            <div id="conditionList"></div>
-            <button class="btn btn-sm btn-secondary" onclick="addCondition()">+ Add condition</button>
-        </div>
+        <!-- SQL preview bar -->
+        <div class="ae-sql" id="sqlBar"></div>
 
-        <!-- Run / Export bar -->
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
-            <button id="runBtn" class="btn btn-primary" onclick="runQuery()">
-                <span class="btn-text">▶ Run Query</span>
-                <span class="spinner"></span>
-            </button>
-            <button class="btn btn-secondary" onclick="clearAll()">↺ Reset</button>
-            <button class="btn btn-secondary" onclick="exportResult('csv')">⬇ CSV</button>
-            <button class="btn btn-secondary" onclick="exportResult('json')">⬇ JSON</button>
-            <span id="resultMeta" style="font-size:12px;color:var(--text-secondary);margin-left:auto;"></span>
-        </div>
-
-        <!-- SQL Preview -->
-        <div id="sqlPreviewBox" class="sql-preview" style="display:none;"></div>
-
-        <!-- Result table -->
-        <div class="qb-card" style="padding:0;overflow:hidden;">
-            <div id="resultWrap" style="max-height:500px;overflow:auto;">
-                <div id="resultPlaceholder" style="padding:40px;text-align:center;color:var(--text-secondary);">
-                    <div style="font-size:2rem;margin-bottom:8px;">📊</div>
-                    <div>Run a query to see results here.</div>
-                </div>
-                <div class="result-table-wrap" id="resultTableWrap" style="display:none;"></div>
+        <!-- Results area -->
+        <div class="ae-results" id="resultsArea">
+            <div class="ae-placeholder" id="placeholder">
+                <i class="fas fa-database"></i>
+                <div style="font-size:14px;font-weight:600;">No query run yet</div>
+                <div style="font-size:12px;">Set filters on the left and click <strong>Run Query</strong></div>
             </div>
         </div>
     </div>
+
 </div>
 
 <script>
-// ─────────── Column definitions ──────────────────────────────────────────────
-const COLS = <?= json_encode(array_values($allowedCols)) ?>;
-const ACTIONS  = <?= json_encode(array_column($actions, 'action')) ?>;
-const MODULES  = <?= json_encode(array_column($modules, 'module')) ?>;
-const USER_ROLES = <?= json_encode(array_column($userRoles, 'user_role')) ?>;
+// ── Constants ────────────────────────────────────────────────────────────────
+const COLS     = <?= json_encode(array_values($allowedCols)) ?>;
+const ACTIONS  = <?= json_encode(array_column($actions,  'action')) ?>;
+const MODULES  = <?= json_encode(array_column($modules,  'module')) ?>;
+const ROLES    = <?= json_encode(array_column($userRoles,'user_role')) ?>;
 const CSRF     = <?= json_encode($csrf_token) ?>;
 
-// Value suggestions per column
-const SUGGESTIONS = {
-    action:    ACTIONS,
-    module:    MODULES,
-    user_role: USER_ROLES,
-    status:    ['success','failure','pending'],
-    device:    ['Desktop','Mobile','Tablet','Bot'],
-};
+// ── Section toggle ────────────────────────────────────────────────────────────
+function toggleSection(hdr) {
+    hdr.classList.toggle('open');
+    hdr.nextElementSibling.classList.toggle('open');
+}
 
-// ─────────── Condition rows ───────────────────────────────────────────────────
-function makeColSelect(val) {
-    const sel = document.createElement('select');
-    sel.className = 'form-input cond-col';
-    sel.style.minWidth = '140px';
-    COLS.filter(c => !['*'].includes(c)).forEach(c => {
-        const o = document.createElement('option');
-        o.value = c; o.textContent = c;
-        if (c === val) o.selected = true;
-        sel.appendChild(o);
-    });
-    sel.addEventListener('change', () => updateValInput(sel));
-    return sel;
-}
-function makeOpSelect(val) {
-    const sel = document.createElement('select');
-    sel.className = 'form-input cond-op';
-    sel.style.width = '130px';
-    ['=','!=','LIKE','NOT LIKE','>','<','>=','<=','IS NULL','IS NOT NULL'].forEach(op => {
-        const o = document.createElement('option');
-        o.value = op; o.textContent = op;
-        if (op === val) o.selected = true;
-        sel.appendChild(o);
-    });
-    sel.addEventListener('change', function() {
-        const row = this.closest('.condition-row');
-        const isNull = ['IS NULL','IS NOT NULL'].includes(this.value);
-        const vInput = row.querySelector('.cond-val');
-        if (vInput) vInput.style.display = isNull ? 'none' : '';
-    });
-    return sel;
-}
-function makeValInput(col, val) {
-    const wrap = document.createElement('div');
-    wrap.style.cssText = 'flex:1;min-width:130px;position:relative;';
-    const input = document.createElement('input');
-    input.type = 'text'; input.className = 'form-input cond-val';
-    input.placeholder = 'value'; input.value = val || '';
-    wrap.appendChild(input);
-
-    // Datalist suggestions
-    const sugg = SUGGESTIONS[col];
-    if (sugg && sugg.length) {
-        const dl = document.createElement('datalist');
-        dl.id = 'dl_' + Math.random().toString(36).slice(2);
-        sugg.forEach(s => { const o = document.createElement('option'); o.value = s; dl.appendChild(o); });
-        input.setAttribute('list', dl.id);
-        wrap.appendChild(dl);
-    }
-    return wrap;
-}
-function updateValInput(colSel) {
-    const row = colSel.closest('.condition-row');
-    const oldWrap = row.querySelector('.cond-val')?.parentNode;
-    if (oldWrap && oldWrap !== row) oldWrap.remove();
-    const newWrap = makeValInput(colSel.value, '');
-    // insert before remove btn
-    const removeBtn = row.querySelector('.remove-cond');
-    row.insertBefore(newWrap, removeBtn);
-}
-function addCondition(col, op, val) {
-    const row = document.createElement('div');
-    row.className = 'condition-row';
-    row.appendChild(makeColSelect(col || 'action'));
-    row.appendChild(makeOpSelect(op || '='));
-    row.appendChild(makeValInput(col || 'action', val || ''));
-    const rm = document.createElement('button');
-    rm.className = 'btn btn-sm btn-secondary remove-cond';
-    rm.textContent = '✕'; rm.onclick = () => row.remove();
-    row.appendChild(rm);
-    document.getElementById('conditionList').appendChild(row);
-}
-function removeRow(btn) { btn.closest('.select-row, .condition-row')?.remove(); }
-function addSelectRow(val) {
-    const row = document.createElement('div');
-    row.className = 'select-row'; row.style.cssText = 'display:flex;gap:8px;';
-    const dl = document.createElement('datalist');
-    dl.id = 'dlsel_' + Math.random().toString(36).slice(2);
-    [...COLS, 'COUNT(*)','COUNT(*) AS cnt','SUM(*)'].forEach(c => {
-        const o = document.createElement('option'); o.value = c; dl.appendChild(o);
-    });
+// ── Add SELECT column ─────────────────────────────────────────────────────────
+function addSelectCol(val) {
     const inp = document.createElement('input');
-    inp.type = 'text'; inp.className = 'form-input select-expr';
-    inp.placeholder = 'column or COUNT(*)'; inp.style.flex = '1';
-    inp.value = val || ''; inp.setAttribute('list', dl.id);
-    row.appendChild(dl); row.appendChild(inp);
-    const rm = document.createElement('button');
-    rm.className = 'btn btn-sm btn-secondary'; rm.textContent = '✕';
-    rm.onclick = () => row.remove();
-    row.appendChild(rm);
-    document.getElementById('selectList').appendChild(row);
+    inp.type = 'text'; inp.className = 'ae-builder-input select-expr';
+    inp.placeholder = 'column or COUNT(*)'; inp.style.width = '160px';
+    inp.value = val || ''; inp.setAttribute('list', 'dlCols');
+    inp.ondblclick = () => inp.remove();
+    document.getElementById('selectList').appendChild(inp);
 }
 
-// ─────────── Build query spec from UI ─────────────────────────────────────────
+// ── Build query spec from sidebar filters + SELECT ────────────────────────────
 function buildSpec() {
+    // SELECT
     const select = [...document.querySelectorAll('.select-expr')]
         .map(i => i.value.trim()).filter(Boolean);
-    const groupByRaw = document.getElementById('groupByInput').value.trim();
-    const groupBy = groupByRaw ? groupByRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
+
+    // WHERE from sidebar filters
     const where = [];
-    document.querySelectorAll('.condition-row').forEach(row => {
-        const col = row.querySelector('.cond-col')?.value;
-        const op  = row.querySelector('.cond-op')?.value;
-        const val = row.querySelector('.cond-val')?.value ?? '';
-        if (col && op) where.push({col, op, val});
-    });
+    const push  = (col, op, val) => { if (val !== '' && val != null) where.push({col, op, val}); };
+
+    push('module',      '=',    document.getElementById('fModule').value);
+    push('action',      '=',    document.getElementById('fAction').value);
+    push('status',      '=',    document.getElementById('fStatus').value);
+    push('user_role',   '=',    document.getElementById('fUserRole').value);
+    push('user_id',     '=',    document.getElementById('fUserId').value);
+    push('created_at',  '>=',   document.getElementById('fDateFrom').value ? document.getElementById('fDateFrom').value + ' 00:00:00' : '');
+    push('created_at',  '<=',   document.getElementById('fDateTo').value   ? document.getElementById('fDateTo').value   + ' 23:59:59' : '');
+
+    const search = document.getElementById('fSearch').value.trim();
+    if (search) {
+        where.push({col: 'readable_message', op: 'LIKE', val: '%' + search + '%'});
+    }
+
+    // GROUP BY
+    const gbRaw = document.getElementById('fGroupBy').value.trim();
+    const group_by = gbRaw ? gbRaw.split(',').map(s=>s.trim()).filter(Boolean) : [];
+
     return {
-        select: select.length ? select : ['*'],
+        select:    select.length ? select : ['*'],
         where,
-        group_by: groupBy,
-        order_by: document.getElementById('orderByInput').value.trim() || 'created_at',
-        order_dir: document.getElementById('orderDirInput').value,
-        limit: Math.min(10000, Math.max(1, parseInt(document.getElementById('limitInput').value) || 100)),
+        group_by,
+        order_by:  document.getElementById('fOrderBy').value.trim() || 'created_at',
+        order_dir: document.getElementById('fOrderDir').value,
+        limit:     Math.min(10000, Math.max(1, parseInt(document.getElementById('fLimit').value) || 100)),
     };
 }
 
-// ─────────── Run query ────────────────────────────────────────────────────────
+// ── Run query ─────────────────────────────────────────────────────────────────
 let lastSpec = null;
 async function runQuery() {
     const spec = buildSpec();
-    lastSpec = spec;
-    const btn = document.getElementById('runBtn');
-    btn.classList.add('loading'); btn.disabled = true;
+    lastSpec   = spec;
+    const btn  = document.getElementById('runBtn');
+    btn.textContent = '⏳ Running…'; btn.classList.add('loading'); btn.disabled = true;
 
     try {
-        const res = await fetch('/admin/audit/query', {
+        const res  = await fetch('/admin/audit/query', {
             method: 'POST',
             headers: {'Content-Type':'application/json','X-CSRF-TOKEN': CSRF},
             body: JSON.stringify(spec),
         });
-        const json = await res.json();
-        if (!res.ok || json.error) {
-            showError(json.error || 'Query failed');
-        } else {
-            showResults(json);
-        }
-    } catch (e) {
+        const data = await res.json();
+        if (!res.ok || data.error) { showError(data.error || 'Query failed.'); }
+        else                        { showResults(data); }
+    } catch(e) {
         showError(e.message);
     } finally {
-        btn.classList.remove('loading'); btn.disabled = false;
+        btn.textContent = '▶ Run Query'; btn.classList.remove('loading'); btn.disabled = false;
     }
 }
 
 function showError(msg) {
-    document.getElementById('sqlPreviewBox').style.display = 'none';
-    document.getElementById('resultTableWrap').style.display = 'none';
-    document.getElementById('resultPlaceholder').style.display = '';
-    document.getElementById('resultPlaceholder').innerHTML =
-        `<div style="color:#e74c3c;">❌ ${escHtml(msg)}</div>`;
+    document.getElementById('sqlBar').style.display = 'none';
     document.getElementById('resultMeta').textContent = '';
+    document.getElementById('resultsArea').innerHTML =
+        `<div class="ae-placeholder"><i class="fas fa-exclamation-triangle" style="color:#e74c3c"></i><div style="color:#e74c3c;">${esc(msg)}</div></div>`;
 }
 
 function showResults(json) {
-    document.getElementById('resultMeta').textContent =
-        `${json.count.toLocaleString()} row(s) returned`;
+    document.getElementById('resultMeta').textContent = json.count.toLocaleString() + ' row(s)';
 
-    // SQL Preview
-    const box = document.getElementById('sqlPreviewBox');
-    box.textContent = json.sql;
-    box.style.display = '';
-
-    // Table
-    const wrap = document.getElementById('resultTableWrap');
-    wrap.style.display = '';
-    document.getElementById('resultPlaceholder').style.display = 'none';
+    const bar = document.getElementById('sqlBar');
+    bar.textContent = json.sql; bar.style.display = '';
 
     if (!json.data.length) {
-        wrap.innerHTML = '<p style="padding:20px;color:var(--text-secondary);text-align:center;">No rows found.</p>';
+        document.getElementById('resultsArea').innerHTML =
+            '<div class="ae-placeholder"><i class="fas fa-inbox"></i><div>No rows found.</div></div>';
         return;
     }
+
     const cols = Object.keys(json.data[0]);
-    let html = '<table class="result-table"><thead><tr>';
-    cols.forEach(c => html += `<th>${escHtml(c)}</th>`);
-    html += '</tr></thead><tbody>';
+    let html = '<table class="ae-table"><thead><tr>' +
+        cols.map(c => `<th>${esc(c)}</th>`).join('') + '</tr></thead><tbody>';
+
     json.data.forEach(row => {
-        html += '<tr>';
-        cols.forEach(c => {
-            let v = row[c];
-            if (v === null || v === undefined) v = '';
-            html += `<td title="${escHtml(String(v))}">${escHtml(String(v).substring(0,120))}</td>`;
-        });
-        html += '</tr>';
+        html += '<tr>' + cols.map(c => {
+            let v = row[c] == null ? '' : String(row[c]);
+            return `<td title="${esc(v)}">${esc(v.substring(0,120))}</td>`;
+        }).join('') + '</tr>';
     });
     html += '</tbody></table>';
-    wrap.innerHTML = html;
+    document.getElementById('resultsArea').innerHTML = html;
 }
 
-function escHtml(s) {
+function esc(s) {
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// ─────────── Load template ────────────────────────────────────────────────────
+// ── Load template ──────────────────────────────────────────────────────────────
 function loadTemplate(spec) {
-    // Clear existing
     clearAll(false);
     // SELECT
     const exprs = spec.select || ['*'];
     document.getElementById('selectList').innerHTML = '';
-    exprs.forEach(e => addSelectRow(e));
-    // GROUP BY
-    document.getElementById('groupByInput').value = (spec.group_by || []).join(', ');
-    // ORDER BY
-    document.getElementById('orderByInput').value = spec.order_by || 'created_at';
-    document.getElementById('orderDirInput').value = spec.order_dir || 'DESC';
-    // LIMIT
-    document.getElementById('limitInput').value = spec.limit || 100;
-    // WHERE
-    (spec.where || []).forEach(c => addCondition(c.col, c.op, c.val));
+    exprs.forEach((e,i) => {
+        if (i===0) {
+            const inp = document.createElement('input');
+            inp.type='text'; inp.className='ae-builder-input select-expr';
+            inp.value=e; inp.style.width='180px'; inp.setAttribute('list','dlCols');
+            inp.ondblclick = () => inp.remove();
+            document.getElementById('selectList').appendChild(inp);
+        } else { addSelectCol(e); }
+    });
+    // Filters
+    const findCond = (col,op) => (spec.where||[]).find(w=>w.col===col&&w.op===op);
+    const setVal = (id, val) => { if (val != null) document.getElementById(id).value = val; };
+    setVal('fModule',   findCond('module','=')?.val    || '');
+    setVal('fAction',   findCond('action','=')?.val    || '');
+    setVal('fStatus',   findCond('status','=')?.val    || '');
+    setVal('fUserRole', findCond('user_role','=')?.val || '');
+    setVal('fUserId',   findCond('user_id','=')?.val   || '');
+    const df = findCond('created_at','>=');
+    const dt = findCond('created_at','<=');
+    if (df) setVal('fDateFrom', df.val.substring(0,10));
+    if (dt) setVal('fDateTo',   dt.val.substring(0,10));
+    setVal('fGroupBy',  (spec.group_by||[]).join(', '));
+    setVal('fOrderBy',  spec.order_by  || 'created_at');
+    setVal('fOrderDir', spec.order_dir || 'DESC');
+    setVal('fLimit',    spec.limit     || 100);
 }
 
-// ─────────── Save / Load queries (localStorage) ──────────────────────────────
+// ── Saved queries ──────────────────────────────────────────────────────────────
 function saveQuery() {
-    const name = prompt('Query name:');
-    if (!name) return;
-    const saved = JSON.parse(localStorage.getItem('auditQueries') || '[]');
+    const name = prompt('Query name:'); if (!name) return;
+    const saved = JSON.parse(localStorage.getItem('auditQueries')||'[]');
     saved.push({name, spec: buildSpec(), ts: Date.now()});
     localStorage.setItem('auditQueries', JSON.stringify(saved));
     renderSaved();
 }
 function renderSaved() {
-    const saved = JSON.parse(localStorage.getItem('auditQueries') || '[]');
+    const saved = JSON.parse(localStorage.getItem('auditQueries')||'[]');
     const list  = document.getElementById('savedList');
     const none  = document.getElementById('noSaved');
-    if (!saved.length) { none.style.display = ''; return; }
-    none.style.display = 'none';
+    if (!saved.length) { if(none) none.style.display=''; return; }
+    if(none) none.style.display='none';
     list.innerHTML = '';
     saved.forEach((item, idx) => {
-        const div = document.createElement('div');
-        div.className = 'saved-item';
-        div.innerHTML = `<span class="saved-name" title="${escHtml(item.name)}">${escHtml(item.name)}</span>
-            <button class="btn btn-sm btn-secondary" style="padding:2px 7px;" onclick="loadSaved(${idx})">Load</button>
-            <button class="btn btn-sm" style="padding:2px 7px;color:#e74c3c;background:none;border:none;cursor:pointer;" onclick="deleteSaved(${idx})">✕</button>`;
-        list.appendChild(div);
+        const d = document.createElement('div');
+        d.className = 'ae-saved-item';
+        d.innerHTML = `<span class="name" title="${esc(item.name)}">${esc(item.name)}</span>
+            <button class="ae-saved-load" onclick="loadSaved(${idx})">Load</button>
+            <button class="ae-saved-del" onclick="deleteSaved(${idx})">✕</button>`;
+        list.appendChild(d);
     });
 }
-function loadSaved(idx) {
-    const saved = JSON.parse(localStorage.getItem('auditQueries') || '[]');
-    if (saved[idx]) loadTemplate(saved[idx].spec);
-}
-function deleteSaved(idx) {
-    const saved = JSON.parse(localStorage.getItem('auditQueries') || '[]');
-    saved.splice(idx, 1);
-    localStorage.setItem('auditQueries', JSON.stringify(saved));
-    renderSaved();
-}
+function loadSaved(i)   { const s=JSON.parse(localStorage.getItem('auditQueries')||'[]'); if(s[i]) loadTemplate(s[i].spec); }
+function deleteSaved(i) { const s=JSON.parse(localStorage.getItem('auditQueries')||'[]'); s.splice(i,1); localStorage.setItem('auditQueries',JSON.stringify(s)); renderSaved(); }
 
-// ─────────── Export ────────────────────────────────────────────────────────────
+// ── Export ────────────────────────────────────────────────────────────────────
 function exportResult(fmt) {
     if (!lastSpec) { alert('Run a query first.'); return; }
-    const spec  = {...lastSpec, limit: 10000};
-    const where = encodeURIComponent(JSON.stringify(spec.where || []));
-    const gb    = (spec.group_by || []).join(',');
-    const sel   = (spec.select || ['*']).join(',');
-    const url   = `/admin/audit/export?format=${fmt}&select=${encodeURIComponent(sel)}`
-                + `&where=${where}&group_by=${encodeURIComponent(gb)}`
-                + `&order_by=${encodeURIComponent(spec.order_by||'created_at')}`
-                + `&order_dir=${spec.order_dir||'DESC'}&limit=10000`;
+    const s   = {...lastSpec, limit:10000};
+    const url = `/admin/audit/export?format=${fmt}&select=${encodeURIComponent((s.select||['*']).join(','))}`
+              + `&where=${encodeURIComponent(JSON.stringify(s.where||[]))}`
+              + `&group_by=${encodeURIComponent((s.group_by||[]).join(','))}`
+              + `&order_by=${encodeURIComponent(s.order_by||'created_at')}`
+              + `&order_dir=${s.order_dir||'DESC'}&limit=10000`;
     window.location.href = url;
 }
 
-// ─────────── Reset ─────────────────────────────────────────────────────────────
-function clearAll(resetResults = true) {
+// ── Reset ────────────────────────────────────────────────────────────────────
+function clearAll(resetResults=true) {
+    ['fModule','fAction','fStatus','fUserRole','fUserId','fDateFrom','fDateTo','fSearch','fGroupBy'].forEach(id=>{
+        const el=document.getElementById(id); if(el) el.value='';
+    });
+    document.getElementById('fOrderBy').value  = 'created_at';
+    document.getElementById('fOrderDir').value = 'DESC';
+    document.getElementById('fLimit').value    = '100';
     document.getElementById('selectList').innerHTML = '';
-    addSelectRow('*');
-    document.getElementById('conditionList').innerHTML = '';
-    document.getElementById('groupByInput').value = '';
-    document.getElementById('orderByInput').value = 'created_at';
-    document.getElementById('orderDirInput').value = 'DESC';
-    document.getElementById('limitInput').value = '100';
+    const inp=document.createElement('input');inp.type='text';inp.className='ae-builder-input select-expr';
+    inp.value='*';inp.style.width='180px';inp.setAttribute('list','dlCols');
+    inp.ondblclick=()=>inp.remove();
+    document.getElementById('selectList').appendChild(inp);
     if (resetResults) {
-        document.getElementById('sqlPreviewBox').style.display = 'none';
-        document.getElementById('resultTableWrap').style.display = 'none';
-        document.getElementById('resultPlaceholder').style.display = '';
-        document.getElementById('resultPlaceholder').innerHTML = '<div style="font-size:2rem;margin-bottom:8px;">📊</div><div>Run a query to see results here.</div>';
-        document.getElementById('resultMeta').textContent = '';
-        lastSpec = null;
+        document.getElementById('sqlBar').style.display='none';
+        document.getElementById('resultMeta').textContent='';
+        document.getElementById('resultsArea').innerHTML=
+            '<div class="ae-placeholder"><i class="fas fa-database"></i><div style="font-size:14px;font-weight:600;">No query run yet</div><div style="font-size:12px;">Set filters on the left and click <strong>Run Query</strong></div></div>';
+        lastSpec=null;
     }
 }
 
-// ─────────── Init ──────────────────────────────────────────────────────────────
+// ── Init ─────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-    // start with one SELECT row (* by default)
-    addSelectRow('*');
     renderSaved();
+    // open first section by default
+    document.querySelectorAll('.ae-section-hdr').forEach((hdr,i) => {
+        if (i===0) { hdr.classList.add('open'); hdr.nextElementSibling.classList.add('open'); }
+    });
+    // keyboard shortcut
+    document.addEventListener('keydown', e => {
+        if ((e.ctrlKey||e.metaKey) && e.key==='Enter') runQuery();
+    });
 });
 </script>
 

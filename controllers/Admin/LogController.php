@@ -24,8 +24,49 @@ class LogController extends BaseController
      */
     public function index(): void
     {
+        $db = Database::getInstance();
+
+        // Quick stats for the index dashboard
+        $stats = $db->fetch(
+            "SELECT
+                COUNT(*) AS total,
+                SUM(CASE WHEN DATE(created_at) = CURDATE() THEN 1 ELSE 0 END) AS today,
+                SUM(CASE WHEN status = 'failure' THEN 1 ELSE 0 END) AS failures,
+                COUNT(DISTINCT user_id) AS unique_users
+             FROM activity_logs"
+        ) ?: ['total' => 0, 'today' => 0, 'failures' => 0, 'unique_users' => 0];
+
+        // Latest 8 activity entries for the stream
+        $recentActivity = $db->fetchAll(
+            "SELECT al.action, al.module, al.readable_message, al.status,
+                    al.created_at, u.name AS user_name
+             FROM activity_logs al
+             LEFT JOIN users u ON al.user_id = u.id
+             ORDER BY al.created_at DESC
+             LIMIT 8"
+        ) ?: [];
+
+        // Module breakdown (top 6)
+        $moduleBreakdown = $db->fetchAll(
+            "SELECT COALESCE(module, 'core') AS module, COUNT(*) AS cnt
+             FROM activity_logs
+             GROUP BY module
+             ORDER BY cnt DESC
+             LIMIT 6"
+        ) ?: [];
+
+        // Status breakdown
+        $statusBreakdown = $db->fetchAll(
+            "SELECT COALESCE(status, 'success') AS status, COUNT(*) AS cnt
+             FROM activity_logs GROUP BY status"
+        ) ?: [];
+
         $this->view('admin/logs/index', [
-            'title' => 'Logs'
+            'title'          => 'Logs',
+            'stats'          => $stats,
+            'recentActivity' => $recentActivity,
+            'moduleBreakdown'=> $moduleBreakdown,
+            'statusBreakdown'=> $statusBreakdown,
         ]);
     }
     

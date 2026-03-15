@@ -198,6 +198,11 @@ $router->get('/admin/logs/activity/export', 'Admin\\LogController@export', ['aut
 $router->get('/admin/logs/activity/api', 'Admin\\LogController@api', ['auth', 'admin']);
 $router->get('/admin/logs/system', 'Admin\\LogController@system', ['auth', 'admin']);
 
+// Audit Explorer – accessible to admin, super_admin, and audit_viewer roles
+$router->get('/admin/audit', 'Admin\\AuditController@index', ['auth']);
+$router->post('/admin/audit/query', 'Admin\\AuditController@query', ['auth']);
+$router->get('/admin/audit/export', 'Admin\\AuditController@export', ['auth']);
+
 // Navbar customization
 $router->get('/admin/navbar', 'Admin\\NavbarController@index', ['auth', 'admin']);
 $router->post('/admin/navbar/update', 'Admin\\NavbarController@update', ['auth', 'admin']);

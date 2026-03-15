@@ -57,8 +57,9 @@ class SettingsController
             
             switch ($action) {
                 case 'generate_api_key':
+                    $oldApiKey = $this->getUserApiKey();
                     $apiKey = $this->generateApiKey();
-                    try { ActivityLogger::logCreate($this->user['id'], 'whatsapp', 'api_key', null, ['action' => 'generate_api_key']); } catch (\Throwable $_) {}
+                    try { ActivityLogger::logCreate($this->user['id'], 'whatsapp', 'api_key', null, ['action' => 'generate_api_key', 'old_key_prefix' => $oldApiKey ? substr($oldApiKey, 0, 12) . '…' : null, 'new_key_prefix' => substr($apiKey, 0, 12) . '…']); } catch (\Throwable $_) {}
                     echo json_encode([
                         'success' => true,
                         'message' => 'API key generated successfully',
@@ -68,8 +69,9 @@ class SettingsController
                     
                 case 'update_webhook':
                     $webhookUrl = $_POST['webhook_url'] ?? '';
+                    $oldWebhookUrl = $this->getWebhookUrl();
                     $this->updateWebhookUrl($webhookUrl);
-                    try { ActivityLogger::logUpdate($this->user['id'], 'whatsapp', 'webhook', null, [], ['webhook_url' => $webhookUrl]); } catch (\Throwable $_) {}
+                    try { ActivityLogger::logUpdate($this->user['id'], 'whatsapp', 'webhook', null, ['webhook_url' => $oldWebhookUrl], ['webhook_url' => $webhookUrl]); } catch (\Throwable $_) {}
                     echo json_encode([
                         'success' => true,
                         'message' => 'Webhook URL updated successfully'

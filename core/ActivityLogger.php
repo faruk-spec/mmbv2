@@ -269,6 +269,7 @@ class ActivityLogger
      * Examples:
      *   "User #5 performed login"
      *   "User #3 created file #42 in proshare"
+     *   "User #3 updated webhook in whatsapp (webhook_url: 'https://old.com' → 'https://new.com')"
      */
     private static function buildReadableMessage(?int $userId, string $action, array $context): string
     {
@@ -278,6 +279,8 @@ class ActivityLogger
         $resourceType = $context['resource_type'] ?? null;
         $resourceId   = $context['resource_id']   ?? null;
         $module       = $context['module']         ?? null;
+        $oldValues    = is_array($context['old_values'] ?? null) ? ($context['old_values'] ?? []) : [];
+        $newValues    = is_array($context['new_values'] ?? null) ? ($context['new_values'] ?? []) : [];
 
         // Convert snake_case action to a readable verb phrase
         $verb = ucwords(str_replace('_', ' ', $action));
@@ -292,6 +295,31 @@ class ActivityLogger
 
         if ($module) {
             $msg .= " in {$module}";
+        }
+
+        // Append a concise field-change summary when old AND new values are available
+        if (!empty($oldValues) && !empty($newValues)) {
+            $changes = [];
+            foreach ($newValues as $key => $newVal) {
+                $oldVal = $oldValues[$key] ?? null;
+                // Skip internal/noise keys
+                if (in_array($key, ['action', '_auto', 'csrf_token'], true)) {
+                    continue;
+                }
+                $newStr = is_array($newVal) ? json_encode($newVal) : (string)$newVal;
+                if ($oldVal === null) {
+                    $changes[] = "{$key}: '{$newStr}'";
+                } elseif ((string)$oldVal !== (string)$newVal) {
+                    $oldStr = is_array($oldVal) ? json_encode($oldVal) : (string)$oldVal;
+                    // Truncate long values for readability
+                    if (strlen($oldStr) > 60) { $oldStr = substr($oldStr, 0, 57) . '…'; }
+                    if (strlen($newStr) > 60) { $newStr = substr($newStr, 0, 57) . '…'; }
+                    $changes[] = "{$key}: '{$oldStr}' → '{$newStr}'";
+                }
+            }
+            if (!empty($changes)) {
+                $msg .= ' (' . implode(', ', array_slice($changes, 0, 5)) . ')';
+            }
         }
 
         return $msg;
