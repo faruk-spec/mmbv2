@@ -145,6 +145,21 @@ class UserController extends BaseController
     /**
      * Edit user form
      */
+    /**
+     * All apps available on the platform (slug => label, icon)
+     */
+    private const APPS = [
+        'qr'        => ['label' => 'QR Generator',   'icon' => 'fas fa-qrcode',        'color' => '#00f0ff'],
+        'whatsapp'  => ['label' => 'WhatsApp API',    'icon' => 'fab fa-whatsapp',       'color' => '#25d366'],
+        'proshare'  => ['label' => 'ProShare',        'icon' => 'fas fa-share-alt',      'color' => '#ff2ec4'],
+        'codexpro'  => ['label' => 'CodeXPro',        'icon' => 'fas fa-code',           'color' => '#9b59b6'],
+        'imgtxt'    => ['label' => 'ImgTxt',          'icon' => 'fas fa-image',          'color' => '#f39c12'],
+        'convertx'  => ['label' => 'ConvertX',        'icon' => 'fas fa-file-export',    'color' => '#3498db'],
+        'billx'     => ['label' => 'BillX',           'icon' => 'fas fa-file-invoice',   'color' => '#2ecc71'],
+        'resumex'   => ['label' => 'ResumeX',         'icon' => 'fas fa-file-alt',       'color' => '#e67e22'],
+        'devzone'   => ['label' => 'DevZone',         'icon' => 'fas fa-terminal',       'color' => '#e74c3c'],
+    ];
+
     public function edit(string $id): void
     {
         $db = Database::getInstance();
@@ -180,6 +195,8 @@ class UserController extends BaseController
             'editUser'   => $user,
             'qrPlans'    => $qrPlans,
             'userQrPlan' => $userQrPlan,
+            'apps'       => self::APPS,
+            'userApps'   => json_decode($user['app_access'] ?? 'null', true),
         ]);
     }
     
@@ -234,6 +251,28 @@ class UserController extends BaseController
                 'status' => $this->input('status'),
                 'updated_at' => date('Y-m-d H:i:s')
             ];
+            
+            // App access: null = all apps allowed; array = restricted list
+            $submitted = $this->input('app_access');  // hidden JSON or checkboxes
+            if ($submitted !== null) {
+                // Checkbox names come as app_access[] in POST
+                $selectedApps = isset($_POST['app_access']) ? (array)$_POST['app_access'] : null;
+                if ($selectedApps !== null) {
+                    // Whitelist against known apps
+                    $validSlugs   = array_keys(self::APPS);
+                    $selectedApps = array_values(array_filter($selectedApps, fn($s) => in_array($s, $validSlugs, true)));
+                    // Empty selection = restrict to nothing; null = no restriction
+                    $updateData['app_access'] = json_encode($selectedApps);
+                } else {
+                    $updateData['app_access'] = null;
+                }
+            } elseif (isset($_POST['app_access'])) {
+                $validSlugs   = array_keys(self::APPS);
+                $selectedApps = array_values(array_filter((array)$_POST['app_access'], fn($s) => in_array($s, $validSlugs, true)));
+                $updateData['app_access'] = json_encode($selectedApps);
+            } elseif (isset($_POST['app_access_unrestricted'])) {
+                $updateData['app_access'] = null;
+            }
             
             // Update password if provided
             $newPassword = $this->input('password');
