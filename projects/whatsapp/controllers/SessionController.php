@@ -11,6 +11,7 @@ use Core\Auth;
 use Core\View;
 use Core\Database;
 use Core\Security;
+use Core\ActivityLogger;
 
 class SessionController
 {
@@ -132,6 +133,15 @@ class SessionController
             ]);
             
             $insertId = $this->db->lastInsertId();
+
+            // Audit log
+            ActivityLogger::logCreate(
+                $this->user['id'],
+                'whatsapp',
+                'session',
+                $insertId,
+                ['session_name' => $sessionName, 'session_id' => $sessionId]
+            );
             
             // Clear any accumulated output and prepare JSON response
             $bufferContent = ob_get_clean();
@@ -268,6 +278,16 @@ class SessionController
                 SET status = 'disconnected', disconnected_at = NOW()
                 WHERE id = ?
             ", [$sessionId]);
+
+            // Audit log
+            ActivityLogger::logUpdate(
+                $this->user['id'],
+                'whatsapp',
+                'session',
+                (int)$sessionId,
+                ['status' => $session['status']],
+                ['status' => 'disconnected']
+            );
             
             // PRODUCTION: Here you would also:
             // 1. Close WhatsApp Web connection
@@ -482,6 +502,15 @@ class SessionController
                 DELETE FROM whatsapp_sessions 
                 WHERE id = ?
             ", [$sessionId]);
+
+            // Audit log
+            ActivityLogger::logDelete(
+                $this->user['id'],
+                'whatsapp',
+                'session',
+                (int)$sessionId,
+                ['session_name' => $session['session_name'], 'status' => $session['status']]
+            );
             
             // PRODUCTION: Here you would also:
             // 1. Close WhatsApp Web connection

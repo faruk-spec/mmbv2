@@ -93,6 +93,12 @@ class Router
         if (class_exists('Core\\Middleware\\MaintenanceMiddleware')) {
             \Core\Middleware\MaintenanceMiddleware::handle();
         }
+
+        // Run global action logger – captures every mutating request automatically
+        // so no button click is ever missed in the audit trail.
+        if (class_exists('Core\\Middleware\\ActionLoggerMiddleware')) {
+            (new \Core\Middleware\ActionLoggerMiddleware())->handle();
+        }
         
         // Remove trailing slash
         $uri = rtrim($uri, '/') ?: '/';
