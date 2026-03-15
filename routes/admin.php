@@ -155,6 +155,7 @@ $router->post('/admin/projects/billx/bills/delete', 'Admin\\BillXAdminController
 $router->post('/admin/projects/billx/bills/bulk-delete', 'Admin\\BillXAdminController@bulkDelete', ['auth', 'admin']);
 $router->get('/admin/projects/billx/settings', 'Admin\\BillXAdminController@settings', ['auth', 'admin']);
 $router->post('/admin/projects/billx/settings', 'Admin\\BillXAdminController@settings', ['auth', 'admin']);
+$router->get('/admin/projects/billx/activity-logs', 'Admin\\BillXAdminController@activityLogs', ['auth', 'admin']);
 
 // Project Database Setup routes
 $router->get('/admin/projects/database-setup', 'Admin\\ProjectDatabaseController@index', ['auth', 'admin']);

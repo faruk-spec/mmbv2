@@ -77,8 +77,66 @@
 </div>
 </div>
 
+<?php elseif ($tplStyle === '2'): ?>
+<!-- Style 2: Clean colored-header restaurant bill (sans-serif, matches live preview) -->
+<?php
+    $cgstPct2 = (float)($td['cgst_pct'] ?? 0);
+    $sgstPct2 = (float)($td['sgst_pct'] ?? 0);
+    $cgstAmt2 = round($subtotal * $cgstPct2 / 100, 2);
+    $sgstAmt2 = round($subtotal * $sgstPct2 / 100, 2);
+?>
+<div style="font-family:Arial,sans-serif;background:#fff;width:80mm;max-width:80mm;margin:0 auto;border:1px solid #ddd;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.12);">
+  <div style="background:<?= htmlspecialchars($c) ?>;color:#fff;padding:12px 16px;text-align:center;">
+    <div style="font-size:18px;font-weight:700;"><?= htmlspecialchars($bill['from_name']) ?></div>
+    <?php if ($bill['from_address']): ?><div style="font-size:10px;opacity:.85;margin-top:2px;"><?= htmlspecialchars(str_replace("\n",' | ',$bill['from_address'])) ?></div><?php endif; ?>
+    <?php if ($bill['from_phone']): ?><div style="font-size:10px;opacity:.85;">Ph: <?= htmlspecialchars($bill['from_phone']) ?></div><?php endif; ?>
+    <?php if ($bill['from_email']): ?><div style="font-size:10px;opacity:.85;"><?= htmlspecialchars($bill['from_email']) ?></div><?php endif; ?>
+  </div>
+  <div style="padding:8px 12px;background:#f5f5f5;border-bottom:1px solid #ddd;display:flex;justify-content:space-between;font-size:11px;">
+    <span>Bill No: <b><?= htmlspecialchars($bill['bill_number']) ?></b></span>
+    <?php if ($tableNo): ?><span>Table: <b>#<?= htmlspecialchars($tableNo) ?></b></span><?php endif; ?>
+    <span><?= $billDate ?></span>
+  </div>
+  <div style="padding:6px 12px;font-size:11px;border-bottom:1px solid #eee;">
+    Customer: <b><?= htmlspecialchars($bill['to_name']) ?></b><?= $bill['to_phone'] ? ' | Ph: '.htmlspecialchars($bill['to_phone']) : '' ?><?= $payMode ? ' | Mode: <b>'.htmlspecialchars($payMode).'</b>' : '' ?>
+  </div>
+  <table style="width:100%;border-collapse:collapse;">
+    <thead>
+      <tr style="background:<?= htmlspecialchars($c) ?>;color:#fff;">
+        <th style="padding:5px 8px;text-align:left;font-size:11px;">Item</th>
+        <th style="padding:5px 8px;text-align:center;font-size:11px;">Qty</th>
+        <th style="padding:5px 8px;text-align:right;font-size:11px;">Rate</th>
+        <th style="padding:5px 8px;text-align:right;font-size:11px;">Amt</th>
+      </tr>
+    </thead>
+    <tbody>
+    <?php foreach ($items as $i => $item): ?>
+    <tr style="background:<?= $i % 2 === 0 ? '#fafafa' : '#fff' ?>;">
+      <td style="padding:5px 8px;font-size:12px;"><?= htmlspecialchars($item['description'] ?? '-') ?></td>
+      <td style="padding:5px 8px;text-align:center;font-size:11px;"><?= (float)($item['qty'] ?? 1) ?></td>
+      <td style="padding:5px 8px;text-align:right;font-size:12px;"><?= $sym.number_format((float)($item['rate'] ?? 0), 2) ?></td>
+      <td style="padding:5px 8px;text-align:right;font-weight:700;font-size:12px;"><?= $sym.number_format((float)($item['amount'] ?? 0), 2) ?></td>
+    </tr>
+    <?php endforeach; ?>
+    <?php if (empty($items)): ?>
+    <tr><td colspan="4" style="padding:8px;text-align:center;color:#aaa;">No items</td></tr>
+    <?php endif; ?>
+    </tbody>
+  </table>
+  <div style="padding:8px 12px;background:#f9f9f9;border-top:1px solid #ddd;font-size:11px;">
+    <div style="display:flex;justify-content:space-between;padding:2px 0;"><span>Sub-Total</span><span><?= $sym.number_format($subtotal, 2) ?></span></div>
+    <?php if ($cgstPct2 > 0): ?><div style="display:flex;justify-content:space-between;padding:2px 0;"><span>CGST <?= $cgstPct2 ?>%</span><span><?= $sym.number_format($cgstAmt2, 2) ?></span></div><?php endif; ?>
+    <?php if ($sgstPct2 > 0): ?><div style="display:flex;justify-content:space-between;padding:2px 0;"><span>SGST <?= $sgstPct2 ?>%</span><span><?= $sym.number_format($sgstAmt2, 2) ?></span></div><?php endif; ?>
+    <?php if ($taxPct > 0 && $cgstPct2 == 0 && $sgstPct2 == 0): ?><div style="display:flex;justify-content:space-between;padding:2px 0;"><span>Tax <?= $taxPct ?>%</span><span><?= $sym.number_format($taxAmt, 2) ?></span></div><?php endif; ?>
+    <?php if ($discount > 0): ?><div style="display:flex;justify-content:space-between;padding:2px 0;"><span>Discount</span><span style="color:green;">-<?= $sym.number_format($discount, 2) ?></span></div><?php endif; ?>
+    <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:900;border-top:2px solid <?= htmlspecialchars($c) ?>;margin-top:4px;padding-top:4px;color:<?= htmlspecialchars($c) ?>;"><span>TOTAL</span><span><?= $sym.number_format($total, 2) ?></span></div>
+  </div>
+  <?php if ($bill['notes']): ?><div style="padding:6px 12px;font-size:10px;color:#555;border-top:1px solid #eee;"><?= htmlspecialchars($bill['notes']) ?></div><?php endif; ?>
+  <div style="padding:6px;text-align:center;font-size:9px;color:#999;background:#f0f0f0;">Thank you! Visit again | Time: <?= htmlspecialchars($billTime) ?></div>
+</div>
+
 <?php else: ?>
-<!-- Style 1 & 2: Clean professional monospace POS receipt -->
+<!-- Style 1: Classic monospace POS receipt -->
 <div style="font-family:'Courier New',Courier,monospace;background:#fff;width:80mm;max-width:80mm;margin:0 auto;padding:16px 16px 14px;font-size:11px;color:#111;line-height:1.55;">
   <div style="text-align:center;margin-bottom:6px;">
     <div style="font-size:15px;font-weight:700;letter-spacing:3px;text-transform:uppercase;"><?= htmlspecialchars($bill['from_name']) ?></div>

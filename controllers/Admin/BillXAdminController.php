@@ -469,4 +469,104 @@ class BillXAdminController extends BaseController
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         ");
     }
+
+    // ------------------------------------------------------------------ //
+    //  Activity Logs (GET)                                                  //
+    // ------------------------------------------------------------------ //
+
+    public function activityLogs(): void
+    {
+        $page    = max(1, (int)($_GET['page'] ?? 1));
+        $perPage = 50;
+        $offset  = ($page - 1) * $perPage;
+
+        $userId  = trim($_GET['user_id']  ?? '');
+        $action  = trim($_GET['action']   ?? '');
+        $search  = trim($_GET['search']   ?? '');
+        $dateFrom = trim($_GET['date_from'] ?? '');
+        $dateTo   = trim($_GET['date_to']   ?? '');
+
+        // Validate dates
+        foreach ([&$dateFrom, &$dateTo] as &$d) {
+            if ($d !== '') {
+                $parsed = \DateTime::createFromFormat('Y-m-d', $d);
+                if (!$parsed || $parsed->format('Y-m-d') !== $d) $d = '';
+            }
+        }
+        unset($d);
+
+        $where  = ["a.action LIKE 'billx%'"];
+        $params = [];
+
+        if ($userId !== '' && ctype_digit($userId)) {
+            $where[]  = 'a.user_id = ?';
+            $params[] = (int)$userId;
+        }
+        if ($action !== '') {
+            $where[]  = 'a.action = ?';
+            $params[] = $action;
+        }
+        if ($search !== '') {
+            $where[]  = '(u.name LIKE ? OR u.email LIKE ? OR a.data LIKE ?)';
+            $params[] = "%{$search}%";
+            $params[] = "%{$search}%";
+            $params[] = "%{$search}%";
+        }
+        if ($dateFrom !== '') {
+            $where[]  = 'DATE(a.created_at) >= ?';
+            $params[] = $dateFrom;
+        }
+        if ($dateTo !== '') {
+            $where[]  = 'DATE(a.created_at) <= ?';
+            $params[] = $dateTo;
+        }
+
+        $whereStr = implode(' AND ', $where);
+
+        $total = 0;
+        $logs  = [];
+        try {
+            $countRow = $this->db->fetch(
+                "SELECT COUNT(*) AS cnt
+                   FROM activity_logs a
+                   LEFT JOIN users u ON a.user_id = u.id
+                  WHERE {$whereStr}",
+                $params
+            );
+            $total = (int)($countRow['cnt'] ?? 0);
+
+            $logs = $this->db->fetchAll(
+                "SELECT a.*, u.name AS user_name, u.email AS user_email
+                   FROM activity_logs a
+                   LEFT JOIN users u ON a.user_id = u.id
+                  WHERE {$whereStr}
+                  ORDER BY a.created_at DESC
+                  LIMIT {$perPage} OFFSET {$offset}",
+                $params
+            ) ?: [];
+        } catch (\Exception $e) {
+            Logger::error('BillXAdmin activityLogs: ' . $e->getMessage());
+        }
+
+        // Distinct actions for filter dropdown
+        $actions = [];
+        try {
+            $actRows = $this->db->fetchAll(
+                "SELECT DISTINCT action FROM activity_logs WHERE action LIKE 'billx%' ORDER BY action"
+            ) ?: [];
+            $actions = array_column($actRows, 'action');
+        } catch (\Exception $e) {}
+
+        $this->view('admin/projects/billx/activity-logs', [
+            'title'    => 'BillX Admin — Activity Logs',
+            'logs'     => $logs,
+            'total'    => $total,
+            'page'     => $page,
+            'perPage'  => $perPage,
+            'filters'  => compact('userId', 'action', 'search', 'dateFrom', 'dateTo'),
+            'actions'  => $actions,
+            'dbConnected' => true,
+        ]);
+    }
 }
+

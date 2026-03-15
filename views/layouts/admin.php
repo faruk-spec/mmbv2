@@ -1361,13 +1361,17 @@
                                 <i class="fas fa-chart-line"></i>
                                 <span>Overview</span>
                             </a>
-                            <a href="/admin/projects/billx/bills" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/billx/bills') === 0 ? 'active' : '' ?>">
+                            <a href="/admin/projects/billx/bills" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/billx/bills') === 0 && strpos($_SERVER['REQUEST_URI'] ?? '', '/activity') === false ? 'active' : '' ?>">
                                 <i class="fas fa-list"></i>
                                 <span>All Bills</span>
                             </a>
                             <a href="/admin/projects/billx/bills/export" class="menu-link">
                                 <i class="fas fa-file-csv"></i>
                                 <span>Export CSV</span>
+                            </a>
+                            <a href="/admin/projects/billx/activity-logs" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/billx/activity-logs') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-history"></i>
+                                <span>Activity Logs</span>
                             </a>
                             <a href="/admin/projects/billx/settings" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/billx/settings') === 0 ? 'active' : '' ?>">
                                 <i class="fas fa-cog"></i>

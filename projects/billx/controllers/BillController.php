@@ -10,6 +10,7 @@ namespace Projects\BillX\Controllers;
 use Core\Auth;
 use Core\Security;
 use Core\Logger;
+use Core\Database;
 use Projects\BillX\Models\BillModel;
 
 class BillController
@@ -21,10 +22,68 @@ class BillController
         $this->model = new BillModel();
     }
 
+    /**
+     * Load admin settings from billx_settings table.
+     * Returns defaults if table doesn't exist yet.
+     */
+    private function loadAdminSettings(): array
+    {
+        $defaults = [
+            'max_bills_per_user'   => 500,
+            'allowed_bill_types'   => [],  // empty = all allowed
+            'default_currency'     => 'INR',
+            'require_policy_agree' => 1,
+        ];
+        try {
+            $db = Database::getInstance();
+            $row = $db->fetch(
+                "SELECT setting_value FROM billx_settings WHERE setting_key = 'admin_config'"
+            );
+            if ($row && !empty($row['setting_value'])) {
+                $saved = json_decode($row['setting_value'], true);
+                if (is_array($saved)) {
+                    return array_merge($defaults, $saved);
+                }
+            }
+        } catch (\Exception $e) {
+            // Table may not exist yet — return defaults silently
+        }
+        return $defaults;
+    }
+
+    /**
+     * Merge admin settings into the bill config:
+     * - Filter bill_types to only allowed ones (if any restriction set)
+     * - Apply default currency from admin settings
+     * - Apply require_policy_agree flag
+     */
+    private function applyAdminSettings(array $config): array
+    {
+        $settings = $this->loadAdminSettings();
+
+        // Filter allowed bill types
+        if (!empty($settings['allowed_bill_types'])) {
+            $config['bill_types'] = array_filter(
+                $config['bill_types'],
+                fn($key) => in_array($key, $settings['allowed_bill_types'], true),
+                ARRAY_FILTER_USE_KEY
+            );
+            // If all types filtered out (bad config), restore all types
+            if (empty($config['bill_types'])) {
+                $config['bill_types'] = (require PROJECT_PATH . '/config.php')['bill_types'];
+            }
+        }
+
+        // Expose admin settings as config keys for the view
+        $config['admin_settings'] = $settings;
+
+        return $config;
+    }
+
     /** GET /projects/billx/generate */
     public function showForm(): void
     {
-        $config = require PROJECT_PATH . '/config.php';
+        $config = $this->applyAdminSettings(require PROJECT_PATH . '/config.php');
         $this->render('generate', [
             'title'  => 'Generate Bill',
             'user'   => Auth::user(),
@@ -42,7 +101,7 @@ class BillController
         }
 
         $userId = Auth::id();
-        $config = require PROJECT_PATH . '/config.php';
+        $config = $this->applyAdminSettings(require PROJECT_PATH . '/config.php');
 
         $billType   = Security::sanitize($_POST['bill_type']   ?? 'general');
         $billNumber = Security::sanitize(substr($_POST['bill_number'] ?? '', 0, 50));
@@ -209,10 +268,11 @@ class BillController
     /** GET /projects/billx/view/{id} */
     public function view(int $id): void
     {
-        $userId = Auth::id();
-        $bill   = $this->model->getById($id);
+        $userId  = Auth::id();
+        $isAdmin = Auth::isAdmin();
+        $bill    = $this->model->getById($id);
 
-        if (!$bill || (int)$bill['user_id'] !== $userId) {
+        if (!$bill || ((int)$bill['user_id'] !== $userId && !$isAdmin)) {
             http_response_code(404);
             echo "Bill not found.";
             return;
@@ -232,10 +292,12 @@ class BillController
     /** GET /projects/billx/pdf/{id} — standalone print/PDF view */
     public function pdf(int $id): void
     {
-        $userId = Auth::id();
-        $bill   = $this->model->getById($id);
+        $userId  = Auth::id();
+        $isAdmin = Auth::isAdmin();
+        $bill    = $this->model->getById($id);
 
-        if (!$bill || (int)$bill['user_id'] !== $userId) {
+        // Allow the bill owner OR any admin to view/print/PDF a bill
+        if (!$bill || ((int)$bill['user_id'] !== $userId && !$isAdmin)) {
             http_response_code(404);
             echo "Bill not found.";
             return;
@@ -254,10 +316,12 @@ class BillController
     /** GET /projects/billx/download/{id} */
     public function download(int $id): void
     {
-        $userId = Auth::id();
-        $bill   = $this->model->getById($id);
+        $userId  = Auth::id();
+        $isAdmin = Auth::isAdmin();
+        $bill    = $this->model->getById($id);
 
-        if (!$bill || (int)$bill['user_id'] !== $userId) {
+        // Allow the bill owner OR any admin to download a bill
+        if (!$bill || ((int)$bill['user_id'] !== $userId && !$isAdmin)) {
             http_response_code(404);
             echo "Bill not found.";
             return;

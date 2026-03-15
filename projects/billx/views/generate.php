@@ -321,9 +321,11 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
             </div>
 
             <!-- Policy Agreement -->
-            <div class="card">
+            <?php $requirePolicy = !empty($config['admin_settings']['require_policy_agree'] ?? 1); ?>
+            <div class="card" <?= !$requirePolicy ? 'style="display:none;"' : '' ?>>
                 <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;">
-                    <input type="checkbox" name="policy_agree" id="policy_agree" required
+                    <input type="checkbox" name="policy_agree" id="policy_agree"
+                           <?= $requirePolicy ? 'required' : '' ?>
                            style="margin-top:3px;width:16px;height:16px;accent-color:var(--amber);flex-shrink:0;">
                     <span style="font-size:0.85rem;color:var(--text-secondary);line-height:1.5;">
                         <strong style="color:var(--text-primary);">Policy Agreement</strong><br>
@@ -1345,7 +1347,7 @@ function toggleCrambled(){
 // ─── Form submit dispatcher ───────────────────────────────────────────────────
 function submitBill(action){
     const chk=document.getElementById('policy_agree');
-    if(!chk.checked){chk.reportValidity();chk.focus();return;}
+    if(chk && chk.required && !chk.checked){chk.reportValidity();chk.focus();return;}
     if(action==='download'){
         // Generate PDF from live preview first, then save silently to history
         _downloadFromPreviewThenSave();
