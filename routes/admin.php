@@ -57,8 +57,8 @@ $router->post('/admin/users/{id}/toggle', 'Admin\\UserController@toggle', ['auth
 
 // Admin User Access — granular admin panel permissions
 $router->get('/admin/admin-access', 'Admin\\AdminUserAccessController@index', ['auth', 'admin']);
-$router->get('/admin/admin-access/{id}/edit', 'Admin\\AdminUserAccessController@editForm', ['auth', 'admin']);
-$router->post('/admin/admin-access/{id}/save', 'Admin\\AdminUserAccessController@save', ['auth', 'admin']);
+$router->get('/admin/admin-access/{userId}/edit', 'Admin\\AdminUserAccessController@editForm', ['auth', 'admin']);
+$router->post('/admin/admin-access/{userId}/save', 'Admin\\AdminUserAccessController@save', ['auth', 'admin']);
 
 // Project management
 $router->get('/admin/projects', 'Admin\\ProjectController@index', ['auth', 'admin']);
