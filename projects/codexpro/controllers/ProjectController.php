@@ -12,6 +12,7 @@ use Core\View;
 use Core\Auth;
 use Core\Security;
 use Core\Helpers;
+use Core\ActivityLogger;
 
 class ProjectController
 {
@@ -62,6 +63,7 @@ class ProjectController
         ]);
         
         if ($projectId) {
+            try { ActivityLogger::logCreate($user['id'], 'codexpro', 'project', $projectId, ['name' => $name, 'language' => $language]); } catch (\Throwable $_) {}
             echo json_encode(['success' => true, 'project_id' => $projectId]);
         } else {
             echo json_encode(['success' => false, 'error' => 'Failed to create project']);
@@ -121,6 +123,7 @@ class ProjectController
             'visibility' => $visibility,
         ], ['id' => $id]);
         
+        try { ActivityLogger::logUpdate($user['id'], 'codexpro', 'project', $id, [], ['name' => $name, 'description' => $description, 'visibility' => $visibility]); } catch (\Throwable $_) {}
         echo json_encode(['success' => $updated]);
     }
     
@@ -152,11 +155,13 @@ class ProjectController
             ]);
             
             if ($deleted !== false && $deleted > 0) {
+                try { ActivityLogger::logDelete($user['id'], 'codexpro', 'project', $id, ['id' => $id]); } catch (\Throwable $_) {}
                 echo json_encode(['success' => true, 'message' => 'Project deleted successfully']);
             } else {
                 echo json_encode(['success' => false, 'error' => 'Failed to delete project']);
             }
         } catch (\Exception $e) {
+            try { ActivityLogger::logFailure($user['id'] ?? 0, 'delete_project', $e->getMessage()); } catch (\Throwable $_) {}
             echo json_encode(['success' => false, 'error' => 'Server error: ' . $e->getMessage()]);
         }
     }
@@ -220,11 +225,13 @@ class ProjectController
             ]);
             
             if ($updated !== false) {
+                try { ActivityLogger::logUpdate($user['id'], 'codexpro', 'project', $id, [], $updateData); } catch (\Throwable $_) {}
                 echo json_encode(['success' => true, 'data' => $updateData, 'message' => 'Project updated successfully']);
             } else {
                 echo json_encode(['success' => false, 'error' => 'Failed to update project']);
             }
         } catch (\Exception $e) {
+            try { ActivityLogger::logFailure($user['id'] ?? 0, 'quick_update_project', $e->getMessage()); } catch (\Throwable $_) {}
             echo json_encode(['success' => false, 'error' => 'Server error: ' . $e->getMessage()]);
         }
     }

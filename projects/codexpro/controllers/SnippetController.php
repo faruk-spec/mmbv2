@@ -11,6 +11,7 @@ use Core\Database;
 use Core\View;
 use Core\Auth;
 use Core\Security;
+use Core\ActivityLogger;
 
 class SnippetController
 {
@@ -66,6 +67,7 @@ class SnippetController
         ]);
         
         if ($snippetId) {
+            try { ActivityLogger::logCreate($user['id'], 'codexpro', 'snippet', $snippetId, ['title' => $title, 'language' => $language]); } catch (\Throwable $_) {}
             echo json_encode(['success' => true, 'snippet_id' => $snippetId]);
         } else {
             echo json_encode(['success' => false, 'error' => 'Failed to create snippet']);
@@ -184,6 +186,7 @@ class SnippetController
         ]);
         
         if ($updated !== false) {
+            try { ActivityLogger::logUpdate($user['id'], 'codexpro', 'snippet', $id, [], ['title' => $title, 'language' => $language]); } catch (\Throwable $_) {}
             echo json_encode(['success' => true, 'message' => 'Snippet updated successfully']);
         } else {
             echo json_encode(['success' => false, 'error' => 'Failed to update snippet']);
@@ -218,11 +221,13 @@ class SnippetController
             ]);
             
             if ($deleted !== false && $deleted > 0) {
+                try { ActivityLogger::logDelete($user['id'], 'codexpro', 'snippet', $id, ['id' => $id]); } catch (\Throwable $_) {}
                 echo json_encode(['success' => true, 'message' => 'Snippet deleted successfully']);
             } else {
                 echo json_encode(['success' => false, 'error' => 'Failed to delete snippet']);
             }
         } catch (\Exception $e) {
+            try { ActivityLogger::logFailure($user['id'] ?? 0, 'delete_snippet', $e->getMessage()); } catch (\Throwable $_) {}
             echo json_encode(['success' => false, 'error' => 'Server error: ' . $e->getMessage()]);
         }
     }
@@ -286,11 +291,13 @@ class SnippetController
             ]);
             
             if ($updated !== false) {
+                try { ActivityLogger::logUpdate($user['id'], 'codexpro', 'snippet', $id, [], $updateData); } catch (\Throwable $_) {}
                 echo json_encode(['success' => true, 'data' => $updateData, 'message' => 'Snippet updated successfully']);
             } else {
                 echo json_encode(['success' => false, 'error' => 'Failed to update snippet']);
             }
         } catch (\Exception $e) {
+            try { ActivityLogger::logFailure($user['id'] ?? 0, 'quick_update_snippet', $e->getMessage()); } catch (\Throwable $_) {}
             echo json_encode(['success' => false, 'error' => 'Server error: ' . $e->getMessage()]);
         }
     }

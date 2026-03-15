@@ -11,6 +11,7 @@ use Controllers\BaseController;
 use Core\Database;
 use Core\Auth;
 use Core\Logger;
+use Core\ActivityLogger;
 use Core\Cache;
 
 class CodeXProAdminController extends BaseController
@@ -199,6 +200,7 @@ class CodeXProAdminController extends BaseController
         Cache::delete('codexpro_storage');
         
         Logger::activity(Auth::id(), 'codexpro_settings_updated', $settings);
+        try { ActivityLogger::logUpdate(Auth::id(), 'codexpro', 'settings', 0, [], $settings); } catch (\Throwable $_) {}
         
         $this->flash('success', 'Settings updated successfully.');
         $this->redirect('/admin/projects/codexpro/settings');
@@ -341,6 +343,7 @@ class CodeXProAdminController extends BaseController
         if ($id > 0) {
             $this->projectDb->delete('templates', 'id = ?', [$id]);
             Logger::activity(Auth::id(), 'codexpro_template_deleted', ['template_id' => $id]);
+            try { ActivityLogger::logDelete(Auth::id(), 'codexpro', 'template', $id, ['id' => $id]); } catch (\Throwable $_) {}
             $this->flash('success', 'Template deleted successfully.');
         } else {
             $this->flash('error', 'Invalid template ID.');

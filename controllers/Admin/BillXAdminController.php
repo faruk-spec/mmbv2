@@ -12,6 +12,7 @@ use Core\Database;
 use Core\Auth;
 use Core\Security;
 use Core\Logger;
+use Core\ActivityLogger;
 use Projects\BillX\Models\BillModel;
 
 class BillXAdminController extends BaseController
@@ -167,9 +168,11 @@ class BillXAdminController extends BaseController
         try {
             $this->db->query("DELETE FROM billx_bills WHERE id = ?", [$id]);
             Logger::activity(Auth::id(), 'admin_delete_bill', ['bill_id' => $id]);
+            try { ActivityLogger::logDelete(Auth::id(), 'billx', 'bill', $id); } catch (\Throwable $_) {}
             $this->redirect('/admin/projects/billx/bills?deleted=1');
         } catch (\Exception $e) {
             Logger::error('BillXAdmin deleteBill: ' . $e->getMessage());
+            try { ActivityLogger::logFailure(Auth::id(), 'admin_delete_bill', $e->getMessage()); } catch (\Throwable $_) {}
             $this->redirect('/admin/projects/billx/bills?error=db_error');
         }
     }
@@ -204,9 +207,11 @@ class BillXAdminController extends BaseController
         try {
             $count = $this->model->adminDeleteMultiple($ids);
             Logger::activity(Auth::id(), 'admin_bulk_delete_bills', ['count' => $count, 'ids' => implode(',', $ids)]);
+            try { ActivityLogger::log(Auth::id(), 'bulk_deleted', ['module' => 'billx', 'resource_type' => 'bill', 'count' => $count, 'ids' => implode(',', $ids)]); } catch (\Throwable $_) {}
             $this->redirect('/admin/projects/billx/bills?bulk_deleted=' . $count);
         } catch (\Exception $e) {
             Logger::error('BillXAdmin bulkDelete: ' . $e->getMessage());
+            try { ActivityLogger::logFailure(Auth::id(), 'admin_bulk_delete_bills', $e->getMessage()); } catch (\Throwable $_) {}
             $this->redirect('/admin/projects/billx/bills?error=db_error');
         }
     }
@@ -318,6 +323,7 @@ class BillXAdminController extends BaseController
             $this->saveSettings($newSettings);
             $saved = true;
             Logger::activity(Auth::id(), 'admin_billx_settings_updated');
+            try { ActivityLogger::logUpdate(Auth::id(), 'billx', 'settings', 0, [], $newSettings); } catch (\Throwable $_) {}
         }
 
         $this->view('admin/projects/billx/settings', [
@@ -453,6 +459,7 @@ class BillXAdminController extends BaseController
             }
         } catch (\Exception $e) {
             Logger::error('BillXAdmin saveSettings: ' . $e->getMessage());
+            try { ActivityLogger::logFailure(Auth::id(), 'admin_billx_save_settings', $e->getMessage()); } catch (\Throwable $_) {}
         }
     }
 
