@@ -40,7 +40,16 @@
         </div>
         <?php endif; ?>
         
-        <form method="POST" action="/login<?= !empty($_GET['redirect']) ? '?redirect=' . urlencode($_GET['redirect']) : '' ?>">
+        <?php
+        // Preserve redirect or return URL through form submission
+        $loginRedirect = '';
+        if (!empty($_GET['redirect'])) {
+            $loginRedirect = '?redirect=' . urlencode($_GET['redirect']);
+        } elseif (!empty($_GET['return'])) {
+            $loginRedirect = '?return=' . urlencode($_GET['return']);
+        }
+        ?>
+        <form method="POST" action="<?= htmlspecialchars('/login' . $loginRedirect) ?>">
             <?= \Core\Security::csrfField() ?>
             
             <div class="form-group">

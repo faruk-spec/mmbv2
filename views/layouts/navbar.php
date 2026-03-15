@@ -770,15 +770,22 @@ body {
     position: absolute;
     top: 100%;
     right: 0;
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
+    background: var(--bg-card, #1c1c2a);
+    border: 1px solid var(--border-color, rgba(255,255,255,0.15));
     border-radius: 8px;
     min-width: 200px;
     margin-top: 8px;
     padding: 8px 0;
-    box-shadow: var(--shadow);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.06);
     display: none;
     z-index: 10001;
+}
+
+/* Explicit dark-mode override so the dropdown is always legible in projects */
+html:not([data-theme="light"]) .dropdown-menu {
+    background: #1c1c2a;
+    border-color: rgba(255,255,255,0.15);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.08);
 }
 
 .dropdown.active .dropdown-menu {
@@ -790,15 +797,20 @@ body {
     align-items: center;
     gap: 10px;
     padding: 10px 16px;
-    color: var(--text-primary);
+    color: var(--text-primary, #e8eefc);
     text-decoration: none;
-    transition: var(--transition);
+    transition: var(--transition, all 0.3s ease);
     font-size: 14px;
 }
 
+/* Ensure text is always readable in dark mode */
+html:not([data-theme="light"]) .dropdown-item {
+    color: #e8eefc;
+}
+
 .dropdown-item:hover {
-    background: var(--hover-bg);
-    color: var(--cyan);
+    background: var(--hover-bg, rgba(0,240,255,0.08));
+    color: var(--cyan, #00f0ff);
 }
 
 .dropdown-divider {

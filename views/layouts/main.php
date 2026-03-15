@@ -120,10 +120,8 @@ try {
             box-sizing: border-box;
         }
         
-        html, body {
+        html {
             width: 100%;
-            overflow-x: hidden;
-            position: relative;
         }
         
         body {
@@ -133,7 +131,8 @@ try {
             min-height: 100vh;
             line-height: 1.6;
             font-size: 14px;
-            overflow-y: auto;
+            overflow-x: hidden;
+            position: relative;
         }
         
         h1 { font-size: 2rem; }

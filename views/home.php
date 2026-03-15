@@ -303,7 +303,6 @@ $featuresSubheading = $sections['features']['subheading'] ?? 'Powerful capabilit
             <div style="display: flex; gap: 15px; flex-wrap: wrap;">
                 <?php if (Auth::check()): ?>
                     <a href="/dashboard" class="btn btn-primary">Go to Dashboard</a>
-                    <a href="/projects" class="btn btn-secondary">Browse Projects</a>
                 <?php else: ?>
                     <a href="/register" class="btn btn-primary">Get Started</a>
                     <a href="/login" class="btn btn-secondary">Sign In</a>
@@ -576,7 +575,7 @@ if ($showStats):
                         <line x1="5" y1="12" x2="19" y2="12"></line>
                         <polyline points="12 5 19 12 12 19"></polyline>
                     </svg>
-                    Access Project
+                    Access Application
                 </a>
             <?php else: ?>
                 <a href="/login?redirect=<?= urlencode($projectUrl) ?>" class="btn btn-secondary" style="width: 100%;">

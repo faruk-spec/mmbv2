@@ -127,7 +127,6 @@ try {
             scroll-behavior: smooth;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
-            overflow-x: hidden;
             max-width: 100vw;
             background: var(--bg-primary);   /* ← critical */
         }
@@ -222,7 +221,6 @@ try {
         .cx-dashboard {
             display: flex;
             min-height: calc(100vh - var(--navbar-height));
-            margin-top: var(--navbar-height);
             background: var(--bg-primary);   /* ← ensures no white behind sidebar */
         }
 
