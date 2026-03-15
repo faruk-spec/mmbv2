@@ -11,6 +11,7 @@ use Core\Auth;
 use Core\View;
 use Core\Database;
 use Core\Security;
+use Core\ActivityLogger;
 
 class MessageController
 {
@@ -87,6 +88,7 @@ class MessageController
             ]);
             
             $messageId = $this->db->lastInsertId();
+            try { ActivityLogger::logCreate($this->user['id'], 'whatsapp', 'message', $messageId, ['recipient' => $recipient, 'session_id' => $sessionId]); } catch (\Throwable $_) {}
             
             // In production, this would send to WhatsApp Web API
             $sent = $this->sendToWhatsApp($sessionId, $recipient, $message, $mediaUrl);
@@ -108,6 +110,7 @@ class MessageController
             
         } catch (\Exception $e) {
             http_response_code(400);
+            try { ActivityLogger::logFailure($this->user['id'], 'message_send', $e->getMessage()); } catch (\Throwable $_) {}
             echo json_encode([
                 'success' => false,
                 'message' => $e->getMessage()

@@ -13,6 +13,7 @@ use Core\Auth;
 use Core\View;
 use Core\Database;
 use Core\Security;
+use Core\ActivityLogger;
 
 class WhatsAppAdminController
 {
@@ -230,6 +231,7 @@ class WhatsAppAdminController
             }
             
             $this->db->query("DELETE FROM whatsapp_sessions WHERE id = ?", [$sessionId]);
+            try { ActivityLogger::logDelete(Auth::id(), 'whatsapp', 'session', $sessionId); } catch (\Throwable $_) {}
             
             http_response_code(200);
             header('Content-Type: application/json');
@@ -242,6 +244,7 @@ class WhatsAppAdminController
         } catch (\Exception $e) {
             http_response_code(400);
             header('Content-Type: application/json');
+            try { ActivityLogger::logFailure(Auth::id(), 'session_delete', $e->getMessage()); } catch (\Throwable $_) {}
             echo json_encode([
                 'success' => false,
                 'message' => $e->getMessage()

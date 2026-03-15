@@ -11,6 +11,7 @@ use Core\Auth;
 use Core\View;
 use Core\Database;
 use Core\Security;
+use Core\ActivityLogger;
 
 class SettingsController
 {
@@ -57,6 +58,7 @@ class SettingsController
             switch ($action) {
                 case 'generate_api_key':
                     $apiKey = $this->generateApiKey();
+                    try { ActivityLogger::logCreate($this->user['id'], 'whatsapp', 'api_key', null, ['action' => 'generate_api_key']); } catch (\Throwable $_) {}
                     echo json_encode([
                         'success' => true,
                         'message' => 'API key generated successfully',
@@ -67,6 +69,7 @@ class SettingsController
                 case 'update_webhook':
                     $webhookUrl = $_POST['webhook_url'] ?? '';
                     $this->updateWebhookUrl($webhookUrl);
+                    try { ActivityLogger::logUpdate($this->user['id'], 'whatsapp', 'webhook', null, [], ['webhook_url' => $webhookUrl]); } catch (\Throwable $_) {}
                     echo json_encode([
                         'success' => true,
                         'message' => 'Webhook URL updated successfully'
@@ -79,6 +82,7 @@ class SettingsController
             
         } catch (\Exception $e) {
             http_response_code(400);
+            try { ActivityLogger::logFailure($this->user['id'], 'settings_update', $e->getMessage()); } catch (\Throwable $_) {}
             echo json_encode([
                 'success' => false,
                 'message' => $e->getMessage()

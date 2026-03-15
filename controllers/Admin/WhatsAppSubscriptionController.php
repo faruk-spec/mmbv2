@@ -13,6 +13,7 @@ use Core\Auth;
 use Core\View;
 use Core\Database;
 use Core\Security;
+use Core\ActivityLogger;
 
 class WhatsAppSubscriptionController
 {
@@ -105,6 +106,7 @@ class WhatsAppSubscriptionController
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ", [$name, $description, $price, $currency, $messages_limit, $sessions_limit, $api_calls_limit, $duration_days, $is_active]);
         
+        try { ActivityLogger::logCreate(Auth::id(), 'whatsapp', 'subscription_plan', null, ['name' => $name, 'price' => $price]); } catch (\Throwable $_) {}
         $_SESSION['success'] = 'Subscription plan created successfully';
         header('Location: /admin/whatsapp/subscription-plans');
         exit;
@@ -172,6 +174,7 @@ class WhatsAppSubscriptionController
             WHERE id = ?
         ", [$name, $description, $price, $currency, $messages_limit, $sessions_limit, $api_calls_limit, $duration_days, $is_active, $id]);
         
+        try { ActivityLogger::logUpdate(Auth::id(), 'whatsapp', 'subscription_plan', $id, [], ['name' => $name, 'price' => $price]); } catch (\Throwable $_) {}
         $_SESSION['success'] = 'Subscription plan updated successfully';
         header('Location: /admin/whatsapp/subscription-plans');
         exit;
@@ -209,6 +212,7 @@ class WhatsAppSubscriptionController
         
         $this->db->query("DELETE FROM whatsapp_subscription_plans WHERE id = ?", [$id]);
         
+        try { ActivityLogger::logDelete(Auth::id(), 'whatsapp', 'subscription_plan', $id); } catch (\Throwable $_) {}
         $_SESSION['success'] = 'Subscription plan deleted successfully';
         header('Location: /admin/whatsapp/subscription-plans');
         exit;
@@ -362,6 +366,7 @@ class WhatsAppSubscriptionController
             $plan['api_calls_limit']
         ]);
         
+        try { ActivityLogger::logCreate(Auth::id(), 'whatsapp', 'subscription', null, ['user_id' => $user_id, 'plan_type' => $planType]); } catch (\Throwable $_) {}
         $_SESSION['success'] = 'Subscription assigned successfully';
         header('Location: /admin/whatsapp/user-subscriptions');
         exit;
@@ -393,6 +398,7 @@ class WhatsAppSubscriptionController
                 SET end_date = DATE_ADD(end_date, INTERVAL ? DAY)
                 WHERE id = ?
             ", [$days, $id]);
+            try { ActivityLogger::logUpdate(Auth::id(), 'whatsapp', 'subscription', $id, [], ['action' => $action]); } catch (\Throwable $_) {}
             $_SESSION['success'] = "Subscription extended by {$days} days";
         } elseif ($action === 'reset_usage') {
             $this->db->query("
@@ -400,6 +406,7 @@ class WhatsAppSubscriptionController
                 SET messages_used = 0, sessions_used = 0, api_calls_used = 0
                 WHERE id = ?
             ", [$id]);
+            try { ActivityLogger::logUpdate(Auth::id(), 'whatsapp', 'subscription', $id, [], ['action' => $action]); } catch (\Throwable $_) {}
             $_SESSION['success'] = 'Usage statistics reset successfully';
         } elseif ($action === 'change_status') {
             $status = $_POST['status'] ?? 'active';
@@ -408,6 +415,7 @@ class WhatsAppSubscriptionController
                 SET status = ?
                 WHERE id = ?
             ", [$status, $id]);
+            try { ActivityLogger::logUpdate(Auth::id(), 'whatsapp', 'subscription', $id, [], ['action' => $action]); } catch (\Throwable $_) {}
             $_SESSION['success'] = 'Subscription status updated';
         }
         
@@ -438,6 +446,7 @@ class WhatsAppSubscriptionController
             WHERE id = ?
         ", [$id]);
         
+        try { ActivityLogger::logUpdate(Auth::id(), 'whatsapp', 'subscription', $id, ['status' => 'active'], ['status' => 'cancelled']); } catch (\Throwable $_) {}
         $_SESSION['success'] = 'Subscription cancelled successfully';
         header('Location: /admin/whatsapp/user-subscriptions');
         exit;
