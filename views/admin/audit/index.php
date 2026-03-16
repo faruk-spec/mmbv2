@@ -12,7 +12,7 @@
 .ae-mode-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0;}
 .ae-mode-tab{flex:1;padding:9px 0;font-size:11px;font-weight:600;text-align:center;cursor:pointer;border:none;background:none;color:var(--text-m);border-bottom:2px solid transparent;transition:.12s;font-family:inherit;}
 .ae-mode-tab.active{color:var(--cyan);border-bottom-color:var(--cyan);}
-.ae-vb-panel{display:flex;flex-direction:column;flex:1;overflow:hidden;}
+.ae-vb-panel{display:flex;flex-direction:column;flex:1;overflow-y:auto;min-height:0;}
 .ae-run-btn{margin:10px 14px;background:var(--cyan);color:#000;border:none;border-radius:8px;padding:9px 0;font-weight:700;font-size:12px;cursor:pointer;width:calc(100% - 28px);transition:opacity .15s;flex-shrink:0;font-family:inherit;}
 .ae-run-btn:hover:not(:disabled){opacity:.85;}.ae-run-btn:disabled{opacity:.5;cursor:not-allowed;}
 .ae-sec{border-bottom:1px solid var(--border);}
@@ -31,13 +31,16 @@
 .sv-name{flex:1;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .sv-load{background:none;border:1px solid var(--border);color:var(--text-m);border-radius:5px;padding:2px 6px;font-size:10px;cursor:pointer;font-family:inherit;}
 .sv-del{background:none;border:none;color:var(--red);cursor:pointer;font-size:12px;padding:0 2px;}
-/* Exclude resource-type tag filter */
-.ae-rt-wrap{display:flex;flex-wrap:wrap;gap:5px;padding:2px 0 6px;}
-.ae-rt-tag{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;border:1px solid var(--border);background:var(--bg-card);font-size:10.5px;cursor:pointer;color:var(--text-m);transition:.12s;user-select:none;line-height:1.4;}
-.ae-rt-tag:hover{border-color:var(--orange);color:var(--orange);}
-.ae-rt-tag.excluded{background:rgba(255,120,50,.12);border-color:var(--orange);color:var(--orange);font-weight:600;}
-.ae-rt-tag.excluded::before{content:'✕ ';}
-.ae-rt-none{font-size:10.5px;color:var(--text-m);font-style:italic;}
+/* Exclude resource-type filter */
+.ae-rt-input-row{display:flex;gap:5px;align-items:center;}
+.ae-rt-input{flex:1;padding:5px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg-card);color:var(--text);font-size:11px;font-family:inherit;}
+.ae-rt-input:focus{outline:none;border-color:var(--orange);}
+.ae-rt-add-btn{background:none;border:1px solid var(--border);color:var(--text-m);border-radius:6px;padding:4px 9px;font-size:11px;cursor:pointer;font-family:inherit;transition:.12s;flex-shrink:0;}
+.ae-rt-add-btn:hover{border-color:var(--orange);color:var(--orange);}
+.ae-rt-chips{display:flex;flex-wrap:wrap;gap:5px;padding:6px 0 2px;min-height:0;}
+.ae-rt-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 6px 3px 9px;border-radius:20px;border:1px solid var(--orange);background:rgba(255,120,50,.12);font-size:10.5px;color:var(--orange);font-weight:600;line-height:1.4;}
+.ae-rt-chip-del{background:none;border:none;color:var(--orange);cursor:pointer;font-size:13px;padding:0 1px;line-height:1;font-family:inherit;}
+.ae-rt-chip-del:hover{color:#ff4500;}
 .ae-export-row{padding:10px 14px;border-top:1px solid var(--border);display:flex;gap:6px;flex-shrink:0;margin-top:auto;}
 .ae-sm-btn{flex:1;background:none;border:1px solid var(--border);color:var(--text-m);border-radius:6px;padding:5px 0;font-size:11px;cursor:pointer;font-family:inherit;transition:.12s;}
 .ae-sm-btn:hover{border-color:var(--cyan);color:var(--cyan);}
@@ -252,22 +255,22 @@
                 <i class="fas fa-chevron-right arr"></i>
             </div>
             <div class="ae-sec-body">
-                <div style="font-size:10px;color:var(--text-m);margin-bottom:6px;line-height:1.5;">
-                    Click a tag to <strong style="color:var(--orange);">exclude</strong> that resource type from results.
+                <div style="font-size:10px;color:var(--text-m);margin-bottom:7px;line-height:1.5;">
+                    Type a resource type to exclude it from query results.
                 </div>
-                <div class="ae-rt-wrap" id="rtTagWrap">
-                    <?php if (empty($resourceTypes)): ?>
-                        <span class="ae-rt-none">No resource types found yet.</span>
-                    <?php else: ?>
+                <div class="ae-rt-input-row">
+                    <input type="text" id="rtInput" class="ae-rt-input" placeholder="e.g. audit, session…"
+                           list="dlResourceTypes" autocomplete="off"
+                           onkeydown="if(event.key==='Enter'){event.preventDefault();addRtExclude();}">
+                    <datalist id="dlResourceTypes">
                         <?php foreach ($resourceTypes as $rt): ?>
-                            <span class="ae-rt-tag" data-rt="<?= View::e($rt['resource_type']) ?>"
-                                  onclick="toggleRtExclude(this)">
-                                <?= View::e($rt['resource_type']) ?>
-                            </span>
+                            <option value="<?= View::e($rt['resource_type']) ?>">
                         <?php endforeach; ?>
-                    <?php endif; ?>
+                    </datalist>
+                    <button type="button" class="ae-rt-add-btn" onclick="addRtExclude()">+ Add</button>
                 </div>
-                <button type="button" class="ae-sm-btn" style="width:100%;margin-top:2px;" onclick="clearRtExcludes()">Clear exclusions</button>
+                <div class="ae-rt-chips" id="rtChips"></div>
+                <button type="button" class="ae-sm-btn" style="width:100%;margin-top:4px;" onclick="clearRtExcludes()">Clear all exclusions</button>
             </div>
         </div>
 
@@ -473,8 +476,8 @@ function buildSpec() {
     if(ue)where.push({col:'user_email',op:'LIKE',val:'%'+ue+'%'});
     const kw=document.getElementById('fSearch').value.trim();
     if(kw)where.push({col:'readable_message',op:'LIKE',val:'%'+kw+'%'});
-    // Exclude resource types
-    const excludedRt = [...document.querySelectorAll('.ae-rt-tag.excluded')].map(t=>t.dataset.rt).filter(Boolean);
+    // Exclude resource types (chip-based typeahead)
+    const excludedRt = [...document.querySelectorAll('#rtChips .ae-rt-chip')].map(c=>c.dataset.rt).filter(Boolean);
     if(excludedRt.length) where.push({col:'resource_type',op:'NOT IN',val:excludedRt});
     const gbRaw=document.getElementById('fGroupBy').value.trim();
     return {
@@ -931,10 +934,10 @@ function clearAll(resetResults=true){
     const inp=document.createElement('input');inp.type='text';inp.className='ae-col-in sel-expr';
     inp.value='*';inp.setAttribute('list','dlCols');inp.ondblclick=()=>inp.remove();
     document.getElementById('selectWrap').appendChild(inp);
-    // Reset results first so lastSpec=null before clearRtExcludes runs
+    // Reset results first so lastSpec=null, then clear chips silently
     if(resetResults){resetResults2();}
-    // Clear tag exclusions silently (no re-run since we just wiped results)
-    document.querySelectorAll('.ae-rt-tag.excluded').forEach(t => t.classList.remove('excluded'));
+    // Clear resource-type exclusion chips silently (no re-run, results already wiped)
+    document.getElementById('rtChips').innerHTML = '';
 }
 function resetResults2(){
     document.getElementById('sqlBar').style.display='none';
@@ -943,15 +946,28 @@ function resetResults2(){
     lastSpec=null;
 }
 
-function toggleRtExclude(tag) {
-    tag.classList.toggle('excluded');
+function addRtExclude() {
+    const inp = document.getElementById('rtInput');
+    const val = inp.value.trim();
+    if (!val) return;
+    // Prevent duplicates
+    const existing = [...document.querySelectorAll('#rtChips .ae-rt-chip')].map(chip=>chip.dataset.rt);
+    if (existing.includes(val)) { inp.value=''; return; }
+    const chip = document.createElement('span');
+    chip.className = 'ae-rt-chip';
+    chip.dataset.rt = val;
+    chip.innerHTML = val + ' <button type="button" class="ae-rt-chip-del" title="Remove" onclick="removeRtChip(this)">&#x2715;</button>';
+    document.getElementById('rtChips').appendChild(chip);
+    inp.value = '';
+}
+
+function removeRtChip(btn) {
+    btn.closest('.ae-rt-chip').remove();
 }
 
 function clearRtExcludes() {
-    const hadExclusions = document.querySelectorAll('.ae-rt-tag.excluded').length > 0;
-    document.querySelectorAll('.ae-rt-tag.excluded').forEach(t => t.classList.remove('excluded'));
-    // Re-run to reflect cleared exclusions only when triggered by the dedicated button
-    // (not when called from clearAll which resets everything anyway)
+    const hadExclusions = document.querySelectorAll('#rtChips .ae-rt-chip').length > 0;
+    document.getElementById('rtChips').innerHTML = '';
     if (hadExclusions && lastSpec) runQuery();
 }
 
