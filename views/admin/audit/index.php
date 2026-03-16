@@ -110,6 +110,18 @@
 .ae-vt-btn:first-child{border-radius:6px 0 0 6px;}
 .ae-vt-btn:last-child{border-radius:0 6px 6px 0;border-left:none;}
 .ae-vt-btn.active{background:var(--cyan);color:#000;border-color:var(--cyan);}
+/* Refresh + auto-refresh controls */
+.ae-refresh-grp{position:relative;display:inline-flex;gap:0;margin-left:4px;}
+.ae-refresh-grp .ae-vt-btn:first-child{border-radius:6px 0 0 6px;padding:4px 7px;}
+.ae-refresh-grp .ae-vt-btn:last-child{border-radius:0 6px 6px 0;border-left:none;padding:4px 6px;font-size:13px;letter-spacing:.5px;}
+.ae-refresh-grp .ae-vt-btn.ar-on{background:rgba(0,240,255,.15);color:var(--cyan);border-color:var(--cyan);}
+.ae-ar-menu{display:none;position:absolute;top:calc(100% + 4px);right:0;z-index:200;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;min-width:168px;padding:4px 0;box-shadow:0 6px 20px rgba(0,0,0,.5);}
+.ae-ar-menu.open{display:block;}
+.ae-ar-opt{padding:7px 14px;font-size:11.5px;cursor:pointer;color:var(--text);transition:.1s;}
+.ae-ar-opt:hover{background:rgba(0,240,255,.08);color:var(--cyan);}
+.ae-ar-opt.active{color:var(--cyan);font-weight:600;}
+.ae-ar-sep{height:1px;background:var(--border);margin:3px 0;}
+.ae-ar-badge{font-size:9px;background:rgba(0,240,255,.15);color:var(--cyan);border-radius:8px;padding:1px 6px;margin-left:5px;}
 /* Timeline */
 .ae-timeline{padding:14px 20px;display:flex;flex-direction:column;}
 .ae-tl-item{display:flex;gap:14px;padding-bottom:18px;position:relative;}
@@ -140,17 +152,17 @@
     </div>
 
     <div class="ae-mode-tabs">
-        <button class="ae-mode-tab active" id="tabVB" onclick="setMode('vb')">
+        <button type="button" class="ae-mode-tab active" id="tabVB" onclick="setMode('vb')">
             <i class="fas fa-sliders-h" style="margin-right:4px;"></i>Visual
         </button>
-        <button class="ae-mode-tab" id="tabSQL" onclick="setMode('sql')">
+        <button type="button" class="ae-mode-tab" id="tabSQL" onclick="setMode('sql')">
             <i class="fas fa-terminal" style="margin-right:4px;"></i>SQL
         </button>
     </div>
 
     <!-- Visual Builder panel -->
     <div class="ae-vb-panel" id="vbPanel">
-        <button class="ae-run-btn" id="runBtn" onclick="runQuery()">&#9654; Run Query</button>
+        <button type="button" class="ae-run-btn" id="runBtn" onclick="runQuery()">&#9654; Run Query</button>
 
         <div class="ae-sec">
             <div class="ae-sec-hdr open" onclick="toggleSec(this)">
@@ -249,7 +261,7 @@
                     ['Deletes today',              ['select'=>['*'],'where'=>[['col'=>'action','op'=>'LIKE','val'=>'%_deleted'],['col'=>'created_at','op'=>'>=','val'=>date('Y-m-d')]],'order_by'=>'created_at','limit'=>100]],
                 ];
                 foreach ($tpls as [$label, $spec]): ?>
-                <button class="tpl-btn" onclick='loadTemplate(<?= htmlspecialchars(json_encode($spec), ENT_QUOTES) ?>)'><?= htmlspecialchars($label) ?></button>
+                <button type="button" class="tpl-btn" onclick='loadTemplate(<?= htmlspecialchars(json_encode($spec), ENT_QUOTES) ?>)'><?= htmlspecialchars($label) ?></button>
                 <?php endforeach; ?>
             </div>
         </div>
@@ -261,15 +273,15 @@
             </div>
             <div class="ae-sec-body">
                 <div id="savedList"><p style="font-size:10.5px;color:var(--text-m);">No saved queries yet.</p></div>
-                <button class="ae-sm-btn" style="width:100%;margin-top:6px;" onclick="saveQuery()">+ Save current query</button>
+                <button type="button" class="ae-sm-btn" style="width:100%;margin-top:6px;" onclick="saveQuery()">+ Save current query</button>
             </div>
         </div>
 
         <div style="flex:1;min-height:10px;"></div>
         <div class="ae-export-row">
-            <button class="ae-sm-btn" onclick="exportResult('csv')">&#x2B07; CSV</button>
-            <button class="ae-sm-btn" onclick="exportResult('json')">&#x2B07; JSON</button>
-            <button class="ae-sm-btn" onclick="clearAll()">&#x21BA; Reset</button>
+            <button type="button" class="ae-sm-btn" onclick="exportResult('csv')">&#x2B07; CSV</button>
+            <button type="button" class="ae-sm-btn" onclick="exportResult('json')">&#x2B07; JSON</button>
+            <button type="button" class="ae-sm-btn" onclick="clearAll()">&#x21BA; Reset</button>
         </div>
     </div>
 
@@ -279,7 +291,7 @@
             <div class="ae-sql-editor-label" style="margin-bottom:6px;">&#x1F4DD; SQL Query</div>
             <textarea id="sqlInput" class="ae-sql-ta" spellcheck="false"
                 placeholder="SELECT al.*, u.name AS user_name&#10;FROM activity_logs al&#10;LEFT JOIN users u ON al.user_id = u.id&#10;WHERE al.status = 'failure'&#10;ORDER BY al.created_at DESC&#10;LIMIT 100"></textarea>
-            <button class="ae-sql-run-btn" id="sqlRunBtn" onclick="runRawSql()" style="margin-top:8px;">
+            <button type="button" class="ae-sql-run-btn" id="sqlRunBtn" onclick="runRawSql()" style="margin-top:8px;">
                 &#9654; Execute SQL
             </button>
         </div>
@@ -301,8 +313,8 @@
         </div>
         <div style="flex:1;min-height:10px;"></div>
         <div class="ae-export-row">
-            <button class="ae-sm-btn" onclick="exportSqlResult('csv')">&#x2B07; CSV</button>
-            <button class="ae-sm-btn" onclick="exportSqlResult('json')">&#x2B07; JSON</button>
+            <button type="button" class="ae-sm-btn" onclick="exportSqlResult('csv')">&#x2B07; CSV</button>
+            <button type="button" class="ae-sm-btn" onclick="exportSqlResult('json')">&#x2B07; JSON</button>
         </div>
     </div>
 </aside>
@@ -320,7 +332,7 @@
         <div class="ae-sel-wrap" id="selectWrap">
             <input type="text" class="ae-col-in sel-expr" value="*" placeholder="col or COUNT(*) AS n" list="dlCols" ondblclick="this.remove()">
         </div>
-        <button class="ae-add-col" onclick="addColIn()">+ col</button>
+        <button type="button" class="ae-add-col" onclick="addColIn()">+ col</button>
         <datalist id="dlCols">
             <?php foreach ($allowedCols as $c): ?><option value="<?= View::e($c) ?>"><?php endforeach; ?>
             <option value="COUNT(*)"><option value="COUNT(*) AS cnt">
@@ -328,11 +340,24 @@
             <option value="entity_name"><option value="changes">
         </datalist>
         <span style="display:flex;gap:0;">
-            <button class="ae-vt-btn active" id="btnCompact" onclick="setView('compact')" title="Compact view"><i class="fas fa-list"></i></button>
-            <button class="ae-vt-btn" id="btnTable" onclick="setView('table')" title="Table view"><i class="fas fa-table"></i></button>
-            <button class="ae-vt-btn" id="btnTimeline" onclick="setView('timeline')" title="Timeline view"><i class="fas fa-stream"></i></button>
+            <button type="button" class="ae-vt-btn active" id="btnCompact" onclick="setView('compact')" title="Compact view"><i class="fas fa-list"></i></button>
+            <button type="button" class="ae-vt-btn" id="btnTable" onclick="setView('table')" title="Table view"><i class="fas fa-table"></i></button>
+            <button type="button" class="ae-vt-btn" id="btnTimeline" onclick="setView('timeline')" title="Timeline view"><i class="fas fa-stream"></i></button>
         </span>
-        <button class="ae-sm-btn" style="padding:4px 10px;margin-left:4px;" onclick="runQuery()" title="Refresh results"><i class="fas fa-sync-alt"></i></button>
+        <span class="ae-refresh-grp">
+            <button type="button" class="ae-vt-btn" id="refreshBtn" onclick="manualRefresh(event)" title="Refresh results"><i class="fas fa-sync-alt" id="refreshIcon"></i></button>
+            <button type="button" class="ae-vt-btn" id="arTrigger" onclick="toggleArMenu(event)" title="Auto-refresh options">&#x22EF;</button>
+            <div class="ae-ar-menu" id="arMenu">
+                <div class="ae-ar-opt active" data-ms="0">&#x2715; Off</div>
+                <div class="ae-ar-sep"></div>
+                <div class="ae-ar-opt" data-ms="10000">Every 10 s</div>
+                <div class="ae-ar-opt" data-ms="30000">Every 30 s</div>
+                <div class="ae-ar-opt" data-ms="60000">Every 1 min</div>
+                <div class="ae-ar-opt" data-ms="300000">Every 5 min</div>
+                <div class="ae-ar-sep"></div>
+                <div class="ae-ar-opt" data-ms="custom">Custom&#x2026;</div>
+            </div>
+        </span>
         <span class="ae-result-meta" id="resultMeta"></span>
     </div>
 
@@ -563,7 +588,7 @@ function diffCell(oldVal,newVal,idx){
             html+='<span class="diff-new">+ '+esc(c.k)+': '+esc(JSON.stringify(c.nv))+'</span>';
         });
         if(changes.length>2){
-            html+='<button class="diff-toggle" data-diffid="'+esc(id)+'">+'+(changes.length-2)+' more</button>';
+            html+='<button type="button" class="diff-toggle" data-diffid="'+esc(id)+'">+'+(changes.length-2)+' more</button>';
         }
         return html+'</div>';
     }catch(e){
@@ -607,7 +632,7 @@ function renderDbChanges(changesJson, idx) {
             html += '<span class="diff-new">+ ' + esc(c.k) + ': ' + esc(newStr) + '</span>';
         });
         if (changes.length > 2) {
-            html += '<button class="diff-toggle" data-diffid="' + esc(id) + '">+' + (changes.length - 2) + ' more</button>';
+            html += '<button type="button" class="diff-toggle" data-diffid="' + esc(id) + '">+' + (changes.length - 2) + ' more</button>';
         }
         return html + '</div>';
     } catch(e) {
@@ -620,6 +645,10 @@ function renderDbChanges(changesJson, idx) {
 let compactExpanded = {};
 
 function renderCompact(rows) {
+    if (!rows || !rows.length) {
+        document.getElementById('resultsArea').innerHTML='<div class="ae-placeholder"><i class="fas fa-inbox"></i><strong>No rows found.</strong></div>';
+        return;
+    }
     compactExpanded = {};
     const cols = Object.keys(rows[0]);
     // Core columns always shown inline (in priority order)
@@ -646,7 +675,7 @@ function renderCompact(rows) {
         else if (action.includes('creat') || action.includes('login') || status === 'success') sevClass = 'sev-ok';
 
         html += '<tr>';
-        html += '<td style="padding:3px 8px;"><button class="ae-exp-btn" data-crid="' + rid + '" title="Expand details">+</button></td>';
+        html += '<td style="padding:3px 8px;"><button type="button" class="ae-exp-btn" data-crid="' + rid + '" title="Expand details">+</button></td>';
         inline.forEach(c => {
             const raw = row[c];
             if (raw == null || raw === '') { html += '<td><span style="opacity:.3">\u2014</span></td>'; return; }
@@ -839,7 +868,7 @@ function renderSaved(){
     list.innerHTML='';
     saved.forEach((item,idx)=>{
         const d=document.createElement('div');d.className='sv-item';
-        d.innerHTML='<span class="sv-name" title="'+esc(item.name)+'">'+esc(item.name)+'</span><button class="sv-load" onclick="loadSaved('+idx+')">Load</button><button class="sv-del" onclick="delSaved('+idx+')">\u2715</button>';
+        d.innerHTML='<span class="sv-name" title="'+esc(item.name)+'">'+esc(item.name)+'</span><button type="button" class="sv-load" onclick="loadSaved('+idx+')">Load</button><button type="button" class="sv-del" onclick="delSaved('+idx+')">\u2715</button>';
         list.appendChild(d);
     });
 }
@@ -880,6 +909,88 @@ function esc(s){
     return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+// ─── Refresh & Auto-refresh ───────────────────────────────────────────────────
+let arTimer = null;
+let arIntervalMs = 0;
+let arCountdown = 0;
+let arCountdownTimer = null;
+
+function manualRefresh(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const icon = document.getElementById('refreshIcon');
+    icon.classList.add('fa-spin');
+    const sqlPanel = document.getElementById('sqlPanel');
+    const p = sqlPanel && sqlPanel.classList.contains('visible') ? runRawSql() : runQuery();
+    Promise.resolve(p).finally(() => { setTimeout(() => icon.classList.remove('fa-spin'), 300); });
+}
+
+function toggleArMenu(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    document.getElementById('arMenu').classList.toggle('open');
+}
+
+function setAutoRefresh(ms) {
+    // Clear existing timers
+    if (arTimer) { clearInterval(arTimer); arTimer = null; }
+    if (arCountdownTimer) { clearInterval(arCountdownTimer); arCountdownTimer = null; }
+    arIntervalMs = ms;
+
+    // Update active state on options
+    document.querySelectorAll('.ae-ar-opt').forEach(o => {
+        o.classList.toggle('active', parseInt(o.dataset.ms) === ms || (ms === 0 && o.dataset.ms === '0'));
+    });
+
+    // Update the ⋯ button appearance
+    const trigger = document.getElementById('arTrigger');
+    if (ms > 0) {
+        trigger.classList.add('ar-on');
+        // Start countdown display
+        arCountdown = ms / 1000;
+        updateArBadge();
+        arCountdownTimer = setInterval(() => {
+            arCountdown = Math.max(0, arCountdown - 1);
+            updateArBadge();
+        }, 1000);
+        // Start refresh interval
+        arTimer = setInterval(() => {
+            arCountdown = ms / 1000;
+            const icon = document.getElementById('refreshIcon');
+            icon.classList.add('fa-spin');
+            const sqlPanel = document.getElementById('sqlPanel');
+            const p = sqlPanel && sqlPanel.classList.contains('visible') ? runRawSql() : runQuery();
+            Promise.resolve(p).finally(() => setTimeout(() => icon.classList.remove('fa-spin'), 300));
+        }, ms);
+    } else {
+        trigger.classList.remove('ar-on');
+        updateArBadge(true);
+    }
+    document.getElementById('arMenu').classList.remove('open');
+}
+
+function updateArBadge(clear) {
+    const trigger = document.getElementById('arTrigger');
+    // Remove existing badge
+    const existing = trigger.querySelector('.ae-ar-badge');
+    if (existing) existing.remove();
+    if (clear || arIntervalMs === 0) { trigger.innerHTML = '&#x22EF;'; return; }
+    const s = arCountdown;
+    const label = s >= 60 ? Math.ceil(s/60)+'m' : s+'s';
+    trigger.innerHTML = '&#x22EF;<span class="ae-ar-badge">'+label+'</span>';
+}
+
+// Close auto-refresh menu when clicking outside
+document.addEventListener('click', function(e) {
+    const menu = document.getElementById('arMenu');
+    const trigger = document.getElementById('arTrigger');
+    if (menu && trigger && !menu.contains(e.target) && !trigger.contains(e.target)) {
+        menu.classList.remove('open');
+    }
+});
+
+// Handle auto-refresh option clicks (registered in main DOMContentLoaded below)
+
 document.addEventListener('DOMContentLoaded',()=>{
     renderSaved();
     document.addEventListener('keydown',e=>{
@@ -889,6 +1000,22 @@ document.addEventListener('DOMContentLoaded',()=>{
             if(sqlPanel.classList.contains('visible'))runRawSql();
             else runQuery();
         }
+    });
+    // Auto-refresh option click handlers
+    document.querySelectorAll('.ae-ar-opt').forEach(opt => {
+        opt.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const ms = opt.dataset.ms;
+            if (ms === 'custom') {
+                const val = prompt('Auto-refresh interval (seconds):', '60');
+                if (val === null) return;
+                const n = parseInt(val);
+                if (!n || n < 5) { alert('Minimum interval is 5 seconds.'); return; }
+                setAutoRefresh(n * 1000);
+            } else {
+                setAutoRefresh(parseInt(ms));
+            }
+        });
     });
     document.getElementById('resultsArea').innerHTML='<div class="ae-placeholder"><i class="fas fa-spinner fa-spin"></i><strong>Loading latest events...</strong></div>';
     runQuery();
