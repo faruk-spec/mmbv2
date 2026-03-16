@@ -15,8 +15,13 @@ class AdminMiddleware
     public function handle(): bool
     {
         if (!Auth::hasAnyAdminPermission()) {
-            http_response_code(403);
-            View::render('errors/403');
+            // Silently log the user out so the admin panel's existence
+            // is not revealed — the requester sees a plain 404.
+            if (Auth::check()) {
+                Auth::logout();
+            }
+            http_response_code(404);
+            View::render('errors/404');
             return false;
         }
 
