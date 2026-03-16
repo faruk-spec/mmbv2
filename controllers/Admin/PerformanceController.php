@@ -63,7 +63,7 @@ class PerformanceController extends BaseController
      */
     public function assets(): void
     {
-        $this->requirePermission('performance');
+        $this->requirePermission('performance.assets');
         // Get assets directory info
         $assetsDir = __DIR__ . '/../../assets/';
         $assets = [
@@ -106,7 +106,7 @@ class PerformanceController extends BaseController
      */
     public function database(): void
     {
-        $this->requirePermission('performance');
+        $this->requirePermission('performance.database');
         $db = Database::getInstance();
         
         // Get database size
@@ -149,7 +149,7 @@ class PerformanceController extends BaseController
      */
     public function monitoring(): void
     {
-        $this->requirePermission('performance');
+        $this->requirePermission('performance.monitoring');
         $db = Database::getInstance();
         
         // Get server info
@@ -239,7 +239,7 @@ class PerformanceController extends BaseController
      */
     public function optimizeTable(): void
     {
-        $this->requirePermission('performance');
+        $this->requirePermission('performance.database');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->json(['success' => false, 'message' => 'Invalid request method']);
             return;
@@ -267,7 +267,7 @@ class PerformanceController extends BaseController
      */
     public function minifyAsset(): void
     {
-        $this->requirePermission('performance');
+        $this->requirePermission('performance.assets');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->json(['success' => false, 'message' => 'Invalid request method']);
             return;

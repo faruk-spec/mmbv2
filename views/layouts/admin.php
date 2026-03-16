@@ -1385,8 +1385,8 @@
                             </a>
                             <?php endif; ?>
                             
-<?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('proshare.user_logs')): ?>
-                                                        <!-- User Activity Logs -->
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('proshare.user_logs')): ?>
+                            <!-- User Activity Logs -->
                             <a href="/admin/projects/proshare/user-logs" class="menu-link">
                                 <i class="fas fa-user-clock"></i>
                                 <span>User Activity Logs</span>
@@ -1399,8 +1399,8 @@
                             </a>
                             <?php endif; ?>
                             
-<?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('proshare.files')): ?>
-                                                        <!-- File & Folder Activity -->
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('proshare.files')): ?>
+                            <!-- File & Folder Activity -->
                             <a href="/admin/projects/proshare/files" class="menu-link">
                                 <i class="fas fa-file"></i>
                                 <span>All Files</span>
@@ -1419,8 +1419,8 @@
                             </a>
                             <?php endif; ?>
                             
-<?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('proshare.security')): ?>
-                                                        <!-- Security Monitoring -->
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('proshare.security')): ?>
+                            <!-- Security Monitoring -->
                             <a href="/admin/projects/proshare/security" class="menu-link">
                                 <i class="fas fa-shield-alt"></i>
                                 <span>Security Monitoring</span>
@@ -1433,32 +1433,32 @@
                             </a>
                             <?php endif; ?>
                             
-<?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('proshare.storage')): ?>
-                                                        <!-- Storage Monitoring -->
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('proshare.storage')): ?>
+                            <!-- Storage Monitoring -->
                             <a href="/admin/projects/proshare/storage" class="menu-link">
                                 <i class="fas fa-hdd"></i>
                                 <span>Storage Monitoring</span>
                             </a>
                             <?php endif; ?>
                             
-<?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('proshare.audit_trail')): ?>
-                                                        <!-- Audit Trail -->
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('proshare.audit_trail')): ?>
+                            <!-- Audit Trail -->
                             <a href="/admin/projects/proshare/audit-trail" class="menu-link">
                                 <i class="fas fa-book"></i>
                                 <span>Audit Trail</span>
                             </a>
                             <?php endif; ?>
                             
-<?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('proshare.notifications')): ?>
-                                                        <!-- Notifications & Alerts -->
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('proshare.notifications')): ?>
+                            <!-- Notifications & Alerts -->
                             <a href="/admin/projects/proshare/notifications" class="menu-link">
                                 <i class="fas fa-bell"></i>
                                 <span>Notifications & Alerts</span>
                             </a>
                             <?php endif; ?>
                             
-<?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('proshare.analytics')): ?>
-                                                        <!-- Analytics & Insights -->
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('proshare.analytics')): ?>
+                            <!-- Analytics & Insights -->
                             <a href="/admin/projects/proshare/analytics" class="menu-link">
                                 <i class="fas fa-chart-bar"></i>
                                 <span>Analytics & Insights</span>
