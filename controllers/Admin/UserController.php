@@ -179,11 +179,22 @@ class UserController extends BaseController
             // QR tables may not exist yet; silently ignore
         }
 
+        // Load custom roles from user_roles table (non-system, active)
+        $customRoles = [];
+        try {
+            $customRoles = $db->fetchAll(
+                "SELECT slug, name, color FROM user_roles WHERE is_system = 0 AND status = 'active' ORDER BY sort_order ASC, name ASC"
+            );
+        } catch (\Exception $e) {
+            // user_roles may not exist yet; silently ignore
+        }
+
         $this->view('admin/users/edit', [
-            'title'      => 'Edit User',
-            'editUser'   => $user,
-            'qrPlans'    => $qrPlans,
-            'userQrPlan' => $userQrPlan,
+            'title'       => 'Edit User',
+            'editUser'    => $user,
+            'qrPlans'     => $qrPlans,
+            'userQrPlan'  => $userQrPlan,
+            'customRoles' => $customRoles,
         ]);
     }
     
@@ -231,11 +242,33 @@ class UserController extends BaseController
             }
         }
         
+        // Validate the submitted role slug against known system + custom roles
+        $systemRoles = ['user', 'project_admin', 'admin', 'super_admin'];
+        $submittedRole = $this->input('role');
+        $validRole = in_array($submittedRole, $systemRoles, true);
+        if (!$validRole) {
+            // Check custom roles
+            try {
+                $customRoleRow = $db->fetch(
+                    "SELECT slug FROM user_roles WHERE slug = ? AND is_system = 0 AND status = 'active'",
+                    [$submittedRole]
+                );
+                $validRole = ($customRoleRow !== null);
+            } catch (\Exception $e) {
+                $validRole = false;
+            }
+        }
+        if (!$validRole) {
+            $this->flash('error', 'Invalid role selected.');
+            $this->redirect('/admin/users/' . $id . '/edit');
+            return;
+        }
+
         try {
             $updateData = [
                 'name' => Security::sanitize($this->input('name')),
                 'email' => $this->input('email'),
-                'role' => $this->input('role'),
+                'role' => $submittedRole,
                 'status' => $this->input('status'),
                 'updated_at' => date('Y-m-d H:i:s')
             ];

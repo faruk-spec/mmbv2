@@ -1021,72 +1021,7 @@
                 </div>
                 <?php endif; ?>
 
-                <!-- QR Code Admin -->
-                <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('qr')): ?>
-                <div class="menu-section">
-                    <div class="menu-section-title">QR Code Admin</div>
 
-                    <div class="menu-item menu-dropdown">
-                        <div class="menu-dropdown-toggle">
-                            <div class="left">
-                                <i class="fas fa-qrcode"></i>
-                                <span>QR Codes</span>
-                            </div>
-                            <i class="fas fa-chevron-down arrow"></i>
-                        </div>
-                        <div class="menu-dropdown-content">
-                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('qr')): ?>
-                            <a href="/admin/qr" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/qr') === 0 && ($_SERVER['REQUEST_URI'] ?? '') === '/admin/qr' ? 'active' : '' ?>">
-                                <i class="fas fa-list"></i>
-                                <span>All QR Codes</span>
-                            </a>
-                            <?php endif; ?>
-                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('qr.analytics')): ?>
-                            <a href="/admin/qr/analytics" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/qr/analytics') === 0 ? 'active' : '' ?>">
-                                <i class="fas fa-chart-line"></i>
-                                <span>Scan Analytics</span>
-                            </a>
-                            <?php endif; ?>
-                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('qr.blocked_links')): ?>
-                            <a href="/admin/qr/blocked-links" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/qr/blocked-links') === 0 ? 'active' : '' ?>">
-                                <i class="fas fa-ban"></i>
-                                <span>Block Malicious Links</span>
-                            </a>
-                            <?php endif; ?>
-                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('qr.storage')): ?>
-                            <a href="/admin/qr/storage" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/qr/storage') === 0 ? 'active' : '' ?>">
-                                <i class="fas fa-hdd"></i>
-                                <span>Storage Monitor</span>
-                            </a>
-                            <?php endif; ?>
-                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('qr.plans')): ?>
-                            <a href="/admin/qr/plans" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/qr/plans') === 0 ? 'active' : '' ?>">
-                                <i class="fas fa-tags"></i>
-                                <span>Plan Limits</span>
-                            </a>
-                            <?php endif; ?>
-                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('qr.abuse_reports')): ?>
-                            <a href="/admin/qr/abuse-reports" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/qr/abuse-reports') === 0 ? 'active' : '' ?>">
-                                <i class="fas fa-flag"></i>
-                                <span>Abuse Reports</span>
-                            </a>
-                            <?php endif; ?>
-                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('qr.roles')): ?>
-                            <a href="/admin/qr/roles" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/qr/roles') === 0 ? 'active' : '' ?>">
-                                <i class="fas fa-users-cog"></i>
-                                <span>Roles &amp; Permissions</span>
-                            </a>
-                            <?php endif; ?>
-                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('qr.api_keys')): ?>
-                            <a href="/admin/qr/api-keys" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/qr/api-keys') === 0 ? 'active' : '' ?>">
-                                <i class="fas fa-key"></i>
-                                <span>QR API Keys</span>
-                            </a>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                </div>
-                <?php endif; ?>
 
                 <!-- Platform Plans (Universal Multi-App) -->
                 <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('platform_plans')): ?>
@@ -1120,7 +1055,7 @@
                 <?php endif; ?>
 
                 <!-- Projects Management -->
-                <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('projects') || \Core\Auth::hasPermissionGroup('convertx') || \Core\Auth::hasPermissionGroup('codexpro') || \Core\Auth::hasPermissionGroup('imgtxt') || \Core\Auth::hasPermissionGroup('proshare') || \Core\Auth::hasPermissionGroup('billx') || \Core\Auth::hasPermissionGroup('whatsapp')): ?>
+                <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('projects') || \Core\Auth::hasPermissionGroup('convertx') || \Core\Auth::hasPermissionGroup('codexpro') || \Core\Auth::hasPermissionGroup('imgtxt') || \Core\Auth::hasPermissionGroup('proshare') || \Core\Auth::hasPermissionGroup('billx') || \Core\Auth::hasPermissionGroup('whatsapp') || \Core\Auth::hasPermissionGroup('qr')): ?>
                 <div class="menu-section">
                     <div class="menu-section-title">Projects</div>
                     
@@ -1570,6 +1505,69 @@
                             <a href="/admin/whatsapp/user-subscriptions/assign" class="menu-link">
                                 <i class="fas fa-user-plus"></i>
                                 <span>Assign Subscription</span>
+                            </a>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
+                    <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('qr')): ?>
+                    <!-- QR Codes -->
+                    <div class="menu-item menu-dropdown">
+                        <div class="menu-dropdown-toggle <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/qr') === 0 ? 'active' : '' ?>">
+                            <div class="left">
+                                <i class="fas fa-qrcode"></i>
+                                <span>QR Codes</span>
+                            </div>
+                            <i class="fas fa-chevron-down arrow"></i>
+                        </div>
+                        <div class="menu-dropdown-content">
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('qr')): ?>
+                            <a href="/admin/qr" class="menu-link <?= ($_SERVER['REQUEST_URI'] ?? '') === '/admin/qr' ? 'active' : '' ?>">
+                                <i class="fas fa-list"></i>
+                                <span>All QR Codes</span>
+                            </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('qr.analytics')): ?>
+                            <a href="/admin/qr/analytics" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/qr/analytics') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-chart-line"></i>
+                                <span>Scan Analytics</span>
+                            </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('qr.blocked_links')): ?>
+                            <a href="/admin/qr/blocked-links" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/qr/blocked-links') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-ban"></i>
+                                <span>Block Malicious Links</span>
+                            </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('qr.storage')): ?>
+                            <a href="/admin/qr/storage" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/qr/storage') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-hdd"></i>
+                                <span>Storage Monitor</span>
+                            </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('qr.plans')): ?>
+                            <a href="/admin/qr/plans" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/qr/plans') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-tags"></i>
+                                <span>Plan Limits</span>
+                            </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('qr.abuse_reports')): ?>
+                            <a href="/admin/qr/abuse-reports" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/qr/abuse-reports') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-flag"></i>
+                                <span>Abuse Reports</span>
+                            </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('qr.roles')): ?>
+                            <a href="/admin/qr/roles" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/qr/roles') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-users-cog"></i>
+                                <span>Roles &amp; Permissions</span>
+                            </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('qr.api_keys')): ?>
+                            <a href="/admin/qr/api-keys" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/qr/api-keys') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-key"></i>
+                                <span>QR API Keys</span>
                             </a>
                             <?php endif; ?>
                         </div>

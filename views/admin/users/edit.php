@@ -31,12 +31,22 @@
                     <option value="project_admin" <?= $editUser['role'] === 'project_admin' ? 'selected' : '' ?>>Project Admin</option>
                     <option value="admin"         <?= $editUser['role'] === 'admin'         ? 'selected' : '' ?>>Admin</option>
                     <option value="super_admin"   <?= $editUser['role'] === 'super_admin'   ? 'selected' : '' ?>>Super Admin</option>
+                    <?php if (!empty($customRoles)): ?>
+                        <optgroup label="Custom Roles">
+                        <?php foreach ($customRoles as $cr): ?>
+                            <option value="<?= View::e($cr['slug']) ?>" <?= $editUser['role'] === $cr['slug'] ? 'selected' : '' ?>>
+                                <?= View::e($cr['name']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                        </optgroup>
+                    <?php endif; ?>
                 </select>
                 <small style="color: var(--text-secondary); display: block; margin-top: 4px;">
                     <i class="fas fa-info-circle"></i>
                     Roles <strong>admin</strong> and <strong>super_admin</strong> grant full panel access and override any
-                    per-feature permissions. For finer control use
-                    <a href="/admin/admin-access/<?= $editUser['id'] ?>/edit" style="color: var(--cyan);">Admin Access.</a>
+                    per-feature permissions. Custom roles combine with
+                    <a href="/admin/admin-access/<?= $editUser['id'] ?>/edit" style="color: var(--cyan);">Admin Access</a>
+                    permissions (both apply simultaneously).
                 </small>
             </div>
 

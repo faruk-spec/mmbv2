@@ -80,6 +80,7 @@
 
 <?php View::section('content'); ?>
 
+<?php if ($canUsers && $stats): ?>
 <div class="grid grid-4 mb-3">
     <div class="stat-card">
         <div class="stat-value" style="color: var(--cyan);"><?= $stats['total_users'] ?></div>
@@ -101,7 +102,9 @@
         <div class="stat-label">Logins Today</div>
     </div>
 </div>
+<?php endif; ?>
 
+<?php if ($canCodexPro || $canImgTxt || $canProShare): ?>
 <!-- New Projects Stats -->
 <div class="card mb-3">
     <div class="card-header">
@@ -111,13 +114,24 @@
                 <rect x="7" y="7" width="3" height="9"></rect>
                 <rect x="14" y="7" width="3" height="5"></rect>
             </svg>
-            New Projects Overview
+            Projects Overview
         </h3>
     </div>
     
-    <div class="grid grid-3">
-        <!-- CodeXPro Stats -->
-        <div style="padding: 20px; border-right: 1px solid var(--border-color);">
+    <?php
+    // Build list of visible project columns
+    $visibleCols = array_filter([
+        $canCodexPro ? 'codexpro' : null,
+        $canImgTxt   ? 'imgtxt'   : null,
+        $canProShare ? 'proshare' : null,
+    ]);
+    $colCount = count($visibleCols);
+    ?>
+    <div class="grid grid-<?= $colCount ?>">
+        <?php $colIdx = 0; foreach ($visibleCols as $proj): $colIdx++; ?>
+
+        <?php if ($proj === 'codexpro'): ?>
+        <div style="padding: 20px; <?= $colIdx < $colCount ? 'border-right: 1px solid var(--border-color);' : '' ?>">
             <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 15px;">
                 <div style="width: 45px; height: 45px; background: linear-gradient(135deg, var(--cyan), var(--purple)); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
                     <i class="fas fa-code" style="font-size: 20px;"></i>
@@ -141,9 +155,10 @@
                 <i class="fas fa-chart-line"></i> View Details
             </a>
         </div>
-        
-        <!-- ImgTxt Stats -->
-        <div style="padding: 20px; border-right: 1px solid var(--border-color);">
+        <?php endif; ?>
+
+        <?php if ($proj === 'imgtxt'): ?>
+        <div style="padding: 20px; <?= $colIdx < $colCount ? 'border-right: 1px solid var(--border-color);' : '' ?>">
             <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 15px;">
                 <div style="width: 45px; height: 45px; background: linear-gradient(135deg, var(--green), var(--cyan)); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
                     <i class="fas fa-image" style="font-size: 20px;"></i>
@@ -167,8 +182,9 @@
                 <i class="fas fa-chart-line"></i> View Details
             </a>
         </div>
-        
-        <!-- ProShare Stats -->
+        <?php endif; ?>
+
+        <?php if ($proj === 'proshare'): ?>
         <div style="padding: 20px;">
             <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 15px;">
                 <div style="width: 45px; height: 45px; background: linear-gradient(135deg, var(--magenta), var(--orange)); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
@@ -193,10 +209,16 @@
                 <i class="fas fa-chart-line"></i> View Details
             </a>
         </div>
+        <?php endif; ?>
+
+        <?php endforeach; ?>
     </div>
 </div>
+<?php endif; ?>
 
+<?php if ($canUsers || $canProjects): ?>
 <div class="grid grid-2 mb-3">
+    <?php if ($canUsers && !empty($chartData)): ?>
     <div class="card">
         <div class="card-header">
             <h3 class="card-title">User Registrations (Last 7 Days)</h3>
@@ -215,7 +237,9 @@
             <?php endforeach; ?>
         </div>
     </div>
+    <?php endif; ?>
     
+    <?php if ($canProjects && !empty($projects)): ?>
     <div class="card">
         <div class="card-header">
             <h3 class="card-title">Projects</h3>
@@ -240,9 +264,13 @@
             <?php endforeach; ?>
         </div>
     </div>
+    <?php endif; ?>
 </div>
+<?php endif; ?>
 
+<?php if ($canLogs || $canUsers): ?>
 <div class="grid grid-2">
+    <?php if ($canLogs): ?>
     <div class="card">
         <div class="card-header">
             <h3 class="card-title">Recent Activity</h3>
@@ -273,7 +301,9 @@
             </div>
         <?php endif; ?>
     </div>
+    <?php endif; ?>
     
+    <?php if ($canUsers): ?>
     <div class="card">
         <div class="card-header">
             <h3 class="card-title">Recent Users</h3>
@@ -298,7 +328,7 @@
                                 <div style="font-weight: 500;"><?= View::e($u['name']) ?></div>
                                 <div style="font-size: 12px; color: var(--text-secondary);"><?= View::e($u['email']) ?></div>
                             </td>
-                            <td><span class="badge badge-info"><?= $u['role'] ?></span></td>
+                            <td><span class="badge badge-info"><?= View::e($u['role']) ?></span></td>
                             <td>
                                 <span class="badge <?= $u['status'] === 'active' ? 'badge-success' : 'badge-danger' ?>">
                                     <?= ucfirst($u['status']) ?>
@@ -310,5 +340,8 @@
             </table>
         <?php endif; ?>
     </div>
+    <?php endif; ?>
 </div>
+<?php endif; ?>
 <?php View::endSection(); ?>
+
