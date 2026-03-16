@@ -1010,6 +1010,7 @@
             
             <nav class="sidebar-menu">
                 <!-- Dashboard -->
+                <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('dashboard')): ?>
                 <div class="menu-section">
                     <div class="menu-item">
                         <a href="/admin/dashboard" class="menu-link <?= ($_SERVER['REQUEST_URI'] ?? '') == '/admin/dashboard' || ($_SERVER['REQUEST_URI'] ?? '') == '/admin' ? 'active' : '' ?>">
@@ -1018,8 +1019,10 @@
                         </a>
                     </div>
                 </div>
+                <?php endif; ?>
 
                 <!-- QR Code Admin -->
+                <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('qr')): ?>
                 <div class="menu-section">
                     <div class="menu-section-title">QR Code Admin</div>
 
@@ -1067,8 +1070,10 @@
                         </div>
                     </div>
                 </div>
+                <?php endif; ?>
 
                 <!-- Platform Plans (Universal Multi-App) -->
+                <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('platform_plans')): ?>
                 <div class="menu-section">
                     <div class="menu-section-title">Platform Billing</div>
 
@@ -1092,11 +1097,14 @@
                         </div>
                     </div>
                 </div>
+                <?php endif; ?>
 
                 <!-- Projects Management -->
+                <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('projects') || \Core\Auth::hasPermissionGroup('convertx') || \Core\Auth::hasPermissionGroup('codexpro') || \Core\Auth::hasPermissionGroup('imgtxt') || \Core\Auth::hasPermissionGroup('proshare') || \Core\Auth::hasPermissionGroup('billx') || \Core\Auth::hasPermissionGroup('whatsapp')): ?>
                 <div class="menu-section">
                     <div class="menu-section-title">Projects</div>
                     
+                    <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('projects')): ?>
                     <div class="menu-item">
                         <a href="/admin/projects" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects') === 0 && !strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/') ? 'active' : '' ?>">
                             <i class="fas fa-folder"></i>
@@ -1111,7 +1119,9 @@
                             <span>Database Setup</span>
                         </a>
                     </div>
+                    <?php endif; ?>
                     
+                    <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('convertx')): ?>
                     <!-- ConvertX Admin -->
                     <div class="menu-item menu-dropdown">
                         <div class="menu-dropdown-toggle <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/convertx') === 0 ? 'active' : '' ?>">
@@ -1152,7 +1162,9 @@
                             </a>
                         </div>
                     </div>
+                    <?php endif; ?>
                     
+                    <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('codexpro')): ?>
                     <!-- CodeXPro -->
                     <div class="menu-item menu-dropdown">
                         <div class="menu-dropdown-toggle">
@@ -1181,7 +1193,9 @@
                             </a>
                         </div>
                     </div>
+                    <?php endif; ?>
                     
+                    <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('imgtxt')): ?>
                     <!-- ImgTxt -->
                     <div class="menu-item menu-dropdown">
                         <div class="menu-dropdown-toggle">
@@ -1242,7 +1256,9 @@
                             </a>
                         </div>
                     </div>
+                    <?php endif; ?>
                     
+                    <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('proshare')): ?>
                     <!-- ProShare - User Dashboard Features -->
                     <div class="menu-item menu-dropdown">
                         <div class="menu-dropdown-toggle">
@@ -1346,7 +1362,9 @@
                             </a>
                         </div>
                     </div>
+                    <?php endif; ?>
                     
+                    <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('billx')): ?>
                     <!-- BillX -->
                     <div class="menu-item menu-dropdown">
                         <div class="menu-dropdown-toggle">
@@ -1379,7 +1397,9 @@
                             </a>
                         </div>
                     </div>
+                    <?php endif; ?>
 
+                    <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('whatsapp')): ?>
                     <!-- WhatsApp API -->
                     <div class="menu-item menu-dropdown">
                         <div class="menu-dropdown-toggle">
@@ -1424,9 +1444,12 @@
                             </a>
                         </div>
                     </div>
+                    <?php endif; ?>
                 </div>
+                <?php endif; ?>
                 
                 <!-- User Management -->
+                <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('users')): ?>
                 <div class="menu-section">
                     <div class="menu-section-title">Management</div>
                     
@@ -1437,6 +1460,7 @@
                         </a>
                     </div>
 
+                    <?php if (\Core\Auth::isAdmin()): ?>
                     <div class="menu-item">
                         <a href="/admin/admin-access" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/admin-access') === 0 ? 'active' : '' ?>">
                             <i class="fas fa-user-shield"></i>
@@ -1450,12 +1474,16 @@
                             <span>User Roles</span>
                         </a>
                     </div>
+                    <?php endif; ?>
                 </div>
+                <?php endif; ?>
                 
                 <!-- Security -->
+                <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('security') || \Core\Auth::hasPermissionGroup('oauth') || \Core\Auth::hasPermissionGroup('sessions') || \Core\Auth::hasPermission('2fa')): ?>
                 <div class="menu-section">
                     <div class="menu-section-title">Security</div>
                     
+                    <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('security')): ?>
                     <div class="menu-item menu-dropdown">
                         <div class="menu-dropdown-toggle">
                             <div class="left">
@@ -1479,7 +1507,9 @@
                             </a>
                         </div>
                     </div>
+                    <?php endif; ?>
                     
+                    <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('oauth')): ?>
                     <div class="menu-item menu-dropdown">
                         <div class="menu-dropdown-toggle">
                             <div class="left">
@@ -1499,7 +1529,9 @@
                             </a>
                         </div>
                     </div>
+                    <?php endif; ?>
                     
+                    <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('sessions')): ?>
                     <div class="menu-item menu-dropdown">
                         <div class="menu-dropdown-toggle">
                             <div class="left">
@@ -1519,7 +1551,9 @@
                             </a>
                         </div>
                     </div>
+                    <?php endif; ?>
                     
+                    <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('2fa')): ?>
                     <!-- 2FA Management -->
                     <div class="menu-item menu-dropdown">
                         <div class="menu-dropdown-toggle">
@@ -1536,12 +1570,16 @@
                             </a>
                         </div>
                     </div>
+                    <?php endif; ?>
                 </div>
+                <?php endif; ?>
                 
                 <!-- Logs -->
+                <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('logs') || \Core\Auth::hasPermission('audit')): ?>
                 <div class="menu-section">
                     <div class="menu-section-title">Logs</div>
                     
+                    <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('logs')): ?>
                     <div class="menu-item menu-dropdown">
                         <div class="menu-dropdown-toggle">
                             <div class="left">
@@ -1563,19 +1601,36 @@
                                 <i class="fas fa-server"></i>
                                 <span>System Logs</span>
                             </a>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+                    <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('audit')): ?>
+                    <div class="menu-item menu-dropdown">
+                        <div class="menu-dropdown-toggle">
+                            <div class="left">
+                                <i class="fas fa-search"></i>
+                                <span>Audit Explorer</span>
+                            </div>
+                            <i class="fas fa-chevron-down arrow"></i>
+                        </div>
+                        <div class="menu-dropdown-content">
                             <a href="/admin/audit" class="menu-link">
                                 <i class="fas fa-search"></i>
                                 <span>Audit Explorer</span>
                             </a>
                         </div>
                     </div>
+                    <?php endif; ?>
                 </div>
+                <?php endif; ?>
                 
                 <!-- Advanced Features -->
+                <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('api') || \Core\Auth::hasPermissionGroup('websocket') || \Core\Auth::hasPermissionGroup('analytics') || \Core\Auth::hasPermissionGroup('email') || \Core\Auth::hasPermissionGroup('notifications') || \Core\Auth::hasPermissionGroup('performance')): ?>
                 <div class="menu-section">
                     <div class="menu-section-title">Advanced Features</div>
                     
                     <!-- API Management -->
+                    <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('api')): ?>
                     <div class="menu-item menu-dropdown">
                         <div class="menu-dropdown-toggle">
                             <div class="left">
@@ -1603,7 +1658,9 @@
                             </a>
                         </div>
                     </div>
+                    <?php endif; ?>
                     
+                    <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('websocket')): ?>
                     <!-- Real-time & WebSocket -->
                     <div class="menu-item menu-dropdown">
                         <div class="menu-dropdown-toggle">
@@ -1632,7 +1689,9 @@
                             </a>
                         </div>
                     </div>
+                    <?php endif; ?>
                     
+                    <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('analytics')): ?>
                     <!-- Analytics & Reports -->
                     <div class="menu-item menu-dropdown">
                         <div class="menu-dropdown-toggle">
@@ -1661,7 +1720,9 @@
                             </a>
                         </div>
                     </div>
+                    <?php endif; ?>
                     
+                    <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('email') || \Core\Auth::hasPermissionGroup('notifications')): ?>
                     <!-- Email & Notifications -->
                     <div class="menu-item menu-dropdown">
                         <div class="menu-dropdown-toggle">
@@ -1690,7 +1751,9 @@
                             </a>
                         </div>
                     </div>
+                    <?php endif; ?>
                     
+                    <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('performance')): ?>
                     <!-- Performance & Cache -->
                     <div class="menu-item menu-dropdown">
                         <div class="menu-dropdown-toggle">
@@ -1719,9 +1782,12 @@
                             </a>
                         </div>
                     </div>
+                    <?php endif; ?>
                 </div>
+                <?php endif; ?>
                 
                 <!-- Settings -->
+                <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('settings') || \Core\Auth::hasPermission('navbar')): ?>
                 <div class="menu-section">
                     <div class="menu-section-title">System</div>
                     
@@ -1765,6 +1831,7 @@
                         </div>
                     </div>
                 </div>
+                <?php endif; ?>
             </nav>
         </aside>
         

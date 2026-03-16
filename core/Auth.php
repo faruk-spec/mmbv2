@@ -379,6 +379,58 @@ class Auth
     }
 
     /**
+     * Check if the current user has any permission whose key equals $prefix
+     * OR starts with "$prefix." (i.e. any permission in that group).
+     *
+     * Used by the admin sidebar to decide whether to show a whole section.
+     * Super_admin / admin always return true.
+     */
+    public static function hasPermissionGroup(string $prefix): bool
+    {
+        if (self::isAdmin()) {
+            return true;
+        }
+
+        $userId = self::id();
+        if (!$userId) {
+            return false;
+        }
+
+        try {
+            $db = Database::getInstance();
+
+            // 1. Direct user permissions
+            if ((int) $db->fetchColumn(
+                "SELECT COUNT(*) FROM admin_user_permissions
+                 WHERE user_id = ? AND (permission_key = ? OR permission_key LIKE ?)",
+                [$userId, $prefix, $prefix . '.%']
+            ) > 0) {
+                return true;
+            }
+
+            // 2. Role-based permissions
+            $user = self::user();
+            if ($user) {
+                $roleRow = $db->fetch(
+                    "SELECT r.id FROM user_roles r WHERE r.slug = ? AND r.status = 'active'",
+                    [$user['role']]
+                );
+                if ($roleRow && (int) $db->fetchColumn(
+                    "SELECT COUNT(*) FROM user_role_permissions
+                     WHERE role_id = ? AND (permission_key = ? OR permission_key LIKE ?)",
+                    [$roleRow['id'], $prefix, $prefix . '.%']
+                ) > 0) {
+                    return true;
+                }
+            }
+        } catch (\Exception $e) {
+            // Tables may not exist yet
+        }
+
+        return false;
+    }
+
+    /**
      * Check if the current user has at least one entry in admin_user_permissions
      * OR has at least one permission granted via their role.
      *
