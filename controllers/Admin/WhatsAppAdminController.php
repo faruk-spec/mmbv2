@@ -28,7 +28,7 @@ class WhatsAppAdminController
             exit;
         }
 
-        if (!Auth::hasPermission('whatsapp')) {
+        if (!Auth::hasPermissionGroup('whatsapp')) {
             $_SESSION['flash_error'] = 'You do not have permission to access that section.';
             header('Location: /admin/dashboard');
             exit;
@@ -40,6 +40,11 @@ class WhatsAppAdminController
      */
     public function overview()
     {
+        if (!Auth::hasPermission('whatsapp.overview')) {
+            $_SESSION['flash_error'] = 'You do not have permission to access that section.';
+            header('Location: /admin/dashboard');
+            exit;
+        }
         $stats = $this->getOverviewStats();
         $recentSessions = $this->getRecentSessions();
         $recentMessages = $this->getRecentMessages();
@@ -57,6 +62,11 @@ class WhatsAppAdminController
      */
     public function sessions()
     {
+        if (!Auth::hasPermission('whatsapp.sessions')) {
+            $_SESSION['flash_error'] = 'You do not have permission to access that section.';
+            header('Location: /admin/dashboard');
+            exit;
+        }
         $page = $_GET['page'] ?? 1;
         $perPage = 20;
         $offset = ($page - 1) * $perPage;
@@ -86,6 +96,11 @@ class WhatsAppAdminController
      */
     public function messages()
     {
+        if (!Auth::hasPermission('whatsapp.messages')) {
+            $_SESSION['flash_error'] = 'You do not have permission to access that section.';
+            header('Location: /admin/dashboard');
+            exit;
+        }
         $page = $_GET['page'] ?? 1;
         $perPage = 50;
         $offset = ($page - 1) * $perPage;
@@ -115,6 +130,11 @@ class WhatsAppAdminController
      */
     public function apiLogs()
     {
+        if (!Auth::hasPermission('whatsapp.api_logs')) {
+            $_SESSION['flash_error'] = 'You do not have permission to access that section.';
+            header('Location: /admin/dashboard');
+            exit;
+        }
         $page = $_GET['page'] ?? 1;
         $perPage = 50;
         $offset = ($page - 1) * $perPage;
@@ -143,6 +163,11 @@ class WhatsAppAdminController
      */
     public function userSettings()
     {
+        if (!Auth::hasPermission('whatsapp.users')) {
+            $_SESSION['flash_error'] = 'You do not have permission to access that section.';
+            header('Location: /admin/dashboard');
+            exit;
+        }
         $userId = $_GET['user_id'] ?? null;
         
         if ($userId) {
@@ -215,6 +240,12 @@ class WhatsAppAdminController
      */
     public function deleteSession()
     {
+        if (!Auth::hasPermission('whatsapp.sessions')) {
+            http_response_code(403);
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Permission denied']);
+            exit;
+        }
         header('Content-Type: application/json');
         
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {

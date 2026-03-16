@@ -28,7 +28,7 @@ class WhatsAppSubscriptionController
             exit;
         }
 
-        if (!Auth::hasPermission('whatsapp')) {
+        if (!Auth::hasPermissionGroup('whatsapp')) {
             $_SESSION['flash_error'] = 'You do not have permission to access that section.';
             header('Location: /admin/dashboard');
             exit;
@@ -40,6 +40,11 @@ class WhatsAppSubscriptionController
      */
     public function plans()
     {
+        if (!Auth::hasPermission('whatsapp.subscription_plans')) {
+            $_SESSION['flash_error'] = 'You do not have permission to access that section.';
+            header('Location: /admin/dashboard');
+            exit;
+        }
         $plans = $this->db->fetchAll("
             SELECT * FROM whatsapp_subscription_plans 
             ORDER BY price ASC
@@ -64,6 +69,11 @@ class WhatsAppSubscriptionController
      */
     public function createPlanForm()
     {
+        if (!Auth::hasPermission('whatsapp.subscription_plans')) {
+            $_SESSION['flash_error'] = 'You do not have permission to access that section.';
+            header('Location: /admin/dashboard');
+            exit;
+        }
         View::render('admin/projects/whatsapp/subscription-plan-form', [
             'plan' => null,
             'pageTitle' => 'Create Subscription Plan - WhatsApp Admin'
@@ -75,6 +85,11 @@ class WhatsAppSubscriptionController
      */
     public function createPlan()
     {
+        if (!Auth::hasPermission('whatsapp.subscription_plans')) {
+            $_SESSION['flash_error'] = 'You do not have permission to access that section.';
+            header('Location: /admin/dashboard');
+            exit;
+        }
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header('Location: /admin/whatsapp/subscription-plans');
             exit;
@@ -122,6 +137,11 @@ class WhatsAppSubscriptionController
      */
     public function editPlanForm($id)
     {
+        if (!Auth::hasPermission('whatsapp.subscription_plans')) {
+            $_SESSION['flash_error'] = 'You do not have permission to access that section.';
+            header('Location: /admin/dashboard');
+            exit;
+        }
         $plan = $this->db->fetch("SELECT * FROM whatsapp_subscription_plans WHERE id = ?", [$id]);
         
         if (!$plan) {
@@ -141,6 +161,11 @@ class WhatsAppSubscriptionController
      */
     public function updatePlan($id)
     {
+        if (!Auth::hasPermission('whatsapp.subscription_plans')) {
+            $_SESSION['flash_error'] = 'You do not have permission to access that section.';
+            header('Location: /admin/dashboard');
+            exit;
+        }
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header('Location: /admin/whatsapp/subscription-plans');
             exit;
@@ -190,6 +215,11 @@ class WhatsAppSubscriptionController
      */
     public function deletePlan($id)
     {
+        if (!Auth::hasPermission('whatsapp.subscription_plans')) {
+            $_SESSION['flash_error'] = 'You do not have permission to access that section.';
+            header('Location: /admin/dashboard');
+            exit;
+        }
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header('Location: /admin/whatsapp/subscription-plans');
             exit;
@@ -228,6 +258,11 @@ class WhatsAppSubscriptionController
      */
     public function subscriptions()
     {
+        if (!Auth::hasPermission('whatsapp.user_subscriptions')) {
+            $_SESSION['flash_error'] = 'You do not have permission to access that section.';
+            header('Location: /admin/dashboard');
+            exit;
+        }
         $page = $_GET['page'] ?? 1;
         $perPage = 20;
         $offset = ($page - 1) * $perPage;
@@ -280,6 +315,11 @@ class WhatsAppSubscriptionController
      */
     public function assignSubscriptionForm()
     {
+        if (!Auth::hasPermission('whatsapp.assign_subscription')) {
+            $_SESSION['flash_error'] = 'You do not have permission to access that section.';
+            header('Location: /admin/dashboard');
+            exit;
+        }
         $users = $this->db->fetchAll("
             SELECT id, name, email FROM users 
             ORDER BY name ASC
@@ -303,6 +343,11 @@ class WhatsAppSubscriptionController
      */
     public function assignSubscription()
     {
+        if (!Auth::hasPermission('whatsapp.assign_subscription')) {
+            $_SESSION['flash_error'] = 'You do not have permission to access that section.';
+            header('Location: /admin/dashboard');
+            exit;
+        }
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header('Location: /admin/whatsapp/user-subscriptions');
             exit;
@@ -382,6 +427,11 @@ class WhatsAppSubscriptionController
      */
     public function updateSubscription($id)
     {
+        if (!Auth::hasPermission('whatsapp.user_subscriptions')) {
+            $_SESSION['flash_error'] = 'You do not have permission to access that section.';
+            header('Location: /admin/dashboard');
+            exit;
+        }
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header('Location: /admin/whatsapp/user-subscriptions');
             exit;
@@ -433,6 +483,11 @@ class WhatsAppSubscriptionController
      */
     public function cancelSubscription($id)
     {
+        if (!Auth::hasPermission('whatsapp.user_subscriptions')) {
+            $_SESSION['flash_error'] = 'You do not have permission to access that section.';
+            header('Location: /admin/dashboard');
+            exit;
+        }
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header('Location: /admin/whatsapp/user-subscriptions');
             exit;
