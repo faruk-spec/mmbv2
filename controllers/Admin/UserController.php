@@ -135,6 +135,11 @@ class UserController extends BaseController
             ]);
             
             Logger::activity(Auth::id(), 'user_created', ['user_id' => $userId]);
+            ActivityLogger::logCreate(
+                Auth::id(), 'users', 'user', $userId,
+                ['name' => Security::sanitize($this->input('name')), 'email' => $this->input('email'), 'role' => $this->input('role')],
+                Security::sanitize($this->input('name'))
+            );
             
             $this->flash('success', 'User created successfully.');
             $this->redirect('/admin/users');
@@ -320,7 +325,8 @@ class UserController extends BaseController
                 'user',
                 (int) $id,
                 $oldSnapshot,
-                $newSnapshot
+                $newSnapshot,
+                $user['name']
             );
             
             $this->flash('success', 'User updated successfully.');
@@ -357,6 +363,10 @@ class UserController extends BaseController
         try {
             $db = Database::getInstance();
             
+            // Capture name before deletion for the audit log
+            $targetUser = $db->fetch("SELECT name FROM users WHERE id = ?", [$userId]);
+            $targetName = $targetUser['name'] ?? null;
+
             // Delete related data
             $db->delete('user_profiles', 'user_id = ?', [$userId]);
             $db->delete('user_remember_tokens', 'user_id = ?', [$userId]);
@@ -364,6 +374,7 @@ class UserController extends BaseController
             $db->delete('users', 'id = ?', [$userId]);
             
             Logger::activity(Auth::id(), 'user_deleted', ['user_id' => $userId]);
+            ActivityLogger::logDelete(Auth::id(), 'users', 'user', $userId, [], $targetName ?? '');
             
             $this->flash('success', 'User deleted successfully.');
             
@@ -398,7 +409,7 @@ class UserController extends BaseController
         
         try {
             $db = Database::getInstance();
-            $user = $db->fetch("SELECT status FROM users WHERE id = ?", [$userId]);
+            $user = $db->fetch("SELECT name, status FROM users WHERE id = ?", [$userId]);
             
             if ($user) {
                 $newStatus = $user['status'] === 'active' ? 'inactive' : 'active';
@@ -411,6 +422,12 @@ class UserController extends BaseController
                     'user_id' => $userId,
                     'status' => $newStatus
                 ]);
+
+                if ($newStatus === 'active') {
+                    ActivityLogger::logEnable(Auth::id(), 'users', 'user', $userId, $user['name']);
+                } else {
+                    ActivityLogger::logDisable(Auth::id(), 'users', 'user', $userId, $user['name']);
+                }
                 
                 $this->flash('success', 'User status updated.');
             }

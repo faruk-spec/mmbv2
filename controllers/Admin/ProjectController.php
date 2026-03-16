@@ -11,6 +11,7 @@ use Controllers\BaseController;
 use Core\Database;
 use Core\Auth;
 use Core\Logger;
+use Core\ActivityLogger;
 
 class ProjectController extends BaseController
 {
@@ -72,6 +73,12 @@ class ProjectController extends BaseController
         // Note: In a full implementation, this would update a database or config file
         // For now, we just log the action
         Logger::activity(Auth::id(), 'project_toggled', ['project' => $name]);
+        ActivityLogger::log(Auth::id(), 'project_toggled', [
+            'module'        => 'admin',
+            'resource_type' => 'project',
+            'resource_id'   => $name,
+            'entity_name'   => $name,
+        ]);
         
         $this->flash('success', 'Project status updated.');
         $this->redirect('/admin/projects');

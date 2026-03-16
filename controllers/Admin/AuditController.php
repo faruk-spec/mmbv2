@@ -23,9 +23,9 @@ class AuditController extends BaseController
      */
     private const ALLOWED_COLUMNS = [
         'id', 'user_id', 'action', 'module', 'tenant_id',
-        'resource_type', 'resource_id', 'user_role', 'status',
+        'resource_type', 'resource_id', 'entity_name', 'user_role', 'status',
         'readable_message', 'ip_address', 'device', 'browser',
-        'request_id', 'created_at',
+        'request_id', 'old_values', 'new_values', 'changes', 'created_at',
         // joined columns
         'user_name', 'user_email',
     ];
@@ -38,7 +38,7 @@ class AuditController extends BaseController
     /**
      * Allowed operators for WHERE conditions
      */
-    private const ALLOWED_OPERATORS = ['=', '!=', 'LIKE', 'NOT LIKE', '>', '<', '>=', '<=', 'IS NULL', 'IS NOT NULL'];
+    private const ALLOWED_OPERATORS = ['=', '!=', 'LIKE', 'NOT LIKE', '>', '<', '>=', '<=', 'IS NULL', 'IS NOT NULL', 'IN', 'NOT IN'];
 
     public function __construct()
     {
@@ -94,19 +94,37 @@ class AuditController extends BaseController
             "SELECT DISTINCT user_role FROM activity_logs WHERE user_role IS NOT NULL AND user_role != '' ORDER BY user_role"
         );
 
+        // Resource types for the exclude-filter in the sidebar
+        $resourceTypes = $db->fetchAll(
+            "SELECT DISTINCT resource_type FROM activity_logs WHERE resource_type IS NOT NULL AND resource_type != '' ORDER BY resource_type"
+        );
+
+        // Entity names for inclusion/exclusion autocomplete
+        $entityNames = $db->fetchAll(
+            "SELECT DISTINCT entity_name FROM activity_logs WHERE entity_name IS NOT NULL AND entity_name != '' ORDER BY entity_name LIMIT 300"
+        );
+
+        // IP addresses for inclusion/exclusion autocomplete (cap to 200 most-recent distinct)
+        $ipAddresses = $db->fetchAll(
+            "SELECT DISTINCT ip_address FROM activity_logs WHERE ip_address IS NOT NULL AND ip_address != '' ORDER BY ip_address LIMIT 200"
+        );
+
         // Users list for the user-filter autocomplete (name + email)
         $users = $db->fetchAll(
             "SELECT id, name, email FROM users ORDER BY name LIMIT 500"
         );
 
         $this->view('admin/audit/index', [
-            'title'       => 'Audit Explorer',
-            'stats'       => $stats,
-            'actions'     => $actions,
-            'modules'     => $modules,
-            'userRoles'   => $userRoles,
-            'users'       => $users,
-            'allowedCols' => self::ALLOWED_COLUMNS,
+            'title'         => 'Audit Explorer',
+            'stats'         => $stats,
+            'actions'       => $actions,
+            'modules'       => $modules,
+            'userRoles'     => $userRoles,
+            'resourceTypes' => $resourceTypes,
+            'entityNames'   => $entityNames,
+            'ipAddresses'   => $ipAddresses,
+            'users'         => $users,
+            'allowedCols'   => self::ALLOWED_COLUMNS,
         ]);
     }
 
@@ -387,6 +405,16 @@ class AuditController extends BaseController
 
             if ($op === 'IS NULL' || $op === 'IS NOT NULL') {
                 $whereParts[] = "{$qcol} {$op}";
+            } elseif ($op === 'IN' || $op === 'NOT IN') {
+                $vals = is_array($val) ? array_values($val) : [$val];
+                if (empty($vals)) {
+                    continue; // nothing to filter on
+                }
+                $placeholders = implode(', ', array_fill(0, count($vals), '?'));
+                $whereParts[] = "{$qcol} {$op} ({$placeholders})";
+                foreach ($vals as $v) {
+                    $params[] = $v;
+                }
             } elseif ($op === 'LIKE' || $op === 'NOT LIKE') {
                 $whereParts[] = "{$qcol} {$op} ?";
                 $params[]      = $val;

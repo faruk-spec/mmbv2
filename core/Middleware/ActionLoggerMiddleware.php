@@ -62,12 +62,14 @@ class ActionLoggerMiddleware
 
     /**
      * URL fragments that indicate a pure read/status AJAX endpoint.
-     * These happen during polling and would flood the log.
+     * These happen during polling or UI refresh and would flood the log.
      */
     private const SKIP_FRAGMENTS = [
         '/status', '/ping', '/health', '/heartbeat',
         '/qr-status', '/session-status', '/bridge-health',
         '/check-auth', '/debug-session',
+        // Audit Explorer read-only query endpoints (POST used for body, not mutation)
+        '/admin/audit/query', '/admin/audit/sql',
     ];
 
     /**

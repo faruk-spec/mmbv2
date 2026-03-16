@@ -23,11 +23,12 @@
         </p>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <a href="/admin/logs/activity/export?format=csv&<?= http_build_query(['action'=>$currentAction,'module'=>$currentModule,'user_id'=>$currentUserId,'status'=>$currentStatus,'date_from'=>$dateFrom,'date_to'=>$dateTo,'search'=>$search]) ?>"
+        <?php $exportParams = ['action'=>$currentAction,'module'=>$currentModule,'user_id'=>$currentUserId,'email'=>$currentEmail??'','status'=>$currentStatus,'entity_id'=>$currentEntityId??'','entity_name'=>$currentEntityName??'','date_from'=>$dateFrom,'date_to'=>$dateTo,'search'=>$search]; ?>
+        <a href="/admin/logs/activity/export?format=csv&<?= http_build_query($exportParams) ?>"
            class="btn btn-sm btn-secondary"><i class="fas fa-file-csv"></i> CSV</a>
-        <a href="/admin/logs/activity/export?format=json&<?= http_build_query(['action'=>$currentAction,'module'=>$currentModule,'user_id'=>$currentUserId,'status'=>$currentStatus,'date_from'=>$dateFrom,'date_to'=>$dateTo,'search'=>$search]) ?>"
+        <a href="/admin/logs/activity/export?format=json&<?= http_build_query($exportParams) ?>"
            class="btn btn-sm btn-secondary"><i class="fas fa-file-code"></i> JSON</a>
-        <a href="/admin/logs/activity/api?<?= http_build_query(['action'=>$currentAction,'module'=>$currentModule,'user_id'=>$currentUserId,'status'=>$currentStatus,'date_from'=>$dateFrom,'date_to'=>$dateTo,'search'=>$search]) ?>"
+        <a href="/admin/logs/activity/api?<?= http_build_query($exportParams) ?>"
            class="btn btn-sm btn-secondary" target="_blank"><i class="fas fa-code"></i> API</a>
     </div>
 </div>
@@ -119,7 +120,7 @@
             <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
                 <div style="flex:2;min-width:160px;">
                     <label style="display:block;margin-bottom:4px;font-size:11px;color:var(--text-secondary);">Search</label>
-                    <input type="text" name="search" class="form-input" placeholder="Action, message, user, IP…" value="<?= View::e($search) ?>">
+                    <input type="text" name="search" class="form-input" placeholder="Action, message, user, entity, IP…" value="<?= View::e($search) ?>">
                 </div>
                 <div style="min-width:150px;">
                     <label style="display:block;margin-bottom:4px;font-size:11px;color:var(--text-secondary);">Action</label>
@@ -159,6 +160,18 @@
                 <div style="min-width:100px;">
                     <label style="display:block;margin-bottom:4px;font-size:11px;color:var(--text-secondary);">User ID</label>
                     <input type="number" name="user_id" class="form-input" placeholder="User ID" value="<?= View::e($currentUserId) ?>">
+                </div>
+                <div style="min-width:160px;">
+                    <label style="display:block;margin-bottom:4px;font-size:11px;color:var(--text-secondary);">Email</label>
+                    <input type="email" name="email" class="form-input" placeholder="user@example.com" value="<?= View::e($currentEmail ?? '') ?>">
+                </div>
+                <div style="min-width:110px;">
+                    <label style="display:block;margin-bottom:4px;font-size:11px;color:var(--text-secondary);">Entity ID</label>
+                    <input type="text" name="entity_id" class="form-input" placeholder="e.g. 42" value="<?= View::e($currentEntityId ?? '') ?>">
+                </div>
+                <div style="min-width:130px;">
+                    <label style="display:block;margin-bottom:4px;font-size:11px;color:var(--text-secondary);">Entity Name</label>
+                    <input type="text" name="entity_name" class="form-input" placeholder="e.g. Payment API" value="<?= View::e($currentEntityName ?? '') ?>">
                 </div>
                 <div style="min-width:120px;">
                     <label style="display:block;margin-bottom:4px;font-size:11px;color:var(--text-secondary);">From</label>
@@ -205,17 +218,23 @@
                             <?php
                             $isAdmin    = \Controllers\Admin\LogController::isAdminAction($log['action']);
                             $badgeCls   = $isAdmin ? 'badge-warning' : 'badge-info';
+                            $changesArr = json_decode($log['changes'] ?? '', true);
                             $oldVals    = json_decode($log['old_values'] ?? '', true);
                             $newVals    = json_decode($log['new_values'] ?? '', true);
                             $extraData  = json_decode($log['data'] ?? '', true);
-                            $hasDetails = !empty($oldVals) || !empty($newVals) || !empty($extraData);
+                            $hasDetails = !empty($changesArr) || !empty($oldVals) || !empty($newVals) || !empty($extraData);
                             $rowId      = 'ld-' . $idx;
                             $statusColor = ['success'=>'var(--green)','failure'=>'#e74c3c','pending'=>'var(--orange)'][$log['status']??'success'] ?? 'var(--green)';
+                            // Use denormalized user_name when JOIN didn't return a name (e.g. deleted user)
+                            $displayName = $log['name'] ?? $log['user_name'] ?? 'Unknown';
                             ?>
                             <tr>
                                 <td>
-                                    <div style="font-weight:500;font-size:13px;"><?= View::e($log['name'] ?? 'Unknown') ?></div>
+                                    <div style="font-weight:500;font-size:13px;"><?= View::e($displayName) ?></div>
                                     <div style="font-size:11px;color:var(--text-secondary);"><?= View::e($log['email'] ?? '') ?></div>
+                                    <?php if (!empty($log['user_id'])): ?>
+                                        <span style="font-size:10px;background:var(--bg-secondary);padding:1px 6px;border-radius:4px;color:var(--text-secondary);">ID #<?= (int)$log['user_id'] ?></span>
+                                    <?php endif; ?>
                                     <?php if (!empty($log['user_role'])): ?>
                                         <span style="font-size:10px;background:var(--bg-secondary);padding:1px 6px;border-radius:4px;color:var(--text-secondary);"><?= View::e($log['user_role']) ?></span>
                                     <?php endif; ?>
@@ -226,7 +245,19 @@
                                     <?php endif; ?>
                                     <span class="badge <?= $badgeCls ?>" style="font-size:11px;"><?= View::e($log['action']) ?></span>
                                     <?php if (!empty($log['resource_type'])): ?>
-                                        <span style="font-size:11px;color:var(--text-secondary);margin-left:4px;"><?= View::e($log['resource_type']) ?><?= !empty($log['resource_id']) ? ' #'.View::e($log['resource_id']) : '' ?></span>
+                                        <span style="font-size:11px;color:var(--text-secondary);margin-left:4px;">
+                                            <?= View::e($log['resource_type']) ?>
+                                            <?php if (!empty($log['entity_name'])): ?>
+                                                <span style="color:var(--cyan);">'<?= View::e($log['entity_name']) ?>'</span>
+                                            <?php elseif (!empty($log['resource_id'])): ?>
+                                                #<?= View::e($log['resource_id']) ?>
+                                            <?php endif; ?>
+                                        </span>
+                                    <?php endif; ?>
+                                    <?php if (!empty($changesArr)): ?>
+                                        <span style="font-size:10px;background:rgba(255,152,0,0.15);color:#ff9800;padding:1px 6px;border-radius:8px;margin-left:4px;" title="<?= count($changesArr) ?> field(s) changed">
+                                            <?= count($changesArr) ?> change<?= count($changesArr) !== 1 ? 's' : '' ?>
+                                        </span>
                                     <?php endif; ?>
                                 </td>
                                 <td>
@@ -251,7 +282,30 @@
                             <?php if ($hasDetails): ?>
                                 <tr id="<?= $rowId ?>" style="display:none;background:var(--bg-secondary);">
                                     <td colspan="7" style="padding:14px 18px;">
-                                        <?php if (!empty($oldVals) || !empty($newVals)): ?>
+
+                                        <?php if (!empty($changesArr)): ?>
+                                            <!-- Field-level Changes Diff -->
+                                            <div style="margin-bottom:12px;">
+                                                <div style="font-size:10px;font-weight:700;color:#ff9800;margin-bottom:7px;text-transform:uppercase;letter-spacing:.6px;">
+                                                    ✎ Field Changes
+                                                </div>
+                                                <div style="display:flex;flex-direction:column;gap:5px;">
+                                                    <?php foreach ($changesArr as $field => $diff): ?>
+                                                        <?php
+                                                        $oldStr = $diff['old'] !== null ? (is_array($diff['old']) ? json_encode($diff['old']) : (string)$diff['old']) : '(empty)';
+                                                        $newStr = $diff['new'] !== null ? (is_array($diff['new']) ? json_encode($diff['new']) : (string)$diff['new']) : '(empty)';
+                                                        ?>
+                                                        <div style="display:flex;align-items:baseline;gap:8px;background:var(--bg-card);border:1px solid var(--border-color);border-radius:7px;padding:7px 10px;font-size:11px;">
+                                                            <span style="font-weight:600;color:var(--text-secondary);min-width:100px;flex-shrink:0;"><?= View::e(str_replace('_', ' ', $field)) ?>:</span>
+                                                            <span style="color:#e74c3c;text-decoration:line-through;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="<?= View::e($oldStr) ?>"><?= View::e(mb_strlen($oldStr) > 60 ? mb_substr($oldStr, 0, 57) . '…' : $oldStr) ?></span>
+                                                            <span style="color:var(--text-secondary);flex-shrink:0;">→</span>
+                                                            <span style="color:var(--green);font-weight:500;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="<?= View::e($newStr) ?>"><?= View::e(mb_strlen($newStr) > 60 ? mb_substr($newStr, 0, 57) . '…' : $newStr) ?></span>
+                                                        </div>
+                                                    <?php endforeach; ?>
+                                                </div>
+                                            </div>
+                                        <?php elseif (!empty($oldVals) || !empty($newVals)): ?>
+                                            <!-- Legacy before/after snapshots (no changes column) -->
                                             <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px;">
                                                 <?php if (!empty($oldVals)): ?>
                                                     <div style="flex:1;min-width:180px;">
@@ -281,6 +335,7 @@
                                                 <?php endif; ?>
                                             </div>
                                         <?php endif; ?>
+
                                         <?php if (!empty($extraData)): ?>
                                             <div style="font-size:10px;font-weight:700;color:var(--text-secondary);margin-bottom:5px;">EXTRA DATA</div>
                                             <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:7px;padding:9px;font-size:11px;">
@@ -306,7 +361,7 @@
             <!-- Pagination -->
             <?php if ($pagination['total'] > 1): ?>
                 <div style="display:flex;justify-content:center;gap:8px;padding:14px;">
-                    <?php $q = http_build_query(['search'=>$search,'action'=>$currentAction,'module'=>$currentModule,'category'=>$category,'status'=>$currentStatus,'user_id'=>$currentUserId,'date_from'=>$dateFrom,'date_to'=>$dateTo]); ?>
+                    <?php $q = http_build_query(['search'=>$search,'action'=>$currentAction,'module'=>$currentModule,'category'=>$category,'status'=>$currentStatus,'user_id'=>$currentUserId,'email'=>$currentEmail??'','entity_id'=>$currentEntityId??'','entity_name'=>$currentEntityName??'','date_from'=>$dateFrom,'date_to'=>$dateTo]); ?>
                     <?php if ($pagination['current'] > 1): ?>
                         <a href="?page=<?= $pagination['current']-1 ?>&<?= $q ?>" class="btn btn-sm btn-secondary">← Prev</a>
                     <?php endif; ?>
@@ -427,7 +482,7 @@ function toggleDetail(id) {
 }
 
 // --- If any filter is active, auto-switch to Timeline tab ---
-<?php if ($currentAction || $currentModule || $currentStatus || $currentUserId || $dateFrom || $dateTo || $search): ?>
+<?php if ($currentAction || $currentModule || $currentStatus || $currentUserId || ($currentEmail??'') || $dateFrom || $dateTo || $search): ?>
 document.querySelectorAll('.act-tab').forEach(b => b.classList.remove('active'));
 document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
 document.querySelector('[data-tab="timeline"]').classList.add('active');

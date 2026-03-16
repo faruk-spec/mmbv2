@@ -12,7 +12,7 @@
 .ae-mode-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0;}
 .ae-mode-tab{flex:1;padding:9px 0;font-size:11px;font-weight:600;text-align:center;cursor:pointer;border:none;background:none;color:var(--text-m);border-bottom:2px solid transparent;transition:.12s;font-family:inherit;}
 .ae-mode-tab.active{color:var(--cyan);border-bottom-color:var(--cyan);}
-.ae-vb-panel{display:flex;flex-direction:column;flex:1;overflow:hidden;}
+.ae-vb-panel{display:flex;flex-direction:column;flex:1;overflow-y:auto;min-height:0;}
 .ae-run-btn{margin:10px 14px;background:var(--cyan);color:#000;border:none;border-radius:8px;padding:9px 0;font-weight:700;font-size:12px;cursor:pointer;width:calc(100% - 28px);transition:opacity .15s;flex-shrink:0;font-family:inherit;}
 .ae-run-btn:hover:not(:disabled){opacity:.85;}.ae-run-btn:disabled{opacity:.5;cursor:not-allowed;}
 .ae-sec{border-bottom:1px solid var(--border);}
@@ -31,6 +31,21 @@
 .sv-name{flex:1;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .sv-load{background:none;border:1px solid var(--border);color:var(--text-m);border-radius:5px;padding:2px 6px;font-size:10px;cursor:pointer;font-family:inherit;}
 .sv-del{background:none;border:none;color:var(--red);cursor:pointer;font-size:12px;padding:0 2px;}
+/* Multi-field exclusion / inclusion filter */
+.ae-mf-row{display:flex;gap:4px;align-items:center;margin-bottom:6px;}
+.ae-mf-col{flex:0 0 auto;padding:4px 6px;border-radius:6px;border:1px solid var(--border);background:var(--bg-card);color:var(--text);font-size:10.5px;font-family:inherit;max-width:112px;}
+.ae-mf-col:focus{outline:none;border-color:var(--cyan);}
+.ae-mf-val{flex:1;min-width:0;padding:4px 7px;border-radius:6px;border:1px solid var(--border);background:var(--bg-card);color:var(--text);font-size:11px;font-family:inherit;}
+.ae-mf-val:focus{outline:none;border-color:var(--cyan);}
+.ae-mf-add-btn{flex-shrink:0;background:none;border:1px solid var(--border);color:var(--text-m);border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;font-family:inherit;transition:.12s;}
+.ae-mf-add-btn:hover{border-color:var(--cyan);color:var(--cyan);}
+.ae-mf-chips{display:flex;flex-wrap:wrap;gap:5px;padding:2px 0;min-height:0;}
+.ae-mf-chip{display:inline-flex;align-items:center;gap:3px;padding:2px 5px 2px 8px;border-radius:20px;font-size:10px;font-weight:600;line-height:1.5;}
+.ae-mf-chip-exc{border:1px solid var(--orange);background:rgba(255,120,50,.12);color:var(--orange);}
+.ae-mf-chip-inc{border:1px solid var(--cyan);background:rgba(0,240,255,.10);color:var(--cyan);}
+.ae-mf-chip-label{max-width:145px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ae-mf-chip-del{background:none;border:none;cursor:pointer;font-size:12px;padding:0 1px;line-height:1;font-family:inherit;}
+.ae-mf-chip-exc .ae-mf-chip-del{color:var(--orange);}.ae-mf-chip-inc .ae-mf-chip-del{color:var(--cyan);}
 .ae-export-row{padding:10px 14px;border-top:1px solid var(--border);display:flex;gap:6px;flex-shrink:0;margin-top:auto;}
 .ae-sm-btn{flex:1;background:none;border:1px solid var(--border);color:var(--text-m);border-radius:6px;padding:5px 0;font-size:11px;cursor:pointer;font-family:inherit;transition:.12s;}
 .ae-sm-btn:hover{border-color:var(--cyan);color:var(--cyan);}
@@ -110,6 +125,18 @@
 .ae-vt-btn:first-child{border-radius:6px 0 0 6px;}
 .ae-vt-btn:last-child{border-radius:0 6px 6px 0;border-left:none;}
 .ae-vt-btn.active{background:var(--cyan);color:#000;border-color:var(--cyan);}
+/* Refresh + auto-refresh controls */
+.ae-refresh-grp{position:relative;display:inline-flex;gap:0;margin-left:4px;}
+.ae-refresh-grp .ae-vt-btn:first-child{border-radius:6px 0 0 6px;padding:4px 7px;}
+.ae-refresh-grp .ae-vt-btn:last-child{border-radius:0 6px 6px 0;border-left:none;padding:4px 6px;font-size:13px;letter-spacing:.5px;}
+.ae-refresh-grp .ae-vt-btn.ar-on{background:rgba(0,240,255,.15);color:var(--cyan);border-color:var(--cyan);}
+.ae-ar-menu{display:none;position:absolute;top:calc(100% + 4px);right:0;z-index:200;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;min-width:168px;padding:4px 0;box-shadow:0 6px 20px rgba(0,0,0,.5);}
+.ae-ar-menu.open{display:block;}
+.ae-ar-opt{padding:7px 14px;font-size:11.5px;cursor:pointer;color:var(--text);transition:.1s;}
+.ae-ar-opt:hover{background:rgba(0,240,255,.08);color:var(--cyan);}
+.ae-ar-opt.active{color:var(--cyan);font-weight:600;}
+.ae-ar-sep{height:1px;background:var(--border);margin:3px 0;}
+.ae-ar-badge{font-size:9px;background:rgba(0,240,255,.15);color:var(--cyan);border-radius:8px;padding:1px 6px;margin-left:5px;}
 /* Timeline */
 .ae-timeline{padding:14px 20px;display:flex;flex-direction:column;}
 .ae-tl-item{display:flex;gap:14px;padding-bottom:18px;position:relative;}
@@ -120,6 +147,15 @@
 .ae-tl-msg{font-size:12px;color:var(--text);margin:4px 0;}
 .ae-tl-meta{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;}
 .ae-tl-meta span{font-size:10.5px;color:var(--text-m);}
+/* Compact view */
+.ae-compact{width:100%;border-collapse:collapse;font-size:11.5px;}
+.ae-compact th{background:var(--bg-s);padding:6px 10px;text-align:left;font-weight:600;font-size:10px;white-space:nowrap;position:sticky;top:0;z-index:2;border-bottom:2px solid var(--border);color:var(--text-m);text-transform:uppercase;letter-spacing:.5px;}
+.ae-compact td{padding:4px 10px;border-bottom:1px solid var(--border);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px;vertical-align:middle;font-size:11px;}
+.ae-compact tbody tr:hover{background:rgba(0,240,255,.04);}
+.ae-compact tr.ae-exp-row td{white-space:normal;overflow:visible;max-width:none;background:var(--bg-s);padding:10px 14px;font-size:11px;}
+.ae-exp-btn{background:none;border:1px solid var(--border);color:var(--cyan);border-radius:4px;padding:1px 6px;font-size:11px;cursor:pointer;font-family:inherit;line-height:1.4;transition:.1s;flex-shrink:0;}
+.ae-exp-btn:hover{background:rgba(0,240,255,.1);}
+.ae-raw-pre{font-family:'JetBrains Mono',monospace;font-size:10px;white-space:pre-wrap;word-break:break-word;color:var(--text-m);margin:0;}
 @media(max-width:760px){.ae-wrap{grid-template-columns:1fr;}.ae-sidebar{max-height:45vh;height:auto;}}
 </style>
 
@@ -131,17 +167,17 @@
     </div>
 
     <div class="ae-mode-tabs">
-        <button class="ae-mode-tab active" id="tabVB" onclick="setMode('vb')">
+        <button type="button" class="ae-mode-tab active" id="tabVB" onclick="setMode('vb')">
             <i class="fas fa-sliders-h" style="margin-right:4px;"></i>Visual
         </button>
-        <button class="ae-mode-tab" id="tabSQL" onclick="setMode('sql')">
+        <button type="button" class="ae-mode-tab" id="tabSQL" onclick="setMode('sql')">
             <i class="fas fa-terminal" style="margin-right:4px;"></i>SQL
         </button>
     </div>
 
     <!-- Visual Builder panel -->
     <div class="ae-vb-panel" id="vbPanel">
-        <button class="ae-run-btn" id="runBtn" onclick="runQuery()">&#9654; Run Query</button>
+        <button type="button" class="ae-run-btn" id="runBtn" onclick="runQuery()">&#9654; Run Query</button>
 
         <div class="ae-sec">
             <div class="ae-sec-hdr open" onclick="toggleSec(this)">
@@ -220,6 +256,70 @@
 
         <div class="ae-sec">
             <div class="ae-sec-hdr" onclick="toggleSec(this)">
+                <span class="lbl">&#x1F6AB; Exclusion Filters</span>
+                <i class="fas fa-chevron-right arr"></i>
+            </div>
+            <div class="ae-sec-body">
+                <div style="font-size:10px;color:var(--text-m);margin-bottom:7px;line-height:1.5;">
+                    Exclude rows where the field matches any added value.
+                </div>
+                <div class="ae-mf-row">
+                    <select id="exColSel" class="ae-mf-col" onchange="switchMfDatalist('dlEx','exColSel','exInput')">
+                        <option value="action">Action</option>
+                        <option value="module">Module</option>
+                        <option value="status">Status</option>
+                        <option value="resource_type">Resource Type</option>
+                        <option value="user_name">User Name</option>
+                        <option value="user_id">User ID</option>
+                        <option value="entity_name">Entity Name</option>
+                        <option value="ip_address">IP Address</option>
+                        <option value="id">ID</option>
+                    </select>
+                    <input type="text" id="exInput" class="ae-mf-val" placeholder="value…"
+                           list="dlEx" autocomplete="off"
+                           onkeydown="if(event.key==='Enter'){event.preventDefault();addMfChip('exChips','exColSel','exInput','exc');}">
+                    <datalist id="dlEx"></datalist>
+                    <button type="button" class="ae-mf-add-btn" onclick="addMfChip('exChips','exColSel','exInput','exc')">+ Add</button>
+                </div>
+                <div class="ae-mf-chips" id="exChips"></div>
+                <button type="button" class="ae-sm-btn" style="width:100%;margin-top:4px;" onclick="clearMfChips('exChips')">Clear exclusions</button>
+            </div>
+        </div>
+
+        <div class="ae-sec">
+            <div class="ae-sec-hdr" onclick="toggleSec(this)">
+                <span class="lbl">&#x2705; Inclusion Filters</span>
+                <i class="fas fa-chevron-right arr"></i>
+            </div>
+            <div class="ae-sec-body">
+                <div style="font-size:10px;color:var(--text-m);margin-bottom:7px;line-height:1.5;">
+                    Include only rows where the field matches any added value.
+                </div>
+                <div class="ae-mf-row">
+                    <select id="inColSel" class="ae-mf-col" onchange="switchMfDatalist('dlIn','inColSel','inInput')">
+                        <option value="action">Action</option>
+                        <option value="module">Module</option>
+                        <option value="status">Status</option>
+                        <option value="resource_type">Resource Type</option>
+                        <option value="user_name">User Name</option>
+                        <option value="user_id">User ID</option>
+                        <option value="entity_name">Entity Name</option>
+                        <option value="ip_address">IP Address</option>
+                        <option value="id">ID</option>
+                    </select>
+                    <input type="text" id="inInput" class="ae-mf-val" placeholder="value…"
+                           list="dlIn" autocomplete="off"
+                           onkeydown="if(event.key==='Enter'){event.preventDefault();addMfChip('inChips','inColSel','inInput','inc');}">
+                    <datalist id="dlIn"></datalist>
+                    <button type="button" class="ae-mf-add-btn" onclick="addMfChip('inChips','inColSel','inInput','inc')">+ Add</button>
+                </div>
+                <div class="ae-mf-chips" id="inChips"></div>
+                <button type="button" class="ae-sm-btn" style="width:100%;margin-top:4px;" onclick="clearMfChips('inChips')">Clear inclusions</button>
+            </div>
+        </div>
+
+        <div class="ae-sec">
+            <div class="ae-sec-hdr" onclick="toggleSec(this)">
                 <span class="lbl">&#9889; Templates</span>
                 <i class="fas fa-chevron-right arr"></i>
             </div>
@@ -240,7 +340,7 @@
                     ['Deletes today',              ['select'=>['*'],'where'=>[['col'=>'action','op'=>'LIKE','val'=>'%_deleted'],['col'=>'created_at','op'=>'>=','val'=>date('Y-m-d')]],'order_by'=>'created_at','limit'=>100]],
                 ];
                 foreach ($tpls as [$label, $spec]): ?>
-                <button class="tpl-btn" onclick='loadTemplate(<?= htmlspecialchars(json_encode($spec), ENT_QUOTES) ?>)'><?= htmlspecialchars($label) ?></button>
+                <button type="button" class="tpl-btn" onclick='loadTemplate(<?= htmlspecialchars(json_encode($spec), ENT_QUOTES) ?>)'><?= htmlspecialchars($label) ?></button>
                 <?php endforeach; ?>
             </div>
         </div>
@@ -252,15 +352,15 @@
             </div>
             <div class="ae-sec-body">
                 <div id="savedList"><p style="font-size:10.5px;color:var(--text-m);">No saved queries yet.</p></div>
-                <button class="ae-sm-btn" style="width:100%;margin-top:6px;" onclick="saveQuery()">+ Save current query</button>
+                <button type="button" class="ae-sm-btn" style="width:100%;margin-top:6px;" onclick="saveQuery()">+ Save current query</button>
             </div>
         </div>
 
         <div style="flex:1;min-height:10px;"></div>
         <div class="ae-export-row">
-            <button class="ae-sm-btn" onclick="exportResult('csv')">&#x2B07; CSV</button>
-            <button class="ae-sm-btn" onclick="exportResult('json')">&#x2B07; JSON</button>
-            <button class="ae-sm-btn" onclick="clearAll()">&#x21BA; Reset</button>
+            <button type="button" class="ae-sm-btn" onclick="exportResult('csv')">&#x2B07; CSV</button>
+            <button type="button" class="ae-sm-btn" onclick="exportResult('json')">&#x2B07; JSON</button>
+            <button type="button" class="ae-sm-btn" onclick="clearAll()">&#x21BA; Reset</button>
         </div>
     </div>
 
@@ -270,7 +370,7 @@
             <div class="ae-sql-editor-label" style="margin-bottom:6px;">&#x1F4DD; SQL Query</div>
             <textarea id="sqlInput" class="ae-sql-ta" spellcheck="false"
                 placeholder="SELECT al.*, u.name AS user_name&#10;FROM activity_logs al&#10;LEFT JOIN users u ON al.user_id = u.id&#10;WHERE al.status = 'failure'&#10;ORDER BY al.created_at DESC&#10;LIMIT 100"></textarea>
-            <button class="ae-sql-run-btn" id="sqlRunBtn" onclick="runRawSql()" style="margin-top:8px;">
+            <button type="button" class="ae-sql-run-btn" id="sqlRunBtn" onclick="runRawSql()" style="margin-top:8px;">
                 &#9654; Execute SQL
             </button>
         </div>
@@ -278,7 +378,7 @@
             <div class="ae-schema-label">&#x1F4CB; Schema Reference</div>
             <div class="ae-schema-box">
                 <span class="t">activity_logs (al.*)</span>
-                <?php foreach (['id','user_id','action','module','tenant_id','resource_type','resource_id','user_role','status','readable_message','ip_address','device','browser','request_id','old_values','new_values','created_at'] as $col): ?>
+                <?php foreach (['id','user_id','user_name','action','module','tenant_id','resource_type','resource_id','entity_name','user_role','status','readable_message','ip_address','device','browser','request_id','old_values','new_values','changes','created_at'] as $col): ?>
                 <span class="c">&#x21B3; <?= $col ?></span>
                 <?php endforeach; ?>
                 <span class="t" style="margin-top:8px;">users (JOIN on user_id)</span>
@@ -292,8 +392,8 @@
         </div>
         <div style="flex:1;min-height:10px;"></div>
         <div class="ae-export-row">
-            <button class="ae-sm-btn" onclick="exportSqlResult('csv')">&#x2B07; CSV</button>
-            <button class="ae-sm-btn" onclick="exportSqlResult('json')">&#x2B07; JSON</button>
+            <button type="button" class="ae-sm-btn" onclick="exportSqlResult('csv')">&#x2B07; CSV</button>
+            <button type="button" class="ae-sm-btn" onclick="exportSqlResult('json')">&#x2B07; JSON</button>
         </div>
     </div>
 </aside>
@@ -311,15 +411,31 @@
         <div class="ae-sel-wrap" id="selectWrap">
             <input type="text" class="ae-col-in sel-expr" value="*" placeholder="col or COUNT(*) AS n" list="dlCols" ondblclick="this.remove()">
         </div>
-        <button class="ae-add-col" onclick="addColIn()">+ col</button>
+        <button type="button" class="ae-add-col" onclick="addColIn()">+ col</button>
         <datalist id="dlCols">
             <?php foreach ($allowedCols as $c): ?><option value="<?= View::e($c) ?>"><?php endforeach; ?>
             <option value="COUNT(*)"><option value="COUNT(*) AS cnt">
             <option value="user_name"><option value="user_email">
+            <option value="entity_name"><option value="changes">
         </datalist>
         <span style="display:flex;gap:0;">
-            <button class="ae-vt-btn active" id="btnTable" onclick="setView('table')" title="Table view"><i class="fas fa-table"></i></button>
-            <button class="ae-vt-btn" id="btnTimeline" onclick="setView('timeline')" title="Timeline view"><i class="fas fa-stream"></i></button>
+            <button type="button" class="ae-vt-btn active" id="btnCompact" onclick="setView('compact')" title="Compact view"><i class="fas fa-list"></i></button>
+            <button type="button" class="ae-vt-btn" id="btnTable" onclick="setView('table')" title="Table view"><i class="fas fa-table"></i></button>
+            <button type="button" class="ae-vt-btn" id="btnTimeline" onclick="setView('timeline')" title="Timeline view"><i class="fas fa-stream"></i></button>
+        </span>
+        <span class="ae-refresh-grp">
+            <button type="button" class="ae-vt-btn" id="refreshBtn" onclick="manualRefresh(event)" title="Refresh results"><i class="fas fa-sync-alt" id="refreshIcon"></i></button>
+            <button type="button" class="ae-vt-btn" id="arTrigger" onclick="toggleArMenu(event)" title="Auto-refresh options">&#x22EF;</button>
+            <div class="ae-ar-menu" id="arMenu">
+                <div class="ae-ar-opt active" data-ms="0">&#x2715; Off</div>
+                <div class="ae-ar-sep"></div>
+                <div class="ae-ar-opt" data-ms="10000">Every 10 s</div>
+                <div class="ae-ar-opt" data-ms="30000">Every 30 s</div>
+                <div class="ae-ar-opt" data-ms="60000">Every 1 min</div>
+                <div class="ae-ar-opt" data-ms="300000">Every 5 min</div>
+                <div class="ae-ar-sep"></div>
+                <div class="ae-ar-opt" data-ms="custom">Custom&#x2026;</div>
+            </div>
         </span>
         <span class="ae-result-meta" id="resultMeta"></span>
     </div>
@@ -340,7 +456,7 @@
 <?php View::section('scripts'); ?>
 <script>
 const CSRF = document.querySelector('meta[name="csrf-token"]')?.content || '';
-let currentView = 'table';
+let currentView = 'compact';
 let lastSpec = null;
 let lastSqlRows = null;
 
@@ -364,6 +480,7 @@ function resetResults() {
 
 function setView(v) {
     currentView = v;
+    document.getElementById('btnCompact').classList.toggle('active', v==='compact');
     document.getElementById('btnTable').classList.toggle('active', v==='table');
     document.getElementById('btnTimeline').classList.toggle('active', v==='timeline');
     if (lastSpec) runQuery();
@@ -403,6 +520,22 @@ function buildSpec() {
     if(ue)where.push({col:'user_email',op:'LIKE',val:'%'+ue+'%'});
     const kw=document.getElementById('fSearch').value.trim();
     if(kw)where.push({col:'readable_message',op:'LIKE',val:'%'+kw+'%'});
+    // Exclusion filter chips (grouped by column → NOT IN)
+    const exChips = [...document.querySelectorAll('#exChips .ae-mf-chip')];
+    const exByCol = {};
+    exChips.forEach(chip => {
+        const col = chip.dataset.col, val = chip.dataset.val;
+        if (col && val) { if (!exByCol[col]) exByCol[col] = []; exByCol[col].push(val); }
+    });
+    Object.entries(exByCol).forEach(([col, vals]) => where.push({col, op:'NOT IN', val:vals}));
+    // Inclusion filter chips (grouped by column → IN)
+    const inChips = [...document.querySelectorAll('#inChips .ae-mf-chip')];
+    const inByCol = {};
+    inChips.forEach(chip => {
+        const col = chip.dataset.col, val = chip.dataset.val;
+        if (col && val) { if (!inByCol[col]) inByCol[col] = []; inByCol[col].push(val); }
+    });
+    Object.entries(inByCol).forEach(([col, vals]) => where.push({col, op:'IN', val:vals}));
     const gbRaw=document.getElementById('fGroupBy').value.trim();
     return {
         select:select.length?select:['*'],
@@ -481,6 +614,7 @@ function showResults(json) {
         return;
     }
     if(currentView==='timeline') renderTimeline(json.data);
+    else if(currentView==='compact') renderCompact(json.data);
     else renderTable(json.data);
 }
 
@@ -549,7 +683,7 @@ function diffCell(oldVal,newVal,idx){
             html+='<span class="diff-new">+ '+esc(c.k)+': '+esc(JSON.stringify(c.nv))+'</span>';
         });
         if(changes.length>2){
-            html+='<button class="diff-toggle" data-diffid="'+esc(id)+'">+'+(changes.length-2)+' more</button>';
+            html+='<button type="button" class="diff-toggle" data-diffid="'+esc(id)+'">+'+(changes.length-2)+' more</button>';
         }
         return html+'</div>';
     }catch(e){
@@ -574,12 +708,143 @@ document.addEventListener('click', function(e) {
     el.innerHTML=html;
 });
 
+// Render the DB-stored `changes` JSON column (field-level diff format: {field:{old,new}})
+function renderDbChanges(changesJson, idx) {
+    try {
+        const data = typeof changesJson === 'string' ? JSON.parse(changesJson) : changesJson;
+        if (!data || typeof data !== 'object') return '<span style="opacity:.35">\u2014</span>';
+        const fields = Object.keys(data);
+        if (!fields.length) return '<span style="opacity:.35">\u2014</span>';
+        const id = 'dbc' + idx;
+        const changes = fields.map(k => ({k, ov: data[k]['old'], nv: data[k]['new']}));
+        diffStore[id] = changes;
+        const visible = changes.slice(0, 2);
+        let html = '<div class="diff-wrap" id="' + id + '">';
+        visible.forEach(c => {
+            const oldStr = c.ov != null ? JSON.stringify(c.ov) : '(empty)';
+            const newStr = c.nv != null ? JSON.stringify(c.nv) : '(empty)';
+            html += '<span class="diff-old">\u2212 ' + esc(c.k) + ': ' + esc(oldStr) + '</span>';
+            html += '<span class="diff-new">+ ' + esc(c.k) + ': ' + esc(newStr) + '</span>';
+        });
+        if (changes.length > 2) {
+            html += '<button type="button" class="diff-toggle" data-diffid="' + esc(id) + '">+' + (changes.length - 2) + ' more</button>';
+        }
+        return html + '</div>';
+    } catch(e) {
+        return '<span style="font-size:10px;color:var(--text-m);">' + esc(String(changesJson).slice(0, 60)) + '</span>';
+    }
+}
+
+// ─── Compact view ────────────────────────────────────────────────────────────
+// Renders a dense single-line-per-event table with a + button to expand raw JSON.
+let compactExpanded = {};
+
+function renderCompact(rows) {
+    if (!rows || !rows.length) {
+        document.getElementById('resultsArea').innerHTML='<div class="ae-placeholder"><i class="fas fa-inbox"></i><strong>No rows found.</strong></div>';
+        return;
+    }
+    compactExpanded = {};
+    const cols = Object.keys(rows[0]);
+    // Core columns always shown inline (in priority order)
+    const INLINE = ['id','action','module','user_name','user_id','entity_name','resource_type','status','ip_address','created_at'];
+    // Detail columns: everything not in INLINE (plus user_email which is a join helper)
+    const DETAIL_SKIP = new Set([...INLINE, 'user_email']);
+    const COMPACT_TRUNC = 40; // max chars for inline cell truncation
+
+    const inline = INLINE.filter(c => cols.includes(c));
+    const hasUser = cols.includes('user_email') || cols.includes('user_id');
+
+    let html = '<table class="ae-compact"><thead><tr>';
+    html += '<th style="width:22px;"></th>'; // expand button col
+    inline.forEach(c => { html += '<th>' + esc(c.replace(/_/g,' ')) + '</th>'; });
+    html += '</tr></thead><tbody>';
+
+    rows.forEach((row, idx) => {
+        const rid = 'cr' + idx;
+        const action = String(row['action'] || '').toLowerCase();
+        const status = String(row['status'] || '').toLowerCase();
+        let sevClass = 'sev-info';
+        if (status === 'failure' || action.includes('fail') || action.includes('block')) sevClass = 'sev-error';
+        else if (action.includes('delet')) sevClass = 'sev-warn';
+        else if (action.includes('creat') || action.includes('login') || status === 'success') sevClass = 'sev-ok';
+
+        html += '<tr>';
+        html += '<td style="padding:3px 8px;"><button type="button" class="ae-exp-btn" data-crid="' + rid + '" title="Expand details">+</button></td>';
+        inline.forEach(c => {
+            const raw = row[c];
+            if (raw == null || raw === '') { html += '<td><span style="opacity:.3">\u2014</span></td>'; return; }
+            const s = String(raw);
+            if (c === 'action')     { html += '<td>' + actionBadge(s) + '</td>'; return; }
+            if (c === 'status')     { html += '<td>' + statusBadge(s) + '</td>'; return; }
+            if (c === 'module')     { html += '<td>' + moduleBadge(s) + '</td>'; return; }
+            if (c === 'created_at') { html += '<td style="font-size:10px;color:var(--text-m);">' + esc(s) + '</td>'; return; }
+            if (c === 'user_name')  { html += '<td>' + userCell(s, row['user_email'] || '') + '</td>'; return; }
+            if (c === 'user_id')    { html += '<td style="font-family:monospace;font-size:10px;color:var(--text-m);">#' + esc(s) + '</td>'; return; }
+            if (c === 'ip_address') { html += '<td><span class="ip-badge">' + esc(s) + '</span></td>'; return; }
+            html += '<td title="' + esc(s) + '">' + esc(s.length > COMPACT_TRUNC ? s.slice(0, COMPACT_TRUNC - 2) + '\u2026' : s) + '</td>';
+        });
+        html += '</tr>';
+
+        // Detail/raw expansion row (hidden initially)
+        const detail = {};
+        cols.forEach(c => { detail[c] = row[c]; });
+        html += '<tr class="ae-exp-row" id="' + rid + '" style="display:none;">';
+        html += '<td></td><td colspan="' + inline.length + '">';
+        // Field grid
+        html += '<div style="display:flex;flex-wrap:wrap;gap:8px 18px;margin-bottom:8px;">';
+        cols.forEach(c => {
+            if (DETAIL_SKIP.has(c)) return;
+            const v = row[c];
+            if (v == null || v === '') return;
+            const s = String(v);
+            const isJson = s.startsWith('{') || s.startsWith('[');
+            let valHtml;
+            if (isJson) {
+                try { valHtml = '<pre class="ae-raw-pre">' + esc(JSON.stringify(JSON.parse(s), null, 2)) + '</pre>'; }
+                catch(e) { valHtml = '<span>' + esc(s) + '</span>'; }
+            } else {
+                valHtml = '<span style="word-break:break-all;">' + esc(s) + '</span>';
+            }
+            html += '<div style="min-width:180px;max-width:360px;flex:1;">'
+                  + '<div style="font-size:9.5px;font-weight:700;color:var(--text-m);text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px;">' + esc(c.replace(/_/g,' ')) + '</div>'
+                  + valHtml + '</div>';
+        });
+        html += '</div>';
+        // Changes diff
+        if (row['changes'] || row['old_values'] || row['new_values']) {
+            const diffHtml = row['changes'] ? renderDbChanges(row['changes'], idx) : diffCell(row['old_values'], row['new_values'], idx);
+            html += '<div style="margin-top:4px;">' + diffHtml + '</div>';
+        }
+        // Raw JSON
+        html += '<details style="margin-top:6px;"><summary style="font-size:10px;cursor:pointer;color:var(--text-m);">Raw JSON</summary>'
+              + '<pre class="ae-raw-pre" style="margin-top:4px;max-height:220px;overflow-y:auto;">' + esc(JSON.stringify(row, null, 2)) + '</pre></details>';
+        html += '</td></tr>';
+    });
+
+    document.getElementById('resultsArea').innerHTML = html + '</tbody></table>';
+}
+
+// Event delegation for compact expand buttons
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('button[data-crid]');
+    if (!btn) return;
+    const id = btn.dataset.crid;
+    const row = document.getElementById(id);
+    if (!row) return;
+    const expanded = row.style.display !== 'none';
+    row.style.display = expanded ? 'none' : '';
+    btn.textContent = expanded ? '+' : '\u2212';
+});
+
 function renderTable(rows){
     const cols=Object.keys(rows[0]);
     const isFullLog=cols.includes('action')&&cols.includes('created_at');
     let dc=cols.filter(c=>c!=='user_email'&&c!=='user_id');
+    // If old_values/new_values are present, replace them with a unified "changes" column.
+    // Also remove any existing "changes" DB column to avoid duplicates before re-appending.
     const hasDiff=cols.includes('old_values')&&cols.includes('new_values');
-    if(hasDiff)dc=[...dc.filter(c=>c!=='old_values'&&c!=='new_values'),'changes'];
+    if(hasDiff)dc=[...dc.filter(c=>c!=='old_values'&&c!=='new_values'&&c!=='changes'),'changes'];
 
     let html='<table class="ae-table"><thead><tr>';
     if(isFullLog)html+='<th style="width:12px;"></th>';
@@ -597,7 +862,13 @@ function renderTable(rows){
         html+='<tr>';
         if(isFullLog)html+='<td style="padding-right:0;vertical-align:middle;"><span class="sev '+sevClass+'"></span></td>';
         dc.forEach(c=>{
-            if(c==='changes'){html+='<td>'+diffCell(row['old_values'],row['new_values'],idx)+'</td>';return;}
+            if(c==='changes'){
+                // Prefer the DB-computed changes JSON column if present and non-null
+                const dbChanges=row['changes'];
+                if(dbChanges){html+='<td>'+renderDbChanges(dbChanges,idx)+'</td>';}
+                else{html+='<td>'+diffCell(row['old_values'],row['new_values'],idx)+'</td>';}
+                return;
+            }
             const raw=row[c];
             if(raw==null||raw===''){html+='<td><span style="opacity:.35">\u2014</span></td>';return;}
             const s=String(raw);
@@ -643,7 +914,10 @@ function renderTimeline(rows){
         if(row['ip_address'])html+='<span><i class="fas fa-network-wired"></i> <span class="ip-badge">'+esc(row['ip_address'])+'</span></span>';
         if(row['created_at'])html+='<span><i class="fas fa-clock"></i> '+tsCell(row['created_at'])+'</span>';
         html+='</div>';
-        if(row['old_values']||row['new_values'])html+='<div style="margin-top:6px;">'+diffCell(row['old_values'],row['new_values'],idx)+'</div>';
+        if(row['changes']||row['old_values']||row['new_values']){
+            const diffHtml=row['changes']?renderDbChanges(row['changes'],idx):diffCell(row['old_values'],row['new_values'],idx);
+            html+='<div style="margin-top:6px;">'+diffHtml+'</div>';
+        }
         html+='</div></div>';
     });
     document.getElementById('resultsArea').innerHTML=html+'</div>';
@@ -689,7 +963,7 @@ function renderSaved(){
     list.innerHTML='';
     saved.forEach((item,idx)=>{
         const d=document.createElement('div');d.className='sv-item';
-        d.innerHTML='<span class="sv-name" title="'+esc(item.name)+'">'+esc(item.name)+'</span><button class="sv-load" onclick="loadSaved('+idx+')">Load</button><button class="sv-del" onclick="delSaved('+idx+')">\u2715</button>';
+        d.innerHTML='<span class="sv-name" title="'+esc(item.name)+'">'+esc(item.name)+'</span><button type="button" class="sv-load" onclick="loadSaved('+idx+')">Load</button><button type="button" class="sv-del" onclick="delSaved('+idx+')">\u2715</button>';
         list.appendChild(d);
     });
 }
@@ -717,7 +991,11 @@ function clearAll(resetResults=true){
     const inp=document.createElement('input');inp.type='text';inp.className='ae-col-in sel-expr';
     inp.value='*';inp.setAttribute('list','dlCols');inp.ondblclick=()=>inp.remove();
     document.getElementById('selectWrap').appendChild(inp);
+    // Reset results first so lastSpec=null, then clear chips silently
     if(resetResults){resetResults2();}
+    // Clear exclusion and inclusion chips silently (no re-run, results already wiped)
+    document.getElementById('exChips').innerHTML = '';
+    document.getElementById('inChips').innerHTML = '';
 }
 function resetResults2(){
     document.getElementById('sqlBar').style.display='none';
@@ -726,12 +1004,142 @@ function resetResults2(){
     lastSpec=null;
 }
 
+// ─── Multi-field Exclusion / Inclusion Filters ───────────────────────────────
+const FIELD_OPTS = {
+    action:        <?= json_encode(array_column($actions, 'action'), JSON_UNESCAPED_UNICODE) ?>,
+    module:        <?= json_encode(array_map(fn($m) => $m['module'], $modules), JSON_UNESCAPED_UNICODE) ?>,
+    status:        ['success','failure','pending'],
+    resource_type: <?= json_encode(array_column($resourceTypes, 'resource_type'), JSON_UNESCAPED_UNICODE) ?>,
+    user_name:     <?= json_encode(array_column($users, 'name'), JSON_UNESCAPED_UNICODE) ?>,
+    user_id:       <?= json_encode(array_column($users, 'id'), JSON_UNESCAPED_UNICODE) ?>,
+    entity_name:   <?= json_encode(array_column($entityNames, 'entity_name'), JSON_UNESCAPED_UNICODE) ?>,
+    ip_address:    <?= json_encode(array_column($ipAddresses, 'ip_address'), JSON_UNESCAPED_UNICODE) ?>,
+    id:            [],
+};
+
+function switchMfDatalist(dlId, selId, inputId) {
+    const col = document.getElementById(selId).value;
+    const dl = document.getElementById(dlId);
+    dl.innerHTML = (FIELD_OPTS[col] || []).map(v => '<option value="' + esc(String(v)) + '">').join('');
+    document.getElementById(inputId).value = '';
+}
+
+function addMfChip(chipsId, selId, inputId, type) {
+    const col = document.getElementById(selId).value;
+    const val = document.getElementById(inputId).value.trim();
+    if (!col || !val) return;
+    // Prevent duplicate col+val
+    const dup = [...document.querySelectorAll('#' + chipsId + ' .ae-mf-chip')]
+        .some(c => c.dataset.col === col && c.dataset.val === val);
+    if (dup) { document.getElementById(inputId).value = ''; return; }
+    const chip = document.createElement('span');
+    chip.className = 'ae-mf-chip ae-mf-chip-' + type;
+    chip.dataset.col = col;
+    chip.dataset.val = val;
+    const colLabel = col.replace(/_/g, ' ');
+    chip.innerHTML = '<span class="ae-mf-chip-label">' + esc(colLabel) + ': ' + esc(val) + '</span>'
+        + ' <button type="button" class="ae-mf-chip-del" onclick="this.closest(\'.ae-mf-chip\').remove()">&#x2715;</button>';
+    document.getElementById(chipsId).appendChild(chip);
+    document.getElementById(inputId).value = '';
+}
+
+function clearMfChips(chipsId) {
+    const had = document.querySelectorAll('#' + chipsId + ' .ae-mf-chip').length > 0;
+    document.getElementById(chipsId).innerHTML = '';
+    if (had && lastSpec) runQuery();
+}
+
 function esc(s){
     return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+// ─── Refresh & Auto-refresh ───────────────────────────────────────────────────
+let arTimer = null;
+let arIntervalMs = 0;
+let arCountdown = 0;
+let arCountdownTimer = null;
+
+function manualRefresh(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const icon = document.getElementById('refreshIcon');
+    icon.classList.add('fa-spin');
+    const sqlPanel = document.getElementById('sqlPanel');
+    const p = sqlPanel && sqlPanel.classList.contains('visible') ? runRawSql() : runQuery();
+    Promise.resolve(p).finally(() => { setTimeout(() => icon.classList.remove('fa-spin'), 300); });
+}
+
+function toggleArMenu(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    document.getElementById('arMenu').classList.toggle('open');
+}
+
+function setAutoRefresh(ms) {
+    // Clear existing timers
+    if (arTimer) { clearInterval(arTimer); arTimer = null; }
+    if (arCountdownTimer) { clearInterval(arCountdownTimer); arCountdownTimer = null; }
+    arIntervalMs = ms;
+
+    // Update active state on options
+    document.querySelectorAll('.ae-ar-opt').forEach(o => {
+        o.classList.toggle('active', parseInt(o.dataset.ms) === ms || (ms === 0 && o.dataset.ms === '0'));
+    });
+
+    // Update the ⋯ button appearance
+    const trigger = document.getElementById('arTrigger');
+    if (ms > 0) {
+        trigger.classList.add('ar-on');
+        // Start countdown display
+        arCountdown = ms / 1000;
+        updateArBadge();
+        arCountdownTimer = setInterval(() => {
+            arCountdown = Math.max(0, arCountdown - 1);
+            updateArBadge();
+        }, 1000);
+        // Start refresh interval
+        arTimer = setInterval(() => {
+            arCountdown = ms / 1000;
+            const icon = document.getElementById('refreshIcon');
+            icon.classList.add('fa-spin');
+            const sqlPanel = document.getElementById('sqlPanel');
+            const p = sqlPanel && sqlPanel.classList.contains('visible') ? runRawSql() : runQuery();
+            Promise.resolve(p).finally(() => setTimeout(() => icon.classList.remove('fa-spin'), 300));
+        }, ms);
+    } else {
+        trigger.classList.remove('ar-on');
+        updateArBadge(true);
+    }
+    document.getElementById('arMenu').classList.remove('open');
+}
+
+function updateArBadge(clear) {
+    const trigger = document.getElementById('arTrigger');
+    // Remove existing badge
+    const existing = trigger.querySelector('.ae-ar-badge');
+    if (existing) existing.remove();
+    if (clear || arIntervalMs === 0) { trigger.innerHTML = '&#x22EF;'; return; }
+    const s = arCountdown;
+    const label = s >= 60 ? Math.ceil(s/60)+'m' : s+'s';
+    trigger.innerHTML = '&#x22EF;<span class="ae-ar-badge">'+label+'</span>';
+}
+
+// Close auto-refresh menu when clicking outside
+document.addEventListener('click', function(e) {
+    const menu = document.getElementById('arMenu');
+    const trigger = document.getElementById('arTrigger');
+    if (menu && trigger && !menu.contains(e.target) && !trigger.contains(e.target)) {
+        menu.classList.remove('open');
+    }
+});
+
+// Handle auto-refresh option clicks (registered in main DOMContentLoaded below)
+
 document.addEventListener('DOMContentLoaded',()=>{
     renderSaved();
+    // Populate datalists with default field options
+    switchMfDatalist('dlEx', 'exColSel', 'exInput');
+    switchMfDatalist('dlIn', 'inColSel', 'inInput');
     document.addEventListener('keydown',e=>{
         if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){
             e.preventDefault();
@@ -739,6 +1147,22 @@ document.addEventListener('DOMContentLoaded',()=>{
             if(sqlPanel.classList.contains('visible'))runRawSql();
             else runQuery();
         }
+    });
+    // Auto-refresh option click handlers
+    document.querySelectorAll('.ae-ar-opt').forEach(opt => {
+        opt.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const ms = opt.dataset.ms;
+            if (ms === 'custom') {
+                const val = prompt('Auto-refresh interval (seconds):', '60');
+                if (val === null) return;
+                const n = parseInt(val);
+                if (!n || n < 5) { alert('Minimum interval is 5 seconds.'); return; }
+                setAutoRefresh(n * 1000);
+            } else {
+                setAutoRefresh(parseInt(ms));
+            }
+        });
     });
     document.getElementById('resultsArea').innerHTML='<div class="ae-placeholder"><i class="fas fa-spinner fa-spin"></i><strong>Loading latest events...</strong></div>';
     runQuery();
