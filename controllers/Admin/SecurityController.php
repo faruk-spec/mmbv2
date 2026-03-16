@@ -18,7 +18,7 @@ class SecurityController extends BaseController
     public function __construct()
     {
         $this->requireAuth();
-        $this->requirePermission('security');
+        $this->requirePermissionGroup('security');
     }
     
     /**
@@ -26,6 +26,7 @@ class SecurityController extends BaseController
      */
     public function index(): void
     {
+        $this->requirePermission('security');
         $db = Database::getInstance();
         
         // Get comprehensive security stats
@@ -101,6 +102,7 @@ class SecurityController extends BaseController
      */
     public function blockedIps(): void
     {
+        $this->requirePermission('security.blocked_ips');
         $db = Database::getInstance();
         
         $blockedIps = $db->fetchAll(
@@ -118,6 +120,7 @@ class SecurityController extends BaseController
      */
     public function blockIp(): void
     {
+        $this->requirePermission('security.blocked_ips');
         if (!$this->validateCsrf()) {
             $this->flash('error', 'Invalid request.');
             $this->redirect('/admin/security/blocked-ips');
@@ -167,6 +170,7 @@ class SecurityController extends BaseController
      */
     public function unblockIp(string $id): void
     {
+        $this->requirePermission('security.blocked_ips');
         if (!$this->validateCsrf()) {
             $this->flash('error', 'Invalid request.');
             $this->redirect('/admin/security/blocked-ips');
@@ -196,6 +200,7 @@ class SecurityController extends BaseController
      */
     public function failedLogins(): void
     {
+        $this->requirePermission('security.failed_logins');
         $db = Database::getInstance();
         
         $page = max(1, (int) $this->input('page', 1));
@@ -225,6 +230,7 @@ class SecurityController extends BaseController
      */
     public function autoBlock(): void
     {
+        $this->requirePermission('security');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->json(['success' => false, 'message' => 'Invalid request method']);
             return;
@@ -299,6 +305,7 @@ class SecurityController extends BaseController
      */
     public function getStats(): void
     {
+        $this->requirePermission('security');
         $db = Database::getInstance();
         
         try {

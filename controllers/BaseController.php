@@ -132,6 +132,25 @@ abstract class BaseController
         if (!Auth::hasPermission($key)) {
             $this->flash('error', 'You do not have permission to access that section.');
             $this->redirect('/dashboard');
+            exit;
+        }
+    }
+
+    /**
+     * Gate a controller whose features are split across several sub-permission
+     * keys (e.g. 'qr', 'qr.analytics', 'qr.blocked_links' …).
+     *
+     * Passes if the user holds the exact key OR any key that starts with
+     * "$prefix." – i.e. they have at least one permission in the group.
+     * Individual action methods should then call requirePermission('qr.analytics')
+     * etc. to enforce fine-grained access.
+     */
+    protected function requirePermissionGroup(string $prefix): void
+    {
+        if (!Auth::hasPermissionGroup($prefix)) {
+            $this->flash('error', 'You do not have permission to access that section.');
+            $this->redirect('/dashboard');
+            exit;
         }
     }
 
