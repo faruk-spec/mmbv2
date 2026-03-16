@@ -23,7 +23,7 @@
         </p>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <?php $exportParams = ['action'=>$currentAction,'module'=>$currentModule,'user_id'=>$currentUserId,'status'=>$currentStatus,'entity_id'=>$currentEntityId??'','entity_name'=>$currentEntityName??'','date_from'=>$dateFrom,'date_to'=>$dateTo,'search'=>$search]; ?>
+        <?php $exportParams = ['action'=>$currentAction,'module'=>$currentModule,'user_id'=>$currentUserId,'email'=>$currentEmail??'','status'=>$currentStatus,'entity_id'=>$currentEntityId??'','entity_name'=>$currentEntityName??'','date_from'=>$dateFrom,'date_to'=>$dateTo,'search'=>$search]; ?>
         <a href="/admin/logs/activity/export?format=csv&<?= http_build_query($exportParams) ?>"
            class="btn btn-sm btn-secondary"><i class="fas fa-file-csv"></i> CSV</a>
         <a href="/admin/logs/activity/export?format=json&<?= http_build_query($exportParams) ?>"
@@ -161,6 +161,10 @@
                     <label style="display:block;margin-bottom:4px;font-size:11px;color:var(--text-secondary);">User ID</label>
                     <input type="number" name="user_id" class="form-input" placeholder="User ID" value="<?= View::e($currentUserId) ?>">
                 </div>
+                <div style="min-width:160px;">
+                    <label style="display:block;margin-bottom:4px;font-size:11px;color:var(--text-secondary);">Email</label>
+                    <input type="email" name="email" class="form-input" placeholder="user@example.com" value="<?= View::e($currentEmail ?? '') ?>">
+                </div>
                 <div style="min-width:110px;">
                     <label style="display:block;margin-bottom:4px;font-size:11px;color:var(--text-secondary);">Entity ID</label>
                     <input type="text" name="entity_id" class="form-input" placeholder="e.g. 42" value="<?= View::e($currentEntityId ?? '') ?>">
@@ -228,6 +232,9 @@
                                 <td>
                                     <div style="font-weight:500;font-size:13px;"><?= View::e($displayName) ?></div>
                                     <div style="font-size:11px;color:var(--text-secondary);"><?= View::e($log['email'] ?? '') ?></div>
+                                    <?php if (!empty($log['user_id'])): ?>
+                                        <span style="font-size:10px;background:var(--bg-secondary);padding:1px 6px;border-radius:4px;color:var(--text-secondary);">ID #<?= (int)$log['user_id'] ?></span>
+                                    <?php endif; ?>
                                     <?php if (!empty($log['user_role'])): ?>
                                         <span style="font-size:10px;background:var(--bg-secondary);padding:1px 6px;border-radius:4px;color:var(--text-secondary);"><?= View::e($log['user_role']) ?></span>
                                     <?php endif; ?>
@@ -354,7 +361,7 @@
             <!-- Pagination -->
             <?php if ($pagination['total'] > 1): ?>
                 <div style="display:flex;justify-content:center;gap:8px;padding:14px;">
-                    <?php $q = http_build_query(['search'=>$search,'action'=>$currentAction,'module'=>$currentModule,'category'=>$category,'status'=>$currentStatus,'user_id'=>$currentUserId,'entity_id'=>$currentEntityId??'','entity_name'=>$currentEntityName??'','date_from'=>$dateFrom,'date_to'=>$dateTo]); ?>
+                    <?php $q = http_build_query(['search'=>$search,'action'=>$currentAction,'module'=>$currentModule,'category'=>$category,'status'=>$currentStatus,'user_id'=>$currentUserId,'email'=>$currentEmail??'','entity_id'=>$currentEntityId??'','entity_name'=>$currentEntityName??'','date_from'=>$dateFrom,'date_to'=>$dateTo]); ?>
                     <?php if ($pagination['current'] > 1): ?>
                         <a href="?page=<?= $pagination['current']-1 ?>&<?= $q ?>" class="btn btn-sm btn-secondary">← Prev</a>
                     <?php endif; ?>
@@ -475,7 +482,7 @@ function toggleDetail(id) {
 }
 
 // --- If any filter is active, auto-switch to Timeline tab ---
-<?php if ($currentAction || $currentModule || $currentStatus || $currentUserId || $dateFrom || $dateTo || $search): ?>
+<?php if ($currentAction || $currentModule || $currentStatus || $currentUserId || ($currentEmail??'') || $dateFrom || $dateTo || $search): ?>
 document.querySelectorAll('.act-tab').forEach(b => b.classList.remove('active'));
 document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
 document.querySelector('[data-tab="timeline"]').classList.add('active');

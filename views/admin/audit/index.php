@@ -120,6 +120,15 @@
 .ae-tl-msg{font-size:12px;color:var(--text);margin:4px 0;}
 .ae-tl-meta{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;}
 .ae-tl-meta span{font-size:10.5px;color:var(--text-m);}
+/* Compact view */
+.ae-compact{width:100%;border-collapse:collapse;font-size:11.5px;}
+.ae-compact th{background:var(--bg-s);padding:6px 10px;text-align:left;font-weight:600;font-size:10px;white-space:nowrap;position:sticky;top:0;z-index:2;border-bottom:2px solid var(--border);color:var(--text-m);text-transform:uppercase;letter-spacing:.5px;}
+.ae-compact td{padding:4px 10px;border-bottom:1px solid var(--border);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px;vertical-align:middle;font-size:11px;}
+.ae-compact tbody tr:hover{background:rgba(0,240,255,.04);}
+.ae-compact tr.ae-exp-row td{white-space:normal;overflow:visible;max-width:none;background:var(--bg-s);padding:10px 14px;font-size:11px;}
+.ae-exp-btn{background:none;border:1px solid var(--border);color:var(--cyan);border-radius:4px;padding:1px 6px;font-size:11px;cursor:pointer;font-family:inherit;line-height:1.4;transition:.1s;flex-shrink:0;}
+.ae-exp-btn:hover{background:rgba(0,240,255,.1);}
+.ae-raw-pre{font-family:'JetBrains Mono',monospace;font-size:10px;white-space:pre-wrap;word-break:break-word;color:var(--text-m);margin:0;}
 @media(max-width:760px){.ae-wrap{grid-template-columns:1fr;}.ae-sidebar{max-height:45vh;height:auto;}}
 </style>
 
@@ -319,9 +328,11 @@
             <option value="entity_name"><option value="changes">
         </datalist>
         <span style="display:flex;gap:0;">
-            <button class="ae-vt-btn active" id="btnTable" onclick="setView('table')" title="Table view"><i class="fas fa-table"></i></button>
+            <button class="ae-vt-btn active" id="btnCompact" onclick="setView('compact')" title="Compact view"><i class="fas fa-list"></i></button>
+            <button class="ae-vt-btn" id="btnTable" onclick="setView('table')" title="Table view"><i class="fas fa-table"></i></button>
             <button class="ae-vt-btn" id="btnTimeline" onclick="setView('timeline')" title="Timeline view"><i class="fas fa-stream"></i></button>
         </span>
+        <button class="ae-sm-btn" style="padding:4px 10px;margin-left:4px;" onclick="runQuery()" title="Refresh results"><i class="fas fa-sync-alt"></i></button>
         <span class="ae-result-meta" id="resultMeta"></span>
     </div>
 
@@ -341,7 +352,7 @@
 <?php View::section('scripts'); ?>
 <script>
 const CSRF = document.querySelector('meta[name="csrf-token"]')?.content || '';
-let currentView = 'table';
+let currentView = 'compact';
 let lastSpec = null;
 let lastSqlRows = null;
 
@@ -365,6 +376,7 @@ function resetResults() {
 
 function setView(v) {
     currentView = v;
+    document.getElementById('btnCompact').classList.toggle('active', v==='compact');
     document.getElementById('btnTable').classList.toggle('active', v==='table');
     document.getElementById('btnTimeline').classList.toggle('active', v==='timeline');
     if (lastSpec) runQuery();
@@ -482,6 +494,7 @@ function showResults(json) {
         return;
     }
     if(currentView==='timeline') renderTimeline(json.data);
+    else if(currentView==='compact') renderCompact(json.data);
     else renderTable(json.data);
 }
 
@@ -601,6 +614,104 @@ function renderDbChanges(changesJson, idx) {
         return '<span style="font-size:10px;color:var(--text-m);">' + esc(String(changesJson).slice(0, 60)) + '</span>';
     }
 }
+
+// ─── Compact view ────────────────────────────────────────────────────────────
+// Renders a dense single-line-per-event table with a + button to expand raw JSON.
+let compactExpanded = {};
+
+function renderCompact(rows) {
+    compactExpanded = {};
+    const cols = Object.keys(rows[0]);
+    // Core columns always shown inline (in priority order)
+    const INLINE = ['id','action','module','user_name','user_id','entity_name','resource_type','status','ip_address','created_at'];
+    // Detail columns: everything not in INLINE (plus user_email which is a join helper)
+    const DETAIL_SKIP = new Set([...INLINE, 'user_email']);
+    const COMPACT_TRUNC = 40; // max chars for inline cell truncation
+
+    const inline = INLINE.filter(c => cols.includes(c));
+    const hasUser = cols.includes('user_email') || cols.includes('user_id');
+
+    let html = '<table class="ae-compact"><thead><tr>';
+    html += '<th style="width:22px;"></th>'; // expand button col
+    inline.forEach(c => { html += '<th>' + esc(c.replace(/_/g,' ')) + '</th>'; });
+    html += '</tr></thead><tbody>';
+
+    rows.forEach((row, idx) => {
+        const rid = 'cr' + idx;
+        const action = String(row['action'] || '').toLowerCase();
+        const status = String(row['status'] || '').toLowerCase();
+        let sevClass = 'sev-info';
+        if (status === 'failure' || action.includes('fail') || action.includes('block')) sevClass = 'sev-error';
+        else if (action.includes('delet')) sevClass = 'sev-warn';
+        else if (action.includes('creat') || action.includes('login') || status === 'success') sevClass = 'sev-ok';
+
+        html += '<tr>';
+        html += '<td style="padding:3px 8px;"><button class="ae-exp-btn" data-crid="' + rid + '" title="Expand details">+</button></td>';
+        inline.forEach(c => {
+            const raw = row[c];
+            if (raw == null || raw === '') { html += '<td><span style="opacity:.3">\u2014</span></td>'; return; }
+            const s = String(raw);
+            if (c === 'action')     { html += '<td>' + actionBadge(s) + '</td>'; return; }
+            if (c === 'status')     { html += '<td>' + statusBadge(s) + '</td>'; return; }
+            if (c === 'module')     { html += '<td>' + moduleBadge(s) + '</td>'; return; }
+            if (c === 'created_at') { html += '<td style="font-size:10px;color:var(--text-m);">' + esc(s) + '</td>'; return; }
+            if (c === 'user_name')  { html += '<td>' + userCell(s, row['user_email'] || '') + '</td>'; return; }
+            if (c === 'user_id')    { html += '<td style="font-family:monospace;font-size:10px;color:var(--text-m);">#' + esc(s) + '</td>'; return; }
+            if (c === 'ip_address') { html += '<td><span class="ip-badge">' + esc(s) + '</span></td>'; return; }
+            html += '<td title="' + esc(s) + '">' + esc(s.length > COMPACT_TRUNC ? s.slice(0, COMPACT_TRUNC - 2) + '\u2026' : s) + '</td>';
+        });
+        html += '</tr>';
+
+        // Detail/raw expansion row (hidden initially)
+        const detail = {};
+        cols.forEach(c => { detail[c] = row[c]; });
+        html += '<tr class="ae-exp-row" id="' + rid + '" style="display:none;">';
+        html += '<td></td><td colspan="' + inline.length + '">';
+        // Field grid
+        html += '<div style="display:flex;flex-wrap:wrap;gap:8px 18px;margin-bottom:8px;">';
+        cols.forEach(c => {
+            if (DETAIL_SKIP.has(c)) return;
+            const v = row[c];
+            if (v == null || v === '') return;
+            const s = String(v);
+            const isJson = s.startsWith('{') || s.startsWith('[');
+            let valHtml;
+            if (isJson) {
+                try { valHtml = '<pre class="ae-raw-pre">' + esc(JSON.stringify(JSON.parse(s), null, 2)) + '</pre>'; }
+                catch(e) { valHtml = '<span>' + esc(s) + '</span>'; }
+            } else {
+                valHtml = '<span style="word-break:break-all;">' + esc(s) + '</span>';
+            }
+            html += '<div style="min-width:180px;max-width:360px;flex:1;">'
+                  + '<div style="font-size:9.5px;font-weight:700;color:var(--text-m);text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px;">' + esc(c.replace(/_/g,' ')) + '</div>'
+                  + valHtml + '</div>';
+        });
+        html += '</div>';
+        // Changes diff
+        if (row['changes'] || row['old_values'] || row['new_values']) {
+            const diffHtml = row['changes'] ? renderDbChanges(row['changes'], idx) : diffCell(row['old_values'], row['new_values'], idx);
+            html += '<div style="margin-top:4px;">' + diffHtml + '</div>';
+        }
+        // Raw JSON
+        html += '<details style="margin-top:6px;"><summary style="font-size:10px;cursor:pointer;color:var(--text-m);">Raw JSON</summary>'
+              + '<pre class="ae-raw-pre" style="margin-top:4px;max-height:220px;overflow-y:auto;">' + esc(JSON.stringify(row, null, 2)) + '</pre></details>';
+        html += '</td></tr>';
+    });
+
+    document.getElementById('resultsArea').innerHTML = html + '</tbody></table>';
+}
+
+// Event delegation for compact expand buttons
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('button[data-crid]');
+    if (!btn) return;
+    const id = btn.dataset.crid;
+    const row = document.getElementById(id);
+    if (!row) return;
+    const expanded = row.style.display !== 'none';
+    row.style.display = expanded ? 'none' : '';
+    btn.textContent = expanded ? '+' : '\u2212';
+});
 
 function renderTable(rows){
     const cols=Object.keys(rows[0]);

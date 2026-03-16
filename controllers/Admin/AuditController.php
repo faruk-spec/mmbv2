@@ -25,7 +25,7 @@ class AuditController extends BaseController
         'id', 'user_id', 'action', 'module', 'tenant_id',
         'resource_type', 'resource_id', 'entity_name', 'user_role', 'status',
         'readable_message', 'ip_address', 'device', 'browser',
-        'request_id', 'created_at',
+        'request_id', 'old_values', 'new_values', 'changes', 'created_at',
         // joined columns
         'user_name', 'user_email',
     ];

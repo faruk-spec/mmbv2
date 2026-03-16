@@ -85,6 +85,7 @@ class LogController extends BaseController
 
         $action       = $this->input('action', '');
         $userId       = $this->input('user_id', '');
+        $email        = $this->input('email', '');
         $category     = $this->input('category', '');   // 'admin' | 'user' | ''
         $module       = $this->input('module', '');
         $resourceType = $this->input('resource_type', '');
@@ -97,7 +98,7 @@ class LogController extends BaseController
         $search       = $this->input('search', '');
 
         [$where, $params] = $this->buildWhereClause(
-            $action, $userId, $category, $module, $resourceType, $entityId, $entityName, $tenantId, $status, $dateFrom, $dateTo, $search
+            $action, $userId, $email, $category, $module, $resourceType, $entityId, $entityName, $tenantId, $status, $dateFrom, $dateTo, $search
         );
 
         $logs = $db->fetchAll(
@@ -173,6 +174,7 @@ class LogController extends BaseController
             'statusDistrib'       => $statusDistrib,
             'currentAction'       => $action,
             'currentUserId'       => $userId,
+            'currentEmail'        => $email,
             'currentModule'       => $module,
             'currentResourceType' => $resourceType,
             'currentEntityId'     => $entityId,
@@ -206,6 +208,7 @@ class LogController extends BaseController
 
         $action       = $this->input('action', '');
         $userId       = $this->input('user_id', '');
+        $email        = $this->input('email', '');
         $category     = $this->input('category', '');
         $module       = $this->input('module', '');
         $resourceType = $this->input('resource_type', '');
@@ -218,11 +221,11 @@ class LogController extends BaseController
         $search       = $this->input('search', '');
 
         [$where, $params] = $this->buildWhereClause(
-            $action, $userId, $category, $module, $resourceType, $entityId, $entityName, $tenantId, $status, $dateFrom, $dateTo, $search
+            $action, $userId, $email, $category, $module, $resourceType, $entityId, $entityName, $tenantId, $status, $dateFrom, $dateTo, $search
         );
 
         $logs = $db->fetchAll(
-            "SELECT al.id, al.action, al.module, al.tenant_id, al.resource_type, al.resource_id,
+            "SELECT al.id, al.user_id, al.action, al.module, al.tenant_id, al.resource_type, al.resource_id,
                     al.entity_name, al.user_name AS log_user_name,
                     al.user_role, al.readable_message, al.status,
                     al.old_values, al.new_values, al.changes, al.data,
@@ -298,6 +301,7 @@ class LogController extends BaseController
 
         $action       = $this->input('action', '');
         $userId       = $this->input('user_id', '');
+        $email        = $this->input('email', '');
         $category     = $this->input('category', '');
         $module       = $this->input('module', '');
         $resourceType = $this->input('resource_type', '');
@@ -310,11 +314,11 @@ class LogController extends BaseController
         $search       = $this->input('search', '');
 
         [$where, $params] = $this->buildWhereClause(
-            $action, $userId, $category, $module, $resourceType, $entityId, $entityName, $tenantId, $status, $dateFrom, $dateTo, $search
+            $action, $userId, $email, $category, $module, $resourceType, $entityId, $entityName, $tenantId, $status, $dateFrom, $dateTo, $search
         );
 
         $logs = $db->fetchAll(
-            "SELECT al.id, al.action, al.module, al.tenant_id, al.resource_type, al.resource_id,
+            "SELECT al.id, al.user_id, al.action, al.module, al.tenant_id, al.resource_type, al.resource_id,
                     al.entity_name, al.user_name AS log_user_name,
                     al.user_role, al.readable_message, al.status,
                     al.old_values, al.new_values, al.changes, al.data,
@@ -389,7 +393,7 @@ class LogController extends BaseController
      * export(), and api().
      */
     private function buildWhereClause(
-        string $action, string $userId, string $category,
+        string $action, string $userId, string $email, string $category,
         string $module, string $resourceType, string $entityId, string $entityName,
         string $tenantId, string $status, string $dateFrom, string $dateTo, string $search
     ): array {
@@ -404,6 +408,11 @@ class LogController extends BaseController
         if ($userId) {
             $where   .= ' AND al.user_id = ?';
             $params[] = (int) $userId;
+        }
+
+        if ($email) {
+            $where   .= ' AND u.email LIKE ?';
+            $params[] = "%{$email}%";
         }
 
         if ($module) {
