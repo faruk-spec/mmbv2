@@ -31,16 +31,21 @@
 .sv-name{flex:1;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .sv-load{background:none;border:1px solid var(--border);color:var(--text-m);border-radius:5px;padding:2px 6px;font-size:10px;cursor:pointer;font-family:inherit;}
 .sv-del{background:none;border:none;color:var(--red);cursor:pointer;font-size:12px;padding:0 2px;}
-/* Exclude resource-type filter */
-.ae-rt-input-row{display:flex;gap:5px;align-items:center;}
-.ae-rt-input{flex:1;padding:5px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg-card);color:var(--text);font-size:11px;font-family:inherit;}
-.ae-rt-input:focus{outline:none;border-color:var(--orange);}
-.ae-rt-add-btn{background:none;border:1px solid var(--border);color:var(--text-m);border-radius:6px;padding:4px 9px;font-size:11px;cursor:pointer;font-family:inherit;transition:.12s;flex-shrink:0;}
-.ae-rt-add-btn:hover{border-color:var(--orange);color:var(--orange);}
-.ae-rt-chips{display:flex;flex-wrap:wrap;gap:5px;padding:6px 0 2px;min-height:0;}
-.ae-rt-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 6px 3px 9px;border-radius:20px;border:1px solid var(--orange);background:rgba(255,120,50,.12);font-size:10.5px;color:var(--orange);font-weight:600;line-height:1.4;}
-.ae-rt-chip-del{background:none;border:none;color:var(--orange);cursor:pointer;font-size:13px;padding:0 1px;line-height:1;font-family:inherit;}
-.ae-rt-chip-del:hover{color:#ff4500;}
+/* Multi-field exclusion / inclusion filter */
+.ae-mf-row{display:flex;gap:4px;align-items:center;margin-bottom:6px;}
+.ae-mf-col{flex:0 0 auto;padding:4px 6px;border-radius:6px;border:1px solid var(--border);background:var(--bg-card);color:var(--text);font-size:10.5px;font-family:inherit;max-width:112px;}
+.ae-mf-col:focus{outline:none;border-color:var(--cyan);}
+.ae-mf-val{flex:1;min-width:0;padding:4px 7px;border-radius:6px;border:1px solid var(--border);background:var(--bg-card);color:var(--text);font-size:11px;font-family:inherit;}
+.ae-mf-val:focus{outline:none;border-color:var(--cyan);}
+.ae-mf-add-btn{flex-shrink:0;background:none;border:1px solid var(--border);color:var(--text-m);border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;font-family:inherit;transition:.12s;}
+.ae-mf-add-btn:hover{border-color:var(--cyan);color:var(--cyan);}
+.ae-mf-chips{display:flex;flex-wrap:wrap;gap:5px;padding:2px 0;min-height:0;}
+.ae-mf-chip{display:inline-flex;align-items:center;gap:3px;padding:2px 5px 2px 8px;border-radius:20px;font-size:10px;font-weight:600;line-height:1.5;}
+.ae-mf-chip-exc{border:1px solid var(--orange);background:rgba(255,120,50,.12);color:var(--orange);}
+.ae-mf-chip-inc{border:1px solid var(--cyan);background:rgba(0,240,255,.10);color:var(--cyan);}
+.ae-mf-chip-label{max-width:145px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ae-mf-chip-del{background:none;border:none;cursor:pointer;font-size:12px;padding:0 1px;line-height:1;font-family:inherit;}
+.ae-mf-chip-exc .ae-mf-chip-del{color:var(--orange);}.ae-mf-chip-inc .ae-mf-chip-del{color:var(--cyan);}
 .ae-export-row{padding:10px 14px;border-top:1px solid var(--border);display:flex;gap:6px;flex-shrink:0;margin-top:auto;}
 .ae-sm-btn{flex:1;background:none;border:1px solid var(--border);color:var(--text-m);border-radius:6px;padding:5px 0;font-size:11px;cursor:pointer;font-family:inherit;transition:.12s;}
 .ae-sm-btn:hover{border-color:var(--cyan);color:var(--cyan);}
@@ -251,26 +256,65 @@
 
         <div class="ae-sec">
             <div class="ae-sec-hdr" onclick="toggleSec(this)">
-                <span class="lbl">&#x1F6AB; Exclude Resource Types</span>
+                <span class="lbl">&#x1F6AB; Exclusion Filters</span>
                 <i class="fas fa-chevron-right arr"></i>
             </div>
             <div class="ae-sec-body">
                 <div style="font-size:10px;color:var(--text-m);margin-bottom:7px;line-height:1.5;">
-                    Type a resource type to exclude it from query results.
+                    Exclude rows where the field matches any added value.
                 </div>
-                <div class="ae-rt-input-row">
-                    <input type="text" id="rtInput" class="ae-rt-input" placeholder="e.g. audit, session…"
-                           list="dlResourceTypes" autocomplete="off"
-                           onkeydown="if(event.key==='Enter'){event.preventDefault();addRtExclude();}">
-                    <datalist id="dlResourceTypes">
-                        <?php foreach ($resourceTypes as $rt): ?>
-                            <option value="<?= View::e($rt['resource_type']) ?>">
-                        <?php endforeach; ?>
-                    </datalist>
-                    <button type="button" class="ae-rt-add-btn" onclick="addRtExclude()">+ Add</button>
+                <div class="ae-mf-row">
+                    <select id="exColSel" class="ae-mf-col" onchange="switchMfDatalist('dlEx','exColSel','exInput')">
+                        <option value="action">Action</option>
+                        <option value="module">Module</option>
+                        <option value="status">Status</option>
+                        <option value="resource_type">Resource Type</option>
+                        <option value="user_name">User Name</option>
+                        <option value="user_id">User ID</option>
+                        <option value="entity_name">Entity Name</option>
+                        <option value="ip_address">IP Address</option>
+                        <option value="id">ID</option>
+                    </select>
+                    <input type="text" id="exInput" class="ae-mf-val" placeholder="value…"
+                           list="dlEx" autocomplete="off"
+                           onkeydown="if(event.key==='Enter'){event.preventDefault();addMfChip('exChips','exColSel','exInput','exc');}">
+                    <datalist id="dlEx"></datalist>
+                    <button type="button" class="ae-mf-add-btn" onclick="addMfChip('exChips','exColSel','exInput','exc')">+ Add</button>
                 </div>
-                <div class="ae-rt-chips" id="rtChips"></div>
-                <button type="button" class="ae-sm-btn" style="width:100%;margin-top:4px;" onclick="clearRtExcludes()">Clear all exclusions</button>
+                <div class="ae-mf-chips" id="exChips"></div>
+                <button type="button" class="ae-sm-btn" style="width:100%;margin-top:4px;" onclick="clearMfChips('exChips')">Clear exclusions</button>
+            </div>
+        </div>
+
+        <div class="ae-sec">
+            <div class="ae-sec-hdr" onclick="toggleSec(this)">
+                <span class="lbl">&#x2705; Inclusion Filters</span>
+                <i class="fas fa-chevron-right arr"></i>
+            </div>
+            <div class="ae-sec-body">
+                <div style="font-size:10px;color:var(--text-m);margin-bottom:7px;line-height:1.5;">
+                    Include only rows where the field matches any added value.
+                </div>
+                <div class="ae-mf-row">
+                    <select id="inColSel" class="ae-mf-col" onchange="switchMfDatalist('dlIn','inColSel','inInput')">
+                        <option value="action">Action</option>
+                        <option value="module">Module</option>
+                        <option value="status">Status</option>
+                        <option value="resource_type">Resource Type</option>
+                        <option value="user_name">User Name</option>
+                        <option value="user_id">User ID</option>
+                        <option value="entity_name">Entity Name</option>
+                        <option value="ip_address">IP Address</option>
+                        <option value="id">ID</option>
+                    </select>
+                    <input type="text" id="inInput" class="ae-mf-val" placeholder="value…"
+                           list="dlIn" autocomplete="off"
+                           onkeydown="if(event.key==='Enter'){event.preventDefault();addMfChip('inChips','inColSel','inInput','inc');}">
+                    <datalist id="dlIn"></datalist>
+                    <button type="button" class="ae-mf-add-btn" onclick="addMfChip('inChips','inColSel','inInput','inc')">+ Add</button>
+                </div>
+                <div class="ae-mf-chips" id="inChips"></div>
+                <button type="button" class="ae-sm-btn" style="width:100%;margin-top:4px;" onclick="clearMfChips('inChips')">Clear inclusions</button>
             </div>
         </div>
 
@@ -476,9 +520,22 @@ function buildSpec() {
     if(ue)where.push({col:'user_email',op:'LIKE',val:'%'+ue+'%'});
     const kw=document.getElementById('fSearch').value.trim();
     if(kw)where.push({col:'readable_message',op:'LIKE',val:'%'+kw+'%'});
-    // Exclude resource types (chip-based typeahead)
-    const excludedRt = [...document.querySelectorAll('#rtChips .ae-rt-chip')].map(c=>c.dataset.rt).filter(Boolean);
-    if(excludedRt.length) where.push({col:'resource_type',op:'NOT IN',val:excludedRt});
+    // Exclusion filter chips (grouped by column → NOT IN)
+    const exChips = [...document.querySelectorAll('#exChips .ae-mf-chip')];
+    const exByCol = {};
+    exChips.forEach(chip => {
+        const col = chip.dataset.col, val = chip.dataset.val;
+        if (col && val) { if (!exByCol[col]) exByCol[col] = []; exByCol[col].push(val); }
+    });
+    Object.entries(exByCol).forEach(([col, vals]) => where.push({col, op:'NOT IN', val:vals}));
+    // Inclusion filter chips (grouped by column → IN)
+    const inChips = [...document.querySelectorAll('#inChips .ae-mf-chip')];
+    const inByCol = {};
+    inChips.forEach(chip => {
+        const col = chip.dataset.col, val = chip.dataset.val;
+        if (col && val) { if (!inByCol[col]) inByCol[col] = []; inByCol[col].push(val); }
+    });
+    Object.entries(inByCol).forEach(([col, vals]) => where.push({col, op:'IN', val:vals}));
     const gbRaw=document.getElementById('fGroupBy').value.trim();
     return {
         select:select.length?select:['*'],
@@ -936,8 +993,9 @@ function clearAll(resetResults=true){
     document.getElementById('selectWrap').appendChild(inp);
     // Reset results first so lastSpec=null, then clear chips silently
     if(resetResults){resetResults2();}
-    // Clear resource-type exclusion chips silently (no re-run, results already wiped)
-    document.getElementById('rtChips').innerHTML = '';
+    // Clear exclusion and inclusion chips silently (no re-run, results already wiped)
+    document.getElementById('exChips').innerHTML = '';
+    document.getElementById('inChips').innerHTML = '';
 }
 function resetResults2(){
     document.getElementById('sqlBar').style.display='none';
@@ -946,29 +1004,49 @@ function resetResults2(){
     lastSpec=null;
 }
 
-function addRtExclude() {
-    const inp = document.getElementById('rtInput');
-    const val = inp.value.trim();
-    if (!val) return;
-    // Prevent duplicates
-    const existing = [...document.querySelectorAll('#rtChips .ae-rt-chip')].map(chip=>chip.dataset.rt);
-    if (existing.includes(val)) { inp.value=''; return; }
+// ─── Multi-field Exclusion / Inclusion Filters ───────────────────────────────
+const FIELD_OPTS = {
+    action:        <?= json_encode(array_column($actions, 'action'), JSON_UNESCAPED_UNICODE) ?>,
+    module:        <?= json_encode(array_map(fn($m) => $m['module'], $modules), JSON_UNESCAPED_UNICODE) ?>,
+    status:        ['success','failure','pending'],
+    resource_type: <?= json_encode(array_column($resourceTypes, 'resource_type'), JSON_UNESCAPED_UNICODE) ?>,
+    user_name:     <?= json_encode(array_column($users, 'name'), JSON_UNESCAPED_UNICODE) ?>,
+    user_id:       <?= json_encode(array_column($users, 'id'), JSON_UNESCAPED_UNICODE) ?>,
+    entity_name:   <?= json_encode(array_column($entityNames, 'entity_name'), JSON_UNESCAPED_UNICODE) ?>,
+    ip_address:    <?= json_encode(array_column($ipAddresses, 'ip_address'), JSON_UNESCAPED_UNICODE) ?>,
+    id:            [],
+};
+
+function switchMfDatalist(dlId, selId, inputId) {
+    const col = document.getElementById(selId).value;
+    const dl = document.getElementById(dlId);
+    dl.innerHTML = (FIELD_OPTS[col] || []).map(v => '<option value="' + esc(String(v)) + '">').join('');
+    document.getElementById(inputId).value = '';
+}
+
+function addMfChip(chipsId, selId, inputId, type) {
+    const col = document.getElementById(selId).value;
+    const val = document.getElementById(inputId).value.trim();
+    if (!col || !val) return;
+    // Prevent duplicate col+val
+    const dup = [...document.querySelectorAll('#' + chipsId + ' .ae-mf-chip')]
+        .some(c => c.dataset.col === col && c.dataset.val === val);
+    if (dup) { document.getElementById(inputId).value = ''; return; }
     const chip = document.createElement('span');
-    chip.className = 'ae-rt-chip';
-    chip.dataset.rt = val;
-    chip.innerHTML = val + ' <button type="button" class="ae-rt-chip-del" title="Remove" onclick="removeRtChip(this)">&#x2715;</button>';
-    document.getElementById('rtChips').appendChild(chip);
-    inp.value = '';
+    chip.className = 'ae-mf-chip ae-mf-chip-' + type;
+    chip.dataset.col = col;
+    chip.dataset.val = val;
+    const colLabel = col.replace(/_/g, ' ');
+    chip.innerHTML = '<span class="ae-mf-chip-label">' + esc(colLabel) + ': ' + esc(val) + '</span>'
+        + ' <button type="button" class="ae-mf-chip-del" onclick="this.closest(\'.ae-mf-chip\').remove()">&#x2715;</button>';
+    document.getElementById(chipsId).appendChild(chip);
+    document.getElementById(inputId).value = '';
 }
 
-function removeRtChip(btn) {
-    btn.closest('.ae-rt-chip').remove();
-}
-
-function clearRtExcludes() {
-    const hadExclusions = document.querySelectorAll('#rtChips .ae-rt-chip').length > 0;
-    document.getElementById('rtChips').innerHTML = '';
-    if (hadExclusions && lastSpec) runQuery();
+function clearMfChips(chipsId) {
+    const had = document.querySelectorAll('#' + chipsId + ' .ae-mf-chip').length > 0;
+    document.getElementById(chipsId).innerHTML = '';
+    if (had && lastSpec) runQuery();
 }
 
 function esc(s){
@@ -1059,6 +1137,9 @@ document.addEventListener('click', function(e) {
 
 document.addEventListener('DOMContentLoaded',()=>{
     renderSaved();
+    // Populate datalists with default field options
+    switchMfDatalist('dlEx', 'exColSel', 'exInput');
+    switchMfDatalist('dlIn', 'inColSel', 'inInput');
     document.addEventListener('keydown',e=>{
         if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){
             e.preventDefault();

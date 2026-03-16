@@ -99,6 +99,16 @@ class AuditController extends BaseController
             "SELECT DISTINCT resource_type FROM activity_logs WHERE resource_type IS NOT NULL AND resource_type != '' ORDER BY resource_type"
         );
 
+        // Entity names for inclusion/exclusion autocomplete
+        $entityNames = $db->fetchAll(
+            "SELECT DISTINCT entity_name FROM activity_logs WHERE entity_name IS NOT NULL AND entity_name != '' ORDER BY entity_name LIMIT 300"
+        );
+
+        // IP addresses for inclusion/exclusion autocomplete (cap to 200 most-recent distinct)
+        $ipAddresses = $db->fetchAll(
+            "SELECT DISTINCT ip_address FROM activity_logs WHERE ip_address IS NOT NULL AND ip_address != '' ORDER BY ip_address LIMIT 200"
+        );
+
         // Users list for the user-filter autocomplete (name + email)
         $users = $db->fetchAll(
             "SELECT id, name, email FROM users ORDER BY name LIMIT 500"
@@ -111,6 +121,8 @@ class AuditController extends BaseController
             'modules'       => $modules,
             'userRoles'     => $userRoles,
             'resourceTypes' => $resourceTypes,
+            'entityNames'   => $entityNames,
+            'ipAddresses'   => $ipAddresses,
             'users'         => $users,
             'allowedCols'   => self::ALLOWED_COLUMNS,
         ]);
