@@ -16,6 +16,40 @@ class ResumeModel
     public function __construct()
     {
         $this->db = Database::getInstance();
+        $this->ensureTable();
+    }
+
+    /**
+     * Auto-create the resumex_resumes table if it does not yet exist.
+     * Runs at most once per PHP request thanks to a static guard.
+     */
+    private function ensureTable(): void
+    {
+        static $ran = false;
+        if ($ran) {
+            return;
+        }
+        $ran = true;
+
+        try {
+            $this->db->query("
+                CREATE TABLE IF NOT EXISTS `resumex_resumes` (
+                    `id`             INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    `user_id`        INT UNSIGNED NOT NULL,
+                    `title`          VARCHAR(255) NOT NULL DEFAULT 'My Resume',
+                    `template`       VARCHAR(100) NOT NULL DEFAULT 'midnight-pro',
+                    `resume_data`    LONGTEXT     NULL,
+                    `theme_settings` LONGTEXT     NULL,
+                    `created_at`     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `updated_at`     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    PRIMARY KEY (`id`),
+                    KEY `idx_user_id` (`user_id`),
+                    KEY `idx_updated_at` (`updated_at`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+        } catch (\Exception $e) {
+            \Core\Logger::error('ResumeModel::ensureTable error: ' . $e->getMessage());
+        }
     }
 
     /**
