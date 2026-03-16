@@ -38,7 +38,7 @@ class AuditController extends BaseController
     /**
      * Allowed operators for WHERE conditions
      */
-    private const ALLOWED_OPERATORS = ['=', '!=', 'LIKE', 'NOT LIKE', '>', '<', '>=', '<=', 'IS NULL', 'IS NOT NULL'];
+    private const ALLOWED_OPERATORS = ['=', '!=', 'LIKE', 'NOT LIKE', '>', '<', '>=', '<=', 'IS NULL', 'IS NOT NULL', 'IN', 'NOT IN'];
 
     public function __construct()
     {
@@ -94,19 +94,25 @@ class AuditController extends BaseController
             "SELECT DISTINCT user_role FROM activity_logs WHERE user_role IS NOT NULL AND user_role != '' ORDER BY user_role"
         );
 
+        // Resource types for the exclude-filter in the sidebar
+        $resourceTypes = $db->fetchAll(
+            "SELECT DISTINCT resource_type FROM activity_logs WHERE resource_type IS NOT NULL AND resource_type != '' ORDER BY resource_type"
+        );
+
         // Users list for the user-filter autocomplete (name + email)
         $users = $db->fetchAll(
             "SELECT id, name, email FROM users ORDER BY name LIMIT 500"
         );
 
         $this->view('admin/audit/index', [
-            'title'       => 'Audit Explorer',
-            'stats'       => $stats,
-            'actions'     => $actions,
-            'modules'     => $modules,
-            'userRoles'   => $userRoles,
-            'users'       => $users,
-            'allowedCols' => self::ALLOWED_COLUMNS,
+            'title'         => 'Audit Explorer',
+            'stats'         => $stats,
+            'actions'       => $actions,
+            'modules'       => $modules,
+            'userRoles'     => $userRoles,
+            'resourceTypes' => $resourceTypes,
+            'users'         => $users,
+            'allowedCols'   => self::ALLOWED_COLUMNS,
         ]);
     }
 
@@ -387,6 +393,16 @@ class AuditController extends BaseController
 
             if ($op === 'IS NULL' || $op === 'IS NOT NULL') {
                 $whereParts[] = "{$qcol} {$op}";
+            } elseif ($op === 'IN' || $op === 'NOT IN') {
+                $vals = is_array($val) ? array_values($val) : [$val];
+                if (empty($vals)) {
+                    continue; // nothing to filter on
+                }
+                $placeholders = implode(', ', array_fill(0, count($vals), '?'));
+                $whereParts[] = "{$qcol} {$op} ({$placeholders})";
+                foreach ($vals as $v) {
+                    $params[] = $v;
+                }
             } elseif ($op === 'LIKE' || $op === 'NOT LIKE') {
                 $whereParts[] = "{$qcol} {$op} ?";
                 $params[]      = $val;

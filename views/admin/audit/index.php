@@ -31,6 +31,13 @@
 .sv-name{flex:1;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .sv-load{background:none;border:1px solid var(--border);color:var(--text-m);border-radius:5px;padding:2px 6px;font-size:10px;cursor:pointer;font-family:inherit;}
 .sv-del{background:none;border:none;color:var(--red);cursor:pointer;font-size:12px;padding:0 2px;}
+/* Exclude resource-type tag filter */
+.ae-rt-wrap{display:flex;flex-wrap:wrap;gap:5px;padding:2px 0 6px;}
+.ae-rt-tag{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;border:1px solid var(--border);background:var(--bg-card);font-size:10.5px;cursor:pointer;color:var(--text-m);transition:.12s;user-select:none;line-height:1.4;}
+.ae-rt-tag:hover{border-color:var(--orange);color:var(--orange);}
+.ae-rt-tag.excluded{background:rgba(255,120,50,.12);border-color:var(--orange);color:var(--orange);font-weight:600;}
+.ae-rt-tag.excluded::before{content:'✕ ';}
+.ae-rt-none{font-size:10.5px;color:var(--text-m);font-style:italic;}
 .ae-export-row{padding:10px 14px;border-top:1px solid var(--border);display:flex;gap:6px;flex-shrink:0;margin-top:auto;}
 .ae-sm-btn{flex:1;background:none;border:1px solid var(--border);color:var(--text-m);border-radius:6px;padding:5px 0;font-size:11px;cursor:pointer;font-family:inherit;transition:.12s;}
 .ae-sm-btn:hover{border-color:var(--cyan);color:var(--cyan);}
@@ -241,6 +248,31 @@
 
         <div class="ae-sec">
             <div class="ae-sec-hdr" onclick="toggleSec(this)">
+                <span class="lbl">&#x1F6AB; Exclude Resource Types</span>
+                <i class="fas fa-chevron-right arr"></i>
+            </div>
+            <div class="ae-sec-body">
+                <div style="font-size:10px;color:var(--text-m);margin-bottom:6px;line-height:1.5;">
+                    Click a tag to <strong style="color:var(--orange);">exclude</strong> that resource type from results.
+                </div>
+                <div class="ae-rt-wrap" id="rtTagWrap">
+                    <?php if (empty($resourceTypes)): ?>
+                        <span class="ae-rt-none">No resource types found yet.</span>
+                    <?php else: ?>
+                        <?php foreach ($resourceTypes as $rt): ?>
+                            <span class="ae-rt-tag" data-rt="<?= View::e($rt['resource_type']) ?>"
+                                  onclick="toggleRtExclude(this)">
+                                <?= View::e($rt['resource_type']) ?>
+                            </span>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+                <button type="button" class="ae-sm-btn" style="width:100%;margin-top:2px;" onclick="clearRtExcludes()">Clear exclusions</button>
+            </div>
+        </div>
+
+        <div class="ae-sec">
+            <div class="ae-sec-hdr" onclick="toggleSec(this)">
                 <span class="lbl">&#9889; Templates</span>
                 <i class="fas fa-chevron-right arr"></i>
             </div>
@@ -441,6 +473,9 @@ function buildSpec() {
     if(ue)where.push({col:'user_email',op:'LIKE',val:'%'+ue+'%'});
     const kw=document.getElementById('fSearch').value.trim();
     if(kw)where.push({col:'readable_message',op:'LIKE',val:'%'+kw+'%'});
+    // Exclude resource types
+    const excludedRt = [...document.querySelectorAll('.ae-rt-tag.excluded')].map(t=>t.dataset.rt).filter(Boolean);
+    if(excludedRt.length) where.push({col:'resource_type',op:'NOT IN',val:excludedRt});
     const gbRaw=document.getElementById('fGroupBy').value.trim();
     return {
         select:select.length?select:['*'],
@@ -896,13 +931,28 @@ function clearAll(resetResults=true){
     const inp=document.createElement('input');inp.type='text';inp.className='ae-col-in sel-expr';
     inp.value='*';inp.setAttribute('list','dlCols');inp.ondblclick=()=>inp.remove();
     document.getElementById('selectWrap').appendChild(inp);
+    // Reset results first so lastSpec=null before clearRtExcludes runs
     if(resetResults){resetResults2();}
+    // Clear tag exclusions silently (no re-run since we just wiped results)
+    document.querySelectorAll('.ae-rt-tag.excluded').forEach(t => t.classList.remove('excluded'));
 }
 function resetResults2(){
     document.getElementById('sqlBar').style.display='none';
     document.getElementById('resultMeta').textContent='';
     document.getElementById('resultsArea').innerHTML='<div class="ae-placeholder"><i class="fas fa-database"></i><strong>No query run yet</strong></div>';
     lastSpec=null;
+}
+
+function toggleRtExclude(tag) {
+    tag.classList.toggle('excluded');
+}
+
+function clearRtExcludes() {
+    const hadExclusions = document.querySelectorAll('.ae-rt-tag.excluded').length > 0;
+    document.querySelectorAll('.ae-rt-tag.excluded').forEach(t => t.classList.remove('excluded'));
+    // Re-run to reflect cleared exclusions only when triggered by the dedicated button
+    // (not when called from clearAll which resets everything anyway)
+    if (hadExclusions && lastSpec) runQuery();
 }
 
 function esc(s){
