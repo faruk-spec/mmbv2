@@ -1,3 +1,4 @@
+<?php use Core\View; ?>
 <?php View::extend('main'); ?>
 
 <?php View::section('content'); ?>
