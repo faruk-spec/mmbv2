@@ -10,6 +10,7 @@ namespace Projects\ImgTxt\Controllers;
 use Core\Database;
 use Core\View;
 use Core\Auth;
+use Core\ActivityLogger;
 
 class HistoryController
 {
@@ -71,11 +72,13 @@ class HistoryController
             $deleted = $db->delete('ocr_jobs', 'id = ? AND user_id = ?', [$id, $user['id']]);
             
             if ($deleted) {
+                try { ActivityLogger::logDelete($user['id'], 'imgtxt', 'ocr_job', $id, ['filename' => $job['original_filename'] ?? null]); } catch (\Throwable $_) {}
                 echo json_encode(['success' => true, 'message' => 'Job deleted successfully']);
             } else {
                 echo json_encode(['success' => false, 'error' => 'Failed to delete job']);
             }
         } catch (\Exception $e) {
+            try { ActivityLogger::logFailure($user['id'] ?? null, 'ocr_job_delete', $e->getMessage()); } catch (\Throwable $_) {}
             http_response_code(500);
             echo json_encode(['success' => false, 'error' => 'Server error: ' . $e->getMessage()]);
         }
@@ -106,6 +109,8 @@ class HistoryController
         
         // Delete from database
         $db->query("DELETE FROM ocr_jobs WHERE user_id = ?", [$user['id']]);
+        
+        try { ActivityLogger::log($user['id'], 'history_cleared', ['module' => 'imgtxt', 'resource_type' => 'ocr_job', 'new_values' => ['cleared_count' => count($jobs)]]); } catch (\Throwable $_) {}
         
         echo json_encode(['success' => true]);
     }

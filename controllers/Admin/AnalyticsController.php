@@ -19,7 +19,7 @@ class AnalyticsController extends BaseController
     public function __construct()
     {
         $this->requireAuth();
-        $this->requireAdmin();
+        $this->requirePermissionGroup('analytics');
     }
     
     /**
@@ -27,6 +27,7 @@ class AnalyticsController extends BaseController
      */
     public function overview(): void
     {
+        $this->requirePermission('analytics');
         $db = Database::getInstance();
         
         // Cache analytics stats for 10 minutes
@@ -115,6 +116,7 @@ class AnalyticsController extends BaseController
      */
     public function events(): void
     {
+        $this->requirePermission('analytics.events');
         $db = Database::getInstance();
         
         $page = $_GET['page'] ?? 1;
@@ -189,6 +191,7 @@ class AnalyticsController extends BaseController
      */
     public function reports(): void
     {
+        $this->requirePermission('analytics.reports');
         $db = Database::getInstance();
         
         // Get date range from request
@@ -265,6 +268,7 @@ class AnalyticsController extends BaseController
      */
     public function export(): void
     {
+        $this->requirePermission('analytics.export');
         $db = Database::getInstance();
         
         // Handle AJAX requests for live data

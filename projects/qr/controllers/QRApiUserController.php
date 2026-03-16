@@ -17,6 +17,7 @@ namespace Projects\QR\Controllers;
 use Core\Auth;
 use Core\Database;
 use Core\Logger;
+use Core\ActivityLogger;
 use Core\Security;
 use Core\API\ApiAuth;
 use Projects\QR\Services\QRFeatureService;
@@ -119,6 +120,7 @@ class QRApiUserController
             );
 
             Logger::activity($this->userId, 'qr_api_key_generated', ['key_name' => $name]);
+            try { ActivityLogger::logCreate($this->userId, 'qr', 'api_key', $keyData['id'] ?? 0, ['key_name' => $name]); } catch (\Throwable $_) {}
 
             // Store once so the view can show it in full (only shown once)
             $_SESSION['qr_api_new_key'] = $keyData['api_key'];
@@ -126,6 +128,7 @@ class QRApiUserController
             $this->flash('success', 'API key "' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . '" created successfully. Copy it now — it will not be shown again.');
         } catch (\Exception $e) {
             Logger::error('QR API key generation error: ' . $e->getMessage());
+            try { ActivityLogger::logFailure($this->userId, 'api_key_create', $e->getMessage()); } catch (\Throwable $_) {}
             $this->flash('error', 'Failed to generate API key. Please try again.');
         }
 
@@ -160,6 +163,7 @@ class QRApiUserController
 
         ApiAuth::revokeKey($keyId);
         Logger::activity($this->userId, 'qr_api_key_revoked', ['key_id' => $keyId, 'key_name' => $key['name']]);
+        try { ActivityLogger::logDelete($this->userId, 'qr', 'api_key', $keyId, ['key_name' => $key['name']]); } catch (\Throwable $_) {}
 
         header('Content-Type: application/json');
         echo json_encode(['success' => true, 'message' => 'API key revoked.']);

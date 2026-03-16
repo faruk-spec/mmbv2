@@ -109,7 +109,73 @@ abstract class BaseController
      */
     protected function requireAdmin(): void
     {
+        if (!Auth::hasAnyAdminPermission()) {
+            http_response_code(403);
+            View::render('errors/403');
+            exit;
+        }
+    }
+
+    /**
+     * Require a specific granular admin permission.
+     *
+     * Checks Auth::hasPermission($key) which resolves via:
+     *  1. Role (admin / super_admin) → always pass
+     *  2. Explicit row in admin_user_permissions for this user
+     *  3. Row in user_role_permissions for the user's role
+     *
+     * On failure, flashes an error and redirects the already-authenticated
+     * admin user to the dashboard (avoids hard 403 within the admin panel).
+     */
+    protected function requirePermission(string $key): void
+    {
+        if (!Auth::hasPermission($key)) {
+            $this->flash('error', 'You do not have permission to access that section.');
+            $this->redirect('/dashboard');
+            exit;
+        }
+    }
+
+    /**
+     * Gate a controller whose features are split across several sub-permission
+     * keys (e.g. 'qr', 'qr.analytics', 'qr.blocked_links' …).
+     *
+     * Passes if the user holds the exact key OR any key that starts with
+     * "$prefix." – i.e. they have at least one permission in the group.
+     * Individual action methods should then call requirePermission('qr.analytics')
+     * etc. to enforce fine-grained access.
+     */
+    protected function requirePermissionGroup(string $prefix): void
+    {
+        if (!Auth::hasPermissionGroup($prefix)) {
+            $this->flash('error', 'You do not have permission to access that section.');
+            $this->redirect('/dashboard');
+            exit;
+        }
+    }
+
+    /**
+     * Require the user to be a true role-based admin (admin / super_admin).
+     *
+     * Use this inside actions that must be restricted to real admins even if
+     * the user happens to have some entries in admin_user_permissions
+     * (e.g. managing permissions themselves, security settings, etc.).
+     */
+    protected function requireRoleAdmin(): void
+    {
         if (!Auth::isAdmin()) {
+            http_response_code(403);
+            View::render('errors/403');
+            exit;
+        }
+    }
+
+    /**
+     * Check if user can access Audit Explorer (admin or audit_viewer role)
+     */
+    protected function requireAuditAccess(): void
+    {
+        if (!Auth::canAccessAudit()) {
             http_response_code(403);
             View::render('errors/403');
             exit;

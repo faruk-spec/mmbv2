@@ -12,6 +12,7 @@ use Core\View;
 use Core\Auth;
 use Core\Security;
 use Core\Helpers;
+use Core\ActivityLogger;
 
 class OCRController
 {
@@ -117,6 +118,7 @@ class OCRController
             ]);
             
             if ($jobId) {
+                try { ActivityLogger::logCreate($user['id'], 'imgtxt', 'ocr_job', $jobId, ['filename' => $file['name'], 'language' => $language]); } catch (\Throwable $_) {}
                 echo json_encode([
                     'success' => true,
                     'job_id' => $jobId,
@@ -126,6 +128,7 @@ class OCRController
                 echo json_encode(['success' => false, 'error' => 'Failed to create OCR job']);
             }
         } catch (\Exception $e) {
+            try { ActivityLogger::logFailure($user['id'] ?? null, 'ocr_upload', $e->getMessage()); } catch (\Throwable $_) {}
             echo json_encode(['success' => false, 'error' => 'Server error: ' . $e->getMessage()]);
         }
     }
@@ -185,6 +188,8 @@ class OCRController
                 // Update usage stats
                 $this->updateUsageStats($user['id'], $db, true);
                 
+                try { ActivityLogger::log($user['id'], 'ocr_processed', ['module' => 'imgtxt', 'resource_type' => 'ocr_job', 'resource_id' => $jobId, 'new_values' => ['status' => 'completed', 'processing_time' => $processingTime]]); } catch (\Throwable $_) {}
+                
                 echo json_encode([
                     'success' => true,
                     'job_id' => $jobId,
@@ -209,6 +214,7 @@ class OCRController
                 ]);
             }
         } catch (\Exception $e) {
+            try { ActivityLogger::logFailure($user['id'] ?? null, 'ocr_process', $e->getMessage()); } catch (\Throwable $_) {}
             echo json_encode(['success' => false, 'error' => 'Server error: ' . $e->getMessage()]);
         }
     }

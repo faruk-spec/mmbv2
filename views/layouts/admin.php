@@ -1010,6 +1010,7 @@
             
             <nav class="sidebar-menu">
                 <!-- Dashboard -->
+                <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('dashboard')): ?>
                 <div class="menu-section">
                     <div class="menu-item">
                         <a href="/admin/dashboard" class="menu-link <?= ($_SERVER['REQUEST_URI'] ?? '') == '/admin/dashboard' || ($_SERVER['REQUEST_URI'] ?? '') == '/admin' ? 'active' : '' ?>">
@@ -1018,57 +1019,12 @@
                         </a>
                     </div>
                 </div>
+                <?php endif; ?>
 
-                <!-- QR Code Admin -->
-                <div class="menu-section">
-                    <div class="menu-section-title">QR Code Admin</div>
 
-                    <div class="menu-item menu-dropdown">
-                        <div class="menu-dropdown-toggle">
-                            <div class="left">
-                                <i class="fas fa-qrcode"></i>
-                                <span>QR Codes</span>
-                            </div>
-                            <i class="fas fa-chevron-down arrow"></i>
-                        </div>
-                        <div class="menu-dropdown-content">
-                            <a href="/admin/qr" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/qr') === 0 && ($_SERVER['REQUEST_URI'] ?? '') === '/admin/qr' ? 'active' : '' ?>">
-                                <i class="fas fa-list"></i>
-                                <span>All QR Codes</span>
-                            </a>
-                            <a href="/admin/qr/analytics" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/qr/analytics') === 0 ? 'active' : '' ?>">
-                                <i class="fas fa-chart-line"></i>
-                                <span>Scan Analytics</span>
-                            </a>
-                            <a href="/admin/qr/blocked-links" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/qr/blocked-links') === 0 ? 'active' : '' ?>">
-                                <i class="fas fa-ban"></i>
-                                <span>Block Malicious Links</span>
-                            </a>
-                            <a href="/admin/qr/storage" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/qr/storage') === 0 ? 'active' : '' ?>">
-                                <i class="fas fa-hdd"></i>
-                                <span>Storage Monitor</span>
-                            </a>
-                            <a href="/admin/qr/plans" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/qr/plans') === 0 ? 'active' : '' ?>">
-                                <i class="fas fa-tags"></i>
-                                <span>Plan Limits</span>
-                            </a>
-                            <a href="/admin/qr/abuse-reports" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/qr/abuse-reports') === 0 ? 'active' : '' ?>">
-                                <i class="fas fa-flag"></i>
-                                <span>Abuse Reports</span>
-                            </a>
-                            <a href="/admin/qr/roles" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/qr/roles') === 0 ? 'active' : '' ?>">
-                                <i class="fas fa-users-cog"></i>
-                                <span>Roles &amp; Permissions</span>
-                            </a>
-                            <a href="/admin/qr/api-keys" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/qr/api-keys') === 0 ? 'active' : '' ?>">
-                                <i class="fas fa-key"></i>
-                                <span>QR API Keys</span>
-                            </a>
-                        </div>
-                    </div>
-                </div>
 
                 <!-- Platform Plans (Universal Multi-App) -->
+                <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('platform_plans')): ?>
                 <div class="menu-section">
                     <div class="menu-section-title">Platform Billing</div>
 
@@ -1081,37 +1037,50 @@
                             <i class="fas fa-chevron-down arrow"></i>
                         </div>
                         <div class="menu-dropdown-content">
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('platform_plans.list') || \Core\Auth::hasPermission('platform_plans')): ?>
                             <a href="/admin/platform-plans" class="menu-link <?= ($_SERVER['REQUEST_URI'] ?? '') === '/admin/platform-plans' ? 'active' : '' ?>">
                                 <i class="fas fa-list"></i>
                                 <span>All Plans</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('platform_plans.create')): ?>
                             <a href="/admin/platform-plans/create" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/platform-plans/create') === 0 ? 'active' : '' ?>">
                                 <i class="fas fa-plus-circle"></i>
                                 <span>Create Plan</span>
                             </a>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
+                <?php endif; ?>
 
                 <!-- Projects Management -->
+                <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('projects') || \Core\Auth::hasPermissionGroup('convertx') || \Core\Auth::hasPermissionGroup('codexpro') || \Core\Auth::hasPermissionGroup('imgtxt') || \Core\Auth::hasPermissionGroup('proshare') || \Core\Auth::hasPermissionGroup('billx') || \Core\Auth::hasPermissionGroup('whatsapp') || \Core\Auth::hasPermissionGroup('qr')): ?>
                 <div class="menu-section">
                     <div class="menu-section-title">Projects</div>
                     
+                    <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('projects')): ?>
+                    <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('projects.list') || \Core\Auth::hasPermission('projects')): ?>
                     <div class="menu-item">
                         <a href="/admin/projects" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects') === 0 && !strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/') ? 'active' : '' ?>">
                             <i class="fas fa-folder"></i>
                             <span>All Projects</span>
                         </a>
                     </div>
+                    <?php endif; ?>
                     
                     <!-- Database Setup -->
+                    <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('projects.database_setup')): ?>
                     <div class="menu-item">
                         <a href="/admin/projects/database-setup" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/database-setup') === 0 ? 'active' : '' ?>">
                             <i class="fas fa-database"></i>
                             <span>Database Setup</span>
                         </a>
                     </div>
+                    <?php endif; ?>
+                    <?php endif; ?>
                     
+                    <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('convertx')): ?>
                     <!-- ConvertX Admin -->
                     <div class="menu-item menu-dropdown">
                         <div class="menu-dropdown-toggle <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/convertx') === 0 ? 'active' : '' ?>">
@@ -1122,37 +1091,53 @@
                             <i class="fas fa-chevron-down arrow"></i>
                         </div>
                         <div class="menu-dropdown-content">
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('convertx')): ?>
                             <a href="/admin/projects/convertx" class="menu-link <?= ($_SERVER['REQUEST_URI'] ?? '') === '/admin/projects/convertx' ? 'active' : '' ?>">
                                 <i class="fas fa-chart-line"></i>
                                 <span>Overview</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('convertx.jobs')): ?>
                             <a href="/admin/projects/convertx/jobs" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/convertx/jobs') === 0 ? 'active' : '' ?>">
                                 <i class="fas fa-tasks"></i>
                                 <span>All Jobs</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('convertx.users')): ?>
                             <a href="/admin/projects/convertx/users" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/convertx/users') === 0 ? 'active' : '' ?>">
                                 <i class="fas fa-users"></i>
                                 <span>Users</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('convertx.api_keys')): ?>
                             <a href="/admin/projects/convertx/api-keys" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/convertx/api-keys') === 0 ? 'active' : '' ?>">
                                 <i class="fas fa-key"></i>
                                 <span>API Keys</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('convertx.settings')): ?>
                             <a href="/admin/projects/convertx/settings" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/convertx/settings') === 0 ? 'active' : '' ?>">
                                 <i class="fas fa-cog"></i>
                                 <span>Settings</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('convertx.storage')): ?>
                             <a href="/admin/projects/convertx/storage" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/convertx/storage') === 0 ? 'active' : '' ?>">
                                 <i class="fas fa-hdd"></i>
                                 <span>Storage</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('convertx.plans')): ?>
                             <a href="/admin/projects/convertx/plans" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/convertx/plans') === 0 ? 'active' : '' ?>">
                                 <i class="fas fa-tags"></i>
                                 <span>Plans</span>
                             </a>
+                            <?php endif; ?>
                         </div>
                     </div>
+                    <?php endif; ?>
                     
+                    <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('codexpro')): ?>
                     <!-- CodeXPro -->
                     <div class="menu-item menu-dropdown">
                         <div class="menu-dropdown-toggle">
@@ -1163,25 +1148,35 @@
                             <i class="fas fa-chevron-down arrow"></i>
                         </div>
                         <div class="menu-dropdown-content">
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('codexpro')): ?>
                             <a href="/admin/projects/codexpro" class="menu-link">
                                 <i class="fas fa-chart-line"></i>
                                 <span>Overview</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('codexpro.settings')): ?>
                             <a href="/admin/projects/codexpro/settings" class="menu-link">
                                 <i class="fas fa-cog"></i>
                                 <span>Settings</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('codexpro.users')): ?>
                             <a href="/admin/projects/codexpro/users" class="menu-link">
                                 <i class="fas fa-users"></i>
                                 <span>Users</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('codexpro.templates')): ?>
                             <a href="/admin/projects/codexpro/templates" class="menu-link">
                                 <i class="fas fa-file-code"></i>
                                 <span>Templates</span>
                             </a>
+                            <?php endif; ?>
                         </div>
                     </div>
+                    <?php endif; ?>
                     
+                    <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('imgtxt')): ?>
                     <!-- ImgTxt -->
                     <div class="menu-item menu-dropdown">
                         <div class="menu-dropdown-toggle">
@@ -1192,58 +1187,85 @@
                             <i class="fas fa-chevron-down arrow"></i>
                         </div>
                         <div class="menu-dropdown-content">
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('imgtxt')): ?>
                             <a href="/admin/projects/imgtxt" class="menu-link">
                                 <i class="fas fa-chart-line"></i>
                                 <span>Overview</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('imgtxt')): ?>
                             <a href="/projects/imgtxt/dashboard" class="menu-link">
                                 <i class="fas fa-tachometer-alt"></i>
                                 <span>Dashboard</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('imgtxt')): ?>
                             <a href="/projects/imgtxt/upload" class="menu-link">
                                 <i class="fas fa-cloud-upload-alt"></i>
                                 <span>Upload & Extract</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('imgtxt')): ?>
                             <a href="/projects/imgtxt/batch" class="menu-link">
                                 <i class="fas fa-layer-group"></i>
                                 <span>Batch Processing</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('imgtxt')): ?>
                             <a href="/projects/imgtxt/history" class="menu-link">
                                 <i class="fas fa-history"></i>
                                 <span>History</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('imgtxt.jobs')): ?>
                             <a href="/admin/projects/imgtxt/jobs" class="menu-link">
                                 <i class="fas fa-tasks"></i>
                                 <span>All OCR Jobs</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('imgtxt')): ?>
                             <a href="/projects/imgtxt/settings" class="menu-link">
                                 <i class="fas fa-cog"></i>
                                 <span>User Settings</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('imgtxt.settings')): ?>
                             <a href="/admin/projects/imgtxt/settings" class="menu-link">
                                 <i class="fas fa-wrench"></i>
                                 <span>Admin Settings</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('imgtxt.languages')): ?>
                             <a href="/admin/projects/imgtxt/languages" class="menu-link">
                                 <i class="fas fa-language"></i>
                                 <span>Languages Config</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('imgtxt.users')): ?>
                             <a href="/admin/projects/imgtxt/users" class="menu-link">
                                 <i class="fas fa-users"></i>
                                 <span>User Management</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('imgtxt.statistics')): ?>
                             <a href="/admin/projects/imgtxt/statistics" class="menu-link">
                                 <i class="fas fa-chart-bar"></i>
                                 <span>Statistics</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('imgtxt.activity')): ?>
                             <a href="/admin/projects/imgtxt/activity" class="menu-link">
                                 <i class="fas fa-stream"></i>
                                 <span>Activity Logs</span>
                             </a>
+                            <?php endif; ?>
                         </div>
                     </div>
+                    <?php endif; ?>
                     
+                    <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('proshare')): ?>
                     <!-- ProShare - User Dashboard Features -->
+                    <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('proshare.user_dashboard') || \Core\Auth::hasPermission('proshare.user_files') || \Core\Auth::hasPermission('proshare.user_activity')): ?>
                     <div class="menu-item menu-dropdown">
                         <div class="menu-dropdown-toggle">
                             <div class="left">
@@ -1253,20 +1275,27 @@
                             <i class="fas fa-chevron-down arrow"></i>
                         </div>
                         <div class="menu-dropdown-content">
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('proshare.user_dashboard')): ?>
                             <a href="/admin/projects/proshare/user-dashboard" class="menu-link">
                                 <i class="fas fa-tachometer-alt"></i>
                                 <span>User Dashboard</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('proshare.user_files')): ?>
                             <a href="/admin/projects/proshare/user-files" class="menu-link">
                                 <i class="fas fa-file"></i>
                                 <span>User Files</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('proshare.user_activity')): ?>
                             <a href="/admin/projects/proshare/user-activity" class="menu-link">
                                 <i class="fas fa-history"></i>
                                 <span>User Activity</span>
                             </a>
+                            <?php endif; ?>
                         </div>
                     </div>
+                    <?php endif; ?>
 
                     <!-- ProShare - Admin Features -->
                     <div class="menu-item menu-dropdown">
@@ -1278,75 +1307,103 @@
                             <i class="fas fa-chevron-down arrow"></i>
                         </div>
                         <div class="menu-dropdown-content">
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('proshare')): ?>
                             <a href="/admin/projects/proshare" class="menu-link">
                                 <i class="fas fa-chart-line"></i>
                                 <span>Overview</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('proshare.settings')): ?>
                             <a href="/admin/projects/proshare/settings" class="menu-link">
                                 <i class="fas fa-cog"></i>
                                 <span>Settings</span>
                             </a>
+                            <?php endif; ?>
                             
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('proshare.user_logs')): ?>
                             <!-- User Activity Logs -->
                             <a href="/admin/projects/proshare/user-logs" class="menu-link">
                                 <i class="fas fa-user-clock"></i>
                                 <span>User Activity Logs</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('proshare.sessions')): ?>
                             <a href="/admin/projects/proshare/sessions" class="menu-link">
                                 <i class="fas fa-desktop"></i>
                                 <span>Session History</span>
                             </a>
+                            <?php endif; ?>
                             
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('proshare.files')): ?>
                             <!-- File & Folder Activity -->
                             <a href="/admin/projects/proshare/files" class="menu-link">
                                 <i class="fas fa-file"></i>
                                 <span>All Files</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('proshare.file_activity')): ?>
                             <a href="/admin/projects/proshare/file-activity" class="menu-link">
                                 <i class="fas fa-clipboard-list"></i>
                                 <span>File Activity Logs</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('proshare.texts')): ?>
                             <a href="/admin/projects/proshare/texts" class="menu-link">
                                 <i class="fas fa-align-left"></i>
                                 <span>Text Shares</span>
                             </a>
+                            <?php endif; ?>
                             
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('proshare.security')): ?>
                             <!-- Security Monitoring -->
                             <a href="/admin/projects/proshare/security" class="menu-link">
                                 <i class="fas fa-shield-alt"></i>
                                 <span>Security Monitoring</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('proshare.server_health')): ?>
                             <a href="/admin/projects/proshare/server-health" class="menu-link">
                                 <i class="fas fa-heartbeat"></i>
                                 <span>Server Health</span>
                             </a>
+                            <?php endif; ?>
                             
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('proshare.storage')): ?>
                             <!-- Storage Monitoring -->
                             <a href="/admin/projects/proshare/storage" class="menu-link">
                                 <i class="fas fa-hdd"></i>
                                 <span>Storage Monitoring</span>
                             </a>
+                            <?php endif; ?>
                             
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('proshare.audit_trail')): ?>
                             <!-- Audit Trail -->
                             <a href="/admin/projects/proshare/audit-trail" class="menu-link">
                                 <i class="fas fa-book"></i>
                                 <span>Audit Trail</span>
                             </a>
+                            <?php endif; ?>
                             
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('proshare.notifications')): ?>
                             <!-- Notifications & Alerts -->
                             <a href="/admin/projects/proshare/notifications" class="menu-link">
                                 <i class="fas fa-bell"></i>
                                 <span>Notifications & Alerts</span>
                             </a>
+                            <?php endif; ?>
                             
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('proshare.analytics')): ?>
                             <!-- Analytics & Insights -->
                             <a href="/admin/projects/proshare/analytics" class="menu-link">
                                 <i class="fas fa-chart-bar"></i>
                                 <span>Analytics & Insights</span>
                             </a>
+                            <?php endif; ?>
                         </div>
                     </div>
+                    <?php endif; ?>
                     
+                    <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('billx')): ?>
                     <!-- BillX -->
                     <div class="menu-item menu-dropdown">
                         <div class="menu-dropdown-toggle">
@@ -1357,29 +1414,41 @@
                             <i class="fas fa-chevron-down arrow"></i>
                         </div>
                         <div class="menu-dropdown-content">
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('billx')): ?>
                             <a href="/admin/projects/billx" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/billx') === 0 && ($_SERVER['REQUEST_URI'] ?? '') === '/admin/projects/billx' ? 'active' : '' ?>">
                                 <i class="fas fa-chart-line"></i>
                                 <span>Overview</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('billx.bills')): ?>
                             <a href="/admin/projects/billx/bills" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/billx/bills') === 0 && strpos($_SERVER['REQUEST_URI'] ?? '', '/activity') === false ? 'active' : '' ?>">
                                 <i class="fas fa-list"></i>
                                 <span>All Bills</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('billx.export')): ?>
                             <a href="/admin/projects/billx/bills/export" class="menu-link">
                                 <i class="fas fa-file-csv"></i>
                                 <span>Export CSV</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('billx.activity_logs')): ?>
                             <a href="/admin/projects/billx/activity-logs" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/billx/activity-logs') === 0 ? 'active' : '' ?>">
                                 <i class="fas fa-history"></i>
                                 <span>Activity Logs</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('billx.settings')): ?>
                             <a href="/admin/projects/billx/settings" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/billx/settings') === 0 ? 'active' : '' ?>">
                                 <i class="fas fa-cog"></i>
                                 <span>Settings</span>
                             </a>
+                            <?php endif; ?>
                         </div>
                     </div>
+                    <?php endif; ?>
 
+                    <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('whatsapp')): ?>
                     <!-- WhatsApp API -->
                     <div class="menu-item menu-dropdown">
                         <div class="menu-dropdown-toggle">
@@ -1390,43 +1459,125 @@
                             <i class="fas fa-chevron-down arrow"></i>
                         </div>
                         <div class="menu-dropdown-content">
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('whatsapp.overview')): ?>
                             <a href="/admin/whatsapp/overview" class="menu-link">
                                 <i class="fas fa-chart-line"></i>
                                 <span>Overview</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('whatsapp.sessions')): ?>
                             <a href="/admin/whatsapp/sessions" class="menu-link">
                                 <i class="fas fa-mobile-alt"></i>
                                 <span>Sessions</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('whatsapp.messages')): ?>
                             <a href="/admin/whatsapp/messages" class="menu-link">
                                 <i class="fas fa-comments"></i>
                                 <span>Messages</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('whatsapp.users')): ?>
                             <a href="/admin/whatsapp/users" class="menu-link">
                                 <i class="fas fa-users"></i>
                                 <span>Users</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('whatsapp.api_logs')): ?>
                             <a href="/admin/whatsapp/api-logs" class="menu-link">
                                 <i class="fas fa-file-alt"></i>
                                 <span>API Logs</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('whatsapp.subscription_plans')): ?>
                             <a href="/admin/whatsapp/subscription-plans" class="menu-link">
                                 <i class="fas fa-tags"></i>
                                 <span>Subscription Plans</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('whatsapp.user_subscriptions')): ?>
                             <a href="/admin/whatsapp/user-subscriptions" class="menu-link">
                                 <i class="fas fa-crown"></i>
                                 <span>User Subscriptions</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('whatsapp.assign_subscription')): ?>
                             <a href="/admin/whatsapp/user-subscriptions/assign" class="menu-link">
                                 <i class="fas fa-user-plus"></i>
                                 <span>Assign Subscription</span>
                             </a>
+                            <?php endif; ?>
                         </div>
                     </div>
+                    <?php endif; ?>
+
+                    <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('qr')): ?>
+                    <!-- QR Codes -->
+                    <div class="menu-item menu-dropdown">
+                        <div class="menu-dropdown-toggle <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/qr') === 0 ? 'active' : '' ?>">
+                            <div class="left">
+                                <i class="fas fa-qrcode"></i>
+                                <span>QR Codes</span>
+                            </div>
+                            <i class="fas fa-chevron-down arrow"></i>
+                        </div>
+                        <div class="menu-dropdown-content">
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('qr')): ?>
+                            <a href="/admin/qr" class="menu-link <?= ($_SERVER['REQUEST_URI'] ?? '') === '/admin/qr' ? 'active' : '' ?>">
+                                <i class="fas fa-list"></i>
+                                <span>All QR Codes</span>
+                            </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('qr.analytics')): ?>
+                            <a href="/admin/qr/analytics" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/qr/analytics') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-chart-line"></i>
+                                <span>Scan Analytics</span>
+                            </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('qr.blocked_links')): ?>
+                            <a href="/admin/qr/blocked-links" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/qr/blocked-links') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-ban"></i>
+                                <span>Block Malicious Links</span>
+                            </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('qr.storage')): ?>
+                            <a href="/admin/qr/storage" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/qr/storage') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-hdd"></i>
+                                <span>Storage Monitor</span>
+                            </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('qr.plans')): ?>
+                            <a href="/admin/qr/plans" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/qr/plans') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-tags"></i>
+                                <span>Plan Limits</span>
+                            </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('qr.abuse_reports')): ?>
+                            <a href="/admin/qr/abuse-reports" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/qr/abuse-reports') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-flag"></i>
+                                <span>Abuse Reports</span>
+                            </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('qr.roles')): ?>
+                            <a href="/admin/qr/roles" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/qr/roles') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-users-cog"></i>
+                                <span>Roles &amp; Permissions</span>
+                            </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('qr.api_keys')): ?>
+                            <a href="/admin/qr/api-keys" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/qr/api-keys') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-key"></i>
+                                <span>QR API Keys</span>
+                            </a>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <?php endif; ?>
                 </div>
+                <?php endif; ?>
                 
                 <!-- User Management -->
+                <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('users')): ?>
                 <div class="menu-section">
                     <div class="menu-section-title">Management</div>
                     
@@ -1436,12 +1587,31 @@
                             <span>Users</span>
                         </a>
                     </div>
+
+                    <?php if (\Core\Auth::isAdmin()): ?>
+                    <div class="menu-item">
+                        <a href="/admin/admin-access" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/admin-access') === 0 ? 'active' : '' ?>">
+                            <i class="fas fa-user-shield"></i>
+                            <span>Admin Users Access</span>
+                        </a>
+                    </div>
+
+                    <div class="menu-item">
+                        <a href="/admin/roles" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/roles') === 0 ? 'active' : '' ?>">
+                            <i class="fas fa-user-tag"></i>
+                            <span>User Roles</span>
+                        </a>
+                    </div>
+                    <?php endif; ?>
                 </div>
+                <?php endif; ?>
                 
                 <!-- Security -->
+                <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('security') || \Core\Auth::hasPermissionGroup('oauth') || \Core\Auth::hasPermissionGroup('sessions') || \Core\Auth::hasPermission('2fa')): ?>
                 <div class="menu-section">
                     <div class="menu-section-title">Security</div>
                     
+                    <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('security')): ?>
                     <div class="menu-item menu-dropdown">
                         <div class="menu-dropdown-toggle">
                             <div class="left">
@@ -1451,21 +1621,29 @@
                             <i class="fas fa-chevron-down arrow"></i>
                         </div>
                         <div class="menu-dropdown-content">
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('security')): ?>
                             <a href="/admin/security" class="menu-link">
                                 <i class="fas fa-chart-line"></i>
                                 <span>Overview</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('security.blocked_ips')): ?>
                             <a href="/admin/security/blocked-ips" class="menu-link">
                                 <i class="fas fa-ban"></i>
                                 <span>Blocked IPs</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('security.failed_logins')): ?>
                             <a href="/admin/security/failed-logins" class="menu-link">
                                 <i class="fas fa-exclamation-triangle"></i>
                                 <span>Failed Logins</span>
                             </a>
+                            <?php endif; ?>
                         </div>
                     </div>
+                    <?php endif; ?>
                     
+                    <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('oauth')): ?>
                     <div class="menu-item menu-dropdown">
                         <div class="menu-dropdown-toggle">
                             <div class="left">
@@ -1475,17 +1653,23 @@
                             <i class="fas fa-chevron-down arrow"></i>
                         </div>
                         <div class="menu-dropdown-content">
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('oauth')): ?>
                             <a href="/admin/oauth" class="menu-link">
                                 <i class="fas fa-cog"></i>
                                 <span>OAuth Providers</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('oauth.connections')): ?>
                             <a href="/admin/oauth/connections" class="menu-link">
                                 <i class="fas fa-link"></i>
                                 <span>OAuth Connections</span>
                             </a>
+                            <?php endif; ?>
                         </div>
                     </div>
+                    <?php endif; ?>
                     
+                    <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('sessions')): ?>
                     <div class="menu-item menu-dropdown">
                         <div class="menu-dropdown-toggle">
                             <div class="left">
@@ -1495,17 +1679,23 @@
                             <i class="fas fa-chevron-down arrow"></i>
                         </div>
                         <div class="menu-dropdown-content">
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('sessions')): ?>
                             <a href="/admin/sessions" class="menu-link">
                                 <i class="fas fa-users"></i>
                                 <span>Active Sessions</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('sessions.login_history')): ?>
                             <a href="/admin/sessions/login-history" class="menu-link">
                                 <i class="fas fa-history"></i>
                                 <span>Login History</span>
                             </a>
+                            <?php endif; ?>
                         </div>
                     </div>
+                    <?php endif; ?>
                     
+                    <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('2fa')): ?>
                     <!-- 2FA Management -->
                     <div class="menu-item menu-dropdown">
                         <div class="menu-dropdown-toggle">
@@ -1522,12 +1712,16 @@
                             </a>
                         </div>
                     </div>
+                    <?php endif; ?>
                 </div>
+                <?php endif; ?>
                 
                 <!-- Logs -->
+                <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('logs') || \Core\Auth::hasPermission('audit')): ?>
                 <div class="menu-section">
                     <div class="menu-section-title">Logs</div>
                     
+                    <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('logs')): ?>
                     <div class="menu-item menu-dropdown">
                         <div class="menu-dropdown-toggle">
                             <div class="left">
@@ -1537,27 +1731,54 @@
                             <i class="fas fa-chevron-down arrow"></i>
                         </div>
                         <div class="menu-dropdown-content">
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('logs')): ?>
                             <a href="/admin/logs" class="menu-link">
                                 <i class="fas fa-list"></i>
                                 <span>All Logs</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('logs.activity')): ?>
                             <a href="/admin/logs/activity" class="menu-link">
                                 <i class="fas fa-user-clock"></i>
                                 <span>User Activity</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('logs.system')): ?>
                             <a href="/admin/logs/system" class="menu-link">
                                 <i class="fas fa-server"></i>
                                 <span>System Logs</span>
                             </a>
+                            <?php endif; ?>
                         </div>
                     </div>
+                    <?php endif; ?>
+                    <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('audit')): ?>
+                    <div class="menu-item menu-dropdown">
+                        <div class="menu-dropdown-toggle">
+                            <div class="left">
+                                <i class="fas fa-search"></i>
+                                <span>Audit Explorer</span>
+                            </div>
+                            <i class="fas fa-chevron-down arrow"></i>
+                        </div>
+                        <div class="menu-dropdown-content">
+                            <a href="/admin/audit" class="menu-link">
+                                <i class="fas fa-search"></i>
+                                <span>Audit Explorer</span>
+                            </a>
+                        </div>
+                    </div>
+                    <?php endif; ?>
                 </div>
+                <?php endif; ?>
                 
                 <!-- Advanced Features -->
+                <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('api') || \Core\Auth::hasPermissionGroup('websocket') || \Core\Auth::hasPermissionGroup('analytics') || \Core\Auth::hasPermissionGroup('email') || \Core\Auth::hasPermissionGroup('notifications') || \Core\Auth::hasPermissionGroup('performance')): ?>
                 <div class="menu-section">
                     <div class="menu-section-title">Advanced Features</div>
                     
                     <!-- API Management -->
+                    <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('api')): ?>
                     <div class="menu-item menu-dropdown">
                         <div class="menu-dropdown-toggle">
                             <div class="left">
@@ -1567,25 +1788,35 @@
                             <i class="fas fa-chevron-down arrow"></i>
                         </div>
                         <div class="menu-dropdown-content">
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('api.keys')): ?>
                             <a href="/admin/api/keys" class="menu-link">
                                 <i class="fas fa-key"></i>
                                 <span>API Keys</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('api.logs')): ?>
                             <a href="/admin/api/logs" class="menu-link">
                                 <i class="fas fa-history"></i>
                                 <span>Request Logs</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('api.rate_limits')): ?>
                             <a href="/admin/api/rate-limits" class="menu-link">
                                 <i class="fas fa-tachometer-alt"></i>
                                 <span>Rate Limits</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('api.documentation')): ?>
                             <a href="/admin/api/documentation" class="menu-link">
                                 <i class="fas fa-book"></i>
                                 <span>Documentation</span>
                             </a>
+                            <?php endif; ?>
                         </div>
                     </div>
+                    <?php endif; ?>
                     
+                    <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('websocket')): ?>
                     <!-- Real-time & WebSocket -->
                     <div class="menu-item menu-dropdown">
                         <div class="menu-dropdown-toggle">
@@ -1596,25 +1827,35 @@
                             <i class="fas fa-chevron-down arrow"></i>
                         </div>
                         <div class="menu-dropdown-content">
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('websocket')): ?>
                             <a href="/admin/websocket/status" class="menu-link">
                                 <i class="fas fa-signal"></i>
                                 <span>WebSocket Status</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('websocket.connections')): ?>
                             <a href="/admin/websocket/connections" class="menu-link">
                                 <i class="fas fa-users"></i>
                                 <span>Active Connections</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('websocket.rooms')): ?>
                             <a href="/admin/websocket/rooms" class="menu-link">
                                 <i class="fas fa-layer-group"></i>
                                 <span>Rooms</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('websocket.settings')): ?>
                             <a href="/admin/websocket/settings" class="menu-link">
                                 <i class="fas fa-cog"></i>
                                 <span>Settings</span>
                             </a>
+                            <?php endif; ?>
                         </div>
                     </div>
+                    <?php endif; ?>
                     
+                    <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('analytics')): ?>
                     <!-- Analytics & Reports -->
                     <div class="menu-item menu-dropdown">
                         <div class="menu-dropdown-toggle">
@@ -1625,25 +1866,35 @@
                             <i class="fas fa-chevron-down arrow"></i>
                         </div>
                         <div class="menu-dropdown-content">
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('analytics')): ?>
                             <a href="/admin/analytics/overview" class="menu-link">
                                 <i class="fas fa-chart-line"></i>
                                 <span>Overview</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('analytics.events')): ?>
                             <a href="/admin/analytics/events" class="menu-link">
                                 <i class="fas fa-stream"></i>
                                 <span>Events</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('analytics.reports')): ?>
                             <a href="/admin/analytics/reports" class="menu-link">
                                 <i class="fas fa-file-alt"></i>
                                 <span>Reports</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('analytics.export')): ?>
                             <a href="/admin/analytics/export" class="menu-link">
                                 <i class="fas fa-download"></i>
                                 <span>Export Data</span>
                             </a>
+                            <?php endif; ?>
                         </div>
                     </div>
+                    <?php endif; ?>
                     
+                    <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('email') || \Core\Auth::hasPermissionGroup('notifications')): ?>
                     <!-- Email & Notifications -->
                     <div class="menu-item menu-dropdown">
                         <div class="menu-dropdown-toggle">
@@ -1654,25 +1905,35 @@
                             <i class="fas fa-chevron-down arrow"></i>
                         </div>
                         <div class="menu-dropdown-content">
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('email.queue')): ?>
                             <a href="/admin/email/queue" class="menu-link">
                                 <i class="fas fa-inbox"></i>
                                 <span>Email Queue</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('email.templates')): ?>
                             <a href="/admin/email/templates" class="menu-link">
                                 <i class="fas fa-file-code"></i>
                                 <span>Templates</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('notifications')): ?>
                             <a href="/admin/notifications/all" class="menu-link">
                                 <i class="fas fa-bell"></i>
                                 <span>All Notifications</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('notifications.preferences')): ?>
                             <a href="/admin/notifications/preferences" class="menu-link">
                                 <i class="fas fa-sliders-h"></i>
                                 <span>Preferences</span>
                             </a>
+                            <?php endif; ?>
                         </div>
                     </div>
+                    <?php endif; ?>
                     
+                    <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('performance')): ?>
                     <!-- Performance & Cache -->
                     <div class="menu-item menu-dropdown">
                         <div class="menu-dropdown-toggle">
@@ -1683,27 +1944,38 @@
                             <i class="fas fa-chevron-down arrow"></i>
                         </div>
                         <div class="menu-dropdown-content">
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('performance.cache')): ?>
                             <a href="/admin/performance/cache" class="menu-link">
                                 <i class="fas fa-database"></i>
                                 <span>Cache Management</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('performance.assets')): ?>
                             <a href="/admin/performance/assets" class="menu-link">
                                 <i class="fas fa-file-code"></i>
                                 <span>Asset Optimization</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('performance.database')): ?>
                             <a href="/admin/performance/database" class="menu-link">
                                 <i class="fas fa-server"></i>
                                 <span>Database Optimization</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('performance.monitoring')): ?>
                             <a href="/admin/performance/monitoring" class="menu-link">
                                 <i class="fas fa-chart-area"></i>
                                 <span>Monitoring</span>
                             </a>
+                            <?php endif; ?>
                         </div>
                     </div>
+                    <?php endif; ?>
                 </div>
+                <?php endif; ?>
                 
                 <!-- Settings -->
+                <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('settings') || \Core\Auth::hasPermission('navbar')): ?>
                 <div class="menu-section">
                     <div class="menu-section-title">System</div>
                     
@@ -1716,37 +1988,52 @@
                             <i class="fas fa-chevron-down arrow"></i>
                         </div>
                         <div class="menu-dropdown-content">
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('settings')): ?>
                             <a href="/admin/settings" class="menu-link">
                                 <i class="fas fa-sliders-h"></i>
                                 <span>General</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('settings.session')): ?>
                             <a href="/admin/settings/session" class="menu-link">
                                 <i class="fas fa-clock"></i>
                                 <span>Session & Security</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('settings.home_content')): ?>
                             <a href="/admin/home-content" class="menu-link">
                                 <i class="fas fa-home"></i>
                                 <span>Home Page</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('navbar')): ?>
                             <a href="/admin/navbar" class="menu-link">
                                 <i class="fas fa-bars"></i>
                                 <span>Navbar</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('settings.maintenance')): ?>
                             <a href="/admin/settings/maintenance" class="menu-link">
                                 <i class="fas fa-tools"></i>
                                 <span>Maintenance</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('settings.features')): ?>
                             <a href="/admin/settings/features" class="menu-link">
                                 <i class="fas fa-toggle-on"></i>
                                 <span>Feature Flags</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('settings.timezone')): ?>
                             <a href="/admin/settings#timezone" class="menu-link">
                                 <i class="fas fa-globe"></i>
                                 <span>Timezone</span>
                             </a>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
+                <?php endif; ?>
             </nav>
         </aside>
         

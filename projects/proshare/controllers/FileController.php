@@ -11,6 +11,7 @@ use Core\Auth;
 use Core\Security;
 use Core\Helpers;
 use Core\Logger;
+use Core\ActivityLogger;
 
 class FileController
 {
@@ -96,6 +97,7 @@ class FileController
                 'filename' => $file['name'],
                 'size' => $file['size']
             ]);
+            try { ActivityLogger::logCreate(Auth::id(), 'proshare', 'file', null, ['filename' => $file['name'] ?? null]); } catch (\Throwable $_) {}
             
             Helpers::flash('success', 'File uploaded successfully!');
             $_SESSION['last_upload'] = $fileInfo;
@@ -213,6 +215,7 @@ class FileController
             
             // Update status in database
             $db->update('files', ['status' => 'deleted'], 'id = ?', [$file['id']]);
+            try { ActivityLogger::logDelete($user['id'], 'proshare', 'file', $file['id'], ['filename' => $file['original_name'] ?? null]); } catch (\Throwable $_) {}
             
             // Try to log the deletion (don't fail if logging fails)
             try {
@@ -234,6 +237,7 @@ class FileController
             echo json_encode(['success' => true, 'message' => 'File deleted successfully']);
         } catch (\Exception $e) {
             error_log('File deletion failed: ' . $e->getMessage());
+            try { ActivityLogger::logFailure($user['id'] ?? null, 'file_action', $e->getMessage()); } catch (\Throwable $_) {}
             echo json_encode(['success' => false, 'error' => 'Failed to delete file: ' . $e->getMessage()]);
         }
     }

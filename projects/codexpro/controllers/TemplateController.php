@@ -9,6 +9,7 @@ namespace Projects\CodeXPro\Controllers;
 
 use Core\Database;
 use Core\View;
+use Core\ActivityLogger;
 use TemplateManager;
 
 // Load TemplateManager for starter templates

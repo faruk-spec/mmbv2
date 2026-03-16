@@ -23,7 +23,7 @@ class QRAdminController extends BaseController
     public function __construct()
     {
         $this->requireAuth();
-        $this->requireAdmin();
+        $this->requirePermissionGroup('qr');
         $this->db = Database::getInstance();
         $this->ensureTables();
     }
@@ -358,6 +358,7 @@ class QRAdminController extends BaseController
      */
     public function index(): void
     {
+        $this->requirePermission('qr');
         $page    = max(1, (int) $this->input('page', 1));
         $perPage = 20;
         $offset  = ($page - 1) * $perPage;
@@ -439,6 +440,7 @@ class QRAdminController extends BaseController
      */
     public function blockQR(string $id): void
     {
+        $this->requirePermission('qr');
         if (!$this->validateCsrf()) {
             $this->flash('error', 'Invalid request.');
             $this->redirect('/admin/qr');
@@ -465,6 +467,7 @@ class QRAdminController extends BaseController
      */
     public function unblockQR(string $id): void
     {
+        $this->requirePermission('qr');
         if (!$this->validateCsrf()) {
             $this->flash('error', 'Invalid request.');
             $this->redirect('/admin/qr');
@@ -495,6 +498,7 @@ class QRAdminController extends BaseController
      */
     public function analytics(): void
     {
+        $this->requirePermission('qr.analytics');
         try {
             // Total scans per day (last 30 days)
             $dailyScans = $this->db->fetchAll(
@@ -571,6 +575,7 @@ class QRAdminController extends BaseController
      */
     public function blockedLinks(): void
     {
+        $this->requirePermission('qr.blocked_links');
         try {
             $blockedLinks = $this->db->fetchAll(
                 "SELECT bl.*, u.name AS blocked_by_name
@@ -594,6 +599,7 @@ class QRAdminController extends BaseController
      */
     public function blockLink(): void
     {
+        $this->requirePermission('qr.blocked_links');
         if (!$this->validateCsrf()) {
             $this->flash('error', 'Invalid request.');
             $this->redirect('/admin/qr/blocked-links');
@@ -639,6 +645,7 @@ class QRAdminController extends BaseController
      */
     public function unblockLink(string $id): void
     {
+        $this->requirePermission('qr.blocked_links');
         if (!$this->validateCsrf()) {
             $this->flash('error', 'Invalid request.');
             $this->redirect('/admin/qr/blocked-links');
@@ -671,6 +678,7 @@ class QRAdminController extends BaseController
      */
     public function storage(): void
     {
+        $this->requirePermission('qr.storage');
         try {
             // Per-user storage usage
             $userStorage = $this->db->fetchAll(
@@ -736,6 +744,7 @@ class QRAdminController extends BaseController
      */
     public function plans(): void
     {
+        $this->requirePermission('qr.plans');
         try {
             $plans = $this->db->fetchAll(
                 "SELECT p.*,
@@ -792,6 +801,7 @@ class QRAdminController extends BaseController
      */
     public function updatePlan(string $id): void
     {
+        $this->requirePermission('qr.plans');
         if (!$this->validateCsrf()) {
             $this->flash('error', 'Invalid request.');
             $this->redirect('/admin/qr/plans');
@@ -859,6 +869,7 @@ class QRAdminController extends BaseController
      */
     public function togglePlanFeature(string $id): void
     {
+        $this->requirePermission('qr.plans');
         if (!$this->validateCsrf()) {
             $this->json(['success' => false, 'message' => 'Invalid request.'], 403);
             return;
@@ -914,6 +925,7 @@ class QRAdminController extends BaseController
      */
     public function abuseReports(): void
     {
+        $this->requirePermission('qr.abuse_reports');
         try {
             $reports = $this->db->fetchAll(
                 "SELECT r.*, q.content AS qr_content, q.type AS qr_type, q.status AS qr_status,
@@ -950,6 +962,7 @@ class QRAdminController extends BaseController
      */
     public function resolveAbuse(string $id): void
     {
+        $this->requirePermission('qr.abuse_reports');
         if (!$this->validateCsrf()) {
             $this->flash('error', 'Invalid request.');
             $this->redirect('/admin/qr/abuse-reports');
@@ -999,6 +1012,7 @@ class QRAdminController extends BaseController
      */
     public function roles(): void
     {
+        $this->requirePermission('qr.roles');
         try {
             // Available features
             $allFeatures = $this->getAllFeatures();
@@ -1081,6 +1095,7 @@ class QRAdminController extends BaseController
      */
     public function setRoleFeature(): void
     {
+        $this->requirePermission('qr.roles');
         if (!$this->validateCsrf()) {
             $this->json(['success' => false, 'message' => 'Invalid request.'], 403);
             return;
@@ -1124,6 +1139,7 @@ class QRAdminController extends BaseController
      */
     public function setUserFeature(): void
     {
+        $this->requirePermission('qr.roles');
         if (!$this->validateCsrf()) {
             $this->json(['success' => false, 'message' => 'Invalid request.'], 403);
             return;
@@ -1166,6 +1182,7 @@ class QRAdminController extends BaseController
      */
     public function removeUserFeatures(): void
     {
+        $this->requirePermission('qr.roles');
         if (!$this->validateCsrf()) {
             $this->json(['success' => false, 'message' => 'Invalid request.'], 403);
             return;
@@ -1193,6 +1210,7 @@ class QRAdminController extends BaseController
      */
     public function getUserFeaturesApi(string $id): void
     {
+        $this->requirePermission('qr.roles');
         $userId = (int) $id;
         if (!$userId) {
             $this->json(['success' => false, 'message' => 'Invalid user.'], 400);
@@ -1238,6 +1256,7 @@ class QRAdminController extends BaseController
      */
     public function setUsePlanSettings(): void
     {
+        $this->requirePermission('qr.roles');
         if (!$this->validateCsrf()) {
             $this->json(['success' => false, 'message' => 'Invalid request.'], 403);
             return;
@@ -1276,6 +1295,7 @@ class QRAdminController extends BaseController
      */
     public function assignUserPlan(): void
     {
+        $this->requirePermission('qr.roles');
         if (!$this->validateCsrf()) {
             $this->flash('error', 'Invalid request.');
             $this->redirect('/admin/qr/roles');
@@ -1377,6 +1397,7 @@ class QRAdminController extends BaseController
      */
     public function qrApiKeys(): void
     {
+        $this->requirePermission('qr.api_keys');
         $db = Database::getInstance();
 
         try {
@@ -1425,6 +1446,7 @@ class QRAdminController extends BaseController
      */
     public function revokeQrApiKey(): void
     {
+        $this->requirePermission('qr.api_keys');
         $keyId = (int) $this->input('key_id', '0');
         if (!$keyId) {
             $this->json(['success' => false, 'error' => 'Key ID required'], 400);
@@ -1458,6 +1480,7 @@ class QRAdminController extends BaseController
      */
     public function adminGenerateApiKey(): void
     {
+        $this->requirePermission('qr.api_keys');
         $userId = (int) $this->input('user_id', '0');
         $name   = trim(Security::sanitize($this->input('name', '')));
 

@@ -33,7 +33,7 @@ class PlatformPlansController extends BaseController
     public function __construct()
     {
         $this->requireAuth();
-        $this->requireAdmin();
+        $this->requirePermissionGroup('platform_plans');
         $this->db = Database::getInstance();
         $this->ensureTables();
     }
@@ -44,6 +44,7 @@ class PlatformPlansController extends BaseController
 
     public function index(): void
     {
+        $this->requirePermission('platform_plans.list');
         $plans = $this->getPlans();
 
         // Subscriber counts
@@ -72,6 +73,7 @@ class PlatformPlansController extends BaseController
 
     public function createForm(): void
     {
+        $this->requirePermission('platform_plans.create');
         $this->view('admin/platform-plans/form', [
             'title'  => 'Create Platform Plan',
             'plan'   => null,
@@ -82,6 +84,7 @@ class PlatformPlansController extends BaseController
 
     public function create(): void
     {
+        $this->requirePermission('platform_plans.create');
         if (!$this->validateCsrf()) {
             $this->flash('error', 'Invalid request token.');
             $this->redirect('/admin/platform-plans/create');
@@ -126,6 +129,7 @@ class PlatformPlansController extends BaseController
 
     public function editForm(int $id): void
     {
+        $this->requirePermission('platform_plans');
         $plan = $this->db->fetch("SELECT * FROM platform_plans WHERE id = ?", [$id]);
         if (!$plan) {
             $this->flash('error', 'Plan not found.');
@@ -146,6 +150,7 @@ class PlatformPlansController extends BaseController
 
     public function update(int $id): void
     {
+        $this->requirePermission('platform_plans');
         if (!$this->validateCsrf()) {
             $this->flash('error', 'Invalid request token.');
             $this->redirect("/admin/platform-plans/{$id}/edit");
@@ -192,6 +197,7 @@ class PlatformPlansController extends BaseController
 
     public function delete(int $id): void
     {
+        $this->requirePermission('platform_plans');
         if (!$this->validateCsrf()) {
             $this->flash('error', 'Invalid request token.');
             $this->redirect('/admin/platform-plans');
@@ -228,6 +234,7 @@ class PlatformPlansController extends BaseController
 
     public function assignUser(): void
     {
+        $this->requirePermission('platform_plans');
         if (!$this->validateCsrf()) {
             $this->jsonError('Invalid request token.');
             return;
@@ -278,6 +285,7 @@ class PlatformPlansController extends BaseController
 
     public function revokeUser(): void
     {
+        $this->requirePermission('platform_plans');
         if (!$this->validateCsrf()) {
             $this->jsonError('Invalid request token.');
             return;

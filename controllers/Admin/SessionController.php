@@ -20,7 +20,7 @@ class SessionController extends BaseController
     public function __construct()
     {
         $this->requireAuth();
-        $this->requireAdmin();
+        $this->requirePermissionGroup('sessions');
     }
     
     /**
@@ -28,6 +28,7 @@ class SessionController extends BaseController
      */
     public function index(): void
     {
+        $this->requirePermission('sessions');
         $db = Database::getInstance();
         
         $page = max(1, (int) $this->input('page', 1));
@@ -79,6 +80,7 @@ class SessionController extends BaseController
      */
     public function revoke(string $id): void
     {
+        $this->requirePermission('sessions');
         if (!$this->validateCsrf()) {
             $this->flash('error', 'Invalid request.');
             $this->redirect('/admin/sessions');
@@ -100,6 +102,7 @@ class SessionController extends BaseController
      */
     public function cleanup(): void
     {
+        $this->requirePermission('sessions');
         if (!$this->validateCsrf()) {
             $this->flash('error', 'Invalid request.');
             $this->redirect('/admin/sessions');
@@ -119,6 +122,7 @@ class SessionController extends BaseController
      */
     public function loginHistory(): void
     {
+        $this->requirePermission('sessions.login_history');
         $db = Database::getInstance();
         
         $page = max(1, (int) $this->input('page', 1));

@@ -13,18 +13,24 @@ use Core\Auth;
 use Core\View;
 use Core\Database;
 use Core\Security;
+use Core\ActivityLogger;
 
 class WhatsAppAdminController
 {
     private $db;
-    
+
     public function __construct()
     {
         $this->db = Database::getInstance();
-        
-        // Check if user is admin
-        if (!Auth::isAdmin()) {
-            header('Location: /dashboard');
+
+        if (!Auth::check()) {
+            header('Location: /login');
+            exit;
+        }
+
+        if (!Auth::hasPermissionGroup('whatsapp')) {
+            $_SESSION['flash_error'] = 'You do not have permission to access that section.';
+            header('Location: /admin/dashboard');
             exit;
         }
     }
@@ -34,6 +40,11 @@ class WhatsAppAdminController
      */
     public function overview()
     {
+        if (!Auth::hasPermission('whatsapp.overview')) {
+            $_SESSION['flash_error'] = 'You do not have permission to access that section.';
+            header('Location: /admin/dashboard');
+            exit;
+        }
         $stats = $this->getOverviewStats();
         $recentSessions = $this->getRecentSessions();
         $recentMessages = $this->getRecentMessages();
@@ -51,6 +62,11 @@ class WhatsAppAdminController
      */
     public function sessions()
     {
+        if (!Auth::hasPermission('whatsapp.sessions')) {
+            $_SESSION['flash_error'] = 'You do not have permission to access that section.';
+            header('Location: /admin/dashboard');
+            exit;
+        }
         $page = $_GET['page'] ?? 1;
         $perPage = 20;
         $offset = ($page - 1) * $perPage;
@@ -80,6 +96,11 @@ class WhatsAppAdminController
      */
     public function messages()
     {
+        if (!Auth::hasPermission('whatsapp.messages')) {
+            $_SESSION['flash_error'] = 'You do not have permission to access that section.';
+            header('Location: /admin/dashboard');
+            exit;
+        }
         $page = $_GET['page'] ?? 1;
         $perPage = 50;
         $offset = ($page - 1) * $perPage;
@@ -109,6 +130,11 @@ class WhatsAppAdminController
      */
     public function apiLogs()
     {
+        if (!Auth::hasPermission('whatsapp.api_logs')) {
+            $_SESSION['flash_error'] = 'You do not have permission to access that section.';
+            header('Location: /admin/dashboard');
+            exit;
+        }
         $page = $_GET['page'] ?? 1;
         $perPage = 50;
         $offset = ($page - 1) * $perPage;
@@ -137,6 +163,11 @@ class WhatsAppAdminController
      */
     public function userSettings()
     {
+        if (!Auth::hasPermission('whatsapp.users')) {
+            $_SESSION['flash_error'] = 'You do not have permission to access that section.';
+            header('Location: /admin/dashboard');
+            exit;
+        }
         $userId = $_GET['user_id'] ?? null;
         
         if ($userId) {
@@ -209,6 +240,12 @@ class WhatsAppAdminController
      */
     public function deleteSession()
     {
+        if (!Auth::hasPermission('whatsapp.sessions')) {
+            http_response_code(403);
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Permission denied']);
+            exit;
+        }
         header('Content-Type: application/json');
         
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -230,6 +267,7 @@ class WhatsAppAdminController
             }
             
             $this->db->query("DELETE FROM whatsapp_sessions WHERE id = ?", [$sessionId]);
+            try { ActivityLogger::logDelete(Auth::id(), 'whatsapp', 'session', $sessionId); } catch (\Throwable $_) {}
             
             http_response_code(200);
             header('Content-Type: application/json');
@@ -242,6 +280,7 @@ class WhatsAppAdminController
         } catch (\Exception $e) {
             http_response_code(400);
             header('Content-Type: application/json');
+            try { ActivityLogger::logFailure(Auth::id(), 'session_delete', $e->getMessage()); } catch (\Throwable $_) {}
             echo json_encode([
                 'success' => false,
                 'message' => $e->getMessage()

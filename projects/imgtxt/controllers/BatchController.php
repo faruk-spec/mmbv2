@@ -10,6 +10,7 @@ namespace Projects\ImgTxt\Controllers;
 use Core\Database;
 use Core\View;
 use Core\Auth;
+use Core\ActivityLogger;
 
 class BatchController
 {
@@ -55,6 +56,7 @@ class BatchController
         ]);
         
         if ($batchId) {
+            try { ActivityLogger::logCreate($user['id'], 'imgtxt', 'batch_job', $batchId, ['name' => $name]); } catch (\Throwable $_) {}
             echo json_encode([
                 'success' => true,
                 'batch_id' => $batchId

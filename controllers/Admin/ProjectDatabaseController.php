@@ -13,7 +13,7 @@ class ProjectDatabaseController extends BaseController
     public function __construct()
     {
         $this->requireAuth();
-        $this->requireAdmin();
+        $this->requirePermissionGroup('projects');
         $this->configPath = BASE_PATH . '/config/projects_db.php';
     }
     
@@ -22,6 +22,7 @@ class ProjectDatabaseController extends BaseController
      */
     public function index()
     {
+        $this->requirePermission('projects.database_setup');
         $config = $this->loadConfig();
         
         $data = [
@@ -47,6 +48,7 @@ class ProjectDatabaseController extends BaseController
      */
     public function configure($project)
     {
+        $this->requirePermission('projects.database_setup');
         if (!in_array($project, $this->projects)) {
             $this->redirect('/admin/projects/database-setup');
             return;
@@ -76,6 +78,7 @@ class ProjectDatabaseController extends BaseController
      */
     public function testConnection()
     {
+        $this->requirePermission('projects.database_setup');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->json(['success' => false, 'message' => 'Invalid request method'], 405);
             return;
@@ -139,6 +142,7 @@ class ProjectDatabaseController extends BaseController
      */
     public function saveConfiguration()
     {
+        $this->requirePermission('projects.database_setup');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->redirect('/admin/projects/database-setup');
             return;
@@ -186,6 +190,7 @@ class ProjectDatabaseController extends BaseController
      */
     public function importSchema()
     {
+        $this->requirePermission('projects.database_setup');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->json(['success' => false, 'message' => 'Invalid request method'], 405);
             return;

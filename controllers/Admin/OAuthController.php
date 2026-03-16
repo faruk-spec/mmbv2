@@ -19,7 +19,7 @@ class OAuthController extends BaseController
     public function __construct()
     {
         $this->requireAuth();
-        $this->requireAdmin();
+        $this->requirePermissionGroup('oauth');
     }
     
     /**
@@ -27,6 +27,7 @@ class OAuthController extends BaseController
      */
     public function index(): void
     {
+        $this->requirePermission('oauth');
         $db = Database::getInstance();
         
         $providers = $db->fetchAll(
@@ -45,6 +46,7 @@ class OAuthController extends BaseController
      */
     public function edit(string $id): void
     {
+        $this->requirePermission('oauth');
         $db = Database::getInstance();
         $provider = $db->fetch("SELECT * FROM oauth_providers WHERE id = ?", [(int) $id]);
         
@@ -65,6 +67,7 @@ class OAuthController extends BaseController
      */
     public function update(string $id): void
     {
+        $this->requirePermission('oauth');
         if (!$this->validateCsrf()) {
             $this->flash('error', 'Invalid request.');
             $this->redirect('/admin/oauth/' . $id . '/edit');
@@ -102,6 +105,7 @@ class OAuthController extends BaseController
      */
     public function connections(): void
     {
+        $this->requirePermission('oauth.connections');
         $db = Database::getInstance();
         
         $page = max(1, (int) $this->input('page', 1));
@@ -140,6 +144,7 @@ class OAuthController extends BaseController
      */
     public function revokeConnection(string $id): void
     {
+        $this->requirePermission('oauth.connections');
         if (!$this->validateCsrf()) {
             $this->flash('error', 'Invalid request.');
             $this->redirect('/admin/oauth/connections');

@@ -12,6 +12,7 @@ use Core\View;
 use Core\Auth;
 use Core\Security;
 use Core\Helpers;
+use Core\ActivityLogger;
 
 class EditorController
 {
@@ -122,6 +123,7 @@ class EditorController
                 'visibility' => $visibility,
             ], ['id' => $projectId]);
             
+            try { ActivityLogger::logUpdate($user['id'], 'codexpro', 'file', $projectId, [], ['name' => $name, 'action' => 'file_saved']); } catch (\Throwable $_) {}
             echo json_encode(['success' => $updated, 'project_id' => $projectId]);
         } else {
             // Create new project
@@ -136,6 +138,7 @@ class EditorController
             ]);
             
             if ($projectId) {
+                try { ActivityLogger::logCreate($user['id'], 'codexpro', 'file', $projectId, ['name' => $name, 'action' => 'file_saved']); } catch (\Throwable $_) {}
                 echo json_encode(['success' => true, 'project_id' => $projectId]);
             } else {
                 echo json_encode(['success' => false, 'error' => 'Failed to create project']);
@@ -180,6 +183,7 @@ class EditorController
             'js_content' => $jsContent,
         ], ['id' => $projectId]);
         
+        try { ActivityLogger::logUpdate($user['id'], 'codexpro', 'file', $projectId, [], ['action' => 'file_saved']); } catch (\Throwable $_) {}
         echo json_encode(['success' => $updated]);
     }
 }

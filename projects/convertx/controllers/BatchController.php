@@ -12,6 +12,7 @@ namespace Projects\ConvertX\Controllers;
 use Core\Auth;
 use Core\Security;
 use Core\Logger;
+use Core\ActivityLogger;
 use Projects\ConvertX\Models\ConversionJobModel;
 use Projects\ConvertX\Services\ConversionService;
 use Projects\ConvertX\Services\JobQueueService;
@@ -135,8 +136,10 @@ class BatchController
                     'plan_tier'      => $plan,
                 ]);
                 $jobIds[] = $jobId;
+                try { ActivityLogger::logCreate($userId, 'convertx', 'batch_job', $jobId, ['batch_id' => $batchId, 'input_filename' => $file['name'], 'output_format' => $outputFormat]); } catch (\Throwable $_) {}
             } catch (\Exception $e) {
                 Logger::error('BatchController::submit - ' . $e->getMessage());
+                try { ActivityLogger::logFailure($userId, 'submit_batch_job', $e->getMessage()); } catch (\Throwable $_) {}
                 $errors[] = $file['name'] . ': could not queue job';
             }
         }

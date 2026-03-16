@@ -18,7 +18,7 @@ class HomeContentController extends BaseController
     public function __construct()
     {
         $this->requireAuth();
-        $this->requireAdmin();
+        $this->requirePermission('settings.home_content');
     }
     
     /**

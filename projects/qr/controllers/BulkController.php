@@ -10,6 +10,7 @@ namespace Projects\QR\Controllers;
 
 use Core\Auth;
 use Core\Logger;
+use Core\ActivityLogger;
 use Core\Security;
 use Projects\QR\Models\BulkJobModel;
 use Projects\QR\Models\QRModel;
@@ -132,6 +133,7 @@ class BulkController
         }
 
         Logger::activity($userId, 'qr_bulk_upload', ['job_id' => $jobId, 'total' => count($rows), 'campaign_id' => $campaignId]);
+        try { ActivityLogger::logCreate($userId, 'qr', 'bulk_job', $jobId, ['total' => count($rows), 'campaign_id' => $campaignId]); } catch (\Throwable $_) {}
         
         // Store CSV data in session for processing
         $_SESSION['bulk_job_' . $jobId] = [
@@ -246,6 +248,7 @@ class BulkController
             'message' => "Generated {$completed} QR codes successfully"
         ]);
         Logger::activity($userId, 'qr_bulk_generated', ['job_id' => $jobId, 'completed' => $completed, 'failed' => $failed]);
+        try { ActivityLogger::logUpdate($userId, 'qr', 'bulk_job', $jobId, [], ['completed' => $completed, 'failed' => $failed]); } catch (\Throwable $_) {}
         exit;
     }
     

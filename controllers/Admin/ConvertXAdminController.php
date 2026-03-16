@@ -12,6 +12,7 @@ use Core\Database;
 use Core\Auth;
 use Core\Security;
 use Core\Logger;
+use Core\ActivityLogger;
 
 class ConvertXAdminController extends BaseController
 {
@@ -20,7 +21,7 @@ class ConvertXAdminController extends BaseController
     public function __construct()
     {
         $this->requireAuth();
-        $this->requireAdmin();
+        $this->requirePermissionGroup('convertx');
         $this->db = Database::getInstance();
     }
 
@@ -30,6 +31,7 @@ class ConvertXAdminController extends BaseController
 
     public function overview(): void
     {
+        $this->requirePermission('convertx');
         $stats = $this->getStats();
         $recentJobs = $this->getRecentJobs(15);
 
@@ -46,6 +48,7 @@ class ConvertXAdminController extends BaseController
 
     public function jobs(): void
     {
+        $this->requirePermission('convertx.jobs');
         $page    = max(1, (int) ($_GET['page'] ?? 1));
         $perPage = 30;
         $offset  = ($page - 1) * $perPage;
@@ -95,6 +98,7 @@ class ConvertXAdminController extends BaseController
 
     public function cancelJob(): void
     {
+        $this->requirePermission('convertx.jobs');
         if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
             $this->json(['success' => false, 'error' => 'Invalid token'], 403);
             return;
@@ -105,12 +109,14 @@ class ConvertXAdminController extends BaseController
                 "UPDATE convertx_jobs SET status='cancelled' WHERE id=:id AND status IN ('pending','processing')",
                 ['id' => $id]
             );
+            try { ActivityLogger::logUpdate(Auth::id(), 'convertx', 'conversion_job', $id, ['status' => 'pending/processing'], ['status' => 'cancelled']); } catch (\Throwable $_) {}
         }
         $this->redirect('/admin/projects/convertx/jobs');
     }
 
     public function deleteJob(): void
     {
+        $this->requirePermission('convertx.jobs');
         if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
             $this->json(['success' => false, 'error' => 'Invalid token'], 403);
             return;
@@ -118,6 +124,7 @@ class ConvertXAdminController extends BaseController
         $id = (int) ($_POST['job_id'] ?? 0);
         if ($id) {
             $this->db->query("DELETE FROM convertx_jobs WHERE id=:id", ['id' => $id]);
+            try { ActivityLogger::logDelete(Auth::id(), 'convertx', 'conversion_job', $id); } catch (\Throwable $_) {}
         }
         $this->redirect('/admin/projects/convertx/jobs');
     }
@@ -128,6 +135,7 @@ class ConvertXAdminController extends BaseController
 
     public function users(): void
     {
+        $this->requirePermission('convertx.users');
         $users = $this->db->fetchAll(
             "SELECT u.id, u.name, u.email,
                     COUNT(j.id) AS total_jobs,
@@ -154,6 +162,7 @@ class ConvertXAdminController extends BaseController
 
     public function apiKeys(): void
     {
+        $this->requirePermission('convertx.api_keys');
         $keys = $this->db->fetchAll(
             "SELECT k.*, u.name AS user_name, u.email AS user_email
                FROM api_keys k
@@ -181,6 +190,7 @@ class ConvertXAdminController extends BaseController
 
     public function revokeApiKey(): void
     {
+        $this->requirePermission('convertx.api_keys');
         if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
             $this->json(['success' => false, 'error' => 'Invalid token'], 403);
             return;
@@ -188,6 +198,7 @@ class ConvertXAdminController extends BaseController
         $id = (int) ($_POST['key_id'] ?? 0);
         if ($id) {
             $this->db->query("UPDATE api_keys SET is_active=0 WHERE id=:id", ['id' => $id]);
+            try { ActivityLogger::logDelete(Auth::id(), 'convertx', 'api_key', $id); } catch (\Throwable $_) {}
         }
         $this->redirect('/admin/projects/convertx/api-keys');
     }
@@ -198,6 +209,7 @@ class ConvertXAdminController extends BaseController
 
     public function settings(): void
     {
+        $this->requirePermission('convertx.settings');
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->updateSettings();
             return;
@@ -215,6 +227,7 @@ class ConvertXAdminController extends BaseController
 
     public function updateSettings(): void
     {
+        $this->requirePermission('convertx.settings');
         if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
             $_SESSION['_flash']['error'] = 'Invalid request token.';
             $this->redirect('/admin/projects/convertx/settings');
@@ -229,6 +242,7 @@ class ConvertXAdminController extends BaseController
                 "UPDATE convertx_ai_providers SET is_active=:a WHERE id=:id",
                 ['a' => $isActive, 'id' => $id]
             );
+            try { ActivityLogger::logUpdate(Auth::id(), 'convertx', 'settings', $id, [], ['provider_id' => $id, 'is_active' => $isActive]); } catch (\Throwable $_) {}
         }
 
         $_SESSION['_flash']['success'] = 'Settings updated.';
@@ -241,6 +255,7 @@ class ConvertXAdminController extends BaseController
 
     public function schema(): void
     {
+        $this->requirePermission('convertx.settings');
         $schemaFile = BASE_PATH . '/projects/convertx/schema.sql';
         $schema = file_exists($schemaFile) ? file_get_contents($schemaFile) : '-- schema.sql not found';
 
@@ -256,6 +271,7 @@ class ConvertXAdminController extends BaseController
 
     public function generateApiKeyForUser(): void
     {
+        $this->requirePermission('convertx.api_keys');
         if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
             $this->json(['success' => false, 'error' => 'Invalid token'], 403);
             return;
@@ -297,8 +313,10 @@ class ConvertXAdminController extends BaseController
             $_SESSION['_flash']['success'] = 'API key generated for ' . $user['name'] . ': ' . $key;
             $_SESSION['_flash']['new_key'] = $key;
             $_SESSION['_flash']['new_key_user'] = $user['name'];
+            try { ActivityLogger::logCreate(Auth::id(), 'convertx', 'api_key', 0, ['for_user_id' => $userId, 'key_prefix' => substr($key, 0, 8)]); } catch (\Throwable $_) {}
         } catch (\Exception $e) {
             Logger::error('ConvertX Admin generateApiKeyForUser: ' . $e->getMessage());
+            try { ActivityLogger::logFailure(Auth::id(), 'generate_api_key_for_user', $e->getMessage()); } catch (\Throwable $_) {}
             $_SESSION['_flash']['error'] = 'Failed to generate API key.';
         }
         $this->redirect('/admin/projects/convertx/api-keys');
@@ -310,6 +328,7 @@ class ConvertXAdminController extends BaseController
 
     public function createProvider(): void
     {
+        $this->requirePermission('convertx.settings');
         if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
             $_SESSION['_flash']['error'] = 'Invalid token.';
             $this->redirect('/admin/projects/convertx/settings');
@@ -348,8 +367,10 @@ class ConvertXAdminController extends BaseController
                 ]
             );
             $_SESSION['_flash']['success'] = 'Provider created.';
+            try { ActivityLogger::logCreate(Auth::id(), 'convertx', 'ai_provider', 0, ['name' => $name, 'slug' => $slug]); } catch (\Throwable $_) {}
         } catch (\Exception $e) {
             Logger::error('ConvertX createProvider: ' . $e->getMessage());
+            try { ActivityLogger::logFailure(Auth::id(), 'create_ai_provider', $e->getMessage()); } catch (\Throwable $_) {}
             $_SESSION['_flash']['error'] = 'Failed to create provider: ' . $e->getMessage();
         }
         $this->redirect('/admin/projects/convertx/settings');
@@ -357,6 +378,7 @@ class ConvertXAdminController extends BaseController
 
     public function editProvider(): void
     {
+        $this->requirePermission('convertx.settings');
         if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
             $_SESSION['_flash']['error'] = 'Invalid token.';
             $this->redirect('/admin/projects/convertx/settings');
@@ -403,8 +425,10 @@ class ConvertXAdminController extends BaseController
                 $params
             );
             $_SESSION['_flash']['success'] = 'Provider updated.';
+            try { ActivityLogger::logUpdate(Auth::id(), 'convertx', 'ai_provider', $id, [], ['name' => $name, 'base_url' => $baseUrl, 'model' => $model, 'priority' => $priority]); } catch (\Throwable $_) {}
         } catch (\Exception $e) {
             Logger::error('ConvertX editProvider: ' . $e->getMessage());
+            try { ActivityLogger::logFailure(Auth::id(), 'edit_ai_provider', $e->getMessage()); } catch (\Throwable $_) {}
             $_SESSION['_flash']['error'] = 'Failed to update provider.';
         }
         $this->redirect('/admin/projects/convertx/settings');
@@ -412,6 +436,7 @@ class ConvertXAdminController extends BaseController
 
     public function deleteProvider(): void
     {
+        $this->requirePermission('convertx.settings');
         if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
             $_SESSION['_flash']['error'] = 'Invalid token.';
             $this->redirect('/admin/projects/convertx/settings');
@@ -422,6 +447,7 @@ class ConvertXAdminController extends BaseController
             try {
                 $this->db->query("DELETE FROM convertx_ai_providers WHERE id=:id", ['id' => $id]);
                 $_SESSION['_flash']['success'] = 'Provider deleted.';
+                try { ActivityLogger::logDelete(Auth::id(), 'convertx', 'ai_provider', $id); } catch (\Throwable $_) {}
             } catch (\Exception $e) {
                 $_SESSION['_flash']['error'] = 'Failed to delete provider.';
             }
@@ -439,6 +465,7 @@ class ConvertXAdminController extends BaseController
      */
     public function testProvider(): void
     {
+        $this->requirePermission('convertx.settings');
         // Prevent any accidental buffered output from leaking into the JSON
         while (ob_get_level() > 0) {
             ob_end_clean();
@@ -620,6 +647,7 @@ class ConvertXAdminController extends BaseController
 
     public function storage(): void
     {
+        $this->requirePermission('convertx.storage');
         $uploadDir = BASE_PATH . '/storage/uploads/convertx';
         $diskUsed  = 0;
         $fileCount = 0;
@@ -675,6 +703,7 @@ class ConvertXAdminController extends BaseController
 
     public function plans(): void
     {
+        $this->requirePermission('convertx.plans');
         $this->ensurePlansTables();
         $plans = [];
         try {
@@ -695,6 +724,7 @@ class ConvertXAdminController extends BaseController
 
     public function createPlan(): void
     {
+        $this->requirePermission('convertx.plans');
         if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
             $_SESSION['_flash']['error'] = 'Invalid token.';
             $this->redirect('/admin/projects/convertx/plans');
@@ -732,8 +762,10 @@ class ConvertXAdminController extends BaseController
                 ]
             );
             $_SESSION['_flash']['success'] = 'Plan created.';
+            try { ActivityLogger::logCreate(Auth::id(), 'convertx', 'subscription_plan', 0, ['name' => $name, 'slug' => $slug, 'price' => $price]); } catch (\Throwable $_) {}
         } catch (\Exception $e) {
             Logger::error('ConvertX createPlan: ' . $e->getMessage());
+            try { ActivityLogger::logFailure(Auth::id(), 'create_subscription_plan', $e->getMessage()); } catch (\Throwable $_) {}
             $_SESSION['_flash']['error'] = 'Failed to create plan: ' . $e->getMessage();
         }
         $this->redirect('/admin/projects/convertx/plans');
@@ -741,6 +773,7 @@ class ConvertXAdminController extends BaseController
 
     public function updatePlan(): void
     {
+        $this->requirePermission('convertx.plans');
         if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
             $_SESSION['_flash']['error'] = 'Invalid token.';
             $this->redirect('/admin/projects/convertx/plans');
@@ -779,6 +812,7 @@ class ConvertXAdminController extends BaseController
                 ]
             );
             $_SESSION['_flash']['success'] = 'Plan updated.';
+            try { ActivityLogger::logUpdate(Auth::id(), 'convertx', 'subscription_plan', $id, [], ['name' => $name, 'price' => $price, 'status' => $status]); } catch (\Throwable $_) {}
         } catch (\Exception $e) {
             $_SESSION['_flash']['error'] = 'Failed to update plan.';
         }
@@ -787,6 +821,7 @@ class ConvertXAdminController extends BaseController
 
     public function deletePlan(): void
     {
+        $this->requirePermission('convertx.plans');
         if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
             $_SESSION['_flash']['error'] = 'Invalid token.';
             $this->redirect('/admin/projects/convertx/plans');
@@ -797,6 +832,7 @@ class ConvertXAdminController extends BaseController
             try {
                 $this->db->query("DELETE FROM convertx_subscription_plans WHERE id=:id", ['id' => $id]);
                 $_SESSION['_flash']['success'] = 'Plan deleted.';
+                try { ActivityLogger::logDelete(Auth::id(), 'convertx', 'subscription_plan', $id); } catch (\Throwable $_) {}
             } catch (\Exception $e) {
                 $_SESSION['_flash']['error'] = 'Failed to delete plan.';
             }

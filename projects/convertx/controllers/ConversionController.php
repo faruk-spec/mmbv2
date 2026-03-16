@@ -12,6 +12,7 @@ namespace Projects\ConvertX\Controllers;
 use Core\Auth;
 use Core\Security;
 use Core\Logger;
+use Core\ActivityLogger;
 use Projects\ConvertX\Models\ConversionJobModel;
 use Projects\ConvertX\Services\ConversionService;
 use Projects\ConvertX\Services\JobQueueService;
@@ -160,9 +161,12 @@ class ConversionController
             ]);
         } catch (\Exception $e) {
             Logger::error('ConversionController::submit - ' . $e->getMessage());
+            try { ActivityLogger::logFailure($userId, 'submit_conversion', $e->getMessage()); } catch (\Throwable $_) {}
             $this->jsonError('Could not enqueue job', 500);
             return;
         }
+
+        try { ActivityLogger::logCreate($userId, 'convertx', 'conversion_job', $jobId, ['input_format' => $inputFormat, 'output_format' => $outputFormat]); } catch (\Throwable $_) {}
 
         // Process the job synchronously. Loop up to max-retry times so that
         // the job always reaches a terminal state (completed/failed) in this

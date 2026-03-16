@@ -11,6 +11,7 @@ use Controllers\BaseController;
 use Core\Database;
 use Core\Auth;
 use Core\Logger;
+use Core\ActivityLogger;
 use Core\Cache;
 
 class CodeXProAdminController extends BaseController
@@ -23,7 +24,7 @@ class CodeXProAdminController extends BaseController
     public function __construct()
     {
         $this->requireAuth();
-        $this->requireAdmin();
+        $this->requirePermissionGroup('codexpro');
         $this->projectDb = Database::projectConnection('codexpro');
         $this->mainDb = Database::getInstance();
         
@@ -41,6 +42,7 @@ class CodeXProAdminController extends BaseController
      */
     public function overview(): void
     {
+        $this->requirePermission('codexpro');
         // Cache statistics for 5 minutes
         $stats = Cache::remember('codexpro_stats', function() {
             return [
@@ -130,6 +132,7 @@ class CodeXProAdminController extends BaseController
      */
     public function settings(): void
     {
+        $this->requirePermission('codexpro.settings');
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->updateSettings();
             return;
@@ -199,6 +202,7 @@ class CodeXProAdminController extends BaseController
         Cache::delete('codexpro_storage');
         
         Logger::activity(Auth::id(), 'codexpro_settings_updated', $settings);
+        try { ActivityLogger::logUpdate(Auth::id(), 'codexpro', 'settings', 0, [], $settings); } catch (\Throwable $_) {}
         
         $this->flash('success', 'Settings updated successfully.');
         $this->redirect('/admin/projects/codexpro/settings');
@@ -209,6 +213,7 @@ class CodeXProAdminController extends BaseController
      */
     public function users(): void
     {
+        $this->requirePermission('codexpro.users');
         $page = (int)($_GET['page'] ?? 1);
         $perPage = 20;
         $offset = ($page - 1) * $perPage;
@@ -274,6 +279,7 @@ class CodeXProAdminController extends BaseController
      */
     public function templates(): void
     {
+        $this->requirePermission('codexpro.templates');
         $page = (int)($_GET['page'] ?? 1);
         $perPage = 20;
         $offset = ($page - 1) * $perPage;
@@ -330,6 +336,7 @@ class CodeXProAdminController extends BaseController
      */
     public function deleteTemplate(): void
     {
+        $this->requirePermission('codexpro.templates');
         if (!$this->validateCsrf()) {
             $this->flash('error', 'Invalid request.');
             $this->redirect('/admin/projects/codexpro/templates');
@@ -341,6 +348,7 @@ class CodeXProAdminController extends BaseController
         if ($id > 0) {
             $this->projectDb->delete('templates', 'id = ?', [$id]);
             Logger::activity(Auth::id(), 'codexpro_template_deleted', ['template_id' => $id]);
+            try { ActivityLogger::logDelete(Auth::id(), 'codexpro', 'template', $id, ['id' => $id]); } catch (\Throwable $_) {}
             $this->flash('success', 'Template deleted successfully.');
         } else {
             $this->flash('error', 'Invalid template ID.');
@@ -354,6 +362,7 @@ class CodeXProAdminController extends BaseController
      */
     public function toggleTemplate(): void
     {
+        $this->requirePermission('codexpro.templates');
         if (!$this->validateCsrf()) {
             $this->flash('error', 'Invalid request.');
             $this->redirect('/admin/projects/codexpro/templates');

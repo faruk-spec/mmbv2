@@ -17,7 +17,7 @@ class ProjectController extends BaseController
     public function __construct()
     {
         $this->requireAuth();
-        $this->requireAdmin();
+        $this->requirePermissionGroup('projects');
     }
     
     /**
@@ -25,6 +25,7 @@ class ProjectController extends BaseController
      */
     public function index(): void
     {
+        $this->requirePermission('projects.list');
         $projects = require BASE_PATH . '/config/projects.php';
         
         $this->view('admin/projects/index', [
@@ -38,6 +39,7 @@ class ProjectController extends BaseController
      */
     public function show(string $name): void
     {
+        $this->requirePermission('projects');
         $projects = require BASE_PATH . '/config/projects.php';
         
         if (!isset($projects[$name])) {
@@ -60,6 +62,7 @@ class ProjectController extends BaseController
      */
     public function toggle(string $name): void
     {
+        $this->requirePermission('projects');
         if (!$this->validateCsrf()) {
             $this->flash('error', 'Invalid request.');
             $this->redirect('/admin/projects');
@@ -79,6 +82,7 @@ class ProjectController extends BaseController
      */
     public function settings(string $name): void
     {
+        $this->requirePermission('projects');
         $projects = require BASE_PATH . '/config/projects.php';
         
         if (!isset($projects[$name])) {
@@ -101,6 +105,7 @@ class ProjectController extends BaseController
      */
     public function updateSettings(string $name): void
     {
+        $this->requirePermission('projects');
         if (!$this->validateCsrf()) {
             $this->flash('error', 'Invalid request.');
             $this->redirect('/admin/projects/' . $name . '/settings');

@@ -7,7 +7,8 @@ CREATE TABLE IF NOT EXISTS `users` (
     `name` VARCHAR(100) NOT NULL,
     `email` VARCHAR(255) NOT NULL UNIQUE,
     `password` VARCHAR(255) NOT NULL,
-    `role` ENUM('super_admin', 'admin', 'project_admin', 'user') DEFAULT 'user',
+    `role` VARCHAR(100) NOT NULL DEFAULT 'user',
+    `app_access` JSON NULL DEFAULT NULL COMMENT 'JSON array of allowed app slugs. NULL = unrestricted.',
     `status` ENUM('active', 'inactive', 'banned') DEFAULT 'active',
     `email_verified_at` TIMESTAMP NULL,
     `email_verification_token` VARCHAR(64) NULL,
@@ -80,6 +81,18 @@ CREATE TABLE IF NOT EXISTS `activity_logs` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `user_id` INT UNSIGNED NULL,
     `action` VARCHAR(100) NOT NULL,
+    `module` VARCHAR(100) NULL,
+    `tenant_id` INT UNSIGNED NULL,
+    `resource_type` VARCHAR(100) NULL,
+    `resource_id` VARCHAR(100) NULL,
+    `user_role` VARCHAR(50) NULL,
+    `old_values` JSON NULL,
+    `new_values` JSON NULL,
+    `readable_message` VARCHAR(500) NULL,
+    `request_id` VARCHAR(64) NULL,
+    `device` VARCHAR(100) NULL,
+    `browser` VARCHAR(100) NULL,
+    `status` ENUM('success','failure','pending') NOT NULL DEFAULT 'success',
     `ip_address` VARCHAR(45) NULL,
     `user_agent` VARCHAR(500) NULL,
     `data` JSON NULL,
@@ -87,6 +100,12 @@ CREATE TABLE IF NOT EXISTS `activity_logs` (
     FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE SET NULL,
     INDEX `idx_user_id` (`user_id`),
     INDEX `idx_action` (`action`),
+    INDEX `idx_module` (`module`),
+    INDEX `idx_tenant_id` (`tenant_id`),
+    INDEX `idx_resource` (`resource_type`, `resource_id`(50)),
+    INDEX `idx_user_role` (`user_role`),
+    INDEX `idx_status` (`status`),
+    INDEX `idx_request_id` (`request_id`),
     INDEX `idx_created_at` (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -263,3 +282,15 @@ INSERT INTO `home_sections` (`section_key`, `heading`, `subheading`, `is_active`
 ('stats', 'Our Impact in Numbers', 'Trusted by developers and teams worldwide', 1, 1),
 ('timeline', 'Our Journey', 'Milestones and achievements that shaped our platform', 1, 2),
 ('features', '🚀 Platform Features', 'Powerful capabilities across all projects', 1, 3);
+
+-- Admin user permissions (granular admin panel access)
+CREATE TABLE IF NOT EXISTS `admin_user_permissions` (
+    `id`              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `user_id`         INT UNSIGNED NOT NULL,
+    `permission_key`  VARCHAR(100) NOT NULL,
+    `granted_by`      INT UNSIGNED NULL,
+    `created_at`      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY `uq_user_perm` (`user_id`, `permission_key`),
+    INDEX `idx_user_id` (`user_id`),
+    INDEX `idx_permission_key` (`permission_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

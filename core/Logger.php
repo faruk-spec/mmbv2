@@ -79,22 +79,14 @@ class Logger
     
     /**
      * Log activity
+     *
+     * Delegates to ActivityLogger for centralized, enriched audit logging.
+     * Accepts either a plain $data array (legacy) or a rich context array
+     * that ActivityLogger understands (module, resource_type, old_values, …).
      */
     public static function activity(int $userId, string $action, array $data = []): void
     {
-        try {
-            $db = Database::getInstance();
-            $db->insert('activity_logs', [
-                'user_id' => $userId,
-                'action' => $action,
-                'ip_address' => Security::getClientIp(),
-                'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? '',
-                'data' => json_encode($data),
-                'created_at' => date('Y-m-d H:i:s')
-            ]);
-        } catch (\Exception $e) {
-            self::error('Failed to log activity: ' . $e->getMessage());
-        }
+        ActivityLogger::log($userId, $action, $data);
     }
     
     /**

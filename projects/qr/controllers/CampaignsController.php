@@ -10,6 +10,7 @@ namespace Projects\QR\Controllers;
 
 use Core\Auth;
 use Core\Logger;
+use Core\ActivityLogger;
 use Core\Security;
 use Core\Helpers;
 use Projects\QR\Models\CampaignModel;
@@ -111,6 +112,7 @@ class CampaignsController
             
             if ($campaignId) {
                 Logger::activity($userId, 'qr_campaign_created', ['campaign_id' => $campaignId, 'name' => $data['name']]);
+                try { ActivityLogger::logCreate($userId, 'qr', 'campaign', $campaignId, ['name' => $data['name']]); } catch (\Throwable $_) {}
                 $_SESSION['success'] = 'Campaign created successfully';
                 header('Location: /projects/qr/campaigns');
             } else {
@@ -167,6 +169,7 @@ class CampaignsController
             
             if ($this->model->update($campaignId, $userId, $data)) {
                 Logger::activity($userId, 'qr_campaign_updated', ['campaign_id' => $campaignId, 'name' => $data['name']]);
+                try { ActivityLogger::logUpdate($userId, 'qr', 'campaign', $campaignId, [], $data); } catch (\Throwable $_) {}
                 $_SESSION['success'] = 'Campaign updated successfully';
                 header('Location: /projects/qr/campaigns');
             } else {
@@ -211,6 +214,7 @@ class CampaignsController
         
         if ($this->model->delete($campaignId, $userId)) {
             Logger::activity($userId, 'qr_campaign_deleted', ['campaign_id' => $campaignId]);
+            try { ActivityLogger::logDelete($userId, 'qr', 'campaign', $campaignId); } catch (\Throwable $_) {}
             echo json_encode(['success' => true, 'message' => 'Campaign deleted successfully']);
         } else {
             echo json_encode(['success' => false, 'message' => 'Failed to delete campaign']);

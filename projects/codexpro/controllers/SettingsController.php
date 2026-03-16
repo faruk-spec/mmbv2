@@ -11,6 +11,7 @@ use Core\Database;
 use Core\View;
 use Core\Auth;
 use Core\Security;
+use Core\ActivityLogger;
 
 class SettingsController
 {
@@ -76,6 +77,7 @@ class SettingsController
                     'key_bindings' => $keyBindings,
                 ]);
                 $updated = true;
+                try { ActivityLogger::logUpdate($user['id'], 'codexpro', 'settings', $user['id'], [], ['theme' => $theme, 'font_size' => $fontSize, 'tab_size' => $tabSize]); } catch (\Throwable $_) {}
             } else {
                 // Update existing settings
                 $updated = $db->update('user_settings', [
@@ -86,10 +88,12 @@ class SettingsController
                     'auto_preview' => $autoPreview,
                     'key_bindings' => $keyBindings,
                 ], ['user_id' => $user['id']]);
+                try { ActivityLogger::logUpdate($user['id'], 'codexpro', 'settings', $user['id'], [], ['theme' => $theme, 'font_size' => $fontSize, 'tab_size' => $tabSize]); } catch (\Throwable $_) {}
             }
             
             echo json_encode(['success' => true, 'updated' => $updated]);
         } catch (\Exception $e) {
+            try { ActivityLogger::logFailure($user['id'] ?? 0, 'update_codexpro_settings', $e->getMessage()); } catch (\Throwable $_) {}
             echo json_encode(['success' => false, 'error' => $e->getMessage()]);
         }
     }

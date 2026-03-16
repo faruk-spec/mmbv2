@@ -12,6 +12,7 @@ use Core\Database;
 use Core\Auth;
 use Core\Security;
 use Core\Logger;
+use Core\ActivityLogger;
 use Projects\BillX\Models\BillModel;
 
 class BillXAdminController extends BaseController
@@ -22,7 +23,7 @@ class BillXAdminController extends BaseController
     public function __construct()
     {
         $this->requireAuth();
-        $this->requireAdmin();
+        $this->requirePermissionGroup('billx');
         $this->db    = Database::getInstance();
         $this->model = new BillModel();
     }
@@ -33,6 +34,7 @@ class BillXAdminController extends BaseController
 
     public function overview(): void
     {
+        $this->requirePermission('billx');
         $stats        = $this->getStats();
         $revenue      = $this->model->getRevenueStats();
         $byType       = $this->getBillsByType();
@@ -56,6 +58,7 @@ class BillXAdminController extends BaseController
 
     public function bills(): void
     {
+        $this->requirePermission('billx.bills');
         $page     = max(1, (int)($_GET['page'] ?? 1));
         $perPage  = 30;
         $offset   = ($page - 1) * $perPage;
@@ -107,6 +110,7 @@ class BillXAdminController extends BaseController
 
     public function viewBill(int $id): void
     {
+        $this->requirePermission('billx.bills');
         $bill = $this->model->getById($id);
         if (!$bill) {
             http_response_code(404);
@@ -153,6 +157,7 @@ class BillXAdminController extends BaseController
 
     public function deleteBill(): void
     {
+        $this->requirePermission('billx.bills');
         if (!Security::validateCsrfToken($_POST['_csrf_token'] ?? '')) {
             $this->redirect('/admin/projects/billx/bills?error=invalid_token');
             return;
@@ -167,9 +172,11 @@ class BillXAdminController extends BaseController
         try {
             $this->db->query("DELETE FROM billx_bills WHERE id = ?", [$id]);
             Logger::activity(Auth::id(), 'admin_delete_bill', ['bill_id' => $id]);
+            try { ActivityLogger::logDelete(Auth::id(), 'billx', 'bill', $id); } catch (\Throwable $_) {}
             $this->redirect('/admin/projects/billx/bills?deleted=1');
         } catch (\Exception $e) {
             Logger::error('BillXAdmin deleteBill: ' . $e->getMessage());
+            try { ActivityLogger::logFailure(Auth::id(), 'admin_delete_bill', $e->getMessage()); } catch (\Throwable $_) {}
             $this->redirect('/admin/projects/billx/bills?error=db_error');
         }
     }
@@ -180,6 +187,7 @@ class BillXAdminController extends BaseController
 
     public function bulkDelete(): void
     {
+        $this->requirePermission('billx.bills');
         if (!Security::validateCsrfToken($_POST['_csrf_token'] ?? '')) {
             $this->redirect('/admin/projects/billx/bills?error=invalid_token');
             return;
@@ -204,9 +212,11 @@ class BillXAdminController extends BaseController
         try {
             $count = $this->model->adminDeleteMultiple($ids);
             Logger::activity(Auth::id(), 'admin_bulk_delete_bills', ['count' => $count, 'ids' => implode(',', $ids)]);
+            try { ActivityLogger::log(Auth::id(), 'bulk_deleted', ['module' => 'billx', 'resource_type' => 'bill', 'count' => $count, 'ids' => implode(',', $ids)]); } catch (\Throwable $_) {}
             $this->redirect('/admin/projects/billx/bills?bulk_deleted=' . $count);
         } catch (\Exception $e) {
             Logger::error('BillXAdmin bulkDelete: ' . $e->getMessage());
+            try { ActivityLogger::logFailure(Auth::id(), 'admin_bulk_delete_bills', $e->getMessage()); } catch (\Throwable $_) {}
             $this->redirect('/admin/projects/billx/bills?error=db_error');
         }
     }
@@ -217,6 +227,7 @@ class BillXAdminController extends BaseController
 
     public function exportCsv(): void
     {
+        $this->requirePermission('billx.export');
         $filters = [
             'bill_type'   => trim($_GET['bill_type']    ?? ''),
             'search'      => trim($_GET['search']       ?? ''),
@@ -292,6 +303,7 @@ class BillXAdminController extends BaseController
 
     public function settings(): void
     {
+        $this->requirePermission('billx.settings');
         $saved = false;
         $error = null;
 
@@ -318,6 +330,7 @@ class BillXAdminController extends BaseController
             $this->saveSettings($newSettings);
             $saved = true;
             Logger::activity(Auth::id(), 'admin_billx_settings_updated');
+            try { ActivityLogger::logUpdate(Auth::id(), 'billx', 'settings', 0, [], $newSettings); } catch (\Throwable $_) {}
         }
 
         $this->view('admin/projects/billx/settings', [
@@ -453,6 +466,7 @@ class BillXAdminController extends BaseController
             }
         } catch (\Exception $e) {
             Logger::error('BillXAdmin saveSettings: ' . $e->getMessage());
+            try { ActivityLogger::logFailure(Auth::id(), 'admin_billx_save_settings', $e->getMessage()); } catch (\Throwable $_) {}
         }
     }
 
@@ -476,6 +490,7 @@ class BillXAdminController extends BaseController
 
     public function activityLogs(): void
     {
+        $this->requirePermission('billx.activity_logs');
         $page    = max(1, (int)($_GET['page'] ?? 1));
         $perPage = 50;
         $offset  = ($page - 1) * $perPage;

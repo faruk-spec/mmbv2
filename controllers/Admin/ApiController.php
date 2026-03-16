@@ -19,7 +19,7 @@ class ApiController extends BaseController
     public function __construct()
     {
         $this->requireAuth();
-        $this->requireAdmin();
+        $this->requirePermissionGroup('api');
     }
     
     /**
@@ -27,6 +27,7 @@ class ApiController extends BaseController
      */
     public function keys(): void
     {
+        $this->requirePermission('api.keys');
         $db = Database::getInstance();
         
         // Get all API keys with user information
@@ -48,6 +49,7 @@ class ApiController extends BaseController
      */
     public function logs(): void
     {
+        $this->requirePermission('api.logs');
         $db = Database::getInstance();
         
         $page = $_GET['page'] ?? 1;
@@ -82,6 +84,7 @@ class ApiController extends BaseController
      */
     public function rateLimits(): void
     {
+        $this->requirePermission('api.rate_limits');
         $db = Database::getInstance();
         
         // Get rate limit settings from system_settings
@@ -102,6 +105,7 @@ class ApiController extends BaseController
      */
     public function documentation(): void
     {
+        $this->requirePermission('api.documentation');
         $this->view('admin/api/documentation', [
             'title' => 'API Documentation'
         ]);
@@ -112,6 +116,7 @@ class ApiController extends BaseController
      */
     public function generateKey(): void
     {
+        $this->requirePermission('api.keys');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->jsonResponse(['success' => false, 'message' => 'Invalid request method']);
             return;
@@ -140,6 +145,7 @@ class ApiController extends BaseController
      */
     public function revokeKey(): void
     {
+        $this->requirePermission('api.keys');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->jsonResponse(['success' => false, 'message' => 'Invalid request method']);
             return;

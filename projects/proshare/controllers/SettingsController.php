@@ -11,6 +11,7 @@ use Core\Database;
 use Core\View;
 use Core\Auth;
 use Core\Security;
+use Core\ActivityLogger;
 
 class SettingsController
 {
@@ -98,16 +99,19 @@ class SettingsController
                         'enable_compression' => $enableCompression,
                         'max_file_size' => $maxFileSize,
                     ]);
+                    try { ActivityLogger::logUpdate($user['id'], 'proshare', 'settings', $user['id'] ?? null, [], ['email_notifications' => $emailNotifications, 'sms_notifications' => $smsNotifications, 'default_expiry' => $defaultExpiry, 'auto_delete' => $autoDelete, 'enable_encryption' => $enableEncryption, 'enable_compression' => $enableCompression, 'max_file_size' => $maxFileSize]); } catch (\Throwable $_) {}
                     echo json_encode(['success' => true, 'message' => 'Settings saved successfully']);
                 } else {
                     // Settings exist but no changes were made
                     echo json_encode(['success' => true, 'message' => 'Settings saved successfully']);
                 }
             } else {
+                try { ActivityLogger::logUpdate($user['id'], 'proshare', 'settings', $user['id'] ?? null, [], ['email_notifications' => $emailNotifications, 'sms_notifications' => $smsNotifications, 'default_expiry' => $defaultExpiry, 'auto_delete' => $autoDelete, 'enable_encryption' => $enableEncryption, 'enable_compression' => $enableCompression, 'max_file_size' => $maxFileSize]); } catch (\Throwable $_) {}
                 echo json_encode(['success' => true, 'message' => 'Settings updated successfully']);
             }
         } catch (\Exception $e) {
             error_log('Settings update failed: ' . $e->getMessage());
+            try { ActivityLogger::logFailure($user['id'] ?? null, 'settings_update', $e->getMessage()); } catch (\Throwable $_) {}
             echo json_encode(['success' => false, 'error' => 'Failed to save settings']);
         }
     }

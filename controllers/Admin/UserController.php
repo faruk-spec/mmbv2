@@ -12,13 +12,14 @@ use Core\Database;
 use Core\Security;
 use Core\Auth;
 use Core\Logger;
+use Core\ActivityLogger;
 
 class UserController extends BaseController
 {
     public function __construct()
     {
         $this->requireAuth();
-        $this->requireAdmin();
+        $this->requirePermissionGroup('users');
     }
     
     /**
@@ -26,6 +27,7 @@ class UserController extends BaseController
      */
     public function index(): void
     {
+        $this->requirePermission('users');
         $db = Database::getInstance();
         
         $page = max(1, (int) $this->input('page', 1));
@@ -84,6 +86,7 @@ class UserController extends BaseController
      */
     public function create(): void
     {
+        $this->requirePermission('users.create');
         $this->view('admin/users/create', [
             'title' => 'Create User'
         ]);
@@ -94,6 +97,7 @@ class UserController extends BaseController
      */
     public function store(): void
     {
+        $this->requirePermission('users.create');
         if (!$this->validateCsrf()) {
             $this->flash('error', 'Invalid request.');
             $this->redirect('/admin/users/create');
@@ -147,6 +151,7 @@ class UserController extends BaseController
      */
     public function edit(string $id): void
     {
+        $this->requirePermission('users.edit');
         $db = Database::getInstance();
         $user = $db->fetch("SELECT * FROM users WHERE id = ?", [(int) $id]);
         
@@ -175,11 +180,22 @@ class UserController extends BaseController
             // QR tables may not exist yet; silently ignore
         }
 
+        // Load custom roles from user_roles table (non-system, active)
+        $customRoles = [];
+        try {
+            $customRoles = $db->fetchAll(
+                "SELECT slug, name, color FROM user_roles WHERE is_system = 0 AND status = 'active' ORDER BY sort_order ASC, name ASC"
+            );
+        } catch (\Exception $e) {
+            // user_roles may not exist yet; silently ignore
+        }
+
         $this->view('admin/users/edit', [
-            'title'      => 'Edit User',
-            'editUser'   => $user,
-            'qrPlans'    => $qrPlans,
-            'userQrPlan' => $userQrPlan,
+            'title'       => 'Edit User',
+            'editUser'    => $user,
+            'qrPlans'     => $qrPlans,
+            'userQrPlan'  => $userQrPlan,
+            'customRoles' => $customRoles,
         ]);
     }
     
@@ -188,6 +204,7 @@ class UserController extends BaseController
      */
     public function update(string $id): void
     {
+        $this->requirePermission('users.edit');
         if (!$this->validateCsrf()) {
             $this->flash('error', 'Invalid request.');
             $this->redirect('/admin/users/' . $id . '/edit');
@@ -226,11 +243,53 @@ class UserController extends BaseController
             }
         }
         
+        // Validate the submitted roles[] array against known system + custom roles
+        $systemRoles = ['user', 'project_admin', 'admin', 'super_admin'];
+        $submittedRoles = array_values(array_filter(array_map('trim', (array) ($_POST['roles'] ?? []))));
+
+        // Fall back to legacy single-role field if the new roles[] was not submitted
+        if (empty($submittedRoles) && !empty($this->input('role'))) {
+            $submittedRoles = [$this->input('role')];
+        }
+
+        if (empty($submittedRoles)) {
+            $submittedRoles = ['user'];
+        }
+
+        // Fetch all valid custom role slugs in one query for efficiency
+        $validCustomSlugs = [];
         try {
+            $rows = $db->fetchAll("SELECT slug FROM user_roles WHERE is_system = 0 AND status = 'active'");
+            $validCustomSlugs = array_column($rows, 'slug');
+        } catch (\Exception $e) {
+            // table may not exist yet
+        }
+
+        $allValidSlugs = array_merge($systemRoles, $validCustomSlugs);
+        foreach ($submittedRoles as $slug) {
+            if (!in_array($slug, $allValidSlugs, true)) {
+                $this->flash('error', 'Invalid role selected: ' . $slug);
+                $this->redirect('/admin/users/' . $id . '/edit');
+                return;
+            }
+        }
+
+        // Deduplicate and encode as comma-separated string
+        $rolesString = implode(',', array_unique($submittedRoles));
+
+        try {
+            // Snapshot old values for audit before the update
+            $oldSnapshot = [
+                'name'   => $user['name'],
+                'email'  => $user['email'],
+                'role'   => $user['role'],
+                'status' => $user['status'],
+            ];
+
             $updateData = [
                 'name' => Security::sanitize($this->input('name')),
                 'email' => $this->input('email'),
-                'role' => $this->input('role'),
+                'role' => $rolesString,
                 'status' => $this->input('status'),
                 'updated_at' => date('Y-m-d H:i:s')
             ];
@@ -242,8 +301,27 @@ class UserController extends BaseController
             }
             
             $db->update('users', $updateData, 'id = ?', [(int) $id]);
-            
-            Logger::activity(Auth::id(), 'user_updated', ['user_id' => (int) $id]);
+
+            // Build new-values snapshot (exclude password hash for security)
+            $newSnapshot = [
+                'name'   => $updateData['name'],
+                'email'  => $updateData['email'],
+                'role'   => $updateData['role'],
+                'status' => $updateData['status'],
+            ];
+            if (!empty($newPassword)) {
+                $newSnapshot['password'] = '*** changed ***';
+                $oldSnapshot['password'] = '*** previous ***';
+            }
+
+            ActivityLogger::logUpdate(
+                Auth::id(),
+                'users',
+                'user',
+                (int) $id,
+                $oldSnapshot,
+                $newSnapshot
+            );
             
             $this->flash('success', 'User updated successfully.');
             $this->redirect('/admin/users');
@@ -260,6 +338,7 @@ class UserController extends BaseController
      */
     public function delete(string $id): void
     {
+        $this->requirePermission('users.delete');
         if (!$this->validateCsrf()) {
             $this->flash('error', 'Invalid request.');
             $this->redirect('/admin/users');
@@ -301,6 +380,7 @@ class UserController extends BaseController
      */
     public function toggle(string $id): void
     {
+        $this->requirePermission('users.edit');
         if (!$this->validateCsrf()) {
             $this->flash('error', 'Invalid request.');
             $this->redirect('/admin/users');

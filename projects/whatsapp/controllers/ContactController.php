@@ -10,6 +10,7 @@ namespace Projects\WhatsApp\Controllers;
 use Core\Auth;
 use Core\View;
 use Core\Database;
+use Core\ActivityLogger;
 
 class ContactController
 {
@@ -71,6 +72,7 @@ class ContactController
             
             // Save contacts to database
             $syncedCount = $this->saveContacts($sessionId, $contacts);
+            try { ActivityLogger::log($this->user['id'], 'contact_synced', ['module' => 'whatsapp', 'resource_type' => 'contact', 'resource_id' => $sessionId, 'new_values' => ['synced_count' => $syncedCount]]); } catch (\Throwable $_) {}
             
             echo json_encode([
                 'success' => true,
@@ -80,6 +82,7 @@ class ContactController
             
         } catch (\Exception $e) {
             http_response_code(400);
+            try { ActivityLogger::logFailure($this->user['id'], 'contact_sync', $e->getMessage()); } catch (\Throwable $_) {}
             echo json_encode([
                 'success' => false,
                 'message' => $e->getMessage()

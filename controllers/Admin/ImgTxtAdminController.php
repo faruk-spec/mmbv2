@@ -11,6 +11,7 @@ use Controllers\BaseController;
 use Core\Database;
 use Core\Auth;
 use Core\Logger;
+use Core\ActivityLogger;
 
 class ImgTxtAdminController extends BaseController
 {
@@ -22,7 +23,7 @@ class ImgTxtAdminController extends BaseController
     public function __construct()
     {
         $this->requireAuth();
-        $this->requireAdmin();
+        $this->requirePermissionGroup('imgtxt');
         $this->projectDb = Database::projectConnection('imgtxt');
         $this->mainDb = Database::getInstance();
         
@@ -40,6 +41,7 @@ class ImgTxtAdminController extends BaseController
      */
     public function overview(): void
     {
+        $this->requirePermission('imgtxt');
         // Get statistics
         $stats = [
             'total_jobs' => $this->projectDb->fetch("SELECT COUNT(*) as count FROM ocr_jobs")['count'] ?? 0,
@@ -135,6 +137,7 @@ class ImgTxtAdminController extends BaseController
      */
     public function settings(): void
     {
+        $this->requirePermission('imgtxt.settings');
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->updateSettings();
             return;
@@ -211,10 +214,12 @@ class ImgTxtAdminController extends BaseController
             
             // Log the activity
             Logger::activity(Auth::id(), 'imgtxt_settings_updated', $settings);
+            try { ActivityLogger::logUpdate(Auth::id(), 'imgtxt', 'settings', null, [], $settings); } catch (\Throwable $_) {}
             
             $_SESSION['flash_message'] = 'Settings updated successfully';
             $_SESSION['flash_type'] = 'success';
         } catch (\Exception $e) {
+            try { ActivityLogger::logFailure(Auth::id(), 'settings_update', $e->getMessage()); } catch (\Throwable $_) {}
             $_SESSION['flash_message'] = 'Failed to update settings: ' . $e->getMessage();
             $_SESSION['flash_type'] = 'danger';
         }
@@ -227,6 +232,7 @@ class ImgTxtAdminController extends BaseController
      */
     public function jobs(): void
     {
+        $this->requirePermission('imgtxt.jobs');
         $page = (int)($_GET['page'] ?? 1);
         $perPage = 20;
         $offset = ($page - 1) * $perPage;
@@ -320,6 +326,7 @@ class ImgTxtAdminController extends BaseController
      */
     public function languages(): void
     {
+        $this->requirePermission('imgtxt.languages');
         // Available languages
         $languages = [
             'eng' => 'English',
@@ -369,6 +376,7 @@ class ImgTxtAdminController extends BaseController
      */
     public function retryJob(): void
     {
+        $this->requirePermission('imgtxt.jobs');
         if (!$this->validateCsrf()) {
             $this->flash('error', 'Invalid request.');
             $this->redirect('/admin/projects/imgtxt/jobs');
@@ -385,6 +393,7 @@ class ImgTxtAdminController extends BaseController
             ], 'id = ?', [$id]);
             
             Logger::activity(Auth::id(), 'imgtxt_job_retry', ['job_id' => $id]);
+            try { ActivityLogger::logUpdate(Auth::id(), 'imgtxt', 'ocr_job', $id, [], ['status' => 'pending']); } catch (\Throwable $_) {}
             $this->flash('success', 'Job queued for retry.');
         }
         
@@ -396,6 +405,7 @@ class ImgTxtAdminController extends BaseController
      */
     public function deleteJob(): void
     {
+        $this->requirePermission('imgtxt.jobs');
         if (!$this->validateCsrf()) {
             $this->flash('error', 'Invalid request.');
             $this->redirect('/admin/projects/imgtxt/jobs');
@@ -407,6 +417,7 @@ class ImgTxtAdminController extends BaseController
         if ($id > 0) {
             $this->projectDb->delete('ocr_jobs', 'id = ?', [$id]);
             Logger::activity(Auth::id(), 'imgtxt_job_deleted', ['job_id' => $id]);
+            try { ActivityLogger::logDelete(Auth::id(), 'imgtxt', 'ocr_job', $id); } catch (\Throwable $_) {}
             $this->flash('success', 'Job deleted successfully.');
         }
         
@@ -418,6 +429,7 @@ class ImgTxtAdminController extends BaseController
      */
     public function users(): void
     {
+        $this->requirePermission('imgtxt.users');
         // Get all users who have used ImgTxt from project DB
         $imgtxtUserIds = $this->projectDb->fetchAll(
             "SELECT DISTINCT user_id FROM ocr_jobs WHERE user_id IS NOT NULL"
@@ -483,6 +495,7 @@ class ImgTxtAdminController extends BaseController
      */
     public function statistics(): void
     {
+        $this->requirePermission('imgtxt.statistics');
         // Overall statistics
         $overallStats = [
             'total_jobs' => $this->projectDb->fetch("SELECT COUNT(*) as count FROM ocr_jobs")['count'] ?? 0,
@@ -624,6 +637,7 @@ class ImgTxtAdminController extends BaseController
      */
     public function activity(): void
     {
+        $this->requirePermission('imgtxt.activity');
         $page = (int)($_GET['page'] ?? 1);
         $perPage = 50;
         $offset = ($page - 1) * $perPage;

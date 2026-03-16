@@ -284,7 +284,23 @@ class Auth
     {
         return $_SESSION['user_id'] ?? null;
     }
-    
+
+    /**
+     * Parse a potentially comma-separated role string into an array of slugs.
+     * Supports both legacy single-role values ("admin") and multi-role
+     * values stored as comma-separated slugs ("admin,editor_role").
+     */
+    public static function getRoles(?array $user = null): array
+    {
+        if ($user === null) {
+            $user = self::user();
+        }
+        if (!$user || empty($user['role'])) {
+            return ['user'];
+        }
+        return array_values(array_filter(array_map('trim', explode(',', $user['role']))));
+    }
+
     /**
      * Check user role
      */
@@ -294,18 +310,20 @@ class Auth
         if (!$user) {
             return false;
         }
-        
+
+        $roles = self::getRoles($user);
+
         // Super admin has all roles
-        if ($user['role'] === 'super_admin') {
+        if (in_array('super_admin', $roles, true)) {
             return true;
         }
-        
-        // Admin has project_admin and user roles
-        if ($user['role'] === 'admin' && in_array($role, ['admin', 'project_admin', 'user'])) {
+
+        // Admin has project_admin, audit_viewer and user roles
+        if (in_array('admin', $roles, true) && in_array($role, ['admin', 'project_admin', 'audit_viewer', 'user'], true)) {
             return true;
         }
-        
-        return $user['role'] === $role;
+
+        return in_array($role, $roles, true);
     }
     
     /**
@@ -314,6 +332,177 @@ class Auth
     public static function isAdmin(): bool
     {
         return self::hasRole('admin') || self::hasRole('super_admin');
+    }
+
+    /**
+     * Check if user can access the Audit Explorer
+     * (super_admin, admin, or audit_viewer role)
+     */
+    public static function canAccessAudit(): bool
+    {
+        return self::isAdmin() || self::hasRole('audit_viewer') || self::hasPermission('audit');
+    }
+
+    /**
+     * Check if the current user has a specific granular admin permission.
+     *
+     * Returns true for super_admin / admin (implicit full access) or when:
+     *  1. the user has an explicit row in admin_user_permissions for $key, OR
+     *  2. the user's role has $key in user_role_permissions.
+     *
+     * Individual user permissions always take precedence (override) over
+     * role-level defaults.
+     */
+    public static function hasPermission(string $key): bool
+    {
+        if (self::isAdmin()) {
+            return true;
+        }
+
+        $userId = self::id();
+        if (!$userId) {
+            return false;
+        }
+
+        try {
+            $db = Database::getInstance();
+
+            // 1. Explicit per-user permission
+            if ($db->fetch(
+                "SELECT id FROM admin_user_permissions WHERE user_id = ? AND permission_key = ?",
+                [$userId, $key]
+            ) !== null) {
+                return true;
+            }
+
+            // 2. Role-based permission — check ALL roles the user holds
+            $user = self::user();
+            if ($user) {
+                foreach (self::getRoles($user) as $slug) {
+                    $roleRow = $db->fetch(
+                        "SELECT r.id FROM user_roles r WHERE r.slug = ? AND r.status = 'active'",
+                        [$slug]
+                    );
+                    if ($roleRow && $db->fetch(
+                        "SELECT id FROM user_role_permissions WHERE role_id = ? AND permission_key = ?",
+                        [$roleRow['id'], $key]
+                    ) !== null) {
+                        return true;
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            // user_roles / user_role_permissions may not exist yet
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if the current user has any permission whose key equals $prefix
+     * OR starts with "$prefix." (i.e. any permission in that group).
+     *
+     * Used by the admin sidebar to decide whether to show a whole section.
+     * Super_admin / admin always return true.
+     */
+    public static function hasPermissionGroup(string $prefix): bool
+    {
+        if (self::isAdmin()) {
+            return true;
+        }
+
+        $userId = self::id();
+        if (!$userId) {
+            return false;
+        }
+
+        try {
+            $db = Database::getInstance();
+
+            // 1. Direct user permissions
+            if ((int) $db->fetchColumn(
+                "SELECT COUNT(*) FROM admin_user_permissions
+                 WHERE user_id = ? AND (permission_key = ? OR permission_key LIKE ?)",
+                [$userId, $prefix, $prefix . '.%']
+            ) > 0) {
+                return true;
+            }
+
+            // 2. Role-based permissions — check ALL roles the user holds
+            $user = self::user();
+            if ($user) {
+                foreach (self::getRoles($user) as $slug) {
+                    $roleRow = $db->fetch(
+                        "SELECT r.id FROM user_roles r WHERE r.slug = ? AND r.status = 'active'",
+                        [$slug]
+                    );
+                    if ($roleRow && (int) $db->fetchColumn(
+                        "SELECT COUNT(*) FROM user_role_permissions
+                         WHERE role_id = ? AND (permission_key = ? OR permission_key LIKE ?)",
+                        [$roleRow['id'], $prefix, $prefix . '.%']
+                    ) > 0) {
+                        return true;
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            // Tables may not exist yet
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if the current user has at least one entry in admin_user_permissions
+     * OR has at least one permission granted via their role.
+     *
+     * Used as a gateway check: super_admin / admin always return true;
+     * non-admin users are allowed through only when an administrator has
+     * explicitly granted them at least one admin-panel permission.
+     */
+    public static function hasAnyAdminPermission(): bool
+    {
+        if (self::isAdmin()) {
+            return true;
+        }
+
+        $userId = self::id();
+        if (!$userId) {
+            return false;
+        }
+
+        try {
+            $db = Database::getInstance();
+
+            // 1. Direct user permissions
+            if ((int) $db->fetchColumn(
+                "SELECT COUNT(*) FROM admin_user_permissions WHERE user_id = ?",
+                [$userId]
+            ) > 0) {
+                return true;
+            }
+
+            // 2. Role-based permissions — check ALL roles the user holds
+            $user = self::user();
+            if ($user) {
+                foreach (self::getRoles($user) as $slug) {
+                    $roleRow = $db->fetch(
+                        "SELECT r.id FROM user_roles r WHERE r.slug = ? AND r.status = 'active'",
+                        [$slug]
+                    );
+                    if ($roleRow && (int) $db->fetchColumn(
+                        "SELECT COUNT(*) FROM user_role_permissions WHERE role_id = ?",
+                        [$roleRow['id']]
+                    ) > 0) {
+                        return true;
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            // Tables may not exist yet
+        }
+
+        return false;
     }
     
     /**

@@ -55,6 +55,19 @@ $router->post('/admin/users/{id}/edit', 'Admin\\UserController@update', ['auth',
 $router->post('/admin/users/{id}/delete', 'Admin\\UserController@delete', ['auth', 'admin']);
 $router->post('/admin/users/{id}/toggle', 'Admin\\UserController@toggle', ['auth', 'admin']);
 
+// Admin User Access — granular admin panel permissions
+$router->get('/admin/admin-access', 'Admin\\AdminUserAccessController@index', ['auth', 'admin']);
+$router->get('/admin/admin-access/{userId}/edit', 'Admin\\AdminUserAccessController@editForm', ['auth', 'admin']);
+$router->post('/admin/admin-access/{userId}/save', 'Admin\\AdminUserAccessController@save', ['auth', 'admin']);
+
+// User Roles
+$router->get('/admin/roles', 'Admin\\RoleController@index', ['auth', 'admin']);
+$router->get('/admin/roles/create', 'Admin\\RoleController@createForm', ['auth', 'admin']);
+$router->post('/admin/roles/create', 'Admin\\RoleController@create', ['auth', 'admin']);
+$router->get('/admin/roles/{id}/edit', 'Admin\\RoleController@editForm', ['auth', 'admin']);
+$router->post('/admin/roles/{id}/update', 'Admin\\RoleController@update', ['auth', 'admin']);
+$router->post('/admin/roles/{id}/delete', 'Admin\\RoleController@delete', ['auth', 'admin']);
+
 // Project management
 $router->get('/admin/projects', 'Admin\\ProjectController@index', ['auth', 'admin']);
 $router->get('/admin/projects/{name}', 'Admin\\ProjectController@show', ['auth', 'admin']);
@@ -194,7 +207,15 @@ $router->get('/admin/sessions/login-history', 'Admin\\SessionController@loginHis
 // Activity logs
 $router->get('/admin/logs', 'Admin\\LogController@index', ['auth', 'admin']);
 $router->get('/admin/logs/activity', 'Admin\\LogController@activity', ['auth', 'admin']);
+$router->get('/admin/logs/activity/export', 'Admin\\LogController@export', ['auth', 'admin']);
+$router->get('/admin/logs/activity/api', 'Admin\\LogController@api', ['auth', 'admin']);
 $router->get('/admin/logs/system', 'Admin\\LogController@system', ['auth', 'admin']);
+
+// Audit Explorer – accessible to admin, super_admin, and audit_viewer roles
+$router->get('/admin/audit', 'Admin\\AuditController@index', ['auth']);
+$router->post('/admin/audit/query', 'Admin\\AuditController@query', ['auth']);
+$router->post('/admin/audit/sql', 'Admin\\AuditController@rawSql', ['auth']);
+$router->get('/admin/audit/export', 'Admin\\AuditController@export', ['auth']);
 
 // Navbar customization
 $router->get('/admin/navbar', 'Admin\\NavbarController@index', ['auth', 'admin']);

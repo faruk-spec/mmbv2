@@ -22,7 +22,7 @@ class ProShareAdminController extends BaseController
     public function __construct()
     {
         $this->requireAuth();
-        $this->requireAdmin();
+        $this->requirePermissionGroup('proshare');
         $this->projectDb = Database::projectConnection('proshare');
         $this->mainDb = Database::getInstance();
         
@@ -40,6 +40,7 @@ class ProShareAdminController extends BaseController
      */
     public function overview(): void
     {
+        $this->requirePermission('proshare');
         // Get statistics
         $stats = [
             'total_files' => $this->projectDb->fetch("SELECT COUNT(*) as count FROM files")['count'] ?? 0,
@@ -173,6 +174,7 @@ class ProShareAdminController extends BaseController
      */
     public function settings(): void
     {
+        $this->requirePermission('proshare.settings');
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->updateSettings();
             return;
@@ -278,6 +280,7 @@ class ProShareAdminController extends BaseController
      */
     public function files(): void
     {
+        $this->requirePermission('proshare.files');
         $page = (int)($_GET['page'] ?? 1);
         $perPage = 20;
         $offset = ($page - 1) * $perPage;
@@ -362,6 +365,7 @@ class ProShareAdminController extends BaseController
      */
     public function texts(): void
     {
+        $this->requirePermission('proshare.texts');
         $page = (int)($_GET['page'] ?? 1);
         $perPage = 20;
         $offset = ($page - 1) * $perPage;
@@ -436,6 +440,7 @@ class ProShareAdminController extends BaseController
      */
     public function notifications(): void
     {
+        $this->requirePermission('proshare.notifications');
         $page = (int)($_GET['page'] ?? 1);
         $perPage = 30;
         $offset = ($page - 1) * $perPage;
@@ -504,6 +509,7 @@ class ProShareAdminController extends BaseController
      */
     public function deleteFile(): void
     {
+        $this->requirePermission('proshare.files');
         if (!$this->validateCsrf()) {
             $this->flash('error', 'Invalid request.');
             $this->redirect('/admin/projects/proshare/files');
@@ -539,6 +545,7 @@ class ProShareAdminController extends BaseController
      */
     public function expireFile(): void
     {
+        $this->requirePermission('proshare.files');
         if (!$this->validateCsrf()) {
             $this->flash('error', 'Invalid request.');
             $this->redirect('/admin/projects/proshare/files');
@@ -564,6 +571,7 @@ class ProShareAdminController extends BaseController
      */
     public function deleteText(): void
     {
+        $this->requirePermission('proshare.texts');
         if (!$this->validateCsrf()) {
             $this->flash('error', 'Invalid request.');
             $this->redirect('/admin/projects/proshare/texts');
@@ -649,6 +657,7 @@ class ProShareAdminController extends BaseController
      */
     public function userDashboard(): void
     {
+        $this->requirePermission('proshare.user_dashboard');
         // Get all user IDs from ProShare files
         $userIdsFromFiles = $this->projectDb->fetchAll(
             "SELECT DISTINCT user_id FROM files WHERE user_id IS NOT NULL"
@@ -675,6 +684,7 @@ class ProShareAdminController extends BaseController
      */
     public function userFiles(): void
     {
+        $this->requirePermission('proshare.user_files');
         $userId = $_GET['user_id'] ?? null;
         $page = (int)($_GET['page'] ?? 1);
         $perPage = 20;
@@ -740,6 +750,7 @@ class ProShareAdminController extends BaseController
      */
     public function userActivity(): void
     {
+        $this->requirePermission('proshare.user_activity');
         $userId = $_GET['user_id'] ?? null;
         $page = (int)($_GET['page'] ?? 1);
         $perPage = 50;
@@ -801,6 +812,7 @@ class ProShareAdminController extends BaseController
      */
     public function userLogs(): void
     {
+        $this->requirePermission('proshare.user_logs');
         $page = (int)($_GET['page'] ?? 1);
         $perPage = 50;
         $offset = ($page - 1) * $perPage;
@@ -888,6 +900,7 @@ class ProShareAdminController extends BaseController
      */
     public function sessions(): void
     {
+        $this->requirePermission('proshare.sessions');
         $page = (int)($_GET['page'] ?? 1);
         $perPage = 50;
         $offset = ($page - 1) * $perPage;
@@ -920,6 +933,7 @@ class ProShareAdminController extends BaseController
      */
     public function fileActivity(): void
     {
+        $this->requirePermission('proshare.file_activity');
         $page = (int)($_GET['page'] ?? 1);
         $perPage = 50;
         $offset = ($page - 1) * $perPage;
@@ -1015,6 +1029,7 @@ class ProShareAdminController extends BaseController
      */
     public function security(): void
     {
+        $this->requirePermission('proshare.security');
         // Get failed login attempts from main DB
         $failedLogins = $this->mainDb->fetchAll(
             "SELECT * FROM failed_logins ORDER BY attempted_at DESC LIMIT 100"
@@ -1062,6 +1077,7 @@ class ProShareAdminController extends BaseController
      */
     public function serverHealth(): void
     {
+        $this->requirePermission('proshare.server_health');
         // Get server health metrics
         $health = [
             'cpu_usage' => $this->getCpuUsage(),
@@ -1099,6 +1115,7 @@ class ProShareAdminController extends BaseController
      */
     public function storage(): void
     {
+        $this->requirePermission('proshare.storage');
         // Get total storage used
         $totalStorage = $this->getStorageUsage();
         
@@ -1170,6 +1187,7 @@ class ProShareAdminController extends BaseController
      */
     public function auditTrail(): void
     {
+        $this->requirePermission('proshare.audit_trail');
         $page = (int)($_GET['page'] ?? 1);
         $perPage = 50;
         $offset = ($page - 1) * $perPage;
@@ -1233,6 +1251,7 @@ class ProShareAdminController extends BaseController
      */
     public function exportAuditTrail(): void
     {
+        $this->requirePermission('proshare.audit_trail');
         $format = $_GET['format'] ?? 'csv';
         
         // Get all audit logs
@@ -1311,6 +1330,7 @@ class ProShareAdminController extends BaseController
      */
     public function analytics(): void
     {
+        $this->requirePermission('proshare.analytics');
         // Get recently logged in users
         $recentUsers = $this->mainDb->fetchAll(
             "SELECT id, name, email, last_login_at 

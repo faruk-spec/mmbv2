@@ -18,7 +18,7 @@ class EmailController extends BaseController
     public function __construct()
     {
         $this->requireAuth();
-        $this->requireAdmin();
+        $this->requirePermissionGroup('email');
     }
     
     /**
@@ -26,6 +26,7 @@ class EmailController extends BaseController
      */
     public function queue(): void
     {
+        $this->requirePermission('email.queue');
         $db = Database::getInstance();
         
         $status = isset($_GET['status']) ? $_GET['status'] : 'all';
@@ -75,6 +76,7 @@ class EmailController extends BaseController
      */
     public function templates(): void
     {
+        $this->requirePermission('email.templates');
         // Get all email template files
         $templateDir = __DIR__ . '/../../views/emails/';
         $templates = [];
@@ -105,6 +107,7 @@ class EmailController extends BaseController
      */
     public function viewTemplate(): void
     {
+        $this->requirePermission('email.templates');
         $templateName = $_GET['template'] ?? '';
         
         if (!$templateName) {
@@ -134,6 +137,7 @@ class EmailController extends BaseController
      */
     public function processQueue(): void
     {
+        $this->requirePermission('email.queue');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->jsonResponse(['success' => false, 'message' => 'Invalid request method']);
             return;
@@ -158,6 +162,7 @@ class EmailController extends BaseController
      */
     public function deleteFailed(): void
     {
+        $this->requirePermission('email.queue');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->jsonResponse(['success' => false, 'message' => 'Invalid request method']);
             return;
