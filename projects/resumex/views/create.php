@@ -688,11 +688,6 @@
     const selDot    = document.getElementById('rxcSelDot');
     const selName   = document.getElementById('rxcSelName');
 
-    const CREATIVE_CATS = ['creative', 'tech', 'bold'];
-    const LIGHT_CATS    = ['light'];
-    const DARK_CATS     = ['dark'];
-    const PRO_CATS      = ['professional'];
-
     let activeFilter = 'all';
 
     // ── Filter logic ──────────────────────────────────────────
