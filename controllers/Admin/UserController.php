@@ -243,27 +243,39 @@ class UserController extends BaseController
             }
         }
         
-        // Validate the submitted role slug against known system + custom roles
+        // Validate the submitted roles[] array against known system + custom roles
         $systemRoles = ['user', 'project_admin', 'admin', 'super_admin'];
-        $submittedRole = $this->input('role');
-        $validRole = in_array($submittedRole, $systemRoles, true);
-        if (!$validRole) {
-            // Check custom roles
-            try {
-                $customRoleRow = $db->fetch(
-                    "SELECT slug FROM user_roles WHERE slug = ? AND is_system = 0 AND status = 'active'",
-                    [$submittedRole]
-                );
-                $validRole = ($customRoleRow !== null);
-            } catch (\Exception $e) {
-                $validRole = false;
+        $submittedRoles = array_values(array_filter(array_map('trim', (array) ($_POST['roles'] ?? []))));
+
+        // Fall back to legacy single-role field if the new roles[] was not submitted
+        if (empty($submittedRoles) && !empty($this->input('role'))) {
+            $submittedRoles = [$this->input('role')];
+        }
+
+        if (empty($submittedRoles)) {
+            $submittedRoles = ['user'];
+        }
+
+        // Fetch all valid custom role slugs in one query for efficiency
+        $validCustomSlugs = [];
+        try {
+            $rows = $db->fetchAll("SELECT slug FROM user_roles WHERE is_system = 0 AND status = 'active'");
+            $validCustomSlugs = array_column($rows, 'slug');
+        } catch (\Exception $e) {
+            // table may not exist yet
+        }
+
+        $allValidSlugs = array_merge($systemRoles, $validCustomSlugs);
+        foreach ($submittedRoles as $slug) {
+            if (!in_array($slug, $allValidSlugs, true)) {
+                $this->flash('error', 'Invalid role selected: ' . $slug);
+                $this->redirect('/admin/users/' . $id . '/edit');
+                return;
             }
         }
-        if (!$validRole) {
-            $this->flash('error', 'Invalid role selected.');
-            $this->redirect('/admin/users/' . $id . '/edit');
-            return;
-        }
+
+        // Deduplicate and encode as comma-separated string
+        $rolesString = implode(',', array_unique($submittedRoles));
 
         try {
             // Snapshot old values for audit before the update
@@ -277,7 +289,7 @@ class UserController extends BaseController
             $updateData = [
                 'name' => Security::sanitize($this->input('name')),
                 'email' => $this->input('email'),
-                'role' => $submittedRole,
+                'role' => $rolesString,
                 'status' => $this->input('status'),
                 'updated_at' => date('Y-m-d H:i:s')
             ];

@@ -315,7 +315,11 @@
                                 <div style="font-weight:500;"><?= View::e($u['name']) ?></div>
                                 <div style="font-size:12px;color:var(--text-secondary);"><?= View::e($u['email']) ?></div>
                             </td>
-                            <td><span class="badge badge-info"><?= View::e($u['role']) ?></span></td>
+                            <td>
+                                    <?php foreach (array_filter(array_map('trim', explode(',', $u['role']))) as $r): ?>
+                                        <span class="badge badge-info" style="margin-right:2px;"><?= View::e($r) ?></span>
+                                    <?php endforeach; ?>
+                                </td>
                             <td>
                                 <span class="badge <?= $u['status'] === 'active' ? 'badge-success' : 'badge-danger' ?>">
                                     <?= ucfirst($u['status']) ?>
@@ -364,17 +368,31 @@ if ($canProjects && !$canCodexPro && !$canImgTxt && !$canProShare)
 <?php endif; ?>
 
 <?php if (!$hasAnyAccess): ?>
-<div class="card" style="text-align:center;padding:40px 20px;">
-    <div style="font-size:48px;margin-bottom:16px;opacity:.4;"><i class="fas fa-lock"></i></div>
-    <h3 style="font-size:1.3rem;margin-bottom:8px;">Dashboard Access Granted</h3>
-    <p style="color:var(--text-secondary);max-width:480px;margin:0 auto 20px;">
-        You can access the admin panel but no specific modules have been assigned to your account yet.
-        Please ask a Super Admin to grant you the required module permissions via
-        <strong>Admin Users Access</strong>.
-    </p>
-    <a href="/admin/admin-access" class="btn btn-secondary">
-        <i class="fas fa-user-shield"></i> View Admin Access
-    </a>
+<div class="card" style="text-align:center;padding:60px 20px;position:relative;overflow:hidden;">
+    <!-- Decorative background rings -->
+    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:0;">
+        <div style="width:260px;height:260px;border-radius:50%;border:1px solid var(--border-color);opacity:.35;"></div>
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:180px;height:180px;border-radius:50%;border:1px solid var(--border-color);opacity:.25;"></div>
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:100px;height:100px;border-radius:50%;background:radial-gradient(circle,rgba(153,69,255,.08),transparent 70%);"></div>
+    </div>
+    <div style="position:relative;z-index:1;">
+        <div style="width:72px;height:72px;margin:0 auto 20px;background:linear-gradient(135deg,rgba(153,69,255,.15),rgba(0,240,255,.1));border:1px solid rgba(153,69,255,.3);border-radius:50%;display:flex;align-items:center;justify-content:center;">
+            <i class="fas fa-shield-alt" style="font-size:28px;color:var(--purple,#9945ff);" aria-hidden="true"></i>
+        </div>
+        <h3 style="font-size:1.25rem;font-weight:700;margin-bottom:10px;">Access Pending</h3>
+        <p style="color:var(--text-secondary);max-width:420px;margin:0 auto 6px;line-height:1.6;">
+            You are logged into the admin panel, but no modules have been
+            assigned to your account yet.
+        </p>
+        <p style="color:var(--text-secondary);font-size:13px;max-width:380px;margin:0 auto;">
+            Contact your Super Admin to have the appropriate module permissions
+            granted to your account.
+        </p>
+        <div style="margin-top:24px;display:inline-flex;align-items:center;gap:8px;padding:8px 16px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;font-size:13px;color:var(--text-secondary);">
+            <i class="fas fa-envelope" style="color:var(--cyan);"></i>
+            Waiting for permission assignment
+        </div>
+    </div>
 </div>
 <?php endif; ?>
 

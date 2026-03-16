@@ -284,7 +284,23 @@ class Auth
     {
         return $_SESSION['user_id'] ?? null;
     }
-    
+
+    /**
+     * Parse a potentially comma-separated role string into an array of slugs.
+     * Supports both legacy single-role values ("admin") and multi-role
+     * values stored as comma-separated slugs ("admin,editor_role").
+     */
+    public static function getRoles(?array $user = null): array
+    {
+        if ($user === null) {
+            $user = self::user();
+        }
+        if (!$user || empty($user['role'])) {
+            return ['user'];
+        }
+        return array_values(array_filter(array_map('trim', explode(',', $user['role']))));
+    }
+
     /**
      * Check user role
      */
@@ -294,18 +310,20 @@ class Auth
         if (!$user) {
             return false;
         }
-        
+
+        $roles = self::getRoles($user);
+
         // Super admin has all roles
-        if ($user['role'] === 'super_admin') {
+        if (in_array('super_admin', $roles, true)) {
             return true;
         }
-        
+
         // Admin has project_admin, audit_viewer and user roles
-        if ($user['role'] === 'admin' && in_array($role, ['admin', 'project_admin', 'audit_viewer', 'user'])) {
+        if (in_array('admin', $roles, true) && in_array($role, ['admin', 'project_admin', 'audit_viewer', 'user'], true)) {
             return true;
         }
-        
-        return $user['role'] === $role;
+
+        return in_array($role, $roles, true);
     }
     
     /**
@@ -357,18 +375,20 @@ class Auth
                 return true;
             }
 
-            // 2. Role-based permission
+            // 2. Role-based permission — check ALL roles the user holds
             $user = self::user();
             if ($user) {
-                $roleRow = $db->fetch(
-                    "SELECT r.id FROM user_roles r WHERE r.slug = ? AND r.status = 'active'",
-                    [$user['role']]
-                );
-                if ($roleRow && $db->fetch(
-                    "SELECT id FROM user_role_permissions WHERE role_id = ? AND permission_key = ?",
-                    [$roleRow['id'], $key]
-                ) !== null) {
-                    return true;
+                foreach (self::getRoles($user) as $slug) {
+                    $roleRow = $db->fetch(
+                        "SELECT r.id FROM user_roles r WHERE r.slug = ? AND r.status = 'active'",
+                        [$slug]
+                    );
+                    if ($roleRow && $db->fetch(
+                        "SELECT id FROM user_role_permissions WHERE role_id = ? AND permission_key = ?",
+                        [$roleRow['id'], $key]
+                    ) !== null) {
+                        return true;
+                    }
                 }
             }
         } catch (\Exception $e) {
@@ -408,19 +428,21 @@ class Auth
                 return true;
             }
 
-            // 2. Role-based permissions
+            // 2. Role-based permissions — check ALL roles the user holds
             $user = self::user();
             if ($user) {
-                $roleRow = $db->fetch(
-                    "SELECT r.id FROM user_roles r WHERE r.slug = ? AND r.status = 'active'",
-                    [$user['role']]
-                );
-                if ($roleRow && (int) $db->fetchColumn(
-                    "SELECT COUNT(*) FROM user_role_permissions
-                     WHERE role_id = ? AND (permission_key = ? OR permission_key LIKE ?)",
-                    [$roleRow['id'], $prefix, $prefix . '.%']
-                ) > 0) {
-                    return true;
+                foreach (self::getRoles($user) as $slug) {
+                    $roleRow = $db->fetch(
+                        "SELECT r.id FROM user_roles r WHERE r.slug = ? AND r.status = 'active'",
+                        [$slug]
+                    );
+                    if ($roleRow && (int) $db->fetchColumn(
+                        "SELECT COUNT(*) FROM user_role_permissions
+                         WHERE role_id = ? AND (permission_key = ? OR permission_key LIKE ?)",
+                        [$roleRow['id'], $prefix, $prefix . '.%']
+                    ) > 0) {
+                        return true;
+                    }
                 }
             }
         } catch (\Exception $e) {
@@ -460,18 +482,20 @@ class Auth
                 return true;
             }
 
-            // 2. Role-based permissions
+            // 2. Role-based permissions — check ALL roles the user holds
             $user = self::user();
             if ($user) {
-                $roleRow = $db->fetch(
-                    "SELECT r.id FROM user_roles r WHERE r.slug = ? AND r.status = 'active'",
-                    [$user['role']]
-                );
-                if ($roleRow && (int) $db->fetchColumn(
-                    "SELECT COUNT(*) FROM user_role_permissions WHERE role_id = ?",
-                    [$roleRow['id']]
-                ) > 0) {
-                    return true;
+                foreach (self::getRoles($user) as $slug) {
+                    $roleRow = $db->fetch(
+                        "SELECT r.id FROM user_roles r WHERE r.slug = ? AND r.status = 'active'",
+                        [$slug]
+                    );
+                    if ($roleRow && (int) $db->fetchColumn(
+                        "SELECT COUNT(*) FROM user_role_permissions WHERE role_id = ?",
+                        [$roleRow['id']]
+                    ) > 0) {
+                        return true;
+                    }
                 }
             }
         } catch (\Exception $e) {

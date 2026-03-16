@@ -73,7 +73,11 @@
                                 </div>
                             </div>
                         </td>
-                        <td><span class="badge badge-info"><?= $u['role'] ?></span></td>
+                        <td>
+                            <?php foreach (array_filter(array_map('trim', explode(',', $u['role']))) as $r): ?>
+                                <span class="badge badge-info" style="margin-right:2px;"><?= View::e($r) ?></span>
+                            <?php endforeach; ?>
+                        </td>
                         <td>
                             <span class="badge <?= $u['status'] === 'active' ? 'badge-success' : 'badge-danger' ?>">
                                 <?= ucfirst($u['status']) ?>
