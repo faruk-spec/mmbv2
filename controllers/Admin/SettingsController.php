@@ -18,7 +18,7 @@ class SettingsController extends BaseController
     public function __construct()
     {
         $this->requireAuth();
-        $this->requirePermission('settings');
+        $this->requirePermissionGroup('settings');
     }
     
     /**
@@ -26,6 +26,7 @@ class SettingsController extends BaseController
      */
     public function index(): void
     {
+        $this->requirePermission('settings');
         $db = Database::getInstance();
         
         // Get current settings

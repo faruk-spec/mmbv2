@@ -1990,34 +1990,48 @@
                             <i class="fas fa-chevron-down arrow"></i>
                         </div>
                         <div class="menu-dropdown-content">
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('settings')): ?>
                             <a href="/admin/settings" class="menu-link">
                                 <i class="fas fa-sliders-h"></i>
                                 <span>General</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('settings.session')): ?>
                             <a href="/admin/settings/session" class="menu-link">
                                 <i class="fas fa-clock"></i>
                                 <span>Session & Security</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('settings.home_content')): ?>
                             <a href="/admin/home-content" class="menu-link">
                                 <i class="fas fa-home"></i>
                                 <span>Home Page</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('navbar')): ?>
                             <a href="/admin/navbar" class="menu-link">
                                 <i class="fas fa-bars"></i>
                                 <span>Navbar</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('settings.maintenance')): ?>
                             <a href="/admin/settings/maintenance" class="menu-link">
                                 <i class="fas fa-tools"></i>
                                 <span>Maintenance</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('settings.features')): ?>
                             <a href="/admin/settings/features" class="menu-link">
                                 <i class="fas fa-toggle-on"></i>
                                 <span>Feature Flags</span>
                             </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('settings.timezone')): ?>
                             <a href="/admin/settings#timezone" class="menu-link">
                                 <i class="fas fa-globe"></i>
                                 <span>Timezone</span>
                             </a>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>

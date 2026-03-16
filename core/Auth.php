@@ -322,7 +322,7 @@ class Auth
      */
     public static function canAccessAudit(): bool
     {
-        return self::isAdmin() || self::hasRole('audit_viewer');
+        return self::isAdmin() || self::hasRole('audit_viewer') || self::hasPermission('audit');
     }
 
     /**
