@@ -15,6 +15,7 @@ use Core\Auth;
 use Core\Database;
 use Core\Logger;
 use Core\Security;
+use Core\ActivityLogger;
 
 class AdminUserAccessController extends BaseController
 {
@@ -925,11 +926,14 @@ class AdminUserAccessController extends BaseController
 
             $db->commit();
 
-            Logger::activity(Auth::id(), 'admin_access_updated', [
-                'target_user_id'  => (int) $userId,
-                'old_permissions' => implode(',', $oldKeys),
-                'new_permissions' => implode(',', $newKeys),
-            ]);
+            ActivityLogger::logUpdate(
+                Auth::id(),
+                'users',
+                'admin_permissions',
+                (int) $userId,
+                ['permissions' => $oldKeys],
+                ['permissions' => $newKeys]
+            );
 
             $this->flash('success', 'Permissions updated for ' . $user['name'] . '.');
         } catch (\Exception $e) {

@@ -149,7 +149,7 @@
         <?php endif; ?>
 
         <?php if ($proj === 'imgtxt'): ?>
-        <div style="padding: 20px; <?= $colIdx < $colCount - 1 ? 'border-right: 1px solid var(--border-color);' : '' ?>">
+        <div style="padding: 20px; <?= $index < $colCount - 1 ? 'border-right: 1px solid var(--border-color);' : '' ?>">
             <div style="display:flex;align-items:center;gap:12px;margin-bottom:15px;">
                 <div style="width:45px;height:45px;background:linear-gradient(135deg,var(--green),var(--cyan));border-radius:10px;display:flex;align-items:center;justify-content:center;">
                     <i class="fas fa-image" style="font-size:20px;"></i>

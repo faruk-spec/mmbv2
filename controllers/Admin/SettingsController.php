@@ -12,6 +12,7 @@ use Core\Database;
 use Core\Security;
 use Core\Auth;
 use Core\Logger;
+use Core\ActivityLogger;
 
 class SettingsController extends BaseController
 {
@@ -66,6 +67,14 @@ class SettingsController extends BaseController
                 'date_format',
                 'time_format'
             ];
+
+            // Snapshot current values before writing
+            $oldValues = [];
+            $newValues = [];
+            foreach ($settingsToUpdate as $key) {
+                $row = $db->fetch("SELECT value FROM settings WHERE `key` = ?", [$key]);
+                $oldValues[$key] = $row ? $row['value'] : null;
+            }
             
             foreach ($settingsToUpdate as $key) {
                 $value = $this->input($key, '');
@@ -85,14 +94,32 @@ class SettingsController extends BaseController
                         'created_at' => date('Y-m-d H:i:s')
                     ]);
                 }
+                $newValues[$key] = Security::sanitize($value);
             }
             
             // Update timezone in app config if changed
             if ($this->input('system_timezone')) {
                 date_default_timezone_set($this->input('system_timezone'));
             }
-            
-            Logger::activity(Auth::id(), 'settings_updated');
+
+            // Only log keys that actually changed
+            $changedOld = [];
+            $changedNew = [];
+            foreach ($settingsToUpdate as $key) {
+                if ($oldValues[$key] !== $newValues[$key]) {
+                    $changedOld[$key] = $oldValues[$key];
+                    $changedNew[$key] = $newValues[$key];
+                }
+            }
+
+            ActivityLogger::logUpdate(
+                Auth::id(),
+                'settings',
+                'settings',
+                0,
+                $changedOld,
+                $changedNew
+            );
             
             $this->flash('success', 'Settings updated successfully.');
             
@@ -151,7 +178,8 @@ class SettingsController extends BaseController
             $db = Database::getInstance();
             
             $current = $db->fetch("SELECT value FROM settings WHERE `key` = 'maintenance_mode'");
-            $newValue = ($current && $current['value'] === '1') ? '0' : '1';
+            $oldValue = ($current && $current['value'] === '1') ? '1' : '0';
+            $newValue = $oldValue === '1' ? '0' : '1';
             
             if ($current) {
                 $db->update('settings', [
@@ -165,8 +193,15 @@ class SettingsController extends BaseController
                     'created_at' => date('Y-m-d H:i:s')
                 ]);
             }
-            
-            Logger::activity(Auth::id(), 'maintenance_mode_toggled', ['enabled' => $newValue === '1']);
+
+            ActivityLogger::logUpdate(
+                Auth::id(),
+                'settings',
+                'settings',
+                0,
+                ['maintenance_mode' => $oldValue === '1' ? 'enabled' : 'disabled'],
+                ['maintenance_mode' => $newValue === '1' ? 'enabled' : 'disabled']
+            );
             
             $status = $newValue === '1' ? 'enabled' : 'disabled';
             $this->flash('success', "Maintenance mode {$status}.");

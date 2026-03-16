@@ -12,6 +12,7 @@ use Core\Database;
 use Core\Security;
 use Core\Auth;
 use Core\Logger;
+use Core\ActivityLogger;
 
 class UserController extends BaseController
 {
@@ -265,6 +266,14 @@ class UserController extends BaseController
         }
 
         try {
+            // Snapshot old values for audit before the update
+            $oldSnapshot = [
+                'name'   => $user['name'],
+                'email'  => $user['email'],
+                'role'   => $user['role'],
+                'status' => $user['status'],
+            ];
+
             $updateData = [
                 'name' => Security::sanitize($this->input('name')),
                 'email' => $this->input('email'),
@@ -280,8 +289,27 @@ class UserController extends BaseController
             }
             
             $db->update('users', $updateData, 'id = ?', [(int) $id]);
-            
-            Logger::activity(Auth::id(), 'user_updated', ['user_id' => (int) $id]);
+
+            // Build new-values snapshot (exclude password hash for security)
+            $newSnapshot = [
+                'name'   => $updateData['name'],
+                'email'  => $updateData['email'],
+                'role'   => $updateData['role'],
+                'status' => $updateData['status'],
+            ];
+            if (!empty($newPassword)) {
+                $newSnapshot['password'] = '*** changed ***';
+                $oldSnapshot['password'] = '*** previous ***';
+            }
+
+            ActivityLogger::logUpdate(
+                Auth::id(),
+                'users',
+                'user',
+                (int) $id,
+                $oldSnapshot,
+                $newSnapshot
+            );
             
             $this->flash('success', 'User updated successfully.');
             $this->redirect('/admin/users');

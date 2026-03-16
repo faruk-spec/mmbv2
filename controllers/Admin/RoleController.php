@@ -16,6 +16,7 @@ use Core\Auth;
 use Core\Database;
 use Core\Logger;
 use Core\Security;
+use Core\ActivityLogger;
 
 class RoleController extends BaseController
 {
@@ -217,6 +218,24 @@ class RoleController extends BaseController
         }
 
         try {
+            // Snapshot old role data + permissions for audit
+            $oldPermissions = array_column(
+                $this->db->fetchAll(
+                    "SELECT permission_key FROM user_role_permissions WHERE role_id = ?",
+                    [$id]
+                ),
+                'permission_key'
+            );
+            $oldSnapshot = [
+                'name'        => $role['name'],
+                'slug'        => $role['slug'],
+                'description' => $role['description'],
+                'color'       => $role['color'],
+                'status'      => $role['status'],
+                'sort_order'  => (int) $role['sort_order'],
+                'permissions' => $oldPermissions,
+            ];
+
             $this->db->query(
                 "UPDATE user_roles
                  SET name = ?, slug = ?, description = ?, color = ?, status = ?, sort_order = ?, updated_at = NOW()
@@ -226,7 +245,25 @@ class RoleController extends BaseController
 
             $this->saveRolePermissions($id);
 
-            Logger::activity(Auth::id(), 'role_updated', ['role_id' => $id, 'name' => $name]);
+            // Build new permissions list after save
+            $newPermissions = array_column(
+                $this->db->fetchAll(
+                    "SELECT permission_key FROM user_role_permissions WHERE role_id = ?",
+                    [$id]
+                ),
+                'permission_key'
+            );
+            $newSnapshot = [
+                'name'        => $name,
+                'slug'        => $slug,
+                'description' => $desc,
+                'color'       => $color,
+                'status'      => $status,
+                'sort_order'  => $sortOrder,
+                'permissions' => $newPermissions,
+            ];
+
+            ActivityLogger::logUpdate(Auth::id(), 'roles', 'role', $id, $oldSnapshot, $newSnapshot);
             $this->flash('success', 'Role "' . $name . '" updated successfully.');
         } catch (\Exception $e) {
             Logger::error('RoleController::update — ' . $e->getMessage());
