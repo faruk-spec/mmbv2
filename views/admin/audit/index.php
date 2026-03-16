@@ -278,7 +278,7 @@
             <div class="ae-schema-label">&#x1F4CB; Schema Reference</div>
             <div class="ae-schema-box">
                 <span class="t">activity_logs (al.*)</span>
-                <?php foreach (['id','user_id','action','module','tenant_id','resource_type','resource_id','user_role','status','readable_message','ip_address','device','browser','request_id','old_values','new_values','created_at'] as $col): ?>
+                <?php foreach (['id','user_id','user_name','action','module','tenant_id','resource_type','resource_id','entity_name','user_role','status','readable_message','ip_address','device','browser','request_id','old_values','new_values','changes','created_at'] as $col): ?>
                 <span class="c">&#x21B3; <?= $col ?></span>
                 <?php endforeach; ?>
                 <span class="t" style="margin-top:8px;">users (JOIN on user_id)</span>
@@ -316,6 +316,7 @@
             <?php foreach ($allowedCols as $c): ?><option value="<?= View::e($c) ?>"><?php endforeach; ?>
             <option value="COUNT(*)"><option value="COUNT(*) AS cnt">
             <option value="user_name"><option value="user_email">
+            <option value="entity_name"><option value="changes">
         </datalist>
         <span style="display:flex;gap:0;">
             <button class="ae-vt-btn active" id="btnTable" onclick="setView('table')" title="Table view"><i class="fas fa-table"></i></button>
@@ -574,12 +575,41 @@ document.addEventListener('click', function(e) {
     el.innerHTML=html;
 });
 
+// Render the DB-stored `changes` JSON column (field-level diff format: {field:{old,new}})
+function renderDbChanges(changesJson, idx) {
+    try {
+        const data = typeof changesJson === 'string' ? JSON.parse(changesJson) : changesJson;
+        if (!data || typeof data !== 'object') return '<span style="opacity:.35">\u2014</span>';
+        const fields = Object.keys(data);
+        if (!fields.length) return '<span style="opacity:.35">\u2014</span>';
+        const id = 'dbc' + idx;
+        const changes = fields.map(k => ({k, ov: data[k]['old'], nv: data[k]['new']}));
+        diffStore[id] = changes;
+        const visible = changes.slice(0, 2);
+        let html = '<div class="diff-wrap" id="' + id + '">';
+        visible.forEach(c => {
+            const oldStr = c.ov != null ? JSON.stringify(c.ov) : '(empty)';
+            const newStr = c.nv != null ? JSON.stringify(c.nv) : '(empty)';
+            html += '<span class="diff-old">\u2212 ' + esc(c.k) + ': ' + esc(oldStr) + '</span>';
+            html += '<span class="diff-new">+ ' + esc(c.k) + ': ' + esc(newStr) + '</span>';
+        });
+        if (changes.length > 2) {
+            html += '<button class="diff-toggle" data-diffid="' + esc(id) + '">+' + (changes.length - 2) + ' more</button>';
+        }
+        return html + '</div>';
+    } catch(e) {
+        return '<span style="font-size:10px;color:var(--text-m);">' + esc(String(changesJson).slice(0, 60)) + '</span>';
+    }
+}
+
 function renderTable(rows){
     const cols=Object.keys(rows[0]);
     const isFullLog=cols.includes('action')&&cols.includes('created_at');
     let dc=cols.filter(c=>c!=='user_email'&&c!=='user_id');
+    // If old_values/new_values are present, replace them with a unified "changes" column.
+    // Also remove any existing "changes" DB column to avoid duplicates before re-appending.
     const hasDiff=cols.includes('old_values')&&cols.includes('new_values');
-    if(hasDiff)dc=[...dc.filter(c=>c!=='old_values'&&c!=='new_values'),'changes'];
+    if(hasDiff)dc=[...dc.filter(c=>c!=='old_values'&&c!=='new_values'&&c!=='changes'),'changes'];
 
     let html='<table class="ae-table"><thead><tr>';
     if(isFullLog)html+='<th style="width:12px;"></th>';
@@ -597,7 +627,13 @@ function renderTable(rows){
         html+='<tr>';
         if(isFullLog)html+='<td style="padding-right:0;vertical-align:middle;"><span class="sev '+sevClass+'"></span></td>';
         dc.forEach(c=>{
-            if(c==='changes'){html+='<td>'+diffCell(row['old_values'],row['new_values'],idx)+'</td>';return;}
+            if(c==='changes'){
+                // Prefer the DB-computed changes JSON column if present and non-null
+                const dbChanges=row['changes'];
+                if(dbChanges){html+='<td>'+renderDbChanges(dbChanges,idx)+'</td>';}
+                else{html+='<td>'+diffCell(row['old_values'],row['new_values'],idx)+'</td>';}
+                return;
+            }
             const raw=row[c];
             if(raw==null||raw===''){html+='<td><span style="opacity:.35">\u2014</span></td>';return;}
             const s=String(raw);
@@ -643,7 +679,10 @@ function renderTimeline(rows){
         if(row['ip_address'])html+='<span><i class="fas fa-network-wired"></i> <span class="ip-badge">'+esc(row['ip_address'])+'</span></span>';
         if(row['created_at'])html+='<span><i class="fas fa-clock"></i> '+tsCell(row['created_at'])+'</span>';
         html+='</div>';
-        if(row['old_values']||row['new_values'])html+='<div style="margin-top:6px;">'+diffCell(row['old_values'],row['new_values'],idx)+'</div>';
+        if(row['changes']||row['old_values']||row['new_values']){
+            const diffHtml=row['changes']?renderDbChanges(row['changes'],idx):diffCell(row['old_values'],row['new_values'],idx);
+            html+='<div style="margin-top:6px;">'+diffHtml+'</div>';
+        }
         html+='</div></div>';
     });
     document.getElementById('resultsArea').innerHTML=html+'</div>';

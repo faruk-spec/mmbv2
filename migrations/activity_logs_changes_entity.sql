@@ -2,6 +2,10 @@
 -- Activity Logs: changes, entity_name, user_name columns
 -- Adds field-level change tracking and denormalized entity context.
 -- Run once against the main database.
+--
+-- Requires MySQL 8.0.29+ or MariaDB 10.3.3+ for IF NOT EXISTS support.
+-- On older versions, remove the IF NOT EXISTS clauses and ensure the
+-- columns do not already exist before running.
 -- ============================================================
 
 -- changes: computed diff of only the modified fields

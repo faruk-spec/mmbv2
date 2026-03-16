@@ -276,8 +276,11 @@ class ActivityLogger
      */
     public static function computeChanges(array $oldValues, array $newValues, array $ignoreKeys = []): ?array
     {
+        // Always exclude pure security/noise tokens from the diff.
+        // Timestamps (updated_at, created_at) are intentionally kept so
+        // callers that include them in their snapshots will see them recorded.
         $skip = array_merge(
-            ['updated_at', 'created_at', 'password', 'remember_token', '_token', 'csrf_token'],
+            ['remember_token', '_token', 'csrf_token'],
             $ignoreKeys
         );
 
@@ -288,6 +291,17 @@ class ActivityLogger
                 continue;
             }
             $oldVal = $oldValues[$key] ?? null;
+
+            // Redact passwords: never store actual hashes; only note that it changed.
+            if ($key === 'password') {
+                $oldStr = $oldVal !== null ? (string)$oldVal : null;
+                $newStr = (string)$newVal;
+                if ($oldStr !== $newStr) {
+                    $changes[$key] = ['old' => '[hidden]', 'new' => '[changed]'];
+                }
+                continue;
+            }
+
             $newStr = is_array($newVal) ? json_encode($newVal) : (string)$newVal;
             $oldStr = $oldVal !== null ? (is_array($oldVal) ? json_encode($oldVal) : (string)$oldVal) : null;
 
@@ -297,7 +311,7 @@ class ActivityLogger
         }
         // Detect removed fields
         foreach ($oldValues as $key => $oldVal) {
-            if (in_array($key, $skip, true) || array_key_exists($key, $newValues)) {
+            if (in_array($key, $skip, true) || $key === 'password' || array_key_exists($key, $newValues)) {
                 continue;
             }
             $changes[$key] = ['old' => $oldVal, 'new' => null];
@@ -523,11 +537,17 @@ class ActivityLogger
             }
         }
 
-        // Append field-change summary for updated events (max 3 fields for brevity)
+        // Append field-change summary for updated events (max 3 fields for brevity).
+        // Exclude noisy/internal fields (timestamps, password) from the human-readable text;
+        // they are still stored in the `changes` JSON column for full auditability.
+        $messageSkip = ['updated_at', 'created_at', 'password', 'remember_token'];
         if ($verb === 'updated' && !empty($changes)) {
             $parts = [];
             $count = 0;
             foreach ($changes as $field => $diff) {
+                if (in_array($field, $messageSkip, true)) {
+                    continue;
+                }
                 if ($count >= 3) {
                     $parts[] = '…';
                     break;

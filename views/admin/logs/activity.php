@@ -241,7 +241,7 @@
                                         <span style="font-size:11px;color:var(--text-secondary);margin-left:4px;">
                                             <?= View::e($log['resource_type']) ?>
                                             <?php if (!empty($log['entity_name'])): ?>
-                                                '<span style="color:var(--cyan);"><?= View::e($log['entity_name']) ?></span>'
+                                                <span style="color:var(--cyan);">'<?= View::e($log['entity_name']) ?>'</span>
                                             <?php elseif (!empty($log['resource_id'])): ?>
                                                 #<?= View::e($log['resource_id']) ?>
                                             <?php endif; ?>
