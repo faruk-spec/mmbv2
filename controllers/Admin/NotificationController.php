@@ -17,7 +17,7 @@ class NotificationController extends BaseController
     public function __construct()
     {
         $this->requireAuth();
-        $this->requirePermission('notifications');
+        $this->requirePermissionGroup('notifications');
     }
     
     /**
@@ -25,6 +25,7 @@ class NotificationController extends BaseController
      */
     public function allNotifications(): void
     {
+        $this->requirePermission('notifications');
         $db = Database::getInstance();
         
         $page = $_GET['page'] ?? 1;
@@ -100,6 +101,7 @@ class NotificationController extends BaseController
      */
     public function preferences(): void
     {
+        $this->requirePermission('notifications.preferences');
         $db = Database::getInstance();
         
         // Get all notification preferences grouped by user
@@ -127,6 +129,7 @@ class NotificationController extends BaseController
      */
     public function sendTest(): void
     {
+        $this->requirePermission('notifications.preferences');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->jsonResponse(['success' => false, 'message' => 'Invalid request method']);
             return;
@@ -153,6 +156,7 @@ class NotificationController extends BaseController
      */
     public function deleteOld(): void
     {
+        $this->requirePermission('notifications');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->jsonResponse(['success' => false, 'message' => 'Invalid request method']);
             return;

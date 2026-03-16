@@ -18,7 +18,7 @@ class UserController extends BaseController
     public function __construct()
     {
         $this->requireAuth();
-        $this->requirePermission('users');
+        $this->requirePermissionGroup('users');
     }
     
     /**
@@ -26,6 +26,7 @@ class UserController extends BaseController
      */
     public function index(): void
     {
+        $this->requirePermission('users');
         $db = Database::getInstance();
         
         $page = max(1, (int) $this->input('page', 1));
@@ -84,6 +85,7 @@ class UserController extends BaseController
      */
     public function create(): void
     {
+        $this->requirePermission('users.create');
         $this->view('admin/users/create', [
             'title' => 'Create User'
         ]);
@@ -94,6 +96,7 @@ class UserController extends BaseController
      */
     public function store(): void
     {
+        $this->requirePermission('users.create');
         if (!$this->validateCsrf()) {
             $this->flash('error', 'Invalid request.');
             $this->redirect('/admin/users/create');
@@ -147,6 +150,7 @@ class UserController extends BaseController
      */
     public function edit(string $id): void
     {
+        $this->requirePermission('users.edit');
         $db = Database::getInstance();
         $user = $db->fetch("SELECT * FROM users WHERE id = ?", [(int) $id]);
         
@@ -188,6 +192,7 @@ class UserController extends BaseController
      */
     public function update(string $id): void
     {
+        $this->requirePermission('users.edit');
         if (!$this->validateCsrf()) {
             $this->flash('error', 'Invalid request.');
             $this->redirect('/admin/users/' . $id . '/edit');
@@ -260,6 +265,7 @@ class UserController extends BaseController
      */
     public function delete(string $id): void
     {
+        $this->requirePermission('users.delete');
         if (!$this->validateCsrf()) {
             $this->flash('error', 'Invalid request.');
             $this->redirect('/admin/users');
@@ -301,6 +307,7 @@ class UserController extends BaseController
      */
     public function toggle(string $id): void
     {
+        $this->requirePermission('users.edit');
         if (!$this->validateCsrf()) {
             $this->flash('error', 'Invalid request.');
             $this->redirect('/admin/users');

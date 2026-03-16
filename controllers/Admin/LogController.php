@@ -16,7 +16,7 @@ class LogController extends BaseController
     public function __construct()
     {
         $this->requireAuth();
-        $this->requirePermission('logs');
+        $this->requirePermissionGroup('logs');
     }
     
     /**
@@ -24,6 +24,7 @@ class LogController extends BaseController
      */
     public function index(): void
     {
+        $this->requirePermission('logs');
         $db = Database::getInstance();
 
         // Quick stats for the index dashboard
@@ -75,6 +76,7 @@ class LogController extends BaseController
      */
     public function activity(): void
     {
+        $this->requirePermission('logs.activity');
         $db = Database::getInstance();
 
         $page    = max(1, (int) $this->input('page', 1));
@@ -191,6 +193,7 @@ class LogController extends BaseController
      */
     public function export(): void
     {
+        $this->requirePermission('logs');
         $db     = Database::getInstance();
         $format = strtolower($this->input('format', 'csv'));
         if (!in_array($format, ['csv', 'json'])) {
@@ -276,6 +279,7 @@ class LogController extends BaseController
      */
     public function api(): void
     {
+        $this->requirePermission('logs');
         $db = Database::getInstance();
 
         $page    = max(1, (int) $this->input('page', 1));
@@ -346,6 +350,7 @@ class LogController extends BaseController
      */
     public function system(): void
     {
+        $this->requirePermission('logs.system');
         $logFiles = Logger::getLogFiles();
         $selectedFile = $this->input('file', '');
         $logContent = [];

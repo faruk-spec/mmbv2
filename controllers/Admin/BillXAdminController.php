@@ -23,7 +23,7 @@ class BillXAdminController extends BaseController
     public function __construct()
     {
         $this->requireAuth();
-        $this->requirePermission('billx');
+        $this->requirePermissionGroup('billx');
         $this->db    = Database::getInstance();
         $this->model = new BillModel();
     }
@@ -34,6 +34,7 @@ class BillXAdminController extends BaseController
 
     public function overview(): void
     {
+        $this->requirePermission('billx');
         $stats        = $this->getStats();
         $revenue      = $this->model->getRevenueStats();
         $byType       = $this->getBillsByType();
@@ -57,6 +58,7 @@ class BillXAdminController extends BaseController
 
     public function bills(): void
     {
+        $this->requirePermission('billx.bills');
         $page     = max(1, (int)($_GET['page'] ?? 1));
         $perPage  = 30;
         $offset   = ($page - 1) * $perPage;
@@ -108,6 +110,7 @@ class BillXAdminController extends BaseController
 
     public function viewBill(int $id): void
     {
+        $this->requirePermission('billx.bills');
         $bill = $this->model->getById($id);
         if (!$bill) {
             http_response_code(404);
@@ -154,6 +157,7 @@ class BillXAdminController extends BaseController
 
     public function deleteBill(): void
     {
+        $this->requirePermission('billx.bills');
         if (!Security::validateCsrfToken($_POST['_csrf_token'] ?? '')) {
             $this->redirect('/admin/projects/billx/bills?error=invalid_token');
             return;
@@ -183,6 +187,7 @@ class BillXAdminController extends BaseController
 
     public function bulkDelete(): void
     {
+        $this->requirePermission('billx.bills');
         if (!Security::validateCsrfToken($_POST['_csrf_token'] ?? '')) {
             $this->redirect('/admin/projects/billx/bills?error=invalid_token');
             return;
@@ -222,6 +227,7 @@ class BillXAdminController extends BaseController
 
     public function exportCsv(): void
     {
+        $this->requirePermission('billx.export');
         $filters = [
             'bill_type'   => trim($_GET['bill_type']    ?? ''),
             'search'      => trim($_GET['search']       ?? ''),
@@ -297,6 +303,7 @@ class BillXAdminController extends BaseController
 
     public function settings(): void
     {
+        $this->requirePermission('billx.settings');
         $saved = false;
         $error = null;
 
@@ -483,6 +490,7 @@ class BillXAdminController extends BaseController
 
     public function activityLogs(): void
     {
+        $this->requirePermission('billx.activity_logs');
         $page    = max(1, (int)($_GET['page'] ?? 1));
         $perPage = 50;
         $offset  = ($page - 1) * $perPage;

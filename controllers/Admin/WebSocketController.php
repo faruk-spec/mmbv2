@@ -16,7 +16,7 @@ class WebSocketController extends BaseController
     public function __construct()
     {
         $this->requireAuth();
-        $this->requirePermission('websocket');
+        $this->requirePermissionGroup('websocket');
     }
     
     /**
@@ -24,6 +24,7 @@ class WebSocketController extends BaseController
      */
     public function status(): void
     {
+        $this->requirePermission('websocket');
         $db = Database::getInstance();
         
         // Get WebSocket settings
@@ -62,6 +63,7 @@ class WebSocketController extends BaseController
      */
     public function connections(): void
     {
+        $this->requirePermission('websocket.connections');
         // In a real implementation, this would connect to the WebSocket server
         // to get active connections. For now, we'll show a placeholder.
         
@@ -76,6 +78,7 @@ class WebSocketController extends BaseController
      */
     public function rooms(): void
     {
+        $this->requirePermission('websocket.rooms');
         // In a real implementation, this would show active rooms
         // For now, we'll show a placeholder.
         
@@ -90,6 +93,7 @@ class WebSocketController extends BaseController
      */
     public function settings(): void
     {
+        $this->requirePermission('websocket.settings');
         $db = Database::getInstance();
         
         // Get WebSocket settings
@@ -110,6 +114,7 @@ class WebSocketController extends BaseController
      */
     public function updateSettings(): void
     {
+        $this->requirePermission('websocket.settings');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->jsonResponse(['success' => false, 'message' => 'Invalid request method']);
             return;

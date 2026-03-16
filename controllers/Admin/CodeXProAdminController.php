@@ -24,7 +24,7 @@ class CodeXProAdminController extends BaseController
     public function __construct()
     {
         $this->requireAuth();
-        $this->requirePermission('codexpro');
+        $this->requirePermissionGroup('codexpro');
         $this->projectDb = Database::projectConnection('codexpro');
         $this->mainDb = Database::getInstance();
         
@@ -42,6 +42,7 @@ class CodeXProAdminController extends BaseController
      */
     public function overview(): void
     {
+        $this->requirePermission('codexpro');
         // Cache statistics for 5 minutes
         $stats = Cache::remember('codexpro_stats', function() {
             return [
@@ -131,6 +132,7 @@ class CodeXProAdminController extends BaseController
      */
     public function settings(): void
     {
+        $this->requirePermission('codexpro.settings');
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->updateSettings();
             return;
@@ -211,6 +213,7 @@ class CodeXProAdminController extends BaseController
      */
     public function users(): void
     {
+        $this->requirePermission('codexpro.users');
         $page = (int)($_GET['page'] ?? 1);
         $perPage = 20;
         $offset = ($page - 1) * $perPage;
@@ -276,6 +279,7 @@ class CodeXProAdminController extends BaseController
      */
     public function templates(): void
     {
+        $this->requirePermission('codexpro.templates');
         $page = (int)($_GET['page'] ?? 1);
         $perPage = 20;
         $offset = ($page - 1) * $perPage;
@@ -332,6 +336,7 @@ class CodeXProAdminController extends BaseController
      */
     public function deleteTemplate(): void
     {
+        $this->requirePermission('codexpro.templates');
         if (!$this->validateCsrf()) {
             $this->flash('error', 'Invalid request.');
             $this->redirect('/admin/projects/codexpro/templates');
@@ -357,6 +362,7 @@ class CodeXProAdminController extends BaseController
      */
     public function toggleTemplate(): void
     {
+        $this->requirePermission('codexpro.templates');
         if (!$this->validateCsrf()) {
             $this->flash('error', 'Invalid request.');
             $this->redirect('/admin/projects/codexpro/templates');
