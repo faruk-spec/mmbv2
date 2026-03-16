@@ -27,12 +27,24 @@ class DashboardController extends BaseController
     {
         $db = Database::getInstance();
 
-        $canUsers    = Auth::isAdmin() || Auth::hasPermissionGroup('users');
-        $canLogs     = Auth::isAdmin() || Auth::hasPermissionGroup('logs');
-        $canProjects = Auth::isAdmin() || Auth::hasPermissionGroup('projects');
-        $canCodexPro = Auth::isAdmin() || Auth::hasPermissionGroup('codexpro');
-        $canImgTxt   = Auth::isAdmin() || Auth::hasPermissionGroup('imgtxt');
-        $canProShare = Auth::isAdmin() || Auth::hasPermissionGroup('proshare');
+        // Broad permission checks used to gate data fetches + view sections
+        $canUsers        = Auth::isAdmin() || Auth::hasPermissionGroup('users');
+        $canLogs         = Auth::isAdmin() || Auth::hasPermissionGroup('logs');
+        $canProjects     = Auth::isAdmin() || Auth::hasPermissionGroup('projects');
+        $canCodexPro     = Auth::isAdmin() || Auth::hasPermissionGroup('codexpro');
+        $canImgTxt       = Auth::isAdmin() || Auth::hasPermissionGroup('imgtxt');
+        $canProShare     = Auth::isAdmin() || Auth::hasPermissionGroup('proshare');
+        $canConvertX     = Auth::isAdmin() || Auth::hasPermissionGroup('convertx');
+        $canBillX        = Auth::isAdmin() || Auth::hasPermissionGroup('billx');
+        $canWhatsApp     = Auth::isAdmin() || Auth::hasPermissionGroup('whatsapp');
+        $canQr           = Auth::isAdmin() || Auth::hasPermissionGroup('qr');
+        $canSecurity     = Auth::isAdmin() || Auth::hasPermissionGroup('security');
+        $canPlatformPlans= Auth::isAdmin() || Auth::hasPermissionGroup('platform_plans');
+
+        // Determine whether the user has ANY visible module access
+        $hasAnyAccess = $canUsers || $canLogs || $canProjects || $canCodexPro || $canImgTxt
+            || $canProShare || $canConvertX || $canBillX || $canWhatsApp || $canQr
+            || $canSecurity || $canPlatformPlans;
 
         // User stats — only if the user has access to the users section
         $stats = null;
@@ -98,8 +110,8 @@ class DashboardController extends BaseController
         if ($canCodexPro) {
             try {
                 $projectStats['codexpro'] = [
-                    'projects' => (int) $db->fetchColumn("SELECT COUNT(*) FROM codexpro_projects") ?? 0,
-                    'snippets' => (int) $db->fetchColumn("SELECT COUNT(*) FROM codexpro_snippets") ?? 0,
+                    'projects' => (int) ($db->fetchColumn("SELECT COUNT(*) FROM codexpro_projects") ?: 0),
+                    'snippets' => (int) ($db->fetchColumn("SELECT COUNT(*) FROM codexpro_snippets") ?: 0),
                 ];
             } catch (\Exception $e) {
                 $projectStats['codexpro'] = ['projects' => 0, 'snippets' => 0];
@@ -108,8 +120,8 @@ class DashboardController extends BaseController
         if ($canImgTxt) {
             try {
                 $projectStats['imgtxt'] = [
-                    'total_jobs' => (int) $db->fetchColumn("SELECT COUNT(*) FROM imgtxt_jobs") ?? 0,
-                    'completed'  => (int) $db->fetchColumn("SELECT COUNT(*) FROM imgtxt_jobs WHERE status = 'completed'") ?? 0,
+                    'total_jobs' => (int) ($db->fetchColumn("SELECT COUNT(*) FROM imgtxt_jobs") ?: 0),
+                    'completed'  => (int) ($db->fetchColumn("SELECT COUNT(*) FROM imgtxt_jobs WHERE status = 'completed'") ?: 0),
                 ];
             } catch (\Exception $e) {
                 $projectStats['imgtxt'] = ['total_jobs' => 0, 'completed' => 0];
@@ -118,8 +130,8 @@ class DashboardController extends BaseController
         if ($canProShare) {
             try {
                 $projectStats['proshare'] = [
-                    'files' => (int) $db->fetchColumn("SELECT COUNT(*) FROM proshare_files") ?? 0,
-                    'texts' => (int) $db->fetchColumn("SELECT COUNT(*) FROM proshare_texts") ?? 0,
+                    'files' => (int) ($db->fetchColumn("SELECT COUNT(*) FROM proshare_files") ?: 0),
+                    'texts' => (int) ($db->fetchColumn("SELECT COUNT(*) FROM proshare_texts") ?: 0),
                 ];
             } catch (\Exception $e) {
                 $projectStats['proshare'] = ['files' => 0, 'texts' => 0];
@@ -127,19 +139,26 @@ class DashboardController extends BaseController
         }
 
         $this->view('admin/dashboard', [
-            'title'          => 'Admin Dashboard',
-            'stats'          => $stats,
-            'recentActivity' => $recentActivity,
-            'recentUsers'    => $recentUsers,
-            'projects'       => $projects,
-            'chartData'      => $chartData,
-            'projectStats'   => $projectStats,
-            'canUsers'       => $canUsers,
-            'canLogs'        => $canLogs,
-            'canProjects'    => $canProjects,
-            'canCodexPro'    => $canCodexPro,
-            'canImgTxt'      => $canImgTxt,
-            'canProShare'    => $canProShare,
+            'title'           => 'Admin Dashboard',
+            'stats'           => $stats,
+            'recentActivity'  => $recentActivity,
+            'recentUsers'     => $recentUsers,
+            'projects'        => $projects,
+            'chartData'       => $chartData,
+            'projectStats'    => $projectStats,
+            'canUsers'        => $canUsers,
+            'canLogs'         => $canLogs,
+            'canProjects'     => $canProjects,
+            'canCodexPro'     => $canCodexPro,
+            'canImgTxt'       => $canImgTxt,
+            'canProShare'     => $canProShare,
+            'canConvertX'     => $canConvertX,
+            'canBillX'        => $canBillX,
+            'canWhatsApp'     => $canWhatsApp,
+            'canQr'           => $canQr,
+            'canSecurity'     => $canSecurity,
+            'canPlatformPlans'=> $canPlatformPlans,
+            'hasAnyAccess'    => $hasAnyAccess,
         ]);
     }
 }

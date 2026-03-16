@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS `users` (
     `name` VARCHAR(100) NOT NULL,
     `email` VARCHAR(255) NOT NULL UNIQUE,
     `password` VARCHAR(255) NOT NULL,
-    `role` ENUM('super_admin', 'admin', 'project_admin', 'user') DEFAULT 'user',
+    `role` VARCHAR(100) NOT NULL DEFAULT 'user',
     `app_access` JSON NULL DEFAULT NULL COMMENT 'JSON array of allowed app slugs. NULL = unrestricted.',
     `status` ENUM('active', 'inactive', 'banned') DEFAULT 'active',
     `email_verified_at` TIMESTAMP NULL,

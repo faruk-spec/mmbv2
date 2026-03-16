@@ -345,6 +345,24 @@ class RoleController extends BaseController
                     );
                 }
             }
+
+            // Ensure users.role is VARCHAR so custom role slugs can be stored.
+            // If it is still an ENUM the ALTER is applied once; subsequent runs are no-ops.
+            try {
+                $col = $this->db->fetch(
+                    "SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS
+                     WHERE TABLE_SCHEMA = DATABASE()
+                       AND TABLE_NAME = 'users'
+                       AND COLUMN_NAME = 'role'"
+                );
+                if ($col && stripos($col['COLUMN_TYPE'], 'enum') !== false) {
+                    $this->db->query(
+                        "ALTER TABLE `users` MODIFY COLUMN `role` VARCHAR(100) NOT NULL DEFAULT 'user'"
+                    );
+                }
+            } catch (\Exception $inner) {
+                Logger::error('RoleController::ensureTables — role column migration: ' . $inner->getMessage());
+            }
         } catch (\Exception $e) {
             Logger::error('RoleController::ensureTables — ' . $e->getMessage());
         }
