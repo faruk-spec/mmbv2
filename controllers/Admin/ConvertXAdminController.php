@@ -21,7 +21,7 @@ class ConvertXAdminController extends BaseController
     public function __construct()
     {
         $this->requireAuth();
-        $this->requirePermission('convertx');
+        $this->requirePermissionGroup('convertx');
         $this->db = Database::getInstance();
     }
 
@@ -31,6 +31,7 @@ class ConvertXAdminController extends BaseController
 
     public function overview(): void
     {
+        $this->requirePermission('convertx');
         $stats = $this->getStats();
         $recentJobs = $this->getRecentJobs(15);
 
@@ -47,6 +48,7 @@ class ConvertXAdminController extends BaseController
 
     public function jobs(): void
     {
+        $this->requirePermission('convertx.jobs');
         $page    = max(1, (int) ($_GET['page'] ?? 1));
         $perPage = 30;
         $offset  = ($page - 1) * $perPage;
@@ -96,6 +98,7 @@ class ConvertXAdminController extends BaseController
 
     public function cancelJob(): void
     {
+        $this->requirePermission('convertx.jobs');
         if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
             $this->json(['success' => false, 'error' => 'Invalid token'], 403);
             return;
@@ -113,6 +116,7 @@ class ConvertXAdminController extends BaseController
 
     public function deleteJob(): void
     {
+        $this->requirePermission('convertx.jobs');
         if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
             $this->json(['success' => false, 'error' => 'Invalid token'], 403);
             return;
@@ -131,6 +135,7 @@ class ConvertXAdminController extends BaseController
 
     public function users(): void
     {
+        $this->requirePermission('convertx.users');
         $users = $this->db->fetchAll(
             "SELECT u.id, u.name, u.email,
                     COUNT(j.id) AS total_jobs,
@@ -157,6 +162,7 @@ class ConvertXAdminController extends BaseController
 
     public function apiKeys(): void
     {
+        $this->requirePermission('convertx.api_keys');
         $keys = $this->db->fetchAll(
             "SELECT k.*, u.name AS user_name, u.email AS user_email
                FROM api_keys k
@@ -184,6 +190,7 @@ class ConvertXAdminController extends BaseController
 
     public function revokeApiKey(): void
     {
+        $this->requirePermission('convertx.api_keys');
         if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
             $this->json(['success' => false, 'error' => 'Invalid token'], 403);
             return;
@@ -202,6 +209,7 @@ class ConvertXAdminController extends BaseController
 
     public function settings(): void
     {
+        $this->requirePermission('convertx.settings');
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->updateSettings();
             return;
@@ -219,6 +227,7 @@ class ConvertXAdminController extends BaseController
 
     public function updateSettings(): void
     {
+        $this->requirePermission('convertx.settings');
         if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
             $_SESSION['_flash']['error'] = 'Invalid request token.';
             $this->redirect('/admin/projects/convertx/settings');
@@ -246,6 +255,7 @@ class ConvertXAdminController extends BaseController
 
     public function schema(): void
     {
+        $this->requirePermission('convertx.settings');
         $schemaFile = BASE_PATH . '/projects/convertx/schema.sql';
         $schema = file_exists($schemaFile) ? file_get_contents($schemaFile) : '-- schema.sql not found';
 
@@ -261,6 +271,7 @@ class ConvertXAdminController extends BaseController
 
     public function generateApiKeyForUser(): void
     {
+        $this->requirePermission('convertx.api_keys');
         if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
             $this->json(['success' => false, 'error' => 'Invalid token'], 403);
             return;
@@ -317,6 +328,7 @@ class ConvertXAdminController extends BaseController
 
     public function createProvider(): void
     {
+        $this->requirePermission('convertx.settings');
         if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
             $_SESSION['_flash']['error'] = 'Invalid token.';
             $this->redirect('/admin/projects/convertx/settings');
@@ -366,6 +378,7 @@ class ConvertXAdminController extends BaseController
 
     public function editProvider(): void
     {
+        $this->requirePermission('convertx.settings');
         if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
             $_SESSION['_flash']['error'] = 'Invalid token.';
             $this->redirect('/admin/projects/convertx/settings');
@@ -423,6 +436,7 @@ class ConvertXAdminController extends BaseController
 
     public function deleteProvider(): void
     {
+        $this->requirePermission('convertx.settings');
         if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
             $_SESSION['_flash']['error'] = 'Invalid token.';
             $this->redirect('/admin/projects/convertx/settings');
@@ -451,6 +465,7 @@ class ConvertXAdminController extends BaseController
      */
     public function testProvider(): void
     {
+        $this->requirePermission('convertx.settings');
         // Prevent any accidental buffered output from leaking into the JSON
         while (ob_get_level() > 0) {
             ob_end_clean();
@@ -632,6 +647,7 @@ class ConvertXAdminController extends BaseController
 
     public function storage(): void
     {
+        $this->requirePermission('convertx.storage');
         $uploadDir = BASE_PATH . '/storage/uploads/convertx';
         $diskUsed  = 0;
         $fileCount = 0;
@@ -687,6 +703,7 @@ class ConvertXAdminController extends BaseController
 
     public function plans(): void
     {
+        $this->requirePermission('convertx.plans');
         $this->ensurePlansTables();
         $plans = [];
         try {
@@ -707,6 +724,7 @@ class ConvertXAdminController extends BaseController
 
     public function createPlan(): void
     {
+        $this->requirePermission('convertx.plans');
         if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
             $_SESSION['_flash']['error'] = 'Invalid token.';
             $this->redirect('/admin/projects/convertx/plans');
@@ -755,6 +773,7 @@ class ConvertXAdminController extends BaseController
 
     public function updatePlan(): void
     {
+        $this->requirePermission('convertx.plans');
         if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
             $_SESSION['_flash']['error'] = 'Invalid token.';
             $this->redirect('/admin/projects/convertx/plans');
@@ -802,6 +821,7 @@ class ConvertXAdminController extends BaseController
 
     public function deletePlan(): void
     {
+        $this->requirePermission('convertx.plans');
         if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
             $_SESSION['_flash']['error'] = 'Invalid token.';
             $this->redirect('/admin/projects/convertx/plans');
