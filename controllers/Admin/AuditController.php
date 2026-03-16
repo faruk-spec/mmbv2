@@ -23,7 +23,7 @@ class AuditController extends BaseController
      */
     private const ALLOWED_COLUMNS = [
         'id', 'user_id', 'action', 'module', 'tenant_id',
-        'resource_type', 'resource_id', 'user_role', 'status',
+        'resource_type', 'resource_id', 'entity_name', 'user_role', 'status',
         'readable_message', 'ip_address', 'device', 'browser',
         'request_id', 'created_at',
         // joined columns

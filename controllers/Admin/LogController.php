@@ -88,6 +88,8 @@ class LogController extends BaseController
         $category     = $this->input('category', '');   // 'admin' | 'user' | ''
         $module       = $this->input('module', '');
         $resourceType = $this->input('resource_type', '');
+        $entityId     = $this->input('entity_id', '');
+        $entityName   = $this->input('entity_name', '');
         $tenantId     = $this->input('tenant_id', '');
         $status       = $this->input('status', '');
         $dateFrom     = $this->input('date_from', '');
@@ -95,7 +97,7 @@ class LogController extends BaseController
         $search       = $this->input('search', '');
 
         [$where, $params] = $this->buildWhereClause(
-            $action, $userId, $category, $module, $resourceType, $tenantId, $status, $dateFrom, $dateTo, $search
+            $action, $userId, $category, $module, $resourceType, $entityId, $entityName, $tenantId, $status, $dateFrom, $dateTo, $search
         );
 
         $logs = $db->fetchAll(
@@ -173,6 +175,8 @@ class LogController extends BaseController
             'currentUserId'       => $userId,
             'currentModule'       => $module,
             'currentResourceType' => $resourceType,
+            'currentEntityId'     => $entityId,
+            'currentEntityName'   => $entityName,
             'currentTenantId'     => $tenantId,
             'currentStatus'       => $status,
             'category'            => $category,
@@ -205,6 +209,8 @@ class LogController extends BaseController
         $category     = $this->input('category', '');
         $module       = $this->input('module', '');
         $resourceType = $this->input('resource_type', '');
+        $entityId     = $this->input('entity_id', '');
+        $entityName   = $this->input('entity_name', '');
         $tenantId     = $this->input('tenant_id', '');
         $status       = $this->input('status', '');
         $dateFrom     = $this->input('date_from', '');
@@ -212,13 +218,14 @@ class LogController extends BaseController
         $search       = $this->input('search', '');
 
         [$where, $params] = $this->buildWhereClause(
-            $action, $userId, $category, $module, $resourceType, $tenantId, $status, $dateFrom, $dateTo, $search
+            $action, $userId, $category, $module, $resourceType, $entityId, $entityName, $tenantId, $status, $dateFrom, $dateTo, $search
         );
 
         $logs = $db->fetchAll(
             "SELECT al.id, al.action, al.module, al.tenant_id, al.resource_type, al.resource_id,
+                    al.entity_name, al.user_name AS log_user_name,
                     al.user_role, al.readable_message, al.status,
-                    al.old_values, al.new_values, al.data,
+                    al.old_values, al.new_values, al.changes, al.data,
                     al.ip_address, al.device, al.browser,
                     al.request_id, al.created_at,
                     u.name AS user_name, u.email AS user_email
@@ -247,7 +254,8 @@ class LogController extends BaseController
         $out = fopen('php://output', 'w');
         fputcsv($out, [
             'ID', 'User Name', 'User Email', 'Action', 'Module', 'Tenant ID',
-            'Resource Type', 'Resource ID', 'User Role', 'Readable Message',
+            'Resource Type', 'Resource ID', 'Entity Name', 'User Role',
+            'Readable Message', 'Changes',
             'Status', 'IP Address', 'Device', 'Browser', 'Request ID', 'Created At',
         ]);
         foreach ($logs as $row) {
@@ -260,8 +268,10 @@ class LogController extends BaseController
                 $row['tenant_id'] ?? '',
                 $row['resource_type'] ?? '',
                 $row['resource_id'] ?? '',
+                $row['entity_name'] ?? '',
                 $row['user_role'] ?? '',
                 $row['readable_message'] ?? '',
+                $row['changes'] ?? '',
                 $row['status'] ?? 'success',
                 $row['ip_address'] ?? '',
                 $row['device'] ?? '',
@@ -291,6 +301,8 @@ class LogController extends BaseController
         $category     = $this->input('category', '');
         $module       = $this->input('module', '');
         $resourceType = $this->input('resource_type', '');
+        $entityId     = $this->input('entity_id', '');
+        $entityName   = $this->input('entity_name', '');
         $tenantId     = $this->input('tenant_id', '');
         $status       = $this->input('status', '');
         $dateFrom     = $this->input('date_from', '');
@@ -298,13 +310,14 @@ class LogController extends BaseController
         $search       = $this->input('search', '');
 
         [$where, $params] = $this->buildWhereClause(
-            $action, $userId, $category, $module, $resourceType, $tenantId, $status, $dateFrom, $dateTo, $search
+            $action, $userId, $category, $module, $resourceType, $entityId, $entityName, $tenantId, $status, $dateFrom, $dateTo, $search
         );
 
         $logs = $db->fetchAll(
             "SELECT al.id, al.action, al.module, al.tenant_id, al.resource_type, al.resource_id,
+                    al.entity_name, al.user_name AS log_user_name,
                     al.user_role, al.readable_message, al.status,
-                    al.old_values, al.new_values, al.data,
+                    al.old_values, al.new_values, al.changes, al.data,
                     al.ip_address, al.device, al.browser,
                     al.request_id, al.created_at,
                     u.name AS user_name, u.email AS user_email
@@ -325,7 +338,7 @@ class LogController extends BaseController
 
         // Decode JSON sub-fields for convenience
         foreach ($logs as &$log) {
-            foreach (['old_values', 'new_values', 'data'] as $col) {
+            foreach (['old_values', 'new_values', 'changes', 'data'] as $col) {
                 if (isset($log[$col]) && is_string($log[$col])) {
                     $decoded = json_decode($log[$col], true);
                     $log[$col] = $decoded !== null ? $decoded : $log[$col];
@@ -377,8 +390,8 @@ class LogController extends BaseController
      */
     private function buildWhereClause(
         string $action, string $userId, string $category,
-        string $module, string $resourceType, string $tenantId,
-        string $status, string $dateFrom, string $dateTo, string $search
+        string $module, string $resourceType, string $entityId, string $entityName,
+        string $tenantId, string $status, string $dateFrom, string $dateTo, string $search
     ): array {
         $where  = '1=1';
         $params = [];
@@ -403,6 +416,16 @@ class LogController extends BaseController
             $params[] = $resourceType;
         }
 
+        if ($entityId) {
+            $where   .= ' AND al.resource_id = ?';
+            $params[] = $entityId;
+        }
+
+        if ($entityName) {
+            $where   .= ' AND al.entity_name LIKE ?';
+            $params[] = "%{$entityName}%";
+        }
+
         if ($tenantId) {
             $where   .= ' AND al.tenant_id = ?';
             $params[] = (int) $tenantId;
@@ -414,7 +437,9 @@ class LogController extends BaseController
         }
 
         if ($search) {
-            $where   .= ' AND (al.action LIKE ? OR al.readable_message LIKE ? OR u.name LIKE ? OR u.email LIKE ? OR al.ip_address LIKE ?)';
+            $where   .= ' AND (al.action LIKE ? OR al.readable_message LIKE ? OR al.entity_name LIKE ? OR al.user_name LIKE ? OR u.name LIKE ? OR u.email LIKE ? OR al.ip_address LIKE ?)';
+            $params[] = "%{$search}%";
+            $params[] = "%{$search}%";
             $params[] = "%{$search}%";
             $params[] = "%{$search}%";
             $params[] = "%{$search}%";
