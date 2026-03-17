@@ -2547,6 +2547,16 @@ window.toggleItem = function (headEl) {
 };
 
 /* ══════════════════════════════════════════════════════════════
+   GLOBAL EXPORTS FOR INLINE EVENT HANDLERS
+   resumeData, markDirty and renderExperience are declared
+   inside this IIFE so inline on* attributes (which run in the
+   global scope) can't reach them unless we expose them on window.
+══════════════════════════════════════════════════════════════ */
+window.resumeData       = resumeData;
+window.markDirty        = markDirty;
+window.renderExperience = renderExperience;
+
+/* ══════════════════════════════════════════════════════════════
    INIT
 ══════════════════════════════════════════════════════════════ */
 initContact();
