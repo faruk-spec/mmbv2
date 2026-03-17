@@ -1335,8 +1335,8 @@ window.updateLivePreview = function() {
     var scale = paneW > 0 ? Math.min(1, paneW / 794) : 1;
     frame.style.transform = 'scale(' + scale + ')';
     frame.style.marginBottom = Math.round((1123 * scale) - 1123 + 12) + 'px';
-    // Load the actual PHP preview; add a cache-bust timestamp so it reloads
-    frame.src = '/projects/resumex/preview/' + resumeId + '?_t=' + Date.now();
+    // Load the actual PHP preview in embed mode (no toolbar, pure A4 resume)
+    frame.src = '/projects/resumex/preview/' + resumeId + '?embed=1&_t=' + Date.now();
 };
 
 

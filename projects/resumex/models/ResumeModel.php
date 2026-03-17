@@ -290,6 +290,7 @@ class ResumeModel
                 'iconStyle'       => 'filled',
                 'accentHighlights' => true,
                 'animations'      => true,
+                'layoutStyle'    => 'sidebar-left',
             ],
             'arctic-white' => [
                 'key'             => 'arctic-white',
@@ -313,6 +314,7 @@ class ResumeModel
                 'iconStyle'       => 'outline',
                 'accentHighlights' => true,
                 'animations'      => false,
+                'layoutStyle'    => 'full-header',
             ],
             'ocean-blue' => [
                 'key'             => 'ocean-blue',
@@ -336,6 +338,7 @@ class ResumeModel
                 'iconStyle'       => 'filled',
                 'accentHighlights' => true,
                 'animations'      => true,
+                'layoutStyle'    => 'sidebar-dark',
             ],
             'forest-green' => [
                 'key'             => 'forest-green',
@@ -359,6 +362,7 @@ class ResumeModel
                 'iconStyle'       => 'filled',
                 'accentHighlights' => false,
                 'animations'      => false,
+                'layoutStyle'    => 'sidebar-left',
             ],
             'royal-purple' => [
                 'key'             => 'royal-purple',
@@ -382,6 +386,7 @@ class ResumeModel
                 'iconStyle'       => 'filled',
                 'accentHighlights' => true,
                 'animations'      => true,
+                'layoutStyle'    => 'sidebar-left',
             ],
             'neon-cyber' => [
                 'key'             => 'neon-cyber',
@@ -405,6 +410,7 @@ class ResumeModel
                 'iconStyle'       => 'filled',
                 'accentHighlights' => true,
                 'animations'      => true,
+                'layoutStyle'    => 'single',
             ],
             'warm-amber' => [
                 'key'             => 'warm-amber',
@@ -428,6 +434,7 @@ class ResumeModel
                 'iconStyle'       => 'outline',
                 'accentHighlights' => true,
                 'animations'      => false,
+                'layoutStyle'    => 'timeline',
             ],
             'corporate-gray' => [
                 'key'             => 'corporate-gray',
@@ -451,6 +458,7 @@ class ResumeModel
                 'iconStyle'       => 'outline',
                 'accentHighlights' => false,
                 'animations'      => false,
+                'layoutStyle'    => 'full-header',
             ],
             'rose-petal' => [
                 'key'             => 'rose-petal',
@@ -474,6 +482,7 @@ class ResumeModel
                 'iconStyle'       => 'filled',
                 'accentHighlights' => true,
                 'animations'      => true,
+                'layoutStyle'    => 'sidebar-left',
             ],
             'vintage-ink' => [
                 'key'             => 'vintage-ink',
@@ -497,6 +506,7 @@ class ResumeModel
                 'iconStyle'       => 'outline',
                 'accentHighlights' => false,
                 'animations'      => false,
+                'layoutStyle'    => 'single',
             ],
             'sky-minimal' => [
                 'key'             => 'sky-minimal',
@@ -520,6 +530,7 @@ class ResumeModel
                 'iconStyle'       => 'outline',
                 'accentHighlights' => true,
                 'animations'      => false,
+                'layoutStyle'    => 'minimal',
             ],
             'crimson-elite' => [
                 'key'             => 'crimson-elite',
@@ -543,6 +554,7 @@ class ResumeModel
                 'iconStyle'       => 'filled',
                 'accentHighlights' => true,
                 'animations'      => true,
+                'layoutStyle'    => 'banner',
             ],
             'minimal-white' => [
                 'key' => 'minimal-white', 'name' => 'Minimal White', 'category' => 'minimal',
@@ -553,6 +565,7 @@ class ResumeModel
                 'fontWeight' => '400', 'headerStyle' => 'minimal', 'buttonStyle' => 'square',
                 'cardStyle' => 'flat', 'spacing' => 'spacious', 'layoutMode' => 'single',
                 'iconStyle' => 'outline', 'accentHighlights' => false, 'animations' => false,
+                'layoutStyle'    => 'minimal',
             ],
             'teal-modern' => [
                 'key' => 'teal-modern', 'name' => 'Teal Modern', 'category' => 'professional',
@@ -563,6 +576,7 @@ class ResumeModel
                 'fontWeight' => '400', 'headerStyle' => 'gradient', 'buttonStyle' => 'rounded',
                 'cardStyle' => 'bordered', 'spacing' => 'comfortable', 'layoutMode' => 'two-column',
                 'iconStyle' => 'filled', 'accentHighlights' => true, 'animations' => true,
+                'layoutStyle'    => 'sidebar-left',
             ],
             'slate-executive' => [
                 'key' => 'slate-executive', 'name' => 'Slate Executive', 'category' => 'professional',
@@ -573,6 +587,7 @@ class ResumeModel
                 'fontWeight' => '400', 'headerStyle' => 'solid', 'buttonStyle' => 'square',
                 'cardStyle' => 'elevated', 'spacing' => 'comfortable', 'layoutMode' => 'two-column',
                 'iconStyle' => 'outline', 'accentHighlights' => false, 'animations' => false,
+                'layoutStyle'    => 'full-header',
             ],
             'indigo-creative' => [
                 'key' => 'indigo-creative', 'name' => 'Indigo Creative', 'category' => 'creative',
@@ -583,6 +598,7 @@ class ResumeModel
                 'fontWeight' => '400', 'headerStyle' => 'gradient', 'buttonStyle' => 'pill',
                 'cardStyle' => 'glass', 'spacing' => 'comfortable', 'layoutMode' => 'single',
                 'iconStyle' => 'filled', 'accentHighlights' => true, 'animations' => true,
+                'layoutStyle'    => 'banner',
             ],
             'gold-luxury' => [
                 'key' => 'gold-luxury', 'name' => 'Gold Luxury', 'category' => 'bold',
@@ -593,6 +609,7 @@ class ResumeModel
                 'fontWeight' => '400', 'headerStyle' => 'gradient', 'buttonStyle' => 'square',
                 'cardStyle' => 'bordered', 'spacing' => 'spacious', 'layoutMode' => 'single',
                 'iconStyle' => 'filled', 'accentHighlights' => true, 'animations' => false,
+                'layoutStyle'    => 'sidebar-dark',
             ],
             'pastel-soft' => [
                 'key' => 'pastel-soft', 'name' => 'Pastel Soft', 'category' => 'pastel',
@@ -603,6 +620,7 @@ class ResumeModel
                 'fontWeight' => '400', 'headerStyle' => 'gradient', 'buttonStyle' => 'pill',
                 'cardStyle' => 'elevated', 'spacing' => 'spacious', 'layoutMode' => 'single',
                 'iconStyle' => 'filled', 'accentHighlights' => true, 'animations' => true,
+                'layoutStyle'    => 'full-header',
             ],
             'developer-dark' => [
                 'key' => 'developer-dark', 'name' => 'Developer Dark', 'category' => 'tech',
@@ -613,6 +631,7 @@ class ResumeModel
                 'fontWeight' => '400', 'headerStyle' => 'solid', 'buttonStyle' => 'square',
                 'cardStyle' => 'bordered', 'spacing' => 'compact', 'layoutMode' => 'single',
                 'iconStyle' => 'filled', 'accentHighlights' => true, 'animations' => false,
+                'layoutStyle'    => 'developer',
             ],
             'paper-classic' => [
                 'key' => 'paper-classic', 'name' => 'Paper Classic', 'category' => 'classic',
@@ -623,6 +642,7 @@ class ResumeModel
                 'fontWeight' => '400', 'headerStyle' => 'underline', 'buttonStyle' => 'square',
                 'cardStyle' => 'flat', 'spacing' => 'spacious', 'layoutMode' => 'single',
                 'iconStyle' => 'outline', 'accentHighlights' => false, 'animations' => false,
+                'layoutStyle'    => 'single',
             ],
             'midnight-blue' => [
                 'key' => 'midnight-blue', 'name' => 'Midnight Blue', 'category' => 'dark',
@@ -633,6 +653,7 @@ class ResumeModel
                 'fontWeight' => '400', 'headerStyle' => 'gradient', 'buttonStyle' => 'rounded',
                 'cardStyle' => 'glass', 'spacing' => 'comfortable', 'layoutMode' => 'two-column',
                 'iconStyle' => 'filled', 'accentHighlights' => true, 'animations' => true,
+                'layoutStyle'    => 'sidebar-left',
             ],
             'print-ready' => [
                 'key' => 'print-ready', 'name' => 'Print Ready', 'category' => 'print',
@@ -643,6 +664,7 @@ class ResumeModel
                 'fontWeight' => '400', 'headerStyle' => 'minimal', 'buttonStyle' => 'square',
                 'cardStyle' => 'flat', 'spacing' => 'compact', 'layoutMode' => 'single',
                 'iconStyle' => 'outline', 'accentHighlights' => false, 'animations' => false,
+                'layoutStyle'    => 'single',
             ],
             'startup-bright' => [
                 'key' => 'startup-bright', 'name' => 'Startup Bright', 'category' => 'creative',
@@ -653,6 +675,7 @@ class ResumeModel
                 'fontWeight' => '500', 'headerStyle' => 'gradient', 'buttonStyle' => 'pill',
                 'cardStyle' => 'neon', 'spacing' => 'comfortable', 'layoutMode' => 'single',
                 'iconStyle' => 'filled', 'accentHighlights' => true, 'animations' => true,
+                'layoutStyle'    => 'banner',
             ],
             'sage-nature' => [
                 'key' => 'sage-nature', 'name' => 'Sage Nature', 'category' => 'nature',
@@ -663,6 +686,7 @@ class ResumeModel
                 'fontWeight' => '400', 'headerStyle' => 'solid', 'buttonStyle' => 'pill',
                 'cardStyle' => 'elevated', 'spacing' => 'spacious', 'layoutMode' => 'single',
                 'iconStyle' => 'outline', 'accentHighlights' => true, 'animations' => false,
+                'layoutStyle'    => 'sidebar-left',
             ],
             'glass-frost' => [
                 'key' => 'glass-frost', 'name' => 'Glass Frost', 'category' => 'creative',
@@ -673,6 +697,7 @@ class ResumeModel
                 'fontWeight' => '400', 'headerStyle' => 'gradient', 'buttonStyle' => 'pill',
                 'cardStyle' => 'glass', 'spacing' => 'comfortable', 'layoutMode' => 'two-column',
                 'iconStyle' => 'filled', 'accentHighlights' => true, 'animations' => true,
+                'layoutStyle'    => 'sidebar-dark',
             ],
             'academic-clean' => [
                 'key' => 'academic-clean', 'name' => 'Academic Clean', 'category' => 'academic',
@@ -683,6 +708,7 @@ class ResumeModel
                 'fontWeight' => '400', 'headerStyle' => 'underline', 'buttonStyle' => 'square',
                 'cardStyle' => 'flat', 'spacing' => 'spacious', 'layoutMode' => 'single',
                 'iconStyle' => 'outline', 'accentHighlights' => false, 'animations' => false,
+                'layoutStyle'    => 'academic',
             ],
         ];
     }
