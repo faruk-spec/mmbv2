@@ -263,7 +263,7 @@ class ResumeModel
     }
 
     /**
-     * All 12 theme presets
+     * All 26 theme presets
      */
     public function getAllThemePresets(): array
     {
