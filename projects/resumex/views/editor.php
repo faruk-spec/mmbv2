@@ -1388,7 +1388,7 @@ function schedulePreviewUpdate() {
                 theme_settings: themeSettings
             })
         }).then(function() { updateLivePreview(); }).catch(function() { updateLivePreview(); });
-    }, 1200);
+    }, 600);
 }
 
 window.updateLivePreview = function() {
@@ -1493,6 +1493,7 @@ window.saveResume = function () {
             saveStatusEl.textContent = 'Saved ✓';
             showToast('Saved successfully', 'success');
             setTimeout(function () { saveStatusEl.textContent = 'All changes saved'; }, 3000);
+            updateLivePreview();
         } else {
             saveStatusEl.textContent = 'Save failed';
             showToast('Save failed. Please try again.', 'error');
