@@ -666,7 +666,6 @@
     min-height: 1123px;
     border: none;
     background: #fff;
-    transform-origin: top left;
     display: block;
     box-shadow: 0 4px 32px rgba(0,0,0,0.5);
 }
@@ -970,11 +969,12 @@
                         <input class="rxe-input" id="c_phone" type="text" placeholder="+1 555 000 0000" maxlength="30">
                     </div>
                 </div>
-                <div class="rxe-row">
+                <div class="rxe-row full">
                     <div class="rxe-field">
                         <label class="rxe-label">Location</label>
                         <input class="rxe-input" id="c_location" type="text" placeholder="City, Country" maxlength="100">
                     </div>
+                </div>
                 <div class="rxe-row">
                     <div class="rxe-field">
                         <label class="rxe-label">Website / Portfolio</label>
@@ -995,7 +995,7 @@
                         <input class="rxe-input" id="c_photo" type="url" placeholder="https://…/photo.jpg" maxlength="500">
                     </div>
                 </div>
-            </div>
+            </div><!-- /panel-contact -->
 
             <!-- Summary -->
             <div id="panel-summary" class="rxe-panel">
@@ -1392,7 +1392,8 @@ window.updateLivePreview = function() {
     var paneW = wrap ? wrap.clientWidth - 24 : 0;
     var scale = paneW > 0 ? Math.min(1, paneW / 794) : 1;
     frame.style.transform = 'scale(' + scale + ')';
-    frame.style.marginBottom = Math.round((1123 * scale) - 1123 + 12) + 'px';
+    frame.style.transformOrigin = 'top center';
+    frame.style.marginBottom = Math.round((1123 * scale) - 1123) + 'px';
     // Load the actual PHP preview in embed mode (no toolbar, pure A4 resume)
     frame.src = '/projects/resumex/preview/' + resumeId + '?embed=1&_t=' + Date.now();
 };
