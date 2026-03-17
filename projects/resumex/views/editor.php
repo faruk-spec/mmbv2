@@ -582,7 +582,222 @@
     letter-spacing: 0.5px;
 }
 
+/* ── Live preview pane ──────────────────────────────────────── */
+.rxe-editor-main {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+.rxe-editor-left {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+}
+.rxe-splitter {
+    width: 5px;
+    flex-shrink: 0;
+    background: var(--border-color);
+    cursor: col-resize;
+    transition: background 0.2s;
+    position: relative;
+    z-index: 10;
+}
+.rxe-splitter:hover, .rxe-splitter.dragging { background: var(--cyan); }
+.rxe-preview-pane {
+    width: 42%;
+    flex-shrink: 0;
+    background: #1a1a2e;
+    border-left: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    min-width: 280px;
+    overflow: hidden;
+    transition: width 0.25s;
+}
+.rxe-preview-pane.hidden { width: 0 !important; min-width: 0; border: none; overflow: hidden; }
+.rxe-preview-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 14px;
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+.rxe-preview-header span {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+.rxe-preview-header-btns { display: flex; gap: 8px; align-items: center; }
+.rxe-preview-header-btn {
+    background: none;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-secondary);
+    font-size: 0.72rem;
+    font-family: 'Poppins', sans-serif;
+    padding: 4px 9px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.rxe-preview-header-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+.rxe-preview-iframe-wrap {
+    flex: 1;
+    overflow: auto;
+    background: #1a1a2e;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 12px;
+}
+#rxe-preview-frame {
+    width: 794px;
+    min-height: 1123px;
+    border: none;
+    background: #fff;
+    transform-origin: top left;
+    display: block;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.5);
+}
+.rxe-preview-loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(10,10,15,0.6);
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+.rxe-preview-loading.show { opacity: 1; }
+
+/* ── Custom modal ───────────────────────────────────────────── */
+.rxe-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.65);
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+}
+.rxe-modal-overlay.open { opacity: 1; pointer-events: auto; }
+.rxe-modal-box {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 24px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    transform: scale(0.95) translateY(-10px);
+    transition: transform 0.2s;
+}
+.rxe-modal-overlay.open .rxe-modal-box { transform: scale(1) translateY(0); }
+.rxe-modal-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+.rxe-modal-btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+
+/* ── Better score breakdown ─────────────────────────────────── */
+.rxe-score-ring-wrap {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+.rxe-score-ring {
+    position: relative;
+    width: 90px;
+    height: 90px;
+    flex-shrink: 0;
+}
+.rxe-score-ring svg { transform: rotate(-90deg); }
+.rxe-score-ring-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+.rxe-score-ring-num { font-size: 1.5rem; font-weight: 800; line-height: 1; }
+.rxe-score-ring-label { font-size: 0.62rem; font-weight: 700; color: var(--text-secondary); letter-spacing: 0.5px; margin-top: 2px; }
+.rxe-score-info h3 { margin: 0 0 4px; font-size: 1.1rem; font-weight: 800; color: var(--text-primary); }
+.rxe-score-grade-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    background: rgba(0,240,255,0.12);
+    color: var(--cyan);
+    border: 1px solid rgba(0,240,255,0.3);
+}
+.rxe-score-breakdown { margin: 0 0 16px; }
+.rxe-score-breakdown-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+}
+.rxe-score-cat {
+    margin-bottom: 10px;
+}
+.rxe-score-cat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+}
+.rxe-score-cat-name { font-size: 0.8rem; font-weight: 600; color: var(--text-primary); }
+.rxe-score-cat-pts { font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); }
+.rxe-score-cat-bar {
+    height: 5px;
+    background: var(--bg-secondary);
+    border-radius: 3px;
+    overflow: hidden;
+}
+.rxe-score-cat-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: linear-gradient(90deg, var(--cyan), var(--purple));
+    transition: width 0.6s ease;
+}
+
+/* ── AI suggestion item added state ─────────────────────────── */
+.rxe-ai-suggestion-item.added {
+    opacity: 0.4;
+    text-decoration: line-through;
+    cursor: default;
+    pointer-events: none;
+}
+
 /* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 960px) {
+    .rxe-preview-pane { display: none !important; }
+    .rxe-splitter { display: none; }
+    .rxe-btn-toggle-preview { display: none !important; }
+}
 @media (max-width: 768px) {
     .rxe-nav { width: 160px; }
     .rxe-form-area { padding: 16px 16px 60px; }
@@ -609,7 +824,11 @@
                placeholder="Resume title" maxlength="255">
         <div class="rxe-bar-spacer"></div>
         <span id="saveStatus" class="rxe-save-status">All changes saved</span>
-        <button type="button" class="rxe-bar-btn" onclick="scoreResume()" title="Analyse your resume">
+        <button type="button" class="rxe-bar-btn rxe-btn-toggle-preview" id="btnTogglePreview" onclick="togglePreviewPane()" title="Toggle live preview">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+            Preview
+        </button>
+        <button type="button" class="rxe-bar-btn" onclick="showSection('score'); scoreResume();" title="Analyse your resume">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
             Score
         </button>
@@ -628,6 +847,8 @@
     </div>
 
     <div class="rxe-body">
+        <div class="rxe-editor-main">
+        <div class="rxe-editor-left">
         <!-- Section navigation -->
         <nav class="rxe-nav">
             <div class="rxe-nav-group">Basics</div>
@@ -930,18 +1151,30 @@
             <div id="panel-score" class="rxe-panel">
                 <div class="rxe-section-heading">
                     <h2>Resume Score</h2>
-                    <p>See how complete and strong your resume is.</p>
+                    <p>See how complete and strong your resume is across all sections.</p>
                 </div>
                 <div class="rxe-score-box">
-                    <div class="rxe-score-header">
-                        <h3>Overall Score</h3>
-                        <div>
-                            <div id="scoreNum" class="rxe-score-num">—</div>
-                            <div id="scoreGrade" class="rxe-score-grade">Run analysis</div>
+                    <div class="rxe-score-ring-wrap">
+                        <div class="rxe-score-ring">
+                            <svg width="90" height="90" viewBox="0 0 90 90">
+                                <circle cx="45" cy="45" r="38" fill="none" stroke="var(--bg-secondary)" stroke-width="8"/>
+                                <circle id="scoreRingCircle" cx="45" cy="45" r="38" fill="none" stroke="var(--cyan)" stroke-width="8"
+                                    stroke-dasharray="238.76" stroke-dashoffset="238.76"
+                                    stroke-linecap="round" style="transition:stroke-dashoffset 0.7s ease, stroke 0.4s;"/>
+                            </svg>
+                            <div class="rxe-score-ring-text">
+                                <span id="scoreNum" class="rxe-score-ring-num" style="color:var(--cyan)">—</span>
+                                <span class="rxe-score-ring-label">/100</span>
+                            </div>
+                        </div>
+                        <div class="rxe-score-info">
+                            <h3 id="scoreLabel">Run Analysis</h3>
+                            <span id="scoreGrade" class="rxe-score-grade-badge">—</span>
                         </div>
                     </div>
-                    <div class="rxe-score-bar-track">
-                        <div id="scoreBarFill" class="rxe-score-bar-fill" style="width:0%"></div>
+                    <div class="rxe-score-breakdown">
+                        <div class="rxe-score-breakdown-title">Section Breakdown</div>
+                        <div id="scoreBreakdown"></div>
                     </div>
                     <div id="scoreSuggestions" class="rxe-score-suggestions"></div>
                 </div>
@@ -952,8 +1185,40 @@
             </div>
 
         </div><!-- /rxe-form-area -->
+        </div><!-- /rxe-editor-left -->
+
+        <!-- Splitter -->
+        <div class="rxe-splitter" id="rxe-splitter"></div>
+
+        <!-- Live preview pane -->
+        <div class="rxe-preview-pane" id="rxe-preview-pane">
+            <div class="rxe-preview-header">
+                <span>&#128064; Live Preview</span>
+                <div class="rxe-preview-header-btns">
+                    <button type="button" class="rxe-preview-header-btn" onclick="updateLivePreview()">&#8635; Refresh</button>
+                    <a href="/projects/resumex/preview/<?= (int)$resume['id'] ?>" target="_blank" class="rxe-preview-header-btn">&#10138; Full page</a>
+                </div>
+            </div>
+            <div class="rxe-preview-iframe-wrap" id="rxe-preview-iframe-wrap">
+                <iframe id="rxe-preview-frame" sandbox="allow-same-origin" title="Resume preview"></iframe>
+            </div>
+        </div>
+
+        </div><!-- /rxe-editor-main -->
     </div><!-- /rxe-body -->
 </div><!-- /rxe-wrap -->
+
+<!-- Custom prompt modal -->
+<div id="rxe-prompt-modal" class="rxe-modal-overlay" role="dialog" aria-modal="true">
+    <div class="rxe-modal-box">
+        <div class="rxe-modal-title" id="rxe-prompt-title">Enter value</div>
+        <input id="rxe-prompt-input" class="rxe-input" type="text" placeholder="" style="margin-top:12px;width:100%;">
+        <div class="rxe-modal-btns">
+            <button type="button" class="rxe-bar-btn" id="rxe-prompt-cancel">Cancel</button>
+            <button type="button" class="rxe-bar-btn primary" id="rxe-prompt-ok">OK</button>
+        </div>
+    </div>
+</div>
 
 <div id="rxe-toast" class="rxe-toast"></div>
 
@@ -967,6 +1232,334 @@ var themeSettings = <?= json_encode($themeSettings, JSON_HEX_TAG | JSON_HEX_APOS
 var allThemes     = <?= json_encode($allThemes,     JSON_HEX_TAG | JSON_HEX_APOS) ?>;
 var csrfToken     = <?= json_encode($csrfToken) ?>;
 var resumeId      = <?= (int)$resume['id'] ?>;
+
+/* ── Ensure resumeData defaults ─────────────────────────────── */
+resumeData.contact        = resumeData.contact        || {};
+resumeData.summary        = resumeData.summary        || '';
+resumeData.experience     = resumeData.experience     || [];
+resumeData.education      = resumeData.education      || [];
+resumeData.skills         = resumeData.skills         || [];
+resumeData.projects       = resumeData.projects       || [];
+resumeData.certifications = resumeData.certifications || [];
+resumeData.awards         = resumeData.awards         || [];
+resumeData.volunteer      = resumeData.volunteer      || [];
+resumeData.languages      = resumeData.languages      || [];
+resumeData.hobbies        = resumeData.hobbies        || [];
+resumeData.references     = resumeData.references     || [];
+resumeData.publications   = resumeData.publications   || [];
+resumeData.hidden_sections = resumeData.hidden_sections || [];
+resumeData.section_order  = resumeData.section_order  || ['contact','summary','experience','education','skills','projects','certifications','awards','volunteer','languages','hobbies','references','publications'];
+
+/* ── Custom modal (replaces browser prompt) ─────────────────── */
+var _modalCallback = null;
+(function initModal() {
+    var modal  = document.getElementById('rxe-prompt-modal');
+    var input  = document.getElementById('rxe-prompt-input');
+    var title  = document.getElementById('rxe-prompt-title');
+    var btnOk  = document.getElementById('rxe-prompt-ok');
+    var btnCan = document.getElementById('rxe-prompt-cancel');
+    function close(val) {
+        modal.classList.remove('open');
+        if (_modalCallback) { _modalCallback(val); _modalCallback = null; }
+    }
+    btnOk.addEventListener('click', function() { close(input.value.trim()); });
+    btnCan.addEventListener('click', function() { close(null); });
+    input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); close(input.value.trim()); }
+        if (e.key === 'Escape') { close(null); }
+    });
+    modal.addEventListener('click', function(e) { if (e.target === modal) close(null); });
+    window.openPromptModal = function(titleText, placeholder, defaultVal, cb) {
+        title.textContent = titleText;
+        input.placeholder = placeholder || '';
+        input.value = defaultVal || '';
+        _modalCallback = cb;
+        modal.classList.add('open');
+        setTimeout(function() { input.focus(); input.select(); }, 100);
+    };
+}());
+
+/* ── Live Preview ────────────────────────────────────────────── */
+var previewVisible = true;
+var previewTimer = null;
+
+window.togglePreviewPane = function() {
+    var pane = document.getElementById('rxe-preview-pane');
+    var splitter = document.getElementById('rxe-splitter');
+    previewVisible = !previewVisible;
+    if (previewVisible) {
+        pane.classList.remove('hidden');
+        splitter.style.display = '';
+        document.getElementById('btnTogglePreview').style.borderColor = 'rgba(0,240,255,0.35)';
+        document.getElementById('btnTogglePreview').style.color = 'var(--cyan)';
+        updateLivePreview();
+    } else {
+        pane.classList.add('hidden');
+        splitter.style.display = 'none';
+        document.getElementById('btnTogglePreview').style.borderColor = '';
+        document.getElementById('btnTogglePreview').style.color = '';
+    }
+};
+
+function schedulePreviewUpdate() {
+    if (!previewVisible) return;
+    clearTimeout(previewTimer);
+    previewTimer = setTimeout(updateLivePreview, 600);
+}
+
+window.updateLivePreview = function() {
+    var frame = document.getElementById('rxe-preview-frame');
+    if (!frame) return;
+    var wrap = document.getElementById('rxe-preview-iframe-wrap');
+    var paneW = wrap ? wrap.clientWidth - 24 : 0;
+    var scale = paneW > 0 ? Math.min(1, paneW / 794) : 1;
+    frame.style.transform = 'scale(' + scale + ')';
+    frame.style.marginBottom = Math.round((1123 * scale) - 1123 + 12) + 'px';
+    frame.srcdoc = buildPreviewHTML();
+};
+
+function he(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function buildPreviewHTML() {
+    var t   = themeSettings;
+    var d   = resumeData;
+    var pri = t.primaryColor    || '#00f0ff';
+    var sec = t.secondaryColor  || '#9945ff';
+    var bg  = t.backgroundColor || '#0a0a0f';
+    var sur = t.surfaceColor    || '#12121e';
+    var txt = t.textColor       || '#e0e6ff';
+    var mut = t.textMuted       || '#6b7280';
+    var brd = t.borderColor     || 'rgba(0,240,255,0.15)';
+    var ff  = t.fontFamily      || 'Poppins';
+    var fs  = t.fontSize        || 14;
+    var contact   = d.contact   || {};
+    var hidden    = d.hidden_sections || [];
+    var order     = d.section_order   || ['contact','summary','experience','education','skills','projects','certifications','awards','volunteer','languages','hobbies','references','publications'];
+    var twoCol    = (t.layoutMode || 'single') === 'two-column';
+    var spacing   = t.spacing || 'comfortable';
+    var pad = spacing === 'compact' ? '14px' : (spacing === 'spacious' ? '28px' : '20px');
+
+    function isHidden(s) { return hidden.indexOf(s) !== -1; }
+
+    function sectionHtml(key) {
+        if (isHidden(key)) return '';
+        var sections = {
+            contact: function() {
+                var name = he(contact.name || '');
+                var sub  = [contact.email, contact.phone, contact.location].filter(Boolean).map(he).join(' &nbsp;·&nbsp; ');
+                var links= [contact.website, contact.linkedin, contact.github].filter(Boolean);
+                if (!name && !sub) return '';
+                return '<div style="margin-bottom:' + pad + ';padding-bottom:' + pad + ';border-bottom:1px solid ' + brd + '">' +
+                    (name ? '<h1 style="margin:0 0 4px;font-size:1.8em;font-weight:800;background:linear-gradient(135deg,' + pri + ',' + sec + ');-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">' + name + '</h1>' : '') +
+                    (sub  ? '<p style="margin:0 0 4px;font-size:0.85em;color:' + mut + '">' + sub + '</p>' : '') +
+                    (links.length ? '<p style="margin:0;font-size:0.78em;color:' + mut + '">' + links.map(he).join(' &nbsp;·&nbsp; ') + '</p>' : '') +
+                '</div>';
+            },
+            summary: function() {
+                var s = d.summary || '';
+                if (!s.trim()) return '';
+                return '<div style="margin-bottom:' + pad + '">' +
+                    '<h2 style="margin:0 0 8px;font-size:0.72em;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:' + pri + '">Summary</h2>' +
+                    '<p style="margin:0;font-size:0.88em;line-height:1.6;color:' + txt + '">' + he(s) + '</p>' +
+                '</div>';
+            },
+            experience: function() {
+                var exp = d.experience || [];
+                if (!exp.length) return '';
+                return '<div style="margin-bottom:' + pad + '">' +
+                    '<h2 style="margin:0 0 10px;font-size:0.72em;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:' + pri + '">Experience</h2>' +
+                    exp.map(function(e) {
+                        var bullets = (e.bullets||[]).filter(Boolean);
+                        return '<div style="margin-bottom:12px">' +
+                            '<div style="display:flex;justify-content:space-between;align-items:baseline">' +
+                                '<span style="font-weight:700;font-size:0.9em;color:' + txt + '">' + he(e.title||'') + '</span>' +
+                                '<span style="font-size:0.75em;color:' + mut + '">' + he(e.start_date||'') + (e.start_date ? ' – ' : '') + (e.current ? 'Present' : he(e.end_date||'')) + '</span>' +
+                            '</div>' +
+                            '<div style="font-size:0.8em;color:' + pri + ';margin-bottom:4px">' + he(e.company||'') + (e.location ? ' &nbsp;·&nbsp; <span style="color:' + mut + '">' + he(e.location) + '</span>' : '') + '</div>' +
+                            (e.description ? '<p style="margin:0 0 4px;font-size:0.82em;color:' + mut + '">' + he(e.description) + '</p>' : '') +
+                            (bullets.length ? '<ul style="margin:4px 0 0 16px;padding:0">' + bullets.map(function(b){ return '<li style="font-size:0.82em;color:' + txt + ';margin-bottom:2px">' + he(b) + '</li>'; }).join('') + '</ul>' : '') +
+                        '</div>';
+                    }).join('') +
+                '</div>';
+            },
+            education: function() {
+                var edu = d.education || [];
+                if (!edu.length) return '';
+                return '<div style="margin-bottom:' + pad + '">' +
+                    '<h2 style="margin:0 0 10px;font-size:0.72em;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:' + pri + '">Education</h2>' +
+                    edu.map(function(e) {
+                        return '<div style="margin-bottom:8px">' +
+                            '<div style="display:flex;justify-content:space-between;align-items:baseline">' +
+                                '<span style="font-weight:700;font-size:0.9em;color:' + txt + '">' + he(e.school||'') + '</span>' +
+                                '<span style="font-size:0.75em;color:' + mut + '">' + he(e.start_date||'') + (e.start_date && e.end_date ? ' – ' : '') + he(e.end_date||'') + '</span>' +
+                            '</div>' +
+                            '<div style="font-size:0.82em;color:' + mut + '">' + he(e.degree||'') + (e.field ? ' · ' + he(e.field) : '') + (e.gpa ? ' · GPA: ' + he(e.gpa) : '') + '</div>' +
+                        '</div>';
+                    }).join('') +
+                '</div>';
+            },
+            skills: function() {
+                var skills = d.skills || [];
+                if (!skills.length) return '';
+                return '<div style="margin-bottom:' + pad + '">' +
+                    '<h2 style="margin:0 0 8px;font-size:0.72em;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:' + pri + '">Skills</h2>' +
+                    '<div style="display:flex;flex-wrap:wrap;gap:6px">' +
+                    skills.map(function(s) {
+                        var n = typeof s === 'string' ? s : (s.name || '');
+                        return '<span style="padding:3px 10px;border-radius:20px;font-size:0.78em;font-weight:600;background:' + pri + '22;color:' + pri + ';border:1px solid ' + pri + '44">' + he(n) + '</span>';
+                    }).join('') +
+                    '</div></div>';
+            },
+            projects: function() {
+                var pp = d.projects || [];
+                if (!pp.length) return '';
+                return '<div style="margin-bottom:' + pad + '">' +
+                    '<h2 style="margin:0 0 10px;font-size:0.72em;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:' + pri + '">Projects</h2>' +
+                    pp.map(function(p) {
+                        return '<div style="margin-bottom:8px">' +
+                            '<span style="font-weight:700;font-size:0.88em;color:' + txt + '">' + he(p.name||'') + '</span>' +
+                            (p.technologies ? '<span style="font-size:0.75em;color:' + mut + ';margin-left:6px">' + (Array.isArray(p.technologies) ? p.technologies.join(', ') : he(p.technologies)) + '</span>' : '') +
+                            (p.description ? '<p style="margin:2px 0 0;font-size:0.8em;color:' + mut + '">' + he(p.description) + '</p>' : '') +
+                        '</div>';
+                    }).join('') +
+                '</div>';
+            },
+            certifications: function() {
+                var cc = d.certifications || [];
+                if (!cc.length) return '';
+                return '<div style="margin-bottom:' + pad + '">' +
+                    '<h2 style="margin:0 0 10px;font-size:0.72em;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:' + pri + '">Certifications</h2>' +
+                    cc.map(function(c) {
+                        return '<div style="margin-bottom:6px;display:flex;justify-content:space-between">' +
+                            '<span style="font-size:0.85em;color:' + txt + ';font-weight:600">' + he(c.name||'') + (c.issuer ? ' <span style="color:' + mut + ';font-weight:400">· ' + he(c.issuer) + '</span>' : '') + '</span>' +
+                            (c.date ? '<span style="font-size:0.75em;color:' + mut + '">' + he(c.date) + '</span>' : '') +
+                        '</div>';
+                    }).join('') +
+                '</div>';
+            },
+            awards: function() {
+                var aa = d.awards || [];
+                if (!aa.length) return '';
+                return '<div style="margin-bottom:' + pad + '">' +
+                    '<h2 style="margin:0 0 10px;font-size:0.72em;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:' + pri + '">Awards</h2>' +
+                    aa.map(function(a) {
+                        return '<div style="margin-bottom:6px">' +
+                            '<span style="font-size:0.85em;color:' + txt + ';font-weight:600">' + he(a.title||'') + '</span>' +
+                            (a.issuer ? ' <span style="font-size:0.78em;color:' + mut + '">· ' + he(a.issuer) + '</span>' : '') +
+                            (a.date ? ' <span style="font-size:0.75em;color:' + mut + '">(' + he(a.date) + ')</span>' : '') +
+                        '</div>';
+                    }).join('') +
+                '</div>';
+            },
+            volunteer: function() {
+                var vv = d.volunteer || [];
+                if (!vv.length) return '';
+                return '<div style="margin-bottom:' + pad + '">' +
+                    '<h2 style="margin:0 0 10px;font-size:0.72em;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:' + pri + '">Volunteer</h2>' +
+                    vv.map(function(v) {
+                        return '<div style="margin-bottom:8px">' +
+                            '<span style="font-weight:700;font-size:0.88em;color:' + txt + '">' + he(v.role||'') + '</span>' +
+                            (v.organization ? ' <span style="font-size:0.8em;color:' + pri + '">@ ' + he(v.organization) + '</span>' : '') +
+                            (v.description ? '<p style="margin:2px 0 0;font-size:0.8em;color:' + mut + '">' + he(v.description) + '</p>' : '') +
+                        '</div>';
+                    }).join('') +
+                '</div>';
+            },
+            languages: function() {
+                var ll = d.languages || [];
+                if (!ll.length) return '';
+                return '<div style="margin-bottom:' + pad + '">' +
+                    '<h2 style="margin:0 0 8px;font-size:0.72em;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:' + pri + '">Languages</h2>' +
+                    '<div style="display:flex;flex-wrap:wrap;gap:6px">' +
+                    ll.map(function(l) {
+                        return '<span style="padding:3px 10px;border-radius:20px;font-size:0.78em;border:1px solid ' + brd + ';color:' + txt + '">' + he(l.language||'') + (l.level ? ' · <em style="color:' + mut + '">' + he(l.level) + '</em>' : '') + '</span>';
+                    }).join('') + '</div></div>';
+            },
+            hobbies: function() {
+                var hh = d.hobbies || [];
+                if (!hh.length) return '';
+                return '<div style="margin-bottom:' + pad + '">' +
+                    '<h2 style="margin:0 0 8px;font-size:0.72em;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:' + pri + '">Hobbies</h2>' +
+                    '<p style="margin:0;font-size:0.85em;color:' + txt + '">' + hh.map(he).join(' &nbsp;·&nbsp; ') + '</p>' +
+                '</div>';
+            },
+            references: function() {
+                var rr = d.references || [];
+                if (!rr.length) return '';
+                return '<div style="margin-bottom:' + pad + '">' +
+                    '<h2 style="margin:0 0 10px;font-size:0.72em;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:' + pri + '">References</h2>' +
+                    rr.map(function(r) {
+                        return '<div style="margin-bottom:8px">' +
+                            '<span style="font-weight:700;font-size:0.88em;color:' + txt + '">' + he(r.name||'') + '</span>' +
+                            (r.title || r.company ? '<div style="font-size:0.78em;color:' + mut + '">' + [r.title, r.company].filter(Boolean).map(he).join(', ') + '</div>' : '') +
+                            (r.email ? '<div style="font-size:0.75em;color:' + mut + '">' + he(r.email) + (r.phone ? ' · ' + he(r.phone) : '') + '</div>' : '') +
+                        '</div>';
+                    }).join('') +
+                '</div>';
+            },
+            publications: function() {
+                var pp = d.publications || [];
+                if (!pp.length) return '';
+                return '<div style="margin-bottom:' + pad + '">' +
+                    '<h2 style="margin:0 0 10px;font-size:0.72em;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:' + pri + '">Publications</h2>' +
+                    pp.map(function(p) {
+                        return '<div style="margin-bottom:8px">' +
+                            '<span style="font-weight:700;font-size:0.88em;color:' + txt + '">' + he(p.title||'') + '</span>' +
+                            (p.journal ? '<span style="font-size:0.78em;color:' + mut + '"> · ' + he(p.journal) + '</span>' : '') +
+                            (p.date ? '<span style="font-size:0.75em;color:' + mut + '"> (' + he(p.date) + ')</span>' : '') +
+                        '</div>';
+                    }).join('') +
+                '</div>';
+            }
+        };
+        return sections[key] ? sections[key]() : '';
+    }
+
+    var body = order.map(sectionHtml).join('');
+
+    return '<!DOCTYPE html><html><head><meta charset="utf-8">' +
+        '<link rel="preconnect" href="https://fonts.googleapis.com">' +
+        '<link href="https://fonts.googleapis.com/css2?family=' + encodeURIComponent(ff) + ':wght@400;500;600;700;800&display=swap" rel="stylesheet">' +
+        '<style>' +
+        '*{box-sizing:border-box;margin:0;padding:0}' +
+        'body{font-family:"' + ff + '",sans-serif;font-size:' + fs + 'px;background:' + bg + ';color:' + txt + ';padding:' + pad + ';line-height:1.5;min-height:1123px;}' +
+        'ul{list-style:disc}' +
+        '</style></head><body>' +
+        body + '</body></html>';
+}
+
+/* ── Splitter resize ─────────────────────────────────────────── */
+(function initSplitter() {
+    var splitter = document.getElementById('rxe-splitter');
+    var previewPane = document.getElementById('rxe-preview-pane');
+    var isDragging = false;
+    splitter.addEventListener('mousedown', function(e) {
+        isDragging = true;
+        splitter.classList.add('dragging');
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+        e.preventDefault();
+    });
+    document.addEventListener('mousemove', function(e) {
+        if (!isDragging) return;
+        var wrap = document.querySelector('.rxe-editor-main');
+        var rect = wrap.getBoundingClientRect();
+        var totalW = rect.width;
+        var fromRight = rect.right - e.clientX;
+        var pct = Math.min(70, Math.max(20, (fromRight / totalW) * 100));
+        previewPane.style.width = pct + '%';
+        schedulePreviewUpdate();
+    });
+    document.addEventListener('mouseup', function() {
+        if (!isDragging) return;
+        isDragging = false;
+        splitter.classList.remove('dragging');
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+    });
+}());
 
 /* ── Utility helpers ────────────────────────────────────────── */
 function esc(s) {
@@ -982,6 +1575,7 @@ function markDirty() {
     saveStatusEl.textContent = 'Unsaved changes…';
     clearTimeout(saveTimer);
     saveTimer = setTimeout(saveResume, 3000);
+    schedulePreviewUpdate();
 }
 
 /* ── Show/hide sections ─────────────────────────────────────── */
@@ -1096,32 +1690,35 @@ window.aiSuggestSummary = function () {
     var jobTitle = resumeData.experience && resumeData.experience[0]
         ? (resumeData.experience[0].title || '')
         : '';
-    if (!jobTitle) {
-        jobTitle = prompt('Enter your job title for AI suggestions:', '');
-        if (!jobTitle) return;
+    function doFetch(jt) {
+        var expYears = resumeData.experience ? resumeData.experience.length * 2 : 0;
+        var skillStr = (resumeData.skills || []).slice(0, 5).map(function (s) {
+            return typeof s === 'string' ? s : (s.name || '');
+        }).join(', ');
+        var fd = new FormData();
+        fd.append('_token', csrfToken);
+        fd.append('job_title', jt);
+        fd.append('experience_years', expYears);
+        fd.append('skills', skillStr);
+        fetch('/projects/resumex/ai/suggest-summary', { method: 'POST', body: fd })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (!data.success) return;
+            var box = document.getElementById('aiSumSuggestions');
+            box.innerHTML = '<div style="font-size:0.75rem;font-weight:700;color:var(--text-secondary);margin-bottom:8px;">Click a suggestion to use it:</div>' +
+                data.suggestions.map(function (s) {
+                    return '<div class="rxe-ai-suggestion-item" onclick="useSummarySuggestion(this.textContent)">' + esc(s) + '</div>';
+                }).join('');
+            box.classList.add('open');
+        });
     }
-    var expYears = resumeData.experience ? resumeData.experience.length * 2 : 0;
-    var skillStr = (resumeData.skills || []).slice(0, 5).map(function (s) {
-        return typeof s === 'string' ? s : (s.name || '');
-    }).join(', ');
-
-    var fd = new FormData();
-    fd.append('_token', csrfToken);
-    fd.append('job_title', jobTitle);
-    fd.append('experience_years', expYears);
-    fd.append('skills', skillStr);
-
-    fetch('/projects/resumex/ai/suggest-summary', { method: 'POST', body: fd })
-    .then(function (r) { return r.json(); })
-    .then(function (data) {
-        if (!data.success) return;
-        var box = document.getElementById('aiSumSuggestions');
-        box.innerHTML = '<div style="font-size:0.75rem;font-weight:700;color:var(--text-secondary);margin-bottom:8px;">Click a suggestion to use it:</div>' +
-            data.suggestions.map(function (s) {
-                return '<div class="rxe-ai-suggestion-item" onclick="useSummarySuggestion(this.textContent)">' + esc(s) + '</div>';
-            }).join('');
-        box.classList.add('open');
-    });
+    if (jobTitle) {
+        doFetch(jobTitle);
+    } else {
+        openPromptModal('Enter your job title for AI suggestions', 'e.g. Software Engineer', '', function(t) {
+            if (t) doFetch(t);
+        });
+    }
 };
 window.useSummarySuggestion = function (text) {
     var el = document.getElementById('f_summary');
@@ -1357,23 +1954,45 @@ document.getElementById('skillInput').addEventListener('keydown', function (e) {
 window.aiSuggestSkills = function () {
     var jobTitle = resumeData.experience && resumeData.experience[0]
         ? resumeData.experience[0].title
-        : prompt('Enter your job title:', '');
-    if (!jobTitle) return;
-    var fd = new FormData();
-    fd.append('_token', csrfToken);
-    fd.append('job_title', jobTitle);
-    fetch('/projects/resumex/ai/suggest-skills', { method:'POST', body:fd })
-    .then(function (r) { return r.json(); })
-    .then(function (data) {
-        if (!data.success) return;
-        var box = document.getElementById('aiSkillSuggestions');
-        box.innerHTML = '<div style="font-size:0.75rem;font-weight:700;color:var(--text-secondary);margin-bottom:8px;">Click to add a skill:</div>' +
-            data.skills.map(function (s) {
-                return '<div class="rxe-ai-suggestion-item" onclick="addSkill(\'' + esc(s) + '\'); this.style.opacity=\'0.4\';">' + esc(s) + '</div>';
-            }).join('');
-        box.classList.add('open');
-    });
+        : '';
+    function doFetch(jt) {
+        var fd = new FormData();
+        fd.append('_token', csrfToken);
+        fd.append('job_title', jt);
+        fetch('/projects/resumex/ai/suggest-skills', { method:'POST', body:fd })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (!data.success) return;
+            var box = document.getElementById('aiSkillSuggestions');
+            box.innerHTML = '<div style="font-size:0.75rem;font-weight:700;color:var(--text-secondary);margin-bottom:8px;">Click to add a skill:</div>';
+            data.skills.forEach(function(s) {
+                var el = document.createElement('div');
+                el.className = 'rxe-ai-suggestion-item';
+                el.dataset.skill = s;
+                el.textContent = s;
+                box.appendChild(el);
+            });
+            box.classList.add('open');
+        });
+    }
+    if (jobTitle) {
+        doFetch(jobTitle);
+    } else {
+        openPromptModal('Enter your job title for skill suggestions', 'e.g. Frontend Developer', '', function(t) {
+            if (t) doFetch(t);
+        });
+    }
 };
+
+/* ── Skill suggestion click via event delegation ────────────── */
+document.getElementById('aiSkillSuggestions').addEventListener('click', function(e) {
+    var item = e.target.closest('.rxe-ai-suggestion-item');
+    if (!item || item.classList.contains('added')) return;
+    var skill = item.dataset.skill;
+    if (!skill) return;
+    addSkill(skill);
+    item.classList.add('added');
+});
 
 /* ══════════════════════════════════════════════════════════════
    PROJECTS
@@ -1721,16 +2340,50 @@ window.scoreResume = function () {
     .then(function (r) { return r.json(); })
     .then(function (data) {
         if (!data.success) return;
-        document.getElementById('scoreNum').textContent = data.score + '/100';
-        document.getElementById('scoreGrade').textContent = 'Grade: ' + data.grade;
-        document.getElementById('scoreBarFill').style.width = data.score + '%';
+        var score = data.score;
+        var scoreColor = score >= 80 ? 'var(--green)' : (score >= 60 ? 'var(--cyan)' : (score >= 40 ? 'var(--orange)' : 'var(--red)'));
+        // Ring
+        var circumference = 238.76;
+        var offset = circumference - (score / 100) * circumference;
+        var ring = document.getElementById('scoreRingCircle');
+        if (ring) {
+            ring.style.strokeDashoffset = offset;
+            ring.style.stroke = scoreColor;
+        }
+        var numEl = document.getElementById('scoreNum');
+        if (numEl) { numEl.textContent = score; numEl.style.color = scoreColor; }
+        var labelEl = document.getElementById('scoreLabel');
+        if (labelEl) labelEl.textContent = data.label || 'Analysis Complete';
+        var gradeEl = document.getElementById('scoreGrade');
+        if (gradeEl) {
+            gradeEl.textContent = 'Grade ' + data.grade;
+            gradeEl.style.background = scoreColor.replace('var(','').replace(')','') !== scoreColor
+                ? scoreColor + '22' : 'rgba(0,240,255,0.12)';
+            gradeEl.style.color = scoreColor;
+            gradeEl.style.borderColor = scoreColor + '44';
+        }
+        // Breakdown bars
+        var bdEl = document.getElementById('scoreBreakdown');
+        if (bdEl && data.breakdown) {
+            bdEl.innerHTML = Object.values(data.breakdown).map(function(cat) {
+                var pct = cat.max > 0 ? Math.round((cat.score / cat.max) * 100) : 0;
+                return '<div class="rxe-score-cat">' +
+                    '<div class="rxe-score-cat-header">' +
+                        '<span class="rxe-score-cat-name">' + esc(cat.label) + '</span>' +
+                        '<span class="rxe-score-cat-pts">' + cat.score + '/' + cat.max + '</span>' +
+                    '</div>' +
+                    '<div class="rxe-score-cat-bar"><div class="rxe-score-cat-fill" style="width:' + pct + '%"></div></div>' +
+                '</div>';
+            }).join('');
+        }
         var sugg = document.getElementById('scoreSuggestions');
         if (data.suggestions && data.suggestions.length) {
-            sugg.innerHTML = data.suggestions.map(function (s) {
-                return '<div class="rxe-score-suggestion">' + esc(s) + '</div>';
-            }).join('');
+            sugg.innerHTML = '<div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;color:var(--text-secondary);margin-bottom:8px;">Suggestions</div>' +
+                data.suggestions.map(function (s) {
+                    return '<div class="rxe-score-suggestion">' + esc(s) + '</div>';
+                }).join('');
         } else {
-            sugg.innerHTML = '<div style="color:var(--green); font-size:0.85rem;">Great job! Your resume is well-rounded.</div>';
+            sugg.innerHTML = '<div style="color:var(--green);font-size:0.85rem;padding:8px 0;">&#10003; Great job! Your resume is well-rounded.</div>';
         }
     });
 };
@@ -1761,6 +2414,15 @@ renderReferences();
 renderPublications();
 renderThemeGrid();
 renderSectionOrder();
+
+// Initial live preview
+setTimeout(updateLivePreview, 400);
+
+// Highlight preview toggle button as active
+(function() {
+    var btn = document.getElementById('btnTogglePreview');
+    if (btn) { btn.style.borderColor = 'rgba(0,240,255,0.35)'; btn.style.color = 'var(--cyan)'; }
+}());
 
 }());
 </script>
