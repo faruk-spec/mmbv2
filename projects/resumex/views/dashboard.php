@@ -601,7 +601,7 @@
         </div>
         <h3 id="rx-delete-title">Delete Resume</h3>
         <p>Are you sure you want to delete <span class="rx-modal-title-preview" id="rx-delete-name"></span>? This action cannot be undone.</p>
-        <input type="hidden" id="rx-delete-csrf" value="<?= \Core\Security::csrfToken() ?>">
+        <input type="hidden" id="rx-delete-csrf" value="<?= htmlspecialchars(\Core\Security::generateCsrfToken(), ENT_QUOTES, 'UTF-8') ?>">
             <input type="hidden" id="rx-delete-id" value="">
             <div class="rx-modal-actions">
                 <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
