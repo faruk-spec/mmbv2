@@ -550,7 +550,7 @@
             $proCategories      = ['professional'];
             $otherCategories    = ['nature', 'warm', 'pastel', 'classic'];
 
-            $defaultKey = 'midnight-pro';
+            $defaultKey = 'ocean-blue';
             foreach ($allThemes as $themeKey => $theme):
                 $cat = strtolower($theme['category'] ?? 'other');
                 // Determine which filter group this card belongs to

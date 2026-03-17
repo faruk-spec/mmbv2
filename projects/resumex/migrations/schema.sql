@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS `resumex_resumes` (
     `id`             INT UNSIGNED NOT NULL AUTO_INCREMENT,
     `user_id`        INT UNSIGNED NOT NULL,
     `title`          VARCHAR(255) NOT NULL DEFAULT 'My Resume',
-    `template`       VARCHAR(100) NOT NULL DEFAULT 'midnight-pro',
+    `template`       VARCHAR(100) NOT NULL DEFAULT 'ocean-blue',
     `resume_data`    LONGTEXT     NULL,
     `theme_settings` LONGTEXT     NULL,
     `created_at`     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,

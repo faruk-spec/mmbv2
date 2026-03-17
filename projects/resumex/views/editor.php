@@ -3,6 +3,11 @@
 
 <?php View::section('content'); ?>
 <style>
+/* ── Strip main layout padding so editor starts right below navbar ── */
+body .main {
+    padding: 0 !important;
+}
+
 /* ── Editor wrapper ─────────────────────────────────────────── */
 .rxe-wrap {
     display: flex;
@@ -10,8 +15,7 @@
     height: calc(100vh - 56px);
     min-height: 0;
     overflow: hidden;
-    max-width: 1400px;
-    margin: 0 auto;
+    width: 100%;
 }
 
 /* ── Top bar ────────────────────────────────────────────────── */
@@ -24,9 +28,10 @@
     border-bottom: 1px solid var(--border-color);
     flex-shrink: 0;
     flex-wrap: wrap;
-    max-width: 1400px;
-    margin: 0 auto;
     width: 100%;
+    position: sticky;
+    top: 0;
+    z-index: 50;
 }
 .rxe-back {
     display: inline-flex;
@@ -612,7 +617,7 @@
 }
 .rxe-splitter:hover, .rxe-splitter.dragging { background: var(--cyan); }
 .rxe-preview-pane {
-    width: 42%;
+    width: 55%;
     flex-shrink: 0;
     background: #1a1a2e;
     border-left: 1px solid var(--border-color);
@@ -654,7 +659,8 @@
 .rxe-preview-header-btn:hover { border-color: var(--cyan); color: var(--cyan); }
 .rxe-preview-iframe-wrap {
     flex: 1;
-    overflow: auto;
+    overflow-y: auto;
+    overflow-x: hidden;
     background: #1a1a2e;
     display: flex;
     align-items: flex-start;
@@ -1377,7 +1383,7 @@ function schedulePreviewUpdate() {
             body: JSON.stringify({
                 _token: csrfToken,
                 title: title,
-                template: themeSettings.key || 'midnight-pro',
+                template: themeSettings.key || 'ocean-blue',
                 resume_data: resumeData,
                 theme_settings: themeSettings
             })
@@ -1391,8 +1397,10 @@ window.updateLivePreview = function() {
     var wrap = document.getElementById('rxe-preview-iframe-wrap');
     var paneW = wrap ? wrap.clientWidth - 24 : 0;
     var scale = paneW > 0 ? Math.min(1, paneW / 794) : 1;
-    frame.style.transform = 'scale(' + scale + ')';
+    // Scale from top-center so scaled content stays horizontally centred in wrapper
     frame.style.transformOrigin = 'top center';
+    frame.style.transform = 'scale(' + scale + ')';
+    // Collapse the unused vertical layout space so the wrapper scroll tracks visual height
     frame.style.marginBottom = Math.round((1123 * scale) - 1123) + 'px';
     // Load the actual PHP preview in embed mode (no toolbar, pure A4 resume)
     frame.src = '/projects/resumex/preview/' + resumeId + '?embed=1&_t=' + Date.now();
@@ -1474,7 +1482,7 @@ window.saveResume = function () {
         body: JSON.stringify({
             _token: csrfToken,
             title: title,
-            template: themeSettings.key || 'midnight-pro',
+            template: themeSettings.key || 'ocean-blue',
             resume_data: resumeData,
             theme_settings: themeSettings
         })
