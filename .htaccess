@@ -48,6 +48,9 @@ DirectoryIndex index.php public/index.php
     FallbackResource /index.php
 </IfModule>
 
+# Redirect Apache 403 to login instead of showing default Forbidden page
+ErrorDocument 403 /login
+
 # Security: Block access to sensitive files
 <FilesMatch "^\.">
     Require all denied

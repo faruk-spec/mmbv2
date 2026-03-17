@@ -7,9 +7,11 @@
 .rxe-wrap {
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 64px);
+    height: calc(100vh - 56px);
     min-height: 0;
     overflow: hidden;
+    max-width: 1400px;
+    margin: 0 auto;
 }
 
 /* ── Top bar ────────────────────────────────────────────────── */
@@ -17,11 +19,14 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 12px 20px;
+    padding: 8px 14px;
     background: var(--bg-card);
     border-bottom: 1px solid var(--border-color);
     flex-shrink: 0;
     flex-wrap: wrap;
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
 }
 .rxe-back {
     display: inline-flex;
@@ -38,15 +43,15 @@
 .rxe-title-input {
     flex: 1;
     min-width: 140px;
-    max-width: 340px;
+    max-width: 280px;
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
     border-radius: 8px;
     color: var(--text-primary);
-    font-size: 0.93rem;
+    font-size: 0.86rem;
     font-weight: 600;
     font-family: 'Poppins', sans-serif;
-    padding: 8px 12px;
+    padding: 5px 10px;
     outline: none;
     transition: border-color 0.2s, box-shadow 0.2s;
 }
@@ -56,7 +61,7 @@
 }
 .rxe-bar-spacer { flex: 1; }
 .rxe-save-status {
-    font-size: 0.78rem;
+    font-size: 0.72rem;
     color: var(--text-secondary);
     white-space: nowrap;
 }
@@ -64,9 +69,9 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 8px 14px;
+    padding: 6px 11px;
     border-radius: 8px;
-    font-size: 0.82rem;
+    font-size: 0.78rem;
     font-weight: 600;
     font-family: 'Poppins', sans-serif;
     cursor: pointer;
@@ -906,10 +911,9 @@
         <div class="rxe-form-area">
 
             <?php if (isset($_GET['new'])): ?>
-            <div style="background: rgba(0,240,255,0.08); border: 1px solid rgba(0,240,255,0.25); border-radius: 10px; padding: 14px 18px; margin-bottom: 24px; font-size: 0.88rem; color: var(--cyan); display: flex; align-items: center; gap: 10px;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-                Your resume was created! Start filling in your details below.
-                <span class="rxe-new-badge">NEW</span>
+            <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(0,240,255,0.07);border:1px solid rgba(0,240,255,0.2);border-radius:20px;padding:5px 12px;margin-bottom:16px;font-size:0.77rem;font-weight:600;color:var(--cyan);">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                Resume created — fill in your details below
             </div>
             <?php endif; ?>
 
@@ -1200,7 +1204,7 @@
                 </div>
             </div>
             <div class="rxe-preview-iframe-wrap" id="rxe-preview-iframe-wrap">
-                <iframe id="rxe-preview-frame" sandbox="allow-same-origin" title="Resume preview"></iframe>
+                <iframe id="rxe-preview-frame" sandbox="allow-same-origin allow-scripts" title="Resume preview"></iframe>
             </div>
         </div>
 
@@ -1304,7 +1308,23 @@ window.togglePreviewPane = function() {
 function schedulePreviewUpdate() {
     if (!previewVisible) return;
     clearTimeout(previewTimer);
-    previewTimer = setTimeout(updateLivePreview, 600);
+    previewTimer = setTimeout(function() {
+        // Silent save then reload preview
+        readContactFromDOM();
+        readSummaryFromDOM();
+        var title = (document.getElementById('resumeTitle').value || 'My Resume').trim();
+        fetch('/projects/resumex/edit/' + resumeId, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+            body: JSON.stringify({
+                _token: csrfToken,
+                title: title,
+                template: themeSettings.key || 'midnight-pro',
+                resume_data: resumeData,
+                theme_settings: themeSettings
+            })
+        }).then(function() { updateLivePreview(); }).catch(function() { updateLivePreview(); });
+    }, 1200);
 }
 
 window.updateLivePreview = function() {
@@ -1315,220 +1335,10 @@ window.updateLivePreview = function() {
     var scale = paneW > 0 ? Math.min(1, paneW / 794) : 1;
     frame.style.transform = 'scale(' + scale + ')';
     frame.style.marginBottom = Math.round((1123 * scale) - 1123 + 12) + 'px';
-    frame.srcdoc = buildPreviewHTML();
+    // Load the actual PHP preview; add a cache-bust timestamp so it reloads
+    frame.src = '/projects/resumex/preview/' + resumeId + '?_t=' + Date.now();
 };
 
-function he(s) {
-    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-function buildPreviewHTML() {
-    var t   = themeSettings;
-    var d   = resumeData;
-    var pri = t.primaryColor    || '#00f0ff';
-    var sec = t.secondaryColor  || '#9945ff';
-    var bg  = t.backgroundColor || '#0a0a0f';
-    var sur = t.surfaceColor    || '#12121e';
-    var txt = t.textColor       || '#e0e6ff';
-    var mut = t.textMuted       || '#6b7280';
-    var brd = t.borderColor     || 'rgba(0,240,255,0.15)';
-    var ff  = t.fontFamily      || 'Poppins';
-    var fs  = t.fontSize        || 14;
-    var contact   = d.contact   || {};
-    var hidden    = d.hidden_sections || [];
-    var order     = d.section_order   || ['contact','summary','experience','education','skills','projects','certifications','awards','volunteer','languages','hobbies','references','publications'];
-    var twoCol    = (t.layoutMode || 'single') === 'two-column';
-    var spacing   = t.spacing || 'comfortable';
-    var pad = spacing === 'compact' ? '14px' : (spacing === 'spacious' ? '28px' : '20px');
-
-    function isHidden(s) { return hidden.indexOf(s) !== -1; }
-
-    function sectionHtml(key) {
-        if (isHidden(key)) return '';
-        var sections = {
-            contact: function() {
-                var name = he(contact.name || '');
-                var sub  = [contact.email, contact.phone, contact.location].filter(Boolean).map(he).join(' &nbsp;·&nbsp; ');
-                var links= [contact.website, contact.linkedin, contact.github].filter(Boolean);
-                if (!name && !sub) return '';
-                return '<div style="margin-bottom:' + pad + ';padding-bottom:' + pad + ';border-bottom:1px solid ' + brd + '">' +
-                    (name ? '<h1 style="margin:0 0 4px;font-size:1.8em;font-weight:800;background:linear-gradient(135deg,' + pri + ',' + sec + ');-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">' + name + '</h1>' : '') +
-                    (sub  ? '<p style="margin:0 0 4px;font-size:0.85em;color:' + mut + '">' + sub + '</p>' : '') +
-                    (links.length ? '<p style="margin:0;font-size:0.78em;color:' + mut + '">' + links.map(he).join(' &nbsp;·&nbsp; ') + '</p>' : '') +
-                '</div>';
-            },
-            summary: function() {
-                var s = d.summary || '';
-                if (!s.trim()) return '';
-                return '<div style="margin-bottom:' + pad + '">' +
-                    '<h2 style="margin:0 0 8px;font-size:0.72em;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:' + pri + '">Summary</h2>' +
-                    '<p style="margin:0;font-size:0.88em;line-height:1.6;color:' + txt + '">' + he(s) + '</p>' +
-                '</div>';
-            },
-            experience: function() {
-                var exp = d.experience || [];
-                if (!exp.length) return '';
-                return '<div style="margin-bottom:' + pad + '">' +
-                    '<h2 style="margin:0 0 10px;font-size:0.72em;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:' + pri + '">Experience</h2>' +
-                    exp.map(function(e) {
-                        var bullets = (e.bullets||[]).filter(Boolean);
-                        return '<div style="margin-bottom:12px">' +
-                            '<div style="display:flex;justify-content:space-between;align-items:baseline">' +
-                                '<span style="font-weight:700;font-size:0.9em;color:' + txt + '">' + he(e.title||'') + '</span>' +
-                                '<span style="font-size:0.75em;color:' + mut + '">' + he(e.start_date||'') + (e.start_date ? ' – ' : '') + (e.current ? 'Present' : he(e.end_date||'')) + '</span>' +
-                            '</div>' +
-                            '<div style="font-size:0.8em;color:' + pri + ';margin-bottom:4px">' + he(e.company||'') + (e.location ? ' &nbsp;·&nbsp; <span style="color:' + mut + '">' + he(e.location) + '</span>' : '') + '</div>' +
-                            (e.description ? '<p style="margin:0 0 4px;font-size:0.82em;color:' + mut + '">' + he(e.description) + '</p>' : '') +
-                            (bullets.length ? '<ul style="margin:4px 0 0 16px;padding:0">' + bullets.map(function(b){ return '<li style="font-size:0.82em;color:' + txt + ';margin-bottom:2px">' + he(b) + '</li>'; }).join('') + '</ul>' : '') +
-                        '</div>';
-                    }).join('') +
-                '</div>';
-            },
-            education: function() {
-                var edu = d.education || [];
-                if (!edu.length) return '';
-                return '<div style="margin-bottom:' + pad + '">' +
-                    '<h2 style="margin:0 0 10px;font-size:0.72em;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:' + pri + '">Education</h2>' +
-                    edu.map(function(e) {
-                        return '<div style="margin-bottom:8px">' +
-                            '<div style="display:flex;justify-content:space-between;align-items:baseline">' +
-                                '<span style="font-weight:700;font-size:0.9em;color:' + txt + '">' + he(e.school||'') + '</span>' +
-                                '<span style="font-size:0.75em;color:' + mut + '">' + he(e.start_date||'') + (e.start_date && e.end_date ? ' – ' : '') + he(e.end_date||'') + '</span>' +
-                            '</div>' +
-                            '<div style="font-size:0.82em;color:' + mut + '">' + he(e.degree||'') + (e.field ? ' · ' + he(e.field) : '') + (e.gpa ? ' · GPA: ' + he(e.gpa) : '') + '</div>' +
-                        '</div>';
-                    }).join('') +
-                '</div>';
-            },
-            skills: function() {
-                var skills = d.skills || [];
-                if (!skills.length) return '';
-                return '<div style="margin-bottom:' + pad + '">' +
-                    '<h2 style="margin:0 0 8px;font-size:0.72em;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:' + pri + '">Skills</h2>' +
-                    '<div style="display:flex;flex-wrap:wrap;gap:6px">' +
-                    skills.map(function(s) {
-                        var n = typeof s === 'string' ? s : (s.name || '');
-                        return '<span style="padding:3px 10px;border-radius:20px;font-size:0.78em;font-weight:600;background:' + pri + '22;color:' + pri + ';border:1px solid ' + pri + '44">' + he(n) + '</span>';
-                    }).join('') +
-                    '</div></div>';
-            },
-            projects: function() {
-                var pp = d.projects || [];
-                if (!pp.length) return '';
-                return '<div style="margin-bottom:' + pad + '">' +
-                    '<h2 style="margin:0 0 10px;font-size:0.72em;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:' + pri + '">Projects</h2>' +
-                    pp.map(function(p) {
-                        return '<div style="margin-bottom:8px">' +
-                            '<span style="font-weight:700;font-size:0.88em;color:' + txt + '">' + he(p.name||'') + '</span>' +
-                            (p.technologies ? '<span style="font-size:0.75em;color:' + mut + ';margin-left:6px">' + (Array.isArray(p.technologies) ? p.technologies.join(', ') : he(p.technologies)) + '</span>' : '') +
-                            (p.description ? '<p style="margin:2px 0 0;font-size:0.8em;color:' + mut + '">' + he(p.description) + '</p>' : '') +
-                        '</div>';
-                    }).join('') +
-                '</div>';
-            },
-            certifications: function() {
-                var cc = d.certifications || [];
-                if (!cc.length) return '';
-                return '<div style="margin-bottom:' + pad + '">' +
-                    '<h2 style="margin:0 0 10px;font-size:0.72em;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:' + pri + '">Certifications</h2>' +
-                    cc.map(function(c) {
-                        return '<div style="margin-bottom:6px;display:flex;justify-content:space-between">' +
-                            '<span style="font-size:0.85em;color:' + txt + ';font-weight:600">' + he(c.name||'') + (c.issuer ? ' <span style="color:' + mut + ';font-weight:400">· ' + he(c.issuer) + '</span>' : '') + '</span>' +
-                            (c.date ? '<span style="font-size:0.75em;color:' + mut + '">' + he(c.date) + '</span>' : '') +
-                        '</div>';
-                    }).join('') +
-                '</div>';
-            },
-            awards: function() {
-                var aa = d.awards || [];
-                if (!aa.length) return '';
-                return '<div style="margin-bottom:' + pad + '">' +
-                    '<h2 style="margin:0 0 10px;font-size:0.72em;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:' + pri + '">Awards</h2>' +
-                    aa.map(function(a) {
-                        return '<div style="margin-bottom:6px">' +
-                            '<span style="font-size:0.85em;color:' + txt + ';font-weight:600">' + he(a.title||'') + '</span>' +
-                            (a.issuer ? ' <span style="font-size:0.78em;color:' + mut + '">· ' + he(a.issuer) + '</span>' : '') +
-                            (a.date ? ' <span style="font-size:0.75em;color:' + mut + '">(' + he(a.date) + ')</span>' : '') +
-                        '</div>';
-                    }).join('') +
-                '</div>';
-            },
-            volunteer: function() {
-                var vv = d.volunteer || [];
-                if (!vv.length) return '';
-                return '<div style="margin-bottom:' + pad + '">' +
-                    '<h2 style="margin:0 0 10px;font-size:0.72em;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:' + pri + '">Volunteer</h2>' +
-                    vv.map(function(v) {
-                        return '<div style="margin-bottom:8px">' +
-                            '<span style="font-weight:700;font-size:0.88em;color:' + txt + '">' + he(v.role||'') + '</span>' +
-                            (v.organization ? ' <span style="font-size:0.8em;color:' + pri + '">@ ' + he(v.organization) + '</span>' : '') +
-                            (v.description ? '<p style="margin:2px 0 0;font-size:0.8em;color:' + mut + '">' + he(v.description) + '</p>' : '') +
-                        '</div>';
-                    }).join('') +
-                '</div>';
-            },
-            languages: function() {
-                var ll = d.languages || [];
-                if (!ll.length) return '';
-                return '<div style="margin-bottom:' + pad + '">' +
-                    '<h2 style="margin:0 0 8px;font-size:0.72em;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:' + pri + '">Languages</h2>' +
-                    '<div style="display:flex;flex-wrap:wrap;gap:6px">' +
-                    ll.map(function(l) {
-                        return '<span style="padding:3px 10px;border-radius:20px;font-size:0.78em;border:1px solid ' + brd + ';color:' + txt + '">' + he(l.language||'') + (l.level ? ' · <em style="color:' + mut + '">' + he(l.level) + '</em>' : '') + '</span>';
-                    }).join('') + '</div></div>';
-            },
-            hobbies: function() {
-                var hh = d.hobbies || [];
-                if (!hh.length) return '';
-                return '<div style="margin-bottom:' + pad + '">' +
-                    '<h2 style="margin:0 0 8px;font-size:0.72em;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:' + pri + '">Hobbies</h2>' +
-                    '<p style="margin:0;font-size:0.85em;color:' + txt + '">' + hh.map(he).join(' &nbsp;·&nbsp; ') + '</p>' +
-                '</div>';
-            },
-            references: function() {
-                var rr = d.references || [];
-                if (!rr.length) return '';
-                return '<div style="margin-bottom:' + pad + '">' +
-                    '<h2 style="margin:0 0 10px;font-size:0.72em;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:' + pri + '">References</h2>' +
-                    rr.map(function(r) {
-                        return '<div style="margin-bottom:8px">' +
-                            '<span style="font-weight:700;font-size:0.88em;color:' + txt + '">' + he(r.name||'') + '</span>' +
-                            (r.title || r.company ? '<div style="font-size:0.78em;color:' + mut + '">' + [r.title, r.company].filter(Boolean).map(he).join(', ') + '</div>' : '') +
-                            (r.email ? '<div style="font-size:0.75em;color:' + mut + '">' + he(r.email) + (r.phone ? ' · ' + he(r.phone) : '') + '</div>' : '') +
-                        '</div>';
-                    }).join('') +
-                '</div>';
-            },
-            publications: function() {
-                var pp = d.publications || [];
-                if (!pp.length) return '';
-                return '<div style="margin-bottom:' + pad + '">' +
-                    '<h2 style="margin:0 0 10px;font-size:0.72em;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:' + pri + '">Publications</h2>' +
-                    pp.map(function(p) {
-                        return '<div style="margin-bottom:8px">' +
-                            '<span style="font-weight:700;font-size:0.88em;color:' + txt + '">' + he(p.title||'') + '</span>' +
-                            (p.journal ? '<span style="font-size:0.78em;color:' + mut + '"> · ' + he(p.journal) + '</span>' : '') +
-                            (p.date ? '<span style="font-size:0.75em;color:' + mut + '"> (' + he(p.date) + ')</span>' : '') +
-                        '</div>';
-                    }).join('') +
-                '</div>';
-            }
-        };
-        return sections[key] ? sections[key]() : '';
-    }
-
-    var body = order.map(sectionHtml).join('');
-
-    return '<!DOCTYPE html><html><head><meta charset="utf-8">' +
-        '<link rel="preconnect" href="https://fonts.googleapis.com">' +
-        '<link href="https://fonts.googleapis.com/css2?family=' + encodeURIComponent(ff) + ':wght@400;500;600;700;800&display=swap" rel="stylesheet">' +
-        '<style>' +
-        '*{box-sizing:border-box;margin:0;padding:0}' +
-        'body{font-family:"' + ff + '",sans-serif;font-size:' + fs + 'px;background:' + bg + ';color:' + txt + ';padding:' + pad + ';line-height:1.5;min-height:1123px;}' +
-        'ul{list-style:disc}' +
-        '</style></head><body>' +
-        body + '</body></html>';
-}
 
 /* ── Splitter resize ─────────────────────────────────────────── */
 (function initSplitter() {
