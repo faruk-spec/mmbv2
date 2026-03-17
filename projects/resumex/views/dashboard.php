@@ -601,14 +601,12 @@
         </div>
         <h3 id="rx-delete-title">Delete Resume</h3>
         <p>Are you sure you want to delete <span class="rx-modal-title-preview" id="rx-delete-name"></span>? This action cannot be undone.</p>
-        <form id="rx-delete-form" method="POST" action="/projects/resumex/delete">
-            <?= \Core\Security::csrfField() ?>
-            <input type="hidden" name="id" id="rx-delete-id" value="">
+        <input type="hidden" id="rx-delete-csrf" value="<?= \Core\Security::csrfToken() ?>">
+            <input type="hidden" id="rx-delete-id" value="">
             <div class="rx-modal-actions">
                 <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
-                <button type="submit" class="btn btn-danger">Delete</button>
+                <button type="button" class="btn btn-danger" id="rx-delete-confirm-btn">Delete</button>
             </div>
-        </form>
     </div>
 </div>
 
@@ -636,6 +634,7 @@
     var deleteOverlay    = document.getElementById('rx-delete-modal');
     var deleteIdInput    = document.getElementById('rx-delete-id');
     var deleteNameEl     = document.getElementById('rx-delete-name');
+    var deleteBtn        = document.getElementById('rx-delete-confirm-btn');
 
     var duplicateOverlay = document.getElementById('rx-duplicate-modal');
     var duplicateIdInput = document.getElementById('rx-duplicate-id');
@@ -645,11 +644,24 @@
         deleteIdInput.value = id;
         deleteNameEl.textContent = '\u201c' + title + '\u201d.';
         deleteOverlay.classList.add('open');
-        deleteOverlay.querySelector('.btn-danger').focus();
+        deleteBtn.focus();
     };
     window.closeDeleteModal = function () {
         deleteOverlay.classList.remove('open');
     };
+
+    deleteBtn.addEventListener('click', function () {
+        var id    = deleteIdInput.value;
+        var token = document.getElementById('rx-delete-csrf').value;
+        deleteBtn.disabled = true;
+        deleteBtn.textContent = 'Deleting…';
+        var fd = new FormData();
+        fd.append('_token', token);
+        fd.append('id', id);
+        fetch('/projects/resumex/delete', { method: 'POST', body: fd })
+            .then(function () { window.location.reload(); })
+            .catch(function () { window.location.reload(); });
+    });
 
     window.openDuplicateModal = function (id, title) {
         duplicateIdInput.value = id;

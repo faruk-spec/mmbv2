@@ -594,40 +594,165 @@
                     </svg>
                 </span>
 
-                <!-- Color preview with mini mockup -->
+                <!-- Layout-aware SVG thumbnail -->
                 <div class="rxc-preview" style="background:<?= $bg ?>;">
-                    <div class="rxc-mockup" style="background:<?= $surf ?>;">
-                        <!-- Header bar -->
-                        <div class="rxc-mockup-header" style="background:<?= $pri ?>22; border-bottom: 1px solid <?= $pri ?>44;">
-                            <div class="rxc-mockup-avatar" style="background:<?= $pri ?>55;"></div>
-                            <div class="rxc-mockup-title-block">
-                                <div class="rxc-mockup-name-bar" style="background:<?= $pri ?>cc;"></div>
-                                <div class="rxc-mockup-sub-bar" style="background:<?= $pri ?>66;"></div>
-                            </div>
-                        </div>
-                        <!-- Body lines -->
-                        <div class="rxc-mockup-body">
-                            <div class="rxc-mockup-section-label" style="background:<?= $pri ?>bb;"></div>
-                            <?php for ($i = 0; $i < 3; $i++):
-                                $widths = ['80%', '65%', '72%'];
-                            ?>
-                            <div style="display:flex;align-items:center;gap:4px;margin-bottom:1px;">
-                                <div class="rxc-mockup-bullet" style="background:<?= $pri ?>;"></div>
-                                <div class="rxc-mockup-line-fill" style="background:rgba(128,128,128,0.3);width:<?= $widths[$i] ?>;height:3px;border-radius:3px;"></div>
-                            </div>
-                            <?php endfor; ?>
-                            <div style="height:4px;"></div>
-                            <div class="rxc-mockup-section-label" style="background:<?= $sec ?>bb;width:35%;"></div>
-                            <?php for ($i = 0; $i < 2; $i++):
-                                $widths2 = ['70%', '55%'];
-                            ?>
-                            <div style="display:flex;align-items:center;gap:4px;margin-bottom:1px;">
-                                <div class="rxc-mockup-bullet" style="background:<?= $sec ?>;"></div>
-                                <div class="rxc-mockup-line-fill" style="background:rgba(128,128,128,0.3);width:<?= $widths2[$i] ?>;height:3px;border-radius:3px;"></div>
-                            </div>
-                            <?php endfor; ?>
-                        </div>
-                    </div>
+                    <?php
+                    $ls = $theme['layoutStyle'] ?? 'single';
+                    if ($ls === 'sidebar-left' || $ls === 'sidebar-dark'):
+                    ?>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 140" style="width:100%;height:100%;display:block;">
+                        <rect width="170" height="140" fill="<?= $bg ?>"/>
+                        <rect x="0" y="0" width="52" height="140" fill="<?= $surf ?>"/>
+                        <circle cx="26" cy="22" r="11" fill="<?= $pri ?>44" stroke="<?= $pri ?>" stroke-width="1.5"/>
+                        <rect x="8" y="37" width="36" height="4" rx="2" fill="<?= $pri ?>cc"/>
+                        <rect x="12" y="44" width="28" height="2.5" rx="1.5" fill="<?= $pri ?>66"/>
+                        <rect x="8" y="54" width="20" height="2" rx="1" fill="<?= $pri ?>88"/>
+                        <rect x="8" y="59" width="36" height="2" rx="1" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>33"/>
+                        <rect x="8" y="64" width="30" height="2" rx="1" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>22"/>
+                        <rect x="8" y="74" width="20" height="2" rx="1" fill="<?= $sec ?>88"/>
+                        <rect x="8" y="79" width="34" height="2" rx="1" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>33"/>
+                        <rect x="8" y="84" width="26" height="2" rx="1" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>22"/>
+                        <rect x="60" y="10" width="90" height="5" rx="2" fill="<?= $pri ?>"/>
+                        <rect x="60" y="18" width="60" height="3" rx="1.5" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>66"/>
+                        <rect x="60" y="28" width="100" height="1.5" rx="1" fill="<?= $pri ?>44"/>
+                        <rect x="60" y="35" width="65" height="2" rx="1" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>44"/>
+                        <rect x="60" y="40" width="80" height="2" rx="1" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>33"/>
+                        <rect x="60" y="45" width="55" height="2" rx="1" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>22"/>
+                        <rect x="60" y="55" width="90" height="2" rx="1" fill="<?= $pri ?>66"/>
+                        <rect x="60" y="61" width="70" height="2" rx="1" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>33"/>
+                        <rect x="60" y="66" width="80" height="2" rx="1" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>22"/>
+                        <rect x="60" y="71" width="50" height="2" rx="1" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>33"/>
+                    </svg>
+                    <?php elseif ($ls === 'banner'): ?>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 140" style="width:100%;height:100%;display:block;">
+                        <rect width="170" height="140" fill="<?= $bg ?>"/>
+                        <rect x="0" y="0" width="170" height="46" fill="<?= $pri ?>22"/>
+                        <rect x="0" y="43" width="170" height="3" fill="<?= $pri ?>"/>
+                        <rect x="12" y="8" width="75" height="8" rx="3" fill="<?= $pri ?>"/>
+                        <rect x="12" y="19" width="50" height="4" rx="2" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>88"/>
+                        <circle cx="148" cy="22" r="15" fill="<?= $pri ?>33" stroke="<?= $pri ?>" stroke-width="1.5"/>
+                        <rect x="12" y="30" width="22" height="6" rx="3" fill="<?= $pri ?>33" stroke="<?= $pri ?>" stroke-width="0.5"/>
+                        <rect x="38" y="30" width="28" height="6" rx="3" fill="<?= $pri ?>33" stroke="<?= $pri ?>" stroke-width="0.5"/>
+                        <rect x="12" y="55" width="50" height="3" rx="1.5" fill="<?= $pri ?>88"/>
+                        <rect x="12" y="62" width="146" height="2" rx="1" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>44"/>
+                        <rect x="12" y="67" width="120" height="2" rx="1" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>33"/>
+                        <rect x="12" y="78" width="50" height="3" rx="1.5" fill="<?= $sec ?>88"/>
+                        <rect x="12" y="84" width="140" height="2" rx="1" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>33"/>
+                        <rect x="12" y="89" width="100" height="2" rx="1" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>22"/>
+                    </svg>
+                    <?php elseif ($ls === 'full-header'): ?>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 140" style="width:100%;height:100%;display:block;">
+                        <rect width="170" height="140" fill="<?= $bg ?>"/>
+                        <rect x="0" y="0" width="170" height="40" fill="<?= $surf ?>"/>
+                        <rect x="0" y="37" width="170" height="3" fill="<?= $pri ?>"/>
+                        <circle cx="20" cy="20" r="12" fill="<?= $pri ?>44" stroke="<?= $pri ?>" stroke-width="1.5"/>
+                        <rect x="36" y="9" width="70" height="7" rx="2" fill="<?= $pri ?>"/>
+                        <rect x="36" y="19" width="45" height="3.5" rx="1.5" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>66"/>
+                        <rect x="36" y="25" width="95" height="2" rx="1" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>33"/>
+                        <rect x="0" y="43" width="62" height="94" fill="<?= $surf ?>11"/>
+                        <rect x="62" y="43" width="1.5" height="94" fill="<?= $pri ?>22"/>
+                        <rect x="8" y="51" width="30" height="2.5" rx="1.5" fill="<?= $pri ?>88"/>
+                        <rect x="8" y="57" width="46" height="2" rx="1" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>33"/>
+                        <rect x="8" y="62" width="38" height="2" rx="1" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>22"/>
+                        <rect x="8" y="72" width="30" height="2.5" rx="1.5" fill="<?= $sec ?>88"/>
+                        <rect x="8" y="78" width="46" height="2" rx="1" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>33"/>
+                        <rect x="70" y="51" width="50" height="2.5" rx="1.5" fill="<?= $pri ?>88"/>
+                        <rect x="70" y="57" width="90" height="2" rx="1" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>44"/>
+                        <rect x="70" y="62" width="80" height="2" rx="1" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>33"/>
+                        <rect x="70" y="67" width="60" height="2" rx="1" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>22"/>
+                        <rect x="70" y="77" width="50" height="2.5" rx="1.5" fill="<?= $sec ?>88"/>
+                        <rect x="70" y="83" width="85" height="2" rx="1" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>33"/>
+                    </svg>
+                    <?php elseif ($ls === 'timeline'): ?>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 140" style="width:100%;height:100%;display:block;">
+                        <rect width="170" height="140" fill="<?= $bg ?>"/>
+                        <rect x="0" y="0" width="170" height="34" fill="<?= $surf ?>"/>
+                        <rect x="0" y="31" width="170" height="3" fill="<?= $pri ?>"/>
+                        <rect x="12" y="8" width="65" height="7" rx="2" fill="<?= $pri ?>"/>
+                        <rect x="12" y="18" width="42" height="3.5" rx="1.5" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>66"/>
+                        <line x1="24" y1="42" x2="24" y2="130" stroke="<?= $pri ?>44" stroke-width="2"/>
+                        <circle cx="24" cy="48" r="4" fill="<?= $pri ?>"/>
+                        <rect x="34" y="45" width="60" height="3.5" rx="1.5" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>cc"/>
+                        <rect x="34" y="51" width="45" height="2.5" rx="1" fill="<?= $pri ?>99"/>
+                        <rect x="34" y="56" width="90" height="2" rx="1" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>33"/>
+                        <circle cx="24" cy="71" r="4" fill="<?= $pri ?>"/>
+                        <rect x="34" y="68" width="55" height="3.5" rx="1.5" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>cc"/>
+                        <rect x="34" y="74" width="40" height="2.5" rx="1" fill="<?= $pri ?>99"/>
+                        <rect x="34" y="79" width="80" height="2" rx="1" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>33"/>
+                        <circle cx="24" cy="93" r="4" fill="<?= $sec ?>"/>
+                        <rect x="34" y="90" width="50" height="3.5" rx="1.5" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>cc"/>
+                        <rect x="34" y="96" width="38" height="2.5" rx="1" fill="<?= $sec ?>99"/>
+                    </svg>
+                    <?php elseif ($ls === 'minimal'): ?>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 140" style="width:100%;height:100%;display:block;">
+                        <rect width="170" height="140" fill="<?= $bg ?>"/>
+                        <rect x="12" y="10" width="95" height="9" rx="2" fill="<?= $pri ?>"/>
+                        <rect x="12" y="22" width="58" height="4" rx="2" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>88"/>
+                        <rect x="12" y="30" width="146" height="2" rx="1" fill="<?= $pri ?>66"/>
+                        <rect x="12" y="35" width="100" height="2.5" rx="1" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>44"/>
+                        <rect x="12" y="41" width="80" height="2" rx="1" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>33"/>
+                        <rect x="12" y="55" width="42" height="2.5" rx="1" fill="<?= $pri ?>cc"/>
+                        <rect x="12" y="61" width="130" height="2" rx="1" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>44"/>
+                        <rect x="12" y="66" width="110" height="2" rx="1" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>33"/>
+                        <rect x="12" y="71" width="120" height="2" rx="1" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>22"/>
+                        <rect x="12" y="83" width="42" height="2.5" rx="1" fill="<?= $sec ?>cc"/>
+                        <rect x="12" y="89" width="120" height="2" rx="1" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>33"/>
+                        <rect x="12" y="94" width="90" height="2" rx="1" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>22"/>
+                    </svg>
+                    <?php elseif ($ls === 'developer'): ?>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 140" style="width:100%;height:100%;display:block;">
+                        <rect width="170" height="140" fill="<?= $bg ?>"/>
+                        <rect x="0" y="0" width="170" height="38" fill="<?= $surf ?>"/>
+                        <rect x="0" y="35" width="170" height="3" fill="<?= $pri ?>44"/>
+                        <rect x="10" y="7" width="10" height="6" rx="1" fill="<?= $pri ?>44"/>
+                        <rect x="22" y="7" width="68" height="9" rx="2" fill="<?= $pri ?>"/>
+                        <rect x="10" y="19" width="14" height="3" rx="1" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>44"/>
+                        <rect x="26" y="19" width="52" height="3" rx="1" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>66"/>
+                        <rect x="10" y="8" width="1.5" height="75" fill="<?= $pri ?>66"/>
+                        <rect x="18" y="46" width="30" height="3.5" rx="1" fill="<?= $pri ?>88"/>
+                        <rect x="18" y="53" width="130" height="2" rx="1" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>33"/>
+                        <rect x="18" y="58" width="100" height="2" rx="1" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>22"/>
+                        <rect x="18" y="68" width="30" height="3.5" rx="1" fill="<?= $sec ?>88"/>
+                        <rect x="18" y="75" width="120" height="2" rx="1" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>33"/>
+                        <rect x="18" y="80" width="90" height="2" rx="1" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>22"/>
+                    </svg>
+                    <?php elseif ($ls === 'academic'): ?>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 140" style="width:100%;height:100%;display:block;">
+                        <rect width="170" height="140" fill="<?= $bg ?>"/>
+                        <rect x="40" y="8" width="90" height="9" rx="2" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>dd"/>
+                        <rect x="60" y="20" width="50" height="4" rx="2" fill="<?= $pri ?>99"/>
+                        <rect x="30" y="28" width="110" height="2" rx="1" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>44"/>
+                        <rect x="0" y="32" width="170" height="3" fill="<?= $pri ?>"/>
+                        <rect x="50" y="37" width="70" height="1.5" fill="<?= $pri ?>22"/>
+                        <rect x="12" y="47" width="52" height="3" rx="1.5" fill="<?= $pri ?>aa"/>
+                        <rect x="12" y="51" width="146" height="1.5" fill="<?= $pri ?>33"/>
+                        <rect x="12" y="56" width="130" height="2" rx="1" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>44"/>
+                        <rect x="12" y="61" width="110" height="2" rx="1" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>33"/>
+                        <rect x="12" y="74" width="52" height="3" rx="1.5" fill="<?= $sec ?>aa"/>
+                        <rect x="12" y="78" width="146" height="1.5" fill="<?= $sec ?>33"/>
+                        <rect x="12" y="83" width="120" height="2" rx="1" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>33"/>
+                        <rect x="12" y="88" width="90" height="2" rx="1" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>22"/>
+                    </svg>
+                    <?php else: /* single / default */ ?>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 140" style="width:100%;height:100%;display:block;">
+                        <rect width="170" height="140" fill="<?= $bg ?>"/>
+                        <rect x="0" y="0" width="170" height="40" fill="<?= $surf ?>"/>
+                        <rect x="0" y="37" width="170" height="3" fill="<?= $pri ?>"/>
+                        <circle cx="20" cy="20" r="12" fill="<?= $pri ?>33" stroke="<?= $pri ?>" stroke-width="1.5"/>
+                        <rect x="36" y="9" width="68" height="7" rx="2" fill="<?= $pri ?>"/>
+                        <rect x="36" y="19" width="46" height="3.5" rx="1.5" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>66"/>
+                        <rect x="36" y="26" width="82" height="2" rx="1" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>33"/>
+                        <rect x="12" y="48" width="52" height="3" rx="1.5" fill="<?= $pri ?>88"/>
+                        <rect x="12" y="52" width="146" height="1.5" fill="<?= $pri ?>33"/>
+                        <rect x="12" y="57" width="130" height="2" rx="1" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>44"/>
+                        <rect x="12" y="62" width="110" height="2" rx="1" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>33"/>
+                        <rect x="12" y="67" width="120" height="2" rx="1" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>22"/>
+                        <rect x="12" y="79" width="52" height="3" rx="1.5" fill="<?= $sec ?>88"/>
+                        <rect x="12" y="83" width="146" height="1.5" fill="<?= $sec ?>22"/>
+                        <rect x="12" y="88" width="120" height="2" rx="1" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>33"/>
+                        <rect x="12" y="93" width="90" height="2" rx="1" fill="<?= htmlspecialchars($theme['textColor'] ?? '#e0e6ff') ?>22"/>
+                    </svg>
+                    <?php endif; ?>
                 </div>
 
                 <!-- Card info -->
@@ -636,6 +761,8 @@
                     <span class="rxc-cat-badge <?= $catClass ?>">
                         <?= htmlspecialchars(ucfirst($cat)) ?>
                     </span>
+                    <?php $lsLabel = str_replace('-', ' ', $theme['layoutStyle'] ?? 'single'); ?>
+                    <span style="display:inline-block;padding:1px 7px;border-radius:10px;font-size:0.6rem;font-weight:600;border:1px solid var(--border-color);color:var(--text-secondary);margin-left:3px;"><?= htmlspecialchars(ucfirst($lsLabel)) ?></span>
                 </div>
             </label>
             <?php endforeach; ?>

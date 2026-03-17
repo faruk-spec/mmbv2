@@ -720,6 +720,29 @@
 }
 .rxe-modal-btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
 
+/* ── Template picker modal ───────────────────────────────────── */
+#rxe-tpl-modal { padding: 40px 20px; }
+.rxe-tpl-filter-btn {
+    padding: 5px 14px; border-radius: 20px; border: 1px solid var(--border-color);
+    background: transparent; color: var(--text-secondary); font-size: 0.75rem;
+    font-family: 'Poppins', sans-serif; cursor: pointer; transition: all 0.18s; font-weight: 500;
+}
+.rxe-tpl-filter-btn:hover { border-color: rgba(0,240,255,0.4); color: var(--cyan); }
+.rxe-tpl-filter-btn.active { background: var(--cyan); border-color: var(--cyan); color: #06060a; font-weight: 700; }
+.rxe-tpl-card {
+    border-radius: 10px; border: 2px solid var(--border-color); overflow: hidden;
+    cursor: pointer; transition: all 0.18s; background: var(--bg-secondary);
+    display: flex; flex-direction: column;
+}
+.rxe-tpl-card:hover { border-color: rgba(0,240,255,0.5); transform: translateY(-2px); box-shadow: 0 6px 24px rgba(0,0,0,0.3); }
+.rxe-tpl-card.active-tpl { border-color: var(--cyan); box-shadow: 0 0 0 2px rgba(0,240,255,0.3); }
+.rxe-tpl-thumb { height: 140px; position: relative; overflow: hidden; flex-shrink: 0; }
+.rxe-tpl-info { padding: 10px 12px; }
+.rxe-tpl-name { font-size: 0.78rem; font-weight: 700; color: var(--text-primary); }
+.rxe-tpl-cat { font-size: 0.68rem; color: var(--text-secondary); margin-top: 2px; }
+.rxe-tpl-badge { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 0.62rem; font-weight: 600; background: var(--cyan); color: #06060a; margin-top: 4px; }
+.rxe-tpl-layout-tag { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 0.62rem; font-weight: 600; border: 1px solid var(--border-color); color: var(--text-secondary); margin-top: 4px; margin-left: 4px; }
+
 /* ── Better score breakdown ─────────────────────────────────── */
 .rxe-score-ring-wrap {
     display: flex;
@@ -829,6 +852,10 @@
                placeholder="Resume title" maxlength="255">
         <div class="rxe-bar-spacer"></div>
         <span id="saveStatus" class="rxe-save-status">All changes saved</span>
+        <button type="button" class="rxe-bar-btn" onclick="openTemplatePicker()" title="Change resume template">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            Template
+        </button>
         <button type="button" class="rxe-bar-btn rxe-btn-toggle-preview" id="btnTogglePreview" onclick="togglePreviewPane()" title="Toggle live preview">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
             Preview
@@ -929,20 +956,25 @@
                         <input class="rxe-input" id="c_name" type="text" placeholder="e.g. Jane Smith" maxlength="100">
                     </div>
                     <div class="rxe-field">
-                        <label class="rxe-label">Email</label>
-                        <input class="rxe-input" id="c_email" type="email" placeholder="jane@example.com" maxlength="120">
+                        <label class="rxe-label">Job Title</label>
+                        <input class="rxe-input" id="c_job_title" type="text" placeholder="e.g. Interior Designer" maxlength="120">
                     </div>
                 </div>
                 <div class="rxe-row">
                     <div class="rxe-field">
+                        <label class="rxe-label">Email</label>
+                        <input class="rxe-input" id="c_email" type="email" placeholder="jane@example.com" maxlength="120">
+                    </div>
+                    <div class="rxe-field">
                         <label class="rxe-label">Phone</label>
                         <input class="rxe-input" id="c_phone" type="text" placeholder="+1 555 000 0000" maxlength="30">
                     </div>
+                </div>
+                <div class="rxe-row">
                     <div class="rxe-field">
                         <label class="rxe-label">Location</label>
                         <input class="rxe-input" id="c_location" type="text" placeholder="City, Country" maxlength="100">
                     </div>
-                </div>
                 <div class="rxe-row">
                     <div class="rxe-field">
                         <label class="rxe-label">Website / Portfolio</label>
@@ -1224,6 +1256,32 @@
     </div>
 </div>
 
+<!-- Template Picker Modal -->
+<div id="rxe-tpl-modal" class="rxe-modal-overlay" role="dialog" aria-modal="true" style="align-items:flex-start;padding:0;">
+    <div style="background:var(--bg-card);width:100%;max-width:980px;margin:auto;border-radius:14px;overflow:hidden;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,0.6);">
+        <!-- Header -->
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:1px solid var(--border-color);flex-shrink:0;">
+            <div>
+                <div style="font-size:1.05rem;font-weight:700;color:var(--text-primary);">Choose a Template</div>
+                <div style="font-size:0.78rem;color:var(--text-secondary);margin-top:2px;">Select a design — your content is preserved</div>
+            </div>
+            <button type="button" onclick="closeTemplatePicker()" style="background:none;border:none;color:var(--text-secondary);font-size:1.4rem;cursor:pointer;line-height:1;padding:4px 8px;">&times;</button>
+        </div>
+        <!-- Filter tabs -->
+        <div style="display:flex;gap:6px;padding:12px 24px;border-bottom:1px solid var(--border-color);flex-shrink:0;flex-wrap:wrap;" id="rxe-tpl-filters">
+            <button class="rxe-tpl-filter-btn active" data-filter="all">All</button>
+            <button class="rxe-tpl-filter-btn" data-filter="professional">Professional</button>
+            <button class="rxe-tpl-filter-btn" data-filter="creative">Creative</button>
+            <button class="rxe-tpl-filter-btn" data-filter="minimal">Minimal</button>
+            <button class="rxe-tpl-filter-btn" data-filter="dark">Dark</button>
+            <button class="rxe-tpl-filter-btn" data-filter="sidebar">Sidebar</button>
+            <button class="rxe-tpl-filter-btn" data-filter="timeline">Timeline</button>
+        </div>
+        <!-- Grid -->
+        <div id="rxe-tpl-grid" style="overflow-y:auto;padding:20px 24px;display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:14px;flex:1;"></div>
+    </div>
+</div>
+
 <div id="rxe-toast" class="rxe-toast"></div>
 
 <script>
@@ -1461,7 +1519,7 @@ document.addEventListener('keydown', function (e) {
 ══════════════════════════════════════════════════════════════ */
 function initContact() {
     var c = resumeData.contact || {};
-    var fields = ['name','email','phone','location','website','linkedin','github','photo'];
+    var fields = ['name','job_title','email','phone','location','website','linkedin','github','photo'];
     fields.forEach(function (f) {
         var el = document.getElementById('c_' + f);
         if (!el) return;
@@ -1471,7 +1529,7 @@ function initContact() {
 }
 function readContactFromDOM() {
     if (!resumeData.contact) resumeData.contact = {};
-    var fields = ['name','email','phone','location','website','linkedin','github','photo'];
+    var fields = ['name','job_title','email','phone','location','website','linkedin','github','photo'];
     fields.forEach(function (f) {
         var el = document.getElementById('c_' + f);
         if (el) resumeData.contact[f] = el.value.trim();
@@ -2103,6 +2161,278 @@ window.selectTheme = function (key) {
     renderThemeGrid();
     markDirty();
 };
+
+/* ══════════════════════════════════════════════════════════════
+   TEMPLATE PICKER MODAL
+══════════════════════════════════════════════════════════════ */
+(function () {
+    var modal = document.getElementById('rxe-tpl-modal');
+    var grid  = document.getElementById('rxe-tpl-grid');
+    var currentFilter = 'all';
+
+    var layoutFilterMap = {
+        'sidebar-left': 'sidebar', 'sidebar-dark': 'sidebar',
+        'full-header': 'professional', 'banner': 'creative',
+        'timeline': 'timeline', 'minimal': 'minimal',
+        'developer': 'dark', 'academic': 'professional',
+        'single': 'professional',
+    };
+
+    function getFilterGroup(t) {
+        var cat = (t.category || '').toLowerCase();
+        var ls  = t.layoutStyle || 'single';
+        if (ls === 'sidebar-left' || ls === 'sidebar-dark') return 'sidebar';
+        if (ls === 'timeline') return 'timeline';
+        if (ls === 'minimal') return 'minimal';
+        if (ls === 'developer') return 'dark';
+        if (ls === 'banner') return 'creative';
+        if (cat === 'creative' || cat === 'tech' || cat === 'bold') return 'creative';
+        if (cat === 'dark') return 'dark';
+        if (cat === 'minimal') return 'minimal';
+        return 'professional';
+    }
+
+    function renderThumbSvg(t) {
+        var bg   = t.backgroundColor || '#0a0a0f';
+        var surf = t.surfaceColor    || '#12121e';
+        var pri  = t.primaryColor    || '#00f0ff';
+        var sec  = t.secondaryColor  || '#9945ff';
+        var tx   = t.textColor       || '#e0e6ff';
+        var ls   = t.layoutStyle     || 'single';
+
+        var svg = '';
+        if (ls === 'sidebar-left' || ls === 'sidebar-dark') {
+            svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 120" style="width:100%;height:100%;display:block;">'
+                + '<rect width="170" height="120" fill="' + bg + '"/>'
+                // sidebar
+                + '<rect x="0" y="0" width="52" height="120" fill="' + surf + '"/>'
+                // photo circle
+                + '<circle cx="26" cy="22" r="12" fill="' + pri + '44" stroke="' + pri + '" stroke-width="1.5"/>'
+                // name lines
+                + '<rect x="8" y="38" width="36" height="4" rx="2" fill="' + pri + 'cc"/>'
+                + '<rect x="12" y="45" width="28" height="2.5" rx="1.5" fill="' + pri + '66"/>'
+                // sidebar section dots
+                + '<rect x="8" y="56" width="20" height="2" rx="1" fill="' + pri + '88"/>'
+                + '<rect x="8" y="62" width="36" height="2" rx="1" fill="' + tx + '33"/>'
+                + '<rect x="8" y="67" width="30" height="2" rx="1" fill="' + tx + '22"/>'
+                + '<rect x="8" y="74" width="20" height="2" rx="1" fill="' + sec + '88"/>'
+                + '<rect x="8" y="80" width="34" height="2" rx="1" fill="' + tx + '33"/>'
+                + '<rect x="8" y="85" width="26" height="2" rx="1" fill="' + tx + '22"/>'
+                // main area header
+                + '<rect x="60" y="10" width="90" height="5" rx="2" fill="' + pri + '"/>'
+                + '<rect x="60" y="18" width="60" height="3" rx="1.5" fill="' + tx + '66"/>'
+                + '<rect x="60" y="28" width="100" height="2" rx="1" fill="' + pri + '44"/>'
+                // main body lines
+                + '<rect x="60" y="35" width="65" height="2" rx="1" fill="' + tx + '44"/>'
+                + '<rect x="60" y="40" width="80" height="2" rx="1" fill="' + tx + '33"/>'
+                + '<rect x="60" y="45" width="55" height="2" rx="1" fill="' + tx + '22"/>'
+                + '<rect x="60" y="55" width="90" height="2" rx="1" fill="' + pri + '66"/>'
+                + '<rect x="60" y="61" width="70" height="2" rx="1" fill="' + tx + '33"/>'
+                + '<rect x="60" y="66" width="80" height="2" rx="1" fill="' + tx + '22"/>'
+                + '<rect x="60" y="71" width="50" height="2" rx="1" fill="' + tx + '33"/>'
+                + '</svg>';
+        } else if (ls === 'banner') {
+            svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 120" style="width:100%;height:100%;display:block;">'
+                + '<rect width="170" height="120" fill="' + bg + '"/>'
+                // banner header
+                + '<rect x="0" y="0" width="170" height="40" fill="' + pri + '22"/>'
+                + '<rect x="0" y="37" width="170" height="3" fill="' + pri + '"/>'
+                // name
+                + '<rect x="12" y="8" width="75" height="7" rx="3" fill="' + pri + '"/>'
+                + '<rect x="12" y="18" width="50" height="4" rx="2" fill="' + tx + '88"/>'
+                // photo circle top-right
+                + '<circle cx="148" cy="18" r="14" fill="' + pri + '33" stroke="' + pri + '" stroke-width="1.5"/>'
+                // skill chips
+                + '<rect x="12" y="28" width="22" height="5" rx="3" fill="' + pri + '33" stroke="' + pri + '" stroke-width="0.5"/>'
+                + '<rect x="38" y="28" width="28" height="5" rx="3" fill="' + pri + '33" stroke="' + pri + '" stroke-width="0.5"/>'
+                // body lines
+                + '<rect x="12" y="52" width="50" height="3" rx="1.5" fill="' + pri + '88"/>'
+                + '<rect x="12" y="58" width="146" height="2" rx="1" fill="' + tx + '44"/>'
+                + '<rect x="12" y="63" width="120" height="2" rx="1" fill="' + tx + '33"/>'
+                + '<rect x="12" y="72" width="50" height="3" rx="1.5" fill="' + sec + '88"/>'
+                + '<rect x="12" y="78" width="140" height="2" rx="1" fill="' + tx + '33"/>'
+                + '<rect x="12" y="83" width="100" height="2" rx="1" fill="' + tx + '22"/>'
+                + '</svg>';
+        } else if (ls === 'full-header') {
+            svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 120" style="width:100%;height:100%;display:block;">'
+                + '<rect width="170" height="120" fill="' + bg + '"/>'
+                // full header band
+                + '<rect x="0" y="0" width="170" height="36" fill="' + surf + '"/>'
+                + '<rect x="0" y="33" width="170" height="3" fill="' + pri + '"/>'
+                // photo in header
+                + '<circle cx="20" cy="18" r="11" fill="' + pri + '44" stroke="' + pri + '" stroke-width="1.5"/>'
+                // name
+                + '<rect x="36" y="8" width="70" height="6" rx="2" fill="' + pri + '"/>'
+                + '<rect x="36" y="17" width="45" height="3.5" rx="1.5" fill="' + tx + '66"/>'
+                + '<rect x="36" y="23" width="95" height="2" rx="1" fill="' + tx + '33"/>'
+                // two column body
+                + '<rect x="0" y="39" width="60" height="78" fill="' + surf + '11"/>'
+                + '<rect x="60" y="39" width="1.5" height="78" fill="' + pri + '22"/>'
+                // left col
+                + '<rect x="8" y="46" width="28" height="2.5" rx="1.5" fill="' + pri + '88"/>'
+                + '<rect x="8" y="52" width="44" height="2" rx="1" fill="' + tx + '33"/>'
+                + '<rect x="8" y="57" width="36" height="2" rx="1" fill="' + tx + '22"/>'
+                + '<rect x="8" y="68" width="28" height="2.5" rx="1.5" fill="' + sec + '88"/>'
+                + '<rect x="8" y="74" width="44" height="2" rx="1" fill="' + tx + '33"/>'
+                // right col
+                + '<rect x="68" y="46" width="50" height="2.5" rx="1.5" fill="' + pri + '88"/>'
+                + '<rect x="68" y="52" width="90" height="2" rx="1" fill="' + tx + '44"/>'
+                + '<rect x="68" y="57" width="80" height="2" rx="1" fill="' + tx + '33"/>'
+                + '<rect x="68" y="62" width="60" height="2" rx="1" fill="' + tx + '22"/>'
+                + '<rect x="68" y="72" width="50" height="2.5" rx="1.5" fill="' + sec + '88"/>'
+                + '<rect x="68" y="78" width="85" height="2" rx="1" fill="' + tx + '33"/>'
+                + '</svg>';
+        } else if (ls === 'timeline') {
+            svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 120" style="width:100%;height:100%;display:block;">'
+                + '<rect width="170" height="120" fill="' + bg + '"/>'
+                + '<rect x="0" y="0" width="170" height="30" fill="' + surf + '"/>'
+                + '<rect x="0" y="27" width="170" height="3" fill="' + pri + '"/>'
+                + '<rect x="12" y="7" width="60" height="6" rx="2" fill="' + pri + '"/>'
+                + '<rect x="12" y="16" width="40" height="3" rx="1.5" fill="' + tx + '66"/>'
+                // timeline line
+                + '<line x1="24" y1="38" x2="24" y2="115" stroke="' + pri + '44" stroke-width="2"/>'
+                // dots and content
+                + '<circle cx="24" cy="44" r="4" fill="' + pri + '"/>'
+                + '<rect x="34" y="41" width="60" height="3.5" rx="1.5" fill="' + tx + 'cc"/>'
+                + '<rect x="34" y="47" width="45" height="2.5" rx="1" fill="' + pri + '99"/>'
+                + '<rect x="34" y="52" width="90" height="2" rx="1" fill="' + tx + '33"/>'
+                + '<circle cx="24" cy="65" r="4" fill="' + pri + '"/>'
+                + '<rect x="34" y="62" width="55" height="3.5" rx="1.5" fill="' + tx + 'cc"/>'
+                + '<rect x="34" y="68" width="40" height="2.5" rx="1" fill="' + pri + '99"/>'
+                + '<rect x="34" y="73" width="80" height="2" rx="1" fill="' + tx + '33"/>'
+                + '<circle cx="24" cy="86" r="4" fill="' + sec + '"/>'
+                + '<rect x="34" y="83" width="50" height="3.5" rx="1.5" fill="' + tx + 'cc"/>'
+                + '<rect x="34" y="89" width="38" height="2.5" rx="1" fill="' + sec + '99"/>'
+                + '</svg>';
+        } else if (ls === 'minimal') {
+            svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 120" style="width:100%;height:100%;display:block;">'
+                + '<rect width="170" height="120" fill="' + bg + '"/>'
+                + '<rect x="12" y="12" width="90" height="8" rx="2" fill="' + pri + '"/>'
+                + '<rect x="12" y="23" width="55" height="4" rx="2" fill="' + tx + '88"/>'
+                + '<rect x="12" y="30" width="146" height="1.5" rx="1" fill="' + pri + '66"/>'
+                + '<rect x="12" y="34" width="100" height="2.5" rx="1" fill="' + tx + '44"/>'
+                + '<rect x="12" y="40" width="80" height="2" rx="1" fill="' + tx + '33"/>'
+                // section title minimal
+                + '<rect x="12" y="52" width="40" height="2.5" rx="1" fill="' + pri + 'cc"/>'
+                + '<rect x="12" y="58" width="130" height="2" rx="1" fill="' + tx + '44"/>'
+                + '<rect x="12" y="63" width="110" height="2" rx="1" fill="' + tx + '33"/>'
+                + '<rect x="12" y="68" width="120" height="2" rx="1" fill="' + tx + '22"/>'
+                + '<rect x="12" y="78" width="40" height="2.5" rx="1" fill="' + sec + 'cc"/>'
+                + '<rect x="12" y="84" width="120" height="2" rx="1" fill="' + tx + '33"/>'
+                + '<rect x="12" y="89" width="90" height="2" rx="1" fill="' + tx + '22"/>'
+                + '</svg>';
+        } else if (ls === 'developer') {
+            svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 120" style="width:100%;height:100%;display:block;">'
+                + '<rect width="170" height="120" fill="' + bg + '"/>'
+                + '<rect x="0" y="0" width="170" height="34" fill="' + surf + '"/>'
+                + '<rect x="0" y="31" width="170" height="3" fill="' + pri + '44"/>'
+                // $ name
+                + '<rect x="10" y="6" width="10" height="5" rx="1" fill="' + pri + '44"/>'
+                + '<rect x="22" y="6" width="65" height="8" rx="2" fill="' + pri + '"/>'
+                + '<rect x="10" y="17" width="14" height="3" rx="1" fill="' + tx + '44"/>'
+                + '<rect x="26" y="17" width="50" height="3" rx="1" fill="' + tx + '66"/>'
+                // code lines
+                + '<rect x="10" y="10" width="1.5" height="60" fill="' + pri + '66"/>'
+                + '<rect x="18" y="40" width="30" height="3.5" rx="1" fill="' + pri + '88"/>'
+                + '<rect x="18" y="46" width="130" height="2" rx="1" fill="' + tx + '33"/>'
+                + '<rect x="18" y="51" width="100" height="2" rx="1" fill="' + tx + '22"/>'
+                + '<rect x="18" y="60" width="30" height="3.5" rx="1" fill="' + sec + '88"/>'
+                + '<rect x="18" y="66" width="120" height="2" rx="1" fill="' + tx + '33"/>'
+                + '<rect x="18" y="71" width="90" height="2" rx="1" fill="' + tx + '22"/>'
+                + '</svg>';
+        } else if (ls === 'academic') {
+            svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 120" style="width:100%;height:100%;display:block;">'
+                + '<rect width="170" height="120" fill="' + bg + '"/>'
+                // centred header
+                + '<rect x="40" y="8" width="90" height="8" rx="2" fill="' + tx + 'dd"/>'
+                + '<rect x="60" y="19" width="50" height="4" rx="2" fill="' + pri + '99"/>'
+                + '<rect x="30" y="26" width="110" height="2" rx="1" fill="' + tx + '44"/>'
+                + '<rect x="0" y="30" width="170" height="3" fill="' + pri + '"/>'
+                + '<rect x="50" y="35" width="70" height="1.5" fill="' + pri + '22"/>'
+                // sections
+                + '<rect x="12" y="44" width="50" height="3" rx="1.5" fill="' + pri + 'aa"/>'
+                + '<rect x="12" y="48" width="146" height="1.5" fill="' + pri + '33"/>'
+                + '<rect x="12" y="53" width="130" height="2" rx="1" fill="' + tx + '44"/>'
+                + '<rect x="12" y="58" width="110" height="2" rx="1" fill="' + tx + '33"/>'
+                + '<rect x="12" y="70" width="50" height="3" rx="1.5" fill="' + sec + 'aa"/>'
+                + '<rect x="12" y="74" width="146" height="1.5" fill="' + sec + '33"/>'
+                + '<rect x="12" y="79" width="120" height="2" rx="1" fill="' + tx + '33"/>'
+                + '</svg>';
+        } else {
+            // single / default
+            svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 120" style="width:100%;height:100%;display:block;">'
+                + '<rect width="170" height="120" fill="' + bg + '"/>'
+                + '<rect x="0" y="0" width="170" height="36" fill="' + surf + '"/>'
+                + '<rect x="0" y="33" width="170" height="3" fill="' + pri + '"/>'
+                + '<circle cx="20" cy="18" r="11" fill="' + pri + '33" stroke="' + pri + '" stroke-width="1.5"/>'
+                + '<rect x="36" y="8" width="65" height="7" rx="2" fill="' + pri + '"/>'
+                + '<rect x="36" y="18" width="45" height="3.5" rx="1.5" fill="' + tx + '66"/>'
+                + '<rect x="36" y="24" width="80" height="2" rx="1" fill="' + tx + '33"/>'
+                // body
+                + '<rect x="12" y="44" width="50" height="3" rx="1.5" fill="' + pri + '88"/>'
+                + '<rect x="12" y="48" width="146" height="1.5" fill="' + pri + '33"/>'
+                + '<rect x="12" y="53" width="130" height="2" rx="1" fill="' + tx + '44"/>'
+                + '<rect x="12" y="58" width="110" height="2" rx="1" fill="' + tx + '33"/>'
+                + '<rect x="12" y="63" width="120" height="2" rx="1" fill="' + tx + '22"/>'
+                + '<rect x="12" y="73" width="50" height="3" rx="1.5" fill="' + sec + '88"/>'
+                + '<rect x="12" y="77" width="146" height="1.5" fill="' + sec + '22"/>'
+                + '<rect x="12" y="82" width="120" height="2" rx="1" fill="' + tx + '33"/>'
+                + '<rect x="12" y="87" width="90" height="2" rx="1" fill="' + tx + '22"/>'
+                + '</svg>';
+        }
+        return svg;
+    }
+
+    function renderGrid(filter) {
+        currentFilter = filter || 'all';
+        var html = '';
+        Object.values(allThemes).forEach(function (t) {
+            var fg = getFilterGroup(t);
+            if (currentFilter !== 'all' && fg !== currentFilter) return;
+            var isCurrent = (themeSettings.key === t.key);
+            var ls = t.layoutStyle || 'single';
+            var layoutLabel = ls.replace('-', ' ');
+            html += '<div class="rxe-tpl-card' + (isCurrent ? ' active-tpl' : '') + '" onclick="window.selectTplFromPicker(\'' + esc(t.key) + '\')">'
+                + '<div class="rxe-tpl-thumb">' + renderThumbSvg(t) + '</div>'
+                + '<div class="rxe-tpl-info">'
+                + '<div class="rxe-tpl-name">' + esc(t.name) + '</div>'
+                + '<div class="rxe-tpl-cat">' + esc(t.category || 'general') + '</div>'
+                + (isCurrent ? '<span class="rxe-tpl-badge">&#10003; Active</span>' : '')
+                + '<span class="rxe-tpl-layout-tag">' + esc(layoutLabel) + '</span>'
+                + '</div></div>';
+        });
+        grid.innerHTML = html || '<div style="padding:24px;color:var(--text-secondary);grid-column:1/-1;">No templates found.</div>';
+    }
+
+    document.getElementById('rxe-tpl-filters').addEventListener('click', function (e) {
+        var btn = e.target.closest('.rxe-tpl-filter-btn');
+        if (!btn) return;
+        document.querySelectorAll('.rxe-tpl-filter-btn').forEach(function (b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        renderGrid(btn.dataset.filter);
+    });
+
+    modal.addEventListener('click', function (e) {
+        if (e.target === modal) closeTemplatePicker();
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && modal.classList.contains('open')) closeTemplatePicker();
+    });
+
+    window.openTemplatePicker = function () {
+        renderGrid(currentFilter);
+        modal.classList.add('open');
+    };
+    window.closeTemplatePicker = function () {
+        modal.classList.remove('open');
+    };
+    window.selectTplFromPicker = function (key) {
+        window.selectTheme(key);
+        closeTemplatePicker();
+        schedulePreviewUpdate();
+        showToast('Template changed to "' + (allThemes[key] ? allThemes[key].name : key) + '"', 'success');
+    };
+}());
 
 /* ══════════════════════════════════════════════════════════════
    SECTION ORDER
