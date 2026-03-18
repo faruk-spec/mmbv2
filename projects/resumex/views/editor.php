@@ -1614,6 +1614,7 @@ function renderExperience() {
     if (!resumeData.experience || !resumeData.experience.length) { list.innerHTML = ''; return; }
     list.innerHTML = resumeData.experience.map(function (exp, i) {
         var title = val(exp,'title') || 'New Position';
+        // company is pre-escaped by esc() here; used directly (without another esc()) below in the header
         var company = val(exp,'company') ? ' at ' + esc(val(exp,'company')) : '';
         var bullets = (exp.bullets || []).map(function (b, bi) {
             return '<div class="rxe-bullet-row">' +
@@ -1626,7 +1627,7 @@ function renderExperience() {
         return '<div class="rxe-item-card">' +
             '<div class="rxe-item-head" onclick="toggleItem(this)">' +
                 '<div>' +
-                    '<div class="rxe-item-head-title">' + esc(title) + esc(company) + '</div>' +
+                    '<div class="rxe-item-head-title">' + esc(title) + company + '</div>' +
                     '<div class="rxe-item-head-subtitle">' + esc(val(exp,'start_date')) + (val(exp,'start_date') ? ' – ' + (exp.current ? 'Present' : esc(val(exp,'end_date'))) : '') + '</div>' +
                 '</div>' +
                 '<div class="rxe-item-actions">' +
@@ -1701,6 +1702,14 @@ window.updateExpHead = function (i) {
 };
 window.aiSuggestBullets = function (i) {
     var exp = resumeData.experience[i] || {};
+    var box = document.getElementById('aiBullets' + i);
+    if (!exp.title || !exp.title.trim()) {
+        box.innerHTML = '<div style="font-size:0.8rem;color:var(--text-secondary);padding:8px 0;">Please type a <strong>Job Title</strong> above first, then click AI Bullet Suggestions.</div>';
+        box.classList.add('open');
+        return;
+    }
+    box.innerHTML = '<div style="font-size:0.8rem;color:var(--text-secondary);padding:8px 0;">⏳ Generating suggestions…</div>';
+    box.classList.add('open');
     var fd = new FormData();
     fd.append('_token', csrfToken);
     fd.append('job_title', exp.title || '');
@@ -1708,13 +1717,17 @@ window.aiSuggestBullets = function (i) {
     fetch('/projects/resumex/ai/suggest-bullets', { method: 'POST', body: fd })
     .then(function (r) { return r.json(); })
     .then(function (data) {
-        if (!data.success) return;
-        var box = document.getElementById('aiBullets' + i);
+        if (!data.success) {
+            box.innerHTML = '<div style="font-size:0.8rem;color:var(--red);padding:8px 0;">' + esc(data.message || 'Could not generate suggestions. Please try again.') + '</div>';
+            return;
+        }
         box.innerHTML = '<div style="font-size:0.75rem;font-weight:700;color:var(--text-secondary);margin-bottom:8px;">Click to add a bullet:</div>' +
             data.bullets.map(function (b) {
                 return '<div class="rxe-ai-suggestion-item" onclick="addBulletFromAI(' + i + ',this.textContent)">' + esc(b) + '</div>';
             }).join('');
-        box.classList.add('open');
+    })
+    .catch(function () {
+        box.innerHTML = '<div style="font-size:0.8rem;color:var(--red);padding:8px 0;">Network error. Please check your connection and try again.</div>';
     });
 };
 window.addBulletFromAI = function (i, text) {
