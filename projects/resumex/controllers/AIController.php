@@ -203,16 +203,33 @@ class AIController
     private function buildSummaries(string $jobTitle, int $years, string $skills): array
     {
         $jt  = ucwords($jobTitle);
+        $jl  = strtolower($jobTitle);
         $yrs = $years > 0 ? "{$years}+" : 'several';
-        $sk  = !empty($skills) ? ", with expertise in {$skills}," : '';
-        $yr  = $years > 0 ? " Over {$years} years" : ' Extensive';
+        $sk  = !empty($skills) ? ", specialising in {$skills}," : '';
+        $skb = !empty($skills) ? " with core expertise in {$skills}" : '';
+        $yr  = $years > 0 ? "Over {$years} years" : 'Extensive experience';
+
+        // Role-specific opening sentences for more natural variation
+        $techRoles = ['developer','engineer','programmer','backend','frontend','fullstack','devops','data'];
+        $isTech = false;
+        foreach ($techRoles as $kw) { if (str_contains($jl, $kw)) { $isTech = true; break; } }
+
+        if ($isTech) {
+            return [
+                "{$yr} as a {$jt}{$sk} building scalable, production-grade systems. Driven by a passion for clean code, engineering excellence, and measurable business impact. Proven ability to own features end-to-end, collaborate cross-functionally, and mentor junior engineers in fast-paced agile environments.",
+                "Impact-focused {$jt}{$skb}. {$yr} designing and shipping robust software solutions that serve real users at scale. Comfortable operating across the full stack — from architecture decisions to code reviews — with a track record of reducing tech debt and accelerating delivery cycles.",
+                "Versatile {$jt} with {$yrs} years of experience{$sk} who thrives on solving ambiguous, high-impact problems. Passionate about developer experience, system reliability, and data-driven engineering decisions. Equally comfortable diving deep into technical detail and presenting at the executive level.",
+                "{$yr} as a {$jt}{$skb}, turning complex product requirements into reliable, performant software. Known for taking ownership, fostering engineering best practices, and building collaborative team cultures that consistently ship quality work on time.",
+                "Creative and analytical {$jt} with {$yrs} years of experience{$sk}. Combines strong technical depth with excellent communication skills to bridge the gap between engineering teams and business stakeholders. Committed to continuous learning and raising the bar in everything I ship.",
+            ];
+        }
 
         return [
-            "Results-driven {$jt} with {$yrs} years of proven experience{$sk} delivering high-impact solutions. Passionate about clean architecture and measurable business outcomes, with a track record of leading teams and exceeding targets.",
-            "Innovative {$jt}{$sk} combining {$yrs} years of hands-on expertise with a strategic mindset.{$yr} of experience collaborating cross-functionally to ship products on time and within budget.",
-            "Dynamic {$jt} with {$yrs} years of progressive experience{$sk}. Adept at turning complex challenges into elegant solutions, with a consistent focus on quality, performance, and continuous improvement.",
-            "Accomplished {$jt} bringing {$yrs} years of industry experience{$sk}. Known for building collaborative team environments, mentoring talent, and driving technical roadmaps aligned with business priorities.",
-            "Detail-oriented {$jt} with {$yrs} years of experience{$sk}. Skilled at bridging the gap between technical teams and stakeholders, communicating complex ideas clearly and delivering reliable, scalable solutions.",
+            "Results-driven {$jt} with {$yrs} years of experience{$sk} delivering high-impact outcomes across diverse projects and teams. Skilled at translating complex challenges into practical solutions, with a consistent focus on quality, strategic alignment, and stakeholder value.",
+            "Passionate and adaptable {$jt}{$skb}, bringing {$yrs} years of progressive experience. Recognised for building strong cross-functional relationships, driving data-informed decisions, and consistently exceeding expectations in fast-moving environments.",
+            "Dynamic {$jt} with {$yrs} years of experience{$sk}. Adept at leading initiatives from concept to delivery, with a proven ability to manage competing priorities, mentor colleagues, and communicate clearly at all levels of an organisation.",
+            "{$yr} as a {$jt}{$skb}. Known for a thoughtful, detail-oriented approach that ensures high standards without sacrificing pace. Committed to continuous improvement, team collaboration, and creating lasting positive impact in every role.",
+            "Experienced {$jt} combining {$yrs} years of hands-on expertise{$sk} with strong analytical and interpersonal skills. Comfortable navigating ambiguity, aligning teams around shared goals, and delivering tangible results that move the needle on key business metrics.",
         ];
     }
 

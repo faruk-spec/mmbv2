@@ -192,8 +192,11 @@ class ResumeController
 
         $newId = $id ? $this->resumeModel->duplicate($id, $userId) : 0;
 
-        header('Content-Type: application/json');
-        echo json_encode(['success' => (bool) $newId, 'id' => $newId]);
+        if ($newId) {
+            header("Location: /projects/resumex/edit/{$newId}?duplicated=1");
+        } else {
+            header('Location: /projects/resumex?error=duplicate_failed');
+        }
         exit;
     }
 

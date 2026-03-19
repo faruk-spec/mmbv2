@@ -528,6 +528,23 @@ body .main {
     overflow: hidden;
     text-overflow: ellipsis;
 }
+.rxe-color-dots {
+    display: flex;
+    gap: 5px;
+    padding: 5px 10px 7px;
+    flex-wrap: wrap;
+}
+.rxe-color-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: transform 0.15s, border-color 0.15s;
+    flex-shrink: 0;
+}
+.rxe-color-dot:hover { transform: scale(1.25); }
+.rxe-color-dot.active-dot { border-color: #fff; box-shadow: 0 0 0 2px rgba(255,255,255,0.4); }
 
 /* ── Section order ──────────────────────────────────────────── */
 .rxe-section-order-list {
@@ -830,18 +847,98 @@ body .main {
     .rxe-preview-pane { display: none !important; }
     .rxe-splitter { display: none; }
     .rxe-btn-toggle-preview { display: none !important; }
+    /* Mobile preview overlay mode */
+    .rxe-preview-pane.mobile-open {
+        display: flex !important;
+        position: fixed;
+        inset: 56px 0 0 0;
+        z-index: 200;
+        width: 100% !important;
+        min-width: unset;
+        border-left: none;
+    }
+    .rxe-mobile-preview-toggle {
+        display: flex !important;
+    }
 }
 @media (max-width: 768px) {
     .rxe-nav { width: 160px; }
-    .rxe-form-area { padding: 16px 16px 60px; }
+    .rxe-form-area { padding: 16px 12px 80px; }
     .rxe-row { grid-template-columns: 1fr; }
     .rxe-row.three { grid-template-columns: 1fr; }
-    .rxe-title-input { max-width: 160px; }
+    .rxe-title-input { max-width: 130px; min-width: 90px; }
+    .rxe-save-status { display: none; }
+    .rxe-bar-btn:not(.primary) span.rxe-btn-label { display: none; }
+    .rxe-bar-btn { padding: 6px 8px; gap: 0; }
+    .rxe-bar-btn.primary { padding: 6px 10px; gap: 4px; }
 }
 @media (max-width: 560px) {
     .rxe-nav { display: none; }
-    .rxe-form-area { padding: 14px 14px 60px; }
+    .rxe-mobile-nav-bar { display: flex !important; }
+    .rxe-form-area { padding: 12px 12px 80px; }
+    .rxe-title-input { max-width: 110px; min-width: 80px; font-size: 0.8rem; }
+    .rxe-bar { gap: 6px; padding: 6px 10px; }
 }
+/* Mobile bottom nav bar */
+.rxe-mobile-nav-bar {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: var(--bg-card);
+    border-top: 1px solid var(--border-color);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+.rxe-mobile-nav-bar::-webkit-scrollbar { display: none; }
+.rxe-mobile-nav-inner {
+    display: flex;
+    min-width: max-content;
+    padding: 4px 8px;
+    gap: 2px;
+}
+.rxe-mobile-nav-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.62rem;
+    font-weight: 600;
+    font-family: 'Poppins', sans-serif;
+    cursor: pointer;
+    white-space: nowrap;
+    min-width: 52px;
+    transition: all 0.15s;
+}
+.rxe-mobile-nav-btn.active { color: var(--cyan); background: rgba(0,240,255,0.08); }
+.rxe-mobile-nav-btn:hover { color: var(--cyan); }
+.rxe-mobile-preview-toggle {
+    display: none;
+    position: fixed;
+    bottom: 68px;
+    right: 16px;
+    z-index: 150;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: none;
+    background: linear-gradient(135deg, var(--cyan), var(--purple));
+    color: #06060a;
+    font-size: 1.2rem;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(0,240,255,0.35);
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s;
+}
+.rxe-mobile-preview-toggle:hover { transform: scale(1.1); }
 </style>
 
 <div class="rxe-wrap">
@@ -873,7 +970,7 @@ body .main {
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
             Preview
         </a>
-        <a href="/projects/resumex/download/<?= (int)$resume['id'] ?>" target="_blank" class="rxe-bar-btn" title="Download / Print">
+        <a href="/projects/resumex/download/<?= (int)$resume['id'] ?>?print=1" target="_blank" class="rxe-bar-btn" title="Download / Print">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
             Download
         </a>
@@ -1250,6 +1347,49 @@ body .main {
     </div><!-- /rxe-body -->
 </div><!-- /rxe-wrap -->
 
+<!-- Mobile bottom navigation bar (shown on ≤560px) -->
+<div class="rxe-mobile-nav-bar" id="rxeMobileNavBar">
+    <div class="rxe-mobile-nav-inner">
+        <button type="button" class="rxe-mobile-nav-btn active" data-section="contact" onclick="showSection('contact')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            Contact
+        </button>
+        <button type="button" class="rxe-mobile-nav-btn" data-section="summary" onclick="showSection('summary')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            Summary
+        </button>
+        <button type="button" class="rxe-mobile-nav-btn" data-section="experience" onclick="showSection('experience')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+            Experience
+        </button>
+        <button type="button" class="rxe-mobile-nav-btn" data-section="education" onclick="showSection('education')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"></path><path d="M6 12v5c3 3 9 3 12 0v-5"></path></svg>
+            Education
+        </button>
+        <button type="button" class="rxe-mobile-nav-btn" data-section="skills" onclick="showSection('skills')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+            Skills
+        </button>
+        <button type="button" class="rxe-mobile-nav-btn" data-section="projects" onclick="showSection('projects')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+            Projects
+        </button>
+        <button type="button" class="rxe-mobile-nav-btn" data-section="theme" onclick="showSection('theme')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M19.07 19.07l-1.41-1.41M4.93 19.07l1.41-1.41M12 2v2M12 20v2M2 12h2M20 12h2"></path></svg>
+            Theme
+        </button>
+        <button type="button" class="rxe-mobile-nav-btn" data-section="score" onclick="showSection('score'); scoreResume();">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            Score
+        </button>
+    </div>
+</div>
+
+<!-- Mobile floating preview toggle button -->
+<button type="button" class="rxe-mobile-preview-toggle" id="btnMobilePreview" onclick="toggleMobilePreview()" aria-label="Toggle preview">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+</button>
+
 <!-- Custom prompt modal -->
 <div id="rxe-prompt-modal" class="rxe-modal-overlay" role="dialog" aria-modal="true">
     <div class="rxe-modal-box">
@@ -1369,6 +1509,22 @@ window.togglePreviewPane = function() {
     }
 };
 
+/* Mobile preview overlay toggle */
+var mobilePreviewOpen = false;
+window.toggleMobilePreview = function() {
+    var pane = document.getElementById('rxe-preview-pane');
+    var btn  = document.getElementById('btnMobilePreview');
+    mobilePreviewOpen = !mobilePreviewOpen;
+    if (mobilePreviewOpen) {
+        pane.classList.add('mobile-open');
+        if (btn) btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+        updateLivePreview();
+    } else {
+        pane.classList.remove('mobile-open');
+        if (btn) btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+    }
+};
+
 function schedulePreviewUpdate() {
     if (!previewVisible) return;
     clearTimeout(previewTimer);
@@ -1459,10 +1615,13 @@ function markDirty() {
 window.showSection = function (name) {
     document.querySelectorAll('.rxe-panel').forEach(function (p) { p.classList.remove('active'); });
     document.querySelectorAll('.rxe-nav-btn').forEach(function (b) { b.classList.remove('active'); });
+    document.querySelectorAll('.rxe-mobile-nav-btn').forEach(function (b) { b.classList.remove('active'); });
     var panel = document.getElementById('panel-' + name);
     var btn   = document.querySelector('[data-section="' + name + '"]');
     if (panel) panel.classList.add('active');
     if (btn)   btn.classList.add('active');
+    // Also close mobile preview when navigating form sections
+    if (mobilePreviewOpen) { window.toggleMobilePreview(); }
 };
 
 /* ── Save (AJAX) ────────────────────────────────────────────── */
@@ -2165,22 +2324,52 @@ function renderThemeGrid() {
     var grid = document.getElementById('theme-grid');
     grid.innerHTML = Object.values(allThemes).map(function (t) {
         var active = (themeSettings.key === t.key) ? 'active' : '';
+        var activePrimary = (themeSettings.key === t.key) ? themeSettings.primaryColor : t.primaryColor;
+        // Color variant dots
+        var dots = '';
+        if (t.colorVariants && t.colorVariants.length) {
+            dots = '<div class="rxe-color-dots">' +
+                t.colorVariants.map(function (v, vi) {
+                    var isActiveDot = (themeSettings.key === t.key && themeSettings.primaryColor === v.primary) ? 'active-dot' : '';
+                    return '<div class="rxe-color-dot ' + isActiveDot + '" title="' + esc(v.label) + '" style="background:' + esc(v.primary) + '"' +
+                        ' onclick="event.stopPropagation(); applyColorVariant(\'' + esc(t.key) + '\',' + vi + ')"></div>';
+                }).join('') +
+            '</div>';
+        }
         return '<div class="rxe-theme-card ' + active + '" onclick="selectTheme(\'' + esc(t.key) + '\')">' +
             '<div class="rxe-theme-preview" style="background:' + esc(t.backgroundColor) + '">' +
                 '<div>' +
-                    '<div class="rxe-theme-preview-line" style="background:' + esc(t.primaryColor) + '"></div>' +
+                    '<div class="rxe-theme-preview-line" style="background:' + esc(activePrimary) + '"></div>' +
                     '<div class="rxe-theme-preview-line short" style="background:' + esc(t.secondaryColor) + '; opacity:0.7"></div>' +
                     '<div class="rxe-theme-preview-line" style="background:' + esc(t.textColor) + '; opacity:0.35; width:80%"></div>' +
                     '<div class="rxe-theme-preview-line short" style="background:' + esc(t.textColor) + '; opacity:0.2"></div>' +
                 '</div>' +
             '</div>' +
             '<div class="rxe-theme-name" style="background:' + esc(t.surfaceColor) + '; color:' + esc(t.textColor) + '">' + esc(t.name) + '</div>' +
+            dots +
         '</div>';
     }).join('');
 }
 window.selectTheme = function (key) {
     if (!allThemes[key]) return;
     themeSettings = JSON.parse(JSON.stringify(allThemes[key]));
+    renderThemeGrid();
+    markDirty();
+};
+window.applyColorVariant = function (key, variantIndex) {
+    if (!allThemes[key]) return;
+    var t = allThemes[key];
+    if (!t.colorVariants || !t.colorVariants[variantIndex]) return;
+    var variant = t.colorVariants[variantIndex];
+    // Apply or switch to this theme with the variant colors
+    if (themeSettings.key !== key) {
+        themeSettings = JSON.parse(JSON.stringify(t));
+    }
+    themeSettings.primaryColor   = variant.primary;
+    themeSettings.secondaryColor = variant.secondary;
+    // Update allThemes[key] so the preview dot shows correctly
+    allThemes[key].primaryColor   = variant.primary;
+    allThemes[key].secondaryColor = variant.secondary;
     renderThemeGrid();
     markDirty();
 };

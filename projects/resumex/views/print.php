@@ -97,10 +97,10 @@ function pHasContent(array $d, string $sec): bool {
 }
 
 @media print {
-    @page { size: A4; margin: 12mm; }
-    body { background: white; }
+    @page { size: A4; margin: 0; }
+    body { background: white; margin: 0; padding: 0; }
     .rx-print-toolbar { display: none; }
-    .rx-paper { box-shadow: none; width: 100%; }
+    .rx-paper { box-shadow: none; width: 210mm; min-height: 297mm; margin: 0; page-break-after: always; }
 }
 
 .rx-paper {
@@ -187,7 +187,14 @@ function pHasContent(array $d, string $sec): bool {
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
         Print / Save as PDF
     </button>
+    <span style="font-size:12px;color:#6b7280;">Tip: In the print dialog, set margins to "None" and enable "Background graphics" for best results.</span>
 </div>
+<script>
+// Auto-open print dialog when ?print=1 is in URL
+if (window.location.search.indexOf('print=1') !== -1) {
+    window.addEventListener('load', function() { setTimeout(function() { window.print(); }, 400); });
+}
+</script>
 
 <div class="rx-paper">
 

@@ -782,7 +782,7 @@
                 <div class="rxc-sel-dot" id="rxcSelDot" style="background: #00f0ff;"></div>
                 <div class="rxc-sel-info">
                     <div class="rxc-sel-label">Selected Template</div>
-                    <div class="rxc-sel-name" id="rxcSelName">Midnight Pro</div>
+                    <div class="rxc-sel-name" id="rxcSelName"><?= htmlspecialchars($allThemes[$defaultKey]['name'] ?? 'Ocean Blue', ENT_QUOTES, 'UTF-8') ?></div>
                 </div>
             </div>
             <a href="/projects/resumex" class="rxc-btn-cancel">
