@@ -546,6 +546,40 @@ body .main {
 .rxe-color-dot:hover { transform: scale(1.25); }
 .rxe-color-dot.active-dot { border-color: #fff; box-shadow: 0 0 0 2px rgba(255,255,255,0.4); }
 
+/* ── Colour palette (large swatches in theme panel) ─────────── */
+.rxe-colour-palette {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+.rxe-colour-swatch {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+}
+.rxe-colour-swatch-dot {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+.rxe-colour-swatch:hover .rxe-colour-swatch-dot { transform: scale(1.15); }
+.rxe-colour-swatch.active .rxe-colour-swatch-dot {
+    border-color: var(--cyan);
+    box-shadow: 0 0 0 3px rgba(0,240,255,0.25);
+}
+.rxe-colour-swatch-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
 /* ── Section order ──────────────────────────────────────────── */
 .rxe-section-order-list {
     display: flex;
@@ -847,6 +881,7 @@ body .main {
     .rxe-preview-pane { display: none !important; }
     .rxe-splitter { display: none; }
     .rxe-btn-toggle-preview { display: none !important; }
+    .rxe-desktop-only { display: none !important; }
     /* Mobile preview overlay mode */
     .rxe-preview-pane.mobile-open {
         display: flex !important;
@@ -970,8 +1005,8 @@ body .main {
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
             Preview
         </a>
-        <a href="/projects/resumex/download/<?= (int)$resume['id'] ?>?print=1" target="_blank" class="rxe-bar-btn" title="Download / Print">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+        <a href="/projects/resumex/download/<?= (int)$resume['id'] ?>" target="_blank" class="rxe-bar-btn" title="Download as PDF">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
             Download
         </a>
         <button type="button" class="rxe-bar-btn primary" onclick="saveResume()">
@@ -1275,9 +1310,18 @@ body .main {
             <div id="panel-theme" class="rxe-panel">
                 <div class="rxe-section-heading">
                     <h2>Theme &amp; Style</h2>
-                    <p>Choose a colour theme for your resume.</p>
+                    <p>Select a template and customise its colour.</p>
                 </div>
+
+                <!-- Template selector (only 2) -->
                 <div id="theme-grid" class="rxe-theme-grid"></div>
+
+                <!-- Colour options for the active template -->
+                <div class="rxe-section-heading" style="margin-top: 20px;">
+                    <h2>Colour Options</h2>
+                    <p>Pick an accent colour for your resume.</p>
+                </div>
+                <div id="rxe-colour-palette" class="rxe-colour-palette"></div>
 
                 <div class="rxe-section-heading" style="margin-top: 24px;">
                     <h2>Section Visibility &amp; Order</h2>
@@ -1334,8 +1378,13 @@ body .main {
             <div class="rxe-preview-header">
                 <span>&#128064; Live Preview</span>
                 <div class="rxe-preview-header-btns">
+                    <!-- Mobile: "Edit" close button (visible only in mobile overlay mode) -->
+                    <button type="button" class="rxe-preview-header-btn rxe-mobile-edit-btn" id="btnPreviewClose" onclick="toggleMobilePreview()" style="display:none">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                        Edit
+                    </button>
                     <button type="button" class="rxe-preview-header-btn" onclick="updateLivePreview()">&#8635; Refresh</button>
-                    <a href="/projects/resumex/preview/<?= (int)$resume['id'] ?>" target="_blank" class="rxe-preview-header-btn">&#10138; Full page</a>
+                    <a href="/projects/resumex/preview/<?= (int)$resume['id'] ?>" target="_blank" class="rxe-preview-header-btn rxe-desktop-only">&#10138; Full page</a>
                 </div>
             </div>
             <div class="rxe-preview-iframe-wrap" id="rxe-preview-iframe-wrap">
@@ -1512,16 +1561,23 @@ window.togglePreviewPane = function() {
 /* Mobile preview overlay toggle */
 var mobilePreviewOpen = false;
 window.toggleMobilePreview = function() {
-    var pane = document.getElementById('rxe-preview-pane');
-    var btn  = document.getElementById('btnMobilePreview');
+    var pane      = document.getElementById('rxe-preview-pane');
+    var fabBtn    = document.getElementById('btnMobilePreview');
+    var closeBtn  = document.getElementById('btnPreviewClose');
     mobilePreviewOpen = !mobilePreviewOpen;
     if (mobilePreviewOpen) {
         pane.classList.add('mobile-open');
-        if (btn) btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+        // FAB shows an X icon
+        if (fabBtn) fabBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+        // Show "Edit" button inside preview header
+        if (closeBtn) closeBtn.style.display = '';
         updateLivePreview();
     } else {
         pane.classList.remove('mobile-open');
-        if (btn) btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+        // FAB shows eye icon
+        if (fabBtn) fabBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+        // Hide "Edit" button
+        if (closeBtn) closeBtn.style.display = 'none';
     }
 };
 
@@ -2325,17 +2381,6 @@ function renderThemeGrid() {
     grid.innerHTML = Object.values(allThemes).map(function (t) {
         var active = (themeSettings.key === t.key) ? 'active' : '';
         var activePrimary = (themeSettings.key === t.key) ? themeSettings.primaryColor : t.primaryColor;
-        // Color variant dots
-        var dots = '';
-        if (t.colorVariants && t.colorVariants.length) {
-            dots = '<div class="rxe-color-dots">' +
-                t.colorVariants.map(function (v, vi) {
-                    var isActiveDot = (themeSettings.key === t.key && themeSettings.primaryColor === v.primary) ? 'active-dot' : '';
-                    return '<div class="rxe-color-dot ' + isActiveDot + '" title="' + esc(v.label) + '" style="background:' + esc(v.primary) + '"' +
-                        ' onclick="event.stopPropagation(); applyColorVariant(\'' + esc(t.key) + '\',' + vi + ')"></div>';
-                }).join('') +
-            '</div>';
-        }
         return '<div class="rxe-theme-card ' + active + '" onclick="selectTheme(\'' + esc(t.key) + '\')">' +
             '<div class="rxe-theme-preview" style="background:' + esc(t.backgroundColor) + '">' +
                 '<div>' +
@@ -2346,10 +2391,25 @@ function renderThemeGrid() {
                 '</div>' +
             '</div>' +
             '<div class="rxe-theme-name" style="background:' + esc(t.surfaceColor) + '; color:' + esc(t.textColor) + '">' + esc(t.name) + '</div>' +
-            dots +
+        '</div>';
+    }).join('');
+    renderColourPalette();
+}
+
+function renderColourPalette() {
+    var palette = document.getElementById('rxe-colour-palette');
+    if (!palette) return;
+    var t = allThemes[themeSettings.key];
+    if (!t || !t.colorVariants) { palette.innerHTML = ''; return; }
+    palette.innerHTML = t.colorVariants.map(function (v, vi) {
+        var isActive = (themeSettings.primaryColor === v.primary);
+        return '<div class="rxe-colour-swatch' + (isActive ? ' active' : '') + '" onclick="applyColorVariant(\'' + esc(t.key) + '\',' + vi + ')" title="' + esc(v.label) + '">' +
+            '<div class="rxe-colour-swatch-dot" style="background:' + esc(v.primary) + '"></div>' +
+            '<div class="rxe-colour-swatch-label">' + esc(v.label) + '</div>' +
         '</div>';
     }).join('');
 }
+
 window.selectTheme = function (key) {
     if (!allThemes[key]) return;
     themeSettings = JSON.parse(JSON.stringify(allThemes[key]));
@@ -2367,9 +2427,7 @@ window.applyColorVariant = function (key, variantIndex) {
     }
     themeSettings.primaryColor   = variant.primary;
     themeSettings.secondaryColor = variant.secondary;
-    // Update allThemes[key] so the preview dot shows correctly
-    allThemes[key].primaryColor   = variant.primary;
-    allThemes[key].secondaryColor = variant.secondary;
+    renderColourPalette();
     renderThemeGrid();
     markDirty();
 };

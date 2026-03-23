@@ -96,7 +96,7 @@ function pHasContent(array $d, string $sec): bool {
     }
 }
 
-@media print {
+.rx-print-toolbar.autoprint-hidden { display: none; }
     @page { size: A4; margin: 0; }
     body { background: white; margin: 0; padding: 0; }
     .rx-print-toolbar { display: none; }
@@ -180,7 +180,8 @@ function pHasContent(array $d, string $sec): bool {
 </head>
 <body>
 
-<div class="rx-print-toolbar">
+<?php $isAutoprint = !empty($autoPrint); ?>
+<div class="rx-print-toolbar<?= $isAutoprint ? ' autoprint-hidden' : '' ?>">
     <a href="/projects/resumex/edit/<?= (int)$resume['id'] ?>" class="rx-print-btn rx-print-btn-back">← Edit</a>
     <a href="/projects/resumex" class="rx-print-btn rx-print-btn-back">Dashboard</a>
     <button onclick="window.print()" class="rx-print-btn rx-print-btn-print">
@@ -190,10 +191,13 @@ function pHasContent(array $d, string $sec): bool {
     <span style="font-size:12px;color:#6b7280;">Tip: In the print dialog, set margins to "None" and enable "Background graphics" for best results.</span>
 </div>
 <script>
-// Auto-open print dialog when ?print=1 is in URL
-if (window.location.search.indexOf('print=1') !== -1) {
-    window.addEventListener('load', function() { setTimeout(function() { window.print(); }, 400); });
-}
+// Auto-open print dialog for download flow or ?print=1 param
+(function() {
+    var autoprint = <?= $isAutoprint ? 'true' : 'false' ?>;
+    if (autoprint || window.location.search.indexOf('print=1') !== -1) {
+        window.addEventListener('load', function() { setTimeout(function() { window.print(); }, 300); });
+    }
+}());
 </script>
 
 <div class="rx-paper">

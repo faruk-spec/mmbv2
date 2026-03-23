@@ -44,7 +44,7 @@ class ResumeController
 
         $userId   = Auth::id();
         $title    = trim($_POST['title'] ?? 'My Resume');
-        $template = trim($_POST['template'] ?? 'midnight-pro');
+        $template = trim($_POST['template'] ?? 'ocean-blue');
 
         if (empty($title)) {
             $title = 'My Resume';
@@ -201,28 +201,40 @@ class ResumeController
     }
 
     /**
-     * Download resume as HTML (print-friendly)
+     * Download resume — renders print view and immediately triggers browser print-to-PDF dialog.
      */
     public function download(int $id): void
     {
         $userId = Auth::id();
+
+        if (!$userId) {
+            // Not logged in — redirect to login page
+            header('Location: /login?redirect=' . urlencode('/projects/resumex/download/' . $id));
+            exit;
+        }
+
         $resume = $this->resumeModel->get($id, $userId);
 
         if (!$resume) {
             http_response_code(404);
-            echo '<h2>Resume not found.</h2>';
+            View::render('projects/resumex/download_notfound', [
+                'title' => 'Resume Not Found',
+                'user'  => Auth::user(),
+                'id'    => $id,
+            ]);
             return;
         }
 
-        $resumeData   = json_decode($resume['resume_data']   ?? '{}', true) ?: $this->resumeModel->getDefaultData();
+        $resumeData    = json_decode($resume['resume_data']   ?? '{}', true) ?: $this->resumeModel->getDefaultData();
         $themeSettings = json_decode($resume['theme_settings'] ?? '{}', true) ?: $this->resumeModel->getThemePreset($resume['template']);
 
-        // Render a print-optimised view
+        // Render the print view with auto-print enabled
         View::render('projects/resumex/print', [
             'title'         => htmlspecialchars($resume['title']),
             'resume'        => $resume,
             'resumeData'    => $resumeData,
             'themeSettings' => $themeSettings,
+            'autoPrint'     => true,
         ]);
     }
 }
