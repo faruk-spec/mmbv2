@@ -888,11 +888,14 @@ body .main {
     .rxe-desktop-only { display: none !important; }
     /* Keep bar on one line — no wrapping */
     .rxe-bar { flex-wrap: nowrap; overflow-x: hidden; }
-    /* Mobile preview overlay mode — inset-top matches actual bar height */
+    /* Mobile preview overlay mode — top is set dynamically by JS to match bar height */
     .rxe-preview-pane.mobile-open {
         display: flex !important;
         position: fixed;
-        inset: 44px 0 0 0;
+        top: var(--rxe-bar-h, 44px);
+        left: 0;
+        right: 0;
+        bottom: 0;
         z-index: 200;
         width: 100% !important;
         min-width: unset;
@@ -1580,6 +1583,11 @@ window.toggleMobilePreview = function() {
     var closeBtn = document.getElementById('btnPreviewClose');
     mobilePreviewOpen = !mobilePreviewOpen;
     if (mobilePreviewOpen) {
+        // Measure the real bar height so the overlay starts just below it
+        var bar = document.querySelector('.rxe-bar');
+        var barH = bar ? bar.getBoundingClientRect().height : 44;
+        document.documentElement.style.setProperty('--rxe-bar-h', Math.ceil(barH) + 'px');
+        pane.style.top = Math.ceil(barH) + 'px';
         pane.classList.add('mobile-open');
         // Bar button highlights as active
         if (barBtn) { barBtn.style.borderColor = 'rgba(0,240,255,0.35)'; barBtn.style.color = 'var(--cyan)'; }
@@ -1589,6 +1597,7 @@ window.toggleMobilePreview = function() {
         requestAnimationFrame(function() { updateLivePreview(); });
     } else {
         pane.classList.remove('mobile-open');
+        pane.style.top = '';
         if (barBtn) { barBtn.style.borderColor = ''; barBtn.style.color = ''; }
         if (closeBtn) closeBtn.style.display = 'none';
     }
