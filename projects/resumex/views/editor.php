@@ -1014,10 +1014,10 @@ body .main {
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
             Score
         </button>
-        <a href="/projects/resumex/download/<?= (int)$resume['id'] ?>" target="_blank" class="rxe-bar-btn" title="Download as PDF">
+        <button type="button" id="btnDownload" class="rxe-bar-btn" onclick="downloadResume()" title="Download as PDF">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
             Download
-        </a>
+        </button>
         <button type="button" class="rxe-bar-btn primary" onclick="saveResume()">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
             Save
@@ -1380,10 +1380,10 @@ body .main {
         </div><!-- /rxe-editor-left -->
 
         <!-- Splitter -->
-        <div class="rxe-splitter" id="rxe-splitter"></div>
+        <div class="rxe-splitter" id="rxe-splitter" style="display:none"></div>
 
         <!-- Live preview pane -->
-        <div class="rxe-preview-pane" id="rxe-preview-pane">
+        <div class="rxe-preview-pane hidden" id="rxe-preview-pane">
             <div class="rxe-preview-header">
                 <span>&#128064; Live Preview</span>
                 <div class="rxe-preview-header-btns">
@@ -1546,7 +1546,7 @@ var _modalCallback = null;
 }());
 
 /* ── Live Preview ────────────────────────────────────────────── */
-var previewVisible = true;
+var previewVisible = false;
 var previewTimer = null;
 
 window.togglePreviewPane = function() {
@@ -1788,6 +1788,52 @@ document.addEventListener('keydown', function (e) {
         saveResume();
     }
 });
+
+/* ── Download as PDF ─────────────────────────────────────────── */
+window.downloadResume = function() {
+    var btn = document.getElementById('btnDownload');
+    if (btn) { btn.style.opacity = '0.6'; btn.style.pointerEvents = 'none'; }
+    showToast('Preparing download…', '');
+    // Save latest content first, then fetch the PDF
+    readContactFromDOM();
+    readSummaryFromDOM();
+    var title = (document.getElementById('resumeTitle').value || 'My Resume').trim();
+    fetch('/projects/resumex/edit/' + resumeId, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+        body: JSON.stringify({
+            _token: csrfToken,
+            title: title,
+            template: themeSettings.key || 'ocean-blue',
+            resume_data: resumeData,
+            theme_settings: themeSettings
+        })
+    }).then(function() {
+        return fetch('/projects/resumex/download/' + resumeId);
+    }).then(function(response) {
+        var contentType = response.headers.get('Content-Type') || '';
+        if (contentType.indexOf('application/pdf') !== -1) {
+            return response.blob().then(function(blob) {
+                var url = URL.createObjectURL(blob);
+                var a = document.createElement('a');
+                a.href = url;
+                a.download = title.replace(/[^a-zA-Z0-9_\-]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '') + '.pdf';
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(function() { URL.revokeObjectURL(url); document.body.removeChild(a); }, 1000);
+                showToast('Download started', 'success');
+            });
+        } else {
+            // Server-side PDF not available — open print page in a new window
+            window.open('/projects/resumex/download/' + resumeId, '_blank');
+        }
+    }).catch(function() {
+        showToast('Could not generate PDF. Opening print view…', 'error');
+        window.open('/projects/resumex/download/' + resumeId, '_blank');
+    }).then(function() {
+        if (btn) { btn.style.opacity = ''; btn.style.pointerEvents = ''; }
+    });
+};
 
 /* ══════════════════════════════════════════════════════════════
    CONTACT
@@ -2885,14 +2931,8 @@ renderPublications();
 renderThemeGrid();
 renderSectionOrder();
 
-// Initial live preview
-setTimeout(updateLivePreview, 400);
-
-// Highlight preview toggle button as active
-(function() {
-    var btn = document.getElementById('btnTogglePreview');
-    if (btn) { btn.style.borderColor = 'rgba(0,240,255,0.35)'; btn.style.color = 'var(--cyan)'; }
-}());
+// Initial live preview (only if preview pane is visible by default)
+if (previewVisible) { setTimeout(updateLivePreview, 400); }
 
 }());
 </script>
