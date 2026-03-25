@@ -97,6 +97,7 @@ function pHasContent(array $d, string $sec): bool {
 }
 
 .rx-print-toolbar.autoprint-hidden { display: none; }
+@media print {
     @page { size: A4; margin: 0; }
     body { background: white; margin: 0; padding: 0; }
     .rx-print-toolbar { display: none; }
