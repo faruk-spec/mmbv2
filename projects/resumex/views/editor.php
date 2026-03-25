@@ -1010,14 +1010,18 @@ body .main {
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
             Preview
         </button>
-        <button type="button" class="rxe-bar-btn" onclick="showSection('score'); scoreResume();" title="Analyse your resume">
+        <button type="button" class="rxe-bar-btn" id="btnScore" onclick="toggleScorePanel()" title="Analyse your resume">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
             Score
         </button>
-        <a href="/projects/resumex/download/<?= (int)$resume['id'] ?>" target="_blank" class="rxe-bar-btn" title="Download as PDF">
+        <button type="button" id="btnDownload" class="rxe-bar-btn" onclick="downloadResume()" title="Download as PDF">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
             Download
-        </a>
+        </button>
+        <button type="button" class="rxe-bar-btn rxe-desktop-only" onclick="printResume()" title="Print resume">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+            Print
+        </button>
         <button type="button" class="rxe-bar-btn primary" onclick="saveResume()">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
             Save
@@ -1341,9 +1345,15 @@ body .main {
 
             <!-- Resume Score -->
             <div id="panel-score" class="rxe-panel">
-                <div class="rxe-section-heading">
-                    <h2>Resume Score</h2>
-                    <p>See how complete and strong your resume is across all sections.</p>
+                <div class="rxe-section-heading" style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
+                    <div>
+                        <h2>Resume Score</h2>
+                        <p>See how complete and strong your resume is across all sections.</p>
+                    </div>
+                    <button type="button" class="rxe-bar-btn rxe-desktop-only" onclick="toggleScorePanel()" title="Back to editing" style="flex-shrink:0;margin-top:2px;">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                        Back to editing
+                    </button>
                 </div>
                 <div class="rxe-score-box">
                     <div class="rxe-score-ring-wrap">
@@ -1718,7 +1728,15 @@ function markDirty() {
 }
 
 /* ── Show/hide sections ─────────────────────────────────────── */
+// Track the last non-score section so Score panel can navigate back to it
+var lastSection = (function () {
+    var active = document.querySelector('.rxe-panel.active');
+    if (active && active.id) { return active.id.replace('panel-', '') || 'contact'; }
+    return 'contact';
+}());
+
 window.showSection = function (name) {
+    if (name !== 'score') { lastSection = name; }
     document.querySelectorAll('.rxe-panel').forEach(function (p) { p.classList.remove('active'); });
     document.querySelectorAll('.rxe-nav-btn').forEach(function (b) { b.classList.remove('active'); });
     document.querySelectorAll('.rxe-mobile-nav-btn').forEach(function (b) { b.classList.remove('active'); });
@@ -1726,8 +1744,32 @@ window.showSection = function (name) {
     var btn   = document.querySelector('[data-section="' + name + '"]');
     if (panel) panel.classList.add('active');
     if (btn)   btn.classList.add('active');
+    // Highlight the toolbar Score button when score panel is active
+    var scoreBarBtn = document.getElementById('btnScore');
+    if (scoreBarBtn) {
+        if (name === 'score') {
+            scoreBarBtn.style.color = 'var(--cyan)';
+            scoreBarBtn.style.borderColor = 'rgba(0,240,255,0.35)';
+        } else {
+            scoreBarBtn.style.color = '';
+            scoreBarBtn.style.borderColor = '';
+        }
+    }
     // Also close mobile preview when navigating form sections
     if (mobilePreviewOpen) { window.toggleMobilePreview(); }
+};
+
+/* ── Toggle Score panel (from toolbar or "Back" button) ──────── */
+window.toggleScorePanel = function () {
+    var scorePanel = document.getElementById('panel-score');
+    if (!scorePanel) { return; }
+    var isScore = scorePanel.classList.contains('active');
+    if (isScore) {
+        showSection(lastSection);
+    } else {
+        showSection('score');
+        scoreResume();
+    }
 };
 
 /* ── Save (AJAX) ────────────────────────────────────────────── */
@@ -1788,6 +1830,141 @@ document.addEventListener('keydown', function (e) {
         saveResume();
     }
 });
+
+/* ── Download as PDF ─────────────────────────────────────────── */
+window.downloadResume = function() {
+    var btn = document.getElementById('btnDownload');
+    if (btn) { btn.style.opacity = '0.6'; btn.style.pointerEvents = 'none'; }
+    showToast('Preparing download…', '');
+    // Save latest content first, then try to download
+    readContactFromDOM();
+    readSummaryFromDOM();
+    var title = (document.getElementById('resumeTitle').value || 'My Resume').trim();
+    var safeTitle = title.replace(/[^a-zA-Z0-9_\-]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '') || 'resume';
+
+    function restoreBtn() {
+        if (btn) { btn.style.opacity = ''; btn.style.pointerEvents = ''; }
+    }
+
+    function triggerBlobDownload(blob, filename) {
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(function() { URL.revokeObjectURL(url); document.body.removeChild(a); }, 1000);
+    }
+
+    /* Client-side PDF using html2pdf.js — loaded lazily from CDN */
+    function clientSidePdf() {
+        showToast('Generating PDF…', '');
+
+        function generate() {
+            var iframe = document.createElement('iframe');
+            iframe.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:794px;height:1px;opacity:0;pointer-events:none;border:none;';
+            document.body.appendChild(iframe);
+
+            iframe.onload = function() {
+                // Allow 600ms for fonts and images to settle before rendering
+                setTimeout(function() {
+                    var paper = iframe.contentDocument && (iframe.contentDocument.querySelector('.rp-a4') || iframe.contentDocument.body);
+                    if (!paper) {
+                        document.body.removeChild(iframe);
+                        showToast('Could not find resume content for PDF export.', 'error');
+                        restoreBtn();
+                        return;
+                    }
+                    html2pdf().from(paper).set({
+                        margin: 0,
+                        filename: safeTitle + '.pdf',
+                        image: { type: 'jpeg', quality: 0.98 },
+                        html2canvas: { scale: 2, useCORS: true, logging: false },
+                        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                    }).save().then(function() {
+                        document.body.removeChild(iframe);
+                        showToast('Download started', 'success');
+                        restoreBtn();
+                    }).catch(function() {
+                        document.body.removeChild(iframe);
+                        showToast('PDF generation failed.', 'error');
+                        restoreBtn();
+                    });
+                }, 600);
+            };
+
+            iframe.src = '/projects/resumex/preview/' + resumeId + '?embed=1&pdf=1';
+        }
+
+        if (typeof html2pdf !== 'undefined') {
+            generate();
+        } else {
+            var script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+            script.crossOrigin = 'anonymous';
+            script.onload = generate;
+            script.onerror = function() {
+                showToast('PDF library failed to load.', 'error');
+                restoreBtn();
+            };
+            document.head.appendChild(script);
+        }
+    }
+
+    // Step 1: Save resume data
+    fetch('/projects/resumex/edit/' + resumeId, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+        body: JSON.stringify({
+            _token: csrfToken,
+            title: title,
+            template: themeSettings.key || 'ocean-blue',
+            resume_data: resumeData,
+            theme_settings: themeSettings
+        })
+    }).then(function() {
+        // Step 2: Try server-side PDF (Chromium)
+        return fetch('/projects/resumex/download/' + resumeId);
+    }).then(function(response) {
+        var contentType = response.headers.get('Content-Type') || '';
+        if (contentType.indexOf('application/pdf') !== -1) {
+            // Server generated a real PDF — download it as a blob
+            return response.blob().then(function(blob) {
+                triggerBlobDownload(blob, safeTitle + '.pdf');
+                showToast('Download started', 'success');
+                restoreBtn();
+            });
+        } else {
+            // Server returned HTML (no Chromium) — fall back to client-side PDF
+            clientSidePdf();
+        }
+    }).catch(function() {
+        // Network error — fall back to client-side PDF
+        clientSidePdf();
+    });
+};
+
+/* ── Print Resume ────────────────────────────────────────────── */
+window.printResume = function() {
+    readContactFromDOM();
+    readSummaryFromDOM();
+    var title = (document.getElementById('resumeTitle').value || 'My Resume').trim();
+    var printUrl = '/projects/resumex/preview/' + resumeId + '?autoprint=1';
+    showToast('Saving before print…', '');
+    fetch('/projects/resumex/edit/' + resumeId, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+        body: JSON.stringify({
+            _token: csrfToken,
+            title: title,
+            template: themeSettings.key || 'ocean-blue',
+            resume_data: resumeData,
+            theme_settings: themeSettings
+        })
+    }).finally(function() {
+        window.open(printUrl, '_blank');
+    });
+};
 
 /* ══════════════════════════════════════════════════════════════
    CONTACT

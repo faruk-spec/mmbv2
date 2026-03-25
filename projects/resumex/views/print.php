@@ -91,6 +91,7 @@ function pHasContent(array $d, string $sec): bool {
     .rx-print-btn-print:hover { background: #4338ca; }
     .rx-paper {
         width: 860px;
+        min-height: 297mm;
         margin-bottom: 40px;
         box-shadow: 0 4px 24px rgba(0,0,0,0.15);
     }
