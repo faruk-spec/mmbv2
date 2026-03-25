@@ -248,7 +248,7 @@ $showcaseThemes = array_slice(array_values($allThemes ?? []), 0, 6);
 
     <p class="rxnf-desc">
         This resume doesn't exist, may have been deleted, or you don't have access to it.
-        <?php if (Auth::id()): ?>
+        <?php if (!empty($user)): ?>
         Why not create a brand-new resume right now?
         <?php endif; ?>
     </p>
