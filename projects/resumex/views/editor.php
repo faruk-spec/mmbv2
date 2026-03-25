@@ -802,10 +802,14 @@ body .main {
 .rxe-tpl-cat { font-size: 0.68rem; color: var(--text-secondary); margin-top: 2px; }
 .rxe-tpl-badge { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 0.62rem; font-weight: 600; background: var(--cyan); color: #06060a; margin-top: 4px; }
 .rxe-tpl-layout-tag { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 0.62rem; font-weight: 600; border: 1px solid var(--border-color); color: var(--text-secondary); margin-top: 4px; margin-left: 4px; }
-.rxe-tpl-variants { display: flex; align-items: center; gap: 6px; padding: 0 10px 10px; }
+.rxe-tpl-variants { display: flex; align-items: center; gap: 6px; padding: 0 10px 10px; flex-wrap: wrap; }
 .rxe-tpl-vdot { width: 15px; height: 15px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s; padding: 0; flex-shrink: 0; outline: none; appearance: none; -webkit-appearance: none; }
 .rxe-tpl-vdot:hover { transform: scale(1.3); }
 .rxe-tpl-vdot.rxe-tpl-vdot-active { border-color: rgba(255,255,255,0.9); box-shadow: 0 0 0 2px rgba(255,255,255,0.25), 0 2px 6px rgba(0,0,0,0.4); transform: scale(1.2); }
+@media (max-width: 640px) {
+    #rxe-tpl-grid { grid-template-columns: repeat(auto-fill,minmax(140px,1fr)) !important; padding: 12px !important; gap: 10px !important; }
+    .rxe-tpl-thumb { height: 110px; }
+}
 
 /* ── Better score breakdown ─────────────────────────────────── */
 .rxe-score-ring-wrap {
@@ -1496,7 +1500,7 @@ body .main {
             <button class="rxe-tpl-filter-btn" data-filter="timeline">Timeline</button>
         </div>
         <!-- Grid -->
-        <div id="rxe-tpl-grid" style="overflow-y:auto;padding:20px 24px;display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:14px;flex:1;"></div>
+        <div id="rxe-tpl-grid" style="overflow-y:auto;padding:20px 24px;display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:14px;flex:1;min-height:0;"></div>
     </div>
 </div>
 
@@ -2911,8 +2915,13 @@ window.applyColorVariant = function (key, variantIndex) {
                 variantHtml += '</div>';
             }
 
+            // For the active template, override SVG colours with the currently selected variant
+            var thumbT = isCurrent
+                ? Object.assign({}, t, { primaryColor: themeSettings.primaryColor, secondaryColor: themeSettings.secondaryColor })
+                : t;
+
             html += '<div class="rxe-tpl-card' + (isCurrent ? ' active-tpl' : '') + '" data-tpl-key="' + esc(t.key) + '">'
-                + '<div class="rxe-tpl-thumb">' + renderThumbSvg(t) + '</div>'
+                + '<div class="rxe-tpl-thumb">' + renderThumbSvg(thumbT) + '</div>'
                 + '<div class="rxe-tpl-info">'
                 + '<div class="rxe-tpl-name">' + esc(t.name) + '</div>'
                 + '<div class="rxe-tpl-cat">' + esc(t.category || 'general') + '</div>'
