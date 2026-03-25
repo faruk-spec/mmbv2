@@ -347,6 +347,7 @@
     outline: none;
     appearance: none;
     -webkit-appearance: none;
+    display: block;
 }
 .rxc-vdot:hover {
     transform: scale(1.3);
