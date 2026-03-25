@@ -1380,10 +1380,10 @@ body .main {
         </div><!-- /rxe-editor-left -->
 
         <!-- Splitter -->
-        <div class="rxe-splitter" id="rxe-splitter" style="display:none"></div>
+        <div class="rxe-splitter" id="rxe-splitter"></div>
 
         <!-- Live preview pane -->
-        <div class="rxe-preview-pane hidden" id="rxe-preview-pane">
+        <div class="rxe-preview-pane" id="rxe-preview-pane">
             <div class="rxe-preview-header">
                 <span>&#128064; Live Preview</span>
                 <div class="rxe-preview-header-btns">
@@ -1546,7 +1546,7 @@ var _modalCallback = null;
 }());
 
 /* ── Live Preview ────────────────────────────────────────────── */
-var previewVisible = false;
+var previewVisible = true;
 var previewTimer = null;
 
 window.togglePreviewPane = function() {
@@ -1794,10 +1794,82 @@ window.downloadResume = function() {
     var btn = document.getElementById('btnDownload');
     if (btn) { btn.style.opacity = '0.6'; btn.style.pointerEvents = 'none'; }
     showToast('Preparing download…', '');
-    // Save latest content first, then fetch the PDF
+    // Save latest content first, then try to download
     readContactFromDOM();
     readSummaryFromDOM();
     var title = (document.getElementById('resumeTitle').value || 'My Resume').trim();
+    var safeTitle = title.replace(/[^a-zA-Z0-9_\-]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '') || 'resume';
+
+    function restoreBtn() {
+        if (btn) { btn.style.opacity = ''; btn.style.pointerEvents = ''; }
+    }
+
+    function triggerBlobDownload(blob, filename) {
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(function() { URL.revokeObjectURL(url); document.body.removeChild(a); }, 1000);
+    }
+
+    /* Client-side PDF using html2pdf.js — loaded lazily from CDN */
+    function clientSidePdf() {
+        showToast('Generating PDF…', '');
+
+        function generate() {
+            var iframe = document.createElement('iframe');
+            iframe.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:794px;height:1px;opacity:0;pointer-events:none;border:none;';
+            document.body.appendChild(iframe);
+
+            iframe.onload = function() {
+                // Allow 600ms for fonts and images to settle before rendering
+                setTimeout(function() {
+                    var paper = iframe.contentDocument && (iframe.contentDocument.querySelector('.rp-a4') || iframe.contentDocument.body);
+                    if (!paper) {
+                        document.body.removeChild(iframe);
+                        showToast('Could not find resume content for PDF export.', 'error');
+                        restoreBtn();
+                        return;
+                    }
+                    html2pdf().from(paper).set({
+                        margin: 0,
+                        filename: safeTitle + '.pdf',
+                        image: { type: 'jpeg', quality: 0.98 },
+                        html2canvas: { scale: 2, useCORS: true, logging: false },
+                        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                    }).save().then(function() {
+                        document.body.removeChild(iframe);
+                        showToast('Download started', 'success');
+                        restoreBtn();
+                    }).catch(function() {
+                        document.body.removeChild(iframe);
+                        showToast('PDF generation failed.', 'error');
+                        restoreBtn();
+                    });
+                }, 600);
+            };
+
+            iframe.src = '/projects/resumex/preview/' + resumeId + '?embed=1';
+        }
+
+        if (typeof html2pdf !== 'undefined') {
+            generate();
+        } else {
+            var script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+            script.crossOrigin = 'anonymous';
+            script.onload = generate;
+            script.onerror = function() {
+                showToast('PDF library failed to load.', 'error');
+                restoreBtn();
+            };
+            document.head.appendChild(script);
+        }
+    }
+
+    // Step 1: Save resume data
     fetch('/projects/resumex/edit/' + resumeId, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
@@ -1809,29 +1881,24 @@ window.downloadResume = function() {
             theme_settings: themeSettings
         })
     }).then(function() {
+        // Step 2: Try server-side PDF (Chromium)
         return fetch('/projects/resumex/download/' + resumeId);
     }).then(function(response) {
         var contentType = response.headers.get('Content-Type') || '';
         if (contentType.indexOf('application/pdf') !== -1) {
+            // Server generated a real PDF — download it as a blob
             return response.blob().then(function(blob) {
-                var url = URL.createObjectURL(blob);
-                var a = document.createElement('a');
-                a.href = url;
-                a.download = title.replace(/[^a-zA-Z0-9_\-]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '') + '.pdf';
-                document.body.appendChild(a);
-                a.click();
-                setTimeout(function() { URL.revokeObjectURL(url); document.body.removeChild(a); }, 1000);
+                triggerBlobDownload(blob, safeTitle + '.pdf');
                 showToast('Download started', 'success');
+                restoreBtn();
             });
         } else {
-            // Server-side PDF not available — open print page in a new window
-            window.open('/projects/resumex/download/' + resumeId, '_blank');
+            // Server returned HTML (no Chromium) — fall back to client-side PDF
+            clientSidePdf();
         }
     }).catch(function() {
-        showToast('Could not generate PDF. Opening print view…', 'error');
-        window.open('/projects/resumex/download/' + resumeId, '_blank');
-    }).then(function() {
-        if (btn) { btn.style.opacity = ''; btn.style.pointerEvents = ''; }
+        // Network error — fall back to client-side PDF
+        clientSidePdf();
     });
 };
 
@@ -2931,8 +2998,14 @@ renderPublications();
 renderThemeGrid();
 renderSectionOrder();
 
-// Initial live preview (only if preview pane is visible by default)
-if (previewVisible) { setTimeout(updateLivePreview, 400); }
+// Initial live preview
+setTimeout(updateLivePreview, 400);
+
+// Highlight preview toggle button as active
+(function() {
+    var btn = document.getElementById('btnTogglePreview');
+    if (btn) { btn.style.borderColor = 'rgba(0,240,255,0.35)'; btn.style.color = 'var(--cyan)'; }
+}());
 
 }());
 </script>
