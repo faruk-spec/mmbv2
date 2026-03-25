@@ -16,6 +16,7 @@ body .main {
     min-height: 0;
     overflow: hidden;
     width: 100%;
+    position: relative;
 }
 
 /* ── Top bar ────────────────────────────────────────────────── */
@@ -888,10 +889,10 @@ body .main {
     .rxe-desktop-only { display: none !important; }
     /* Keep bar on one line — no wrapping */
     .rxe-bar { flex-wrap: nowrap; overflow-x: hidden; }
-    /* Mobile preview overlay mode — top is set dynamically by JS to match bar height */
+    /* Mobile preview overlay mode — positioned within .rxe-wrap (same div), top is set dynamically to the bar height */
     .rxe-preview-pane.mobile-open {
         display: flex !important;
-        position: fixed;
+        position: absolute;
         top: var(--rxe-bar-h, 44px);
         left: 0;
         right: 0;
@@ -1583,12 +1584,12 @@ window.toggleMobilePreview = function() {
     var closeBtn = document.getElementById('btnPreviewClose');
     mobilePreviewOpen = !mobilePreviewOpen;
     if (mobilePreviewOpen) {
-        // Use the bar's bottom edge in viewport coordinates so the overlay
-        // starts just below it, even when a global sticky navbar sits above the bar.
+        // Measure the bar's own height within .rxe-wrap (absolute positioning, so top
+        // is relative to the container — not the viewport — and no global navbar offset needed).
         var bar = document.querySelector('.rxe-bar');
-        var barBottom = bar ? Math.ceil(bar.getBoundingClientRect().bottom) : 44;
-        document.documentElement.style.setProperty('--rxe-bar-h', barBottom + 'px');
-        pane.style.top = barBottom + 'px';
+        var barH = bar ? Math.ceil(bar.getBoundingClientRect().height) : 44;
+        document.documentElement.style.setProperty('--rxe-bar-h', barH + 'px');
+        pane.style.top = barH + 'px';
         pane.classList.add('mobile-open');
         // Bar button highlights as active
         if (barBtn) { barBtn.style.borderColor = 'rgba(0,240,255,0.35)'; barBtn.style.color = 'var(--cyan)'; }
