@@ -781,11 +781,12 @@ body .main {
 .rxe-modal-btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
 
 /* ── Template picker modal ───────────────────────────────────── */
-#rxe-tpl-modal { padding: 40px 20px; }
+#rxe-tpl-modal { padding: 0; }
 .rxe-tpl-filter-btn {
     padding: 5px 14px; border-radius: 20px; border: 1px solid var(--border-color);
     background: transparent; color: var(--text-secondary); font-size: 0.75rem;
     font-family: 'Poppins', sans-serif; cursor: pointer; transition: all 0.18s; font-weight: 500;
+    flex-shrink: 0;
 }
 .rxe-tpl-filter-btn:hover { border-color: rgba(0,240,255,0.4); color: var(--cyan); }
 .rxe-tpl-filter-btn.active { background: var(--cyan); border-color: var(--cyan); color: #06060a; font-weight: 700; }
@@ -806,9 +807,34 @@ body .main {
 .rxe-tpl-vdot { width: 15px; height: 15px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s; padding: 0; flex-shrink: 0; outline: none; appearance: none; -webkit-appearance: none; }
 .rxe-tpl-vdot:hover { transform: scale(1.3); }
 .rxe-tpl-vdot.rxe-tpl-vdot-active { border-color: rgba(255,255,255,0.9); box-shadow: 0 0 0 2px rgba(255,255,255,0.25), 0 2px 6px rgba(0,0,0,0.4); transform: scale(1.2); }
+/* ── Template picker: mobile bottom-sheet ────────────────────── */
 @media (max-width: 640px) {
-    #rxe-tpl-grid { grid-template-columns: repeat(auto-fill,minmax(140px,1fr)) !important; padding: 12px !important; gap: 10px !important; }
+    /* Slide up from bottom as a sheet */
+    #rxe-tpl-modal { align-items: flex-end !important; }
+    /* Inner sheet: full width, rounded top corners only, near-full height */
+    #rxe-tpl-inner {
+        border-radius: 16px 16px 0 0 !important;
+        max-height: 92svh !important;
+        max-height: 92dvh !important;
+        margin: 0 !important;
+        width: 100% !important;
+    }
+    /* Filter tabs: scroll horizontally instead of wrapping (saves vertical space) */
+    #rxe-tpl-filters {
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+        padding: 10px 14px !important;
+        gap: 6px !important;
+        scrollbar-width: none;
+    }
+    #rxe-tpl-filters::-webkit-scrollbar { display: none; }
+    /* Grid: 2 columns on small phones, tighter padding */
+    #rxe-tpl-grid { grid-template-columns: repeat(auto-fill,minmax(140px,1fr)) !important; padding: 12px 14px !important; gap: 10px !important; }
     .rxe-tpl-thumb { height: 110px; }
+    /* Larger touch targets for variant dots */
+    .rxe-tpl-vdot { width: 18px !important; height: 18px !important; }
+    .rxe-tpl-variants { gap: 8px; padding: 0 12px 12px; }
 }
 
 /* ── Better score breakdown ─────────────────────────────────── */
@@ -1480,7 +1506,7 @@ body .main {
 
 <!-- Template Picker Modal -->
 <div id="rxe-tpl-modal" class="rxe-modal-overlay" role="dialog" aria-modal="true" style="align-items:flex-start;padding:0;">
-    <div style="background:var(--bg-card);width:100%;max-width:980px;margin:auto;border-radius:14px;overflow:hidden;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,0.6);">
+    <div id="rxe-tpl-inner" style="background:var(--bg-card);width:100%;max-width:980px;margin:auto;border-radius:14px;overflow:hidden;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,0.6);">
         <!-- Header -->
         <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:1px solid var(--border-color);flex-shrink:0;">
             <div>
