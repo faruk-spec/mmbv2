@@ -804,7 +804,7 @@ body .main {
 .rxe-tpl-badge { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 0.62rem; font-weight: 600; background: var(--cyan); color: #06060a; margin-top: 4px; }
 .rxe-tpl-layout-tag { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 0.62rem; font-weight: 600; border: 1px solid var(--border-color); color: var(--text-secondary); margin-top: 4px; margin-left: 4px; }
 .rxe-tpl-variants { display: flex; align-items: center; gap: 6px; padding: 0 10px 10px; flex-wrap: wrap; }
-.rxe-tpl-vdot { width: 15px; height: 15px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s; padding: 0; flex-shrink: 0; outline: none; appearance: none; -webkit-appearance: none; }
+.rxe-tpl-vdot { width: 15px; height: 15px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s; padding: 0; flex-shrink: 0; outline: none; appearance: none; -webkit-appearance: none; display: block; }
 .rxe-tpl-vdot:hover { transform: scale(1.3); }
 .rxe-tpl-vdot.rxe-tpl-vdot-active { border-color: rgba(255,255,255,0.9); box-shadow: 0 0 0 2px rgba(255,255,255,0.25), 0 2px 6px rgba(0,0,0,0.4); transform: scale(1.2); }
 /* ── Template picker: mobile bottom-sheet ────────────────────── */
@@ -814,6 +814,7 @@ body .main {
     /* Inner sheet: full width, rounded top corners only, near-full height */
     #rxe-tpl-inner {
         border-radius: 16px 16px 0 0 !important;
+        max-height: 92vh !important;
         max-height: 92svh !important;
         max-height: 92dvh !important;
         margin: 0 !important;
@@ -829,8 +830,8 @@ body .main {
         scrollbar-width: none;
     }
     #rxe-tpl-filters::-webkit-scrollbar { display: none; }
-    /* Grid: 2 columns on small phones, tighter padding */
-    #rxe-tpl-grid { grid-template-columns: repeat(auto-fill,minmax(140px,1fr)) !important; padding: 12px 14px !important; gap: 10px !important; }
+    /* Grid: 2 columns on small phones, tighter padding, touch scroll */
+    #rxe-tpl-grid { grid-template-columns: repeat(auto-fill,minmax(140px,1fr)) !important; padding: 12px 14px !important; gap: 10px !important; -webkit-overflow-scrolling: touch; }
     .rxe-tpl-thumb { height: 110px; }
     /* Larger touch targets for variant dots */
     .rxe-tpl-vdot { width: 18px !important; height: 18px !important; }
@@ -2730,6 +2731,14 @@ window.applyColorVariant = function (key, variantIndex) {
         var sec  = t.secondaryColor  || '#9945ff';
         var tx   = t.textColor       || '#e0e6ff';
         var ls   = t.layoutStyle     || 'single';
+
+        // Normalize to 6-char hex so appending 2-char opacity suffixes (#33, #88 etc.) stays valid
+        function stripAlpha(c) { return (c && c[0] === '#' && c.length > 7) ? c.slice(0, 7) : c; }
+        pri  = stripAlpha(pri);
+        sec  = stripAlpha(sec);
+        bg   = stripAlpha(bg);
+        surf = stripAlpha(surf);
+        tx   = stripAlpha(tx);
 
         var svg = '';
         if (ls === 'sidebar-left' || ls === 'sidebar-dark') {
