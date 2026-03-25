@@ -328,6 +328,35 @@
 .rxc-cat-bold       { background: rgba(220,38,38,0.1);   color: #f87171; border: 1px solid rgba(220,38,38,0.2); }
 .rxc-cat-other      { background: rgba(107,114,128,0.12); color: #9ca3af; border: 1px solid rgba(107,114,128,0.2); }
 
+/* ── Colour variant dots ──────────────────────────────────────── */
+.rxc-variants {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 0 14px 12px;
+}
+.rxc-vdot {
+    width: 17px;
+    height: 17px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+    padding: 0;
+    flex-shrink: 0;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+}
+.rxc-vdot:hover {
+    transform: scale(1.3);
+}
+.rxc-vdot.rxc-vdot-active {
+    border-color: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.25), 0 2px 8px rgba(0, 0, 0, 0.4);
+    transform: scale(1.2);
+}
+
 /* ── No results ───────────────────────────────────────────────── */
 .rxc-empty {
     display: none;
@@ -500,6 +529,8 @@
     <!-- Form -->
     <form method="POST" action="/projects/resumex/create" id="rxcForm" novalidate>
         <input type="hidden" name="_token" value="<?= htmlspecialchars(\Core\Security::generateCsrfToken()) ?>">
+        <input type="hidden" name="color_primary" id="rxcColorPrimary" value="">
+        <input type="hidden" name="color_secondary" id="rxcColorSecondary" value="">
 
         <!-- Resume name -->
         <div class="rxc-name-row">
@@ -578,6 +609,7 @@
                 data-filter-group="<?= $filterGroup ?>"
                 data-key="<?= htmlspecialchars($themeKey) ?>"
                 data-primary="<?= $pri ?>"
+                data-secondary="<?= $sec ?>"
                 data-name="<?= htmlspecialchars($theme['name']) ?>"
             >
                 <input
@@ -764,6 +796,21 @@
                     <?php $lsLabel = str_replace('-', ' ', $theme['layoutStyle'] ?? 'single'); ?>
                     <span style="display:inline-block;padding:1px 7px;border-radius:10px;font-size:0.6rem;font-weight:600;border:1px solid var(--border-color);color:var(--text-secondary);margin-left:3px;"><?= htmlspecialchars(ucfirst($lsLabel)) ?></span>
                 </div>
+
+                <?php if (!empty($theme['colorVariants'])): ?>
+                <!-- Colour variant circles -->
+                <div class="rxc-variants">
+                    <?php foreach ($theme['colorVariants'] as $vi => $variant): ?>
+                    <button type="button"
+                            class="rxc-vdot<?= $vi === 0 ? ' rxc-vdot-active' : '' ?>"
+                            data-pri="<?= htmlspecialchars($variant['primary']) ?>"
+                            data-sec="<?= htmlspecialchars($variant['secondary']) ?>"
+                            title="<?= htmlspecialchars($variant['label']) ?>"
+                            style="background: linear-gradient(135deg, <?= htmlspecialchars($variant['primary']) ?>, <?= htmlspecialchars($variant['secondary']) ?>);"
+                    ></button>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
             </label>
             <?php endforeach; ?>
 
@@ -815,6 +862,8 @@
     const countEl   = document.getElementById('rxcVisibleCount');
     const selDot    = document.getElementById('rxcSelDot');
     const selName   = document.getElementById('rxcSelName');
+    const colorPrimaryInput   = document.getElementById('rxcColorPrimary');
+    const colorSecondaryInput = document.getElementById('rxcColorSecondary');
 
     let activeFilter = 'all';
 
@@ -852,6 +901,10 @@
         selDot.style.background = card.dataset.primary;
         selName.textContent = card.dataset.name;
 
+        // Sync hidden colour inputs
+        colorPrimaryInput.value   = card.dataset.primary   || '';
+        colorSecondaryInput.value = card.dataset.secondary || '';
+
         updateSubmit();
     }
 
@@ -866,6 +919,54 @@
         card.setAttribute('tabindex', '0');
         card.setAttribute('role', 'radio');
         card.setAttribute('aria-checked', card.classList.contains('selected') ? 'true' : 'false');
+    });
+
+    // ── Colour variant dot selection ───────────────────────────
+    function escapeRxcRe(s) {
+        return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    // Build a regex that matches a 6-digit hex colour followed by an optional
+    // 2-digit opacity suffix, ensuring the match is not mid-way through a longer
+    // hex value (lookahead asserts next char is non-hex or end-of-string).
+    function makeColorRe(color) {
+        return new RegExp(
+            escapeRxcRe(color) + '([0-9a-fA-F]{2})?(?=[^0-9a-fA-F]|$)',
+            'gi'
+        );
+    }
+
+    cards.forEach(function (card) {
+        var dots = Array.from(card.querySelectorAll('.rxc-vdot'));
+        dots.forEach(function (dot) {
+            dot.addEventListener('click', function (e) {
+                e.stopPropagation(); // don't bubble to card click handler
+                var newPri = this.dataset.pri;
+                var newSec = this.dataset.sec;
+                var oldPri = card.dataset.primary;
+                var oldSec = card.dataset.secondary;
+
+                // Highlight active dot
+                dots.forEach(function (d) { d.classList.remove('rxc-vdot-active'); });
+                this.classList.add('rxc-vdot-active');
+
+                // Re-colour the SVG preview, preserving any 2-char opacity suffix
+                if (newPri !== oldPri || newSec !== oldSec) {
+                    var preview = card.querySelector('.rxc-preview');
+                    if (preview) {
+                        var html = preview.innerHTML;
+                        html = html.replace(makeColorRe(oldPri), function (m, alpha) { return newPri + (alpha || ''); });
+                        html = html.replace(makeColorRe(oldSec), function (m, alpha) { return newSec + (alpha || ''); });
+                        preview.innerHTML = html;
+                    }
+                    card.dataset.primary   = newPri;
+                    card.dataset.secondary = newSec;
+                }
+
+                // Selecting this card also applies the colour override
+                selectCard(card);
+            });
+        });
     });
 
     // ── Submit state ───────────────────────────────────────────

@@ -50,7 +50,18 @@ class ResumeController
             $title = 'My Resume';
         }
 
-        $id = $this->resumeModel->create($userId, $title, $template);
+        // Collect optional colour-variant overrides from the picker
+        $colorOverride = [];
+        $rawPri = trim($_POST['color_primary'] ?? '');
+        $rawSec = trim($_POST['color_secondary'] ?? '');
+        if (preg_match('/^#[0-9a-fA-F]{6}$/', $rawPri)) {
+            $colorOverride['primaryColor'] = $rawPri;
+        }
+        if (preg_match('/^#[0-9a-fA-F]{6}$/', $rawSec)) {
+            $colorOverride['secondaryColor'] = $rawSec;
+        }
+
+        $id = $this->resumeModel->create($userId, $title, $template, $colorOverride);
 
         if ($id) {
             header("Location: /projects/resumex/edit/{$id}?new=1");
