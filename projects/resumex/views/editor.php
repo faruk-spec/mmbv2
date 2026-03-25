@@ -1583,11 +1583,12 @@ window.toggleMobilePreview = function() {
     var closeBtn = document.getElementById('btnPreviewClose');
     mobilePreviewOpen = !mobilePreviewOpen;
     if (mobilePreviewOpen) {
-        // Measure the real bar height so the overlay starts just below it
+        // Use the bar's bottom edge in viewport coordinates so the overlay
+        // starts just below it, even when a global sticky navbar sits above the bar.
         var bar = document.querySelector('.rxe-bar');
-        var barH = bar ? bar.getBoundingClientRect().height : 44;
-        document.documentElement.style.setProperty('--rxe-bar-h', Math.ceil(barH) + 'px');
-        pane.style.top = Math.ceil(barH) + 'px';
+        var barBottom = bar ? Math.ceil(bar.getBoundingClientRect().bottom) : 44;
+        document.documentElement.style.setProperty('--rxe-bar-h', barBottom + 'px');
+        pane.style.top = barBottom + 'px';
         pane.classList.add('mobile-open');
         // Bar button highlights as active
         if (barBtn) { barBtn.style.borderColor = 'rgba(0,240,255,0.35)'; barBtn.style.color = 'var(--cyan)'; }
