@@ -201,7 +201,9 @@ class ResumeController
     }
 
     /**
-     * Download resume — renders print view and immediately triggers browser print-to-PDF dialog.
+     * Download resume — generates and streams a PDF file directly to the browser.
+     * Uses Chromium headless for server-side PDF generation.
+     * Falls back to the browser print dialog if Chromium is unavailable.
      */
     public function download(int $id): void
     {
@@ -228,7 +230,27 @@ class ResumeController
         $resumeData    = json_decode($resume['resume_data']   ?? '{}', true) ?: $this->resumeModel->getDefaultData();
         $themeSettings = json_decode($resume['theme_settings'] ?? '{}', true) ?: $this->resumeModel->getThemePreset($resume['template']);
 
-        // Render the print view with auto-print enabled
+        // Try server-side PDF generation with Chromium headless
+        $chromium = $this->findChromiumBinary();
+        if ($chromium !== null) {
+            $html = $this->renderPrintHtml($resume, $resumeData, $themeSettings);
+            $pdf  = $this->generatePdfWithChromium($chromium, $html);
+
+            if ($pdf !== null) {
+                $filename = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $resume['title'] ?: 'resume');
+                // Encode filename per RFC 6266 to prevent header injection
+                $safeFilename = rawurlencode($filename) . '.pdf';
+                header('Content-Type: application/pdf');
+                header('Content-Disposition: attachment; filename="' . $filename . '.pdf"; filename*=UTF-8\'\'' . $safeFilename);
+                header('Content-Length: ' . strlen($pdf));
+                header('Cache-Control: private, max-age=0, must-revalidate');
+                header('Pragma: private');
+                echo $pdf;
+                exit;
+            }
+        }
+
+        // Fallback: render the print view with auto-print dialog
         View::render('projects/resumex/print', [
             'title'         => htmlspecialchars($resume['title']),
             'resume'        => $resume,
@@ -236,5 +258,94 @@ class ResumeController
             'themeSettings' => $themeSettings,
             'autoPrint'     => true,
         ]);
+    }
+
+    /**
+     * Find an available Chromium or Google Chrome binary on the system.
+     */
+    private function findChromiumBinary(): ?string
+    {
+        $candidates = [
+            '/usr/bin/chromium',
+            '/usr/bin/chromium-browser',
+            '/usr/bin/google-chrome',
+            '/usr/bin/google-chrome-stable',
+        ];
+
+        foreach ($candidates as $bin) {
+            if (is_executable($bin)) {
+                return $bin;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Render the print view to an HTML string for PDF generation.
+     */
+    private function renderPrintHtml(array $resume, array $resumeData, array $themeSettings): string
+    {
+        $autoPrint = false;
+        ob_start();
+        extract([
+            'resume'        => $resume,
+            'resumeData'    => $resumeData,
+            'themeSettings' => $themeSettings,
+            'autoPrint'     => $autoPrint,
+        ]);
+        include dirname(__DIR__) . '/views/print.php';
+        $html = ob_get_clean() ?: '';
+
+        // Remove the Google Fonts @import since file:// rendering cannot load external resources.
+        // Chromium will fall back to the system font (Arial) specified as the CSS fallback.
+        $html = preg_replace('/@import\s+url\([^)]*fonts\.googleapis\.com[^)]*\)\s*;/', '', $html);
+
+        return $html;
+    }
+
+    /**
+     * Use Chromium headless to convert HTML to a PDF byte string.
+     * Returns null on failure so the caller can fall back gracefully.
+     */
+    private function generatePdfWithChromium(string $chromium, string $html): ?string
+    {
+        $tmpHtml = tempnam(sys_get_temp_dir(), 'resumex_') . '.html';
+        $tmpPdf  = tempnam(sys_get_temp_dir(), 'resumex_') . '.pdf';
+
+        try {
+            if (file_put_contents($tmpHtml, $html) === false) {
+                return null;
+            }
+
+            // --no-sandbox is required when running as root (e.g. in Docker/container environments).
+            $noSandbox = (function_exists('posix_getuid') && posix_getuid() === 0) ? ' --no-sandbox' : '';
+
+            $cmd = escapeshellarg($chromium)
+                . ' --headless=new'
+                . ' --disable-gpu'
+                . $noSandbox
+                . ' --disable-dev-shm-usage'
+                . ' --run-all-compositor-stages-before-draw'
+                . ' --print-to-pdf=' . escapeshellarg($tmpPdf)
+                . ' --print-to-pdf-no-header'
+                . ' ' . escapeshellarg('file://' . $tmpHtml)
+                . ' 2>/dev/null';
+
+            exec($cmd, $output, $returnCode);
+
+            if ($returnCode === 0 && file_exists($tmpPdf) && filesize($tmpPdf) > 0) {
+                return file_get_contents($tmpPdf) ?: null;
+            }
+        } finally {
+            if (file_exists($tmpHtml)) {
+                @unlink($tmpHtml);
+            }
+            if (file_exists($tmpPdf)) {
+                @unlink($tmpPdf);
+            }
+        }
+
+        return null;
     }
 }
