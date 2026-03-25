@@ -802,6 +802,10 @@ body .main {
 .rxe-tpl-cat { font-size: 0.68rem; color: var(--text-secondary); margin-top: 2px; }
 .rxe-tpl-badge { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 0.62rem; font-weight: 600; background: var(--cyan); color: #06060a; margin-top: 4px; }
 .rxe-tpl-layout-tag { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 0.62rem; font-weight: 600; border: 1px solid var(--border-color); color: var(--text-secondary); margin-top: 4px; margin-left: 4px; }
+.rxe-tpl-variants { display: flex; align-items: center; gap: 6px; padding: 0 10px 10px; }
+.rxe-tpl-vdot { width: 15px; height: 15px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s; padding: 0; flex-shrink: 0; outline: none; appearance: none; -webkit-appearance: none; }
+.rxe-tpl-vdot:hover { transform: scale(1.3); }
+.rxe-tpl-vdot.rxe-tpl-vdot-active { border-color: rgba(255,255,255,0.9); box-shadow: 0 0 0 2px rgba(255,255,255,0.25), 0 2px 6px rgba(0,0,0,0.4); transform: scale(1.2); }
 
 /* ── Better score breakdown ─────────────────────────────────── */
 .rxe-score-ring-wrap {
@@ -2889,17 +2893,59 @@ window.applyColorVariant = function (key, variantIndex) {
             var isCurrent = (themeSettings.key === t.key);
             var ls = t.layoutStyle || 'single';
             var layoutLabel = ls.replace('-', ' ');
-            html += '<div class="rxe-tpl-card' + (isCurrent ? ' active-tpl' : '') + '" onclick="window.selectTplFromPicker(\'' + esc(t.key) + '\')">'
+
+            // Build colour variant dots
+            var variantHtml = '';
+            if (t.colorVariants && t.colorVariants.length) {
+                variantHtml = '<div class="rxe-tpl-variants" onclick="event.stopPropagation()">';
+                t.colorVariants.forEach(function (v, vi) {
+                    var isActiveDot = isCurrent && (themeSettings.primaryColor === v.primary);
+                    variantHtml += '<button type="button"'
+                        + ' class="rxe-tpl-vdot' + (isActiveDot ? ' rxe-tpl-vdot-active' : '') + '"'
+                        + ' data-tpl-key="' + esc(t.key) + '"'
+                        + ' data-vi="' + vi + '"'
+                        + ' title="' + esc(v.label) + '"'
+                        + ' style="background:linear-gradient(135deg,' + esc(v.primary) + ',' + esc(v.secondary) + ');"'
+                        + '></button>';
+                });
+                variantHtml += '</div>';
+            }
+
+            html += '<div class="rxe-tpl-card' + (isCurrent ? ' active-tpl' : '') + '" data-tpl-key="' + esc(t.key) + '">'
                 + '<div class="rxe-tpl-thumb">' + renderThumbSvg(t) + '</div>'
                 + '<div class="rxe-tpl-info">'
                 + '<div class="rxe-tpl-name">' + esc(t.name) + '</div>'
                 + '<div class="rxe-tpl-cat">' + esc(t.category || 'general') + '</div>'
                 + (isCurrent ? '<span class="rxe-tpl-badge">&#10003; Active</span>' : '')
                 + '<span class="rxe-tpl-layout-tag">' + esc(layoutLabel) + '</span>'
-                + '</div></div>';
+                + '</div>'
+                + variantHtml
+                + '</div>';
         });
         grid.innerHTML = html || '<div style="padding:24px;color:var(--text-secondary);grid-column:1/-1;">No templates found.</div>';
     }
+
+    // Event delegation: handle card clicks and variant dot clicks
+    grid.addEventListener('click', function (e) {
+        // Variant dot click
+        var dot = e.target.closest('.rxe-tpl-vdot');
+        if (dot) {
+            e.stopPropagation();
+            var key = dot.dataset.tplKey;
+            var vi  = parseInt(dot.dataset.vi, 10);
+            window.applyColorVariant(key, vi);
+            schedulePreviewUpdate();
+            showToast('Color variant applied', 'success');
+            // Re-render to update active dot indicators
+            renderGrid(currentFilter);
+            return;
+        }
+        // Card click (select template)
+        var card = e.target.closest('.rxe-tpl-card[data-tpl-key]');
+        if (card) {
+            window.selectTplFromPicker(card.dataset.tplKey);
+        }
+    });
 
     document.getElementById('rxe-tpl-filters').addEventListener('click', function (e) {
         var btn = e.target.closest('.rxe-tpl-filter-btn');
