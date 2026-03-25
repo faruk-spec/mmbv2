@@ -2897,7 +2897,7 @@ window.applyColorVariant = function (key, variantIndex) {
             // Build colour variant dots
             var variantHtml = '';
             if (t.colorVariants && t.colorVariants.length) {
-                variantHtml = '<div class="rxe-tpl-variants" onclick="event.stopPropagation()">';
+                variantHtml = '<div class="rxe-tpl-variants">';
                 t.colorVariants.forEach(function (v, vi) {
                     var isActiveDot = isCurrent && (themeSettings.primaryColor === v.primary);
                     variantHtml += '<button type="button"'
