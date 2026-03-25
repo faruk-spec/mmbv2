@@ -715,16 +715,19 @@ body .main {
     background: #1a1a2e;
     display: flex;
     align-items: flex-start;
-    justify-content: center;
-    padding: 12px;
+    justify-content: flex-start;
+    padding: 4px;
 }
 #rxe-preview-frame {
     width: 794px;
-    min-height: 1123px;
+    height: 1123px;
+    min-height: unset;
     border: none;
     background: #fff;
     display: block;
     box-shadow: 0 4px 32px rgba(0,0,0,0.5);
+    transform-origin: top left;
+    flex-shrink: 0;
 }
 .rxe-preview-loading {
     position: absolute;
@@ -880,7 +883,8 @@ body .main {
 @media (max-width: 960px) {
     .rxe-preview-pane { display: none !important; }
     .rxe-splitter { display: none; }
-    .rxe-btn-toggle-preview { display: none !important; }
+    /* On mobile, show the bar Preview button (overrides the hide rule) */
+    .rxe-btn-toggle-preview { display: inline-flex !important; }
     .rxe-desktop-only { display: none !important; }
     /* Mobile preview overlay mode */
     .rxe-preview-pane.mobile-open {
@@ -892,27 +896,31 @@ body .main {
         min-width: unset;
         border-left: none;
     }
-    .rxe-mobile-preview-toggle {
-        display: flex !important;
-    }
+    /* Hide floating FAB — we use the bar button now */
+    .rxe-mobile-preview-toggle { display: none !important; }
+    /* Hide non-essential bar items so bar stays on one line */
+    .rxe-bar-hide-mobile { display: none !important; }
 }
 @media (max-width: 768px) {
     .rxe-nav { width: 160px; }
     .rxe-form-area { padding: 16px 12px 80px; }
     .rxe-row { grid-template-columns: 1fr; }
     .rxe-row.three { grid-template-columns: 1fr; }
-    .rxe-title-input { max-width: 130px; min-width: 90px; }
+    .rxe-title-input { max-width: 120px; min-width: 80px; }
     .rxe-save-status { display: none; }
-    .rxe-bar-btn:not(.primary) span.rxe-btn-label { display: none; }
-    .rxe-bar-btn { padding: 6px 8px; gap: 0; }
-    .rxe-bar-btn.primary { padding: 6px 10px; gap: 4px; }
+    .rxe-bar-spacer { flex: 1; min-width: 0; }
+    /* Compress all bar buttons to icon-only */
+    .rxe-bar-btn { padding: 6px 8px; gap: 0; font-size: 0; }
+    .rxe-bar-btn svg { flex-shrink: 0; }
+    .rxe-bar-btn.primary { padding: 6px 10px; font-size: 0.78rem; gap: 4px; }
 }
 @media (max-width: 560px) {
     .rxe-nav { display: none; }
     .rxe-mobile-nav-bar { display: flex !important; }
     .rxe-form-area { padding: 12px 12px 80px; }
-    .rxe-title-input { max-width: 110px; min-width: 80px; font-size: 0.8rem; }
-    .rxe-bar { gap: 6px; padding: 6px 10px; }
+    .rxe-title-input { max-width: 90px; min-width: 60px; font-size: 0.78rem; }
+    .rxe-bar { gap: 4px; padding: 6px 8px; }
+    .rxe-back span { display: none; } /* hide Dashboard text, keep arrow */
 }
 /* Mobile bottom nav bar */
 .rxe-mobile-nav-bar {
@@ -982,29 +990,25 @@ body .main {
     <div class="rxe-bar">
         <a href="/projects/resumex" class="rxe-back">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-            Dashboard
+            <span>Dashboard</span>
         </a>
         <input id="resumeTitle" type="text" class="rxe-title-input"
                value="<?= htmlspecialchars($resume['title'] ?? 'My Resume', ENT_QUOTES, 'UTF-8') ?>"
                placeholder="Resume title" maxlength="255">
         <div class="rxe-bar-spacer"></div>
         <span id="saveStatus" class="rxe-save-status">All changes saved</span>
-        <button type="button" class="rxe-bar-btn" onclick="openTemplatePicker()" title="Change resume template">
+        <button type="button" class="rxe-bar-btn rxe-bar-hide-mobile" onclick="openTemplatePicker()" title="Change resume template">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
             Template
         </button>
-        <button type="button" class="rxe-bar-btn rxe-btn-toggle-preview" id="btnTogglePreview" onclick="togglePreviewPane()" title="Toggle live preview">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+        <button type="button" class="rxe-bar-btn rxe-btn-toggle-preview" id="btnTogglePreview" onclick="handlePreviewBtn()" title="Toggle live preview">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
             Preview
         </button>
-        <button type="button" class="rxe-bar-btn" onclick="showSection('score'); scoreResume();" title="Analyse your resume">
+        <button type="button" class="rxe-bar-btn rxe-bar-hide-mobile" onclick="showSection('score'); scoreResume();" title="Analyse your resume">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
             Score
         </button>
-        <a href="/projects/resumex/preview/<?= (int)$resume['id'] ?>" target="_blank" class="rxe-bar-btn" title="Open preview in new tab">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-            Preview
-        </a>
         <a href="/projects/resumex/download/<?= (int)$resume['id'] ?>" target="_blank" class="rxe-bar-btn" title="Download as PDF">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
             Download
@@ -1558,25 +1562,33 @@ window.togglePreviewPane = function() {
     }
 };
 
-/* Mobile preview overlay toggle */
+/* Unified handler: desktop → togglePreviewPane, mobile → toggleMobilePreview */
+window.handlePreviewBtn = function() {
+    if (window.innerWidth <= 960) {
+        toggleMobilePreview();
+    } else {
+        togglePreviewPane();
+    }
+};
+
+/* Mobile preview overlay toggle — called by the bar Preview button on mobile */
 var mobilePreviewOpen = false;
 window.toggleMobilePreview = function() {
-    var pane      = document.getElementById('rxe-preview-pane');
-    var fabBtn    = document.getElementById('btnMobilePreview');
-    var closeBtn  = document.getElementById('btnPreviewClose');
+    var pane     = document.getElementById('rxe-preview-pane');
+    var barBtn   = document.getElementById('btnTogglePreview');
+    var closeBtn = document.getElementById('btnPreviewClose');
     mobilePreviewOpen = !mobilePreviewOpen;
     if (mobilePreviewOpen) {
         pane.classList.add('mobile-open');
-        // FAB shows an X icon
-        if (fabBtn) fabBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
-        // Show "Edit" button inside preview header
+        // Bar button highlights as active
+        if (barBtn) { barBtn.style.borderColor = 'rgba(0,240,255,0.35)'; barBtn.style.color = 'var(--cyan)'; }
+        // Show "Edit" close button inside preview header
         if (closeBtn) closeBtn.style.display = '';
-        updateLivePreview();
+        // Force recalc A4 scale after overlay becomes visible
+        requestAnimationFrame(function() { updateLivePreview(); });
     } else {
         pane.classList.remove('mobile-open');
-        // FAB shows eye icon
-        if (fabBtn) fabBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
-        // Hide "Edit" button
+        if (barBtn) { barBtn.style.borderColor = ''; barBtn.style.color = ''; }
         if (closeBtn) closeBtn.style.display = 'none';
     }
 };
@@ -1607,13 +1619,19 @@ window.updateLivePreview = function() {
     var frame = document.getElementById('rxe-preview-frame');
     if (!frame) return;
     var wrap = document.getElementById('rxe-preview-iframe-wrap');
-    var paneW = wrap ? wrap.clientWidth - 24 : 0;
-    var scale = paneW > 0 ? Math.min(1, paneW / 794) : 1;
-    // Scale from top-center so scaled content stays horizontally centred in wrapper
-    frame.style.transformOrigin = 'top center';
+    // Use the wrap's actual rendered width (works in both desktop pane and mobile overlay)
+    var paneW = wrap ? wrap.getBoundingClientRect().width : 0;
+    if (!paneW) paneW = window.innerWidth; // fallback for mobile fullscreen
+    // A4 page is 794px wide; scale down to fit the available width
+    var scale = Math.min(1, (paneW - 8) / 794);
+    frame.style.width = '794px';
+    frame.style.height = '1123px';
+    frame.style.transformOrigin = 'top left';
     frame.style.transform = 'scale(' + scale + ')';
-    // Collapse the unused vertical layout space so the wrapper scroll tracks visual height
-    frame.style.marginBottom = Math.round((1123 * scale) - 1123) + 'px';
+    // Shrink the wrapper height so scroll tracks visual (scaled) height
+    if (wrap) {
+        wrap.style.height = Math.ceil(1123 * scale) + 'px';
+    }
     // Load the actual PHP preview in embed mode (no toolbar, pure A4 resume)
     frame.src = '/projects/resumex/preview/' + resumeId + '?embed=1&_t=' + Date.now();
 };
