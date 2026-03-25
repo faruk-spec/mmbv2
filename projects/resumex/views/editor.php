@@ -811,12 +811,21 @@ body .main {
 @media (max-width: 640px) {
     /* Slide up from bottom as a sheet */
     #rxe-tpl-modal { align-items: flex-end !important; }
-    /* Inner sheet: full width, rounded top corners only, near-full height */
+    /* Inner sheet: full width, rounded top corners only, near-full height.
+       display:block (overrides inline display:flex) turns the flex→grid chain
+       into a block→grid chain so the grid is a block child and takes its full
+       natural content height (all rows fully visible, including colour dots).
+       overflow-y:auto on this container is the single scroll unit — the whole
+       popup (title + filters + all cards) scrolls as one piece. */
     #rxe-tpl-inner {
+        display: block !important;
         border-radius: 16px 16px 0 0 !important;
         max-height: 92vh !important;
         max-height: 92svh !important;
         max-height: 92dvh !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        -webkit-overflow-scrolling: touch;
         margin: 0 !important;
         width: 100% !important;
     }
@@ -824,14 +833,21 @@ body .main {
     #rxe-tpl-filters {
         flex-wrap: nowrap !important;
         overflow-x: auto !important;
+        overflow-y: visible !important;
         -webkit-overflow-scrolling: touch;
         padding: 10px 14px !important;
         gap: 6px !important;
         scrollbar-width: none;
     }
     #rxe-tpl-filters::-webkit-scrollbar { display: none; }
-    /* Grid: 2 columns on small phones, tighter padding, touch scroll */
-    #rxe-tpl-grid { grid-template-columns: repeat(auto-fill,minmax(140px,1fr)) !important; padding: 12px 14px !important; gap: 10px !important; -webkit-overflow-scrolling: touch; }
+    /* Grid: block child → intrinsic height = all rows; no independent scroll. */
+    #rxe-tpl-grid {
+        grid-template-columns: repeat(auto-fill,minmax(140px,1fr)) !important;
+        padding: 12px 14px 24px !important;
+        gap: 10px !important;
+        overflow: visible !important;
+        min-height: unset !important;
+    }
     .rxe-tpl-thumb { height: 110px; }
     /* Larger touch targets for variant dots */
     .rxe-tpl-vdot { width: 18px !important; height: 18px !important; }
