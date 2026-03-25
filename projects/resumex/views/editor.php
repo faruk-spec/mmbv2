@@ -1018,6 +1018,10 @@ body .main {
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
             Download
         </button>
+        <button type="button" class="rxe-bar-btn rxe-desktop-only" onclick="printResume()" title="Print resume">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+            Print
+        </button>
         <button type="button" class="rxe-bar-btn primary" onclick="saveResume()">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
             Save
@@ -1851,7 +1855,7 @@ window.downloadResume = function() {
                 }, 600);
             };
 
-            iframe.src = '/projects/resumex/preview/' + resumeId + '?embed=1';
+            iframe.src = '/projects/resumex/preview/' + resumeId + '?embed=1&pdf=1';
         }
 
         if (typeof html2pdf !== 'undefined') {
@@ -1899,6 +1903,28 @@ window.downloadResume = function() {
     }).catch(function() {
         // Network error — fall back to client-side PDF
         clientSidePdf();
+    });
+};
+
+/* ── Print Resume ────────────────────────────────────────────── */
+window.printResume = function() {
+    readContactFromDOM();
+    readSummaryFromDOM();
+    var title = (document.getElementById('resumeTitle').value || 'My Resume').trim();
+    var printUrl = '/projects/resumex/preview/' + resumeId + '?autoprint=1';
+    showToast('Saving before print…', '');
+    fetch('/projects/resumex/edit/' + resumeId, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+        body: JSON.stringify({
+            _token: csrfToken,
+            title: title,
+            template: themeSettings.key || 'ocean-blue',
+            resume_data: resumeData,
+            theme_settings: themeSettings
+        })
+    }).finally(function() {
+        window.open(printUrl, '_blank');
     });
 };
 

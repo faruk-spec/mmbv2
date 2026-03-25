@@ -16,7 +16,9 @@
  *   academic     - centred name, ruled sections
  */
 
-$isEmbed = isset($_GET['embed']);
+$isEmbed    = isset($_GET['embed']);
+$isPdf      = isset($_GET['pdf']);       // client-side PDF capture: removes min-height forcing
+$isAutoPrint = isset($_GET['autoprint']); // opens print dialog automatically on load
 
 /* ── Theme variables ─────────────────────────────────────────── */
 $t       = $themeSettings;
@@ -338,7 +340,17 @@ a{color:<?= $primary ?>;text-decoration:none;}
 <?php else: ?>
 .rp-wrap{padding:0;}
 <?php endif; ?>
-.rp-a4{width:794px;min-height:1123px;background:<?= $bg ?>;font-family:'<?= $font ?>',system-ui,sans-serif;font-size:<?= $fsize ?>px;font-weight:<?= $fweight ?>;color:<?= $text ?>;overflow:hidden;<?= $isEmbed ? '' : 'box-shadow:0 8px 48px rgba(0,0,0,.35);' ?>}
+.rp-a4{
+  width:794px;
+  <?= $isPdf ? 'min-height:auto;' : 'min-height:1123px;' ?>
+  background:<?= $bg ?>;
+  font-family:'<?= $font ?>',system-ui,sans-serif;
+  font-size:<?= $fsize ?>px;
+  font-weight:<?= $fweight ?>;
+  color:<?= $text ?>;
+  overflow:<?= $isPdf ? 'visible' : 'hidden' ?>;
+  <?= (!$isEmbed) ? 'box-shadow:0 8px 48px rgba(0,0,0,.35);' : '' ?>
+}
 @media print{html,body{background:#fff;}.rp-toolbar{display:none!important;}.rp-wrap{padding:0;display:block;}.rp-a4{width:210mm;min-height:297mm;box-shadow:none;margin:0;}@page{size:A4;margin:.5in;}}
 </style>
 </head>
@@ -349,7 +361,7 @@ a{color:<?= $primary ?>;text-decoration:none;}
   <a href="/projects/resumex/edit/<?= (int)$resume['id'] ?>" class="rp-tbtn">&#9998; Edit</a>
   <div class="rp-spacer"></div>
   <span class="rp-meta"><?= rpHe($resume['title'] ?? 'Resume') ?> &middot; <?= rpHe($t['name'] ?? 'Theme') ?></span>
-  <a href="/projects/resumex/download/<?= (int)$resume['id'] ?>" target="_blank" class="rp-tbtn">&#8659; Download PDF</a>
+  <a href="/projects/resumex/download/<?= (int)$resume['id'] ?>" id="btnDownloadPdf" class="rp-tbtn" onclick="downloadPreviewPdf(event)">&#8659; Download PDF</a>
   <button onclick="window.print()" class="rp-tbtn primary">&#9113; Print</button>
 </div>
 <?php endif; ?>
@@ -616,5 +628,82 @@ default:
 ?>
 </div><!-- /rp-a4 -->
 </div><!-- /rp-wrap -->
+<?php if (!$isEmbed): ?>
+<script>
+/* ── Download PDF (client-side via html2pdf.js) ── */
+function downloadPreviewPdf(e) {
+    e.preventDefault();
+    var btn = document.getElementById('btnDownloadPdf');
+    if (btn) { btn.style.opacity = '0.6'; btn.style.pointerEvents = 'none'; btn.textContent = 'Generating…'; }
+
+    var safeTitle = (document.title || 'resume').replace(/[^a-zA-Z0-9_\-]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '') || 'resume';
+
+    function restoreBtn() {
+        if (btn) { btn.style.opacity = ''; btn.style.pointerEvents = ''; btn.innerHTML = '&#8659; Download PDF'; }
+    }
+
+    function generate() {
+        // First try server-side PDF (Chromium)
+        fetch(btn.getAttribute('href'))
+            .then(function(res) {
+                var ct = res.headers.get('Content-Type') || '';
+                if (ct.indexOf('application/pdf') !== -1) {
+                    return res.blob().then(function(blob) {
+                        var url = URL.createObjectURL(blob);
+                        var a = document.createElement('a');
+                        a.href = url; a.download = safeTitle + '.pdf';
+                        document.body.appendChild(a); a.click();
+                        setTimeout(function() { URL.revokeObjectURL(url); document.body.removeChild(a); }, 1000);
+                        restoreBtn();
+                    });
+                } else {
+                    // Fallback: render current page's .rp-a4 with html2pdf.js
+                    clientGenerate();
+                }
+            })
+            .catch(clientGenerate);
+    }
+
+    function clientGenerate() {
+        // Temporarily unset min-height so pdf has exact content height
+        var paper = document.querySelector('.rp-a4');
+        if (!paper) { restoreBtn(); return; }
+        var origStyle = { minHeight: paper.style.minHeight, overflow: paper.style.overflow };
+        paper.style.minHeight = 'auto';
+        paper.style.overflow  = 'visible';
+
+        html2pdf().from(paper).set({
+            margin: 0,
+            filename: safeTitle + '.pdf',
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true, logging: false },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        }).save().then(function() {
+            paper.style.minHeight = origStyle.minHeight;
+            paper.style.overflow  = origStyle.overflow;
+            restoreBtn();
+        }).catch(function() {
+            paper.style.minHeight = origStyle.minHeight;
+            paper.style.overflow  = origStyle.overflow;
+            restoreBtn();
+        });
+    }
+
+    if (typeof html2pdf !== 'undefined') {
+        generate();
+    } else {
+        var s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+        s.crossOrigin = 'anonymous';
+        s.onload = generate;
+        s.onerror = restoreBtn;
+        document.head.appendChild(s);
+    }
+}
+<?php if ($isAutoPrint): ?>
+window.addEventListener('load', function() { setTimeout(function() { window.print(); }, 500); });
+<?php endif; ?>
+</script>
+<?php endif; ?>
 </body>
 </html>
