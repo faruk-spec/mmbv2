@@ -1010,7 +1010,7 @@ body .main {
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
             Preview
         </button>
-        <button type="button" class="rxe-bar-btn" onclick="showSection('score'); scoreResume();" title="Analyse your resume">
+        <button type="button" class="rxe-bar-btn" id="btnScore" onclick="toggleScorePanel()" title="Analyse your resume">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
             Score
         </button>
@@ -1345,9 +1345,15 @@ body .main {
 
             <!-- Resume Score -->
             <div id="panel-score" class="rxe-panel">
-                <div class="rxe-section-heading">
-                    <h2>Resume Score</h2>
-                    <p>See how complete and strong your resume is across all sections.</p>
+                <div class="rxe-section-heading" style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
+                    <div>
+                        <h2>Resume Score</h2>
+                        <p>See how complete and strong your resume is across all sections.</p>
+                    </div>
+                    <button type="button" class="rxe-bar-btn rxe-desktop-only" onclick="toggleScorePanel()" title="Back to editing" style="flex-shrink:0;margin-top:2px;">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                        Back to editing
+                    </button>
                 </div>
                 <div class="rxe-score-box">
                     <div class="rxe-score-ring-wrap">
@@ -1722,7 +1728,15 @@ function markDirty() {
 }
 
 /* ── Show/hide sections ─────────────────────────────────────── */
+// Track the last non-score section so Score panel can navigate back to it
+var lastSection = (function () {
+    var active = document.querySelector('.rxe-panel.active');
+    if (active && active.id) { return active.id.replace('panel-', '') || 'contact'; }
+    return 'contact';
+}());
+
 window.showSection = function (name) {
+    if (name !== 'score') { lastSection = name; }
     document.querySelectorAll('.rxe-panel').forEach(function (p) { p.classList.remove('active'); });
     document.querySelectorAll('.rxe-nav-btn').forEach(function (b) { b.classList.remove('active'); });
     document.querySelectorAll('.rxe-mobile-nav-btn').forEach(function (b) { b.classList.remove('active'); });
@@ -1730,8 +1744,32 @@ window.showSection = function (name) {
     var btn   = document.querySelector('[data-section="' + name + '"]');
     if (panel) panel.classList.add('active');
     if (btn)   btn.classList.add('active');
+    // Highlight the toolbar Score button when score panel is active
+    var scoreBarBtn = document.getElementById('btnScore');
+    if (scoreBarBtn) {
+        if (name === 'score') {
+            scoreBarBtn.style.color = 'var(--cyan)';
+            scoreBarBtn.style.borderColor = 'rgba(0,240,255,0.35)';
+        } else {
+            scoreBarBtn.style.color = '';
+            scoreBarBtn.style.borderColor = '';
+        }
+    }
     // Also close mobile preview when navigating form sections
     if (mobilePreviewOpen) { window.toggleMobilePreview(); }
+};
+
+/* ── Toggle Score panel (from toolbar or "Back" button) ──────── */
+window.toggleScorePanel = function () {
+    var scorePanel = document.getElementById('panel-score');
+    if (!scorePanel) { return; }
+    var isScore = scorePanel.classList.contains('active');
+    if (isScore) {
+        showSection(lastSection);
+    } else {
+        showSection('score');
+        scoreResume();
+    }
 };
 
 /* ── Save (AJAX) ────────────────────────────────────────────── */
