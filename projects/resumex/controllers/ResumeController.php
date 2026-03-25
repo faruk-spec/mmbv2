@@ -70,7 +70,12 @@ class ResumeController
 
         if (!$resume) {
             http_response_code(404);
-            echo '<h2>Resume not found.</h2>';
+            View::render('projects/resumex/resume_notfound', [
+                'title'     => 'Resume Not Found',
+                'user'      => Auth::user(),
+                'id'        => $id,
+                'allThemes' => $this->resumeModel->getAllThemePresets(),
+            ]);
             return;
         }
 
@@ -145,7 +150,12 @@ class ResumeController
 
         if (!$resume) {
             http_response_code(404);
-            echo '<h2>Resume not found.</h2>';
+            View::render('projects/resumex/resume_notfound', [
+                'title'     => 'Resume Not Found',
+                'user'      => Auth::user(),
+                'id'        => $id,
+                'allThemes' => $this->resumeModel->getAllThemePresets(),
+            ]);
             return;
         }
 
