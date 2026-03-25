@@ -886,11 +886,13 @@ body .main {
     /* On mobile, show the bar Preview button (overrides the hide rule) */
     .rxe-btn-toggle-preview { display: inline-flex !important; }
     .rxe-desktop-only { display: none !important; }
-    /* Mobile preview overlay mode */
+    /* Keep bar on one line — no wrapping */
+    .rxe-bar { flex-wrap: nowrap; overflow-x: hidden; }
+    /* Mobile preview overlay mode — inset-top matches actual bar height */
     .rxe-preview-pane.mobile-open {
         display: flex !important;
         position: fixed;
-        inset: 56px 0 0 0;
+        inset: 44px 0 0 0;
         z-index: 200;
         width: 100% !important;
         min-width: unset;
@@ -898,29 +900,28 @@ body .main {
     }
     /* Hide floating FAB — we use the bar button now */
     .rxe-mobile-preview-toggle { display: none !important; }
-    /* Hide non-essential bar items so bar stays on one line */
-    .rxe-bar-hide-mobile { display: none !important; }
 }
 @media (max-width: 768px) {
     .rxe-nav { width: 160px; }
     .rxe-form-area { padding: 16px 12px 80px; }
     .rxe-row { grid-template-columns: 1fr; }
     .rxe-row.three { grid-template-columns: 1fr; }
-    .rxe-title-input { max-width: 120px; min-width: 80px; }
+    .rxe-title-input { max-width: 100px; min-width: 60px; }
     .rxe-save-status { display: none; }
     .rxe-bar-spacer { flex: 1; min-width: 0; }
     /* Compress all bar buttons to icon-only */
-    .rxe-bar-btn { padding: 6px 8px; gap: 0; font-size: 0; }
+    .rxe-bar-btn { padding: 5px 7px; gap: 0; font-size: 0; min-width: 0; }
     .rxe-bar-btn svg { flex-shrink: 0; }
-    .rxe-bar-btn.primary { padding: 6px 10px; font-size: 0.78rem; gap: 4px; }
+    .rxe-bar-btn.primary { padding: 5px 8px; font-size: 0.75rem; gap: 3px; }
 }
 @media (max-width: 560px) {
     .rxe-nav { display: none; }
     .rxe-mobile-nav-bar { display: flex !important; }
     .rxe-form-area { padding: 12px 12px 80px; }
-    .rxe-title-input { max-width: 90px; min-width: 60px; font-size: 0.78rem; }
-    .rxe-bar { gap: 4px; padding: 6px 8px; }
+    .rxe-title-input { max-width: 80px; min-width: 50px; font-size: 0.75rem; }
+    .rxe-bar { gap: 3px; padding: 5px 6px; }
     .rxe-back span { display: none; } /* hide Dashboard text, keep arrow */
+    .rxe-back { padding: 3px; }
 }
 /* Mobile bottom nav bar */
 .rxe-mobile-nav-bar {
@@ -997,7 +998,7 @@ body .main {
                placeholder="Resume title" maxlength="255">
         <div class="rxe-bar-spacer"></div>
         <span id="saveStatus" class="rxe-save-status">All changes saved</span>
-        <button type="button" class="rxe-bar-btn rxe-bar-hide-mobile" onclick="openTemplatePicker()" title="Change resume template">
+        <button type="button" class="rxe-bar-btn" onclick="openTemplatePicker()" title="Change resume template">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
             Template
         </button>
@@ -1005,7 +1006,7 @@ body .main {
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
             Preview
         </button>
-        <button type="button" class="rxe-bar-btn rxe-bar-hide-mobile" onclick="showSection('score'); scoreResume();" title="Analyse your resume">
+        <button type="button" class="rxe-bar-btn" onclick="showSection('score'); scoreResume();" title="Analyse your resume">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
             Score
         </button>
@@ -1615,7 +1616,7 @@ function schedulePreviewUpdate() {
     }, 600);
 }
 
-window.updateLivePreview = function() {
+function applyPreviewScale() {
     var frame = document.getElementById('rxe-preview-frame');
     if (!frame) return;
     var wrap = document.getElementById('rxe-preview-iframe-wrap');
@@ -1625,15 +1626,35 @@ window.updateLivePreview = function() {
     // A4 page is 794px wide; scale down to fit the available width
     var scale = Math.min(1, (paneW - 8) / 794);
     frame.style.width = '794px';
-    frame.style.height = '1123px';
     frame.style.transformOrigin = 'top left';
     frame.style.transform = 'scale(' + scale + ')';
-    // Shrink the wrapper height so scroll tracks visual (scaled) height
+    // Get the actual rendered content height (same-origin iframe)
+    var contentH = 1123; // A4 default
+    try {
+        var doc = frame.contentDocument || (frame.contentWindow && frame.contentWindow.document);
+        if (doc && doc.documentElement) {
+            var h = doc.documentElement.scrollHeight || doc.body.scrollHeight;
+            if (h > 50) contentH = h;
+        }
+    } catch(e) { /* cross-origin guard */ }
+    frame.style.height = contentH + 'px';
+    // Shrink the wrapper height so scroll tracks visual (scaled) height only
     if (wrap) {
-        wrap.style.height = Math.ceil(1123 * scale) + 'px';
+        wrap.style.height = Math.ceil(contentH * scale) + 'px';
+        wrap.style.overflow = 'hidden'; // no extra scroll beyond scaled content
     }
+}
+
+window.updateLivePreview = function() {
+    var frame = document.getElementById('rxe-preview-frame');
+    if (!frame) return;
+    // Apply scale immediately with current height (avoids flash)
+    applyPreviewScale();
     // Load the actual PHP preview in embed mode (no toolbar, pure A4 resume)
-    frame.src = '/projects/resumex/preview/' + resumeId + '?embed=1&_t=' + Date.now();
+    var newSrc = '/projects/resumex/preview/' + resumeId + '?embed=1&_t=' + Date.now();
+    // After iframe loads, recalculate height based on actual content
+    frame.onload = function() { applyPreviewScale(); };
+    frame.src = newSrc;
 };
 
 
