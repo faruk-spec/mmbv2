@@ -8,7 +8,12 @@
         <h1><i class="fas fa-layer-group" style="color:var(--cyan);"></i> ResumeX — Manage Templates</h1>
         <p style="color:var(--text-secondary);">Upload and manage custom resume templates for all users.</p>
     </div>
-    <a href="/admin/projects/resumex" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Overview</a>
+    <div style="display:flex;gap:8px;">
+        <a href="/admin/projects/resumex/designer" class="btn btn-primary">
+            <i class="fas fa-magic"></i> Visual Designer
+        </a>
+        <a href="/admin/projects/resumex" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Overview</a>
+    </div>
 </div>
 
 <?php if (!empty($success)): ?>
@@ -227,6 +232,10 @@
                         <span style="display:inline-block;padding:2px 10px;border-radius:999px;font-size:0.72rem;font-weight:600;background:rgba(139,92,246,0.1);color:#a78bfa;border:1px solid rgba(139,92,246,0.3);">
                             <i class="fas fa-file-code"></i> Full
                         </span>
+                        <?php elseif ($type === 'designer'): ?>
+                        <span style="display:inline-block;padding:2px 10px;border-radius:999px;font-size:0.72rem;font-weight:600;background:rgba(0,240,255,0.08);color:var(--cyan);border:1px solid rgba(0,240,255,0.25);">
+                            <i class="fas fa-magic"></i> Designer
+                        </span>
                         <?php else: ?>
                         <span style="display:inline-block;padding:2px 10px;border-radius:999px;font-size:0.72rem;font-weight:600;background:rgba(14,165,233,0.08);color:#38bdf8;border:1px solid rgba(14,165,233,0.25);">
                             <i class="fas fa-sliders-h"></i> Preset
@@ -236,6 +245,11 @@
                     <td style="font-size:0.78rem;color:var(--text-secondary);"><?= date('d M Y', strtotime($t['created_at'])) ?></td>
                     <td>
                         <div style="display:flex;gap:6px;align-items:center;">
+                            <?php if (($t['template_type'] ?? '') === 'designer'): ?>
+                            <a href="/admin/projects/resumex/designer/<?= (int)$t['id'] ?>" class="btn btn-secondary btn-sm" title="Edit in Visual Designer">
+                                <i class="fas fa-magic"></i>
+                            </a>
+                            <?php endif; ?>
                             <?php if (empty($t['preview_image'])): ?>
                             <button type="button" class="btn btn-secondary btn-sm"
                                     onclick="triggerPreviewUpload(<?= (int)$t['id'] ?>)"

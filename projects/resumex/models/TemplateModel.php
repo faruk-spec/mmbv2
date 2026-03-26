@@ -71,32 +71,34 @@ class TemplateModel
         try {
             $this->db->query("
                 CREATE TABLE IF NOT EXISTS `resumex_templates` (
-                    `id`            INT UNSIGNED     NOT NULL AUTO_INCREMENT,
-                    `key`           VARCHAR(100)     NOT NULL,
-                    `name`          VARCHAR(255)     NOT NULL,
-                    `category`      VARCHAR(100)     NOT NULL DEFAULT 'custom',
-                    `template_type` VARCHAR(10)      NOT NULL DEFAULT 'preset',
-                    `file_name`     VARCHAR(255)     NOT NULL DEFAULT '',
-                    `uploaded_by`   INT UNSIGNED     NOT NULL,
-                    `is_active`     TINYINT(1)       NOT NULL DEFAULT 1,
-                    `is_override`   TINYINT(1)       NOT NULL DEFAULT 0,
-                    `preview_image` VARCHAR(500)     DEFAULT NULL,
-                    `display_bg`    VARCHAR(20)      DEFAULT NULL,
-                    `display_pri`   VARCHAR(20)      DEFAULT NULL,
-                    `created_at`    DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    `updated_at`    DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP
-                                                             ON UPDATE CURRENT_TIMESTAMP,
+                    `id`              INT UNSIGNED     NOT NULL AUTO_INCREMENT,
+                    `key`             VARCHAR(100)     NOT NULL,
+                    `name`            VARCHAR(255)     NOT NULL,
+                    `category`        VARCHAR(100)     NOT NULL DEFAULT 'custom',
+                    `template_type`   VARCHAR(10)      NOT NULL DEFAULT 'preset',
+                    `file_name`       VARCHAR(255)     NOT NULL DEFAULT '',
+                    `template_design` LONGTEXT         DEFAULT NULL,
+                    `uploaded_by`     INT UNSIGNED     NOT NULL,
+                    `is_active`       TINYINT(1)       NOT NULL DEFAULT 1,
+                    `is_override`     TINYINT(1)       NOT NULL DEFAULT 0,
+                    `preview_image`   VARCHAR(500)     DEFAULT NULL,
+                    `display_bg`      VARCHAR(20)      DEFAULT NULL,
+                    `display_pri`     VARCHAR(20)      DEFAULT NULL,
+                    `created_at`      DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `updated_at`      DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                                               ON UPDATE CURRENT_TIMESTAMP,
                     PRIMARY KEY (`id`),
                     UNIQUE KEY `uk_key` (`key`)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             ");
 
             $cols = [
-                'is_override'   => "TINYINT(1) NOT NULL DEFAULT 0",
-                'preview_image' => "VARCHAR(500) DEFAULT NULL",
-                'template_type' => "VARCHAR(10) NOT NULL DEFAULT 'preset'",
-                'display_bg'    => "VARCHAR(20) DEFAULT NULL",
-                'display_pri'   => "VARCHAR(20) DEFAULT NULL",
+                'is_override'     => "TINYINT(1) NOT NULL DEFAULT 0",
+                'preview_image'   => "VARCHAR(500) DEFAULT NULL",
+                'template_type'   => "VARCHAR(10) NOT NULL DEFAULT 'preset'",
+                'display_bg'      => "VARCHAR(20) DEFAULT NULL",
+                'display_pri'     => "VARCHAR(20) DEFAULT NULL",
+                'template_design' => "LONGTEXT DEFAULT NULL",
             ];
             foreach ($cols as $col => $def) {
                 $this->addColumnIfMissing('resumex_templates', $col, $def);
@@ -157,6 +159,11 @@ class TemplateModel
             if ($type === 'full') {
                 $stub = $this->buildFullTemplateStub($row);
                 $out[$stub['key']] = $stub;
+            } elseif ($type === 'designer') {
+                $stub = $this->buildDesignerTemplateStub($row);
+                if ($stub !== null) {
+                    $out[$stub['key']] = $stub;
+                }
             } else {
                 $preset = $this->loadTemplateFile($row['file_name']);
                 if ($preset !== null) {
@@ -223,6 +230,107 @@ class TemplateModel
             return null;
         }
     }
+
+    /**
+     * If the given template key belongs to an active DESIGNER template, return
+     * the parsed design array (layout JSON). Returns null otherwise.
+     *
+     * @return array|null  The design definition, or null if not a designer template.
+     */
+    public function getDesignedTemplateDesign(string $key): ?array
+    {
+        try {
+            $row = $this->db->fetch(
+                "SELECT template_design FROM resumex_templates
+                 WHERE `key` = ? AND template_type = 'designer' AND is_active = 1",
+                [$key]
+            );
+            if (!$row || empty($row['template_design'])) {
+                return null;
+            }
+            $design = json_decode($row['template_design'], true);
+            return is_array($design) ? $design : null;
+        } catch (\Exception $e) {
+            Logger::error('TemplateModel::getDesignedTemplateDesign error: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Create a new designer template record.
+     *
+     * @param  array  $meta        Keys: key, name, category, display_bg, display_pri
+     * @param  array  $design      The full design JSON structure
+     * @param  int    $uploadedBy  Admin user ID
+     * @return array{success: bool, id?: int, key?: string, error?: string}
+     */
+    public function saveDesignedTemplate(array $meta, array $design, int $uploadedBy): array
+    {
+        $key      = strtolower(trim($meta['key']      ?? ''));
+        $name     = trim($meta['name']                ?? '');
+        $category = trim($meta['category']            ?? 'custom');
+        $dispBg   = trim($meta['display_bg']          ?? '#ffffff');
+        $dispPri  = trim($meta['display_pri']         ?? '#007bff');
+
+        if (!preg_match('/^[a-z0-9\-]+$/', $key) || strlen($key) > 100) {
+            return ['success' => false, 'error' => 'Key must contain only lowercase letters, digits, and hyphens (max 100 chars).'];
+        }
+        if ($name === '' || strlen($name) > 255) {
+            return ['success' => false, 'error' => 'Name is required (max 255 chars).'];
+        }
+        if ($this->keyExists($key)) {
+            return ['success' => false, 'error' => "A template with key \"{$key}\" already exists."];
+        }
+
+        try {
+            $this->db->query(
+                "INSERT INTO resumex_templates
+                    (`key`, `name`, `category`, `template_type`, `template_design`, `file_name`, `uploaded_by`, `display_bg`, `display_pri`)
+                 VALUES (?, ?, ?, 'designer', ?, '', ?, ?, ?)",
+                [$key, $name, $category, json_encode($design), $uploadedBy, $dispBg, $dispPri]
+            );
+            $id = $this->db->lastInsertId();
+            return ['success' => true, 'id' => $id, 'key' => $key];
+        } catch (\Exception $e) {
+            Logger::error('TemplateModel::saveDesignedTemplate DB error: ' . $e->getMessage());
+            return ['success' => false, 'error' => 'Database error while saving template.'];
+        }
+    }
+
+    /**
+     * Update an existing designer template.
+     *
+     * @param  int    $id     DB record ID
+     * @param  array  $meta   Fields to update: name, category, display_bg, display_pri
+     * @param  array  $design The full design JSON structure
+     * @return array{success: bool, error?: string}
+     */
+    public function updateDesignedTemplate(int $id, array $meta, array $design): array
+    {
+        try {
+            $name     = trim($meta['name']       ?? '');
+            $category = trim($meta['category']   ?? 'custom');
+            $dispBg   = trim($meta['display_bg'] ?? '#ffffff');
+            $dispPri  = trim($meta['display_pri']?? '#007bff');
+
+            if ($name === '') {
+                return ['success' => false, 'error' => 'Name is required.'];
+            }
+
+            $this->db->query(
+                "UPDATE resumex_templates
+                    SET `name` = ?, `category` = ?, `display_bg` = ?, `display_pri` = ?,
+                        `template_design` = ?
+                  WHERE `id` = ? AND template_type = 'designer'",
+                [$name, $category, $dispBg, $dispPri, json_encode($design), $id]
+            );
+            return ['success' => true];
+        } catch (\Exception $e) {
+            Logger::error('TemplateModel::updateDesignedTemplate error: ' . $e->getMessage());
+            return ['success' => false, 'error' => 'Database error.'];
+        }
+    }
+
 
     /**
      * Validate and store an uploaded PRESET template file.
@@ -480,6 +588,62 @@ class TemplateModel
             'layoutStyle'      => 'full',      // special value — signals full template
             'colorVariants'    => [],           // full templates own their colors
             '_full_template'   => true,
+            '_preview_image'   => $row['preview_image'] ?? null,
+            '_db_id'           => (int) $row['id'],
+            '_is_override'     => false,
+        ];
+    }
+
+    /**
+     * Build a theme-stub array from a designer template DB row.
+     * Returns null if the design JSON is invalid or missing.
+     */
+    private function buildDesignerTemplateStub(array $row): ?array
+    {
+        $design = null;
+        if (!empty($row['template_design'])) {
+            $design = json_decode($row['template_design'], true);
+        }
+        if (!is_array($design)) {
+            return null;
+        }
+
+        $bg  = $row['display_bg']  ?? ($design['canvas']['background'] ?? '#ffffff');
+        $pri = $row['display_pri'] ?? ($design['colorVariants'][0]['primary'] ?? '#007bff');
+        $sec = $design['colorVariants'][0]['secondary'] ?? $pri;
+
+        // Extract color variants from design
+        $colorVariants = [];
+        if (!empty($design['colorVariants']) && is_array($design['colorVariants'])) {
+            $colorVariants = $design['colorVariants'];
+        }
+
+        return [
+            'key'              => $row['key'],
+            'name'             => $row['name'],
+            'category'         => $row['category'] ?? 'custom',
+            'primaryColor'     => $pri,
+            'secondaryColor'   => $sec,
+            'backgroundColor'  => $bg,
+            'surfaceColor'     => $bg,
+            'textColor'        => $design['canvas']['textColor'] ?? '#111111',
+            'textMuted'        => '#555555',
+            'borderColor'      => '#dddddd',
+            'fontFamily'       => $design['canvas']['fontFamily'] ?? 'Inter',
+            'fontSize'         => '14',
+            'fontWeight'       => '400',
+            'headerStyle'      => 'solid',
+            'buttonStyle'      => 'pill',
+            'cardStyle'        => 'flat',
+            'spacing'          => 'normal',
+            'layoutMode'       => 'single',
+            'iconStyle'        => 'filled',
+            'accentHighlights' => false,
+            'animations'       => false,
+            'layoutStyle'      => 'designer',
+            'colorVariants'    => $colorVariants,
+            '_designer_template' => true,
+            '_design'          => $design,
             '_preview_image'   => $row['preview_image'] ?? null,
             '_db_id'           => (int) $row['id'],
             '_is_override'     => false,

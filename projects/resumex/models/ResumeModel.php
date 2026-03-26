@@ -321,6 +321,21 @@ class ResumeModel
     }
 
     /**
+     * If $key belongs to an active DESIGNER template, return its parsed design
+     * array (layout JSON).  Returns null for all other template types.
+     */
+    public function getDesignedTemplateDesign(string $key): ?array
+    {
+        try {
+            $templateModel = new TemplateModel();
+            return $templateModel->getDesignedTemplateDesign($key);
+        } catch (\Throwable $e) {
+            \Core\Logger::error('ResumeModel::getDesignedTemplateDesign error: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
      * Built-in (hardcoded) theme presets.
      */
     private function getBuiltInPresets(): array

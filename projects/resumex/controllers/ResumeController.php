@@ -154,6 +154,7 @@ class ResumeController
     /**
      * Preview a resume.
      * If the resume uses a full custom template, includes it directly.
+     * If the resume uses a designer template, renders via designed_template.php.
      */
     public function preview(int $id): void
     {
@@ -173,6 +174,17 @@ class ResumeController
 
         $resumeData    = json_decode($resume['resume_data']   ?? '{}', true) ?: $this->resumeModel->getDefaultData();
         $themeSettings = json_decode($resume['theme_settings'] ?? '{}', true) ?: $this->resumeModel->getThemePreset($resume['template']);
+
+        // Check if this template is a designer template
+        $designerDesign = $this->resumeModel->getDesignedTemplateDesign($resume['template']);
+        if ($designerDesign !== null) {
+            $isEmbed = isset($_GET['embed']);
+            $isPdf   = false;
+            $title   = htmlspecialchars($resume['title'] ?? 'Resume', ENT_QUOTES, 'UTF-8');
+            extract(compact('resumeData', 'themeSettings', 'resume', 'isEmbed', 'isPdf', 'title', 'designerDesign'));
+            include dirname(__DIR__) . '/views/designed_template.php';
+            return;
+        }
 
         // Check if this template is a full custom renderer
         $fullTplFile = $this->resumeModel->getFullTemplateFile($resume['template']);
@@ -284,6 +296,16 @@ class ResumeController
         }
 
         // Fallback: render the print view with auto-print dialog
+        $designerDesign = $this->resumeModel->getDesignedTemplateDesign($resume['template']);
+        if ($designerDesign !== null) {
+            $isEmbed = false;
+            $isPdf   = false;
+            $title   = htmlspecialchars($resume['title'] ?? 'Resume', ENT_QUOTES, 'UTF-8');
+            extract(compact('resumeData', 'themeSettings', 'resume', 'isEmbed', 'isPdf', 'title', 'designerDesign'));
+            include dirname(__DIR__) . '/views/designed_template.php';
+            return;
+        }
+
         $fullTplFile = $this->resumeModel->getFullTemplateFile($resume['template']);
         if ($fullTplFile !== null) {
             $isEmbed = false;
@@ -337,18 +359,25 @@ class ResumeController
 
         ob_start();
 
-        $fullTplFile = $this->resumeModel->getFullTemplateFile($resume['template']);
-        if ($fullTplFile !== null) {
-            extract(compact('resumeData', 'themeSettings', 'resume', 'isEmbed', 'isPdf', 'title'));
-            include $fullTplFile;
+        // Check designer template first
+        $designerDesign = $this->resumeModel->getDesignedTemplateDesign($resume['template']);
+        if ($designerDesign !== null) {
+            extract(compact('resumeData', 'themeSettings', 'resume', 'isEmbed', 'isPdf', 'title', 'designerDesign'));
+            include dirname(__DIR__) . '/views/designed_template.php';
         } else {
-            extract([
-                'resume'        => $resume,
-                'resumeData'    => $resumeData,
-                'themeSettings' => $themeSettings,
-                'autoPrint'     => $autoPrint,
-            ]);
-            include dirname(__DIR__) . '/views/print.php';
+            $fullTplFile = $this->resumeModel->getFullTemplateFile($resume['template']);
+            if ($fullTplFile !== null) {
+                extract(compact('resumeData', 'themeSettings', 'resume', 'isEmbed', 'isPdf', 'title'));
+                include $fullTplFile;
+            } else {
+                extract([
+                    'resume'        => $resume,
+                    'resumeData'    => $resumeData,
+                    'themeSettings' => $themeSettings,
+                    'autoPrint'     => $autoPrint,
+                ]);
+                include dirname(__DIR__) . '/views/print.php';
+            }
         }
 
         $html = ob_get_clean() ?: '';

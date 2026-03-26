@@ -31,8 +31,9 @@ CREATE TABLE IF NOT EXISTS `resumex_templates` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Migration: add columns that may be absent on older installs (safe to run on existing tables)
-ALTER TABLE `resumex_templates` ADD COLUMN IF NOT EXISTS `template_type` VARCHAR(10)  NOT NULL DEFAULT 'preset';
-ALTER TABLE `resumex_templates` ADD COLUMN IF NOT EXISTS `is_override`   TINYINT(1)   NOT NULL DEFAULT 0;
-ALTER TABLE `resumex_templates` ADD COLUMN IF NOT EXISTS `preview_image` VARCHAR(500) DEFAULT NULL;
-ALTER TABLE `resumex_templates` ADD COLUMN IF NOT EXISTS `display_bg`    VARCHAR(20)  DEFAULT NULL;
-ALTER TABLE `resumex_templates` ADD COLUMN IF NOT EXISTS `display_pri`   VARCHAR(20)  DEFAULT NULL;
+ALTER TABLE `resumex_templates` ADD COLUMN IF NOT EXISTS `template_type`   VARCHAR(10)  NOT NULL DEFAULT 'preset';
+ALTER TABLE `resumex_templates` ADD COLUMN IF NOT EXISTS `is_override`     TINYINT(1)   NOT NULL DEFAULT 0;
+ALTER TABLE `resumex_templates` ADD COLUMN IF NOT EXISTS `preview_image`   VARCHAR(500) DEFAULT NULL;
+ALTER TABLE `resumex_templates` ADD COLUMN IF NOT EXISTS `display_bg`      VARCHAR(20)  DEFAULT NULL;
+ALTER TABLE `resumex_templates` ADD COLUMN IF NOT EXISTS `display_pri`     VARCHAR(20)  DEFAULT NULL;
+ALTER TABLE `resumex_templates` ADD COLUMN IF NOT EXISTS `template_design` LONGTEXT     DEFAULT NULL;

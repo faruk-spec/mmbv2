@@ -252,8 +252,103 @@ class ResumeXAdminController extends BaseController
     }
 
     // ──────────────────────────────────────────────────────────────────────────
-    //  All resumes (read-only listing)
+    //  Visual Template Designer
     // ──────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Open the visual designer to create a NEW template.
+     */
+    public function designerNew(): void
+    {
+        $this->requirePermission('resumex.templates');
+        $csrfToken = Security::generateCsrfToken();
+
+        $this->view('admin/projects/resumex/designer', [
+            'title'       => 'ResumeX — Template Designer',
+            'csrfToken'   => $csrfToken,
+            'template'    => null,
+            'templateId'  => 0,
+            'designJson'  => 'null',
+        ]);
+    }
+
+    /**
+     * Open the visual designer to edit an EXISTING designed template.
+     */
+    public function designerEdit(int $id): void
+    {
+        $this->requirePermission('resumex.templates');
+
+        $row = $this->templateModel->getById($id);
+        if (!$row || ($row['template_type'] ?? '') !== 'designer') {
+            header('Location: /admin/projects/resumex/templates?error=' . urlencode('Template not found.'));
+            exit;
+        }
+
+        $design = json_decode($row['template_design'] ?? 'null', true);
+        $csrfToken = Security::generateCsrfToken();
+
+        $this->view('admin/projects/resumex/designer', [
+            'title'      => 'ResumeX — Edit Template: ' . htmlspecialchars($row['name']),
+            'csrfToken'  => $csrfToken,
+            'template'   => $row,
+            'templateId' => $id,
+            'designJson' => json_encode($design, JSON_HEX_TAG | JSON_HEX_APOS),
+        ]);
+    }
+
+    /**
+     * AJAX endpoint: save (create or update) a designed template.
+     * Accepts JSON body: { _token, id, meta: {...}, design: {...} }
+     */
+    public function designerSave(): void
+    {
+        $this->requirePermission('resumex.templates');
+        header('Content-Type: application/json');
+
+        $body = file_get_contents('php://input');
+        $payload = json_decode($body, true);
+
+        $token = $payload['_token'] ?? ($_POST['_token'] ?? '');
+        if (!Security::validateCsrfToken($token)) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'Invalid security token.']);
+            exit;
+        }
+
+        $id     = (int) ($payload['id'] ?? 0);
+        $meta   = $payload['meta']   ?? [];
+        $design = $payload['design'] ?? [];
+
+        if (empty($design) || !is_array($design)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Design data is required.']);
+            exit;
+        }
+
+        if ($id > 0) {
+            // Update existing
+            $result = $this->templateModel->updateDesignedTemplate($id, $meta, $design);
+            if ($result['success']) {
+                ActivityLogger::log('resumex_designer_update', 'resumex', ['template_id' => $id]);
+            }
+        } else {
+            // Create new
+            $result = $this->templateModel->saveDesignedTemplate($meta, $design, Auth::id());
+            if ($result['success']) {
+                ActivityLogger::log('resumex_designer_create', 'resumex', [
+                    'template_key'  => $result['key'] ?? '',
+                    'template_id'   => $result['id']  ?? 0,
+                ]);
+                $result['redirect'] = '/admin/projects/resumex/designer/' . ($result['id'] ?? 0);
+            }
+        }
+
+        echo json_encode($result);
+        exit;
+    }
+
+
 
     public function resumes(): void
     {

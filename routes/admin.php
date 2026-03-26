@@ -327,4 +327,7 @@ $router->post('/admin/projects/resumex/templates/delete', 'Admin\\ResumeXAdminCo
 $router->get('/admin/projects/resumex/templates/sample-download', 'Admin\\ResumeXAdminController@downloadSample', ['auth', 'admin']);
 $router->get('/admin/projects/resumex/templates/sample-full-download', 'Admin\\ResumeXAdminController@downloadSampleFull', ['auth', 'admin']);
 $router->post('/admin/projects/resumex/templates/preview-image', 'Admin\\ResumeXAdminController@uploadPreviewImage', ['auth', 'admin']);
+$router->get('/admin/projects/resumex/designer', 'Admin\\ResumeXAdminController@designerNew', ['auth', 'admin']);
+$router->get('/admin/projects/resumex/designer/{id}', 'Admin\\ResumeXAdminController@designerEdit', ['auth', 'admin']);
+$router->post('/admin/projects/resumex/designer/save', 'Admin\\ResumeXAdminController@designerSave', ['auth', 'admin']);
 $router->get('/admin/projects/resumex/resumes', 'Admin\\ResumeXAdminController@resumes', ['auth', 'admin']);
