@@ -964,10 +964,13 @@ body .main {
     .rxe-title-input { max-width: 100px; min-width: 60px; }
     .rxe-save-status { display: none; }
     .rxe-bar-spacer { flex: 1; min-width: 0; }
-    /* Compress all bar buttons to icon-only */
+    /* Compress all bar buttons to icon-only on mobile */
     .rxe-bar-btn { padding: 5px 7px; gap: 0; font-size: 0; min-width: 0; }
     .rxe-bar-btn svg { flex-shrink: 0; }
-    .rxe-bar-btn.primary { padding: 5px 8px; font-size: 0.75rem; gap: 3px; }
+    /* Save: icon-only (no text) */
+    .rxe-bar-btn.primary { padding: 5px 8px; font-size: 0; gap: 0; }
+    /* Preview: icon + label */
+    .rxe-btn-toggle-preview { font-size: 0.72rem; gap: 4px; padding: 5px 9px; }
 }
 @media (max-width: 560px) {
     .rxe-nav { display: none; }
@@ -977,6 +980,8 @@ body .main {
     .rxe-bar { gap: 3px; padding: 5px 6px; }
     .rxe-back span { display: none; } /* hide Dashboard text, keep arrow */
     .rxe-back { padding: 3px; }
+    /* Tighten Preview label on very small screens */
+    .rxe-btn-toggle-preview { font-size: 0.68rem; gap: 3px; padding: 5px 7px; }
 }
 /* Mobile bottom nav bar */
 .rxe-mobile-nav-bar {
