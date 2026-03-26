@@ -2,9 +2,16 @@
 /**
  * ResumeX Template Model
  *
- * Manages custom (user-uploaded) resume templates stored on disk and tracked in
- * the database.  Built-in presets defined in ResumeModel::getAllThemePresets()
- * are not touched by this model.
+ * Manages two kinds of custom resume templates:
+ *
+ *  preset  - a PHP file that returns a theme-property array (colors/fonts/layout).
+ *            Uploaded via the "Upload Theme Preset" form. Merged with built-in
+ *            presets and applied by preview.php / print.php.
+ *
+ *  full    - a complete PHP renderer that outputs a standalone HTML page.
+ *            Uploaded via the "Upload Full Resume Template" form. Bypasses
+ *            preview.php / print.php entirely; the file is included directly with
+ *            $resumeData, $resume, $themeSettings, $isEmbed, $isPdf available.
  *
  * @package MMB\Projects\ResumeX\Models
  */
@@ -18,10 +25,13 @@ class TemplateModel
 {
     private Database $db;
 
-    /** Absolute path to the directory that holds uploaded template PHP files. */
+    /** Absolute path to the directory that holds uploaded preset PHP files. */
     private string $storageDir;
 
-    /** Required top-level keys that every template definition must provide. */
+    /** Absolute path to the directory that holds uploaded full-template PHP files. */
+    private string $fullTemplateDir;
+
+    /** Required top-level keys that every PRESET template definition must provide. */
     private const REQUIRED_KEYS = [
         'key', 'name', 'category',
         'primaryColor', 'secondaryColor', 'backgroundColor',
@@ -33,17 +43,22 @@ class TemplateModel
         'colorVariants',
     ];
 
+    /** Regex pattern for validating a CSS hex color (#rgb or #rrggbb). */
+    private const HEX_COLOR_PATTERN = '/^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/';
+
     public function __construct()
     {
-        $this->db         = Database::getInstance();
-        $this->storageDir = BASE_PATH . '/storage/uploads/resumex/templates';
+        $this->db              = Database::getInstance();
+        $this->storageDir      = BASE_PATH . '/storage/uploads/resumex/templates';
+        $this->fullTemplateDir = BASE_PATH . '/storage/uploads/resumex/full-templates';
         $this->ensureTable();
         $this->ensureStorageDir();
+        $this->ensureFullTemplateDir();
     }
 
-    // ──────────────────────────────────────────────────────────────────────────
+    // ----------------------------------------------------------------------
     //  Schema bootstrap
-    // ──────────────────────────────────────────────────────────────────────────
+    // ----------------------------------------------------------------------
 
     private function ensureTable(): void
     {
@@ -56,31 +71,41 @@ class TemplateModel
         try {
             $this->db->query("
                 CREATE TABLE IF NOT EXISTS `resumex_templates` (
-                    `id`           INT UNSIGNED     NOT NULL AUTO_INCREMENT,
-                    `key`          VARCHAR(100)     NOT NULL,
-                    `name`         VARCHAR(255)     NOT NULL,
-                    `category`     VARCHAR(100)     NOT NULL DEFAULT 'custom',
-                    `file_name`    VARCHAR(255)     NOT NULL DEFAULT '',
-                    `uploaded_by`  INT UNSIGNED     NOT NULL,
-                    `is_active`    TINYINT(1)       NOT NULL DEFAULT 1,
-                    `is_override`  TINYINT(1)       NOT NULL DEFAULT 0,
-                    `preview_image` VARCHAR(500)    DEFAULT NULL,
-                    `created_at`   DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    `updated_at`   DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP
+                    `id`            INT UNSIGNED     NOT NULL AUTO_INCREMENT,
+                    `key`           VARCHAR(100)     NOT NULL,
+                    `name`          VARCHAR(255)     NOT NULL,
+                    `category`      VARCHAR(100)     NOT NULL DEFAULT 'custom',
+                    `template_type` VARCHAR(10)      NOT NULL DEFAULT 'preset',
+                    `file_name`     VARCHAR(255)     NOT NULL DEFAULT '',
+                    `uploaded_by`   INT UNSIGNED     NOT NULL,
+                    `is_active`     TINYINT(1)       NOT NULL DEFAULT 1,
+                    `is_override`   TINYINT(1)       NOT NULL DEFAULT 0,
+                    `preview_image` VARCHAR(500)     DEFAULT NULL,
+                    `display_bg`    VARCHAR(20)      DEFAULT NULL,
+                    `display_pri`   VARCHAR(20)      DEFAULT NULL,
+                    `created_at`    DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `updated_at`    DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP
                                                              ON UPDATE CURRENT_TIMESTAMP,
                     PRIMARY KEY (`id`),
                     UNIQUE KEY `uk_key` (`key`)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             ");
-            // Add columns that may be missing in existing installations
-            $this->addColumnIfMissing('resumex_templates', 'is_override',    "TINYINT(1) NOT NULL DEFAULT 0 AFTER `is_active`");
-            $this->addColumnIfMissing('resumex_templates', 'preview_image',  "VARCHAR(500) DEFAULT NULL AFTER `is_override`");
+
+            $cols = [
+                'is_override'   => "TINYINT(1) NOT NULL DEFAULT 0 AFTER `is_active`",
+                'preview_image' => "VARCHAR(500) DEFAULT NULL AFTER `is_override`",
+                'template_type' => "VARCHAR(10) NOT NULL DEFAULT 'preset' AFTER `category`",
+                'display_bg'    => "VARCHAR(20) DEFAULT NULL AFTER `preview_image`",
+                'display_pri'   => "VARCHAR(20) DEFAULT NULL AFTER `display_bg`",
+            ];
+            foreach ($cols as $col => $def) {
+                $this->addColumnIfMissing('resumex_templates', $col, $def);
+            }
         } catch (\Exception $e) {
             Logger::error('TemplateModel::ensureTable error: ' . $e->getMessage());
         }
     }
 
-    /** Add a column to an existing table only when it is absent (idempotent). */
     private function addColumnIfMissing(string $table, string $column, string $definition): void
     {
         try {
@@ -104,16 +129,25 @@ class TemplateModel
         }
     }
 
-    // ──────────────────────────────────────────────────────────────────────────
+    private function ensureFullTemplateDir(): void
+    {
+        if (!is_dir($this->fullTemplateDir)) {
+            mkdir($this->fullTemplateDir, 0775, true);
+        }
+    }
+
+    // ----------------------------------------------------------------------
     //  Public API
-    // ──────────────────────────────────────────────────────────────────────────
+    // ----------------------------------------------------------------------
 
     /**
      * Return all active custom templates as theme-preset arrays, keyed by their
-     * template key.  Templates whose backing file is missing are skipped.
-     * Override templates (is_override=1) take precedence over built-ins.
+     * template key.
      *
-     * @return array<string, array>   ['key' => preset, ...]  — overrides flagged with '_is_override'=>true
+     *  preset templates:   evaluated to load the array; skipped when file is missing.
+     *  full   templates:   a minimal stub array is returned with '_full_template' => true.
+     *
+     * @return array<string, array>
      */
     public function getAllCustomTemplates(): array
     {
@@ -121,12 +155,19 @@ class TemplateModel
         $out  = [];
 
         foreach ($rows as $row) {
-            $preset = $this->loadTemplateFile($row['file_name']);
-            if ($preset !== null) {
-                $preset['_is_override']    = (bool) ($row['is_override'] ?? false);
-                $preset['_preview_image']  = $row['preview_image'] ?? null;
-                $preset['_db_id']          = (int) $row['id'];
-                $out[$preset['key']] = $preset;
+            $type = $row['template_type'] ?? 'preset';
+
+            if ($type === 'full') {
+                $stub = $this->buildFullTemplateStub($row);
+                $out[$stub['key']] = $stub;
+            } else {
+                $preset = $this->loadTemplateFile($row['file_name']);
+                if ($preset !== null) {
+                    $preset['_is_override']   = (bool) ($row['is_override'] ?? false);
+                    $preset['_preview_image'] = $row['preview_image'] ?? null;
+                    $preset['_db_id']         = (int) $row['id'];
+                    $out[$preset['key']]      = $preset;
+                }
             }
         }
 
@@ -142,7 +183,7 @@ class TemplateModel
     {
         try {
             return $this->db->fetchAll(
-                "SELECT * FROM resumex_templates ORDER BY is_override DESC, created_at DESC"
+                "SELECT * FROM resumex_templates ORDER BY template_type ASC, created_at DESC"
             );
         } catch (\Exception $e) {
             Logger::error('TemplateModel::getAllRows error: ' . $e->getMessage());
@@ -152,8 +193,6 @@ class TemplateModel
 
     /**
      * Fetch one template row by ID.
-     *
-     * @return array|null
      */
     public function getById(int $id): ?array
     {
@@ -166,79 +205,188 @@ class TemplateModel
     }
 
     /**
-     * Create a custom template from a validated form-data array.
-     * Generates the PHP file on the server — no file upload required.
+     * If the given template key belongs to an active full template, return the
+     * absolute path to the rendering PHP file. Returns null otherwise.
+     */
+    public function getFullTemplateFile(string $key): ?string
+    {
+        try {
+            $row = $this->db->fetch(
+                "SELECT file_name FROM resumex_templates
+                 WHERE `key` = ? AND template_type = 'full' AND is_active = 1",
+                [$key]
+            );
+            if (!$row || empty($row['file_name'])) {
+                return null;
+            }
+            $path = $this->fullTemplateDir . '/' . basename($row['file_name']);
+            return file_exists($path) ? $path : null;
+        } catch (\Exception $e) {
+            Logger::error('TemplateModel::getFullTemplateFile error: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Validate and store an uploaded PRESET template file.
      *
-     * @param  array $data        All template preset fields (must pass validatePreset)
-     * @param  int   $createdBy   Admin user ID
-     * @param  bool  $isOverride  True when intentionally overriding a built-in key
+     * @param  array  $file        Entry from $_FILES
+     * @param  int    $uploadedBy  User ID of the uploader
+     * @param  bool   $isOverride  Whether to allow replacing an existing key
      * @return array{success: bool, error?: string, template?: array}
      */
-    public function createFromData(array $data, int $createdBy, bool $isOverride = false): array
+    public function upload(array $file, int $uploadedBy, bool $isOverride = false): array
     {
-        $validationError = $this->validatePreset($data);
+        if (!isset($file['tmp_name']) || $file['error'] !== UPLOAD_ERR_OK) {
+            return ['success' => false, 'error' => 'File upload failed (code ' . ($file['error'] ?? '?') . ').'];
+        }
+
+        $originalName = $file['name'] ?? '';
+        if (strtolower(pathinfo($originalName, PATHINFO_EXTENSION)) !== 'php') {
+            return ['success' => false, 'error' => 'Only .php template files are accepted.'];
+        }
+
+        if ($file['size'] > 512 * 1024) {
+            return ['success' => false, 'error' => 'Template file must be smaller than 512 KB.'];
+        }
+
+        $preset = $this->evalTemplateFile($file['tmp_name']);
+        if ($preset === null) {
+            return ['success' => false, 'error' => 'Template file must return an array. Check the sample template for the required format.'];
+        }
+
+        $validationError = $this->validatePreset($preset);
         if ($validationError !== null) {
             return ['success' => false, 'error' => $validationError];
         }
 
-        // Reject duplicate keys unless this is an explicit override
-        if (!$isOverride && $this->keyExists($data['key'])) {
-            return ['success' => false, 'error' => "A template with key \"{$data['key']}\" already exists. Use a unique key."];
+        if (!$isOverride && $this->keyExists($preset['key'])) {
+            return ['success' => false, 'error' => "A template with key \"{$preset['key']}\" already exists. Use a unique key."];
         }
-        // For overrides, delete the existing custom entry so we can re-insert
-        if ($isOverride && $this->keyExists($data['key'])) {
-            try {
-                $existing = $this->db->fetch("SELECT * FROM resumex_templates WHERE `key` = ?", [$data['key']]);
-                if ($existing) {
-                    $oldFile = $this->storageDir . '/' . $existing['file_name'];
-                    if (file_exists($oldFile)) {
-                        @unlink($oldFile);
-                    }
-                    $this->db->query("DELETE FROM resumex_templates WHERE `key` = ?", [$data['key']]);
-                }
-            } catch (\Exception $e) {
-                Logger::error('TemplateModel::createFromData override cleanup: ' . $e->getMessage());
-            }
+        if ($isOverride && $this->keyExists($preset['key'])) {
+            $this->deleteByKey($preset['key']);
         }
 
-        // Generate the PHP file content
-        $phpContent = $this->generatePhpContent($data);
-        $fileName   = preg_replace('/[^a-z0-9\-]/', '', $data['key']) . '_' . time() . '.php';
-        $dest       = $this->storageDir . '/' . $fileName;
+        $fileName = $preset['key'] . '_' . time() . '.php';
+        $dest     = $this->storageDir . '/' . $fileName;
 
-        if (file_put_contents($dest, $phpContent) === false) {
-            return ['success' => false, 'error' => 'Could not write template file to disk.'];
+        if (!$this->moveFile($file['tmp_name'], $dest)) {
+            return ['success' => false, 'error' => 'Could not save the template file to disk.'];
         }
-        @chmod($dest, 0664);
 
         try {
             $this->db->query(
-                "INSERT INTO resumex_templates (`key`, `name`, `category`, `file_name`, `uploaded_by`, `is_override`)
-                 VALUES (?, ?, ?, ?, ?, ?)",
-                [
-                    $data['key'],
-                    $data['name'],
-                    $data['category'],
-                    $fileName,
-                    $createdBy,
-                    $isOverride ? 1 : 0,
-                ]
+                "INSERT INTO resumex_templates
+                    (`key`, `name`, `category`, `template_type`, `file_name`, `uploaded_by`, `is_override`)
+                 VALUES (?, ?, ?, 'preset', ?, ?, ?)",
+                [$preset['key'], $preset['name'], $preset['category'], $fileName, $uploadedBy, $isOverride ? 1 : 0]
             );
         } catch (\Exception $e) {
             @unlink($dest);
-            Logger::error('TemplateModel::createFromData DB error: ' . $e->getMessage());
+            Logger::error('TemplateModel::upload DB error: ' . $e->getMessage());
             return ['success' => false, 'error' => 'Database error while saving template.'];
         }
 
-        return ['success' => true, 'template' => $data];
+        return ['success' => true, 'template' => $preset];
     }
 
     /**
-     * Upload and store a preview image for a given template DB row.
+     * Upload a FULL resume template PHP file (a complete renderer).
      *
-     * @param  int   $templateId  DB row ID
-     * @param  array $file        $_FILES entry
-     * @return array{success: bool, error?: string, url?: string}
+     * The uploaded file receives $resumeData, $resume, $themeSettings,
+     * $isEmbed, $isPdf when included, and should output a complete HTML page.
+     *
+     * @param  array  $file       Entry from $_FILES
+     * @param  array  $meta       Keys: key, name, category, display_bg, display_pri
+     * @param  int    $uploadedBy User ID of the uploader
+     * @return array{success: bool, error?: string, key?: string, name?: string}
+     */
+    public function uploadFullTemplate(array $file, array $meta, int $uploadedBy): array
+    {
+        if (!isset($file['tmp_name']) || $file['error'] !== UPLOAD_ERR_OK) {
+            return ['success' => false, 'error' => 'File upload failed (code ' . ($file['error'] ?? '?') . ').'];
+        }
+
+        $ext = strtolower(pathinfo($file['name'] ?? '', PATHINFO_EXTENSION));
+        if ($ext !== 'php') {
+            return ['success' => false, 'error' => 'Only .php template files are accepted.'];
+        }
+
+        if ($file['size'] > 2 * 1024 * 1024) {
+            return ['success' => false, 'error' => 'Full template file must be smaller than 2 MB.'];
+        }
+
+        $key      = strtolower(trim($meta['key']      ?? ''));
+        $name     = trim($meta['name']                ?? '');
+        $category = trim($meta['category']            ?? 'custom');
+        $dispBg   = trim($meta['display_bg']          ?? '#1e1e2e');
+        $dispPri  = trim($meta['display_pri']         ?? '#00f0ff');
+
+        if (!preg_match('/^[a-z0-9\-]+$/', $key) || strlen($key) > 100) {
+            return ['success' => false, 'error' => 'Key must contain only lowercase letters, digits, and hyphens (max 100 chars).'];
+        }
+        if ($name === '' || strlen($name) > 255) {
+            return ['success' => false, 'error' => 'Name must be a non-empty string of at most 255 characters.'];
+        }
+        if ($this->keyExists($key)) {
+            return ['success' => false, 'error' => "A template with key \"{$key}\" already exists. Use a unique key."];
+        }
+
+        $fileName = $key . '_' . time() . '.php';
+        $dest     = $this->fullTemplateDir . '/' . $fileName;
+
+        if (!$this->moveFile($file['tmp_name'], $dest)) {
+            return ['success' => false, 'error' => 'Could not save the template file to disk.'];
+        }
+
+        try {
+            $this->db->query(
+                "INSERT INTO resumex_templates
+                    (`key`, `name`, `category`, `template_type`, `file_name`, `uploaded_by`, `display_bg`, `display_pri`)
+                 VALUES (?, ?, ?, 'full', ?, ?, ?, ?)",
+                [$key, $name, $category, $fileName, $uploadedBy, $dispBg, $dispPri]
+            );
+        } catch (\Exception $e) {
+            @unlink($dest);
+            Logger::error('TemplateModel::uploadFullTemplate DB error: ' . $e->getMessage());
+            return ['success' => false, 'error' => 'Database error while saving template.'];
+        }
+
+        return ['success' => true, 'key' => $key, 'name' => $name];
+    }
+
+    /**
+     * Delete a custom template by database ID.
+     *
+     * @return array{success: bool, error?: string}
+     */
+    public function delete(int $id): array
+    {
+        try {
+            $row = $this->db->fetch("SELECT * FROM resumex_templates WHERE id = ?", [$id]);
+
+            if (!$row) {
+                return ['success' => false, 'error' => 'Template not found.'];
+            }
+
+            $type = $row['template_type'] ?? 'preset';
+            $dir  = $type === 'full' ? $this->fullTemplateDir : $this->storageDir;
+            $path = $dir . '/' . basename($row['file_name'] ?? '');
+            if ($path && file_exists($path)) {
+                @unlink($path);
+            }
+
+            $this->db->query("DELETE FROM resumex_templates WHERE id = ?", [$id]);
+
+            return ['success' => true];
+        } catch (\Exception $e) {
+            Logger::error('TemplateModel::delete error: ' . $e->getMessage());
+            return ['success' => false, 'error' => 'Database error while deleting template.'];
+        }
+    }
+
+    /**
+     * Upload a preview image for a given template DB row.
      */
     public function uploadPreviewImage(int $templateId, array $file): array
     {
@@ -255,8 +403,8 @@ class TemplateModel
         }
 
         $allowed = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/gif' => 'gif', 'image/webp' => 'webp'];
-        $finfo    = finfo_open(FILEINFO_MIME_TYPE);
-        $mime     = finfo_file($finfo, $file['tmp_name']);
+        $finfo   = finfo_open(FILEINFO_MIME_TYPE);
+        $mime    = finfo_file($finfo, $file['tmp_name']);
         finfo_close($finfo);
 
         if (!array_key_exists($mime, $allowed)) {
@@ -267,14 +415,7 @@ class TemplateModel
         $fileName = "preview_{$templateId}_" . time() . ".{$ext}";
         $dest     = $previewDir . '/' . $fileName;
 
-        $saved = move_uploaded_file($file['tmp_name'], $dest);
-        if (!$saved) {
-            $saved = @copy($file['tmp_name'], $dest);
-            if ($saved) {
-                @unlink($file['tmp_name']);
-            }
-        }
-        if (!$saved) {
+        if (!$this->moveFile($file['tmp_name'], $dest)) {
             return ['success' => false, 'error' => 'Could not save the preview image.'];
         }
 
@@ -292,113 +433,10 @@ class TemplateModel
         return ['success' => true, 'url' => $url];
     }
 
-    /**
-     * Validate and store an uploaded template file.
-     *
-     * @param  array  $file        Entry from $_FILES (e.g. $_FILES['template_file'])
-     * @param  int    $uploadedBy  User ID of the uploader
-     * @return array{success: bool, error?: string, template?: array}
-     */
-    public function upload(array $file, int $uploadedBy): array
-    {
-        // ── Basic upload checks ──────────────────────────────────────────────
-        if (!isset($file['tmp_name']) || $file['error'] !== UPLOAD_ERR_OK) {
-            return ['success' => false, 'error' => 'File upload failed (code ' . ($file['error'] ?? '?') . ').'];
-        }
-
-        $originalName = $file['name'] ?? '';
-        if (strtolower(pathinfo($originalName, PATHINFO_EXTENSION)) !== 'php') {
-            return ['success' => false, 'error' => 'Only .php template files are accepted.'];
-        }
-
-        if ($file['size'] > 512 * 1024) {
-            return ['success' => false, 'error' => 'Template file must be smaller than 512 KB.'];
-        }
-
-        // ── Load and validate the template definition ────────────────────────
-        $preset = $this->evalTemplateFile($file['tmp_name']);
-        if ($preset === null) {
-            return ['success' => false, 'error' => 'Template file must return an array. Check the sample template for the required format.'];
-        }
-
-        $validationError = $this->validatePreset($preset);
-        if ($validationError !== null) {
-            return ['success' => false, 'error' => $validationError];
-        }
-
-        // ── Reject duplicate keys ────────────────────────────────────────────
-        if ($this->keyExists($preset['key'])) {
-            return ['success' => false, 'error' => "A template with key \"{$preset['key']}\" already exists. Use a unique key."];
-        }
-
-        // ── Persist the file ─────────────────────────────────────────────────
-        $fileName = $preset['key'] . '_' . time() . '.php';
-        $dest     = $this->storageDir . '/' . $fileName;
-
-        if (!move_uploaded_file($file['tmp_name'], $dest)) {
-            return ['success' => false, 'error' => 'Could not save the template file to disk.'];
-        }
-
-        // ── Write DB record ──────────────────────────────────────────────────
-        try {
-            $this->db->query(
-                "INSERT INTO resumex_templates (`key`, `name`, `category`, `file_name`, `uploaded_by`)
-                 VALUES (?, ?, ?, ?, ?)",
-                [
-                    $preset['key'],
-                    $preset['name'],
-                    $preset['category'],
-                    $fileName,
-                    $uploadedBy,
-                ]
-            );
-        } catch (\Exception $e) {
-            // Roll back the file
-            @unlink($dest);
-            Logger::error('TemplateModel::upload DB error: ' . $e->getMessage());
-            return ['success' => false, 'error' => 'Database error while saving template.'];
-        }
-
-        return ['success' => true, 'template' => $preset];
-    }
-
-    /**
-     * Delete a custom template by database ID.
-     *
-     * @return array{success: bool, error?: string}
-     */
-    public function delete(int $id): array
-    {
-        try {
-            $row = $this->db->fetch(
-                "SELECT * FROM resumex_templates WHERE id = ?",
-                [$id]
-            );
-
-            if (!$row) {
-                return ['success' => false, 'error' => 'Template not found.'];
-            }
-
-            // Remove file
-            $path = $this->storageDir . '/' . $row['file_name'];
-            if (file_exists($path)) {
-                @unlink($path);
-            }
-
-            $this->db->query("DELETE FROM resumex_templates WHERE id = ?", [$id]);
-
-            return ['success' => true];
-        } catch (\Exception $e) {
-            Logger::error('TemplateModel::delete error: ' . $e->getMessage());
-            return ['success' => false, 'error' => 'Database error while deleting template.'];
-        }
-    }
-
-    // ──────────────────────────────────────────────────────────────────────────
+    // ----------------------------------------------------------------------
     //  Private helpers
-    // ──────────────────────────────────────────────────────────────────────────
+    // ----------------------------------------------------------------------
 
-    /** @return array[] */
     private function fetchActiveRows(): array
     {
         try {
@@ -412,14 +450,48 @@ class TemplateModel
     }
 
     /**
-     * Safely evaluate a template PHP file in an isolated scope and return the
-     * returned value.  Returns null if the file does not return an array.
+     * Build a minimal preset-like stub for a full template so it can appear
+     * in the template picker card grid.
      */
+    private function buildFullTemplateStub(array $row): array
+    {
+        $bg  = $row['display_bg']  ?? '#1e1e2e';
+        $pri = $row['display_pri'] ?? '#00f0ff';
+
+        return [
+            'key'              => $row['key'],
+            'name'             => $row['name'],
+            'category'         => $row['category'] ?? 'custom',
+            'primaryColor'     => $pri,
+            'secondaryColor'   => $pri,
+            'backgroundColor'  => $bg,
+            'surfaceColor'     => $bg,
+            'textColor'        => '#ffffff',
+            'textMuted'        => '#aaaaaa',
+            'borderColor'      => 'rgba(255,255,255,0.1)',
+            'fontFamily'       => 'Inter',
+            'fontSize'         => '14',
+            'fontWeight'       => '400',
+            'headerStyle'      => 'solid',
+            'buttonStyle'      => 'pill',
+            'cardStyle'        => 'bordered',
+            'spacing'          => 'normal',
+            'layoutMode'       => 'single',
+            'iconStyle'        => 'filled',
+            'accentHighlights' => false,
+            'animations'       => false,
+            'layoutStyle'      => 'full',      // special value — signals full template
+            'colorVariants'    => [],           // full templates own their colors
+            '_full_template'   => true,
+            '_preview_image'   => $row['preview_image'] ?? null,
+            '_db_id'           => (int) $row['id'],
+            '_is_override'     => false,
+        ];
+    }
+
     private function evalTemplateFile(string $filePath): ?array
     {
         try {
-            // Execute in a clean scope so the template cannot access $this or
-            // any variables from this method.
             $result = (static function (string $p) {
                 return include $p;
             })($filePath);
@@ -431,55 +503,42 @@ class TemplateModel
         }
     }
 
-    /**
-     * Load a stored template file by file name and return its preset array,
-     * or null if the file is missing or invalid.
-     */
     private function loadTemplateFile(string $fileName): ?array
     {
-        $path = $this->storageDir . '/' . $fileName;
+        if ($fileName === '') {
+            return null;
+        }
+        $path = $this->storageDir . '/' . basename($fileName);
         if (!file_exists($path)) {
             return null;
         }
         return $this->evalTemplateFile($path);
     }
 
-    /**
-     * Validate the structure of a template preset array.
-     * Returns null on success, or an error message string on failure.
-     */
     private function validatePreset(array $preset): ?string
     {
-        // Check required keys
         foreach (self::REQUIRED_KEYS as $reqKey) {
             if (!array_key_exists($reqKey, $preset)) {
                 return "Missing required field: \"{$reqKey}\". See the sample template for the complete list.";
             }
         }
 
-        // Validate `key`
         if (!preg_match('/^[a-z0-9\-]+$/', $preset['key']) || strlen($preset['key']) > 100) {
             return 'The "key" field must contain only lowercase letters, digits, and hyphens, and be at most 100 characters.';
         }
 
-        // Validate `name`
         if (!is_string($preset['name']) || trim($preset['name']) === '' || strlen($preset['name']) > 255) {
             return 'The "name" field must be a non-empty string of at most 255 characters.';
         }
 
-        // Validate hex color fields
-        $colorFields = [
-            'primaryColor', 'secondaryColor', 'backgroundColor',
-            'surfaceColor', 'textColor', 'textMuted',
-        ];
+        $colorFields = ['primaryColor', 'secondaryColor', 'backgroundColor', 'surfaceColor', 'textColor', 'textMuted'];
         foreach ($colorFields as $field) {
             $val = $preset[$field] ?? '';
-            if (!is_string($val) || !preg_match('/^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/', $val)) {
+            if (!is_string($val) || !preg_match(self::HEX_COLOR_PATTERN, $val)) {
                 return "Field \"{$field}\" must be a valid hex color (e.g. \"#1e40af\").";
             }
         }
 
-        // Validate colorVariants
         $variants = $preset['colorVariants'];
         if (!is_array($variants) || count($variants) < 1 || count($variants) > 4) {
             return '"colorVariants" must be an array of 1 to 4 items.';
@@ -488,8 +547,8 @@ class TemplateModel
             if (!is_array($v) || empty($v['label']) || empty($v['primary']) || empty($v['secondary'])) {
                 return "colorVariants[{$i}] must have \"label\", \"primary\", and \"secondary\" fields.";
             }
-            if (!preg_match('/^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/', $v['primary'])
-                || !preg_match('/^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/', $v['secondary'])) {
+            if (!preg_match(self::HEX_COLOR_PATTERN, $v['primary'])
+                || !preg_match(self::HEX_COLOR_PATTERN, $v['secondary'])) {
                 return "colorVariants[{$i}]: \"primary\" and \"secondary\" must be valid hex colors.";
             }
         }
@@ -497,80 +556,52 @@ class TemplateModel
         return null;
     }
 
-    /** Check if a template key already exists in the database. */
     private function keyExists(string $key): bool
     {
         try {
-            $row = $this->db->fetch(
-                "SELECT id FROM resumex_templates WHERE `key` = ?",
-                [$key]
-            );
+            $row = $this->db->fetch("SELECT id FROM resumex_templates WHERE `key` = ?", [$key]);
             return $row !== null && $row !== false;
         } catch (\Exception $e) {
             return false;
         }
     }
 
-    /**
-     * Generate a valid PHP template file body from a preset array.
-     *
-     * @param  array $data  Validated preset
-     * @return string       PHP source code
-     */
-    private function generatePhpContent(array $data): string
+    private function deleteByKey(string $key): void
     {
-        $exp = static function ($v): string {
-            if (is_bool($v)) {
-                return $v ? 'true' : 'false';
+        try {
+            $row = $this->db->fetch("SELECT * FROM resumex_templates WHERE `key` = ?", [$key]);
+            if ($row) {
+                $type = $row['template_type'] ?? 'preset';
+                $dir  = $type === 'full' ? $this->fullTemplateDir : $this->storageDir;
+                $path = $dir . '/' . basename($row['file_name'] ?? '');
+                if ($path && file_exists($path)) {
+                    @unlink($path);
+                }
+                $this->db->query("DELETE FROM resumex_templates WHERE `key` = ?", [$key]);
             }
-            if (is_int($v) || is_float($v)) {
-                return (string) $v;
-            }
-            return "'" . addcslashes((string) $v, "'\\") . "'";
-        };
-
-        $variantsCode = '';
-        foreach ($data['colorVariants'] as $variant) {
-            $variantsCode .= sprintf(
-                "        ['label' => %s, 'primary' => %s, 'secondary' => %s],\n",
-                $exp($variant['label']),
-                $exp($variant['primary']),
-                $exp($variant['secondary'])
-            );
+        } catch (\Exception $e) {
+            Logger::error('TemplateModel::deleteByKey error: ' . $e->getMessage());
         }
+    }
 
-        return <<<PHP
-<?php
-/**
- * ResumeX Custom Template: {$data['name']}
- * Generated by the ResumeX Admin Template Designer.
- */
-return [
-    'key'              => {$exp($data['key'])},
-    'name'             => {$exp($data['name'])},
-    'category'         => {$exp($data['category'])},
-    'primaryColor'     => {$exp($data['primaryColor'])},
-    'secondaryColor'   => {$exp($data['secondaryColor'])},
-    'backgroundColor'  => {$exp($data['backgroundColor'])},
-    'surfaceColor'     => {$exp($data['surfaceColor'])},
-    'textColor'        => {$exp($data['textColor'])},
-    'textMuted'        => {$exp($data['textMuted'])},
-    'borderColor'      => {$exp($data['borderColor'])},
-    'fontFamily'       => {$exp($data['fontFamily'])},
-    'fontSize'         => {$exp($data['fontSize'])},
-    'fontWeight'       => {$exp($data['fontWeight'])},
-    'headerStyle'      => {$exp($data['headerStyle'])},
-    'buttonStyle'      => {$exp($data['buttonStyle'])},
-    'cardStyle'        => {$exp($data['cardStyle'])},
-    'spacing'          => {$exp($data['spacing'])},
-    'layoutMode'       => {$exp($data['layoutMode'])},
-    'iconStyle'        => {$exp($data['iconStyle'])},
-    'accentHighlights' => {$exp($data['accentHighlights'])},
-    'animations'       => {$exp($data['animations'])},
-    'layoutStyle'      => {$exp($data['layoutStyle'])},
-    'colorVariants'    => [
-{$variantsCode}    ],
-];
-PHP;
+    /**
+     * Move an uploaded file with fallbacks for cross-mount-point environments.
+     */
+    private function moveFile(string $tmpPath, string $dest): bool
+    {
+        if (move_uploaded_file($tmpPath, $dest)) {
+            return true;
+        }
+        Logger::error('TemplateModel::moveFile move_uploaded_file failed for ' . basename($dest) . ', trying copy() fallback.');
+        if (@copy($tmpPath, $dest)) {
+            @unlink($tmpPath);
+            return true;
+        }
+        $data = @file_get_contents($tmpPath);
+        if ($data !== false && @file_put_contents($dest, $data) !== false) {
+            @unlink($tmpPath);
+            return true;
+        }
+        return false;
     }
 }

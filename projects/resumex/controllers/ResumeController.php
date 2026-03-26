@@ -152,7 +152,8 @@ class ResumeController
     }
 
     /**
-     * Preview a resume
+     * Preview a resume.
+     * If the resume uses a full custom template, includes it directly.
      */
     public function preview(int $id): void
     {
@@ -170,8 +171,19 @@ class ResumeController
             return;
         }
 
-        $resumeData   = json_decode($resume['resume_data']   ?? '{}', true) ?: $this->resumeModel->getDefaultData();
+        $resumeData    = json_decode($resume['resume_data']   ?? '{}', true) ?: $this->resumeModel->getDefaultData();
         $themeSettings = json_decode($resume['theme_settings'] ?? '{}', true) ?: $this->resumeModel->getThemePreset($resume['template']);
+
+        // Check if this template is a full custom renderer
+        $fullTplFile = $this->resumeModel->getFullTemplateFile($resume['template']);
+        if ($fullTplFile !== null) {
+            $isEmbed    = isset($_GET['embed']);
+            $isPdf      = isset($_GET['pdf']);
+            $title      = htmlspecialchars($resume['title'] ?? 'Resume', ENT_QUOTES, 'UTF-8');
+            extract(compact('resumeData', 'themeSettings', 'resume', 'isEmbed', 'isPdf', 'title'));
+            include $fullTplFile;
+            return;
+        }
 
         View::render('projects/resumex/preview', [
             'title'         => 'Preview - ' . htmlspecialchars($resume['title']),
@@ -272,6 +284,16 @@ class ResumeController
         }
 
         // Fallback: render the print view with auto-print dialog
+        $fullTplFile = $this->resumeModel->getFullTemplateFile($resume['template']);
+        if ($fullTplFile !== null) {
+            $isEmbed = false;
+            $isPdf   = false;
+            $title   = htmlspecialchars($resume['title'] ?? 'Resume', ENT_QUOTES, 'UTF-8');
+            extract(compact('resumeData', 'themeSettings', 'resume', 'isEmbed', 'isPdf', 'title'));
+            include $fullTplFile;
+            return;
+        }
+
         View::render('projects/resumex/print', [
             'title'         => htmlspecialchars($resume['title']),
             'resume'        => $resume,
@@ -304,22 +326,34 @@ class ResumeController
 
     /**
      * Render the print view to an HTML string for PDF generation.
+     * If the resume uses a full custom template, that file is used instead of print.php.
      */
     private function renderPrintHtml(array $resume, array $resumeData, array $themeSettings): string
     {
-        $autoPrint = false;
+        $autoPrint   = false;
+        $isEmbed     = false;
+        $isPdf       = true;
+        $title       = htmlspecialchars($resume['title'] ?? 'Resume', ENT_QUOTES, 'UTF-8');
+
         ob_start();
-        extract([
-            'resume'        => $resume,
-            'resumeData'    => $resumeData,
-            'themeSettings' => $themeSettings,
-            'autoPrint'     => $autoPrint,
-        ]);
-        include dirname(__DIR__) . '/views/print.php';
+
+        $fullTplFile = $this->resumeModel->getFullTemplateFile($resume['template']);
+        if ($fullTplFile !== null) {
+            extract(compact('resumeData', 'themeSettings', 'resume', 'isEmbed', 'isPdf', 'title'));
+            include $fullTplFile;
+        } else {
+            extract([
+                'resume'        => $resume,
+                'resumeData'    => $resumeData,
+                'themeSettings' => $themeSettings,
+                'autoPrint'     => $autoPrint,
+            ]);
+            include dirname(__DIR__) . '/views/print.php';
+        }
+
         $html = ob_get_clean() ?: '';
 
-        // Remove the Google Fonts @import since file:// rendering cannot load external resources.
-        // Chromium will fall back to the system font (Arial) specified as the CSS fallback.
+        // Remove Google Fonts @import since file:// rendering cannot load external resources.
         $html = preg_replace('/@import\s+url\([^)]*fonts\.googleapis\.com[^)]*\)\s*;/', '', $html);
 
         return $html;

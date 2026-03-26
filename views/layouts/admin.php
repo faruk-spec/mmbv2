@@ -1596,10 +1596,6 @@
                                 <i class="fas fa-layer-group"></i>
                                 <span>Manage Templates</span>
                             </a>
-                            <a href="/admin/projects/resumex/templates/create" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/resumex/templates/create') === 0 ? 'active' : '' ?>">
-                                <i class="fas fa-paint-brush"></i>
-                                <span>Template Designer</span>
-                            </a>
                             <?php endif; ?>
                             <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('resumex.resumes')): ?>
                             <a href="/admin/projects/resumex/resumes" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/resumex/resumes') === 0 ? 'active' : '' ?>">

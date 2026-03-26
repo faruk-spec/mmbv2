@@ -322,9 +322,9 @@ $router->post('/admin/whatsapp/user-subscriptions/cancel/{id}', 'Admin\\WhatsApp
 $router->get('/admin/projects/resumex', 'Admin\\ResumeXAdminController@overview', ['auth', 'admin']);
 $router->get('/admin/projects/resumex/templates', 'Admin\\ResumeXAdminController@templates', ['auth', 'admin']);
 $router->post('/admin/projects/resumex/templates/upload', 'Admin\\ResumeXAdminController@uploadTemplate', ['auth', 'admin']);
+$router->post('/admin/projects/resumex/templates/upload-full', 'Admin\\ResumeXAdminController@uploadFullTemplate', ['auth', 'admin']);
 $router->post('/admin/projects/resumex/templates/delete', 'Admin\\ResumeXAdminController@deleteTemplate', ['auth', 'admin']);
 $router->get('/admin/projects/resumex/templates/sample-download', 'Admin\\ResumeXAdminController@downloadSample', ['auth', 'admin']);
-$router->get('/admin/projects/resumex/templates/create', 'Admin\\ResumeXAdminController@createTemplate', ['auth', 'admin']);
-$router->post('/admin/projects/resumex/templates/create', 'Admin\\ResumeXAdminController@saveTemplate', ['auth', 'admin']);
+$router->get('/admin/projects/resumex/templates/sample-full-download', 'Admin\\ResumeXAdminController@downloadSampleFull', ['auth', 'admin']);
 $router->post('/admin/projects/resumex/templates/preview-image', 'Admin\\ResumeXAdminController@uploadPreviewImage', ['auth', 'admin']);
 $router->get('/admin/projects/resumex/resumes', 'Admin\\ResumeXAdminController@resumes', ['auth', 'admin']);

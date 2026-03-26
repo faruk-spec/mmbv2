@@ -135,103 +135,66 @@ class ResumeXAdminController extends BaseController
     }
 
     /**
-     * Show the visual Template Designer form.
-     * Pass ?prefill=<built-in-key> to pre-populate from an existing built-in template.
+     * Handle upload of a full resume template (complete PHP renderer).
      */
-    public function createTemplate(): void
-    {
-        $this->requirePermission('resumex.templates');
-
-        $allTemplates = $this->resumeModel->getAllThemePresets();
-        $prefillKey   = trim($_GET['prefill'] ?? '');
-        $prefill      = null;
-        $isOverride   = false;
-
-        $builtinTemplates = $this->resumeModel->getAllThemePresets();
-        $customRows       = $this->templateModel->getAllRows();
-        $customKeys       = array_column($customRows, 'key');
-
-        if ($prefillKey !== '' && isset($allTemplates[$prefillKey])) {
-            $prefill    = $allTemplates[$prefillKey];
-            $isOverride = !in_array($prefillKey, $customKeys, true);  // only built-ins are flagged as override
-        }
-
-        $this->view('admin/projects/resumex/template_create', [
-            'title'            => 'ResumeX — Template Designer',
-            'csrfToken'        => Security::generateCsrfToken(),
-            'prefill'          => $prefill,
-            'isOverride'       => $isOverride,
-            'builtinKeys'      => array_keys($this->resumeModel->getAllThemePresets()),
-            'error'            => $_GET['error'] ?? null,
-        ]);
-    }
-
-    /**
-     * Handle form submission from the Template Designer.
-     */
-    public function saveTemplate(): void
+    public function uploadFullTemplate(): void
     {
         $this->requirePermission('resumex.templates');
 
         if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
-            $this->redirectWithError('/admin/projects/resumex/templates/create', 'Invalid security token.');
+            $this->redirectWithError('/admin/projects/resumex/templates', 'Invalid security token.');
         }
 
-        // Build preset array from POST data
-        $data = [
-            'key'              => strtolower(trim($_POST['key']         ?? '')),
-            'name'             => trim($_POST['name']                   ?? ''),
-            'category'         => trim($_POST['category']               ?? 'custom'),
-            'primaryColor'     => trim($_POST['primaryColor']           ?? '#000000'),
-            'secondaryColor'   => trim($_POST['secondaryColor']         ?? '#000000'),
-            'backgroundColor'  => trim($_POST['backgroundColor']        ?? '#ffffff'),
-            'surfaceColor'     => trim($_POST['surfaceColor']           ?? '#ffffff'),
-            'textColor'        => trim($_POST['textColor']              ?? '#000000'),
-            'textMuted'        => trim($_POST['textMuted']              ?? '#666666'),
-            'borderColor'      => trim($_POST['borderColor']            ?? '#e2e8f0'),
-            'fontFamily'       => trim($_POST['fontFamily']             ?? 'Inter'),
-            'fontSize'         => trim($_POST['fontSize']               ?? '14'),
-            'fontWeight'       => trim($_POST['fontWeight']             ?? '400'),
-            'headerStyle'      => trim($_POST['headerStyle']            ?? 'minimal'),
-            'buttonStyle'      => trim($_POST['buttonStyle']            ?? 'pill'),
-            'cardStyle'        => trim($_POST['cardStyle']              ?? 'bordered'),
-            'spacing'          => trim($_POST['spacing']                ?? 'normal'),
-            'layoutMode'       => trim($_POST['layoutMode']             ?? 'two-column'),
-            'iconStyle'        => trim($_POST['iconStyle']              ?? 'filled'),
-            'accentHighlights' => !empty($_POST['accentHighlights']),
-            'animations'       => !empty($_POST['animations']),
-            'layoutStyle'      => trim($_POST['layoutStyle']            ?? 'minimal'),
-            'colorVariants'    => [],
+        if (empty($_FILES['full_template_file']) || $_FILES['full_template_file']['error'] === UPLOAD_ERR_NO_FILE) {
+            $this->redirectWithError('/admin/projects/resumex/templates', 'No file was selected for upload.');
+        }
+
+        $meta = [
+            'key'         => $_POST['tpl_key']      ?? '',
+            'name'        => $_POST['tpl_name']     ?? '',
+            'category'    => $_POST['tpl_category'] ?? 'custom',
+            'display_bg'  => $_POST['tpl_bg']       ?? '#1e1e2e',
+            'display_pri' => $_POST['tpl_pri']      ?? '#00f0ff',
         ];
 
-        // Parse color variants (up to 4)
-        $variantLabels    = $_POST['variant_label']    ?? [];
-        $variantPrimaries = $_POST['variant_primary']  ?? [];
-        $variantSeconds   = $_POST['variant_secondary'] ?? [];
-        for ($i = 0; $i < min(4, count($variantLabels)); $i++) {
-            $label = trim($variantLabels[$i] ?? '');
-            $prim  = trim($variantPrimaries[$i] ?? '');
-            $sec   = trim($variantSeconds[$i]   ?? '');
-            if ($label !== '' && $prim !== '' && $sec !== '') {
-                $data['colorVariants'][] = ['label' => $label, 'primary' => $prim, 'secondary' => $sec];
-            }
-        }
-
-        $isOverride = !empty($_POST['is_override']);
-        $result     = $this->templateModel->createFromData($data, Auth::id(), $isOverride);
+        $result = $this->templateModel->uploadFullTemplate(
+            $_FILES['full_template_file'],
+            $meta,
+            Auth::id()
+        );
 
         if (!$result['success']) {
-            $this->redirectWithError('/admin/projects/resumex/templates/create', $result['error'] ?? 'Failed to save template.');
+            $this->redirectWithError('/admin/projects/resumex/templates', $result['error'] ?? 'Upload failed.');
         }
 
-        ActivityLogger::log('resumex_template_create', 'resumex', [
-            'template_key'  => $data['key'],
-            'template_name' => $data['name'],
-            'is_override'   => $isOverride ? 1 : 0,
+        ActivityLogger::log('resumex_full_template_upload', 'resumex', [
+            'template_key'  => $result['key']  ?? '',
+            'template_name' => $result['name'] ?? '',
         ]);
 
-        $name = urlencode($data['name']);
+        $name = urlencode($result['name'] ?? 'Template');
         header("Location: /admin/projects/resumex/templates?success=1&name={$name}");
+        exit;
+    }
+
+    /**
+     * Serve the sample FULL template PHP file as a download.
+     */
+    public function downloadSampleFull(): void
+    {
+        $this->requirePermission('resumex.templates');
+
+        $path = BASE_PATH . '/projects/resumex/templates/sample-full-template.php';
+        if (!file_exists($path)) {
+            http_response_code(404);
+            echo 'Sample full template not found.';
+            exit;
+        }
+
+        header('Content-Type: application/octet-stream');
+        header('Content-Disposition: attachment; filename="sample-full-template.php"');
+        header('Content-Length: ' . filesize($path));
+        readfile($path);
         exit;
     }
 

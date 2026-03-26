@@ -631,7 +631,28 @@
                 <div class="rxc-preview" style="background:<?= $bg ?>;">
                     <?php
                     $ls = $theme['layoutStyle'] ?? 'single';
-                    if ($ls === 'sidebar-left' || $ls === 'sidebar-dark'):
+                    if (!empty($theme['_full_template'])): ?>
+                    <?php if (!empty($theme['_preview_image'])): ?>
+                    <img src="<?= htmlspecialchars($theme['_preview_image']) ?>" alt="preview"
+                         style="width:100%;height:100%;object-fit:cover;display:block;">
+                    <?php else: ?>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 140" style="width:100%;height:100%;display:block;">
+                        <rect width="170" height="140" fill="<?= $bg ?>"/>
+                        <rect x="0" y="0" width="170" height="35" fill="<?= $pri ?>"/>
+                        <rect x="10" y="11" width="80" height="7" rx="3" fill="#ffffff88"/>
+                        <rect x="10" y="21" width="50" height="4" rx="2" fill="#ffffff55"/>
+                        <rect x="10" y="45" width="40" height="3" rx="1.5" fill="<?= $pri ?>cc"/>
+                        <rect x="10" y="53" width="150" height="2" rx="1" fill="<?= $pri ?>40"/>
+                        <rect x="10" y="60" width="145" height="2" rx="1" fill="#ffffff22"/>
+                        <rect x="10" y="65" width="120" height="2" rx="1" fill="#ffffff18"/>
+                        <rect x="10" y="80" width="40" height="3" rx="1.5" fill="<?= $pri ?>cc"/>
+                        <rect x="10" y="88" width="150" height="2" rx="1" fill="#ffffff22"/>
+                        <rect x="10" y="93" width="130" height="2" rx="1" fill="#ffffff18"/>
+                        <rect x="10" y="98" width="100" height="2" rx="1" fill="#ffffff14"/>
+                        <text x="85" y="130" text-anchor="middle" font-size="9" fill="<?= $pri ?>99" font-family="sans-serif">Full Custom Template</text>
+                    </svg>
+                    <?php endif; ?>
+                    <?php elseif ($ls === 'sidebar-left' || $ls === 'sidebar-dark'): ?>
                     ?>
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 140" style="width:100%;height:100%;display:block;">
                         <rect width="170" height="140" fill="<?= $bg ?>"/>
@@ -794,8 +815,12 @@
                     <span class="rxc-cat-badge <?= $catClass ?>">
                         <?= htmlspecialchars(ucfirst($cat)) ?>
                     </span>
+                    <?php if (!empty($theme['_full_template'])): ?>
+                    <span style="display:inline-block;padding:1px 7px;border-radius:10px;font-size:0.6rem;font-weight:600;border:1px solid rgba(139,92,246,0.4);color:#a78bfa;margin-left:3px;">Full Design</span>
+                    <?php else: ?>
                     <?php $lsLabel = str_replace('-', ' ', $theme['layoutStyle'] ?? 'single'); ?>
                     <span style="display:inline-block;padding:1px 7px;border-radius:10px;font-size:0.6rem;font-weight:600;border:1px solid var(--border-color);color:var(--text-secondary);margin-left:3px;"><?= htmlspecialchars(ucfirst($lsLabel)) ?></span>
+                    <?php endif; ?>
                 </div>
 
                 <?php if (!empty($theme['colorVariants'])): ?>

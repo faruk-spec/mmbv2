@@ -275,31 +275,48 @@ class ResumeModel
     /**
      * Return all theme presets: built-in presets merged with any active custom
      * templates that have been uploaded by admins.  Custom templates with the
-     * same key as a built-in preset are ignored to prevent overrides.
+     * same key as a built-in preset are ignored to prevent overrides unless
+     * the template is explicitly flagged as an override.
+     *
+     * Full custom templates (type='full') are included so they appear in the
+     * template picker, with a '_full_template' => true marker.
      */
     public function getAllThemePresets(): array
     {
         $builtIn = $this->getBuiltInPresets();
 
-        // Merge custom (uploaded) templates.
-        // Override templates (is_override=1) replace built-ins; others are added only for new keys.
         try {
             $customModel = new TemplateModel();
             $custom      = $customModel->getAllCustomTemplates();
             foreach ($custom as $key => $preset) {
-                if (!empty($preset['_is_override']) || !array_key_exists($key, $builtIn)) {
-                    // Strip private metadata before exposing to the editor
-                    unset($preset['_is_override'], $preset['_preview_image'], $preset['_db_id']);
-                    $builtIn[$key] = $preset;
+                $isFullTpl = !empty($preset['_full_template']);
+                if ($isFullTpl || !empty($preset['_is_override']) || !array_key_exists($key, $builtIn)) {
+                    // Strip internal metadata except _full_template which is needed by the renderer
+                    $stripped = $preset;
+                    unset($stripped['_is_override'], $stripped['_preview_image'], $stripped['_db_id']);
+                    $builtIn[$key] = $stripped;
                 }
             }
         } catch (\Throwable $e) {
-            // If TemplateModel fails for any reason (e.g. DB not ready) we
-            // degrade gracefully and just return the built-in presets.
             \Core\Logger::error('ResumeModel::getAllThemePresets custom-template load error: ' . $e->getMessage());
         }
 
         return $builtIn;
+    }
+
+    /**
+     * If $key belongs to an active full-template, return the absolute path to
+     * the rendering PHP file.  Returns null for built-in / preset templates.
+     */
+    public function getFullTemplateFile(string $key): ?string
+    {
+        try {
+            $templateModel = new TemplateModel();
+            return $templateModel->getFullTemplateFile($key);
+        } catch (\Throwable $e) {
+            \Core\Logger::error('ResumeModel::getFullTemplateFile error: ' . $e->getMessage());
+            return null;
+        }
     }
 
     /**
