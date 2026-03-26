@@ -1055,7 +1055,7 @@
                 <?php endif; ?>
 
                 <!-- Projects Management -->
-                <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('projects') || \Core\Auth::hasPermissionGroup('convertx') || \Core\Auth::hasPermissionGroup('codexpro') || \Core\Auth::hasPermissionGroup('imgtxt') || \Core\Auth::hasPermissionGroup('proshare') || \Core\Auth::hasPermissionGroup('billx') || \Core\Auth::hasPermissionGroup('whatsapp') || \Core\Auth::hasPermissionGroup('qr')): ?>
+                <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('projects') || \Core\Auth::hasPermissionGroup('convertx') || \Core\Auth::hasPermissionGroup('codexpro') || \Core\Auth::hasPermissionGroup('imgtxt') || \Core\Auth::hasPermissionGroup('proshare') || \Core\Auth::hasPermissionGroup('billx') || \Core\Auth::hasPermissionGroup('whatsapp') || \Core\Auth::hasPermissionGroup('qr') || \Core\Auth::hasPermissionGroup('resumex')): ?>
                 <div class="menu-section">
                     <div class="menu-section-title">Projects</div>
                     
@@ -1568,6 +1568,51 @@
                             <a href="/admin/qr/api-keys" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/qr/api-keys') === 0 ? 'active' : '' ?>">
                                 <i class="fas fa-key"></i>
                                 <span>QR API Keys</span>
+                            </a>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
+                    <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('resumex')): ?>
+                    <!-- ResumeX -->
+                    <div class="menu-item menu-dropdown">
+                        <div class="menu-dropdown-toggle <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/resumex') === 0 ? 'active' : '' ?>">
+                            <div class="left">
+                                <i class="fas fa-file-alt"></i>
+                                <span>ResumeX</span>
+                            </div>
+                            <i class="fas fa-chevron-down arrow"></i>
+                        </div>
+                        <div class="menu-dropdown-content">
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('resumex')): ?>
+                            <a href="/admin/projects/resumex" class="menu-link <?= ($_SERVER['REQUEST_URI'] ?? '') === '/admin/projects/resumex' ? 'active' : '' ?>">
+                                <i class="fas fa-chart-line"></i>
+                                <span>Overview</span>
+                            </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('resumex.templates')): ?>
+                            <a href="/admin/projects/resumex/templates" class="menu-link <?= ($_SERVER['REQUEST_URI'] ?? '') === '/admin/projects/resumex/templates' ? 'active' : '' ?>">
+                                <i class="fas fa-layer-group"></i>
+                                <span>Manage Templates</span>
+                            </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('resumex.templates')): ?>
+                            <a href="/admin/projects/resumex/designer" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/resumex/designer') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-magic"></i>
+                                <span>Template Designer</span>
+                            </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('resumex.resumes')): ?>
+                            <a href="/admin/projects/resumex/resumes" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/resumex/resumes') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-list"></i>
+                                <span>All Resumes</span>
+                            </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('resumex.templates')): ?>
+                            <a href="/admin/projects/resumex/templates/sample-download" class="menu-link">
+                                <i class="fas fa-download"></i>
+                                <span>Download Sample Template</span>
                             </a>
                             <?php endif; ?>
                         </div>

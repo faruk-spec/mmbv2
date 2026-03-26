@@ -8,6 +8,7 @@
 namespace Projects\ResumeX\Models;
 
 use Core\Database;
+use Core\Logger;
 
 class ResumeModel
 {
@@ -272,9 +273,72 @@ class ResumeModel
     }
 
     /**
-     * Two supported theme presets
+     * Return all theme presets: built-in presets merged with any active custom
+     * templates that have been uploaded by admins.  Custom templates with the
+     * same key as a built-in preset are ignored to prevent overrides unless
+     * the template is explicitly flagged as an override.
+     *
+     * Full custom templates (type='full') are included so they appear in the
+     * template picker, with a '_full_template' => true marker.
      */
     public function getAllThemePresets(): array
+    {
+        $builtIn = $this->getBuiltInPresets();
+
+        try {
+            $customModel = new TemplateModel();
+            $custom      = $customModel->getAllCustomTemplates();
+            foreach ($custom as $key => $preset) {
+                $isFullTpl = !empty($preset['_full_template']);
+                if ($isFullTpl || !empty($preset['_is_override']) || !array_key_exists($key, $builtIn)) {
+                    // Strip admin-only internal metadata that callers don't need;
+                    // keep _full_template and _preview_image for the template picker UI.
+                    $stripped = $preset;
+                    unset($stripped['_is_override'], $stripped['_db_id']);
+                    $builtIn[$key] = $stripped;
+                }
+            }
+        } catch (\Throwable $e) {
+            \Core\Logger::error('ResumeModel::getAllThemePresets custom-template load error: ' . $e->getMessage());
+        }
+
+        return $builtIn;
+    }
+
+    /**
+     * If $key belongs to an active full-template, return the absolute path to
+     * the rendering PHP file.  Returns null for built-in / preset templates.
+     */
+    public function getFullTemplateFile(string $key): ?string
+    {
+        try {
+            $templateModel = new TemplateModel();
+            return $templateModel->getFullTemplateFile($key);
+        } catch (\Throwable $e) {
+            \Core\Logger::error('ResumeModel::getFullTemplateFile error: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * If $key belongs to an active DESIGNER template, return its parsed design
+     * array (layout JSON).  Returns null for all other template types.
+     */
+    public function getDesignedTemplateDesign(string $key): ?array
+    {
+        try {
+            $templateModel = new TemplateModel();
+            return $templateModel->getDesignedTemplateDesign($key);
+        } catch (\Throwable $e) {
+            \Core\Logger::error('ResumeModel::getDesignedTemplateDesign error: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Built-in (hardcoded) theme presets.
+     */
+    private function getBuiltInPresets(): array
     {
         return [
             'ocean-blue' => [

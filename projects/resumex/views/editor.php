@@ -1199,7 +1199,14 @@ body .main {
                     </div>
                     <div class="rxe-field">
                         <label class="rxe-label">Photo URL <small style="text-transform: none; font-weight: 400">(optional)</small></label>
-                        <input class="rxe-input" id="c_photo" type="url" placeholder="https://…/photo.jpg" maxlength="500">
+                        <div style="display:flex;gap:8px;align-items:center;">
+                            <input class="rxe-input" id="c_photo" type="url" placeholder="https://…/photo.jpg" maxlength="500" style="flex:1;">
+                            <label title="Upload photo" style="display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;background:rgba(0,240,255,0.1);border:1px solid rgba(0,240,255,0.25);cursor:pointer;flex-shrink:0;transition:background 0.2s;" id="photoUploadLabel">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+                                <input type="file" id="photoFileInput" accept="image/jpeg,image/png,image/gif,image/webp" style="display:none;">
+                            </label>
+                        </div>
+                        <div id="photoUploadStatus" style="font-size:0.78rem;margin-top:4px;display:none;"></div>
                     </div>
                 </div>
             </div><!-- /panel-contact -->
@@ -1546,6 +1553,7 @@ body .main {
             <button class="rxe-tpl-filter-btn" data-filter="dark">Dark</button>
             <button class="rxe-tpl-filter-btn" data-filter="sidebar">Sidebar</button>
             <button class="rxe-tpl-filter-btn" data-filter="timeline">Timeline</button>
+            <button class="rxe-tpl-filter-btn" data-filter="custom">Custom</button>
         </div>
         <!-- Grid -->
         <div id="rxe-tpl-grid" style="overflow-y:auto;padding:20px 24px;display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:14px;flex:1;min-height:0;"></div>
@@ -2732,6 +2740,8 @@ window.applyColorVariant = function (key, variantIndex) {
     };
 
     function getFilterGroup(t) {
+        // Designer and full custom templates always land in the 'custom' bucket
+        if (t._full_template || t._designer_template) return 'custom';
         var cat = (t.category || '').toLowerCase();
         var ls  = t.layoutStyle || 'single';
         if (ls === 'sidebar-left' || ls === 'sidebar-dark') return 'sidebar';
@@ -2742,6 +2752,7 @@ window.applyColorVariant = function (key, variantIndex) {
         if (cat === 'creative' || cat === 'tech' || cat === 'bold') return 'creative';
         if (cat === 'dark') return 'dark';
         if (cat === 'minimal') return 'minimal';
+        if (cat === 'custom') return 'custom';
         return 'professional';
     }
 
@@ -2752,6 +2763,32 @@ window.applyColorVariant = function (key, variantIndex) {
         var sec  = t.secondaryColor  || '#9945ff';
         var tx   = t.textColor       || '#e0e6ff';
         var ls   = t.layoutStyle     || 'single';
+
+        // Full custom template: show preview image or a "Full Design" placeholder SVG
+        if (t._full_template || t._designer_template) {
+            var thumbLabel = t._designer_template ? 'Designed Template' : 'Custom Template';
+            if (t._preview_image) {
+                return '<img src="' + t._preview_image.replace(/"/g,'&quot;') + '" style="width:100%;height:100%;object-fit:cover;display:block;" alt="preview">';
+            }
+            // Normalize to 6-char hex
+            function stripAlpha2(c) { return (c && c[0] === '#' && c.length > 7) ? c.slice(0, 7) : c; }
+            pri = stripAlpha2(pri); bg = stripAlpha2(bg || '#ffffff');
+            var bgFill = bg || '#ffffff';
+            return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 120" style="width:100%;height:100%;display:block;">'
+                + '<rect width="170" height="120" fill="' + bgFill + '"/>'
+                + '<rect x="0" y="0" width="170" height="34" fill="' + pri + '"/>'
+                + '<rect x="10" y="10" width="70" height="7" rx="3" fill="#ffffff88"/>'
+                + '<rect x="10" y="20" width="45" height="4" rx="2" fill="#ffffff55"/>'
+                + '<rect x="10" y="44" width="35" height="3" rx="1.5" fill="' + pri + 'cc"/>'
+                + '<rect x="10" y="51" width="150" height="2" rx="1" fill="' + pri + '40"/>'
+                + '<rect x="10" y="57" width="140" height="2" rx="1" fill="rgba(0,0,0,.1)"/>'
+                + '<rect x="10" y="62" width="115" height="2" rx="1" fill="rgba(0,0,0,.07)"/>'
+                + '<rect x="10" y="76" width="35" height="3" rx="1.5" fill="' + pri + 'cc"/>'
+                + '<rect x="10" y="83" width="150" height="2" rx="1" fill="rgba(0,0,0,.1)"/>'
+                + '<rect x="10" y="88" width="125" height="2" rx="1" fill="rgba(0,0,0,.07)"/>'
+                + '<text x="85" y="112" text-anchor="middle" font-size="7" fill="' + pri + '99" font-family="sans-serif">' + thumbLabel + '</text>'
+                + '</svg>';
+        }
 
         // Normalize to 6-char hex so appending 2-char opacity suffixes (#33, #88 etc.) stays valid
         function stripAlpha(c) { return (c && c[0] === '#' && c.length > 7) ? c.slice(0, 7) : c; }
@@ -2982,7 +3019,11 @@ window.applyColorVariant = function (key, variantIndex) {
                 + '<div class="rxe-tpl-name">' + esc(t.name) + '</div>'
                 + '<div class="rxe-tpl-cat">' + esc(t.category || 'general') + '</div>'
                 + (isCurrent ? '<span class="rxe-tpl-badge">&#10003; Active</span>' : '')
-                + '<span class="rxe-tpl-layout-tag">' + esc(layoutLabel) + '</span>'
+                + (t._designer_template
+                    ? '<span class="rxe-tpl-layout-tag" style="border-color:rgba(0,240,255,0.4);color:var(--cyan);">Designed</span>'
+                    : t._full_template
+                        ? '<span class="rxe-tpl-layout-tag" style="border-color:rgba(139,92,246,0.4);color:#a78bfa;">Full Design</span>'
+                        : '<span class="rxe-tpl-layout-tag">' + esc(layoutLabel) + '</span>')
                 + '</div>'
                 + variantHtml
                 + '</div>';
@@ -3176,7 +3217,49 @@ renderSectionOrder();
 // Initial live preview
 setTimeout(updateLivePreview, 400);
 
-// Highlight preview toggle button as active
+// ── Profile photo upload ─────────────────────────────────────────────────────
+(function () {
+    var fileInput  = document.getElementById('photoFileInput');
+    var photoField = document.getElementById('c_photo');
+    var statusEl   = document.getElementById('photoUploadStatus');
+
+    if (!fileInput || !photoField) return;
+
+    fileInput.addEventListener('change', function () {
+        var file = this.files[0];
+        if (!file) return;
+
+        statusEl.style.display = 'block';
+        statusEl.style.color   = 'var(--cyan)';
+        statusEl.textContent   = '⏳ Uploading…';
+
+        var fd = new FormData();
+        fd.append('_token', csrfToken);
+        fd.append('photo',  file);
+
+        fetch('/projects/resumex/upload-image', { method: 'POST', body: fd })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data.success) {
+                    photoField.value = data.url;
+                    photoField.dispatchEvent(new Event('input'));
+                    statusEl.style.color = '#34d399';
+                    statusEl.textContent = '✓ Photo uploaded successfully.';
+                } else {
+                    statusEl.style.color = '#f87171';
+                    statusEl.textContent = '✗ ' + (data.error || 'Upload failed.');
+                }
+            })
+            .catch(function () {
+                statusEl.style.color = '#f87171';
+                statusEl.textContent = '✗ Network error. Please try again.';
+            });
+
+        // Reset input so the same file can be re-selected
+        this.value = '';
+    });
+}());
+
 (function() {
     var btn = document.getElementById('btnTogglePreview');
     if (btn) { btn.style.borderColor = 'rgba(0,240,255,0.35)'; btn.style.color = 'var(--cyan)'; }
