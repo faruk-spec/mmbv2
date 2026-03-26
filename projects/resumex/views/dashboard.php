@@ -433,23 +433,65 @@
         from { opacity: 0; transform: translateY(-8px); }
         to   { opacity: 1; transform: translateY(0); }
     }
+    @keyframes rx-slidein {
+        from { opacity: 0; transform: translateY(20px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes rx-scalein {
+        from { opacity: 0; transform: scale(0.95); }
+        to   { opacity: 1; transform: scale(1); }
+    }
+    .rx-header { animation: rx-slidein 0.45s ease both; }
+    .rx-stats   { animation: rx-slidein 0.5s 0.08s ease both; }
+    .rx-section-head { animation: rx-slidein 0.5s 0.14s ease both; }
+    .rx-grid    { animation: rx-slidein 0.5s 0.18s ease both; }
+    .rx-stat-card { transition: var(--transition), box-shadow 0.25s; }
+    .rx-card    { animation: rx-scalein 0.4s 0.22s ease both; }
 
     /* ── Responsive ──────────────────────────────────────────── */
     @media (max-width: 1024px) {
         .rx-grid { grid-template-columns: repeat(2, 1fr); }
     }
     @media (max-width: 768px) {
-        .rx-wrap { padding: 20px 16px; }
-        .rx-header { align-items: flex-start; }
-        .rx-header-left h1 { font-size: 1.7rem; }
-        .rx-stats { grid-template-columns: 1fr; gap: 12px; }
+        .rx-wrap { padding: 16px 14px; }
+        .rx-header {
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+        .rx-header-left h1 { font-size: 1.8rem; }
+        .rx-header-left p { font-size: 0.88rem; }
+        /* All 3 stat cards in one scrollable row */
+        .rx-stats {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+        .rx-stat-card {
+            padding: 12px 10px;
+            gap: 8px;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        .rx-stat-icon { width: 36px; height: 36px; }
+        .rx-stat-icon svg { width: 18px; height: 18px; }
+        .rx-stat-val { font-size: 1.3rem; }
+        .rx-stat-label { font-size: 0.72rem; }
         .rx-grid { grid-template-columns: 1fr; }
-        .rx-stat-card { padding: 16px; }
         .rx-card-actions { gap: 6px; }
         .rx-action-btn { padding: 7px 10px; font-size: 0.74rem; }
         .rx-empty { padding: 48px 16px; }
         .rx-modal { padding: 24px 20px; }
         .rx-modal-actions { flex-direction: column; }
+    }
+    @media (max-width: 480px) {
+        .rx-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+        .rx-stat-card { padding: 10px 6px; gap: 6px; }
+        .rx-stat-val { font-size: 1.15rem; }
+        .rx-stat-label { font-size: 0.67rem; letter-spacing: 0; }
     }
 </style>
 

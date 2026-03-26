@@ -781,11 +781,12 @@ body .main {
 .rxe-modal-btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
 
 /* ── Template picker modal ───────────────────────────────────── */
-#rxe-tpl-modal { padding: 40px 20px; }
+#rxe-tpl-modal { padding: 0; }
 .rxe-tpl-filter-btn {
     padding: 5px 14px; border-radius: 20px; border: 1px solid var(--border-color);
     background: transparent; color: var(--text-secondary); font-size: 0.75rem;
     font-family: 'Poppins', sans-serif; cursor: pointer; transition: all 0.18s; font-weight: 500;
+    flex-shrink: 0;
 }
 .rxe-tpl-filter-btn:hover { border-color: rgba(0,240,255,0.4); color: var(--cyan); }
 .rxe-tpl-filter-btn.active { background: var(--cyan); border-color: var(--cyan); color: #06060a; font-weight: 700; }
@@ -802,6 +803,56 @@ body .main {
 .rxe-tpl-cat { font-size: 0.68rem; color: var(--text-secondary); margin-top: 2px; }
 .rxe-tpl-badge { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 0.62rem; font-weight: 600; background: var(--cyan); color: #06060a; margin-top: 4px; }
 .rxe-tpl-layout-tag { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 0.62rem; font-weight: 600; border: 1px solid var(--border-color); color: var(--text-secondary); margin-top: 4px; margin-left: 4px; }
+.rxe-tpl-variants { display: flex; align-items: center; gap: 6px; padding: 0 10px 10px; flex-wrap: wrap; }
+.rxe-tpl-vdot { width: 15px; height: 15px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s; padding: 0; flex-shrink: 0; outline: none; appearance: none; -webkit-appearance: none; display: block; }
+.rxe-tpl-vdot:hover { transform: scale(1.3); }
+.rxe-tpl-vdot.rxe-tpl-vdot-active { border-color: rgba(255,255,255,0.9); box-shadow: 0 0 0 2px rgba(255,255,255,0.25), 0 2px 6px rgba(0,0,0,0.4); transform: scale(1.2); }
+/* ── Template picker: mobile bottom-sheet ────────────────────── */
+@media (max-width: 640px) {
+    /* Slide up from bottom as a sheet */
+    #rxe-tpl-modal { align-items: flex-end !important; }
+    /* Inner sheet: full width, rounded top corners only, near-full height.
+       display:block (overrides inline display:flex) turns the flex→grid chain
+       into a block→grid chain so the grid is a block child and takes its full
+       natural content height (all rows fully visible, including colour dots).
+       overflow-y:auto on this container is the single scroll unit — the whole
+       popup (title + filters + all cards) scrolls as one piece. */
+    #rxe-tpl-inner {
+        display: block !important;
+        border-radius: 16px 16px 0 0 !important;
+        max-height: 92vh !important;
+        max-height: 92svh !important;
+        max-height: 92dvh !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        -webkit-overflow-scrolling: touch;
+        margin: 0 !important;
+        width: 100% !important;
+    }
+    /* Filter tabs: scroll horizontally instead of wrapping (saves vertical space) */
+    #rxe-tpl-filters {
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        overflow-y: visible !important;
+        -webkit-overflow-scrolling: touch;
+        padding: 10px 14px !important;
+        gap: 6px !important;
+        scrollbar-width: none;
+    }
+    #rxe-tpl-filters::-webkit-scrollbar { display: none; }
+    /* Grid: block child → intrinsic height = all rows; no independent scroll. */
+    #rxe-tpl-grid {
+        grid-template-columns: repeat(auto-fill,minmax(140px,1fr)) !important;
+        padding: 12px 14px 24px !important;
+        gap: 10px !important;
+        overflow: visible !important;
+        min-height: unset !important;
+    }
+    .rxe-tpl-thumb { height: 110px; }
+    /* Larger touch targets for variant dots */
+    .rxe-tpl-vdot { width: 18px !important; height: 18px !important; }
+    .rxe-tpl-variants { gap: 8px; padding: 0 12px 12px; }
+}
 
 /* ── Better score breakdown ─────────────────────────────────── */
 .rxe-score-ring-wrap {
@@ -913,10 +964,13 @@ body .main {
     .rxe-title-input { max-width: 100px; min-width: 60px; }
     .rxe-save-status { display: none; }
     .rxe-bar-spacer { flex: 1; min-width: 0; }
-    /* Compress all bar buttons to icon-only */
+    /* Compress all bar buttons to icon-only on mobile */
     .rxe-bar-btn { padding: 5px 7px; gap: 0; font-size: 0; min-width: 0; }
     .rxe-bar-btn svg { flex-shrink: 0; }
-    .rxe-bar-btn.primary { padding: 5px 8px; font-size: 0.75rem; gap: 3px; }
+    /* Save: icon-only (no text) */
+    .rxe-bar-btn.primary { padding: 5px 8px; font-size: 0; gap: 0; }
+    /* Preview: icon + label */
+    .rxe-btn-toggle-preview { font-size: 0.72rem; gap: 4px; padding: 5px 9px; }
 }
 @media (max-width: 560px) {
     .rxe-nav { display: none; }
@@ -926,6 +980,8 @@ body .main {
     .rxe-bar { gap: 3px; padding: 5px 6px; }
     .rxe-back span { display: none; } /* hide Dashboard text, keep arrow */
     .rxe-back { padding: 3px; }
+    /* Tighten Preview label on very small screens */
+    .rxe-btn-toggle-preview { font-size: 0.68rem; gap: 3px; padding: 5px 7px; }
 }
 /* Mobile bottom nav bar */
 .rxe-mobile-nav-bar {
@@ -1472,7 +1528,7 @@ body .main {
 
 <!-- Template Picker Modal -->
 <div id="rxe-tpl-modal" class="rxe-modal-overlay" role="dialog" aria-modal="true" style="align-items:flex-start;padding:0;">
-    <div style="background:var(--bg-card);width:100%;max-width:980px;margin:auto;border-radius:14px;overflow:hidden;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,0.6);">
+    <div id="rxe-tpl-inner" style="background:var(--bg-card);width:100%;max-width:980px;margin:auto;border-radius:14px;overflow:hidden;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,0.6);">
         <!-- Header -->
         <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:1px solid var(--border-color);flex-shrink:0;">
             <div>
@@ -1492,7 +1548,7 @@ body .main {
             <button class="rxe-tpl-filter-btn" data-filter="timeline">Timeline</button>
         </div>
         <!-- Grid -->
-        <div id="rxe-tpl-grid" style="overflow-y:auto;padding:20px 24px;display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:14px;flex:1;"></div>
+        <div id="rxe-tpl-grid" style="overflow-y:auto;padding:20px 24px;display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:14px;flex:1;min-height:0;"></div>
     </div>
 </div>
 
@@ -2697,6 +2753,14 @@ window.applyColorVariant = function (key, variantIndex) {
         var tx   = t.textColor       || '#e0e6ff';
         var ls   = t.layoutStyle     || 'single';
 
+        // Normalize to 6-char hex so appending 2-char opacity suffixes (#33, #88 etc.) stays valid
+        function stripAlpha(c) { return (c && c[0] === '#' && c.length > 7) ? c.slice(0, 7) : c; }
+        pri  = stripAlpha(pri);
+        sec  = stripAlpha(sec);
+        bg   = stripAlpha(bg);
+        surf = stripAlpha(surf);
+        tx   = stripAlpha(tx);
+
         var svg = '';
         if (ls === 'sidebar-left' || ls === 'sidebar-dark') {
             svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 120" style="width:100%;height:100%;display:block;">'
@@ -2889,17 +2953,64 @@ window.applyColorVariant = function (key, variantIndex) {
             var isCurrent = (themeSettings.key === t.key);
             var ls = t.layoutStyle || 'single';
             var layoutLabel = ls.replace('-', ' ');
-            html += '<div class="rxe-tpl-card' + (isCurrent ? ' active-tpl' : '') + '" onclick="window.selectTplFromPicker(\'' + esc(t.key) + '\')">'
-                + '<div class="rxe-tpl-thumb">' + renderThumbSvg(t) + '</div>'
+
+            // Build colour variant dots
+            var variantHtml = '';
+            if (t.colorVariants && t.colorVariants.length) {
+                variantHtml = '<div class="rxe-tpl-variants">';
+                t.colorVariants.forEach(function (v, vi) {
+                    var isActiveDot = isCurrent && (themeSettings.primaryColor === v.primary);
+                    variantHtml += '<button type="button"'
+                        + ' class="rxe-tpl-vdot' + (isActiveDot ? ' rxe-tpl-vdot-active' : '') + '"'
+                        + ' data-tpl-key="' + esc(t.key) + '"'
+                        + ' data-vi="' + vi + '"'
+                        + ' title="' + esc(v.label) + '"'
+                        + ' style="background:linear-gradient(135deg,' + esc(v.primary) + ',' + esc(v.secondary) + ');"'
+                        + '></button>';
+                });
+                variantHtml += '</div>';
+            }
+
+            // For the active template, override SVG colours with the currently selected variant
+            var thumbT = isCurrent
+                ? Object.assign({}, t, { primaryColor: themeSettings.primaryColor, secondaryColor: themeSettings.secondaryColor })
+                : t;
+
+            html += '<div class="rxe-tpl-card' + (isCurrent ? ' active-tpl' : '') + '" data-tpl-key="' + esc(t.key) + '">'
+                + '<div class="rxe-tpl-thumb">' + renderThumbSvg(thumbT) + '</div>'
                 + '<div class="rxe-tpl-info">'
                 + '<div class="rxe-tpl-name">' + esc(t.name) + '</div>'
                 + '<div class="rxe-tpl-cat">' + esc(t.category || 'general') + '</div>'
                 + (isCurrent ? '<span class="rxe-tpl-badge">&#10003; Active</span>' : '')
                 + '<span class="rxe-tpl-layout-tag">' + esc(layoutLabel) + '</span>'
-                + '</div></div>';
+                + '</div>'
+                + variantHtml
+                + '</div>';
         });
         grid.innerHTML = html || '<div style="padding:24px;color:var(--text-secondary);grid-column:1/-1;">No templates found.</div>';
     }
+
+    // Event delegation: handle card clicks and variant dot clicks
+    grid.addEventListener('click', function (e) {
+        // Variant dot click
+        var dot = e.target.closest('.rxe-tpl-vdot');
+        if (dot) {
+            e.stopPropagation();
+            var key = dot.dataset.tplKey;
+            var vi  = parseInt(dot.dataset.vi, 10);
+            window.applyColorVariant(key, vi);
+            schedulePreviewUpdate();
+            showToast('Color variant applied', 'success');
+            // Re-render to update active dot indicators
+            renderGrid(currentFilter);
+            return;
+        }
+        // Card click (select template)
+        var card = e.target.closest('.rxe-tpl-card[data-tpl-key]');
+        if (card) {
+            window.selectTplFromPicker(card.dataset.tplKey);
+        }
+    });
 
     document.getElementById('rxe-tpl-filters').addEventListener('click', function (e) {
         var btn = e.target.closest('.rxe-tpl-filter-btn');
