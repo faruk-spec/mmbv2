@@ -1199,7 +1199,14 @@ body .main {
                     </div>
                     <div class="rxe-field">
                         <label class="rxe-label">Photo URL <small style="text-transform: none; font-weight: 400">(optional)</small></label>
-                        <input class="rxe-input" id="c_photo" type="url" placeholder="https://…/photo.jpg" maxlength="500">
+                        <div style="display:flex;gap:8px;align-items:center;">
+                            <input class="rxe-input" id="c_photo" type="url" placeholder="https://…/photo.jpg" maxlength="500" style="flex:1;">
+                            <label title="Upload photo" style="display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;background:rgba(0,240,255,0.1);border:1px solid rgba(0,240,255,0.25);cursor:pointer;flex-shrink:0;transition:background 0.2s;" id="photoUploadLabel">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+                                <input type="file" id="photoFileInput" accept="image/jpeg,image/png,image/gif,image/webp" style="display:none;">
+                            </label>
+                        </div>
+                        <div id="photoUploadStatus" style="font-size:0.78rem;margin-top:4px;display:none;"></div>
                     </div>
                 </div>
             </div><!-- /panel-contact -->
@@ -3176,7 +3183,49 @@ renderSectionOrder();
 // Initial live preview
 setTimeout(updateLivePreview, 400);
 
-// Highlight preview toggle button as active
+// ── Profile photo upload ─────────────────────────────────────────────────────
+(function () {
+    var fileInput  = document.getElementById('photoFileInput');
+    var photoField = document.getElementById('c_photo');
+    var statusEl   = document.getElementById('photoUploadStatus');
+
+    if (!fileInput || !photoField) return;
+
+    fileInput.addEventListener('change', function () {
+        var file = this.files[0];
+        if (!file) return;
+
+        statusEl.style.display = 'block';
+        statusEl.style.color   = 'var(--cyan)';
+        statusEl.textContent   = '⏳ Uploading…';
+
+        var fd = new FormData();
+        fd.append('_token', csrfToken);
+        fd.append('photo',  file);
+
+        fetch('/projects/resumex/upload-image', { method: 'POST', body: fd })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data.success) {
+                    photoField.value = data.url;
+                    photoField.dispatchEvent(new Event('input'));
+                    statusEl.style.color = '#34d399';
+                    statusEl.textContent = '✓ Photo uploaded successfully.';
+                } else {
+                    statusEl.style.color = '#f87171';
+                    statusEl.textContent = '✗ ' + (data.error || 'Upload failed.');
+                }
+            })
+            .catch(function () {
+                statusEl.style.color = '#f87171';
+                statusEl.textContent = '✗ Network error. Please try again.';
+            });
+
+        // Reset input so the same file can be re-selected
+        this.value = '';
+    });
+}());
+
 (function() {
     var btn = document.getElementById('btnTogglePreview');
     if (btn) { btn.style.borderColor = 'rgba(0,240,255,0.35)'; btn.style.color = 'var(--cyan)'; }

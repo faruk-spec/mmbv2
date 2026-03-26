@@ -31,6 +31,7 @@ class TemplateController
             'title'     => 'Resume Templates',
             'user'      => Auth::user(),
             'allThemes' => $allThemes,
+            'isAdmin'   => Auth::isAdmin(),
         ]);
     }
 }

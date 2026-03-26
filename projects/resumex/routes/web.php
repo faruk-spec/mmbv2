@@ -68,9 +68,48 @@ switch ($segments[0]) {
         break;
 
     case 'templates':
-        require_once PROJECT_PATH . '/controllers/TemplateController.php';
-        $ctrl = new \Projects\ResumeX\Controllers\TemplateController();
-        $ctrl->index();
+        $sub = $segments[1] ?? '';
+        if ($sub === 'upload') {
+            require_once PROJECT_PATH . '/controllers/TemplateUploadController.php';
+            $ctrl = new \Projects\ResumeX\Controllers\TemplateUploadController();
+            if ($method === 'POST') {
+                $ctrl->upload();
+            } else {
+                $ctrl->index();
+            }
+        } elseif ($sub === 'delete' && $method === 'POST') {
+            require_once PROJECT_PATH . '/controllers/TemplateUploadController.php';
+            $ctrl = new \Projects\ResumeX\Controllers\TemplateUploadController();
+            $ctrl->delete();
+        } elseif ($sub === 'sample-download') {
+            // Serve the sample template PHP file as a download
+            $samplePath = PROJECT_PATH . '/templates/sample-template.php';
+            if (file_exists($samplePath)) {
+                header('Content-Type: application/octet-stream');
+                header('Content-Disposition: attachment; filename="sample-template.php"');
+                header('Content-Length: ' . filesize($samplePath));
+                readfile($samplePath);
+            } else {
+                http_response_code(404);
+                echo 'Sample template not found.';
+            }
+            exit;
+        } else {
+            require_once PROJECT_PATH . '/controllers/TemplateController.php';
+            $ctrl = new \Projects\ResumeX\Controllers\TemplateController();
+            $ctrl->index();
+        }
+        break;
+
+    case 'upload-image':
+        require_once PROJECT_PATH . '/controllers/ImageUploadController.php';
+        $ctrl = new \Projects\ResumeX\Controllers\ImageUploadController();
+        if ($method === 'POST') {
+            $ctrl->upload();
+        } else {
+            http_response_code(405);
+            echo json_encode(['error' => 'Method not allowed']);
+        }
         break;
 
     case 'ai':

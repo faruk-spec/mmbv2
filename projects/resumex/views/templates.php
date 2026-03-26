@@ -114,6 +114,14 @@
     <div class="rxt-header">
         <h1>Resume Templates</h1>
         <p><?= count($allThemes) ?> professionally designed themes — pick one and start building.</p>
+        <?php if (!empty($isAdmin)): ?>
+            <div style="margin-top:14px;">
+                <a href="/projects/resumex/templates/upload" style="display:inline-flex;align-items:center;gap:7px;padding:8px 18px;border-radius:8px;background:linear-gradient(135deg,var(--cyan),var(--purple));color:#fff;font-size:0.85rem;font-weight:600;text-decoration:none;transition:opacity 0.2s;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+                    Upload / Manage Templates
+                </a>
+            </div>
+        <?php endif; ?>
     </div>
 
     <div class="rxt-grid">

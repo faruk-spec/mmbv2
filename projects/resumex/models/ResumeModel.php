@@ -8,6 +8,7 @@
 namespace Projects\ResumeX\Models;
 
 use Core\Database;
+use Core\Logger;
 
 class ResumeModel
 {
@@ -272,9 +273,36 @@ class ResumeModel
     }
 
     /**
-     * Two supported theme presets
+     * Return all theme presets: built-in presets merged with any active custom
+     * templates that have been uploaded by admins.  Custom templates with the
+     * same key as a built-in preset are ignored to prevent overrides.
      */
     public function getAllThemePresets(): array
+    {
+        $builtIn = $this->getBuiltInPresets();
+
+        // Merge custom (uploaded) templates — built-ins take priority on key conflicts
+        try {
+            $customModel = new TemplateModel();
+            $custom      = $customModel->getAllCustomTemplates();
+            foreach ($custom as $key => $preset) {
+                if (!array_key_exists($key, $builtIn)) {
+                    $builtIn[$key] = $preset;
+                }
+            }
+        } catch (\Throwable $e) {
+            // If TemplateModel fails for any reason (e.g. DB not ready) we
+            // degrade gracefully and just return the built-in presets.
+            \Core\Logger::error('ResumeModel::getAllThemePresets custom-template load error: ' . $e->getMessage());
+        }
+
+        return $builtIn;
+    }
+
+    /**
+     * Built-in (hardcoded) theme presets.
+     */
+    private function getBuiltInPresets(): array
     {
         return [
             'ocean-blue' => [
