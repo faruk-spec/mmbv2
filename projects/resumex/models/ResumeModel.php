@@ -281,12 +281,15 @@ class ResumeModel
     {
         $builtIn = $this->getBuiltInPresets();
 
-        // Merge custom (uploaded) templates — built-ins take priority on key conflicts
+        // Merge custom (uploaded) templates.
+        // Override templates (is_override=1) replace built-ins; others are added only for new keys.
         try {
             $customModel = new TemplateModel();
             $custom      = $customModel->getAllCustomTemplates();
             foreach ($custom as $key => $preset) {
-                if (!array_key_exists($key, $builtIn)) {
+                if (!empty($preset['_is_override']) || !array_key_exists($key, $builtIn)) {
+                    // Strip private metadata before exposing to the editor
+                    unset($preset['_is_override'], $preset['_preview_image'], $preset['_db_id']);
                     $builtIn[$key] = $preset;
                 }
             }

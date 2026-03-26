@@ -1592,9 +1592,13 @@
                             </a>
                             <?php endif; ?>
                             <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('resumex.templates')): ?>
-                            <a href="/admin/projects/resumex/templates" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/resumex/templates') === 0 ? 'active' : '' ?>">
+                            <a href="/admin/projects/resumex/templates" class="menu-link <?= ($_SERVER['REQUEST_URI'] ?? '') === '/admin/projects/resumex/templates' ? 'active' : '' ?>">
                                 <i class="fas fa-layer-group"></i>
                                 <span>Manage Templates</span>
+                            </a>
+                            <a href="/admin/projects/resumex/templates/create" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/resumex/templates/create') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-paint-brush"></i>
+                                <span>Template Designer</span>
                             </a>
                             <?php endif; ?>
                             <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('resumex.resumes')): ?>
@@ -1609,10 +1613,6 @@
                                 <span>Download Sample Template</span>
                             </a>
                             <?php endif; ?>
-                            <a href="/projects/resumex" class="menu-link" target="_blank">
-                                <i class="fas fa-external-link-alt"></i>
-                                <span>Open ResumeX</span>
-                            </a>
                         </div>
                     </div>
                     <?php endif; ?>

@@ -120,7 +120,7 @@ class ImageUploadController
         $fileName = sprintf('%d_%s_%s.%s', $userId, date('Ymd'), bin2hex(random_bytes(8)), $ext);
         $destPath = $this->storageDir . '/' . $fileName;
 
-        if (!move_uploaded_file($file['tmp_name'], $destPath)) {
+        if (!$this->moveUploadedFile($file['tmp_name'], $destPath)) {
             Logger::error('ImageUploadController: move_uploaded_file failed for user ' . $userId);
             http_response_code(500);
             echo json_encode(['success' => false, 'error' => 'Could not save the image. Please try again.']);
@@ -138,7 +138,38 @@ class ImageUploadController
     private function ensureStorageDir(): void
     {
         if (!is_dir($this->storageDir)) {
-            mkdir($this->storageDir, 0755, true);
+            mkdir($this->storageDir, 0775, true);
         }
+        // Ensure directory is writable even if it already existed with wrong perms
+        if (!is_writable($this->storageDir)) {
+            @chmod($this->storageDir, 0775);
+        }
+    }
+
+    /**
+     * Move an uploaded file to $dest.  Falls back to copy()+unlink() for
+     * environments where PHP's temp directory and the destination sit on
+     * different mount points, which makes rename() (used internally by
+     * move_uploaded_file) fail with EXDEV.
+     */
+    private function moveUploadedFile(string $tmpPath, string $dest): bool
+    {
+        if (move_uploaded_file($tmpPath, $dest)) {
+            return true;
+        }
+        // Log that the primary method failed (helps diagnose filesystem config issues)
+        Logger::error('ImageUploadController: move_uploaded_file failed for ' . basename($dest) . ', trying copy() fallback.');
+        // Fallback: copy the raw bytes, then delete the temp file
+        if (@copy($tmpPath, $dest)) {
+            @unlink($tmpPath);
+            return true;
+        }
+        // Last resort: file_put_contents
+        $data = @file_get_contents($tmpPath);
+        if ($data !== false && @file_put_contents($dest, $data) !== false) {
+            @unlink($tmpPath);
+            return true;
+        }
+        return false;
     }
 }

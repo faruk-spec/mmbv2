@@ -135,6 +135,139 @@ class ResumeXAdminController extends BaseController
     }
 
     /**
+     * Show the visual Template Designer form.
+     * Pass ?prefill=<built-in-key> to pre-populate from an existing built-in template.
+     */
+    public function createTemplate(): void
+    {
+        $this->requirePermission('resumex.templates');
+
+        $allTemplates = $this->resumeModel->getAllThemePresets();
+        $prefillKey   = trim($_GET['prefill'] ?? '');
+        $prefill      = null;
+        $isOverride   = false;
+
+        $builtinTemplates = $this->resumeModel->getAllThemePresets();
+        $customRows       = $this->templateModel->getAllRows();
+        $customKeys       = array_column($customRows, 'key');
+
+        if ($prefillKey !== '' && isset($allTemplates[$prefillKey])) {
+            $prefill    = $allTemplates[$prefillKey];
+            $isOverride = !in_array($prefillKey, $customKeys, true);  // only built-ins are flagged as override
+        }
+
+        $this->view('admin/projects/resumex/template_create', [
+            'title'            => 'ResumeX — Template Designer',
+            'csrfToken'        => Security::generateCsrfToken(),
+            'prefill'          => $prefill,
+            'isOverride'       => $isOverride,
+            'builtinKeys'      => array_keys($this->resumeModel->getAllThemePresets()),
+            'error'            => $_GET['error'] ?? null,
+        ]);
+    }
+
+    /**
+     * Handle form submission from the Template Designer.
+     */
+    public function saveTemplate(): void
+    {
+        $this->requirePermission('resumex.templates');
+
+        if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
+            $this->redirectWithError('/admin/projects/resumex/templates/create', 'Invalid security token.');
+        }
+
+        // Build preset array from POST data
+        $data = [
+            'key'              => strtolower(trim($_POST['key']         ?? '')),
+            'name'             => trim($_POST['name']                   ?? ''),
+            'category'         => trim($_POST['category']               ?? 'custom'),
+            'primaryColor'     => trim($_POST['primaryColor']           ?? '#000000'),
+            'secondaryColor'   => trim($_POST['secondaryColor']         ?? '#000000'),
+            'backgroundColor'  => trim($_POST['backgroundColor']        ?? '#ffffff'),
+            'surfaceColor'     => trim($_POST['surfaceColor']           ?? '#ffffff'),
+            'textColor'        => trim($_POST['textColor']              ?? '#000000'),
+            'textMuted'        => trim($_POST['textMuted']              ?? '#666666'),
+            'borderColor'      => trim($_POST['borderColor']            ?? '#e2e8f0'),
+            'fontFamily'       => trim($_POST['fontFamily']             ?? 'Inter'),
+            'fontSize'         => trim($_POST['fontSize']               ?? '14'),
+            'fontWeight'       => trim($_POST['fontWeight']             ?? '400'),
+            'headerStyle'      => trim($_POST['headerStyle']            ?? 'minimal'),
+            'buttonStyle'      => trim($_POST['buttonStyle']            ?? 'pill'),
+            'cardStyle'        => trim($_POST['cardStyle']              ?? 'bordered'),
+            'spacing'          => trim($_POST['spacing']                ?? 'normal'),
+            'layoutMode'       => trim($_POST['layoutMode']             ?? 'two-column'),
+            'iconStyle'        => trim($_POST['iconStyle']              ?? 'filled'),
+            'accentHighlights' => !empty($_POST['accentHighlights']),
+            'animations'       => !empty($_POST['animations']),
+            'layoutStyle'      => trim($_POST['layoutStyle']            ?? 'minimal'),
+            'colorVariants'    => [],
+        ];
+
+        // Parse color variants (up to 4)
+        $variantLabels    = $_POST['variant_label']    ?? [];
+        $variantPrimaries = $_POST['variant_primary']  ?? [];
+        $variantSeconds   = $_POST['variant_secondary'] ?? [];
+        for ($i = 0; $i < min(4, count($variantLabels)); $i++) {
+            $label = trim($variantLabels[$i] ?? '');
+            $prim  = trim($variantPrimaries[$i] ?? '');
+            $sec   = trim($variantSeconds[$i]   ?? '');
+            if ($label !== '' && $prim !== '' && $sec !== '') {
+                $data['colorVariants'][] = ['label' => $label, 'primary' => $prim, 'secondary' => $sec];
+            }
+        }
+
+        $isOverride = !empty($_POST['is_override']);
+        $result     = $this->templateModel->createFromData($data, Auth::id(), $isOverride);
+
+        if (!$result['success']) {
+            $this->redirectWithError('/admin/projects/resumex/templates/create', $result['error'] ?? 'Failed to save template.');
+        }
+
+        ActivityLogger::log('resumex_template_create', 'resumex', [
+            'template_key'  => $data['key'],
+            'template_name' => $data['name'],
+            'is_override'   => $isOverride ? 1 : 0,
+        ]);
+
+        $name = urlencode($data['name']);
+        header("Location: /admin/projects/resumex/templates?success=1&name={$name}");
+        exit;
+    }
+
+    /**
+     * Upload a preview image for a custom template.
+     */
+    public function uploadPreviewImage(): void
+    {
+        $this->requirePermission('resumex.templates');
+        header('Content-Type: application/json');
+
+        if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'Invalid security token.']);
+            exit;
+        }
+
+        $id = (int) ($_POST['template_id'] ?? 0);
+        if ($id <= 0) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Invalid template ID.']);
+            exit;
+        }
+
+        if (empty($_FILES['preview_image']) || $_FILES['preview_image']['error'] === UPLOAD_ERR_NO_FILE) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'No file selected.']);
+            exit;
+        }
+
+        $result = $this->templateModel->uploadPreviewImage($id, $_FILES['preview_image']);
+        echo json_encode($result);
+        exit;
+    }
+
+    /**
      * Serve the sample template PHP file as a download.
      */
     public function downloadSample(): void

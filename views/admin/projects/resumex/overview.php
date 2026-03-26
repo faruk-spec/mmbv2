@@ -11,7 +11,6 @@
     <div style="display:flex;gap:8px;">
         <a href="/admin/projects/resumex/templates" class="btn btn-secondary"><i class="fas fa-layer-group"></i> Templates</a>
         <a href="/admin/projects/resumex/resumes" class="btn btn-secondary"><i class="fas fa-list"></i> All Resumes</a>
-        <a href="/projects/resumex" class="btn btn-primary" target="_blank"><i class="fas fa-external-link-alt"></i> Open ResumeX</a>
     </div>
 </div>
 
