@@ -117,6 +117,9 @@ switch ($segments[0]) {
         $ctrl = new \Projects\ResumeX\Controllers\AIController();
         $action = $segments[1] ?? '';
         switch ($action) {
+            case 'suggest-all':
+                $ctrl->suggestAll();
+                break;
             case 'suggest-summary':
                 $ctrl->suggestSummary();
                 break;

@@ -2079,6 +2079,9 @@ window.aiSuggestSummary = function () {
         var skillStr = (resumeData.skills || []).slice(0, 5).map(function (s) {
             return typeof s === 'string' ? s : (s.name || '');
         }).join(', ');
+        var box = document.getElementById('aiSumSuggestions');
+        box.innerHTML = '<div style="font-size:0.8rem;color:var(--text-secondary);padding:8px 0;">⏳ Generating suggestions…</div>';
+        box.classList.add('open');
         var fd = new FormData();
         fd.append('_token', csrfToken);
         fd.append('job_title', jt);
@@ -2087,13 +2090,21 @@ window.aiSuggestSummary = function () {
         fetch('/projects/resumex/ai/suggest-summary', { method: 'POST', body: fd })
         .then(function (r) { return r.json(); })
         .then(function (data) {
-            if (!data.success) return;
-            var box = document.getElementById('aiSumSuggestions');
-            box.innerHTML = '<div style="font-size:0.75rem;font-weight:700;color:var(--text-secondary);margin-bottom:8px;">Click a suggestion to use it:</div>' +
+            if (!data.success) {
+                box.innerHTML = '<div style="font-size:0.8rem;color:var(--text-secondary);padding:8px 0;">⚠️ Could not generate suggestions right now. Please try again.</div>';
+                return;
+            }
+            var badge = data.ai_powered
+                ? '<span style="font-size:0.7rem;background:linear-gradient(90deg,#6366f1,#8b5cf6);color:#fff;border-radius:4px;padding:1px 6px;margin-left:6px;vertical-align:middle;">✨ AI</span>'
+                : '';
+            box.innerHTML = '<div style="font-size:0.75rem;font-weight:700;color:var(--text-secondary);margin-bottom:8px;">Click a suggestion to use it:' + badge + '</div>' +
                 data.suggestions.map(function (s) {
                     return '<div class="rxe-ai-suggestion-item" onclick="useSummarySuggestion(this.textContent)">' + esc(s) + '</div>';
                 }).join('');
             box.classList.add('open');
+        })
+        .catch(function () {
+            box.innerHTML = '<div style="font-size:0.8rem;color:var(--text-secondary);padding:8px 0;">⚠️ Could not generate suggestions right now. Please try again.</div>';
         });
     }
     if (jobTitle) {
@@ -2227,7 +2238,9 @@ window.aiSuggestBullets = function (i) {
             box.innerHTML = '<div style="font-size:0.8rem;color:var(--red);padding:8px 0;">' + esc(data.message || 'Could not generate suggestions. Please try again.') + '</div>';
             return;
         }
-        box.innerHTML = '<div style="font-size:0.75rem;font-weight:700;color:var(--text-secondary);margin-bottom:8px;">Click to add a bullet:</div>' +
+        box.innerHTML = '<div style="font-size:0.75rem;font-weight:700;color:var(--text-secondary);margin-bottom:8px;">Click to add a bullet:' +
+            (data.ai_powered ? '<span style="font-size:0.7rem;background:linear-gradient(90deg,#6366f1,#8b5cf6);color:#fff;border-radius:4px;padding:1px 6px;margin-left:6px;vertical-align:middle;">✨ AI</span>' : '') +
+            '</div>' +
             data.bullets.map(function (b) {
                 return '<div class="rxe-ai-suggestion-item" onclick="addBulletFromAI(' + i + ',this.textContent)">' + esc(b) + '</div>';
             }).join('');
@@ -2353,15 +2366,23 @@ window.aiSuggestSkills = function () {
         ? resumeData.experience[0].title
         : '';
     function doFetch(jt) {
+        var box = document.getElementById('aiSkillSuggestions');
+        box.innerHTML = '<div style="font-size:0.8rem;color:var(--text-secondary);padding:8px 0;">⏳ Generating skill suggestions…</div>';
+        box.classList.add('open');
         var fd = new FormData();
         fd.append('_token', csrfToken);
         fd.append('job_title', jt);
         fetch('/projects/resumex/ai/suggest-skills', { method:'POST', body:fd })
         .then(function (r) { return r.json(); })
         .then(function (data) {
-            if (!data.success) return;
-            var box = document.getElementById('aiSkillSuggestions');
-            box.innerHTML = '<div style="font-size:0.75rem;font-weight:700;color:var(--text-secondary);margin-bottom:8px;">Click to add a skill:</div>';
+            if (!data.success) {
+                box.innerHTML = '<div style="font-size:0.8rem;color:var(--text-secondary);padding:8px 0;">⚠️ Could not generate skill suggestions right now. Please try again.</div>';
+                return;
+            }
+            var badge = data.ai_powered
+                ? '<span style="font-size:0.7rem;background:linear-gradient(90deg,#6366f1,#8b5cf6);color:#fff;border-radius:4px;padding:1px 6px;margin-left:6px;vertical-align:middle;">✨ AI</span>'
+                : '';
+            box.innerHTML = '<div style="font-size:0.75rem;font-weight:700;color:var(--text-secondary);margin-bottom:8px;">Click to add a skill:' + badge + '</div>';
             data.skills.forEach(function(s) {
                 var el = document.createElement('div');
                 el.className = 'rxe-ai-suggestion-item';
@@ -2370,6 +2391,9 @@ window.aiSuggestSkills = function () {
                 box.appendChild(el);
             });
             box.classList.add('open');
+        })
+        .catch(function () {
+            box.innerHTML = '<div style="font-size:0.8rem;color:var(--text-secondary);padding:8px 0;">⚠️ Could not generate skill suggestions right now. Please try again.</div>';
         });
     }
     if (jobTitle) {

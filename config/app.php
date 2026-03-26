@@ -30,6 +30,10 @@ define('APP_DEBUG', true);
 define('APP_KEY', getenv('APP_KEY') ?: 'change_this_in_production_32_chars');
 define('SSO_SECRET_KEY', getenv('SSO_SECRET_KEY') ?: 'sso_secret_key_change_in_production');
 
+// Hugging Face Inference API token (free tier)
+// Set HUGGING_FACE_API_TOKEN environment variable or leave blank to use rule-based fallback only
+define('HUGGING_FACE_API_TOKEN', getenv('HUGGING_FACE_API_TOKEN') ?: '');
+
 // Session settings
 define('SESSION_LIFETIME', 120); // minutes
 define('SESSION_NAME', 'mmb_session');

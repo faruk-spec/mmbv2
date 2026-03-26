@@ -1,7 +1,7 @@
 <?php
 /**
  * ResumeX AI Controller
- * Provides intelligent rule-based suggestions.
+ * Provides AI-powered (Hugging Face) and rule-based resume suggestions.
  *
  * @package MMB\Projects\ResumeX\Controllers
  */
@@ -9,12 +9,67 @@
 namespace Projects\ResumeX\Controllers;
 
 use Core\Security;
+use Core\Logger;
 
 class AIController
 {
+    /** Hugging Face Inference API endpoint */
+    private const HF_API_URL = 'https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.1';
+
+    /** Request timeout in seconds */
+    private const HF_TIMEOUT = 20;
+
     public function __construct()
     {
         header('Content-Type: application/json');
+    }
+
+    /* ── suggest-all (AI-powered combined endpoint) ───────────── */
+
+    /**
+     * Returns summary, skills, and bullets together using the Hugging Face API,
+     * falling back to rule-based suggestions if the API is unavailable.
+     */
+    public function suggestAll(): void
+    {
+        Security::validateCsrfToken($this->getToken());
+
+        $jobTitle   = trim($_POST['job_title']        ?? '');
+        $experience = trim($_POST['experience']        ?? '');
+        $skills     = trim($_POST['skills']            ?? '');
+        $company    = trim($_POST['company']           ?? '');
+        $expYears   = (int) ($_POST['experience_years'] ?? 0);
+
+        if (empty($jobTitle)) {
+            echo json_encode(['success' => false, 'message' => 'Job title is required']);
+            exit;
+        }
+
+        // Attempt Hugging Face AI generation
+        $aiResult = $this->callHuggingFaceAPI($jobTitle, $experience ?: ($expYears > 0 ? "{$expYears} years" : 'entry level'));
+
+        if ($aiResult !== null) {
+            echo json_encode([
+                'success'    => true,
+                'ai_powered' => true,
+                'summary'    => $aiResult['summary']  ?? '',
+                'skills'     => array_slice($aiResult['skills'] ?? [], 0, 8),
+                'bullets'    => $aiResult['bullets']  ?? [],
+                'suggestions'=> [$aiResult['summary'] ?? ''],
+            ]);
+            exit;
+        }
+
+        // Fallback: rule-based
+        echo json_encode([
+            'success'    => true,
+            'ai_powered' => false,
+            'summary'    => $this->buildSummaries($jobTitle, $expYears, $skills)[0] ?? '',
+            'skills'     => array_slice($this->getSkillsForRole($jobTitle), 0, 8),
+            'bullets'    => $this->buildBullets($jobTitle, $company),
+            'suggestions'=> $this->buildSummaries($jobTitle, $expYears, $skills),
+        ]);
+        exit;
     }
 
     /* ── suggest-summary ──────────────────────────────────────── */
@@ -23,7 +78,8 @@ class AIController
         Security::validateCsrfToken($this->getToken());
 
         $jobTitle   = trim($_POST['job_title']        ?? '');
-        $experience = (int) ($_POST['experience_years'] ?? 0);
+        $experience = trim($_POST['experience']        ?? '');
+        $expYears   = (int) ($_POST['experience_years'] ?? 0);
         $skills     = trim($_POST['skills']            ?? '');
 
         if (empty($jobTitle)) {
@@ -31,7 +87,24 @@ class AIController
             exit;
         }
 
-        echo json_encode(['success' => true, 'suggestions' => $this->buildSummaries($jobTitle, $experience, $skills)]);
+        // Try Hugging Face API first
+        $expLabel = $experience ?: ($expYears > 0 ? "{$expYears} years" : 'entry level');
+        $aiResult = $this->callHuggingFaceAPI($jobTitle, $expLabel);
+        if ($aiResult !== null && !empty($aiResult['summary'])) {
+            echo json_encode([
+                'success'    => true,
+                'ai_powered' => true,
+                'suggestions'=> [$aiResult['summary']],
+            ]);
+            exit;
+        }
+
+        // Fallback: rule-based
+        echo json_encode([
+            'success'    => true,
+            'ai_powered' => false,
+            'suggestions'=> $this->buildSummaries($jobTitle, $expYears, $skills),
+        ]);
         exit;
     }
 
@@ -40,14 +113,31 @@ class AIController
     {
         Security::validateCsrfToken($this->getToken());
 
-        $jobTitle = trim($_POST['job_title'] ?? '');
+        $jobTitle   = trim($_POST['job_title'] ?? '');
+        $experience = trim($_POST['experience'] ?? '');
 
         if (empty($jobTitle)) {
             echo json_encode(['success' => false, 'message' => 'Job title is required']);
             exit;
         }
 
-        echo json_encode(['success' => true, 'skills' => $this->getSkillsForRole($jobTitle)]);
+        // Try Hugging Face API first
+        $aiResult = $this->callHuggingFaceAPI($jobTitle, $experience ?: 'mid level');
+        if ($aiResult !== null && !empty($aiResult['skills'])) {
+            echo json_encode([
+                'success'    => true,
+                'ai_powered' => true,
+                'skills'     => array_slice($aiResult['skills'], 0, 8),
+            ]);
+            exit;
+        }
+
+        // Fallback: rule-based
+        echo json_encode([
+            'success'    => true,
+            'ai_powered' => false,
+            'skills'     => $this->getSkillsForRole($jobTitle),
+        ]);
         exit;
     }
 
@@ -56,15 +146,32 @@ class AIController
     {
         Security::validateCsrfToken($this->getToken());
 
-        $jobTitle = trim($_POST['job_title'] ?? '');
-        $company  = trim($_POST['company']   ?? '');
+        $jobTitle   = trim($_POST['job_title'] ?? '');
+        $company    = trim($_POST['company']   ?? '');
+        $experience = trim($_POST['experience'] ?? '');
 
         if (empty($jobTitle)) {
             echo json_encode(['success' => false, 'message' => 'Job title is required']);
             exit;
         }
 
-        echo json_encode(['success' => true, 'bullets' => $this->buildBullets($jobTitle, $company)]);
+        // Try Hugging Face API first
+        $aiResult = $this->callHuggingFaceAPI($jobTitle, $experience ?: 'mid level');
+        if ($aiResult !== null && !empty($aiResult['bullets'])) {
+            echo json_encode([
+                'success'    => true,
+                'ai_powered' => true,
+                'bullets'    => $aiResult['bullets'],
+            ]);
+            exit;
+        }
+
+        // Fallback: rule-based
+        echo json_encode([
+            'success'    => true,
+            'ai_powered' => false,
+            'bullets'    => $this->buildBullets($jobTitle, $company),
+        ]);
         exit;
     }
 
@@ -189,6 +296,173 @@ class AIController
     }
 
     // ── Private helpers ──────────────────────────────────────────
+
+    /**
+     * Call Hugging Face Inference API (Mistral-7B-Instruct-v0.1) to generate
+     * a professional summary, 8 relevant skills, and achievement bullet points.
+     *
+     * Returns an array with keys 'summary', 'skills', and 'bullets' on success,
+     * or null when the API is unavailable / the token is not configured.
+     *
+     * On failure the real error is logged and the admin is notified; the caller
+     * then falls back to the rule-based suggestion engine.
+     *
+     * @param string $jobTitle   e.g. "Software Engineer"
+     * @param string $experience e.g. "5 years" | "entry level" | "senior"
+     * @return array{summary:string,skills:string[],bullets:string[]}|null
+     */
+    private function callHuggingFaceAPI(string $jobTitle, string $experience): ?array
+    {
+        $token = defined('HUGGING_FACE_API_TOKEN') ? HUGGING_FACE_API_TOKEN : '';
+        if (empty($token)) {
+            return null; // Not configured – use rule-based silently
+        }
+
+        // Sanitize inputs: strip control characters and cap length to prevent prompt injection
+        $safeJobTitle   = mb_substr(preg_replace('/[\x00-\x1F\x7F]/u', '', $jobTitle),   0, 100);
+        $safeExperience = mb_substr(preg_replace('/[\x00-\x1F\x7F]/u', '', $experience), 0, 50);
+
+        $prompt = "<s>[INST] You are a professional resume writer.\n"
+            . "Given a job title and experience level, generate:\n"
+            . "1. A professional summary (3-4 lines)\n"
+            . "2. A list of exactly 8 relevant skills\n"
+            . "3. Exactly 5 strong achievement-oriented bullet points for a resume\n\n"
+            . "Job Title: {$safeJobTitle}\n"
+            . "Experience Level: {$safeExperience}\n\n"
+            . "Respond ONLY with a valid JSON object in this exact format (no markdown, no extra text):\n"
+            . '{"summary":"...","skills":["...","...","...","...","...","...","...","..."],"bullets":["...","...","...","...","..."]}' . " [/INST]";
+
+        $payload = json_encode([
+            'inputs'     => $prompt,
+            'parameters' => [
+                'max_new_tokens'  => 512,
+                'temperature'     => 0.7,
+                'return_full_text'=> false,
+            ],
+        ]);
+
+        $ch = curl_init(self::HF_API_URL);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => $payload,
+            CURLOPT_TIMEOUT        => self::HF_TIMEOUT,
+            CURLOPT_HTTPHEADER     => [
+                'Authorization: Bearer ' . $token,
+                'Content-Type: application/json',
+            ],
+        ]);
+
+        $raw      = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlErr  = curl_error($ch);
+        curl_close($ch);
+
+        if ($raw === false || !empty($curlErr)) {
+            $this->notifyAdmin(
+                "Hugging Face API cURL error: {$curlErr}",
+                ['job_title' => $jobTitle, 'experience' => $experience]
+            );
+            return null;
+        }
+
+        if ($httpCode !== 200) {
+            $this->notifyAdmin(
+                "Hugging Face API returned HTTP {$httpCode}: {$raw}",
+                ['job_title' => $jobTitle, 'experience' => $experience]
+            );
+            return null;
+        }
+
+        // The HF inference API wraps the result in an array
+        $decoded = json_decode($raw, true);
+        $text    = '';
+        if (isset($decoded[0]['generated_text'])) {
+            $text = $decoded[0]['generated_text'];
+        } elseif (is_string($decoded)) {
+            $text = $decoded;
+        }
+
+        return $this->parseAIResponse($text, $jobTitle, $experience);
+    }
+
+    /**
+     * Extract the JSON payload from the model's generated text and validate
+     * that it contains the required keys.  Returns null if parsing fails.
+     */
+    private function parseAIResponse(string $text, string $jobTitle, string $experience): ?array
+    {
+        // Find JSON object in the response (model may add surrounding text)
+        if (preg_match('/\{.*\}/s', $text, $m)) {
+            $data = json_decode($m[0], true);
+            if (
+                is_array($data)
+                && isset($data['summary'], $data['skills'], $data['bullets'])
+                && is_string($data['summary'])
+                && is_array($data['skills'])
+                && is_array($data['bullets'])
+                && count($data['skills']) >= 4
+            ) {
+                return [
+                    'summary' => trim($data['summary']),
+                    'skills'  => array_values(array_filter(array_map('trim', $data['skills']))),
+                    'bullets' => array_values(array_filter(array_map('trim', $data['bullets']))),
+                ];
+            }
+        }
+
+        $this->notifyAdmin(
+            'Hugging Face API response could not be parsed as valid JSON',
+            ['job_title' => $jobTitle, 'experience' => $experience, 'raw_snippet' => mb_substr($text, 0, 300)]
+        );
+        return null;
+    }
+
+    /**
+     * Log the real error for the admin and send an email notification.
+     * Users see only a generic friendly message; admins receive full details.
+     */
+    private function notifyAdmin(string $realError, array $context = []): void
+    {
+        // Always write to application log
+        Logger::error('[ResumeX AI] ' . $realError, $context);
+
+        // Attempt to email the admin using the platform mail stack
+        try {
+            $adminEmail = $this->getAdminEmail();
+            if (!empty($adminEmail) && class_exists('\\Core\\Email')) {
+                $subject = '[' . (defined('APP_NAME') ? APP_NAME : 'ResumeX') . '] AI Suggestion Service Error';
+                $body    = '<p><strong>AI service error in ResumeX resume maker:</strong></p>'
+                    . '<p>' . htmlspecialchars($realError, ENT_QUOTES, 'UTF-8') . '</p>'
+                    . '<pre>' . htmlspecialchars(json_encode($context, JSON_PRETTY_PRINT), ENT_QUOTES, 'UTF-8') . '</pre>'
+                    . '<p><small>Time: ' . date('Y-m-d H:i:s T') . '</small></p>';
+
+                \Core\Email::send($adminEmail, $subject, $body);
+            }
+        } catch (\Throwable $e) {
+            // Never let notification failure surface to the end user
+            Logger::error('[ResumeX AI] Admin notification email failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Retrieve the admin e-mail address from the settings table (if available).
+     */
+    private function getAdminEmail(): string
+    {
+        try {
+            if (class_exists('\\Core\\Database')) {
+                $db  = \Core\Database::getInstance();
+                $row = $db->fetch(
+                    "SELECT email FROM users WHERE role = 'admin' AND status = 'active' ORDER BY id ASC LIMIT 1"
+                );
+                return $row['email'] ?? '';
+            }
+        } catch (\Throwable $e) {
+            // Silently ignore DB errors
+        }
+        return '';
+    }
 
     private function getToken(): string
     {
