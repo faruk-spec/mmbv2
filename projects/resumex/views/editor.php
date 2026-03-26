@@ -1553,6 +1553,7 @@ body .main {
             <button class="rxe-tpl-filter-btn" data-filter="dark">Dark</button>
             <button class="rxe-tpl-filter-btn" data-filter="sidebar">Sidebar</button>
             <button class="rxe-tpl-filter-btn" data-filter="timeline">Timeline</button>
+            <button class="rxe-tpl-filter-btn" data-filter="custom">Custom</button>
         </div>
         <!-- Grid -->
         <div id="rxe-tpl-grid" style="overflow-y:auto;padding:20px 24px;display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:14px;flex:1;min-height:0;"></div>
@@ -2739,6 +2740,8 @@ window.applyColorVariant = function (key, variantIndex) {
     };
 
     function getFilterGroup(t) {
+        // Full custom templates always land in the 'custom' bucket
+        if (t._full_template) return 'custom';
         var cat = (t.category || '').toLowerCase();
         var ls  = t.layoutStyle || 'single';
         if (ls === 'sidebar-left' || ls === 'sidebar-dark') return 'sidebar';
@@ -2749,6 +2752,7 @@ window.applyColorVariant = function (key, variantIndex) {
         if (cat === 'creative' || cat === 'tech' || cat === 'bold') return 'creative';
         if (cat === 'dark') return 'dark';
         if (cat === 'minimal') return 'minimal';
+        if (cat === 'custom') return 'custom';
         return 'professional';
     }
 
@@ -2759,6 +2763,30 @@ window.applyColorVariant = function (key, variantIndex) {
         var sec  = t.secondaryColor  || '#9945ff';
         var tx   = t.textColor       || '#e0e6ff';
         var ls   = t.layoutStyle     || 'single';
+
+        // Full custom template: show preview image or a "Full Design" placeholder SVG
+        if (t._full_template) {
+            if (t._preview_image) {
+                return '<img src="' + t._preview_image.replace(/"/g,'&quot;') + '" style="width:100%;height:100%;object-fit:cover;display:block;" alt="preview">';
+            }
+            // Normalize to 6-char hex
+            function stripAlpha2(c) { return (c && c[0] === '#' && c.length > 7) ? c.slice(0, 7) : c; }
+            pri = stripAlpha2(pri); bg = stripAlpha2(bg);
+            return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 120" style="width:100%;height:100%;display:block;">'
+                + '<rect width="170" height="120" fill="' + bg + '"/>'
+                + '<rect x="0" y="0" width="170" height="34" fill="' + pri + '"/>'
+                + '<rect x="10" y="10" width="70" height="7" rx="3" fill="#ffffff88"/>'
+                + '<rect x="10" y="20" width="45" height="4" rx="2" fill="#ffffff55"/>'
+                + '<rect x="10" y="44" width="35" height="3" rx="1.5" fill="' + pri + 'cc"/>'
+                + '<rect x="10" y="51" width="150" height="2" rx="1" fill="' + pri + '40"/>'
+                + '<rect x="10" y="57" width="140" height="2" rx="1" fill="#ffffff18"/>'
+                + '<rect x="10" y="62" width="115" height="2" rx="1" fill="#ffffff14"/>'
+                + '<rect x="10" y="76" width="35" height="3" rx="1.5" fill="' + pri + 'cc"/>'
+                + '<rect x="10" y="83" width="150" height="2" rx="1" fill="#ffffff18"/>'
+                + '<rect x="10" y="88" width="125" height="2" rx="1" fill="#ffffff14"/>'
+                + '<text x="85" y="112" text-anchor="middle" font-size="7" fill="' + pri + '99" font-family="sans-serif">Custom Template</text>'
+                + '</svg>';
+        }
 
         // Normalize to 6-char hex so appending 2-char opacity suffixes (#33, #88 etc.) stays valid
         function stripAlpha(c) { return (c && c[0] === '#' && c.length > 7) ? c.slice(0, 7) : c; }
@@ -2989,7 +3017,9 @@ window.applyColorVariant = function (key, variantIndex) {
                 + '<div class="rxe-tpl-name">' + esc(t.name) + '</div>'
                 + '<div class="rxe-tpl-cat">' + esc(t.category || 'general') + '</div>'
                 + (isCurrent ? '<span class="rxe-tpl-badge">&#10003; Active</span>' : '')
-                + '<span class="rxe-tpl-layout-tag">' + esc(layoutLabel) + '</span>'
+                + (t._full_template
+                    ? '<span class="rxe-tpl-layout-tag" style="border-color:rgba(139,92,246,0.4);color:#a78bfa;">Full Design</span>'
+                    : '<span class="rxe-tpl-layout-tag">' + esc(layoutLabel) + '</span>')
                 + '</div>'
                 + variantHtml
                 + '</div>';

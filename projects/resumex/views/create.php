@@ -567,6 +567,7 @@
             <button type="button" class="rxc-filter-btn" data-filter="light">Light</button>
             <button type="button" class="rxc-filter-btn" data-filter="professional">Professional</button>
             <button type="button" class="rxc-filter-btn" data-filter="creative">Creative</button>
+            <button type="button" class="rxc-filter-btn" data-filter="custom">Custom</button>
             <button type="button" class="rxc-filter-btn" data-filter="other">Other</button>
             <span class="rxc-count">
                 <span id="rxcVisibleCount"><?= count($allThemes) ?></span> / <?= count($allThemes) ?> templates
@@ -586,7 +587,9 @@
             foreach ($allThemes as $themeKey => $theme):
                 $cat = strtolower($theme['category'] ?? 'other');
                 // Determine which filter group this card belongs to
-                if (in_array($cat, $creativeCategories)) {
+                if (!empty($theme['_full_template'])) {
+                    $filterGroup = 'custom';
+                } elseif (in_array($cat, $creativeCategories)) {
                     $filterGroup = 'creative';
                 } elseif (in_array($cat, $lightCategories)) {
                     $filterGroup = 'light';

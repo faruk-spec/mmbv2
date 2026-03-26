@@ -44,7 +44,7 @@ class TemplateModel
     ];
 
     /** Regex pattern for validating a CSS hex color (#rgb or #rrggbb). */
-    private const HEX_COLOR_PATTERN = '/^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/';
+    private const HEX_COLOR_PATTERN = '/^#[0-9a-fA-F]{3}(?:[0-9a-fA-F]{3})?$/';
 
     public function __construct()
     {
@@ -92,11 +92,11 @@ class TemplateModel
             ");
 
             $cols = [
-                'is_override'   => "TINYINT(1) NOT NULL DEFAULT 0 AFTER `is_active`",
-                'preview_image' => "VARCHAR(500) DEFAULT NULL AFTER `is_override`",
-                'template_type' => "VARCHAR(10) NOT NULL DEFAULT 'preset' AFTER `category`",
-                'display_bg'    => "VARCHAR(20) DEFAULT NULL AFTER `preview_image`",
-                'display_pri'   => "VARCHAR(20) DEFAULT NULL AFTER `display_bg`",
+                'is_override'   => "TINYINT(1) NOT NULL DEFAULT 0",
+                'preview_image' => "VARCHAR(500) DEFAULT NULL",
+                'template_type' => "VARCHAR(10) NOT NULL DEFAULT 'preset'",
+                'display_bg'    => "VARCHAR(20) DEFAULT NULL",
+                'display_pri'   => "VARCHAR(20) DEFAULT NULL",
             ];
             foreach ($cols as $col => $def) {
                 $this->addColumnIfMissing('resumex_templates', $col, $def);
@@ -109,11 +109,8 @@ class TemplateModel
     private function addColumnIfMissing(string $table, string $column, string $definition): void
     {
         try {
-            $row = $this->db->fetch(
-                "SELECT 1 FROM information_schema.COLUMNS
-                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?",
-                [$table, $column]
-            );
+            // SHOW COLUMNS is simpler and doesn't require information_schema access
+            $row = $this->db->fetch("SHOW COLUMNS FROM `{$table}` LIKE ?", [$column]);
             if (!$row) {
                 $this->db->query("ALTER TABLE `{$table}` ADD COLUMN `{$column}` {$definition}");
             }

@@ -86,7 +86,7 @@
                                    oninput="document.getElementById('tpl_bg').value=this.value"
                                    style="width:34px;height:34px;border:none;background:none;cursor:pointer;padding:0;">
                             <input class="form-input" type="text" name="tpl_bg" id="tpl_bg" value="#1e1e2e"
-                                   pattern="^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$"
+                                   pattern="#[0-9a-fA-F]{3}(?:[0-9a-fA-F]{3})?"
                                    placeholder="#1e1e2e"
                                    oninput="document.getElementById('fullBgPick').value=this.value"
                                    style="flex:1;">
@@ -101,7 +101,7 @@
                                    oninput="document.getElementById('tpl_pri').value=this.value"
                                    style="width:34px;height:34px;border:none;background:none;cursor:pointer;padding:0;">
                             <input class="form-input" type="text" name="tpl_pri" id="tpl_pri" value="#00f0ff"
-                                   pattern="^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$"
+                                   pattern="#[0-9a-fA-F]{3}(?:[0-9a-fA-F]{3})?"
                                    placeholder="#00f0ff"
                                    oninput="document.getElementById('fullPriPick').value=this.value"
                                    style="flex:1;">
@@ -110,12 +110,13 @@
                 </div>
 
                 <div style="border:2px dashed var(--border-color);border-radius:10px;padding:20px;text-align:center;position:relative;cursor:pointer;margin-bottom:14px;" id="fullDropzone">
-                    <input type="file" name="full_template_file" id="fullFile" accept=".php"
+                    <input type="file" name="full_template_file" id="fullFile" accept=".php" required
                            style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;">
                     <i class="fas fa-file-php" style="font-size:1.8rem;color:var(--text-secondary);margin-bottom:8px;display:block;"></i>
                     <p style="margin:0 0 3px;font-size:0.85rem;"><strong style="color:var(--cyan);">Click or drag</strong> your .php template file here</p>
                     <p style="margin:0;font-size:0.78rem;color:var(--text-secondary);">max 2 MB · complete resume renderer</p>
                     <div id="fullFileSelected" style="display:none;margin-top:8px;font-size:0.82rem;color:var(--cyan);font-weight:600;"></div>
+                    <div id="fullFileError" style="display:none;margin-top:8px;font-size:0.82rem;color:#f87171;font-weight:600;"></div>
                 </div>
 
                 <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">
@@ -323,18 +324,63 @@
 <script>
 // ── Drag & drop for full template upload ──────────────────────────────────────
 (function () {
-    var dz  = document.getElementById('fullDropzone');
-    var inp = document.getElementById('fullFile');
-    var lbl = document.getElementById('fullFileSelected');
+    var dz   = document.getElementById('fullDropzone');
+    var inp  = document.getElementById('fullFile');
+    var lbl  = document.getElementById('fullFileSelected');
+    var err  = document.getElementById('fullFileError');
+    var form = document.getElementById('fullUploadForm');
+    var btn  = form ? form.querySelector('button[type="submit"]') : null;
     if (!dz) return;
+
+    function validateFile(file) {
+        if (!file) return false;
+        var name = file.name || '';
+        var ok = /\.php$/i.test(name);
+        if (ok) {
+            lbl.textContent = '✓ ' + name; lbl.style.display = 'block';
+            err.style.display = 'none';
+            dz.style.borderColor = 'var(--cyan)';
+        } else {
+            err.textContent = '✗ Only .php files are accepted (got .' + name.split('.').pop() + ')';
+            err.style.display = 'block';
+            lbl.style.display = 'none';
+            dz.style.borderColor = '#f87171';
+        }
+        return ok;
+    }
+
     inp.addEventListener('change', function () {
-        if (this.files.length) { lbl.textContent = '✓ ' + this.files[0].name; lbl.style.display = 'block'; dz.style.borderColor = 'var(--cyan)'; }
+        if (this.files.length) validateFile(this.files[0]);
     });
+
+    // Add loading state on submit
+    if (form && btn) {
+        form.addEventListener('submit', function (e) {
+            if (!inp.files.length) {
+                e.preventDefault();
+                err.textContent = '✗ Please select a .php file first.';
+                err.style.display = 'block';
+                return;
+            }
+            if (!validateFile(inp.files[0])) {
+                e.preventDefault();
+                return;
+            }
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading…';
+        });
+    }
+
     ['dragenter','dragover'].forEach(function(ev) { dz.addEventListener(ev, function(e) { e.preventDefault(); dz.style.borderColor='var(--cyan)'; }); });
-    ['dragleave','drop'].forEach(function(ev) { dz.addEventListener(ev, function(e) { e.preventDefault(); dz.style.borderColor=''; }); });
+    ['dragleave'].forEach(function(ev) { dz.addEventListener(ev, function(e) { e.preventDefault(); if (!inp.files.length) dz.style.borderColor=''; }); });
     dz.addEventListener('drop', function(e) {
+        e.preventDefault();
         var f = e.dataTransfer.files;
-        if (f.length) { inp.files = f; lbl.textContent = '✓ ' + f[0].name; lbl.style.display='block'; }
+        if (f.length) {
+            try { inp.files = f; } catch(_) {}
+            validateFile(f[0]);
+        }
+        dz.style.borderColor = '';
     });
 }());
 

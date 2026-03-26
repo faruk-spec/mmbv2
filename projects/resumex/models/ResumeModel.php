@@ -291,9 +291,10 @@ class ResumeModel
             foreach ($custom as $key => $preset) {
                 $isFullTpl = !empty($preset['_full_template']);
                 if ($isFullTpl || !empty($preset['_is_override']) || !array_key_exists($key, $builtIn)) {
-                    // Strip internal metadata except _full_template which is needed by the renderer
+                    // Strip admin-only internal metadata that callers don't need;
+                    // keep _full_template and _preview_image for the template picker UI.
                     $stripped = $preset;
-                    unset($stripped['_is_override'], $stripped['_preview_image'], $stripped['_db_id']);
+                    unset($stripped['_is_override'], $stripped['_db_id']);
                     $builtIn[$key] = $stripped;
                 }
             }
