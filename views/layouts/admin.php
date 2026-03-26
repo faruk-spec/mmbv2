@@ -1597,6 +1597,12 @@
                                 <span>Manage Templates</span>
                             </a>
                             <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('resumex.templates')): ?>
+                            <a href="/admin/projects/resumex/designer" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/resumex/designer') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-magic"></i>
+                                <span>Template Designer</span>
+                            </a>
+                            <?php endif; ?>
                             <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('resumex.resumes')): ?>
                             <a href="/admin/projects/resumex/resumes" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/resumex/resumes') === 0 ? 'active' : '' ?>">
                                 <i class="fas fa-list"></i>

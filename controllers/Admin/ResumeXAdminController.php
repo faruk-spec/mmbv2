@@ -99,7 +99,8 @@ class ResumeXAdminController extends BaseController
             $this->redirectWithError('/admin/projects/resumex/templates', $result['error'] ?? 'Upload failed.');
         }
 
-        ActivityLogger::log('resumex_template_upload', 'resumex', [
+        ActivityLogger::log(Auth::id(), 'resumex_template_upload', [
+            'module'        => 'resumex',
             'template_key'  => $result['template']['key']  ?? '',
             'template_name' => $result['template']['name'] ?? '',
         ]);
@@ -128,7 +129,7 @@ class ResumeXAdminController extends BaseController
             $this->redirectWithError('/admin/projects/resumex/templates', $result['error'] ?? 'Delete failed.');
         }
 
-        ActivityLogger::log('resumex_template_delete', 'resumex', ['template_id' => $id]);
+        ActivityLogger::log(Auth::id(), 'resumex_template_delete', ['module' => 'resumex', 'template_id' => $id]);
 
         header('Location: /admin/projects/resumex/templates?success=deleted');
         exit;
@@ -167,7 +168,8 @@ class ResumeXAdminController extends BaseController
             $this->redirectWithError('/admin/projects/resumex/templates', $result['error'] ?? 'Upload failed.');
         }
 
-        ActivityLogger::log('resumex_full_template_upload', 'resumex', [
+        ActivityLogger::log(Auth::id(), 'resumex_full_template_upload', [
+            'module'        => 'resumex',
             'template_key'  => $result['key']  ?? '',
             'template_name' => $result['name'] ?? '',
         ]);
@@ -330,15 +332,16 @@ class ResumeXAdminController extends BaseController
             // Update existing
             $result = $this->templateModel->updateDesignedTemplate($id, $meta, $design);
             if ($result['success']) {
-                ActivityLogger::log('resumex_designer_update', 'resumex', ['template_id' => $id]);
+                ActivityLogger::log(Auth::id(), 'resumex_designer_update', ['module' => 'resumex', 'template_id' => $id]);
             }
         } else {
             // Create new
             $result = $this->templateModel->saveDesignedTemplate($meta, $design, Auth::id());
             if ($result['success']) {
-                ActivityLogger::log('resumex_designer_create', 'resumex', [
-                    'template_key'  => $result['key'] ?? '',
-                    'template_id'   => $result['id']  ?? 0,
+                ActivityLogger::log(Auth::id(), 'resumex_designer_create', [
+                    'module'       => 'resumex',
+                    'template_key' => $result['key'] ?? '',
+                    'template_id'  => $result['id']  ?? 0,
                 ]);
                 $result['redirect'] = '/admin/projects/resumex/designer/' . ($result['id'] ?? 0);
             }
