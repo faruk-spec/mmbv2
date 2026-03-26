@@ -316,3 +316,12 @@ $router->get('/admin/whatsapp/user-subscriptions/assign', 'Admin\\WhatsAppSubscr
 $router->post('/admin/whatsapp/user-subscriptions/assign', 'Admin\\WhatsAppSubscriptionController@assignSubscription', ['auth', 'admin']);
 $router->post('/admin/whatsapp/user-subscriptions/update/{id}', 'Admin\\WhatsAppSubscriptionController@updateSubscription', ['auth', 'admin']);
 $router->post('/admin/whatsapp/user-subscriptions/cancel/{id}', 'Admin\\WhatsAppSubscriptionController@cancelSubscription', ['auth', 'admin']);
+
+
+// ── ResumeX Admin ────────────────────────────────────────────────────────────
+$router->get('/admin/projects/resumex', 'Admin\\ResumeXAdminController@overview', ['auth', 'admin']);
+$router->get('/admin/projects/resumex/templates', 'Admin\\ResumeXAdminController@templates', ['auth', 'admin']);
+$router->post('/admin/projects/resumex/templates/upload', 'Admin\\ResumeXAdminController@uploadTemplate', ['auth', 'admin']);
+$router->post('/admin/projects/resumex/templates/delete', 'Admin\\ResumeXAdminController@deleteTemplate', ['auth', 'admin']);
+$router->get('/admin/projects/resumex/templates/sample-download', 'Admin\\ResumeXAdminController@downloadSample', ['auth', 'admin']);
+$router->get('/admin/projects/resumex/resumes', 'Admin\\ResumeXAdminController@resumes', ['auth', 'admin']);
