@@ -353,6 +353,145 @@ class ResumeXAdminController extends BaseController
 
 
 
+    // ──────────────────────────────────────────────────────────────────────────
+    //  Settings
+    // ──────────────────────────────────────────────────────────────────────────
+
+    public function settings(): void
+    {
+        $this->requirePermission('resumex.settings');
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $this->updateSettings();
+            return;
+        }
+
+        $settings = $this->getResumeXSettings();
+
+        $this->view('admin/projects/resumex/settings', [
+            'title'     => 'ResumeX — Settings',
+            'settings'  => $settings,
+            'csrfToken' => Security::generateCsrfToken(),
+            'success'   => $_SESSION['_flash']['success'] ?? null,
+            'error'     => $_SESSION['_flash']['error']   ?? null,
+        ]);
+        unset($_SESSION['_flash']['success'], $_SESSION['_flash']['error']);
+    }
+
+    public function updateSettings(): void
+    {
+        $this->requirePermission('resumex.settings');
+
+        if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
+            $_SESSION['_flash']['error'] = 'Invalid security token.';
+            $this->redirect('/admin/projects/resumex/settings');
+            return;
+        }
+
+        $keysToSave = [
+            'resumex_openai_api_key',
+            'resumex_openai_model',
+            'resumex_ai_enabled',
+            'resumex_ai_daily_limit',
+        ];
+
+        $oldValues = [];
+        $newValues = [];
+
+        foreach ($keysToSave as $key) {
+            $row = $this->db->fetch("SELECT value FROM settings WHERE `key` = ?", [$key]);
+            $oldValues[$key] = $row ? $row['value'] : null;
+        }
+
+        $aiEnabled   = isset($_POST['resumex_ai_enabled']) ? '1' : '0';
+        $openaiKey   = Security::sanitize(trim($_POST['resumex_openai_api_key'] ?? ''));
+        $openaiModel = Security::sanitize(trim($_POST['resumex_openai_model'] ?? ''));
+        $dailyLimit  = max(0, (int) ($_POST['resumex_ai_daily_limit'] ?? 0));
+
+        // Validate key format: must be empty OR start with 'sk-'
+        if (!empty($openaiKey) && !str_starts_with($openaiKey, 'sk-')) {
+            $_SESSION['_flash']['error'] = 'Invalid API key format. OpenAI keys start with "sk-".';
+            $this->redirect('/admin/projects/resumex/settings');
+            return;
+        }
+
+        // Validate model: allow only known safe model names (alphanumeric + dash + dot)
+        if (!empty($openaiModel) && !preg_match('/^[a-zA-Z0-9\-\.]+$/', $openaiModel)) {
+            $_SESSION['_flash']['error'] = 'Invalid model name format.';
+            $this->redirect('/admin/projects/resumex/settings');
+            return;
+        }
+
+        // Validate daily limit: 0–9999
+        if ($dailyLimit > 9999) {
+            $_SESSION['_flash']['error'] = 'Daily limit must be between 0 and 9999.';
+            $this->redirect('/admin/projects/resumex/settings');
+            return;
+        }
+
+        $updates = [
+            'resumex_ai_enabled'      => $aiEnabled,
+            'resumex_openai_api_key'  => $openaiKey,
+            'resumex_openai_model'    => $openaiModel,
+            'resumex_ai_daily_limit'  => (string) $dailyLimit,
+        ];
+
+        foreach ($updates as $key => $value) {
+            $existing = $this->db->fetch("SELECT id FROM settings WHERE `key` = ?", [$key]);
+            if ($existing) {
+                $this->db->update('settings', [
+                    'value'      => $value,
+                    'updated_at' => date('Y-m-d H:i:s'),
+                ], '`key` = ?', [$key]);
+            } else {
+                $this->db->insert('settings', [
+                    'key'        => $key,
+                    'value'      => $value,
+                    'type'       => 'string',
+                    'created_at' => date('Y-m-d H:i:s'),
+                ]);
+            }
+            $newValues[$key] = $value;
+        }
+
+        ActivityLogger::log(Auth::id(), 'resumex_settings_updated', [
+            'module'     => 'resumex',
+            'old_values' => $oldValues,
+            'new_values' => $newValues,
+        ]);
+
+        $_SESSION['_flash']['success'] = 'ResumeX settings saved successfully.';
+        $this->redirect('/admin/projects/resumex/settings');
+    }
+
+    /**
+     * Helper: load all ResumeX settings from the settings table.
+     */
+    private function getResumeXSettings(): array
+    {
+        $defaults = [
+            'resumex_ai_enabled'     => '1',
+            'resumex_openai_api_key' => defined('OPENAI_API_KEY') ? OPENAI_API_KEY : '',
+            'resumex_openai_model'   => 'gpt-4o-mini',
+            'resumex_ai_daily_limit' => '0',
+        ];
+
+        try {
+            $rows = $this->db->fetchAll(
+                "SELECT `key`, `value` FROM settings WHERE `key` LIKE 'resumex_%'"
+            );
+            foreach ($rows as $row) {
+                $defaults[$row['key']] = $row['value'];
+            }
+        } catch (\Exception $e) {
+            // Return defaults if settings table unavailable
+        }
+
+        return $defaults;
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+
     public function resumes(): void
     {
         $this->requirePermission('resumex.resumes');
