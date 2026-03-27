@@ -2242,19 +2242,30 @@ window.aiSuggestBullets = function (i) {
             (data.ai_powered ? '<span style="font-size:0.7rem;background:linear-gradient(90deg,#6366f1,#8b5cf6);color:#fff;border-radius:4px;padding:1px 6px;margin-left:6px;vertical-align:middle;">✨ AI</span>' : '') +
             '</div>' +
             data.bullets.map(function (b) {
-                return '<div class="rxe-ai-suggestion-item" onclick="addBulletFromAI(' + i + ',this.textContent)">' + esc(b) + '</div>';
+                return '<div class="rxe-ai-suggestion-item" onclick="addBulletFromAI(' + i + ',this)">' + esc(b) + '</div>';
             }).join('');
     })
     .catch(function () {
         box.innerHTML = '<div style="font-size:0.8rem;color:var(--red);padding:8px 0;">Network error. Please check your connection and try again.</div>';
     });
 };
-window.addBulletFromAI = function (i, text) {
+window.addBulletFromAI = function (i, el) {
+    var text = el.textContent;
+    // Mark this suggestion as used; CSS (.added) disables pointer-events
+    el.classList.add('added');
     resumeData.experience[i].bullets = resumeData.experience[i].bullets || [];
     resumeData.experience[i].bullets.push(text);
-    document.getElementById('aiBullets' + i).classList.remove('open');
+    // Save suggestion box content before renderExperience() wipes the DOM,
+    // then restore it so the user can keep selecting bullets one by one.
+    var box = document.getElementById('aiBullets' + i);
+    var savedHTML = box ? box.innerHTML : '';
     renderExperience();
     markDirty();
+    var newBox = document.getElementById('aiBullets' + i);
+    if (newBox && savedHTML) {
+        newBox.innerHTML = savedHTML;
+        newBox.classList.add('open');
+    }
 };
 
 /* ══════════════════════════════════════════════════════════════

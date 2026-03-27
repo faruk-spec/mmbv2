@@ -324,6 +324,11 @@ class AIController
             return null; // AI disabled by admin — silently use rule-based
         }
 
+        // Check per-user daily rate limit
+        if (!$this->checkAndIncrementRateLimit($dbSettings)) {
+            return null; // Over daily limit — fall back to rule-based silently
+        }
+
         // Prefer DB key, then env constant, then give up
         $apiKey = $dbSettings['resumex_openai_api_key'] ?? '';
         if (empty($apiKey)) {
@@ -485,6 +490,44 @@ class AIController
             // Never let notification failure surface to the end user
             Logger::error('[ResumeX AI] Admin notification email failed: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Check whether the current user is within their daily AI generation quota
+     * and increment the counter if they are.
+     *
+     * Uses a lightweight temp-file counter (one file per user per calendar day).
+     * Returns true (allow) when rate limiting is disabled (limit = 0) or the
+     * user's count is below the configured limit.  Returns false when the daily
+     * quota is exhausted.
+     *
+     * @param array $dbSettings Already-loaded settings map from loadDbSettings()
+     */
+    private function checkAndIncrementRateLimit(array $dbSettings): bool
+    {
+        $limit = (int) ($dbSettings['resumex_ai_daily_limit'] ?? 0);
+        if ($limit <= 0) {
+            return true; // 0 means unlimited
+        }
+
+        $userId = (int) ($_SESSION['user_id'] ?? 0);
+        if ($userId <= 0) {
+            return true; // Unauthenticated — allow (CSRF already validated)
+        }
+
+        $file  = sys_get_temp_dir() . '/rxai_u' . $userId . '_' . date('Ymd');
+        $count = (int) @file_get_contents($file);
+
+        if ($count >= $limit) {
+            Logger::warning(
+                '[ResumeX AI] Daily limit reached for user ' . $userId,
+                ['limit' => $limit, 'used' => $count]
+            );
+            return false;
+        }
+
+        @file_put_contents($file, $count + 1, LOCK_EX);
+        return true;
     }
 
     /**

@@ -205,6 +205,19 @@
                     Any OpenAI chat model can be used.
                 </small>
             </div>
+
+            <!-- Daily AI generation limit -->
+            <div class="form-group">
+                <label for="ai_daily_limit">Daily AI Generations Per User</label>
+                <input type="number" id="ai_daily_limit" name="resumex_ai_daily_limit"
+                       value="<?= (int)($settings['resumex_ai_daily_limit'] ?? 0) ?>"
+                       min="0" max="9999" step="1" style="max-width:140px;">
+                <small>
+                    Maximum AI suggestion calls allowed per user per day.
+                    Set to <code>0</code> for unlimited.
+                    Users who exceed the limit automatically receive rule-based suggestions instead.
+                </small>
+            </div>
         </div>
     </div>
 
@@ -216,6 +229,7 @@
             <li>If the API call fails (network error, rate-limit, invalid key, etc.), the error is <strong style="color:var(--text-primary);">logged</strong> and an <strong style="color:var(--text-primary);">admin notification</strong> is sent to the notification bell.</li>
             <li>The user always receives helpful suggestions — either AI-generated or from the built-in rule-based engine as a fallback.</li>
             <li>Disabling AI or leaving the key blank skips the API call entirely and uses the rule-based engine.</li>
+            <li>The <strong style="color:var(--text-primary);">Daily AI Generations Per User</strong> limit resets every day at midnight. Users who reach the limit transparently receive rule-based suggestions for the rest of the day.</li>
         </ul>
     </div>
 

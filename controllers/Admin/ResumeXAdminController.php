@@ -392,6 +392,7 @@ class ResumeXAdminController extends BaseController
             'resumex_openai_api_key',
             'resumex_openai_model',
             'resumex_ai_enabled',
+            'resumex_ai_daily_limit',
         ];
 
         $oldValues = [];
@@ -402,9 +403,10 @@ class ResumeXAdminController extends BaseController
             $oldValues[$key] = $row ? $row['value'] : null;
         }
 
-        $aiEnabled = isset($_POST['resumex_ai_enabled']) ? '1' : '0';
-        $openaiKey = Security::sanitize(trim($_POST['resumex_openai_api_key'] ?? ''));
+        $aiEnabled   = isset($_POST['resumex_ai_enabled']) ? '1' : '0';
+        $openaiKey   = Security::sanitize(trim($_POST['resumex_openai_api_key'] ?? ''));
         $openaiModel = Security::sanitize(trim($_POST['resumex_openai_model'] ?? ''));
+        $dailyLimit  = max(0, (int) ($_POST['resumex_ai_daily_limit'] ?? 0));
 
         // Validate key format: must be empty OR start with 'sk-'
         if (!empty($openaiKey) && !str_starts_with($openaiKey, 'sk-')) {
@@ -420,10 +422,18 @@ class ResumeXAdminController extends BaseController
             return;
         }
 
+        // Validate daily limit: 0–9999
+        if ($dailyLimit > 9999) {
+            $_SESSION['_flash']['error'] = 'Daily limit must be between 0 and 9999.';
+            $this->redirect('/admin/projects/resumex/settings');
+            return;
+        }
+
         $updates = [
-            'resumex_ai_enabled'   => $aiEnabled,
-            'resumex_openai_api_key' => $openaiKey,
-            'resumex_openai_model'   => $openaiModel,
+            'resumex_ai_enabled'      => $aiEnabled,
+            'resumex_openai_api_key'  => $openaiKey,
+            'resumex_openai_model'    => $openaiModel,
+            'resumex_ai_daily_limit'  => (string) $dailyLimit,
         ];
 
         foreach ($updates as $key => $value) {
@@ -463,6 +473,7 @@ class ResumeXAdminController extends BaseController
             'resumex_ai_enabled'     => '1',
             'resumex_openai_api_key' => defined('OPENAI_API_KEY') ? OPENAI_API_KEY : '',
             'resumex_openai_model'   => 'gpt-4o-mini',
+            'resumex_ai_daily_limit' => '0',
         ];
 
         try {
