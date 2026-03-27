@@ -224,7 +224,16 @@ class TemplateModel
                 return null;
             }
             $path = $this->fullTemplateDir . '/' . basename($row['file_name']);
-            return file_exists($path) ? $path : null;
+            if (!file_exists($path)) {
+                return null;
+            }
+            // Verify the resolved path stays within the intended directory (prevents symlink escapes)
+            $realPath = realpath($path);
+            $realDir  = realpath($this->fullTemplateDir);
+            if ($realPath === false || $realDir === false || strncmp($realPath, $realDir . DIRECTORY_SEPARATOR, strlen($realDir) + 1) !== 0) {
+                return null;
+            }
+            return $realPath;
         } catch (\Exception $e) {
             Logger::error('TemplateModel::getFullTemplateFile error: ' . $e->getMessage());
             return null;
@@ -478,7 +487,13 @@ class TemplateModel
             $dir  = $type === 'full' ? $this->fullTemplateDir : $this->storageDir;
             $path = $dir . '/' . basename($row['file_name'] ?? '');
             if ($path && file_exists($path)) {
-                @unlink($path);
+                // Verify path stays within intended directory before deletion
+                $realPath = realpath($path);
+                $realDir  = realpath($dir);
+                if ($realPath !== false && $realDir !== false
+                    && strncmp($realPath, $realDir . DIRECTORY_SEPARATOR, strlen($realDir) + 1) === 0) {
+                    @unlink($realPath);
+                }
             }
 
             $this->db->query("DELETE FROM resumex_templates WHERE id = ?", [$id]);

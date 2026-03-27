@@ -259,7 +259,7 @@
             <a href="/projects/resumex/templates" class="rx-nav-link">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
                 <span>Templates</span>
-                <?php if (!empty($allThemes)): ?>
+                <?php if (!empty($allThemes ?? [])): ?>
                     <span class="rx-nav-badge"><?= count($allThemes) ?></span>
                 <?php endif; ?>
             </a>
@@ -314,7 +314,7 @@
         <div class="rx-header">
             <div class="rx-header-left">
                 <h1>My Dashboard</h1>
-                <p>Welcome back<?php if (!empty($user['name'])): ?>, <?= htmlspecialchars(explode(' ', $user['name'])[0]) ?><?php endif; ?>! Here is an overview of your resumes.</p>
+                <p>Welcome back<?php if (!empty($user['name'] ?? null)): ?>, <?= htmlspecialchars(explode(' ', $user['name'])[0]) ?><?php endif; ?>! Here is an overview of your resumes.</p>
             </div>
             <a href="/projects/resumex/create" class="rx-btn-create">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
@@ -438,12 +438,12 @@
                                     Preview
                                 </a>
                                 <button type="button" class="rx-action-btn duplicate"
-                                    onclick="openDuplicateModal(<?= $resumeId ?>, '<?= addslashes($resume['title'] ?? 'Untitled') ?>')">
+                                    onclick="openDuplicateModal(<?= $resumeId ?>, <?= htmlspecialchars(json_encode($resume['title'] ?? 'Untitled'), ENT_QUOTES, 'UTF-8') ?>)">
                                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                                     Copy
                                 </button>
                                 <button type="button" class="rx-action-btn delete"
-                                    onclick="openDeleteModal(<?= $resumeId ?>, '<?= addslashes($resume['title'] ?? 'Untitled') ?>')">
+                                    onclick="openDeleteModal(<?= $resumeId ?>, <?= htmlspecialchars(json_encode($resume['title'] ?? 'Untitled'), ENT_QUOTES, 'UTF-8') ?>)">
                                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>
                                     Delete
                                 </button>
