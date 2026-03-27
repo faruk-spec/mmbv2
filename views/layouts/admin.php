@@ -315,8 +315,8 @@
         }
         
         .menu-dropdown.open .menu-dropdown-content {
-            max-height: 800px; /* Increased from 500px to accommodate more menu items */
-            overflow-y: auto; /* Add scroll if needed */
+            max-height: 1000px;
+            overflow: hidden;
         }
         
         .menu-dropdown-content .menu-link {
@@ -1591,6 +1591,12 @@
                                 <span>Overview</span>
                             </a>
                             <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('resumex')): ?>
+                            <a href="/admin/projects/resumex/analytics" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/resumex/analytics') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-chart-bar"></i>
+                                <span>Analytics</span>
+                            </a>
+                            <?php endif; ?>
                             <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('resumex.templates')): ?>
                             <a href="/admin/projects/resumex/templates" class="menu-link <?= ($_SERVER['REQUEST_URI'] ?? '') === '/admin/projects/resumex/templates' ? 'active' : '' ?>">
                                 <i class="fas fa-layer-group"></i>
@@ -1612,13 +1618,7 @@
                             <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('resumex.settings')): ?>
                             <a href="/admin/projects/resumex/settings" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/resumex/settings') === 0 ? 'active' : '' ?>">
                                 <i class="fas fa-cog"></i>
-                                <span>Settings</span>
-                            </a>
-                            <?php endif; ?>
-                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('resumex.templates')): ?>
-                            <a href="/admin/projects/resumex/templates/sample-download" class="menu-link">
-                                <i class="fas fa-download"></i>
-                                <span>Download Sample Template</span>
+                                <span>Settings & Pro Features</span>
                             </a>
                             <?php endif; ?>
                         </div>

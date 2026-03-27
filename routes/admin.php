@@ -320,6 +320,7 @@ $router->post('/admin/whatsapp/user-subscriptions/cancel/{id}', 'Admin\\WhatsApp
 
 // ── ResumeX Admin ────────────────────────────────────────────────────────────
 $router->get('/admin/projects/resumex', 'Admin\\ResumeXAdminController@overview', ['auth', 'admin']);
+$router->get('/admin/projects/resumex/analytics', 'Admin\\ResumeXAdminController@analytics', ['auth', 'admin']);
 $router->get('/admin/projects/resumex/settings', 'Admin\\ResumeXAdminController@settings', ['auth', 'admin']);
 $router->post('/admin/projects/resumex/settings', 'Admin\\ResumeXAdminController@settings', ['auth', 'admin']);
 $router->get('/admin/projects/resumex/templates', 'Admin\\ResumeXAdminController@templates', ['auth', 'admin']);
