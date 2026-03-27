@@ -406,6 +406,23 @@ class ResumeXAdminController extends BaseController
         $hfToken   = Security::sanitize(trim($_POST['resumex_hf_api_token'] ?? ''));
         $hfModel   = Security::sanitize(trim($_POST['resumex_hf_model_url']  ?? ''));
 
+        // Validate token format: must be empty OR start with 'hf_'
+        if (!empty($hfToken) && !str_starts_with($hfToken, 'hf_')) {
+            $_SESSION['_flash']['error'] = 'Invalid API token format. Hugging Face tokens start with "hf_".';
+            $this->redirect('/admin/projects/resumex/settings');
+            return;
+        }
+
+        // Validate model URL: must be empty OR a valid Hugging Face inference endpoint
+        if (!empty($hfModel)) {
+            $allowedPrefix = 'https://api-inference.huggingface.co/';
+            if (!str_starts_with($hfModel, $allowedPrefix)) {
+                $_SESSION['_flash']['error'] = 'Invalid model URL. The endpoint must start with "' . $allowedPrefix . '".';
+                $this->redirect('/admin/projects/resumex/settings');
+                return;
+            }
+        }
+
         $updates = [
             'resumex_ai_enabled'   => $aiEnabled,
             'resumex_hf_api_token' => $hfToken,

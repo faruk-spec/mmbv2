@@ -335,6 +335,12 @@ class AIController
             $apiUrl = self::HF_API_URL_DEFAULT;
         }
 
+        // Guard against SSRF: only allow Hugging Face inference endpoints
+        if (!str_starts_with($apiUrl, 'https://api-inference.huggingface.co/')) {
+            Logger::error('[ResumeX AI] Blocked unsafe model URL (SSRF guard): ' . $apiUrl);
+            return null;
+        }
+
         // Sanitize inputs: strip control characters and cap length to prevent prompt injection
         $safeJobTitle   = mb_substr(preg_replace('/[\x00-\x1F\x7F]/u', '', $jobTitle),   0, 100);
         $safeExperience = mb_substr(preg_replace('/[\x00-\x1F\x7F]/u', '', $experience), 0, 50);
