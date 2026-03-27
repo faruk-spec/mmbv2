@@ -1,0 +1,256 @@
+<?php use Core\View; ?>
+<?php View::extend('admin'); ?>
+
+<?php View::section('styles'); ?>
+<style>
+.settings-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 28px 32px;
+    margin-bottom: 24px;
+}
+.settings-card h3 {
+    color: var(--cyan);
+    font-size: 1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    margin: 0 0 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-color);
+}
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 18px;
+}
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.form-group label {
+    font-size: .875rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+.form-group small {
+    color: var(--text-secondary);
+    font-size: .78rem;
+    margin-top: 2px;
+}
+.form-group input[type="text"],
+.form-group input[type="password"],
+.form-group input[type="url"] {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    padding: 9px 12px;
+    font-size: .9rem;
+    transition: border-color .2s;
+    width: 100%;
+    box-sizing: border-box;
+}
+.form-group input:focus {
+    outline: none;
+    border-color: var(--cyan);
+}
+.toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+.toggle-switch {
+    position: relative;
+    width: 48px;
+    height: 26px;
+    flex-shrink: 0;
+}
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-switch .slider {
+    position: absolute;
+    inset: 0;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 26px;
+    cursor: pointer;
+    transition: background .25s, border-color .25s;
+}
+.toggle-switch .slider::before {
+    content: '';
+    position: absolute;
+    width: 18px; height: 18px;
+    left: 3px; top: 3px;
+    background: var(--text-secondary);
+    border-radius: 50%;
+    transition: transform .25s, background .25s;
+}
+.toggle-switch input:checked + .slider { background: var(--cyan); border-color: var(--cyan); }
+.toggle-switch input:checked + .slider::before { transform: translateX(22px); background: #fff; }
+.toggle-label { font-size: .9rem; color: var(--text-primary); }
+.alert {
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: .9rem;
+}
+.alert-success { background: rgba(0,255,136,.1); color: var(--green, #00ff88); border: 1px solid var(--green, #00ff88); }
+.alert-danger  { background: rgba(255,107,107,.1); color: var(--red, #ff6b6b); border: 1px solid var(--red, #ff6b6b); }
+.btn-save {
+    background: linear-gradient(135deg, var(--cyan), var(--magenta));
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 28px;
+    font-size: .9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity .2s;
+}
+.btn-save:hover { opacity: .88; }
+.token-wrap { position: relative; }
+.token-wrap input { padding-right: 42px; }
+.token-toggle {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 0;
+}
+.token-toggle:hover { color: var(--cyan); }
+.badge-ai-on  { display:inline-block; padding:3px 10px; border-radius:20px; font-size:.75rem; font-weight:600; background:rgba(0,240,255,.15); color:var(--cyan); border:1px solid var(--cyan); }
+.badge-ai-off { display:inline-block; padding:3px 10px; border-radius:20px; font-size:.75rem; font-weight:600; background:rgba(255,107,107,.12); color:var(--red,#ff6b6b); border:1px solid var(--red,#ff6b6b); }
+</style>
+<?php View::endSection(); ?>
+
+<?php View::section('content'); ?>
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+    <div>
+        <h1><i class="fas fa-cog" style="color:var(--cyan);"></i> ResumeX — Settings</h1>
+        <p style="color:var(--text-secondary);">Configure AI API integration and feature options</p>
+    </div>
+    <a href="/admin/projects/resumex" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back to Overview</a>
+</div>
+
+<?php if (!empty($success)): ?>
+<div class="alert alert-success"><i class="fas fa-check-circle"></i> <?= htmlspecialchars($success) ?></div>
+<?php endif; ?>
+<?php if (!empty($error)): ?>
+<div class="alert alert-danger"><i class="fas fa-exclamation-circle"></i> <?= htmlspecialchars($error) ?></div>
+<?php endif; ?>
+
+<form method="POST" action="/admin/projects/resumex/settings">
+    <input type="hidden" name="_token" value="<?= htmlspecialchars($csrfToken) ?>">
+
+    <!-- AI Integration Card -->
+    <div class="settings-card">
+        <h3><i class="fas fa-robot" style="margin-right:8px;"></i>AI Integration (Hugging Face)</h3>
+
+        <div class="form-row">
+            <!-- Enable / disable AI -->
+            <div class="form-group">
+                <label>AI-Powered Suggestions</label>
+                <div class="toggle-row">
+                    <label class="toggle-switch">
+                        <input type="checkbox" name="resumex_ai_enabled" value="1"
+                               <?= ($settings['resumex_ai_enabled'] ?? '1') === '1' ? 'checked' : '' ?>>
+                        <span class="slider"></span>
+                    </label>
+                    <span class="toggle-label">
+                        <?php if (($settings['resumex_ai_enabled'] ?? '1') === '1'): ?>
+                        <span class="badge-ai-on"><i class="fas fa-bolt"></i> AI Enabled</span>
+                        <?php else: ?>
+                        <span class="badge-ai-off"><i class="fas fa-times"></i> AI Disabled — using rule-based engine</span>
+                        <?php endif; ?>
+                    </span>
+                </div>
+                <small>When disabled, the rule-based engine is used for all suggestions without calling external APIs.</small>
+            </div>
+
+            <!-- API Token -->
+            <div class="form-group">
+                <label for="hf_token">Hugging Face API Token</label>
+                <div class="token-wrap">
+                    <input type="password" id="hf_token" name="resumex_hf_api_token"
+                           value="<?= htmlspecialchars($settings['resumex_hf_api_token'] ?? '') ?>"
+                           placeholder="hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                           autocomplete="off">
+                    <button type="button" class="token-toggle" onclick="toggleToken()" title="Show/hide token">
+                        <i class="fas fa-eye" id="tokenEyeIcon"></i>
+                    </button>
+                </div>
+                <small>
+                    Get your free token at
+                    <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener noreferrer"
+                       style="color:var(--cyan);">huggingface.co/settings/tokens</a>.
+                    Leave blank to use the server environment constant (<code>HUGGING_FACE_API_TOKEN</code>).
+                </small>
+            </div>
+
+            <!-- Model URL -->
+            <div class="form-group">
+                <label for="hf_model">Hugging Face Inference API Model URL</label>
+                <input type="url" id="hf_model" name="resumex_hf_model_url"
+                       value="<?= htmlspecialchars($settings['resumex_hf_model_url'] ?? 'https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.1') ?>"
+                       placeholder="https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.1">
+                <small>
+                    The full inference API endpoint for the model to use.
+                    Default: <code>mistralai/Mistral-7B-Instruct-v0.1</code>.
+                    Any instruction-following model on Hugging Face Hub can be used.
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info box -->
+    <div class="settings-card" style="background:rgba(0,240,255,.04);border-color:rgba(0,240,255,.2);">
+        <h3><i class="fas fa-info-circle" style="margin-right:8px;"></i>How it works</h3>
+        <ul style="color:var(--text-secondary);font-size:.875rem;line-height:1.8;margin:0;padding-left:20px;">
+            <li>When AI is enabled and a valid API token is provided, the resume builder sends the job title and experience level to Hugging Face to generate a tailored summary, skills list, and bullet points.</li>
+            <li>If the API call fails (network error, rate-limit, invalid token, etc.), the error is <strong style="color:var(--text-primary);">logged</strong> and an <strong style="color:var(--text-primary);">admin notification</strong> is sent to the notification bell.</li>
+            <li>The user always receives helpful suggestions — either AI-generated or from the built-in rule-based engine as a fallback.</li>
+            <li>Disabling AI or leaving the token blank skips the API call entirely and uses the rule-based engine.</li>
+        </ul>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;">
+        <button type="submit" class="btn-save"><i class="fas fa-save"></i> Save Settings</button>
+    </div>
+</form>
+<?php View::endSection(); ?>
+
+<?php View::section('scripts'); ?>
+<script>
+function toggleToken() {
+    const input = document.getElementById('hf_token');
+    const icon  = document.getElementById('tokenEyeIcon');
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'fas fa-eye-slash';
+    } else {
+        input.type = 'password';
+        icon.className = 'fas fa-eye';
+    }
+}
+// Live toggle badge update
+document.querySelector('input[name="resumex_ai_enabled"]')?.addEventListener('change', function () {
+    const badge = this.closest('.toggle-row').querySelector('.toggle-label span');
+    if (badge) {
+        if (this.checked) {
+            badge.className = 'badge-ai-on';
+            badge.innerHTML = '<i class="fas fa-bolt"></i> AI Enabled';
+        } else {
+            badge.className = 'badge-ai-off';
+            badge.innerHTML = '<i class="fas fa-times"></i> AI Disabled — using rule-based engine';
+        }
+    }
+});
+</script>
+<?php View::endSection(); ?>

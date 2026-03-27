@@ -1609,6 +1609,12 @@
                                 <span>All Resumes</span>
                             </a>
                             <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('resumex.settings')): ?>
+                            <a href="/admin/projects/resumex/settings" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/resumex/settings') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-cog"></i>
+                                <span>Settings</span>
+                            </a>
+                            <?php endif; ?>
                             <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('resumex.templates')): ?>
                             <a href="/admin/projects/resumex/templates/sample-download" class="menu-link">
                                 <i class="fas fa-download"></i>
