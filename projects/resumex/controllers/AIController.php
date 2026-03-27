@@ -1,7 +1,7 @@
 <?php
 /**
  * ResumeX AI Controller
- * Provides AI-powered (Hugging Face) and rule-based resume suggestions.
+ * Provides AI-powered (OpenAI) and rule-based resume suggestions.
  *
  * @package MMB\Projects\ResumeX\Controllers
  */
@@ -13,11 +13,14 @@ use Core\Logger;
 
 class AIController
 {
-    /** Fallback Hugging Face Inference API endpoint (overridable via DB settings) */
-    private const HF_API_URL_DEFAULT = 'https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.1';
+    /** OpenAI Chat Completions endpoint */
+    private const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
+
+    /** Default model (cost-efficient, highly capable) */
+    private const OPENAI_MODEL_DEFAULT = 'gpt-4o-mini';
 
     /** Request timeout in seconds */
-    private const HF_TIMEOUT = 20;
+    private const OPENAI_TIMEOUT = 30;
 
     public function __construct()
     {
@@ -27,7 +30,7 @@ class AIController
     /* ── suggest-all (AI-powered combined endpoint) ───────────── */
 
     /**
-     * Returns summary, skills, and bullets together using the Hugging Face API,
+     * Returns summary, skills, and bullets together using the OpenAI API,
      * falling back to rule-based suggestions if the API is unavailable.
      */
     public function suggestAll(): void
@@ -45,8 +48,8 @@ class AIController
             exit;
         }
 
-        // Attempt Hugging Face AI generation
-        $aiResult = $this->callHuggingFaceAPI($jobTitle, $experience ?: ($expYears > 0 ? "{$expYears} years" : 'entry level'));
+        // Attempt OpenAI generation
+        $aiResult = $this->callOpenAIAPI($jobTitle, $experience ?: ($expYears > 0 ? "{$expYears} years" : 'entry level'));
 
         if ($aiResult !== null) {
             echo json_encode([
@@ -87,9 +90,9 @@ class AIController
             exit;
         }
 
-        // Try Hugging Face API first
+        // Try OpenAI first
         $expLabel = $experience ?: ($expYears > 0 ? "{$expYears} years" : 'entry level');
-        $aiResult = $this->callHuggingFaceAPI($jobTitle, $expLabel);
+        $aiResult = $this->callOpenAIAPI($jobTitle, $expLabel);
         if ($aiResult !== null && !empty($aiResult['summary'])) {
             echo json_encode([
                 'success'    => true,
@@ -121,8 +124,8 @@ class AIController
             exit;
         }
 
-        // Try Hugging Face API first
-        $aiResult = $this->callHuggingFaceAPI($jobTitle, $experience ?: 'mid level');
+        // Try OpenAI first
+        $aiResult = $this->callOpenAIAPI($jobTitle, $experience ?: 'mid level');
         if ($aiResult !== null && !empty($aiResult['skills'])) {
             echo json_encode([
                 'success'    => true,
@@ -155,8 +158,8 @@ class AIController
             exit;
         }
 
-        // Try Hugging Face API first
-        $aiResult = $this->callHuggingFaceAPI($jobTitle, $experience ?: 'mid level');
+        // Try OpenAI first
+        $aiResult = $this->callOpenAIAPI($jobTitle, $experience ?: 'mid level');
         if ($aiResult !== null && !empty($aiResult['bullets'])) {
             echo json_encode([
                 'success'    => true,
@@ -298,20 +301,20 @@ class AIController
     // ── Private helpers ──────────────────────────────────────────
 
     /**
-     * Call Hugging Face Inference API (Mistral-7B-Instruct-v0.1) to generate
-     * a professional summary, 8 relevant skills, and achievement bullet points.
+     * Call the OpenAI Chat Completions API to generate a professional summary,
+     * 8 relevant skills, and achievement bullet points.
      *
      * Returns an array with keys 'summary', 'skills', and 'bullets' on success,
-     * or null when the API is unavailable / the token is not configured.
+     * or null when the API is unavailable / the key is not configured.
      *
-     * On failure the real error is logged and the admin is notified; the caller
-     * then falls back to the rule-based suggestion engine.
+     * On failure the real error is logged and the admin is notified via the
+     * notification bell; the caller falls back to the rule-based engine.
      *
      * @param string $jobTitle   e.g. "Software Engineer"
      * @param string $experience e.g. "5 years" | "entry level" | "senior"
      * @return array{summary:string,skills:string[],bullets:string[]}|null
      */
-    private function callHuggingFaceAPI(string $jobTitle, string $experience): ?array
+    private function callOpenAIAPI(string $jobTitle, string $experience): ?array
     {
         // Read settings from DB (with constant / default fallbacks)
         $dbSettings = $this->loadDbSettings();
@@ -321,57 +324,52 @@ class AIController
             return null; // AI disabled by admin — silently use rule-based
         }
 
-        // Prefer DB token, then env constant, then give up
-        $token = $dbSettings['resumex_hf_api_token'] ?? '';
-        if (empty($token)) {
-            $token = defined('HUGGING_FACE_API_TOKEN') ? HUGGING_FACE_API_TOKEN : '';
+        // Prefer DB key, then env constant, then give up
+        $apiKey = $dbSettings['resumex_openai_api_key'] ?? '';
+        if (empty($apiKey)) {
+            $apiKey = defined('OPENAI_API_KEY') ? OPENAI_API_KEY : '';
         }
-        if (empty($token)) {
+        if (empty($apiKey)) {
             return null; // Not configured – use rule-based silently
         }
 
-        $apiUrl = $dbSettings['resumex_hf_model_url'] ?? self::HF_API_URL_DEFAULT;
-        if (empty($apiUrl)) {
-            $apiUrl = self::HF_API_URL_DEFAULT;
-        }
-
-        // Guard against SSRF: only allow Hugging Face inference endpoints
-        if (!str_starts_with($apiUrl, 'https://api-inference.huggingface.co/')) {
-            Logger::error('[ResumeX AI] Blocked unsafe model URL (SSRF guard): ' . $apiUrl);
-            return null;
+        $model = $dbSettings['resumex_openai_model'] ?? self::OPENAI_MODEL_DEFAULT;
+        if (empty($model)) {
+            $model = self::OPENAI_MODEL_DEFAULT;
         }
 
         // Sanitize inputs: strip control characters and cap length to prevent prompt injection
         $safeJobTitle   = mb_substr(preg_replace('/[\x00-\x1F\x7F]/u', '', $jobTitle),   0, 100);
         $safeExperience = mb_substr(preg_replace('/[\x00-\x1F\x7F]/u', '', $experience), 0, 50);
 
-        $prompt = "<s>[INST] You are a professional resume writer.\n"
-            . "Given a job title and experience level, generate:\n"
-            . "1. A professional summary (3-4 lines)\n"
-            . "2. A list of exactly 8 relevant skills\n"
-            . "3. Exactly 5 strong achievement-oriented bullet points for a resume\n\n"
-            . "Job Title: {$safeJobTitle}\n"
-            . "Experience Level: {$safeExperience}\n\n"
-            . "Respond ONLY with a valid JSON object in this exact format (no markdown, no extra text):\n"
-            . '{"summary":"...","skills":["...","...","...","...","...","...","...","..."],"bullets":["...","...","...","...","..."]}' . " [/INST]";
+        $systemPrompt = 'You are a professional resume writer. '
+            . 'Always respond with a valid JSON object only — no markdown, no extra text. '
+            . 'The JSON must have exactly these keys: '
+            . '"summary" (string, 3-4 sentence professional profile), '
+            . '"skills" (array of exactly 8 relevant skill strings), '
+            . '"bullets" (array of exactly 5 strong achievement-oriented resume bullet points).';
+
+        $userPrompt = "Job Title: {$safeJobTitle}\nExperience Level: {$safeExperience}";
 
         $payload = json_encode([
-            'inputs'     => $prompt,
-            'parameters' => [
-                'max_new_tokens'  => 512,
-                'temperature'     => 0.7,
-                'return_full_text'=> false,
+            'model'           => $model,
+            'messages'        => [
+                ['role' => 'system', 'content' => $systemPrompt],
+                ['role' => 'user',   'content' => $userPrompt],
             ],
+            'temperature'     => 0.7,
+            'max_tokens'      => 600,
+            'response_format' => ['type' => 'json_object'],
         ]);
 
-        $ch = curl_init($apiUrl);
+        $ch = curl_init(self::OPENAI_API_URL);
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_POST           => true,
             CURLOPT_POSTFIELDS     => $payload,
-            CURLOPT_TIMEOUT        => self::HF_TIMEOUT,
+            CURLOPT_TIMEOUT        => self::OPENAI_TIMEOUT,
             CURLOPT_HTTPHEADER     => [
-                'Authorization: Bearer ' . $token,
+                'Authorization: Bearer ' . $apiKey,
                 'Content-Type: application/json',
             ],
         ]);
@@ -383,7 +381,7 @@ class AIController
 
         if ($raw === false || !empty($curlErr)) {
             $this->notifyAdmin(
-                "Hugging Face API cURL error: {$curlErr}",
+                "OpenAI API cURL error: {$curlErr}",
                 ['job_title' => $jobTitle, 'experience' => $experience]
             );
             return null;
@@ -391,20 +389,15 @@ class AIController
 
         if ($httpCode !== 200) {
             $this->notifyAdmin(
-                "Hugging Face API returned HTTP {$httpCode}: {$raw}",
+                "OpenAI API returned HTTP {$httpCode}: {$raw}",
                 ['job_title' => $jobTitle, 'experience' => $experience]
             );
             return null;
         }
 
-        // The HF inference API wraps the result in an array
-        $decoded = json_decode($raw, true);
-        $text    = '';
-        if (isset($decoded[0]['generated_text'])) {
-            $text = $decoded[0]['generated_text'];
-        } elseif (is_string($decoded)) {
-            $text = $decoded;
-        }
+        // Extract content from the OpenAI response envelope
+        $response = json_decode($raw, true);
+        $text     = $response['choices'][0]['message']['content'] ?? '';
 
         return $this->parseAIResponse($text, $jobTitle, $experience);
     }
@@ -435,7 +428,7 @@ class AIController
         }
 
         $this->notifyAdmin(
-            'Hugging Face API response could not be parsed as valid JSON',
+            'OpenAI API response could not be parsed as valid JSON',
             ['job_title' => $jobTitle, 'experience' => $experience, 'raw_snippet' => mb_substr($text, 0, 300)]
         );
         return null;

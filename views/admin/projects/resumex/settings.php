@@ -151,7 +151,7 @@
 
     <!-- AI Integration Card -->
     <div class="settings-card">
-        <h3><i class="fas fa-robot" style="margin-right:8px;"></i>AI Integration (Hugging Face)</h3>
+        <h3><i class="fas fa-robot" style="margin-right:8px;"></i>AI Integration (OpenAI)</h3>
 
         <div class="form-row">
             <!-- Enable / disable AI -->
@@ -174,36 +174,35 @@
                 <small>When disabled, the rule-based engine is used for all suggestions without calling external APIs.</small>
             </div>
 
-            <!-- API Token -->
+            <!-- OpenAI API Key -->
             <div class="form-group">
-                <label for="hf_token">Hugging Face API Token</label>
+                <label for="openai_key">OpenAI API Key</label>
                 <div class="token-wrap">
-                    <input type="password" id="hf_token" name="resumex_hf_api_token"
-                           value="<?= htmlspecialchars($settings['resumex_hf_api_token'] ?? '') ?>"
-                           placeholder="hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                    <input type="password" id="openai_key" name="resumex_openai_api_key"
+                           value="<?= htmlspecialchars($settings['resumex_openai_api_key'] ?? '') ?>"
+                           placeholder="sk-..."
                            autocomplete="off">
-                    <button type="button" class="token-toggle" onclick="toggleToken()" title="Show/hide token">
+                    <button type="button" class="token-toggle" onclick="toggleToken()" title="Show/hide key">
                         <i class="fas fa-eye" id="tokenEyeIcon"></i>
                     </button>
                 </div>
                 <small>
-                    Get your free token at
-                    <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener noreferrer"
-                       style="color:var(--cyan);">huggingface.co/settings/tokens</a>.
-                    Leave blank to use the server environment constant (<code>HUGGING_FACE_API_TOKEN</code>).
+                    Get your API key at
+                    <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer"
+                       style="color:var(--cyan);">platform.openai.com/api-keys</a>.
+                    Leave blank to use the server environment constant (<code>OPENAI_API_KEY</code>).
                 </small>
             </div>
 
-            <!-- Model URL -->
+            <!-- OpenAI Model -->
             <div class="form-group">
-                <label for="hf_model">Hugging Face Inference API Model URL</label>
-                <input type="url" id="hf_model" name="resumex_hf_model_url"
-                       value="<?= htmlspecialchars($settings['resumex_hf_model_url'] ?? 'https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.1') ?>"
-                       placeholder="https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.1">
+                <label for="openai_model">OpenAI Model</label>
+                <input type="text" id="openai_model" name="resumex_openai_model"
+                       value="<?= htmlspecialchars($settings['resumex_openai_model'] ?? 'gpt-4o-mini') ?>"
+                       placeholder="gpt-4o-mini">
                 <small>
-                    The full inference API endpoint for the model to use.
-                    Default: <code>mistralai/Mistral-7B-Instruct-v0.1</code>.
-                    Any instruction-following model on Hugging Face Hub can be used.
+                    Recommended: <code>gpt-4o-mini</code> (fast &amp; cheap) or <code>gpt-4o</code> (highest quality).
+                    Any OpenAI chat model can be used.
                 </small>
             </div>
         </div>
@@ -213,10 +212,10 @@
     <div class="settings-card" style="background:rgba(0,240,255,.04);border-color:rgba(0,240,255,.2);">
         <h3><i class="fas fa-info-circle" style="margin-right:8px;"></i>How it works</h3>
         <ul style="color:var(--text-secondary);font-size:.875rem;line-height:1.8;margin:0;padding-left:20px;">
-            <li>When AI is enabled and a valid API token is provided, the resume builder sends the job title and experience level to Hugging Face to generate a tailored summary, skills list, and bullet points.</li>
-            <li>If the API call fails (network error, rate-limit, invalid token, etc.), the error is <strong style="color:var(--text-primary);">logged</strong> and an <strong style="color:var(--text-primary);">admin notification</strong> is sent to the notification bell.</li>
+            <li>When AI is enabled and a valid API key is provided, the resume builder sends the job title and experience level to OpenAI to generate a tailored summary, skills list, and bullet points.</li>
+            <li>If the API call fails (network error, rate-limit, invalid key, etc.), the error is <strong style="color:var(--text-primary);">logged</strong> and an <strong style="color:var(--text-primary);">admin notification</strong> is sent to the notification bell.</li>
             <li>The user always receives helpful suggestions — either AI-generated or from the built-in rule-based engine as a fallback.</li>
-            <li>Disabling AI or leaving the token blank skips the API call entirely and uses the rule-based engine.</li>
+            <li>Disabling AI or leaving the key blank skips the API call entirely and uses the rule-based engine.</li>
         </ul>
     </div>
 
@@ -229,7 +228,7 @@
 <?php View::section('scripts'); ?>
 <script>
 function toggleToken() {
-    const input = document.getElementById('hf_token');
+    const input = document.getElementById('openai_key');
     const icon  = document.getElementById('tokenEyeIcon');
     if (input.type === 'password') {
         input.type = 'text';

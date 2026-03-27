@@ -389,8 +389,8 @@ class ResumeXAdminController extends BaseController
         }
 
         $keysToSave = [
-            'resumex_hf_api_token',
-            'resumex_hf_model_url',
+            'resumex_openai_api_key',
+            'resumex_openai_model',
             'resumex_ai_enabled',
         ];
 
@@ -403,30 +403,27 @@ class ResumeXAdminController extends BaseController
         }
 
         $aiEnabled = isset($_POST['resumex_ai_enabled']) ? '1' : '0';
-        $hfToken   = Security::sanitize(trim($_POST['resumex_hf_api_token'] ?? ''));
-        $hfModel   = Security::sanitize(trim($_POST['resumex_hf_model_url']  ?? ''));
+        $openaiKey = Security::sanitize(trim($_POST['resumex_openai_api_key'] ?? ''));
+        $openaiModel = Security::sanitize(trim($_POST['resumex_openai_model'] ?? ''));
 
-        // Validate token format: must be empty OR start with 'hf_'
-        if (!empty($hfToken) && !str_starts_with($hfToken, 'hf_')) {
-            $_SESSION['_flash']['error'] = 'Invalid API token format. Hugging Face tokens start with "hf_".';
+        // Validate key format: must be empty OR start with 'sk-'
+        if (!empty($openaiKey) && !str_starts_with($openaiKey, 'sk-')) {
+            $_SESSION['_flash']['error'] = 'Invalid API key format. OpenAI keys start with "sk-".';
             $this->redirect('/admin/projects/resumex/settings');
             return;
         }
 
-        // Validate model URL: must be empty OR a valid Hugging Face inference endpoint
-        if (!empty($hfModel)) {
-            $allowedPrefix = 'https://api-inference.huggingface.co/';
-            if (!str_starts_with($hfModel, $allowedPrefix)) {
-                $_SESSION['_flash']['error'] = 'Invalid model URL. The endpoint must start with "' . $allowedPrefix . '".';
-                $this->redirect('/admin/projects/resumex/settings');
-                return;
-            }
+        // Validate model: allow only known safe model names (alphanumeric + dash + dot)
+        if (!empty($openaiModel) && !preg_match('/^[a-zA-Z0-9\-\.]+$/', $openaiModel)) {
+            $_SESSION['_flash']['error'] = 'Invalid model name format.';
+            $this->redirect('/admin/projects/resumex/settings');
+            return;
         }
 
         $updates = [
             'resumex_ai_enabled'   => $aiEnabled,
-            'resumex_hf_api_token' => $hfToken,
-            'resumex_hf_model_url' => $hfModel,
+            'resumex_openai_api_key' => $openaiKey,
+            'resumex_openai_model'   => $openaiModel,
         ];
 
         foreach ($updates as $key => $value) {
@@ -463,9 +460,9 @@ class ResumeXAdminController extends BaseController
     private function getResumeXSettings(): array
     {
         $defaults = [
-            'resumex_ai_enabled'   => '1',
-            'resumex_hf_api_token' => defined('HUGGING_FACE_API_TOKEN') ? HUGGING_FACE_API_TOKEN : '',
-            'resumex_hf_model_url' => 'https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.1',
+            'resumex_ai_enabled'     => '1',
+            'resumex_openai_api_key' => defined('OPENAI_API_KEY') ? OPENAI_API_KEY : '',
+            'resumex_openai_model'   => 'gpt-4o-mini',
         ];
 
         try {
