@@ -1,7 +1,7 @@
 <?php
 /**
  * ConvertX – AI File Processing View
- * Upload any file + add remarks → OpenAI processes and returns output
+ * Upload any file + add remarks → AI processes and returns output
  */
 $currentView = 'ai-process';
 $csrfToken   = \Core\Security::generateCsrfToken();
@@ -14,7 +14,7 @@ $csrfToken   = \Core\Security::generateCsrfToken();
             background:linear-gradient(135deg,var(--cx-primary),var(--cx-accent));
             -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;"></i>
         AI File Processing
-        <span class="ai-badge" style="font-size:.65rem;vertical-align:middle;margin-left:.4rem;">✨ OpenAI</span>
+        <span class="ai-badge" style="font-size:.65rem;vertical-align:middle;margin-left:.4rem;">✨ AI</span>
     </h1>
     <p>Upload any document or image, describe what you need, and let AI do the heavy lifting</p>
 </div>
@@ -24,8 +24,8 @@ $csrfToken   = \Core\Security::generateCsrfToken();
 <div class="cx-notice" style="border-color:var(--cx-warning);background:rgba(245,158,11,.08);margin-bottom:1.5rem;">
     <i class="fa-solid fa-triangle-exclamation" style="color:var(--cx-warning);font-size:1.1rem;"></i>
     <div>
-        <strong>OpenAI is not configured.</strong>
-        Ask an admin to add an OpenAI API key in
+        <strong>AI processing is not configured.</strong>
+        Ask an admin to enable AI in
         <a href="/projects/convertx/settings" style="color:var(--cx-primary);font-weight:600;">ConvertX → Settings</a>.
     </div>
 </div>
@@ -59,7 +59,7 @@ $csrfToken   = \Core\Security::generateCsrfToken();
         </div>
         <div>
             <div class="cx-aip-step-title">3. AI Processes</div>
-            <div class="cx-aip-step-desc">OpenAI returns the result instantly</div>
+            <div class="cx-aip-step-desc">AI returns the result instantly</div>
         </div>
     </div>
 </div>
@@ -205,7 +205,7 @@ e.g. Translate to French and improve the tone"
             <div id="outputSpinner" class="cx-aip-spinner" style="display:none;">
                 <div class="cx-aip-spinner-ring"></div>
                 <div class="cx-aip-spinner-text">
-                    <span id="spinnerMsg">Sending to OpenAI…</span>
+                    <span id="spinnerMsg">Sending to AI…</span>
                 </div>
             </div>
 
@@ -714,6 +714,7 @@ function showSelected(file) {
 // ── Quick prompts ─────────────────────────────────────────────────────
 window.applyPrompt = function(text) {
     remarksEl.value = text;
+    remarksEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
     remarksEl.focus();
     // Highlight active chip
     document.querySelectorAll('.cx-aip-chip').forEach(function(c) {
@@ -883,7 +884,6 @@ document.getElementById('aiProcessForm').addEventListener('submit', function(e) 
 
         // Meta info
         var meta = [];
-        if (data.model)    meta.push('<i class="fa-solid fa-microchip" style="color:var(--cx-primary);"></i> ' + escHtml(data.model));
         if (data.filename) meta.push('<i class="fa-solid fa-file" style="color:var(--cx-primary);"></i> ' + escHtml(data.filename));
         document.getElementById('outputMeta').innerHTML = meta.join(' &nbsp;·&nbsp; ');
 

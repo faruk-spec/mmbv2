@@ -167,7 +167,7 @@ class ConversionService
             if ($result) {
                 return ['success' => true, 'output_path' => $outputPath, 'error' => ''];
             }
-            return ['success' => false, 'output_path' => '', 'error' => "Conversion did not produce an output file for {$inputFormat} → {$outputFormat}. Check that the required tool (LibreOffice / ImageMagick) is installed and accessible by the web server."];
+            return ['success' => false, 'output_path' => '', 'error' => "Conversion did not produce output for {$inputFormat} → {$outputFormat}. This format combination may not be supported on this server."];
         } catch (\Exception $e) {
             Logger::error('ConversionService::convert - ' . $e->getMessage());
             return ['success' => false, 'output_path' => '', 'error' => $e->getMessage()];
@@ -241,9 +241,8 @@ class ConversionService
                 return true;
             }
             throw new \RuntimeException(
-                "PDF to image conversion requires ImageMagick. "
-                . "If ImageMagick is installed, check that /etc/ImageMagick-*/policy.xml "
-                . "does not have rights=\"none\" for the PDF coder."
+                "PDF to image conversion is not available on this server. "
+                . "Please try a different output format."
             );
         }
 
@@ -269,6 +268,24 @@ class ConversionService
         $textOutputFormats = ['txt', 'html', 'md', 'csv'];
         if ($isInputImage && in_array($outputFormat, $textOutputFormats, true)) {
             return $this->convertImageToTextWithOcr($inputPath, $outputFormat, $outputPath);
+        }
+
+        // 4d. Image → spreadsheet formats (xlsx / xls / ods):
+        //     Use Tesseract OCR to extract text and write it into a minimal spreadsheet.
+        //     The PDF-chain approach is not supported for these formats.
+        $spreadsheetOutputFormats = ['xlsx', 'xls', 'ods'];
+        if ($isInputImage && in_array($outputFormat, $spreadsheetOutputFormats, true)) {
+            return $this->convertImageToSpreadsheetWithOcr($inputPath, $outputFormat, $outputPath);
+        }
+
+        // 4e. Image → presentation formats (pptx / odp / ppt):
+        //     Embed the image directly in a minimal presentation file using ZipArchive.
+        $presentationOutputFormats = ['pptx', 'odp', 'ppt'];
+        if ($isInputImage && in_array($outputFormat, $presentationOutputFormats, true)) {
+            if ($this->convertImageToPresentationWithPhp($inputPath, $inputFormat, $outputFormat, $outputPath)) {
+                return true;
+            }
+            // ZipArchive unavailable — fall through to chain
         }
 
         // 5. Cross-family: image → office/text (non-pdf)
@@ -299,9 +316,8 @@ class ConversionService
                 && in_array($outputFormat, ['xlsx', 'xls', 'ods', 'csv', 'pptx', 'ppt', 'odp'], true)
             ) {
                 throw new \RuntimeException(
-                    "Direct PDF to {$outputFormat} conversion is not supported — LibreOffice cannot "
-                    . "reliably import PDFs into Calc or Impress. "
-                    . "Consider converting to a Writer format (docx/odt/txt) first."
+                    "PDF to spreadsheet or presentation conversion is not supported. "
+                    . "Try converting to a document format (DOCX, ODT, or TXT) first."
                 );
             }
             return $this->convertWithLibreOffice($inputPath, $inputFormat, $outputFormat, $outputPath);
@@ -627,12 +643,9 @@ class ConversionService
             }
 
             if (!$step1ok || !file_exists($tmpPdf)) {
-                $hint = $step1Error
-                    ? "Step 1 error: {$step1Error}"
-                    : "Ensure both LibreOffice and ImageMagick are installed and that "
-                      . "ImageMagick policy.xml allows PDF output.";
                 throw new \RuntimeException(
-                    "Two-step conversion failed at step 1 ({$inputFormat} → PDF). {$hint}"
+                    "Conversion failed at the intermediate step ({$inputFormat} → PDF). "
+                    . "Please verify the input file is valid and try a different output format."
                 );
             }
 
@@ -647,9 +660,8 @@ class ConversionService
             $pdfUnsafeTargets = ['xlsx', 'xls', 'ods', 'csv', 'pptx', 'ppt', 'odp'];
             if (in_array($outputFormat, $pdfUnsafeTargets, true)) {
                 throw new \RuntimeException(
-                    "Converting an image to {$outputFormat} via PDF intermediate is not supported — "
-                    . "LibreOffice cannot reliably import PDFs into Calc/Impress. "
-                    . "To extract data from an image spreadsheet, enable AI OCR on the conversion."
+                    "This image to {$outputFormat} conversion is not supported via the standard path. "
+                    . "Try enabling AI OCR on the conversion for better results."
                 );
             }
 
@@ -983,6 +995,505 @@ class ConversionService
     }
 
     /**
+     * Create a spreadsheet (xlsx / xls / ods) from an image using Tesseract OCR.
+     * Each text line extracted becomes a row; tab-separated values become multiple cells.
+     */
+    private function convertImageToSpreadsheetWithOcr(
+        string $inputPath,
+        string $outputFormat,
+        string $outputPath
+    ): bool {
+        // Extract text via Tesseract OCR
+        $text = '';
+        $tess = trim((string) shell_exec('which tesseract 2>/dev/null'));
+        if ($tess) {
+            $tmpBase = sys_get_temp_dir() . '/cx_tess_' . getmypid() . '_' . bin2hex(random_bytes(8));
+            exec(
+                escapeshellarg($tess) . ' ' . escapeshellarg($inputPath)
+                . ' ' . escapeshellarg($tmpBase) . ' -l eng 2>/dev/null',
+                $_lines, $tessCode
+            );
+            $tessOut = $tmpBase . '.txt';
+            if ($tessCode === 0 && file_exists($tessOut)) {
+                $text = (string) file_get_contents($tessOut);
+                @unlink($tessOut);
+            }
+        }
+
+        // Parse extracted text into rows/cells
+        $rows = [];
+        foreach (preg_split('/\r\n|\r|\n/', trim($text)) as $line) {
+            if (trim($line) === '') {
+                continue;
+            }
+            // Tab-separated → multiple cells; otherwise treat as single-cell CSV row
+            if (str_contains($line, "\t")) {
+                $rows[] = explode("\t", $line);
+            } else {
+                $parsed = str_getcsv($line);
+                $rows[] = ($parsed !== false && $parsed !== ['']) ? $parsed : [$line];
+            }
+        }
+
+        if (empty($rows)) {
+            $rows = [['No text could be extracted from this image.']];
+        }
+
+        if ($outputFormat === 'ods') {
+            return $this->writeOdsCalcFromRows($rows, $outputPath);
+        }
+
+        // xlsx and xls: write xlsx (xlsx is the modern binary-compatible replacement for xls)
+        $xlsxOk = $this->writeXlsxFromRows($rows, $outputPath);
+        if ($xlsxOk && $outputFormat === 'xls') {
+            // Attempt LibreOffice xlsx→xls conversion if LibreOffice is available
+            $tmpXlsx = $outputPath . '_tmp.xlsx';
+            try {
+                if (@rename($outputPath, $tmpXlsx)) {
+                    $this->convertWithLibreOffice($tmpXlsx, 'xlsx', 'xls', $outputPath);
+                    @unlink($tmpXlsx);
+                }
+            } catch (\Exception $e) {
+                // LibreOffice unavailable — keep xlsx content under xls extension
+                if (!file_exists($outputPath) && file_exists($tmpXlsx)) {
+                    @rename($tmpXlsx, $outputPath);
+                }
+            }
+        }
+        return $xlsxOk;
+    }
+
+    /**
+     * Write a minimal but valid xlsx spreadsheet (OOXML) from a 2-D array of rows.
+     */
+    private function writeXlsxFromRows(array $rows, string $outputPath): bool
+    {
+        if (!class_exists('ZipArchive')) {
+            return false;
+        }
+
+        // Build worksheet XML
+        $sheetData = '';
+        foreach ($rows as $rowIdx => $cells) {
+            $rowNum     = $rowIdx + 1;
+            $sheetData .= "<row r=\"{$rowNum}\">";
+            foreach ((array) $cells as $colIdx => $cell) {
+                // Column letter: A–Z for 0–25; AA–ZZ for 26–701
+                if ($colIdx < 26) {
+                    $colLetter = chr(65 + $colIdx);
+                } elseif ($colIdx < 702) {
+                    $colLetter = chr(64 + intdiv($colIdx, 26)) . chr(65 + ($colIdx % 26));
+                } else {
+                    break; // skip beyond ZZ (702 columns)
+                }
+                $ref        = $colLetter . $rowNum;
+                $escaped    = htmlspecialchars((string) $cell, ENT_QUOTES | ENT_XML1, 'UTF-8');
+                $sheetData .= "<c r=\"{$ref}\" t=\"inlineStr\"><is><t>{$escaped}</t></is></c>";
+            }
+            $sheetData .= '</row>';
+        }
+
+        $contentTypes =
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+            . '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+            . '<Default Extension="xml" ContentType="application/xml"/>'
+            . '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
+            . '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'
+            . '</Types>';
+
+        $relsMain =
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            . '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>'
+            . '</Relationships>';
+
+        $workbook =
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/sheet"'
+            . ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+            . '<sheets><sheet name="Sheet1" sheetId="1" r:id="rId1"/></sheets>'
+            . '</workbook>';
+
+        $workbookRels =
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            . '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>'
+            . '</Relationships>';
+
+        $sheet =
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/sheet">'
+            . '<sheetData>' . $sheetData . '</sheetData>'
+            . '</worksheet>';
+
+        $zip = new \ZipArchive();
+        if ($zip->open($outputPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
+            return false;
+        }
+        $zip->addFromString('[Content_Types].xml',        $contentTypes);
+        $zip->addFromString('_rels/.rels',                $relsMain);
+        $zip->addFromString('xl/workbook.xml',            $workbook);
+        $zip->addFromString('xl/_rels/workbook.xml.rels', $workbookRels);
+        $zip->addFromString('xl/worksheets/sheet1.xml',   $sheet);
+        $zip->close();
+
+        return file_exists($outputPath) && filesize($outputPath) > 100;
+    }
+
+    /**
+     * Write a minimal ODS spreadsheet (ODF Calc) from a 2-D array of rows.
+     */
+    private function writeOdsCalcFromRows(array $rows, string $outputPath): bool
+    {
+        if (!class_exists('ZipArchive')) {
+            return false;
+        }
+
+        $tableRows = '';
+        foreach ($rows as $cells) {
+            $tableRows .= '<table:table-row>';
+            foreach ((array) $cells as $cell) {
+                $escaped    = htmlspecialchars((string) $cell, ENT_QUOTES | ENT_XML1, 'UTF-8');
+                $tableRows .= '<table:table-cell office:value-type="string"><text:p>' . $escaped . '</text:p></table:table-cell>';
+            }
+            $tableRows .= '</table:table-row>';
+        }
+
+        $manifest =
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            . '<manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0" manifest:version="1.3">'
+            . '<manifest:file-entry manifest:full-path="/" manifest:version="1.3" manifest:media-type="application/vnd.oasis.opendocument.spreadsheet"/>'
+            . '<manifest:file-entry manifest:full-path="content.xml" manifest:media-type="text/xml"/>'
+            . '</manifest:manifest>';
+
+        $content =
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            . '<office:document-content'
+            . ' xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"'
+            . ' xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0"'
+            . ' xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"'
+            . ' office:version="1.3">'
+            . '<office:body><office:spreadsheet>'
+            . '<table:table table:name="Sheet1">'
+            . $tableRows
+            . '</table:table>'
+            . '</office:spreadsheet></office:body>'
+            . '</office:document-content>';
+
+        $zip = new \ZipArchive();
+        if ($zip->open($outputPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
+            return false;
+        }
+        // ODF spec: 'mimetype' MUST be the first entry and STORED (not compressed)
+        $zip->addFromString('mimetype', 'application/vnd.oasis.opendocument.spreadsheet');
+        if (method_exists($zip, 'setCompressionName')) {
+            $zip->setCompressionName('mimetype', \ZipArchive::CM_STORE);
+        }
+        $zip->addFromString('META-INF/manifest.xml', $manifest);
+        $zip->addFromString('content.xml',           $content);
+        $zip->close();
+
+        return file_exists($outputPath) && filesize($outputPath) > 100;
+    }
+
+    /**
+     * Dispatch image → presentation format to the correct PHP builder.
+     */
+    private function convertImageToPresentationWithPhp(
+        string $inputPath,
+        string $inputFormat,
+        string $outputFormat,
+        string $outputPath
+    ): bool {
+        return match ($outputFormat) {
+            'pptx' => $this->convertImageToPptxWithPhp($inputPath, $inputFormat, $outputPath),
+            'ppt'  => $this->convertImageToPptxViaPptx($inputPath, $inputFormat, $outputPath),
+            'odp'  => $this->convertImageToOdpWithPhp($inputPath, $inputFormat, $outputPath),
+            default => false,
+        };
+    }
+
+    /**
+     * Create a minimal PPTX with the image centred on a blank slide.
+     * A PPTX is a ZIP (OOXML) containing presentation.xml, a slide, a slide
+     * master, and a slide layout.
+     */
+    private function convertImageToPptxWithPhp(
+        string $inputPath,
+        string $inputFormat,
+        string $outputPath
+    ): bool {
+        if (!class_exists('ZipArchive')) {
+            return false;
+        }
+
+        $imgExt  = strtolower(pathinfo($inputPath, PATHINFO_EXTENSION)) ?: strtolower($inputFormat);
+        $mimeMap = [
+            'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png'  => 'image/png',
+            'gif' => 'image/gif',  'webp' => 'image/webp', 'bmp'  => 'image/bmp',
+            'tiff' => 'image/tiff', 'svg' => 'image/svg+xml',
+        ];
+        $mime  = $mimeMap[$imgExt] ?? 'image/png';
+        $media = 'image1.' . $imgExt;
+
+        // Slide canvas: 10 in × 7.5 in in EMU (914400 EMU per inch)
+        $slideW = 9144000;
+        $slideH = 6858000;
+
+        // Scale image to fit the slide with 5 % margin on each side
+        $imgData = @getimagesize($inputPath);
+        $pxW     = $imgData ? max(1, (int) $imgData[0]) : 800;
+        $pxH     = $imgData ? max(1, (int) $imgData[1]) : 600;
+        $margin  = (int) ($slideW * 0.05);
+        $maxW    = $slideW - 2 * $margin;
+        $maxH    = $slideH - 2 * $margin;
+        $scale   = min($maxW / $pxW, $maxH / $pxH);
+        $emuW    = (int) round($pxW * $scale);
+        $emuH    = (int) round($pxH * $scale);
+        $offX    = (int) (($slideW - $emuW) / 2);
+        $offY    = (int) (($slideH - $emuH) / 2);
+
+        $ctXml =
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+            . '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+            . '<Default Extension="xml" ContentType="application/xml"/>'
+            . '<Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/>'
+            . '<Override PartName="/ppt/slides/slide1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>'
+            . '<Override PartName="/ppt/slideLayouts/slideLayout1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/>'
+            . '<Override PartName="/ppt/slideMasters/slideMaster1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"/>'
+            . '</Types>';
+
+        $relsMain =
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            . '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="ppt/presentation.xml"/>'
+            . '</Relationships>';
+
+        $presentation =
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<p:presentation xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"'
+            . ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"'
+            . ' xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">'
+            . '<p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId1"/></p:sldMasterIdLst>'
+            . '<p:sldSz cx="' . $slideW . '" cy="' . $slideH . '"/>'
+            . '<p:notesSz cx="6858000" cy="9144000"/>'
+            . '<p:sldIdLst><p:sldId id="256" r:id="rId2"/></p:sldIdLst>'
+            . '</p:presentation>';
+
+        $presRels =
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            . '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="slideMasters/slideMaster1.xml"/>'
+            . '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide1.xml"/>'
+            . '</Relationships>';
+
+        $slide =
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"'
+            . ' xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"'
+            . ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+            . '<p:cSld><p:spTree>'
+            . '<p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>'
+            . '<p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/>'
+            . '<a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>'
+            . '<p:pic>'
+            . '<p:nvPicPr><p:cNvPr id="2" name="Picture 1"/><p:cNvPicPr/><p:nvPr/></p:nvPicPr>'
+            . '<p:blipFill><a:blip r:embed="rId1"/><a:stretch><a:fillRect/></a:stretch></p:blipFill>'
+            . '<p:spPr>'
+            . '<a:xfrm><a:off x="' . $offX . '" y="' . $offY . '"/><a:ext cx="' . $emuW . '" cy="' . $emuH . '"/></a:xfrm>'
+            . '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom>'
+            . '</p:spPr>'
+            . '</p:pic>'
+            . '</p:spTree></p:cSld>'
+            . '<p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>'
+            . '</p:sld>';
+
+        $slideRels =
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            . '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/' . $media . '"/>'
+            . '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>'
+            . '</Relationships>';
+
+        $slideMaster =
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<p:sldMaster xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"'
+            . ' xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"'
+            . ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+            . '<p:cSld><p:spTree>'
+            . '<p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>'
+            . '<p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/>'
+            . '<a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>'
+            . '</p:spTree></p:cSld>'
+            . '<p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/>'
+            . '<p:sldLayoutIdLst><p:sldLayoutId id="2147483649" r:id="rId1"/></p:sldLayoutIdLst>'
+            . '<p:txStyles>'
+            . '<p:titleStyle><a:lstStyle/></p:titleStyle>'
+            . '<p:bodyStyle><a:lstStyle/></p:bodyStyle>'
+            . '<p:otherStyle><a:lstStyle/></p:otherStyle>'
+            . '</p:txStyles>'
+            . '</p:sldMaster>';
+
+        $masterRels =
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            . '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>'
+            . '</Relationships>';
+
+        $slideLayout =
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<p:sldLayout xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"'
+            . ' xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"'
+            . ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"'
+            . ' type="blank" preserve="1">'
+            . '<p:cSld name="Blank"><p:spTree>'
+            . '<p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>'
+            . '<p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/>'
+            . '<a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>'
+            . '</p:spTree></p:cSld>'
+            . '<p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>'
+            . '</p:sldLayout>';
+
+        $layoutRels =
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            . '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="../slideMasters/slideMaster1.xml"/>'
+            . '</Relationships>';
+
+        $zip = new \ZipArchive();
+        if ($zip->open($outputPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
+            return false;
+        }
+        $zip->addFromString('[Content_Types].xml',                         $ctXml);
+        $zip->addFromString('_rels/.rels',                                 $relsMain);
+        $zip->addFromString('ppt/presentation.xml',                        $presentation);
+        $zip->addFromString('ppt/_rels/presentation.xml.rels',             $presRels);
+        $zip->addFromString('ppt/slides/slide1.xml',                       $slide);
+        $zip->addFromString('ppt/slides/_rels/slide1.xml.rels',            $slideRels);
+        $zip->addFromString('ppt/slideMasters/slideMaster1.xml',           $slideMaster);
+        $zip->addFromString('ppt/slideMasters/_rels/slideMaster1.xml.rels', $masterRels);
+        $zip->addFromString('ppt/slideLayouts/slideLayout1.xml',           $slideLayout);
+        $zip->addFromString('ppt/slideLayouts/_rels/slideLayout1.xml.rels', $layoutRels);
+        $zip->addFile($inputPath, 'ppt/media/' . $media);
+        $zip->close();
+
+        return file_exists($outputPath) && filesize($outputPath) > 100;
+    }
+
+    /**
+     * Convert an image to PPT (legacy binary format) via a temporary PPTX intermediate.
+     */
+    private function convertImageToPptxViaPptx(
+        string $inputPath,
+        string $inputFormat,
+        string $outputPath
+    ): bool {
+        $tmpBase = tempnam(sys_get_temp_dir(), 'cx_ppt_');
+        @unlink($tmpBase);
+        $tmpPptx = $tmpBase . '.pptx';
+        try {
+            if (!$this->convertImageToPptxWithPhp($inputPath, $inputFormat, $tmpPptx)) {
+                return false;
+            }
+            return $this->convertWithLibreOffice($tmpPptx, 'pptx', 'ppt', $outputPath);
+        } finally {
+            if (file_exists($tmpPptx)) {
+                @unlink($tmpPptx);
+            }
+        }
+    }
+
+    /**
+     * Create a minimal ODP (ODF Presentation) with the image centred on a single slide.
+     */
+    private function convertImageToOdpWithPhp(
+        string $inputPath,
+        string $inputFormat,
+        string $outputPath
+    ): bool {
+        if (!class_exists('ZipArchive')) {
+            return false;
+        }
+
+        $imgExt  = strtolower(pathinfo($inputPath, PATHINFO_EXTENSION)) ?: strtolower($inputFormat);
+        $mimeMap = [
+            'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png'  => 'image/png',
+            'gif' => 'image/gif',  'webp' => 'image/webp', 'bmp'  => 'image/bmp',
+            'tiff' => 'image/tiff', 'svg' => 'image/svg+xml',
+        ];
+        $mime  = $mimeMap[$imgExt] ?? 'image/png';
+        $media = 'Pictures/image.' . $imgExt;
+
+        // Scale image to fit A4 landscape (25.4 cm × 19.05 cm) with 5 % margin
+        $imgData = @getimagesize($inputPath);
+        $pxW     = $imgData ? max(1, (int) $imgData[0]) : 800;
+        $pxH     = $imgData ? max(1, (int) $imgData[1]) : 600;
+        $maxCmW  = 24.13;
+        $maxCmH  = 18.1;
+        $cmPerPx = 2.54 / 96.0;
+        $cmW     = min($maxCmW, round($pxW * $cmPerPx, 3));
+        $cmH     = round($cmW * $pxH / $pxW, 3);
+        if ($cmH > $maxCmH) {
+            $cmH = $maxCmH;
+            $cmW = round($cmH * $pxW / $pxH, 3);
+        }
+        $xCm = round((25.4 - $cmW) / 2, 3);
+        $yCm = round((19.05 - $cmH) / 2, 3);
+
+        $manifest =
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            . '<manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0" manifest:version="1.3">'
+            . '<manifest:file-entry manifest:full-path="/" manifest:version="1.3" manifest:media-type="application/vnd.oasis.opendocument.presentation"/>'
+            . '<manifest:file-entry manifest:full-path="content.xml" manifest:media-type="text/xml"/>'
+            . '<manifest:file-entry manifest:full-path="' . $media . '" manifest:media-type="' . $mime . '"/>'
+            . '</manifest:manifest>';
+
+        $content =
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            . '<office:document-content'
+            . ' xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"'
+            . ' xmlns:draw="urn:oasis:names:tc:opendocument:xmlns:drawing:1.0"'
+            . ' xmlns:presentation="urn:oasis:names:tc:opendocument:xmlns:presentation:1.0"'
+            . ' xmlns:svg="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0"'
+            . ' xmlns:xlink="http://www.w3.org/1999/xlink"'
+            . ' xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0">'
+            . '<office:automatic-styles>'
+            . '<style:style style:name="dp1" style:family="drawing-page"/>'
+            . '<style:style style:name="fr1" style:family="graphic">'
+            . '<style:graphic-properties style:run-through="foreground" style:wrap="none"/>'
+            . '</style:style>'
+            . '</office:automatic-styles>'
+            . '<office:body><office:presentation>'
+            . '<draw:page draw:name="page1" draw:style-name="dp1" draw:master-page-name="Default">'
+            . '<draw:frame draw:style-name="fr1" draw:name="Image1"'
+            . ' svg:x="' . $xCm . 'cm" svg:y="' . $yCm . 'cm"'
+            . ' svg:width="' . $cmW . 'cm" svg:height="' . $cmH . 'cm">'
+            . '<draw:image xlink:href="' . $media . '" xlink:type="simple" xlink:show="embed" xlink:actuate="onLoad"/>'
+            . '</draw:frame>'
+            . '</draw:page>'
+            . '</office:presentation></office:body>'
+            . '</office:document-content>';
+
+        $zip = new \ZipArchive();
+        if ($zip->open($outputPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
+            return false;
+        }
+        // ODF spec: 'mimetype' MUST be the first entry and STORED (not compressed)
+        $zip->addFromString('mimetype', 'application/vnd.oasis.opendocument.presentation');
+        if (method_exists($zip, 'setCompressionName')) {
+            $zip->setCompressionName('mimetype', \ZipArchive::CM_STORE);
+        }
+        $zip->addFromString('META-INF/manifest.xml', $manifest);
+        $zip->addFromString('content.xml',           $content);
+        $zip->addFile($inputPath, $media);
+        $zip->close();
+
+        return file_exists($outputPath) && filesize($outputPath) > 100;
+    }
+
+    /**
      * Extract text from an image using Tesseract OCR, then write the result
      * to a plain-text output file in the requested format (txt/html/md/csv).
      *
@@ -1018,8 +1529,8 @@ class ConversionService
         // 2. If no Tesseract text, give a meaningful error rather than garbage
         if (empty(trim($text))) {
             throw new \RuntimeException(
-                "Image to text conversion requires Tesseract OCR. "
-                . "Install with: apt-get install tesseract-ocr"
+                "Text extraction from images is not available on this server. "
+                . "Try a different output format."
             );
         }
 
@@ -1060,9 +1571,8 @@ class ConversionService
            ?: trim((string) shell_exec('which soffice 2>/dev/null'));
         if (!$lo) {
             throw new \RuntimeException(
-                "LibreOffice is not installed on this server. "
-                . "Only text/markup conversions (TXT, HTML, MD, CSV) and "
-                . "image-to-image conversions are available without additional tools."
+                "This document conversion is not available on this server. "
+                . "Only text, markup, and image-to-image conversions are supported."
             );
         }
 
@@ -1098,12 +1608,10 @@ class ConversionService
         exec($cmd, $output, $code);
 
         if ($code !== 0) {
-            // Surface the full LibreOffice output so users and logs show what went wrong.
-            $detail = trim(implode(' | ', array_filter($output)));
-            Logger::warning('LibreOffice conversion failed: ' . implode("\n", $output));
+            // Log the full output for debugging but don't expose it to users
+            Logger::warning('Document conversion failed (exit ' . $code . '): ' . implode("\n", $output));
             throw new \RuntimeException(
-                "LibreOffice conversion failed (exit {$code})"
-                . ($detail ? ": {$detail}" : '.')
+                "Document conversion failed. Please try a different output format."
             );
         }
 
@@ -1119,8 +1627,7 @@ class ConversionService
         if (file_exists($outputPath) && filesize($outputPath) < 10) {
             @unlink($outputPath);
             throw new \RuntimeException(
-                "LibreOffice produced an empty output for {$inputFormat} → {$outputFormat}. "
-                . "For PDF input, ensure the libreoffice-pdfimport package is installed."
+                "Conversion produced an empty file. Please try a different output format."
             );
         }
 
@@ -1136,8 +1643,8 @@ class ConversionService
            ?: trim((string) shell_exec('which magick 2>/dev/null'));
         if (!$im) {
             throw new \RuntimeException(
-                "ImageMagick is not installed on this server. "
-                . "Image-to-image conversion requires ImageMagick or PHP GD (GD failed too)."
+                "Image conversion is not available on this server. "
+                . "Please try a different output format."
             );
         }
 
@@ -1163,8 +1670,7 @@ class ConversionService
         $pandoc = trim((string) shell_exec('which pandoc 2>/dev/null'));
         if (!$pandoc) {
             throw new \RuntimeException(
-                "Pandoc is not installed on this server. "
-                . "Plain-text markup conversion (MD, RST, HTML) requires Pandoc."
+                "This text conversion is not available on this server."
             );
         }
 

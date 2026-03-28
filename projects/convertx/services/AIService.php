@@ -242,7 +242,7 @@ class AIService
         curl_close($ch);
 
         if ($response === false || $httpCode !== 200) {
-            return ['success' => false, 'error' => "OpenAI HTTP {$httpCode}"];
+            return ['success' => false, 'error' => "AI service request failed (HTTP {$httpCode})"];
         }
 
         $data = json_decode($response, true);
@@ -399,7 +399,7 @@ class AIService
         curl_close($ch);
 
         if ($response === false || $httpCode !== 200) {
-            return ['success' => false, 'error' => "HuggingFace HTTP {$httpCode}"];
+            return ['success' => false, 'error' => "AI service request failed (HTTP {$httpCode})"];
         }
 
         return ['success' => true, 'data' => json_decode($response, true)];
