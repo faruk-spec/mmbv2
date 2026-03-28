@@ -620,10 +620,12 @@ class ResumeController
         }
 
         $token = $resume['share_token'] ?? '';
+        $newIsPublic = 1; // default: enabling sharing
         try {
             $db = \Core\Database::getInstance();
             if (empty($token)) {
                 $token = bin2hex(random_bytes(32));
+                $newIsPublic = 1;
                 $db->update(
                     'resumex_resumes',
                     ['share_token' => $token, 'is_public' => 1, 'updated_at' => date('Y-m-d H:i:s')],
@@ -631,10 +633,10 @@ class ResumeController
                     [$id, $userId]
                 );
             } else {
-                $newPublic = ($resume['is_public'] ?? 0) ? 0 : 1;
+                $newIsPublic = ($resume['is_public'] ?? 0) ? 0 : 1;
                 $db->update(
                     'resumex_resumes',
-                    ['is_public' => $newPublic, 'updated_at' => date('Y-m-d H:i:s')],
+                    ['is_public' => $newIsPublic, 'updated_at' => date('Y-m-d H:i:s')],
                     'id = ? AND user_id = ?',
                     [$id, $userId]
                 );
@@ -646,7 +648,13 @@ class ResumeController
         }
 
         header('Content-Type: application/json');
-        echo json_encode(['success' => true, 'token' => $token, 'url' => '/projects/resumex/share/' . $token]);
+        // Return token only when sharing is active so JS can distinguish enable vs disable
+        echo json_encode([
+            'success'   => true,
+            'is_public' => (bool) $newIsPublic,
+            'token'     => $newIsPublic ? $token : null,
+            'url'       => $newIsPublic ? '/projects/resumex/share/' . $token : null,
+        ]);
         exit;
     }
 

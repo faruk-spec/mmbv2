@@ -530,8 +530,8 @@
     <!-- Form -->
     <form method="POST" action="/projects/resumex/create" id="rxcForm" novalidate>
         <input type="hidden" name="_token" value="<?= htmlspecialchars(\Core\Security::generateCsrfToken()) ?>">
-        <input type="hidden" name="color_primary" id="rxcColorPrimary" value="">
-        <input type="hidden" name="color_secondary" id="rxcColorSecondary" value="">
+        <input type="hidden" name="color_primary" id="rxcColorPrimary" value="<?= htmlspecialchars(preg_replace('/[^#a-fA-F0-9]/', '', $_GET['color_primary'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+        <input type="hidden" name="color_secondary" id="rxcColorSecondary" value="<?= htmlspecialchars(preg_replace('/[^#a-fA-F0-9]/', '', $_GET['color_secondary'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
 
         <!-- Resume name -->
         <div class="rxc-name-row">
@@ -583,7 +583,9 @@
             $proCategories      = ['professional'];
             $otherCategories    = ['nature', 'warm', 'pastel', 'classic'];
 
-            $defaultKey = 'ocean-blue';
+            $defaultKey = !empty($_GET['template']) && isset($allThemes[$_GET['template']])
+                ? preg_replace('/[^a-zA-Z0-9_\-]/', '', $_GET['template'])
+                : 'ocean-blue';
             foreach ($allThemes as $themeKey => $theme):
                 $cat = strtolower($theme['category'] ?? 'other');
                 // Determine which filter group this card belongs to

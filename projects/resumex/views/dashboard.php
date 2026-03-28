@@ -672,12 +672,14 @@
         fetch('/projects/resumex/share/generate', { method: 'POST', body: fd })
             .then(function (r) { return r.json(); })
             .then(function (d) {
-                if (d.success && d.token) {
+                if (d.success && d.is_public === true && d.token) {
+                    // Sharing enabled — show the public link
                     shareInput.value = window.location.origin + '/projects/resumex/share/' + d.token;
                     shareLinkWrap.style.display = 'block';
                     shareGenBtn.textContent = 'Disable Sharing';
                     shareGenBtn.disabled = false;
                 } else if (d.success) {
+                    // Sharing disabled — close modal and refresh card state
                     closeShareModal();
                     window.location.reload();
                 } else {

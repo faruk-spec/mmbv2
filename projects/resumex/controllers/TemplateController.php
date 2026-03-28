@@ -21,10 +21,15 @@ class TemplateController
     }
 
     /**
-     * Show all template options
+     * Show all template options (requires login)
      */
     public function index(): void
     {
+        if (!\Core\Auth::check()) {
+            header('Location: /login?redirect=' . urlencode('/projects/resumex/templates'));
+            exit;
+        }
+
         $allThemes = $this->resumeModel->getAllThemePresets();
 
         View::render('projects/resumex/templates', [
