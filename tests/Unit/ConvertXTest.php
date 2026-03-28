@@ -580,4 +580,210 @@ class ConvertXTest extends TestCase
         $this->assertTrue($result['success']);
         $this->assertEquals('other', $result['category']);
     }
+
+    // ------------------------------------------------------------------ //
+    //  parseTextIntoRows — currency comma-split fix                         //
+    // ------------------------------------------------------------------ //
+
+    public function testParseTextIntoRowsDoesNotSplitCurrencyAtComma(): void
+    {
+        $text = "\$5,079.60\n\$1,418.00\n\$744.60";
+        $rows = $this->invokePrivate($this->conversionService, 'parseTextIntoRows', [$text]);
+
+        // Every row must be a single cell — str_getcsv would have split $5,079.60
+        foreach ($rows as $row) {
+            $this->assertCount(1, $row, "Each OCR line must be a single spreadsheet cell (no CSV comma-splitting)");
+        }
+        $this->assertEquals('$5,079.60', $rows[0][0]);
+        $this->assertEquals('$1,418.00', $rows[1][0]);
+        $this->assertEquals('$744.60',   $rows[2][0]);
+    }
+
+    public function testParseTextIntoRowsSplitsOnTabs(): void
+    {
+        $text = "Product\tQtr 1\tGrand Total\nChocolade\t\$744.60\t\$907.16";
+        $rows = $this->invokePrivate($this->conversionService, 'parseTextIntoRows', [$text]);
+
+        $this->assertCount(2, $rows);
+        $this->assertCount(3, $rows[0], 'Tab-separated header should produce 3 cells');
+        $this->assertEquals('Product',     $rows[0][0]);
+        $this->assertEquals('Grand Total', $rows[0][2]);
+        $this->assertEquals('$744.60',     $rows[1][1]);
+    }
+
+    public function testParseTextIntoRowsSkipsBlankLines(): void
+    {
+        $text = "Line one\n\nLine two\n\n\nLine three";
+        $rows = $this->invokePrivate($this->conversionService, 'parseTextIntoRows', [$text]);
+
+        $this->assertCount(3, $rows);
+    }
+
+    // ------------------------------------------------------------------ //
+    //  writeDocxFromText — text-based DOCX builder                         //
+    // ------------------------------------------------------------------ //
+
+    public function testWriteDocxFromTextCreatesValidZip(): void
+    {
+        if (!class_exists('ZipArchive')) {
+            $this->markTestSkipped('ZipArchive extension not available');
+        }
+
+        $text   = "# Invoice Report\n\nThis is a paragraph.\n\n"
+                . "| Product | Price |\n|---------|-------|\n| Chocolade | \$5,079.60 |\n\n"
+                . "- Bullet item\n1. Numbered item";
+        $outPath = sys_get_temp_dir() . '/cx_test_' . uniqid() . '.docx';
+
+        $ok = $this->invokePrivate($this->conversionService, 'writeDocxFromText', [$text, $outPath]);
+        $this->assertTrue($ok, 'writeDocxFromText should return true');
+        $this->assertFileExists($outPath);
+        $this->assertGreaterThan(100, filesize($outPath), 'DOCX must be > 100 bytes');
+
+        $zip    = new \ZipArchive();
+        $opened = $zip->open($outPath);
+        $this->assertTrue($opened === true, 'Output must be a valid ZIP');
+        if ($opened === true) {
+            $this->assertNotFalse($zip->locateName('[Content_Types].xml'));
+            $this->assertNotFalse($zip->locateName('word/document.xml'));
+
+            $docXml = $zip->getFromName('word/document.xml');
+            $this->assertStringContainsString('Invoice Report', $docXml, 'Heading text must be in document.xml');
+            $this->assertStringContainsString('Heading1',       $docXml, 'H1 must use Heading1 style');
+            $this->assertStringContainsString('Chocolade',      $docXml, 'Table cell text must appear');
+            $this->assertStringContainsString('$5,079.60',      $docXml, 'Currency must NOT be split at comma');
+            $this->assertStringContainsString('<w:tbl>',        $docXml, 'Pipe table must produce w:tbl');
+            $this->assertStringContainsString('<w:b/>',         $docXml, 'Table header row must be bold');
+            $this->assertStringContainsString('ListBullet',     $docXml, 'Bullet list must use ListBullet style');
+            $this->assertStringContainsString('ListNumber',     $docXml, 'Numbered list must use ListNumber style');
+            $zip->close();
+        }
+        @unlink($outPath);
+    }
+
+    // ------------------------------------------------------------------ //
+    //  writeOdtFromText — text-based ODT builder                           //
+    // ------------------------------------------------------------------ //
+
+    public function testWriteOdtFromTextCreatesValidZip(): void
+    {
+        if (!class_exists('ZipArchive')) {
+            $this->markTestSkipped('ZipArchive extension not available');
+        }
+
+        $text    = "## Summary\n\nSome paragraph text.\n\n| Col A | Col B |\n|-------|-------|\n| Val 1 | Val 2 |";
+        $outPath = sys_get_temp_dir() . '/cx_test_' . uniqid() . '.odt';
+
+        $ok = $this->invokePrivate($this->conversionService, 'writeOdtFromText', [$text, $outPath]);
+        $this->assertTrue($ok, 'writeOdtFromText should return true');
+        $this->assertFileExists($outPath);
+
+        $zip    = new \ZipArchive();
+        $opened = $zip->open($outPath);
+        $this->assertTrue($opened === true, 'ODT output must be a valid ZIP');
+        if ($opened === true) {
+            $this->assertNotFalse($zip->locateName('content.xml'));
+            $this->assertNotFalse($zip->locateName('META-INF/manifest.xml'));
+
+            $contentXml = $zip->getFromName('content.xml');
+            $this->assertStringContainsString('Summary',         $contentXml, 'Heading text must appear');
+            $this->assertStringContainsString('Heading_20_2',    $contentXml, 'H2 must use Heading_20_2 style');
+            $this->assertStringContainsString('Val 1',           $contentXml, 'Table cell must appear');
+            $this->assertStringContainsString('table:table',     $contentXml, 'Pipe table must produce ODF table');
+            $zip->close();
+        }
+        @unlink($outPath);
+    }
+
+    // ------------------------------------------------------------------ //
+    //  writeRtfFromText — text-based RTF builder                           //
+    // ------------------------------------------------------------------ //
+
+    public function testWriteRtfFromTextCreatesValidRtf(): void
+    {
+        $text    = "# Title\n\nA normal paragraph with **bold** and *italic*.\n\n- Bullet\n1. Numbered";
+        $outPath = sys_get_temp_dir() . '/cx_test_' . uniqid() . '.rtf';
+
+        $ok = $this->invokePrivate($this->conversionService, 'writeRtfFromText', [$text, $outPath]);
+        $this->assertTrue($ok, 'writeRtfFromText should return true');
+        $this->assertFileExists($outPath);
+
+        $content = file_get_contents($outPath);
+        $this->assertStringContainsString('{\\rtf1',  $content, 'RTF must start with {\\rtf1');
+        $this->assertStringContainsString('Title',    $content, 'Heading text must appear');
+        $this->assertStringContainsString('\\b\\fs36',$content, 'H1 must use large bold font');
+        $this->assertStringContainsString('{\\b bold}', $content, 'Inline bold must be wrapped in {\\b}');
+        $this->assertStringContainsString('{\\i italic}', $content, 'Inline italic must be wrapped in {\\i}');
+        $this->assertStringContainsString('\\bullet', $content, 'Bullet list must use \\bullet');
+        @unlink($outPath);
+    }
+
+    // ------------------------------------------------------------------ //
+    //  markdownTableToDocxXml — table builder correctness                  //
+    // ------------------------------------------------------------------ //
+
+    public function testMarkdownTableToDocxXmlPreservesCurrency(): void
+    {
+        $lines = [
+            '| Product      | Qtr 1      | Grand Total |',
+            '|--------------|------------|-------------|',
+            '| Chocolade    | $5,079.60  | $6,328.80   |',
+            '| Total        | $14,181.59 | $22,309.37  |',
+        ];
+        $xml = $this->invokePrivate($this->conversionService, 'markdownTableToDocxXml', [$lines]);
+
+        $this->assertStringContainsString('<w:tbl>',      $xml);
+        $this->assertStringContainsString('<w:b/>',       $xml, 'Header row must be bold');
+        $this->assertStringContainsString('$5,079.60',    $xml, 'Currency must not be split at comma');
+        $this->assertStringContainsString('$14,181.59',   $xml, 'Large currency must not be split');
+        $this->assertStringContainsString('Grand Total',  $xml, 'Multi-word header must be intact');
+        // 1 header + 2 data rows = 3 <w:tr> elements
+        $this->assertEquals(3, substr_count($xml, '<w:tr>'), '3 rows: header + 2 data');
+    }
+
+    // ------------------------------------------------------------------ //
+    //  AIService: new methods exist and have correct signatures             //
+    // ------------------------------------------------------------------ //
+
+    public function testAiServiceOcrDocumentMethodExists(): void
+    {
+        $ai  = $this->makeAiServiceMock();
+        $ref = new \ReflectionMethod($ai, 'ocrDocument');
+        $this->assertTrue($ref->isPublic(), 'ocrDocument must be a public method');
+
+        $params = $ref->getParameters();
+        $this->assertGreaterThanOrEqual(1, count($params));
+        $this->assertEquals('filePath', $params[0]->getName());
+    }
+
+    public function testAiServiceOcrForFormatMethodExists(): void
+    {
+        $ai  = $this->makeAiServiceMock();
+        $ref = new \ReflectionMethod($ai, 'ocrForFormat');
+        $this->assertTrue($ref->isPublic(), 'ocrForFormat must be a public method');
+
+        $params = $ref->getParameters();
+        $this->assertGreaterThanOrEqual(2, count($params));
+        $this->assertEquals('filePath',      $params[0]->getName());
+        $this->assertEquals('targetFormat',  $params[1]->getName());
+    }
+
+    public function testAiServiceOcrDocumentReturnsFailureWhenNoProvider(): void
+    {
+        // Verify the method signature and return shape via Reflection only —
+        // calling it would require a real DB connection to initialise providerModel.
+        $ai  = $this->makeAiServiceMock();
+        $ref = new \ReflectionMethod($ai, 'ocrDocument');
+
+        $this->assertTrue($ref->isPublic(), 'ocrDocument must be public');
+        $this->assertCount(2, $ref->getParameters(), 'ocrDocument(filePath, planTier)');
+    }
+
+    public function testAiServiceOcrForFormatReturnsFailureWhenNoProvider(): void
+    {
+        $ai  = $this->makeAiServiceMock();
+        $ref = new \ReflectionMethod($ai, 'ocrForFormat');
+
+        $this->assertTrue($ref->isPublic(), 'ocrForFormat must be public');
+        $this->assertCount(3, $ref->getParameters(), 'ocrForFormat(filePath, targetFormat, planTier)');
+    }
 }

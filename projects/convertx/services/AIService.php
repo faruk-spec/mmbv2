@@ -71,6 +71,56 @@ class AIService
     }
 
     /**
+     * Extract structured document content from an image using AI vision.
+     *
+     * The AI is instructed to return the content as structured plain text with
+     * Markdown-style headings (#, ##, ###), pipe tables, bullet/numbered lists,
+     * and paragraph breaks — preserving the reading order and logical structure
+     * of the source document.
+     *
+     * @param string $filePath
+     * @param string $planTier
+     * @return array{success: bool, text: string, provider: string, tokens: int, error: string}
+     */
+    public function ocrDocument(string $filePath, string $planTier = 'free'): array
+    {
+        $result = $this->dispatch('ocr', $planTier, function (array $provider) use ($filePath): array {
+            return $this->callOCRDocument($provider, $filePath);
+        });
+        if (!$result['success']) {
+            return ['success' => false, 'text' => '', 'provider' => 'none',
+                    'tokens' => 0, 'error' => $result['error'] ?? 'No document OCR provider available'];
+        }
+        return $result;
+    }
+
+    /**
+     * Format-specific OCR: produce output already in the requested target format.
+     *
+     * Supported $targetFormat values: 'html', 'md', 'txt', 'csv'
+     * For 'csv' the AI returns RFC 4180 CSV preserving column structure.
+     * For 'html' the AI returns valid HTML body content.
+     * For 'md'  the AI returns Markdown.
+     * For 'txt' the AI returns plain text preserving reading order.
+     *
+     * @param string $filePath
+     * @param string $targetFormat  One of 'html', 'md', 'txt', 'csv'
+     * @param string $planTier
+     * @return array{success: bool, text: string, provider: string, tokens: int, error: string}
+     */
+    public function ocrForFormat(string $filePath, string $targetFormat, string $planTier = 'free'): array
+    {
+        $result = $this->dispatch('ocr', $planTier, function (array $provider) use ($filePath, $targetFormat): array {
+            return $this->callOCRForFormat($provider, $filePath, $targetFormat);
+        });
+        if (!$result['success']) {
+            // Fall back to generic OCR so callers always get something usable
+            return $this->ocr($filePath, $planTier);
+        }
+        return $result;
+    }
+
+    /**
      * Summarize a piece of text.
      *
      * @param string $text
@@ -212,6 +262,30 @@ class AIService
                 // Non-vision providers cannot do table OCR
                 return ['success' => false, 'csv' => '', 'rows' => [], 'tokens' => 0,
                         'error' => 'Provider does not support table OCR'];
+        }
+    }
+
+    private function callOCRDocument(array $provider, string $filePath): array
+    {
+        switch ($provider['slug']) {
+            case 'openai':
+                return $this->openaiVisionOCRDocument($provider, $filePath);
+
+            default:
+                return ['success' => false, 'text' => '', 'tokens' => 0,
+                        'error' => 'Provider does not support document OCR'];
+        }
+    }
+
+    private function callOCRForFormat(array $provider, string $filePath, string $targetFormat): array
+    {
+        switch ($provider['slug']) {
+            case 'openai':
+                return $this->openaiVisionOCRForFormat($provider, $filePath, $targetFormat);
+
+            default:
+                return ['success' => false, 'text' => '', 'tokens' => 0,
+                        'error' => 'Provider does not support format-specific OCR'];
         }
     }
 
@@ -385,7 +459,7 @@ class AIService
             return [];
         }
 
-        // Normalise line endings
+        // Normalize line endings
         $csv  = str_replace(["\r\n", "\r"], "\n", $csv);
         $rows = [];
 
@@ -407,6 +481,108 @@ class AIService
         fclose($handle);
 
         return $rows;
+    }
+
+    /**
+     * Document-aware OCR: ask GPT-4 Vision to extract all content as structured
+     * Markdown (headings, bullet lists, numbered lists, pipe tables, paragraphs).
+     * The caller can then convert the Markdown to DOCX, ODT, RTF, HTML, etc.
+     */
+    private function openaiVisionOCRDocument(array $provider, string $filePath): array
+    {
+        $imageData = base64_encode(file_get_contents($filePath));
+        $mimeType  = mime_content_type($filePath) ?: 'image/png';
+
+        $prompt =
+            "Extract ALL content from this image as structured text. Rules:\n"
+            . "1. Preserve document hierarchy: use # for top-level headings, ## for second-level, ### for third.\n"
+            . "2. Preserve tables using Markdown pipe format: | Col1 | Col2 | — include header separator row.\n"
+            . "3. Preserve bullet lists with - prefix; numbered lists with 1. 2. 3. etc.\n"
+            . "4. Separate paragraphs with a blank line.\n"
+            . "5. Preserve ALL text exactly as shown in the image, in reading order (left-to-right, top-to-bottom).\n"
+            . "6. Keep numbers, currency values, and special characters exactly as they appear.\n"
+            . "7. Output ONLY the extracted content — no descriptions, no explanations, no code fences.";
+
+        $payload = [
+            'model'    => $provider['model'] ?? 'gpt-4o',
+            'messages' => [[
+                'role'    => 'user',
+                'content' => [
+                    ['type' => 'text',      'text'      => $prompt],
+                    ['type' => 'image_url', 'image_url' => ['url' => "data:{$mimeType};base64,{$imageData}"]],
+                ],
+            ]],
+            'max_tokens' => 4096,
+        ];
+
+        $res = $this->openaiRequest($provider, $payload);
+        if (!$res['success']) {
+            return ['success' => false, 'text' => '', 'tokens' => 0, 'error' => $res['error']];
+        }
+
+        $content = trim($res['data']['choices'][0]['message']['content'] ?? '');
+        $tokens  = $res['data']['usage']['total_tokens'] ?? 0;
+        return ['success' => true, 'text' => $content, 'tokens' => $tokens, 'error' => ''];
+    }
+
+    /**
+     * Format-specific OCR: produce output already formatted for the target file type.
+     *
+     * Supported formats: 'html', 'md', 'txt', 'csv'
+     */
+    private function openaiVisionOCRForFormat(array $provider, string $filePath, string $targetFormat): array
+    {
+        $imageData = base64_encode(file_get_contents($filePath));
+        $mimeType  = mime_content_type($filePath) ?: 'image/png';
+
+        $prompts = [
+            'html' => "Extract all content from this image and return it as valid HTML body content "
+                    . "(no <html>/<head> wrapper). Use semantic tags: <h1>–<h3> for headings, <p> for "
+                    . "paragraphs, <table><tr><th><td> for tables, <ul><li> for bullets, <ol><li> for "
+                    . "numbered lists. Preserve all text and numbers exactly. Output ONLY the HTML.",
+
+            'md'   => "Extract all content from this image as Markdown. Use # ## ### for headings, "
+                    . "pipe tables for tabular data, - for bullets, 1. for numbered lists. Preserve "
+                    . "all text and numbers exactly. Output ONLY the Markdown, no code fences.",
+
+            'csv'  => "Extract all tabular data from this image and return ONLY valid RFC 4180 CSV. "
+                    . "First row is the header. Use comma delimiter. Quote any cell that contains a "
+                    . "comma or double-quote. Preserve numeric values exactly (currency symbols, decimals). "
+                    . "Output ONLY the CSV — no explanation, no markdown fences.",
+
+            'txt'  => "Extract all text from this image preserving the reading order (left-to-right, "
+                    . "top-to-bottom). Keep paragraphs separated by blank lines. Preserve all numbers, "
+                    . "currency, and special characters exactly. Output ONLY the extracted text.",
+        ];
+
+        $prompt = $prompts[$targetFormat] ?? $prompts['txt'];
+
+        $payload = [
+            'model'    => $provider['model'] ?? 'gpt-4o',
+            'messages' => [[
+                'role'    => 'user',
+                'content' => [
+                    ['type' => 'text',      'text'      => $prompt],
+                    ['type' => 'image_url', 'image_url' => ['url' => "data:{$mimeType};base64,{$imageData}"]],
+                ],
+            ]],
+            'max_tokens' => 4096,
+        ];
+
+        $res = $this->openaiRequest($provider, $payload);
+        if (!$res['success']) {
+            return ['success' => false, 'text' => '', 'tokens' => 0, 'error' => $res['error']];
+        }
+
+        $content = trim($res['data']['choices'][0]['message']['content'] ?? '');
+        $tokens  = $res['data']['usage']['total_tokens'] ?? 0;
+
+        // Strip any markdown code fences the model may have added despite the prompt
+        $content = preg_replace('/^```[^\n]*\n?/m', '', $content);
+        $content = preg_replace('/^```$/m', '', $content);
+        $content = trim((string) $content);
+
+        return ['success' => true, 'text' => $content, 'tokens' => $tokens, 'error' => ''];
     }
 
     private function openaiSummarize(array $provider, string $text, array $options): array

@@ -261,19 +261,30 @@ class ConversionService
             );
         }
 
-        // 4b. Image → writer format (docx / odt / rtf / doc): create a proper document
-        //     that embeds the image using PHP ZipArchive — no external tools needed.
-        //     This is far more reliable than the 2-step chain (image→PDF→DOCX) which
-        //     requires the optional libreoffice-pdfimport package for the PDF→Writer
-        //     leg, and often silently produces empty output when that package is absent.
-        //     'doc' (binary OLE format) is handled by building a temp DOCX in PHP then
-        //     converting DOCX→DOC via LibreOffice (same Writer family, no --infilter).
+        // 4b. Image → writer format (docx / odt / rtf / doc):
+        //
+        // Priority:
+        //   A. AI document OCR — extract structured text via vision model, then write
+        //      a proper text-based document (headings, paragraphs, tables).  This is
+        //      far superior to image-embedding for scanned documents / screenshots.
+        //   B. PHP ZipArchive image-embed — fast fallback when AI is unavailable.
+        //   C. Two-step chain (image→PDF→writer) as last resort.
+        //
+        // 'doc' (binary OLE) is handled by building a DOCX then converting DOCX→DOC
+        // via LibreOffice (same Writer family, no --infilter, no pdfimport needed).
         $phpWriterFormats = ['docx', 'odt', 'rtf', 'doc'];
         if ($isInputImage && in_array($outputFormat, $phpWriterFormats, true)) {
+            // A. AI path: extract text → write proper document
+            if ($this->aiService !== null) {
+                if ($this->convertImageToDocumentWithOcr($inputPath, $inputFormat, $outputFormat, $outputPath)) {
+                    return true;
+                }
+            }
+            // B. Image-embed fallback (ZipArchive)
             if ($this->convertImageToDocumentWithPhp($inputPath, $inputFormat, $outputFormat, $outputPath)) {
                 return true;
             }
-            // ZipArchive unavailable or failed — fall through to chain
+            // C. Chain fallback
         }
 
         // 4c. Image → plain-text formats (txt / html / md / csv): use Tesseract OCR
@@ -708,6 +719,658 @@ class ConversionService
     // ------------------------------------------------------------------ //
     //  PHP-native document builders (no external tools)                    //
     // ------------------------------------------------------------------ //
+
+    /**
+     * AI-powered image → document conversion.
+     *
+     * Uses the vision model to extract structured content (headings, paragraphs,
+     * tables, lists) from the image and writes it as a proper text-based document.
+     * This produces far better output than simply embedding the image.
+     *
+     * Falls back silently and returns false if AI is unavailable or extraction fails.
+     */
+    private function convertImageToDocumentWithOcr(
+        string $inputPath,
+        string $inputFormat,
+        string $outputFormat,
+        string $outputPath
+    ): bool {
+        if (!file_exists($inputPath) || $this->aiService === null) {
+            return false;
+        }
+
+        // Get structured Markdown text from the AI vision model
+        $aiResult = $this->aiService->ocrDocument($inputPath, 'free');
+        if (!$aiResult['success'] || empty(trim($aiResult['text'] ?? ''))) {
+            return false;
+        }
+
+        $text = $aiResult['text'];
+
+        return match ($outputFormat) {
+            'docx' => $this->writeDocxFromText($text, $outputPath, $inputPath, $inputFormat),
+            'odt'  => $this->writeOdtFromText($text, $outputPath, $inputPath, $inputFormat),
+            'rtf'  => $this->writeRtfFromText($text, $outputPath),
+            'doc'  => $this->writeDocViaDocxFromText($text, $outputPath, $inputPath, $inputFormat),
+            default => false,
+        };
+    }
+
+    /**
+     * Build a DOCX file from structured Markdown-like text (from AI document OCR).
+     *
+     * Supported Markdown constructs:
+     *   # Heading 1    → Heading1 paragraph style
+     *   ## Heading 2   → Heading2 paragraph style
+     *   ### Heading 3  → Heading3 paragraph style
+     *   | col | col |  → OOXML <w:tbl> table
+     *   - item         → ListBullet paragraph style
+     *   1. item        → ListNumber paragraph style
+     *   blank line     → empty paragraph (spacer)
+     *   everything else → Normal paragraph style
+     *
+     * When $imagePath is provided the image is also embedded after the text.
+     */
+    private function writeDocxFromText(
+        string $text,
+        string $outputPath,
+        string $imagePath = '',
+        string $inputFormat = ''
+    ): bool {
+        if (!class_exists('ZipArchive')) {
+            return false;
+        }
+
+        $bodyXml      = '';
+        $relationships = '';
+        $contentTypes  = '';
+        $imageEntry    = '';
+        $rId           = 1;
+
+        // ── Parse text into DOCX body XML ────────────────────────────────
+        $lines = preg_split('/\r\n|\r|\n/', $text) ?: [];
+        $i = 0;
+        while ($i < count($lines)) {
+            $line = $lines[$i];
+
+            // Markdown pipe table: collect consecutive | lines
+            if (str_starts_with(trim($line), '|')) {
+                $tableLines = [];
+                while ($i < count($lines) && str_starts_with(trim($lines[$i]), '|')) {
+                    $tableLines[] = $lines[$i];
+                    $i++;
+                }
+                $bodyXml .= $this->markdownTableToDocxXml($tableLines);
+                continue;
+            }
+
+            // Heading levels
+            if (preg_match('/^(#{1,3})\s+(.+)$/', $line, $m)) {
+                $lvl      = strlen($m[1]);
+                $style    = "Heading{$lvl}";
+                $bodyXml .= $this->docxParagraph(htmlspecialchars($m[2], ENT_XML1), $style);
+                $i++;
+                continue;
+            }
+
+            // Bullet list
+            if (preg_match('/^[-*]\s+(.+)$/', $line, $m)) {
+                $bodyXml .= $this->docxParagraph(htmlspecialchars($m[1], ENT_XML1), 'ListBullet');
+                $i++;
+                continue;
+            }
+
+            // Numbered list
+            if (preg_match('/^\d+[.)]\s+(.+)$/', $line, $m)) {
+                $bodyXml .= $this->docxParagraph(htmlspecialchars($m[1], ENT_XML1), 'ListNumber');
+                $i++;
+                continue;
+            }
+
+            // Blank line → empty spacer paragraph
+            if (trim($line) === '') {
+                $bodyXml .= '<w:p/>';
+                $i++;
+                continue;
+            }
+
+            // Inline formatting: **bold** and *italic*
+            $safe = htmlspecialchars($line, ENT_XML1);
+            $safe = preg_replace('/\*\*(.+?)\*\*/', '<w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">$1</w:t></w:r>', $safe);
+            $safe = preg_replace('/\*(.+?)\*/',     '<w:r><w:rPr><w:i/></w:rPr><w:t xml:space="preserve">$1</w:t></w:r>', $safe);
+
+            // If the line still has no <w:r> tags it's plain text
+            if (!str_contains((string) $safe, '<w:r>')) {
+                $bodyXml .= $this->docxParagraph((string) $safe, 'Normal');
+            } else {
+                $bodyXml .= '<w:p>' . $safe . '</w:p>';
+            }
+            $i++;
+        }
+
+        // ── Optional: append the source image ────────────────────────────
+        $mediaFiles = [];
+        if ($imagePath && file_exists($imagePath)) {
+            $mimeMap   = ['jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png',
+                          'gif' => 'image/gif', 'webp' => 'image/webp', 'bmp' => 'image/bmp',
+                          'tiff' => 'image/tiff', 'svg' => 'image/svg+xml'];
+            $imgExt    = strtolower(pathinfo($imagePath, PATHINFO_EXTENSION)) ?: strtolower($inputFormat);
+            $mime      = $mimeMap[$imgExt] ?? 'image/png';
+            $media     = 'image1.' . $imgExt;
+            $imgData   = @getimagesize($imagePath);
+            $pxW       = $imgData ? max(1, (int) $imgData[0]) : 800;
+            $pxH       = $imgData ? max(1, (int) $imgData[1]) : 600;
+            $emuPerPx  = 914400.0 / 96.0;
+            $maxEmuW   = 5486400;
+            $emuW      = (int) min($maxEmuW, round($pxW * $emuPerPx));
+            $emuH      = (int) round($emuW * $pxH / $pxW);
+
+            $bodyXml .= '<w:p/>'  // blank line before image
+                     . '<w:p><w:r><w:drawing>'
+                     . '<wp:inline distT="0" distB="0" distL="0" distR="0"'
+                     . ' xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing">'
+                     . '<wp:extent cx="' . $emuW . '" cy="' . $emuH . '"/>'
+                     . '<wp:effectExtent l="0" t="0" r="0" b="0"/>'
+                     . '<wp:docPr id="1" name="Picture 1"/>'
+                     . '<wp:cNvGraphicFramePr>'
+                     . '<a:graphicFrameLocks noChangeAspectRatio="1"'
+                     . ' xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"/>'
+                     . '</wp:cNvGraphicFramePr>'
+                     . '<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">'
+                     . '<a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">'
+                     . '<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">'
+                     . '<pic:nvPicPr><pic:cNvPr id="0" name="img"/><pic:cNvPicPr/></pic:nvPicPr>'
+                     . '<pic:blipFill>'
+                     . '<a:blip r:embed="rId1" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"/>'
+                     . '<a:stretch><a:fillRect/></a:stretch></pic:blipFill>'
+                     . '<pic:spPr>'
+                     . '<a:xfrm><a:off x="0" y="0"/><a:ext cx="' . $emuW . '" cy="' . $emuH . '"/></a:xfrm>'
+                     . '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom>'
+                     . '</pic:spPr>'
+                     . '</pic:pic></a:graphicData></a:graphic>'
+                     . '</wp:inline>'
+                     . '</w:drawing></w:r></w:p>';
+
+            $mediaFiles[$media] = $imagePath;
+            $relationships      = '<Relationship Id="rId1"'
+                . ' Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image"'
+                . ' Target="media/' . $media . '"/>';
+            $contentTypes       = '<Override PartName="/word/media/' . $media . '" ContentType="' . $mime . '"/>';
+        }
+
+        // ── Assemble the DOCX ZIP ─────────────────────────────────────────
+        $document =
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<w:document'
+            . ' xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"'
+            . ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+            . '<w:body>'
+            . $bodyXml
+            . '<w:sectPr><w:pgSz w:w="12240" w:h="15840"/>'
+            . '<w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440"/></w:sectPr>'
+            . '</w:body></w:document>';
+
+        $rels =
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            . $relationships
+            . '</Relationships>';
+
+        $contentTypesXml =
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+            . '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+            . '<Default Extension="xml" ContentType="application/xml"/>'
+            . '<Override PartName="/word/document.xml"'
+            . ' ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>'
+            . $contentTypes
+            . '</Types>';
+
+        $relsMain =
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            . '<Relationship Id="rId1"'
+            . ' Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument"'
+            . ' Target="word/document.xml"/>'
+            . '</Relationships>';
+
+        $zip = new \ZipArchive();
+        if ($zip->open($outputPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
+            return false;
+        }
+        $zip->addFromString('[Content_Types].xml',          $contentTypesXml);
+        $zip->addFromString('_rels/.rels',                  $relsMain);
+        $zip->addFromString('word/document.xml',            $document);
+        $zip->addFromString('word/_rels/document.xml.rels', $rels);
+        foreach ($mediaFiles as $zipEntry => $srcPath) {
+            $zip->addFile($srcPath, 'word/media/' . $zipEntry);
+        }
+        $zip->close();
+
+        return file_exists($outputPath) && filesize($outputPath) > 100;
+    }
+
+    /** Build a single DOCX <w:p> element with an optional paragraph style. */
+    private function docxParagraph(string $xmlText, string $style = 'Normal'): string
+    {
+        $stylePr = ($style !== 'Normal')
+            ? '<w:pPr><w:pStyle w:val="' . htmlspecialchars($style, ENT_XML1) . '"/></w:pPr>'
+            : '';
+        return '<w:p>' . $stylePr . '<w:r><w:t xml:space="preserve">'
+             . $xmlText . '</w:t></w:r></w:p>';
+    }
+
+    /**
+     * Convert an array of Markdown pipe-table lines to DOCX <w:tbl> XML.
+     *
+     * Example input:
+     *   ['| Product | Qtr 1 |', '|---------|-------|', '| Choc    | $7.00 |']
+     */
+    private function markdownTableToDocxXml(array $lines): string
+    {
+        $tblXml = '<w:tbl>'
+            . '<w:tblPr>'
+            . '<w:tblStyle w:val="TableGrid"/>'
+            . '<w:tblW w:w="0" w:type="auto"/>'
+            . '</w:tblPr>';
+
+        $headerDone = false;
+        foreach ($lines as $line) {
+            // Skip the separator row (| --- | --- |)
+            if (preg_match('/^\|[\s\-:|]+\|/', trim($line))) {
+                $headerDone = true;
+                continue;
+            }
+
+            // Split on | and trim; remove empty first/last entries from leading/trailing |
+            $cells = array_map('trim', explode('|', $line));
+            $cells = array_values(array_filter($cells, fn($c) => $c !== ''));
+            if (empty($cells)) {
+                continue;
+            }
+
+            $isHeader = !$headerDone;
+            $tblXml  .= '<w:tr>';
+            foreach ($cells as $cell) {
+                $cellText = htmlspecialchars($cell, ENT_XML1);
+                $runPr    = $isHeader ? '<w:rPr><w:b/></w:rPr>' : '';
+                $tblXml  .= '<w:tc>'
+                          . '<w:tcPr><w:tcW w:w="0" w:type="auto"/></w:tcPr>'
+                          . '<w:p><w:r>' . $runPr
+                          . '<w:t xml:space="preserve">' . $cellText . '</w:t>'
+                          . '</w:r></w:p>'
+                          . '</w:tc>';
+            }
+            $tblXml .= '</w:tr>';
+        }
+
+        $tblXml .= '</w:tbl><w:p/>'; // blank paragraph after table (required by OOXML)
+        return $tblXml;
+    }
+
+    /**
+     * Build an ODT file from structured Markdown-like text.
+     *
+     * Supports headings (# ## ###), paragraphs, and pipe tables.
+     * When $imagePath is provided, the image is appended after the text.
+     */
+    private function writeOdtFromText(
+        string $text,
+        string $outputPath,
+        string $imagePath = '',
+        string $inputFormat = ''
+    ): bool {
+        if (!class_exists('ZipArchive')) {
+            return false;
+        }
+
+        $bodyXml    = '';
+        $mediaFiles = [];
+        $manifestEntries = '';
+
+        // ── Parse text into ODF body XML ──────────────────────────────────
+        $lines = preg_split('/\r\n|\r|\n/', $text) ?: [];
+        $i = 0;
+        while ($i < count($lines)) {
+            $line = $lines[$i];
+
+            // Pipe table: collect consecutive | lines
+            if (str_starts_with(trim($line), '|')) {
+                $tableLines = [];
+                while ($i < count($lines) && str_starts_with(trim($lines[$i]), '|')) {
+                    $tableLines[] = $lines[$i];
+                    $i++;
+                }
+                $bodyXml .= $this->markdownTableToOdtXml($tableLines);
+                continue;
+            }
+
+            // Headings
+            if (preg_match('/^(#{1,3})\s+(.+)$/', $line, $m)) {
+                $lvl      = strlen($m[1]);
+                $style    = 'Heading_20_' . $lvl;
+                $bodyXml .= '<text:h text:style-name="' . $style . '" text:outline-level="' . $lvl . '">'
+                          . htmlspecialchars($m[2], ENT_XML1) . '</text:h>';
+                $i++;
+                continue;
+            }
+
+            // Bullet list
+            if (preg_match('/^[-*]\s+(.+)$/', $line, $m)) {
+                $bodyXml .= '<text:list><text:list-item><text:p>'
+                          . htmlspecialchars($m[1], ENT_XML1) . '</text:p></text:list-item></text:list>';
+                $i++;
+                continue;
+            }
+
+            // Numbered list
+            if (preg_match('/^\d+[.)]\s+(.+)$/', $line, $m)) {
+                $bodyXml .= '<text:list text:style-name="List_20_Number"><text:list-item><text:p>'
+                          . htmlspecialchars($m[1], ENT_XML1) . '</text:p></text:list-item></text:list>';
+                $i++;
+                continue;
+            }
+
+            // Blank → empty paragraph
+            if (trim($line) === '') {
+                $bodyXml .= '<text:p/>';
+                $i++;
+                continue;
+            }
+
+            // Regular paragraph (with basic inline bold/italic support)
+            $safe = htmlspecialchars($line, ENT_XML1);
+            $safe = preg_replace('/\*\*(.+?)\*\*/', '<text:span text:style-name="Strong_20_Emphasis">$1</text:span>', $safe);
+            $safe = preg_replace('/\*(.+?)\*/',     '<text:span text:style-name="Emphasis">$1</text:span>',          $safe);
+            $bodyXml .= '<text:p>' . $safe . '</text:p>';
+            $i++;
+        }
+
+        // ── Optional: append source image ─────────────────────────────────
+        if ($imagePath && file_exists($imagePath)) {
+            $mimeMap = ['jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png',
+                        'gif' => 'image/gif',  'webp' => 'image/webp', 'bmp' => 'image/bmp',
+                        'tiff' => 'image/tiff', 'svg' => 'image/svg+xml'];
+            $imgExt  = strtolower(pathinfo($imagePath, PATHINFO_EXTENSION)) ?: strtolower($inputFormat);
+            $mime    = $mimeMap[$imgExt] ?? 'image/png';
+            $media   = 'Pictures/image.' . $imgExt;
+            $imgData = @getimagesize($imagePath);
+            $pxW     = $imgData ? max(1, (int) $imgData[0]) : 800;
+            $pxH     = $imgData ? max(1, (int) $imgData[1]) : 600;
+            $maxCmW  = 16.0;
+            $cmPerPx = 2.54 / 96.0;
+            $cmW     = min($maxCmW, round($pxW * $cmPerPx, 3));
+            $cmH     = round($cmW * $pxH / $pxW, 3);
+
+            $bodyXml .= '<text:p>'
+                     . '<draw:frame draw:style-name="fr1" draw:name="Image1"'
+                     . ' svg:width="' . $cmW . 'cm" svg:height="' . $cmH . 'cm"'
+                     . ' text:anchor-type="paragraph">'
+                     . '<draw:image xlink:href="' . $media . '" xlink:type="simple"'
+                     . ' xlink:show="embed" xlink:actuate="onLoad"/>'
+                     . '</draw:frame></text:p>';
+
+            $mediaFiles[$media] = $imagePath;
+            $manifestEntries   .= '<manifest:file-entry manifest:full-path="' . $media
+                                . '" manifest:media-type="' . $mime . '"/>';
+        }
+
+        // ── Build the ODT ZIP ─────────────────────────────────────────────
+        $manifest =
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            . '<manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0" manifest:version="1.3">'
+            . '<manifest:file-entry manifest:full-path="/" manifest:version="1.3" manifest:media-type="application/vnd.oasis.opendocument.text"/>'
+            . '<manifest:file-entry manifest:full-path="content.xml" manifest:media-type="text/xml"/>'
+            . $manifestEntries
+            . '</manifest:manifest>';
+
+        $content =
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            . '<office:document-content'
+            . ' xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"'
+            . ' xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"'
+            . ' xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0"'
+            . ' xmlns:draw="urn:oasis:names:tc:opendocument:xmlns:drawing:1.0"'
+            . ' xmlns:svg="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0"'
+            . ' xmlns:xlink="http://www.w3.org/1999/xlink"'
+            . ' xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0">'
+            . '<office:automatic-styles>'
+            . '<style:style style:name="fr1" style:family="graphic">'
+            . '<style:graphic-properties style:run-through="foreground" style:wrap="none"/>'
+            . '</style:style>'
+            . '</office:automatic-styles>'
+            . '<office:body><office:text>'
+            . $bodyXml
+            . '</office:text></office:body>'
+            . '</office:document-content>';
+
+        $zip = new \ZipArchive();
+        if ($zip->open($outputPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
+            return false;
+        }
+        $zip->addFromString('mimetype', 'application/vnd.oasis.opendocument.text');
+        if (method_exists($zip, 'setCompressionName')) {
+            $zip->setCompressionName('mimetype', \ZipArchive::CM_STORE);
+        }
+        $zip->addFromString('META-INF/manifest.xml', $manifest);
+        $zip->addFromString('content.xml',           $content);
+        foreach ($mediaFiles as $zipEntry => $srcPath) {
+            $zip->addFile($srcPath, $zipEntry);
+        }
+        $zip->close();
+
+        return file_exists($outputPath) && filesize($outputPath) > 100;
+    }
+
+    /**
+     * Convert an array of Markdown pipe-table lines to ODF <table:table> XML.
+     */
+    private function markdownTableToOdtXml(array $lines): string
+    {
+        $xml = '<table:table table:name="Table1" table:style-name="TableGrid">';
+
+        $headerDone = false;
+        foreach ($lines as $line) {
+            if (preg_match('/^\|[\s\-:|]+\|/', trim($line))) {
+                $headerDone = true;
+                continue;
+            }
+            $cells = array_map('trim', explode('|', $line));
+            $cells = array_values(array_filter($cells, fn($c) => $c !== ''));
+            if (empty($cells)) {
+                continue;
+            }
+            $isHeader = !$headerDone;
+            $xml .= '<table:table-row>';
+            foreach ($cells as $cell) {
+                $cellText = htmlspecialchars($cell, ENT_XML1);
+                $inner    = $isHeader
+                    ? '<text:p><text:span text:style-name="Strong_20_Emphasis">' . $cellText . '</text:span></text:p>'
+                    : '<text:p>' . $cellText . '</text:p>';
+                $xml .= '<table:table-cell>' . $inner . '</table:table-cell>';
+            }
+            $xml .= '</table:table-row>';
+        }
+        $xml .= '</table:table><text:p/>';
+        return $xml;
+    }
+
+    /**
+     * Build an RTF document from structured Markdown-like text.
+     *
+     * Supports headings (# ## ###), bullet/numbered lists, pipe tables,
+     * bold/italic inline formatting, and paragraph breaks.
+     */
+    private function writeRtfFromText(string $text, string $outputPath): bool
+    {
+        $rtfBody = '';
+
+        $lines = preg_split('/\r\n|\r|\n/', $text) ?: [];
+        $i = 0;
+        while ($i < count($lines)) {
+            $line = $lines[$i];
+
+            // Pipe table → simple tab-separated RTF table row
+            if (str_starts_with(trim($line), '|')) {
+                $tableLines = [];
+                while ($i < count($lines) && str_starts_with(trim($lines[$i]), '|')) {
+                    $tableLines[] = $lines[$i];
+                    $i++;
+                }
+                $rtfBody .= $this->markdownTableToRtf($tableLines);
+                continue;
+            }
+
+            // Heading 1
+            if (preg_match('/^#\s+(.+)$/', $line, $m)) {
+                $rtfBody .= '\\pard\\sb240\\sa120{\\b\\fs36 '
+                          . $this->rtfEscape($m[1]) . '}\\par\\pard' . "\n";
+                $i++;
+                continue;
+            }
+            // Heading 2
+            if (preg_match('/^##\s+(.+)$/', $line, $m)) {
+                $rtfBody .= '\\pard\\sb240\\sa120{\\b\\fs28 '
+                          . $this->rtfEscape($m[1]) . '}\\par\\pard' . "\n";
+                $i++;
+                continue;
+            }
+            // Heading 3
+            if (preg_match('/^###\s+(.+)$/', $line, $m)) {
+                $rtfBody .= '\\pard\\sb120\\sa60{\\b\\fs24 '
+                          . $this->rtfEscape($m[1]) . '}\\par\\pard' . "\n";
+                $i++;
+                continue;
+            }
+
+            // Bullet list
+            if (preg_match('/^[-*]\s+(.+)$/', $line, $m)) {
+                $rtfBody .= '\\pard\\li360\\fi-360{\\bullet\\tab '
+                          . $this->rtfInline($m[1]) . '}\\par\\pard' . "\n";
+                $i++;
+                continue;
+            }
+
+            // Numbered list
+            if (preg_match('/^(\d+)[.)]\s+(.+)$/', $line, $m)) {
+                $rtfBody .= '\\pard\\li360\\fi-360{' . $m[1] . '.\\tab '
+                          . $this->rtfInline($m[2]) . '}\\par\\pard' . "\n";
+                $i++;
+                continue;
+            }
+
+            // Blank → paragraph break
+            if (trim($line) === '') {
+                $rtfBody .= '\\par' . "\n";
+                $i++;
+                continue;
+            }
+
+            // Regular paragraph
+            $rtfBody .= '\\pard ' . $this->rtfInline($line) . '\\par\\pard' . "\n";
+            $i++;
+        }
+
+        $rtf = '{\\rtf1\\ansi\\deff0' . "\n"
+             . '{\\fonttbl{\\f0\\froman\\fcharset0 Times New Roman;}{\\f1\\fswiss\\fcharset0 Arial;}}' . "\n"
+             . '{\\colortbl;\\red0\\green0\\blue0;}' . "\n"
+             . '\\deflang1033\\widowctrl\\hyphauto' . "\n"
+             . $rtfBody
+             . '}';
+
+        return file_put_contents($outputPath, $rtf) !== false;
+    }
+
+    /**
+     * Convert Markdown pipe-table lines to RTF tab-separated rows.
+     */
+    private function markdownTableToRtf(array $lines): string
+    {
+        $rtf         = '';
+        $headerDone  = false;
+        $colCount    = 0;
+
+        foreach ($lines as $line) {
+            if (preg_match('/^\|[\s\-:|]+\|/', trim($line))) {
+                $headerDone = true;
+                continue;
+            }
+            $cells = array_map('trim', explode('|', $line));
+            $cells = array_values(array_filter($cells, fn($c) => $c !== ''));
+            if (empty($cells)) {
+                continue;
+            }
+            if ($colCount === 0) {
+                $colCount = count($cells);
+            }
+
+            // Build RTF table row definition (each column = 2880 twips ≈ 2 inches)
+            $rowDef = '\\trowd\\trqc';
+            $pos    = 0;
+            for ($c = 0; $c < count($cells); $c++) {
+                $pos     += 2880;
+                $rowDef  .= '\\cellx' . $pos;
+            }
+
+            $isHeader = !$headerDone;
+            $rtf .= $rowDef;
+            foreach ($cells as $cell) {
+                $fmt   = $isHeader ? '{\\b ' . $this->rtfEscape($cell) . '}' : $this->rtfInline($cell);
+                $rtf  .= '\\pard\\intbl ' . $fmt . '\\cell';
+            }
+            $rtf .= '\\row' . "\n";
+        }
+
+        return $rtf . '\\par' . "\n";
+    }
+
+    /** Escape a plain string for RTF (backslash, braces, non-ASCII). */
+    private function rtfEscape(string $text): string
+    {
+        $text = str_replace(['\\', '{', '}'], ['\\\\', '\\{', '\\}'], $text);
+        // Convert non-ASCII to RTF Unicode escapes
+        $out = '';
+        for ($j = 0; $j < mb_strlen($text, 'UTF-8'); $j++) {
+            $char = mb_substr($text, $j, 1, 'UTF-8');
+            $ord  = mb_ord($char, 'UTF-8');
+            $out .= ($ord > 127) ? '\\u' . $ord . '?' : $char;
+        }
+        return $out;
+    }
+
+    /** Apply inline **bold** and *italic* formatting to an RTF string. */
+    private function rtfInline(string $text): string
+    {
+        $text = $this->rtfEscape($text);
+        $text = preg_replace('/\*\*(.+?)\*\*/', '{\\b $1}', $text);
+        $text = preg_replace('/\*(.+?)\*/',     '{\\i $1}', $text);
+        return (string) $text;
+    }
+
+    /**
+     * Write a .doc file from structured text by first building a DOCX via
+     * writeDocxFromText() then letting LibreOffice convert DOCX→DOC.
+     */
+    private function writeDocViaDocxFromText(
+        string $text,
+        string $outputPath,
+        string $imagePath = '',
+        string $inputFormat = ''
+    ): bool {
+        $tmpBase = tempnam(sys_get_temp_dir(), 'cx_doc_');
+        @unlink($tmpBase);
+        $tmpDocx = $tmpBase . '.docx';
+        try {
+            if (!$this->writeDocxFromText($text, $tmpDocx, $imagePath, $inputFormat)) {
+                return false;
+            }
+            return $this->convertWithLibreOffice($tmpDocx, 'docx', 'doc', $outputPath);
+        } finally {
+            if (file_exists($tmpDocx)) {
+                @unlink($tmpDocx);
+            }
+        }
+    }
 
     /**
      * Embed a source image directly inside a writer-format document using
@@ -1779,12 +2442,15 @@ class ConversionService
     }
 
     /**
-     * Extract text from an image using Tesseract OCR, then write the result
-     * to a plain-text output file in the requested format (txt/html/md/csv).
+     * Extract text from an image and write it to a text-format output file
+     * (txt / html / md / csv).
      *
-     * Falls back to LibreOffice Draw's --cat if Tesseract is absent (rare
-     * success — only works for SVG; returns empty for raster images) and then
-     * to an explicit error rather than silently producing garbage.
+     * Priority chain:
+     *   1. AI format-specific OCR (vision model with a prompt tailored to the
+     *      target format — produces HTML, Markdown, CSV, or plain text directly).
+     *   2. Tesseract plain-text OCR (local, --psm 6).
+     *   3. AI generic OCR fallback (if Tesseract is absent).
+     *   4. Error if all three fail.
      */
     private function convertImageToTextWithOcr(
         string $inputPath,
@@ -1797,17 +2463,28 @@ class ConversionService
             );
         }
 
-        $text = '';
+        // ── 1. AI format-specific OCR (best quality) ──────────────────────
+        //
+        // Use the vision model with a prompt tailored to the target format.
+        // For CSV: returns RFC 4180 CSV preserving table column structure.
+        // For HTML: returns semantic HTML with headings, paragraphs, tables.
+        // For MD:   returns Markdown with headings, pipe tables, lists.
+        // For TXT:  returns plain text in reading order.
+        if ($this->aiService !== null) {
+            $aiOcr = $this->aiService->ocrForFormat($inputPath, $outputFormat, 'free');
+            if ($aiOcr['success'] && !empty(trim($aiOcr['text'] ?? ''))) {
+                return $this->writeTextOutput($aiOcr['text'], $outputFormat, $outputPath);
+            }
+        }
 
-        // 1. Tesseract (best for raster OCR) — cryptographically unique temp path,
-        //    no pre-created placeholder file, no tempnam race condition.
+        // ── 2. Tesseract plain-text OCR (local fallback) ──────────────────
+        $text = '';
         $tess = trim((string) shell_exec('which tesseract 2>/dev/null'));
         if ($tess) {
             $tmpBase = sys_get_temp_dir() . '/cx_tess_' . getmypid() . '_' . bin2hex(random_bytes(8));
-            $lang = 'eng';
             exec(
                 escapeshellarg($tess) . ' ' . escapeshellarg($inputPath)
-                . ' ' . escapeshellarg($tmpBase) . ' -l ' . escapeshellarg($lang) . ' 2>/dev/null',
+                . ' ' . escapeshellarg($tmpBase) . ' --psm 6 -l eng 2>/dev/null',
                 $_lines, $tessCode
             );
             $tessOut = $tmpBase . '.txt';
@@ -1817,8 +2494,7 @@ class ConversionService
             }
         }
 
-        // 2. AI OCR fallback: when Tesseract is absent or returns no text,
-        //    automatically use the AI service (e.g. OpenAI vision) to extract content.
+        // ── 3. AI generic OCR (when Tesseract is not installed) ────────────
         if (empty(trim($text)) && $this->aiService !== null) {
             $aiOcr = $this->aiService->ocr($inputPath, 'free');
             if ($aiOcr['success'] && !empty(trim($aiOcr['text'] ?? ''))) {
@@ -1826,7 +2502,7 @@ class ConversionService
             }
         }
 
-        // 3. If still no text, give a clear error
+        // ── 4. Error if nothing worked ─────────────────────────────────────
         if (empty(trim($text))) {
             throw new \RuntimeException(
                 "Text extraction from images requires Tesseract or a configured AI provider. "
@@ -1834,27 +2510,60 @@ class ConversionService
             );
         }
 
-        // 4. Write extracted text to the target format
+        return $this->writeTextOutput($text, $outputFormat, $outputPath);
+    }
+
+    /**
+     * Write extracted OCR text to the target text-format output file.
+     *
+     * When called after `ocrForFormat()`, the $text is already in the target
+     * format (HTML, Markdown, CSV) so it can be written directly.  When called
+     * with raw Tesseract plain-text, a minimal conversion is applied so the
+     * output is at least syntactically valid for the target format.
+     */
+    private function writeTextOutput(string $text, string $outputFormat, string $outputPath): bool
+    {
         $text = mb_convert_encoding($text, 'UTF-8', 'UTF-8');
         switch ($outputFormat) {
             case 'html':
-                $body    = nl2br(htmlspecialchars($text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'));
-                $content = "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"></head><body><p>{$body}</p></body></html>";
-                return file_put_contents($outputPath, $content) !== false;
-            case 'md':
+                // If the text is already HTML (from ocrForFormat), wrap it in a
+                // minimal document shell; otherwise convert plain text to HTML.
+                if (stripos($text, '<') !== false && stripos($text, '>') !== false) {
+                    // Already looks like HTML — wrap in document shell if needed
+                    if (stripos($text, '<html') === false) {
+                        $text = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body>'
+                              . "\n" . $text . "\n</body></html>";
+                    }
+                } else {
+                    $body = nl2br(htmlspecialchars($text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'));
+                    $text = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body><p>'
+                          . $body . '</p></body></html>';
+                }
                 return file_put_contents($outputPath, $text) !== false;
+
+            case 'md':
+                // Already Markdown (from ocrForFormat) or plain text — write as-is
+                return file_put_contents($outputPath, $text) !== false;
+
             case 'csv':
-                // Each non-empty line becomes a single-column RFC 4180 CSV row
+                // If the text is already RFC 4180 CSV (from ocrForFormat), write directly
+                if (str_contains($text, ',') || str_contains($text, '"')) {
+                    return file_put_contents($outputPath, $text) !== false;
+                }
+                // Otherwise: each non-empty line → single-column CSV row
                 $fh = fopen($outputPath, 'w');
                 if (!$fh) {
                     return false;
                 }
                 $lines = preg_split('/\r\n|\r|\n/', trim($text)) ?: [];
                 foreach ($lines as $line) {
-                    fputcsv($fh, [$line]);
+                    if (trim($line) !== '') {
+                        fputcsv($fh, [$line]);
+                    }
                 }
                 fclose($fh);
                 return file_exists($outputPath);
+
             default: // txt
                 return file_put_contents($outputPath, $text) !== false;
         }
