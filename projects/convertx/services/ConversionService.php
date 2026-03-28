@@ -1080,9 +1080,10 @@ class ConversionService
         }
 
         $tmpBase = sys_get_temp_dir() . '/cx_tess_' . getmypid() . '_' . bin2hex(random_bytes(8));
+        // --psm 6: treat the image as a single uniform block of text — better for tables/grids
         exec(
             escapeshellarg($tess) . ' ' . escapeshellarg($inputPath)
-            . ' ' . escapeshellarg($tmpBase) . ' tsv -l eng 2>/dev/null',
+            . ' ' . escapeshellarg($tmpBase) . ' --psm 6 tsv -l eng 2>/dev/null',
             $_out, $code
         );
         $tsvFile = $tmpBase . '.tsv';
@@ -1095,8 +1096,8 @@ class ConversionService
 
         // Group words by (block_num, par_num, line_num) → reconstruct logical lines,
         // then group logical lines by approximate vertical band into spreadsheet rows.
-        $lines = [];  // keyed by "block.par.line"
-        $topMap = []; // top pixel of each line
+        $lines  = [];  // keyed by "block.par.line"
+        $topMap = [];  // top pixel of each line
 
         foreach (explode("\n", $tsv) as $i => $rawLine) {
             if ($i === 0 || trim($rawLine) === '') {
@@ -1106,51 +1107,100 @@ class ConversionService
             if (count($cols) < 12) {
                 continue;
             }
-            $conf   = (int) $cols[10];
-            $word   = trim($cols[11]);
+            $conf = (int) $cols[10];
+            $word = trim($cols[11]);
             if ($conf === -1 || $word === '') {
                 continue;
             }
-            $key = $cols[2] . '.' . $cols[3] . '.' . $cols[4]; // block.par.line
-            $top = (int) $cols[7];
+            // Filter out very low-confidence tokens (likely OCR garbage from UI elements)
+            if ($conf < 10 && strlen($word) <= 2) {
+                continue;
+            }
+            $key   = $cols[2] . '.' . $cols[3] . '.' . $cols[4]; // block.par.line
+            $left  = (int) $cols[6];
+            $top   = (int) $cols[7];
+            $width = (int) $cols[8];
 
             if (!isset($lines[$key])) {
                 $lines[$key]  = [];
                 $topMap[$key] = $top;
             }
-            $lines[$key][] = ['left' => (int) $cols[6], 'text' => $word];
+            // Store left, center, and text for each word
+            $lines[$key][] = [
+                'left'   => $left,
+                'center' => $left + (int) ($width / 2),
+                'text'   => $word,
+            ];
         }
 
         if (empty($lines)) {
             return [];
         }
 
-        // Sort words within each line by horizontal position
+        // Sort words within each line by horizontal position (left edge)
         $sortedLines = [];
         foreach ($lines as $key => $words) {
             usort($words, fn($a, $b) => $a['left'] <=> $b['left']);
-            $sortedLines[$key] = ['top' => $topMap[$key], 'words' => $words];
+
+            // Merge adjacent tokens that Tesseract split at a comma inside a number.
+            // e.g. ["$5,", "079.60"] → ["$5,079.60"]
+            //      ["$1,",  "249.20"] → ["$1,249.20"]
+            $merged = [];
+            for ($j = 0; $j < count($words); $j++) {
+                $cur = $words[$j];
+                if (
+                    isset($words[$j + 1])
+                    && preg_match('/^[£$€¥₹]?\d[\d,]*,$/', $cur['text'])   // ends with digit + comma
+                    && preg_match('/^\d{3}(\.\d+)?$/', $words[$j + 1]['text'])  // next is NNN or NNN.NN
+                ) {
+                    // Merge: keep the left/center of the first token
+                    $merged[] = [
+                        'left'   => $cur['left'],
+                        'center' => $cur['center'],
+                        'text'   => $cur['text'] . $words[$j + 1]['text'],
+                    ];
+                    $j++; // skip the next token
+                } else {
+                    $merged[] = $cur;
+                }
+            }
+
+            $sortedLines[$key] = ['top' => $topMap[$key], 'words' => $merged];
         }
 
         // Sort lines by vertical position
         uasort($sortedLines, fn($a, $b) => $a['top'] <=> $b['top']);
 
-        // Detect column boundaries from the first meaningful line (header row)
-        // by looking at horizontal gaps between words across all lines.
-        $allLeftPositions = [];
+        // ── Adaptive column zone detection ──────────────────────────────────
+        //
+        // Collect CENTER positions of all words across all lines, then find the
+        // gaps between adjacent sorted positions.  Gaps larger than the adaptive
+        // threshold indicate column boundaries.
+        //
+        // Using CENTER (left + width/2) rather than just left is more reliable for
+        // right-aligned numeric columns where the left edge varies with digit count.
+        $allCenters = [];
         foreach ($sortedLines as $lineData) {
             foreach ($lineData['words'] as $w) {
-                $allLeftPositions[] = $w['left'];
+                $allCenters[] = $w['center'];
             }
         }
-        sort($allLeftPositions);
+        sort($allCenters);
 
-        // Cluster left positions into column zones using a gap threshold.
-        // A new column starts when the gap to the next word-start exceeds $threshold px.
-        $threshold  = 20;
-        $colZones   = [];
-        $zoneStart  = null;
-        foreach ($allLeftPositions as $pos) {
+        // Find the largest gap across all adjacent center positions
+        $maxGap = 1;
+        for ($i = 1; $i < count($allCenters); $i++) {
+            $gap    = $allCenters[$i] - $allCenters[$i - 1];
+            $maxGap = max($maxGap, $gap);
+        }
+
+        // A new column zone starts when the gap exceeds 40% of the largest gap
+        // (minimum 30 px so noise on very small images doesn't create false columns).
+        $threshold = max(30, (int) ($maxGap * 0.40));
+
+        $colZones  = [];
+        $zoneStart = null;
+        foreach ($allCenters as $pos) {
             if ($zoneStart === null) {
                 $zoneStart = $pos;
             } elseif ($pos - $zoneStart > $threshold) {
@@ -1173,15 +1223,15 @@ class ConversionService
             return $rows;
         }
 
-        // Assign each word to the nearest column zone and build the grid
+        // Assign each word to the nearest column zone using CENTER position
         $rows = [];
         foreach ($sortedLines as $lineData) {
             $cells = array_fill(0, count($colZones), '');
             foreach ($lineData['words'] as $w) {
-                $colIdx = 0;
+                $colIdx  = 0;
                 $minDist = PHP_INT_MAX;
                 foreach ($colZones as $zi => $zone) {
-                    $dist = abs($w['left'] - $zone);
+                    $dist = abs($w['center'] - $zone);
                     if ($dist < $minDist) {
                         $minDist = $dist;
                         $colIdx  = $zi;
@@ -1211,7 +1261,7 @@ class ConversionService
         $tmpBase = sys_get_temp_dir() . '/cx_tess_' . getmypid() . '_' . bin2hex(random_bytes(8));
         exec(
             escapeshellarg($tess) . ' ' . escapeshellarg($inputPath)
-            . ' ' . escapeshellarg($tmpBase) . ' -l eng 2>/dev/null',
+            . ' ' . escapeshellarg($tmpBase) . ' --psm 6 -l eng 2>/dev/null',
             $_out, $code
         );
         $txtFile = $tmpBase . '.txt';
@@ -1226,7 +1276,12 @@ class ConversionService
 
     /**
      * Split raw text into spreadsheet rows.
-     * Tab-separated values → multiple cells; otherwise treat as single-cell row.
+     * Tab-separated values become multiple cells; every other non-empty line
+     * is treated as a single cell.
+     *
+     * IMPORTANT: Do NOT use str_getcsv() here.  OCR plain-text output is not
+     * RFC 4180 CSV — it contains currency values like "$5,079.60" that would be
+     * incorrectly split at the comma into ["$5", "079.60"].
      *
      * @return array<int, array<int, string>>
      */
@@ -1240,8 +1295,7 @@ class ConversionService
             if (str_contains($line, "\t")) {
                 $rows[] = explode("\t", $line);
             } else {
-                $parsed = str_getcsv($line);
-                $rows[] = ($parsed !== false && $parsed !== ['']) ? $parsed : [$line];
+                $rows[] = [$line];
             }
         }
         return $rows;
