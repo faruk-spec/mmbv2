@@ -177,7 +177,7 @@ class AuthController extends BaseController
         SSO::clearToken();
         setcookie('sso_token', '', time() - 3600, '/', '', true, true);
         Auth::logout();
-        $this->redirect('/');
+        $this->redirect('/?logged_out=1');
     }
     
     /**

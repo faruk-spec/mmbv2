@@ -1764,6 +1764,55 @@ try {
     
     <!-- Toast Notification System -->
     <script src="/assets/js/toast.js"></script>
+
+    <!-- ── Post-logout Login Suggestion Popup ───────────────────────────────── -->
+    <?php if (isset($_GET['logged_out']) && !(\Core\Auth::check())): ?>
+    <div id="loggedOutPopup" style="display:none;position:fixed;bottom:28px;right:28px;z-index:99998;max-width:340px;width:calc(100% - 40px);">
+        <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:16px;padding:20px 22px;box-shadow:0 12px 48px rgba(0,0,0,0.45);transform:translateY(20px);opacity:0;transition:transform 0.4s cubic-bezier(.34,1.56,.64,1),opacity 0.3s ease;" id="loggedOutCard">
+            <button onclick="closeLoggedOutPopup()" style="position:absolute;top:12px;right:14px;background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:1.1rem;line-height:1;" aria-label="Close">&times;</button>
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+                <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,var(--cyan),var(--purple));display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#06060a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </div>
+                <div>
+                    <div style="font-size:0.95rem;font-weight:700;color:var(--text-primary);">You've been signed out</div>
+                    <div style="font-size:0.8rem;color:var(--text-secondary);margin-top:2px;">Come back anytime!</div>
+                </div>
+            </div>
+            <p style="font-size:0.82rem;color:var(--text-secondary);margin:0 0 14px;line-height:1.5;">Sign back in to access your resumes, files, and all platform features.</p>
+            <div style="display:flex;gap:8px;">
+                <a href="/login" style="flex:1;padding:9px 14px;border-radius:8px;background:linear-gradient(135deg,var(--cyan),var(--purple));color:#06060a;font-size:0.85rem;font-weight:700;text-decoration:none;text-align:center;">Sign In</a>
+                <a href="/register" style="flex:1;padding:9px 14px;border-radius:8px;border:1px solid var(--border-color);background:transparent;color:var(--text-primary);font-size:0.85rem;font-weight:600;text-decoration:none;text-align:center;">Register</a>
+            </div>
+        </div>
+    </div>
+    <script>
+    (function () {
+        var popup = document.getElementById('loggedOutPopup');
+        var card  = document.getElementById('loggedOutCard');
+        if (!popup) return;
+        // Show after short delay
+        setTimeout(function () {
+            popup.style.display = 'block';
+            requestAnimationFrame(function () {
+                requestAnimationFrame(function () {
+                    card.style.transform = 'translateY(0)';
+                    card.style.opacity   = '1';
+                });
+            });
+        }, 600);
+        // Auto-dismiss after 12 seconds
+        setTimeout(function () { closeLoggedOutPopup(); }, 12600);
+
+        function closeLoggedOutPopup() {
+            card.style.transform = 'translateY(20px)';
+            card.style.opacity   = '0';
+            setTimeout(function () { popup.style.display = 'none'; }, 350);
+        }
+        window.closeLoggedOutPopup = closeLoggedOutPopup;
+    })();
+    </script>
+    <?php endif; ?>
     
     <?php View::yield('scripts'); ?>
 </body>

@@ -301,6 +301,23 @@ class ResumeModel
     {
         $builtIn = $this->getBuiltInPresets();
 
+        // Apply pro flags stored in admin settings for built-in templates
+        try {
+            $row = $this->db->fetch("SELECT value FROM settings WHERE `key` = 'resumex_builtin_pro_templates'");
+            if ($row && !empty($row['value'])) {
+                $proKeys = json_decode($row['value'], true);
+                if (is_array($proKeys)) {
+                    foreach ($proKeys as $proKey) {
+                        if (isset($builtIn[$proKey])) {
+                            $builtIn[$proKey]['_is_pro'] = true;
+                        }
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            // Non-critical; proceed without pro flags
+        }
+
         try {
             $customModel = new TemplateModel();
             $custom      = $customModel->getAllCustomTemplates();

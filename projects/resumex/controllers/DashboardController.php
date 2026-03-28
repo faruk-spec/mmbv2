@@ -53,19 +53,51 @@ class DashboardController
         // Parse theme settings for display
         foreach ($resumes as &$resume) {
             $themeSettings = json_decode($resume['theme_settings'] ?? '{}', true);
-            $resume['theme_name']  = $themeSettings['name'] ?? ucfirst(str_replace('-', ' ', $resume['template'] ?? 'Default'));
+            $resume['theme_name']   = $themeSettings['name'] ?? ucfirst(str_replace('-', ' ', $resume['template'] ?? 'Default'));
             $resume['primaryColor'] = $themeSettings['primaryColor'] ?? '#00f0ff';
         }
         unset($resume);
 
         $allThemes = $this->resumeModel->getAllThemePresets();
 
+        // Load relevant admin feature flags
+        $featureSettings = $this->loadFeatureSettings();
+
         View::render('projects/resumex/dashboard', [
-            'title'     => 'ResumeX - Dashboard',
-            'user'      => $user,
-            'resumes'   => $resumes,
-            'stats'     => $stats,
-            'allThemes' => $allThemes,
+            'title'           => 'ResumeX - Dashboard',
+            'user'            => $user,
+            'resumes'         => $resumes,
+            'stats'           => $stats,
+            'allThemes'       => $allThemes,
+            'featureSettings' => $featureSettings,
         ]);
+    }
+
+    /**
+     * Load the admin feature flags relevant to the user-facing dashboard.
+     */
+    private function loadFeatureSettings(): array
+    {
+        $defaults = [
+            'resumex_public_resumes'  => '1',
+            'resumex_linkedin_import' => '1',
+            'resumex_custom_domain'   => '0',
+            'resumex_max_resumes_free' => '3',
+            'resumex_max_resumes_pro'  => '0',
+        ];
+
+        try {
+            $db   = Database::getInstance();
+            $rows = $db->fetchAll(
+                "SELECT `key`, `value` FROM settings WHERE `key` IN ('resumex_public_resumes','resumex_linkedin_import','resumex_custom_domain','resumex_max_resumes_free','resumex_max_resumes_pro')"
+            );
+            foreach ($rows as $row) {
+                $defaults[$row['key']] = $row['value'];
+            }
+        } catch (\Exception $e) {
+            // Use defaults on error
+        }
+
+        return $defaults;
     }
 }

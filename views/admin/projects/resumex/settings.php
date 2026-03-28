@@ -267,7 +267,17 @@
                     </label>
                     <span class="toggle-label">Add a watermark to PDFs exported by free users</span>
                 </div>
-                <small>When enabled, PDF exports for non-pro users will include a "Powered by ResumeX" watermark.</small>
+                <small>When enabled, PDF exports for non-pro users will include the watermark text below.</small>
+            </div>
+
+            <!-- PDF Watermark Text -->
+            <div class="form-group" style="margin-top:-8px;padding-left:4px;">
+                <label>Watermark Text</label>
+                <input type="text" name="resumex_pdf_watermark_text" class="form-input"
+                       value="<?= htmlspecialchars($settings['resumex_pdf_watermark_text'] ?? 'ResumeX Free') ?>"
+                       maxlength="80" placeholder="e.g. ResumeX Free"
+                       style="max-width:360px;">
+                <small>Text displayed diagonally across the PDF. Keep it short (e.g. "ResumeX Free" or your brand name).</small>
             </div>
 
             <!-- Pro-only templates -->

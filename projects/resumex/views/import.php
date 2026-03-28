@@ -4,7 +4,7 @@
 <?php View::section('content'); ?>
 <style>
 .rxi-wrap {
-    max-width: 860px;
+    max-width: 1100px;
     margin: 0 auto;
     padding: 36px 24px 60px;
 }
@@ -202,33 +202,47 @@
             <input type="file" id="resumeFile" name="resume_file" accept=".json,application/json" style="display:none;">
         </div>
 
-        <!-- Step 3: Template picker -->
-        <div class="rxi-card">
-            <h2><span class="step">3</span> Choose a Template</h2>
-            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;max-height:320px;overflow-y:auto;padding-right:4px;">
+        <!-- Step 3: Template picker (full grid matching create.php) -->
+        <div class="rxi-card" style="padding:28px 28px 24px;">
+            <h2 style="margin-bottom:16px;"><span class="step">3</span> Choose a Template</h2>
+            <p style="font-size:0.875rem;color:var(--text-secondary);margin:0 0 20px;">Pick a design — you can change it later in the editor.</p>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;">
                 <?php $first = true; foreach ($allThemes as $tKey => $tTheme):
                     $tBg  = htmlspecialchars($tTheme['backgroundColor'] ?? '#111');
                     $tPri = htmlspecialchars($tTheme['primaryColor'] ?? '#00f0ff');
+                    $tSec = htmlspecialchars($tTheme['secondaryColor'] ?? $tTheme['primaryColor'] ?? '#00f0ff');
                     $tIsPro = !empty($tTheme['_is_pro']);
+                    $tName  = htmlspecialchars($tTheme['name']);
+                    $tCat   = htmlspecialchars(ucfirst($tTheme['category'] ?? 'other'));
                 ?>
-                <label style="cursor:pointer;border-radius:10px;overflow:hidden;border:2px solid var(--border-color);transition:border-color 0.2s;position:relative;" class="rxi-tpl-card">
+                <label class="rxi-tpl-card" style="cursor:pointer;border-radius:12px;overflow:hidden;border:2px solid <?= $first ? 'rgba(0,240,255,0.6)' : 'var(--border-color)' ?>;transition:border-color 0.2s,box-shadow 0.2s;position:relative;display:block;">
                     <input type="radio" name="template" value="<?= htmlspecialchars($tKey) ?>"
                            <?= $first ? 'checked' : '' ?> style="display:none;"
-                           onchange="document.querySelectorAll('.rxi-tpl-card').forEach(c=>c.style.borderColor='var(--border-color)');this.closest('.rxi-tpl-card').style.borderColor='rgba(0,240,255,0.6)';">
-                    <div style="height:70px;background:<?= $tBg ?>;display:flex;align-items:center;justify-content:center;">
-                        <svg width="40" height="30" viewBox="0 0 40 30">
-                            <rect width="40" height="30" fill="<?= $tBg ?>"/>
-                            <rect x="0" y="0" width="40" height="8" fill="<?= $tPri ?>44"/>
-                            <rect x="2" y="2" width="18" height="2" rx="1" fill="<?= $tPri ?>"/>
-                            <rect x="2" y="11" width="36" height="1.5" rx="0.75" fill="<?= $tPri ?>44"/>
-                            <rect x="2" y="14" width="30" height="1" rx="0.5" fill="<?= $tPri ?>22"/>
+                           onchange="(function(inp){document.querySelectorAll('.rxi-tpl-card').forEach(c=>{c.style.borderColor='var(--border-color)';c.style.boxShadow='none';});inp.closest('.rxi-tpl-card').style.borderColor='rgba(0,240,255,0.6)';inp.closest('.rxi-tpl-card').style.boxShadow='0 0 0 2px rgba(0,240,255,0.15)';})(this)">
+                    <!-- Thumbnail -->
+                    <div style="height:100px;background:<?= $tBg ?>;display:flex;align-items:center;justify-content:center;position:relative;">
+                        <svg width="64" height="50" viewBox="0 0 64 50">
+                            <rect width="64" height="50" fill="<?= $tBg ?>"/>
+                            <rect x="0" y="0" width="64" height="13" fill="<?= $tPri ?>44"/>
+                            <rect x="4" y="3" width="30" height="3" rx="1.5" fill="<?= $tPri ?>"/>
+                            <rect x="4" y="8" width="18" height="2" rx="1" fill="<?= $tSec ?>88"/>
+                            <rect x="4" y="18" width="56" height="2" rx="1" fill="<?= $tPri ?>44"/>
+                            <rect x="4" y="22" width="48" height="1.5" rx="0.75" fill="<?= $tPri ?>22"/>
+                            <rect x="4" y="26" width="52" height="1.5" rx="0.75" fill="<?= $tPri ?>22"/>
+                            <rect x="4" y="32" width="20" height="2.5" rx="1.25" fill="<?= $tPri ?>"/>
+                            <rect x="4" y="37" width="56" height="1.5" rx="0.75" fill="<?= $tPri ?>33"/>
+                            <rect x="4" y="41" width="44" height="1" rx="0.5" fill="<?= $tPri ?>22"/>
                         </svg>
-                    </div>
-                    <div style="padding:6px 8px;background:var(--bg-secondary);font-size:0.7rem;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-                        <?= htmlspecialchars($tTheme['name']) ?>
                         <?php if ($tIsPro): ?>
-                        <span style="font-size:0.55rem;font-weight:700;color:#f59e0b;margin-left:3px;">PRO</span>
+                        <span style="position:absolute;top:6px;right:6px;padding:2px 7px;border-radius:8px;font-size:0.6rem;font-weight:700;background:rgba(245,158,11,0.9);color:#000;letter-spacing:0.3px;">
+                            ★ PRO
+                        </span>
                         <?php endif; ?>
+                    </div>
+                    <!-- Info -->
+                    <div style="padding:8px 10px;background:var(--bg-secondary);">
+                        <div style="font-size:0.78rem;font-weight:700;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><?= $tName ?></div>
+                        <div style="font-size:0.68rem;color:var(--text-secondary);margin-top:1px;"><?= $tCat ?></div>
                     </div>
                 </label>
                 <?php $first = false; endforeach; ?>

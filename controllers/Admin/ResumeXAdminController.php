@@ -396,6 +396,7 @@ class ResumeXAdminController extends BaseController
             'resumex_max_resumes_free',
             'resumex_max_resumes_pro',
             'resumex_pdf_watermark_free',
+            'resumex_pdf_watermark_text',
             'resumex_pro_templates_only',
             'resumex_linkedin_import',
             'resumex_public_resumes',
@@ -417,6 +418,7 @@ class ResumeXAdminController extends BaseController
         $maxResumesFree    = max(0, (int) ($_POST['resumex_max_resumes_free'] ?? 3));
         $maxResumesPro     = max(0, (int) ($_POST['resumex_max_resumes_pro'] ?? 0));
         $pdfWatermarkFree  = isset($_POST['resumex_pdf_watermark_free']) ? '1' : '0';
+        $pdfWatermarkText  = Security::sanitize(trim($_POST['resumex_pdf_watermark_text'] ?? 'ResumeX Free'));
         $proTemplatesOnly  = isset($_POST['resumex_pro_templates_only']) ? '1' : '0';
         $linkedinImport    = isset($_POST['resumex_linkedin_import']) ? '1' : '0';
         $publicResumes     = isset($_POST['resumex_public_resumes']) ? '1' : '0';
@@ -451,6 +453,7 @@ class ResumeXAdminController extends BaseController
             'resumex_max_resumes_free'    => (string) $maxResumesFree,
             'resumex_max_resumes_pro'     => (string) $maxResumesPro,
             'resumex_pdf_watermark_free'  => $pdfWatermarkFree,
+            'resumex_pdf_watermark_text'  => $pdfWatermarkText !== '' ? $pdfWatermarkText : 'ResumeX Free',
             'resumex_pro_templates_only'  => $proTemplatesOnly,
             'resumex_linkedin_import'     => $linkedinImport,
             'resumex_public_resumes'      => $publicResumes,
@@ -722,6 +725,7 @@ class ResumeXAdminController extends BaseController
             'resumex_max_resumes_free'     => '3',
             'resumex_max_resumes_pro'      => '0',
             'resumex_pdf_watermark_free'   => '0',
+            'resumex_pdf_watermark_text'   => 'ResumeX Free',
             'resumex_pro_templates_only'   => '0',
             'resumex_linkedin_import'      => '1',
             'resumex_public_resumes'       => '1',
@@ -773,6 +777,65 @@ class ResumeXAdminController extends BaseController
             $this->db->update('resumex_templates', ['is_pro' => $val, 'updated_at' => date('Y-m-d H:i:s')], 'id = ?', [$id]);
             \Core\ActivityLogger::log(\Core\Auth::id(), 'resumex_template_pro_toggle', [
                 'module' => 'resumex', 'template_id' => $id, 'is_pro' => $val,
+            ]);
+            echo json_encode(['success' => true, 'is_pro' => $val]);
+        } catch (\Exception $e) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'error' => 'Database error.']);
+        }
+        exit;
+    }
+
+    /**
+     * Toggle PRO status for a built-in (hardcoded) template.
+     * Stores the list of pro built-in template keys in settings.
+     */
+    public function toggleBuiltinTemplatePro(): void
+    {
+        $this->requirePermission('resumex.templates');
+        header('Content-Type: application/json');
+
+        $token = $_POST['_token'] ?? '';
+        if (!\Core\Security::validateCsrfToken($token)) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'Invalid security token.']);
+            exit;
+        }
+
+        $key = trim($_POST['key'] ?? '');
+        $val = ($_POST['is_pro'] ?? '0') === '1' ? 1 : 0;
+
+        if ($key === '' || !preg_match('/^[a-z0-9_\-]+$/', $key)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Invalid template key.']);
+            exit;
+        }
+
+        try {
+            $row = $this->db->fetch("SELECT value FROM settings WHERE `key` = 'resumex_builtin_pro_templates'");
+            $proKeys = [];
+            if ($row && !empty($row['value'])) {
+                $proKeys = json_decode($row['value'], true) ?: [];
+            }
+
+            if ($val) {
+                if (!in_array($key, $proKeys, true)) {
+                    $proKeys[] = $key;
+                }
+            } else {
+                $proKeys = array_values(array_filter($proKeys, fn($k) => $k !== $key));
+            }
+
+            $json = json_encode(array_values($proKeys));
+            $existing = $this->db->fetch("SELECT id FROM settings WHERE `key` = 'resumex_builtin_pro_templates'");
+            if ($existing) {
+                $this->db->update('settings', ['value' => $json, 'updated_at' => date('Y-m-d H:i:s')], '`key` = ?', ['resumex_builtin_pro_templates']);
+            } else {
+                $this->db->query("INSERT INTO settings (`key`, `value`, `created_at`, `updated_at`) VALUES (?, ?, NOW(), NOW())", ['resumex_builtin_pro_templates', $json]);
+            }
+
+            \Core\ActivityLogger::log(\Core\Auth::id(), 'resumex_builtin_template_pro_toggle', [
+                'module' => 'resumex', 'template_key' => $key, 'is_pro' => $val,
             ]);
             echo json_encode(['success' => true, 'is_pro' => $val]);
         } catch (\Exception $e) {

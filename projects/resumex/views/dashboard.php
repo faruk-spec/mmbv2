@@ -1,6 +1,13 @@
 <?php use Core\View; use Core\Auth; ?>
 <?php View::extend('main'); ?>
 
+<?php View::section('styles'); ?>
+<style>
+    /* Override main padding so rx-layout can be full-bleed */
+    .main { padding: 0 !important; }
+</style>
+<?php View::endSection(); ?>
+
 <?php View::section('content'); ?>
 <style>
     /* ++ Layout */
@@ -276,6 +283,26 @@
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"></polyline><line x1="12" y1="12" x2="12" y2="21"></line><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path></svg>
                 <span>Import Resume</span>
             </a>
+            <?php if (($featureSettings['resumex_linkedin_import'] ?? '0') === '1'): ?>
+            <a href="/projects/resumex/import?source=linkedin" class="rx-nav-link">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
+                <span>LinkedIn Import</span>
+                <span class="rx-nav-pro-badge">PRO</span>
+            </a>
+            <?php endif; ?>
+            <?php if (($featureSettings['resumex_public_resumes'] ?? '0') === '1'): ?>
+            <a href="#rx-all-resumes" class="rx-nav-link" onclick="document.querySelector('#rx-all-resumes').scrollIntoView({behavior:'smooth'});return false;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+                <span>Share Resume</span>
+            </a>
+            <?php endif; ?>
+            <?php if (($featureSettings['resumex_custom_domain'] ?? '0') === '1'): ?>
+            <a href="#custom-domain" class="rx-nav-link">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                <span>Custom Domain</span>
+                <span class="rx-nav-pro-badge">PRO</span>
+            </a>
+            <?php endif; ?>
         </div>
 
         <?php if (!empty($resumes)): ?>
@@ -427,6 +454,9 @@
                             <div class="rx-card-date">
                                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
                                 Updated <?= $updatedStr ?>
+                                <?php if (!empty($resume['is_public']) && !empty($resume['share_token'])): ?>
+                                <span style="margin-left:6px;font-size:0.68rem;color:#4ade80;font-weight:600;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:middle;"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> Shared</span>
+                                <?php endif; ?>
                             </div>
                             <div class="rx-card-actions">
                                 <a href="/projects/resumex/edit/<?= $resumeId ?>" class="rx-action-btn edit">
@@ -437,6 +467,15 @@
                                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                                     Preview
                                 </a>
+                                <?php if (($featureSettings['resumex_public_resumes'] ?? '0') === '1'): ?>
+                                <button type="button" class="rx-action-btn"
+                                        style="<?= !empty($resume['is_public']) ? 'color:#4ade80;' : '' ?>"
+                                        onclick="openShareModal(<?= $resumeId ?>, <?= htmlspecialchars(json_encode($resume['share_token'] ?? ''), ENT_QUOTES, 'UTF-8') ?>, <?= !empty($resume['is_public']) ? 'true' : 'false' ?>)"
+                                        title="Share resume publicly">
+                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                                    Share
+                                </button>
+                                <?php endif; ?>
                                 <button type="button" class="rx-action-btn duplicate"
                                     onclick="openDuplicateModal(<?= $resumeId ?>, <?= htmlspecialchars(json_encode($resume['title'] ?? 'Untitled'), ENT_QUOTES, 'UTF-8') ?>)">
                                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
@@ -455,6 +494,35 @@
         </div>
 
     </main>
+</div>
+
+<!-- Share Modal -->
+<div id="rx-share-modal" class="rx-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="rx-share-title" style="display:none;">
+    <div class="rx-modal">
+        <div class="rx-modal-icon" style="background:rgba(74,222,128,0.12);border:1px solid rgba(74,222,128,0.3);">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        </div>
+        <h3 id="rx-share-title">Share Resume</h3>
+        <p id="rx-share-desc" style="color:var(--text-secondary);font-size:0.875rem;margin:0 0 14px;">Generate a public link to share your resume with anyone — no login required.</p>
+        <div id="rx-share-link-wrap" style="display:none;margin-bottom:14px;">
+            <input id="rx-share-link-input" type="text" readonly
+                   style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-size:0.8rem;font-family:monospace;margin-bottom:8px;"
+                   value="">
+            <button onclick="copyShareLink()" style="width:100%;padding:9px;border-radius:8px;border:none;background:rgba(74,222,128,0.15);color:#4ade80;font-weight:600;cursor:pointer;font-size:0.85rem;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:middle;margin-right:4px;"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                Copy Link
+            </button>
+        </div>
+        <input type="hidden" id="rx-share-csrf" value="<?= htmlspecialchars(\Core\Security::generateCsrfToken(), ENT_QUOTES, 'UTF-8') ?>">
+        <input type="hidden" id="rx-share-id" value="">
+        <div class="rx-modal-actions">
+            <button class="rx-modal-btn secondary" onclick="closeShareModal()">Cancel</button>
+            <button id="rx-share-generate-btn" class="rx-modal-btn primary" onclick="generateShare()">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:middle;margin-right:4px;"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                Generate Link
+            </button>
+        </div>
+    </div>
 </div>
 
 <!-- Delete Modal -->
@@ -541,8 +609,77 @@
         if (e.key === 'Escape') {
             deleteOverlay.classList.remove('open');
             duplicateOverlay.classList.remove('open');
+            closeShareModal();
         }
     });
+
+    // ── Share modal ─────────────────────────────────────────────────────────────
+    var shareModal  = document.getElementById('rx-share-modal');
+    var shareInput  = document.getElementById('rx-share-link-input');
+    var shareLinkWrap = document.getElementById('rx-share-link-wrap');
+    var shareGenBtn   = document.getElementById('rx-share-generate-btn');
+
+    window.openShareModal = function (id, token, isPublic) {
+        document.getElementById('rx-share-id').value = id;
+        shareLinkWrap.style.display = 'none';
+        shareGenBtn.textContent = 'Generate Link';
+        shareGenBtn.disabled = false;
+        if (token && isPublic) {
+            shareInput.value = window.location.origin + '/projects/resumex/share/' + token;
+            shareLinkWrap.style.display = 'block';
+            shareGenBtn.textContent = 'Disable Sharing';
+        }
+        shareModal.style.display = 'flex';
+    };
+    window.closeShareModal = function () { shareModal.style.display = 'none'; };
+
+    window.generateShare = function () {
+        var id    = document.getElementById('rx-share-id').value;
+        var token = document.getElementById('rx-share-csrf').value;
+        shareGenBtn.disabled = true;
+        shareGenBtn.textContent = 'Working…';
+        var fd = new FormData();
+        fd.append('_token', token);
+        fd.append('id', id);
+        fetch('/projects/resumex/share/generate', { method: 'POST', body: fd })
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                if (d.success && d.token) {
+                    shareInput.value = window.location.origin + '/projects/resumex/share/' + d.token;
+                    shareLinkWrap.style.display = 'block';
+                    shareGenBtn.textContent = 'Disable Sharing';
+                    shareGenBtn.disabled = false;
+                } else if (d.success) {
+                    closeShareModal();
+                    window.location.reload();
+                } else {
+                    alert(d.error || 'Failed to update sharing.');
+                    shareGenBtn.disabled = false;
+                    shareGenBtn.textContent = 'Generate Link';
+                }
+            })
+            .catch(function () {
+                alert('Network error.');
+                shareGenBtn.disabled = false;
+                shareGenBtn.textContent = 'Generate Link';
+            });
+    };
+
+    window.copyShareLink = function () {
+        var input = document.getElementById('rx-share-link-input');
+        navigator.clipboard.writeText(input.value).then(function () {
+            var btn = document.querySelector('#rx-share-modal .rx-modal-actions .rx-modal-btn.primary');
+        }).catch(function () {
+            input.select();
+            document.execCommand('copy');
+        });
+    };
+
+    if (shareModal) {
+        shareModal.addEventListener('click', function (e) {
+            if (e.target === shareModal) closeShareModal();
+        });
+    }
 }());
 </script>
 <?php View::end(); ?>
