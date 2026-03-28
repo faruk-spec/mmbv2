@@ -30,6 +30,16 @@ switch ($segments[0]) {
         }
         break;
 
+    case 'import':
+        require_once PROJECT_PATH . '/controllers/ResumeController.php';
+        $ctrl = new \Projects\ResumeX\Controllers\ResumeController();
+        if ($method === 'POST') {
+            $ctrl->storeImport();
+        } else {
+            $ctrl->importForm();
+        }
+        break;
+
     case 'edit':
         require_once PROJECT_PATH . '/controllers/ResumeController.php';
         $ctrl = new \Projects\ResumeX\Controllers\ResumeController();
@@ -135,6 +145,17 @@ switch ($segments[0]) {
             default:
                 http_response_code(404);
                 echo json_encode(['error' => 'Not found']);
+        }
+        break;
+
+    case 'share':
+        require_once PROJECT_PATH . '/controllers/ResumeController.php';
+        $ctrl  = new \Projects\ResumeX\Controllers\ResumeController();
+        $token = $segments[1] ?? '';
+        if ($method === 'POST' && $token === 'generate') {
+            $ctrl->generateShareLink();
+        } else {
+            $ctrl->publicView($token);
         }
         break;
 

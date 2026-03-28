@@ -747,4 +747,38 @@ class ResumeXAdminController extends BaseController
         header('Location: ' . $url . '?error=' . urlencode($message));
         exit;
     }
+
+    public function toggleTemplatePro(): void
+    {
+        $this->requirePermission('resumex.templates');
+        header('Content-Type: application/json');
+
+        $token = $_POST['_token'] ?? '';
+        if (!\Core\Security::validateCsrfToken($token)) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'Invalid security token.']);
+            exit;
+        }
+
+        $id  = (int) ($_POST['id'] ?? 0);
+        $val = ($_POST['is_pro'] ?? '0') === '1' ? 1 : 0;
+
+        if (!$id) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Invalid template ID.']);
+            exit;
+        }
+
+        try {
+            $this->db->update('resumex_templates', ['is_pro' => $val, 'updated_at' => date('Y-m-d H:i:s')], 'id = ?', [$id]);
+            \Core\ActivityLogger::log(\Core\Auth::id(), 'resumex_template_pro_toggle', [
+                'module' => 'resumex', 'template_id' => $id, 'is_pro' => $val,
+            ]);
+            echo json_encode(['success' => true, 'is_pro' => $val]);
+        } catch (\Exception $e) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'error' => 'Database error.']);
+        }
+        exit;
+    }
 }

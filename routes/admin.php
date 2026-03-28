@@ -334,3 +334,4 @@ $router->get('/admin/projects/resumex/designer', 'Admin\\ResumeXAdminController@
 $router->get('/admin/projects/resumex/designer/{id}', 'Admin\\ResumeXAdminController@designerEdit', ['auth', 'admin']);
 $router->post('/admin/projects/resumex/designer/save', 'Admin\\ResumeXAdminController@designerSave', ['auth', 'admin']);
 $router->get('/admin/projects/resumex/resumes', 'Admin\\ResumeXAdminController@resumes', ['auth', 'admin']);
+$router->post('/admin/projects/resumex/templates/toggle-pro', 'Admin\\ResumeXAdminController@toggleTemplatePro', ['auth', 'admin']);

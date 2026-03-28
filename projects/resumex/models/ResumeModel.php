@@ -102,10 +102,10 @@ class ResumeModel
     /**
      * Create a new resume
      */
-    public function create(int $userId, string $title, string $template = 'ocean-blue', array $colorOverride = []): int
+    public function create(int $userId, string $title, string $template = 'ocean-blue', array $colorOverride = [], array $resumeData = []): int
     {
         try {
-            $defaultData   = $this->getDefaultData();
+            $defaultData   = !empty($resumeData) ? $resumeData : $this->getDefaultData();
             $defaultTheme  = $this->getThemePreset($template);
 
             // Apply optional colour overrides (e.g. a variant chosen on the picker)

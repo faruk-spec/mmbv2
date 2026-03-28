@@ -257,6 +257,18 @@
                                 <i class="fas fa-image"></i>
                             </button>
                             <?php endif; ?>
+                            <button type="button"
+                                    class="btn btn-sm btn-toggle-pro"
+                                    data-id="<?= (int)$t['id'] ?>"
+                                    data-is-pro="<?= (int)($t['is_pro'] ?? 0) ?>"
+                                    title="Toggle PRO status"
+                                    style="<?= ($t['is_pro'] ?? 0) ? 'background:rgba(245,158,11,0.15);color:#f59e0b;border:1px solid rgba(245,158,11,0.4);' : 'background:rgba(255,255,255,0.05);color:var(--text-secondary);border:1px solid var(--border-color);' ?>border-radius:6px;padding:3px 9px;font-size:0.7rem;font-weight:700;cursor:pointer;">
+                                <?php if ($t['is_pro'] ?? 0): ?>
+                                <i class="fas fa-star"></i> PRO
+                                <?php else: ?>
+                                <i class="far fa-star"></i> Free
+                                <?php endif; ?>
+                            </button>
                             <form method="POST" action="/admin/projects/resumex/templates/delete"
                                   onsubmit="return confirm('Delete ' + <?= json_encode($t['name']) ?> + '? This cannot be undone.')">
                                 <input type="hidden" name="_token" value="<?= htmlspecialchars($csrfToken) ?>">
@@ -446,6 +458,41 @@ function uploadPreview(id, input) {
         })
         .catch(function() { alert('Network error during preview upload.'); });
 }
+
+document.addEventListener('DOMContentLoaded', function () {
+    var csrfToken = <?= json_encode($csrfToken) ?>;
+
+    document.querySelectorAll('.btn-toggle-pro').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var id    = parseInt(btn.dataset.id, 10);
+            var isPro = parseInt(btn.dataset.isPro, 10);
+            var newVal = isPro ? '0' : '1';
+
+            var fd = new FormData();
+            fd.append('_token', csrfToken);
+            fd.append('id', id);
+            fd.append('is_pro', newVal);
+
+            fetch('/admin/projects/resumex/templates/toggle-pro', { method: 'POST', body: fd })
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                    if (d.success) {
+                        btn.dataset.isPro = d.is_pro;
+                        if (d.is_pro) {
+                            btn.innerHTML = '<i class="fas fa-star"></i> PRO';
+                            btn.style.cssText = 'background:rgba(245,158,11,0.15);color:#f59e0b;border:1px solid rgba(245,158,11,0.4);border-radius:6px;padding:3px 9px;font-size:0.7rem;font-weight:700;cursor:pointer;';
+                        } else {
+                            btn.innerHTML = '<i class="far fa-star"></i> Free';
+                            btn.style.cssText = 'background:rgba(255,255,255,0.05);color:var(--text-secondary);border:1px solid var(--border-color);border-radius:6px;padding:3px 9px;font-size:0.7rem;font-weight:700;cursor:pointer;';
+                        }
+                    } else {
+                        alert('Failed to update PRO status: ' + (d.error || 'Unknown error'));
+                    }
+                })
+                .catch(function () { alert('Network error toggling PRO status.'); });
+        });
+    });
+});
 </script>
 
 <?php View::endSection(); ?>

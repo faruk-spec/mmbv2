@@ -818,6 +818,9 @@
                     <span class="rxc-cat-badge <?= $catClass ?>">
                         <?= htmlspecialchars(ucfirst($cat)) ?>
                     </span>
+                    <?php if (!empty($theme['_is_pro'])): ?>
+                    <span style="display:inline-block;padding:1px 7px;border-radius:10px;font-size:0.6rem;font-weight:700;background:rgba(245,158,11,0.15);color:#f59e0b;border:1px solid rgba(245,158,11,0.4);margin-left:3px;"><i class="fas fa-star" style="font-size:0.55rem;"></i> PRO</span>
+                    <?php endif; ?>
                     <?php if (!empty($theme['_full_template'])): ?>
                     <span style="display:inline-block;padding:1px 7px;border-radius:10px;font-size:0.6rem;font-weight:600;border:1px solid rgba(139,92,246,0.4);color:#a78bfa;margin-left:3px;">Full Design</span>
                     <?php else: ?>

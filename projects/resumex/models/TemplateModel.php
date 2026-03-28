@@ -99,6 +99,7 @@ class TemplateModel
                 'display_bg'      => "VARCHAR(20) DEFAULT NULL",
                 'display_pri'     => "VARCHAR(20) DEFAULT NULL",
                 'template_design' => "LONGTEXT DEFAULT NULL",
+                'is_pro'          => "TINYINT(1) NOT NULL DEFAULT 0",
             ];
             foreach ($cols as $col => $def) {
                 $this->addColumnIfMissing('resumex_templates', $col, $def);
@@ -170,6 +171,7 @@ class TemplateModel
                     $preset['_is_override']   = (bool) ($row['is_override'] ?? false);
                     $preset['_preview_image'] = $row['preview_image'] ?? null;
                     $preset['_db_id']         = (int) $row['id'];
+                    $preset['_is_pro']        = (bool) ($row['is_pro'] ?? false);
                     $out[$preset['key']]      = $preset;
                 }
             }
@@ -606,6 +608,7 @@ class TemplateModel
             '_preview_image'   => $row['preview_image'] ?? null,
             '_db_id'           => (int) $row['id'],
             '_is_override'     => false,
+            '_is_pro'          => (bool) ($row['is_pro'] ?? false),
         ];
     }
 
@@ -662,6 +665,7 @@ class TemplateModel
             '_preview_image'   => $row['preview_image'] ?? null,
             '_db_id'           => (int) $row['id'],
             '_is_override'     => false,
+            '_is_pro'          => (bool) ($row['is_pro'] ?? false),
         ];
     }
 

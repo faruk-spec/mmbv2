@@ -22,7 +22,7 @@
         padding: 28px 0 20px;
         position: sticky;
         top: 0;
-        height: 100vh;
+        height: calc(100vh - 70px);
         overflow-y: auto;
     }
     .rx-sidebar-logo {
