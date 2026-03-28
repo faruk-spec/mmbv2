@@ -48,8 +48,24 @@ class ResumeModel
                     KEY `idx_updated_at` (`updated_at`)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             ");
+
+            // Add pro/sharing columns if not present
+            $this->addColumnIfMissing('resumex_resumes', 'share_token', "VARCHAR(64) DEFAULT NULL");
+            $this->addColumnIfMissing('resumex_resumes', 'is_public',   "TINYINT(1) NOT NULL DEFAULT 0");
         } catch (\Exception $e) {
             \Core\Logger::error('ResumeModel::ensureTable error: ' . $e->getMessage());
+        }
+    }
+
+    private function addColumnIfMissing(string $table, string $column, string $definition): void
+    {
+        try {
+            $row = $this->db->fetch("SHOW COLUMNS FROM `{$table}` LIKE ?", [$column]);
+            if (!$row) {
+                $this->db->query("ALTER TABLE `{$table}` ADD COLUMN `{$column}` {$definition}");
+            }
+        } catch (\Exception $e) {
+            \Core\Logger::error("ResumeModel::addColumnIfMissing({$table}.{$column}): " . $e->getMessage());
         }
     }
 
