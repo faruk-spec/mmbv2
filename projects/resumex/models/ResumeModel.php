@@ -48,8 +48,24 @@ class ResumeModel
                     KEY `idx_updated_at` (`updated_at`)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             ");
+
+            // Add pro/sharing columns if not present
+            $this->addColumnIfMissing('resumex_resumes', 'share_token', "VARCHAR(64) DEFAULT NULL");
+            $this->addColumnIfMissing('resumex_resumes', 'is_public',   "TINYINT(1) NOT NULL DEFAULT 0");
         } catch (\Exception $e) {
             \Core\Logger::error('ResumeModel::ensureTable error: ' . $e->getMessage());
+        }
+    }
+
+    private function addColumnIfMissing(string $table, string $column, string $definition): void
+    {
+        try {
+            $row = $this->db->fetch("SHOW COLUMNS FROM `{$table}` LIKE ?", [$column]);
+            if (!$row) {
+                $this->db->query("ALTER TABLE `{$table}` ADD COLUMN `{$column}` {$definition}");
+            }
+        } catch (\Exception $e) {
+            \Core\Logger::error("ResumeModel::addColumnIfMissing({$table}.{$column}): " . $e->getMessage());
         }
     }
 
@@ -102,10 +118,10 @@ class ResumeModel
     /**
      * Create a new resume
      */
-    public function create(int $userId, string $title, string $template = 'ocean-blue', array $colorOverride = []): int
+    public function create(int $userId, string $title, string $template = 'ocean-blue', array $colorOverride = [], array $resumeData = []): int
     {
         try {
-            $defaultData   = $this->getDefaultData();
+            $defaultData   = !empty($resumeData) ? $resumeData : $this->getDefaultData();
             $defaultTheme  = $this->getThemePreset($template);
 
             // Apply optional colour overrides (e.g. a variant chosen on the picker)
@@ -284,6 +300,23 @@ class ResumeModel
     public function getAllThemePresets(): array
     {
         $builtIn = $this->getBuiltInPresets();
+
+        // Apply pro flags stored in admin settings for built-in templates
+        try {
+            $row = $this->db->fetch("SELECT value FROM settings WHERE `key` = 'resumex_builtin_pro_templates'");
+            if ($row && !empty($row['value'])) {
+                $proKeys = json_decode($row['value'], true);
+                if (is_array($proKeys)) {
+                    foreach ($proKeys as $proKey) {
+                        if (isset($builtIn[$proKey])) {
+                            $builtIn[$proKey]['_is_pro'] = true;
+                        }
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            // Non-critical; proceed without pro flags
+        }
 
         try {
             $customModel = new TemplateModel();

@@ -257,6 +257,18 @@
                                 <i class="fas fa-image"></i>
                             </button>
                             <?php endif; ?>
+                            <button type="button"
+                                    class="btn btn-sm btn-toggle-pro"
+                                    data-id="<?= (int)$t['id'] ?>"
+                                    data-is-pro="<?= (int)($t['is_pro'] ?? 0) ?>"
+                                    title="Toggle PRO status"
+                                    style="<?= ($t['is_pro'] ?? 0) ? 'background:rgba(245,158,11,0.15);color:#f59e0b;border:1px solid rgba(245,158,11,0.4);' : 'background:rgba(255,255,255,0.05);color:var(--text-secondary);border:1px solid var(--border-color);' ?>border-radius:6px;padding:3px 9px;font-size:0.7rem;font-weight:700;cursor:pointer;">
+                                <?php if ($t['is_pro'] ?? 0): ?>
+                                <i class="fas fa-star"></i> PRO
+                                <?php else: ?>
+                                <i class="far fa-star"></i> Free
+                                <?php endif; ?>
+                            </button>
                             <form method="POST" action="/admin/projects/resumex/templates/delete"
                                   onsubmit="return confirm('Delete ' + <?= json_encode($t['name']) ?> + '? This cannot be undone.')">
                                 <input type="hidden" name="_token" value="<?= htmlspecialchars($csrfToken) ?>">
@@ -297,12 +309,15 @@
                     <th>Layout</th>
                     <th>Colors</th>
                     <th>Status</th>
+                    <th>PRO</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 <?php foreach ($builtinTemplates as $key => $t):
                     if (!empty($t['_full_template'])) continue; // custom full templates are already listed in the Custom Templates table above; skip here
                     $isOverridden = in_array($key, array_column($customTemplates, 'key'), true);
+                    $isBIpro = !empty($t['_is_pro']);
                 ?>
                 <tr>
                     <td><strong><?= htmlspecialchars($t['name']) ?></strong></td>
@@ -328,6 +343,28 @@
                         <span style="font-size:0.75rem;color:#4ade80;"><i class="fas fa-check-circle"></i> Active</span>
                         <?php endif; ?>
                     </td>
+                    <td>
+                        <button type="button"
+                                class="btn btn-sm btn-toggle-builtin-pro"
+                                data-key="<?= htmlspecialchars($key) ?>"
+                                data-is-pro="<?= $isBIpro ? '1' : '0' ?>"
+                                title="Toggle PRO status"
+                                style="<?= $isBIpro ? 'background:rgba(245,158,11,0.15);color:#f59e0b;border:1px solid rgba(245,158,11,0.4);' : 'background:rgba(255,255,255,0.05);color:var(--text-secondary);border:1px solid var(--border-color);' ?>border-radius:6px;padding:3px 9px;font-size:0.7rem;font-weight:700;cursor:pointer;">
+                            <?php if ($isBIpro): ?>
+                            <i class="fas fa-star"></i> PRO
+                            <?php else: ?>
+                            <i class="far fa-star"></i> Free
+                            <?php endif; ?>
+                        </button>
+                    </td>
+                    <td>
+                        <a href="/admin/projects/resumex/templates?override=<?= urlencode($key) ?>"
+                           title="Override this built-in template"
+                           onclick="return confirm('⚠️ Warning: You are about to upload a custom template that overrides the built-in \u0022<?= htmlspecialchars(str_replace(["'", '"', '\\'], ["\\'", '\\"', '\\\\'], $t['name']), ENT_QUOTES) ?>\u0022 template. This will apply to all users immediately. Continue?')"
+                           style="display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:6px;background:rgba(139,92,246,0.1);color:#a78bfa;border:1px solid rgba(139,92,246,0.3);font-size:0.7rem;font-weight:600;text-decoration:none;">
+                            <i class="fas fa-edit"></i> Override
+                        </a>
+                    </td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>
@@ -336,6 +373,38 @@
 </div>
 
 <script>
+// ── Built-in template PRO toggle ──────────────────────────────────────────────
+(function () {
+    var csrfToken = <?= json_encode($csrfToken) ?>;
+    document.querySelectorAll('.btn-toggle-builtin-pro').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var key   = btn.dataset.key;
+            var isPro = parseInt(btn.dataset.isPro, 10);
+            var newVal = isPro ? '0' : '1';
+            var fd = new FormData();
+            fd.append('_token', csrfToken);
+            fd.append('key', key);
+            fd.append('is_pro', newVal);
+            fetch('/admin/projects/resumex/templates/toggle-builtin-pro', { method: 'POST', body: fd })
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                    if (d.success) {
+                        btn.dataset.isPro = d.is_pro;
+                        if (d.is_pro) {
+                            btn.innerHTML = '<i class="fas fa-star"></i> PRO';
+                            btn.style.cssText = 'background:rgba(245,158,11,0.15);color:#f59e0b;border:1px solid rgba(245,158,11,0.4);border-radius:6px;padding:3px 9px;font-size:0.7rem;font-weight:700;cursor:pointer;';
+                        } else {
+                            btn.innerHTML = '<i class="far fa-star"></i> Free';
+                            btn.style.cssText = 'background:rgba(255,255,255,0.05);color:var(--text-secondary);border:1px solid var(--border-color);border-radius:6px;padding:3px 9px;font-size:0.7rem;font-weight:700;cursor:pointer;';
+                        }
+                    } else {
+                        alert('Error: ' + (d.error || 'Unknown error'));
+                    }
+                })
+                .catch(function () { alert('Network error.'); });
+        });
+    });
+})();
 // ── Drag & drop for full template upload ──────────────────────────────────────
 (function () {
     var dz   = document.getElementById('fullDropzone');
@@ -446,6 +515,41 @@ function uploadPreview(id, input) {
         })
         .catch(function() { alert('Network error during preview upload.'); });
 }
+
+document.addEventListener('DOMContentLoaded', function () {
+    var csrfToken = <?= json_encode($csrfToken) ?>;
+
+    document.querySelectorAll('.btn-toggle-pro').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var id    = parseInt(btn.dataset.id, 10);
+            var isPro = parseInt(btn.dataset.isPro, 10);
+            var newVal = isPro ? '0' : '1';
+
+            var fd = new FormData();
+            fd.append('_token', csrfToken);
+            fd.append('id', id);
+            fd.append('is_pro', newVal);
+
+            fetch('/admin/projects/resumex/templates/toggle-pro', { method: 'POST', body: fd })
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                    if (d.success) {
+                        btn.dataset.isPro = d.is_pro;
+                        if (d.is_pro) {
+                            btn.innerHTML = '<i class="fas fa-star"></i> PRO';
+                            btn.style.cssText = 'background:rgba(245,158,11,0.15);color:#f59e0b;border:1px solid rgba(245,158,11,0.4);border-radius:6px;padding:3px 9px;font-size:0.7rem;font-weight:700;cursor:pointer;';
+                        } else {
+                            btn.innerHTML = '<i class="far fa-star"></i> Free';
+                            btn.style.cssText = 'background:rgba(255,255,255,0.05);color:var(--text-secondary);border:1px solid var(--border-color);border-radius:6px;padding:3px 9px;font-size:0.7rem;font-weight:700;cursor:pointer;';
+                        }
+                    } else {
+                        alert('Failed to update PRO status: ' + (d.error || 'Unknown error'));
+                    }
+                })
+                .catch(function () { alert('Network error toggling PRO status.'); });
+        });
+    });
+});
 </script>
 
 <?php View::endSection(); ?>

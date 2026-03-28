@@ -99,6 +99,7 @@ class TemplateModel
                 'display_bg'      => "VARCHAR(20) DEFAULT NULL",
                 'display_pri'     => "VARCHAR(20) DEFAULT NULL",
                 'template_design' => "LONGTEXT DEFAULT NULL",
+                'is_pro'          => "TINYINT(1) NOT NULL DEFAULT 0",
             ];
             foreach ($cols as $col => $def) {
                 $this->addColumnIfMissing('resumex_templates', $col, $def);
@@ -170,6 +171,7 @@ class TemplateModel
                     $preset['_is_override']   = (bool) ($row['is_override'] ?? false);
                     $preset['_preview_image'] = $row['preview_image'] ?? null;
                     $preset['_db_id']         = (int) $row['id'];
+                    $preset['_is_pro']        = (bool) ($row['is_pro'] ?? false);
                     $out[$preset['key']]      = $preset;
                 }
             }
@@ -224,7 +226,16 @@ class TemplateModel
                 return null;
             }
             $path = $this->fullTemplateDir . '/' . basename($row['file_name']);
-            return file_exists($path) ? $path : null;
+            if (!file_exists($path)) {
+                return null;
+            }
+            // Verify the resolved path stays within the intended directory (prevents symlink escapes)
+            $realPath = realpath($path);
+            $realDir  = realpath($this->fullTemplateDir);
+            if ($realPath === false || $realDir === false || strncmp($realPath, $realDir . DIRECTORY_SEPARATOR, strlen($realDir) + 1) !== 0) {
+                return null;
+            }
+            return $realPath;
         } catch (\Exception $e) {
             Logger::error('TemplateModel::getFullTemplateFile error: ' . $e->getMessage());
             return null;
@@ -478,7 +489,13 @@ class TemplateModel
             $dir  = $type === 'full' ? $this->fullTemplateDir : $this->storageDir;
             $path = $dir . '/' . basename($row['file_name'] ?? '');
             if ($path && file_exists($path)) {
-                @unlink($path);
+                // Verify path stays within intended directory before deletion
+                $realPath = realpath($path);
+                $realDir  = realpath($dir);
+                if ($realPath !== false && $realDir !== false
+                    && strncmp($realPath, $realDir . DIRECTORY_SEPARATOR, strlen($realDir) + 1) === 0) {
+                    @unlink($realPath);
+                }
             }
 
             $this->db->query("DELETE FROM resumex_templates WHERE id = ?", [$id]);
@@ -591,6 +608,7 @@ class TemplateModel
             '_preview_image'   => $row['preview_image'] ?? null,
             '_db_id'           => (int) $row['id'],
             '_is_override'     => false,
+            '_is_pro'          => (bool) ($row['is_pro'] ?? false),
         ];
     }
 
@@ -647,6 +665,7 @@ class TemplateModel
             '_preview_image'   => $row['preview_image'] ?? null,
             '_db_id'           => (int) $row['id'],
             '_is_override'     => false,
+            '_is_pro'          => (bool) ($row['is_pro'] ?? false),
         ];
     }
 

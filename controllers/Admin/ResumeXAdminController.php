@@ -393,6 +393,14 @@ class ResumeXAdminController extends BaseController
             'resumex_openai_model',
             'resumex_ai_enabled',
             'resumex_ai_daily_limit',
+            'resumex_max_resumes_free',
+            'resumex_max_resumes_pro',
+            'resumex_pdf_watermark_free',
+            'resumex_pdf_watermark_text',
+            'resumex_pro_templates_only',
+            'resumex_linkedin_import',
+            'resumex_public_resumes',
+            'resumex_custom_domain',
         ];
 
         $oldValues = [];
@@ -403,10 +411,18 @@ class ResumeXAdminController extends BaseController
             $oldValues[$key] = $row ? $row['value'] : null;
         }
 
-        $aiEnabled   = isset($_POST['resumex_ai_enabled']) ? '1' : '0';
-        $openaiKey   = Security::sanitize(trim($_POST['resumex_openai_api_key'] ?? ''));
-        $openaiModel = Security::sanitize(trim($_POST['resumex_openai_model'] ?? ''));
-        $dailyLimit  = max(0, (int) ($_POST['resumex_ai_daily_limit'] ?? 0));
+        $aiEnabled         = isset($_POST['resumex_ai_enabled']) ? '1' : '0';
+        $openaiKey         = Security::sanitize(trim($_POST['resumex_openai_api_key'] ?? ''));
+        $openaiModel       = Security::sanitize(trim($_POST['resumex_openai_model'] ?? ''));
+        $dailyLimit        = max(0, (int) ($_POST['resumex_ai_daily_limit'] ?? 0));
+        $maxResumesFree    = max(0, (int) ($_POST['resumex_max_resumes_free'] ?? 3));
+        $maxResumesPro     = max(0, (int) ($_POST['resumex_max_resumes_pro'] ?? 0));
+        $pdfWatermarkFree  = isset($_POST['resumex_pdf_watermark_free']) ? '1' : '0';
+        $pdfWatermarkText  = Security::sanitize(trim($_POST['resumex_pdf_watermark_text'] ?? 'ResumeX Free'));
+        $proTemplatesOnly  = isset($_POST['resumex_pro_templates_only']) ? '1' : '0';
+        $linkedinImport    = isset($_POST['resumex_linkedin_import']) ? '1' : '0';
+        $publicResumes     = isset($_POST['resumex_public_resumes']) ? '1' : '0';
+        $customDomain      = isset($_POST['resumex_custom_domain']) ? '1' : '0';
 
         // Validate key format: must be empty OR start with 'sk-'
         if (!empty($openaiKey) && !str_starts_with($openaiKey, 'sk-')) {
@@ -430,10 +446,18 @@ class ResumeXAdminController extends BaseController
         }
 
         $updates = [
-            'resumex_ai_enabled'      => $aiEnabled,
-            'resumex_openai_api_key'  => $openaiKey,
-            'resumex_openai_model'    => $openaiModel,
-            'resumex_ai_daily_limit'  => (string) $dailyLimit,
+            'resumex_ai_enabled'          => $aiEnabled,
+            'resumex_openai_api_key'      => $openaiKey,
+            'resumex_openai_model'        => $openaiModel,
+            'resumex_ai_daily_limit'      => (string) $dailyLimit,
+            'resumex_max_resumes_free'    => (string) $maxResumesFree,
+            'resumex_max_resumes_pro'     => (string) $maxResumesPro,
+            'resumex_pdf_watermark_free'  => $pdfWatermarkFree,
+            'resumex_pdf_watermark_text'  => $pdfWatermarkText !== '' ? $pdfWatermarkText : 'ResumeX Free',
+            'resumex_pro_templates_only'  => $proTemplatesOnly,
+            'resumex_linkedin_import'     => $linkedinImport,
+            'resumex_public_resumes'      => $publicResumes,
+            'resumex_custom_domain'       => $customDomain,
         ];
 
         foreach ($updates as $key => $value) {
@@ -464,31 +488,6 @@ class ResumeXAdminController extends BaseController
         $this->redirect('/admin/projects/resumex/settings');
     }
 
-    /**
-     * Helper: load all ResumeX settings from the settings table.
-     */
-    private function getResumeXSettings(): array
-    {
-        $defaults = [
-            'resumex_ai_enabled'     => '1',
-            'resumex_openai_api_key' => defined('OPENAI_API_KEY') ? OPENAI_API_KEY : '',
-            'resumex_openai_model'   => 'gpt-4o-mini',
-            'resumex_ai_daily_limit' => '0',
-        ];
-
-        try {
-            $rows = $this->db->fetchAll(
-                "SELECT `key`, `value` FROM settings WHERE `key` LIKE 'resumex_%'"
-            );
-            foreach ($rows as $row) {
-                $defaults[$row['key']] = $row['value'];
-            }
-        } catch (\Exception $e) {
-            // Return defaults if settings table unavailable
-        }
-
-        return $defaults;
-    }
 
     // ──────────────────────────────────────────────────────────────────────────
 
@@ -611,9 +610,238 @@ class ResumeXAdminController extends BaseController
         }
     }
 
+    // ──────────────────────────────────────────────────────────────────────────
+    //  Analytics
+    // ──────────────────────────────────────────────────────────────────────────
+
+    public function analytics(): void
+    {
+        $this->requirePermission('resumex');
+
+        $stats       = $this->getStats();
+        $daily       = $this->getDailyCreations(30);
+        $byTemplate  = $this->getResumesByTemplate(10);
+        $topUsers    = $this->getTopUsers(10);
+        $aiUsage     = $this->getAiUsageSummary();
+
+        $this->view('admin/projects/resumex/analytics', [
+            'title'      => 'ResumeX — Analytics',
+            'stats'      => $stats,
+            'daily'      => $daily,
+            'byTemplate' => $byTemplate,
+            'topUsers'   => $topUsers,
+            'aiUsage'    => $aiUsage,
+        ]);
+    }
+
+    private function getDailyCreations(int $days): array
+    {
+        try {
+            return $this->db->fetchAll(
+                "SELECT DATE(created_at) AS day, COUNT(*) AS cnt
+                 FROM resumex_resumes
+                 WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
+                 GROUP BY DATE(created_at)
+                 ORDER BY day ASC",
+                [$days]
+            );
+        } catch (\Exception $e) {
+            return [];
+        }
+    }
+
+    private function getResumesByTemplate(int $limit): array
+    {
+        try {
+            return $this->db->fetchAll(
+                "SELECT template, COUNT(*) AS cnt
+                 FROM resumex_resumes
+                 GROUP BY template
+                 ORDER BY cnt DESC
+                 LIMIT ?",
+                [$limit]
+            );
+        } catch (\Exception $e) {
+            return [];
+        }
+    }
+
+    private function getTopUsers(int $limit): array
+    {
+        try {
+            return $this->db->fetchAll(
+                "SELECT r.user_id, u.name AS user_name, u.email AS user_email,
+                        COUNT(*) AS resume_count,
+                        MAX(r.updated_at) AS last_active
+                 FROM resumex_resumes r
+                 LEFT JOIN users u ON u.id = r.user_id
+                 GROUP BY r.user_id, u.name, u.email
+                 ORDER BY resume_count DESC
+                 LIMIT ?",
+                [$limit]
+            );
+        } catch (\Exception $e) {
+            return [];
+        }
+    }
+
+    private function getAiUsageSummary(): array
+    {
+        try {
+            $today = (int) ($this->db->fetch(
+                "SELECT COUNT(*) AS cnt FROM activity_logs
+                 WHERE module = 'resumex' AND action LIKE '%ai%' AND DATE(created_at) = CURDATE()"
+            )['cnt'] ?? 0);
+            $week = (int) ($this->db->fetch(
+                "SELECT COUNT(*) AS cnt FROM activity_logs
+                 WHERE module = 'resumex' AND action LIKE '%ai%'
+                 AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)"
+            )['cnt'] ?? 0);
+            $month = (int) ($this->db->fetch(
+                "SELECT COUNT(*) AS cnt FROM activity_logs
+                 WHERE module = 'resumex' AND action LIKE '%ai%'
+                 AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)"
+            )['cnt'] ?? 0);
+            return compact('today', 'week', 'month');
+        } catch (\Exception $e) {
+            return ['today' => 0, 'week' => 0, 'month' => 0];
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    //  Pro Feature Settings helpers
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Extended list of all ResumeX settings including pro-feature controls.
+     */
+    private function getResumeXSettings(): array
+    {
+        $defaults = [
+            'resumex_ai_enabled'           => '1',
+            'resumex_openai_api_key'       => defined('OPENAI_API_KEY') ? OPENAI_API_KEY : '',
+            'resumex_openai_model'         => 'gpt-4o-mini',
+            'resumex_ai_daily_limit'       => '0',
+            'resumex_max_resumes_free'     => '3',
+            'resumex_max_resumes_pro'      => '0',
+            'resumex_pdf_watermark_free'   => '0',
+            'resumex_pdf_watermark_text'   => 'ResumeX Free',
+            'resumex_pro_templates_only'   => '0',
+            'resumex_linkedin_import'      => '1',
+            'resumex_public_resumes'       => '1',
+            'resumex_custom_domain'        => '0',
+        ];
+
+        try {
+            $rows = $this->db->fetchAll(
+                "SELECT `key`, `value` FROM settings WHERE `key` LIKE 'resumex_%'"
+            );
+            foreach ($rows as $row) {
+                $defaults[$row['key']] = $row['value'];
+            }
+        } catch (\Exception $e) {
+            // Return defaults if settings table unavailable
+        }
+
+        return $defaults;
+    }
+
     private function redirectWithError(string $url, string $message): never
     {
         header('Location: ' . $url . '?error=' . urlencode($message));
+        exit;
+    }
+
+    public function toggleTemplatePro(): void
+    {
+        $this->requirePermission('resumex.templates');
+        header('Content-Type: application/json');
+
+        $token = $_POST['_token'] ?? '';
+        if (!\Core\Security::validateCsrfToken($token)) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'Invalid security token.']);
+            exit;
+        }
+
+        $id  = (int) ($_POST['id'] ?? 0);
+        $val = ($_POST['is_pro'] ?? '0') === '1' ? 1 : 0;
+
+        if (!$id) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Invalid template ID.']);
+            exit;
+        }
+
+        try {
+            $this->db->update('resumex_templates', ['is_pro' => $val, 'updated_at' => date('Y-m-d H:i:s')], 'id = ?', [$id]);
+            \Core\ActivityLogger::log(\Core\Auth::id(), 'resumex_template_pro_toggle', [
+                'module' => 'resumex', 'template_id' => $id, 'is_pro' => $val,
+            ]);
+            echo json_encode(['success' => true, 'is_pro' => $val]);
+        } catch (\Exception $e) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'error' => 'Database error.']);
+        }
+        exit;
+    }
+
+    /**
+     * Toggle PRO status for a built-in (hardcoded) template.
+     * Stores the list of pro built-in template keys in settings.
+     */
+    public function toggleBuiltinTemplatePro(): void
+    {
+        $this->requirePermission('resumex.templates');
+        header('Content-Type: application/json');
+
+        $token = $_POST['_token'] ?? '';
+        if (!\Core\Security::validateCsrfToken($token)) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'Invalid security token.']);
+            exit;
+        }
+
+        $key = trim($_POST['key'] ?? '');
+        $val = ($_POST['is_pro'] ?? '0') === '1' ? 1 : 0;
+
+        if ($key === '' || !preg_match('/^[a-z0-9_\-]+$/', $key)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Invalid template key.']);
+            exit;
+        }
+
+        try {
+            $row = $this->db->fetch("SELECT value FROM settings WHERE `key` = 'resumex_builtin_pro_templates'");
+            $proKeys = [];
+            if ($row && !empty($row['value'])) {
+                $proKeys = json_decode($row['value'], true) ?: [];
+            }
+
+            if ($val) {
+                if (!in_array($key, $proKeys, true)) {
+                    $proKeys[] = $key;
+                }
+            } else {
+                $proKeys = array_values(array_filter($proKeys, fn($k) => $k !== $key));
+            }
+
+            $json = json_encode(array_values($proKeys));
+            $existing = $this->db->fetch("SELECT id FROM settings WHERE `key` = 'resumex_builtin_pro_templates'");
+            if ($existing) {
+                $this->db->update('settings', ['value' => $json, 'updated_at' => date('Y-m-d H:i:s')], '`key` = ?', ['resumex_builtin_pro_templates']);
+            } else {
+                $this->db->query("INSERT INTO settings (`key`, `value`, `created_at`, `updated_at`) VALUES (?, ?, NOW(), NOW())", ['resumex_builtin_pro_templates', $json]);
+            }
+
+            \Core\ActivityLogger::log(\Core\Auth::id(), 'resumex_builtin_template_pro_toggle', [
+                'module' => 'resumex', 'template_key' => $key, 'is_pro' => $val,
+            ]);
+            echo json_encode(['success' => true, 'is_pro' => $val]);
+        } catch (\Exception $e) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'error' => 'Database error.']);
+        }
         exit;
     }
 }

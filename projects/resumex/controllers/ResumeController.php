@@ -50,6 +50,19 @@ class ResumeController
             $title = 'My Resume';
         }
 
+        // Enforce max resumes limit
+        $maxResumesFree = (int) $this->getAdminSetting('resumex_max_resumes_free', '3');
+        $maxResumesPro  = (int) $this->getAdminSetting('resumex_max_resumes_pro', '0');
+        if ($maxResumesFree > 0 || $maxResumesPro > 0) {
+            $currentCount = count($this->resumeModel->getAll($userId));
+            $isPro = $this->userHasPro($userId);
+            $limit = $isPro ? $maxResumesPro : $maxResumesFree;
+            if ($limit > 0 && $currentCount >= $limit) {
+                header("Location: /projects/resumex/create?error=limit_reached");
+                exit;
+            }
+        }
+
         // Collect optional colour-variant overrides from the picker
         $colorOverride = [];
         $rawPri = trim($_POST['color_primary'] ?? '');
@@ -279,6 +292,52 @@ class ResumeController
         $chromium = $this->findChromiumBinary();
         if ($chromium !== null) {
             $html = $this->renderPrintHtml($resume, $resumeData, $themeSettings);
+
+            // Apply watermark for free users if enabled
+            $addWatermark = ($this->getAdminSetting('resumex_pdf_watermark_free', '0') === '1' && !$this->userHasPro($userId));
+            if ($addWatermark) {
+                $watermarkText = $this->getAdminSetting('resumex_pdf_watermark_text', 'ResumeX Free');
+                // Strip any characters that could break out of CSS content string
+                $watermarkText = preg_replace('/[^a-zA-Z0-9\s\-\_\.\/\!\@\#\$\%\^\&\*\(\)\+\=\[\]\{\}]/', '', $watermarkText);
+                $watermarkText = str_replace(['"', "'", '\\'], '', $watermarkText);
+                if (empty($watermarkText)) {
+                    $watermarkText = 'ResumeX Free';
+                }
+                // Use a repeating diagonal watermark visible in both screen and print/PDF rendering.
+                // position:fixed appears on every PDF page in Chromium's headless print mode.
+                $watermarkStyle = '<style>'
+                    . 'body::after{'
+                    . 'content:"' . $watermarkText . '";'
+                    . 'position:fixed;'
+                    . 'top:50%;left:50%;'
+                    . 'transform:translate(-50%,-50%) rotate(-35deg);'
+                    . 'font-size:4.5rem;font-weight:900;'
+                    . 'color:rgba(0,0,0,0.12);'
+                    . 'z-index:9999;pointer-events:none;'
+                    . 'white-space:nowrap;letter-spacing:0.15em;'
+                    . 'text-transform:uppercase;'
+                    . '}'
+                    . '@media print{'
+                    . 'body::after{'
+                    . 'content:"' . $watermarkText . '";'
+                    . 'position:fixed;'
+                    . 'top:50%;left:50%;'
+                    . 'transform:translate(-50%,-50%) rotate(-35deg);'
+                    . 'font-size:4.5rem;font-weight:900;'
+                    . 'color:rgba(0,0,0,0.12);'
+                    . 'z-index:9999;pointer-events:none;'
+                    . 'white-space:nowrap;letter-spacing:0.15em;'
+                    . 'text-transform:uppercase;'
+                    . '}'
+                    . '}'
+                    . '</style>';
+                if (strpos($html, '</head>') !== false) {
+                    $html = str_replace('</head>', $watermarkStyle . '</head>', $html);
+                } else {
+                    $html = $watermarkStyle . $html;
+                }
+            }
+
             $pdf  = $this->generatePdfWithChromium($chromium, $html);
 
             if ($pdf !== null) {
@@ -431,5 +490,216 @@ class ResumeController
         }
 
         return null;
+    }
+
+    private function getAdminSetting(string $key, string $default = ''): string
+    {
+        try {
+            $row = \Core\Database::getInstance()->fetch("SELECT value FROM settings WHERE `key` = ?", [$key]);
+            return $row ? (string) $row['value'] : $default;
+        } catch (\Exception $e) {
+            return $default;
+        }
+    }
+
+    private function userHasPro(int $userId): bool
+    {
+        try {
+            $db  = \Core\Database::getInstance();
+            $sub = $db->fetch(
+                "SELECT pus.id FROM platform_user_subscriptions pus
+                 JOIN platform_plans pp ON pp.id = pus.plan_id
+                 WHERE pus.user_id = ? AND pus.status = 'active'
+                 AND (pus.expires_at IS NULL OR pus.expires_at > NOW())
+                 AND JSON_CONTAINS(pp.included_apps, '\"resumex\"')",
+                [$userId]
+            );
+            return $sub !== null && $sub !== false;
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Show import resume form
+     */
+    public function importForm(): void
+    {
+        View::render('projects/resumex/import', [
+            'title'     => 'Import Resume',
+            'user'      => Auth::user(),
+            'allThemes' => $this->resumeModel->getAllThemePresets(),
+            'csrfToken' => Security::generateCsrfToken(),
+        ]);
+    }
+
+    /**
+     * Process uploaded resume file, parse it, then redirect to editor
+     */
+    public function storeImport(): void
+    {
+        if (!\Core\Security::validateCsrfToken($_POST['_token'] ?? '')) {
+            header('Location: /projects/resumex/import?error=token');
+            exit;
+        }
+
+        $userId = Auth::id();
+        if (!$userId) {
+            header('Location: /login');
+            exit;
+        }
+
+        $template = trim($_POST['template'] ?? 'ocean-blue');
+        $title    = trim($_POST['title'] ?? 'My Imported Resume');
+        if (empty($title)) {
+            $title = 'My Imported Resume';
+        }
+
+        $resumeData = null;
+
+        if (!empty($_POST['resume_json'])) {
+            $parsed = json_decode(trim($_POST['resume_json']), true);
+            if (is_array($parsed)) {
+                $resumeData = $parsed;
+            }
+        }
+
+        if ($resumeData === null && isset($_FILES['resume_file']) && $_FILES['resume_file']['error'] === UPLOAD_ERR_OK) {
+            $ext = strtolower(pathinfo($_FILES['resume_file']['name'], PATHINFO_EXTENSION));
+            if ($ext === 'json') {
+                $content = file_get_contents($_FILES['resume_file']['tmp_name']);
+                $parsed  = json_decode($content, true);
+                if (is_array($parsed)) {
+                    $resumeData = $parsed;
+                }
+            }
+        }
+
+        if ($resumeData === null) {
+            $resumeData = $this->resumeModel->getDefaultData();
+        }
+
+        $id = $this->resumeModel->create($userId, $title, $template, [], $resumeData);
+
+        if ($id) {
+            header("Location: /projects/resumex/edit/{$id}?imported=1");
+        } else {
+            header("Location: /projects/resumex/import?error=1");
+        }
+        exit;
+    }
+
+    /**
+     * Generate or toggle a public share link for a resume
+     */
+    public function generateShareLink(): void
+    {
+        if (!\Core\Security::validateCsrfToken($_POST['_token'] ?? '')) {
+            header('Content-Type: application/json');
+            http_response_code(403);
+            echo json_encode(['success' => false]);
+            exit;
+        }
+
+        $userId = Auth::id();
+        $id     = (int) ($_POST['id'] ?? 0);
+
+        $resume = $this->resumeModel->get($id, $userId);
+        if (!$resume) {
+            header('Content-Type: application/json');
+            http_response_code(404);
+            echo json_encode(['success' => false]);
+            exit;
+        }
+
+        $sharingEnabled = $this->getAdminSetting('resumex_public_resumes', '1');
+        if ($sharingEnabled !== '1') {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'Public sharing is disabled.']);
+            exit;
+        }
+
+        $token = $resume['share_token'] ?? '';
+        $newIsPublic = 1; // default: enabling sharing
+        try {
+            $db = \Core\Database::getInstance();
+            if (empty($token)) {
+                $token = bin2hex(random_bytes(32));
+                $newIsPublic = 1;
+                $db->update(
+                    'resumex_resumes',
+                    ['share_token' => $token, 'is_public' => 1, 'updated_at' => date('Y-m-d H:i:s')],
+                    'id = ? AND user_id = ?',
+                    [$id, $userId]
+                );
+            } else {
+                $newIsPublic = ($resume['is_public'] ?? 0) ? 0 : 1;
+                $db->update(
+                    'resumex_resumes',
+                    ['is_public' => $newIsPublic, 'updated_at' => date('Y-m-d H:i:s')],
+                    'id = ? AND user_id = ?',
+                    [$id, $userId]
+                );
+            }
+        } catch (\Exception $e) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'Database error.']);
+            exit;
+        }
+
+        header('Content-Type: application/json');
+        // Return token only when sharing is active so JS can distinguish enable vs disable
+        echo json_encode([
+            'success'   => true,
+            'is_public' => (bool) $newIsPublic,
+            'token'     => $newIsPublic ? $token : null,
+            'url'       => $newIsPublic ? '/projects/resumex/share/' . $token : null,
+        ]);
+        exit;
+    }
+
+    /**
+     * Display a publicly shared resume
+     */
+    public function publicView(string $token): void
+    {
+        if (empty($token)) {
+            http_response_code(404);
+            echo '<h1>Not Found</h1>';
+            exit;
+        }
+
+        try {
+            $db     = \Core\Database::getInstance();
+            $resume = $db->fetch(
+                "SELECT * FROM resumex_resumes WHERE share_token = ? AND is_public = 1",
+                [$token]
+            );
+        } catch (\Exception $e) {
+            $resume = null;
+        }
+
+        if (!$resume) {
+            http_response_code(404);
+            View::render('projects/resumex/resume_notfound', [
+                'title'     => 'Resume Not Found',
+                'user'      => Auth::user(),
+                'id'        => 0,
+                'allThemes' => $this->resumeModel->getAllThemePresets(),
+            ]);
+            return;
+        }
+
+        $resumeData    = json_decode($resume['resume_data']    ?? '{}', true) ?: $this->resumeModel->getDefaultData();
+        $themeSettings = json_decode($resume['theme_settings'] ?? '{}', true) ?: $this->resumeModel->getThemePreset($resume['template']);
+
+        View::render('projects/resumex/preview', [
+            'title'         => htmlspecialchars($resume['title']) . ' - Public Resume',
+            'user'          => Auth::user(),
+            'resume'        => $resume,
+            'resumeData'    => $resumeData,
+            'themeSettings' => $themeSettings,
+            'isPublic'      => true,
+        ]);
     }
 }

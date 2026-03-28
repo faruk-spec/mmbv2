@@ -5,8 +5,6 @@
 <style>
 /* ── Wrapper ──────────────────────────────────────────────────── */
 .rxc-wrap {
-    max-width: 1100px;
-    margin: 0 auto;
     padding: 36px 24px 60px;
 }
 
@@ -530,8 +528,8 @@
     <!-- Form -->
     <form method="POST" action="/projects/resumex/create" id="rxcForm" novalidate>
         <input type="hidden" name="_token" value="<?= htmlspecialchars(\Core\Security::generateCsrfToken()) ?>">
-        <input type="hidden" name="color_primary" id="rxcColorPrimary" value="">
-        <input type="hidden" name="color_secondary" id="rxcColorSecondary" value="">
+        <input type="hidden" name="color_primary" id="rxcColorPrimary" value="<?= htmlspecialchars(preg_replace('/[^#a-fA-F0-9]/', '', $_GET['color_primary'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+        <input type="hidden" name="color_secondary" id="rxcColorSecondary" value="<?= htmlspecialchars(preg_replace('/[^#a-fA-F0-9]/', '', $_GET['color_secondary'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
 
         <!-- Resume name -->
         <div class="rxc-name-row">
@@ -583,7 +581,9 @@
             $proCategories      = ['professional'];
             $otherCategories    = ['nature', 'warm', 'pastel', 'classic'];
 
-            $defaultKey = 'ocean-blue';
+            $defaultKey = !empty($_GET['template']) && isset($allThemes[$_GET['template']])
+                ? preg_replace('/[^a-zA-Z0-9_\-]/', '', $_GET['template'])
+                : 'ocean-blue';
             foreach ($allThemes as $themeKey => $theme):
                 $cat = strtolower($theme['category'] ?? 'other');
                 // Determine which filter group this card belongs to
@@ -818,6 +818,9 @@
                     <span class="rxc-cat-badge <?= $catClass ?>">
                         <?= htmlspecialchars(ucfirst($cat)) ?>
                     </span>
+                    <?php if (!empty($theme['_is_pro'])): ?>
+                    <span style="display:inline-block;padding:1px 7px;border-radius:10px;font-size:0.6rem;font-weight:700;background:rgba(245,158,11,0.15);color:#f59e0b;border:1px solid rgba(245,158,11,0.4);margin-left:3px;"><i class="fas fa-star" style="font-size:0.55rem;"></i> PRO</span>
+                    <?php endif; ?>
                     <?php if (!empty($theme['_full_template'])): ?>
                     <span style="display:inline-block;padding:1px 7px;border-radius:10px;font-size:0.6rem;font-weight:600;border:1px solid rgba(139,92,246,0.4);color:#a78bfa;margin-left:3px;">Full Design</span>
                     <?php else: ?>

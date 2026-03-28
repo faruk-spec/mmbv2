@@ -35,6 +35,11 @@ DirectoryIndex index.php public/index.php
     RewriteCond %{REQUEST_URI} ^/public/
     RewriteCond %{DOCUMENT_ROOT}%{REQUEST_URI} -f
     RewriteRule ^(.*)$ $1 [L]
+
+    # Force project sub-paths that are real directories to route through PHP
+    # (e.g. /projects/resumex/templates/ exists as a dir but must be handled by the PHP router)
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^(projects/[a-zA-Z0-9][a-zA-Z0-9_-]+/.+)$ index.php?url=$1 [L,QSA]
     
     # Route everything else to index.php (root level) with url parameter
     RewriteCond %{REQUEST_FILENAME} !-f

@@ -348,7 +348,7 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
                         Settings
                     </a>
                     <div class="dropdown-divider"></div>
-                    <a href="/logout" class="dropdown-item">
+                    <a href="#" class="dropdown-item" id="navbarLogoutBtn" onclick="openLogoutModal(event)">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
                             <polyline points="16 17 21 12 16 7"/>
@@ -1163,3 +1163,69 @@ html:not([data-theme="light"]) .universal-header .dropdown-item:hover {
     }
 }
 </style>
+
+<!-- ── Logout Confirmation Modal ───────────────────────────────────────────── -->
+<div id="logoutModal" style="display:none;position:fixed;inset:0;z-index:99999;align-items:center;justify-content:center;">
+    <!-- Backdrop -->
+    <div id="logoutBackdrop" onclick="closeLogoutModal()"
+         style="position:absolute;inset:0;background:rgba(6,6,10,0.75);backdrop-filter:blur(6px);opacity:0;transition:opacity 0.3s ease;"></div>
+    <!-- Card -->
+    <div id="logoutCard"
+         style="position:relative;z-index:1;background:var(--bg-card);border:1px solid var(--border-color);border-radius:20px;padding:40px 36px 32px;max-width:400px;width:calc(100% - 40px);text-align:center;transform:translateY(24px) scale(0.96);opacity:0;transition:transform 0.35s cubic-bezier(.34,1.56,.64,1),opacity 0.3s ease;box-shadow:0 24px 80px rgba(0,0,0,0.5);">
+        <!-- Icon -->
+        <div style="width:64px;height:64px;border-radius:50%;background:rgba(255,107,107,0.12);border:1px solid rgba(255,107,107,0.3);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ff6b6b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+        </div>
+        <h3 style="font-size:1.25rem;font-weight:700;color:var(--text-primary);margin:0 0 8px;">Sign Out?</h3>
+        <p style="font-size:0.9rem;color:var(--text-secondary);margin:0 0 28px;line-height:1.55;">You're about to sign out of your account. You can always log back in at any time.</p>
+        <div style="display:flex;gap:12px;justify-content:center;">
+            <button onclick="closeLogoutModal()"
+                    style="flex:1;max-width:140px;padding:11px 20px;border-radius:10px;border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-size:0.9rem;font-weight:600;cursor:pointer;transition:background 0.2s;">
+                Cancel
+            </button>
+            <a href="/logout" id="logoutConfirmBtn"
+               style="flex:1;max-width:140px;padding:11px 20px;border-radius:10px;border:none;background:linear-gradient(135deg,#ff6b6b,#ff2ec4);color:#fff;font-size:0.9rem;font-weight:600;cursor:pointer;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px;transition:opacity 0.2s;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                Sign Out
+            </a>
+        </div>
+    </div>
+</div>
+<script>
+(function () {
+    function openLogoutModal(e) {
+        e && e.preventDefault();
+        var modal   = document.getElementById('logoutModal');
+        var backdrop = document.getElementById('logoutBackdrop');
+        var card    = document.getElementById('logoutCard');
+        modal.style.display = 'flex';
+        // Force reflow then animate in
+        requestAnimationFrame(function () {
+            requestAnimationFrame(function () {
+                backdrop.style.opacity = '1';
+                card.style.transform  = 'translateY(0) scale(1)';
+                card.style.opacity    = '1';
+            });
+        });
+    }
+    function closeLogoutModal() {
+        var modal   = document.getElementById('logoutModal');
+        var backdrop = document.getElementById('logoutBackdrop');
+        var card    = document.getElementById('logoutCard');
+        backdrop.style.opacity = '0';
+        card.style.transform   = 'translateY(24px) scale(0.96)';
+        card.style.opacity     = '0';
+        setTimeout(function () { modal.style.display = 'none'; }, 320);
+    }
+    // ESC key closes modal
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeLogoutModal();
+    });
+    window.openLogoutModal  = openLogoutModal;
+    window.closeLogoutModal = closeLogoutModal;
+})();
+</script>

@@ -315,8 +315,8 @@
         }
         
         .menu-dropdown.open .menu-dropdown-content {
-            max-height: 800px; /* Increased from 500px to accommodate more menu items */
-            overflow-y: auto; /* Add scroll if needed */
+            max-height: 1000px;
+            overflow: hidden;
         }
         
         .menu-dropdown-content .menu-link {
@@ -1591,6 +1591,12 @@
                                 <span>Overview</span>
                             </a>
                             <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('resumex')): ?>
+                            <a href="/admin/projects/resumex/analytics" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/resumex/analytics') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-chart-bar"></i>
+                                <span>Analytics</span>
+                            </a>
+                            <?php endif; ?>
                             <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('resumex.templates')): ?>
                             <a href="/admin/projects/resumex/templates" class="menu-link <?= ($_SERVER['REQUEST_URI'] ?? '') === '/admin/projects/resumex/templates' ? 'active' : '' ?>">
                                 <i class="fas fa-layer-group"></i>
@@ -1612,13 +1618,7 @@
                             <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('resumex.settings')): ?>
                             <a href="/admin/projects/resumex/settings" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/resumex/settings') === 0 ? 'active' : '' ?>">
                                 <i class="fas fa-cog"></i>
-                                <span>Settings</span>
-                            </a>
-                            <?php endif; ?>
-                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('resumex.templates')): ?>
-                            <a href="/admin/projects/resumex/templates/sample-download" class="menu-link">
-                                <i class="fas fa-download"></i>
-                                <span>Download Sample Template</span>
+                                <span>Settings & Pro Features</span>
                             </a>
                             <?php endif; ?>
                         </div>
@@ -2187,7 +2187,7 @@
                                 
                                 <div class="profile-menu-divider"></div>
                                 
-                                <a href="/logout" class="profile-menu-item" style="color: var(--red);">
+                                <a href="#" class="profile-menu-item" style="color: var(--red);" onclick="openLogoutModal(event)">
                                     <i class="fas fa-sign-out-alt"></i>
                                     <span>Logout</span>
                                 </a>
@@ -2383,6 +2383,62 @@
                 fetch('/api/notifications').then(r=>r.json()).then(d=>{ if(d.success) updateBadge(d.unread_count); }).catch(()=>{});
             }
         }, 60000);
+    })();
+    </script>
+
+    <!-- ── Admin Logout Confirmation Modal ─────────────────────────────────── -->
+    <div id="logoutModal" style="display:none;position:fixed;inset:0;z-index:99999;align-items:center;justify-content:center;">
+        <div id="logoutBackdrop" onclick="closeLogoutModal()"
+             style="position:absolute;inset:0;background:rgba(6,6,10,0.75);backdrop-filter:blur(6px);opacity:0;transition:opacity 0.3s ease;"></div>
+        <div id="logoutCard"
+             style="position:relative;z-index:1;background:var(--bg-card);border:1px solid var(--border-color);border-radius:20px;padding:40px 36px 32px;max-width:400px;width:calc(100% - 40px);text-align:center;transform:translateY(24px) scale(0.96);opacity:0;transition:transform 0.35s cubic-bezier(.34,1.56,.64,1),opacity 0.3s ease;box-shadow:0 24px 80px rgba(0,0,0,0.5);">
+            <div style="width:64px;height:64px;border-radius:50%;background:rgba(255,107,107,0.12);border:1px solid rgba(255,107,107,0.3);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
+                <i class="fas fa-sign-out-alt" style="font-size:1.5rem;color:#ff6b6b;"></i>
+            </div>
+            <h3 style="font-size:1.25rem;font-weight:700;color:var(--text-primary);margin:0 0 8px;">Sign Out?</h3>
+            <p style="font-size:0.9rem;color:var(--text-secondary);margin:0 0 28px;line-height:1.55;">You're about to sign out of the admin panel. Any unsaved changes will be lost.</p>
+            <div style="display:flex;gap:12px;justify-content:center;">
+                <button onclick="closeLogoutModal()"
+                        style="flex:1;max-width:140px;padding:11px 20px;border-radius:10px;border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-size:0.9rem;font-weight:600;cursor:pointer;">
+                    Cancel
+                </button>
+                <a href="/logout"
+                   style="flex:1;max-width:140px;padding:11px 20px;border-radius:10px;border:none;background:linear-gradient(135deg,#ff6b6b,#ff2ec4);color:#fff;font-size:0.9rem;font-weight:600;cursor:pointer;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px;">
+                    <i class="fas fa-sign-out-alt"></i> Sign Out
+                </a>
+            </div>
+        </div>
+    </div>
+    <script>
+    (function () {
+        function openLogoutModal(e) {
+            e && e.preventDefault();
+            var modal = document.getElementById('logoutModal');
+            var backdrop = document.getElementById('logoutBackdrop');
+            var card = document.getElementById('logoutCard');
+            modal.style.display = 'flex';
+            requestAnimationFrame(function () {
+                requestAnimationFrame(function () {
+                    backdrop.style.opacity = '1';
+                    card.style.transform   = 'translateY(0) scale(1)';
+                    card.style.opacity     = '1';
+                });
+            });
+        }
+        function closeLogoutModal() {
+            var modal = document.getElementById('logoutModal');
+            var backdrop = document.getElementById('logoutBackdrop');
+            var card = document.getElementById('logoutCard');
+            backdrop.style.opacity = '0';
+            card.style.transform   = 'translateY(24px) scale(0.96)';
+            card.style.opacity     = '0';
+            setTimeout(function () { modal.style.display = 'none'; }, 320);
+        }
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') closeLogoutModal();
+        });
+        window.openLogoutModal  = openLogoutModal;
+        window.closeLogoutModal = closeLogoutModal;
     })();
     </script>
     

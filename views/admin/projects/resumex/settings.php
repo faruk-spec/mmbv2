@@ -233,6 +233,125 @@
         </ul>
     </div>
 
+    <!-- Pro Features Card -->
+    <div class="settings-card">
+        <h3><i class="fas fa-crown" style="margin-right:8px;color:#f59e0b;"></i>Pro Feature Controls</h3>
+        <div class="form-row">
+
+            <!-- Max resumes for free users -->
+            <div class="form-group">
+                <label for="max_resumes_free">Max Resumes — Free Users</label>
+                <input type="number" id="max_resumes_free" name="resumex_max_resumes_free"
+                       value="<?= (int)($settings['resumex_max_resumes_free'] ?? 3) ?>"
+                       min="0" max="9999" step="1" style="max-width:140px;">
+                <small>Maximum number of resumes a free user can create. Set to <code>0</code> for unlimited.</small>
+            </div>
+
+            <!-- Max resumes for pro users -->
+            <div class="form-group">
+                <label for="max_resumes_pro">Max Resumes — Pro Users</label>
+                <input type="number" id="max_resumes_pro" name="resumex_max_resumes_pro"
+                       value="<?= (int)($settings['resumex_max_resumes_pro'] ?? 0) ?>"
+                       min="0" max="9999" step="1" style="max-width:140px;">
+                <small>Maximum number of resumes a Pro user can create. Set to <code>0</code> for unlimited.</small>
+            </div>
+
+            <!-- PDF Watermark for free users -->
+            <div class="form-group">
+                <label>PDF Watermark on Free Exports</label>
+                <div class="toggle-row">
+                    <label class="toggle-switch">
+                        <input type="checkbox" name="resumex_pdf_watermark_free" value="1"
+                               <?= ($settings['resumex_pdf_watermark_free'] ?? '0') === '1' ? 'checked' : '' ?>>
+                        <span class="slider"></span>
+                    </label>
+                    <span class="toggle-label">Add a watermark to PDFs exported by free users</span>
+                </div>
+                <small>When enabled, PDF exports for non-pro users will include the watermark text below.</small>
+            </div>
+
+            <!-- PDF Watermark Text -->
+            <div class="form-group" style="margin-top:-8px;padding-left:4px;">
+                <label>Watermark Text</label>
+                <input type="text" name="resumex_pdf_watermark_text" class="form-input"
+                       value="<?= htmlspecialchars($settings['resumex_pdf_watermark_text'] ?? 'ResumeX Free') ?>"
+                       maxlength="80" placeholder="e.g. ResumeX Free"
+                       style="max-width:360px;">
+                <small>Text displayed diagonally across the PDF. Keep it short (e.g. "ResumeX Free" or your brand name).</small>
+            </div>
+
+            <!-- Pro-only templates -->
+            <div class="form-group">
+                <label>Pro-Only Premium Templates</label>
+                <div class="toggle-row">
+                    <label class="toggle-switch">
+                        <input type="checkbox" name="resumex_pro_templates_only" value="1"
+                               <?= ($settings['resumex_pro_templates_only'] ?? '0') === '1' ? 'checked' : '' ?>>
+                        <span class="slider"></span>
+                    </label>
+                    <span class="toggle-label">Restrict designer/custom templates to Pro users only</span>
+                </div>
+                <small>When enabled, uploaded and designer-created templates are locked to pro plan users.</small>
+            </div>
+
+            <!-- LinkedIn Import -->
+            <div class="form-group">
+                <label>LinkedIn Import</label>
+                <div class="toggle-row">
+                    <label class="toggle-switch">
+                        <input type="checkbox" name="resumex_linkedin_import" value="1"
+                               <?= ($settings['resumex_linkedin_import'] ?? '1') === '1' ? 'checked' : '' ?>>
+                        <span class="slider"></span>
+                    </label>
+                    <span class="toggle-label">Allow users to import their LinkedIn profile data</span>
+                </div>
+            </div>
+
+            <!-- Public Resume Sharing -->
+            <div class="form-group">
+                <label>Public Resume Sharing</label>
+                <div class="toggle-row">
+                    <label class="toggle-switch">
+                        <input type="checkbox" name="resumex_public_resumes" value="1"
+                               <?= ($settings['resumex_public_resumes'] ?? '1') === '1' ? 'checked' : '' ?>>
+                        <span class="slider"></span>
+                    </label>
+                    <span class="toggle-label">Allow users to create shareable public resume links</span>
+                </div>
+            </div>
+
+            <!-- Custom Domain -->
+            <div class="form-group">
+                <label>Custom Domain (Pro Only)</label>
+                <div class="toggle-row">
+                    <label class="toggle-switch">
+                        <input type="checkbox" name="resumex_custom_domain" value="1"
+                               <?= ($settings['resumex_custom_domain'] ?? '0') === '1' ? 'checked' : '' ?>>
+                        <span class="slider"></span>
+                    </label>
+                    <span class="toggle-label">Allow Pro users to use a custom domain for their resume</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Sample Template Downloads -->
+    <div class="settings-card" style="background:rgba(153,69,255,.04);border-color:rgba(153,69,255,.2);">
+        <h3><i class="fas fa-download" style="margin-right:8px;color:#a78bfa;"></i>Sample Templates</h3>
+        <p style="color:var(--text-secondary);font-size:.875rem;margin:0 0 14px;">
+            Download sample PHP template files to use as a starting point for custom templates.
+        </p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+            <a href="/admin/projects/resumex/templates/sample-download" class="btn btn-secondary">
+                <i class="fas fa-file-code"></i> Download sample-template.php
+            </a>
+            <a href="/admin/projects/resumex/templates/sample-full-download" class="btn btn-secondary">
+                <i class="fas fa-file-archive"></i> Download sample-full-template.php
+            </a>
+        </div>
+    </div>
+
     <div style="display:flex;justify-content:flex-end;">
         <button type="submit" class="btn-save"><i class="fas fa-save"></i> Save Settings</button>
     </div>

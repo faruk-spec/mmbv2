@@ -4,8 +4,6 @@
 <?php View::section('content'); ?>
 <style>
 .tu-wrap {
-    max-width: 1000px;
-    margin: 0 auto;
     padding: 36px 24px 60px;
 }
 .tu-back {
