@@ -57,12 +57,31 @@ class ConversionService
     private ?AIService $aiService = null;
 
     /**
+     * The plan tier of the current user ('free'|'pro'|'enterprise').
+     * Passed through to AI service calls so provider routing respects the user's
+     * subscription level.  Defaults to 'free' so free-tier-capable providers are
+     * always tried.
+     */
+    private string $planTier = 'free';
+
+    /**
      * Inject the AI service to enable AI-powered OCR fallback during conversion.
      * Call this before convert() when an AIService instance is available.
      */
     public function setAIService(AIService $aiService): void
     {
         $this->aiService = $aiService;
+    }
+
+    /**
+     * Set the current user's plan tier so AI provider routing uses the correct
+     * capability tier ('free'|'pro'|'enterprise').
+     */
+    public function setPlanTier(string $planTier): void
+    {
+        $this->planTier = in_array($planTier, ['free', 'pro', 'enterprise'], true)
+            ? $planTier
+            : 'free';
     }
 
     /**
@@ -891,7 +910,7 @@ class ConversionService
 
         // No rasterizer — try AI directly on the PDF if it has a data-URI pathway
         if ($this->aiService !== null) {
-            $aiTable = $this->aiService->ocrTable($inputPath, 'free');
+            $aiTable = $this->aiService->ocrTable($inputPath, $this->planTier);
             if ($aiTable['success'] && !empty($aiTable['rows'])) {
                 return $this->writeSpreadsheetFromRows($aiTable['rows'], $outputFormat, $outputPath);
             }
@@ -1106,7 +1125,7 @@ class ConversionService
         }
 
         // Use document OCR (Markdown) so we get structured headings and bullets
-        $aiResult = $this->aiService->ocrDocument($inputPath, 'free');
+        $aiResult = $this->aiService->ocrDocument($inputPath, $this->planTier);
         if (!$aiResult['success'] || empty(trim($aiResult['text'] ?? ''))) {
             return false;
         }
@@ -1144,7 +1163,7 @@ class ConversionService
         }
 
         // Get structured Markdown text from the AI vision model
-        $aiResult = $this->aiService->ocrDocument($inputPath, 'free');
+        $aiResult = $this->aiService->ocrDocument($inputPath, $this->planTier);
         if (!$aiResult['success'] || empty(trim($aiResult['text'] ?? ''))) {
             return false;
         }
@@ -2283,7 +2302,7 @@ class ConversionService
         // asked to return RFC 4180 CSV so that multi-column tables are extracted
         // correctly rather than as a flat stream of text that Tesseract produces.
         if ($this->aiService !== null) {
-            $aiTable = $this->aiService->ocrTable($inputPath, 'free');
+            $aiTable = $this->aiService->ocrTable($inputPath, $this->planTier);
             if ($aiTable['success'] && !empty($aiTable['rows'])) {
                 $rows = $aiTable['rows'];
                 return $this->writeSpreadsheetFromRows($rows, $outputFormat, $outputPath);
@@ -2305,7 +2324,7 @@ class ConversionService
 
         // ── 4. AI plain OCR (last resort when Tesseract is not installed) ─────
         if (empty($rows) && $this->aiService !== null) {
-            $aiOcr = $this->aiService->ocr($inputPath, 'free');
+            $aiOcr = $this->aiService->ocr($inputPath, $this->planTier);
             if ($aiOcr['success'] && !empty(trim($aiOcr['text'] ?? ''))) {
                 $rows = $this->parseTextIntoRows($aiOcr['text']);
             }
@@ -3771,7 +3790,7 @@ class ConversionService
         // For MD:   returns Markdown with headings, pipe tables, lists.
         // For TXT:  returns plain text in reading order.
         if ($this->aiService !== null) {
-            $aiOcr = $this->aiService->ocrForFormat($inputPath, $outputFormat, 'free');
+            $aiOcr = $this->aiService->ocrForFormat($inputPath, $outputFormat, $this->planTier);
             if ($aiOcr['success'] && !empty(trim($aiOcr['text'] ?? ''))) {
                 return $this->writeTextOutput($aiOcr['text'], $outputFormat, $outputPath);
             }
@@ -3803,7 +3822,7 @@ class ConversionService
 
         // ── 3. AI generic OCR (when Tesseract is not installed) ────────────
         if (empty(trim($text)) && $this->aiService !== null) {
-            $aiOcr = $this->aiService->ocr($inputPath, 'free');
+            $aiOcr = $this->aiService->ocr($inputPath, $this->planTier);
             if ($aiOcr['success'] && !empty(trim($aiOcr['text'] ?? ''))) {
                 $text = $aiOcr['text'];
             }

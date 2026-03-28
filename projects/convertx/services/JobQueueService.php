@@ -89,6 +89,14 @@ class JobQueueService
         try {
             // Claim the job (inside try-catch so a column issue doesn't leave job as 'pending')
             $this->jobModel->updateStatus($jobId, ConversionJobModel::STATUS_PROCESSING);
+
+            // Set the user's plan tier so AI provider routing uses the correct
+            // capability tier for this job (free / pro / enterprise).
+            $this->conversionService->setPlanTier($job['plan_tier'] ?? 'free');
+            if (empty($job['plan_tier'])) {
+                Logger::warning("ConvertX: job #{$jobId} missing plan_tier — defaulting to 'free'");
+            }
+
             // 1. Perform core file conversion
             $convResult = $this->conversionService->convert(
                 $job['input_path'],

@@ -16,6 +16,9 @@ use Projects\ConvertX\Models\AIProviderModel;
 
 class AIService
 {
+    /** Seconds after a failure before a provider is automatically re-enabled. */
+    private const HEALTH_RESET_COOLDOWN_SECONDS = 300;
+
     private AIProviderModel $providerModel;
 
     public function __construct()
@@ -197,8 +200,21 @@ class AIService
 
             if (!in_array($capability, $capabilities, true)
                 || !in_array($planTier, $allowedTiers, true)
-                || !($provider['is_healthy'] ?? true)
             ) {
+                continue;
+            }
+
+            // Auto-reset provider health after a 5-minute cooldown so a single
+            // transient API failure does not permanently blacklist the provider.
+            $isHealthy = (bool) ($provider['is_healthy'] ?? true);
+            if (!$isHealthy) {
+                $checkedAt = $provider['health_checked_at'] ?? null;
+                if ($checkedAt !== null && (time() - strtotime($checkedAt)) >= self::HEALTH_RESET_COOLDOWN_SECONDS) {
+                    $this->providerModel->setHealth((int) $provider['id'], true);
+                    $isHealthy = true;
+                }
+            }
+            if (!$isHealthy) {
                 continue;
             }
 
@@ -212,6 +228,10 @@ class AIService
                 }
 
                 if ($result['success']) {
+                    // Ensure provider is marked healthy on success
+                    if (!($provider['is_healthy'] ?? true)) {
+                        $this->providerModel->setHealth((int) $provider['id'], true);
+                    }
                     $result['provider'] = $provider['slug'];
                     return $result;
                 }

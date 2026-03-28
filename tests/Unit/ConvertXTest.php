@@ -1228,5 +1228,103 @@ class ConvertXTest extends TestCase
             'A name must NOT match the split-currency pattern'
         );
     }
+
+    // ------------------------------------------------------------------ //
+    //  ConversionService::setPlanTier — plan tier routing fix              //
+    // ------------------------------------------------------------------ //
+
+    public function testSetPlanTierAcceptsValidTiers(): void
+    {
+        $svc = new \Projects\ConvertX\Services\ConversionService();
+        $ref = new \ReflectionProperty($svc, 'planTier');
+        $ref->setAccessible(true);
+
+        $svc->setPlanTier('free');
+        $this->assertSame('free', $ref->getValue($svc));
+
+        $svc->setPlanTier('pro');
+        $this->assertSame('pro', $ref->getValue($svc));
+
+        $svc->setPlanTier('enterprise');
+        $this->assertSame('enterprise', $ref->getValue($svc));
+    }
+
+    public function testSetPlanTierDefaultsToFreeForUnknownTier(): void
+    {
+        $svc = new \Projects\ConvertX\Services\ConversionService();
+        $ref = new \ReflectionProperty($svc, 'planTier');
+        $ref->setAccessible(true);
+
+        $svc->setPlanTier('gold');   // unknown tier
+        $this->assertSame('free', $ref->getValue($svc),
+            'Unknown plan tier must fall back to "free"');
+
+        $svc->setPlanTier('');       // empty string
+        $this->assertSame('free', $ref->getValue($svc),
+            'Empty plan tier must fall back to "free"');
+    }
+
+    public function testPlanTierDefaultsToFree(): void
+    {
+        $svc = new \Projects\ConvertX\Services\ConversionService();
+        $ref = new \ReflectionProperty($svc, 'planTier');
+        $ref->setAccessible(true);
+
+        $this->assertSame('free', $ref->getValue($svc),
+            'planTier must default to "free" on construction');
+    }
+
+    // ------------------------------------------------------------------ //
+    //  AIProviderModel::seedDefaultProviders — allowed_tiers includes free //
+    // ------------------------------------------------------------------ //
+
+    public function testOpenAiSeedIncludesFreeTier(): void
+    {
+        // Load AIProviderModel source and scan for the OpenAI seed row.
+        // Verify that the INSERT IGNORE includes "free" in allowed_tiers.
+        $source = file_get_contents(
+            BASE_PATH . '/projects/convertx/models/AIProviderModel.php'
+        );
+        $this->assertIsString($source);
+
+        // Find the INSERT IGNORE block
+        $insertPos = strpos($source, 'INSERT IGNORE INTO convertx_ai_providers');
+        $this->assertNotFalse($insertPos, 'Seed INSERT must be present in AIProviderModel');
+
+        // Extract from INSERT to the closing ')' of the VALUES block (~50 lines)
+        $snippet = substr($source, $insertPos, 2000);
+
+        // The first VALUES entry is OpenAI — verify its allowed_tiers includes "free"
+        $openaiEnd = strpos($snippet, 'HuggingFace');
+        $openaiBlock = $openaiEnd ? substr($snippet, 0, $openaiEnd) : $snippet;
+
+        // The PHP source uses escaped quotes inside double-quoted strings.
+        // Accept any representation of 'free' adjacent to a quote character.
+        $this->assertRegExp(
+            '/[\'"]free[\'""|\\\\"]/',
+            $openaiBlock,
+            'OpenAI seed row must include "free" in allowed_tiers so all users get AI-powered OCR'
+        );
+    }
+
+    public function testSeedFixupQueryUpdatesOldAllowedTiers(): void
+    {
+        // Verify the UPDATE migration statement is present in AIProviderModel.
+        $source = file_get_contents(
+            BASE_PATH . '/projects/convertx/models/AIProviderModel.php'
+        );
+        $this->assertIsString($source);
+
+        // The UPDATE statement must reference the old pro/enterprise-only value
+        $this->assertTrue(
+            str_contains($source, "pro") && str_contains($source, "enterprise") && str_contains($source, "UPDATE"),
+            'Fixup UPDATE must be present in AIProviderModel to migrate old records'
+        );
+        $this->assertStringContainsString(
+            "slug = 'openai'",
+            $source,
+            'Fixup UPDATE must target only the openai row'
+        );
+    }
 }
 
