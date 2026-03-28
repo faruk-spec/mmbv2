@@ -827,7 +827,7 @@ try {
         
         /* Main Content */
         .main {
-            padding: 30px 0;
+            padding: 0;
             min-height: calc(100vh - 120px);
         }
         
@@ -1776,10 +1776,10 @@ try {
                 </div>
                 <div>
                     <div style="font-size:0.95rem;font-weight:700;color:var(--text-primary);">You've been signed out</div>
-                    <div style="font-size:0.8rem;color:var(--text-secondary);margin-top:2px;">Come back anytime!</div>
+                    <div style="font-size:0.8rem;color:var(--text-secondary);margin-top:2px;">See you next time!</div>
                 </div>
             </div>
-            <p style="font-size:0.82rem;color:var(--text-secondary);margin:0 0 14px;line-height:1.5;">Sign back in to access your resumes, files, and all platform features.</p>
+            <p style="font-size:0.82rem;color:var(--text-secondary);margin:0 0 14px;line-height:1.5;">Sign back in to pick up right where you left off — your work is safe and waiting for you.</p>
             <div style="display:flex;gap:8px;">
                 <a href="/login" style="flex:1;padding:9px 14px;border-radius:8px;background:linear-gradient(135deg,var(--cyan),var(--purple));color:#06060a;font-size:0.85rem;font-weight:700;text-decoration:none;text-align:center;">Sign In</a>
                 <a href="/register" style="flex:1;padding:9px 14px;border-radius:8px;border:1px solid var(--border-color);background:transparent;color:var(--text-primary);font-size:0.85rem;font-weight:600;text-decoration:none;text-align:center;">Register</a>

@@ -216,13 +216,6 @@
 .rxt-empty svg { margin-bottom: 12px; opacity: 0.4; }
 .rxt-empty p { margin: 0; font-size: 0.9rem; }
 
-/* ── Admin row ────────────────────────────────────────────────── */
-.rxt-admin-row {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 32px;
-}
-
 /* ── Responsive ───────────────────────────────────────────────── */
 @media (max-width: 640px) {
     .rxt-wrap { padding: 24px 16px 60px; }
@@ -249,15 +242,7 @@
         <p><?= count($allThemes) ?> professionally designed themes — click to start building.</p>
     </div>
 
-    <?php if (!empty($isAdmin)): ?>
-    <div class="rxt-admin-row">
-        <a href="/projects/resumex/templates/upload"
-           style="display:inline-flex;align-items:center;gap:7px;padding:9px 20px;border-radius:9px;background:linear-gradient(135deg,var(--cyan),var(--purple));color:#06060a;font-size:0.85rem;font-weight:700;text-decoration:none;transition:opacity 0.2s;box-shadow:0 4px 16px rgba(0,240,255,0.2);">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
-            Upload / Manage Templates
-        </a>
-    </div>
-    <?php endif; ?>
+
 
     <!-- Filter tabs -->
     <div class="rxt-filters">
