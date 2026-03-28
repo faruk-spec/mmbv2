@@ -202,6 +202,9 @@
     .rx-action-btn.duplicate:hover { background: rgba(0,255,136,0.15); text-decoration: none; color: var(--green); }
     .rx-action-btn.delete { background: rgba(255,107,107,0.07); border-color: rgba(255,107,107,0.18); color: var(--red); }
     .rx-action-btn.delete:hover { background: rgba(255,107,107,0.16); text-decoration: none; color: var(--red); }
+    .rx-action-btn.share { background: rgba(74,222,128,0.07); border-color: rgba(74,222,128,0.2); color: #4ade80; }
+    .rx-action-btn.share:hover { background: rgba(74,222,128,0.15); text-decoration: none; color: #4ade80; }
+    .rx-action-btn.share.active { background: rgba(74,222,128,0.18); border-color: rgba(74,222,128,0.5); color: #4ade80; }
 
     /* ++ Empty */
     .rx-empty { text-align: center; padding: 60px 24px; background: var(--bg-card); border: 1px dashed rgba(0,240,255,0.2); border-radius: 16px; }
@@ -291,13 +294,13 @@
             </a>
             <?php endif; ?>
             <?php if (($featureSettings['resumex_public_resumes'] ?? '0') === '1'): ?>
-            <a href="#rx-all-resumes" class="rx-nav-link" onclick="document.querySelector('#rx-all-resumes').scrollIntoView({behavior:'smooth'});return false;">
+            <a href="#rx-all-resumes" class="rx-nav-link" onclick="event.preventDefault();document.getElementById('rx-all-resumes')&&document.getElementById('rx-all-resumes').scrollIntoView({behavior:'smooth'});">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
                 <span>Share Resume</span>
             </a>
             <?php endif; ?>
             <?php if (($featureSettings['resumex_custom_domain'] ?? '0') === '1'): ?>
-            <a href="#custom-domain" class="rx-nav-link">
+            <a href="#" class="rx-nav-link" onclick="event.preventDefault();openCustomDomainModal();">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
                 <span>Custom Domain</span>
                 <span class="rx-nav-pro-badge">PRO</span>
@@ -468,9 +471,8 @@
                                     Preview
                                 </a>
                                 <?php if (($featureSettings['resumex_public_resumes'] ?? '0') === '1'): ?>
-                                <button type="button" class="rx-action-btn"
-                                        style="<?= !empty($resume['is_public']) ? 'color:#4ade80;' : '' ?>"
-                                        onclick="openShareModal(<?= $resumeId ?>, <?= htmlspecialchars(json_encode($resume['share_token'] ?? ''), ENT_QUOTES, 'UTF-8') ?>, <?= !empty($resume['is_public']) ? 'true' : 'false' ?>)"
+                                <button type="button" class="rx-action-btn share<?= !empty($resume['is_public']) ? ' active' : '' ?>"
+                                        onclick="openShareModal(<?= $resumeId ?>, <?= json_encode($resume['share_token'] ?? '') ?>, <?= !empty($resume['is_public']) ? 'true' : 'false' ?>)"
                                         title="Share resume publicly">
                                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
                                     Share
@@ -497,30 +499,55 @@
 </div>
 
 <!-- Share Modal -->
-<div id="rx-share-modal" class="rx-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="rx-share-title" style="display:none;">
+<div id="rx-share-modal" class="rx-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="rx-share-title">
     <div class="rx-modal">
         <div class="rx-modal-icon" style="background:rgba(74,222,128,0.12);border:1px solid rgba(74,222,128,0.3);">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
         </div>
         <h3 id="rx-share-title">Share Resume</h3>
-        <p id="rx-share-desc" style="color:var(--text-secondary);font-size:0.875rem;margin:0 0 14px;">Generate a public link to share your resume with anyone — no login required.</p>
+        <p style="color:var(--text-secondary);font-size:0.875rem;margin:0 0 14px;">Generate a public link to share your resume with anyone — no login required.</p>
         <div id="rx-share-link-wrap" style="display:none;margin-bottom:14px;">
-            <input id="rx-share-link-input" type="text" readonly
-                   style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-size:0.8rem;font-family:monospace;margin-bottom:8px;"
-                   value="">
-            <button onclick="copyShareLink()" style="width:100%;padding:9px;border-radius:8px;border:none;background:rgba(74,222,128,0.15);color:#4ade80;font-weight:600;cursor:pointer;font-size:0.85rem;">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:middle;margin-right:4px;"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                Copy Link
-            </button>
+            <label style="font-size:0.75rem;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Public Link</label>
+            <div style="display:flex;gap:6px;">
+                <input id="rx-share-link-input" type="text" readonly
+                       style="flex:1;min-width:0;padding:9px 12px;border-radius:8px;border:1px solid var(--border-color);background:rgba(0,240,255,0.04);color:var(--text-primary);font-size:0.78rem;font-family:monospace;"
+                       value="">
+                <button onclick="copyShareLink()" style="padding:9px 14px;border-radius:8px;border:1px solid rgba(74,222,128,0.3);background:rgba(74,222,128,0.1);color:#4ade80;font-weight:700;cursor:pointer;font-size:0.78rem;white-space:nowrap;flex-shrink:0;">
+                    Copy
+                </button>
+            </div>
         </div>
         <input type="hidden" id="rx-share-csrf" value="<?= htmlspecialchars(\Core\Security::generateCsrfToken(), ENT_QUOTES, 'UTF-8') ?>">
         <input type="hidden" id="rx-share-id" value="">
         <div class="rx-modal-actions">
-            <button class="rx-modal-btn secondary" onclick="closeShareModal()">Cancel</button>
-            <button id="rx-share-generate-btn" class="rx-modal-btn primary" onclick="generateShare()">
+            <button type="button" class="btn btn-secondary" onclick="closeShareModal()" style="flex:1;">Cancel</button>
+            <button type="button" id="rx-share-generate-btn" class="btn btn-primary" onclick="generateShare()" style="flex:1;">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:middle;margin-right:4px;"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
                 Generate Link
             </button>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Domain Modal -->
+<div id="rx-custom-domain-modal" class="rx-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="rx-custom-domain-title">
+    <div class="rx-modal" style="max-width:480px;">
+        <div class="rx-modal-icon" style="background:rgba(153,69,255,0.12);border:1px solid rgba(153,69,255,0.3);">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        </div>
+        <h3 id="rx-custom-domain-title">Custom Domain</h3>
+        <p style="color:var(--text-secondary);font-size:0.875rem;margin:0 0 18px;line-height:1.6;">Point your own domain (e.g. <code style="background:rgba(255,255,255,0.06);padding:2px 6px;border-radius:4px;font-size:0.8rem;">cv.yourname.com</code>) to your public resume. This is a Pro feature.</p>
+        <div style="background:rgba(153,69,255,0.06);border:1px solid rgba(153,69,255,0.2);border-radius:10px;padding:16px;margin-bottom:20px;font-size:0.82rem;color:var(--text-secondary);line-height:1.7;">
+            <strong style="color:var(--text-primary);display:block;margin-bottom:8px;">How it works:</strong>
+            <ol style="margin:0;padding-left:18px;">
+                <li>Make your resume public using the <strong>Share</strong> button</li>
+                <li>Add a CNAME record in your DNS pointing to <code style="background:rgba(255,255,255,0.06);padding:1px 5px;border-radius:3px;">share.resumex.app</code></li>
+                <li>Contact support to link your domain to your resume</li>
+            </ol>
+        </div>
+        <div class="rx-modal-actions">
+            <button type="button" class="btn btn-secondary" onclick="closeCustomDomainModal()" style="flex:1;">Close</button>
+            <a href="mailto:support@<?= htmlspecialchars($_SERVER['HTTP_HOST'] ?? 'example.com') ?>" class="btn btn-primary" style="flex:1;text-align:center;">Contact Support</a>
         </div>
     </div>
 </div>
@@ -610,6 +637,7 @@
             deleteOverlay.classList.remove('open');
             duplicateOverlay.classList.remove('open');
             closeShareModal();
+            if (typeof closeCustomDomainModal === 'function') closeCustomDomainModal();
         }
     });
 
@@ -622,16 +650,16 @@
     window.openShareModal = function (id, token, isPublic) {
         document.getElementById('rx-share-id').value = id;
         shareLinkWrap.style.display = 'none';
-        shareGenBtn.textContent = 'Generate Link';
+        shareGenBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:middle;margin-right:4px;"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> Generate Link';
         shareGenBtn.disabled = false;
         if (token && isPublic) {
             shareInput.value = window.location.origin + '/projects/resumex/share/' + token;
             shareLinkWrap.style.display = 'block';
             shareGenBtn.textContent = 'Disable Sharing';
         }
-        shareModal.style.display = 'flex';
+        shareModal.classList.add('open');
     };
-    window.closeShareModal = function () { shareModal.style.display = 'none'; };
+    window.closeShareModal = function () { shareModal.classList.remove('open'); };
 
     window.generateShare = function () {
         var id    = document.getElementById('rx-share-id').value;
@@ -667,8 +695,9 @@
 
     window.copyShareLink = function () {
         var input = document.getElementById('rx-share-link-input');
+        var copyBtn = input.nextElementSibling;
         navigator.clipboard.writeText(input.value).then(function () {
-            var btn = document.querySelector('#rx-share-modal .rx-modal-actions .rx-modal-btn.primary');
+            if (copyBtn) { var t = copyBtn.textContent; copyBtn.textContent = 'Copied!'; setTimeout(function(){ copyBtn.textContent = t; }, 1500); }
         }).catch(function () {
             input.select();
             document.execCommand('copy');
@@ -678,6 +707,20 @@
     if (shareModal) {
         shareModal.addEventListener('click', function (e) {
             if (e.target === shareModal) closeShareModal();
+        });
+    }
+
+    // ── Custom Domain modal ──────────────────────────────────────────────────────
+    var customDomainModal = document.getElementById('rx-custom-domain-modal');
+    window.openCustomDomainModal = function () {
+        if (customDomainModal) customDomainModal.classList.add('open');
+    };
+    window.closeCustomDomainModal = function () {
+        if (customDomainModal) customDomainModal.classList.remove('open');
+    };
+    if (customDomainModal) {
+        customDomainModal.addEventListener('click', function (e) {
+            if (e.target === customDomainModal) closeCustomDomainModal();
         });
     }
 }());

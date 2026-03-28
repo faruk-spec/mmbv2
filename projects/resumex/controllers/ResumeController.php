@@ -303,7 +303,34 @@ class ResumeController
                 if (empty($watermarkText)) {
                     $watermarkText = 'ResumeX Free';
                 }
-                $watermarkStyle = '<style>body::after{content:"' . $watermarkText . '";position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-30deg);font-size:5rem;font-weight:900;color:rgba(0,0,0,0.07);z-index:9999;pointer-events:none;white-space:nowrap;letter-spacing:0.2em;}</style>';
+                // Use a repeating diagonal watermark visible in both screen and print/PDF rendering.
+                // position:fixed appears on every PDF page in Chromium's headless print mode.
+                $watermarkStyle = '<style>'
+                    . 'body::after{'
+                    . 'content:"' . $watermarkText . '";'
+                    . 'position:fixed;'
+                    . 'top:50%;left:50%;'
+                    . 'transform:translate(-50%,-50%) rotate(-35deg);'
+                    . 'font-size:4.5rem;font-weight:900;'
+                    . 'color:rgba(0,0,0,0.12);'
+                    . 'z-index:9999;pointer-events:none;'
+                    . 'white-space:nowrap;letter-spacing:0.15em;'
+                    . 'text-transform:uppercase;'
+                    . '}'
+                    . '@media print{'
+                    . 'body::after{'
+                    . 'content:"' . $watermarkText . '";'
+                    . 'position:fixed;'
+                    . 'top:50%;left:50%;'
+                    . 'transform:translate(-50%,-50%) rotate(-35deg);'
+                    . 'font-size:4.5rem;font-weight:900;'
+                    . 'color:rgba(0,0,0,0.12);'
+                    . 'z-index:9999;pointer-events:none;'
+                    . 'white-space:nowrap;letter-spacing:0.15em;'
+                    . 'text-transform:uppercase;'
+                    . '}'
+                    . '}'
+                    . '</style>';
                 if (strpos($html, '</head>') !== false) {
                     $html = str_replace('</head>', $watermarkStyle . '</head>', $html);
                 } else {

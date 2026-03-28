@@ -160,9 +160,22 @@
         Back to Create
     </a>
 
+    <?php $isLinkedIn = !empty($_GET['source']) && $_GET['source'] === 'linkedin'; ?>
     <div class="rxi-header">
+        <?php if ($isLinkedIn): ?>
+        <h1>LinkedIn Import</h1>
+        <p>Import your LinkedIn profile data to build a resume. Export your profile as JSON from LinkedIn, then upload or paste it below.</p>
+        <div style="margin-top:16px;padding:14px 18px;background:rgba(10,102,194,0.1);border:1px solid rgba(10,102,194,0.3);border-radius:10px;font-size:0.82rem;color:var(--text-secondary);line-height:1.6;">
+            <strong style="color:#3b82f6;display:block;margin-bottom:6px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px;"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+                How to export from LinkedIn:
+            </strong>
+            Go to <strong>LinkedIn Settings</strong> → <strong>Data Privacy</strong> → <strong>Get a copy of your data</strong> → select <em>Profile</em> and request download. Once received, upload the JSON file below.
+        </div>
+        <?php else: ?>
         <h1>Import Resume</h1>
         <p>Paste JSON or upload a previously exported resume file to get started.</p>
+        <?php endif; ?>
     </div>
 
     <?php if (($_GET['error'] ?? '') === 'token'): ?>
@@ -180,7 +193,7 @@
             <label class="rxi-label" for="importTitle">Name your resume</label>
             <input class="rxi-input" type="text" id="importTitle" name="title"
                    placeholder="e.g. My Software Engineer Resume"
-                   value="My Imported Resume" maxlength="200" required>
+                   value="<?= $isLinkedIn ? 'My LinkedIn Resume' : 'My Imported Resume' ?>" maxlength="200" required>
         </div>
 
         <!-- Step 2: Upload source -->
