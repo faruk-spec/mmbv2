@@ -14,8 +14,6 @@
     .rx-layout {
         display: flex;
         min-height: calc(100vh - 70px);
-        max-width: 1400px;
-        margin: 0 auto;
     }
 
     /* ++ Left Sidebar */

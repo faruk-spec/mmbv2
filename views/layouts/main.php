@@ -1767,8 +1767,8 @@ try {
 
     <!-- ── Post-logout Login Suggestion Popup ───────────────────────────────── -->
     <?php if (isset($_GET['logged_out']) && !(\Core\Auth::check())): ?>
-    <div id="loggedOutPopup" style="display:none;position:fixed;bottom:28px;right:28px;z-index:99998;max-width:340px;width:calc(100% - 40px);">
-        <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:16px;padding:20px 22px;box-shadow:0 12px 48px rgba(0,0,0,0.45);transform:translateY(20px);opacity:0;transition:transform 0.4s cubic-bezier(.34,1.56,.64,1),opacity 0.3s ease;" id="loggedOutCard">
+    <div id="loggedOutPopup" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:99998;align-items:center;justify-content:center;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);">
+        <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:16px;padding:20px 22px;box-shadow:0 12px 48px rgba(0,0,0,0.45);transform:translateY(20px);opacity:0;transition:transform 0.4s cubic-bezier(.34,1.56,.64,1),opacity 0.3s ease;max-width:340px;width:calc(100% - 40px);position:relative;" id="loggedOutCard">
             <button onclick="closeLoggedOutPopup()" style="position:absolute;top:12px;right:14px;background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:1.1rem;line-height:1;" aria-label="Close">&times;</button>
             <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
                 <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,var(--cyan),var(--purple));display:flex;align-items:center;justify-content:center;flex-shrink:0;">
@@ -1793,7 +1793,7 @@ try {
         if (!popup) return;
         // Show after short delay
         setTimeout(function () {
-            popup.style.display = 'block';
+            popup.style.display = 'flex';
             requestAnimationFrame(function () {
                 requestAnimationFrame(function () {
                     card.style.transform = 'translateY(0)';

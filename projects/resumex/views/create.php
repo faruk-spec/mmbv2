@@ -5,8 +5,6 @@
 <style>
 /* ── Wrapper ──────────────────────────────────────────────────── */
 .rxc-wrap {
-    max-width: 1100px;
-    margin: 0 auto;
     padding: 36px 24px 60px;
 }
 
