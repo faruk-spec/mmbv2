@@ -51,6 +51,21 @@ class ConversionService
     private const OCR_CANDIDATE_FORMATS = ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'bmp', 'tiff', 'webp', 'ico'];
 
     /**
+     * Optional AI service: injected by the job queue so that AI OCR is automatically
+     * used as a fallback when local tools (Tesseract) are absent or return no text.
+     */
+    private ?AIService $aiService = null;
+
+    /**
+     * Inject the AI service to enable AI-powered OCR fallback during conversion.
+     * Call this before convert() when an AIService instance is available.
+     */
+    public function setAIService(AIService $aiService): void
+    {
+        $this->aiService = $aiService;
+    }
+
+    /**
      * Detect which conversion backends are available on this server.
      * Results are cached in a static variable so shell calls happen once per request.
      *
@@ -1003,6 +1018,10 @@ class ConversionService
         string $outputFormat,
         string $outputPath
     ): bool {
+        if (!file_exists($inputPath)) {
+            return false;
+        }
+
         // Extract text via Tesseract OCR
         $text = '';
         $tess = trim((string) shell_exec('which tesseract 2>/dev/null'));
@@ -1017,6 +1036,15 @@ class ConversionService
             if ($tessCode === 0 && file_exists($tessOut)) {
                 $text = (string) file_get_contents($tessOut);
                 @unlink($tessOut);
+            }
+        }
+
+        // AI OCR fallback: when Tesseract is absent or returns no text,
+        // automatically use the AI service (e.g. OpenAI vision) to extract content.
+        if (empty(trim($text)) && $this->aiService !== null) {
+            $aiOcr = $this->aiService->ocr($inputPath, 'free');
+            if ($aiOcr['success'] && !empty(trim($aiOcr['text'] ?? ''))) {
+                $text = $aiOcr['text'];
             }
         }
 
@@ -1086,9 +1114,12 @@ class ConversionService
                 } else {
                     break; // skip beyond ZZ (702 columns)
                 }
-                $ref        = $colLetter . $rowNum;
-                $escaped    = htmlspecialchars((string) $cell, ENT_QUOTES | ENT_XML1, 'UTF-8');
-                $sheetData .= "<c r=\"{$ref}\" t=\"inlineStr\"><is><t>{$escaped}</t></is></c>";
+                $ref  = $colLetter . $rowNum;
+                // Strip XML 1.0 forbidden control characters (U+0000–U+0008, U+000B–U+000C, U+000E–U+001F)
+                // before escaping — these bytes make the XML unparseable by Excel.
+                $safe     = (string) preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F]/', '', (string) $cell);
+                $escaped  = htmlspecialchars($safe, ENT_QUOTES | ENT_XML1, 'UTF-8');
+                $sheetData .= "<c r=\"{$ref}\" t=\"inlineStr\"><is><t xml:space=\"preserve\">{$escaped}</t></is></c>";
             }
             $sheetData .= '</row>';
         }
@@ -1100,6 +1131,7 @@ class ConversionService
             . '<Default Extension="xml" ContentType="application/xml"/>'
             . '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
             . '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'
+            . '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'
             . '</Types>';
 
         $relsMain =
@@ -1115,11 +1147,27 @@ class ConversionService
             . '<sheets><sheet name="Sheet1" sheetId="1" r:id="rId1"/></sheets>'
             . '</workbook>';
 
+        // workbookRels: rId1 = sheet, rId2 = styles (Excel requires styles even for simple files)
         $workbookRels =
             '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
             . '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>'
+            . '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>'
             . '</Relationships>';
+
+        // Minimal styles.xml — Excel will not open xlsx files without it.
+        $styles =
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+            . '<fonts count="1"><font><sz val="11"/><name val="Calibri"/></font></fonts>'
+            . '<fills count="2">'
+            . '<fill><patternFill patternType="none"/></fill>'
+            . '<fill><patternFill patternType="gray125"/></fill>'
+            . '</fills>'
+            . '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>'
+            . '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
+            . '<cellXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/></cellXfs>'
+            . '</styleSheet>';
 
         $sheet =
             '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
@@ -1135,6 +1183,7 @@ class ConversionService
         $zip->addFromString('_rels/.rels',                $relsMain);
         $zip->addFromString('xl/workbook.xml',            $workbook);
         $zip->addFromString('xl/_rels/workbook.xml.rels', $workbookRels);
+        $zip->addFromString('xl/styles.xml',              $styles);
         $zip->addFromString('xl/worksheets/sheet1.xml',   $sheet);
         $zip->close();
 
@@ -1506,6 +1555,12 @@ class ConversionService
         string $outputFormat,
         string $outputPath
     ): bool {
+        if (!file_exists($inputPath)) {
+            throw new \RuntimeException(
+                "Image file not found: cannot perform OCR."
+            );
+        }
+
         $text = '';
 
         // 1. Tesseract (best for raster OCR) — cryptographically unique temp path,
@@ -1526,15 +1581,24 @@ class ConversionService
             }
         }
 
-        // 2. If no Tesseract text, give a meaningful error rather than garbage
+        // 2. AI OCR fallback: when Tesseract is absent or returns no text,
+        //    automatically use the AI service (e.g. OpenAI vision) to extract content.
+        if (empty(trim($text)) && $this->aiService !== null) {
+            $aiOcr = $this->aiService->ocr($inputPath, 'free');
+            if ($aiOcr['success'] && !empty(trim($aiOcr['text'] ?? ''))) {
+                $text = $aiOcr['text'];
+            }
+        }
+
+        // 3. If still no text, give a clear error
         if (empty(trim($text))) {
             throw new \RuntimeException(
-                "Text extraction from images is not available on this server. "
-                . "Try a different output format."
+                "Text extraction from images requires Tesseract or a configured AI provider. "
+                . "Install Tesseract (apt-get install tesseract-ocr) or add an AI provider in Settings."
             );
         }
 
-        // 3. Write extracted text to the target format
+        // 4. Write extracted text to the target format
         $text = mb_convert_encoding($text, 'UTF-8', 'UTF-8');
         switch ($outputFormat) {
             case 'html':

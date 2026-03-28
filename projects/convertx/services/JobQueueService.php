@@ -31,6 +31,10 @@ class JobQueueService
         $this->conversionService = new ConversionService();
         $this->aiService         = new AIService();
 
+        // Inject the AI service so ConversionService can automatically fall back
+        // to AI-powered OCR when Tesseract is absent or returns no text.
+        $this->conversionService->setAIService($this->aiService);
+
         $config            = require PROJECT_PATH . '/config.php';
         $this->maxRetries  = (int) ($config['queue']['max_retries'] ?? 3);
     }
