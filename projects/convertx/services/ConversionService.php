@@ -1024,9 +1024,11 @@ class ConversionService
     /**
      * Mandatory Tesseract OCR path for image → writer format (DOCX/ODT/RTF/DOC).
      *
-     * Runs Tesseract in plain-text mode, then passes the text through the same
-     * document builders used by the AI path.  This ensures searchable text is
-     * always produced when Tesseract is available, even without an AI API key.
+     * Pre-processes the image for better OCR accuracy (grayscale + contrast
+     * normalisation), then runs Tesseract in plain-text mode and passes the
+     * extracted text through the same document builders used by the AI path.
+     * This ensures searchable text is always produced when Tesseract is
+     * available, even without an AI API key.
      *
      * Returns false silently when Tesseract is not installed.
      */
@@ -1045,12 +1047,20 @@ class ConversionService
             return false;
         }
 
+        // Pre-process for better OCR on coloured backgrounds
+        $processedPath = $this->preprocessImageForOcr($inputPath);
+        $ocrInput      = $processedPath ?? $inputPath;
+
         $tmpBase = sys_get_temp_dir() . '/cx_tess_' . bin2hex(random_bytes(12));
         exec(
-            escapeshellarg($tess) . ' ' . escapeshellarg($inputPath)
+            escapeshellarg($tess) . ' ' . escapeshellarg($ocrInput)
             . ' ' . escapeshellarg($tmpBase) . ' --psm 6 -l eng 2>/dev/null',
             $_o, $code
         );
+        if ($processedPath !== null) {
+            @unlink($processedPath);
+        }
+
         $txtFile = $tmpBase . '.txt';
         if ($code !== 0 || !file_exists($txtFile)) {
             return false;
@@ -1077,6 +1087,7 @@ class ConversionService
             default => false,
         };
     }
+
 
     /**
      * Image → presentation with AI text extraction.
@@ -2310,9 +2321,20 @@ class ConversionService
     /**
      * Run Tesseract in TSV mode and reconstruct table rows from the output.
      *
-     * TSV columns (0-based): level, page_num, block_num, par_num, line_num,
-     * word_num, left, top, width, height, conf, text.
-     * Words with conf = -1 are layout elements (not text) and are skipped.
+     * Core algorithm:
+     *   1. Pre-process the image (grayscale + contrast normalization) so Tesseract
+     *      can read white text on coloured cell backgrounds (e.g., blue headers).
+     *   2. Collect every WORD-level bounding box (TSV level = 5) — this gives us
+     *      the spatial coordinates of each recognised token.
+     *   3. Cluster words into visual rows by grouping tokens whose vertical centres
+     *      are within one average character-height of each other.
+     *   4. Detect global column boundaries via LEFT-EDGE gap analysis:
+     *      sort all word left-edges, then find positions where adjacent left-edges
+     *      are separated by more than the median word width.  This correctly handles
+     *      empty cells (they leave no words, but the next occupied column still
+     *      starts at the right position).
+     *   5. Assign words to their column by comparing the word's left edge against
+     *      the midpoints between adjacent column starts.
      *
      * @return array<int, array<int, string>>
      */
@@ -2323,13 +2345,23 @@ class ConversionService
             return [];
         }
 
+        // ── 1. Pre-process the image for better OCR accuracy ─────────────
+        //
+        // Tables with coloured headers (e.g. white text on blue background) are
+        // misread by Tesseract unless we first convert to high-contrast grayscale.
+        $processedPath = $this->preprocessImageForOcr($inputPath);
+        $ocrInput      = $processedPath ?? $inputPath;
+
         $tmpBase = sys_get_temp_dir() . '/cx_tess_' . bin2hex(random_bytes(12));
-        // --psm 6: treat the image as a single uniform block of text — better for tables/grids
         exec(
-            escapeshellarg($tess) . ' ' . escapeshellarg($inputPath)
+            escapeshellarg($tess) . ' ' . escapeshellarg($ocrInput)
             . ' ' . escapeshellarg($tmpBase) . ' --psm 6 tsv -l eng 2>/dev/null',
             $_out, $code
         );
+        if ($processedPath !== null) {
+            @unlink($processedPath);
+        }
+
         $tsvFile = $tmpBase . '.tsv';
         if ($code !== 0 || !file_exists($tsvFile)) {
             return [];
@@ -2338,150 +2370,183 @@ class ConversionService
         $tsv = (string) file_get_contents($tsvFile);
         @unlink($tsvFile);
 
-        // Group words by (block_num, par_num, line_num) → reconstruct logical lines,
-        // then group logical lines by approximate vertical band into spreadsheet rows.
-        $lines  = [];  // keyed by "block.par.line"
-        $topMap = [];  // top pixel of each line
-
+        // ── 2. Collect WORD-level bounding boxes (level = 5) ─────────────
+        $words = [];
         foreach (explode("\n", $tsv) as $i => $rawLine) {
             if ($i === 0 || trim($rawLine) === '') {
-                continue; // skip TSV header row and blank lines
+                continue;
             }
             $cols = explode("\t", $rawLine);
             if (count($cols) < 12) {
                 continue;
+            }
+            if ((int) $cols[0] !== 5) {
+                continue;   // only word-level rows
             }
             $conf = (int) $cols[10];
             $word = trim($cols[11]);
             if ($conf === -1 || $word === '') {
                 continue;
             }
-            // Filter out very low-confidence tokens (likely OCR garbage from UI elements)
-            if ($conf < 10 && strlen($word) <= 2) {
+            // Skip very low-confidence short tokens (OCR noise from UI borders)
+            if ($conf < 15 && mb_strlen($word) <= 2) {
                 continue;
             }
-            $key   = $cols[2] . '.' . $cols[3] . '.' . $cols[4]; // block.par.line
-            $left  = (int) $cols[6];
-            $top   = (int) $cols[7];
-            $width = (int) $cols[8];
 
-            if (!isset($lines[$key])) {
-                $lines[$key]  = [];
-                $topMap[$key] = $top;
-            }
-            // Store left, center, and text for each word
-            $lines[$key][] = [
-                'left'   => $left,
-                'center' => $left + (int) ($width / 2),
-                'text'   => $word,
+            $left   = (int) $cols[6];
+            $top    = (int) $cols[7];
+            $width  = (int) $cols[8];
+            $height = (int) $cols[9];
+
+            $words[] = [
+                'left'     => $left,
+                'top'      => $top,
+                'right'    => $left + $width,
+                'bottom'   => $top + $height,
+                'center_y' => $top + (int) ($height / 2),
+                'width'    => $width,
+                'height'   => $height,
+                'text'     => $word,
             ];
         }
 
-        if (empty($lines)) {
+        if (empty($words)) {
             return [];
         }
 
-        // Sort words within each line by horizontal position (left edge)
-        $sortedLines = [];
-        foreach ($lines as $key => $words) {
-            usort($words, fn($a, $b) => $a['left'] <=> $b['left']);
+        // ── 3. Cluster words into visual rows by vertical-centre position ─
+        usort($words, fn($a, $b) => $a['center_y'] <=> $b['center_y']);
 
-            // Merge adjacent tokens that Tesseract split at a comma inside a number.
-            // e.g. ["$5,", "079.60"] → ["$5,079.60"]
-            //      ["$1,",  "249.20"] → ["$1,249.20"]
+        $allH    = array_column($words, 'height');
+        sort($allH);
+        $medH    = $allH[(int) ((count($allH) - 1) / 2)] ?? 20;
+        $rowTol  = max(4, (int) ($medH * 0.45));
+
+        $visualRows = [];
+        $curRow     = [$words[0]];
+        $rowCenter  = $words[0]['center_y'];
+
+        for ($i = 1, $n = count($words); $i < $n; $i++) {
+            if (abs($words[$i]['center_y'] - $rowCenter) <= $rowTol) {
+                $curRow[] = $words[$i];
+            } else {
+                $visualRows[] = $curRow;
+                $curRow       = [$words[$i]];
+                $rowCenter    = $words[$i]['center_y'];
+            }
+        }
+        $visualRows[] = $curRow;
+
+        // Sort words left→right within each visual row
+        foreach ($visualRows as &$vRow) {
+            usort($vRow, fn($a, $b) => $a['left'] <=> $b['left']);
+        }
+        unset($vRow);
+
+        // ── 4. Merge split currency/number tokens ─────────────────────────
+        //
+        // Tesseract often splits "$16,753.00" into ["$16,", "753.00"] when
+        // kerning is tight.  Re-join adjacent tokens that form a valid pattern.
+        foreach ($visualRows as &$vRow) {
             $merged = [];
-            for ($j = 0; $j < count($words); $j++) {
-                $cur = $words[$j];
+            for ($j = 0, $len = count($vRow); $j < $len; $j++) {
+                $cur  = $vRow[$j];
+                $next = $vRow[$j + 1] ?? null;
                 if (
-                    isset($words[$j + 1])
-                    && preg_match('/^[£$€¥₹]?\d[\d,]*,$/', $cur['text'])   // ends with digit + comma
-                    && preg_match('/^\d{3}(\.\d+)?$/', $words[$j + 1]['text'])  // next is NNN or NNN.NN
+                    $next !== null
+                    && preg_match('/^[£$€¥₹]?\d[\d,]*,$/', $cur['text'])
+                    && preg_match('/^\d{3}(\.\d+)?$/', $next['text'])
+                    && ($next['left'] - $cur['right']) < max(8, (int) ($cur['width'] * 0.5))
                 ) {
-                    // Merge: keep the left/center of the first token
-                    $merged[] = [
-                        'left'   => $cur['left'],
-                        'center' => $cur['center'],
-                        'text'   => $cur['text'] . $words[$j + 1]['text'],
-                    ];
-                    $j++; // skip the next token
-                } else {
-                    $merged[] = $cur;
+                    $cur['text']  = $cur['text'] . $next['text'];
+                    $cur['right'] = $next['right'];
+                    $j++;
                 }
+                $merged[] = $cur;
             }
-
-            $sortedLines[$key] = ['top' => $topMap[$key], 'words' => $merged];
+            $vRow = $merged;
         }
+        unset($vRow);
 
-        // Sort lines by vertical position
-        uasort($sortedLines, fn($a, $b) => $a['top'] <=> $b['top']);
-
-        // ── Adaptive column zone detection ──────────────────────────────────
+        // ── 5. Detect column boundaries via LEFT-EDGE gap analysis ────────
         //
-        // Collect CENTER positions of all words across all lines, then find the
-        // gaps between adjacent sorted positions.  Gaps larger than the adaptive
-        // threshold indicate column boundaries.
-        //
-        // Using CENTER (left + width/2) rather than just left is more reliable for
-        // right-aligned numeric columns where the left edge varies with digit count.
-        $allCenters = [];
-        foreach ($sortedLines as $lineData) {
-            foreach ($lineData['words'] as $w) {
-                $allCenters[] = $w['center'];
+        // Key insight: words in the same column tend to have similar LEFT edges.
+        // By sorting all left-edge positions and finding gaps larger than the
+        // median word width, we reliably identify where each new column begins —
+        // even when some cells in that column are empty (they leave no words but
+        // do not shift the next column's left-edge position).
+        $allLefts  = [];
+        $allWidths = [];
+        foreach ($visualRows as $vRow) {
+            foreach ($vRow as $w) {
+                $allLefts[]  = $w['left'];
+                $allWidths[] = $w['width'];
             }
         }
-        sort($allCenters);
+        sort($allLefts);
+        sort($allWidths);
 
-        // Find the largest gap across all adjacent center positions
-        $maxGap = 1;
-        for ($i = 1; $i < count($allCenters); $i++) {
-            $gap    = $allCenters[$i] - $allCenters[$i - 1];
-            $maxGap = max($maxGap, $gap);
-        }
+        $medW       = $allWidths[(int) ((count($allWidths) - 1) / 2)] ?? 30;
+        $colGapMin  = max(12, (int) ($medW * 0.45));   // minimum gap between columns
 
-        // A new column zone starts when the gap exceeds 40% of the largest gap
-        // (minimum 30 px so noise on very small images doesn't create false columns).
-        $threshold = max(30, (int) ($maxGap * 0.40));
-
-        $colZones  = [];
-        $zoneStart = null;
-        foreach ($allCenters as $pos) {
-            if ($zoneStart === null) {
-                $zoneStart = $pos;
-            } elseif ($pos - $zoneStart > $threshold) {
-                $colZones[] = $zoneStart;
-                $zoneStart  = $pos;
+        // Find groups of left-edges (each group = one column)
+        $colStarts = [];
+        $group     = $allLefts[0];
+        for ($i = 1, $n = count($allLefts); $i < $n; $i++) {
+            if ($allLefts[$i] - $allLefts[$i - 1] > $colGapMin) {
+                $colStarts[] = (int) round($group);     // representative for this column
+                $group       = $allLefts[$i];
+            } else {
+                // Keep the smallest left-edge as the column representative
+                $group = min($group, $allLefts[$i]);
             }
         }
-        if ($zoneStart !== null) {
-            $colZones[] = $zoneStart;
-        }
-        $colZones = array_unique($colZones);
-        sort($colZones);
+        $colStarts[] = (int) round($group);
+        sort($colStarts);
 
-        if (count($colZones) <= 1) {
-            // Only one column detected — fall back to space-joined plain text per line
-            $rows = [];
-            foreach ($sortedLines as $lineData) {
-                $rows[] = [implode(' ', array_column($lineData['words'], 'text'))];
+        // Merge column starts that are suspiciously close (< colGapMin / 2)
+        $mergeMin = max(6, (int) ($colGapMin / 2));
+        $merged   = [];
+        $prev     = null;
+        foreach ($colStarts as $cs) {
+            if ($prev === null || $cs - $prev > $mergeMin) {
+                $merged[] = $cs;
+                $prev     = $cs;
             }
-            return $rows;
+        }
+        $colStarts = $merged;
+
+        if (count($colStarts) <= 1) {
+            // Only one column detected — return space-joined plain text per row
+            return array_map(
+                fn($vRow) => [implode(' ', array_column($vRow, 'text'))],
+                $visualRows
+            );
         }
 
-        // Assign each word to the nearest column zone using CENTER position
-        $rows = [];
-        foreach ($sortedLines as $lineData) {
-            $cells = array_fill(0, count($colZones), '');
-            foreach ($lineData['words'] as $w) {
-                $colIdx  = 0;
-                $minDist = PHP_INT_MAX;
-                foreach ($colZones as $zi => $zone) {
-                    $dist = abs($w['center'] - $zone);
-                    if ($dist < $minDist) {
-                        $minDist = $dist;
-                        $colIdx  = $zi;
+        // Compute boundary midpoints between adjacent column starts.
+        // A word belongs to column $i if its left-edge is < $boundaries[$i].
+        $boundaries = [];
+        for ($i = 0, $n = count($colStarts) - 1; $i < $n; $i++) {
+            $boundaries[] = (int) (($colStarts[$i] + $colStarts[$i + 1]) / 2);
+        }
+
+        // ── 6. Assign words to columns and build output rows ──────────────
+        $rows    = [];
+        $numCols = count($colStarts);
+
+        foreach ($visualRows as $vRow) {
+            $cells = array_fill(0, $numCols, '');
+            foreach ($vRow as $w) {
+                $colIdx = $numCols - 1;   // default: last column
+                foreach ($boundaries as $bi => $bound) {
+                    if ($w['left'] < $bound) {
+                        $colIdx = $bi;
+                        break;
                     }
                 }
-                $cells[$colIdx] = ($cells[$colIdx] !== '' ? $cells[$colIdx] . ' ' : '') . $w['text'];
+                $cells[$colIdx] = ($cells[$colIdx] !== '' ? $cells[$colIdx] . ' ' : '')
+                                 . $w['text'];
             }
             $rows[] = $cells;
         }
@@ -2490,8 +2555,85 @@ class ConversionService
     }
 
     /**
+     * Pre-process an image to improve Tesseract OCR accuracy.
+     *
+     * Converts to grayscale and normalises the contrast so that:
+     *   • white text on coloured backgrounds (e.g. blue Excel headers) becomes
+     *     dark text on a light background
+     *   • low-contrast scans are stretched to full black–white range
+     *
+     * Uses ImageMagick when available; falls back to PHP's GD extension.
+     * Returns the path of the pre-processed temp file, or null if neither
+     * tool is available.  The caller is responsible for deleting the file.
+     *
+     * @param string $inputPath Absolute path to the source image
+     * @return string|null      Temp PNG path, or null on failure
+     */
+    private function preprocessImageForOcr(string $inputPath): ?string
+    {
+        if (!file_exists($inputPath)) {
+            return null;
+        }
+
+        $outPath = tempnam(sys_get_temp_dir(), 'cx_preocr_') . '.png';
+
+        // ── ImageMagick (preferred) ───────────────────────────────────────
+        $im = trim((string) shell_exec('which convert 2>/dev/null'))
+           ?: trim((string) shell_exec('which magick 2>/dev/null'));
+        if ($im) {
+            exec(
+                escapeshellarg($im)
+                . ' ' . escapeshellarg($inputPath)
+                . ' -colorspace Gray'      // convert to grayscale
+                . ' -normalize'            // stretch histogram to full 0–255 range
+                . ' -sharpen 0x0.5'        // mild sharpening for better letter edges
+                . ' ' . escapeshellarg($outPath) . ' 2>/dev/null',
+                $_o, $code
+            );
+            if ($code === 0 && file_exists($outPath) && filesize($outPath) > 100) {
+                return $outPath;
+            }
+            @unlink($outPath);
+        }
+
+        // ── PHP GD fallback ───────────────────────────────────────────────
+        if (extension_loaded('gd')) {
+            $ext = strtolower(pathinfo($inputPath, PATHINFO_EXTENSION));
+            $src = match ($ext) {
+                'jpg', 'jpeg' => @imagecreatefromjpeg($inputPath),
+                'png'         => @imagecreatefrompng($inputPath),
+                'gif'         => @imagecreatefromgif($inputPath),
+                'bmp'         => function_exists('imagecreatefrombmp')
+                                  ? @imagecreatefrombmp($inputPath) : null,
+                'webp'        => function_exists('imagecreatefromwebp')
+                                  ? @imagecreatefromwebp($inputPath) : null,
+                default       => null,
+            };
+            if ($src !== null && $src !== false) {
+                // Grayscale + contrast boost
+                imagefilter($src, IMG_FILTER_GRAYSCALE);
+                imagefilter($src, IMG_FILTER_CONTRAST, -20);  // negative = more contrast
+
+                if (@imagepng($src, $outPath) !== false
+                    && file_exists($outPath) && filesize($outPath) > 100
+                ) {
+                    imagedestroy($src);
+                    return $outPath;
+                }
+                imagedestroy($src);
+            }
+        }
+
+        @unlink($outPath);
+        return null;
+    }
+
+    /**
      * Run Tesseract in plain text mode and split each non-empty line into a
      * single-cell row.  Used as a fallback when TSV mode fails or returns nothing.
+     *
+     * Also applies preprocessImageForOcr() for the same accuracy improvements as
+     * the TSV path.
      *
      * @return array<int, array<int, string>>
      */
@@ -2502,12 +2644,19 @@ class ConversionService
             return [];
         }
 
+        $processedPath = $this->preprocessImageForOcr($inputPath);
+        $ocrInput      = $processedPath ?? $inputPath;
+
         $tmpBase = sys_get_temp_dir() . '/cx_tess_' . bin2hex(random_bytes(12));
         exec(
-            escapeshellarg($tess) . ' ' . escapeshellarg($inputPath)
+            escapeshellarg($tess) . ' ' . escapeshellarg($ocrInput)
             . ' ' . escapeshellarg($tmpBase) . ' --psm 6 -l eng 2>/dev/null',
             $_out, $code
         );
+        if ($processedPath !== null) {
+            @unlink($processedPath);
+        }
+
         $txtFile = $tmpBase . '.txt';
         if ($code !== 0 || !file_exists($txtFile)) {
             return [];
@@ -2517,6 +2666,7 @@ class ConversionService
 
         return $this->parseTextIntoRows($text);
     }
+
 
     /**
      * Split raw text into spreadsheet rows.
@@ -2936,7 +3086,7 @@ class ConversionService
             $imgEmuH = (int) ($slideW / $srcAspect);
         } else {
             $imgEmuH = $slideH;
-            $imgEmuW = (int) ($slideH * $srcAspect);
+            $imgEmuW = (int) ($imgEmuH * $srcAspect);
         }
         $imgOffX = (int) (($slideW - $imgEmuW) / 2);
         $imgOffY = (int) (($slideH - $imgEmuH) / 2);
@@ -3631,12 +3781,19 @@ class ConversionService
         $text = '';
         $tess = trim((string) shell_exec('which tesseract 2>/dev/null'));
         if ($tess) {
+            // Pre-process for better OCR accuracy on coloured backgrounds
+            $processedPath = $this->preprocessImageForOcr($inputPath);
+            $ocrInput      = $processedPath ?? $inputPath;
+
             $tmpBase = sys_get_temp_dir() . '/cx_tess_' . bin2hex(random_bytes(12));
             exec(
-                escapeshellarg($tess) . ' ' . escapeshellarg($inputPath)
+                escapeshellarg($tess) . ' ' . escapeshellarg($ocrInput)
                 . ' ' . escapeshellarg($tmpBase) . ' --psm 6 -l eng 2>/dev/null',
                 $_lines, $tessCode
             );
+            if ($processedPath !== null) {
+                @unlink($processedPath);
+            }
             $tessOut = $tmpBase . '.txt';
             if ($tessCode === 0 && file_exists($tessOut)) {
                 $text = (string) file_get_contents($tessOut);
