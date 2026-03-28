@@ -1022,44 +1022,37 @@ class ConversionService
             return false;
         }
 
-        // Extract text via Tesseract OCR
-        $text = '';
-        $tess = trim((string) shell_exec('which tesseract 2>/dev/null'));
-        if ($tess) {
-            $tmpBase = sys_get_temp_dir() . '/cx_tess_' . getmypid() . '_' . bin2hex(random_bytes(8));
-            exec(
-                escapeshellarg($tess) . ' ' . escapeshellarg($inputPath)
-                . ' ' . escapeshellarg($tmpBase) . ' -l eng 2>/dev/null',
-                $_lines, $tessCode
-            );
-            $tessOut = $tmpBase . '.txt';
-            if ($tessCode === 0 && file_exists($tessOut)) {
-                $text = (string) file_get_contents($tessOut);
-                @unlink($tessOut);
+        // ── 1. AI table OCR (best quality: preserves column structure) ────────
+        //
+        // Try this FIRST when an AIService is available.  The vision model is
+        // asked to return RFC 4180 CSV so that multi-column tables are extracted
+        // correctly rather than as a flat stream of text that Tesseract produces.
+        if ($this->aiService !== null) {
+            $aiTable = $this->aiService->ocrTable($inputPath, 'free');
+            if ($aiTable['success'] && !empty($aiTable['rows'])) {
+                $rows = $aiTable['rows'];
+                return $this->writeSpreadsheetFromRows($rows, $outputFormat, $outputPath);
             }
         }
 
-        // AI OCR fallback: when Tesseract is absent or returns no text,
-        // automatically use the AI service (e.g. OpenAI vision) to extract content.
-        if (empty(trim($text)) && $this->aiService !== null) {
+        // ── 2. Tesseract TSV mode (local, preserves column layout better than plain text) ─
+        //
+        // `tesseract … tsv` outputs a tab-delimited file with one word per row
+        // including conf, left, top, width, height, and text columns.  We
+        // reconstruct spreadsheet rows by grouping words that share the same
+        // line number (field index 5) and sorting by their horizontal position.
+        $rows = $this->extractRowsFromTesseractTsv($inputPath);
+
+        // ── 3. Tesseract plain-text fallback ──────────────────────────────────
+        if (empty($rows)) {
+            $rows = $this->extractRowsFromTesseractPlain($inputPath);
+        }
+
+        // ── 4. AI plain OCR (last resort when Tesseract is not installed) ─────
+        if (empty($rows) && $this->aiService !== null) {
             $aiOcr = $this->aiService->ocr($inputPath, 'free');
             if ($aiOcr['success'] && !empty(trim($aiOcr['text'] ?? ''))) {
-                $text = $aiOcr['text'];
-            }
-        }
-
-        // Parse extracted text into rows/cells
-        $rows = [];
-        foreach (preg_split('/\r\n|\r|\n/', trim($text)) as $line) {
-            if (trim($line) === '') {
-                continue;
-            }
-            // Tab-separated → multiple cells; otherwise treat as single-cell CSV row
-            if (str_contains($line, "\t")) {
-                $rows[] = explode("\t", $line);
-            } else {
-                $parsed = str_getcsv($line);
-                $rows[] = ($parsed !== false && $parsed !== ['']) ? $parsed : [$line];
+                $rows = $this->parseTextIntoRows($aiOcr['text']);
             }
         }
 
@@ -1067,14 +1060,204 @@ class ConversionService
             $rows = [['No text could be extracted from this image.']];
         }
 
+        return $this->writeSpreadsheetFromRows($rows, $outputFormat, $outputPath);
+    }
+
+    /**
+     * Run Tesseract in TSV mode and reconstruct table rows from the output.
+     *
+     * TSV columns (0-based): level, page_num, block_num, par_num, line_num,
+     * word_num, left, top, width, height, conf, text.
+     * Words with conf = -1 are layout elements (not text) and are skipped.
+     *
+     * @return array<int, array<int, string>>
+     */
+    private function extractRowsFromTesseractTsv(string $inputPath): array
+    {
+        $tess = trim((string) shell_exec('which tesseract 2>/dev/null'));
+        if (!$tess) {
+            return [];
+        }
+
+        $tmpBase = sys_get_temp_dir() . '/cx_tess_' . getmypid() . '_' . bin2hex(random_bytes(8));
+        exec(
+            escapeshellarg($tess) . ' ' . escapeshellarg($inputPath)
+            . ' ' . escapeshellarg($tmpBase) . ' tsv -l eng 2>/dev/null',
+            $_out, $code
+        );
+        $tsvFile = $tmpBase . '.tsv';
+        if ($code !== 0 || !file_exists($tsvFile)) {
+            return [];
+        }
+
+        $tsv = (string) file_get_contents($tsvFile);
+        @unlink($tsvFile);
+
+        // Group words by (block_num, par_num, line_num) → reconstruct logical lines,
+        // then group logical lines by approximate vertical band into spreadsheet rows.
+        $lines = [];  // keyed by "block.par.line"
+        $topMap = []; // top pixel of each line
+
+        foreach (explode("\n", $tsv) as $i => $rawLine) {
+            if ($i === 0 || trim($rawLine) === '') {
+                continue; // skip TSV header row and blank lines
+            }
+            $cols = explode("\t", $rawLine);
+            if (count($cols) < 12) {
+                continue;
+            }
+            $conf   = (int) $cols[10];
+            $word   = trim($cols[11]);
+            if ($conf === -1 || $word === '') {
+                continue;
+            }
+            $key = $cols[2] . '.' . $cols[3] . '.' . $cols[4]; // block.par.line
+            $top = (int) $cols[7];
+
+            if (!isset($lines[$key])) {
+                $lines[$key]  = [];
+                $topMap[$key] = $top;
+            }
+            $lines[$key][] = ['left' => (int) $cols[6], 'text' => $word];
+        }
+
+        if (empty($lines)) {
+            return [];
+        }
+
+        // Sort words within each line by horizontal position
+        $sortedLines = [];
+        foreach ($lines as $key => $words) {
+            usort($words, fn($a, $b) => $a['left'] <=> $b['left']);
+            $sortedLines[$key] = ['top' => $topMap[$key], 'words' => $words];
+        }
+
+        // Sort lines by vertical position
+        uasort($sortedLines, fn($a, $b) => $a['top'] <=> $b['top']);
+
+        // Detect column boundaries from the first meaningful line (header row)
+        // by looking at horizontal gaps between words across all lines.
+        $allLeftPositions = [];
+        foreach ($sortedLines as $lineData) {
+            foreach ($lineData['words'] as $w) {
+                $allLeftPositions[] = $w['left'];
+            }
+        }
+        sort($allLeftPositions);
+
+        // Cluster left positions into column zones using a gap threshold.
+        // A new column starts when the gap to the next word-start exceeds $threshold px.
+        $threshold  = 20;
+        $colZones   = [];
+        $zoneStart  = null;
+        foreach ($allLeftPositions as $pos) {
+            if ($zoneStart === null) {
+                $zoneStart = $pos;
+            } elseif ($pos - $zoneStart > $threshold) {
+                $colZones[] = $zoneStart;
+                $zoneStart  = $pos;
+            }
+        }
+        if ($zoneStart !== null) {
+            $colZones[] = $zoneStart;
+        }
+        $colZones = array_unique($colZones);
+        sort($colZones);
+
+        if (count($colZones) <= 1) {
+            // Only one column detected — fall back to space-joined plain text per line
+            $rows = [];
+            foreach ($sortedLines as $lineData) {
+                $rows[] = [implode(' ', array_column($lineData['words'], 'text'))];
+            }
+            return $rows;
+        }
+
+        // Assign each word to the nearest column zone and build the grid
+        $rows = [];
+        foreach ($sortedLines as $lineData) {
+            $cells = array_fill(0, count($colZones), '');
+            foreach ($lineData['words'] as $w) {
+                $colIdx = 0;
+                $minDist = PHP_INT_MAX;
+                foreach ($colZones as $zi => $zone) {
+                    $dist = abs($w['left'] - $zone);
+                    if ($dist < $minDist) {
+                        $minDist = $dist;
+                        $colIdx  = $zi;
+                    }
+                }
+                $cells[$colIdx] = ($cells[$colIdx] !== '' ? $cells[$colIdx] . ' ' : '') . $w['text'];
+            }
+            $rows[] = $cells;
+        }
+
+        return $rows;
+    }
+
+    /**
+     * Run Tesseract in plain text mode and split each non-empty line into a
+     * single-cell row.  Used as a fallback when TSV mode fails or returns nothing.
+     *
+     * @return array<int, array<int, string>>
+     */
+    private function extractRowsFromTesseractPlain(string $inputPath): array
+    {
+        $tess = trim((string) shell_exec('which tesseract 2>/dev/null'));
+        if (!$tess) {
+            return [];
+        }
+
+        $tmpBase = sys_get_temp_dir() . '/cx_tess_' . getmypid() . '_' . bin2hex(random_bytes(8));
+        exec(
+            escapeshellarg($tess) . ' ' . escapeshellarg($inputPath)
+            . ' ' . escapeshellarg($tmpBase) . ' -l eng 2>/dev/null',
+            $_out, $code
+        );
+        $txtFile = $tmpBase . '.txt';
+        if ($code !== 0 || !file_exists($txtFile)) {
+            return [];
+        }
+        $text = (string) file_get_contents($txtFile);
+        @unlink($txtFile);
+
+        return $this->parseTextIntoRows($text);
+    }
+
+    /**
+     * Split raw text into spreadsheet rows.
+     * Tab-separated values → multiple cells; otherwise treat as single-cell row.
+     *
+     * @return array<int, array<int, string>>
+     */
+    private function parseTextIntoRows(string $text): array
+    {
+        $rows = [];
+        foreach (preg_split('/\r\n|\r|\n/', trim($text)) as $line) {
+            if (trim($line) === '') {
+                continue;
+            }
+            if (str_contains($line, "\t")) {
+                $rows[] = explode("\t", $line);
+            } else {
+                $parsed = str_getcsv($line);
+                $rows[] = ($parsed !== false && $parsed !== ['']) ? $parsed : [$line];
+            }
+        }
+        return $rows;
+    }
+
+    /**
+     * Write rows to the requested spreadsheet format (xlsx / xls / ods).
+     */
+    private function writeSpreadsheetFromRows(array $rows, string $outputFormat, string $outputPath): bool
+    {
         if ($outputFormat === 'ods') {
             return $this->writeOdsCalcFromRows($rows, $outputPath);
         }
 
-        // xlsx and xls: write xlsx (xlsx is the modern binary-compatible replacement for xls)
         $xlsxOk = $this->writeXlsxFromRows($rows, $outputPath);
         if ($xlsxOk && $outputFormat === 'xls') {
-            // Attempt LibreOffice xlsx→xls conversion if LibreOffice is available
             $tmpXlsx = $outputPath . '_tmp.xlsx';
             try {
                 if (@rename($outputPath, $tmpXlsx)) {
@@ -1082,7 +1265,6 @@ class ConversionService
                     @unlink($tmpXlsx);
                 }
             } catch (\Exception $e) {
-                // LibreOffice unavailable — keep xlsx content under xls extension
                 if (!file_exists($outputPath) && file_exists($tmpXlsx)) {
                     @rename($tmpXlsx, $outputPath);
                 }

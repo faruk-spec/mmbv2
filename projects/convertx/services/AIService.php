@@ -46,6 +46,31 @@ class AIService
     }
 
     /**
+     * Extract table data from an image using a structured AI prompt.
+     *
+     * The AI is instructed to return the data as RFC 4180 CSV preserving the
+     * original column structure.  Falls back to plain OCR when no vision-capable
+     * provider is available.
+     *
+     * @param string $filePath  Absolute path to image
+     * @param string $planTier
+     * @return array{success: bool, csv: string, rows: array, provider: string, tokens: int, error: string}
+     */
+    public function ocrTable(string $filePath, string $planTier = 'free'): array
+    {
+        $result = $this->dispatch('ocr', $planTier, function (array $provider) use ($filePath): array {
+            return $this->callOCRTable($provider, $filePath);
+        });
+        if (!$result['success']) {
+            // No vision provider — fall back to plain cmdOCR and let the caller
+            // handle parsing (Tesseract TSV / plain text).
+            return ['success' => false, 'csv' => '', 'rows' => [], 'provider' => 'none',
+                    'tokens' => 0, 'error' => $result['error'] ?? 'No table-OCR provider available'];
+        }
+        return $result;
+    }
+
+    /**
      * Summarize a piece of text.
      *
      * @param string $text
@@ -177,6 +202,19 @@ class AIService
         }
     }
 
+    private function callOCRTable(array $provider, string $filePath): array
+    {
+        switch ($provider['slug']) {
+            case 'openai':
+                return $this->openaiVisionOCRTable($provider, $filePath);
+
+            default:
+                // Non-vision providers cannot do table OCR
+                return ['success' => false, 'csv' => '', 'rows' => [], 'tokens' => 0,
+                        'error' => 'Provider does not support table OCR'];
+        }
+    }
+
     private function callSummarize(array $provider, string $text, array $options): array
     {
         switch ($provider['slug']) {
@@ -274,6 +312,101 @@ class AIService
         $content = $res['data']['choices'][0]['message']['content'] ?? '';
         $tokens  = $res['data']['usage']['total_tokens'] ?? 0;
         return ['success' => true, 'text' => $content, 'tokens' => $tokens, 'error' => ''];
+    }
+
+    /**
+     * Table-aware OCR: ask the vision model to return the image data as RFC 4180
+     * CSV so that column structure is preserved exactly.  The response is parsed
+     * into a 2-D rows array ready for writeXlsxFromRows() / writeOdsCalcFromRows().
+     */
+    private function openaiVisionOCRTable(array $provider, string $filePath): array
+    {
+        $imageData = base64_encode(file_get_contents($filePath));
+        $mimeType  = mime_content_type($filePath) ?: 'image/png';
+
+        $prompt =
+            "This image contains a table or spreadsheet. "
+            . "Extract ALL data from it and return ONLY valid RFC 4180 CSV. "
+            . "Rules:\n"
+            . "- First row must be the header row (column names).\n"
+            . "- Each subsequent row is one data row.\n"
+            . "- Use a comma as the delimiter.\n"
+            . "- Wrap any cell that contains a comma or double-quote in double quotes.\n"
+            . "- Escape literal double-quotes inside cells by doubling them (\"\").\n"
+            . "- Preserve numeric values exactly as shown (keep currency symbols, decimal points, commas within numbers must be inside quoted cells).\n"
+            . "- Do NOT add any explanation, markdown fences, or extra text — output ONLY the CSV.";
+
+        $payload = [
+            'model'    => $provider['model'] ?? 'gpt-4o',
+            'messages' => [[
+                'role'    => 'user',
+                'content' => [
+                    ['type' => 'text',      'text'      => $prompt],
+                    ['type' => 'image_url', 'image_url' => ['url' => "data:{$mimeType};base64,{$imageData}"]],
+                ],
+            ]],
+            'max_tokens' => 4096,
+        ];
+
+        $res = $this->openaiRequest($provider, $payload);
+        if (!$res['success']) {
+            return ['success' => false, 'csv' => '', 'rows' => [], 'tokens' => 0, 'error' => $res['error']];
+        }
+
+        $raw    = trim($res['data']['choices'][0]['message']['content'] ?? '');
+        $tokens = $res['data']['usage']['total_tokens'] ?? 0;
+
+        // Strip markdown code fences if the model wrapped the CSV anyway
+        $raw = preg_replace('/^```[^\n]*\n?/m', '', $raw);
+        $raw = preg_replace('/^```$/m', '', $raw);
+        $raw = trim((string) $raw);
+
+        // Parse CSV into 2-D rows array
+        $rows = $this->parseCsvString($raw);
+
+        if (empty($rows)) {
+            return ['success' => false, 'csv' => $raw, 'rows' => [], 'tokens' => $tokens,
+                    'error'   => 'AI returned no parseable CSV data'];
+        }
+
+        return ['success' => true, 'csv' => $raw, 'rows' => $rows,
+                'tokens'  => $tokens, 'provider' => 'openai', 'error' => ''];
+    }
+
+    /**
+     * Parse an RFC 4180 CSV string into a 2-D array of string cells.
+     *
+     * @param string $csv
+     * @return array<int, array<int, string>>
+     */
+    private function parseCsvString(string $csv): array
+    {
+        if (empty(trim($csv))) {
+            return [];
+        }
+
+        // Normalise line endings
+        $csv  = str_replace(["\r\n", "\r"], "\n", $csv);
+        $rows = [];
+
+        // Use a temp stream so fgetcsv handles RFC 4180 quoting correctly
+        $handle = fopen('php://memory', 'r+');
+        if ($handle === false) {
+            return [];
+        }
+        fwrite($handle, $csv);
+        rewind($handle);
+
+        while (($row = fgetcsv($handle, 0, ',', '"', '')) !== false) {
+            // Skip completely empty rows that may appear at end of AI output
+            if ($row === [null]) {
+                continue;
+            }
+            $rows[] = array_map('strval', $row);
+        }
+        fclose($handle);
+
+        return $rows;
     }
 
     private function openaiSummarize(array $provider, string $text, array $options): array
