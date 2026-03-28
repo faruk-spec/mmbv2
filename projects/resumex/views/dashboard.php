@@ -230,17 +230,69 @@
     .rx-flash { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 9px; margin-bottom: 20px; font-size: 0.875rem; font-weight: 500; background: rgba(0,255,136,0.08); border: 1px solid rgba(0,255,136,0.25); color: var(--green); animation: rx-fadein 0.4s ease; }
     @keyframes rx-fadein { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
 
+    /* ++ Mobile sidebar toggle button */
+    .rx-sidebar-toggle {
+        display: none;
+        position: fixed;
+        bottom: 24px;
+        right: 20px;
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--cyan), var(--purple));
+        border: none;
+        color: #06060a;
+        cursor: pointer;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 20px rgba(0, 240, 255, 0.35);
+        z-index: 1010;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        will-change: transform;
+    }
+    .rx-sidebar-toggle:active { transform: scale(0.93); }
+    .rx-sidebar-toggle svg { width: 22px; height: 22px; flex-shrink: 0; }
+
+    /* ++ Mobile sidebar overlay */
+    .rx-sidebar-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(6, 6, 10, 0.7);
+        backdrop-filter: blur(2px);
+        -webkit-backdrop-filter: blur(2px);
+        z-index: 1005;
+        opacity: 0;
+        transition: opacity 0.25s ease;
+    }
+    .rx-sidebar-overlay.active {
+        display: block;
+        opacity: 1;
+    }
+
     /* ++ Responsive */
     @media (max-width: 1024px) { .rx-stats { grid-template-columns: repeat(2, 1fr); } }
     @media (max-width: 768px) {
-        .rx-layout { flex-direction: column; }
-        .rx-sidebar { width: 100%; height: auto; position: static; flex-direction: row; flex-wrap: wrap; padding: 10px; gap: 4px; border-right: none; border-bottom: 1px solid var(--border-color); }
-        .rx-sidebar-logo { display: none; }
-        .rx-nav-section { padding: 0; }
-        .rx-nav-section-title { display: none; }
-        .rx-nav-link { padding: 7px 10px; font-size: 0.8rem; }
-        .rx-sidebar-upgrade { display: none; }
-        .rx-main { padding: 20px 16px; }
+        .rx-layout { flex-direction: row; } /* keep row so sidebar slides over content */
+        .rx-sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 260px;
+            z-index: 1006;
+            transform: translateX(-100%);
+            transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+            padding-top: 70px; /* below main navbar */
+            border-right: 1px solid var(--border-color);
+        }
+        .rx-sidebar.open { transform: translateX(0); }
+        .rx-sidebar-logo { display: flex; } /* keep logo visible in drawer */
+        .rx-nav-section-title { display: block; }
+        .rx-nav-link { padding: 10px 16px; font-size: 0.875rem; }
+        .rx-sidebar-upgrade { display: block; }
+        .rx-sidebar-toggle { display: flex; }
+        .rx-main { padding: 20px 16px; margin-left: 0; width: 100%; }
         .rx-stats { grid-template-columns: repeat(2, 1fr); gap: 10px; }
         .rx-grid { grid-template-columns: 1fr; }
     }
@@ -250,7 +302,7 @@
 <div class="rx-layout">
 
     <!-- Left Sidebar -->
-    <aside class="rx-sidebar">
+    <aside class="rx-sidebar" id="rxSidebar">
         <div class="rx-sidebar-logo">
             <div class="rx-sidebar-logo-icon">RX</div>
             <span class="rx-sidebar-logo-text">ResumeX</span>
@@ -498,6 +550,18 @@
     </main>
 </div>
 
+<!-- Mobile sidebar overlay -->
+<div class="rx-sidebar-overlay" id="rxSidebarOverlay"></div>
+
+<!-- Mobile sidebar toggle button (hamburger FAB) -->
+<button class="rx-sidebar-toggle" id="rxSidebarToggle" aria-label="Open navigation menu" aria-expanded="false" aria-controls="rxSidebar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="3" y1="6"  x2="21" y2="6"/>
+        <line x1="3" y1="12" x2="21" y2="12"/>
+        <line x1="3" y1="18" x2="21" y2="18"/>
+    </svg>
+</button>
+
 <!-- Share Modal -->
 <div id="rx-share-modal" class="rx-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="rx-share-title">
     <div class="rx-modal">
@@ -638,6 +702,7 @@
             duplicateOverlay.classList.remove('open');
             closeShareModal();
             if (typeof closeCustomDomainModal === 'function') closeCustomDomainModal();
+            rxCloseSidebar();
         }
     });
 
@@ -725,6 +790,48 @@
             if (e.target === customDomainModal) closeCustomDomainModal();
         });
     }
+
+    // ── Mobile sidebar toggle ────────────────────────────────────────────────────
+    var rxSidebar  = document.getElementById('rxSidebar');
+    var rxOverlay  = document.getElementById('rxSidebarOverlay');
+    var rxToggleBtn= document.getElementById('rxSidebarToggle');
+
+    function rxOpenSidebar() {
+        if (!rxSidebar) return;
+        rxSidebar.classList.add('open');
+        rxOverlay.classList.add('active');
+        rxToggleBtn.setAttribute('aria-expanded', 'true');
+        document.body.style.overflow = 'hidden';
+    }
+    function rxCloseSidebar() {
+        if (!rxSidebar) return;
+        rxSidebar.classList.remove('open');
+        rxOverlay.classList.remove('active');
+        rxToggleBtn.setAttribute('aria-expanded', 'false');
+        document.body.style.overflow = '';
+    }
+
+    if (rxToggleBtn) {
+        rxToggleBtn.addEventListener('click', function () {
+            rxSidebar.classList.contains('open') ? rxCloseSidebar() : rxOpenSidebar();
+        });
+    }
+    if (rxOverlay) {
+        rxOverlay.addEventListener('click', rxCloseSidebar);
+    }
+    // Close on nav link click (mobile UX)
+    if (rxSidebar) {
+        rxSidebar.querySelectorAll('.rx-nav-link').forEach(function (link) {
+            link.addEventListener('click', function () {
+                if (window.innerWidth <= 768) rxCloseSidebar();
+            });
+        });
+    }
+    // Close on resize above breakpoint
+    window.addEventListener('resize', function () {
+        if (window.innerWidth > 768) rxCloseSidebar();
+    });
+    // Close on Escape — handled by the shared keydown listener above
 }());
 </script>
 <?php View::end(); ?>
