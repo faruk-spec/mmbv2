@@ -1991,7 +1991,14 @@ class ConversionService
     }
 
     /**
-     * Write a minimal but valid xlsx spreadsheet (OOXML) from a 2-D array of rows.
+     * Write a professional XLSX spreadsheet (OOXML) from a 2-D array of rows.
+     *
+     * Output features:
+     *  - Row 1 styled as a bold white-text header with a blue fill and borders
+     *  - Rows 2+ styled with thin borders on all cells
+     *  - First row is frozen (freeze pane at A2)
+     *  - Column widths are auto-sized based on the longest cell in each column
+     *  - Numbers and currency are stored as strings (preserving exact formatting)
      */
     private function writeXlsxFromRows(array $rows, string $outputPath): bool
     {
@@ -1999,29 +2006,115 @@ class ConversionService
             return false;
         }
 
-        // Build worksheet XML
+        // ── Calculate column widths from content ─────────────────────────────
+        $colWidths = [];
+        foreach ($rows as $cells) {
+            foreach ((array) $cells as $c => $cell) {
+                $len = mb_strlen((string) $cell, 'UTF-8');
+                if (!isset($colWidths[$c]) || $len > $colWidths[$c]) {
+                    $colWidths[$c] = $len;
+                }
+            }
+        }
+
+        // ── Build <cols> element for auto column widths ───────────────────────
+        $colsXml = '<cols>';
+        foreach ($colWidths as $c => $maxLen) {
+            $width     = max(8.5, min(60.0, $maxLen * 1.15 + 2));
+            $colNum    = $c + 1;
+            $colsXml  .= "<col min=\"{$colNum}\" max=\"{$colNum}\" width=\"{$width}\" customWidth=\"1\"/>";
+        }
+        $colsXml .= '</cols>';
+
+        // ── Build worksheet data rows ─────────────────────────────────────────
         $sheetData = '';
         foreach ($rows as $rowIdx => $cells) {
-            $rowNum     = $rowIdx + 1;
+            $rowNum    = $rowIdx + 1;
+            $isHeader  = ($rowIdx === 0);
+            $styleIdx  = $isHeader ? '1' : '2'; // 1=header style, 2=data style
             $sheetData .= "<row r=\"{$rowNum}\">";
             foreach ((array) $cells as $colIdx => $cell) {
-                // Column letter: A–Z for 0–25; AA–ZZ for 26–701
                 if ($colIdx < 26) {
                     $colLetter = chr(65 + $colIdx);
                 } elseif ($colIdx < 702) {
                     $colLetter = chr(64 + intdiv($colIdx, 26)) . chr(65 + ($colIdx % 26));
                 } else {
-                    break; // skip beyond ZZ (702 columns)
+                    break;
                 }
-                $ref  = $colLetter . $rowNum;
-                // Strip XML 1.0 forbidden control characters (U+0000–U+0008, U+000B–U+000C, U+000E–U+001F)
-                // before escaping — these bytes make the XML unparseable by Excel.
-                $safe     = (string) preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F]/', '', (string) $cell);
-                $escaped  = htmlspecialchars($safe, ENT_QUOTES | ENT_XML1, 'UTF-8');
-                $sheetData .= "<c r=\"{$ref}\" t=\"inlineStr\"><is><t xml:space=\"preserve\">{$escaped}</t></is></c>";
+                $ref     = $colLetter . $rowNum;
+                $safe    = (string) preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F]/', '', (string) $cell);
+                $escaped = htmlspecialchars($safe, ENT_QUOTES | ENT_XML1, 'UTF-8');
+                $sheetData .= "<c r=\"{$ref}\" t=\"inlineStr\" s=\"{$styleIdx}\"><is><t xml:space=\"preserve\">{$escaped}</t></is></c>";
             }
             $sheetData .= '</row>';
         }
+
+        // ── Styles: 3 fonts, 3 fills, 2 borders, 3 cellXfs ──────────────────
+        //
+        //  Font 0: Calibri 11 (normal)
+        //  Font 1: Calibri 11 bold white (header text)
+        //  Fill 0: none (required by spec)
+        //  Fill 1: gray125 (required by spec)
+        //  Fill 2: solid #2F75B6 (header background — Excel "Blue, Accent 1")
+        //  Border 0: none
+        //  Border 1: thin black on all sides
+        //  xf 0: normal (no style)
+        //  xf 1: bold white + blue fill + borders (header row)
+        //  xf 2: no fill + borders (data rows)
+        $styles =
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"'
+            . ' xmlns:x14ac="http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac">'
+            . '<fonts count="2">'
+            .   '<font><sz val="11"/><name val="Calibri"/></font>'
+            .   '<font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>'
+            . '</fonts>'
+            . '<fills count="3">'
+            .   '<fill><patternFill patternType="none"/></fill>'
+            .   '<fill><patternFill patternType="gray125"/></fill>'
+            .   '<fill><patternFill patternType="solid"><fgColor rgb="FF2F75B6"/><bgColor indexed="64"/></patternFill></fill>'
+            . '</fills>'
+            . '<borders count="2">'
+            .   '<border><left/><right/><top/><bottom/><diagonal/></border>'
+            .   '<border>'
+            .     '<left style="thin"><color rgb="FF000000"/></left>'
+            .     '<right style="thin"><color rgb="FF000000"/></right>'
+            .     '<top style="thin"><color rgb="FF000000"/></top>'
+            .     '<bottom style="thin"><color rgb="FF000000"/></bottom>'
+            .     '<diagonal/>'
+            .   '</border>'
+            . '</borders>'
+            . '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
+            . '<cellXfs count="3">'
+            .   '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'
+            .   '<xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1">'
+            .     '<alignment wrapText="1" horizontal="center" vertical="center"/>'
+            .   '</xf>'
+            .   '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1">'
+            .     '<alignment vertical="center"/>'
+            .   '</xf>'
+            . '</cellXfs>'
+            . '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>'
+            . '</styleSheet>';
+
+        // ── Freeze pane at A2 (row 1 frozen as header) ───────────────────────
+        $sheetViewXml =
+            '<sheetViews>'
+            . '<sheetView tabSelected="1" workbookViewId="0">'
+            . '<pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/>'
+            . '<selection pane="bottomLeft" activeCell="A2" sqref="A2"/>'
+            . '</sheetView>'
+            . '</sheetViews>';
+
+        // ── Assemble worksheet XML ────────────────────────────────────────────
+        $sheet =
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"'
+            . ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+            . $sheetViewXml
+            . $colsXml
+            . '<sheetData>' . $sheetData . '</sheetData>'
+            . '</worksheet>';
 
         $contentTypes =
             '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
@@ -2043,36 +2136,16 @@ class ConversionService
             '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             . '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"'
             . ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+            . '<bookViews><workbookView xWindow="480" yWindow="60" windowWidth="18195" windowHeight="8505"/></bookViews>'
             . '<sheets><sheet name="Sheet1" sheetId="1" r:id="rId1"/></sheets>'
             . '</workbook>';
 
-        // workbookRels: rId1 = sheet, rId2 = styles (Excel requires styles even for simple files)
         $workbookRels =
             '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
             . '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>'
             . '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>'
             . '</Relationships>';
-
-        // Minimal styles.xml — Excel will not open xlsx files without it.
-        $styles =
-            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
-            . '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
-            . '<fonts count="1"><font><sz val="11"/><name val="Calibri"/></font></fonts>'
-            . '<fills count="2">'
-            . '<fill><patternFill patternType="none"/></fill>'
-            . '<fill><patternFill patternType="gray125"/></fill>'
-            . '</fills>'
-            . '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>'
-            . '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
-            . '<cellXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/></cellXfs>'
-            . '</styleSheet>';
-
-        $sheet =
-            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
-            . '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
-            . '<sheetData>' . $sheetData . '</sheetData>'
-            . '</worksheet>';
 
         $zip = new \ZipArchive();
         if ($zip->open($outputPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
@@ -2090,7 +2163,12 @@ class ConversionService
     }
 
     /**
-     * Write a minimal ODS spreadsheet (ODF Calc) from a 2-D array of rows.
+     * Write a professional ODS spreadsheet (ODF Calc) from a 2-D array of rows.
+     *
+     * Output features:
+     *  - Row 1 styled as a bold header with a blue background and white text
+     *  - Rows 2+ have a thin border on all cells
+     *  - Column widths are auto-sized
      */
     private function writeOdsCalcFromRows(array $rows, string $outputPath): bool
     {
@@ -2098,14 +2176,51 @@ class ConversionService
             return false;
         }
 
-        $tableRows = '';
+        // ── Calculate approximate column widths ──────────────────────────────
+        $colWidths = [];
         foreach ($rows as $cells) {
-            $tableRows .= '<table:table-row>';
+            foreach ((array) $cells as $c => $cell) {
+                $len = mb_strlen((string) $cell, 'UTF-8');
+                if (!isset($colWidths[$c]) || $len > $colWidths[$c]) {
+                    $colWidths[$c] = $len;
+                }
+            }
+        }
+
+        // ── Build <table:table-column> elements ───────────────────────────────
+        $colDefs = '';
+        foreach ($colWidths as $c => $maxLen) {
+            $cm       = min(8.0, max(2.0, $maxLen * 0.22 + 0.5));
+            $colDefs .= sprintf(
+                '<table:table-column table:style-name="co%d" table:default-cell-style-name="Default"/>',
+                $c
+            );
+        }
+
+        // ── Build table rows ─────────────────────────────────────────────────
+        $tableRows = '';
+        foreach ($rows as $rowIdx => $cells) {
+            $isHeader   = ($rowIdx === 0);
+            $rowStyle   = $isHeader ? 'rh' : 'rn';
+            $tableRows .= "<table:table-row table:style-name=\"{$rowStyle}\">";
             foreach ((array) $cells as $cell) {
                 $escaped    = htmlspecialchars((string) $cell, ENT_QUOTES | ENT_XML1, 'UTF-8');
-                $tableRows .= '<table:table-cell office:value-type="string"><text:p>' . $escaped . '</text:p></table:table-cell>';
+                $cellStyle  = $isHeader ? 'hdCell' : 'dtCell';
+                $tableRows .= "<table:table-cell table:style-name=\"{$cellStyle}\" office:value-type=\"string\">"
+                            . "<text:p>{$escaped}</text:p>"
+                            . '</table:table-cell>';
             }
             $tableRows .= '</table:table-row>';
+        }
+
+        // ── Column width style snippets ───────────────────────────────────────
+        $colStyles = '';
+        foreach ($colWidths as $c => $maxLen) {
+            $cm         = min(8.0, max(2.0, $maxLen * 0.22 + 0.5));
+            $colStyles .= '<style:style style:name="co' . $c . '" style:family="table-column">'
+                        . '<style:table-column-properties fo:break-before="auto"'
+                        . ' style:column-width="' . number_format($cm, 3) . 'cm"/>'
+                        . '</style:style>';
         }
 
         $manifest =
@@ -2121,9 +2236,43 @@ class ConversionService
             . ' xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"'
             . ' xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0"'
             . ' xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"'
+            . ' xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0"'
+            . ' xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0"'
             . ' office:version="1.3">'
+            // ── Automatic styles (column widths + cell styles) ────────────────
+            . '<office:automatic-styles>'
+            . $colStyles
+            // Header row height
+            . '<style:style style:name="rh" style:family="table-row">'
+            . '<style:table-row-properties style:row-height="0.8cm" style:use-optimal-row-height="false"/>'
+            . '</style:style>'
+            // Normal row height
+            . '<style:style style:name="rn" style:family="table-row">'
+            . '<style:table-row-properties style:row-height="0.6cm" style:use-optimal-row-height="false"/>'
+            . '</style:style>'
+            // Header cell: bold, white text, blue background, all borders
+            . '<style:style style:name="hdCell" style:family="table-cell">'
+            . '<style:table-cell-properties'
+            . ' fo:border="0.053cm solid #000000"'
+            . ' fo:background-color="#2F75B6"'
+            . ' style:text-align-source="fix"'
+            . ' fo:text-align="center"'
+            . ' style:vertical-align="middle"'
+            . ' fo:padding="0.1cm"/>'
+            . '<style:text-properties fo:font-weight="bold" fo:color="#FFFFFF"'
+            . ' fo:font-size="11pt" style:font-name="Calibri"/>'
+            . '</style:style>'
+            // Data cell: normal text, all borders
+            . '<style:style style:name="dtCell" style:family="table-cell">'
+            . '<style:table-cell-properties'
+            . ' fo:border="0.053cm solid #000000"'
+            . ' fo:padding="0.08cm"/>'
+            . '<style:text-properties fo:font-size="11pt" style:font-name="Calibri"/>'
+            . '</style:style>'
+            . '</office:automatic-styles>'
             . '<office:body><office:spreadsheet>'
             . '<table:table table:name="Sheet1">'
+            . $colDefs
             . $tableRows
             . '</table:table>'
             . '</office:spreadsheet></office:body>'
@@ -2133,7 +2282,6 @@ class ConversionService
         if ($zip->open($outputPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
             return false;
         }
-        // ODF spec: 'mimetype' MUST be the first entry and STORED (not compressed)
         $zip->addFromString('mimetype', 'application/vnd.oasis.opendocument.spreadsheet');
         if (method_exists($zip, 'setCompressionName')) {
             $zip->setCompressionName('mimetype', \ZipArchive::CM_STORE);
