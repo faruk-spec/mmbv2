@@ -263,55 +263,54 @@ class ConversionService
 
         // 4b. Image → writer format (docx / odt / rtf / doc):
         //
-        // Priority:
-        //   A. AI document OCR — extract structured text via vision model, then write
-        //      a proper text-based document (headings, paragraphs, tables).  This is
-        //      far superior to image-embedding for scanned documents / screenshots.
-        //   B. PHP ZipArchive image-embed — fast fallback when AI is unavailable.
-        //   C. Two-step chain (image→PDF→writer) as last resort.
-        //
-        // 'doc' (binary OLE) is handled by building a DOCX then converting DOCX→DOC
-        // via LibreOffice (same Writer family, no --infilter, no pdfimport needed).
+        // Priority — OCR is MANDATORY:
+        //   A. AI document OCR (GPT-4o vision) — highest quality; extracts structured
+        //      text (headings, paragraphs, tables) then writes a proper text document.
+        //   B. Tesseract OCR (local, no API key) — good quality; always attempted
+        //      when AI is unavailable so the user always gets searchable text.
+        //   C. PHP ZipArchive image-embed — lowest quality (no searchable text) but
+        //      still produces a valid document that opens correctly.
         $phpWriterFormats = ['docx', 'odt', 'rtf', 'doc'];
         if ($isInputImage && in_array($outputFormat, $phpWriterFormats, true)) {
-            // A. AI path: extract text → write proper document
+            // A. AI path
             if ($this->aiService !== null) {
                 if ($this->convertImageToDocumentWithOcr($inputPath, $inputFormat, $outputFormat, $outputPath)) {
                     return true;
                 }
             }
-            // B. Image-embed fallback (ZipArchive)
+            // B. Tesseract mandatory fallback (local OCR, no API key required)
+            if ($this->convertImageToDocumentWithTesseract($inputPath, $inputFormat, $outputFormat, $outputPath)) {
+                return true;
+            }
+            // C. Image-embed fallback (ZipArchive) — still valid, just not searchable
             if ($this->convertImageToDocumentWithPhp($inputPath, $inputFormat, $outputFormat, $outputPath)) {
                 return true;
             }
-            // C. Chain fallback
+            // D. Chain fallback (image→PDF→writer via LibreOffice)
         }
 
-        // 4c. Image → plain-text formats (txt / html / md / csv): use Tesseract OCR
-        //     to extract text and write it to the output file.
-        //     Going through the PDF chain here is unreliable — pdfimport produces
-        //     unreadable output and LibreOffice Calc crashes on PDF→csv.
+        // 4c. Image → plain-text formats (txt / html / md / csv): OCR mandatory.
         $textOutputFormats = ['txt', 'html', 'md', 'csv'];
         if ($isInputImage && in_array($outputFormat, $textOutputFormats, true)) {
             return $this->convertImageToTextWithOcr($inputPath, $outputFormat, $outputPath);
         }
 
-        // 4d. Image → spreadsheet formats (xlsx / xls / ods):
-        //     Use Tesseract OCR to extract text and write it into a minimal spreadsheet.
-        //     The PDF-chain approach is not supported for these formats.
+        // 4d. Image → spreadsheet formats (xlsx / xls / ods): OCR mandatory.
         $spreadsheetOutputFormats = ['xlsx', 'xls', 'ods'];
         if ($isInputImage && in_array($outputFormat, $spreadsheetOutputFormats, true)) {
             return $this->convertImageToSpreadsheetWithOcr($inputPath, $outputFormat, $outputPath);
         }
 
-        // 4e. Image → presentation formats (pptx / odp / ppt):
-        //     Embed the image directly in a minimal presentation file using ZipArchive.
+        // 4e. Image → presentation formats (pptx / odp / ppt).
+        //     Priority: AI OCR text → text-based slide; then image-embed fallback.
         $presentationOutputFormats = ['pptx', 'odp', 'ppt'];
         if ($isInputImage && in_array($outputFormat, $presentationOutputFormats, true)) {
+            if ($this->convertImageToPresentationWithOcr($inputPath, $inputFormat, $outputFormat, $outputPath)) {
+                return true;
+            }
             if ($this->convertImageToPresentationWithPhp($inputPath, $inputFormat, $outputFormat, $outputPath)) {
                 return true;
             }
-            // ZipArchive unavailable — fall through to chain
         }
 
         // 5. Cross-family: image → office/text (non-pdf)
@@ -327,25 +326,34 @@ class ConversionService
         }
 
         // 7. Document / office formats → LibreOffice
-        // Note: 'csv' is intentionally excluded from this list — CSV ↔ plain-text
-        // pairs are already handled by the PHP engine above (step 1).  CSV → XLSX/ODS
-        // is caught here because 'xlsx'/'ods' appear in $officeFormats as output.
-        // 'html' is included so that docx→html and xlsx→html use LibreOffice's
-        // HTML export filter rather than falling through to Pandoc (step 8), which
-        // may not be installed.
-        // 'epub' is handled by LibreOffice Writer (requires the epub export extension).
         $officeFormats = ['pdf', 'docx', 'doc', 'odt', 'rtf', 'html', 'xlsx', 'xls', 'ods', 'pptx', 'ppt', 'odp', 'epub'];
         if (in_array($inputFormat, $officeFormats, true) || in_array($outputFormat, $officeFormats, true)) {
-            // Guard: LibreOffice crashes (SIGABRT/exit 134) when importing a PDF
-            // into Calc or Impress — the same crash that happens in convertViaChain.
+            // PDF → spreadsheet / presentation: LibreOffice crashes on these.
+            // Use OCR pipeline instead: rasterize first page → OCR → write output.
             if ($inputFormat === 'pdf'
                 && in_array($outputFormat, ['xlsx', 'xls', 'ods', 'csv', 'pptx', 'ppt', 'odp'], true)
             ) {
-                throw new \RuntimeException(
-                    "PDF to spreadsheet or presentation conversion is not supported. "
-                    . "Try converting to a document format (DOCX, ODT, or TXT) first."
-                );
+                if (in_array($outputFormat, ['xlsx', 'xls', 'ods', 'csv'], true)) {
+                    return $this->convertPdfToSpreadsheet($inputPath, $outputFormat, $outputPath);
+                }
+                return $this->convertPdfToPresentation($inputPath, $outputFormat, $outputPath);
             }
+
+            // PDF → writer: try LibreOffice (needs pdfimport), fall back to OCR pipeline
+            if ($inputFormat === 'pdf' && in_array($outputFormat, ['docx', 'doc', 'odt', 'rtf'], true)) {
+                try {
+                    return $this->convertWithLibreOffice($inputPath, $inputFormat, $outputFormat, $outputPath);
+                } catch (\RuntimeException $e) {
+                    // LibreOffice unavailable or pdfimport not installed → rasterize → OCR
+                    return $this->convertPdfToDocument($inputPath, $outputFormat, $outputPath);
+                }
+            }
+
+            // PDF → plain text: pdftotext first, then rasterize → OCR fallback
+            if ($inputFormat === 'pdf' && in_array($outputFormat, ['txt', 'html', 'md'], true)) {
+                return $this->convertPdfToText($inputPath, $outputFormat, $outputPath);
+            }
+
             return $this->convertWithLibreOffice($inputPath, $inputFormat, $outputFormat, $outputPath);
         }
 
@@ -720,12 +728,397 @@ class ConversionService
     //  PHP-native document builders (no external tools)                    //
     // ------------------------------------------------------------------ //
 
+    // ------------------------------------------------------------------ //
+    //  Page-size & PDF rasterization helpers                               //
+    // ------------------------------------------------------------------ //
+
+    /**
+     * Detect the nearest standard page size from image pixel dimensions.
+     *
+     * Uses both the aspect ratio AND the estimated physical size at a typical
+     * scan resolution (150 DPI for scanned documents) to distinguish between
+     * sizes that share the same aspect ratio (e.g., A4 vs A3 vs A5).
+     *
+     * Returns an array with:
+     *   name      — "A4", "Letter", "A3", "Legal", "A5"
+     *   twip_w    — page width in twips (OOXML: 1 twip = 1/1440 in)
+     *   twip_h    — page height in twips
+     *   cm_w      — page width in cm (ODF)
+     *   cm_h      — page height in cm
+     *   landscape — bool
+     *
+     * @param int $pxW  Image width in pixels
+     * @param int $pxH  Image height in pixels
+     * @return array
+     */
+    private function detectPageSizeFromImage(int $pxW, int $pxH): array
+    {
+        // Standard page sizes in points (portrait orientation).
+        // 1 pt = 1/72 in; A4 = 210×297 mm = 595×842 pt
+        $standards = [
+            'A4'     => [595,  842],   // most common document size
+            'Letter' => [612,  792],   // US Letter
+            'A3'     => [842, 1191],   // 2× A4
+            'Legal'  => [612, 1008],   // US Legal
+            'A5'     => [420,  595],   // half A4
+            'A6'     => [298,  420],
+        ];
+
+        $landscape = ($pxW > $pxH);
+
+        // Normalize to portrait for comparison (short side × long side)
+        $shortPx = (int) min($pxW, $pxH);
+        $longPx  = (int) max($pxW, $pxH);
+
+        // We assume 150 DPI (typical document scan) to estimate physical size.
+        // The match score combines aspect ratio AND scale similarity.
+        $assumedDpi  = 150.0;
+        $shortInches = $shortPx / $assumedDpi;
+        $longInches  = $longPx  / $assumedDpi;
+
+        $best      = 'A4';
+        $bestScore = PHP_FLOAT_MAX;
+        foreach ($standards as $name => [$ptW, $ptH]) {
+            // Portrait: $ptW is short side, $ptH is long side (both in pt; 72 pt = 1 in)
+            $stdShortIn = $ptW / 72.0;
+            $stdLongIn  = $ptH / 72.0;
+
+            // Aspect-ratio error
+            $aspectDiff = abs(($shortInches / $longInches) - ($stdShortIn / $stdLongIn));
+            // Scale error: how far are we from this standard at 150 DPI (normalised 0–1)
+            $scaleDiff  = abs($shortInches / $stdShortIn - 1.0)
+                        + abs($longInches  / $stdLongIn  - 1.0);
+
+            $score = $aspectDiff * 5.0 + $scaleDiff;   // weight aspect ratio higher
+            if ($score < $bestScore) {
+                $bestScore = $score;
+                $best      = $name;
+            }
+        }
+
+        [$ptW, $ptH] = $standards[$best];
+        if ($landscape) {
+            [$ptW, $ptH] = [$ptH, $ptW];
+        }
+
+        return [
+            'name'      => $best,
+            'landscape' => $landscape,
+            'twip_w'    => (int) ($ptW * 20),        // 20 twips per point
+            'twip_h'    => (int) ($ptH * 20),
+            'cm_w'      => round($ptW * 2.54 / 72, 3),
+            'cm_h'      => round($ptH * 2.54 / 72, 3),
+        ];
+    }
+
+    /**
+     * Rasterize the first page of a PDF to a high-resolution PNG.
+     *
+     * Uses Ghostscript (preferred) or ImageMagick.  Returns the absolute path
+     * of the temp PNG or null if neither tool is available.
+     *
+     * The caller is responsible for deleting the returned file.
+     *
+     * @param string $pdfPath Absolute path to the PDF file
+     * @param int    $dpi     Resolution (150–300 dpi gives good OCR quality)
+     * @return string|null    Temp PNG path, or null on failure
+     */
+    private function rasterizePdf(string $pdfPath, int $dpi = 200): ?string
+    {
+        if (!file_exists($pdfPath)) {
+            return null;
+        }
+
+        $tmpPng = tempnam(sys_get_temp_dir(), 'cx_pdf_') . '.png';
+
+        // ── Ghostscript (preferred — not blocked by policy.xml) ───────────
+        $gs = trim((string) shell_exec('which gs 2>/dev/null'));
+        if ($gs) {
+            exec(
+                escapeshellarg($gs)
+                . ' -dNOPAUSE -dBATCH -dSAFER -sDEVICE=pngalpha'
+                . ' -r' . (int) $dpi
+                . ' -dFirstPage=1 -dLastPage=1'
+                . ' -sOutputFile=' . escapeshellarg($tmpPng)
+                . ' ' . escapeshellarg($pdfPath) . ' 2>/dev/null',
+                $_o, $code
+            );
+            if ($code === 0 && file_exists($tmpPng) && filesize($tmpPng) > 500) {
+                return $tmpPng;
+            }
+        }
+
+        // ── ImageMagick / Magick ──────────────────────────────────────────
+        $im = trim((string) shell_exec('which convert 2>/dev/null'))
+           ?: trim((string) shell_exec('which magick 2>/dev/null'));
+        if ($im) {
+            exec(
+                escapeshellarg($im)
+                . ' -density ' . (int) $dpi
+                . ' ' . escapeshellarg($pdfPath . '[0]')   // first page only
+                . ' -quality 95 -background white -alpha remove'
+                . ' ' . escapeshellarg($tmpPng) . ' 2>/dev/null',
+                $_o, $code
+            );
+            if ($code === 0 && file_exists($tmpPng) && filesize($tmpPng) > 500) {
+                return $tmpPng;
+            }
+        }
+
+        @unlink($tmpPng);
+        return null;
+    }
+
+    /**
+     * PDF → spreadsheet via OCR.
+     *
+     * Rasterizes the first PDF page to PNG then passes it through the same
+     * AI/Tesseract spreadsheet pipeline used for image→spreadsheet.
+     */
+    private function convertPdfToSpreadsheet(
+        string $inputPath,
+        string $outputFormat,
+        string $outputPath
+    ): bool {
+        $tmpPng = $this->rasterizePdf($inputPath);
+        if ($tmpPng !== null) {
+            try {
+                return $this->convertImageToSpreadsheetWithOcr($tmpPng, $outputFormat, $outputPath);
+            } finally {
+                @unlink($tmpPng);
+            }
+        }
+
+        // No rasterizer — try AI directly on the PDF if it has a data-URI pathway
+        if ($this->aiService !== null) {
+            $aiTable = $this->aiService->ocrTable($inputPath, 'free');
+            if ($aiTable['success'] && !empty($aiTable['rows'])) {
+                return $this->writeSpreadsheetFromRows($aiTable['rows'], $outputFormat, $outputPath);
+            }
+        }
+
+        throw new \RuntimeException(
+            "PDF to spreadsheet conversion requires Ghostscript or ImageMagick for rasterization "
+            . "plus Tesseract or an AI provider for OCR. "
+            . "Install ghostscript (apt install ghostscript) or configure an AI provider."
+        );
+    }
+
+    /**
+     * PDF → writer document (DOCX/ODT/RTF/DOC) via OCR.
+     *
+     * Rasterizes the first PDF page to PNG then passes it through the same
+     * AI/Tesseract document pipeline used for image→document.
+     */
+    private function convertPdfToDocument(
+        string $inputPath,
+        string $outputFormat,
+        string $outputPath
+    ): bool {
+        $tmpPng = $this->rasterizePdf($inputPath);
+        if ($tmpPng !== null) {
+            try {
+                if ($this->aiService !== null
+                    && $this->convertImageToDocumentWithOcr($tmpPng, 'png', $outputFormat, $outputPath)
+                ) {
+                    return true;
+                }
+                if ($this->convertImageToDocumentWithTesseract($tmpPng, 'png', $outputFormat, $outputPath)) {
+                    return true;
+                }
+                return $this->convertImageToDocumentWithPhp($tmpPng, 'png', $outputFormat, $outputPath);
+            } finally {
+                @unlink($tmpPng);
+            }
+        }
+
+        throw new \RuntimeException(
+            "PDF to document conversion requires Ghostscript or ImageMagick to rasterize the PDF. "
+            . "Install ghostscript (apt install ghostscript) or imagemagick."
+        );
+    }
+
+    /**
+     * PDF → plain text (txt / html / md).
+     *
+     * Priority:
+     *   1. pdftotext (poppler-utils) — fast, accurate for digital PDFs
+     *   2. Rasterize → Tesseract/AI OCR — for scanned PDFs
+     *   3. LibreOffice text export
+     */
+    private function convertPdfToText(
+        string $inputPath,
+        string $outputFormat,
+        string $outputPath
+    ): bool {
+        // ── 1. pdftotext (digital PDF) ────────────────────────────────────
+        $pdfToText = trim((string) shell_exec('which pdftotext 2>/dev/null'));
+        if ($pdfToText) {
+            $tmpTxt = tempnam(sys_get_temp_dir(), 'cx_pdft_') . '.txt';
+            exec(
+                escapeshellarg($pdfToText) . ' -layout '
+                . escapeshellarg($inputPath) . ' '
+                . escapeshellarg($tmpTxt) . ' 2>/dev/null',
+                $_o, $code
+            );
+            if ($code === 0 && file_exists($tmpTxt) && trim((string) file_get_contents($tmpTxt)) !== '') {
+                $text = (string) file_get_contents($tmpTxt);
+                @unlink($tmpTxt);
+                return $this->writeTextOutput($text, $outputFormat, $outputPath);
+            }
+            @unlink($tmpTxt);
+        }
+
+        // ── 2. Rasterize → OCR (scanned PDF) ─────────────────────────────
+        $tmpPng = $this->rasterizePdf($inputPath);
+        if ($tmpPng !== null) {
+            try {
+                return $this->convertImageToTextWithOcr($tmpPng, $outputFormat, $outputPath);
+            } finally {
+                @unlink($tmpPng);
+            }
+        }
+
+        // ── 3. LibreOffice text export ────────────────────────────────────
+        try {
+            return $this->convertWithLibreOffice($inputPath, 'pdf', $outputFormat, $outputPath);
+        } catch (\RuntimeException $e) {
+            // fall through
+        }
+
+        throw new \RuntimeException(
+            "PDF to text extraction requires poppler-utils (apt install poppler-utils) "
+            . "or Ghostscript/ImageMagick for rasterization plus OCR."
+        );
+    }
+
+    /**
+     * PDF → presentation (pptx / odp / ppt).
+     *
+     * Rasterizes the first page then embeds the image in a slide at the correct
+     * page dimensions.
+     */
+    private function convertPdfToPresentation(
+        string $inputPath,
+        string $outputFormat,
+        string $outputPath
+    ): bool {
+        $tmpPng = $this->rasterizePdf($inputPath);
+        if ($tmpPng !== null) {
+            try {
+                if ($this->convertImageToPresentationWithOcr($tmpPng, 'png', $outputFormat, $outputPath)) {
+                    return true;
+                }
+                return $this->convertImageToPresentationWithPhp($tmpPng, 'png', $outputFormat, $outputPath);
+            } finally {
+                @unlink($tmpPng);
+            }
+        }
+
+        throw new \RuntimeException(
+            "PDF to presentation conversion requires Ghostscript or ImageMagick. "
+            . "Install ghostscript (apt install ghostscript)."
+        );
+    }
+
+    /**
+     * Mandatory Tesseract OCR path for image → writer format (DOCX/ODT/RTF/DOC).
+     *
+     * Runs Tesseract in plain-text mode, then passes the text through the same
+     * document builders used by the AI path.  This ensures searchable text is
+     * always produced when Tesseract is available, even without an AI API key.
+     *
+     * Returns false silently when Tesseract is not installed.
+     */
+    private function convertImageToDocumentWithTesseract(
+        string $inputPath,
+        string $inputFormat,
+        string $outputFormat,
+        string $outputPath
+    ): bool {
+        if (!file_exists($inputPath)) {
+            return false;
+        }
+
+        $tess = trim((string) shell_exec('which tesseract 2>/dev/null'));
+        if (!$tess) {
+            return false;
+        }
+
+        $tmpBase = sys_get_temp_dir() . '/cx_tess_' . bin2hex(random_bytes(12));
+        exec(
+            escapeshellarg($tess) . ' ' . escapeshellarg($inputPath)
+            . ' ' . escapeshellarg($tmpBase) . ' --psm 6 -l eng 2>/dev/null',
+            $_o, $code
+        );
+        $txtFile = $tmpBase . '.txt';
+        if ($code !== 0 || !file_exists($txtFile)) {
+            return false;
+        }
+        $text = trim((string) file_get_contents($txtFile));
+        @unlink($txtFile);
+
+        if (empty($text)) {
+            return false;
+        }
+
+        // Detect page size so the output document matches the original
+        $imgData  = @getimagesize($inputPath);
+        $pageSize = $this->detectPageSizeFromImage(
+            $imgData ? (int) $imgData[0] : 800,
+            $imgData ? (int) $imgData[1] : 1131   // default A4 proportion
+        );
+
+        return match ($outputFormat) {
+            'docx' => $this->writeDocxFromText($text, $outputPath, $inputPath, $inputFormat, $pageSize),
+            'odt'  => $this->writeOdtFromText($text, $outputPath, $inputPath, $inputFormat, $pageSize),
+            'rtf'  => $this->writeRtfFromText($text, $outputPath, $pageSize),
+            'doc'  => $this->writeDocViaDocxFromText($text, $outputPath, $inputPath, $inputFormat, $pageSize),
+            default => false,
+        };
+    }
+
+    /**
+     * Image → presentation with AI text extraction.
+     *
+     * Extracts text from the image via AI, then builds a text-based slide deck.
+     * Falls back silently when AI is unavailable.
+     */
+    private function convertImageToPresentationWithOcr(
+        string $inputPath,
+        string $inputFormat,
+        string $outputFormat,
+        string $outputPath
+    ): bool {
+        if (!file_exists($inputPath) || $this->aiService === null) {
+            return false;
+        }
+
+        // Use document OCR (Markdown) so we get structured headings and bullets
+        $aiResult = $this->aiService->ocrDocument($inputPath, 'free');
+        if (!$aiResult['success'] || empty(trim($aiResult['text'] ?? ''))) {
+            return false;
+        }
+
+        $text    = $aiResult['text'];
+        $imgData = @getimagesize($inputPath);
+        $pxW     = $imgData ? (int) $imgData[0] : 1280;
+        $pxH     = $imgData ? (int) $imgData[1] : 720;
+
+        return match ($outputFormat) {
+            'pptx' => $this->writePptxFromText($text, $inputPath, $inputFormat, $outputPath, $pxW, $pxH),
+            'odp'  => $this->writeOdpFromText($text, $inputPath, $inputFormat, $outputPath, $pxW, $pxH),
+            default => false,
+        };
+    }
+
     /**
      * AI-powered image → document conversion.
      *
      * Uses the vision model to extract structured content (headings, paragraphs,
      * tables, lists) from the image and writes it as a proper text-based document.
-     * This produces far better output than simply embedding the image.
+     * The source image is embedded on page 1 so the original visual is preserved;
+     * the extracted text follows (giving both searchable content and correct appearance).
      *
      * Falls back silently and returns false if AI is unavailable or extraction fails.
      */
@@ -747,53 +1140,125 @@ class ConversionService
 
         $text = $aiResult['text'];
 
+        // Detect page size from the image so the output document matches the original
+        $imgData  = @getimagesize($inputPath);
+        $pageSize = $this->detectPageSizeFromImage(
+            $imgData ? (int) $imgData[0] : 800,
+            $imgData ? (int) $imgData[1] : 1131
+        );
+
         return match ($outputFormat) {
-            'docx' => $this->writeDocxFromText($text, $outputPath, $inputPath, $inputFormat),
-            'odt'  => $this->writeOdtFromText($text, $outputPath, $inputPath, $inputFormat),
-            'rtf'  => $this->writeRtfFromText($text, $outputPath),
-            'doc'  => $this->writeDocViaDocxFromText($text, $outputPath, $inputPath, $inputFormat),
+            'docx' => $this->writeDocxFromText($text, $outputPath, $inputPath, $inputFormat, $pageSize),
+            'odt'  => $this->writeOdtFromText($text, $outputPath, $inputPath, $inputFormat, $pageSize),
+            'rtf'  => $this->writeRtfFromText($text, $outputPath, $pageSize),
+            'doc'  => $this->writeDocViaDocxFromText($text, $outputPath, $inputPath, $inputFormat, $pageSize),
             default => false,
         };
     }
 
     /**
-     * Build a DOCX file from structured Markdown-like text (from AI document OCR).
+     * Build a DOCX file from structured Markdown-like text (from AI / Tesseract OCR).
      *
      * Supported Markdown constructs:
-     *   # Heading 1    → Heading1 paragraph style
-     *   ## Heading 2   → Heading2 paragraph style
-     *   ### Heading 3  → Heading3 paragraph style
-     *   | col | col |  → OOXML <w:tbl> table
-     *   - item         → ListBullet paragraph style
-     *   1. item        → ListNumber paragraph style
+     *   # Heading 1    → Heading1 paragraph style (blue, bold, large)
+     *   ## Heading 2   → Heading2 paragraph style (blue, bold, medium)
+     *   ### Heading 3  → Heading3 paragraph style (dark blue, bold, normal)
+     *   | col | col |  → OOXML <w:tbl> table with borders
+     *   - item         → ListBullet paragraph style (indented bullet)
+     *   1. item        → ListNumber paragraph style (indented numbered)
      *   blank line     → empty paragraph (spacer)
      *   everything else → Normal paragraph style
      *
-     * When $imagePath is provided the image is also embedded after the text.
+     * A complete styles.xml is embedded so all styles render correctly in Word/LibreOffice.
+     * The source image (if provided) is embedded FIRST on page 1 so the original
+     * visual is preserved; extracted text follows on the same/subsequent pages.
+     *
+     * @param array $pageSize  Output of detectPageSizeFromImage() — controls page dimensions
      */
     private function writeDocxFromText(
         string $text,
         string $outputPath,
         string $imagePath = '',
-        string $inputFormat = ''
+        string $inputFormat = '',
+        array  $pageSize = []
     ): bool {
         if (!class_exists('ZipArchive')) {
             return false;
         }
 
-        $bodyXml      = '';
-        $relationships = '';
-        $contentTypes  = '';
-        $imageEntry    = '';
-        $rId           = 1;
+        // Default to A4 if no page size provided
+        if (empty($pageSize)) {
+            $pageSize = ['twip_w' => 11906, 'twip_h' => 16838, 'name' => 'A4', 'landscape' => false];
+        }
+        $pgW  = (int) $pageSize['twip_w'];
+        $pgH  = (int) $pageSize['twip_h'];
+        // Standard margins: 1 inch = 1440 twips
+        $pgMar = 1440;
 
-        // ── Parse text into DOCX body XML ────────────────────────────────
+        $bodyXml    = '';
+        $mediaFiles = [];
+        $imgRelXml  = '';
+        $imgCTXml   = '';
+
+        // ── Embed source image on page 1 (preserves original visual design) ─
+        if ($imagePath && file_exists($imagePath)) {
+            $mimeMap = ['jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png',
+                        'gif' => 'image/gif',  'webp' => 'image/webp', 'bmp' => 'image/bmp',
+                        'tiff' => 'image/tiff', 'svg' => 'image/svg+xml'];
+            $imgExt  = strtolower(pathinfo($imagePath, PATHINFO_EXTENSION)) ?: strtolower($inputFormat);
+            $mime    = $mimeMap[$imgExt] ?? 'image/png';
+            $media   = 'image1.' . $imgExt;
+            $imgData = @getimagesize($imagePath);
+            $pxW     = $imgData ? max(1, (int) $imgData[0]) : 800;
+            $pxH     = $imgData ? max(1, (int) $imgData[1]) : 600;
+
+            // Scale image to fit content area (page width minus margins)
+            $maxEmuW  = (int) (($pgW - 2 * $pgMar) * 914400 / 1440);
+            $emuPerPx = 914400.0 / 96.0;
+            $emuW     = (int) min($maxEmuW, round($pxW * $emuPerPx));
+            $emuH     = (int) round($emuW * $pxH / $pxW);
+
+            $bodyXml .= '<w:p><w:r><w:drawing>'
+                     . '<wp:inline distT="0" distB="0" distL="0" distR="0"'
+                     . ' xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing">'
+                     . '<wp:extent cx="' . $emuW . '" cy="' . $emuH . '"/>'
+                     . '<wp:effectExtent l="0" t="0" r="0" b="0"/>'
+                     . '<wp:docPr id="1" name="Source Image"/>'
+                     . '<wp:cNvGraphicFramePr>'
+                     . '<a:graphicFrameLocks noChangeAspectRatio="1"'
+                     . ' xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"/>'
+                     . '</wp:cNvGraphicFramePr>'
+                     . '<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">'
+                     . '<a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">'
+                     . '<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">'
+                     . '<pic:nvPicPr><pic:cNvPr id="0" name="img"/><pic:cNvPicPr/></pic:nvPicPr>'
+                     . '<pic:blipFill>'
+                     . '<a:blip r:embed="rId1" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"/>'
+                     . '<a:stretch><a:fillRect/></a:stretch></pic:blipFill>'
+                     . '<pic:spPr>'
+                     . '<a:xfrm><a:off x="0" y="0"/><a:ext cx="' . $emuW . '" cy="' . $emuH . '"/></a:xfrm>'
+                     . '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom>'
+                     . '</pic:spPr>'
+                     . '</pic:pic></a:graphicData></a:graphic>'
+                     . '</wp:inline>'
+                     . '</w:drawing></w:r></w:p>'
+                     // Page break before extracted text section
+                     . '<w:p><w:r><w:br w:type="page"/></w:r></w:p>';
+
+            $mediaFiles[$media] = $imagePath;
+            $imgRelXml = '<Relationship Id="rId1"'
+                . ' Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image"'
+                . ' Target="media/' . $media . '"/>';
+            $imgCTXml = '<Override PartName="/word/media/' . $media . '" ContentType="' . $mime . '"/>';
+        }
+
+        // ── Parse Markdown text into DOCX body XML ────────────────────────
         $lines = preg_split('/\r\n|\r|\n/', $text) ?: [];
         $i = 0;
         while ($i < count($lines)) {
             $line = $lines[$i];
 
-            // Markdown pipe table: collect consecutive | lines
+            // Markdown pipe table
             if (str_starts_with(trim($line), '|')) {
                 $tableLines = [];
                 while ($i < count($lines) && str_starts_with(trim($lines[$i]), '|')) {
@@ -807,8 +1272,7 @@ class ConversionService
             // Heading levels
             if (preg_match('/^(#{1,3})\s+(.+)$/', $line, $m)) {
                 $lvl      = strlen($m[1]);
-                $style    = "Heading{$lvl}";
-                $bodyXml .= $this->docxParagraph(htmlspecialchars($m[2], ENT_XML1), $style);
+                $bodyXml .= $this->docxParagraph(htmlspecialchars($m[2], ENT_XML1), "Heading{$lvl}");
                 $i++;
                 continue;
             }
@@ -827,19 +1291,18 @@ class ConversionService
                 continue;
             }
 
-            // Blank line → empty spacer paragraph
+            // Blank line → spacer paragraph
             if (trim($line) === '') {
                 $bodyXml .= '<w:p/>';
                 $i++;
                 continue;
             }
 
-            // Inline formatting: **bold** and *italic*
+            // Inline **bold** and *italic*
             $safe = htmlspecialchars($line, ENT_XML1);
             $safe = preg_replace('/\*\*(.+?)\*\*/', '<w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">$1</w:t></w:r>', $safe);
             $safe = preg_replace('/\*(.+?)\*/',     '<w:r><w:rPr><w:i/></w:rPr><w:t xml:space="preserve">$1</w:t></w:r>', $safe);
 
-            // If the line still has no <w:r> tags it's plain text
             if (!str_contains((string) $safe, '<w:r>')) {
                 $bodyXml .= $this->docxParagraph((string) $safe, 'Normal');
             } else {
@@ -848,57 +1311,11 @@ class ConversionService
             $i++;
         }
 
-        // ── Optional: append the source image ────────────────────────────
-        $mediaFiles = [];
-        if ($imagePath && file_exists($imagePath)) {
-            $mimeMap   = ['jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png',
-                          'gif' => 'image/gif', 'webp' => 'image/webp', 'bmp' => 'image/bmp',
-                          'tiff' => 'image/tiff', 'svg' => 'image/svg+xml'];
-            $imgExt    = strtolower(pathinfo($imagePath, PATHINFO_EXTENSION)) ?: strtolower($inputFormat);
-            $mime      = $mimeMap[$imgExt] ?? 'image/png';
-            $media     = 'image1.' . $imgExt;
-            $imgData   = @getimagesize($imagePath);
-            $pxW       = $imgData ? max(1, (int) $imgData[0]) : 800;
-            $pxH       = $imgData ? max(1, (int) $imgData[1]) : 600;
-            $emuPerPx  = 914400.0 / 96.0;
-            $maxEmuW   = 5486400;
-            $emuW      = (int) min($maxEmuW, round($pxW * $emuPerPx));
-            $emuH      = (int) round($emuW * $pxH / $pxW);
+        // ── Styles.xml — full built-in Word styles so headings/lists render correctly
+        $stylesXml = $this->buildDocxStylesXml();
 
-            $bodyXml .= '<w:p/>'  // blank line before image
-                     . '<w:p><w:r><w:drawing>'
-                     . '<wp:inline distT="0" distB="0" distL="0" distR="0"'
-                     . ' xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing">'
-                     . '<wp:extent cx="' . $emuW . '" cy="' . $emuH . '"/>'
-                     . '<wp:effectExtent l="0" t="0" r="0" b="0"/>'
-                     . '<wp:docPr id="1" name="Picture 1"/>'
-                     . '<wp:cNvGraphicFramePr>'
-                     . '<a:graphicFrameLocks noChangeAspectRatio="1"'
-                     . ' xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"/>'
-                     . '</wp:cNvGraphicFramePr>'
-                     . '<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">'
-                     . '<a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">'
-                     . '<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">'
-                     . '<pic:nvPicPr><pic:cNvPr id="0" name="img"/><pic:cNvPicPr/></pic:nvPicPr>'
-                     . '<pic:blipFill>'
-                     . '<a:blip r:embed="rId1" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"/>'
-                     . '<a:stretch><a:fillRect/></a:stretch></pic:blipFill>'
-                     . '<pic:spPr>'
-                     . '<a:xfrm><a:off x="0" y="0"/><a:ext cx="' . $emuW . '" cy="' . $emuH . '"/></a:xfrm>'
-                     . '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom>'
-                     . '</pic:spPr>'
-                     . '</pic:pic></a:graphicData></a:graphic>'
-                     . '</wp:inline>'
-                     . '</w:drawing></w:r></w:p>';
-
-            $mediaFiles[$media] = $imagePath;
-            $relationships      = '<Relationship Id="rId1"'
-                . ' Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image"'
-                . ' Target="media/' . $media . '"/>';
-            $contentTypes       = '<Override PartName="/word/media/' . $media . '" ContentType="' . $mime . '"/>';
-        }
-
-        // ── Assemble the DOCX ZIP ─────────────────────────────────────────
+        // ── Assemble document.xml ─────────────────────────────────────────
+        $landscape  = !empty($pageSize['landscape']) ? ' w:orient="landscape"' : '';
         $document =
             '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             . '<w:document'
@@ -906,14 +1323,20 @@ class ConversionService
             . ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
             . '<w:body>'
             . $bodyXml
-            . '<w:sectPr><w:pgSz w:w="12240" w:h="15840"/>'
-            . '<w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440"/></w:sectPr>'
+            . '<w:sectPr>'
+            . '<w:pgSz w:w="' . $pgW . '" w:h="' . $pgH . '"' . $landscape . '/>'
+            . '<w:pgMar w:top="' . $pgMar . '" w:right="' . $pgMar . '"'
+            . ' w:bottom="' . $pgMar . '" w:left="' . $pgMar . '"/>'
+            . '</w:sectPr>'
             . '</w:body></w:document>';
 
         $rels =
             '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
-            . $relationships
+            . $imgRelXml
+            . '<Relationship Id="rId2"'
+            . ' Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles"'
+            . ' Target="styles.xml"/>'
             . '</Relationships>';
 
         $contentTypesXml =
@@ -923,7 +1346,9 @@ class ConversionService
             . '<Default Extension="xml" ContentType="application/xml"/>'
             . '<Override PartName="/word/document.xml"'
             . ' ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>'
-            . $contentTypes
+            . '<Override PartName="/word/styles.xml"'
+            . ' ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>'
+            . $imgCTXml
             . '</Types>';
 
         $relsMain =
@@ -941,6 +1366,7 @@ class ConversionService
         $zip->addFromString('[Content_Types].xml',          $contentTypesXml);
         $zip->addFromString('_rels/.rels',                  $relsMain);
         $zip->addFromString('word/document.xml',            $document);
+        $zip->addFromString('word/styles.xml',              $stylesXml);
         $zip->addFromString('word/_rels/document.xml.rels', $rels);
         foreach ($mediaFiles as $zipEntry => $srcPath) {
             $zip->addFile($srcPath, 'word/media/' . $zipEntry);
@@ -948,6 +1374,99 @@ class ConversionService
         $zip->close();
 
         return file_exists($outputPath) && filesize($outputPath) > 100;
+    }
+
+    /**
+     * Build a Word styles.xml with real built-in styles.
+     *
+     * Includes: Normal, Heading1 (blue #2F5496 bold 18pt), Heading2 (blue bold 14pt),
+     * Heading3 (dark bold 12pt), ListBullet (indented bullet), ListNumber (indented),
+     * TableGrid (bordered table), Caption.
+     */
+    private function buildDocxStylesXml(): string
+    {
+        $ns = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"'
+            . ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"';
+
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<w:styles ' . $ns . ' w:docDefaults="">'
+            . '<w:docDefaults>'
+            . '<w:rPrDefault><w:rPr>'
+            . '<w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:cs="Times New Roman"/>'
+            . '<w:sz w:val="22"/><w:szCs w:val="22"/>'
+            . '</w:rPr></w:rPrDefault>'
+            . '<w:pPrDefault><w:pPr>'
+            . '<w:spacing w:after="160" w:line="259" w:lineRule="auto"/>'
+            . '</w:pPr></w:pPrDefault>'
+            . '</w:docDefaults>'
+            // Normal
+            . '<w:style w:type="paragraph" w:default="1" w:styleId="Normal">'
+            . '<w:name w:val="Normal"/>'
+            . '<w:pPr><w:spacing w:after="160"/></w:pPr>'
+            . '<w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/><w:sz w:val="22"/></w:rPr>'
+            . '</w:style>'
+            // Heading 1 — blue bold 18pt
+            . '<w:style w:type="paragraph" w:styleId="Heading1">'
+            . '<w:name w:val="heading 1"/>'
+            . '<w:basedOn w:val="Normal"/>'
+            . '<w:next w:val="Normal"/>'
+            . '<w:pPr><w:spacing w:before="480" w:after="120"/><w:outlineLvl w:val="0"/></w:pPr>'
+            . '<w:rPr><w:b/><w:color w:val="2F5496"/>'
+            . '<w:sz w:val="36"/><w:szCs w:val="36"/>'
+            . '<w:rFonts w:ascii="Calibri Light" w:hAnsi="Calibri Light"/></w:rPr>'
+            . '</w:style>'
+            // Heading 2 — blue bold 14pt
+            . '<w:style w:type="paragraph" w:styleId="Heading2">'
+            . '<w:name w:val="heading 2"/>'
+            . '<w:basedOn w:val="Normal"/>'
+            . '<w:next w:val="Normal"/>'
+            . '<w:pPr><w:spacing w:before="360" w:after="80"/><w:outlineLvl w:val="1"/></w:pPr>'
+            . '<w:rPr><w:b/><w:color w:val="2E74B5"/>'
+            . '<w:sz w:val="28"/><w:szCs w:val="28"/>'
+            . '<w:rFonts w:ascii="Calibri Light" w:hAnsi="Calibri Light"/></w:rPr>'
+            . '</w:style>'
+            // Heading 3 — dark blue bold 12pt
+            . '<w:style w:type="paragraph" w:styleId="Heading3">'
+            . '<w:name w:val="heading 3"/>'
+            . '<w:basedOn w:val="Normal"/>'
+            . '<w:next w:val="Normal"/>'
+            . '<w:pPr><w:spacing w:before="240" w:after="60"/><w:outlineLvl w:val="2"/></w:pPr>'
+            . '<w:rPr><w:b/><w:color w:val="1F3864"/>'
+            . '<w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr>'
+            . '</w:style>'
+            // List Bullet
+            . '<w:style w:type="paragraph" w:styleId="ListBullet">'
+            . '<w:name w:val="List Bullet"/>'
+            . '<w:basedOn w:val="Normal"/>'
+            . '<w:pPr>'
+            . '<w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr>'
+            . '<w:ind w:left="720" w:hanging="360"/>'
+            . '</w:pPr>'
+            . '</w:style>'
+            // List Number
+            . '<w:style w:type="paragraph" w:styleId="ListNumber">'
+            . '<w:name w:val="List Number"/>'
+            . '<w:basedOn w:val="Normal"/>'
+            . '<w:pPr>'
+            . '<w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr>'
+            . '<w:ind w:left="720" w:hanging="360"/>'
+            . '</w:pPr>'
+            . '</w:style>'
+            // Table Grid
+            . '<w:style w:type="table" w:styleId="TableGrid">'
+            . '<w:name w:val="Table Grid"/>'
+            . '<w:tblPr>'
+            . '<w:tblBorders>'
+            . '<w:top w:val="single" w:sz="4" w:space="0" w:color="000000"/>'
+            . '<w:left w:val="single" w:sz="4" w:space="0" w:color="000000"/>'
+            . '<w:bottom w:val="single" w:sz="4" w:space="0" w:color="000000"/>'
+            . '<w:right w:val="single" w:sz="4" w:space="0" w:color="000000"/>'
+            . '<w:insideH w:val="single" w:sz="4" w:space="0" w:color="000000"/>'
+            . '<w:insideV w:val="single" w:sz="4" w:space="0" w:color="000000"/>'
+            . '</w:tblBorders>'
+            . '</w:tblPr>'
+            . '</w:style>'
+            . '</w:styles>';
     }
 
     /** Build a single DOCX <w:p> element with an optional paragraph style. */
@@ -976,13 +1495,11 @@ class ConversionService
 
         $headerDone = false;
         foreach ($lines as $line) {
-            // Skip the separator row (| --- | --- |)
             if (preg_match('/^\|[\s\-:|]+\|/', trim($line))) {
                 $headerDone = true;
                 continue;
             }
 
-            // Split on | and trim; remove empty first/last entries from leading/trailing |
             $cells = array_map('trim', explode('|', $line));
             $cells = array_values(array_filter($cells, fn($c) => $c !== ''));
             if (empty($cells)) {
@@ -993,9 +1510,12 @@ class ConversionService
             $tblXml  .= '<w:tr>';
             foreach ($cells as $cell) {
                 $cellText = htmlspecialchars($cell, ENT_XML1);
-                $runPr    = $isHeader ? '<w:rPr><w:b/></w:rPr>' : '';
+                $runPr    = $isHeader ? '<w:rPr><w:b/><w:color w:val="FFFFFF"/></w:rPr>' : '';
+                $shadePr  = $isHeader
+                    ? '<w:tcPr><w:tcW w:w="0" w:type="auto"/><w:shd w:val="clear" w:color="auto" w:fill="2F75B6"/></w:tcPr>'
+                    : '<w:tcPr><w:tcW w:w="0" w:type="auto"/></w:tcPr>';
                 $tblXml  .= '<w:tc>'
-                          . '<w:tcPr><w:tcW w:w="0" w:type="auto"/></w:tcPr>'
+                          . $shadePr
                           . '<w:p><w:r>' . $runPr
                           . '<w:t xml:space="preserve">' . $cellText . '</w:t>'
                           . '</w:r></w:p>'
@@ -1004,89 +1524,42 @@ class ConversionService
             $tblXml .= '</w:tr>';
         }
 
-        $tblXml .= '</w:tbl><w:p/>'; // blank paragraph after table (required by OOXML)
+        $tblXml .= '</w:tbl><w:p/>';
         return $tblXml;
     }
 
     /**
      * Build an ODT file from structured Markdown-like text.
      *
-     * Supports headings (# ## ###), paragraphs, and pipe tables.
-     * When $imagePath is provided, the image is appended after the text.
+     * Supports headings (#/##/###), paragraphs, pipe tables, bullet/numbered lists.
+     * The source image is embedded on page 1 so the original visual is preserved;
+     * extracted text follows.  Page dimensions are set from $pageSize.
+     *
+     * @param array $pageSize  Output of detectPageSizeFromImage()
      */
     private function writeOdtFromText(
         string $text,
         string $outputPath,
         string $imagePath = '',
-        string $inputFormat = ''
+        string $inputFormat = '',
+        array  $pageSize = []
     ): bool {
         if (!class_exists('ZipArchive')) {
             return false;
         }
 
-        $bodyXml    = '';
-        $mediaFiles = [];
+        if (empty($pageSize)) {
+            $pageSize = ['cm_w' => 21.0, 'cm_h' => 29.7, 'name' => 'A4', 'landscape' => false];
+        }
+        $pgW    = number_format((float) $pageSize['cm_w'], 3);
+        $pgH    = number_format((float) $pageSize['cm_h'], 3);
+        $margin = '2.000';  // 2 cm margins
+
+        $bodyXml         = '';
+        $mediaFiles      = [];
         $manifestEntries = '';
 
-        // ── Parse text into ODF body XML ──────────────────────────────────
-        $lines = preg_split('/\r\n|\r|\n/', $text) ?: [];
-        $i = 0;
-        while ($i < count($lines)) {
-            $line = $lines[$i];
-
-            // Pipe table: collect consecutive | lines
-            if (str_starts_with(trim($line), '|')) {
-                $tableLines = [];
-                while ($i < count($lines) && str_starts_with(trim($lines[$i]), '|')) {
-                    $tableLines[] = $lines[$i];
-                    $i++;
-                }
-                $bodyXml .= $this->markdownTableToOdtXml($tableLines);
-                continue;
-            }
-
-            // Headings
-            if (preg_match('/^(#{1,3})\s+(.+)$/', $line, $m)) {
-                $lvl      = strlen($m[1]);
-                $style    = 'Heading_20_' . $lvl;
-                $bodyXml .= '<text:h text:style-name="' . $style . '" text:outline-level="' . $lvl . '">'
-                          . htmlspecialchars($m[2], ENT_XML1) . '</text:h>';
-                $i++;
-                continue;
-            }
-
-            // Bullet list
-            if (preg_match('/^[-*]\s+(.+)$/', $line, $m)) {
-                $bodyXml .= '<text:list><text:list-item><text:p>'
-                          . htmlspecialchars($m[1], ENT_XML1) . '</text:p></text:list-item></text:list>';
-                $i++;
-                continue;
-            }
-
-            // Numbered list
-            if (preg_match('/^\d+[.)]\s+(.+)$/', $line, $m)) {
-                $bodyXml .= '<text:list text:style-name="List_20_Number"><text:list-item><text:p>'
-                          . htmlspecialchars($m[1], ENT_XML1) . '</text:p></text:list-item></text:list>';
-                $i++;
-                continue;
-            }
-
-            // Blank → empty paragraph
-            if (trim($line) === '') {
-                $bodyXml .= '<text:p/>';
-                $i++;
-                continue;
-            }
-
-            // Regular paragraph (with basic inline bold/italic support)
-            $safe = htmlspecialchars($line, ENT_XML1);
-            $safe = preg_replace('/\*\*(.+?)\*\*/', '<text:span text:style-name="Strong_20_Emphasis">$1</text:span>', $safe);
-            $safe = preg_replace('/\*(.+?)\*/',     '<text:span text:style-name="Emphasis">$1</text:span>',          $safe);
-            $bodyXml .= '<text:p>' . $safe . '</text:p>';
-            $i++;
-        }
-
-        // ── Optional: append source image ─────────────────────────────────
+        // ── Embed source image on page 1 (preserves original visual design) ─
         if ($imagePath && file_exists($imagePath)) {
             $mimeMap = ['jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png',
                         'gif' => 'image/gif',  'webp' => 'image/webp', 'bmp' => 'image/bmp',
@@ -1097,32 +1570,131 @@ class ConversionService
             $imgData = @getimagesize($imagePath);
             $pxW     = $imgData ? max(1, (int) $imgData[0]) : 800;
             $pxH     = $imgData ? max(1, (int) $imgData[1]) : 600;
-            $maxCmW  = 16.0;
+            $maxCmW  = (float) $pageSize['cm_w'] - 4.0; // content width
             $cmPerPx = 2.54 / 96.0;
-            $cmW     = min($maxCmW, round($pxW * $cmPerPx, 3));
-            $cmH     = round($cmW * $pxH / $pxW, 3);
+            $cmW     = number_format(min($maxCmW, $pxW * $cmPerPx), 3);
+            $cmH     = number_format((float) $cmW * $pxH / $pxW, 3);
 
             $bodyXml .= '<text:p>'
-                     . '<draw:frame draw:style-name="fr1" draw:name="Image1"'
+                     . '<draw:frame draw:style-name="fr1" draw:name="SourceImage"'
                      . ' svg:width="' . $cmW . 'cm" svg:height="' . $cmH . 'cm"'
                      . ' text:anchor-type="paragraph">'
                      . '<draw:image xlink:href="' . $media . '" xlink:type="simple"'
                      . ' xlink:show="embed" xlink:actuate="onLoad"/>'
-                     . '</draw:frame></text:p>';
+                     . '</draw:frame></text:p>'
+                     . '<text:p><text:soft-page-break/></text:p>';  // page break before text
 
-            $mediaFiles[$media] = $imagePath;
-            $manifestEntries   .= '<manifest:file-entry manifest:full-path="' . $media
-                                . '" manifest:media-type="' . $mime . '"/>';
+            $mediaFiles[$media]  = $imagePath;
+            $manifestEntries    .= '<manifest:file-entry manifest:full-path="' . $media
+                                 . '" manifest:media-type="' . $mime . '"/>';
         }
 
-        // ── Build the ODT ZIP ─────────────────────────────────────────────
+        // ── Parse Markdown text into ODF body XML ─────────────────────────
+        $lines = preg_split('/\r\n|\r|\n/', $text) ?: [];
+        $i = 0;
+        while ($i < count($lines)) {
+            $line = $lines[$i];
+
+            if (str_starts_with(trim($line), '|')) {
+                $tableLines = [];
+                while ($i < count($lines) && str_starts_with(trim($lines[$i]), '|')) {
+                    $tableLines[] = $lines[$i];
+                    $i++;
+                }
+                $bodyXml .= $this->markdownTableToOdtXml($tableLines);
+                continue;
+            }
+
+            if (preg_match('/^(#{1,3})\s+(.+)$/', $line, $m)) {
+                $lvl      = strlen($m[1]);
+                // ODF built-in style names use "Heading N" (not "_20_" which is URL encoding)
+                $bodyXml .= '<text:h text:style-name="Heading ' . $lvl . '" text:outline-level="' . $lvl . '">'
+                          . htmlspecialchars($m[2], ENT_XML1) . '</text:h>';
+                $i++;
+                continue;
+            }
+
+            if (preg_match('/^[-*]\s+(.+)$/', $line, $m)) {
+                $bodyXml .= '<text:list text:style-name="List Bullet"><text:list-item><text:p>'
+                          . htmlspecialchars($m[1], ENT_XML1) . '</text:p></text:list-item></text:list>';
+                $i++;
+                continue;
+            }
+
+            if (preg_match('/^\d+[.)]\s+(.+)$/', $line, $m)) {
+                $bodyXml .= '<text:list text:style-name="List Number"><text:list-item><text:p>'
+                          . htmlspecialchars($m[1], ENT_XML1) . '</text:p></text:list-item></text:list>';
+                $i++;
+                continue;
+            }
+
+            if (trim($line) === '') {
+                $bodyXml .= '<text:p/>';
+                $i++;
+                continue;
+            }
+
+            $safe = htmlspecialchars($line, ENT_XML1);
+            $safe = preg_replace('/\*\*(.+?)\*\*/', '<text:span text:style-name="Strong_20_Emphasis">$1</text:span>', $safe);
+            $safe = preg_replace('/\*(.+?)\*/',     '<text:span text:style-name="Emphasis">$1</text:span>',          $safe);
+            $bodyXml .= '<text:p>' . $safe . '</text:p>';
+            $i++;
+        }
+
+        // ── Build ODT ZIP ─────────────────────────────────────────────────
         $manifest =
             '<?xml version="1.0" encoding="UTF-8"?>'
             . '<manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0" manifest:version="1.3">'
             . '<manifest:file-entry manifest:full-path="/" manifest:version="1.3" manifest:media-type="application/vnd.oasis.opendocument.text"/>'
             . '<manifest:file-entry manifest:full-path="content.xml" manifest:media-type="text/xml"/>'
+            . '<manifest:file-entry manifest:full-path="styles.xml" manifest:media-type="text/xml"/>'
             . $manifestEntries
             . '</manifest:manifest>';
+
+        // styles.xml — page layout with correct dimensions
+        $landscape   = !empty($pageSize['landscape']) ? ' style:print-orientation="landscape"' : '';
+        $stylesXml   =
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            . '<office:document-styles'
+            . ' xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"'
+            . ' xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0"'
+            . ' xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0"'
+            . ' office:version="1.3">'
+            . '<office:styles>'
+            // Heading 1 style
+            . '<style:style style:name="Heading 1" style:family="paragraph" style:class="text">'
+            . '<style:paragraph-properties fo:margin-top="0.494cm" fo:margin-bottom="0.247cm"/>'
+            . '<style:text-properties fo:font-size="18pt" fo:font-weight="bold" fo:color="#2F5496"'
+            . ' style:font-name="Calibri Light"/>'
+            . '</style:style>'
+            // Heading 2
+            . '<style:style style:name="Heading 2" style:family="paragraph" style:class="text">'
+            . '<style:paragraph-properties fo:margin-top="0.353cm" fo:margin-bottom="0.176cm"/>'
+            . '<style:text-properties fo:font-size="14pt" fo:font-weight="bold" fo:color="#2E74B5"'
+            . ' style:font-name="Calibri Light"/>'
+            . '</style:style>'
+            // Heading 3
+            . '<style:style style:name="Heading 3" style:family="paragraph" style:class="text">'
+            . '<style:paragraph-properties fo:margin-top="0.247cm" fo:margin-bottom="0.118cm"/>'
+            . '<style:text-properties fo:font-size="12pt" fo:font-weight="bold" fo:color="#1F3864"/>'
+            . '</style:style>'
+            . '</office:styles>'
+            . '<office:automatic-styles>'
+            . '<style:page-layout style:name="PageLayout">'
+            . '<style:page-layout-properties'
+            . ' fo:page-width="' . $pgW . 'cm"'
+            . ' fo:page-height="' . $pgH . 'cm"'
+            . $landscape
+            . ' fo:margin-top="' . $margin . 'cm"'
+            . ' fo:margin-bottom="' . $margin . 'cm"'
+            . ' fo:margin-left="' . $margin . 'cm"'
+            . ' fo:margin-right="' . $margin . 'cm"/>'
+            . '</style:page-layout>'
+            . '</office:automatic-styles>'
+            . '<office:master-styles>'
+            . '<style:master-page style:name="Standard" style:page-layout-name="PageLayout"/>'
+            . '</office:master-styles>'
+            . '</office:document-styles>';
 
         $content =
             '<?xml version="1.0" encoding="UTF-8"?>'
@@ -1153,6 +1725,7 @@ class ConversionService
             $zip->setCompressionName('mimetype', \ZipArchive::CM_STORE);
         }
         $zip->addFromString('META-INF/manifest.xml', $manifest);
+        $zip->addFromString('styles.xml',            $stylesXml);
         $zip->addFromString('content.xml',           $content);
         foreach ($mediaFiles as $zipEntry => $srcPath) {
             $zip->addFile($srcPath, $zipEntry);
@@ -1167,7 +1740,7 @@ class ConversionService
      */
     private function markdownTableToOdtXml(array $lines): string
     {
-        $xml = '<table:table table:name="Table1" table:style-name="TableGrid">';
+        $xml = '<table:table table:name="Table1">';
 
         $headerDone = false;
         foreach ($lines as $line) {
@@ -1198,10 +1771,13 @@ class ConversionService
     /**
      * Build an RTF document from structured Markdown-like text.
      *
-     * Supports headings (# ## ###), bullet/numbered lists, pipe tables,
+     * Supports headings (#/##/###), bullet/numbered lists, pipe tables,
      * bold/italic inline formatting, and paragraph breaks.
+     * Page size is set via RTF \paperw / \paperh control words (in twips).
+     *
+     * @param array $pageSize  Output of detectPageSizeFromImage()
      */
-    private function writeRtfFromText(string $text, string $outputPath): bool
+    private function writeRtfFromText(string $text, string $outputPath, array $pageSize = []): bool
     {
         $rtfBody = '';
 
@@ -1273,8 +1849,12 @@ class ConversionService
 
         $rtf = '{\\rtf1\\ansi\\deff0' . "\n"
              . '{\\fonttbl{\\f0\\froman\\fcharset0 Times New Roman;}{\\f1\\fswiss\\fcharset0 Arial;}}' . "\n"
-             . '{\\colortbl;\\red0\\green0\\blue0;}' . "\n"
-             . '\\deflang1033\\widowctrl\\hyphauto' . "\n"
+             . '{\\colortbl;\\red47\\green84\\blue150;\\red0\\green0\\blue0;}' . "\n"
+             . '\\deflang1033\\widowctrl\\hyphauto'
+             // Page size in twips (default A4: 11906 × 16838)
+             . '\\paperw' . (empty($pageSize) ? 11906 : (int) $pageSize['twip_w'])
+             . '\\paperh' . (empty($pageSize) ? 16838 : (int) $pageSize['twip_h'])
+             . '\\margl1440\\margr1440\\margt1440\\margb1440' . "\n"
              . $rtfBody
              . '}';
 
@@ -1355,13 +1935,14 @@ class ConversionService
         string $text,
         string $outputPath,
         string $imagePath = '',
-        string $inputFormat = ''
+        string $inputFormat = '',
+        array  $pageSize = []
     ): bool {
         $tmpBase = tempnam(sys_get_temp_dir(), 'cx_doc_');
         @unlink($tmpBase);
         $tmpDocx = $tmpBase . '.docx';
         try {
-            if (!$this->writeDocxFromText($text, $tmpDocx, $imagePath, $inputFormat)) {
+            if (!$this->writeDocxFromText($text, $tmpDocx, $imagePath, $inputFormat, $pageSize)) {
                 return false;
             }
             return $this->convertWithLibreOffice($tmpDocx, 'docx', 'doc', $outputPath);
@@ -1742,7 +2323,7 @@ class ConversionService
             return [];
         }
 
-        $tmpBase = sys_get_temp_dir() . '/cx_tess_' . getmypid() . '_' . bin2hex(random_bytes(8));
+        $tmpBase = sys_get_temp_dir() . '/cx_tess_' . bin2hex(random_bytes(12));
         // --psm 6: treat the image as a single uniform block of text — better for tables/grids
         exec(
             escapeshellarg($tess) . ' ' . escapeshellarg($inputPath)
@@ -1921,7 +2502,7 @@ class ConversionService
             return [];
         }
 
-        $tmpBase = sys_get_temp_dir() . '/cx_tess_' . getmypid() . '_' . bin2hex(random_bytes(8));
+        $tmpBase = sys_get_temp_dir() . '/cx_tess_' . bin2hex(random_bytes(12));
         exec(
             escapeshellarg($tess) . ' ' . escapeshellarg($inputPath)
             . ' ' . escapeshellarg($tmpBase) . ' --psm 6 -l eng 2>/dev/null',
@@ -2311,6 +2892,427 @@ class ConversionService
     }
 
     /**
+     * Build a PPTX from AI-extracted Markdown text.
+     *
+     * Creates a professional slide deck where:
+     *   - Slide 1: The source image filling the slide (preserves original visual)
+     *   - Slide 2+: Text content extracted by AI (headings become title text,
+     *     paragraphs/bullets become content text blocks)
+     *
+     * @param string $text         Markdown text from AI OCR
+     * @param string $imagePath    Source image to embed on slide 1
+     * @param string $inputFormat  Source image format (png/jpg/etc.)
+     * @param string $outputPath   Destination .pptx path
+     * @param int    $pxW          Source image width  (for aspect ratio)
+     * @param int    $pxH          Source image height (for aspect ratio)
+     */
+    private function writePptxFromText(
+        string $text,
+        string $imagePath,
+        string $inputFormat,
+        string $outputPath,
+        int    $pxW = 1280,
+        int    $pxH = 720
+    ): bool {
+        if (!class_exists('ZipArchive')) {
+            return false;
+        }
+
+        // Slide dimensions: widescreen 13.33" × 7.5" in EMUs (1 in = 914400 EMU)
+        $slideW = 9144000;
+        $slideH = 5143500;
+
+        $mimeMap = ['jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png',
+                    'gif' => 'image/gif',  'webp' => 'image/webp', 'bmp' => 'image/bmp',
+                    'tiff' => 'image/tiff'];
+        $imgExt  = strtolower(pathinfo($imagePath, PATHINFO_EXTENSION)) ?: strtolower($inputFormat);
+        $mime    = $mimeMap[$imgExt] ?? 'image/png';
+
+        // Scale image to fill slide while preserving aspect ratio
+        $srcAspect = $pxH > 0 ? ($pxW / $pxH) : (16 / 9);
+        $sldAspect = $slideW / $slideH;
+        if ($srcAspect > $sldAspect) {
+            $imgEmuW = $slideW;
+            $imgEmuH = (int) ($slideW / $srcAspect);
+        } else {
+            $imgEmuH = $slideH;
+            $imgEmuW = (int) ($slideH * $srcAspect);
+        }
+        $imgOffX = (int) (($slideW - $imgEmuW) / 2);
+        $imgOffY = (int) (($slideH - $imgEmuH) / 2);
+
+        // ── Slide 1: source image ─────────────────────────────────────────
+        $slide1 =
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"'
+            . ' xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"'
+            . ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+            . '<p:cSld><p:spTree>'
+            . '<p:sp><p:nvSpPr><p:cNvPr id="1" name="bg"/><p:cNvSpPr><a:spLocks/></p:cNvSpPr>'
+            . '<p:nvPr/></p:nvSpPr>'
+            . '<p:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="' . $slideW . '" cy="' . $slideH . '"/></a:xfrm>'
+            . '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom>'
+            . '<a:solidFill><a:srgbClr val="000000"/></a:solidFill></p:spPr></p:sp>'
+            . '<p:pic>'
+            . '<p:nvPicPr><p:cNvPr id="2" name="img"/><p:cNvPicPr/><p:nvPr/></p:nvPicPr>'
+            . '<p:blipFill><a:blip r:embed="rId1"/><a:stretch><a:fillRect/></a:stretch></p:blipFill>'
+            . '<p:spPr><a:xfrm><a:off x="' . $imgOffX . '" y="' . $imgOffY . '"/>'
+            . '<a:ext cx="' . $imgEmuW . '" cy="' . $imgEmuH . '"/></a:xfrm>'
+            . '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr>'
+            . '</p:pic>'
+            . '</p:spTree></p:cSld>'
+            . '</p:sld>';
+
+        $slide1Rels =
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            . '<Relationship Id="rId1"'
+            . ' Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image"'
+            . ' Target="../media/image1.' . $imgExt . '"/>'
+            . '</Relationships>';
+
+        // ── Slide 2+: text content ────────────────────────────────────────
+        $extraSlides     = [];
+        $extraSlideRels  = [];
+        $lines           = preg_split('/\r\n|\r|\n/', trim($text)) ?: [];
+        $currentSlide    = ['title' => '', 'body' => ''];
+        $slideBodyLines  = [];
+        $slideTitle      = '';
+
+        foreach ($lines as $line) {
+            if (preg_match('/^#\s+(.+)$/', $line, $m)) {
+                // New slide on Heading 1
+                if ($slideTitle !== '' || !empty($slideBodyLines)) {
+                    $extraSlides[] = $this->buildPptxTextSlide($slideTitle, $slideBodyLines, $slideW, $slideH);
+                }
+                $slideTitle     = $m[1];
+                $slideBodyLines = [];
+            } elseif (preg_match('/^#{2,3}\s+(.+)$/', $line, $m)) {
+                $slideBodyLines[] = ['type' => 'sub', 'text' => $m[1]];
+            } elseif (preg_match('/^[-*]\s+(.+)$/', $line, $m)) {
+                $slideBodyLines[] = ['type' => 'bullet', 'text' => '• ' . $m[1]];
+            } elseif (trim($line) !== '') {
+                $slideBodyLines[] = ['type' => 'para', 'text' => $line];
+            }
+        }
+        if ($slideTitle !== '' || !empty($slideBodyLines)) {
+            $extraSlides[] = $this->buildPptxTextSlide($slideTitle, $slideBodyLines, $slideW, $slideH);
+        }
+        // If no headings, put all text on one slide
+        if (empty($extraSlides) && !empty($slideBodyLines)) {
+            $extraSlides[] = $this->buildPptxTextSlide('Extracted Content', $slideBodyLines, $slideW, $slideH);
+        }
+
+        $totalSlides = 1 + count($extraSlides);
+
+        // ── Build presentation.xml slide references ───────────────────────
+        $slideIdList = '<p:sldIdLst>';
+        for ($s = 1; $s <= $totalSlides; $s++) {
+            $slideIdList .= '<p:sldId id="' . (255 + $s) . '" r:id="rId' . ($s + 1) . '"/>';
+        }
+        $slideIdList .= '</p:sldIdLst>';
+
+        $presentation =
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<p:presentation xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"'
+            . ' xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"'
+            . ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+            . '<p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId1"/></p:sldMasterIdLst>'
+            . $slideIdList
+            . '<p:sldSz cx="' . $slideW . '" cy="' . $slideH . '" type="screen16x9"/>'
+            . '<p:notesSz cx="6858000" cy="9144000"/>'
+            . '</p:presentation>';
+
+        $presRels =
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            . '<Relationship Id="rId1"'
+            . ' Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster"'
+            . ' Target="slideMasters/slideMaster1.xml"/>';
+        for ($s = 1; $s <= $totalSlides; $s++) {
+            $presRels .= '<Relationship Id="rId' . ($s + 1) . '"'
+                      . ' Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide"'
+                      . ' Target="slides/slide' . $s . '.xml"/>';
+        }
+        $presRels .= '</Relationships>';
+
+        // ── Minimal slide master ──────────────────────────────────────────
+        $slideMaster =
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<p:sldMaster xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"'
+            . ' xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"'
+            . ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+            . '<p:cSld><p:bg><p:bgPr>'
+            . '<a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill>'
+            . '</p:bgPr></p:bg><p:spTree>'
+            . '<p:sp><p:nvSpPr><p:cNvPr id="1" name="title"/><p:cNvSpPr><a:spLocks/></p:cNvSpPr>'
+            . '<p:nvPr><p:ph type="title"/></p:nvPr></p:nvSpPr>'
+            . '<p:spPr/><p:txBody><a:bodyPr/><a:p/></p:txBody></p:sp>'
+            . '</p:spTree></p:cSld>'
+            . '<p:sldLayoutIdLst/>'
+            . '</p:sldMaster>';
+
+        $slideMasterRels =
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"/>';
+
+        // ── Content types ─────────────────────────────────────────────────
+        $ctSlides = '';
+        for ($s = 1; $s <= $totalSlides; $s++) {
+            $ctSlides .= '<Override PartName="/ppt/slides/slide' . $s . '.xml"'
+                      . ' ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>';
+        }
+
+        $contentTypes =
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+            . '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+            . '<Default Extension="xml" ContentType="application/xml"/>'
+            . '<Override PartName="/ppt/presentation.xml"'
+            . ' ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/>'
+            . '<Override PartName="/ppt/slideMasters/slideMaster1.xml"'
+            . ' ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"/>'
+            . '<Override PartName="/ppt/media/image1.' . $imgExt . '" ContentType="' . $mime . '"/>'
+            . $ctSlides
+            . '</Types>';
+
+        $relsMain =
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            . '<Relationship Id="rId1"'
+            . ' Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument"'
+            . ' Target="ppt/presentation.xml"/>'
+            . '</Relationships>';
+
+        // ── Assemble ZIP ──────────────────────────────────────────────────
+        $zip = new \ZipArchive();
+        if ($zip->open($outputPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
+            return false;
+        }
+        $zip->addFromString('[Content_Types].xml',                              $contentTypes);
+        $zip->addFromString('_rels/.rels',                                      $relsMain);
+        $zip->addFromString('ppt/presentation.xml',                             $presentation);
+        $zip->addFromString('ppt/_rels/presentation.xml.rels',                  $presRels);
+        $zip->addFromString('ppt/slideMasters/slideMaster1.xml',                $slideMaster);
+        $zip->addFromString('ppt/slideMasters/_rels/slideMaster1.xml.rels',     $slideMasterRels);
+        $zip->addFromString('ppt/slides/slide1.xml',                            $slide1);
+        $zip->addFromString('ppt/slides/_rels/slide1.xml.rels',                 $slide1Rels);
+        $zip->addFile($imagePath, 'ppt/media/image1.' . $imgExt);
+
+        // Extra text slides
+        $noImgRels =
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"/>';
+        foreach ($extraSlides as $idx => $slideXml) {
+            $slideNum = $idx + 2;
+            $zip->addFromString('ppt/slides/slide' . $slideNum . '.xml',              $slideXml);
+            $zip->addFromString('ppt/slides/_rels/slide' . $slideNum . '.xml.rels',   $noImgRels);
+        }
+        $zip->close();
+
+        return file_exists($outputPath) && filesize($outputPath) > 100;
+    }
+
+    /** Build a single PPTX text slide with a title and body lines. */
+    private function buildPptxTextSlide(string $title, array $bodyLines, int $slideW, int $slideH): string
+    {
+        $ns = 'xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"'
+            . ' xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"';
+
+        // Title text box
+        $titleXml = '';
+        if ($title !== '') {
+            $escaped   = htmlspecialchars($title, ENT_XML1);
+            $titleXml  = '<p:sp><p:nvSpPr><p:cNvPr id="10" name="Title"/>'
+                       . '<p:cNvSpPr><a:spLocks/></p:cNvSpPr><p:nvPr/></p:nvSpPr>'
+                       . '<p:spPr><a:xfrm><a:off x="457200" y="274638"/>'
+                       . '<a:ext cx="' . ($slideW - 914400) . '" cy="1143000"/></a:xfrm>'
+                       . '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr>'
+                       . '<p:txBody><a:bodyPr/>'
+                       . '<a:p><a:r>'
+                       . '<a:rPr b="1" sz="2800" dirty="0"><a:solidFill><a:srgbClr val="2F5496"/></a:solidFill></a:rPr>'
+                       . '<a:t>' . $escaped . '</a:t></a:r></a:p>'
+                       . '</p:txBody></p:sp>';
+        }
+
+        // Body text box
+        $bodyParas = '';
+        foreach ($bodyLines as $line) {
+            $escaped    = htmlspecialchars($line['text'] ?? '', ENT_XML1);
+            $sz         = $line['type'] === 'sub' ? '2000' : '1800';
+            $bold       = $line['type'] === 'sub' ? ' b="1"' : '';
+            $bodyParas .= '<a:p><a:r><a:rPr sz="' . $sz . '"' . $bold . ' dirty="0"/>'
+                        . '<a:t>' . $escaped . '</a:t></a:r></a:p>';
+        }
+
+        $bodyXml = '';
+        if ($bodyParas !== '') {
+            $bodyOffY = $title !== '' ? 1600000 : 457200;
+            $bodyHt   = $slideH - $bodyOffY - 457200;
+            $bodyXml  = '<p:sp><p:nvSpPr><p:cNvPr id="11" name="Body"/>'
+                      . '<p:cNvSpPr><a:spLocks/></p:cNvSpPr><p:nvPr/></p:nvSpPr>'
+                      . '<p:spPr><a:xfrm><a:off x="457200" y="' . $bodyOffY . '"/>'
+                      . '<a:ext cx="' . ($slideW - 914400) . '" cy="' . $bodyHt . '"/></a:xfrm>'
+                      . '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr>'
+                      . '<p:txBody><a:bodyPr wrap="square" autofit="spAutoFit"/>'
+                      . $bodyParas
+                      . '</p:txBody></p:sp>';
+        }
+
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+             . '<p:sld ' . $ns . '>'
+             . '<p:cSld><p:bg><p:bgPr>'
+             . '<a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill>'
+             . '</p:bgPr></p:bg>'
+             . '<p:spTree>'
+             . $titleXml
+             . $bodyXml
+             . '</p:spTree></p:cSld>'
+             . '</p:sld>';
+    }
+
+    /**
+     * Build an ODP from AI-extracted Markdown text.
+     *
+     * Slide 1: source image; subsequent slides: extracted text.
+     */
+    private function writeOdpFromText(
+        string $text,
+        string $imagePath,
+        string $inputFormat,
+        string $outputPath,
+        int    $pxW = 1280,
+        int    $pxH = 720
+    ): bool {
+        // Convert PPTX first (better tooling) then rename, or build minimal ODP directly
+        // For simplicity, build a minimal ODP zip that embeds the image and text
+        if (!class_exists('ZipArchive')) {
+            return false;
+        }
+
+        $mimeMap = ['jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png',
+                    'gif' => 'image/gif',  'webp' => 'image/webp', 'bmp' => 'image/bmp'];
+        $imgExt  = strtolower(pathinfo($imagePath, PATHINFO_EXTENSION)) ?: strtolower($inputFormat);
+        $mime    = $mimeMap[$imgExt] ?? 'image/png';
+        $media   = 'Pictures/image1.' . $imgExt;
+
+        // Slide size: 25.4cm × 14.29cm (16:9 widescreen)
+        $slideW = '25.400cm';
+        $slideH = '14.288cm';
+
+        // Scale image to fill slide
+        $srcAspect = $pxH > 0 ? ($pxW / $pxH) : (16 / 9);
+        $sldAspect = 25.4 / 14.288;
+        if ($srcAspect > $sldAspect) {
+            $imgW = 25.4;
+            $imgH = round(25.4 / $srcAspect, 3);
+        } else {
+            $imgH = 14.288;
+            $imgW = round(14.288 * $srcAspect, 3);
+        }
+        $offX = round((25.4 - $imgW) / 2, 3);
+        $offY = round((14.288 - $imgH) / 2, 3);
+
+        // Build text content from AI OCR
+        $textSlides = '';
+        $lines = preg_split('/\r\n|\r|\n/', trim($text)) ?: [];
+        $currentTitle = '';
+        $currentBody  = '';
+
+        $flushSlide = function() use (&$textSlides, &$currentTitle, &$currentBody, $slideW, $slideH) {
+            if ($currentTitle === '' && $currentBody === '') return;
+            $titleXml = $currentTitle !== ''
+                ? '<draw:frame draw:name="title" presentation:style-name="Default-title"'
+                . ' svg:x="1.270cm" svg:y="0.762cm" svg:width="22.860cm" svg:height="3.175cm"'
+                . ' presentation:class="title">'
+                . '<draw:text-box><text:p><text:span text:style-name="T1">'
+                . htmlspecialchars($currentTitle, ENT_XML1) . '</text:span></text:p></draw:text-box>'
+                . '</draw:frame>'
+                : '';
+            $bodyXml = $currentBody !== ''
+                ? '<draw:frame draw:name="content" svg:x="1.270cm" svg:y="4.445cm"'
+                . ' svg:width="22.860cm" svg:height="9.208cm">'
+                . '<draw:text-box>' . $currentBody . '</draw:text-box>'
+                . '</draw:frame>'
+                : '';
+            $textSlides .= '<draw:page draw:name="text" draw:master-page-name="Default">'
+                        . $titleXml . $bodyXml . '</draw:page>';
+            $currentTitle = '';
+            $currentBody  = '';
+        };
+
+        foreach ($lines as $line) {
+            if (preg_match('/^#\s+(.+)$/', $line, $m)) {
+                $flushSlide();
+                $currentTitle = $m[1];
+            } elseif (preg_match('/^#{2,3}\s+(.+)$/', $line, $m)) {
+                $currentBody .= '<text:p><text:span text:style-name="T2">'
+                              . htmlspecialchars($m[1], ENT_XML1) . '</text:span></text:p>';
+            } elseif (preg_match('/^[-*]\s+(.+)$/', $line, $m)) {
+                $currentBody .= '<text:p>• ' . htmlspecialchars($m[1], ENT_XML1) . '</text:p>';
+            } elseif (trim($line) !== '') {
+                $currentBody .= '<text:p>' . htmlspecialchars($line, ENT_XML1) . '</text:p>';
+            }
+        }
+        $flushSlide();
+
+        $content =
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            . '<office:document-content'
+            . ' xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"'
+            . ' xmlns:draw="urn:oasis:names:tc:opendocument:xmlns:drawing:1.0"'
+            . ' xmlns:presentation="urn:oasis:names:tc:opendocument:xmlns:presentation:1.0"'
+            . ' xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"'
+            . ' xmlns:svg="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0"'
+            . ' xmlns:xlink="http://www.w3.org/1999/xlink"'
+            . ' xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0"'
+            . ' office:version="1.3">'
+            . '<office:automatic-styles>'
+            . '<style:style style:name="T1" style:family="text">'
+            . '<style:text-properties fo:font-size="28pt" fo:font-weight="bold" fo:color="#2F5496"/>'
+            . '</style:style>'
+            . '<style:style style:name="T2" style:family="text">'
+            . '<style:text-properties fo:font-size="20pt" fo:font-weight="bold" fo:color="#2E74B5"/>'
+            . '</style:style>'
+            . '</office:automatic-styles>'
+            . '<office:body><office:presentation>'
+            // Slide 1: source image
+            . '<draw:page draw:name="slide1" draw:master-page-name="Default">'
+            . '<draw:frame draw:name="img" svg:x="' . $offX . 'cm" svg:y="' . $offY . 'cm"'
+            . ' svg:width="' . $imgW . 'cm" svg:height="' . $imgH . 'cm">'
+            . '<draw:image xlink:href="' . $media . '" xlink:type="simple"'
+            . ' xlink:show="embed" xlink:actuate="onLoad"/>'
+            . '</draw:frame></draw:page>'
+            // Text slides
+            . $textSlides
+            . '</office:presentation></office:body>'
+            . '</office:document-content>';
+
+        $manifest =
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            . '<manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0" manifest:version="1.3">'
+            . '<manifest:file-entry manifest:full-path="/" manifest:version="1.3" manifest:media-type="application/vnd.oasis.opendocument.presentation"/>'
+            . '<manifest:file-entry manifest:full-path="content.xml" manifest:media-type="text/xml"/>'
+            . '<manifest:file-entry manifest:full-path="' . $media . '" manifest:media-type="' . $mime . '"/>'
+            . '</manifest:manifest>';
+
+        $zip = new \ZipArchive();
+        if ($zip->open($outputPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
+            return false;
+        }
+        $zip->addFromString('mimetype', 'application/vnd.oasis.opendocument.presentation');
+        if (method_exists($zip, 'setCompressionName')) {
+            $zip->setCompressionName('mimetype', \ZipArchive::CM_STORE);
+        }
+        $zip->addFromString('META-INF/manifest.xml', $manifest);
+        $zip->addFromString('content.xml',           $content);
+        $zip->addFile($imagePath, $media);
+        $zip->close();
+
+        return file_exists($outputPath) && filesize($outputPath) > 100;
+    }
+
+    /**
      * Create a minimal PPTX with the image centred on a blank slide.
      * A PPTX is a ZIP (OOXML) containing presentation.xml, a slide, a slide
      * master, and a slide layout.
@@ -2629,7 +3631,7 @@ class ConversionService
         $text = '';
         $tess = trim((string) shell_exec('which tesseract 2>/dev/null'));
         if ($tess) {
-            $tmpBase = sys_get_temp_dir() . '/cx_tess_' . getmypid() . '_' . bin2hex(random_bytes(8));
+            $tmpBase = sys_get_temp_dir() . '/cx_tess_' . bin2hex(random_bytes(12));
             exec(
                 escapeshellarg($tess) . ' ' . escapeshellarg($inputPath)
                 . ' ' . escapeshellarg($tmpBase) . ' --psm 6 -l eng 2>/dev/null',

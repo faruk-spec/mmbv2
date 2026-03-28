@@ -686,7 +686,7 @@ class ConvertXTest extends TestCase
 
             $contentXml = $zip->getFromName('content.xml');
             $this->assertStringContainsString('Summary',         $contentXml, 'Heading text must appear');
-            $this->assertStringContainsString('Heading_20_2',    $contentXml, 'H2 must use Heading_20_2 style');
+            $this->assertStringContainsString('Heading 2',       $contentXml, 'H2 must use ODF "Heading 2" style (with space, not _20_)');
             $this->assertStringContainsString('Val 1',           $contentXml, 'Table cell must appear');
             $this->assertStringContainsString('table:table',     $contentXml, 'Pipe table must produce ODF table');
             $zip->close();
@@ -786,4 +786,281 @@ class ConvertXTest extends TestCase
         $this->assertTrue($ref->isPublic(), 'ocrForFormat must be public');
         $this->assertCount(3, $ref->getParameters(), 'ocrForFormat(filePath, targetFormat, planTier)');
     }
+
+    // ------------------------------------------------------------------ //
+    //  detectPageSizeFromImage — page size detection                        //
+    // ------------------------------------------------------------------ //
+
+    private function callDetectPageSize(int $pxW, int $pxH): array
+    {
+        $ref = new \ReflectionMethod($this->conversionService, 'detectPageSizeFromImage');
+        $ref->setAccessible(true);
+        return $ref->invoke($this->conversionService, $pxW, $pxH);
+    }
+
+    public function testDetectPageSizeA4Portrait(): void
+    {
+        // A4 at exactly 150 DPI: 210mm × 297mm → 1240 × 1754 px
+        // (210/25.4)*150 ≈ 1240  (297/25.4)*150 ≈ 1754
+        $ps = $this->callDetectPageSize(1240, 1754);
+        $this->assertEquals('A4', $ps['name']);
+        $this->assertFalse($ps['landscape']);
+        $this->assertGreaterThan(0, $ps['twip_w']);
+        $this->assertGreaterThan(0, $ps['twip_h']);
+        $this->assertGreaterThan($ps['twip_w'], $ps['twip_h'], 'Portrait: height > width');
+    }
+
+    public function testDetectPageSizeA4Landscape(): void
+    {
+        // A4 landscape at 150 DPI: wider than tall
+        $ps = $this->callDetectPageSize(1754, 1240);
+        $this->assertEquals('A4', $ps['name']);
+        $this->assertTrue($ps['landscape']);
+        $this->assertGreaterThan($ps['twip_h'], $ps['twip_w'], 'Landscape: width > height');
+    }
+
+    public function testDetectPageSizeLetter(): void
+    {
+        // US Letter at 150 DPI: 8.5in × 11in → 1275 × 1650 px
+        $ps = $this->callDetectPageSize(1275, 1650);
+        $this->assertEquals('Letter', $ps['name']);
+        $this->assertFalse($ps['landscape']);
+    }
+
+    public function testDetectPageSizeReturnsAllRequiredKeys(): void
+    {
+        $ps = $this->callDetectPageSize(800, 1100);
+        foreach (['name', 'landscape', 'twip_w', 'twip_h', 'cm_w', 'cm_h'] as $key) {
+            $this->assertArrayHasKey($key, $ps, "detectPageSizeFromImage must return '{$key}'");
+        }
+        $this->assertIsString($ps['name']);
+        $this->assertIsBool($ps['landscape']);
+        $this->assertIsInt($ps['twip_w']);
+        $this->assertIsInt($ps['twip_h']);
+    }
+
+    // ------------------------------------------------------------------ //
+    //  writeDocxFromText — styles.xml and page size in DOCX output          //
+    // ------------------------------------------------------------------ //
+
+    public function testWriteDocxFromTextIncludesStylesXml(): void
+    {
+        if (!class_exists('ZipArchive')) {
+            $this->markTestSkipped('ZipArchive extension not available');
+        }
+
+        $outPath = tempnam(sys_get_temp_dir(), 'cx_test_') . '.docx';
+        $ref     = new \ReflectionMethod($this->conversionService, 'writeDocxFromText');
+        $ref->setAccessible(true);
+
+        $text    = "# Invoice\n\nAmount: \$1,234.56\n\n- Item A\n- Item B";
+        $result  = $ref->invoke($this->conversionService, $text, $outPath, '', '', []);
+
+        $this->assertTrue($result, 'writeDocxFromText must return true');
+        $zip    = new \ZipArchive();
+        $opened = $zip->open($outPath);
+        $this->assertTrue($opened === true, 'Output must be a valid ZIP');
+        if ($opened === true) {
+            // Must include styles.xml for headings to render correctly
+            $this->assertNotFalse($zip->locateName('word/styles.xml'),
+                'DOCX must contain word/styles.xml');
+            $stylesXml = $zip->getFromName('word/styles.xml');
+            $this->assertStringContainsString('Heading1',   $stylesXml, 'Heading1 style must exist');
+            $this->assertStringContainsString('Heading2',   $stylesXml, 'Heading2 style must exist');
+            $this->assertStringContainsString('ListBullet', $stylesXml, 'ListBullet style must exist');
+            $this->assertStringContainsString('TableGrid',  $stylesXml, 'TableGrid style must exist');
+            $this->assertStringContainsString('2F5496',     $stylesXml, 'Heading1 must have blue color #2F5496');
+            $zip->close();
+        }
+        @unlink($outPath);
+    }
+
+    public function testWriteDocxFromTextSetsPageSize(): void
+    {
+        if (!class_exists('ZipArchive')) {
+            $this->markTestSkipped('ZipArchive extension not available');
+        }
+
+        $outPath  = tempnam(sys_get_temp_dir(), 'cx_test_') . '.docx';
+        $ref      = new \ReflectionMethod($this->conversionService, 'writeDocxFromText');
+        $ref->setAccessible(true);
+
+        // Provide explicit A4 page size
+        $pageSize = ['twip_w' => 11906, 'twip_h' => 16838, 'name' => 'A4', 'landscape' => false];
+        $result   = $ref->invoke($this->conversionService, 'Hello', $outPath, '', '', $pageSize);
+
+        $this->assertTrue($result);
+        $zip    = new \ZipArchive();
+        $opened = $zip->open($outPath);
+        if ($opened === true) {
+            $docXml = $zip->getFromName('word/document.xml');
+            $this->assertStringContainsString('w:w="11906"', $docXml,
+                'Document page width must match A4 twip_w');
+            $this->assertStringContainsString('w:h="16838"', $docXml,
+                'Document page height must match A4 twip_h');
+            $zip->close();
+        }
+        @unlink($outPath);
+    }
+
+    public function testWriteDocxFromTextHeaderTableHasBlueBackground(): void
+    {
+        if (!class_exists('ZipArchive')) {
+            $this->markTestSkipped('ZipArchive extension not available');
+        }
+
+        $outPath  = tempnam(sys_get_temp_dir(), 'cx_test_') . '.docx';
+        $ref      = new \ReflectionMethod($this->conversionService, 'writeDocxFromText');
+        $ref->setAccessible(true);
+
+        $text   = "| Product | Price |\n|---------|-------|\n| Apple   | \$1.00 |";
+        $result = $ref->invoke($this->conversionService, $text, $outPath, '', '', []);
+
+        $this->assertTrue($result);
+        $zip    = new \ZipArchive();
+        $opened = $zip->open($outPath);
+        if ($opened === true) {
+            $docXml = $zip->getFromName('word/document.xml');
+            // Header row cells must have blue fill
+            $this->assertStringContainsString('2F75B6', $docXml,
+                'Table header cells must have blue background fill');
+            $zip->close();
+        }
+        @unlink($outPath);
+    }
+
+    // ------------------------------------------------------------------ //
+    //  writeOdtFromText — styles.xml with page dimensions in ODT output     //
+    // ------------------------------------------------------------------ //
+
+    public function testWriteOdtFromTextIncludesStylesXmlWithPageSize(): void
+    {
+        if (!class_exists('ZipArchive')) {
+            $this->markTestSkipped('ZipArchive extension not available');
+        }
+
+        $outPath  = tempnam(sys_get_temp_dir(), 'cx_test_') . '.odt';
+        $ref      = new \ReflectionMethod($this->conversionService, 'writeOdtFromText');
+        $ref->setAccessible(true);
+
+        $pageSize = ['cm_w' => 21.0, 'cm_h' => 29.7, 'name' => 'A4', 'landscape' => false];
+        $result   = $ref->invoke($this->conversionService, "# Hello\n\nWorld.", $outPath, '', '', $pageSize);
+
+        $this->assertTrue($result, 'writeOdtFromText must return true');
+        $zip    = new \ZipArchive();
+        $opened = $zip->open($outPath);
+        if ($opened === true) {
+            $this->assertNotFalse($zip->locateName('styles.xml'),
+                'ODT must contain styles.xml with page layout');
+            $stylesXml = $zip->getFromName('styles.xml');
+            $this->assertStringContainsString('21.000cm', $stylesXml,
+                'Page width must be 21cm (A4)');
+            $this->assertStringContainsString('29.700cm', $stylesXml,
+                'Page height must be 29.7cm (A4)');
+            $this->assertStringContainsString('2F5496',   $stylesXml,
+                'Heading 1 must use blue color #2F5496');
+            $zip->close();
+        }
+        @unlink($outPath);
+    }
+
+    // ------------------------------------------------------------------ //
+    //  writeRtfFromText — page dimensions in RTF via \paperw / \paperh     //
+    // ------------------------------------------------------------------ //
+
+    public function testWriteRtfFromTextSetsPageDimensions(): void
+    {
+        $outPath  = tempnam(sys_get_temp_dir(), 'cx_test_') . '.rtf';
+        $ref      = new \ReflectionMethod($this->conversionService, 'writeRtfFromText');
+        $ref->setAccessible(true);
+
+        $pageSize = ['twip_w' => 11906, 'twip_h' => 16838, 'name' => 'A4', 'landscape' => false];
+        $result   = $ref->invoke($this->conversionService, "# Hello\n\nWorld.", $outPath, $pageSize);
+
+        $this->assertTrue($result);
+        $rtf = file_get_contents($outPath);
+        $this->assertStringContainsString('\paperw11906', $rtf, 'RTF must set \paperw from page size');
+        $this->assertStringContainsString('\paperh16838', $rtf, 'RTF must set \paperh from page size');
+        @unlink($outPath);
+    }
+
+    // ------------------------------------------------------------------ //
+    //  buildDocxStylesXml — helper produces valid Word styles XML           //
+    // ------------------------------------------------------------------ //
+
+    public function testBuildDocxStylesXmlContainsAllStyles(): void
+    {
+        $ref = new \ReflectionMethod($this->conversionService, 'buildDocxStylesXml');
+        $ref->setAccessible(true);
+        $xml = $ref->invoke($this->conversionService);
+
+        $this->assertStringContainsString('styleId="Heading1"',   $xml);
+        $this->assertStringContainsString('styleId="Heading2"',   $xml);
+        $this->assertStringContainsString('styleId="Heading3"',   $xml);
+        $this->assertStringContainsString('styleId="ListBullet"', $xml);
+        $this->assertStringContainsString('styleId="ListNumber"', $xml);
+        $this->assertStringContainsString('styleId="TableGrid"',  $xml);
+        $this->assertStringContainsString('2F5496',               $xml, 'Heading1 blue color');
+        $this->assertStringContainsString('2E74B5',               $xml, 'Heading2 blue color');
+
+        // Must be parseable as XML
+        $doc = new \DOMDocument();
+        $this->assertTrue(@$doc->loadXML($xml) !== false, 'styles.xml must be valid XML');
+    }
+
+    // ------------------------------------------------------------------ //
+    //  rasterizePdf — returns null gracefully when no tools available       //
+    // ------------------------------------------------------------------ //
+
+    public function testRasterizePdfReturnsNullWhenNoTools(): void
+    {
+        // In the test environment Ghostscript and ImageMagick may or may not be
+        // installed; we test only that the method never crashes and returns
+        // null when no PDF tools are available (or when given a non-PDF path).
+        $ref = new \ReflectionMethod($this->conversionService, 'rasterizePdf');
+        $ref->setAccessible(true);
+
+        // Non-existent file — must return null without exception
+        $result = $ref->invoke($this->conversionService, '/tmp/nonexistent_cx_test.pdf', 72);
+        $this->assertNull($result, 'rasterizePdf must return null for non-existent files');
+    }
+
+    // ------------------------------------------------------------------ //
+    //  writePptxFromText — AI presentation builder                          //
+    // ------------------------------------------------------------------ //
+
+    public function testWritePptxFromTextBuildsValidZip(): void
+    {
+        if (!class_exists('ZipArchive')) {
+            $this->markTestSkipped('ZipArchive extension not available');
+        }
+
+        // Create a minimal source image (1×1 PNG)
+        $imgPath = tempnam(sys_get_temp_dir(), 'cx_img_') . '.png';
+        file_put_contents($imgPath, base64_decode(
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI6QAAAABJRU5ErkJggg=='
+        ));
+
+        $outPath = tempnam(sys_get_temp_dir(), 'cx_test_') . '.pptx';
+        $ref     = new \ReflectionMethod($this->conversionService, 'writePptxFromText');
+        $ref->setAccessible(true);
+
+        $text   = "# Slide Title\n\nSome bullet point\n\n## Sub heading\n\nAnother point";
+        $result = $ref->invoke($this->conversionService, $text, $imgPath, 'png', $outPath, 100, 100);
+
+        $this->assertTrue($result, 'writePptxFromText must return true');
+        $zip    = new \ZipArchive();
+        $opened = $zip->open($outPath);
+        $this->assertTrue($opened === true, 'PPTX output must be a valid ZIP');
+        if ($opened === true) {
+            $this->assertNotFalse($zip->locateName('ppt/presentation.xml'));
+            $this->assertNotFalse($zip->locateName('ppt/slides/slide1.xml'));
+            $this->assertNotFalse($zip->locateName('ppt/slides/slide2.xml'),
+                'Text slide must be generated from Heading 1');
+            $zip->close();
+        }
+        @unlink($imgPath);
+        @unlink($outPath);
+    }
 }
+
