@@ -24,7 +24,22 @@ const qrCache = {};
  * forced to display a fresh QR code rather than restoring stale credentials.
  */
 function clearSessionAuth(sessionId) {
-    const authDir = path.join(process.cwd(), '.wwebjs_auth', `session-${sessionId}`);
+    // Sanitize sessionId: allow only alphanumeric characters, hyphens and
+    // underscores to prevent path-traversal attacks.
+    if (!/^[a-zA-Z0-9_-]+$/.test(sessionId)) {
+        console.error(`Refusing to clear LocalAuth: invalid sessionId "${sessionId}"`);
+        return;
+    }
+
+    const baseDir = path.resolve(process.cwd(), '.wwebjs_auth');
+    const authDir = path.resolve(baseDir, `session-${sessionId}`);
+
+    // Double-check that the resolved path is still inside baseDir
+    if (!authDir.startsWith(baseDir + path.sep) && authDir !== baseDir) {
+        console.error(`Refusing to clear LocalAuth: path escape detected for sessionId "${sessionId}"`);
+        return;
+    }
+
     try {
         if (fs.existsSync(authDir)) {
             fs.rmSync(authDir, { recursive: true, force: true });

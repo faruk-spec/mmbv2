@@ -506,6 +506,28 @@ function loadQRCode(sessionId) {
                         realQRToastShown = true;
                     }
                 }
+            } else if (data.error_type === 'BRIDGE_OFFLINE') {
+                // Bridge server is not running — show a friendly setup panel
+                clearInterval(qrPollInterval);
+                updateQRStatus('Bridge server offline', 'warning');
+                document.getElementById('qrIntegrationNote').style.display = 'none';
+                document.getElementById('qrCodeContainer').innerHTML = `
+                    <div style="width: 100%; max-width: 320px; margin: 0 auto; background: rgba(255, 170, 0, 0.08); border: 2px solid #ffaa00; border-radius: 12px; padding: 24px; text-align: left;">
+                        <div style="text-align: center; margin-bottom: 16px;">
+                            <i class="fas fa-server" style="font-size: 40px; color: #ffaa00;"></i>
+                        </div>
+                        <div style="font-weight: 700; font-size: 1rem; color: #ffaa00; margin-bottom: 8px; text-align: center;">Bridge Server Offline</div>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 14px; text-align: center;">
+                            The WhatsApp bridge server is not running.<br>Start it with the command below:
+                        </p>
+                        <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 14px; font-family: monospace; font-size: 0.8rem; color: #25D366; word-break: break-all; margin-bottom: 16px;">
+                            cd projects/whatsapp/whatsapp-bridge && npm start
+                        </div>
+                        <button onclick="retryLoadQRCode()" style="width: 100%; padding: 10px; background: #ffaa00; color: #000; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.9rem;">
+                            <i class="fas fa-redo" style="margin-right: 6px;"></i>Retry
+                        </button>
+                    </div>
+                `;
             } else {
                 throw new Error(data.message || 'Failed to load QR code');
             }
@@ -524,6 +546,25 @@ function loadQRCode(sessionId) {
                 </div>
             `;
         });
+}
+
+function retryLoadQRCode() {
+    if (!currentSessionId) return;
+    updateQRStatus('Retrying...', 'loading');
+    document.getElementById('qrCodeContainer').innerHTML = `
+        <div style="width: 256px; height: 256px; margin: 0 auto; background: #f0f0f0; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #666;">
+            <div style="text-align: center;">
+                <i class="fas fa-spinner fa-spin" style="font-size: 48px; margin-bottom: 16px; color: #25D366;"></i>
+                <div>Connecting to bridge...</div>
+            </div>
+        </div>
+    `;
+    loadQRCode(currentSessionId);
+    // Resume status polling in case the bridge just came online
+    clearInterval(qrPollInterval);
+    qrPollInterval = setInterval(() => {
+        checkSessionStatus(currentSessionId);
+    }, 3000);
 }
 
 function checkSessionStatus(sessionId) {

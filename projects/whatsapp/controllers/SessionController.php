@@ -367,7 +367,15 @@ class SessionController
             $qrData = $this->getQRFromBridge($session['session_id']);
             
             if ($qrData === null) {
-                throw new \Exception('WhatsApp bridge server is not running. Please start the bridge server: cd projects/whatsapp/whatsapp-bridge && npm start');
+                // Return a specific error_type so the frontend can render
+                // a helpful "start the bridge" panel instead of a generic error.
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'The WhatsApp bridge server is not running.',
+                    'error_type' => 'BRIDGE_OFFLINE',
+                    'help' => 'cd projects/whatsapp/whatsapp-bridge && npm start'
+                ]);
+                return;
             }
             
             echo json_encode([
@@ -388,6 +396,43 @@ class SessionController
                 'error_type' => 'QR_GENERATION_ERROR'
             ]);
         }
+    }
+    
+    /**
+     * Check whether the WhatsApp Web.js bridge server is reachable.
+     * Endpoint: GET /projects/whatsapp/sessions/bridge-status
+     */
+    public function bridgeStatus()
+    {
+        header('Content-Type: application/json');
+        
+        $bridgeUrl = getenv('WHATSAPP_BRIDGE_URL') ?: 'http://127.0.0.1:3000';
+        $endpoint  = $bridgeUrl . '/api/health';
+        
+        try {
+            if (function_exists('curl_init')) {
+                $ch = curl_init($endpoint);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+                curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3);
+                $response = curl_exec($ch);
+                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                curl_close($ch);
+                $online = ($response !== false && $httpCode === 200);
+            } else {
+                $context  = stream_context_create(['http' => ['timeout' => 5, 'ignore_errors' => true]]);
+                $response = @file_get_contents($endpoint, false, $context);
+                $online   = ($response !== false);
+            }
+        } catch (\Exception $e) {
+            $online = false;
+        }
+        
+        echo json_encode([
+            'success' => true,
+            'online'  => $online,
+            'bridge_url' => $bridgeUrl
+        ]);
     }
     
     /**
