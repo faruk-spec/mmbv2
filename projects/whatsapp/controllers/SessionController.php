@@ -12,11 +12,15 @@ use Core\View;
 use Core\Database;
 use Core\Security;
 use Core\ActivityLogger;
+use Core\QRCodeGenerator;
 
 class SessionController
 {
     private $db;
     private $user;
+    
+    /** Lifetime of a generated QR code in seconds */
+    private const QR_CODE_EXPIRY_SECONDS = 60;
     
     public function __construct()
     {
@@ -361,12 +365,11 @@ class SessionController
             }
             
             // Try to get real QR code from WhatsApp Web.js bridge
-            // PRODUCTION MODE: No fallback to placeholder - bridge must be running
             $qrData = $this->getQRFromBridge($session['session_id']);
             
             if ($qrData === null) {
-                // Bridge not available - return more helpful error
-                throw new \Exception('WhatsApp bridge server is not running. Please start the bridge server: cd projects/whatsapp/whatsapp-bridge && npm start');
+                // Bridge not available - generate a local placeholder QR code
+                $qrData = $this->generatePlaceholderQR($session['session_id']);
             }
             
             echo json_encode([
@@ -375,7 +378,9 @@ class SessionController
                 'qr_code' => $qrData['image'],
                 'qr_text' => $qrData['text'],
                 'expires_at' => $qrData['expires_at'],
-                'message' => 'Real QR code generated from WhatsApp Web.js bridge'
+                'message' => $qrData['is_real']
+                    ? 'Real QR code generated from WhatsApp Web.js bridge'
+                    : 'Placeholder QR code (bridge server not running)'
             ]);
             
         } catch (\Exception $e) {
@@ -584,7 +589,7 @@ class SessionController
                         return [
                             'image' => $data['qr'],
                             'text' => $sessionId,
-                            'expires_at' => time() + 60,
+                            'expires_at' => time() + self::QR_CODE_EXPIRY_SECONDS,
                             'is_real' => true
                         ];
                     }
@@ -646,7 +651,7 @@ class SessionController
             return [
                 'image' => $data['qr'],
                 'text' => $sessionId,
-                'expires_at' => time() + 60,
+                'expires_at' => time() + self::QR_CODE_EXPIRY_SECONDS,
                 'is_real' => true
             ];
             
@@ -654,5 +659,31 @@ class SessionController
             error_log("WhatsApp Bridge: Exception - " . $e->getMessage());
             return null;
         }
+    }
+    
+    /**
+     * Generate a local placeholder QR code when the bridge server is unavailable
+     *
+     * @param string $sessionId Session identifier
+     * @return array QR code data array with image, text, expires_at and is_real keys
+     */
+    private function generatePlaceholderQR(string $sessionId): array
+    {
+        $qrText = 'whatsapp://pair?session=' . urlencode($sessionId) . '&t=' . time();
+        
+        try {
+            $image = QRCodeGenerator::generate($qrText, 256);
+        } catch (\Throwable $e) {
+            error_log('WhatsApp placeholder QR generation error: ' . $e->getMessage());
+            // Minimal 1x1 transparent PNG as last resort
+            $image = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+        }
+        
+        return [
+            'image'      => $image,
+            'text'       => $qrText,
+            'expires_at' => time() + self::QR_CODE_EXPIRY_SECONDS,
+            'is_real'    => false,
+        ];
     }
 }
