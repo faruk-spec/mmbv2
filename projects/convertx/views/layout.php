@@ -1141,6 +1141,28 @@ include BASE_PATH . '/views/layouts/navbar.php';
         </div>
 
         <div class="sidebar-section">
+            <div class="sidebar-title">PDF &amp; Image Tools</div>
+            <nav class="sidebar-nav">
+                <a href="/projects/convertx/pdf-merge"
+                   class="<?= ($currentView === 'pdf-merge') ? 'active' : '' ?>">
+                    <i class="fa-solid fa-object-group"></i> Merge PDFs
+                </a>
+                <a href="/projects/convertx/pdf-split"
+                   class="<?= ($currentView === 'pdf-split') ? 'active' : '' ?>">
+                    <i class="fa-solid fa-scissors"></i> Split PDF
+                </a>
+                <a href="/projects/convertx/pdf-compress"
+                   class="<?= ($currentView === 'pdf-compress') ? 'active' : '' ?>">
+                    <i class="fa-solid fa-file-zipper"></i> Compress PDF
+                </a>
+                <a href="/projects/convertx/img-compress"
+                   class="<?= ($currentView === 'img-compress') ? 'active' : '' ?>">
+                    <i class="fa-solid fa-image"></i> Compress Images
+                </a>
+            </nav>
+        </div>
+
+        <div class="sidebar-section">
             <div class="sidebar-title">Developers</div>
             <nav class="sidebar-nav">
                 <a href="/projects/convertx/docs"

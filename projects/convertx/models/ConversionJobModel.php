@@ -238,6 +238,23 @@ class ConversionJobModel
     }
 
     /**
+     * Return all jobs belonging to a batch, scoped to a user.
+     *
+     * @param string $batchId  The batch_id token generated at submission time
+     * @param int    $userId   Owner user ID (security scope)
+     * @return array  Flat array of job rows, ordered by created_at ASC
+     */
+    public function getBatchJobs(string $batchId, int $userId): array
+    {
+        return $this->db->fetchAll(
+            "SELECT * FROM convertx_jobs
+             WHERE batch_id = :bid AND user_id = :uid
+             ORDER BY created_at ASC",
+            ['bid' => $batchId, 'uid' => $userId]
+        ) ?: [];
+    }
+
+    /**
      * Usage statistics for a user in the current month.
      */
     public function getMonthlyUsage(int $userId): array

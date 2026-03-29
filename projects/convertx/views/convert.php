@@ -93,12 +93,12 @@ foreach ($groupedFormats as $group => $fmts) {
 <div class="cx-notice">
     <i class="fa-solid fa-triangle-exclamation"></i>
     <div>
-        <strong>LibreOffice is not installed on this server</strong>
-        Only the following conversions are available without additional server software:
+        <strong>Some conversion formats are not available on this server</strong>
+        Only the following conversions are currently supported:
         <div class="cx-notice-formats">
             <span class="cx-notice-tag available"><i class="fa-solid fa-check-circle"></i> TXT, HTML, MD, CSV (text/markup)</span>
             <span class="cx-notice-tag available"><i class="fa-solid fa-check-circle"></i> JPG, PNG, GIF, WebP, BMP (images)</span>
-            <span class="cx-notice-tag unavailable"><i class="fa-solid fa-xmark-circle"></i> PDF, DOCX, XLSX, PPTX … (requires LibreOffice)</span>
+            <span class="cx-notice-tag unavailable"><i class="fa-solid fa-xmark-circle"></i> PDF, DOCX, XLSX, PPTX … (not available on this server)</span>
         </div>
     </div>
 </div>

@@ -31,6 +31,10 @@ class JobQueueService
         $this->conversionService = new ConversionService();
         $this->aiService         = new AIService();
 
+        // Inject the AI service so ConversionService can automatically fall back
+        // to AI-powered OCR when Tesseract is absent or returns no text.
+        $this->conversionService->setAIService($this->aiService);
+
         $config            = require PROJECT_PATH . '/config.php';
         $this->maxRetries  = (int) ($config['queue']['max_retries'] ?? 3);
     }
@@ -85,6 +89,14 @@ class JobQueueService
         try {
             // Claim the job (inside try-catch so a column issue doesn't leave job as 'pending')
             $this->jobModel->updateStatus($jobId, ConversionJobModel::STATUS_PROCESSING);
+
+            // Set the user's plan tier so AI provider routing uses the correct
+            // capability tier for this job (free / pro / enterprise).
+            $this->conversionService->setPlanTier($job['plan_tier'] ?? 'free');
+            if (empty($job['plan_tier'])) {
+                Logger::warning("ConvertX: job #{$jobId} missing plan_tier — defaulting to 'free'");
+            }
+
             // 1. Perform core file conversion
             $convResult = $this->conversionService->convert(
                 $job['input_path'],

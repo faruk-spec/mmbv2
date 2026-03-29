@@ -83,7 +83,7 @@ class AIProcessController
         if (!$provider) {
             echo json_encode([
                 'success' => false,
-                'error'   => 'OpenAI is not configured. Ask an admin to add the OpenAI API key in ConvertX → Settings.',
+                'error'   => 'AI processing is not configured. Please ask an admin to enable AI in ConvertX Settings.',
             ]);
             return;
         }
@@ -169,7 +169,7 @@ class AIProcessController
         $data = json_decode($body, true);
 
         if ($httpCode !== 200) {
-            $errMsg = $data['error']['message'] ?? "OpenAI returned HTTP {$httpCode}";
+            $errMsg = $data['error']['message'] ?? "AI service returned HTTP {$httpCode}";
             Logger::error("AIProcessController: {$errMsg}");
             echo json_encode(['success' => false, 'error' => $errMsg]);
             return;
@@ -200,7 +200,6 @@ class AIProcessController
             'success'      => true,
             'output'       => $output,
             'tokens_used'  => $tokens,
-            'model'        => $model,
             'filename'     => $originalName,
         ]);
     }

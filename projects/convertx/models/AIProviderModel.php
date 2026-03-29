@@ -94,7 +94,7 @@ class AIProviderModel
                  ('OpenAI',           'openai',      'https://api.openai.com',
                   'gpt-4o-mini',
                   '[\"ocr\",\"summarization\",\"translation\",\"classification\"]',
-                  '[\"pro\",\"enterprise\"]', 1, 0.000150, 1),
+                  '[\"free\",\"pro\",\"enterprise\"]', 1, 0.000150, 1),
                  ('HuggingFace',      'huggingface', 'https://api-inference.huggingface.co',
                   'facebook/bart-large-cnn',
                   '[\"summarization\",\"classification\"]',
@@ -103,6 +103,15 @@ class AIProviderModel
                   '[\"ocr\"]',
                   '[\"free\",\"pro\",\"enterprise\"]', 3, 0.000000, :tessActive)",
             ['tessActive' => $tessActive]
+        );
+
+        // Fix existing records that were seeded with the old (incorrect) allowed_tiers
+        // that excluded 'free', causing image→spreadsheet conversions to bypass AI OCR.
+        $this->db->query(
+            "UPDATE convertx_ai_providers
+             SET allowed_tiers = '[\"free\",\"pro\",\"enterprise\"]'
+             WHERE slug = 'openai'
+               AND allowed_tiers = '[\"pro\",\"enterprise\"]'"
         );
     }
 

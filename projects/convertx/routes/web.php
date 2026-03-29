@@ -63,11 +63,72 @@ switch ($segments[0]) {
 
     case 'batch':
         require_once PROJECT_PATH . '/controllers/BatchController.php';
-        $ctrl = new \Projects\ConvertX\Controllers\BatchController();
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $ctrl   = new \Projects\ConvertX\Controllers\BatchController();
+        $action = $segments[1] ?? '';
+
+        if ($action === 'status' && isset($segments[2])) {
+            // GET /batch/status/:batchId  — JSON status for all jobs in a batch
+            $ctrl->batchStatus($segments[2]);
+        } elseif ($action === 'download' && isset($segments[2])) {
+            // GET /batch/download/:batchId  — stream all completed files as ZIP
+            $ctrl->batchDownloadZip($segments[2]);
+        } elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $ctrl->submit();
         } else {
             $ctrl->showForm();
+        }
+        break;
+
+    case 'pdf-merge':
+        require_once PROJECT_PATH . '/controllers/PdfToolsController.php';
+        $ctrl = new \Projects\ConvertX\Controllers\PdfToolsController();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $ctrl->submitMerge();
+        } else {
+            $ctrl->showMerge();
+        }
+        break;
+
+    case 'pdf-split':
+        require_once PROJECT_PATH . '/controllers/PdfToolsController.php';
+        $ctrl = new \Projects\ConvertX\Controllers\PdfToolsController();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $ctrl->submitSplit();
+        } else {
+            $ctrl->showSplit();
+        }
+        break;
+
+    case 'pdf-compress':
+        require_once PROJECT_PATH . '/controllers/PdfToolsController.php';
+        $ctrl = new \Projects\ConvertX\Controllers\PdfToolsController();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $ctrl->submitCompressPdf();
+        } else {
+            $ctrl->showCompressPdf();
+        }
+        break;
+
+    case 'img-compress':
+        require_once PROJECT_PATH . '/controllers/PdfToolsController.php';
+        $ctrl = new \Projects\ConvertX\Controllers\PdfToolsController();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $ctrl->submitCompressImages();
+        } else {
+            $ctrl->showCompressImages();
+        }
+        break;
+
+    case 'pdf-tools':
+        // Download token endpoint shared by all PDF tools features
+        require_once PROJECT_PATH . '/controllers/PdfToolsController.php';
+        $ctrl   = new \Projects\ConvertX\Controllers\PdfToolsController();
+        $action = $segments[1] ?? '';
+        if ($action === 'download' && isset($segments[2])) {
+            $ctrl->download($segments[2]);
+        } else {
+            http_response_code(404);
+            echo 'Not found';
         }
         break;
 
