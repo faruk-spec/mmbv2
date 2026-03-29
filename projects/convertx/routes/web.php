@@ -79,6 +79,59 @@ switch ($segments[0]) {
         }
         break;
 
+    case 'pdf-merge':
+        require_once PROJECT_PATH . '/controllers/PdfToolsController.php';
+        $ctrl = new \Projects\ConvertX\Controllers\PdfToolsController();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $ctrl->submitMerge();
+        } else {
+            $ctrl->showMerge();
+        }
+        break;
+
+    case 'pdf-split':
+        require_once PROJECT_PATH . '/controllers/PdfToolsController.php';
+        $ctrl = new \Projects\ConvertX\Controllers\PdfToolsController();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $ctrl->submitSplit();
+        } else {
+            $ctrl->showSplit();
+        }
+        break;
+
+    case 'pdf-compress':
+        require_once PROJECT_PATH . '/controllers/PdfToolsController.php';
+        $ctrl = new \Projects\ConvertX\Controllers\PdfToolsController();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $ctrl->submitCompressPdf();
+        } else {
+            $ctrl->showCompressPdf();
+        }
+        break;
+
+    case 'img-compress':
+        require_once PROJECT_PATH . '/controllers/PdfToolsController.php';
+        $ctrl = new \Projects\ConvertX\Controllers\PdfToolsController();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $ctrl->submitCompressImages();
+        } else {
+            $ctrl->showCompressImages();
+        }
+        break;
+
+    case 'pdf-tools':
+        // Download token endpoint shared by all PDF tools features
+        require_once PROJECT_PATH . '/controllers/PdfToolsController.php';
+        $ctrl   = new \Projects\ConvertX\Controllers\PdfToolsController();
+        $action = $segments[1] ?? '';
+        if ($action === 'download' && isset($segments[2])) {
+            $ctrl->download($segments[2]);
+        } else {
+            http_response_code(404);
+            echo 'Not found';
+        }
+        break;
+
     case 'api':
         require_once PROJECT_PATH . '/controllers/ApiController.php';
         $ctrl   = new \Projects\ConvertX\Controllers\ApiController();

@@ -1459,4 +1459,3 @@ class ConvertXTest extends TestCase
             'Batch status polling must use input_filename from the status response');
     }
 }
-
