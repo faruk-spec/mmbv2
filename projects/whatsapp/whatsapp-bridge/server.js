@@ -75,7 +75,7 @@ app.post('/api/generate-qr', async (req, res) => {
                 console.log(`✓ QR Code converted to data URL for session ${sessionId}`);
             } catch (err) {
                 console.error(`Error converting QR to data URL:`, err);
-                qrCodeData = null;
+                clientError = 'Failed to convert QR to image: ' + err.message;
             }
         });
 
@@ -102,11 +102,16 @@ app.post('/api/generate-qr', async (req, res) => {
             clientError = 'Authentication failed';
         });
 
-        // Initialize client
+        // Start initialization WITHOUT awaiting — initialize() only resolves after
+        // the user scans the QR and the session is fully authenticated, so awaiting
+        // it here would block the QR-polling loop below from ever running.
         console.log(`Initializing client for session ${sessionId}...`);
-        await client.initialize();
+        client.initialize().catch((err) => {
+            console.error(`Initialization error for session ${sessionId}:`, err.message);
+            clientError = err.message;
+        });
 
-        // Wait for QR code (max 15 seconds)
+        // Wait for QR code (max 15 seconds: 30 × 500 ms)
         console.log(`Waiting for QR code for session ${sessionId}...`);
         for (let i = 0; i < 30; i++) {
             if (qrCodeData) {
