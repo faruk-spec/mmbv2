@@ -63,8 +63,16 @@ switch ($segments[0]) {
 
     case 'batch':
         require_once PROJECT_PATH . '/controllers/BatchController.php';
-        $ctrl = new \Projects\ConvertX\Controllers\BatchController();
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $ctrl   = new \Projects\ConvertX\Controllers\BatchController();
+        $action = $segments[1] ?? '';
+
+        if ($action === 'status' && isset($segments[2])) {
+            // GET /batch/status/:batchId  — JSON status for all jobs in a batch
+            $ctrl->batchStatus($segments[2]);
+        } elseif ($action === 'download' && isset($segments[2])) {
+            // GET /batch/download/:batchId  — stream all completed files as ZIP
+            $ctrl->batchDownloadZip($segments[2]);
+        } elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $ctrl->submit();
         } else {
             $ctrl->showForm();

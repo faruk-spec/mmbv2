@@ -27,6 +27,13 @@ require_once BASE_PATH . '/core/Database.php';
 require_once BASE_PATH . '/projects/convertx/models/ConversionJobModel.php';
 require_once BASE_PATH . '/projects/convertx/models/AIProviderModel.php';
 
+// Load controllers for reflection-based tests (not instantiated — constructor needs DB)
+require_once BASE_PATH . '/core/Auth.php';
+require_once BASE_PATH . '/core/Security.php';
+require_once BASE_PATH . '/core/ActivityLogger.php';
+require_once BASE_PATH . '/projects/convertx/services/JobQueueService.php';
+require_once BASE_PATH . '/projects/convertx/controllers/BatchController.php';
+
 class ConvertXTest extends TestCase
 {
     private \Projects\ConvertX\Services\ConversionService $conversionService;
@@ -1325,6 +1332,131 @@ class ConvertXTest extends TestCase
             $source,
             'Fixup UPDATE must target only the openai row'
         );
+    }
+
+    // ------------------------------------------------------------------ //
+    //  BatchController — new endpoints and ConversionJobModel::getBatchJobs //
+    // ------------------------------------------------------------------ //
+
+    public function testGetBatchJobsMethodExistsInModel(): void
+    {
+        $this->assertTrue(
+            method_exists(\Projects\ConvertX\Models\ConversionJobModel::class, 'getBatchJobs'),
+            'ConversionJobModel must have a getBatchJobs(batchId, userId) method'
+        );
+    }
+
+    public function testGetBatchJobsSignature(): void
+    {
+        $ref    = new \ReflectionMethod(\Projects\ConvertX\Models\ConversionJobModel::class, 'getBatchJobs');
+        $params = $ref->getParameters();
+        $this->assertCount(2, $params, 'getBatchJobs must accept exactly 2 parameters');
+        $this->assertSame('batchId', $params[0]->getName());
+        $this->assertSame('userId',  $params[1]->getName());
+    }
+
+    public function testBatchControllerHasBatchStatusMethod(): void
+    {
+        $this->assertTrue(
+            method_exists(\Projects\ConvertX\Controllers\BatchController::class, 'batchStatus'),
+            'BatchController must have a batchStatus() method'
+        );
+    }
+
+    public function testBatchControllerHasBatchDownloadZipMethod(): void
+    {
+        $this->assertTrue(
+            method_exists(\Projects\ConvertX\Controllers\BatchController::class, 'batchDownloadZip'),
+            'BatchController must have a batchDownloadZip() method'
+        );
+    }
+
+    public function testBatchControllerSubmitBuildsAiTasks(): void
+    {
+        // Verify source code: ai_ocr, ai_summarize, ai_translate, ai_classify are present
+        $source = file_get_contents(
+            BASE_PATH . '/projects/convertx/controllers/BatchController.php'
+        );
+        $this->assertStringContainsString('ai_ocr',      $source, 'BatchController must handle ai_ocr');
+        $this->assertStringContainsString('ai_summarize', $source, 'BatchController must handle ai_summarize');
+        $this->assertStringContainsString('ai_translate', $source, 'BatchController must handle ai_translate');
+        $this->assertStringContainsString('ai_classify',  $source, 'BatchController must handle ai_classify');
+    }
+
+    public function testBatchControllerPassesQualityAndDpi(): void
+    {
+        $source = file_get_contents(
+            BASE_PATH . '/projects/convertx/controllers/BatchController.php'
+        );
+        $this->assertStringContainsString("'quality'", $source, "BatchController must pass quality option");
+        $this->assertStringContainsString("'dpi'",     $source, "BatchController must pass dpi option");
+    }
+
+    public function testBatchViewContainsAiOptions(): void
+    {
+        $source = file_get_contents(
+            BASE_PATH . '/projects/convertx/views/batch.php'
+        );
+        $this->assertStringContainsString('ai_ocr',      $source, 'Batch view must include ai_ocr checkbox');
+        $this->assertStringContainsString('ai_summarize', $source, 'Batch view must include ai_summarize checkbox');
+        $this->assertStringContainsString('ai_translate', $source, 'Batch view must include ai_translate checkbox');
+        $this->assertStringContainsString('ai_classify',  $source, 'Batch view must include ai_classify checkbox');
+    }
+
+    public function testBatchViewContainsQualityAndDpi(): void
+    {
+        $source = file_get_contents(
+            BASE_PATH . '/projects/convertx/views/batch.php'
+        );
+        $this->assertStringContainsString('qualitySlider', $source, 'Batch view must include quality slider');
+        $this->assertStringContainsString('dpiSelect',     $source, 'Batch view must include DPI selector');
+    }
+
+    public function testBatchViewContainsDownloadAllButton(): void
+    {
+        $source = file_get_contents(
+            BASE_PATH . '/projects/convertx/views/batch.php'
+        );
+        $this->assertStringContainsString('downloadAllBtn', $source, 'Batch view must include Download All button');
+        $this->assertStringContainsString('downloadAllZip', $source, 'Batch view must wire up downloadAllZip() function');
+    }
+
+    public function testBatchRouteHasStatusAndDownloadCases(): void
+    {
+        $source = file_get_contents(
+            BASE_PATH . '/projects/convertx/routes/web.php'
+        );
+        $this->assertStringContainsString('batchStatus',      $source, 'Routes must dispatch to batchStatus()');
+        $this->assertStringContainsString('batchDownloadZip', $source, 'Routes must dispatch to batchDownloadZip()');
+    }
+
+    public function testBatchStatusPollingUsesBatchEndpoint(): void
+    {
+        $source = file_get_contents(
+            BASE_PATH . '/projects/convertx/views/batch.php'
+        );
+        $this->assertStringContainsString(
+            '/projects/convertx/batch/status/',
+            $source,
+            'Batch view must poll the unified /batch/status/:id endpoint'
+        );
+        $this->assertStringContainsString(
+            '/projects/convertx/batch/download/',
+            $source,
+            'Batch view must build the Download All ZIP URL from /batch/download/:id'
+        );
+    }
+
+    public function testBatchResultsTableShowsFilename(): void
+    {
+        $source = file_get_contents(
+            BASE_PATH . '/projects/convertx/views/batch.php'
+        );
+        // The polling code must update a filename element keyed by job ID
+        $this->assertStringContainsString('fname-', $source,
+            'Batch results table must show per-job filename (fname-<jobId> element)');
+        $this->assertStringContainsString('input_filename', $source,
+            'Batch status polling must use input_filename from the status response');
     }
 }
 

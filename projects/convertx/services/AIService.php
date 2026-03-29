@@ -208,8 +208,9 @@ class AIService
             // transient API failure does not permanently blacklist the provider.
             $isHealthy = (bool) ($provider['is_healthy'] ?? true);
             if (!$isHealthy) {
-                $checkedAt = $provider['health_checked_at'] ?? null;
-                if ($checkedAt !== null && (time() - strtotime($checkedAt)) >= self::HEALTH_RESET_COOLDOWN_SECONDS) {
+                $checkedAt  = $provider['health_checked_at'] ?? null;
+                $checkedTs  = $checkedAt !== null ? strtotime($checkedAt) : false;
+                if ($checkedTs !== false && (time() - $checkedTs) >= self::HEALTH_RESET_COOLDOWN_SECONDS) {
                     $this->providerModel->setHealth((int) $provider['id'], true);
                     $isHealthy = true;
                 }
