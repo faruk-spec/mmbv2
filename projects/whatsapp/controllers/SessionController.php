@@ -18,6 +18,9 @@ class SessionController
     private $db;
     private $user;
     
+    /** Lifetime of a generated QR code in seconds */
+    private const QR_CODE_EXPIRY_SECONDS = 60;
+    
     public function __construct()
     {
         $this->user = Auth::user();
@@ -328,12 +331,12 @@ class SessionController
             }
             
             if (!$this->user) {
-                // Enhanced error message for debugging
+                // Log debug info without overwriting the $sessionId request parameter
                 $sessionStatus = session_status();
                 $hasSessionId = isset($_SESSION['user_id']);
-                $sessionId = $_SESSION['user_id'] ?? 'none';
+                $debugUserId = $_SESSION['user_id'] ?? 'none';
                 
-                error_log("Authentication failed in getQRCode: session_status=$sessionStatus, has_user_id=$hasSessionId, session_user_id=$sessionId");
+                error_log("Authentication failed in getQRCode: session_status=$sessionStatus, has_user_id=$hasSessionId, session_user_id=$debugUserId");
                 
                 throw new \Exception('User not authenticated. Please log in again. (Session may have expired or cookies not enabled)');
             }
@@ -361,12 +364,18 @@ class SessionController
             }
             
             // Try to get real QR code from WhatsApp Web.js bridge
-            // PRODUCTION MODE: No fallback to placeholder - bridge must be running
             $qrData = $this->getQRFromBridge($session['session_id']);
             
             if ($qrData === null) {
-                // Bridge not available - return more helpful error
-                throw new \Exception('WhatsApp bridge server is not running. Please start the bridge server: cd projects/whatsapp/whatsapp-bridge && npm start');
+                // Return a specific error_type so the frontend can render
+                // a helpful "start the bridge" panel instead of a generic error.
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'The WhatsApp bridge server is not running.',
+                    'error_type' => 'BRIDGE_OFFLINE',
+                    'help' => 'cd projects/whatsapp/whatsapp-bridge && npm start'
+                ]);
+                return;
             }
             
             echo json_encode([
@@ -379,13 +388,51 @@ class SessionController
             ]);
             
         } catch (\Exception $e) {
-            http_response_code(400);
+            // Return HTTP 200 so the browser delivers the JSON body to the
+            // fetch .then() handler, which displays the real error message.
             echo json_encode([
                 'success' => false,
                 'message' => $e->getMessage(),
                 'error_type' => 'QR_GENERATION_ERROR'
             ]);
         }
+    }
+    
+    /**
+     * Check whether the WhatsApp Web.js bridge server is reachable.
+     * Endpoint: GET /projects/whatsapp/sessions/bridge-status
+     */
+    public function bridgeStatus()
+    {
+        header('Content-Type: application/json');
+        
+        $bridgeUrl = getenv('WHATSAPP_BRIDGE_URL') ?: 'http://127.0.0.1:3000';
+        $endpoint  = $bridgeUrl . '/api/health';
+        
+        try {
+            if (function_exists('curl_init')) {
+                $ch = curl_init($endpoint);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+                curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3);
+                $response = curl_exec($ch);
+                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                curl_close($ch);
+                $online = ($response !== false && $httpCode === 200);
+            } else {
+                $context  = stream_context_create(['http' => ['timeout' => 5, 'ignore_errors' => true]]);
+                $response = @file_get_contents($endpoint, false, $context);
+                $online   = ($response !== false);
+            }
+        } catch (\Exception $e) {
+            $online = false;
+        }
+        
+        echo json_encode([
+            'success' => true,
+            'online'  => $online,
+            'bridge_url' => $bridgeUrl
+        ]);
     }
     
     /**
@@ -556,7 +603,7 @@ class SessionController
                 'userId' => $this->user['id']
             ]);
             
-            // Try curl first (more reliable in production)
+            // Use cURL when available (preferred)
             if (function_exists('curl_init')) {
                 $ch = curl_init($endpoint);
                 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -566,7 +613,8 @@ class SessionController
                     'Content-Type: application/json',
                     'Content-Length: ' . strlen($postData)
                 ]);
-                curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+                // 25 s gives the bridge (20 s polling + Chrome startup) enough headroom
+                curl_setopt($ch, CURLOPT_TIMEOUT, 25);
                 curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
                 
                 $response = curl_exec($ch);
@@ -574,36 +622,40 @@ class SessionController
                 $curlError = curl_error($ch);
                 curl_close($ch);
                 
-                if ($response === false || $httpCode !== 200) {
-                    error_log("WhatsApp Bridge: cURL failed - HTTP $httpCode, Error: $curlError");
-                    // Fall through to try file_get_contents
-                } else {
-                    $data = json_decode($response, true);
-                    
-                    if ($data && isset($data['success']) && $data['success'] && isset($data['qr'])) {
-                        return [
-                            'image' => $data['qr'],
-                            'text' => $sessionId,
-                            'expires_at' => time() + 60,
-                            'is_real' => true
-                        ];
-                    }
-                    
-                    // Log bridge error
-                    $errorMsg = $data['message'] ?? 'Unknown error';
-                    error_log("WhatsApp Bridge: API returned error - $errorMsg");
+                if ($response === false) {
+                    // Connection-level failure (bridge not running)
+                    error_log("WhatsApp Bridge: cURL connection failed - $curlError");
                     return null;
                 }
+                
+                // Bridge returned a response (parse it regardless of HTTP status)
+                $data = json_decode($response, true);
+                
+                if ($data && isset($data['success']) && $data['success'] && isset($data['qr'])) {
+                    return [
+                        'image' => $data['qr'],
+                        'text' => $sessionId,
+                        'expires_at' => time() + self::QR_CODE_EXPIRY_SECONDS,
+                        'is_real' => true
+                    ];
+                }
+                
+                $errorMsg = $data['message'] ?? "HTTP $httpCode error from bridge";
+                error_log("WhatsApp Bridge: API returned error - $errorMsg (HTTP $httpCode)");
+                if (isset($data['help'])) {
+                    error_log("WhatsApp Bridge: Help - " . $data['help']);
+                }
+                return null;
             }
             
-            // Fallback to file_get_contents if curl is not available or failed
+            // cURL not available: fall back to file_get_contents
             $context = stream_context_create([
                 'http' => [
                     'method' => 'POST',
                     'header' => "Content-Type: application/json\r\n" .
                                "Content-Length: " . strlen($postData) . "\r\n",
                     'content' => $postData,
-                    'timeout' => 15,
+                    'timeout' => 25,
                     'ignore_errors' => true
                 ]
             ]);
@@ -617,38 +669,21 @@ class SessionController
             
             $data = json_decode($response, true);
             
-            if (!$data || !isset($data['success']) || !$data['success']) {
-                $errorMsg = $data['message'] ?? 'Unknown error';
-                error_log("WhatsApp Bridge: API returned error - $errorMsg");
-                
-                if (isset($data['help'])) {
-                    error_log("WhatsApp Bridge: Help - " . $data['help']);
-                }
-                
-                // Check if it's a Chrome/Puppeteer issue
-                if (stripos($errorMsg, 'chrome') !== false || 
-                    stripos($errorMsg, 'puppeteer') !== false ||
-                    stripos($errorMsg, 'launch') !== false ||
-                    stripos($errorMsg, 'dependencies') !== false) {
-                    error_log("WhatsApp Bridge: Chrome/Puppeteer issue detected. See CHROME_SETUP.md");
-                }
-                
-                return null;
+            if ($data && isset($data['success']) && $data['success'] && isset($data['qr'])) {
+                return [
+                    'image' => $data['qr'],
+                    'text' => $sessionId,
+                    'expires_at' => time() + self::QR_CODE_EXPIRY_SECONDS,
+                    'is_real' => true
+                ];
             }
             
-            // Bridge returns 'qr' field, not 'qr_code'
-            if (!isset($data['qr'])) {
-                error_log("WhatsApp Bridge: Missing QR field in response");
-                return null;
+            $errorMsg = $data['message'] ?? 'Unknown error';
+            error_log("WhatsApp Bridge: API returned error - $errorMsg");
+            if (isset($data['help'])) {
+                error_log("WhatsApp Bridge: Help - " . $data['help']);
             }
-            
-            // Return real QR code from bridge
-            return [
-                'image' => $data['qr'],
-                'text' => $sessionId,
-                'expires_at' => time() + 60,
-                'is_real' => true
-            ];
+            return null;
             
         } catch (\Exception $e) {
             error_log("WhatsApp Bridge: Exception - " . $e->getMessage());
