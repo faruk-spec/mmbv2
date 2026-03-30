@@ -75,13 +75,18 @@ class IDCardController
             $cardData[$field] = $this->sanitize($_POST[$field] ?? '');
         }
 
-        // Design overrides (colours, fonts)
+        // Design overrides (colours, fonts, layout style)
+        $allowedStyles = ['classic', 'sidebar', 'wave', 'bold_header', 'diagonal'];
+        $rawStyle = $this->sanitize($_POST['design_style'] ?? 'classic');
+        $designStyle = in_array($rawStyle, $allowedStyles, true) ? $rawStyle : 'classic';
+
         $design = [
             'primary_color'  => $this->sanitizeColor($_POST['primary_color']  ?? $tplConfig['color']),
             'accent_color'   => $this->sanitizeColor($_POST['accent_color']   ?? $tplConfig['accent']),
             'bg_color'       => $this->sanitizeColor($_POST['bg_color']       ?? $tplConfig['bg']),
             'text_color'     => $this->sanitizeColor($_POST['text_color']     ?? $tplConfig['text']),
             'font_family'    => $this->sanitizeFont($_POST['font_family']     ?? 'Poppins'),
+            'design_style'   => $designStyle,
             'show_qr'        => !empty($_POST['show_qr']),
             'show_barcode'   => !empty($_POST['show_barcode']),
             'card_width'     => 'standard', // CR80 standard
