@@ -239,161 +239,184 @@ $csrfToken = \Core\Security::generateCsrfToken();
 // =============================================================================
 //  Data from PHP
 // =============================================================================
-const TEMPLATES    = <?= json_encode($templates) ?>;
-const FIELD_LABELS = <?= json_encode($field_labels) ?>;
-const CSRF_TOKEN   = '<?= htmlspecialchars($csrfToken) ?>';
+var TEMPLATES    = <?= json_encode($templates) ?>;
+var FIELD_LABELS = <?= json_encode($field_labels) ?>;
+var CSRF_TOKEN   = '<?= htmlspecialchars($csrfToken) ?>';
 
-let currentTpl   = '<?= htmlspecialchars($selectedTpl) ?>';
-let currentStyle = 'classic';
-let photoDataUrl = null;
+var currentTpl   = '<?= htmlspecialchars($selectedTpl) ?>';
+var currentStyle = 'classic';
+var photoDataUrl = null;
 
 // =============================================================================
-//  Design style definitions
+//  Design style definitions (matching reference images exactly)
 // =============================================================================
-const DESIGN_STYLES = [
-    { key:'classic',     label:'Classic',       desc:'Corporate with hexagon mesh pattern' },
-    { key:'sidebar',     label:'Tech',          desc:'Dark sidebar with circuit-board traces' },
-    { key:'wave',        label:'Aurora',        desc:'Gradient aurora with layered waves' },
-    { key:'bold_header', label:'Geometric',     desc:'Low-poly triangle header pattern' },
-    { key:'diagonal',    label:'Mosaic',        desc:'Diagonal split with halftone dots' }
+var DESIGN_STYLES = [
+    { key:'classic',     label:'Angled Pro',   desc:'Coloured angled header, centred circle photo' },
+    { key:'sidebar',     label:'Dark Geo',     desc:'Dark card with geometric diamond accent shape' },
+    { key:'wave',        label:'Wave Panel',   desc:'Cream card with organic wave left, fields right' },
+    { key:'bold_header', label:'Bold Split',   desc:'Coloured left panel, white right panel with fields' },
+    { key:'diagonal',    label:'Triangle Pro', desc:'Dark card with arrow triangle shapes and photo' }
 ];
 
 // =============================================================================
-//  SVG thumbnail builder – richer previews matching real card graphics
+//  Barcode SVG (pre-computed realistic barcode pattern)
+// =============================================================================
+var BARCODE_BARS = [2,1,3,1,1,2,1,3,2,1,1,2,1,1,3,1,2,1,1,3,2,1,2,1,1,3,1,1,2,1,3,1,2,1,1,2,3,1,1];
+
+function barcodeStr(color, width) {
+    width = width || '52%';
+    var svg = '<svg viewBox="0 0 80 13" xmlns="http://www.w3.org/2000/svg" style="display:block;width:'+width+';height:auto;">';
+    var x = 0; var isBar = true;
+    for (var i = 0; i < BARCODE_BARS.length; i++) {
+        var w = BARCODE_BARS[i];
+        if (isBar) svg += '<rect x="'+x.toFixed(1)+'" y="0" width="'+w+'" height="13" fill="'+color+'"/>';
+        x += w + 1;
+        isBar = !isBar;
+    }
+    return svg + '</svg>';
+}
+
+// =============================================================================
+//  Style picker thumbnails  (accurate miniature previews)
 // =============================================================================
 function buildStyleThumbnail(key, pri, acc, bg, txt) {
     var W = 85.6, H = 54;
     switch(key) {
+
         case 'classic':
-            // Hex mesh + gradient header + diagonal stripes
+            // White card — coloured angled header — centred circle photo
             return '<svg viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg">' +
                 '<defs>' +
-                '<linearGradient id="thg1" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="' + pri + '"/><stop offset="100%" stop-color="' + acc + '"/></linearGradient>' +
-                '<pattern id="thx1" patternUnits="userSpaceOnUse" width="8" height="13.9">' +
-                '<polygon points="4,0.3 7.5,2.3 7.5,6.3 4,8.3 0.5,6.3 0.5,2.3" fill="none" stroke="' + pri + '" stroke-width="0.35" opacity="0.22"/>' +
-                '</pattern>' +
+                '<linearGradient id="tcg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="'+pri+'"/><stop offset="100%" stop-color="'+acc+'"/></linearGradient>' +
+                '<clipPath id="tcc"><polygon points="0,0 '+W+',0 '+W+','+(H*0.56)+' 0,'+(H*0.72)+'"/></clipPath>' +
                 '</defs>' +
-                '<rect width="' + W + '" height="' + H + '" fill="' + bg + '"/>' +
-                '<rect width="' + W + '" height="' + H + '" fill="url(#thx1)"/>' +
-                '<rect y="0" width="' + W + '" height="6" fill="url(#thg1)"/>' +
-                '<path d="M0,0 L8,0 L0,6 Z" fill="rgba(255,255,255,0.18)"/>' +
-                '<path d="M16,0 L24,0 L16,6 Z" fill="rgba(255,255,255,0.18)"/>' +
-                '<path d="M32,0 L40,0 L32,6 Z" fill="rgba(255,255,255,0.18)"/>' +
-                '<path d="M48,0 L56,0 L48,6 Z" fill="rgba(255,255,255,0.18)"/>' +
-                '<path d="M64,0 L72,0 L64,6 Z" fill="rgba(255,255,255,0.18)"/>' +
-                '<rect y="' + (H-4) + '" width="' + W + '" height="4" fill="url(#thg1)" opacity="0.3"/>' +
-                '<circle cx="20" cy="' + (H/2+2) + '" r="8" fill="' + pri + '" opacity="0.08"/>' +
-                '<circle cx="20" cy="' + (H/2+2) + '" r="8" fill="none" stroke="url(#thg1)" stroke-width="1.5"/>' +
-                '<rect x="33" y="20" width="30" height="3" rx="1.2" fill="' + txt + '" opacity="0.8"/>' +
-                '<rect x="33" y="25" width="3" height="3" rx="1" fill="url(#thg1)" opacity="0.9"/>' +
-                '<rect x="33" y="26.5" width="22" height="1.5" rx="0.6" fill="' + acc + '" opacity="0.7"/>' +
-                '<rect x="33" y="31" width="24" height="1.5" rx="0.5" fill="' + txt + '" opacity="0.3"/>' +
-                '<rect x="33" y="35" width="18" height="1.5" rx="0.5" fill="' + txt + '" opacity="0.3"/>' +
-                '<rect x="33" y="39" width="14" height="1.5" rx="0.5" fill="' + txt + '" opacity="0.3"/>' +
+                '<rect width="'+W+'" height="'+H+'" fill="#f7f8fc"/>' +
+                '<rect width="'+W+'" height="'+H+'" fill="url(#tcg)" clip-path="url(#tcc)"/>' +
+                // Logo area top-left
+                '<circle cx="6" cy="5" r="3" fill="rgba(255,255,255,0.3)"/>' +
+                '<rect x="11" y="3.5" width="18" height="2" rx="1" fill="rgba(255,255,255,0.7)"/>' +
+                // Centred circle photo at boundary
+                '<circle cx="'+W/2+'" cy="'+H*0.46+'" r="7" fill="#fff" stroke="'+pri+'" stroke-width="1.5"/>' +
+                '<circle cx="'+W/2+'" cy="'+H*0.46+'" r="5" fill="'+pri+'22"/>' +
+                // Name below photo
+                '<rect x="'+((W-26)/2)+'" y="'+H*0.58+'" width="26" height="3.5" rx="1.5" fill="'+pri+'" opacity="0.85"/>' +
+                '<rect x="'+((W-18)/2)+'" y="'+H*0.65+'" width="18" height="2" rx="1" fill="#aaa"/>' +
+                // Fields 2-col
+                '<rect x="8" y="'+H*0.72+'" width="16" height="1.8" rx="0.8" fill="#555" opacity="0.5"/>' +
+                '<rect x="'+W/2+'" y="'+H*0.72+'" width="16" height="1.8" rx="0.8" fill="#555" opacity="0.5"/>' +
+                '<rect x="8" y="'+H*0.78+'" width="20" height="1.8" rx="0.8" fill="#555" opacity="0.4"/>' +
+                '<rect x="'+W/2+'" y="'+H*0.78+'" width="20" height="1.8" rx="0.8" fill="#555" opacity="0.4"/>' +
+                // Barcode
+                '<rect x="'+((W-24)/2)+'" y="'+H*0.88+'" width="24" height="5" rx="0.5" fill="#ddd"/>' +
                 '</svg>';
+
         case 'sidebar':
-            // Circuit-board sidebar
+            // Dark card — rotated diamond upper-right — photo circle inside
             return '<svg viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg">' +
-                '<rect width="' + W + '" height="' + H + '" fill="' + bg + '"/>' +
-                '<rect width="22" height="' + H + '" fill="' + pri + '"/>' +
-                // Circuit traces
-                '<line x1="3" y1="8" x2="18" y2="8" stroke="rgba(255,255,255,0.35)" stroke-width="0.7"/>' +
-                '<line x1="10" y1="8" x2="10" y2="20" stroke="rgba(255,255,255,0.35)" stroke-width="0.7"/>' +
-                '<line x1="3" y1="28" x2="19" y2="28" stroke="rgba(255,255,255,0.35)" stroke-width="0.7"/>' +
-                '<line x1="16" y1="28" x2="16" y2="38" stroke="rgba(255,255,255,0.35)" stroke-width="0.7"/>' +
-                '<line x1="3" y1="44" x2="19" y2="44" stroke="rgba(255,255,255,0.35)" stroke-width="0.7"/>' +
-                '<circle cx="10" cy="8" r="1.3" fill="rgba(255,255,255,0.7)"/>' +
-                '<circle cx="16" cy="28" r="1.3" fill="rgba(255,255,255,0.7)"/>' +
-                '<circle cx="6" cy="44" r="1.3" fill="rgba(255,255,255,0.7)"/>' +
-                // Photo square
-                '<rect x="5" y="14" width="12" height="12" rx="2" fill="rgba(255,255,255,0.22)" stroke="rgba(255,255,255,0.45)" stroke-width="0.7"/>' +
-                // Right content
-                '<rect x="28" y="13" width="3" height="28" rx="1.5" fill="' + acc + '" opacity="0.8"/>' +
-                '<rect x="35" y="13" width="36" height="3.5" rx="1.2" fill="' + txt + '" opacity="0.8"/>' +
-                '<rect x="35" y="20" width="24" height="2.5" rx="1" fill="' + acc + '" opacity="0.7"/>' +
-                '<rect x="35" y="27" width="32" height="1.8" rx="0.6" fill="' + txt + '" opacity="0.3"/>' +
-                '<rect x="35" y="32" width="26" height="1.8" rx="0.6" fill="' + txt + '" opacity="0.3"/>' +
-                '<rect x="35" y="37" width="18" height="1.8" rx="0.6" fill="' + txt + '" opacity="0.3"/>' +
+                '<rect width="'+W+'" height="'+H+'" fill="#111827"/>' +
+                // Diamond shape upper-right
+                '<rect x="'+W*0.45+'" y="'+(-H*0.2)+'" width="'+W*0.75+'" height="'+W*0.75+'" rx="3"' +
+                '  fill="'+pri+'" transform="rotate(45 '+(W*0.82)+' '+(H*0.3)+')" opacity="0.9"/>' +
+                // Photo in diamond area
+                '<circle cx="'+W*0.8+'" cy="'+H*0.35+'" r="8" fill="rgba(255,255,255,0.18)" stroke="rgba(255,255,255,0.6)" stroke-width="1"/>' +
+                // Logo + company top-left
+                '<circle cx="6" cy="5.5" r="3" fill="rgba(255,255,255,0.2)"/>' +
+                '<rect x="11" y="4" width="20" height="2" rx="1" fill="rgba(255,255,255,0.5)"/>' +
+                // Name
+                '<rect x="5" y="'+H*0.56+'" width="28" height="3.5" rx="1.5" fill="#fff" opacity="0.9"/>' +
+                '<rect x="5" y="'+H*0.64+'" width="20" height="2" rx="1" fill="'+acc+'" opacity="0.7"/>' +
+                // Fields stacked
+                '<rect x="5" y="'+H*0.74+'" width="24" height="1.6" rx="0.6" fill="rgba(255,255,255,0.3)"/>' +
+                '<rect x="5" y="'+H*0.80+'" width="20" height="1.6" rx="0.6" fill="rgba(255,255,255,0.25)"/>' +
+                '<rect x="5" y="'+H*0.86+'" width="16" height="1.6" rx="0.6" fill="rgba(255,255,255,0.2)"/>' +
+                // Barcode right
+                '<rect x="'+W*0.6+'" y="'+H*0.84+'" width="22" height="5" rx="0.5" fill="rgba(255,255,255,0.12)"/>' +
                 '</svg>';
+
         case 'wave':
-            // Aurora gradient + multi-waves
+            // Cream — dark organic wave left — photo boundary — fields right
             return '<svg viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg">' +
-                '<defs>' +
-                '<linearGradient id="tag" x1="0" y1="0" x2="0.7" y2="1"><stop offset="0%" stop-color="' + pri + '"/><stop offset="60%" stop-color="' + acc + '"/><stop offset="100%" stop-color="' + pri + '" stop-opacity="0.7"/></linearGradient>' +
-                '</defs>' +
-                '<rect width="' + W + '" height="' + H + '" fill="url(#tag)"/>' +
-                // Circles top-right
-                '<circle cx="' + (W-4) + '" cy="6" r="14" fill="rgba(255,255,255,0.07)"/>' +
-                '<circle cx="' + (W-10) + '" cy="2" r="8" fill="rgba(255,255,255,0.05)"/>' +
-                // 5 wave paths
-                '<path d="M0,' + (H*0.6) + ' Q' + (W*0.25) + ',' + (H*0.4) + ' ' + (W*0.5) + ',' + (H*0.58) + ' Q' + (W*0.75) + ',' + (H*0.76) + ' ' + W + ',' + (H*0.55) + ' L' + W + ',' + H + ' L0,' + H + ' Z" fill="rgba(255,255,255,0.05)"/>' +
-                '<path d="M0,' + (H*0.68) + ' Q' + (W*0.3) + ',' + (H*0.52) + ' ' + (W*0.6) + ',' + (H*0.65) + ' Q' + (W*0.8) + ',' + (H*0.75) + ' ' + W + ',' + (H*0.62) + ' L' + W + ',' + H + ' L0,' + H + ' Z" fill="rgba(255,255,255,0.07)"/>' +
-                '<path d="M0,' + (H*0.76) + ' Q' + (W*0.35) + ',' + (H*0.63) + ' ' + (W*0.65) + ',' + (H*0.74) + ' Q' + (W*0.85) + ',' + (H*0.82) + ' ' + W + ',' + (H*0.7) + ' L' + W + ',' + H + ' L0,' + H + ' Z" fill="rgba(255,255,255,0.1)"/>' +
-                '<path d="M0,' + (H*0.84) + ' Q' + (W*0.4) + ',' + (H*0.76) + ' ' + (W*0.7) + ',' + (H*0.82) + ' Q' + (W*0.88) + ',' + (H*0.87) + ' ' + W + ',' + (H*0.78) + ' L' + W + ',' + H + ' L0,' + H + ' Z" fill="rgba(255,255,255,0.12)"/>' +
-                '<path d="M0,' + (H*0.91) + ' Q' + (W*0.45) + ',' + (H*0.86) + ' ' + (W*0.75) + ',' + (H*0.9) + ' Q' + (W*0.9) + ',' + (H*0.93) + ' ' + W + ',' + (H*0.87) + ' L' + W + ',' + H + ' L0,' + H + ' Z" fill="rgba(255,255,255,0.15)"/>' +
-                // Photo circle with double ring
-                '<circle cx="19" cy="22" r="10" fill="rgba(255,255,255,0.25)"/>' +
-                '<circle cx="19" cy="22" r="10" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1"/>' +
-                '<circle cx="19" cy="22" r="12" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="0.8"/>' +
-                '<rect x="33" y="14" width="34" height="3.5" rx="1.5" fill="rgba(255,255,255,0.92)"/>' +
-                '<rect x="33" y="21" width="22" height="2.5" rx="1" fill="rgba(255,255,255,0.7)"/>' +
-                '<rect x="33" y="28" width="28" height="1.8" rx="0.6" fill="rgba(255,255,255,0.4)"/>' +
-                '<rect x="33" y="33" width="20" height="1.8" rx="0.6" fill="rgba(255,255,255,0.4)"/>' +
+                '<rect width="'+W+'" height="'+H+'" fill="#fdf8f3"/>' +
+                // Wave/blob shape left
+                '<path d="M0,0 L'+W*0.55+',0 Q'+W*0.73+','+H*0.28+' '+W*0.65+','+H*0.5+' Q'+W*0.75+','+H*0.72+' '+W*0.58+','+H+' L0,'+H+' Z" fill="'+pri+'"/>' +
+                '<path d="M0,0 L'+W*0.4+',0 Q'+W*0.56+','+H*0.25+' '+W*0.5+','+H*0.5+' Q'+W*0.58+','+H*0.75+' '+W*0.43+','+H+' L0,'+H+' Z" fill="rgba(255,255,255,0.07)"/>' +
+                // Photo at boundary
+                '<circle cx="'+W*0.42+'" cy="'+H*0.4+'" r="8.5" fill="rgba(255,255,255,0.25)" stroke="rgba(255,255,255,0.7)" stroke-width="1.2"/>' +
+                // Name bottom-left
+                '<rect x="4" y="'+H*0.7+'" width="22" height="3" rx="1" fill="#fff" opacity="0.9"/>' +
+                '<rect x="4" y="'+H*0.78+'" width="16" height="1.8" rx="0.7" fill="rgba(255,255,255,0.6)"/>' +
+                // Barcode bottom-left
+                '<rect x="4" y="'+H*0.88+'" width="20" height="4" rx="0.4" fill="rgba(255,255,255,0.2)"/>' +
+                // Logo top-right
+                '<circle cx="'+W*0.9+'" cy="5" r="3" fill="'+pri+'33"/>' +
+                // Fields right
+                '<rect x="'+W*0.68+'" y="10" width="22" height="1.8" rx="0.7" fill="#888" opacity="0.5"/>' +
+                '<rect x="'+W*0.68+'" y="15" width="20" height="1.8" rx="0.7" fill="#888" opacity="0.45"/>' +
+                '<rect x="'+W*0.68+'" y="20" width="24" height="1.8" rx="0.7" fill="#888" opacity="0.4"/>' +
+                '<rect x="'+W*0.68+'" y="25" width="18" height="1.8" rx="0.7" fill="#888" opacity="0.35"/>' +
                 '</svg>';
+
         case 'bold_header':
-            // Triangle tessellation header
+            // Coloured left panel — white right panel
             return '<svg viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg">' +
-                '<rect width="' + W + '" height="' + H + '" fill="' + bg + '"/>' +
-                '<rect width="' + W + '" height="22" fill="' + pri + '"/>' +
-                // Triangle tessellation in header
-                '<polygon points="50,0 62,0 56,11" fill="rgba(255,255,255,0.08)"/>' +
-                '<polygon points="62,0 74,0 68,11" fill="rgba(255,255,255,0.12)"/>' +
-                '<polygon points="74,0 86,0 80,11" fill="rgba(255,255,255,0.07)"/>' +
-                '<polygon points="56,11 68,11 62,22" fill="rgba(255,255,255,0.1)"/>' +
-                '<polygon points="68,11 80,11 74,22" fill="rgba(255,255,255,0.06)"/>' +
-                '<polygon points="62,11 74,11 68,0" fill="rgba(255,255,255,0.14)"/>' +
-                '<polygon points="70,22 84,22 77,11" fill="rgba(255,255,255,0.09)"/>' +
-                // Name in header
-                '<rect x="24" y="7" width="38" height="3.5" rx="1.5" fill="rgba(255,255,255,0.92)"/>' +
-                '<rect x="24" y="14" width="26" height="2.5" rx="1" fill="rgba(255,255,255,0.65)"/>' +
-                // Photo overlapping
-                '<circle cx="12" cy="22" r="10" fill="' + bg + '" stroke="' + acc + '" stroke-width="1.5"/>' +
-                '<circle cx="12" cy="22" r="7" fill="' + pri + '" opacity="0.2"/>' +
-                // Fields
-                '<rect x="24" y="27" width="42" height="2.5" rx="1" fill="' + txt + '" opacity="0.7"/>' +
-                '<rect x="24" y="33" width="34" height="2" rx="1" fill="' + txt + '" opacity="0.3"/>' +
-                '<rect x="24" y="38" width="26" height="2" rx="1" fill="' + txt + '" opacity="0.3"/>' +
-                '<rect x="24" y="43" width="18" height="2" rx="1" fill="' + txt + '" opacity="0.3"/>' +
+                '<defs><linearGradient id="tbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="'+pri+'"/><stop offset="100%" stop-color="'+acc+'"/></linearGradient></defs>' +
+                // Left panel
+                '<rect x="0" y="0" width="'+W*0.4+'" height="'+H+'" fill="url(#tbg)"/>' +
+                // Decorative circles in left panel
+                '<circle cx="'+W*0.2+'" cy="-4" r="14" fill="rgba(255,255,255,0.06)"/>' +
+                '<circle cx="0" cy="'+H*0.8+'" r="10" fill="rgba(255,255,255,0.05)"/>' +
+                // Logo top of left panel
+                '<circle cx="'+W*0.2+'" cy="6" r="3" fill="rgba(255,255,255,0.25)"/>' +
+                // Photo circle centred in left panel
+                '<circle cx="'+W*0.2+'" cy="'+H*0.52+'" r="10" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.7)" stroke-width="1.2"/>' +
+                // Barcode bottom of left panel
+                '<rect x="4" y="'+H*0.88+'" width="'+W*0.32+'" height="4" rx="0.4" fill="rgba(255,255,255,0.18)"/>' +
+                // Right panel
+                '<rect x="'+W*0.4+'" y="0" width="'+W*0.6+'" height="'+H+'" fill="#fff"/>' +
+                // Accent line top of right panel
+                '<rect x="'+W*0.4+'" y="0" width="'+W*0.6+'" height="3" fill="url(#tbg)"/>' +
+                // Name
+                '<rect x="'+W*0.44+'" y="14" width="30" height="3.5" rx="1.5" fill="'+pri+'" opacity="0.85"/>' +
+                '<rect x="'+W*0.44+'" y="20" width="20" height="2" rx="0.8" fill="#aaa"/>' +
+                // Divider
+                '<rect x="'+W*0.44+'" y="26" width="28" height="1.5" rx="0.7" fill="'+acc+'" opacity="0.5"/>' +
+                // Fields right
+                '<rect x="'+W*0.44+'" y="31" width="24" height="1.8" rx="0.7" fill="#555" opacity="0.5"/>' +
+                '<rect x="'+W*0.44+'" y="36" width="28" height="1.8" rx="0.7" fill="#555" opacity="0.45"/>' +
+                '<rect x="'+W*0.44+'" y="41" width="20" height="1.8" rx="0.7" fill="#555" opacity="0.4"/>' +
+                '<rect x="'+W*0.44+'" y="46" width="24" height="1.8" rx="0.7" fill="#555" opacity="0.35"/>' +
                 '</svg>';
+
         case 'diagonal':
-            // Halftone dots on diagonal zone
+            // Dark — arrow triangle shapes right — photo+text left
             return '<svg viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg">' +
-                '<defs><linearGradient id="tdg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="' + pri + '"/><stop offset="100%" stop-color="' + acc + '"/></linearGradient></defs>' +
-                '<rect width="' + W + '" height="' + H + '" fill="' + bg + '"/>' +
-                '<polygon points="0,0 48,0 32,' + H + ' 0,' + H + '" fill="url(#tdg)"/>' +
-                // Halftone dots in colored zone
-                '<circle cx="5" cy="5" r="1.5" fill="rgba(255,255,255,0.25)"/>' +
-                '<circle cx="14" cy="5" r="1.5" fill="rgba(255,255,255,0.25)"/>' +
-                '<circle cx="23" cy="5" r="1.5" fill="rgba(255,255,255,0.25)"/>' +
-                '<circle cx="9" cy="14" r="1.5" fill="rgba(255,255,255,0.25)"/>' +
-                '<circle cx="18" cy="14" r="1.5" fill="rgba(255,255,255,0.25)"/>' +
-                '<circle cx="5" cy="23" r="1.5" fill="rgba(255,255,255,0.25)"/>' +
-                '<circle cx="14" cy="23" r="1.5" fill="rgba(255,255,255,0.25)"/>' +
-                '<circle cx="9" cy="32" r="1.5" fill="rgba(255,255,255,0.25)"/>' +
-                '<circle cx="5" cy="41" r="1.5" fill="rgba(255,255,255,0.25)"/>' +
-                '<circle cx="14" cy="41" r="1.5" fill="rgba(255,255,255,0.25)"/>' +
-                // Photo (square-ish)
-                '<rect x="5" y="16" width="22" height="22" rx="3" fill="rgba(255,255,255,0.25)" stroke="rgba(255,255,255,0.5)" stroke-width="0.8"/>' +
-                // Right content
-                '<rect x="56" y="14" width="26" height="3.5" rx="1.5" fill="' + txt + '" opacity="0.8"/>' +
-                '<rect x="56" y="21" width="18" height="2.5" rx="1" fill="' + acc + '" opacity="0.7"/>' +
-                '<rect x="56" y="28" width="1.5" height="14" rx="0.75" fill="' + acc + '" opacity="0.6"/>' +
-                '<rect x="60" y="29" width="20" height="1.8" rx="0.6" fill="' + txt + '" opacity="0.3"/>' +
-                '<rect x="60" y="34" width="16" height="1.8" rx="0.6" fill="' + txt + '" opacity="0.3"/>' +
-                '<rect x="60" y="39" width="12" height="1.8" rx="0.6" fill="' + txt + '" opacity="0.3"/>' +
+                '<rect width="'+W+'" height="'+H+'" fill="#111827"/>' +
+                // Right background tint
+                '<rect x="'+W*0.55+'" y="0" width="'+W*0.45+'" height="'+H+'" fill="'+pri+'15"/>' +
+                // Arrow triangle 1 (top)
+                '<polygon points="'+W+',0 '+W+','+H*0.4+' '+W*0.55+','+H*0.2+'" fill="'+pri+'"/>' +
+                // Arrow triangle 2 (middle)
+                '<polygon points="'+W+','+H*0.34+' '+W+','+H*0.73+' '+W*0.58+','+H*0.535+'" fill="'+acc+'" opacity="0.85"/>' +
+                // Arrow triangle 3 (bottom)
+                '<polygon points="'+W+','+H*0.64+' '+W+','+H+' '+W*0.56+','+H*0.83+'" fill="'+pri+'" opacity="0.7"/>' +
+                // Photo left
+                '<circle cx="'+W*0.14+'" cy="'+H*0.5+'" r="9" fill="rgba(255,255,255,0.1)" stroke="'+acc+'" stroke-width="1.2"/>' +
+                // Logo top-left
+                '<circle cx="6" cy="5" r="3" fill="rgba(255,255,255,0.15)"/>' +
+                '<rect x="11" y="3.5" width="18" height="2" rx="1" fill="rgba(255,255,255,0.4)"/>' +
+                // Name + role
+                '<rect x="'+W*0.29+'" y="17" width="22" height="3" rx="1" fill="#fff" opacity="0.9"/>' +
+                '<rect x="'+W*0.29+'" y="23" width="16" height="2" rx="0.8" fill="'+acc+'" opacity="0.7"/>' +
+                // Fields
+                '<rect x="5" y="'+H*0.74+'" width="20" height="1.6" rx="0.6" fill="rgba(255,255,255,0.25)"/>' +
+                '<rect x="5" y="'+H*0.81+'" width="18" height="1.6" rx="0.6" fill="rgba(255,255,255,0.2)"/>' +
+                '<rect x="5" y="'+H*0.88+'" width="22" height="1.6" rx="0.6" fill="rgba(255,255,255,0.18)"/>' +
+                // Barcode right
+                '<rect x="'+W*0.6+'" y="'+H*0.86+'" width="24" height="5" rx="0.4" fill="rgba(255,255,255,0.1)"/>' +
                 '</svg>';
+
         default:
-            return '<svg viewBox="0 0 ' + W + ' ' + H + '"><rect width="' + W + '" height="' + H + '" fill="' + pri + '"/></svg>';
+            return '<svg viewBox="0 0 '+W+' '+H+'"><rect width="'+W+'" height="'+H+'" fill="'+pri+'"/></svg>';
     }
 }
 
@@ -402,7 +425,6 @@ function buildStylePicker() {
     var acc = document.getElementById('accentColor').value  || '#3b82f6';
     var bg  = document.getElementById('bgColor').value      || '#ffffff';
     var txt = document.getElementById('textColor').value    || '#1e293b';
-
     var picker = document.getElementById('stylePicker');
     picker.innerHTML = DESIGN_STYLES.map(function(s) {
         var thumb    = buildStyleThumbnail(s.key, pri, acc, bg, txt);
@@ -433,7 +455,7 @@ function updateStyleThumbnails() {
 function selectTemplate(key) {
     if (!TEMPLATES[key]) return;
     currentTpl = key;
-    var tpl  = TEMPLATES[key];
+    var tpl    = TEMPLATES[key];
     document.getElementById('template_key').value = key;
 
     document.querySelectorAll('.tpl-btn').forEach(function(btn) {
@@ -479,7 +501,6 @@ function selectTemplate(key) {
 function selectStyle(key) {
     currentStyle = key;
     document.getElementById('design_style').value = key;
-
     DESIGN_STYLES.forEach(function(s) {
         var card  = document.getElementById('styleCard_' + s.key);
         var label = document.getElementById('styleLabel_' + s.key);
@@ -487,7 +508,6 @@ function selectStyle(key) {
         if (card)  { card.classList.toggle('active', isActive); }
         if (label) { label.classList.toggle('active', isActive); }
     });
-
     var styleDef = DESIGN_STYLES.find(function(s){ return s.key === key; });
     document.getElementById('previewStyleName').textContent = styleDef ? ('· ' + styleDef.label) : '';
     updatePreview();
@@ -496,6 +516,13 @@ function selectStyle(key) {
 // =============================================================================
 //  Card data helpers
 // =============================================================================
+var FIELD_SHORT_LABELS = {
+    department:'DEPT', employee_id:'ID NO', roll_number:'ROLL NO', id_number:'ID NO',
+    badge_id:'BADGE', license_no:'LIC NO', blood_group:'B.GROUP',
+    phone:'PHONE', email:'E-MAIL', year:'YEAR', organization:'ORG',
+    host_name:'HOST', purpose:'PURPOSE', visit_date:'DATE'
+};
+
 function getCardValues() {
     var tpl  = TEMPLATES[currentTpl] || {};
     var pri  = document.getElementById('primaryColor').value || tpl.color  || '#1e40af';
@@ -506,295 +533,223 @@ function getCardValues() {
 
     var roleKeys = ['designation','title','course','event_name'];
     var nameEl   = document.getElementById('field_name');
-    var nameVal  = (nameEl && nameEl.value) ? nameEl.value : 'Full Name';
+    var nameVal  = (nameEl && nameEl.value) ? nameEl.value : 'YOUR NAME';
     var roleVal  = '';
     for (var i = 0; i < roleKeys.length; i++) {
         var el = document.getElementById('field_' + roleKeys[i]);
         if (el && el.value) { roleVal = el.value; break; }
     }
-    roleVal = roleVal || 'Designation / Role';
+    roleVal = roleVal || 'Creative Designer';
 
-    var icons = {department:'building', employee_id:'hashtag', roll_number:'hashtag',
-                 phone:'phone', email:'envelope', blood_group:'tint', badge_id:'hashtag',
-                 host_name:'user', purpose:'clipboard', visit_date:'calendar',
-                 license_no:'certificate', organization:'building', id_number:'hashtag', year:'graduation-cap'};
-
-    var fieldKeys  = (tpl.fields || []).filter(function(f){ return f !== 'photo' && f !== 'name' && !roleKeys.includes(f); });
-    var fieldItems = fieldKeys.slice(0, 3).map(function(f) {
-        var el  = document.getElementById('field_' + f);
-        var val = el ? (el.value || (FIELD_LABELS[f] || f)) : (FIELD_LABELS[f] || f);
-        return { key:f, val:val, icon: icons[f] || 'info-circle' };
+    var fieldKeys  = (tpl.fields || []).filter(function(f){ return f !== 'photo' && f !== 'name' && roleKeys.indexOf(f) === -1; });
+    var fieldItems = fieldKeys.slice(0, 5).map(function(f) {
+        var el    = document.getElementById('field_' + f);
+        var val   = el ? (el.value || (FIELD_LABELS[f] || f)) : (FIELD_LABELS[f] || f);
+        var label = FIELD_SHORT_LABELS[f] || f.replace(/_/g,' ').toUpperCase();
+        return { label: label, val: val };
     });
 
     var photoHTML = photoDataUrl
         ? '<img src="' + photoDataUrl + '" style="width:100%;height:100%;object-fit:cover;">'
-        : '<i class="fas fa-user" style="font-size:1.6rem;opacity:0.65;"></i>';
+        : '<i class="fas fa-user" style="font-size:1.8rem;opacity:0.55;"></i>';
 
-    return { pri:pri, acc:acc, bg:bg, txt:txt, font:font, nameVal:nameVal, roleVal:roleVal, fieldItems:fieldItems, photoHTML:photoHTML };
+    var tplName = tpl.name || 'CardX';
+
+    return { pri:pri, acc:acc, bg:bg, txt:txt, font:font, nameVal:nameVal, roleVal:roleVal, fieldItems:fieldItems, photoHTML:photoHTML, tplName:tplName };
 }
 
-function fieldListHTML(items, color) {
+function fieldRowsHTML(items, labelColor, valueColor) {
     return items.map(function(f) {
-        return '<div style="display:flex;align-items:center;gap:4%;font-size:clamp(0.44rem,1.05vw,0.64rem);opacity:0.88;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:' + color + ';margin-bottom:1%;">' +
-               '<i class="fas fa-' + f.icon + '" style="font-size:0.48rem;opacity:0.6;flex-shrink:0;"></i>' +
-               '<span>' + f.val + '</span>' +
-               '</div>';
+        return '<div style="display:flex;align-items:baseline;gap:2%;font-size:clamp(0.36rem,0.8vw,0.52rem);white-space:nowrap;overflow:hidden;margin-bottom:1.5%;">'
+            + '<span style="color:'+labelColor+';font-weight:700;min-width:28%;letter-spacing:0.04em;">'+f.label+'</span>'
+            + '<span style="color:'+valueColor+';opacity:0.8;">: '+f.val+'</span>'
+            + '</div>';
     }).join('');
 }
 
 // =============================================================================
-//  Card renderers — dramatically upgraded with rich SVG graphic backgrounds
+//  Card renderers — matching reference images exactly
 // =============================================================================
 
-// ── Style 1: Classic — hexagon mesh texture + gradient header ───────────────
+// ── STYLE 1: Angled Pro ── coloured angled header, centred circle photo ──
 function renderClassic(v) {
-    // Inline SVG hex mesh pattern as card texture
-    var hexMesh =
-        '<svg style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;" xmlns="http://www.w3.org/2000/svg">' +
-        '<defs><pattern id="chx" patternUnits="userSpaceOnUse" width="11" height="19.1">' +
-        '<polygon points="5.5,0.4 10,3 10,8.6 5.5,11.2 1,8.6 1,3" fill="none" stroke="' + v.pri + '" stroke-width="0.5" opacity="0.18"/>' +
-        '</pattern></defs>' +
-        '<rect width="100%" height="100%" fill="url(#chx)"/>' +
-        '</svg>';
-    // Gradient header with diagonal stripe decoration
-    var header =
-        '<div style="position:absolute;top:0;left:0;right:0;height:10%;background:linear-gradient(90deg,' + v.pri + ' 0%,' + v.acc + ' 100%);">' +
-        '<svg style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0.18;" viewBox="0 0 200 20" preserveAspectRatio="none">' +
-        '<path d="M0,0 L10,0 L0,20 Z" fill="white"/><path d="M20,0 L30,0 L20,20 Z" fill="white"/>' +
-        '<path d="M40,0 L50,0 L40,20 Z" fill="white"/><path d="M60,0 L70,0 L60,20 Z" fill="white"/>' +
-        '<path d="M80,0 L90,0 L80,20 Z" fill="white"/><path d="M100,0 L110,0 L100,20 Z" fill="white"/>' +
-        '<path d="M120,0 L130,0 L120,20 Z" fill="white"/><path d="M140,0 L150,0 L140,20 Z" fill="white"/>' +
-        '<path d="M160,0 L170,0 L160,20 Z" fill="white"/><path d="M180,0 L190,0 L180,20 Z" fill="white"/>' +
-        '</svg>' +
-        '</div>';
-    // Bottom gradient footer bar
-    var footer = '<div style="position:absolute;bottom:0;left:0;right:0;height:5%;background:linear-gradient(90deg,' + v.acc + ',' + v.pri + ');opacity:0.35;"></div>';
-    // Photo with gradient ring
-    var photo =
-        '<div style="flex-shrink:0;width:20%;aspect-ratio:1;border-radius:50%;background:linear-gradient(135deg,' + v.pri + ',' + v.acc + ');padding:2.5px;box-shadow:0 3px 12px rgba(0,0,0,0.2);">' +
-        '<div style="width:100%;height:100%;border-radius:50%;background:' + v.bg + ';padding:2px;">' +
-        '<div style="width:100%;height:100%;border-radius:50%;background:' + v.pri + '18;overflow:hidden;display:flex;align-items:center;justify-content:center;">' +
-        v.photoHTML +
-        '</div></div></div>';
-    // Info block
-    var info =
-        '<div style="flex:1;min-width:0;">' +
-        '<div style="font-size:clamp(0.7rem,1.8vw,1rem);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:' + v.txt + ';">' + v.nameVal + '</div>' +
-        '<div style="width:35%;height:2px;background:linear-gradient(90deg,' + v.acc + ',transparent);border-radius:2px;margin:3% 0;"></div>' +
-        '<div style="font-size:clamp(0.5rem,1.2vw,0.7rem);color:' + v.acc + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;margin-bottom:4%;">' + v.roleVal + '</div>' +
-        '<div style="display:flex;flex-direction:column;gap:0;">' + fieldListHTML(v.fieldItems, v.txt) + '</div>' +
-        '</div>';
-    return '<div style="width:100%;height:100%;background:' + v.bg + ';font-family:\'' + v.font + '\',sans-serif;position:relative;overflow:hidden;">' +
-        hexMesh + header + footer +
-        '<div style="position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;gap:5%;padding:13% 5% 7%;">' +
-        photo + info +
-        '</div>' +
-        '</div>';
+    var barcode = barcodeStr(v.pri, '48%');
+    return '<div style="width:100%;height:100%;background:#f7f8fc;font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
+        // Angled coloured header
+        + '<div style="position:absolute;top:0;left:0;right:0;height:100%;overflow:hidden;pointer-events:none;">'
+        +   '<div style="position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(135deg,'+v.pri+' 0%,'+v.acc+' 100%);clip-path:polygon(0 0,100% 0,100% 56%,0 72%);"></div>'
+        +   '<div style="position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,0.08);clip-path:polygon(0 70%,100% 54%,100% 59%,0 75%);"></div>'
+        + '</div>'
+        // Logo + company name top-left
+        + '<div style="position:absolute;top:5%;left:5%;display:flex;align-items:center;gap:6%;">'
+        +   '<div style="width:8%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.22);border:1px solid rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;">'
+        +     '<i class="fas fa-infinity" style="color:rgba(255,255,255,0.9);font-size:clamp(0.28rem,0.65vw,0.42rem);"></i>'
+        +   '</div>'
+        +   '<span style="font-size:clamp(0.36rem,0.82vw,0.52rem);color:rgba(255,255,255,0.92);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">'+v.tplName+'</span>'
+        + '</div>'
+        // Infinity badge top-right
+        + '<div style="position:absolute;top:4%;right:4%;width:7%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;">'
+        +   '<i class="fas fa-infinity" style="color:white;font-size:clamp(0.28rem,0.62vw,0.4rem);"></i>'
+        + '</div>'
+        // Centred circular photo overlapping header/body boundary
+        + '<div style="position:absolute;left:50%;top:32%;transform:translateX(-50%);width:22%;aspect-ratio:1;border-radius:50%;border:3px solid #fff;background:'+v.pri+'22;overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 24px rgba(0,0,0,0.22);">'
+        +   v.photoHTML
+        + '</div>'
+        // Name + role centred below photo
+        + '<div style="position:absolute;top:58%;left:0;right:0;text-align:center;padding:0 4%;">'
+        +   '<div style="font-size:clamp(0.62rem,1.55vw,0.9rem);font-weight:800;color:'+v.pri+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:0.02em;">'+v.nameVal+'</div>'
+        +   '<div style="font-size:clamp(0.38rem,0.88vw,0.56rem);color:#888;margin-top:1%;letter-spacing:0.03em;">'+v.roleVal+'</div>'
+        + '</div>'
+        // Fields — two-column grid
+        + '<div style="position:absolute;top:70%;left:5%;right:5%;display:grid;grid-template-columns:1fr 1fr;column-gap:4%;">'
+        +   fieldRowsHTML(v.fieldItems, v.pri, '#444')
+        + '</div>'
+        // Barcode
+        + '<div style="position:absolute;bottom:2.5%;left:50%;transform:translateX(-50%);">'+barcode+'</div>'
+        + '</div>';
 }
 
-// ── Style 2: Tech/Sidebar — circuit-board pattern sidebar ───────────────────
+// ── STYLE 2: Dark Geo ── dark bg, rotated diamond accent, photo inside ──
 function renderSidebar(v) {
-    // Circuit board SVG traces on sidebar
-    var circuitSVG =
-        '<svg style="position:absolute;top:0;left:0;width:100%;height:100%;" viewBox="0 0 80 120" xmlns="http://www.w3.org/2000/svg">' +
-        // Horizontal traces
-        '<line x1="0" y1="12" x2="35" y2="12" stroke="rgba(255,255,255,0.22)" stroke-width="0.8"/>' +
-        '<line x1="45" y1="12" x2="80" y2="12" stroke="rgba(255,255,255,0.22)" stroke-width="0.8"/>' +
-        '<line x1="0" y1="28" x2="22" y2="28" stroke="rgba(255,255,255,0.22)" stroke-width="0.8"/>' +
-        '<line x1="58" y1="28" x2="80" y2="28" stroke="rgba(255,255,255,0.22)" stroke-width="0.8"/>' +
-        '<line x1="8" y1="55" x2="72" y2="55" stroke="rgba(255,255,255,0.18)" stroke-width="0.8"/>' +
-        '<line x1="0" y1="75" x2="48" y2="75" stroke="rgba(255,255,255,0.22)" stroke-width="0.8"/>' +
-        '<line x1="32" y1="90" x2="80" y2="90" stroke="rgba(255,255,255,0.22)" stroke-width="0.8"/>' +
-        '<line x1="15" y1="108" x2="65" y2="108" stroke="rgba(255,255,255,0.18)" stroke-width="0.8"/>' +
-        // Vertical traces
-        '<line x1="18" y1="0" x2="18" y2="12" stroke="rgba(255,255,255,0.22)" stroke-width="0.8"/>' +
-        '<line x1="18" y1="28" x2="18" y2="55" stroke="rgba(255,255,255,0.22)" stroke-width="0.8"/>' +
-        '<line x1="35" y1="12" x2="35" y2="28" stroke="rgba(255,255,255,0.22)" stroke-width="0.8"/>' +
-        '<line x1="55" y1="0" x2="55" y2="12" stroke="rgba(255,255,255,0.22)" stroke-width="0.8"/>' +
-        '<line x1="55" y1="28" x2="55" y2="55" stroke="rgba(255,255,255,0.22)" stroke-width="0.8"/>' +
-        '<line x1="62" y1="55" x2="62" y2="75" stroke="rgba(255,255,255,0.22)" stroke-width="0.8"/>' +
-        '<line x1="22" y1="75" x2="22" y2="90" stroke="rgba(255,255,255,0.22)" stroke-width="0.8"/>' +
-        '<line x1="48" y1="90" x2="48" y2="108" stroke="rgba(255,255,255,0.22)" stroke-width="0.8"/>' +
-        '<line x1="32" y1="108" x2="32" y2="120" stroke="rgba(255,255,255,0.18)" stroke-width="0.8"/>' +
-        // Junction dots
-        '<circle cx="18" cy="12" r="2" fill="rgba(255,255,255,0.65)"/>' +
-        '<circle cx="35" cy="28" r="2" fill="rgba(255,255,255,0.65)"/>' +
-        '<circle cx="55" cy="12" r="2" fill="rgba(255,255,255,0.65)"/>' +
-        '<circle cx="55" cy="55" r="2" fill="rgba(255,255,255,0.65)"/>' +
-        '<circle cx="62" cy="75" r="2" fill="rgba(255,255,255,0.65)"/>' +
-        '<circle cx="22" cy="90" r="2" fill="rgba(255,255,255,0.65)"/>' +
-        '<circle cx="48" cy="108" r="2" fill="rgba(255,255,255,0.65)"/>' +
-        '<circle cx="18" cy="55" r="1.4" fill="rgba(255,255,255,0.4)"/>' +
-        '<circle cx="22" cy="75" r="1.4" fill="rgba(255,255,255,0.4)"/>' +
-        '</svg>';
-    // Right side dot watermark
-    var dotWatermark =
-        '<svg style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0.055;" viewBox="0 0 160 100" xmlns="http://www.w3.org/2000/svg">' +
-        (function(){var d='';for(var r=0;r<10;r++)for(var c=0;c<16;c++)d+='<circle cx="'+(c*10+5)+'" cy="'+(r*10+5)+'" r="1.2" fill="'+v.txt+'"/>';return d;})() +
-        '</svg>';
-    return '<div style="width:100%;height:100%;display:flex;font-family:\'' + v.font + '\',sans-serif;overflow:hidden;position:relative;">' +
-        // Sidebar
-        '<div style="width:29%;background:' + v.pri + ';display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5%;padding:5% 0;flex-shrink:0;position:relative;overflow:hidden;">' +
-        circuitSVG +
-        // Square rounded-corner photo
-        '<div style="width:55%;aspect-ratio:1;border-radius:10%;border:2px solid rgba(255,255,255,0.6);background:rgba(255,255,255,0.15);overflow:hidden;display:flex;align-items:center;justify-content:center;position:relative;z-index:1;box-shadow:0 4px 16px rgba(0,0,0,0.2);">' +
-        v.photoHTML + '</div>' +
-        '<div style="font-size:clamp(0.36rem,0.8vw,0.52rem);color:rgba(255,255,255,0.5);letter-spacing:0.1em;text-transform:uppercase;position:relative;z-index:1;text-align:center;padding:0 8%;">ID Card</div>' +
-        '</div>' +
-        // Right content
-        '<div style="flex:1;background:' + v.bg + ';position:relative;overflow:hidden;">' +
-        dotWatermark +
-        '<div style="position:absolute;top:0;bottom:0;left:0;width:3px;background:linear-gradient(180deg,' + v.pri + ',' + v.acc + ');"></div>' +
-        '<div style="position:absolute;top:0;left:0;right:0;bottom:0;padding:5% 6% 5% 9%;display:flex;flex-direction:column;justify-content:center;color:' + v.txt + ';min-width:0;">' +
-        '<div style="font-size:clamp(0.7rem,1.7vw,0.97rem);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + v.nameVal + '</div>' +
-        '<div style="font-size:clamp(0.48rem,1.1vw,0.7rem);color:' + v.acc + ';margin-top:2%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;">' + v.roleVal + '</div>' +
-        '<div style="width:40%;height:1.5px;background:linear-gradient(90deg,' + v.acc + ',transparent);border-radius:2px;margin:4% 0;"></div>' +
-        '<div style="display:flex;flex-direction:column;">' + fieldListHTML(v.fieldItems, v.txt) + '</div>' +
-        '</div></div>' +
-        '</div>';
+    var barcode = barcodeStr('rgba(255,255,255,0.35)', '100%');
+    return '<div style="width:100%;height:100%;background:#111827;font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
+        // Large rotated diamond SVG upper-right
+        + '<svg style="position:absolute;top:-18%;right:-12%;width:60%;aspect-ratio:1;" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">'
+        +   '<rect x="15" y="15" width="70" height="70" rx="3" fill="'+v.pri+'" transform="rotate(45 50 50)"/>'
+        + '</svg>'
+        // Smaller accent diamond
+        + '<svg style="position:absolute;top:-8%;right:-5%;width:42%;aspect-ratio:1;opacity:0.35;" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">'
+        +   '<rect x="15" y="15" width="70" height="70" rx="3" fill="'+v.acc+'" transform="rotate(45 50 50)"/>'
+        + '</svg>'
+        // Photo circle in diamond area
+        + '<div style="position:absolute;top:6%;right:6%;width:22%;aspect-ratio:1;border-radius:50%;border:2.5px solid rgba(255,255,255,0.7);background:rgba(255,255,255,0.1);overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 18px rgba(0,0,0,0.4);">'
+        +   v.photoHTML
+        + '</div>'
+        // Logo + company name top-left white
+        + '<div style="position:absolute;top:5%;left:5%;display:flex;align-items:center;gap:6%;">'
+        +   '<div style="width:8%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center;">'
+        +     '<i class="fas fa-infinity" style="color:rgba(255,255,255,0.7);font-size:clamp(0.28rem,0.62vw,0.4rem);"></i>'
+        +   '</div>'
+        +   '<span style="font-size:clamp(0.34rem,0.78vw,0.5rem);color:rgba(255,255,255,0.8);font-weight:700;letter-spacing:0.07em;text-transform:uppercase;">'+v.tplName+'</span>'
+        + '</div>'
+        // NAME large white
+        + '<div style="position:absolute;bottom:36%;left:5%;">'
+        +   '<div style="font-size:clamp(0.7rem,1.7vw,1rem);font-weight:800;color:#fff;letter-spacing:0.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:55%;">'+v.nameVal+'</div>'
+        +   '<div style="font-size:clamp(0.38rem,0.85vw,0.54rem);color:'+v.acc+';margin-top:1.5%;letter-spacing:0.04em;">'+v.roleVal+'</div>'
+        + '</div>'
+        // Fields bottom-left
+        + '<div style="position:absolute;bottom:4%;left:5%;right:50%;">'
+        +   fieldRowsHTML(v.fieldItems, 'rgba(255,255,255,0.55)', 'rgba(255,255,255,0.88)')
+        + '</div>'
+        // Barcode bottom-right
+        + '<div style="position:absolute;bottom:4%;right:4%;width:36%;">'+barcode+'</div>'
+        + '</div>';
 }
 
-// ── Style 3: Aurora Wave — gradient + 5 layered waves + double-ring photo ──
+// ── STYLE 3: Wave Panel ── cream, organic wave left, photo boundary, fields right ──
 function renderWave(v) {
-    var waves =
-        '<svg style="position:absolute;bottom:0;left:0;width:100%;height:68%;" viewBox="0 0 400 120" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">' +
-        '<path d="M0,80 Q50,50 100,72 Q150,94 200,62 Q250,30 300,58 Q350,86 400,55 L400,120 L0,120 Z" fill="rgba(255,255,255,0.04)"/>' +
-        '<path d="M0,90 Q60,65 120,85 Q180,105 240,78 Q300,51 360,74 Q380,82 400,65 L400,120 L0,120 Z" fill="rgba(255,255,255,0.06)"/>' +
-        '<path d="M0,100 Q70,82 140,96 Q210,110 280,88 Q340,70 400,84 L400,120 L0,120 Z" fill="rgba(255,255,255,0.08)"/>' +
-        '<path d="M0,108 Q80,98 160,105 Q240,112 320,100 Q360,94 400,102 L400,120 L0,120 Z" fill="rgba(255,255,255,0.1)"/>' +
-        '<path d="M0,114 Q90,108 180,112 Q270,116 360,108 L400,112 L400,120 L0,120 Z" fill="rgba(255,255,255,0.13)"/>' +
-        '</svg>';
-    // Large background circles (top-right decoration)
-    var bgCircles =
-        '<div style="position:absolute;top:-22%;right:-12%;width:50%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.07);"></div>' +
-        '<div style="position:absolute;top:2%;right:8%;width:20%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.05);"></div>' +
-        '<div style="position:absolute;top:20%;right:-5%;width:14%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.04);"></div>';
-    // Photo with double ring
-    var photo =
-        '<div style="flex-shrink:0;position:relative;">' +
-        '<div style="width:21%;aspect-ratio:1;border-radius:50%;border:2.5px solid rgba(255,255,255,0.7);background:rgba(255,255,255,0.2);overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 4px rgba(255,255,255,0.15);">' +
-        v.photoHTML + '</div></div>';
-    return '<div style="width:100%;height:100%;background:linear-gradient(140deg,' + v.pri + ' 0%,' + v.acc + ' 60%,' + v.pri + 'cc 100%);font-family:\'' + v.font + '\',sans-serif;position:relative;overflow:hidden;">' +
-        waves + bgCircles +
-        '<div style="position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;gap:5%;padding:5% 6%;color:rgba(255,255,255,0.96);">' +
-        photo +
-        '<div style="flex:1;min-width:0;">' +
-        '<div style="font-size:clamp(0.7rem,1.8vw,1rem);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + v.nameVal + '</div>' +
-        '<div style="font-size:clamp(0.5rem,1.2vw,0.72rem);opacity:0.85;margin-top:2%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500;">' + v.roleVal + '</div>' +
-        '<div style="width:40%;height:1.5px;background:rgba(255,255,255,0.4);border-radius:2px;margin:4% 0;"></div>' +
-        '<div style="display:flex;flex-direction:column;">' + fieldListHTML(v.fieldItems, 'rgba(255,255,255,0.92)') + '</div>' +
-        '</div>' +
-        '</div>' +
-        '<div style="position:absolute;bottom:3%;right:4%;font-size:clamp(0.36rem,0.75vw,0.5rem);font-family:monospace;opacity:0.4;color:white;letter-spacing:0.05em;">CardX</div>' +
-        '</div>';
+    var barcode = barcodeStr('rgba(255,255,255,0.45)', '100%');
+    return '<div style="width:100%;height:100%;background:#fdf8f3;font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
+        // Organic wave blob
+        + '<svg style="position:absolute;top:0;left:0;width:44%;height:100%;" viewBox="0 0 88 160" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">'
+        +   '<path d="M0,0 L60,0 Q80,25 70,55 Q85,80 72,110 Q88,135 65,160 L0,160 Z" fill="'+v.pri+'"/>'
+        +   '<path d="M0,0 L45,0 Q62,22 55,52 Q68,78 56,108 Q70,132 50,160 L0,160 Z" fill="rgba(255,255,255,0.07)"/>'
+        +   '<path d="M0,30 Q30,45 28,80 Q30,115 0,130" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="2"/>'
+        + '</svg>'
+        // Photo at wave boundary
+        + '<div style="position:absolute;left:24%;top:18%;transform:translateX(-50%);width:24%;aspect-ratio:1;border-radius:50%;border:3px solid rgba(255,255,255,0.8);background:rgba(255,255,255,0.18);overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 22px rgba(0,0,0,0.25);">'
+        +   v.photoHTML
+        + '</div>'
+        // NAME + role bottom-left
+        + '<div style="position:absolute;bottom:12%;left:5%;max-width:40%;">'
+        +   '<div style="font-size:clamp(0.6rem,1.4vw,0.82rem);font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:0.03em;">'+v.nameVal+'</div>'
+        +   '<div style="font-size:clamp(0.35rem,0.78vw,0.5rem);color:rgba(255,255,255,0.75);margin-top:1.5%;letter-spacing:0.04em;">'+v.roleVal+'</div>'
+        + '</div>'
+        // Barcode bottom-left
+        + '<div style="position:absolute;bottom:3%;left:5%;width:36%;">'+barcode+'</div>'
+        // Logo top-right
+        + '<div style="position:absolute;top:5%;right:5%;display:flex;align-items:center;gap:5%;">'
+        +   '<div style="width:7%;aspect-ratio:1;border-radius:50%;background:'+v.pri+'22;border:1px solid '+v.pri+'44;display:flex;align-items:center;justify-content:center;">'
+        +     '<i class="fas fa-infinity" style="color:'+v.pri+';font-size:0.3rem;"></i>'
+        +   '</div>'
+        +   '<span style="font-size:clamp(0.32rem,0.72vw,0.46rem);color:'+v.pri+';font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">'+v.tplName+'</span>'
+        + '</div>'
+        // Fields right side
+        + '<div style="position:absolute;top:14%;right:4%;width:48%;">'
+        +   fieldRowsHTML(v.fieldItems, v.pri, '#4a3728')
+        + '</div>'
+        + '</div>';
 }
 
-// ── Style 4: Geometric — low-poly triangle tessellation in header ────────────
+// ── STYLE 4: Bold Split ── coloured left panel, white right panel ──
 function renderBoldHeader(v) {
-    // Triangle tessellation (low-poly art) filling the header
-    var trianglePoly =
-        '<svg style="position:absolute;right:0;top:0;width:70%;height:135%;opacity:0.13;" viewBox="0 0 200 120" preserveAspectRatio="xMaxYMid slice">' +
-        // Row 1 up-triangles
-        '<polygon points="0,0 40,0 20,25" fill="rgba(255,255,255,0.9)"/>' +
-        '<polygon points="40,0 80,0 60,25" fill="rgba(255,255,255,0.5)"/>' +
-        '<polygon points="80,0 120,0 100,25" fill="rgba(255,255,255,0.75)"/>' +
-        '<polygon points="120,0 160,0 140,25" fill="rgba(255,255,255,0.4)"/>' +
-        '<polygon points="160,0 200,0 180,25" fill="rgba(255,255,255,0.65)"/>' +
-        // Row 1 down-triangles
-        '<polygon points="20,25 60,25 40,0" fill="rgba(255,255,255,0.35)"/>' +
-        '<polygon points="60,25 100,25 80,0" fill="rgba(255,255,255,0.7)"/>' +
-        '<polygon points="100,25 140,25 120,0" fill="rgba(255,255,255,0.45)"/>' +
-        '<polygon points="140,25 180,25 160,0" fill="rgba(255,255,255,0.8)"/>' +
-        // Row 2 up-triangles
-        '<polygon points="0,25 40,25 20,50" fill="rgba(255,255,255,0.6)"/>' +
-        '<polygon points="40,25 80,25 60,50" fill="rgba(255,255,255,0.85)"/>' +
-        '<polygon points="80,25 120,25 100,50" fill="rgba(255,255,255,0.4)"/>' +
-        '<polygon points="120,25 160,25 140,50" fill="rgba(255,255,255,0.7)"/>' +
-        '<polygon points="160,25 200,25 180,50" fill="rgba(255,255,255,0.5)"/>' +
-        // Row 2 down-triangles
-        '<polygon points="20,50 60,50 40,25" fill="rgba(255,255,255,0.75)"/>' +
-        '<polygon points="60,50 100,50 80,25" fill="rgba(255,255,255,0.4)"/>' +
-        '<polygon points="100,50 140,50 120,25" fill="rgba(255,255,255,0.85)"/>' +
-        '<polygon points="140,50 180,50 160,25" fill="rgba(255,255,255,0.55)"/>' +
-        // Row 3
-        '<polygon points="0,50 40,50 20,75" fill="rgba(255,255,255,0.5)"/>' +
-        '<polygon points="40,50 80,50 60,75" fill="rgba(255,255,255,0.7)"/>' +
-        '<polygon points="80,50 120,50 100,75" fill="rgba(255,255,255,0.6)"/>' +
-        '<polygon points="120,50 160,50 140,75" fill="rgba(255,255,255,0.4)"/>' +
-        '<polygon points="160,50 200,50 180,75" fill="rgba(255,255,255,0.8)"/>' +
-        '<polygon points="20,75 60,75 40,50" fill="rgba(255,255,255,0.45)"/>' +
-        '<polygon points="60,75 100,75 80,50" fill="rgba(255,255,255,0.65)"/>' +
-        '<polygon points="100,75 140,75 120,50" fill="rgba(255,255,255,0.75)"/>' +
-        '<polygon points="140,75 180,75 160,50" fill="rgba(255,255,255,0.5)"/>' +
-        '</svg>';
-    return '<div style="width:100%;height:100%;background:' + v.bg + ';font-family:\'' + v.font + '\',sans-serif;position:relative;overflow:hidden;color:' + v.txt + ';">' +
-        // Header block
-        '<div style="position:absolute;top:0;left:0;right:0;height:42%;background:linear-gradient(135deg,' + v.pri + ' 0%,' + v.acc + 'cc 100%);overflow:hidden;">' +
-        trianglePoly +
-        '<div style="position:absolute;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;justify-content:center;padding:0 5% 0 34%;">' +
-        '<div style="font-size:clamp(0.64rem,1.6vw,0.92rem);font-weight:700;color:white;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + v.nameVal + '</div>' +
-        '<div style="font-size:clamp(0.46rem,1.1vw,0.67rem);color:rgba(255,255,255,0.8);margin-top:3%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + v.roleVal + '</div>' +
-        '</div>' +
-        '</div>' +
-        // Photo overlapping header/body
-        '<div style="position:absolute;top:22%;left:4%;width:23%;aspect-ratio:1;border-radius:50%;border:3px solid ' + v.bg + ';background:' + v.acc + '22;overflow:hidden;display:flex;align-items:center;justify-content:center;z-index:2;box-shadow:0 4px 16px rgba(0,0,0,0.22);">' +
-        v.photoHTML +
-        '</div>' +
-        // Body
-        '<div style="position:absolute;top:44%;left:0;right:0;bottom:0;padding:2% 5% 4% 5%;display:flex;flex-direction:column;">' +
-        '<div style="display:flex;align-items:center;gap:4%;margin-bottom:3%;">' +
-        '<div style="flex:1;height:1.5px;background:linear-gradient(90deg,' + v.acc + ',transparent);border-radius:2px;"></div>' +
-        '</div>' +
-        '<div style="display:flex;flex-direction:column;">' + fieldListHTML(v.fieldItems, v.txt) + '</div>' +
-        '</div>' +
-        '<div style="position:absolute;bottom:3%;right:4%;font-size:clamp(0.35rem,0.7vw,0.5rem);font-family:monospace;opacity:0.3;color:' + v.txt + ';">CardX</div>' +
-        '</div>';
+    var barcode = barcodeStr('rgba(255,255,255,0.4)', '100%');
+    return '<div style="width:100%;height:100%;display:flex;overflow:hidden;font-family:\''+v.font+'\',sans-serif;">'
+        // Coloured left panel
+        + '<div style="width:40%;background:linear-gradient(170deg,'+v.pri+' 0%,'+v.acc+' 100%);display:flex;flex-direction:column;align-items:center;position:relative;overflow:hidden;flex-shrink:0;">'
+        +   '<div style="position:absolute;top:-20%;left:-30%;width:90%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.07);"></div>'
+        +   '<div style="position:absolute;bottom:-15%;right:-25%;width:70%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.05);"></div>'
+        // Logo top of panel
+        +   '<div style="padding:10% 0 5%;position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:8%;">'
+        +     '<div style="width:22%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.22);border:1.5px solid rgba(255,255,255,0.5);display:flex;align-items:center;justify-content:center;">'
+        +       '<i class="fas fa-infinity" style="color:white;font-size:clamp(0.28rem,0.65vw,0.42rem);"></i>'
+        +     '</div>'
+        +     '<span style="font-size:clamp(0.3rem,0.7vw,0.44rem);color:rgba(255,255,255,0.7);font-weight:600;letter-spacing:0.08em;text-transform:uppercase;text-align:center;">'+v.tplName+'</span>'
+        +   '</div>'
+        // Photo circle centred
+        +   '<div style="width:45%;aspect-ratio:1;border-radius:50%;border:3px solid rgba(255,255,255,0.8);background:rgba(255,255,255,0.15);overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(0,0,0,0.25);position:relative;z-index:1;margin-top:4%;">'
+        +     v.photoHTML
+        +   '</div>'
+        // Barcode at bottom of panel
+        +   '<div style="margin-top:auto;padding-bottom:6%;width:80%;position:relative;z-index:1;">'+barcode+'</div>'
+        + '</div>'
+        // White right panel
+        + '<div style="flex:1;background:#ffffff;display:flex;flex-direction:column;justify-content:center;padding:6% 7%;min-width:0;position:relative;">'
+        +   '<div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,'+v.pri+','+v.acc+');"></div>'
+        +   '<div style="font-size:clamp(0.62rem,1.52vw,0.88rem);font-weight:800;color:'+v.pri+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:0.02em;">'+v.nameVal+'</div>'
+        +   '<div style="font-size:clamp(0.36rem,0.82vw,0.52rem);color:#888;margin-top:1.5%;letter-spacing:0.04em;margin-bottom:4%;">'+v.roleVal+'</div>'
+        +   '<div style="width:60%;height:2px;background:linear-gradient(90deg,'+v.acc+',transparent);border-radius:2px;margin-bottom:5%;"></div>'
+        +   fieldRowsHTML(v.fieldItems, v.pri, '#555')
+        + '</div>'
+        + '</div>';
 }
 
-// ── Style 5: Mosaic/Diagonal — halftone dots + gradient diagonal split ───────
+// ── STYLE 5: Triangle Pro ── dark bg, arrow triangles right, photo+text left ──
 function renderDiagonal(v) {
-    // Build halftone dot grid for colored zone
-    function dotGrid(cols, rows) {
-        var dots = '';
-        for (var r = 0; r < rows; r++) {
-            for (var c = 0; c < cols; c++) {
-                dots += '<circle cx="' + (c * 9 + 5) + '" cy="' + (r * 9 + 5) + '" r="1.8" fill="rgba(255,255,255,0.3)"/>';
-            }
-        }
-        return dots;
-    }
-    var bgSVG =
-        '<svg style="position:absolute;top:0;left:0;width:100%;height:100%;" viewBox="0 0 256 162" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">' +
-        '<defs><linearGradient id="dg5" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="' + v.pri + '"/><stop offset="100%" stop-color="' + v.acc + '"/></linearGradient></defs>' +
-        '<polygon points="0,0 155,0 105,162 0,162" fill="url(#dg5)"/>' +
-        '</svg>';
-    var halftone =
-        '<svg style="position:absolute;top:0;left:0;width:62%;height:100%;opacity:0.9;" viewBox="0 0 155 162" xmlns="http://www.w3.org/2000/svg">' +
-        '<clipPath id="dcl"><polygon points="0,0 155,0 105,162 0,162"/></clipPath>' +
-        '<g clip-path="url(#dcl)">' +
-        dotGrid(17, 18) +
-        '</g>' +
-        '</svg>';
-    return '<div style="width:100%;height:100%;background:' + v.bg + ';font-family:\'' + v.font + '\',sans-serif;position:relative;overflow:hidden;">' +
-        bgSVG + halftone +
-        '<div style="position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;">' +
-        // Left colored zone — photo + card type label
-        '<div style="width:45%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5%;padding:0 3%;">' +
-        '<div style="width:40%;aspect-ratio:1;border-radius:12%;border:2.5px solid rgba(255,255,255,0.65);background:rgba(255,255,255,0.18);overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.15);">' +
-        v.photoHTML + '</div>' +
-        '<div style="font-size:clamp(0.34rem,0.8vw,0.5rem);color:rgba(255,255,255,0.6);text-align:center;font-family:monospace;text-transform:uppercase;letter-spacing:0.07em;">ID Card</div>' +
-        '</div>' +
-        // Right light zone
-        '<div style="flex:1;padding:4% 4% 4% 2%;color:' + v.txt + ';min-width:0;">' +
-        '<div style="font-size:clamp(0.65rem,1.6vw,0.92rem);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + v.nameVal + '</div>' +
-        '<div style="font-size:clamp(0.47rem,1.1vw,0.67rem);color:' + v.acc + ';margin-top:3%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;">' + v.roleVal + '</div>' +
-        '<div style="display:flex;align-items:center;gap:5%;margin:4% 0;">' +
-        '<div style="flex:1;height:1.5px;background:linear-gradient(90deg,' + v.acc + ',transparent);border-radius:2px;"></div>' +
-        '</div>' +
-        '<div style="display:flex;flex-direction:column;">' + fieldListHTML(v.fieldItems, v.txt) + '</div>' +
-        '</div>' +
-        '</div>' +
-        '</div>';
+    var barcode = barcodeStr('rgba(255,255,255,0.32)', '100%');
+    return '<div style="width:100%;height:100%;background:#111827;font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
+        // Arrow/chevron triangles right side
+        + '<svg style="position:absolute;right:0;top:0;width:48%;height:100%;" viewBox="0 0 96 160" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">'
+        +   '<rect x="40" y="0" width="56" height="160" fill="'+v.pri+'18"/>'
+        +   '<polygon points="96,0 96,62 42,31" fill="'+v.pri+'"/>'
+        +   '<polygon points="96,52 96,112 48,82" fill="'+v.acc+'" opacity="0.85"/>'
+        +   '<polygon points="96,100 96,160 44,130" fill="'+v.pri+'" opacity="0.7"/>'
+        +   '<line x1="96" y1="62" x2="96" y2="52" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>'
+        +   '<line x1="96" y1="112" x2="96" y2="100" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>'
+        + '</svg>'
+        // Photo circle — left area, vertically centred
+        + '<div style="position:absolute;left:5%;top:50%;transform:translateY(-50%);width:22%;aspect-ratio:1;border-radius:50%;border:2.5px solid '+v.acc+';background:rgba(255,255,255,0.08);overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 18px rgba(0,0,0,0.4);">'
+        +   v.photoHTML
+        + '</div>'
+        // Logo top-left
+        + '<div style="position:absolute;top:5%;left:5%;display:flex;align-items:center;gap:6%;">'
+        +   '<div style="width:8%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);display:flex;align-items:center;justify-content:center;">'
+        +     '<i class="fas fa-infinity" style="color:rgba(255,255,255,0.6);font-size:clamp(0.28rem,0.62vw,0.4rem);"></i>'
+        +   '</div>'
+        +   '<span style="font-size:clamp(0.34rem,0.76vw,0.48rem);color:rgba(255,255,255,0.65);font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">'+v.tplName+'</span>'
+        + '</div>'
+        // Name + role — right of photo
+        + '<div style="position:absolute;left:32%;top:20%;max-width:30%;">'
+        +   '<div style="font-size:clamp(0.58rem,1.38vw,0.82rem);font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
+        +   '<div style="font-size:clamp(0.34rem,0.76vw,0.5rem);color:'+v.acc+';margin-top:2%;letter-spacing:0.04em;">'+v.roleVal+'</div>'
+        + '</div>'
+        // Fields — lower-left
+        + '<div style="position:absolute;bottom:6%;left:5%;max-width:50%;">'
+        +   fieldRowsHTML(v.fieldItems, 'rgba(255,255,255,0.55)', 'rgba(255,255,255,0.9)')
+        + '</div>'
+        // Barcode bottom-right
+        + '<div style="position:absolute;bottom:4%;right:4%;width:36%;">'+barcode+'</div>'
+        + '</div>';
 }
 
 // =============================================================================
@@ -803,12 +758,10 @@ function renderDiagonal(v) {
 function updatePreview() {
     var v       = getCardValues();
     updateStyleThumbnails();
-
     var preview = document.getElementById('cardPreview');
     preview.style.fontFamily = "'" + v.font + "',sans-serif";
-
     var html = '';
-    switch(currentStyle) {
+    switch (currentStyle) {
         case 'sidebar':     html = renderSidebar(v);     break;
         case 'wave':        html = renderWave(v);        break;
         case 'bold_header': html = renderBoldHeader(v);  break;
