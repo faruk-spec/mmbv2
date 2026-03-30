@@ -224,6 +224,14 @@ $csrfToken = \Core\Security::generateCsrfToken();
                             <input type="file" name="logo" id="logoInput" class="form-input" accept="image/*"
                                    style="padding:4px 6px;font-size:0.75rem;">
                         </div>
+                        <div class="photo-ctrl form-group" style="margin-bottom:0;">
+                            <label>🔵 Photo Shape</label>
+                            <select name="profile_shape" id="profileShape" class="form-input" style="padding:6px 8px;font-size:0.78rem;" onchange="updatePreview()">
+                                <option value="circle">Circle</option>
+                                <option value="oval">Oval</option>
+                                <option value="square">Square</option>
+                            </select>
+                        </div>
                     </div>
                     <!-- Colours + Font + QR single row -->
                     <div class="compact-controls">
@@ -575,6 +583,9 @@ function getCardValues() {
         return { label:label, val:val };
     });
 
+    var shapeEl = document.getElementById('profileShape');
+    var profileShape = shapeEl ? shapeEl.value : 'circle';
+    var photoShapeCSS = profileShape === 'square' ? 'border-radius:4px;' : (profileShape === 'oval' ? 'border-radius:50% / 40%;' : 'border-radius:50%;');
     var photoHTML = photoDataUrl
         ? '<img src="'+photoDataUrl+'" style="width:100%;height:100%;object-fit:cover;">'
         : '<i class="fas fa-user" style="font-size:1.8rem;opacity:0.55;color:rgba(255,255,255,0.8);"></i>';
@@ -584,15 +595,15 @@ function getCardValues() {
 
     return { pri:pri, acc:acc, bg:bg, txt:txt, font:font, nameVal:nameVal, roleVal:roleVal,
              orgVal:orgVal, addrVal:addrVal, fieldItems:fieldItems, photoHTML:photoHTML,
-             tplName:tplName, portrait:portrait };
+             photoShapeCSS:photoShapeCSS, tplName:tplName, portrait:portrait };
 }
 
 function fieldRowsHTML(items, lc, vc, fs) {
     fs = fs || 'clamp(0.38rem,0.9vw,0.54rem)';
     return items.map(function(f){
-        return '<div style="display:flex;align-items:baseline;font-size:'+fs+';word-break:break-word;overflow-wrap:anywhere;margin-bottom:1.8%;">'
-            +'<span style="color:'+lc+';font-weight:700;min-width:30%;letter-spacing:0.03em;">'+f.label+'</span>'
-            +'<span style="color:'+vc+';margin-left:2%;">: '+f.val+'</span>'
+        return '<div style="display:flex;align-items:baseline;font-size:'+fs+';white-space:nowrap;overflow:hidden;margin-bottom:1.8%;">'
+            +'<span style="color:'+lc+';font-weight:700;min-width:30%;letter-spacing:0.03em;flex-shrink:0;">'+f.label+'</span>'
+            +'<span style="color:'+vc+';margin-left:2%;overflow:hidden;text-overflow:ellipsis;">: '+f.val+'</span>'
             +'</div>';
     }).join('');
 }
@@ -1083,7 +1094,7 @@ function renderClassic(v) {
         +'<div style="width:8%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.22);border:1px solid rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;">'
         +'<i class="fas fa-infinity" style="color:rgba(255,255,255,0.9);font-size:0.4rem;"></i></div>'
         +'<span style="font-size:clamp(0.36rem,0.82vw,0.52rem);color:rgba(255,255,255,0.92);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">'+v.orgVal+'</span></div>'
-        +'<div style="position:absolute;left:50%;top:32%;transform:translateX(-50%);width:22%;aspect-ratio:1;border-radius:50%;border:3px solid #fff;background:'+v.pri+'22;overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 24px rgba(0,0,0,0.22);">'+v.photoHTML+'</div>'
+        +'<div style="position:absolute;left:50%;top:32%;transform:translateX(-50%);width:22%;aspect-ratio:1;'+v.photoShapeCSS+'border:3px solid #fff;background:'+v.pri+'22;overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 24px rgba(0,0,0,0.22);">'+v.photoHTML+'</div>'
         +'<div style="position:absolute;top:58%;left:0;right:0;text-align:center;padding:0 4%;">'
         +'<div style="font-size:clamp(0.62rem,1.55vw,0.9rem);font-weight:800;color:'+v.pri+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
         +'<div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:#888;margin-top:1%;;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.roleVal+'</div></div>'
@@ -1095,7 +1106,7 @@ function renderSidebar(v) {
     return '<div style="width:100%;height:100%;background:#111827;font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
         +'<svg style="position:absolute;top:-18%;right:-12%;width:60%;aspect-ratio:1;" viewBox="0 0 100 100"><rect x="15" y="15" width="70" height="70" rx="3" fill="'+v.pri+'" transform="rotate(45 50 50)"/></svg>'
         +'<svg style="position:absolute;top:-8%;right:-5%;width:42%;aspect-ratio:1;opacity:0.35;" viewBox="0 0 100 100"><rect x="15" y="15" width="70" height="70" rx="3" fill="'+v.acc+'" transform="rotate(45 50 50)"/></svg>'
-        +'<div style="position:absolute;top:6%;right:6%;width:22%;aspect-ratio:1;border-radius:50%;border:2.5px solid rgba(255,255,255,0.7);background:rgba(255,255,255,0.1);overflow:hidden;display:flex;align-items:center;justify-content:center;">'+v.photoHTML+'</div>'
+        +'<div style="position:absolute;top:6%;right:6%;width:22%;aspect-ratio:1;'+v.photoShapeCSS+'border:2.5px solid rgba(255,255,255,0.7);background:rgba(255,255,255,0.1);overflow:hidden;display:flex;align-items:center;justify-content:center;">'+v.photoHTML+'</div>'
         +'<div style="position:absolute;top:5%;left:5%;display:flex;align-items:center;gap:6%;">'
         +'<div style="width:8%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center;">'
         +'<i class="fas fa-infinity" style="color:rgba(255,255,255,0.7);font-size:0.4rem;"></i></div>'
@@ -1110,17 +1121,16 @@ function renderSidebar(v) {
 function renderWave(v) {
     return '<div style="width:100%;height:100%;background:#fdf8f3;font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
         +'<svg style="position:absolute;top:0;left:0;width:44%;height:100%;" viewBox="0 0 88 160" preserveAspectRatio="none"><path d="M0,0 L60,0 Q80,25 70,55 Q85,80 72,110 Q88,135 65,160 L0,160 Z" fill="'+v.pri+'"/></svg>'
-        +'<div style="position:absolute;left:24%;top:18%;transform:translateX(-50%);width:24%;aspect-ratio:1;border-radius:50%;border:3px solid rgba(255,255,255,0.8);background:rgba(255,255,255,0.18);overflow:hidden;display:flex;align-items:center;justify-content:center;">'+v.photoHTML+'</div>'
-        +'<div style="position:absolute;bottom:12%;left:5%;max-width:40%;">'
+        +'<div style="position:absolute;left:24%;top:18%;transform:translateX(-50%);width:24%;aspect-ratio:1;'+v.photoShapeCSS+'border:3px solid rgba(255,255,255,0.8);background:rgba(255,255,255,0.18);overflow:hidden;display:flex;align-items:center;justify-content:center;">'+v.photoHTML+'</div>'
+        +'<div style="position:absolute;bottom:14%;left:5%;max-width:40%;">'
         +'<div style="font-size:clamp(0.6rem,1.4vw,0.82rem);font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
-        +'<div style="font-size:clamp(0.35rem,0.78vw,0.5rem);color:rgba(255,255,255,0.75);margin-top:1.5%;;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.roleVal+'</div></div>'
-        +'<div style="position:absolute;bottom:3%;left:5%;width:36%;">'+bc+'</div>'
+        +'<div style="font-size:clamp(0.35rem,0.78vw,0.5rem);color:rgba(255,255,255,0.75);margin-top:1.5%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.roleVal+'</div></div>'
         +'<div style="position:absolute;top:5%;right:5%;display:flex;align-items:center;gap:5%;">'
         +'<div style="width:7%;aspect-ratio:1;border-radius:50%;background:'+v.pri+'22;border:1px solid '+v.pri+'44;display:flex;align-items:center;justify-content:center;">'
         +'<i class="fas fa-infinity" style="color:'+v.pri+';font-size:0.3rem;"></i></div>'
         +'<span style="font-size:clamp(0.32rem,0.72vw,0.46rem);color:'+v.pri+';font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">'+v.tplName+'</span></div>'
         +'<div style="position:absolute;top:14%;right:4%;width:48%;">'+fieldRowsHTML(v.fieldItems,v.pri,'#4a3728')+'</div>'
-        +qrSlotHTML('bottom:3%;left:50%;transform:translateX(-50%);')
+        +qrSlotHTML('bottom:3%;right:4%;')
         +'</div>';
 }
 function renderBoldHeader(v) {
@@ -1130,7 +1140,7 @@ function renderBoldHeader(v) {
         +'<div style="width:22%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.22);border:1.5px solid rgba(255,255,255,0.5);display:flex;align-items:center;justify-content:center;">'
         +'<i class="fas fa-infinity" style="color:white;font-size:0.4rem;"></i></div>'
         +'<span style="font-size:clamp(0.3rem,0.7vw,0.44rem);color:rgba(255,255,255,0.7);font-weight:600;letter-spacing:0.08em;text-transform:uppercase;text-align:center;">'+v.tplName+'</span></div>'
-        +'<div style="width:45%;aspect-ratio:1;border-radius:50%;border:3px solid rgba(255,255,255,0.8);background:rgba(255,255,255,0.15);overflow:hidden;display:flex;align-items:center;justify-content:center;position:relative;z-index:1;margin-top:4%;">'+v.photoHTML+'</div>'
+        +'<div style="width:45%;aspect-ratio:1;'+v.photoShapeCSS+'border:3px solid rgba(255,255,255,0.8);background:rgba(255,255,255,0.15);overflow:hidden;display:flex;align-items:center;justify-content:center;position:relative;z-index:1;margin-top:4%;">'+v.photoHTML+'</div>'
         +qrSlotHTML('bottom:4%;left:5%;')+'</div>'
         +'<div style="flex:1;background:#ffffff;display:flex;flex-direction:column;justify-content:center;padding:6% 7%;min-width:0;position:relative;">'
         +'<div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,'+v.pri+','+v.acc+');"></div>'
@@ -1147,7 +1157,7 @@ function renderDiagonal(v) {
         +'<polygon points="96,0 96,62 42,31" fill="'+v.pri+'"/>'
         +'<polygon points="96,52 96,112 48,82" fill="'+v.acc+'" opacity="0.85"/>'
         +'<polygon points="96,100 96,160 44,130" fill="'+v.pri+'" opacity="0.7"/></svg>'
-        +'<div style="position:absolute;left:5%;top:50%;transform:translateY(-50%);width:22%;aspect-ratio:1;border-radius:50%;border:2.5px solid '+v.acc+';background:rgba(255,255,255,0.08);overflow:hidden;display:flex;align-items:center;justify-content:center;">'+v.photoHTML+'</div>'
+        +'<div style="position:absolute;left:5%;top:50%;transform:translateY(-50%);width:22%;aspect-ratio:1;'+v.photoShapeCSS+'border:2.5px solid '+v.acc+';background:rgba(255,255,255,0.08);overflow:hidden;display:flex;align-items:center;justify-content:center;">'+v.photoHTML+'</div>'
         +'<div style="position:absolute;top:5%;left:5%;display:flex;align-items:center;gap:6%;">'
         +'<div style="width:8%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);display:flex;align-items:center;justify-content:center;">'
         +'<i class="fas fa-infinity" style="color:rgba(255,255,255,0.6);font-size:0.4rem;"></i></div>'
@@ -1296,7 +1306,7 @@ function renderGradientPro(v) {
         +'<i class="fas fa-infinity" style="color:rgba(255,255,255,0.9);font-size:0.4rem;"></i></div>'
         +'<span style="font-size:clamp(0.36rem,0.82vw,0.52rem);color:rgba(255,255,255,0.92);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">'+v.orgVal+'</span></div>'
         +'<div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:5%;z-index:2;width:90%;">'
-        +'<div style="width:26%;aspect-ratio:1;border-radius:50%;border:3px solid rgba(255,255,255,0.8);background:rgba(255,255,255,0.15);overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 24px rgba(0,0,0,0.3);flex-shrink:0;">'+v.photoHTML+'</div>'
+        +'<div style="width:26%;aspect-ratio:1;'+v.photoShapeCSS+'border:3px solid rgba(255,255,255,0.8);background:rgba(255,255,255,0.15);overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 24px rgba(0,0,0,0.3);flex-shrink:0;">'+v.photoHTML+'</div>'
         +'<div style="flex:1;min-width:0;">'
         +'<div style="font-size:clamp(0.62rem,1.55vw,0.9rem);font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
         +'<div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:rgba(255,255,255,0.75);margin-top:1.5%;margin-bottom:4%;;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.roleVal+'</div>'
@@ -1315,7 +1325,7 @@ function renderNeon(v) {
         +'<div style="width:8%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.05);border:1px solid '+v.acc+';display:flex;align-items:center;justify-content:center;box-shadow:0 0 6px '+v.acc+'44;">'
         +'<i class="fas fa-infinity" style="color:'+v.acc+';font-size:0.4rem;"></i></div>'
         +'<span style="font-size:clamp(0.36rem,0.82vw,0.52rem);color:'+v.acc+';font-weight:700;letter-spacing:0.08em;text-transform:uppercase;text-shadow:0 0 8px '+v.acc+'80;">'+v.orgVal+'</span></div>'
-        +'<div style="position:absolute;left:5%;top:50%;transform:translateY(-50%);width:22%;aspect-ratio:1;border-radius:50%;border:2.5px solid '+v.acc+';background:rgba(255,255,255,0.04);overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 0 16px '+v.acc+'60;">'+v.photoHTML+'</div>'
+        +'<div style="position:absolute;left:5%;top:50%;transform:translateY(-50%);width:22%;aspect-ratio:1;'+v.photoShapeCSS+'border:2.5px solid '+v.acc+';background:rgba(255,255,255,0.04);overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 0 16px '+v.acc+'60;">'+v.photoHTML+'</div>'
         +'<div style="position:absolute;left:34%;top:20%;max-width:60%;">'
         +'<div style="font-size:clamp(0.62rem,1.55vw,0.9rem);font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 0 12px rgba(255,255,255,0.3);">'+v.nameVal+'</div>'
         +'<div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:'+v.acc+';margin-top:2%;text-shadow:0 0 8px '+v.acc+'60;;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.roleVal+'</div>'
@@ -1335,7 +1345,7 @@ function renderExecutive(v) {
         +'<div style="width:8%;aspect-ratio:1;border-radius:50%;background:rgba(201,168,76,0.15);border:1px solid '+gold+';display:flex;align-items:center;justify-content:center;">'
         +'<i class="fas fa-infinity" style="color:'+gold+';font-size:0.4rem;"></i></div>'
         +'<span style="font-size:clamp(0.36rem,0.82vw,0.52rem);color:'+gold+';font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">'+v.orgVal+'</span></div>'
-        +'<div style="position:absolute;left:5%;top:50%;transform:translateY(-50%);width:22%;aspect-ratio:1;border-radius:50%;border:2.5px solid '+gold+';background:rgba(201,168,76,0.1);overflow:hidden;display:flex;align-items:center;justify-content:center;">'+v.photoHTML+'</div>'
+        +'<div style="position:absolute;left:5%;top:50%;transform:translateY(-50%);width:22%;aspect-ratio:1;'+v.photoShapeCSS+'border:2.5px solid '+gold+';background:rgba(201,168,76,0.1);overflow:hidden;display:flex;align-items:center;justify-content:center;">'+v.photoHTML+'</div>'
         +'<div style="position:absolute;left:34%;top:20%;max-width:60%;">'
         +'<div style="font-size:clamp(0.62rem,1.55vw,0.9rem);font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
         +'<div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:'+gold+';margin-top:2%;;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.roleVal+'</div>'
@@ -1354,7 +1364,7 @@ function renderStripe(v) {
         +'<div style="width:8%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.22);border:1px solid rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;">'
         +'<i class="fas fa-infinity" style="color:rgba(255,255,255,0.9);font-size:0.4rem;"></i></div>'
         +'<span style="font-size:clamp(0.36rem,0.82vw,0.52rem);color:rgba(255,255,255,0.92);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">'+v.orgVal+'</span></div>'
-        +'<div style="position:absolute;left:5%;top:50%;transform:translateY(-50%);width:22%;aspect-ratio:1;border-radius:50%;border:2.5px solid '+v.pri+';background:#fff;overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,0,0,0.15);">'+v.photoHTML+'</div>'
+        +'<div style="position:absolute;left:5%;top:50%;transform:translateY(-50%);width:22%;aspect-ratio:1;'+v.photoShapeCSS+'border:2.5px solid '+v.pri+';background:#fff;overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,0,0,0.15);">'+v.photoHTML+'</div>'
         +'<div style="position:absolute;right:5%;top:20%;max-width:52%;">'
         +'<div style="font-size:clamp(0.62rem,1.55vw,0.9rem);font-weight:800;color:'+v.pri+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
         +'<div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:#888;margin-top:2%;;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.roleVal+'</div>'
@@ -1393,7 +1403,7 @@ function renderGlass(v) {
         +'<div style="width:8%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.22);border:1px solid rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;">'
         +'<i class="fas fa-infinity" style="color:rgba(255,255,255,0.9);font-size:0.4rem;"></i></div>'
         +'<span style="font-size:clamp(0.36rem,0.82vw,0.52rem);color:rgba(255,255,255,0.9);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">'+v.orgVal+'</span></div>'
-        +'<div style="position:absolute;left:12%;top:50%;transform:translateY(-50%);width:22%;aspect-ratio:1;border-radius:50%;border:2.5px solid rgba(255,255,255,0.8);background:rgba(255,255,255,0.2);overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 28px rgba(0,0,0,0.2);z-index:3;">'+v.photoHTML+'</div>'
+        +'<div style="position:absolute;left:12%;top:50%;transform:translateY(-50%);width:22%;aspect-ratio:1;'+v.photoShapeCSS+'border:2.5px solid rgba(255,255,255,0.8);background:rgba(255,255,255,0.2);overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 28px rgba(0,0,0,0.2);z-index:3;">'+v.photoHTML+'</div>'
         +'<div style="position:absolute;left:40%;top:18%;max-width:54%;z-index:2;">'
         +'<div style="font-size:clamp(0.62rem,1.55vw,0.9rem);font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 2px 8px rgba(0,0,0,0.2);">'+v.nameVal+'</div>'
         +'<div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:rgba(255,255,255,0.8);margin-top:2%;margin-bottom:4%;;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.roleVal+'</div>'
@@ -1423,7 +1433,7 @@ function renderZigzag(v) {
         +'<div style="width:8%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.22);border:1px solid rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;">'
         +'<i class="fas fa-infinity" style="color:rgba(255,255,255,0.9);font-size:0.4rem;"></i></div>'
         +'<span style="font-size:clamp(0.36rem,0.82vw,0.52rem);color:rgba(255,255,255,0.92);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;z-index:2;">'+v.orgVal+'</span></div>'
-        +'<div style="position:absolute;left:50%;top:44%;transform:translateX(-50%);width:22%;aspect-ratio:1;border-radius:50%;border:3px solid #fff;background:'+v.pri+'22;overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 24px rgba(0,0,0,0.22);z-index:3;">'+v.photoHTML+'</div>'
+        +'<div style="position:absolute;left:50%;top:44%;transform:translateX(-50%);width:22%;aspect-ratio:1;'+v.photoShapeCSS+'border:3px solid #fff;background:'+v.pri+'22;overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 24px rgba(0,0,0,0.22);z-index:3;">'+v.photoHTML+'</div>'
         +'<div style="position:absolute;top:62%;left:4%;right:4%;text-align:center;z-index:2;">'
         +'<div style="font-size:clamp(0.62rem,1.55vw,0.9rem);font-weight:800;color:'+v.pri+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
         +'<div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:#888;margin-top:1%;;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.roleVal+'</div>'
@@ -1443,7 +1453,7 @@ function renderRibbon(v) {
         +'<div style="width:8%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.25);display:flex;align-items:center;justify-content:center;">'
         +'<i class="fas fa-infinity" style="color:rgba(255,255,255,0.7);font-size:0.4rem;"></i></div>'
         +'<span style="font-size:clamp(0.36rem,0.82vw,0.52rem);color:rgba(255,255,255,0.7);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">'+v.orgVal+'</span></div>'
-        +'<div style="position:absolute;left:5%;top:50%;transform:translateY(-50%);width:22%;aspect-ratio:1;border-radius:50%;border:2.5px solid rgba(255,255,255,0.8);background:rgba(255,255,255,0.1);overflow:hidden;display:flex;align-items:center;justify-content:center;z-index:3;">'+v.photoHTML+'</div>'
+        +'<div style="position:absolute;left:5%;top:50%;transform:translateY(-50%);width:22%;aspect-ratio:1;'+v.photoShapeCSS+'border:2.5px solid rgba(255,255,255,0.8);background:rgba(255,255,255,0.1);overflow:hidden;display:flex;align-items:center;justify-content:center;z-index:3;">'+v.photoHTML+'</div>'
         +'<div style="position:absolute;left:33%;top:14%;max-width:60%;z-index:2;">'
         +'<div style="font-size:clamp(0.62rem,1.55vw,0.9rem);font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
         +'<div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:rgba(255,255,255,0.75);margin-top:2%;;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.roleVal+'</div>'
