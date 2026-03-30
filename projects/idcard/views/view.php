@@ -247,17 +247,17 @@ if ($designStyle === 'classic'): ?>
         <path d="M0,0 L60,0 Q80,25 70,55 Q85,80 72,110 Q88,135 65,160 L0,160 Z" fill="<?= $pri ?>"/>
         <path d="M0,0 L45,0 Q62,22 55,52 Q68,78 56,108 Q70,132 50,160 L0,160 Z" fill="rgba(255,255,255,0.07)"/>
     </svg>
-    <div style="position:absolute;left:24%;top:18%;transform:translateX(-50%);width:24%;aspect-ratio:1;border-radius:50%;border:3px solid rgba(255,255,255,0.8);background:rgba(255,255,255,0.18);overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 22px rgba(0,0,0,0.25);">
+    <div style="position:absolute;left:24%;top:18%;transform:translateX(-50%);width:24%;aspect-ratio:1;<?= $photoShapeCSS ?>border:3px solid rgba(255,255,255,0.8);background:rgba(255,255,255,0.18);overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 22px rgba(0,0,0,0.25);">
         <?= icardPhoto($photoPath,'2rem') ?>
     </div>
-    <div style="position:absolute;bottom:12%;left:5%;max-width:40%;">
+    <div style="position:absolute;bottom:14%;left:5%;max-width:40%;">
         <div style="font-size:clamp(0.6rem,1.4vw,0.82rem);font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><?= $nameVal ?></div>
-        <?php if ($roleVal): ?><div style="font-size:clamp(0.35rem,0.78vw,0.5rem);color:rgba(255,255,255,0.75);margin-top:1.5%;"><?= $roleVal ?></div><?php endif; ?>
+        <?php if ($roleVal): ?><div style="font-size:clamp(0.35rem,0.78vw,0.5rem);color:rgba(255,255,255,0.75);margin-top:1.5%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><?= $roleVal ?></div><?php endif; ?>
     </div>
-    <?= $showQr ? icardQrSlot('bottom:3%;left:50%;transform:translateX(-50%);', $qrData, $qrSize) : '' ?>
+    <?= $showQr ? icardQrSlot('bottom:3%;right:4%;', $qrData, $qrSize) : '' ?>
     <div style="position:absolute;top:5%;right:5%;display:flex;align-items:center;gap:5%;">
         <?= icardLogoEl($logoPath,'7%',$pri) ?>
-        <span style="font-size:clamp(0.32rem,0.72vw,0.46rem);color:<?= $pri ?>;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;"><?= $tplName ?></span>
+        <span style="font-size:clamp(0.32rem,0.72vw,0.46rem);color:<?= $pri ?>;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60%;"><?= $orgVal ?></span>
     </div>
     <div style="position:absolute;top:14%;right:4%;width:48%;">
         <?php foreach ($shownFlds as $f): ?><?= icardRow($f['label'], $f['val'], $pri, '#4a3728') ?><?php endforeach; ?>

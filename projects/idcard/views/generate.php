@@ -1196,7 +1196,7 @@ function renderDiagonal(v) {
         +'</div>'
         // Fields below name/photo
         +'<div style="position:absolute;bottom:6%;left:5%;right:52%;overflow:hidden;">'+fieldRowsHTML(v.fieldItems,'rgba(255,255,255,0.55)','rgba(255,255,255,0.9)')+'</div>'
-        +qrSlotHTML('bottom:4%;right:52%;transform:translateX(50%);')
+        +qrSlotHTML('bottom:4%;right:4%;z-index:2;')
         +'</div>';
 }
 
