@@ -1089,32 +1089,47 @@ function selectStyle(key) {
 function renderClassic(v) {
     return '<div style="width:100%;height:100%;background:#f7f8fc;font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
         +'<div style="position:absolute;top:0;left:0;right:0;height:100%;overflow:hidden;pointer-events:none;">'
-        +'<div style="position:absolute;inset:0;background:linear-gradient(135deg,'+v.pri+' 0%,'+v.acc+' 100%);clip-path:polygon(0 0,100% 0,100% 56%,0 72%);"></div></div>'
-        +'<div style="position:absolute;top:5%;left:5%;display:flex;align-items:center;gap:5%;">'
-        +'<div style="width:8%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.22);border:1px solid rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;">'
-        +'<i class="fas fa-infinity" style="color:rgba(255,255,255,0.9);font-size:0.4rem;"></i></div>'
-        +'<span style="font-size:clamp(0.36rem,0.82vw,0.52rem);color:rgba(255,255,255,0.92);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">'+v.orgVal+'</span></div>'
-        +'<div style="position:absolute;left:50%;top:32%;transform:translateX(-50%);width:22%;aspect-ratio:1;'+v.photoShapeCSS+'border:3px solid #fff;background:'+v.pri+'22;overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 24px rgba(0,0,0,0.22);">'+v.photoHTML+'</div>'
-        +'<div style="position:absolute;top:58%;left:0;right:0;text-align:center;padding:0 4%;">'
-        +'<div style="font-size:clamp(0.62rem,1.55vw,0.9rem);font-weight:800;color:'+v.pri+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
-        +'<div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:#888;margin-top:1%;;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.roleVal+'</div></div>'
-        +'<div style="position:absolute;top:70%;left:5%;right:5%;display:grid;grid-template-columns:1fr 1fr;column-gap:3%;">'+fieldRowsHTML(v.fieldItems,v.pri,'#444')+'</div>'
-        +qrSlotHTML('bottom:3%;left:50%;transform:translateX(-50%);width:auto;')
+        +'<div style="position:absolute;inset:0;background:linear-gradient(135deg,'+v.pri+' 0%,'+v.acc+' 100%);clip-path:polygon(0 0,100% 0,100% 40%,0 52%);"></div></div>'
+        // School name centered in header
+        +'<div style="position:absolute;top:4%;left:0;right:0;text-align:center;z-index:2;padding:0 4%;">'
+        +'<div style="font-size:clamp(0.44rem,1.1vw,0.68rem);font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.orgVal+'</div>'
+        +(v.addrVal ? '<div style="font-size:clamp(0.3rem,0.7vw,0.44rem);color:rgba(255,255,255,0.8);margin-top:0.5%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.addrVal+'</div>' : '')
+        +'</div>'
+        // Three-column row: Photo | Name+Course | QR
+        +'<div style="position:absolute;top:48%;left:4%;right:4%;display:flex;align-items:flex-start;gap:3%;z-index:2;">'
+        // Left: photo
+        +'<div style="width:22%;aspect-ratio:1;'+v.photoShapeCSS+'border:2.5px solid '+v.pri+';background:'+v.pri+'22;overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,0,0,0.2);flex-shrink:0;">'+v.photoHTML+'</div>'
+        // Middle: name + role + fields
+        +'<div style="flex:1;min-width:0;overflow:hidden;">'
+        +'<div style="font-size:clamp(0.56rem,1.3vw,0.8rem);font-weight:800;color:'+v.pri+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
+        +'<div style="font-size:clamp(0.32rem,0.76vw,0.48rem);color:#666;margin-top:0.5%;margin-bottom:2%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.roleVal+'</div>'
+        +fieldRowsHTML(v.fieldItems,v.pri,'#444')
+        +'</div>'
+        // Right: QR slot
+        +'<div style="flex-shrink:0;display:flex;align-items:flex-start;">'
+        +qrSlotHTML('position:relative;')
+        +'</div>'
+        +'</div>'
         +'</div>';
 }
 function renderSidebar(v) {
     return '<div style="width:100%;height:100%;background:#111827;font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
         +'<svg style="position:absolute;top:-18%;right:-12%;width:60%;aspect-ratio:1;" viewBox="0 0 100 100"><rect x="15" y="15" width="70" height="70" rx="3" fill="'+v.pri+'" transform="rotate(45 50 50)"/></svg>'
         +'<svg style="position:absolute;top:-8%;right:-5%;width:42%;aspect-ratio:1;opacity:0.35;" viewBox="0 0 100 100"><rect x="15" y="15" width="70" height="70" rx="3" fill="'+v.acc+'" transform="rotate(45 50 50)"/></svg>'
+        // School name centered at top
+        +'<div style="position:absolute;top:5%;left:5%;right:32%;text-align:left;z-index:2;">'
+        +'<div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:rgba(255,255,255,0.92);font-weight:700;letter-spacing:0.05em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.orgVal+'</div>'
+        +(v.addrVal ? '<div style="font-size:clamp(0.28rem,0.65vw,0.42rem);color:rgba(255,255,255,0.6);margin-top:0.5%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.addrVal+'</div>' : '')
+        +'</div>'
+        // Photo top-right
         +'<div style="position:absolute;top:6%;right:6%;width:22%;aspect-ratio:1;'+v.photoShapeCSS+'border:2.5px solid rgba(255,255,255,0.7);background:rgba(255,255,255,0.1);overflow:hidden;display:flex;align-items:center;justify-content:center;">'+v.photoHTML+'</div>'
-        +'<div style="position:absolute;top:5%;left:5%;display:flex;align-items:center;gap:6%;">'
-        +'<div style="width:8%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center;">'
-        +'<i class="fas fa-infinity" style="color:rgba(255,255,255,0.7);font-size:0.4rem;"></i></div>'
-        +'<span style="font-size:clamp(0.34rem,0.78vw,0.5rem);color:rgba(255,255,255,0.8);font-weight:700;letter-spacing:0.07em;text-transform:uppercase;">'+v.orgVal+'</span></div>'
-        +'<div style="position:absolute;bottom:36%;left:5%;">'
-        +'<div style="font-size:clamp(0.7rem,1.7vw,1rem);font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:55%;">'+v.nameVal+'</div>'
-        +'<div style="font-size:clamp(0.38rem,0.85vw,0.54rem);color:'+v.acc+';margin-top:1.5%;;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.roleVal+'</div></div>'
-        +'<div style="position:absolute;bottom:4%;left:5%;right:50%;">'+fieldRowsHTML(v.fieldItems,'rgba(255,255,255,0.55)','rgba(255,255,255,0.88)')+'</div>'
+        // Name
+        +'<div style="position:absolute;top:32%;left:5%;right:32%;">'
+        +'<div style="font-size:clamp(0.62rem,1.5vw,0.9rem);font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
+        +'<div style="font-size:clamp(0.34rem,0.78vw,0.5rem);color:'+v.acc+';margin-top:1%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.roleVal+'</div>'
+        +'</div>'
+        // Fields left side
+        +'<div style="position:absolute;top:52%;left:5%;right:50%;">'+fieldRowsHTML(v.fieldItems,'rgba(255,255,255,0.55)','rgba(255,255,255,0.88)')+'</div>'
         +qrSlotHTML('bottom:4%;right:4%;')
         +'</div>';
 }
@@ -1136,16 +1151,25 @@ function renderWave(v) {
 function renderBoldHeader(v) {
     return '<div style="width:100%;height:100%;display:flex;overflow:hidden;font-family:\''+v.font+'\',sans-serif;">'
         +'<div style="width:40%;background:linear-gradient(170deg,'+v.pri+' 0%,'+v.acc+' 100%);display:flex;flex-direction:column;align-items:center;position:relative;overflow:hidden;flex-shrink:0;">'
-        +'<div style="padding:10% 0 5%;position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:6%;">'
+        +'<div style="position:absolute;top:-20%;left:-30%;width:90%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.07);"></div>'
+        +'<div style="padding:8% 0 4%;position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:4%;width:100%;">'
         +'<div style="width:22%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.22);border:1.5px solid rgba(255,255,255,0.5);display:flex;align-items:center;justify-content:center;">'
         +'<i class="fas fa-infinity" style="color:white;font-size:0.4rem;"></i></div>'
-        +'<span style="font-size:clamp(0.3rem,0.7vw,0.44rem);color:rgba(255,255,255,0.7);font-weight:600;letter-spacing:0.08em;text-transform:uppercase;text-align:center;">'+v.tplName+'</span></div>'
-        +'<div style="width:45%;aspect-ratio:1;'+v.photoShapeCSS+'border:3px solid rgba(255,255,255,0.8);background:rgba(255,255,255,0.15);overflow:hidden;display:flex;align-items:center;justify-content:center;position:relative;z-index:1;margin-top:4%;">'+v.photoHTML+'</div>'
-        +qrSlotHTML('bottom:4%;left:5%;')+'</div>'
+        +'</div>'
+        +'<div style="width:45%;aspect-ratio:1;'+v.photoShapeCSS+'border:3px solid rgba(255,255,255,0.8);background:rgba(255,255,255,0.15);overflow:hidden;display:flex;align-items:center;justify-content:center;position:relative;z-index:1;margin-top:2%;">'+v.photoHTML+'</div>'
+        // Address below photo
+        +(v.addrVal ? '<div style="position:relative;z-index:1;margin-top:4%;padding:0 6%;width:100%;text-align:center;"><div style="font-size:clamp(0.26rem,0.62vw,0.4rem);color:rgba(255,255,255,0.65);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.addrVal+'</div></div>' : '')
+        // QR centered at bottom
+        +'<div style="margin-top:auto;margin-bottom:5%;position:relative;z-index:1;">'
+        +qrSlotHTML('position:relative;')
+        +'</div>'
+        +'</div>'
         +'<div style="flex:1;background:#ffffff;display:flex;flex-direction:column;justify-content:center;padding:6% 7%;min-width:0;position:relative;">'
         +'<div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,'+v.pri+','+v.acc+');"></div>'
+        // School name at top of right panel
+        +'<div style="font-size:clamp(0.3rem,0.72vw,0.46rem);color:'+v.pri+';font-weight:700;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.orgVal+'</div>'
         +'<div style="font-size:clamp(0.62rem,1.52vw,0.88rem);font-weight:800;color:'+v.pri+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
-        +'<div style="font-size:clamp(0.36rem,0.82vw,0.52rem);color:#888;margin-top:1.5%;margin-bottom:4%;;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.roleVal+'</div>'
+        +'<div style="font-size:clamp(0.34rem,0.8vw,0.5rem);color:#888;margin-top:1.5%;margin-bottom:4%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.roleVal+'</div>'
         +'<div style="width:60%;height:2px;background:linear-gradient(90deg,'+v.acc+',transparent);border-radius:2px;margin-bottom:5%;"></div>'
         +fieldRowsHTML(v.fieldItems,v.pri,'#555')
         +'</div></div>';
@@ -1157,16 +1181,21 @@ function renderDiagonal(v) {
         +'<polygon points="96,0 96,62 42,31" fill="'+v.pri+'"/>'
         +'<polygon points="96,52 96,112 48,82" fill="'+v.acc+'" opacity="0.85"/>'
         +'<polygon points="96,100 96,160 44,130" fill="'+v.pri+'" opacity="0.7"/></svg>'
+        // School name at top left
+        +'<div style="position:absolute;top:4%;left:5%;right:52%;z-index:2;">'
+        +'<div style="font-size:clamp(0.34rem,0.8vw,0.5rem);color:rgba(255,255,255,0.85);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.orgVal+'</div>'
+        +(v.addrVal ? '<div style="font-size:clamp(0.28rem,0.65vw,0.42rem);color:rgba(255,255,255,0.55);margin-top:0.5%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.addrVal+'</div>' : '')
+        +'</div>'
+        // Photo on left, vertically centered
         +'<div style="position:absolute;left:5%;top:50%;transform:translateY(-50%);width:22%;aspect-ratio:1;'+v.photoShapeCSS+'border:2.5px solid '+v.acc+';background:rgba(255,255,255,0.08);overflow:hidden;display:flex;align-items:center;justify-content:center;">'+v.photoHTML+'</div>'
-        +'<div style="position:absolute;top:5%;left:5%;display:flex;align-items:center;gap:6%;">'
-        +'<div style="width:8%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);display:flex;align-items:center;justify-content:center;">'
-        +'<i class="fas fa-infinity" style="color:rgba(255,255,255,0.6);font-size:0.4rem;"></i></div>'
-        +'<span style="font-size:clamp(0.34rem,0.76vw,0.48rem);color:rgba(255,255,255,0.65);font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">'+v.orgVal+'</span></div>'
-        +'<div style="position:absolute;left:32%;top:20%;max-width:30%;">'
-        +'<div style="font-size:clamp(0.58rem,1.38vw,0.82rem);font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
-        +'<div style="font-size:clamp(0.34rem,0.76vw,0.5rem);color:'+v.acc+';margin-top:2%;;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.roleVal+'</div></div>'
-        +'<div style="position:absolute;bottom:6%;left:5%;max-width:50%;">'+fieldRowsHTML(v.fieldItems,'rgba(255,255,255,0.55)','rgba(255,255,255,0.9)')+'</div>'
-        +qrSlotHTML('bottom:4%;right:5%;')
+        // Name + role in middle
+        +'<div style="position:absolute;left:32%;top:20%;right:52%;">'
+        +'<div style="font-size:clamp(0.56rem,1.3vw,0.8rem);font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
+        +'<div style="font-size:clamp(0.32rem,0.76vw,0.48rem);color:'+v.acc+';margin-top:2%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.roleVal+'</div>'
+        +'</div>'
+        // Fields below name/photo
+        +'<div style="position:absolute;bottom:6%;left:5%;right:52%;overflow:hidden;">'+fieldRowsHTML(v.fieldItems,'rgba(255,255,255,0.55)','rgba(255,255,255,0.9)')+'</div>'
+        +qrSlotHTML('bottom:4%;right:52%;transform:translateX(50%);')
         +'</div>';
 }
 
@@ -1301,19 +1330,24 @@ function renderVSplit(v) {
 function renderGradientPro(v) {
     return '<div style="width:100%;height:100%;background:linear-gradient(135deg,'+v.pri+' 0%,'+v.acc+' 100%);font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
         +'<div style="position:absolute;inset:0;background:rgba(0,0,0,0.18);"></div>'
-        +'<div style="position:absolute;top:5%;left:5%;display:flex;align-items:center;gap:5%;z-index:2;">'
-        +'<div style="width:8%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.22);border:1px solid rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;">'
-        +'<i class="fas fa-infinity" style="color:rgba(255,255,255,0.9);font-size:0.4rem;"></i></div>'
-        +'<span style="font-size:clamp(0.36rem,0.82vw,0.52rem);color:rgba(255,255,255,0.92);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">'+v.orgVal+'</span></div>'
-        +'<div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:5%;z-index:2;width:90%;">'
+        // School name top center
+        +'<div style="position:absolute;top:4%;left:0;right:0;text-align:center;z-index:2;padding:0 4%;">'
+        +'<div style="font-size:clamp(0.38rem,0.9vw,0.56rem);font-weight:700;color:rgba(255,255,255,0.92);letter-spacing:0.05em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.orgVal+'</div>'
+        +'</div>'
+        // Three-column: photo | name+fields | QR
+        +'<div style="position:absolute;top:20%;left:4%;right:4%;bottom:8%;display:flex;align-items:center;gap:3%;z-index:2;">'
         +'<div style="width:26%;aspect-ratio:1;'+v.photoShapeCSS+'border:3px solid rgba(255,255,255,0.8);background:rgba(255,255,255,0.15);overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 24px rgba(0,0,0,0.3);flex-shrink:0;">'+v.photoHTML+'</div>'
-        +'<div style="flex:1;min-width:0;">'
+        +'<div style="flex:1;min-width:0;overflow:hidden;">'
         +'<div style="font-size:clamp(0.62rem,1.55vw,0.9rem);font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
-        +'<div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:rgba(255,255,255,0.75);margin-top:1.5%;margin-bottom:4%;;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.roleVal+'</div>'
+        +'<div style="font-size:clamp(0.34rem,0.8vw,0.5rem);color:rgba(255,255,255,0.75);margin-top:1.5%;margin-bottom:3%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.roleVal+'</div>'
         +'<div style="width:80%;height:1.5px;background:rgba(255,255,255,0.35);border-radius:2px;margin-bottom:4%;"></div>'
         +fieldRowsHTML(v.fieldItems,'rgba(255,255,255,0.65)','rgba(255,255,255,0.9)')
-        +'</div></div>'
-        +qrSlotHTML('bottom:4%;left:50%;transform:translateX(-50%);')
+        +'</div>'
+        // QR extreme right
+        +'<div style="flex-shrink:0;display:flex;align-items:center;">'
+        +qrSlotHTML('position:relative;')
+        +'</div>'
+        +'</div>'
         +'</div>';
 }
 
@@ -1321,17 +1355,21 @@ function renderNeon(v) {
     return '<div style="width:100%;height:100%;background:#050a10;font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
         +'<div style="position:absolute;top:0;left:0;right:0;height:3px;background:'+v.pri+';box-shadow:0 0 10px '+v.pri+';"></div>'
         +'<div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:'+v.acc+';box-shadow:0 0 10px '+v.acc+';"></div>'
-        +'<div style="position:absolute;top:5%;left:5%;display:flex;align-items:center;gap:5%;z-index:2;">'
-        +'<div style="width:8%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.05);border:1px solid '+v.acc+';display:flex;align-items:center;justify-content:center;box-shadow:0 0 6px '+v.acc+'44;">'
-        +'<i class="fas fa-infinity" style="color:'+v.acc+';font-size:0.4rem;"></i></div>'
-        +'<span style="font-size:clamp(0.36rem,0.82vw,0.52rem);color:'+v.acc+';font-weight:700;letter-spacing:0.08em;text-transform:uppercase;text-shadow:0 0 8px '+v.acc+'80;">'+v.orgVal+'</span></div>'
+        // School name + address at top
+        +'<div style="position:absolute;top:7%;left:5%;right:5%;text-align:center;z-index:2;">'
+        +'<div style="font-size:clamp(0.38rem,0.9vw,0.56rem);color:'+v.acc+';font-weight:700;letter-spacing:0.08em;text-transform:uppercase;text-shadow:0 0 8px '+v.acc+'80;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.orgVal+'</div>'
+        +(v.addrVal ? '<div style="font-size:clamp(0.28rem,0.65vw,0.42rem);color:rgba(255,255,255,0.45);margin-top:0.5%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.addrVal+'</div>' : '')
+        +'</div>'
+        // Photo left
         +'<div style="position:absolute;left:5%;top:50%;transform:translateY(-50%);width:22%;aspect-ratio:1;'+v.photoShapeCSS+'border:2.5px solid '+v.acc+';background:rgba(255,255,255,0.04);overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 0 16px '+v.acc+'60;">'+v.photoHTML+'</div>'
-        +'<div style="position:absolute;left:34%;top:20%;max-width:60%;">'
+        // Name + role + fields in middle
+        +'<div style="position:absolute;left:34%;top:22%;right:18%;overflow:hidden;">'
         +'<div style="font-size:clamp(0.62rem,1.55vw,0.9rem);font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 0 12px rgba(255,255,255,0.3);">'+v.nameVal+'</div>'
-        +'<div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:'+v.acc+';margin-top:2%;text-shadow:0 0 8px '+v.acc+'60;;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.roleVal+'</div>'
-        +'<div style="font-size:clamp(0.34rem,0.82vw,0.5rem);color:'+v.pri+';font-weight:700;margin-top:2%;letter-spacing:0.04em;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.orgVal+'</div></div>'
-        +'<div style="position:absolute;bottom:10%;left:34%;max-width:58%;">'+fieldRowsHTML(v.fieldItems,'rgba(255,255,255,0.45)','rgba(255,255,255,0.85)')+'</div>'
-        +qrSlotHTML('bottom:4%;left:50%;transform:translateX(-50%);')
+        +'<div style="font-size:clamp(0.34rem,0.8vw,0.5rem);color:'+v.acc+';margin-top:2%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 0 8px '+v.acc+'60;">'+v.roleVal+'</div>'
+        +'</div>'
+        +'<div style="position:absolute;top:52%;left:34%;right:18%;overflow:hidden;">'+fieldRowsHTML(v.fieldItems,'rgba(255,255,255,0.45)','rgba(255,255,255,0.85)')+'</div>'
+        // QR extreme right
+        +qrSlotHTML('top:50%;right:2%;transform:translateY(-50%);')
         +'</div>';
 }
 
@@ -1341,53 +1379,61 @@ function renderExecutive(v) {
         +'<div style="position:absolute;top:0;left:0;right:0;height:4px;background:'+gold+';"></div>'
         +'<div style="position:absolute;bottom:0;left:0;right:0;height:4px;background:'+gold+';"></div>'
         +'<div style="position:absolute;top:4px;left:4px;right:4px;bottom:4px;border:0.5px solid rgba(201,168,76,0.25);pointer-events:none;"></div>'
-        +'<div style="position:absolute;top:5%;left:5%;display:flex;align-items:center;gap:5%;z-index:2;">'
-        +'<div style="width:8%;aspect-ratio:1;border-radius:50%;background:rgba(201,168,76,0.15);border:1px solid '+gold+';display:flex;align-items:center;justify-content:center;">'
-        +'<i class="fas fa-infinity" style="color:'+gold+';font-size:0.4rem;"></i></div>'
-        +'<span style="font-size:clamp(0.36rem,0.82vw,0.52rem);color:'+gold+';font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">'+v.orgVal+'</span></div>'
+        // School name at top center
+        +'<div style="position:absolute;top:7%;left:5%;right:5%;text-align:center;z-index:2;">'
+        +'<div style="font-size:clamp(0.38rem,0.9vw,0.56rem);color:'+gold+';font-weight:700;letter-spacing:0.08em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.orgVal+'</div>'
+        +'</div>'
+        // Photo left
         +'<div style="position:absolute;left:5%;top:50%;transform:translateY(-50%);width:22%;aspect-ratio:1;'+v.photoShapeCSS+'border:2.5px solid '+gold+';background:rgba(201,168,76,0.1);overflow:hidden;display:flex;align-items:center;justify-content:center;">'+v.photoHTML+'</div>'
-        +'<div style="position:absolute;left:34%;top:20%;max-width:60%;">'
+        // Name + role + fields in middle
+        +'<div style="position:absolute;left:34%;top:22%;right:18%;overflow:hidden;">'
         +'<div style="font-size:clamp(0.62rem,1.55vw,0.9rem);font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
-        +'<div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:'+gold+';margin-top:2%;;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.roleVal+'</div>'
+        +'<div style="font-size:clamp(0.34rem,0.8vw,0.5rem);color:'+gold+';margin-top:2%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.roleVal+'</div>'
         +'<div style="width:60%;height:1.5px;background:linear-gradient(90deg,'+gold+',transparent);margin-top:4%;margin-bottom:4%;"></div>'
         +fieldRowsHTML(v.fieldItems,'rgba(255,255,255,0.45)','rgba(255,255,255,0.88)')
         +'</div>'
-        +qrSlotHTML('bottom:4%;left:50%;transform:translateX(-50%);')
+        // QR extreme right
+        +qrSlotHTML('top:50%;right:2%;transform:translateY(-50%);')
         +'</div>';
 }
 
 function renderStripe(v) {
     return '<div style="width:100%;height:100%;background:#f5f7fa;font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
-        +'<div style="position:absolute;top:0;left:0;right:0;height:16%;background:'+v.pri+';"></div>'
+        +'<div style="position:absolute;top:0;left:0;right:0;height:18%;background:'+v.pri+';display:flex;align-items:center;justify-content:center;padding:0 4%;">'
+        +'<div style="font-size:clamp(0.4rem,0.95vw,0.6rem);font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;letter-spacing:0.05em;text-transform:uppercase;">'+v.orgVal+'</div>'
+        +'</div>'
         +'<div style="position:absolute;bottom:0;left:0;right:0;height:16%;background:'+v.acc+';"></div>'
-        +'<div style="position:absolute;top:5%;left:5%;display:flex;align-items:center;gap:5%;z-index:2;">'
-        +'<div style="width:8%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.22);border:1px solid rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;">'
-        +'<i class="fas fa-infinity" style="color:rgba(255,255,255,0.9);font-size:0.4rem;"></i></div>'
-        +'<span style="font-size:clamp(0.36rem,0.82vw,0.52rem);color:rgba(255,255,255,0.92);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">'+v.orgVal+'</span></div>'
-        +'<div style="position:absolute;left:5%;top:50%;transform:translateY(-50%);width:22%;aspect-ratio:1;'+v.photoShapeCSS+'border:2.5px solid '+v.pri+';background:#fff;overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,0,0,0.15);">'+v.photoHTML+'</div>'
-        +'<div style="position:absolute;right:5%;top:20%;max-width:52%;">'
-        +'<div style="font-size:clamp(0.62rem,1.55vw,0.9rem);font-weight:800;color:'+v.pri+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
-        +'<div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:#888;margin-top:2%;;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.roleVal+'</div>'
+        // Center: photo
+        +'<div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:22%;aspect-ratio:1;'+v.photoShapeCSS+'border:2.5px solid '+v.pri+';background:#fff;overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,0,0,0.15);">'+v.photoHTML+'</div>'
+        // Right: name + fields
+        +'<div style="position:absolute;right:5%;top:20%;max-width:44%;">'
+        +'<div style="font-size:clamp(0.56rem,1.3vw,0.8rem);font-weight:800;color:'+v.pri+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
+        +'<div style="font-size:clamp(0.32rem,0.76vw,0.48rem);color:#888;margin-top:2%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.roleVal+'</div>'
         +'<div style="width:60%;height:2px;background:linear-gradient(90deg,'+v.acc+',transparent);border-radius:2px;margin:4% 0;"></div>'
         +fieldRowsHTML(v.fieldItems,v.pri,'#555')
         +'</div>'
-        +qrSlotHTML('bottom:4%;left:50%;transform:translateX(-50%);')
+        +qrSlotHTML('bottom:18%;left:5%;')
         +'</div>';
 }
 
 function renderMetro(v) {
-    return '<div style="width:100%;height:100%;display:flex;overflow:hidden;font-family:\''+v.font+'\',sans-serif;">'
+    return '<div style="width:100%;height:100%;display:flex;overflow:hidden;font-family:\''+v.font+'\',sans-serif;border-top:4px solid '+v.pri+';border-bottom:4px solid '+v.acc+';">'
         +'<div style="width:35%;background:'+v.pri+';display:flex;flex-direction:column;align-items:center;flex-shrink:0;position:relative;">'
         +'<div style="position:absolute;top:0;right:0;width:4px;height:100%;background:'+v.acc+'88;"></div>'
-        +'<div style="padding:10% 0 5%;display:flex;flex-direction:column;align-items:center;gap:6%;">'
+        +'<div style="padding:8% 0 5%;display:flex;flex-direction:column;align-items:center;gap:5%;width:100%;">'
         +'<div style="width:22%;aspect-ratio:1;border-radius:0;background:rgba(255,255,255,0.22);border:1.5px solid rgba(255,255,255,0.5);display:flex;align-items:center;justify-content:center;">'
         +'<i class="fas fa-infinity" style="color:white;font-size:0.4rem;"></i></div>'
-        +'<span style="font-size:clamp(0.3rem,0.7vw,0.44rem);color:rgba(255,255,255,0.7);font-weight:600;letter-spacing:0.08em;text-transform:uppercase;text-align:center;writing-mode:vertical-rl;transform:rotate(180deg);">'+v.tplName+'</span></div>'
-        +'<div style="width:55%;aspect-ratio:1;border-radius:0;border:3px solid rgba(255,255,255,0.8);background:rgba(255,255,255,0.15);overflow:hidden;display:flex;align-items:center;justify-content:center;margin-top:4%;">'+v.photoHTML+'</div>'
-        +qrSlotHTML('bottom:4%;right:4%;')+'</div>'
-        +'<div style="flex:1;background:#ffffff;display:flex;flex-direction:column;justify-content:center;padding:6% 7%;min-width:0;position:relative;border-top:4px solid '+v.pri+';border-bottom:4px solid '+v.acc+';">'
+        +'</div>'
+        +'<div style="width:55%;aspect-ratio:1;'+v.photoShapeCSS.replace('border-radius:50%;','border-radius:4px;').replace('border-radius:50% / 40%;','border-radius:8px 20px;')+'border:3px solid rgba(255,255,255,0.8);background:rgba(255,255,255,0.15);overflow:hidden;display:flex;align-items:center;justify-content:center;margin-top:4%;">'+v.photoHTML+'</div>'
+        +'<div style="margin-top:auto;padding-bottom:6%;display:flex;align-items:center;justify-content:center;width:100%;">'
+        +qrSlotHTML('position:relative;')
+        +'</div>'
+        +'</div>'
+        +'<div style="flex:1;background:#ffffff;display:flex;flex-direction:column;justify-content:center;padding:6% 7%;min-width:0;">'
+        +'<div style="font-size:clamp(0.38rem,0.9vw,0.56rem);font-weight:700;color:'+v.pri+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:1%;">'+v.orgVal+'</div>'
+        +(v.addrVal ? '<div style="font-size:clamp(0.28rem,0.65vw,0.42rem);color:#999;margin-bottom:3%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.addrVal+'</div>' : '')
         +'<div style="font-size:clamp(0.62rem,1.52vw,0.88rem);font-weight:800;color:'+v.pri+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
-        +'<div style="font-size:clamp(0.36rem,0.82vw,0.52rem);color:#888;margin-top:1.5%;margin-bottom:4%;;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.roleVal+'</div>'
+        +'<div style="font-size:clamp(0.34rem,0.8vw,0.5rem);color:#888;margin-top:1.5%;margin-bottom:4%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.roleVal+'</div>'
         +'<div style="width:50%;height:3px;background:'+v.acc+';border-radius:0;margin-bottom:5%;"></div>'
         +fieldRowsHTML(v.fieldItems,v.pri,'#555')
         +'</div></div>';
@@ -1397,25 +1443,27 @@ function renderGlass(v) {
     return '<div style="width:100%;height:100%;background:linear-gradient(135deg,'+v.pri+' 0%,'+v.acc+' 100%);font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
         +'<div style="position:absolute;inset:8% 6%;background:rgba(255,255,255,0.15);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,0.35);border-radius:10px;overflow:hidden;">'
         +'<div style="position:absolute;top:-30%;left:-20%;width:60%;aspect-ratio:1;background:rgba(255,255,255,0.08);border-radius:50%;"></div>'
-        +'<div style="position:absolute;bottom:-20%;right:-15%;width:50%;aspect-ratio:1;background:rgba(255,255,255,0.05);border-radius:50%;"></div>'
         +'</div>'
-        +'<div style="position:absolute;top:13%;left:12%;display:flex;align-items:center;gap:5%;z-index:2;">'
-        +'<div style="width:8%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.22);border:1px solid rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;">'
-        +'<i class="fas fa-infinity" style="color:rgba(255,255,255,0.9);font-size:0.4rem;"></i></div>'
-        +'<span style="font-size:clamp(0.36rem,0.82vw,0.52rem);color:rgba(255,255,255,0.9);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">'+v.orgVal+'</span></div>'
-        +'<div style="position:absolute;left:12%;top:50%;transform:translateY(-50%);width:22%;aspect-ratio:1;'+v.photoShapeCSS+'border:2.5px solid rgba(255,255,255,0.8);background:rgba(255,255,255,0.2);overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 28px rgba(0,0,0,0.2);z-index:3;">'+v.photoHTML+'</div>'
-        +'<div style="position:absolute;left:40%;top:18%;max-width:54%;z-index:2;">'
+        // School name at top
+        +'<div style="position:absolute;top:10%;left:10%;right:10%;text-align:center;z-index:2;">'
+        +'<div style="font-size:clamp(0.38rem,0.9vw,0.56rem);font-weight:700;color:rgba(255,255,255,0.92);letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.orgVal+'</div>'
+        +'</div>'
+        // Photo left + QR below photo
+        +'<div style="position:absolute;left:10%;top:24%;display:flex;flex-direction:column;align-items:center;gap:4%;z-index:3;">'
+        +'<div style="width:22%;aspect-ratio:1;'+v.photoShapeCSS+'border:2.5px solid rgba(255,255,255,0.8);background:rgba(255,255,255,0.2);overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 28px rgba(0,0,0,0.2);">'+v.photoHTML+'</div>'
+        +qrSlotHTML('position:relative;margin-top:4%;')
+        +'</div>'
+        // Name + fields right
+        +'<div style="position:absolute;left:40%;top:22%;right:10%;z-index:2;overflow:hidden;">'
         +'<div style="font-size:clamp(0.62rem,1.55vw,0.9rem);font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 2px 8px rgba(0,0,0,0.2);">'+v.nameVal+'</div>'
-        +'<div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:rgba(255,255,255,0.8);margin-top:2%;margin-bottom:4%;;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.roleVal+'</div>'
+        +'<div style="font-size:clamp(0.34rem,0.8vw,0.5rem);color:rgba(255,255,255,0.8);margin-top:2%;margin-bottom:4%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.roleVal+'</div>'
         +'<div style="width:60%;height:1px;background:rgba(255,255,255,0.4);margin-bottom:4%;"></div>'
         +fieldRowsHTML(v.fieldItems,'rgba(255,255,255,0.7)','rgba(255,255,255,0.92)')
         +'</div>'
-        +qrSlotHTML('bottom:7%;left:50%;transform:translateX(-50%);')
         +'</div>';
 }
 
 function renderZigzag(v) {
-    // Build zig-zag path bottom of header ~40% height
     var W = 85.6, H = 54;
     var zzPath = 'M0,0 L'+W+',0 L'+W+','+(H*0.4);
     for (var i = 10; i >= 0; i--) {
@@ -1427,19 +1475,26 @@ function renderZigzag(v) {
     return '<div style="width:100%;height:100%;background:#f7f8fc;font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
         +'<svg style="position:absolute;top:0;left:0;width:100%;height:100%;" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">'
         +'<path d="'+zzPath+'" fill="'+v.pri+'"/>'
-        +'<path d="'+zzPath+'" fill="rgba(255,255,255,0.06)"/>'
         +'</svg>'
-        +'<div style="position:absolute;top:5%;left:5%;display:flex;align-items:center;gap:5%;z-index:2;">'
-        +'<div style="width:8%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.22);border:1px solid rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;">'
-        +'<i class="fas fa-infinity" style="color:rgba(255,255,255,0.9);font-size:0.4rem;"></i></div>'
-        +'<span style="font-size:clamp(0.36rem,0.82vw,0.52rem);color:rgba(255,255,255,0.92);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;z-index:2;">'+v.orgVal+'</span></div>'
-        +'<div style="position:absolute;left:50%;top:44%;transform:translateX(-50%);width:22%;aspect-ratio:1;'+v.photoShapeCSS+'border:3px solid #fff;background:'+v.pri+'22;overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 24px rgba(0,0,0,0.22);z-index:3;">'+v.photoHTML+'</div>'
-        +'<div style="position:absolute;top:62%;left:4%;right:4%;text-align:center;z-index:2;">'
-        +'<div style="font-size:clamp(0.62rem,1.55vw,0.9rem);font-weight:800;color:'+v.pri+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
-        +'<div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:#888;margin-top:1%;;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.roleVal+'</div>'
-        +'<div style="font-size:clamp(0.34rem,0.82vw,0.5rem);color:'+v.pri+';font-weight:700;margin-top:2%;letter-spacing:0.04em;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.orgVal+'</div></div>'
-        +'<div style="position:absolute;top:72%;left:5%;right:5%;display:grid;grid-template-columns:1fr 1fr;column-gap:3%;z-index:2;">'+fieldRowsHTML(v.fieldItems,v.pri,'#444')+'</div>'
-        +qrSlotHTML('bottom:3%;left:50%;transform:translateX(-50%);z-index:2;')
+        // School name centered in header
+        +'<div style="position:absolute;top:5%;left:0;right:0;text-align:center;z-index:2;padding:0 4%;">'
+        +'<div style="font-size:clamp(0.4rem,0.95vw,0.6rem);font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.orgVal+'</div>'
+        +'</div>'
+        // Three-column: photo left | name+fields center | QR right
+        +'<div style="position:absolute;top:38%;left:3%;right:3%;display:flex;align-items:flex-start;gap:2%;z-index:2;">'
+        // Photo left
+        +'<div style="width:22%;aspect-ratio:1;'+v.photoShapeCSS+'border:2.5px solid '+v.pri+';background:'+v.pri+'22;overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,0,0,0.2);flex-shrink:0;">'+v.photoHTML+'</div>'
+        // Name + role + fields center
+        +'<div style="flex:1;min-width:0;overflow:hidden;">'
+        +'<div style="font-size:clamp(0.56rem,1.3vw,0.8rem);font-weight:800;color:'+v.pri+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
+        +'<div style="font-size:clamp(0.32rem,0.76vw,0.48rem);color:#666;margin-top:1%;margin-bottom:2%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.roleVal+'</div>'
+        +fieldRowsHTML(v.fieldItems,v.pri,'#444')
+        +'</div>'
+        // QR right
+        +'<div style="flex-shrink:0;display:flex;align-items:flex-start;">'
+        +qrSlotHTML('position:relative;')
+        +'</div>'
+        +'</div>'
         +'</div>';
 }
 
@@ -1449,17 +1504,20 @@ function renderRibbon(v) {
         +'<polygon points="0,15 85.6,8 85.6,27 0,34" fill="'+v.pri+'" opacity="0.92"/>'
         +'<polygon points="0,18 85.6,11 85.6,31 0,38" fill="'+v.acc+'" opacity="0.55"/>'
         +'</svg>'
-        +'<div style="position:absolute;top:5%;left:5%;display:flex;align-items:center;gap:5%;z-index:2;">'
-        +'<div style="width:8%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.25);display:flex;align-items:center;justify-content:center;">'
-        +'<i class="fas fa-infinity" style="color:rgba(255,255,255,0.7);font-size:0.4rem;"></i></div>'
-        +'<span style="font-size:clamp(0.36rem,0.82vw,0.52rem);color:rgba(255,255,255,0.7);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">'+v.orgVal+'</span></div>'
-        +'<div style="position:absolute;left:5%;top:50%;transform:translateY(-50%);width:22%;aspect-ratio:1;'+v.photoShapeCSS+'border:2.5px solid rgba(255,255,255,0.8);background:rgba(255,255,255,0.1);overflow:hidden;display:flex;align-items:center;justify-content:center;z-index:3;">'+v.photoHTML+'</div>'
-        +'<div style="position:absolute;left:33%;top:14%;max-width:60%;z-index:2;">'
+        // School name at top left
+        +'<div style="position:absolute;top:4%;left:5%;right:32%;z-index:2;">'
+        +'<div style="font-size:clamp(0.38rem,0.9vw,0.56rem);font-weight:700;color:rgba(255,255,255,0.88);letter-spacing:0.05em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.orgVal+'</div>'
+        +'</div>'
+        // Photo on RIGHT side
+        +'<div style="position:absolute;right:5%;top:50%;transform:translateY(-50%);width:22%;aspect-ratio:1;'+v.photoShapeCSS+'border:2.5px solid rgba(255,255,255,0.8);background:rgba(255,255,255,0.1);overflow:hidden;display:flex;align-items:center;justify-content:center;z-index:3;">'+v.photoHTML+'</div>'
+        // Name + role on left
+        +'<div style="position:absolute;left:5%;top:14%;right:30%;z-index:2;overflow:hidden;">'
         +'<div style="font-size:clamp(0.62rem,1.55vw,0.9rem);font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
-        +'<div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:rgba(255,255,255,0.75);margin-top:2%;;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.roleVal+'</div>'
-        +'<div style="font-size:clamp(0.34rem,0.82vw,0.5rem);color:'+v.pri+';font-weight:700;margin-top:2%;letter-spacing:0.04em;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.orgVal+'</div></div>'
-        +'<div style="position:absolute;bottom:8%;left:5%;max-width:52%;z-index:2;">'+fieldRowsHTML(v.fieldItems,'rgba(255,255,255,0.5)','rgba(255,255,255,0.88)')+'</div>'
-        +qrSlotHTML('bottom:4%;right:5%;z-index:2;')
+        +'<div style="font-size:clamp(0.34rem,0.8vw,0.5rem);color:rgba(255,255,255,0.75);margin-top:2%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.roleVal+'</div>'
+        +'</div>'
+        // Fields bottom left
+        +'<div style="position:absolute;bottom:8%;left:5%;right:30%;z-index:2;overflow:hidden;">'+fieldRowsHTML(v.fieldItems,'rgba(255,255,255,0.5)','rgba(255,255,255,0.88)')+'</div>'
+        +qrSlotHTML('bottom:4%;right:30%;z-index:2;')
         +'</div>';
 }
 
