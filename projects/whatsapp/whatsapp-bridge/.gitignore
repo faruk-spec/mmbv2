@@ -1,8 +1,0 @@
-node_modules/
-
-# Baileys auth credentials (contain private session keys — never commit)
-.baileys_auth/
-
-# Legacy whatsapp-web.js auth directories (kept here in case of rollback)
-.wwebjs_auth/
-.wwebjs_cache/

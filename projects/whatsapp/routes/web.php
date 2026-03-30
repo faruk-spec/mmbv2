@@ -31,7 +31,6 @@ $router->post('/projects/whatsapp/sessions/disconnect', 'Projects\WhatsApp\Contr
 $router->post('/projects/whatsapp/sessions/delete', 'Projects\WhatsApp\Controllers\SessionController@delete');
 $router->get('/projects/whatsapp/sessions/qr', 'Projects\WhatsApp\Controllers\SessionController@getQRCode');
 $router->get('/projects/whatsapp/sessions/status', 'Projects\WhatsApp\Controllers\SessionController@status');
-$router->get('/projects/whatsapp/sessions/bridge-status', 'Projects\WhatsApp\Controllers\SessionController@bridgeStatus');
 
 // Message routes
 $router->get('/projects/whatsapp/messages', 'Projects\WhatsApp\Controllers\MessageController@index');
