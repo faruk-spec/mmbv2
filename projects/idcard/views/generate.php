@@ -543,7 +543,8 @@ var FIELD_SHORT = {
     host_name:'HOST', purpose:'PURPOSE', visit_date:'DATE',
     dob:'D.O.B', expiry_date:'EXPIRE', valid_from:'VALID FROM', valid_till:'VALID TILL',
     nationality:'NATION', branch:'BRANCH', shift:'SHIFT', session:'SESSION',
-    reg_number:'REG NO', zone:'ZONE', rank:'RANK', gender:'GENDER', joining_date:'JOINED'
+    reg_number:'REG NO', zone:'ZONE', rank:'RANK', gender:'GENDER', joining_date:'JOINED',
+    person_address:'ADDRESS', company_address:'ADDRESS', school_address:'ADDRESS'
 };
 
 // =============================================================================
@@ -573,7 +574,7 @@ function getCardValues() {
         if (el && el.value) { roleVal = el.value; break; }
     }
 
-    var skipKeys = ['name','company_name','school_name'].concat(roleKeys);
+    var skipKeys = ['name','company_name','school_name','company_address','school_address'].concat(roleKeys);
     var fieldKeys = (tpl.fields || []).filter(function(f){ return f !== 'photo' && skipKeys.indexOf(f) === -1; });
     var isPortrait = isPortraitStyle(currentStyle);
     var fieldItems = fieldKeys.slice(0, isPortrait ? 5 : 6).map(function(f) {
@@ -1424,7 +1425,7 @@ function renderMetro(v) {
         +'<div style="width:22%;aspect-ratio:1;border-radius:0;background:rgba(255,255,255,0.22);border:1.5px solid rgba(255,255,255,0.5);display:flex;align-items:center;justify-content:center;">'
         +'<i class="fas fa-infinity" style="color:white;font-size:0.4rem;"></i></div>'
         +'</div>'
-        +'<div style="width:55%;aspect-ratio:1;'+v.photoShapeCSS.replace('border-radius:50%;','border-radius:4px;').replace('border-radius:50% / 40%;','border-radius:8px 20px;')+'border:3px solid rgba(255,255,255,0.8);background:rgba(255,255,255,0.15);overflow:hidden;display:flex;align-items:center;justify-content:center;margin-top:4%;">'+v.photoHTML+'</div>'
+        +'<div style="width:55%;aspect-ratio:1;'+v.photoShapeCSS+'border:3px solid rgba(255,255,255,0.8);background:rgba(255,255,255,0.15);overflow:hidden;display:flex;align-items:center;justify-content:center;margin-top:4%;">'+v.photoHTML+'</div>'
         +'<div style="margin-top:auto;padding-bottom:6%;display:flex;align-items:center;justify-content:center;width:100%;">'
         +qrSlotHTML('position:relative;')
         +'</div>'
