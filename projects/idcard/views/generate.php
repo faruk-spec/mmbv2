@@ -81,19 +81,16 @@ $csrfToken = \Core\Security::generateCsrfToken();
     </div>
     <select id="categorySelect" class="form-input" style="padding:9px 12px;font-size:0.88rem;cursor:pointer;" onchange="selectTemplate(this.value)">
         <option value="corporate" <?= $selectedTpl === 'corporate' ? 'selected' : '' ?>>Corporate</option>
-        <option value="student" <?= $selectedTpl === 'student' ? 'selected' : '' ?>>Student</option>
+        <option value="student" <?= $selectedTpl === 'student' ? 'selected' : '' ?>>Student / School</option>
         <option value="event" <?= $selectedTpl === 'event' ? 'selected' : '' ?>>Event</option>
         <option value="visitor" <?= $selectedTpl === 'visitor' ? 'selected' : '' ?>>Visitor</option>
         <option value="medical" <?= $selectedTpl === 'medical' ? 'selected' : '' ?>>Medical Staff</option>
-        <option value="minimal" <?= $selectedTpl === 'minimal' ? 'selected' : '' ?>>Minimal Dark</option>
         <option value="tech" <?= $selectedTpl === 'tech' ? 'selected' : '' ?>>Tech Company</option>
         <option value="bank" <?= $selectedTpl === 'bank' ? 'selected' : '' ?>>Banking / Finance</option>
         <option value="media" <?= $selectedTpl === 'media' ? 'selected' : '' ?>>Press / Media</option>
         <option value="govt" <?= $selectedTpl === 'govt' ? 'selected' : '' ?>>Government</option>
         <option value="security" <?= $selectedTpl === 'security' ? 'selected' : '' ?>>Security</option>
-        <option value="school_v" <?= $selectedTpl === 'school_v' ? 'selected' : '' ?>>School</option>
         <option value="hospital_v" <?= $selectedTpl === 'hospital_v' ? 'selected' : '' ?>>Hospital</option>
-        <option value="police_v" <?= $selectedTpl === 'police_v' ? 'selected' : '' ?>>Police / Law</option>
         <option value="ngo_v" <?= $selectedTpl === 'ngo_v' ? 'selected' : '' ?>>NGO / Non-Profit</option>
         <option value="library_v" <?= $selectedTpl === 'library_v' ? 'selected' : '' ?>>Library Card</option>
         <option value="gym_v" <?= $selectedTpl === 'gym_v' ? 'selected' : '' ?>>Gym / Fitness</option>
@@ -492,7 +489,7 @@ function getCardValues() {
         if (el && el.value) { roleVal = el.value; break; }
     }
 
-    var skipKeys = ['name','company_name','school_name','company_address','school_address'].concat(roleKeys);
+    var skipKeys = ['name','company_name','school_name'].concat(roleKeys);
     var fieldKeys = (tpl.fields || []).filter(function(f){ return f !== 'photo' && skipKeys.indexOf(f) === -1; });
     var isPortrait = isPortraitStyle(currentStyle);
     var fieldItems = fieldKeys.slice(0, isPortrait ? 5 : 6).map(function(f) {
@@ -1013,7 +1010,7 @@ function renderClassic(v) {
         +'<div style="position:absolute;left:50%;top:32%;transform:translateX(-50%);width:22%;aspect-ratio:1;border-radius:50%;border:3px solid #fff;background:'+v.pri+'22;overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 24px rgba(0,0,0,0.22);">'+v.photoHTML+'</div>'
         +'<div style="position:absolute;top:58%;left:0;right:0;text-align:center;padding:0 4%;">'
         +'<div style="font-size:clamp(0.62rem,1.55vw,0.9rem);font-weight:800;color:'+v.pri+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
-        +'<div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:#888;margin-top:1%;">'+v.roleVal+'</div></div>'
+        +'<div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:#888;margin-top:1%;;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.roleVal+'</div></div>'
         +'<div style="position:absolute;top:70%;left:5%;right:5%;display:grid;grid-template-columns:1fr 1fr;column-gap:3%;">'+fieldRowsHTML(v.fieldItems,v.pri,'#444')+'</div>'
         +qrSlotHTML('bottom:3%;left:50%;transform:translateX(-50%);width:auto;')
         +'</div>';
@@ -1029,7 +1026,7 @@ function renderSidebar(v) {
         +'<span style="font-size:clamp(0.34rem,0.78vw,0.5rem);color:rgba(255,255,255,0.8);font-weight:700;letter-spacing:0.07em;text-transform:uppercase;">'+v.orgVal+'</span></div>'
         +'<div style="position:absolute;bottom:36%;left:5%;">'
         +'<div style="font-size:clamp(0.7rem,1.7vw,1rem);font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:55%;">'+v.nameVal+'</div>'
-        +'<div style="font-size:clamp(0.38rem,0.85vw,0.54rem);color:'+v.acc+';margin-top:1.5%;">'+v.roleVal+'</div></div>'
+        +'<div style="font-size:clamp(0.38rem,0.85vw,0.54rem);color:'+v.acc+';margin-top:1.5%;;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.roleVal+'</div></div>'
         +'<div style="position:absolute;bottom:4%;left:5%;right:50%;">'+fieldRowsHTML(v.fieldItems,'rgba(255,255,255,0.55)','rgba(255,255,255,0.88)')+'</div>'
         +qrSlotHTML('bottom:4%;right:4%;')
         +'</div>';
@@ -1040,7 +1037,7 @@ function renderWave(v) {
         +'<div style="position:absolute;left:24%;top:18%;transform:translateX(-50%);width:24%;aspect-ratio:1;border-radius:50%;border:3px solid rgba(255,255,255,0.8);background:rgba(255,255,255,0.18);overflow:hidden;display:flex;align-items:center;justify-content:center;">'+v.photoHTML+'</div>'
         +'<div style="position:absolute;bottom:12%;left:5%;max-width:40%;">'
         +'<div style="font-size:clamp(0.6rem,1.4vw,0.82rem);font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
-        +'<div style="font-size:clamp(0.35rem,0.78vw,0.5rem);color:rgba(255,255,255,0.75);margin-top:1.5%;">'+v.roleVal+'</div></div>'
+        +'<div style="font-size:clamp(0.35rem,0.78vw,0.5rem);color:rgba(255,255,255,0.75);margin-top:1.5%;;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.roleVal+'</div></div>'
         +'<div style="position:absolute;bottom:3%;left:5%;width:36%;">'+bc+'</div>'
         +'<div style="position:absolute;top:5%;right:5%;display:flex;align-items:center;gap:5%;">'
         +'<div style="width:7%;aspect-ratio:1;border-radius:50%;background:'+v.pri+'22;border:1px solid '+v.pri+'44;display:flex;align-items:center;justify-content:center;">'
@@ -1062,7 +1059,7 @@ function renderBoldHeader(v) {
         +'<div style="flex:1;background:#ffffff;display:flex;flex-direction:column;justify-content:center;padding:6% 7%;min-width:0;position:relative;">'
         +'<div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,'+v.pri+','+v.acc+');"></div>'
         +'<div style="font-size:clamp(0.62rem,1.52vw,0.88rem);font-weight:800;color:'+v.pri+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
-        +'<div style="font-size:clamp(0.36rem,0.82vw,0.52rem);color:#888;margin-top:1.5%;margin-bottom:4%;">'+v.roleVal+'</div>'
+        +'<div style="font-size:clamp(0.36rem,0.82vw,0.52rem);color:#888;margin-top:1.5%;margin-bottom:4%;;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.roleVal+'</div>'
         +'<div style="width:60%;height:2px;background:linear-gradient(90deg,'+v.acc+',transparent);border-radius:2px;margin-bottom:5%;"></div>'
         +fieldRowsHTML(v.fieldItems,v.pri,'#555')
         +'</div></div>';
@@ -1081,7 +1078,7 @@ function renderDiagonal(v) {
         +'<span style="font-size:clamp(0.34rem,0.76vw,0.48rem);color:rgba(255,255,255,0.65);font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">'+v.orgVal+'</span></div>'
         +'<div style="position:absolute;left:32%;top:20%;max-width:30%;">'
         +'<div style="font-size:clamp(0.58rem,1.38vw,0.82rem);font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
-        +'<div style="font-size:clamp(0.34rem,0.76vw,0.5rem);color:'+v.acc+';margin-top:2%;">'+v.roleVal+'</div></div>'
+        +'<div style="font-size:clamp(0.34rem,0.76vw,0.5rem);color:'+v.acc+';margin-top:2%;;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.roleVal+'</div></div>'
         +'<div style="position:absolute;bottom:6%;left:5%;max-width:50%;">'+fieldRowsHTML(v.fieldItems,'rgba(255,255,255,0.55)','rgba(255,255,255,0.9)')+'</div>'
         +qrSlotHTML('bottom:4%;right:5%;')
         +'</div>';
@@ -1107,7 +1104,8 @@ function renderVSharp(v) {
         // Name + role
         +'<div style="position:absolute;top:62%;left:4%;right:4%;text-align:center;">'
         +'<div style="font-size:clamp(0.8rem,2vw,1.05rem);font-weight:800;color:'+v.pri+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
-        +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#777;margin-top:1%;">'+v.roleVal+'</div></div>'
+        +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#777;margin-top:1%;;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.roleVal+'</div>'
+        +'<div style="font-size:clamp(0.34rem,0.82vw,0.5rem);color:'+v.pri+';font-weight:700;margin-top:2%;letter-spacing:0.04em;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.orgVal+'</div></div>'
         // Accent divider
         +'<div style="position:absolute;top:71%;left:10%;right:10%;height:1.5px;background:linear-gradient(90deg,transparent,'+v.acc+',transparent);opacity:0.5;"></div>'
         // Fields
@@ -1130,7 +1128,8 @@ function renderVCurve(v) {
         +'<div style="position:absolute;left:50%;top:30%;transform:translateX(-50%);width:28%;aspect-ratio:1;border-radius:50%;border:3px solid rgba(255,255,255,0.9);background:rgba(255,255,255,0.2);overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 28px rgba(0,0,0,0.3);z-index:3;">'+v.photoHTML+'</div>'
         +'<div style="position:absolute;top:62%;left:4%;right:4%;text-align:center;">'
         +'<div style="font-size:clamp(0.8rem,2vw,1.05rem);font-weight:800;color:'+v.pri+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
-        +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#888;margin-top:1%;">'+v.roleVal+'</div></div>'
+        +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#888;margin-top:1%;;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.roleVal+'</div>'
+        +'<div style="font-size:clamp(0.34rem,0.82vw,0.5rem);color:'+v.pri+';font-weight:700;margin-top:2%;letter-spacing:0.04em;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.orgVal+'</div></div>'
         +'<div style="position:absolute;top:70%;left:10%;right:10%;height:1px;background:'+v.pri+';opacity:0.2;"></div>'
         +'<div style="position:absolute;top:72%;left:6%;right:6%;">'+fieldRowsHTML(v.fieldItems,v.pri,'#444','clamp(0.38rem,0.9vw,0.54rem)')+'</div>'
         +qrSlotHTML('bottom:2%;right:3%;')
@@ -1154,7 +1153,8 @@ function renderVHex(v) {
         // Name + role
         +'<div style="position:absolute;top:58%;left:4%;right:4%;text-align:center;">'
         +'<div style="font-size:clamp(0.8rem,2vw,1.05rem);font-weight:800;color:'+v.pri+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
-        +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#888;margin-top:1%;">'+v.roleVal+'</div></div>'
+        +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#888;margin-top:1%;;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.roleVal+'</div>'
+        +'<div style="font-size:clamp(0.34rem,0.82vw,0.5rem);color:'+v.pri+';font-weight:700;margin-top:2%;letter-spacing:0.04em;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.orgVal+'</div></div>'
         +'<div style="position:absolute;top:66%;left:8%;right:8%;height:1.5px;background:'+v.pri+';opacity:0.25;"></div>'
         +'<div style="position:absolute;top:68%;left:6%;right:6%;">'+fieldRowsHTML(v.fieldItems,v.pri,'#444','clamp(0.38rem,0.9vw,0.54rem)')+'</div>'
         +qrSlotHTML('bottom:2%;right:3%;')
@@ -1177,7 +1177,8 @@ function renderVCircle(v) {
         // Name + role
         +'<div style="position:absolute;top:60%;left:4%;right:4%;text-align:center;">'
         +'<div style="font-size:clamp(0.8rem,2vw,1.05rem);font-weight:800;color:'+v.pri+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
-        +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#777;margin-top:1%;">'+v.roleVal+'</div></div>'
+        +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#777;margin-top:1%;;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.roleVal+'</div>'
+        +'<div style="font-size:clamp(0.34rem,0.82vw,0.5rem);color:'+v.pri+';font-weight:700;margin-top:2%;letter-spacing:0.04em;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.orgVal+'</div></div>'
         +'<div style="position:absolute;top:68%;left:10%;right:10%;height:2px;background:linear-gradient(90deg,transparent,'+v.acc+',transparent);opacity:0.6;"></div>'
         +'<div style="position:absolute;top:70%;left:6%;right:6%;">'+fieldRowsHTML(v.fieldItems,v.pri,'#444','clamp(0.38rem,0.9vw,0.54rem)')+'</div>'
         +qrSlotHTML('bottom:2%;right:3%;')
@@ -1199,7 +1200,8 @@ function renderVSplit(v) {
         // Name + role
         +'<div style="position:absolute;top:46%;left:4%;right:4%;">'
         +'<div style="font-size:clamp(0.82rem,2vw,1.08rem);font-weight:800;color:'+v.pri+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
-        +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#888;margin-top:1%;">'+v.roleVal+'</div></div>'
+        +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#888;margin-top:1%;;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.roleVal+'</div>'
+        +'<div style="font-size:clamp(0.34rem,0.82vw,0.5rem);color:'+v.pri+';font-weight:700;margin-top:2%;letter-spacing:0.04em;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.orgVal+'</div></div>'
         +'<div style="position:absolute;top:56%;left:4%;right:4%;height:2px;background:linear-gradient(90deg,'+v.acc+',transparent);"></div>'
         +'<div style="position:absolute;top:58%;left:4%;right:4%;">'+fieldRowsHTML(v.fieldItems,v.pri,'#444','clamp(0.38rem,0.9vw,0.54rem)')+'</div>'
         +qrSlotHTML('bottom:7%;left:4%;')
@@ -1221,7 +1223,7 @@ function renderGradientPro(v) {
         +'<div style="width:26%;aspect-ratio:1;border-radius:50%;border:3px solid rgba(255,255,255,0.8);background:rgba(255,255,255,0.15);overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 24px rgba(0,0,0,0.3);flex-shrink:0;">'+v.photoHTML+'</div>'
         +'<div style="flex:1;min-width:0;">'
         +'<div style="font-size:clamp(0.62rem,1.55vw,0.9rem);font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
-        +'<div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:rgba(255,255,255,0.75);margin-top:1.5%;margin-bottom:4%;">'+v.roleVal+'</div>'
+        +'<div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:rgba(255,255,255,0.75);margin-top:1.5%;margin-bottom:4%;;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.roleVal+'</div>'
         +'<div style="width:80%;height:1.5px;background:rgba(255,255,255,0.35);border-radius:2px;margin-bottom:4%;"></div>'
         +fieldRowsHTML(v.fieldItems,'rgba(255,255,255,0.65)','rgba(255,255,255,0.9)')
         +'</div></div>'
@@ -1240,7 +1242,8 @@ function renderNeon(v) {
         +'<div style="position:absolute;left:5%;top:50%;transform:translateY(-50%);width:22%;aspect-ratio:1;border-radius:50%;border:2.5px solid '+v.acc+';background:rgba(255,255,255,0.04);overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 0 16px '+v.acc+'60;">'+v.photoHTML+'</div>'
         +'<div style="position:absolute;left:34%;top:20%;max-width:60%;">'
         +'<div style="font-size:clamp(0.62rem,1.55vw,0.9rem);font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 0 12px rgba(255,255,255,0.3);">'+v.nameVal+'</div>'
-        +'<div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:'+v.acc+';margin-top:2%;text-shadow:0 0 8px '+v.acc+'60;">'+v.roleVal+'</div></div>'
+        +'<div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:'+v.acc+';margin-top:2%;text-shadow:0 0 8px '+v.acc+'60;;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.roleVal+'</div>'
+        +'<div style="font-size:clamp(0.34rem,0.82vw,0.5rem);color:'+v.pri+';font-weight:700;margin-top:2%;letter-spacing:0.04em;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.orgVal+'</div></div>'
         +'<div style="position:absolute;bottom:10%;left:34%;max-width:58%;">'+fieldRowsHTML(v.fieldItems,'rgba(255,255,255,0.45)','rgba(255,255,255,0.85)')+'</div>'
         +qrSlotHTML('bottom:4%;left:50%;transform:translateX(-50%);')
         +'</div>';
@@ -1259,7 +1262,7 @@ function renderExecutive(v) {
         +'<div style="position:absolute;left:5%;top:50%;transform:translateY(-50%);width:22%;aspect-ratio:1;border-radius:50%;border:2.5px solid '+gold+';background:rgba(201,168,76,0.1);overflow:hidden;display:flex;align-items:center;justify-content:center;">'+v.photoHTML+'</div>'
         +'<div style="position:absolute;left:34%;top:20%;max-width:60%;">'
         +'<div style="font-size:clamp(0.62rem,1.55vw,0.9rem);font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
-        +'<div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:'+gold+';margin-top:2%;">'+v.roleVal+'</div>'
+        +'<div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:'+gold+';margin-top:2%;;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.roleVal+'</div>'
         +'<div style="width:60%;height:1.5px;background:linear-gradient(90deg,'+gold+',transparent);margin-top:4%;margin-bottom:4%;"></div>'
         +fieldRowsHTML(v.fieldItems,'rgba(255,255,255,0.45)','rgba(255,255,255,0.88)')
         +'</div>'
@@ -1278,7 +1281,7 @@ function renderStripe(v) {
         +'<div style="position:absolute;left:5%;top:50%;transform:translateY(-50%);width:22%;aspect-ratio:1;border-radius:50%;border:2.5px solid '+v.pri+';background:#fff;overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,0,0,0.15);">'+v.photoHTML+'</div>'
         +'<div style="position:absolute;right:5%;top:20%;max-width:52%;">'
         +'<div style="font-size:clamp(0.62rem,1.55vw,0.9rem);font-weight:800;color:'+v.pri+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
-        +'<div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:#888;margin-top:2%;">'+v.roleVal+'</div>'
+        +'<div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:#888;margin-top:2%;;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.roleVal+'</div>'
         +'<div style="width:60%;height:2px;background:linear-gradient(90deg,'+v.acc+',transparent);border-radius:2px;margin:4% 0;"></div>'
         +fieldRowsHTML(v.fieldItems,v.pri,'#555')
         +'</div>'
@@ -1298,7 +1301,7 @@ function renderMetro(v) {
         +qrSlotHTML('bottom:4%;right:4%;')+'</div>'
         +'<div style="flex:1;background:#ffffff;display:flex;flex-direction:column;justify-content:center;padding:6% 7%;min-width:0;position:relative;border-top:4px solid '+v.pri+';border-bottom:4px solid '+v.acc+';">'
         +'<div style="font-size:clamp(0.62rem,1.52vw,0.88rem);font-weight:800;color:'+v.pri+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
-        +'<div style="font-size:clamp(0.36rem,0.82vw,0.52rem);color:#888;margin-top:1.5%;margin-bottom:4%;">'+v.roleVal+'</div>'
+        +'<div style="font-size:clamp(0.36rem,0.82vw,0.52rem);color:#888;margin-top:1.5%;margin-bottom:4%;;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.roleVal+'</div>'
         +'<div style="width:50%;height:3px;background:'+v.acc+';border-radius:0;margin-bottom:5%;"></div>'
         +fieldRowsHTML(v.fieldItems,v.pri,'#555')
         +'</div></div>';
@@ -1317,7 +1320,7 @@ function renderGlass(v) {
         +'<div style="position:absolute;left:12%;top:50%;transform:translateY(-50%);width:22%;aspect-ratio:1;border-radius:50%;border:2.5px solid rgba(255,255,255,0.8);background:rgba(255,255,255,0.2);overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 28px rgba(0,0,0,0.2);z-index:3;">'+v.photoHTML+'</div>'
         +'<div style="position:absolute;left:40%;top:18%;max-width:54%;z-index:2;">'
         +'<div style="font-size:clamp(0.62rem,1.55vw,0.9rem);font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 2px 8px rgba(0,0,0,0.2);">'+v.nameVal+'</div>'
-        +'<div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:rgba(255,255,255,0.8);margin-top:2%;margin-bottom:4%;">'+v.roleVal+'</div>'
+        +'<div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:rgba(255,255,255,0.8);margin-top:2%;margin-bottom:4%;;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.roleVal+'</div>'
         +'<div style="width:60%;height:1px;background:rgba(255,255,255,0.4);margin-bottom:4%;"></div>'
         +fieldRowsHTML(v.fieldItems,'rgba(255,255,255,0.7)','rgba(255,255,255,0.92)')
         +'</div>'
@@ -1347,7 +1350,8 @@ function renderZigzag(v) {
         +'<div style="position:absolute;left:50%;top:44%;transform:translateX(-50%);width:22%;aspect-ratio:1;border-radius:50%;border:3px solid #fff;background:'+v.pri+'22;overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 24px rgba(0,0,0,0.22);z-index:3;">'+v.photoHTML+'</div>'
         +'<div style="position:absolute;top:62%;left:4%;right:4%;text-align:center;z-index:2;">'
         +'<div style="font-size:clamp(0.62rem,1.55vw,0.9rem);font-weight:800;color:'+v.pri+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
-        +'<div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:#888;margin-top:1%;">'+v.roleVal+'</div></div>'
+        +'<div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:#888;margin-top:1%;;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.roleVal+'</div>'
+        +'<div style="font-size:clamp(0.34rem,0.82vw,0.5rem);color:'+v.pri+';font-weight:700;margin-top:2%;letter-spacing:0.04em;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.orgVal+'</div></div>'
         +'<div style="position:absolute;top:72%;left:5%;right:5%;display:grid;grid-template-columns:1fr 1fr;column-gap:3%;z-index:2;">'+fieldRowsHTML(v.fieldItems,v.pri,'#444')+'</div>'
         +qrSlotHTML('bottom:3%;left:50%;transform:translateX(-50%);z-index:2;')
         +'</div>';
@@ -1366,7 +1370,8 @@ function renderRibbon(v) {
         +'<div style="position:absolute;left:5%;top:50%;transform:translateY(-50%);width:22%;aspect-ratio:1;border-radius:50%;border:2.5px solid rgba(255,255,255,0.8);background:rgba(255,255,255,0.1);overflow:hidden;display:flex;align-items:center;justify-content:center;z-index:3;">'+v.photoHTML+'</div>'
         +'<div style="position:absolute;left:33%;top:14%;max-width:60%;z-index:2;">'
         +'<div style="font-size:clamp(0.62rem,1.55vw,0.9rem);font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
-        +'<div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:rgba(255,255,255,0.75);margin-top:2%;">'+v.roleVal+'</div></div>'
+        +'<div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:rgba(255,255,255,0.75);margin-top:2%;;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.roleVal+'</div>'
+        +'<div style="font-size:clamp(0.34rem,0.82vw,0.5rem);color:'+v.pri+';font-weight:700;margin-top:2%;letter-spacing:0.04em;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.orgVal+'</div></div>'
         +'<div style="position:absolute;bottom:8%;left:5%;max-width:52%;z-index:2;">'+fieldRowsHTML(v.fieldItems,'rgba(255,255,255,0.5)','rgba(255,255,255,0.88)')+'</div>'
         +qrSlotHTML('bottom:4%;right:5%;z-index:2;')
         +'</div>';
@@ -1392,7 +1397,8 @@ function renderVRibbon(v) {
         // Name + role
         +'<div style="position:absolute;top:42%;left:4%;right:4%;text-align:center;">'
         +'<div style="font-size:clamp(0.8rem,2vw,1.05rem);font-weight:800;color:'+v.pri+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
-        +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#777;margin-top:1%;">'+v.roleVal+'</div></div>'
+        +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#777;margin-top:1%;;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.roleVal+'</div>'
+        +'<div style="font-size:clamp(0.34rem,0.82vw,0.5rem);color:'+v.pri+';font-weight:700;margin-top:2%;letter-spacing:0.04em;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.orgVal+'</div></div>'
         +'<div style="position:absolute;top:51%;left:10%;right:10%;height:1.5px;background:linear-gradient(90deg,transparent,'+v.acc+',transparent);opacity:0.6;"></div>'
         +'<div style="position:absolute;top:53%;left:6%;right:6%;">'+fieldRowsHTML(v.fieldItems,v.pri,'#444','clamp(0.38rem,0.9vw,0.54rem)')+'</div>'
         +qrSlotHTML('bottom:2%;right:3%;')
@@ -1416,7 +1422,8 @@ function renderVArch(v) {
         // Name + role below arch
         +'<div style="position:absolute;top:64%;left:4%;right:4%;text-align:center;">'
         +'<div style="font-size:clamp(0.8rem,2vw,1.05rem);font-weight:800;color:'+v.pri+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
-        +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#888;margin-top:1%;">'+v.roleVal+'</div></div>'
+        +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#888;margin-top:1%;;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.roleVal+'</div>'
+        +'<div style="font-size:clamp(0.34rem,0.82vw,0.5rem);color:'+v.pri+';font-weight:700;margin-top:2%;letter-spacing:0.04em;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.orgVal+'</div></div>'
         +'<div style="position:absolute;top:72%;left:10%;right:10%;height:1px;background:'+v.pri+';opacity:0.2;"></div>'
         +'<div style="position:absolute;top:74%;left:6%;right:6%;">'+fieldRowsHTML(v.fieldItems,v.pri,'#444','clamp(0.38rem,0.9vw,0.54rem)')+'</div>'
         +qrSlotHTML('bottom:2%;right:3%;')
@@ -1445,7 +1452,8 @@ function renderVDiamond(v) {
         // Name + role
         +'<div style="position:absolute;top:60%;left:4%;right:4%;text-align:center;">'
         +'<div style="font-size:clamp(0.8rem,2vw,1.05rem);font-weight:800;color:'+v.pri+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
-        +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#888;margin-top:1%;">'+v.roleVal+'</div></div>'
+        +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#888;margin-top:1%;;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.roleVal+'</div>'
+        +'<div style="font-size:clamp(0.34rem,0.82vw,0.5rem);color:'+v.pri+';font-weight:700;margin-top:2%;letter-spacing:0.04em;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.orgVal+'</div></div>'
         +'<div style="position:absolute;top:68%;left:8%;right:8%;height:1.5px;background:'+v.pri+';opacity:0.25;"></div>'
         +'<div style="position:absolute;top:70%;left:6%;right:6%;">'+fieldRowsHTML(v.fieldItems,v.pri,'#444','clamp(0.38rem,0.9vw,0.54rem)')+'</div>'
         +qrSlotHTML('bottom:2%;right:3%;')
@@ -1473,7 +1481,8 @@ function renderVCorner(v) {
         // Name + role
         +'<div style="position:absolute;top:53%;left:4%;right:4%;text-align:center;">'
         +'<div style="font-size:clamp(0.8rem,2vw,1.05rem);font-weight:800;color:'+v.pri+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
-        +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#888;margin-top:1%;">'+v.roleVal+'</div></div>'
+        +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#888;margin-top:1%;;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.roleVal+'</div>'
+        +'<div style="font-size:clamp(0.34rem,0.82vw,0.5rem);color:'+v.pri+';font-weight:700;margin-top:2%;letter-spacing:0.04em;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.orgVal+'</div></div>'
         +'<div style="position:absolute;top:61%;left:10%;right:10%;height:1.5px;background:linear-gradient(90deg,transparent,'+v.acc+',transparent);opacity:0.5;"></div>'
         +'<div style="position:absolute;top:63%;left:6%;right:6%;">'+fieldRowsHTML(v.fieldItems,v.pri,'#444','clamp(0.38rem,0.9vw,0.54rem)')+'</div>'
         +qrSlotHTML('bottom:2%;right:3%;')
@@ -1496,7 +1505,8 @@ function renderVDual(v) {
         // Name + role
         +'<div style="position:absolute;top:57%;left:4%;right:4%;text-align:center;">'
         +'<div style="font-size:clamp(0.8rem,2vw,1.05rem);font-weight:800;color:'+v.pri+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
-        +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#777;margin-top:1%;">'+v.roleVal+'</div></div>'
+        +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#777;margin-top:1%;;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.roleVal+'</div>'
+        +'<div style="font-size:clamp(0.34rem,0.82vw,0.5rem);color:'+v.pri+';font-weight:700;margin-top:2%;letter-spacing:0.04em;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.orgVal+'</div></div>'
         +'<div style="position:absolute;top:65%;left:10%;right:10%;height:1px;background:'+v.pri+';opacity:0.2;"></div>'
         +'<div style="position:absolute;top:67%;left:6%;right:6%;">'+fieldRowsHTML(v.fieldItems,v.pri,'#444','clamp(0.38rem,0.9vw,0.54rem)')+'</div>'
         // QR sits above bottom band
@@ -1518,7 +1528,8 @@ function renderVStripe(v) {
         // Name + role
         +'<div style="position:absolute;top:56%;left:4%;right:4%;text-align:center;">'
         +'<div style="font-size:clamp(0.8rem,2vw,1.05rem);font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 2px 8px rgba(0,0,0,0.2);">'+v.nameVal+'</div>'
-        +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:rgba(255,255,255,0.8);margin-top:1%;">'+v.roleVal+'</div></div>'
+        +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:rgba(255,255,255,0.8);margin-top:1%;;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.roleVal+'</div>'
+        +'<div style="font-size:clamp(0.34rem,0.82vw,0.5rem);color:'+v.pri+';font-weight:700;margin-top:2%;letter-spacing:0.04em;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.orgVal+'</div></div>'
         +'<div style="position:absolute;top:64%;left:10%;right:10%;height:1px;background:rgba(255,255,255,0.4);"></div>'
         +'<div style="position:absolute;top:66%;left:9%;right:9%;">'+fieldRowsHTML(v.fieldItems,'rgba(255,255,255,0.7)','rgba(255,255,255,0.92)','clamp(0.38rem,0.9vw,0.54rem)')+'</div>'
         +qrSlotHTML('bottom:7%;left:50%;transform:translateX(-50%);')
@@ -1543,7 +1554,8 @@ function renderVBadge(v) {
         // Name + role
         +'<div style="position:absolute;top:60%;left:4%;right:4%;text-align:center;">'
         +'<div style="font-size:clamp(0.8rem,2vw,1.05rem);font-weight:800;color:'+v.pri+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
-        +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#888;margin-top:1%;">'+v.roleVal+'</div></div>'
+        +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#888;margin-top:1%;;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.roleVal+'</div>'
+        +'<div style="font-size:clamp(0.34rem,0.82vw,0.5rem);color:'+v.pri+';font-weight:700;margin-top:2%;letter-spacing:0.04em;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v.orgVal+'</div></div>'
         +'<div style="position:absolute;top:68%;left:8%;right:8%;height:1.5px;background:'+v.pri+';opacity:0.25;"></div>'
         +'<div style="position:absolute;top:70%;left:6%;right:6%;">'+fieldRowsHTML(v.fieldItems,v.pri,'#444','clamp(0.38rem,0.9vw,0.54rem)')+'</div>'
         +qrSlotHTML('bottom:2%;right:3%;')
