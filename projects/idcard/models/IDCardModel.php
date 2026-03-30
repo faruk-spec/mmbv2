@@ -1,0 +1,313 @@
+<?php
+/**
+ * IDCard Model
+ *
+ * @package MMB\Projects\IDCard\Models
+ */
+
+namespace Projects\IDCard\Models;
+
+use Core\Database;
+use Core\Logger;
+
+class IDCardModel
+{
+    private Database $db;
+
+    public function __construct()
+    {
+        $this->db = Database::getInstance();
+        $this->ensureTables();
+    }
+
+    // ------------------------------------------------------------------ //
+    //  Schema bootstrap                                                    //
+    // ------------------------------------------------------------------ //
+
+    private function ensureTables(): void
+    {
+        try {
+            $this->db->query(
+                "CREATE TABLE IF NOT EXISTS `idcard_cards` (
+                    `id`             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `user_id`        INT UNSIGNED NOT NULL,
+                    `template_key`   VARCHAR(50)  NOT NULL DEFAULT 'corporate',
+                    `card_number`    VARCHAR(50)  NOT NULL,
+                    `card_data`      JSON         NOT NULL,
+                    `design`         JSON         NULL,
+                    `photo_path`     VARCHAR(500) NULL,
+                    `logo_path`      VARCHAR(500) NULL,
+                    `ai_prompt`      TEXT         NULL,
+                    `ai_suggestions` JSON         NULL,
+                    `status`         ENUM('draft','generated') DEFAULT 'generated',
+                    `created_at`     TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+                    `updated_at`     TIMESTAMP    NULL ON UPDATE CURRENT_TIMESTAMP,
+                    INDEX `idx_ic_user`     (`user_id`),
+                    INDEX `idx_ic_tpl`      (`template_key`),
+                    INDEX `idx_ic_created`  (`created_at`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+            );
+            $this->db->query(
+                "CREATE TABLE IF NOT EXISTS `idcard_settings` (
+                    `id`            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `setting_key`   VARCHAR(100) NOT NULL UNIQUE,
+                    `setting_value` TEXT         NULL,
+                    `created_at`    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+                    `updated_at`    TIMESTAMP    NULL ON UPDATE CURRENT_TIMESTAMP,
+                    INDEX `idx_ics_key` (`setting_key`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+            );
+        } catch (\Exception $e) {
+            Logger::error('IDCard ensureTables: ' . $e->getMessage());
+        }
+    }
+
+    // ------------------------------------------------------------------ //
+    //  Card CRUD                                                           //
+    // ------------------------------------------------------------------ //
+
+    /**
+     * Create a new ID card record and return its ID.
+     */
+    public function create(array $data): int
+    {
+        $this->db->query(
+            "INSERT INTO idcard_cards
+             (user_id, template_key, card_number, card_data, design, photo_path, logo_path, ai_prompt, ai_suggestions, status)
+             VALUES (?,?,?,?,?,?,?,?,?,?)",
+            [
+                $data['user_id'],
+                $data['template_key']   ?? 'corporate',
+                $data['card_number']    ?? $this->generateCardNumber(),
+                json_encode($data['card_data']      ?? []),
+                json_encode($data['design']         ?? []),
+                $data['photo_path']     ?? null,
+                $data['logo_path']      ?? null,
+                $data['ai_prompt']      ?? null,
+                json_encode($data['ai_suggestions'] ?? []),
+                $data['status']         ?? 'generated',
+            ]
+        );
+        return (int) $this->db->lastInsertId();
+    }
+
+    /**
+     * Find a single card by ID (and optionally restrict to a user).
+     */
+    public function findById(int $id, ?int $userId = null): ?array
+    {
+        $sql    = "SELECT * FROM idcard_cards WHERE id = ?";
+        $params = [$id];
+        if ($userId !== null) {
+            $sql    .= " AND user_id = ?";
+            $params[] = $userId;
+        }
+        $row = $this->db->fetch($sql, $params);
+        return $row ? $this->decode($row) : null;
+    }
+
+    /**
+     * Return paginated cards for a user (newest first).
+     */
+    public function getByUser(int $userId, int $limit = 20, int $offset = 0): array
+    {
+        $rows = $this->db->fetchAll(
+            "SELECT * FROM idcard_cards WHERE user_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?",
+            [$userId, $limit, $offset]
+        );
+        return array_map([$this, 'decode'], $rows ?: []);
+    }
+
+    /**
+     * Count total cards for a user.
+     */
+    public function countByUser(int $userId): int
+    {
+        $row = $this->db->fetch(
+            "SELECT COUNT(*) c FROM idcard_cards WHERE user_id = ?",
+            [$userId]
+        );
+        return (int) ($row['c'] ?? 0);
+    }
+
+    /**
+     * Delete a card (only if it belongs to the user).
+     */
+    public function delete(int $id, int $userId): bool
+    {
+        $card = $this->findById($id, $userId);
+        if (!$card) {
+            return false;
+        }
+        // Remove uploaded files if present
+        $this->removeFile($card['photo_path'] ?? '');
+        $this->removeFile($card['logo_path']  ?? '');
+
+        $this->db->query(
+            "DELETE FROM idcard_cards WHERE id = ? AND user_id = ?",
+            [$id, $userId]
+        );
+        return true;
+    }
+
+    // ------------------------------------------------------------------ //
+    //  Admin helpers                                                       //
+    // ------------------------------------------------------------------ //
+
+    public function countAll(): int
+    {
+        $row = $this->db->fetch("SELECT COUNT(*) c FROM idcard_cards");
+        return (int) ($row['c'] ?? 0);
+    }
+
+    public function countToday(): int
+    {
+        $row = $this->db->fetch(
+            "SELECT COUNT(*) c FROM idcard_cards WHERE DATE(created_at) = CURDATE()"
+        );
+        return (int) ($row['c'] ?? 0);
+    }
+
+    public function countThisMonth(): int
+    {
+        $row = $this->db->fetch(
+            "SELECT COUNT(*) c FROM idcard_cards
+             WHERE YEAR(created_at) = YEAR(CURDATE()) AND MONTH(created_at) = MONTH(CURDATE())"
+        );
+        return (int) ($row['c'] ?? 0);
+    }
+
+    public function countActiveUsers(): int
+    {
+        $row = $this->db->fetch(
+            "SELECT COUNT(DISTINCT user_id) c FROM idcard_cards
+             WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)"
+        );
+        return (int) ($row['c'] ?? 0);
+    }
+
+    public function getRecentAll(int $limit = 20): array
+    {
+        $rows = $this->db->fetchAll(
+            "SELECT c.*, u.name user_name, u.email user_email
+             FROM idcard_cards c
+             LEFT JOIN users u ON u.id = c.user_id
+             ORDER BY c.created_at DESC LIMIT ?",
+            [$limit]
+        );
+        return array_map([$this, 'decode'], $rows ?: []);
+    }
+
+    /**
+     * Paginated search for admin.
+     */
+    public function searchAdmin(array $filters, int $limit, int $offset): array
+    {
+        [$where, $params] = $this->buildAdminWhere($filters);
+        $rows = $this->db->fetchAll(
+            "SELECT c.*, u.name user_name, u.email user_email
+             FROM idcard_cards c
+             LEFT JOIN users u ON u.id = c.user_id
+             {$where}
+             ORDER BY c.created_at DESC LIMIT ? OFFSET ?",
+            array_merge($params, [$limit, $offset])
+        );
+        return array_map([$this, 'decode'], $rows ?: []);
+    }
+
+    public function countSearch(array $filters): int
+    {
+        [$where, $params] = $this->buildAdminWhere($filters);
+        $row = $this->db->fetch(
+            "SELECT COUNT(*) c FROM idcard_cards c
+             LEFT JOIN users u ON u.id = c.user_id {$where}",
+            $params
+        );
+        return (int) ($row['c'] ?? 0);
+    }
+
+    private function buildAdminWhere(array $f): array
+    {
+        $conditions = [];
+        $params     = [];
+
+        if (!empty($f['template'])) {
+            $conditions[] = "c.template_key = ?";
+            $params[]     = $f['template'];
+        }
+        if (!empty($f['search'])) {
+            $conditions[] = "(u.name LIKE ? OR u.email LIKE ? OR c.card_number LIKE ?)";
+            $like = '%' . $f['search'] . '%';
+            $params = array_merge($params, [$like, $like, $like]);
+        }
+        if (!empty($f['date_from'])) {
+            $conditions[] = "DATE(c.created_at) >= ?";
+            $params[]     = $f['date_from'];
+        }
+        if (!empty($f['date_to'])) {
+            $conditions[] = "DATE(c.created_at) <= ?";
+            $params[]     = $f['date_to'];
+        }
+
+        $where = $conditions ? ('WHERE ' . implode(' AND ', $conditions)) : '';
+        return [$where, $params];
+    }
+
+    // ------------------------------------------------------------------ //
+    //  Settings                                                            //
+    // ------------------------------------------------------------------ //
+
+    public function getSetting(string $key, mixed $default = null): mixed
+    {
+        try {
+            $row = $this->db->fetch(
+                "SELECT setting_value FROM idcard_settings WHERE setting_key = ?",
+                [$key]
+            );
+            if ($row && $row['setting_value'] !== null) {
+                $decoded = json_decode($row['setting_value'], true);
+                return ($decoded !== null) ? $decoded : $row['setting_value'];
+            }
+        } catch (\Exception $e) {
+            // table may not exist yet
+        }
+        return $default;
+    }
+
+    public function setSetting(string $key, mixed $value): void
+    {
+        $encoded = is_string($value) ? $value : json_encode($value);
+        $this->db->query(
+            "INSERT INTO idcard_settings (setting_key, setting_value)
+             VALUES (?, ?)
+             ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = NOW()",
+            [$key, $encoded]
+        );
+    }
+
+    // ------------------------------------------------------------------ //
+    //  Helpers                                                             //
+    // ------------------------------------------------------------------ //
+
+    private function decode(array $row): array
+    {
+        foreach (['card_data', 'design', 'ai_suggestions'] as $col) {
+            if (isset($row[$col]) && is_string($row[$col])) {
+                $row[$col] = json_decode($row[$col], true) ?: [];
+            }
+        }
+        return $row;
+    }
+
+    private function removeFile(string $path): void
+    {
+        if ($path && file_exists(BASE_PATH . '/' . ltrim($path, '/'))) {
+            @unlink(BASE_PATH . '/' . ltrim($path, '/'));
+        }
+    }
+
+    private function generateCardNumber(): string
+    {
+        return 'CX-' . strtoupper(bin2hex(random_bytes(4)));
+    }
+}

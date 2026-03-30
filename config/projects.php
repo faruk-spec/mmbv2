@@ -93,4 +93,13 @@ return [
         'database' => 'mmb_billx',
         'url' => '/projects/billx'
     ],
+    'idcard' => [
+        'name' => 'CardX',
+        'description' => 'AI-powered professional ID card generator with templates',
+        'icon' => 'id-card',
+        'color' => '#6366f1',
+        'enabled' => true,
+        'database' => 'mmb_idcard',
+        'url' => '/projects/idcard'
+    ],
 ];

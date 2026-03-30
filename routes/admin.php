@@ -336,3 +336,10 @@ $router->post('/admin/projects/resumex/designer/save', 'Admin\\ResumeXAdminContr
 $router->get('/admin/projects/resumex/resumes', 'Admin\\ResumeXAdminController@resumes', ['auth', 'admin']);
 $router->post('/admin/projects/resumex/templates/toggle-pro', 'Admin\\ResumeXAdminController@toggleTemplatePro', ['auth', 'admin']);
 $router->post('/admin/projects/resumex/templates/toggle-builtin-pro', 'Admin\\ResumeXAdminController@toggleBuiltinTemplatePro', ['auth', 'admin']);
+
+// ── CardX (ID Card Generator) Admin ─────────────────────────────────────────
+$router->get('/admin/projects/idcard', 'Admin\\IDCardAdminController@overview', ['auth', 'admin']);
+$router->get('/admin/projects/idcard/cards', 'Admin\\IDCardAdminController@cards', ['auth', 'admin']);
+$router->post('/admin/projects/idcard/cards/delete', 'Admin\\IDCardAdminController@deleteCard', ['auth', 'admin']);
+$router->get('/admin/projects/idcard/settings', 'Admin\\IDCardAdminController@settings', ['auth', 'admin']);
+$router->post('/admin/projects/idcard/settings', 'Admin\\IDCardAdminController@settings', ['auth', 'admin']);
