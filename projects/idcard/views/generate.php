@@ -1538,7 +1538,6 @@ function renderVDiamond(v) {
 
 function renderVCorner(v) {
     return '<div style="width:100%;height:100%;background:#ffffff;font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
-    return '<div style="width:100%;height:100%;background:#ffffff;font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
         // Large triangle top-left
         +'<svg style="position:absolute;top:0;left:0;width:100%;height:100%;" viewBox="0 0 54 85.6" xmlns="http://www.w3.org/2000/svg">'
         +'<polygon points="0,0 35,0 0,47" fill="'+v.pri+'"/>'
