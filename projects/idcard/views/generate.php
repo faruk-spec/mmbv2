@@ -123,18 +123,20 @@ $csrfToken = \Core\Security::generateCsrfToken();
                     </button>
                 </div>
                 <div id="dynamicFields">
+                    <div class="grid grid-2" style="gap:8px 12px;">
                     <?php foreach ($tplConfig['fields'] as $field): ?>
                         <?php if ($field === 'photo'): continue; endif; ?>
-                        <div class="form-group" style="margin-bottom:12px;">
-                            <label class="form-label" style="font-size:0.78rem;" for="field_<?= $field ?>">
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label class="form-label" style="font-size:0.72rem;" for="field_<?= $field ?>">
                                 <?= htmlspecialchars($field_labels[$field] ?? ucfirst(str_replace('_',' ',$field))) ?>
                             </label>
                             <input type="text" id="field_<?= $field ?>" name="<?= htmlspecialchars($field) ?>"
-                                   class="form-input" style="padding:8px 12px;font-size:0.85rem;"
-                                   placeholder="Enter <?= strtolower(htmlspecialchars($field_labels[$field] ?? $field)) ?>"
+                                   class="form-input" style="padding:6px 10px;font-size:0.82rem;"
+                                   placeholder="<?= strtolower(htmlspecialchars($field_labels[$field] ?? $field)) ?>"
                                    oninput="updatePreview()">
                         </div>
                     <?php endforeach; ?>
+                    </div>
                 </div>
             </div>
 
@@ -402,23 +404,27 @@ function applyStyleColors(styleKey) {
 // =============================================================================
 function buildQRData() {
     var parts = [];
-    var nameEl = document.getElementById('field_name');
-    if (nameEl && nameEl.value) parts.push('Name: '+nameEl.value);
-    var orgEl = document.getElementById('field_company_name') || document.getElementById('field_school_name');
-    if (orgEl && orgEl.value) parts.push('Org: '+orgEl.value);
-    var roleEl = document.getElementById('field_designation') || document.getElementById('field_title') || document.getElementById('field_course');
-    if (roleEl && roleEl.value) parts.push('Role: '+roleEl.value);
-    var phoneEl = document.getElementById('field_phone');
-    if (phoneEl && phoneEl.value) parts.push('Tel: '+phoneEl.value);
-    var emailEl = document.getElementById('field_email');
-    if (emailEl && emailEl.value) parts.push(emailEl.value);
-    var idEl = document.getElementById('field_employee_id') || document.getElementById('field_roll_number') || document.getElementById('field_badge_id');
-    if (idEl && idEl.value) parts.push('ID: '+idEl.value);
+    // Scan ALL visible input fields in the dynamic fields container
+    var container = document.getElementById('dynamicFields');
+    if (container) {
+        var inputs = container.querySelectorAll('input[type=text]');
+        inputs.forEach(function(inp) {
+            if (!inp.value || !inp.id) return;
+            var fieldKey = inp.id.replace(/^field_/, '');
+            var label = (FIELD_LABELS[fieldKey] || fieldKey.replace(/_/g,' ')).toUpperCase();
+            parts.push(label+': '+inp.value);
+        });
+    }
+    // Fallback: try named fields directly
+    if (parts.length === 0) {
+        var nameEl = document.getElementById('field_name');
+        if (nameEl && nameEl.value) parts.push('Name: '+nameEl.value);
+    }
     return parts.join('\n') || 'CardX ID Card';
 }
 
 function qrSlotHTML(posStyle) {
-    return '<div class="qr-slot" style="position:absolute;'+posStyle+';display:flex;align-items:center;justify-content:center;"></div>';
+    return '<div class="qr-slot" style="position:absolute;'+posStyle+';display:flex;align-items:center;justify-content:center;background:#fff;border-radius:3px;z-index:10;"></div>';
 }
 
 function renderQRCode() {
@@ -488,7 +494,8 @@ function getCardValues() {
 
     var skipKeys = ['name','company_name','school_name','company_address','school_address'].concat(roleKeys);
     var fieldKeys = (tpl.fields || []).filter(function(f){ return f !== 'photo' && skipKeys.indexOf(f) === -1; });
-    var fieldItems = fieldKeys.slice(0,6).map(function(f) {
+    var isPortrait = isPortraitStyle(currentStyle);
+    var fieldItems = fieldKeys.slice(0, isPortrait ? 5 : 6).map(function(f) {
         var el    = document.getElementById('field_' + f);
         var val   = el ? (el.value || (FIELD_LABELS[f] || f)) : (FIELD_LABELS[f] || f);
         var label = FIELD_SHORT[f] || f.replace(/_/g,' ').toUpperCase();
@@ -923,25 +930,29 @@ function selectTemplate(key) {
     var sel = document.getElementById('categorySelect');
     if (sel) sel.value = key;
 
-    // Rebuild dynamic fields
+    // Save existing field values BEFORE clearing (Fix 5)
+    var savedValues = {};
     var container = document.getElementById('dynamicFields');
-    container.innerHTML = '';
+    container.querySelectorAll('input[type=text]').forEach(function(inp) {
+        if (inp.id && inp.value) savedValues[inp.id] = inp.value;
+    });
+
+    // Rebuild dynamic fields as 2-column grid (Fix 3)
+    container.innerHTML = '<div class="grid grid-2" style="gap:8px 12px;">';
     (tpl.fields || []).forEach(function(field) {
         if (field === 'photo') return;
         var label = FIELD_LABELS[field] || field.replace(/_/g,' ');
-        container.innerHTML +=
-            '<div class="form-group" style="margin-bottom:12px;">'
-            +'<label class="form-label" style="font-size:0.78rem;" for="field_'+field+'">'+label+'</label>'
+        var savedVal = savedValues['field_'+field] || '';
+        container.querySelector('.grid').innerHTML +=
+            '<div class="form-group" style="margin-bottom:0;">'
+            +'<label class="form-label" style="font-size:0.72rem;" for="field_'+field+'">'+label+'</label>'
             +'<input type="text" id="field_'+field+'" name="'+field+'" class="form-input" '
-            +'style="padding:8px 12px;font-size:0.85rem;" placeholder="Enter '+label.toLowerCase()+'" oninput="updatePreview()">'
+            +'style="padding:6px 10px;font-size:0.82rem;" placeholder="'+label.toLowerCase()+'" value="'+savedVal+'" oninput="updatePreview()">'
             +'</div>';
     });
+    container.innerHTML += '</div>';
 
-    // Update colours from template
-    document.getElementById('primaryColor').value = tpl.color;
-    document.getElementById('accentColor').value  = tpl.accent;
-    document.getElementById('bgColor').value      = tpl.bg;
-    document.getElementById('textColor').value    = tpl.text;
+    // Do NOT reset colours when switching category (Fix 1)
     document.getElementById('logoWrap').style.display = tpl.logo ? '' : 'none';
     document.getElementById('previewTplName').textContent = tpl.name;
 
@@ -985,8 +996,6 @@ function selectStyle(key) {
     } else {
         previewEl.classList.remove('portrait');
     }
-    // Apply style color presets
-    applyStyleColors(key);
     updatePreview();
 }
 
@@ -1104,7 +1113,7 @@ function renderVSharp(v) {
         // Fields
         +'<div style="position:absolute;top:73%;left:6%;right:6%;">'+fieldRowsHTML(v.fieldItems,v.pri,'#444','clamp(0.38rem,0.9vw,0.54rem)')+'</div>'
         // QR slot
-        +qrSlotHTML('bottom:2%;left:50%;transform:translateX(-50%);')
+        +qrSlotHTML('bottom:2%;right:3%;')
         +'</div>';
 }
 
@@ -1124,7 +1133,7 @@ function renderVCurve(v) {
         +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#888;margin-top:1%;">'+v.roleVal+'</div></div>'
         +'<div style="position:absolute;top:70%;left:10%;right:10%;height:1px;background:'+v.pri+';opacity:0.2;"></div>'
         +'<div style="position:absolute;top:72%;left:6%;right:6%;">'+fieldRowsHTML(v.fieldItems,v.pri,'#444','clamp(0.38rem,0.9vw,0.54rem)')+'</div>'
-        +qrSlotHTML('bottom:2%;left:50%;transform:translateX(-50%);')
+        +qrSlotHTML('bottom:2%;right:3%;')
         +'</div>';
 }
 
@@ -1148,7 +1157,7 @@ function renderVHex(v) {
         +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#888;margin-top:1%;">'+v.roleVal+'</div></div>'
         +'<div style="position:absolute;top:66%;left:8%;right:8%;height:1.5px;background:'+v.pri+';opacity:0.25;"></div>'
         +'<div style="position:absolute;top:68%;left:6%;right:6%;">'+fieldRowsHTML(v.fieldItems,v.pri,'#444','clamp(0.38rem,0.9vw,0.54rem)')+'</div>'
-        +qrSlotHTML('bottom:2%;left:50%;transform:translateX(-50%);')
+        +qrSlotHTML('bottom:2%;right:3%;')
         +'</div>';
 }
 
@@ -1171,7 +1180,7 @@ function renderVCircle(v) {
         +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#777;margin-top:1%;">'+v.roleVal+'</div></div>'
         +'<div style="position:absolute;top:68%;left:10%;right:10%;height:2px;background:linear-gradient(90deg,transparent,'+v.acc+',transparent);opacity:0.6;"></div>'
         +'<div style="position:absolute;top:70%;left:6%;right:6%;">'+fieldRowsHTML(v.fieldItems,v.pri,'#444','clamp(0.38rem,0.9vw,0.54rem)')+'</div>'
-        +qrSlotHTML('bottom:2%;left:50%;transform:translateX(-50%);')
+        +qrSlotHTML('bottom:2%;right:3%;')
         +'</div>';
 }
 
@@ -1386,7 +1395,7 @@ function renderVRibbon(v) {
         +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#777;margin-top:1%;">'+v.roleVal+'</div></div>'
         +'<div style="position:absolute;top:51%;left:10%;right:10%;height:1.5px;background:linear-gradient(90deg,transparent,'+v.acc+',transparent);opacity:0.6;"></div>'
         +'<div style="position:absolute;top:53%;left:6%;right:6%;">'+fieldRowsHTML(v.fieldItems,v.pri,'#444','clamp(0.38rem,0.9vw,0.54rem)')+'</div>'
-        +qrSlotHTML('bottom:2%;left:50%;transform:translateX(-50%);')
+        +qrSlotHTML('bottom:2%;right:3%;')
         +'</div>';
 }
 
@@ -1410,7 +1419,7 @@ function renderVArch(v) {
         +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#888;margin-top:1%;">'+v.roleVal+'</div></div>'
         +'<div style="position:absolute;top:72%;left:10%;right:10%;height:1px;background:'+v.pri+';opacity:0.2;"></div>'
         +'<div style="position:absolute;top:74%;left:6%;right:6%;">'+fieldRowsHTML(v.fieldItems,v.pri,'#444','clamp(0.38rem,0.9vw,0.54rem)')+'</div>'
-        +qrSlotHTML('bottom:2%;left:50%;transform:translateX(-50%);')
+        +qrSlotHTML('bottom:2%;right:3%;')
         +'</div>';
 }
 
@@ -1439,7 +1448,7 @@ function renderVDiamond(v) {
         +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#888;margin-top:1%;">'+v.roleVal+'</div></div>'
         +'<div style="position:absolute;top:68%;left:8%;right:8%;height:1.5px;background:'+v.pri+';opacity:0.25;"></div>'
         +'<div style="position:absolute;top:70%;left:6%;right:6%;">'+fieldRowsHTML(v.fieldItems,v.pri,'#444','clamp(0.38rem,0.9vw,0.54rem)')+'</div>'
-        +qrSlotHTML('bottom:2%;left:50%;transform:translateX(-50%);')
+        +qrSlotHTML('bottom:2%;right:3%;')
         +'</div>';
 }
 
@@ -1467,7 +1476,7 @@ function renderVCorner(v) {
         +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#888;margin-top:1%;">'+v.roleVal+'</div></div>'
         +'<div style="position:absolute;top:61%;left:10%;right:10%;height:1.5px;background:linear-gradient(90deg,transparent,'+v.acc+',transparent);opacity:0.5;"></div>'
         +'<div style="position:absolute;top:63%;left:6%;right:6%;">'+fieldRowsHTML(v.fieldItems,v.pri,'#444','clamp(0.38rem,0.9vw,0.54rem)')+'</div>'
-        +qrSlotHTML('bottom:2%;left:50%;transform:translateX(-50%);')
+        +qrSlotHTML('bottom:2%;right:3%;')
         +'</div>';
 }
 
@@ -1537,7 +1546,7 @@ function renderVBadge(v) {
         +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#888;margin-top:1%;">'+v.roleVal+'</div></div>'
         +'<div style="position:absolute;top:68%;left:8%;right:8%;height:1.5px;background:'+v.pri+';opacity:0.25;"></div>'
         +'<div style="position:absolute;top:70%;left:6%;right:6%;">'+fieldRowsHTML(v.fieldItems,v.pri,'#444','clamp(0.38rem,0.9vw,0.54rem)')+'</div>'
-        +qrSlotHTML('bottom:2%;left:50%;transform:translateX(-50%);')
+        +qrSlotHTML('bottom:2%;right:3%;')
         +'</div>';
 }
 
