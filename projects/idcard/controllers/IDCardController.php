@@ -77,7 +77,11 @@ class IDCardController
 
         // Design overrides (colours, fonts, layout style)
         $allowedStyles = ['classic', 'sidebar', 'wave', 'bold_header', 'diagonal',
-                          'v_sharp', 'v_curve', 'v_hex', 'v_circle', 'v_split'];
+                          'gradient_pro', 'neon', 'executive', 'stripe', 'metro',
+                          'glass', 'zigzag', 'ribbon',
+                          'v_sharp', 'v_curve', 'v_hex', 'v_circle', 'v_split',
+                          'v_ribbon', 'v_arch', 'v_diamond', 'v_corner', 'v_dual',
+                          'v_stripe', 'v_badge'];
         $rawStyle = $this->sanitize($_POST['design_style'] ?? 'classic');
         $isPortrait = ($tplConfig['orientation'] ?? 'landscape') === 'portrait';
         $defaultStyle = $isPortrait ? 'v_sharp' : 'classic';

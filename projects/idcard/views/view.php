@@ -19,7 +19,11 @@ $font = htmlspecialchars($design['font_family']   ?? 'Poppins',           ENT_QU
 
 $isPortrait    = ($tplConfig['orientation'] ?? 'landscape') === 'portrait';
 $allowedStyles = ['classic','sidebar','wave','bold_header','diagonal',
-                  'v_sharp','v_curve','v_hex','v_circle','v_split'];
+                  'gradient_pro','neon','executive','stripe','metro',
+                  'glass','zigzag','ribbon',
+                  'v_sharp','v_curve','v_hex','v_circle','v_split',
+                  'v_ribbon','v_arch','v_diamond','v_corner','v_dual',
+                  'v_stripe','v_badge'];
 $rawStyle      = $design['design_style'] ?? ($isPortrait ? 'v_sharp' : 'classic');
 $designStyle   = in_array($rawStyle, $allowedStyles, true) ? $rawStyle : ($isPortrait ? 'v_sharp' : 'classic');
 
@@ -507,6 +511,345 @@ elseif ($designStyle === 'v_sharp'): ?>
     <div style="position:absolute;bottom:7%;right:4%;font-size:clamp(0.3rem,0.7vw,0.44rem);font-family:monospace;color:#aaa;"><?= htmlspecialchars($card['card_number']) ?></div>
     <!-- Barcode (inline with bottom accent) -->
     <div style="position:absolute;bottom:6%;left:4%;width:50%;"><?= icardBarcodeSvg($pri,'100%') ?></div>
+</div>
+
+
+<?php elseif ($designStyle === 'gradient_pro'): ?>
+<!-- ── GRADIENT PRO (landscape) ── full gradient bg, photo left, fields right ── -->
+<div style="width:100%;height:100%;background:linear-gradient(135deg,<?= $pri ?> 0%,<?= $acc ?> 100%);position:relative;overflow:hidden;">
+    <div style="position:absolute;inset:0;background:rgba(0,0,0,0.18);"></div>
+    <div style="position:absolute;top:5%;left:5%;display:flex;align-items:center;gap:5%;z-index:2;">
+        <?= icardLogoEl($logoPath,'8%') ?>
+        <span style="font-size:clamp(0.36rem,0.82vw,0.52rem);color:rgba(255,255,255,0.92);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;"><?= $tplName ?></span>
+    </div>
+    <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:5%;z-index:2;width:90%;">
+        <div style="width:26%;aspect-ratio:1;border-radius:50%;border:3px solid rgba(255,255,255,0.8);background:rgba(255,255,255,0.15);overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 24px rgba(0,0,0,0.3);flex-shrink:0;"><?= icardPhoto($photoPath,'2rem') ?></div>
+        <div style="flex:1;min-width:0;">
+            <div style="font-size:clamp(0.62rem,1.55vw,0.9rem);font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><?= $nameVal ?></div>
+            <?php if ($roleVal): ?><div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:rgba(255,255,255,0.75);margin-top:1.5%;margin-bottom:3%;"><?= $roleVal ?></div><?php endif; ?>
+            <div style="width:80%;height:1.5px;background:rgba(255,255,255,0.35);border-radius:2px;margin-bottom:4%;"></div>
+            <?php foreach ($shownFlds as $f): ?><?= icardRow($f['label'], $f['val'], 'rgba(255,255,255,0.65)', 'rgba(255,255,255,0.9)') ?><?php endforeach; ?>
+        </div>
+    </div>
+    <div style="position:absolute;bottom:4%;left:50%;transform:translateX(-50%);"><?= icardBarcodeSvg('rgba(255,255,255,0.3)','48%') ?></div>
+</div>
+
+<?php elseif ($designStyle === 'neon'): ?>
+<!-- ── NEON GLOW (landscape) ── black bg, neon borders, glow effects ── -->
+<div style="width:100%;height:100%;background:#050a10;position:relative;overflow:hidden;">
+    <div style="position:absolute;top:0;left:0;right:0;height:3px;background:<?= $pri ?>;box-shadow:0 0 10px <?= $pri ?>;"></div>
+    <div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:<?= $acc ?>;box-shadow:0 0 10px <?= $acc ?>;"></div>
+    <div style="position:absolute;top:5%;left:5%;display:flex;align-items:center;gap:5%;z-index:2;">
+        <div style="width:8%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.05);border:1px solid <?= $acc ?>;display:flex;align-items:center;justify-content:center;box-shadow:0 0 6px <?= $acc ?>44;">
+            <i class="fas fa-infinity" style="color:<?= $acc ?>;font-size:0.4rem;"></i>
+        </div>
+        <span style="font-size:clamp(0.36rem,0.82vw,0.52rem);color:<?= $acc ?>;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;text-shadow:0 0 8px <?= $acc ?>80;"><?= $tplName ?></span>
+    </div>
+    <div style="position:absolute;left:5%;top:50%;transform:translateY(-50%);width:22%;aspect-ratio:1;border-radius:50%;border:2.5px solid <?= $acc ?>;background:rgba(255,255,255,0.04);overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 0 16px <?= $acc ?>60;"><?= icardPhoto($photoPath,'2rem') ?></div>
+    <div style="position:absolute;left:34%;top:20%;max-width:60%;">
+        <div style="font-size:clamp(0.62rem,1.55vw,0.9rem);font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><?= $nameVal ?></div>
+        <?php if ($roleVal): ?><div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:<?= $acc ?>;margin-top:2%;text-shadow:0 0 8px <?= $acc ?>60;"><?= $roleVal ?></div><?php endif; ?>
+    </div>
+    <div style="position:absolute;bottom:10%;left:34%;max-width:58%;">
+        <?php foreach ($shownFlds as $f): ?><?= icardRow($f['label'], $f['val'], 'rgba(255,255,255,0.45)', 'rgba(255,255,255,0.85)') ?><?php endforeach; ?>
+    </div>
+    <div style="position:absolute;bottom:4%;left:50%;transform:translateX(-50%);"><?= icardBarcodeSvg('rgba(255,255,255,0.18)','48%') ?></div>
+</div>
+
+<?php elseif ($designStyle === 'executive'): ?>
+<!-- ── EXECUTIVE (landscape) ── dark navy, gold accents, premium feel ── -->
+<div style="width:100%;height:100%;background:#1a1f2e;position:relative;overflow:hidden;">
+    <div style="position:absolute;top:0;left:0;right:0;height:4px;background:#c9a84c;"></div>
+    <div style="position:absolute;bottom:0;left:0;right:0;height:4px;background:#c9a84c;"></div>
+    <div style="position:absolute;top:4px;left:4px;right:4px;bottom:4px;border:0.5px solid rgba(201,168,76,0.25);pointer-events:none;"></div>
+    <div style="position:absolute;top:5%;left:5%;display:flex;align-items:center;gap:5%;z-index:2;">
+        <div style="width:8%;aspect-ratio:1;border-radius:50%;background:rgba(201,168,76,0.15);border:1px solid #c9a84c;display:flex;align-items:center;justify-content:center;">
+            <i class="fas fa-infinity" style="color:#c9a84c;font-size:0.4rem;"></i>
+        </div>
+        <span style="font-size:clamp(0.36rem,0.82vw,0.52rem);color:#c9a84c;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;"><?= $tplName ?></span>
+    </div>
+    <div style="position:absolute;left:5%;top:50%;transform:translateY(-50%);width:22%;aspect-ratio:1;border-radius:50%;border:2.5px solid #c9a84c;background:rgba(201,168,76,0.1);overflow:hidden;display:flex;align-items:center;justify-content:center;"><?= icardPhoto($photoPath,'2rem') ?></div>
+    <div style="position:absolute;left:34%;top:20%;max-width:60%;">
+        <div style="font-size:clamp(0.62rem,1.55vw,0.9rem);font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><?= $nameVal ?></div>
+        <?php if ($roleVal): ?><div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:#c9a84c;margin-top:2%;"><?= $roleVal ?></div><?php endif; ?>
+        <div style="width:60%;height:1.5px;background:linear-gradient(90deg,#c9a84c,transparent);margin-top:4%;margin-bottom:4%;"></div>
+        <?php foreach ($shownFlds as $f): ?><?= icardRow($f['label'], $f['val'], 'rgba(255,255,255,0.45)', 'rgba(255,255,255,0.88)') ?><?php endforeach; ?>
+    </div>
+    <div style="position:absolute;bottom:4%;left:50%;transform:translateX(-50%);"><?= icardBarcodeSvg('rgba(201,168,76,0.35)','48%') ?></div>
+</div>
+
+<?php elseif ($designStyle === 'stripe'): ?>
+<!-- ── STRIPE BAND (landscape) ── top/bottom colour bands, white middle ── -->
+<div style="width:100%;height:100%;background:#f5f7fa;position:relative;overflow:hidden;">
+    <div style="position:absolute;top:0;left:0;right:0;height:16%;background:<?= $pri ?>;"></div>
+    <div style="position:absolute;bottom:0;left:0;right:0;height:16%;background:<?= $acc ?>;"></div>
+    <div style="position:absolute;top:5%;left:5%;display:flex;align-items:center;gap:5%;z-index:2;">
+        <?= icardLogoEl($logoPath,'8%') ?>
+        <span style="font-size:clamp(0.36rem,0.82vw,0.52rem);color:rgba(255,255,255,0.92);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;"><?= $tplName ?></span>
+    </div>
+    <div style="position:absolute;left:5%;top:50%;transform:translateY(-50%);width:22%;aspect-ratio:1;border-radius:50%;border:2.5px solid <?= $pri ?>;background:#fff;overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,0,0,0.15);"><?= icardPhoto($photoPath,'2rem') ?></div>
+    <div style="position:absolute;right:5%;top:20%;max-width:52%;">
+        <div style="font-size:clamp(0.62rem,1.55vw,0.9rem);font-weight:800;color:<?= $pri ?>;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><?= $nameVal ?></div>
+        <?php if ($roleVal): ?><div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:#888;margin-top:2%;"><?= $roleVal ?></div><?php endif; ?>
+        <div style="width:60%;height:2px;background:linear-gradient(90deg,<?= $acc ?>,transparent);border-radius:2px;margin:4% 0;"></div>
+        <?php foreach ($shownFlds as $f): ?><?= icardRow($f['label'], $f['val'], $pri, '#555') ?><?php endforeach; ?>
+    </div>
+    <div style="position:absolute;bottom:4%;left:50%;transform:translateX(-50%);"><?= icardBarcodeSvg($pri,'48%') ?></div>
+</div>
+
+<?php elseif ($designStyle === 'metro'): ?>
+<!-- ── METRO FLAT (landscape) ── coloured left strip, square photo, flat design ── -->
+<div style="width:100%;height:100%;display:flex;overflow:hidden;position:relative;border-top:4px solid <?= $pri ?>;border-bottom:4px solid <?= $acc ?>;">
+    <div style="width:35%;background:<?= $pri ?>;display:flex;flex-direction:column;align-items:center;flex-shrink:0;position:relative;">
+        <div style="position:absolute;top:0;right:0;width:4px;height:100%;background:<?= $acc ?>88;"></div>
+        <div style="padding:10% 0 5%;display:flex;flex-direction:column;align-items:center;gap:6%;">
+            <?= icardLogoEl($logoPath,'22%') ?>
+            <span style="font-size:clamp(0.3rem,0.7vw,0.44rem);color:rgba(255,255,255,0.7);font-weight:600;letter-spacing:0.08em;text-transform:uppercase;text-align:center;writing-mode:vertical-rl;transform:rotate(180deg);"><?= $tplName ?></span>
+        </div>
+        <div style="width:55%;aspect-ratio:1;border-radius:0;border:3px solid rgba(255,255,255,0.8);background:rgba(255,255,255,0.15);overflow:hidden;display:flex;align-items:center;justify-content:center;margin-top:4%;"><?= icardPhoto($photoPath,'2.2rem') ?></div>
+        <div style="margin-top:auto;padding-bottom:6%;width:80%;"><?= icardBarcodeSvg('rgba(255,255,255,0.4)','100%') ?></div>
+    </div>
+    <div style="flex:1;background:#ffffff;display:flex;flex-direction:column;justify-content:center;padding:6% 7%;min-width:0;">
+        <div style="font-size:clamp(0.62rem,1.52vw,0.88rem);font-weight:800;color:<?= $pri ?>;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><?= $nameVal ?></div>
+        <?php if ($roleVal): ?><div style="font-size:clamp(0.36rem,0.82vw,0.52rem);color:#888;margin-top:1.5%;margin-bottom:4%;"><?= $roleVal ?></div><?php endif; ?>
+        <div style="width:50%;height:3px;background:<?= $acc ?>;border-radius:0;margin-bottom:5%;"></div>
+        <?php foreach ($shownFlds as $f): ?><?= icardRow($f['label'], $f['val'], $pri, '#555') ?><?php endforeach; ?>
+    </div>
+</div>
+
+<?php elseif ($designStyle === 'glass'): ?>
+<!-- ── GLASSMORPHISM (landscape) ── gradient bg with frosted glass panel ── -->
+<div style="width:100%;height:100%;background:linear-gradient(135deg,<?= $pri ?> 0%,<?= $acc ?> 100%);position:relative;overflow:hidden;">
+    <div style="position:absolute;inset:8% 6%;background:rgba(255,255,255,0.15);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,0.35);border-radius:10px;overflow:hidden;">
+        <div style="position:absolute;top:-30%;left:-20%;width:60%;aspect-ratio:1;background:rgba(255,255,255,0.08);border-radius:50%;"></div>
+    </div>
+    <div style="position:absolute;top:13%;left:12%;display:flex;align-items:center;gap:5%;z-index:2;">
+        <?= icardLogoEl($logoPath,'8%') ?>
+        <span style="font-size:clamp(0.36rem,0.82vw,0.52rem);color:rgba(255,255,255,0.9);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;"><?= $tplName ?></span>
+    </div>
+    <div style="position:absolute;left:12%;top:50%;transform:translateY(-50%);width:22%;aspect-ratio:1;border-radius:50%;border:2.5px solid rgba(255,255,255,0.8);background:rgba(255,255,255,0.2);overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 28px rgba(0,0,0,0.2);z-index:3;"><?= icardPhoto($photoPath,'2rem') ?></div>
+    <div style="position:absolute;left:40%;top:18%;max-width:54%;z-index:2;">
+        <div style="font-size:clamp(0.62rem,1.55vw,0.9rem);font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 2px 8px rgba(0,0,0,0.2);"><?= $nameVal ?></div>
+        <?php if ($roleVal): ?><div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:rgba(255,255,255,0.8);margin-top:2%;margin-bottom:4%;"><?= $roleVal ?></div><?php endif; ?>
+        <div style="width:60%;height:1px;background:rgba(255,255,255,0.4);margin-bottom:4%;"></div>
+        <?php foreach ($shownFlds as $f): ?><?= icardRow($f['label'], $f['val'], 'rgba(255,255,255,0.7)', 'rgba(255,255,255,0.92)') ?><?php endforeach; ?>
+    </div>
+    <div style="position:absolute;bottom:7%;left:50%;transform:translateX(-50%);"><?= icardBarcodeSvg('rgba(255,255,255,0.3)','48%') ?></div>
+</div>
+
+<?php elseif ($designStyle === 'zigzag'): ?>
+<!-- ── ZIG-ZAG (landscape) ── sawtooth header bottom, photo at boundary ── -->
+<div style="width:100%;height:100%;background:#f7f8fc;position:relative;overflow:hidden;">
+    <svg style="position:absolute;top:0;left:0;width:100%;height:100%;" viewBox="0 0 85.6 54" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+        <path d="M0,0 L85.6,0 L85.6,21.6 L77,27 L68.5,21.6 L60,27 L51.4,21.6 L42.8,27 L34.2,21.6 L25.7,27 L17.1,21.6 L8.6,27 L0,21.6 Z" fill="<?= $pri ?>"/>
+        <path d="M0,0 L85.6,0 L85.6,21.6 L77,27 L68.5,21.6 L60,27 L51.4,21.6 L42.8,27 L34.2,21.6 L25.7,27 L17.1,21.6 L8.6,27 L0,21.6 Z" fill="rgba(255,255,255,0.06)"/>
+    </svg>
+    <div style="position:absolute;top:5%;left:5%;display:flex;align-items:center;gap:5%;z-index:2;">
+        <?= icardLogoEl($logoPath,'8%') ?>
+        <span style="font-size:clamp(0.36rem,0.82vw,0.52rem);color:rgba(255,255,255,0.92);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;"><?= $tplName ?></span>
+    </div>
+    <div style="position:absolute;left:50%;top:44%;transform:translateX(-50%);width:22%;aspect-ratio:1;border-radius:50%;border:3px solid #fff;background:<?= $pri ?>22;overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 24px rgba(0,0,0,0.22);z-index:3;"><?= icardPhoto($photoPath,'2rem') ?></div>
+    <div style="position:absolute;top:62%;left:4%;right:4%;text-align:center;">
+        <div style="font-size:clamp(0.62rem,1.55vw,0.9rem);font-weight:800;color:<?= $pri ?>;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><?= $nameVal ?></div>
+        <?php if ($roleVal): ?><div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:#888;margin-top:1%;"><?= $roleVal ?></div><?php endif; ?>
+    </div>
+    <div style="position:absolute;top:72%;left:5%;right:5%;display:grid;grid-template-columns:1fr 1fr;column-gap:3%;">
+        <?php foreach ($shownFlds as $f): ?><?= icardRow($f['label'], $f['val'], $pri, '#444') ?><?php endforeach; ?>
+    </div>
+    <div style="position:absolute;bottom:3%;left:50%;transform:translateX(-50%);"><?= icardBarcodeSvg($pri,'48%') ?></div>
+</div>
+
+<?php elseif ($designStyle === 'ribbon'): ?>
+<!-- ── RIBBON (landscape) ── dark bg with diagonal colour ribbon/sash ── -->
+<div style="width:100%;height:100%;background:#111827;position:relative;overflow:hidden;">
+    <svg style="position:absolute;inset:0;width:100%;height:100%;" viewBox="0 0 85.6 54" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+        <polygon points="0,15 85.6,8 85.6,27 0,34" fill="<?= $pri ?>" opacity="0.92"/>
+        <polygon points="0,18 85.6,11 85.6,31 0,38" fill="<?= $acc ?>" opacity="0.55"/>
+    </svg>
+    <div style="position:absolute;top:5%;left:5%;display:flex;align-items:center;gap:5%;z-index:2;">
+        <?= icardLogoEl($logoPath,'8%') ?>
+        <span style="font-size:clamp(0.36rem,0.82vw,0.52rem);color:rgba(255,255,255,0.7);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;"><?= $tplName ?></span>
+    </div>
+    <div style="position:absolute;left:5%;top:50%;transform:translateY(-50%);width:22%;aspect-ratio:1;border-radius:50%;border:2.5px solid rgba(255,255,255,0.8);background:rgba(255,255,255,0.1);overflow:hidden;display:flex;align-items:center;justify-content:center;z-index:3;"><?= icardPhoto($photoPath,'2rem') ?></div>
+    <div style="position:absolute;left:33%;top:14%;max-width:60%;z-index:2;">
+        <div style="font-size:clamp(0.62rem,1.55vw,0.9rem);font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><?= $nameVal ?></div>
+        <?php if ($roleVal): ?><div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:rgba(255,255,255,0.75);margin-top:2%;"><?= $roleVal ?></div><?php endif; ?>
+    </div>
+    <div style="position:absolute;bottom:8%;left:5%;max-width:52%;z-index:2;">
+        <?php foreach ($shownFlds as $f): ?><?= icardRow($f['label'], $f['val'], 'rgba(255,255,255,0.5)', 'rgba(255,255,255,0.88)') ?><?php endforeach; ?>
+    </div>
+    <div style="position:absolute;bottom:4%;right:5%;width:34%;z-index:2;"><?= icardBarcodeSvg('rgba(255,255,255,0.25)','100%') ?></div>
+</div>
+
+<?php /* ══ New Portrait styles ══ */
+elseif ($designStyle === 'v_ribbon'): ?>
+<!-- ── RIBBON V (portrait) ── top band + accent ribbon, photo at ribbon edge ── -->
+<div style="width:100%;height:100%;background:#f7f8fc;position:relative;overflow:hidden;">
+    <div style="position:absolute;top:0;left:0;right:0;height:20%;background:<?= $pri ?>;"></div>
+    <div style="position:absolute;top:22%;left:0;right:0;height:13%;background:<?= $acc ?>;opacity:0.9;"></div>
+    <div style="position:absolute;top:35%;left:0;right:0;height:3%;background:<?= $pri ?>22;"></div>
+    <div style="position:absolute;top:3%;left:4%;display:flex;align-items:center;gap:6%;z-index:2;">
+        <?= icardLogoEl($logoPath,'12%') ?>
+        <span style="font-size:clamp(0.42rem,1vw,0.6rem);color:rgba(255,255,255,0.95);font-weight:700;letter-spacing:0.05em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:70%;"><?= $orgVal ?: $tplName ?></span>
+    </div>
+    <div style="position:absolute;left:50%;top:18%;transform:translateX(-50%);width:26%;aspect-ratio:1;border-radius:50%;border:3px solid #fff;background:<?= $pri ?>22;overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 28px rgba(0,0,0,0.25);z-index:3;"><?= icardPhoto($photoPath,'1.8rem') ?></div>
+    <div style="position:absolute;top:42%;left:4%;right:4%;text-align:center;">
+        <div style="font-size:clamp(0.8rem,2vw,1.05rem);font-weight:800;color:<?= $pri ?>;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><?= $nameVal ?></div>
+        <?php if ($roleVal): ?><div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#777;margin-top:1%;"><?= $roleVal ?></div><?php endif; ?>
+    </div>
+    <div style="position:absolute;top:51%;left:10%;right:10%;height:1.5px;background:linear-gradient(90deg,transparent,<?= $acc ?>,transparent);opacity:0.6;"></div>
+    <div style="position:absolute;top:53%;left:6%;right:6%;">
+        <?php foreach ($shownFlds as $f): ?><?= icardRow($f['label'], $f['val'], $pri, '#444', 'clamp(0.38rem,0.9vw,0.54rem)') ?><?php endforeach; ?>
+    </div>
+    <div style="position:absolute;bottom:2%;left:50%;transform:translateX(-50%);"><?= icardBarcodeSvg($pri,'62%') ?></div>
+</div>
+
+<?php elseif ($designStyle === 'v_arch'): ?>
+<!-- ── ARCH V (portrait) ── arched dome header, photo inside arch ── -->
+<div style="width:100%;height:100%;background:#ffffff;position:relative;overflow:hidden;">
+    <svg style="position:absolute;top:0;left:0;width:100%;height:62%;" viewBox="0 0 54 54" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M0,0 L54,0 L54,40 Q54,54 27,54 Q0,54 0,40 Z" fill="<?= $pri ?>"/>
+        <path d="M0,0 L54,0 L54,28 Q54,40 27,40 Q0,40 0,28 Z" fill="rgba(255,255,255,0.08)"/>
+    </svg>
+    <div style="position:absolute;top:3%;left:4%;display:flex;align-items:center;gap:6%;z-index:2;">
+        <?= icardLogoEl($logoPath,'12%') ?>
+        <span style="font-size:clamp(0.42rem,1vw,0.6rem);color:rgba(255,255,255,0.92);font-weight:700;letter-spacing:0.05em;text-transform:uppercase;"><?= $orgVal ?: $tplName ?></span>
+    </div>
+    <div style="position:absolute;left:50%;top:18%;transform:translateX(-50%);width:28%;aspect-ratio:1;border-radius:50%;border:3px solid rgba(255,255,255,0.85);background:rgba(255,255,255,0.18);overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 28px rgba(0,0,0,0.28);z-index:3;"><?= icardPhoto($photoPath,'1.8rem') ?></div>
+    <div style="position:absolute;top:64%;left:4%;right:4%;text-align:center;">
+        <div style="font-size:clamp(0.8rem,2vw,1.05rem);font-weight:800;color:<?= $pri ?>;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><?= $nameVal ?></div>
+        <?php if ($roleVal): ?><div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#888;margin-top:1%;"><?= $roleVal ?></div><?php endif; ?>
+    </div>
+    <div style="position:absolute;top:72%;left:10%;right:10%;height:1px;background:<?= $pri ?>;opacity:0.2;"></div>
+    <div style="position:absolute;top:74%;left:6%;right:6%;">
+        <?php foreach ($shownFlds as $f): ?><?= icardRow($f['label'], $f['val'], $pri, '#444', 'clamp(0.38rem,0.9vw,0.54rem)') ?><?php endforeach; ?>
+    </div>
+    <div style="position:absolute;bottom:2%;left:50%;transform:translateX(-50%);"><?= icardBarcodeSvg($pri,'62%') ?></div>
+</div>
+
+<?php elseif ($designStyle === 'v_diamond'): ?>
+<!-- ── DIAMOND V (portrait) ── diamond/rhombus photo frame ── -->
+<div style="width:100%;height:100%;background:#f7f8fc;position:relative;overflow:hidden;">
+    <div style="position:absolute;top:0;left:0;right:0;height:50%;background:<?= $pri ?>;overflow:hidden;">
+        <svg style="position:absolute;bottom:-2%;left:0;width:100%;height:22%;" viewBox="0 0 54 12" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+            <polygon points="27,12 54,0 0,0" fill="#f7f8fc"/>
+        </svg>
+        <svg style="position:absolute;top:5%;right:5%;width:30%;opacity:0.15;" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <rect x="10" y="10" width="80" height="80" rx="4" fill="#fff" transform="rotate(45 50 50)"/>
+        </svg>
+    </div>
+    <div style="position:absolute;top:3%;left:4%;display:flex;align-items:center;gap:6%;z-index:2;">
+        <?= icardLogoEl($logoPath,'12%') ?>
+        <span style="font-size:clamp(0.42rem,1vw,0.6rem);color:rgba(255,255,255,0.92);font-weight:700;letter-spacing:0.05em;text-transform:uppercase;"><?= $orgVal ?: $tplName ?></span>
+    </div>
+    <div style="position:absolute;left:50%;top:28%;transform:translateX(-50%);width:28%;aspect-ratio:1;z-index:4;">
+        <svg style="position:absolute;inset:-18%;width:136%;height:136%;" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <polygon points="50,2 98,50 50,98 2,50" fill="#fff" stroke="<?= $pri ?>" stroke-width="2.5"/>
+        </svg>
+        <div style="position:absolute;inset:0;overflow:hidden;clip-path:polygon(50% 2%,98% 50%,50% 98%,2% 50%);display:flex;align-items:center;justify-content:center;background:<?= $pri ?>20;"><?= icardPhoto($photoPath,'1.8rem') ?></div>
+    </div>
+    <div style="position:absolute;top:60%;left:4%;right:4%;text-align:center;">
+        <div style="font-size:clamp(0.8rem,2vw,1.05rem);font-weight:800;color:<?= $pri ?>;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><?= $nameVal ?></div>
+        <?php if ($roleVal): ?><div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#888;margin-top:1%;"><?= $roleVal ?></div><?php endif; ?>
+    </div>
+    <div style="position:absolute;top:68%;left:8%;right:8%;height:1.5px;background:<?= $pri ?>;opacity:0.25;"></div>
+    <div style="position:absolute;top:70%;left:6%;right:6%;">
+        <?php foreach ($shownFlds as $f): ?><?= icardRow($f['label'], $f['val'], $pri, '#444', 'clamp(0.38rem,0.9vw,0.54rem)') ?><?php endforeach; ?>
+    </div>
+    <div style="position:absolute;bottom:2%;left:50%;transform:translateX(-50%);"><?= icardBarcodeSvg($pri,'62%') ?></div>
+</div>
+
+<?php elseif ($designStyle === 'v_corner'): ?>
+<!-- ── CORNER V (portrait) ── triangle corner accents, clean centre ── -->
+<div style="width:100%;height:100%;background:#ffffff;position:relative;overflow:hidden;">
+    <svg style="position:absolute;top:0;left:0;width:100%;height:100%;" viewBox="0 0 54 85.6" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="0,0 35,0 0,47" fill="<?= $pri ?>"/>
+        <polygon points="0,0 22,0 0,30" fill="rgba(255,255,255,0.1)"/>
+        <polygon points="54,85.6 19,85.6 54,39" fill="<?= $acc ?>" opacity="0.85"/>
+    </svg>
+    <div style="position:absolute;top:3%;left:4%;z-index:2;">
+        <div style="width:14%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.22);border:1px solid rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;">
+            <i class="fas fa-infinity" style="color:rgba(255,255,255,0.85);font-size:0.35rem;"></i>
+        </div>
+    </div>
+    <div style="position:absolute;top:3%;right:4%;max-width:45%;text-align:right;z-index:2;">
+        <div style="font-size:clamp(0.4rem,1vw,0.58rem);color:<?= $pri ?>;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><?= $orgVal ?: $tplName ?></div>
+    </div>
+    <div style="position:absolute;left:50%;top:22%;transform:translateX(-50%);width:28%;aspect-ratio:1;border-radius:50%;border:3px solid #fff;background:<?= $pri ?>15;overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 28px rgba(0,0,0,0.2);z-index:3;"><?= icardPhoto($photoPath,'1.8rem') ?></div>
+    <div style="position:absolute;top:53%;left:4%;right:4%;text-align:center;">
+        <div style="font-size:clamp(0.8rem,2vw,1.05rem);font-weight:800;color:<?= $pri ?>;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><?= $nameVal ?></div>
+        <?php if ($roleVal): ?><div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#888;margin-top:1%;"><?= $roleVal ?></div><?php endif; ?>
+    </div>
+    <div style="position:absolute;top:61%;left:10%;right:10%;height:1.5px;background:linear-gradient(90deg,transparent,<?= $acc ?>,transparent);opacity:0.5;"></div>
+    <div style="position:absolute;top:63%;left:6%;right:6%;">
+        <?php foreach ($shownFlds as $f): ?><?= icardRow($f['label'], $f['val'], $pri, '#444', 'clamp(0.38rem,0.9vw,0.54rem)') ?><?php endforeach; ?>
+    </div>
+    <div style="position:absolute;bottom:2%;left:50%;transform:translateX(-50%);"><?= icardBarcodeSvg($pri,'62%') ?></div>
+</div>
+
+<?php elseif ($designStyle === 'v_dual'): ?>
+<!-- ── DUAL BAND V (portrait) ── top band + bottom band, white middle with photo ── -->
+<div style="width:100%;height:100%;background:#f7f8fc;position:relative;overflow:hidden;">
+    <div style="position:absolute;top:0;left:0;right:0;height:20%;background:<?= $pri ?>;"></div>
+    <div style="position:absolute;bottom:0;left:0;right:0;height:18%;background:<?= $acc ?>;"></div>
+    <div style="position:absolute;top:3%;left:4%;display:flex;align-items:center;gap:6%;z-index:2;">
+        <?= icardLogoEl($logoPath,'12%') ?>
+        <span style="font-size:clamp(0.42rem,1vw,0.6rem);color:rgba(255,255,255,0.92);font-weight:700;letter-spacing:0.05em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:70%;"><?= $orgVal ?: $tplName ?></span>
+    </div>
+    <div style="position:absolute;left:50%;top:26%;transform:translateX(-50%);width:28%;aspect-ratio:1;border-radius:50%;border:3px solid <?= $pri ?>;background:#fff;overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 28px rgba(0,0,0,0.2);z-index:3;"><?= icardPhoto($photoPath,'1.8rem') ?></div>
+    <div style="position:absolute;top:57%;left:4%;right:4%;text-align:center;">
+        <div style="font-size:clamp(0.8rem,2vw,1.05rem);font-weight:800;color:<?= $pri ?>;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><?= $nameVal ?></div>
+        <?php if ($roleVal): ?><div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#777;margin-top:1%;"><?= $roleVal ?></div><?php endif; ?>
+    </div>
+    <div style="position:absolute;top:65%;left:10%;right:10%;height:1px;background:<?= $pri ?>;opacity:0.2;"></div>
+    <div style="position:absolute;top:67%;left:6%;right:6%;">
+        <?php foreach ($shownFlds as $f): ?><?= icardRow($f['label'], $f['val'], $pri, '#444', 'clamp(0.38rem,0.9vw,0.54rem)') ?><?php endforeach; ?>
+    </div>
+    <div style="position:absolute;bottom:20%;left:50%;transform:translateX(-50%);"><?= icardBarcodeSvg($pri,'62%') ?></div>
+</div>
+
+<?php elseif ($designStyle === 'v_stripe'): ?>
+<!-- ── STRIPE V (portrait) ── full gradient bg with frosted glass panel ── -->
+<div style="width:100%;height:100%;background:linear-gradient(135deg,<?= $pri ?> 0%,<?= $acc ?> 100%);position:relative;overflow:hidden;">
+    <div style="position:absolute;top:5%;left:5%;right:5%;bottom:5%;background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.35);border-radius:8px;backdrop-filter:blur(3px);"></div>
+    <div style="position:absolute;top:8%;left:9%;display:flex;align-items:center;gap:6%;z-index:2;">
+        <?= icardLogoEl($logoPath,'12%') ?>
+        <span style="font-size:clamp(0.42rem,1vw,0.6rem);color:rgba(255,255,255,0.9);font-weight:700;letter-spacing:0.05em;text-transform:uppercase;"><?= $orgVal ?: $tplName ?></span>
+    </div>
+    <div style="position:absolute;left:50%;top:22%;transform:translateX(-50%);width:28%;aspect-ratio:1;border-radius:50%;border:3px solid rgba(255,255,255,0.85);background:rgba(255,255,255,0.2);overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 30px rgba(0,0,0,0.3);z-index:3;"><?= icardPhoto($photoPath,'1.8rem') ?></div>
+    <div style="position:absolute;top:56%;left:4%;right:4%;text-align:center;">
+        <div style="font-size:clamp(0.8rem,2vw,1.05rem);font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 2px 8px rgba(0,0,0,0.2);"><?= $nameVal ?></div>
+        <?php if ($roleVal): ?><div style="font-size:clamp(0.42rem,1vw,0.58rem);color:rgba(255,255,255,0.8);margin-top:1%;"><?= $roleVal ?></div><?php endif; ?>
+    </div>
+    <div style="position:absolute;top:64%;left:10%;right:10%;height:1px;background:rgba(255,255,255,0.4);"></div>
+    <div style="position:absolute;top:66%;left:9%;right:9%;">
+        <?php foreach ($shownFlds as $f): ?><?= icardRow($f['label'], $f['val'], 'rgba(255,255,255,0.7)', 'rgba(255,255,255,0.92)', 'clamp(0.38rem,0.9vw,0.54rem)') ?><?php endforeach; ?>
+    </div>
+    <div style="position:absolute;bottom:7%;left:50%;transform:translateX(-50%);"><?= icardBarcodeSvg('rgba(255,255,255,0.3)','62%') ?></div>
+</div>
+
+<?php elseif ($designStyle === 'v_badge'): ?>
+<!-- ── BADGE V (portrait) ── shield/badge shape header, photo inside shield ── -->
+<div style="width:100%;height:100%;background:#f7f8fc;position:relative;overflow:hidden;">
+    <svg style="position:absolute;top:0;left:0;width:100%;height:100%;" viewBox="0 0 54 85.6" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4,0 L50,0 L54,5 L54,36 Q54,48 27,52 Q0,48 0,36 L0,5 Z" fill="<?= $pri ?>"/>
+        <path d="M4,0 L50,0 L54,5 L54,25 Q54,36 27,38 Q0,36 0,25 L0,5 Z" fill="rgba(255,255,255,0.08)"/>
+        <circle cx="3" cy="3" r="2.5" fill="rgba(255,255,255,0.25)"/>
+    </svg>
+    <div style="position:absolute;top:3%;left:4%;display:flex;align-items:center;gap:6%;z-index:2;">
+        <?= icardLogoEl($logoPath,'12%') ?>
+        <span style="font-size:clamp(0.42rem,1vw,0.6rem);color:rgba(255,255,255,0.92);font-weight:700;letter-spacing:0.05em;text-transform:uppercase;"><?= $orgVal ?: $tplName ?></span>
+    </div>
+    <div style="position:absolute;left:50%;top:18%;transform:translateX(-50%);width:28%;aspect-ratio:1;border-radius:50%;border:3px solid rgba(255,255,255,0.85);background:rgba(255,255,255,0.2);overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 28px rgba(0,0,0,0.28);z-index:3;"><?= icardPhoto($photoPath,'1.8rem') ?></div>
+    <div style="position:absolute;top:60%;left:4%;right:4%;text-align:center;">
+        <div style="font-size:clamp(0.8rem,2vw,1.05rem);font-weight:800;color:<?= $pri ?>;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><?= $nameVal ?></div>
+        <?php if ($roleVal): ?><div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#888;margin-top:1%;"><?= $roleVal ?></div><?php endif; ?>
+    </div>
+    <div style="position:absolute;top:68%;left:8%;right:8%;height:1.5px;background:<?= $pri ?>;opacity:0.25;"></div>
+    <div style="position:absolute;top:70%;left:6%;right:6%;">
+        <?php foreach ($shownFlds as $f): ?><?= icardRow($f['label'], $f['val'], $pri, '#444', 'clamp(0.38rem,0.9vw,0.54rem)') ?><?php endforeach; ?>
+    </div>
+    <div style="position:absolute;bottom:2%;left:50%;transform:translateX(-50%);"><?= icardBarcodeSvg($pri,'62%') ?></div>
 </div>
 
 <?php endif; // end design styles ?>

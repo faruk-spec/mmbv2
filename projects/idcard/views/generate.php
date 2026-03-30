@@ -273,18 +273,33 @@ var photoDataUrl = null;
 //  Design style definitions — landscape + portrait
 // =============================================================================
 var LANDSCAPE_STYLES = [
-    { key:'classic',     label:'Angled Pro',   portrait:false },
-    { key:'sidebar',     label:'Dark Geo',     portrait:false },
-    { key:'wave',        label:'Wave Panel',   portrait:false },
-    { key:'bold_header', label:'Bold Split',   portrait:false },
-    { key:'diagonal',    label:'Triangle Pro', portrait:false }
+    { key:'classic',       label:'Angled Pro',    portrait:false },
+    { key:'sidebar',       label:'Dark Geo',      portrait:false },
+    { key:'wave',          label:'Wave Panel',    portrait:false },
+    { key:'bold_header',   label:'Bold Split',    portrait:false },
+    { key:'diagonal',      label:'Triangle Pro',  portrait:false },
+    { key:'gradient_pro',  label:'Gradient Pro',  portrait:false },
+    { key:'neon',          label:'Neon Glow',     portrait:false },
+    { key:'executive',     label:'Executive',     portrait:false },
+    { key:'stripe',        label:'Stripe Band',   portrait:false },
+    { key:'metro',         label:'Metro Flat',    portrait:false },
+    { key:'glass',         label:'Glassmorphism', portrait:false },
+    { key:'zigzag',        label:'Zig-Zag',       portrait:false },
+    { key:'ribbon',        label:'Ribbon',        portrait:false }
 ];
 var PORTRAIT_STYLES = [
-    { key:'v_sharp',  label:'Sharp V',      portrait:true },
-    { key:'v_curve',  label:'Curve Wave',   portrait:true },
-    { key:'v_hex',    label:'Hex Badge',    portrait:true },
-    { key:'v_circle', label:'Circle Top',   portrait:true },
-    { key:'v_split',  label:'Color Split',  portrait:true }
+    { key:'v_sharp',    label:'Sharp V',       portrait:true },
+    { key:'v_curve',    label:'Curve Wave',    portrait:true },
+    { key:'v_hex',      label:'Hex Badge',     portrait:true },
+    { key:'v_circle',   label:'Circle Top',    portrait:true },
+    { key:'v_split',    label:'Color Split',   portrait:true },
+    { key:'v_ribbon',   label:'Ribbon (V)',    portrait:true },
+    { key:'v_arch',     label:'Arch (V)',      portrait:true },
+    { key:'v_diamond',  label:'Diamond (V)',   portrait:true },
+    { key:'v_corner',   label:'Corner (V)',    portrait:true },
+    { key:'v_dual',     label:'Dual Band (V)', portrait:true },
+    { key:'v_stripe',   label:'Stripe (V)',    portrait:true },
+    { key:'v_badge',    label:'Badge (V)',     portrait:true }
 ];
 function isPortraitTemplate(key) {
     var tpl = TEMPLATES[key];
@@ -530,6 +545,216 @@ function buildStyleThumbnail(key, pri, acc, portrait) {
                 +'<rect x="'+(W*0.06)+'" y="'+(H*0.82)+'" width="'+(W*0.88)+'" height="2" rx="0.8" fill="#555" opacity="0.4"/>'
                 +'<rect x="'+(W*0.06)+'" y="'+(H*0.87)+'" width="'+(W*0.70)+'" height="2" rx="0.8" fill="#555" opacity="0.35"/>'
                 +'<rect x="'+(W*0.06)+'" y="'+(H*0.92)+'" width="'+(W*0.55)+'" height="3.5" rx="0.5" fill="#ddd"/>'
+                +'</svg>';
+        case 'gradient_pro':
+            return '<svg viewBox="'+vb+'" xmlns="http://www.w3.org/2000/svg">'
+                +'<defs><linearGradient id="gpg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="'+pri+'"/><stop offset="100%" stop-color="'+acc+'"/></linearGradient></defs>'
+                +'<rect width="'+W+'" height="'+H+'" fill="url(#gpg)"/>'
+                +'<rect x="0" y="0" width="'+W+'" height="'+H+'" fill="rgba(0,0,0,0.18)"/>'
+                +'<circle cx="'+(W*0.28)+'" cy="'+(H*0.5)+'" r="11" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.7)" stroke-width="1.2"/>'
+                +'<rect x="'+(W*0.45)+'" y="12" width="30" height="3.5" rx="1.5" fill="#fff" opacity="0.95"/>'
+                +'<rect x="'+(W*0.45)+'" y="18" width="22" height="2" rx="1" fill="rgba(255,255,255,0.6)"/>'
+                +'<rect x="'+(W*0.45)+'" y="25" width="28" height="1.8" rx="0.7" fill="rgba(255,255,255,0.4)"/>'
+                +'<rect x="'+(W*0.45)+'" y="30" width="24" height="1.8" rx="0.7" fill="rgba(255,255,255,0.35)"/>'
+                +'<rect x="'+(W*0.45)+'" y="35" width="26" height="1.8" rx="0.7" fill="rgba(255,255,255,0.3)"/>'
+                +'<rect x="'+(W*0.45)+'" y="40" width="20" height="1.8" rx="0.7" fill="rgba(255,255,255,0.25)"/>'
+                +'<rect x="'+(W*0.1)+'" y="'+(H*0.88)+'" width="'+(W*0.45)+'" height="4" rx="0.5" fill="rgba(255,255,255,0.15)"/>'
+                +'</svg>';
+        case 'neon':
+            return '<svg viewBox="'+vb+'" xmlns="http://www.w3.org/2000/svg">'
+                +'<rect width="'+W+'" height="'+H+'" fill="#050a10"/>'
+                +'<rect x="0" y="0" width="'+W+'" height="3" fill="'+pri+'"/>'
+                +'<rect x="0" y="'+(H-3)+'" width="'+W+'" height="3" fill="'+acc+'"/>'
+                +'<circle cx="'+(W*0.22)+'" cy="'+(H*0.5)+'" r="11" fill="rgba(255,255,255,0.04)" stroke="'+acc+'" stroke-width="1.5"/>'
+                +'<circle cx="'+(W*0.22)+'" cy="'+(H*0.5)+'" r="7" fill="rgba(255,255,255,0.07)"/>'
+                +'<rect x="'+(W*0.4)+'" y="10" width="32" height="3.5" rx="1.5" fill="'+pri+'" opacity="0.95"/>'
+                +'<rect x="'+(W*0.4)+'" y="16" width="22" height="2" rx="1" fill="'+acc+'" opacity="0.7"/>'
+                +'<rect x="'+(W*0.4)+'" y="23" width="28" height="1.5" rx="0.6" fill="rgba(255,255,255,0.2)"/>'
+                +'<rect x="'+(W*0.4)+'" y="28" width="24" height="1.5" rx="0.6" fill="rgba(255,255,255,0.18)"/>'
+                +'<rect x="'+(W*0.4)+'" y="33" width="26" height="1.5" rx="0.6" fill="rgba(255,255,255,0.15)"/>'
+                +'<rect x="'+(W*0.4)+'" y="38" width="20" height="1.5" rx="0.6" fill="rgba(255,255,255,0.12)"/>'
+                +'<rect x="'+(W*0.1)+'" y="'+(H*0.87)+'" width="30" height="4.5" rx="0.5" fill="rgba(255,255,255,0.07)"/>'
+                +'</svg>';
+        case 'executive':
+            return '<svg viewBox="'+vb+'" xmlns="http://www.w3.org/2000/svg">'
+                +'<rect width="'+W+'" height="'+H+'" fill="#1a1f2e"/>'
+                +'<rect x="0" y="0" width="'+W+'" height="4" fill="#c9a84c"/>'
+                +'<rect x="0" y="'+(H-4)+'" width="'+W+'" height="4" fill="#c9a84c"/>'
+                +'<rect x="4" y="4" width="'+(W-8)+'" height="'+(H-8)+'" fill="none" stroke="rgba(201,168,76,0.3)" stroke-width="0.5"/>'
+                +'<circle cx="'+(W*0.22)+'" cy="'+(H*0.5)+'" r="11" fill="rgba(201,168,76,0.15)" stroke="#c9a84c" stroke-width="1.2"/>'
+                +'<rect x="'+(W*0.38)+'" y="10" width="32" height="3.5" rx="1.5" fill="#fff" opacity="0.92"/>'
+                +'<rect x="'+(W*0.38)+'" y="16" width="22" height="2" rx="1" fill="#c9a84c" opacity="0.8"/>'
+                +'<rect x="'+(W*0.38)+'" y="23" width="28" height="1.5" rx="0.6" fill="rgba(255,255,255,0.3)"/>'
+                +'<rect x="'+(W*0.38)+'" y="28" width="24" height="1.5" rx="0.6" fill="rgba(255,255,255,0.25)"/>'
+                +'<rect x="'+(W*0.38)+'" y="33" width="26" height="1.5" rx="0.6" fill="rgba(255,255,255,0.2)"/>'
+                +'<rect x="'+(W*0.38)+'" y="38" width="20" height="1.5" rx="0.6" fill="rgba(255,255,255,0.15)"/>'
+                +'<rect x="'+(W*0.1)+'" y="'+(H*0.87)+'" width="30" height="4" rx="0.5" fill="rgba(201,168,76,0.15)"/>'
+                +'</svg>';
+        case 'stripe':
+            return '<svg viewBox="'+vb+'" xmlns="http://www.w3.org/2000/svg">'
+                +'<rect width="'+W+'" height="'+H+'" fill="#f5f7fa"/>'
+                +'<rect x="0" y="0" width="'+W+'" height="'+(H*0.18)+'" fill="'+pri+'"/>'
+                +'<rect x="0" y="'+(H*0.18)+'" width="'+W+'" height="'+(H*0.64)+'" fill="#fff"/>'
+                +'<rect x="0" y="'+(H*0.82)+'" width="'+W+'" height="'+(H*0.18)+'" fill="'+acc+'"/>'
+                +'<circle cx="'+(W*0.22)+'" cy="'+(H*0.5)+'" r="12" fill="'+pri+'20" stroke="'+pri+'" stroke-width="1.5"/>'
+                +'<rect x="'+(W*0.38)+'" y="'+(H*0.22)+'" width="32" height="3.5" rx="1.5" fill="'+pri+'" opacity="0.88"/>'
+                +'<rect x="'+(W*0.38)+'" y="'+(H*0.32)+'" width="22" height="2" rx="1" fill="#888"/>'
+                +'<rect x="'+(W*0.38)+'" y="'+(H*0.42)+'" width="28" height="1.8" rx="0.7" fill="#555" opacity="0.5"/>'
+                +'<rect x="'+(W*0.38)+'" y="'+(H*0.50)+'" width="24" height="1.8" rx="0.7" fill="#555" opacity="0.45"/>'
+                +'<rect x="'+(W*0.38)+'" y="'+(H*0.58)+'" width="26" height="1.8" rx="0.7" fill="#555" opacity="0.4"/>'
+                +'<rect x="'+(W*0.38)+'" y="'+(H*0.66)+'" width="20" height="1.8" rx="0.7" fill="#555" opacity="0.35"/>'
+                +'</svg>';
+        case 'metro':
+            return '<svg viewBox="'+vb+'" xmlns="http://www.w3.org/2000/svg">'
+                +'<rect width="'+W+'" height="'+H+'" fill="#fff"/>'
+                +'<rect x="0" y="0" width="'+(W*0.35)+'" height="'+H+'" fill="'+pri+'"/>'
+                +'<rect x="'+(W*0.35)+'" y="0" width="'+(W*0.04)+'" height="'+H+'" fill="'+acc+'"/>'
+                +'<circle cx="'+(W*0.175)+'" cy="'+(H*0.42)+'" r="10" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.6)" stroke-width="1"/>'
+                +'<rect x="5" y="'+(H*0.72)+'" width="'+(W*0.26)+'" height="3" rx="1" fill="rgba(255,255,255,0.8)"/>'
+                +'<rect x="5" y="'+(H*0.80)+'" width="'+(W*0.22)+'" height="2" rx="0.8" fill="rgba(255,255,255,0.5)"/>'
+                +'<rect x="'+(W*0.45)+'" y="10" width="30" height="3.5" rx="1.5" fill="'+pri+'" opacity="0.85"/>'
+                +'<rect x="'+(W*0.45)+'" y="16" width="20" height="2" rx="1" fill="#aaa"/>'
+                +'<rect x="'+(W*0.45)+'" y="24" width="28" height="1.8" rx="0.7" fill="#555" opacity="0.5"/>'
+                +'<rect x="'+(W*0.45)+'" y="29" width="24" height="1.8" rx="0.7" fill="#555" opacity="0.45"/>'
+                +'<rect x="'+(W*0.45)+'" y="34" width="26" height="1.8" rx="0.7" fill="#555" opacity="0.4"/>'
+                +'<rect x="'+(W*0.45)+'" y="39" width="20" height="1.8" rx="0.7" fill="#555" opacity="0.35"/>'
+                +'</svg>';
+        case 'glass':
+            return '<svg viewBox="'+vb+'" xmlns="http://www.w3.org/2000/svg">'
+                +'<defs><linearGradient id="glbg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="'+pri+'"/><stop offset="100%" stop-color="'+acc+'"/></linearGradient></defs>'
+                +'<rect width="'+W+'" height="'+H+'" fill="url(#glbg)"/>'
+                +'<rect x="'+(W*0.08)+'" y="'+(H*0.1)+'" width="'+(W*0.84)+'" height="'+(H*0.8)+'" rx="5" fill="rgba(255,255,255,0.18)" stroke="rgba(255,255,255,0.35)" stroke-width="0.7"/>'
+                +'<circle cx="'+(W*0.28)+'" cy="'+(H*0.46)+'" r="11" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.6)" stroke-width="1"/>'
+                +'<rect x="'+(W*0.42)+'" y="'+(H*0.17)+'" width="30" height="3.5" rx="1.5" fill="#fff" opacity="0.92"/>'
+                +'<rect x="'+(W*0.42)+'" y="'+(H*0.28)+'" width="22" height="2" rx="1" fill="rgba(255,255,255,0.65)"/>'
+                +'<rect x="'+(W*0.42)+'" y="'+(H*0.38)+'" width="28" height="1.5" rx="0.6" fill="rgba(255,255,255,0.4)"/>'
+                +'<rect x="'+(W*0.42)+'" y="'+(H*0.45)+'" width="24" height="1.5" rx="0.6" fill="rgba(255,255,255,0.35)"/>'
+                +'<rect x="'+(W*0.42)+'" y="'+(H*0.52)+'" width="26" height="1.5" rx="0.6" fill="rgba(255,255,255,0.3)"/>'
+                +'<rect x="'+(W*0.42)+'" y="'+(H*0.59)+'" width="20" height="1.5" rx="0.6" fill="rgba(255,255,255,0.25)"/>'
+                +'<rect x="'+(W*0.14)+'" y="'+(H*0.82)+'" width="28" height="4" rx="0.5" fill="rgba(255,255,255,0.2)"/>'
+                +'</svg>';
+        case 'zigzag':
+            return '<svg viewBox="'+vb+'" xmlns="http://www.w3.org/2000/svg">'
+                +'<rect width="'+W+'" height="'+H+'" fill="#f7f8fc"/>'
+                +'<path d="M0,0 L'+W+',0 L'+W+','+(H*0.42)+' '
+                +' L'+(W*0.9)+','+(H*0.35)+' L'+(W*0.8)+','+(H*0.42)+' L'+(W*0.7)+','+(H*0.35)+' L'+(W*0.6)+','+(H*0.42)+' L'+(W*0.5)+','+(H*0.35)+' L'+(W*0.4)+','+(H*0.42)+' L'+(W*0.3)+','+(H*0.35)+' L'+(W*0.2)+','+(H*0.42)+' L'+(W*0.1)+','+(H*0.35)+' L0,'+(H*0.42)+' Z" fill="'+pri+'"/>'
+                +'<circle cx="'+(W*0.5)+'" cy="'+(H*0.46)+'" r="8" fill="#fff" stroke="'+pri+'" stroke-width="1.5"/>'
+                +'<rect x="'+(W*0.05)+'" y="'+(H*0.6)+'" width="'+(W*0.55)+'" height="3.5" rx="1.5" fill="'+pri+'" opacity="0.85"/>'
+                +'<rect x="'+(W*0.05)+'" y="'+(H*0.68)+'" width="'+(W*0.4)+'" height="2" rx="1" fill="#aaa"/>'
+                +'<rect x="'+(W*0.05)+'" y="'+(H*0.76)+'" width="'+(W*0.5)+'" height="1.8" rx="0.7" fill="#555" opacity="0.5"/>'
+                +'<rect x="'+(W*0.05)+'" y="'+(H*0.83)+'" width="'+(W*0.45)+'" height="1.8" rx="0.7" fill="#555" opacity="0.45"/>'
+                +'<rect x="'+(W*0.62)+'" y="'+(H*0.62)+'" width="28" height="5" rx="0.5" fill="#eee"/>'
+                +'</svg>';
+        case 'ribbon':
+            return '<svg viewBox="'+vb+'" xmlns="http://www.w3.org/2000/svg">'
+                +'<rect width="'+W+'" height="'+H+'" fill="#111827"/>'
+                +'<polygon points="0,'+(H*0.28)+' '+W+','+(H*0.15)+' '+W+','+(H*0.5)+' 0,'+(H*0.63)+'" fill="'+pri+'" opacity="0.92"/>'
+                +'<polygon points="0,'+(H*0.32)+' '+W+','+(H*0.19)+' '+W+','+(H*0.54)+' 0,'+(H*0.67)+'" fill="'+acc+'" opacity="0.6"/>'
+                +'<circle cx="'+(W*0.2)+'" cy="'+(H*0.4)+'" r="10" fill="rgba(255,255,255,0.18)" stroke="rgba(255,255,255,0.6)" stroke-width="1"/>'
+                +'<rect x="'+(W*0.36)+'" y="'+(H*0.22)+'" width="28" height="3" rx="1" fill="#fff" opacity="0.92"/>'
+                +'<rect x="'+(W*0.36)+'" y="'+(H*0.3)+'" width="20" height="2" rx="0.8" fill="rgba(255,255,255,0.7)"/>'
+                +'<rect x="'+(W*0.05)+'" y="'+(H*0.74)+'" width="24" height="1.8" rx="0.7" fill="rgba(255,255,255,0.25)"/>'
+                +'<rect x="'+(W*0.05)+'" y="'+(H*0.81)+'" width="20" height="1.8" rx="0.7" fill="rgba(255,255,255,0.2)"/>'
+                +'<rect x="'+(W*0.05)+'" y="'+(H*0.88)+'" width="28" height="4" rx="0.5" fill="rgba(255,255,255,0.1)"/>'
+                +'</svg>';
+        // ── New portrait thumbnails ────────────────────────────────────────────
+        case 'v_ribbon':
+            return '<svg viewBox="'+vb+'" xmlns="http://www.w3.org/2000/svg">'
+                +'<rect width="'+W+'" height="'+H+'" fill="#f7f8fc"/>'
+                +'<rect x="0" y="0" width="'+W+'" height="'+(H*0.2)+'" fill="'+pri+'"/>'
+                +'<rect x="0" y="'+(H*0.28)+'" width="'+W+'" height="'+(H*0.14)+'" fill="'+acc+'"/>'
+                +'<rect x="0" y="'+(H*0.42)+'" width="'+W+'" height="'+(H*0.04)+'" fill="'+pri+'22"/>'
+                +'<circle cx="'+(W*0.5)+'" cy="'+(H*0.28)+'" r="'+(W*0.17)+'" fill="#fff" stroke="'+pri+'" stroke-width="1.5"/>'
+                +'<rect x="'+(W*0.1)+'" y="'+(H*0.5)+'" width="'+(W*0.8)+'" height="4" rx="1.5" fill="'+pri+'" opacity="0.85"/>'
+                +'<rect x="'+(W*0.15)+'" y="'+(H*0.57)+'" width="'+(W*0.7)+'" height="2.5" rx="1" fill="#aaa"/>'
+                +'<rect x="'+(W*0.08)+'" y="'+(H*0.63)+'" width="'+(W*0.84)+'" height="2" rx="0.8" fill="#555" opacity="0.5"/>'
+                +'<rect x="'+(W*0.08)+'" y="'+(H*0.68)+'" width="'+(W*0.78)+'" height="2" rx="0.8" fill="#555" opacity="0.45"/>'
+                +'<rect x="'+(W*0.08)+'" y="'+(H*0.73)+'" width="'+(W*0.70)+'" height="2" rx="0.8" fill="#555" opacity="0.4"/>'
+                +'<rect x="'+(W*0.08)+'" y="'+(H*0.78)+'" width="'+(W*0.65)+'" height="2" rx="0.8" fill="#555" opacity="0.35"/>'
+                +'<rect x="'+(W*0.08)+'" y="'+(H*0.83)+'" width="'+(W*0.60)+'" height="2" rx="0.8" fill="#555" opacity="0.3"/>'
+                +'<rect x="'+(W*0.1)+'" y="'+(H*0.93)+'" width="'+(W*0.8)+'" height="4" rx="0.5" fill="#ddd"/>'
+                +'</svg>';
+        case 'v_arch':
+            return '<svg viewBox="'+vb+'" xmlns="http://www.w3.org/2000/svg">'
+                +'<rect width="'+W+'" height="'+H+'" fill="#ffffff"/>'
+                +'<path d="M0,0 L'+W+',0 L'+W+','+(H*0.5)+' Q'+W+','+(H*0.65)+' '+(W*0.5)+','+(H*0.65)+' Q0,'+(H*0.65)+' 0,'+(H*0.5)+' Z" fill="'+pri+'"/>'
+                +'<path d="M0,0 L'+W+',0 L'+W+','+(H*0.38)+' Q'+W+','+(H*0.52)+' '+(W*0.5)+','+(H*0.52)+' Q0,'+(H*0.52)+' 0,'+(H*0.38)+' Z" fill="rgba(255,255,255,0.1)"/>'
+                +'<circle cx="'+(W*0.5)+'" cy="'+(H*0.28)+'" r="'+(W*0.18)+'" fill="rgba(255,255,255,0.25)" stroke="rgba(255,255,255,0.7)" stroke-width="1.2"/>'
+                +'<rect x="'+(W*0.08)+'" y="'+(H*0.68)+'" width="'+(W*0.84)+'" height="4" rx="1.5" fill="'+pri+'" opacity="0.85"/>'
+                +'<rect x="'+(W*0.13)+'" y="'+(H*0.75)+'" width="'+(W*0.74)+'" height="2.5" rx="1" fill="#aaa"/>'
+                +'<rect x="'+(W*0.08)+'" y="'+(H*0.81)+'" width="'+(W*0.84)+'" height="2" rx="0.8" fill="#555" opacity="0.5"/>'
+                +'<rect x="'+(W*0.08)+'" y="'+(H*0.86)+'" width="'+(W*0.78)+'" height="2" rx="0.8" fill="#555" opacity="0.45"/>'
+                +'<rect x="'+(W*0.08)+'" y="'+(H*0.91)+'" width="'+(W*0.70)+'" height="2" rx="0.8" fill="#555" opacity="0.4"/>'
+                +'<rect x="'+(W*0.1)+'" y="'+(H*0.95)+'" width="'+(W*0.8)+'" height="4" rx="0.5" fill="#ddd"/>'
+                +'</svg>';
+        case 'v_diamond':
+            return '<svg viewBox="'+vb+'" xmlns="http://www.w3.org/2000/svg">'
+                +'<rect width="'+W+'" height="'+H+'" fill="#f7f8fc"/>'
+                +'<rect x="0" y="0" width="'+W+'" height="'+(H*0.5)+'" fill="'+pri+'"/>'
+                +'<polygon points="'+(W*0.5)+','+(H*0.52)+' '+W+','+(H*0.38)+' '+(W*0.5)+','+(H*0.24)+' 0,'+(H*0.38)+'" fill="'+acc+'" opacity="0.8"/>'
+                +'<circle cx="'+(W*0.5)+'" cy="'+(H*0.38)+'" r="'+(W*0.14)+'" fill="rgba(255,255,255,0.25)" stroke="#fff" stroke-width="1.2"/>'
+                +'<circle cx="3" cy="3" r="2.5" fill="rgba(255,255,255,0.25)"/>'
+                +'<rect x="'+(W*0.08)+'" y="'+(H*0.57)+'" width="'+(W*0.84)+'" height="4" rx="1.5" fill="'+pri+'" opacity="0.85"/>'
+                +'<rect x="'+(W*0.13)+'" y="'+(H*0.64)+'" width="'+(W*0.74)+'" height="2.5" rx="1" fill="#aaa"/>'
+                +'<rect x="'+(W*0.08)+'" y="'+(H*0.70)+'" width="'+(W*0.84)+'" height="2" rx="0.8" fill="#555" opacity="0.5"/>'
+                +'<rect x="'+(W*0.08)+'" y="'+(H*0.75)+'" width="'+(W*0.78)+'" height="2" rx="0.8" fill="#555" opacity="0.45"/>'
+                +'<rect x="'+(W*0.08)+'" y="'+(H*0.80)+'" width="'+(W*0.70)+'" height="2" rx="0.8" fill="#555" opacity="0.4"/>'
+                +'<rect x="'+(W*0.08)+'" y="'+(H*0.85)+'" width="'+(W*0.65)+'" height="2" rx="0.8" fill="#555" opacity="0.35"/>'
+                +'<rect x="'+(W*0.1)+'" y="'+(H*0.93)+'" width="'+(W*0.8)+'" height="4" rx="0.5" fill="#ddd"/>'
+                +'</svg>';
+        case 'v_corner':
+            return '<svg viewBox="'+vb+'" xmlns="http://www.w3.org/2000/svg">'
+                +'<rect width="'+W+'" height="'+H+'" fill="#ffffff"/>'
+                +'<polygon points="0,0 '+(W*0.65)+',0 0,'+(H*0.55)+'" fill="'+pri+'"/>'
+                +'<polygon points="'+W+','+H+' '+(W*0.35)+','+H+' '+W+','+(H*0.45)+'" fill="'+acc+'" opacity="0.85"/>'
+                +'<circle cx="'+(W*0.5)+'" cy="'+(H*0.32)+'" r="'+(W*0.17)+'" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.7)" stroke-width="1.2"/>'
+                +'<rect x="'+(W*0.08)+'" y="'+(H*0.54)+'" width="'+(W*0.84)+'" height="4" rx="1.5" fill="'+pri+'" opacity="0.85"/>'
+                +'<rect x="'+(W*0.13)+'" y="'+(H*0.61)+'" width="'+(W*0.74)+'" height="2.5" rx="1" fill="#aaa"/>'
+                +'<rect x="'+(W*0.08)+'" y="'+(H*0.67)+'" width="'+(W*0.84)+'" height="2" rx="0.8" fill="#555" opacity="0.5"/>'
+                +'<rect x="'+(W*0.08)+'" y="'+(H*0.72)+'" width="'+(W*0.78)+'" height="2" rx="0.8" fill="#555" opacity="0.45"/>'
+                +'<rect x="'+(W*0.08)+'" y="'+(H*0.77)+'" width="'+(W*0.70)+'" height="2" rx="0.8" fill="#555" opacity="0.4"/>'
+                +'<rect x="'+(W*0.08)+'" y="'+(H*0.82)+'" width="'+(W*0.65)+'" height="2" rx="0.8" fill="#555" opacity="0.35"/>'
+                +'<rect x="'+(W*0.1)+'" y="'+(H*0.93)+'" width="'+(W*0.8)+'" height="4" rx="0.5" fill="#ddd"/>'
+                +'</svg>';
+        case 'v_dual':
+            return '<svg viewBox="'+vb+'" xmlns="http://www.w3.org/2000/svg">'
+                +'<rect width="'+W+'" height="'+H+'" fill="#f7f8fc"/>'
+                +'<rect x="0" y="0" width="'+W+'" height="'+(H*0.22)+'" fill="'+pri+'"/>'
+                +'<rect x="0" y="'+(H*0.78)+'" width="'+W+'" height="'+(H*0.22)+'" fill="'+acc+'"/>'
+                +'<circle cx="3" cy="3" r="2.5" fill="rgba(255,255,255,0.25)"/>'
+                +'<circle cx="'+(W*0.5)+'" cy="'+(H*0.4)+'" r="'+(W*0.18)+'" fill="#fff" stroke="'+pri+'" stroke-width="1.5"/>'
+                +'<rect x="'+(W*0.1)+'" y="'+(H*0.6)+'" width="'+(W*0.8)+'" height="3.5" rx="1.5" fill="'+pri+'" opacity="0.85"/>'
+                +'<rect x="'+(W*0.15)+'" y="'+(H*0.66)+'" width="'+(W*0.7)+'" height="2.5" rx="1" fill="#aaa"/>'
+                +'<rect x="'+(W*0.08)+'" y="'+(H*0.71)+'" width="'+(W*0.84)+'" height="2" rx="0.8" fill="#555" opacity="0.5"/>'
+                +'<rect x="'+(W*0.08)+'" y="'+(H*0.75)+'" width="'+(W*0.78)+'" height="2" rx="0.8" fill="#555" opacity="0.45"/>'
+                +'</svg>';
+        case 'v_stripe':
+            return '<svg viewBox="'+vb+'" xmlns="http://www.w3.org/2000/svg">'
+                +'<defs><linearGradient id="vsg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="'+pri+'"/><stop offset="100%" stop-color="'+acc+'"/></linearGradient></defs>'
+                +'<rect width="'+W+'" height="'+H+'" fill="url(#vsg)"/>'
+                +'<rect x="'+(W*0.08)+'" y="'+(H*0.05)+'" width="'+(W*0.84)+'" height="'+(H*0.88)+'" rx="4" fill="rgba(255,255,255,0.22)" stroke="rgba(255,255,255,0.4)" stroke-width="0.6"/>'
+                +'<circle cx="'+(W*0.5)+'" cy="'+(H*0.3)+'" r="'+(W*0.18)+'" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.7)" stroke-width="1.2"/>'
+                +'<rect x="'+(W*0.12)+'" y="'+(H*0.52)+'" width="'+(W*0.76)+'" height="4" rx="1.5" fill="#fff" opacity="0.92"/>'
+                +'<rect x="'+(W*0.17)+'" y="'+(H*0.59)+'" width="'+(W*0.66)+'" height="2.5" rx="1" fill="rgba(255,255,255,0.65)"/>'
+                +'<rect x="'+(W*0.12)+'" y="'+(H*0.65)+'" width="'+(W*0.76)+'" height="2" rx="0.8" fill="rgba(255,255,255,0.4)"/>'
+                +'<rect x="'+(W*0.12)+'" y="'+(H*0.70)+'" width="'+(W*0.68)+'" height="2" rx="0.8" fill="rgba(255,255,255,0.35)"/>'
+                +'<rect x="'+(W*0.12)+'" y="'+(H*0.75)+'" width="'+(W*0.60)+'" height="2" rx="0.8" fill="rgba(255,255,255,0.3)"/>'
+                +'<rect x="'+(W*0.12)+'" y="'+(H*0.80)+'" width="'+(W*0.56)+'" height="2" rx="0.8" fill="rgba(255,255,255,0.25)"/>'
+                +'<rect x="'+(W*0.12)+'" y="'+(H*0.87)+'" width="'+(W*0.76)+'" height="4" rx="0.5" fill="rgba(255,255,255,0.15)"/>'
+                +'</svg>';
+        case 'v_badge':
+            return '<svg viewBox="'+vb+'" xmlns="http://www.w3.org/2000/svg">'
+                +'<rect width="'+W+'" height="'+H+'" fill="#f7f8fc"/>'
+                +'<path d="M'+(W*0.08)+',0 L'+(W*0.92)+',0 L'+W+','+(H*0.06)+' L'+W+','+(H*0.42)+' Q'+W+','+(H*0.56)+' '+(W*0.5)+','+(H*0.58)+' Q0,'+(H*0.56)+' 0,'+(H*0.42)+' L0,'+(H*0.06)+' Z" fill="'+pri+'"/>'
+                +'<path d="M'+(W*0.08)+',0 L'+(W*0.92)+',0 L'+W+','+(H*0.06)+' L'+W+','+(H*0.3)+' Q'+W+','+(H*0.44)+' '+(W*0.5)+','+(H*0.44)+' Q0,'+(H*0.44)+' 0,'+(H*0.3)+' L0,'+(H*0.06)+' Z" fill="rgba(255,255,255,0.1)"/>'
+                +'<circle cx="3" cy="3" r="2.5" fill="rgba(255,255,255,0.25)"/>'
+                +'<circle cx="'+(W*0.5)+'" cy="'+(H*0.3)+'" r="'+(W*0.16)+'" fill="rgba(255,255,255,0.25)" stroke="rgba(255,255,255,0.75)" stroke-width="1.2"/>'
+                +'<rect x="'+(W*0.08)+'" y="'+(H*0.62)+'" width="'+(W*0.84)+'" height="4" rx="1.5" fill="'+pri+'" opacity="0.85"/>'
+                +'<rect x="'+(W*0.13)+'" y="'+(H*0.69)+'" width="'+(W*0.74)+'" height="2.5" rx="1" fill="#aaa"/>'
+                +'<rect x="'+(W*0.08)+'" y="'+(H*0.75)+'" width="'+(W*0.84)+'" height="2" rx="0.8" fill="#555" opacity="0.5"/>'
+                +'<rect x="'+(W*0.08)+'" y="'+(H*0.80)+'" width="'+(W*0.78)+'" height="2" rx="0.8" fill="#555" opacity="0.45"/>'
+                +'<rect x="'+(W*0.08)+'" y="'+(H*0.85)+'" width="'+(W*0.70)+'" height="2" rx="0.8" fill="#555" opacity="0.4"/>'
+                +'<rect x="'+(W*0.1)+'" y="'+(H*0.93)+'" width="'+(W*0.8)+'" height="4" rx="0.5" fill="#ddd"/>'
                 +'</svg>';
         default:
             return '<svg viewBox="'+vb+'"><rect width="'+W+'" height="'+H+'" fill="'+pri+'"/></svg>';
@@ -863,6 +1088,364 @@ function renderVSplit(v) {
         +'</div>';
 }
 
+
+// =============================================================================
+//  New Landscape renderers (8 additional styles)
+// =============================================================================
+function renderGradientPro(v) {
+    var bc = barcodeStr('rgba(255,255,255,0.3)','48%');
+    return '<div style="width:100%;height:100%;background:linear-gradient(135deg,'+v.pri+' 0%,'+v.acc+' 100%);font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
+        +'<div style="position:absolute;inset:0;background:rgba(0,0,0,0.18);"></div>'
+        +'<div style="position:absolute;top:5%;left:5%;display:flex;align-items:center;gap:5%;z-index:2;">'
+        +'<div style="width:8%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.22);border:1px solid rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;">'
+        +'<i class="fas fa-infinity" style="color:rgba(255,255,255,0.9);font-size:0.4rem;"></i></div>'
+        +'<span style="font-size:clamp(0.36rem,0.82vw,0.52rem);color:rgba(255,255,255,0.92);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">'+v.orgVal+'</span></div>'
+        +'<div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:5%;z-index:2;width:90%;">'
+        +'<div style="width:26%;aspect-ratio:1;border-radius:50%;border:3px solid rgba(255,255,255,0.8);background:rgba(255,255,255,0.15);overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 24px rgba(0,0,0,0.3);flex-shrink:0;">'+v.photoHTML+'</div>'
+        +'<div style="flex:1;min-width:0;">'
+        +'<div style="font-size:clamp(0.62rem,1.55vw,0.9rem);font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
+        +'<div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:rgba(255,255,255,0.75);margin-top:1.5%;margin-bottom:4%;">'+v.roleVal+'</div>'
+        +'<div style="width:80%;height:1.5px;background:rgba(255,255,255,0.35);border-radius:2px;margin-bottom:4%;"></div>'
+        +fieldRowsHTML(v.fieldItems,'rgba(255,255,255,0.65)','rgba(255,255,255,0.9)')
+        +'</div></div>'
+        +'<div style="position:absolute;bottom:4%;left:50%;transform:translateX(-50%);">'+bc+'</div>'
+        +'</div>';
+}
+
+function renderNeon(v) {
+    var bc = barcodeStr('rgba(255,255,255,0.18)','48%');
+    return '<div style="width:100%;height:100%;background:#050a10;font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
+        +'<div style="position:absolute;top:0;left:0;right:0;height:3px;background:'+v.pri+';box-shadow:0 0 10px '+v.pri+';"></div>'
+        +'<div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:'+v.acc+';box-shadow:0 0 10px '+v.acc+';"></div>'
+        +'<div style="position:absolute;top:5%;left:5%;display:flex;align-items:center;gap:5%;z-index:2;">'
+        +'<div style="width:8%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.05);border:1px solid '+v.acc+';display:flex;align-items:center;justify-content:center;box-shadow:0 0 6px '+v.acc+'44;">'
+        +'<i class="fas fa-infinity" style="color:'+v.acc+';font-size:0.4rem;"></i></div>'
+        +'<span style="font-size:clamp(0.36rem,0.82vw,0.52rem);color:'+v.acc+';font-weight:700;letter-spacing:0.08em;text-transform:uppercase;text-shadow:0 0 8px '+v.acc+'80;">'+v.orgVal+'</span></div>'
+        +'<div style="position:absolute;left:5%;top:50%;transform:translateY(-50%);width:22%;aspect-ratio:1;border-radius:50%;border:2.5px solid '+v.acc+';background:rgba(255,255,255,0.04);overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 0 16px '+v.acc+'60;">'+v.photoHTML+'</div>'
+        +'<div style="position:absolute;left:34%;top:20%;max-width:60%;">'
+        +'<div style="font-size:clamp(0.62rem,1.55vw,0.9rem);font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 0 12px rgba(255,255,255,0.3);">'+v.nameVal+'</div>'
+        +'<div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:'+v.acc+';margin-top:2%;text-shadow:0 0 8px '+v.acc+'60;">'+v.roleVal+'</div></div>'
+        +'<div style="position:absolute;bottom:10%;left:34%;max-width:58%;">'+fieldRowsHTML(v.fieldItems,'rgba(255,255,255,0.45)','rgba(255,255,255,0.85)')+'</div>'
+        +'<div style="position:absolute;bottom:4%;left:50%;transform:translateX(-50%);">'+bc+'</div>'
+        +'</div>';
+}
+
+function renderExecutive(v) {
+    var gold = '#c9a84c';
+    var bc = barcodeStr('rgba(201,168,76,0.35)','48%');
+    return '<div style="width:100%;height:100%;background:#1a1f2e;font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
+        +'<div style="position:absolute;top:0;left:0;right:0;height:4px;background:'+gold+';"></div>'
+        +'<div style="position:absolute;bottom:0;left:0;right:0;height:4px;background:'+gold+';"></div>'
+        +'<div style="position:absolute;top:4px;left:4px;right:4px;bottom:4px;border:0.5px solid rgba(201,168,76,0.25);pointer-events:none;"></div>'
+        +'<div style="position:absolute;top:5%;left:5%;display:flex;align-items:center;gap:5%;z-index:2;">'
+        +'<div style="width:8%;aspect-ratio:1;border-radius:50%;background:rgba(201,168,76,0.15);border:1px solid '+gold+';display:flex;align-items:center;justify-content:center;">'
+        +'<i class="fas fa-infinity" style="color:'+gold+';font-size:0.4rem;"></i></div>'
+        +'<span style="font-size:clamp(0.36rem,0.82vw,0.52rem);color:'+gold+';font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">'+v.orgVal+'</span></div>'
+        +'<div style="position:absolute;left:5%;top:50%;transform:translateY(-50%);width:22%;aspect-ratio:1;border-radius:50%;border:2.5px solid '+gold+';background:rgba(201,168,76,0.1);overflow:hidden;display:flex;align-items:center;justify-content:center;">'+v.photoHTML+'</div>'
+        +'<div style="position:absolute;left:34%;top:20%;max-width:60%;">'
+        +'<div style="font-size:clamp(0.62rem,1.55vw,0.9rem);font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
+        +'<div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:'+gold+';margin-top:2%;">'+v.roleVal+'</div>'
+        +'<div style="width:60%;height:1.5px;background:linear-gradient(90deg,'+gold+',transparent);margin-top:4%;margin-bottom:4%;"></div>'
+        +fieldRowsHTML(v.fieldItems,'rgba(255,255,255,0.45)','rgba(255,255,255,0.88)')
+        +'</div>'
+        +'<div style="position:absolute;bottom:4%;left:50%;transform:translateX(-50%);">'+bc+'</div>'
+        +'</div>';
+}
+
+function renderStripe(v) {
+    var bc = barcodeStr(v.pri,'48%');
+    return '<div style="width:100%;height:100%;background:#f5f7fa;font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
+        +'<div style="position:absolute;top:0;left:0;right:0;height:16%;background:'+v.pri+';"></div>'
+        +'<div style="position:absolute;bottom:0;left:0;right:0;height:16%;background:'+v.acc+';"></div>'
+        +'<div style="position:absolute;top:5%;left:5%;display:flex;align-items:center;gap:5%;z-index:2;">'
+        +'<div style="width:8%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.22);border:1px solid rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;">'
+        +'<i class="fas fa-infinity" style="color:rgba(255,255,255,0.9);font-size:0.4rem;"></i></div>'
+        +'<span style="font-size:clamp(0.36rem,0.82vw,0.52rem);color:rgba(255,255,255,0.92);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">'+v.orgVal+'</span></div>'
+        +'<div style="position:absolute;left:5%;top:50%;transform:translateY(-50%);width:22%;aspect-ratio:1;border-radius:50%;border:2.5px solid '+v.pri+';background:#fff;overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,0,0,0.15);">'+v.photoHTML+'</div>'
+        +'<div style="position:absolute;right:5%;top:20%;max-width:52%;">'
+        +'<div style="font-size:clamp(0.62rem,1.55vw,0.9rem);font-weight:800;color:'+v.pri+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
+        +'<div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:#888;margin-top:2%;">'+v.roleVal+'</div>'
+        +'<div style="width:60%;height:2px;background:linear-gradient(90deg,'+v.acc+',transparent);border-radius:2px;margin:4% 0;"></div>'
+        +fieldRowsHTML(v.fieldItems,v.pri,'#555')
+        +'</div>'
+        +'<div style="position:absolute;bottom:4%;left:50%;transform:translateX(-50%);">'+bc+'</div>'
+        +'</div>';
+}
+
+function renderMetro(v) {
+    var bc = barcodeStr('rgba(255,255,255,0.4)','100%');
+    return '<div style="width:100%;height:100%;display:flex;overflow:hidden;font-family:\''+v.font+'\',sans-serif;">'
+        +'<div style="width:35%;background:'+v.pri+';display:flex;flex-direction:column;align-items:center;flex-shrink:0;position:relative;">'
+        +'<div style="position:absolute;top:0;right:0;width:4px;height:100%;background:'+v.acc+'88;"></div>'
+        +'<div style="padding:10% 0 5%;display:flex;flex-direction:column;align-items:center;gap:6%;">'
+        +'<div style="width:22%;aspect-ratio:1;border-radius:0;background:rgba(255,255,255,0.22);border:1.5px solid rgba(255,255,255,0.5);display:flex;align-items:center;justify-content:center;">'
+        +'<i class="fas fa-infinity" style="color:white;font-size:0.4rem;"></i></div>'
+        +'<span style="font-size:clamp(0.3rem,0.7vw,0.44rem);color:rgba(255,255,255,0.7);font-weight:600;letter-spacing:0.08em;text-transform:uppercase;text-align:center;writing-mode:vertical-rl;transform:rotate(180deg);">'+v.tplName+'</span></div>'
+        +'<div style="width:55%;aspect-ratio:1;border-radius:0;border:3px solid rgba(255,255,255,0.8);background:rgba(255,255,255,0.15);overflow:hidden;display:flex;align-items:center;justify-content:center;margin-top:4%;">'+v.photoHTML+'</div>'
+        +'<div style="margin-top:auto;padding-bottom:6%;width:80%;">'+bc+'</div></div>'
+        +'<div style="flex:1;background:#ffffff;display:flex;flex-direction:column;justify-content:center;padding:6% 7%;min-width:0;position:relative;border-top:4px solid '+v.pri+';border-bottom:4px solid '+v.acc+';">'
+        +'<div style="font-size:clamp(0.62rem,1.52vw,0.88rem);font-weight:800;color:'+v.pri+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
+        +'<div style="font-size:clamp(0.36rem,0.82vw,0.52rem);color:#888;margin-top:1.5%;margin-bottom:4%;">'+v.roleVal+'</div>'
+        +'<div style="width:50%;height:3px;background:'+v.acc+';border-radius:0;margin-bottom:5%;"></div>'
+        +fieldRowsHTML(v.fieldItems,v.pri,'#555')
+        +'</div></div>';
+}
+
+function renderGlass(v) {
+    var bc = barcodeStr('rgba(255,255,255,0.3)','48%');
+    return '<div style="width:100%;height:100%;background:linear-gradient(135deg,'+v.pri+' 0%,'+v.acc+' 100%);font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
+        +'<div style="position:absolute;inset:8% 6%;background:rgba(255,255,255,0.15);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,0.35);border-radius:10px;overflow:hidden;">'
+        +'<div style="position:absolute;top:-30%;left:-20%;width:60%;aspect-ratio:1;background:rgba(255,255,255,0.08);border-radius:50%;"></div>'
+        +'<div style="position:absolute;bottom:-20%;right:-15%;width:50%;aspect-ratio:1;background:rgba(255,255,255,0.05);border-radius:50%;"></div>'
+        +'</div>'
+        +'<div style="position:absolute;top:13%;left:12%;display:flex;align-items:center;gap:5%;z-index:2;">'
+        +'<div style="width:8%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.22);border:1px solid rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;">'
+        +'<i class="fas fa-infinity" style="color:rgba(255,255,255,0.9);font-size:0.4rem;"></i></div>'
+        +'<span style="font-size:clamp(0.36rem,0.82vw,0.52rem);color:rgba(255,255,255,0.9);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">'+v.orgVal+'</span></div>'
+        +'<div style="position:absolute;left:12%;top:50%;transform:translateY(-50%);width:22%;aspect-ratio:1;border-radius:50%;border:2.5px solid rgba(255,255,255,0.8);background:rgba(255,255,255,0.2);overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 28px rgba(0,0,0,0.2);z-index:3;">'+v.photoHTML+'</div>'
+        +'<div style="position:absolute;left:40%;top:18%;max-width:54%;z-index:2;">'
+        +'<div style="font-size:clamp(0.62rem,1.55vw,0.9rem);font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 2px 8px rgba(0,0,0,0.2);">'+v.nameVal+'</div>'
+        +'<div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:rgba(255,255,255,0.8);margin-top:2%;margin-bottom:4%;">'+v.roleVal+'</div>'
+        +'<div style="width:60%;height:1px;background:rgba(255,255,255,0.4);margin-bottom:4%;"></div>'
+        +fieldRowsHTML(v.fieldItems,'rgba(255,255,255,0.7)','rgba(255,255,255,0.92)')
+        +'</div>'
+        +'<div style="position:absolute;bottom:7%;left:50%;transform:translateX(-50%);">'+bc+'</div>'
+        +'</div>';
+}
+
+function renderZigzag(v) {
+    var bc = barcodeStr(v.pri,'48%');
+    // Build zig-zag path bottom of header ~40% height
+    var W = 85.6, H = 54;
+    var zzPath = 'M0,0 L'+W+',0 L'+W+','+(H*0.4);
+    for (var i = 10; i >= 0; i--) {
+        var xr = (i/10)*W;
+        var ym = (i%2===0) ? (H*0.4) : (H*0.32);
+        zzPath += ' L'+xr+','+ym;
+    }
+    zzPath += ' Z';
+    return '<div style="width:100%;height:100%;background:#f7f8fc;font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
+        +'<svg style="position:absolute;top:0;left:0;width:100%;height:100%;" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">'
+        +'<path d="'+zzPath+'" fill="'+v.pri+'"/>'
+        +'<path d="'+zzPath+'" fill="rgba(255,255,255,0.06)"/>'
+        +'</svg>'
+        +'<div style="position:absolute;top:5%;left:5%;display:flex;align-items:center;gap:5%;z-index:2;">'
+        +'<div style="width:8%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.22);border:1px solid rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;">'
+        +'<i class="fas fa-infinity" style="color:rgba(255,255,255,0.9);font-size:0.4rem;"></i></div>'
+        +'<span style="font-size:clamp(0.36rem,0.82vw,0.52rem);color:rgba(255,255,255,0.92);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;z-index:2;">'+v.orgVal+'</span></div>'
+        +'<div style="position:absolute;left:50%;top:44%;transform:translateX(-50%);width:22%;aspect-ratio:1;border-radius:50%;border:3px solid #fff;background:'+v.pri+'22;overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 24px rgba(0,0,0,0.22);z-index:3;">'+v.photoHTML+'</div>'
+        +'<div style="position:absolute;top:62%;left:4%;right:4%;text-align:center;z-index:2;">'
+        +'<div style="font-size:clamp(0.62rem,1.55vw,0.9rem);font-weight:800;color:'+v.pri+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
+        +'<div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:#888;margin-top:1%;">'+v.roleVal+'</div></div>'
+        +'<div style="position:absolute;top:72%;left:5%;right:5%;display:grid;grid-template-columns:1fr 1fr;column-gap:3%;z-index:2;">'+fieldRowsHTML(v.fieldItems,v.pri,'#444')+'</div>'
+        +'<div style="position:absolute;bottom:3%;left:50%;transform:translateX(-50%);z-index:2;">'+bc+'</div>'
+        +'</div>';
+}
+
+function renderRibbon(v) {
+    var bc = barcodeStr('rgba(255,255,255,0.25)','48%');
+    return '<div style="width:100%;height:100%;background:#111827;font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
+        +'<svg style="position:absolute;inset:0;width:100%;height:100%;" viewBox="0 0 85.6 54" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">'
+        +'<polygon points="0,15 85.6,8 85.6,27 0,34" fill="'+v.pri+'" opacity="0.92"/>'
+        +'<polygon points="0,18 85.6,11 85.6,31 0,38" fill="'+v.acc+'" opacity="0.55"/>'
+        +'</svg>'
+        +'<div style="position:absolute;top:5%;left:5%;display:flex;align-items:center;gap:5%;z-index:2;">'
+        +'<div style="width:8%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.25);display:flex;align-items:center;justify-content:center;">'
+        +'<i class="fas fa-infinity" style="color:rgba(255,255,255,0.7);font-size:0.4rem;"></i></div>'
+        +'<span style="font-size:clamp(0.36rem,0.82vw,0.52rem);color:rgba(255,255,255,0.7);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">'+v.orgVal+'</span></div>'
+        +'<div style="position:absolute;left:5%;top:50%;transform:translateY(-50%);width:22%;aspect-ratio:1;border-radius:50%;border:2.5px solid rgba(255,255,255,0.8);background:rgba(255,255,255,0.1);overflow:hidden;display:flex;align-items:center;justify-content:center;z-index:3;">'+v.photoHTML+'</div>'
+        +'<div style="position:absolute;left:33%;top:14%;max-width:60%;z-index:2;">'
+        +'<div style="font-size:clamp(0.62rem,1.55vw,0.9rem);font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
+        +'<div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:rgba(255,255,255,0.75);margin-top:2%;">'+v.roleVal+'</div></div>'
+        +'<div style="position:absolute;bottom:8%;left:5%;max-width:52%;z-index:2;">'+fieldRowsHTML(v.fieldItems,'rgba(255,255,255,0.5)','rgba(255,255,255,0.88)')+'</div>'
+        +'<div style="position:absolute;bottom:4%;right:5%;width:34%;z-index:2;">'+bc+'</div>'
+        +'</div>';
+}
+
+// =============================================================================
+//  New Portrait renderers (7 additional styles)
+// =============================================================================
+function renderVRibbon(v) {
+    var bc = barcodeStr(v.pri,'62%');
+    return '<div style="width:100%;height:100%;background:#f7f8fc;font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
+        // Top narrow band
+        +'<div style="position:absolute;top:0;left:0;right:0;height:20%;background:'+v.pri+';"></div>'
+        // Accent ribbon band
+        +'<div style="position:absolute;top:22%;left:0;right:0;height:13%;background:'+v.acc+';opacity:0.9;"></div>'
+        +'<div style="position:absolute;top:35%;left:0;right:0;height:3%;background:'+v.pri+'22;"></div>'
+        // Logo top-left
+        +'<div style="position:absolute;top:3%;left:4%;display:flex;align-items:center;gap:6%;z-index:2;">'
+        +'<div style="width:12%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.22);border:1px solid rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;">'
+        +'<i class="fas fa-infinity" style="color:rgba(255,255,255,0.9);font-size:0.35rem;"></i></div>'
+        +'<span style="font-size:clamp(0.42rem,1vw,0.6rem);color:rgba(255,255,255,0.95);font-weight:700;letter-spacing:0.05em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:70%;">'+v.orgVal+'</span></div>'
+        // Photo circle centred on ribbon boundary
+        +'<div style="position:absolute;left:50%;top:18%;transform:translateX(-50%);width:26%;aspect-ratio:1;border-radius:50%;border:3px solid #fff;background:'+v.pri+'22;overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 28px rgba(0,0,0,0.25);z-index:3;">'+v.photoHTML+'</div>'
+        // Name + role
+        +'<div style="position:absolute;top:42%;left:4%;right:4%;text-align:center;">'
+        +'<div style="font-size:clamp(0.8rem,2vw,1.05rem);font-weight:800;color:'+v.pri+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
+        +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#777;margin-top:1%;">'+v.roleVal+'</div></div>'
+        +'<div style="position:absolute;top:51%;left:10%;right:10%;height:1.5px;background:linear-gradient(90deg,transparent,'+v.acc+',transparent);opacity:0.6;"></div>'
+        +'<div style="position:absolute;top:53%;left:6%;right:6%;">'+fieldRowsHTML(v.fieldItems,v.pri,'#444','clamp(0.38rem,0.9vw,0.54rem)')+'</div>'
+        +'<div style="position:absolute;bottom:2%;left:50%;transform:translateX(-50%);">'+bc+'</div>'
+        +'</div>';
+}
+
+function renderVArch(v) {
+    var bc = barcodeStr(v.pri,'62%');
+    return '<div style="width:100%;height:100%;background:#ffffff;font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
+        // Arch SVG header — fills top ~60% with curved arch bottom
+        +'<svg style="position:absolute;top:0;left:0;width:100%;height:62%;" viewBox="0 0 54 54" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">'
+        +'<path d="M0,0 L54,0 L54,40 Q54,54 27,54 Q0,54 0,40 Z" fill="'+v.pri+'"/>'
+        +'<path d="M0,0 L54,0 L54,28 Q54,40 27,40 Q0,40 0,28 Z" fill="rgba(255,255,255,0.08)"/>'
+        +'</svg>'
+        // Logo top-left
+        +'<div style="position:absolute;top:3%;left:4%;display:flex;align-items:center;gap:6%;z-index:2;">'
+        +'<div style="width:12%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.22);border:1px solid rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;">'
+        +'<i class="fas fa-infinity" style="color:rgba(255,255,255,0.85);font-size:0.35rem;"></i></div>'
+        +'<span style="font-size:clamp(0.42rem,1vw,0.6rem);color:rgba(255,255,255,0.92);font-weight:700;letter-spacing:0.05em;text-transform:uppercase;">'+v.orgVal+'</span></div>'
+        // Photo inside arch
+        +'<div style="position:absolute;left:50%;top:18%;transform:translateX(-50%);width:28%;aspect-ratio:1;border-radius:50%;border:3px solid rgba(255,255,255,0.85);background:rgba(255,255,255,0.18);overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 28px rgba(0,0,0,0.28);z-index:3;">'+v.photoHTML+'</div>'
+        // Name + role below arch
+        +'<div style="position:absolute;top:64%;left:4%;right:4%;text-align:center;">'
+        +'<div style="font-size:clamp(0.8rem,2vw,1.05rem);font-weight:800;color:'+v.pri+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
+        +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#888;margin-top:1%;">'+v.roleVal+'</div></div>'
+        +'<div style="position:absolute;top:72%;left:10%;right:10%;height:1px;background:'+v.pri+';opacity:0.2;"></div>'
+        +'<div style="position:absolute;top:74%;left:6%;right:6%;">'+fieldRowsHTML(v.fieldItems,v.pri,'#444','clamp(0.38rem,0.9vw,0.54rem)')+'</div>'
+        +'<div style="position:absolute;bottom:2%;left:50%;transform:translateX(-50%);">'+bc+'</div>'
+        +'</div>';
+}
+
+function renderVDiamond(v) {
+    var bc = barcodeStr(v.pri,'62%');
+    return '<div style="width:100%;height:100%;background:#f7f8fc;font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
+        +'<div style="position:absolute;top:0;left:0;right:0;height:50%;background:'+v.pri+';overflow:hidden;">'
+        +'<svg style="position:absolute;bottom:-2%;left:0;width:100%;height:22%;" viewBox="0 0 54 12" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">'
+        +'<polygon points="27,12 54,0 0,0" fill="#f7f8fc"/>'
+        +'</svg>'
+        +'<svg style="position:absolute;top:5%;right:5%;width:30%;opacity:0.15;" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">'
+        +'<rect x="10" y="10" width="80" height="80" rx="4" fill="#fff" transform="rotate(45 50 50)"/>'
+        +'</svg></div>'
+        +'<div style="position:absolute;top:3%;left:4%;display:flex;align-items:center;gap:6%;z-index:2;">'
+        +'<div style="width:12%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.22);border:1px solid rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;">'
+        +'<i class="fas fa-infinity" style="color:rgba(255,255,255,0.85);font-size:0.35rem;"></i></div>'
+        +'<span style="font-size:clamp(0.42rem,1vw,0.6rem);color:rgba(255,255,255,0.92);font-weight:700;letter-spacing:0.05em;text-transform:uppercase;">'+v.orgVal+'</span></div>'
+        // Diamond/rhombus photo frame
+        +'<div style="position:absolute;left:50%;top:28%;transform:translateX(-50%);width:28%;aspect-ratio:1;z-index:4;">'
+        +'<svg style="position:absolute;inset:-18%;width:136%;height:136%;" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">'
+        +'<polygon points="50,2 98,50 50,98 2,50" fill="#fff" stroke="'+v.pri+'" stroke-width="2.5"/>'
+        +'</svg>'
+        +'<div style="position:absolute;inset:0;overflow:hidden;clip-path:polygon(50% 2%,98% 50%,50% 98%,2% 50%);display:flex;align-items:center;justify-content:center;background:'+v.pri+'20;">'+v.photoHTML+'</div></div>'
+        // Name + role
+        +'<div style="position:absolute;top:60%;left:4%;right:4%;text-align:center;">'
+        +'<div style="font-size:clamp(0.8rem,2vw,1.05rem);font-weight:800;color:'+v.pri+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
+        +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#888;margin-top:1%;">'+v.roleVal+'</div></div>'
+        +'<div style="position:absolute;top:68%;left:8%;right:8%;height:1.5px;background:'+v.pri+';opacity:0.25;"></div>'
+        +'<div style="position:absolute;top:70%;left:6%;right:6%;">'+fieldRowsHTML(v.fieldItems,v.pri,'#444','clamp(0.38rem,0.9vw,0.54rem)')+'</div>'
+        +'<div style="position:absolute;bottom:2%;left:50%;transform:translateX(-50%);">'+bc+'</div>'
+        +'</div>';
+}
+
+function renderVCorner(v) {
+    var bc = barcodeStr(v.pri,'62%');
+    return '<div style="width:100%;height:100%;background:#ffffff;font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
+        // Large triangle top-left
+        +'<svg style="position:absolute;top:0;left:0;width:100%;height:100%;" viewBox="0 0 54 85.6" xmlns="http://www.w3.org/2000/svg">'
+        +'<polygon points="0,0 35,0 0,47" fill="'+v.pri+'"/>'
+        +'<polygon points="0,0 22,0 0,30" fill="rgba(255,255,255,0.1)"/>'
+        +'<polygon points="54,85.6 19,85.6 54,39" fill="'+v.acc+'" opacity="0.85"/>'
+        +'</svg>'
+        // Logo top-left
+        +'<div style="position:absolute;top:3%;left:4%;z-index:2;">'
+        +'<div style="width:14%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.22);border:1px solid rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;">'
+        +'<i class="fas fa-infinity" style="color:rgba(255,255,255,0.85);font-size:0.35rem;"></i></div></div>'
+        // Photo circle centre-top
+        +'<div style="position:absolute;left:50%;top:22%;transform:translateX(-50%);width:28%;aspect-ratio:1;border-radius:50%;border:3px solid #fff;background:'+v.pri+'15;overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 28px rgba(0,0,0,0.2);z-index:3;">'+v.photoHTML+'</div>'
+        // Org name right of logo
+        +'<div style="position:absolute;top:3%;right:4%;max-width:45%;text-align:right;z-index:2;">'
+        +'<div style="font-size:clamp(0.4rem,1vw,0.58rem);color:'+v.pri+';font-weight:700;letter-spacing:0.05em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.orgVal+'</div></div>'
+        // Name + role
+        +'<div style="position:absolute;top:53%;left:4%;right:4%;text-align:center;">'
+        +'<div style="font-size:clamp(0.8rem,2vw,1.05rem);font-weight:800;color:'+v.pri+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
+        +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#888;margin-top:1%;">'+v.roleVal+'</div></div>'
+        +'<div style="position:absolute;top:61%;left:10%;right:10%;height:1.5px;background:linear-gradient(90deg,transparent,'+v.acc+',transparent);opacity:0.5;"></div>'
+        +'<div style="position:absolute;top:63%;left:6%;right:6%;">'+fieldRowsHTML(v.fieldItems,v.pri,'#444','clamp(0.38rem,0.9vw,0.54rem)')+'</div>'
+        +'<div style="position:absolute;bottom:2%;left:50%;transform:translateX(-50%);">'+bc+'</div>'
+        +'</div>';
+}
+
+function renderVDual(v) {
+    var bc = barcodeStr(v.pri,'62%');
+    return '<div style="width:100%;height:100%;background:#f7f8fc;font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
+        // Top band
+        +'<div style="position:absolute;top:0;left:0;right:0;height:20%;background:'+v.pri+';"></div>'
+        // Bottom band
+        +'<div style="position:absolute;bottom:0;left:0;right:0;height:18%;background:'+v.acc+';"></div>'
+        // Logo top
+        +'<div style="position:absolute;top:3%;left:4%;display:flex;align-items:center;gap:6%;z-index:2;">'
+        +'<div style="width:12%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.22);border:1px solid rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;">'
+        +'<i class="fas fa-infinity" style="color:rgba(255,255,255,0.85);font-size:0.35rem;"></i></div>'
+        +'<span style="font-size:clamp(0.42rem,1vw,0.6rem);color:rgba(255,255,255,0.92);font-weight:700;letter-spacing:0.05em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:70%;">'+v.orgVal+'</span></div>'
+        // Photo circle centred in white area
+        +'<div style="position:absolute;left:50%;top:26%;transform:translateX(-50%);width:28%;aspect-ratio:1;border-radius:50%;border:3px solid '+v.pri+';background:#fff;overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 28px rgba(0,0,0,0.2);z-index:3;">'+v.photoHTML+'</div>'
+        // Name + role
+        +'<div style="position:absolute;top:57%;left:4%;right:4%;text-align:center;">'
+        +'<div style="font-size:clamp(0.8rem,2vw,1.05rem);font-weight:800;color:'+v.pri+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
+        +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#777;margin-top:1%;">'+v.roleVal+'</div></div>'
+        +'<div style="position:absolute;top:65%;left:10%;right:10%;height:1px;background:'+v.pri+';opacity:0.2;"></div>'
+        +'<div style="position:absolute;top:67%;left:6%;right:6%;">'+fieldRowsHTML(v.fieldItems,v.pri,'#444','clamp(0.38rem,0.9vw,0.54rem)')+'</div>'
+        // Barcode sits above bottom band
+        +'<div style="position:absolute;bottom:20%;left:50%;transform:translateX(-50%);">'+bc+'</div>'
+        +'</div>';
+}
+
+function renderVStripe(v) {
+    var bc = barcodeStr('rgba(255,255,255,0.3)','62%');
+    return '<div style="width:100%;height:100%;background:linear-gradient(135deg,'+v.pri+' 0%,'+v.acc+' 100%);font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
+        // Frosted inner panel
+        +'<div style="position:absolute;top:5%;left:5%;right:5%;bottom:5%;background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.35);border-radius:8px;backdrop-filter:blur(3px);"></div>'
+        // Logo top
+        +'<div style="position:absolute;top:8%;left:9%;display:flex;align-items:center;gap:6%;z-index:2;">'
+        +'<div style="width:12%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.22);border:1px solid rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;">'
+        +'<i class="fas fa-infinity" style="color:rgba(255,255,255,0.9);font-size:0.35rem;"></i></div>'
+        +'<span style="font-size:clamp(0.42rem,1vw,0.6rem);color:rgba(255,255,255,0.9);font-weight:700;letter-spacing:0.05em;text-transform:uppercase;">'+v.orgVal+'</span></div>'
+        // Photo
+        +'<div style="position:absolute;left:50%;top:22%;transform:translateX(-50%);width:28%;aspect-ratio:1;border-radius:50%;border:3px solid rgba(255,255,255,0.85);background:rgba(255,255,255,0.2);overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 30px rgba(0,0,0,0.3);z-index:3;">'+v.photoHTML+'</div>'
+        // Name + role
+        +'<div style="position:absolute;top:56%;left:4%;right:4%;text-align:center;">'
+        +'<div style="font-size:clamp(0.8rem,2vw,1.05rem);font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 2px 8px rgba(0,0,0,0.2);">'+v.nameVal+'</div>'
+        +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:rgba(255,255,255,0.8);margin-top:1%;">'+v.roleVal+'</div></div>'
+        +'<div style="position:absolute;top:64%;left:10%;right:10%;height:1px;background:rgba(255,255,255,0.4);"></div>'
+        +'<div style="position:absolute;top:66%;left:9%;right:9%;">'+fieldRowsHTML(v.fieldItems,'rgba(255,255,255,0.7)','rgba(255,255,255,0.92)','clamp(0.38rem,0.9vw,0.54rem)')+'</div>'
+        +'<div style="position:absolute;bottom:7%;left:50%;transform:translateX(-50%);">'+bc+'</div>'
+        +'</div>';
+}
+
+function renderVBadge(v) {
+    var bc = barcodeStr(v.pri,'62%');
+    return '<div style="width:100%;height:100%;background:#f7f8fc;font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
+        // Shield/badge shape fills top portion using SVG clip
+        +'<svg style="position:absolute;top:0;left:0;width:100%;height:100%;" viewBox="0 0 54 85.6" xmlns="http://www.w3.org/2000/svg">'
+        +'<path d="M4,0 L50,0 L54,5 L54,36 Q54,48 27,52 Q0,48 0,36 L0,5 Z" fill="'+v.pri+'"/>'
+        +'<path d="M4,0 L50,0 L54,5 L54,25 Q54,36 27,38 Q0,36 0,25 L0,5 Z" fill="rgba(255,255,255,0.08)"/>'
+        +'<circle cx="3" cy="3" r="2.5" fill="rgba(255,255,255,0.25)"/>'
+        +'</svg>'
+        // Logo top
+        +'<div style="position:absolute;top:3%;left:4%;display:flex;align-items:center;gap:6%;z-index:2;">'
+        +'<div style="width:12%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.22);border:1px solid rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;">'
+        +'<i class="fas fa-infinity" style="color:rgba(255,255,255,0.85);font-size:0.35rem;"></i></div>'
+        +'<span style="font-size:clamp(0.42rem,1vw,0.6rem);color:rgba(255,255,255,0.92);font-weight:700;letter-spacing:0.05em;text-transform:uppercase;">'+v.orgVal+'</span></div>'
+        // Photo inside shield
+        +'<div style="position:absolute;left:50%;top:18%;transform:translateX(-50%);width:28%;aspect-ratio:1;border-radius:50%;border:3px solid rgba(255,255,255,0.85);background:rgba(255,255,255,0.2);overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 28px rgba(0,0,0,0.28);z-index:3;">'+v.photoHTML+'</div>'
+        // Name + role
+        +'<div style="position:absolute;top:60%;left:4%;right:4%;text-align:center;">'
+        +'<div style="font-size:clamp(0.8rem,2vw,1.05rem);font-weight:800;color:'+v.pri+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
+        +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#888;margin-top:1%;">'+v.roleVal+'</div></div>'
+        +'<div style="position:absolute;top:68%;left:8%;right:8%;height:1.5px;background:'+v.pri+';opacity:0.25;"></div>'
+        +'<div style="position:absolute;top:70%;left:6%;right:6%;">'+fieldRowsHTML(v.fieldItems,v.pri,'#444','clamp(0.38rem,0.9vw,0.54rem)')+'</div>'
+        +'<div style="position:absolute;bottom:2%;left:50%;transform:translateX(-50%);">'+bc+'</div>'
+        +'</div>';
+}
+
 // =============================================================================
 //  Main preview updater
 // =============================================================================
@@ -873,16 +1456,31 @@ function updatePreview() {
     preview.style.fontFamily = "'"+v.font+"',sans-serif";
     var html = '';
     switch (currentStyle) {
-        case 'sidebar':     html = renderSidebar(v);    break;
-        case 'wave':        html = renderWave(v);       break;
-        case 'bold_header': html = renderBoldHeader(v); break;
-        case 'diagonal':    html = renderDiagonal(v);   break;
-        case 'v_sharp':     html = renderVSharp(v);     break;
-        case 'v_curve':     html = renderVCurve(v);     break;
-        case 'v_hex':       html = renderVHex(v);       break;
-        case 'v_circle':    html = renderVCircle(v);    break;
-        case 'v_split':     html = renderVSplit(v);     break;
-        default:            html = renderClassic(v);    break;
+        case 'sidebar':       html = renderSidebar(v);      break;
+        case 'wave':          html = renderWave(v);         break;
+        case 'bold_header':   html = renderBoldHeader(v);   break;
+        case 'diagonal':      html = renderDiagonal(v);     break;
+        case 'gradient_pro':  html = renderGradientPro(v);  break;
+        case 'neon':          html = renderNeon(v);         break;
+        case 'executive':     html = renderExecutive(v);    break;
+        case 'stripe':        html = renderStripe(v);       break;
+        case 'metro':         html = renderMetro(v);        break;
+        case 'glass':         html = renderGlass(v);        break;
+        case 'zigzag':        html = renderZigzag(v);       break;
+        case 'ribbon':        html = renderRibbon(v);       break;
+        case 'v_sharp':       html = renderVSharp(v);       break;
+        case 'v_curve':       html = renderVCurve(v);       break;
+        case 'v_hex':         html = renderVHex(v);         break;
+        case 'v_circle':      html = renderVCircle(v);      break;
+        case 'v_split':       html = renderVSplit(v);       break;
+        case 'v_ribbon':      html = renderVRibbon(v);      break;
+        case 'v_arch':        html = renderVArch(v);        break;
+        case 'v_diamond':     html = renderVDiamond(v);     break;
+        case 'v_corner':      html = renderVCorner(v);      break;
+        case 'v_dual':        html = renderVDual(v);        break;
+        case 'v_stripe':      html = renderVStripe(v);      break;
+        case 'v_badge':       html = renderVBadge(v);       break;
+        default:              html = renderClassic(v);      break;
     }
     preview.innerHTML = html;
 }
