@@ -17,15 +17,16 @@ $acc  = htmlspecialchars($design['accent_color']  ?? $tplConfig['accent'],ENT_QU
 $txt  = htmlspecialchars($design['text_color']    ?? $tplConfig['text'],  ENT_QUOTES, 'UTF-8');
 $font = htmlspecialchars($design['font_family']   ?? 'Poppins',           ENT_QUOTES, 'UTF-8');
 
-$isPortrait    = ($tplConfig['orientation'] ?? 'landscape') === 'portrait';
 $allowedStyles = ['classic','sidebar','wave','bold_header','diagonal',
                   'gradient_pro','neon','executive','stripe','metro',
                   'glass','zigzag','ribbon',
                   'v_sharp','v_curve','v_hex','v_circle','v_split',
                   'v_ribbon','v_arch','v_diamond','v_corner','v_dual',
                   'v_stripe','v_badge'];
-$rawStyle      = $design['design_style'] ?? ($isPortrait ? 'v_sharp' : 'classic');
-$designStyle   = in_array($rawStyle, $allowedStyles, true) ? $rawStyle : ($isPortrait ? 'v_sharp' : 'classic');
+$rawStyle      = $design['design_style'] ?? 'classic';
+$designStyle   = in_array($rawStyle, $allowedStyles, true) ? $rawStyle : 'classic';
+$portraitStyleKeys = ['v_sharp','v_curve','v_hex','v_circle','v_split','v_ribbon','v_arch','v_diamond','v_corner','v_dual','v_stripe','v_badge'];
+$isPortrait    = in_array($designStyle, $portraitStyleKeys, true);
 
 // ── Data helpers ──────────────────────────────────────────────────────────────
 $roleKeys = ['designation','title','course','event_name'];
@@ -81,6 +82,20 @@ foreach ($cd as $fKey => $fVal) {
     ];
 }
 
+// Build QR code data
+$qrParts = [];
+if ($nameVal && $nameVal !== 'YOUR NAME') $qrParts[] = 'Name: '.$nameVal;
+if ($orgVal) $qrParts[] = 'Org: '.$orgVal;
+if ($roleVal) $qrParts[] = 'Role: '.$roleVal;
+if (!empty($cd['phone'])) $qrParts[] = 'Tel: '.htmlspecialchars($cd['phone'],ENT_QUOTES,'UTF-8');
+if (!empty($cd['email'])) $qrParts[] = htmlspecialchars($cd['email'],ENT_QUOTES,'UTF-8');
+if (!empty($cd['employee_id'])) $qrParts[] = 'ID: '.htmlspecialchars($cd['employee_id'],ENT_QUOTES,'UTF-8');
+elseif (!empty($cd['roll_number'])) $qrParts[] = 'Roll: '.htmlspecialchars($cd['roll_number'],ENT_QUOTES,'UTF-8');
+elseif (!empty($cd['badge_id'])) $qrParts[] = 'Badge: '.htmlspecialchars($cd['badge_id'],ENT_QUOTES,'UTF-8');
+$qrData = implode("\n", $qrParts) ?: 'CardX ID Card';
+$showQr = !empty($design['show_qr']);
+$qrSize = max(36, min(90, (int)($design['qr_size'] ?? 54)));
+
 $photoPath = (!empty($card['photo_path']) && file_exists(BASE_PATH . '/' . $card['photo_path']))
     ? '/' . htmlspecialchars($card['photo_path'], ENT_QUOTES, 'UTF-8') : '';
 $logoPath  = (!empty($card['logo_path'])  && file_exists(BASE_PATH . '/' . $card['logo_path']))
@@ -89,17 +104,10 @@ $logoPath  = (!empty($card['logo_path'])  && file_exists(BASE_PATH . '/' . $card
 $tplName = htmlspecialchars($tplConfig['name'] ?? 'CardX', ENT_QUOTES, 'UTF-8');
 
 // ── Helper functions (guarded against duplicate inclusion) ────────────────────
-if (!function_exists('icardBarcodeSvg')) {
-function icardBarcodeSvg(string $color, string $width = '80%'): string {
-    $bars = [2,1,3,1,1,2,1,3,2,1,1,2,1,1,3,1,2,1,1,3,2,1,2,1,1,3,1,1,2,1,3,1,2,1,1,2,3,1,1];
-    $svg  = '<svg viewBox="0 0 80 14" xmlns="http://www.w3.org/2000/svg" style="display:block;width:'.$width.';height:auto;">';
-    $x = 0; $isBar = true;
-    foreach ($bars as $w) {
-        if ($isBar) $svg .= '<rect x="'.round($x,2).'" y="0" width="'.$w.'" height="14" fill="'.$color.'"/>';
-        $x += $w + 1;
-        $isBar = !$isBar;
-    }
-    return $svg . '</svg>';
+if (!function_exists('icardQrSlot')) {
+function icardQrSlot(string $posStyle, string $data, int $size = 54): string {
+    $safeData = htmlspecialchars($data, ENT_QUOTES, 'UTF-8');
+    return '<div class="view-qr-slot" data-qrtext="'.$safeData.'" data-size="'.$size.'" style="position:absolute;'.$posStyle.';display:flex;align-items:center;justify-content:center;"></div>';
 }
 }
 
@@ -204,7 +212,7 @@ if ($designStyle === 'classic'): ?>
     <div style="position:absolute;top:70%;left:5%;right:5%;display:grid;grid-template-columns:1fr 1fr;column-gap:3%;">
         <?php foreach ($shownFlds as $f): ?><?= icardRow($f['label'], $f['val'], $pri, '#444') ?><?php endforeach; ?>
     </div>
-    <div style="position:absolute;bottom:3%;left:50%;transform:translateX(-50%);"><?= icardBarcodeSvg($pri,'48%') ?></div>
+    <?= $showQr ? icardQrSlot('bottom:3%;left:50%;transform:translateX(-50%);', $qrData, $qrSize) : '' ?>
 </div>
 
 <?php elseif ($designStyle === 'sidebar'): ?>
@@ -230,7 +238,7 @@ if ($designStyle === 'classic'): ?>
     <div style="position:absolute;bottom:4%;left:5%;right:52%;">
         <?php foreach ($shownFlds as $f): ?><?= icardRow($f['label'], $f['val'], 'rgba(255,255,255,0.55)', 'rgba(255,255,255,0.88)') ?><?php endforeach; ?>
     </div>
-    <div style="position:absolute;bottom:4%;right:4%;width:36%;"><?= icardBarcodeSvg('rgba(255,255,255,0.35)','100%') ?></div>
+    <?= $showQr ? icardQrSlot('bottom:4%;right:4%;', $qrData, $qrSize) : '' ?>
 </div>
 
 <?php elseif ($designStyle === 'wave'): ?>
@@ -247,7 +255,7 @@ if ($designStyle === 'classic'): ?>
         <div style="font-size:clamp(0.6rem,1.4vw,0.82rem);font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><?= $nameVal ?></div>
         <?php if ($roleVal): ?><div style="font-size:clamp(0.35rem,0.78vw,0.5rem);color:rgba(255,255,255,0.75);margin-top:1.5%;"><?= $roleVal ?></div><?php endif; ?>
     </div>
-    <div style="position:absolute;bottom:3%;left:5%;width:36%;"><?= icardBarcodeSvg('rgba(255,255,255,0.45)','100%') ?></div>
+    <?= $showQr ? icardQrSlot('bottom:3%;left:50%;transform:translateX(-50%);', $qrData, $qrSize) : '' ?>
     <div style="position:absolute;top:5%;right:5%;display:flex;align-items:center;gap:5%;">
         <?= icardLogoEl($logoPath,'7%',$pri) ?>
         <span style="font-size:clamp(0.32rem,0.72vw,0.46rem);color:<?= $pri ?>;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;"><?= $tplName ?></span>
@@ -269,7 +277,7 @@ if ($designStyle === 'classic'): ?>
         <div style="width:45%;aspect-ratio:1;border-radius:50%;border:3px solid rgba(255,255,255,0.8);background:rgba(255,255,255,0.15);overflow:hidden;display:flex;align-items:center;justify-content:center;position:relative;z-index:1;margin-top:4%;">
             <?= icardPhoto($photoPath,'2.2rem') ?>
         </div>
-        <div style="margin-top:auto;padding-bottom:6%;width:80%;position:relative;z-index:1;"><?= icardBarcodeSvg('rgba(255,255,255,0.4)','100%') ?></div>
+        <?= $showQr ? icardQrSlot('bottom:4%;left:5%;', $qrData, $qrSize) : '' ?>
     </div>
     <div style="flex:1;background:#ffffff;display:flex;flex-direction:column;justify-content:center;padding:6% 7%;min-width:0;position:relative;">
         <div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,<?= $pri ?>,<?= $acc ?>);"></div>
@@ -304,7 +312,7 @@ if ($designStyle === 'classic'): ?>
     <div style="position:absolute;bottom:6%;left:5%;max-width:50%;">
         <?php foreach ($shownFlds as $f): ?><?= icardRow($f['label'], $f['val'], 'rgba(255,255,255,0.55)', 'rgba(255,255,255,0.9)') ?><?php endforeach; ?>
     </div>
-    <div style="position:absolute;bottom:4%;right:4%;width:36%;"><?= icardBarcodeSvg('rgba(255,255,255,0.32)','100%') ?></div>
+    <?= $showQr ? icardQrSlot('bottom:4%;right:4%;', $qrData, $qrSize) : '' ?>
 </div>
 
 <?php /* ══════════════════════════════════════════════════════
@@ -352,7 +360,7 @@ elseif ($designStyle === 'v_sharp'): ?>
         <?php foreach ($shownFlds as $f): ?><?= icardRow($f['label'], $f['val'], $pri, '#444','clamp(0.38rem,0.9vw,0.54rem)') ?><?php endforeach; ?>
     </div>
     <!-- Barcode bottom-centre -->
-    <div style="position:absolute;bottom:2%;left:50%;transform:translateX(-50%);"><?= icardBarcodeSvg($pri,'62%') ?></div>
+    <?= $showQr ? icardQrSlot('bottom:2%;left:50%;transform:translateX(-50%);', $qrData, $qrSize) : '' ?>
 </div>
 
 <?php elseif ($designStyle === 'v_curve'): ?>
@@ -387,7 +395,7 @@ elseif ($designStyle === 'v_sharp'): ?>
         <?php foreach ($shownFlds as $f): ?><?= icardRow($f['label'], $f['val'], $pri, '#444','clamp(0.38rem,0.9vw,0.54rem)') ?><?php endforeach; ?>
     </div>
     <!-- Barcode -->
-    <div style="position:absolute;bottom:2%;left:50%;transform:translateX(-50%);"><?= icardBarcodeSvg($pri,'62%') ?></div>
+    <?= $showQr ? icardQrSlot('bottom:2%;left:50%;transform:translateX(-50%);', $qrData, $qrSize) : '' ?>
 </div>
 
 <?php elseif ($designStyle === 'v_hex'): ?>
@@ -435,7 +443,7 @@ elseif ($designStyle === 'v_sharp'): ?>
         <?php foreach ($shownFlds as $f): ?><?= icardRow($f['label'], $f['val'], $pri, '#444','clamp(0.38rem,0.9vw,0.54rem)') ?><?php endforeach; ?>
     </div>
     <!-- Barcode -->
-    <div style="position:absolute;bottom:2%;left:50%;transform:translateX(-50%);"><?= icardBarcodeSvg($pri,'62%') ?></div>
+    <?= $showQr ? icardQrSlot('bottom:2%;left:50%;transform:translateX(-50%);', $qrData, $qrSize) : '' ?>
 </div>
 
 <?php elseif ($designStyle === 'v_circle'): ?>
@@ -472,7 +480,7 @@ elseif ($designStyle === 'v_sharp'): ?>
         <?php foreach ($shownFlds as $f): ?><?= icardRow($f['label'], $f['val'], $pri, '#444','clamp(0.38rem,0.9vw,0.54rem)') ?><?php endforeach; ?>
     </div>
     <!-- Barcode bottom -->
-    <div style="position:absolute;bottom:2%;left:50%;transform:translateX(-50%);"><?= icardBarcodeSvg($pri,'62%') ?></div>
+    <?= $showQr ? icardQrSlot('bottom:2%;left:50%;transform:translateX(-50%);', $qrData, $qrSize) : '' ?>
 </div>
 
 <?php elseif ($designStyle === 'v_split'): ?>
@@ -510,7 +518,7 @@ elseif ($designStyle === 'v_sharp'): ?>
     <!-- Card number -->
     <div style="position:absolute;bottom:7%;right:4%;font-size:clamp(0.3rem,0.7vw,0.44rem);font-family:monospace;color:#aaa;"><?= htmlspecialchars($card['card_number']) ?></div>
     <!-- Barcode (inline with bottom accent) -->
-    <div style="position:absolute;bottom:6%;left:4%;width:50%;"><?= icardBarcodeSvg($pri,'100%') ?></div>
+    <?= $showQr ? icardQrSlot('bottom:7%;left:4%;', $qrData, $qrSize) : '' ?>
 </div>
 
 
@@ -531,7 +539,7 @@ elseif ($designStyle === 'v_sharp'): ?>
             <?php foreach ($shownFlds as $f): ?><?= icardRow($f['label'], $f['val'], 'rgba(255,255,255,0.65)', 'rgba(255,255,255,0.9)') ?><?php endforeach; ?>
         </div>
     </div>
-    <div style="position:absolute;bottom:4%;left:50%;transform:translateX(-50%);"><?= icardBarcodeSvg('rgba(255,255,255,0.3)','48%') ?></div>
+    <?= $showQr ? icardQrSlot('bottom:4%;left:50%;transform:translateX(-50%);', $qrData, $qrSize) : '' ?>
 </div>
 
 <?php elseif ($designStyle === 'neon'): ?>
@@ -553,7 +561,7 @@ elseif ($designStyle === 'v_sharp'): ?>
     <div style="position:absolute;bottom:10%;left:34%;max-width:58%;">
         <?php foreach ($shownFlds as $f): ?><?= icardRow($f['label'], $f['val'], 'rgba(255,255,255,0.45)', 'rgba(255,255,255,0.85)') ?><?php endforeach; ?>
     </div>
-    <div style="position:absolute;bottom:4%;left:50%;transform:translateX(-50%);"><?= icardBarcodeSvg('rgba(255,255,255,0.18)','48%') ?></div>
+    <?= $showQr ? icardQrSlot('bottom:4%;left:50%;transform:translateX(-50%);', $qrData, $qrSize) : '' ?>
 </div>
 
 <?php elseif ($designStyle === 'executive'): ?>
@@ -575,7 +583,7 @@ elseif ($designStyle === 'v_sharp'): ?>
         <div style="width:60%;height:1.5px;background:linear-gradient(90deg,#c9a84c,transparent);margin-top:4%;margin-bottom:4%;"></div>
         <?php foreach ($shownFlds as $f): ?><?= icardRow($f['label'], $f['val'], 'rgba(255,255,255,0.45)', 'rgba(255,255,255,0.88)') ?><?php endforeach; ?>
     </div>
-    <div style="position:absolute;bottom:4%;left:50%;transform:translateX(-50%);"><?= icardBarcodeSvg('rgba(201,168,76,0.35)','48%') ?></div>
+    <?= $showQr ? icardQrSlot('bottom:4%;left:50%;transform:translateX(-50%);', $qrData, $qrSize) : '' ?>
 </div>
 
 <?php elseif ($designStyle === 'stripe'): ?>
@@ -594,7 +602,7 @@ elseif ($designStyle === 'v_sharp'): ?>
         <div style="width:60%;height:2px;background:linear-gradient(90deg,<?= $acc ?>,transparent);border-radius:2px;margin:4% 0;"></div>
         <?php foreach ($shownFlds as $f): ?><?= icardRow($f['label'], $f['val'], $pri, '#555') ?><?php endforeach; ?>
     </div>
-    <div style="position:absolute;bottom:4%;left:50%;transform:translateX(-50%);"><?= icardBarcodeSvg($pri,'48%') ?></div>
+    <?= $showQr ? icardQrSlot('bottom:4%;left:50%;transform:translateX(-50%);', $qrData, $qrSize) : '' ?>
 </div>
 
 <?php elseif ($designStyle === 'metro'): ?>
@@ -607,7 +615,7 @@ elseif ($designStyle === 'v_sharp'): ?>
             <span style="font-size:clamp(0.3rem,0.7vw,0.44rem);color:rgba(255,255,255,0.7);font-weight:600;letter-spacing:0.08em;text-transform:uppercase;text-align:center;writing-mode:vertical-rl;transform:rotate(180deg);"><?= $tplName ?></span>
         </div>
         <div style="width:55%;aspect-ratio:1;border-radius:0;border:3px solid rgba(255,255,255,0.8);background:rgba(255,255,255,0.15);overflow:hidden;display:flex;align-items:center;justify-content:center;margin-top:4%;"><?= icardPhoto($photoPath,'2.2rem') ?></div>
-        <div style="margin-top:auto;padding-bottom:6%;width:80%;"><?= icardBarcodeSvg('rgba(255,255,255,0.4)','100%') ?></div>
+        <?= $showQr ? icardQrSlot('bottom:4%;left:5%;', $qrData, $qrSize) : '' ?>
     </div>
     <div style="flex:1;background:#ffffff;display:flex;flex-direction:column;justify-content:center;padding:6% 7%;min-width:0;">
         <div style="font-size:clamp(0.62rem,1.52vw,0.88rem);font-weight:800;color:<?= $pri ?>;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><?= $nameVal ?></div>
@@ -634,7 +642,7 @@ elseif ($designStyle === 'v_sharp'): ?>
         <div style="width:60%;height:1px;background:rgba(255,255,255,0.4);margin-bottom:4%;"></div>
         <?php foreach ($shownFlds as $f): ?><?= icardRow($f['label'], $f['val'], 'rgba(255,255,255,0.7)', 'rgba(255,255,255,0.92)') ?><?php endforeach; ?>
     </div>
-    <div style="position:absolute;bottom:7%;left:50%;transform:translateX(-50%);"><?= icardBarcodeSvg('rgba(255,255,255,0.3)','48%') ?></div>
+    <?= $showQr ? icardQrSlot('bottom:7%;left:50%;transform:translateX(-50%);', $qrData, $qrSize) : '' ?>
 </div>
 
 <?php elseif ($designStyle === 'zigzag'): ?>
@@ -656,7 +664,7 @@ elseif ($designStyle === 'v_sharp'): ?>
     <div style="position:absolute;top:72%;left:5%;right:5%;display:grid;grid-template-columns:1fr 1fr;column-gap:3%;">
         <?php foreach ($shownFlds as $f): ?><?= icardRow($f['label'], $f['val'], $pri, '#444') ?><?php endforeach; ?>
     </div>
-    <div style="position:absolute;bottom:3%;left:50%;transform:translateX(-50%);"><?= icardBarcodeSvg($pri,'48%') ?></div>
+    <?= $showQr ? icardQrSlot('bottom:3%;left:50%;transform:translateX(-50%);', $qrData, $qrSize) : '' ?>
 </div>
 
 <?php elseif ($designStyle === 'ribbon'): ?>
@@ -678,7 +686,7 @@ elseif ($designStyle === 'v_sharp'): ?>
     <div style="position:absolute;bottom:8%;left:5%;max-width:52%;z-index:2;">
         <?php foreach ($shownFlds as $f): ?><?= icardRow($f['label'], $f['val'], 'rgba(255,255,255,0.5)', 'rgba(255,255,255,0.88)') ?><?php endforeach; ?>
     </div>
-    <div style="position:absolute;bottom:4%;right:5%;width:34%;z-index:2;"><?= icardBarcodeSvg('rgba(255,255,255,0.25)','100%') ?></div>
+    <?= $showQr ? icardQrSlot('bottom:4%;right:5%;z-index:2;', $qrData, $qrSize) : '' ?>
 </div>
 
 <?php /* ══ New Portrait styles ══ */
@@ -701,7 +709,7 @@ elseif ($designStyle === 'v_ribbon'): ?>
     <div style="position:absolute;top:53%;left:6%;right:6%;">
         <?php foreach ($shownFlds as $f): ?><?= icardRow($f['label'], $f['val'], $pri, '#444', 'clamp(0.38rem,0.9vw,0.54rem)') ?><?php endforeach; ?>
     </div>
-    <div style="position:absolute;bottom:2%;left:50%;transform:translateX(-50%);"><?= icardBarcodeSvg($pri,'62%') ?></div>
+    <?= $showQr ? icardQrSlot('bottom:2%;left:50%;transform:translateX(-50%);', $qrData, $qrSize) : '' ?>
 </div>
 
 <?php elseif ($designStyle === 'v_arch'): ?>
@@ -724,7 +732,7 @@ elseif ($designStyle === 'v_ribbon'): ?>
     <div style="position:absolute;top:74%;left:6%;right:6%;">
         <?php foreach ($shownFlds as $f): ?><?= icardRow($f['label'], $f['val'], $pri, '#444', 'clamp(0.38rem,0.9vw,0.54rem)') ?><?php endforeach; ?>
     </div>
-    <div style="position:absolute;bottom:2%;left:50%;transform:translateX(-50%);"><?= icardBarcodeSvg($pri,'62%') ?></div>
+    <?= $showQr ? icardQrSlot('bottom:2%;left:50%;transform:translateX(-50%);', $qrData, $qrSize) : '' ?>
 </div>
 
 <?php elseif ($designStyle === 'v_diamond'): ?>
@@ -756,7 +764,7 @@ elseif ($designStyle === 'v_ribbon'): ?>
     <div style="position:absolute;top:70%;left:6%;right:6%;">
         <?php foreach ($shownFlds as $f): ?><?= icardRow($f['label'], $f['val'], $pri, '#444', 'clamp(0.38rem,0.9vw,0.54rem)') ?><?php endforeach; ?>
     </div>
-    <div style="position:absolute;bottom:2%;left:50%;transform:translateX(-50%);"><?= icardBarcodeSvg($pri,'62%') ?></div>
+    <?= $showQr ? icardQrSlot('bottom:2%;left:50%;transform:translateX(-50%);', $qrData, $qrSize) : '' ?>
 </div>
 
 <?php elseif ($designStyle === 'v_corner'): ?>
@@ -784,7 +792,7 @@ elseif ($designStyle === 'v_ribbon'): ?>
     <div style="position:absolute;top:63%;left:6%;right:6%;">
         <?php foreach ($shownFlds as $f): ?><?= icardRow($f['label'], $f['val'], $pri, '#444', 'clamp(0.38rem,0.9vw,0.54rem)') ?><?php endforeach; ?>
     </div>
-    <div style="position:absolute;bottom:2%;left:50%;transform:translateX(-50%);"><?= icardBarcodeSvg($pri,'62%') ?></div>
+    <?= $showQr ? icardQrSlot('bottom:2%;left:50%;transform:translateX(-50%);', $qrData, $qrSize) : '' ?>
 </div>
 
 <?php elseif ($designStyle === 'v_dual'): ?>
@@ -805,7 +813,7 @@ elseif ($designStyle === 'v_ribbon'): ?>
     <div style="position:absolute;top:67%;left:6%;right:6%;">
         <?php foreach ($shownFlds as $f): ?><?= icardRow($f['label'], $f['val'], $pri, '#444', 'clamp(0.38rem,0.9vw,0.54rem)') ?><?php endforeach; ?>
     </div>
-    <div style="position:absolute;bottom:20%;left:50%;transform:translateX(-50%);"><?= icardBarcodeSvg($pri,'62%') ?></div>
+    <?= $showQr ? icardQrSlot('bottom:20%;left:50%;transform:translateX(-50%);', $qrData, $qrSize) : '' ?>
 </div>
 
 <?php elseif ($designStyle === 'v_stripe'): ?>
@@ -825,7 +833,7 @@ elseif ($designStyle === 'v_ribbon'): ?>
     <div style="position:absolute;top:66%;left:9%;right:9%;">
         <?php foreach ($shownFlds as $f): ?><?= icardRow($f['label'], $f['val'], 'rgba(255,255,255,0.7)', 'rgba(255,255,255,0.92)', 'clamp(0.38rem,0.9vw,0.54rem)') ?><?php endforeach; ?>
     </div>
-    <div style="position:absolute;bottom:7%;left:50%;transform:translateX(-50%);"><?= icardBarcodeSvg('rgba(255,255,255,0.3)','62%') ?></div>
+    <?= $showQr ? icardQrSlot('bottom:7%;left:50%;transform:translateX(-50%);', $qrData, $qrSize) : '' ?>
 </div>
 
 <?php elseif ($designStyle === 'v_badge'): ?>
@@ -849,7 +857,7 @@ elseif ($designStyle === 'v_ribbon'): ?>
     <div style="position:absolute;top:70%;left:6%;right:6%;">
         <?php foreach ($shownFlds as $f): ?><?= icardRow($f['label'], $f['val'], $pri, '#444', 'clamp(0.38rem,0.9vw,0.54rem)') ?><?php endforeach; ?>
     </div>
-    <div style="position:absolute;bottom:2%;left:50%;transform:translateX(-50%);"><?= icardBarcodeSvg($pri,'62%') ?></div>
+    <?= $showQr ? icardQrSlot('bottom:2%;left:50%;transform:translateX(-50%);', $qrData, $qrSize) : '' ?>
 </div>
 
 <?php endif; // end design styles ?>
@@ -915,6 +923,16 @@ elseif ($designStyle === 'v_ribbon'): ?>
 </div>
 
 </div><!-- /grid -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+document.querySelectorAll('.view-qr-slot').forEach(function(slot) {
+    var text = slot.getAttribute('data-qrtext') || 'CardX';
+    var size = parseInt(slot.getAttribute('data-size') || '54');
+    try {
+        new QRCode(slot, { text: text, width: size, height: size, correctLevel: QRCode.CorrectLevel.L });
+    } catch(e) {}
+});
+</script>
 </div><!-- /view-card-wrap -->
 
 <!-- Delete Confirmation Modal -->

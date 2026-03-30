@@ -95,8 +95,8 @@ class IDCardController
             'font_family'    => $this->sanitizeFont($_POST['font_family']     ?? 'Poppins'),
             'design_style'   => $designStyle,
             'show_qr'        => !empty($_POST['show_qr']),
-            'show_barcode'   => !empty($_POST['show_barcode']),
-            'card_width'     => 'standard', // CR80 standard
+            'qr_size'        => max(36, min(90, (int)($_POST['qr_size'] ?? 54))),
+            'card_width'     => 'standard',
         ];
 
         // Handle photo upload

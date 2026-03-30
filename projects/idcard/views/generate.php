@@ -38,7 +38,7 @@ $csrfToken = \Core\Security::generateCsrfToken();
 .style-label.active { color:var(--indigo); }
 
 /* Live preview */
-.preview-area { position:sticky; top:1rem; }
+.preview-area { position:sticky; top:80px; max-height:calc(100vh - 100px); overflow-y:auto; }
 .id-card-preview {
     width:100%; max-width:400px; margin:0 auto;
     border-radius:14px; overflow:hidden;
@@ -58,40 +58,50 @@ $csrfToken = \Core\Security::generateCsrfToken();
 @keyframes spin { to{ transform:rotate(360deg); } }
 .ai-suggestion { font-size:0.78rem; color:var(--text-secondary); line-height:1.6; padding:6px 10px; background:var(--bg-secondary); border-radius:8px; margin-bottom:6px; }
 .ai-suggestion strong { color:var(--text-primary); }
+
+/* Filter buttons */
+.filter-btn {
+    padding:4px 12px; border-radius:16px; font-size:0.72rem; font-weight:600;
+    border:1.5px solid var(--border-color); cursor:pointer;
+    background:var(--bg-secondary); color:var(--text-secondary); transition:all 0.2s;
+}
+.filter-btn.active { background:var(--indigo); color:#fff; border-color:var(--indigo); }
+
+/* Collapsible */
+.collapsible-hidden { display:none !important; }
 </style>
 
 <a href="/projects/idcard" class="back-link"><i class="fas fa-arrow-left"></i> Dashboard</a>
 <h2 class="section-title"><i class="fas fa-id-card" style="color:var(--indigo);"></i> Generate ID Card</h2>
 
-<!-- Template Picker -->
+<!-- Card Category -->
 <div class="card" style="margin-bottom:16px;padding:16px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
-        <p style="font-size:0.8rem;color:var(--text-secondary);font-weight:600;margin:0;">SELECT TEMPLATE</p>
-        <div style="display:flex;gap:8px;">
-            <span style="font-size:0.72rem;color:var(--text-secondary);display:flex;align-items:center;gap:4px;padding:3px 8px;background:var(--bg-secondary);border-radius:8px;border:1px solid var(--border-color);">
-                <span style="display:inline-block;width:28px;height:16px;background:#1e40af;border-radius:3px;vertical-align:middle;"></span> Landscape
-            </span>
-            <span style="font-size:0.72rem;color:var(--text-secondary);display:flex;align-items:center;gap:4px;padding:3px 8px;background:var(--bg-secondary);border-radius:8px;border:1px solid var(--border-color);">
-                <span style="display:inline-block;width:18px;height:26px;background:#7c3aed;border-radius:3px;vertical-align:middle;"></span> Portrait
-            </span>
-        </div>
+        <p style="font-size:0.8rem;color:var(--text-secondary);font-weight:600;margin:0;"><i class="fas fa-tags" style="color:var(--indigo);margin-right:5px;"></i> SELECT CARD CATEGORY</p>
     </div>
-    <div class="tpl-picker" style="display:flex;gap:6px;flex-wrap:wrap;">
-        <?php foreach ($templates as $key => $tpl): ?>
-        <?php $isPortraitTpl = ($tpl['orientation'] ?? 'landscape') === 'portrait'; ?>
-        <button type="button" class="tpl-btn <?= $key === $selectedTpl ? 'active' : '' ?>"
-                data-key="<?= htmlspecialchars($key) ?>"
-                style="<?= $key === $selectedTpl ? "background:{$tpl['color']}" : '' ?>;position:relative;"
-                onclick="selectTemplate('<?= htmlspecialchars($key) ?>')">
-            <?php if ($isPortraitTpl): ?>
-            <span style="display:inline-block;width:6px;height:10px;border-radius:1px;background:<?= htmlspecialchars($tpl['color']) ?>;margin-right:4px;border:1px solid rgba(0,0,0,0.15);"></span>
-            <?php else: ?>
-            <span style="display:inline-block;width:10px;height:6px;border-radius:1px;background:<?= htmlspecialchars($tpl['color']) ?>;margin-right:4px;border:1px solid rgba(0,0,0,0.15);"></span>
-            <?php endif; ?>
-            <?= htmlspecialchars($tpl['name']) ?>
-        </button>
-        <?php endforeach; ?>
-    </div>
+    <select id="categorySelect" class="form-input" style="padding:9px 12px;font-size:0.88rem;cursor:pointer;" onchange="selectTemplate(this.value)">
+        <option value="corporate" <?= $selectedTpl === 'corporate' ? 'selected' : '' ?>>Corporate</option>
+        <option value="student" <?= $selectedTpl === 'student' ? 'selected' : '' ?>>Student</option>
+        <option value="event" <?= $selectedTpl === 'event' ? 'selected' : '' ?>>Event</option>
+        <option value="visitor" <?= $selectedTpl === 'visitor' ? 'selected' : '' ?>>Visitor</option>
+        <option value="medical" <?= $selectedTpl === 'medical' ? 'selected' : '' ?>>Medical Staff</option>
+        <option value="minimal" <?= $selectedTpl === 'minimal' ? 'selected' : '' ?>>Minimal Dark</option>
+        <option value="tech" <?= $selectedTpl === 'tech' ? 'selected' : '' ?>>Tech Company</option>
+        <option value="bank" <?= $selectedTpl === 'bank' ? 'selected' : '' ?>>Banking / Finance</option>
+        <option value="media" <?= $selectedTpl === 'media' ? 'selected' : '' ?>>Press / Media</option>
+        <option value="govt" <?= $selectedTpl === 'govt' ? 'selected' : '' ?>>Government</option>
+        <option value="security" <?= $selectedTpl === 'security' ? 'selected' : '' ?>>Security</option>
+        <option value="school_v" <?= $selectedTpl === 'school_v' ? 'selected' : '' ?>>School</option>
+        <option value="hospital_v" <?= $selectedTpl === 'hospital_v' ? 'selected' : '' ?>>Hospital</option>
+        <option value="police_v" <?= $selectedTpl === 'police_v' ? 'selected' : '' ?>>Police / Law</option>
+        <option value="ngo_v" <?= $selectedTpl === 'ngo_v' ? 'selected' : '' ?>>NGO / Non-Profit</option>
+        <option value="library_v" <?= $selectedTpl === 'library_v' ? 'selected' : '' ?>>Library Card</option>
+        <option value="gym_v" <?= $selectedTpl === 'gym_v' ? 'selected' : '' ?>>Gym / Fitness</option>
+        <option value="transport_v" <?= $selectedTpl === 'transport_v' ? 'selected' : '' ?>>Transport</option>
+        <option value="university_v" <?= $selectedTpl === 'university_v' ? 'selected' : '' ?>>University Faculty</option>
+        <option value="security_v" <?= $selectedTpl === 'security_v' ? 'selected' : '' ?>>Security Guard</option>
+        <option value="retail_v" <?= $selectedTpl === 'retail_v' ? 'selected' : '' ?>>Retail / Shop</option>
+    </select>
 </div>
 
 <div class="gen-wrap">
@@ -104,9 +114,14 @@ $csrfToken = \Core\Security::generateCsrfToken();
 
             <!-- Dynamic fields -->
             <div class="card" style="margin-bottom:16px;">
-                <h3 style="font-size:0.9rem;font-weight:600;margin-bottom:14px;color:var(--indigo);display:flex;align-items:center;gap:6px;">
-                    <i class="fas fa-user"></i> Card Information
-                </h3>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+                    <h3 style="font-size:0.9rem;font-weight:600;color:var(--indigo);display:flex;align-items:center;gap:6px;margin:0;">
+                        <i class="fas fa-user"></i> Card Information
+                    </h3>
+                    <button type="button" onclick="toggleSection('dynamicFields')" class="btn btn-secondary btn-sm" style="padding:3px 10px;font-size:0.72rem;">
+                        <i class="fas fa-chevron-up" id="infoChevron"></i>
+                    </button>
+                </div>
                 <div id="dynamicFields">
                     <?php foreach ($tplConfig['fields'] as $field): ?>
                         <?php if ($field === 'photo'): continue; endif; ?>
@@ -145,19 +160,37 @@ $csrfToken = \Core\Security::generateCsrfToken();
             </div>
 
             <!-- Design Style Picker -->
-            <div class="card" style="margin-bottom:16px;">
-                <h3 style="font-size:0.9rem;font-weight:600;margin-bottom:6px;color:var(--indigo);display:flex;align-items:center;gap:6px;">
-                    <i class="fas fa-layer-group"></i> Design Style
-                </h3>
-                <p style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:12px;">Choose a layout and background graphic</p>
-                <div class="style-picker" id="stylePicker"></div>
+            <div class="card" style="margin-bottom:16px;" id="styleSection">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                    <h3 style="font-size:0.9rem;font-weight:600;color:var(--indigo);display:flex;align-items:center;gap:6px;margin:0;">
+                        <i class="fas fa-layer-group"></i> Design Style
+                    </h3>
+                    <button type="button" onclick="toggleSection('styleBody')" class="btn btn-secondary btn-sm" style="padding:3px 10px;font-size:0.72rem;">
+                        <i class="fas fa-chevron-up" id="styleChevron"></i>
+                    </button>
+                </div>
+                <div id="styleBody">
+                    <p style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:8px;">Choose a layout &amp; orientation</p>
+                    <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
+                        <button type="button" id="filterAll" class="filter-btn active" onclick="setStyleFilter('all')">All (25)</button>
+                        <button type="button" id="filterLandscape" class="filter-btn" onclick="setStyleFilter('landscape')">🖥 Landscape (13)</button>
+                        <button type="button" id="filterPortrait" class="filter-btn" onclick="setStyleFilter('portrait')">📱 Portrait (12)</button>
+                    </div>
+                    <div class="style-picker" id="stylePicker" style="grid-template-columns:repeat(5,1fr);"></div>
+                </div>
             </div>
 
             <!-- Colours & Font -->
             <div class="card" style="margin-bottom:16px;">
-                <h3 style="font-size:0.9rem;font-weight:600;margin-bottom:14px;color:var(--indigo);display:flex;align-items:center;gap:6px;">
-                    <i class="fas fa-paint-brush"></i> Colours &amp; Font
-                </h3>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+                    <h3 style="font-size:0.9rem;font-weight:600;color:var(--indigo);display:flex;align-items:center;gap:6px;margin:0;">
+                        <i class="fas fa-paint-brush"></i> Colours &amp; Font
+                    </h3>
+                    <button type="button" onclick="toggleSection('coloursBody')" class="btn btn-secondary btn-sm" style="padding:3px 10px;font-size:0.72rem;">
+                        <i class="fas fa-chevron-up" id="coloursChevron"></i>
+                    </button>
+                </div>
+                <div id="coloursBody">
                 <div class="grid grid-2" style="gap:12px;">
                     <div class="form-group" style="margin-bottom:0;">
                         <label class="form-label" style="font-size:0.78rem;">Primary Colour</label>
@@ -192,10 +225,15 @@ $csrfToken = \Core\Security::generateCsrfToken();
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <div style="display:flex;gap:16px;margin-top:12px;flex-wrap:wrap;">
-                    <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;cursor:pointer;">
-                        <input type="checkbox" name="show_qr" id="showQr" onchange="updatePreview()"> Show QR Code
+                <div style="margin-top:12px;">
+                    <label style="display:flex;align-items:center;gap:8px;font-size:0.8rem;cursor:pointer;margin-bottom:10px;">
+                        <input type="checkbox" name="show_qr" id="showQr" onchange="updatePreview()" checked> Show QR Code
                     </label>
+                    <div id="qrSizeWrap">
+                        <label class="form-label" style="font-size:0.78rem;">QR Code Size: <span id="qrSizeVal">54</span>px</label>
+                        <input type="range" id="qrSize" name="qr_size" min="36" max="90" value="54" style="width:100%;" oninput="document.getElementById('qrSizeVal').textContent=this.value;updatePreview()">
+                    </div>
+                </div>
                 </div>
             </div>
 
@@ -257,6 +295,7 @@ $csrfToken = \Core\Security::generateCsrfToken();
     </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 // =============================================================================
 //  Data from PHP
@@ -270,9 +309,9 @@ var currentStyle = '';   // set during init
 var photoDataUrl = null;
 
 // =============================================================================
-//  Design style definitions — landscape + portrait
+//  Design style definitions — all 25 styles
 // =============================================================================
-var LANDSCAPE_STYLES = [
+var ALL_STYLES = [
     { key:'classic',       label:'Angled Pro',    portrait:false },
     { key:'sidebar',       label:'Dark Geo',      portrait:false },
     { key:'wave',          label:'Wave Panel',    portrait:false },
@@ -285,44 +324,126 @@ var LANDSCAPE_STYLES = [
     { key:'metro',         label:'Metro Flat',    portrait:false },
     { key:'glass',         label:'Glassmorphism', portrait:false },
     { key:'zigzag',        label:'Zig-Zag',       portrait:false },
-    { key:'ribbon',        label:'Ribbon',        portrait:false }
+    { key:'ribbon',        label:'Ribbon',        portrait:false },
+    { key:'v_sharp',       label:'Sharp V',       portrait:true },
+    { key:'v_curve',       label:'Curve Wave',    portrait:true },
+    { key:'v_hex',         label:'Hex Badge',     portrait:true },
+    { key:'v_circle',      label:'Circle Top',    portrait:true },
+    { key:'v_split',       label:'Color Split',   portrait:true },
+    { key:'v_ribbon',      label:'Ribbon (V)',    portrait:true },
+    { key:'v_arch',        label:'Arch (V)',      portrait:true },
+    { key:'v_diamond',     label:'Diamond (V)',   portrait:true },
+    { key:'v_corner',      label:'Corner (V)',    portrait:true },
+    { key:'v_dual',        label:'Dual Band (V)', portrait:true },
+    { key:'v_stripe',      label:'Stripe (V)',    portrait:true },
+    { key:'v_badge',       label:'Badge (V)',     portrait:true }
 ];
-var PORTRAIT_STYLES = [
-    { key:'v_sharp',    label:'Sharp V',       portrait:true },
-    { key:'v_curve',    label:'Curve Wave',    portrait:true },
-    { key:'v_hex',      label:'Hex Badge',     portrait:true },
-    { key:'v_circle',   label:'Circle Top',    portrait:true },
-    { key:'v_split',    label:'Color Split',   portrait:true },
-    { key:'v_ribbon',   label:'Ribbon (V)',    portrait:true },
-    { key:'v_arch',     label:'Arch (V)',      portrait:true },
-    { key:'v_diamond',  label:'Diamond (V)',   portrait:true },
-    { key:'v_corner',   label:'Corner (V)',    portrait:true },
-    { key:'v_dual',     label:'Dual Band (V)', portrait:true },
-    { key:'v_stripe',   label:'Stripe (V)',    portrait:true },
-    { key:'v_badge',    label:'Badge (V)',     portrait:true }
-];
-function isPortraitTemplate(key) {
-    var tpl = TEMPLATES[key];
-    return tpl && tpl.orientation === 'portrait';
+var currentStyleFilter = 'all';
+
+function setStyleFilter(filter) {
+    currentStyleFilter = filter;
+    ['all','landscape','portrait'].forEach(function(f) {
+        var btn = document.getElementById('filter'+f.charAt(0).toUpperCase()+f.slice(1));
+        if (btn) btn.classList.toggle('active', f === filter);
+    });
+    buildStylePicker();
 }
-function getStyleSet() {
-    return isPortraitTemplate(currentTpl) ? PORTRAIT_STYLES : LANDSCAPE_STYLES;
+
+function getFilteredStyles() {
+    if (currentStyleFilter === 'landscape') return ALL_STYLES.filter(function(s){ return !s.portrait; });
+    if (currentStyleFilter === 'portrait')  return ALL_STYLES.filter(function(s){ return s.portrait; });
+    return ALL_STYLES;
+}
+
+function isPortraitStyle(key) {
+    var s = ALL_STYLES.find(function(x){ return x.key === key; });
+    return s ? s.portrait : false;
+}
+
+var STYLE_COLOR_PRESETS = {
+    'classic':       { pri:'#1e40af', acc:'#3b82f6', bg:'#ffffff', txt:'#1e293b' },
+    'sidebar':       { pri:'#6366f1', acc:'#818cf8', bg:'#111827', txt:'#f1f5f9' },
+    'wave':          { pri:'#065f46', acc:'#10b981', bg:'#fdf8f3', txt:'#064e3b' },
+    'bold_header':   { pri:'#0369a1', acc:'#0ea5e9', bg:'#ffffff', txt:'#1e293b' },
+    'diagonal':      { pri:'#7c3aed', acc:'#a78bfa', bg:'#111827', txt:'#f5f3ff' },
+    'gradient_pro':  { pri:'#1e40af', acc:'#3b82f6', bg:'#1e3a8a', txt:'#ffffff' },
+    'neon':          { pri:'#00f0ff', acc:'#ff2ec4', bg:'#050a10', txt:'#e0f2fe' },
+    'executive':     { pri:'#1a1f2e', acc:'#c9a84c', bg:'#1a1f2e', txt:'#ffffff' },
+    'stripe':        { pri:'#dc2626', acc:'#f87171', bg:'#f5f7fa', txt:'#1e293b' },
+    'metro':         { pri:'#14532d', acc:'#22c55e', bg:'#ffffff', txt:'#1e293b' },
+    'glass':         { pri:'#7c3aed', acc:'#a78bfa', bg:'#7c3aed', txt:'#ffffff' },
+    'zigzag':        { pri:'#b45309', acc:'#f59e0b', bg:'#f7f8fc', txt:'#92400e' },
+    'ribbon':        { pri:'#6366f1', acc:'#818cf8', bg:'#111827', txt:'#f1f5f9' },
+    'v_sharp':       { pri:'#1e40af', acc:'#3b82f6', bg:'#f7f8fc', txt:'#1e293b' },
+    'v_curve':       { pri:'#065f46', acc:'#10b981', bg:'#fafafa', txt:'#064e3b' },
+    'v_hex':         { pri:'#0369a1', acc:'#0ea5e9', bg:'#ffffff', txt:'#1e293b' },
+    'v_circle':      { pri:'#7c3aed', acc:'#a78bfa', bg:'#f7f8fc', txt:'#1e293b' },
+    'v_split':       { pri:'#dc2626', acc:'#f87171', bg:'#ffffff', txt:'#1e293b' },
+    'v_ribbon':      { pri:'#14532d', acc:'#22c55e', bg:'#f7f8fc', txt:'#1e293b' },
+    'v_arch':        { pri:'#1e40af', acc:'#3b82f6', bg:'#ffffff', txt:'#1e293b' },
+    'v_diamond':     { pri:'#0891b2', acc:'#22d3ee', bg:'#f7f8fc', txt:'#1e293b' },
+    'v_corner':      { pri:'#7c3aed', acc:'#a78bfa', bg:'#ffffff', txt:'#1e293b' },
+    'v_dual':        { pri:'#b45309', acc:'#f59e0b', bg:'#f7f8fc', txt:'#92400e' },
+    'v_stripe':      { pri:'#6366f1', acc:'#818cf8', bg:'#6366f1', txt:'#ffffff' },
+    'v_badge':       { pri:'#14532d', acc:'#22c55e', bg:'#f7f8fc', txt:'#1e293b' }
+};
+
+function applyStyleColors(styleKey) {
+    var preset = STYLE_COLOR_PRESETS[styleKey];
+    if (!preset) return;
+    document.getElementById('primaryColor').value = preset.pri;
+    document.getElementById('accentColor').value  = preset.acc;
+    document.getElementById('bgColor').value      = preset.bg;
+    document.getElementById('textColor').value    = preset.txt;
 }
 
 // =============================================================================
-//  Barcode SVG
+//  QR Code helpers
 // =============================================================================
-var BARCODE_BARS = [2,1,3,1,1,2,1,3,2,1,1,2,1,1,3,1,2,1,1,3,2,1,2,1,1,3,1,1,2,1,3,1,2,1,1,2,3,1,1];
-function barcodeStr(color, width) {
-    width = width || '62%';
-    var svg = '<svg viewBox="0 0 80 14" xmlns="http://www.w3.org/2000/svg" style="display:block;width:'+width+';height:auto;">';
-    var x = 0; var isBar = true;
-    for (var i = 0; i < BARCODE_BARS.length; i++) {
-        var w = BARCODE_BARS[i];
-        if (isBar) svg += '<rect x="'+x.toFixed(1)+'" y="0" width="'+w+'" height="14" fill="'+color+'"/>';
-        x += w + 1; isBar = !isBar;
+function buildQRData() {
+    var parts = [];
+    var nameEl = document.getElementById('field_name');
+    if (nameEl && nameEl.value) parts.push('Name: '+nameEl.value);
+    var orgEl = document.getElementById('field_company_name') || document.getElementById('field_school_name');
+    if (orgEl && orgEl.value) parts.push('Org: '+orgEl.value);
+    var roleEl = document.getElementById('field_designation') || document.getElementById('field_title') || document.getElementById('field_course');
+    if (roleEl && roleEl.value) parts.push('Role: '+roleEl.value);
+    var phoneEl = document.getElementById('field_phone');
+    if (phoneEl && phoneEl.value) parts.push('Tel: '+phoneEl.value);
+    var emailEl = document.getElementById('field_email');
+    if (emailEl && emailEl.value) parts.push(emailEl.value);
+    var idEl = document.getElementById('field_employee_id') || document.getElementById('field_roll_number') || document.getElementById('field_badge_id');
+    if (idEl && idEl.value) parts.push('ID: '+idEl.value);
+    return parts.join('\n') || 'CardX ID Card';
+}
+
+function qrSlotHTML(posStyle) {
+    return '<div class="qr-slot" style="position:absolute;'+posStyle+';display:flex;align-items:center;justify-content:center;"></div>';
+}
+
+function renderQRCode() {
+    var showQrEl = document.getElementById('showQr');
+    var show = showQrEl && showQrEl.checked;
+    var slot = document.querySelector('#cardPreview .qr-slot');
+    if (!slot) return;
+    if (!show) { slot.style.display='none'; return; }
+    slot.style.display = '';
+    var sizeEl = document.getElementById('qrSize');
+    var size = sizeEl ? parseInt(sizeEl.value) : 54;
+    var data = buildQRData();
+    slot.innerHTML = '';
+    try {
+        new QRCode(slot, {
+            text: data,
+            width: size,
+            height: size,
+            correctLevel: QRCode.CorrectLevel.L,
+            colorDark: '#000000',
+            colorLight: '#ffffff'
+        });
+    } catch(e) {
+        slot.innerHTML = '<div style="width:'+size+'px;height:'+size+'px;background:#fff;border:1px solid #ccc;display:flex;align-items:center;justify-content:center;font-size:0.5rem;color:#999;">QR</div>';
     }
-    return svg + '</svg>';
 }
 
 // =============================================================================
@@ -389,7 +510,7 @@ function getCardValues() {
 function fieldRowsHTML(items, lc, vc, fs) {
     fs = fs || 'clamp(0.38rem,0.9vw,0.54rem)';
     return items.map(function(f){
-        return '<div style="display:flex;align-items:baseline;font-size:'+fs+';white-space:nowrap;overflow:hidden;margin-bottom:1.8%;">'
+        return '<div style="display:flex;align-items:baseline;font-size:'+fs+';word-break:break-word;overflow-wrap:anywhere;margin-bottom:1.8%;">'
             +'<span style="color:'+lc+';font-weight:700;min-width:30%;letter-spacing:0.03em;">'+f.label+'</span>'
             +'<span style="color:'+vc+';margin-left:2%;">: '+f.val+'</span>'
             +'</div>';
@@ -765,13 +886,12 @@ function buildStyleThumbnail(key, pri, acc, portrait) {
 //  Style picker builder
 // =============================================================================
 function buildStylePicker() {
-    var pri     = document.getElementById('primaryColor').value || '#1e40af';
-    var acc     = document.getElementById('accentColor').value  || '#3b82f6';
-    var styles  = getStyleSet();
-    var isPrt   = isPortraitTemplate(currentTpl);
-    var picker  = document.getElementById('stylePicker');
-    picker.className = 'style-picker' + (isPrt ? ' portrait' : '');
+    var pri    = document.getElementById('primaryColor').value || '#1e40af';
+    var acc    = document.getElementById('accentColor').value  || '#3b82f6';
+    var styles = getFilteredStyles();
+    var picker = document.getElementById('stylePicker');
     picker.innerHTML = styles.map(function(s) {
+        var isPrt   = s.portrait;
         var thumb   = buildStyleThumbnail(s.key, pri, acc, isPrt);
         var isActive = s.key === currentStyle;
         return '<div>'
@@ -783,12 +903,11 @@ function buildStylePicker() {
 }
 
 function updateStyleThumbnails() {
-    var pri    = document.getElementById('primaryColor').value || '#1e40af';
-    var acc    = document.getElementById('accentColor').value  || '#3b82f6';
-    var isPrt  = isPortraitTemplate(currentTpl);
-    getStyleSet().forEach(function(s) {
+    var pri   = document.getElementById('primaryColor').value || '#1e40af';
+    var acc   = document.getElementById('accentColor').value  || '#3b82f6';
+    getFilteredStyles().forEach(function(s) {
         var el = document.getElementById('styleCard_'+s.key);
-        if (el) el.innerHTML = buildStyleThumbnail(s.key, pri, acc, isPrt);
+        if (el) el.innerHTML = buildStyleThumbnail(s.key, pri, acc, s.portrait);
     });
 }
 
@@ -799,15 +918,10 @@ function selectTemplate(key) {
     if (!TEMPLATES[key]) return;
     currentTpl = key;
     var tpl    = TEMPLATES[key];
-    var isPrt  = tpl.orientation === 'portrait';
     document.getElementById('template_key').value = key;
 
-    document.querySelectorAll('.tpl-btn').forEach(function(btn) {
-        var isActive = btn.dataset.key === key;
-        btn.classList.toggle('active', isActive);
-        btn.style.background = isActive ? tpl.color : '';
-        btn.style.color      = isActive ? '#fff' : '';
-    });
+    var sel = document.getElementById('categorySelect');
+    if (sel) sel.value = key;
 
     // Rebuild dynamic fields
     var container = document.getElementById('dynamicFields');
@@ -823,7 +937,7 @@ function selectTemplate(key) {
             +'</div>';
     });
 
-    // Update colours
+    // Update colours from template
     document.getElementById('primaryColor').value = tpl.color;
     document.getElementById('accentColor').value  = tpl.accent;
     document.getElementById('bgColor').value      = tpl.bg;
@@ -833,7 +947,7 @@ function selectTemplate(key) {
 
     // Orientation badge
     var oriEl = document.getElementById('previewOrientation');
-    if (oriEl) oriEl.textContent = isPrt ? '· Portrait' : '· Landscape';
+    if (oriEl) oriEl.textContent = '';
 
     // Update template fields tag list
     var fieldsList = document.getElementById('tplFieldsList');
@@ -842,14 +956,9 @@ function selectTemplate(key) {
         return '<span style="padding:3px 9px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:12px;font-size:0.7rem;color:var(--text-secondary);">'+lbl+'</span>';
     }).join('');
 
-    // Switch default style for orientation
-    var newStyles = isPrt ? PORTRAIT_STYLES : LANDSCAPE_STYLES;
-    currentStyle = newStyles[0].key;
-    document.getElementById('design_style').value = currentStyle;
-
-    // Update preview card aspect ratio
+    // Keep current style but update preview orientation
     var previewEl = document.getElementById('cardPreview');
-    if (isPrt) { previewEl.classList.add('portrait'); } else { previewEl.classList.remove('portrait'); }
+    if (isPortraitStyle(currentStyle)) { previewEl.classList.add('portrait'); } else { previewEl.classList.remove('portrait'); }
 
     buildStylePicker();
     updatePreview();
@@ -861,14 +970,23 @@ function selectTemplate(key) {
 function selectStyle(key) {
     currentStyle = key;
     document.getElementById('design_style').value = key;
-    getStyleSet().forEach(function(s) {
+    getFilteredStyles().forEach(function(s) {
         var card  = document.getElementById('styleCard_'+s.key);
         var label = document.getElementById('styleLabel_'+s.key);
         if (card)  card.classList.toggle('active', s.key===key);
         if (label) label.classList.toggle('active', s.key===key);
     });
-    var styleDef = getStyleSet().find(function(s){ return s.key===key; });
+    var styleDef = ALL_STYLES.find(function(s){ return s.key===key; });
     document.getElementById('previewStyleName').textContent = styleDef ? ('· '+styleDef.label) : '';
+    // Update preview aspect ratio to match style orientation
+    var previewEl = document.getElementById('cardPreview');
+    if (styleDef && styleDef.portrait) {
+        previewEl.classList.add('portrait');
+    } else {
+        previewEl.classList.remove('portrait');
+    }
+    // Apply style color presets
+    applyStyleColors(key);
     updatePreview();
 }
 
@@ -876,7 +994,6 @@ function selectStyle(key) {
 //  Card renderers — LANDSCAPE
 // =============================================================================
 function renderClassic(v) {
-    var bc = barcodeStr(v.pri,'48%');
     return '<div style="width:100%;height:100%;background:#f7f8fc;font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
         +'<div style="position:absolute;top:0;left:0;right:0;height:100%;overflow:hidden;pointer-events:none;">'
         +'<div style="position:absolute;inset:0;background:linear-gradient(135deg,'+v.pri+' 0%,'+v.acc+' 100%);clip-path:polygon(0 0,100% 0,100% 56%,0 72%);"></div></div>'
@@ -889,11 +1006,10 @@ function renderClassic(v) {
         +'<div style="font-size:clamp(0.62rem,1.55vw,0.9rem);font-weight:800;color:'+v.pri+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
         +'<div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:#888;margin-top:1%;">'+v.roleVal+'</div></div>'
         +'<div style="position:absolute;top:70%;left:5%;right:5%;display:grid;grid-template-columns:1fr 1fr;column-gap:3%;">'+fieldRowsHTML(v.fieldItems,v.pri,'#444')+'</div>'
-        +'<div style="position:absolute;bottom:3%;left:50%;transform:translateX(-50%);">'+bc+'</div>'
+        +qrSlotHTML('bottom:3%;left:50%;transform:translateX(-50%);width:auto;')
         +'</div>';
 }
 function renderSidebar(v) {
-    var bc = barcodeStr('rgba(255,255,255,0.35)','100%');
     return '<div style="width:100%;height:100%;background:#111827;font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
         +'<svg style="position:absolute;top:-18%;right:-12%;width:60%;aspect-ratio:1;" viewBox="0 0 100 100"><rect x="15" y="15" width="70" height="70" rx="3" fill="'+v.pri+'" transform="rotate(45 50 50)"/></svg>'
         +'<svg style="position:absolute;top:-8%;right:-5%;width:42%;aspect-ratio:1;opacity:0.35;" viewBox="0 0 100 100"><rect x="15" y="15" width="70" height="70" rx="3" fill="'+v.acc+'" transform="rotate(45 50 50)"/></svg>'
@@ -906,11 +1022,10 @@ function renderSidebar(v) {
         +'<div style="font-size:clamp(0.7rem,1.7vw,1rem);font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:55%;">'+v.nameVal+'</div>'
         +'<div style="font-size:clamp(0.38rem,0.85vw,0.54rem);color:'+v.acc+';margin-top:1.5%;">'+v.roleVal+'</div></div>'
         +'<div style="position:absolute;bottom:4%;left:5%;right:50%;">'+fieldRowsHTML(v.fieldItems,'rgba(255,255,255,0.55)','rgba(255,255,255,0.88)')+'</div>'
-        +'<div style="position:absolute;bottom:4%;right:4%;width:36%;">'+bc+'</div>'
+        +qrSlotHTML('bottom:4%;right:4%;')
         +'</div>';
 }
 function renderWave(v) {
-    var bc = barcodeStr('rgba(255,255,255,0.45)','100%');
     return '<div style="width:100%;height:100%;background:#fdf8f3;font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
         +'<svg style="position:absolute;top:0;left:0;width:44%;height:100%;" viewBox="0 0 88 160" preserveAspectRatio="none"><path d="M0,0 L60,0 Q80,25 70,55 Q85,80 72,110 Q88,135 65,160 L0,160 Z" fill="'+v.pri+'"/></svg>'
         +'<div style="position:absolute;left:24%;top:18%;transform:translateX(-50%);width:24%;aspect-ratio:1;border-radius:50%;border:3px solid rgba(255,255,255,0.8);background:rgba(255,255,255,0.18);overflow:hidden;display:flex;align-items:center;justify-content:center;">'+v.photoHTML+'</div>'
@@ -923,10 +1038,10 @@ function renderWave(v) {
         +'<i class="fas fa-infinity" style="color:'+v.pri+';font-size:0.3rem;"></i></div>'
         +'<span style="font-size:clamp(0.32rem,0.72vw,0.46rem);color:'+v.pri+';font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">'+v.tplName+'</span></div>'
         +'<div style="position:absolute;top:14%;right:4%;width:48%;">'+fieldRowsHTML(v.fieldItems,v.pri,'#4a3728')+'</div>'
+        +qrSlotHTML('bottom:3%;left:50%;transform:translateX(-50%);')
         +'</div>';
 }
 function renderBoldHeader(v) {
-    var bc = barcodeStr('rgba(255,255,255,0.4)','100%');
     return '<div style="width:100%;height:100%;display:flex;overflow:hidden;font-family:\''+v.font+'\',sans-serif;">'
         +'<div style="width:40%;background:linear-gradient(170deg,'+v.pri+' 0%,'+v.acc+' 100%);display:flex;flex-direction:column;align-items:center;position:relative;overflow:hidden;flex-shrink:0;">'
         +'<div style="padding:10% 0 5%;position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:6%;">'
@@ -934,7 +1049,7 @@ function renderBoldHeader(v) {
         +'<i class="fas fa-infinity" style="color:white;font-size:0.4rem;"></i></div>'
         +'<span style="font-size:clamp(0.3rem,0.7vw,0.44rem);color:rgba(255,255,255,0.7);font-weight:600;letter-spacing:0.08em;text-transform:uppercase;text-align:center;">'+v.tplName+'</span></div>'
         +'<div style="width:45%;aspect-ratio:1;border-radius:50%;border:3px solid rgba(255,255,255,0.8);background:rgba(255,255,255,0.15);overflow:hidden;display:flex;align-items:center;justify-content:center;position:relative;z-index:1;margin-top:4%;">'+v.photoHTML+'</div>'
-        +'<div style="margin-top:auto;padding-bottom:6%;width:80%;position:relative;z-index:1;">'+bc+'</div></div>'
+        +qrSlotHTML('bottom:4%;left:5%;')+'</div>'
         +'<div style="flex:1;background:#ffffff;display:flex;flex-direction:column;justify-content:center;padding:6% 7%;min-width:0;position:relative;">'
         +'<div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,'+v.pri+','+v.acc+');"></div>'
         +'<div style="font-size:clamp(0.62rem,1.52vw,0.88rem);font-weight:800;color:'+v.pri+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
@@ -944,7 +1059,6 @@ function renderBoldHeader(v) {
         +'</div></div>';
 }
 function renderDiagonal(v) {
-    var bc = barcodeStr('rgba(255,255,255,0.32)','100%');
     return '<div style="width:100%;height:100%;background:#111827;font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
         +'<svg style="position:absolute;right:0;top:0;width:48%;height:100%;" viewBox="0 0 96 160" preserveAspectRatio="none">'
         +'<rect x="40" y="0" width="56" height="160" fill="'+v.pri+'18"/>'
@@ -960,7 +1074,7 @@ function renderDiagonal(v) {
         +'<div style="font-size:clamp(0.58rem,1.38vw,0.82rem);font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
         +'<div style="font-size:clamp(0.34rem,0.76vw,0.5rem);color:'+v.acc+';margin-top:2%;">'+v.roleVal+'</div></div>'
         +'<div style="position:absolute;bottom:6%;left:5%;max-width:50%;">'+fieldRowsHTML(v.fieldItems,'rgba(255,255,255,0.55)','rgba(255,255,255,0.9)')+'</div>'
-        +'<div style="position:absolute;bottom:4%;right:4%;width:36%;">'+bc+'</div>'
+        +qrSlotHTML('bottom:4%;right:5%;')
         +'</div>';
 }
 
@@ -968,7 +1082,6 @@ function renderDiagonal(v) {
 //  Card renderers — PORTRAIT (vertical)
 // =============================================================================
 function renderVSharp(v) {
-    var bc = barcodeStr(v.pri,'62%');
     return '<div style="width:100%;height:100%;background:#f7f8fc;font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
         +'<div style="position:absolute;inset:0;background:linear-gradient(160deg,'+v.pri+' 0%,'+v.acc+' 100%);clip-path:polygon(0 0,100% 0,100% 38%,50% 48%,0 38%);"></div>'
         +'<div style="position:absolute;inset:0;background:rgba(255,255,255,0.1);clip-path:polygon(0 0,40% 0,0 20%);pointer-events:none;"></div>'
@@ -990,13 +1103,12 @@ function renderVSharp(v) {
         +'<div style="position:absolute;top:71%;left:10%;right:10%;height:1.5px;background:linear-gradient(90deg,transparent,'+v.acc+',transparent);opacity:0.5;"></div>'
         // Fields
         +'<div style="position:absolute;top:73%;left:6%;right:6%;">'+fieldRowsHTML(v.fieldItems,v.pri,'#444','clamp(0.38rem,0.9vw,0.54rem)')+'</div>'
-        // Barcode
-        +'<div style="position:absolute;bottom:2%;left:50%;transform:translateX(-50%);">'+bc+'</div>'
+        // QR slot
+        +qrSlotHTML('bottom:2%;left:50%;transform:translateX(-50%);')
         +'</div>';
 }
 
 function renderVCurve(v) {
-    var bc = barcodeStr(v.pri,'62%');
     return '<div style="width:100%;height:100%;background:#fafafa;font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
         +'<svg style="position:absolute;top:0;left:0;width:100%;height:50%;" viewBox="0 0 100 100" preserveAspectRatio="none">'
         +'<path d="M0,0 L100,0 L100,70 Q75,95 50,80 Q25,65 0,85 Z" fill="'+v.pri+'"/>'
@@ -1012,12 +1124,11 @@ function renderVCurve(v) {
         +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#888;margin-top:1%;">'+v.roleVal+'</div></div>'
         +'<div style="position:absolute;top:70%;left:10%;right:10%;height:1px;background:'+v.pri+';opacity:0.2;"></div>'
         +'<div style="position:absolute;top:72%;left:6%;right:6%;">'+fieldRowsHTML(v.fieldItems,v.pri,'#444','clamp(0.38rem,0.9vw,0.54rem)')+'</div>'
-        +'<div style="position:absolute;bottom:2%;left:50%;transform:translateX(-50%);">'+bc+'</div>'
+        +qrSlotHTML('bottom:2%;left:50%;transform:translateX(-50%);')
         +'</div>';
 }
 
 function renderVHex(v) {
-    var bc = barcodeStr(v.pri,'62%');
     return '<div style="width:100%;height:100%;background:#ffffff;font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
         +'<div style="position:absolute;top:0;left:0;right:0;height:45%;background:linear-gradient(135deg,'+v.pri+' 0%,'+v.acc+' 100%);overflow:hidden;">'
         +'<svg style="position:absolute;top:-15%;right:-12%;width:45%;aspect-ratio:1;opacity:0.18;" viewBox="0 0 100 100"><rect x="10" y="10" width="80" height="80" rx="4" fill="#fff" transform="rotate(45 50 50)"/></svg></div>'
@@ -1037,12 +1148,11 @@ function renderVHex(v) {
         +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#888;margin-top:1%;">'+v.roleVal+'</div></div>'
         +'<div style="position:absolute;top:66%;left:8%;right:8%;height:1.5px;background:'+v.pri+';opacity:0.25;"></div>'
         +'<div style="position:absolute;top:68%;left:6%;right:6%;">'+fieldRowsHTML(v.fieldItems,v.pri,'#444','clamp(0.38rem,0.9vw,0.54rem)')+'</div>'
-        +'<div style="position:absolute;bottom:2%;left:50%;transform:translateX(-50%);">'+bc+'</div>'
+        +qrSlotHTML('bottom:2%;left:50%;transform:translateX(-50%);')
         +'</div>';
 }
 
 function renderVCircle(v) {
-    var bc = barcodeStr(v.pri,'62%');
     return '<div style="width:100%;height:100%;background:#f7f8fc;font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
         +'<div style="position:absolute;top:0;left:0;right:0;height:46%;background:linear-gradient(150deg,'+v.pri+' 0%,'+v.acc+' 100%);overflow:hidden;">'
         +'<svg style="position:absolute;right:-10%;bottom:-20%;width:60%;aspect-ratio:1;opacity:0.1;" viewBox="0 0 100 100">'
@@ -1061,12 +1171,11 @@ function renderVCircle(v) {
         +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#777;margin-top:1%;">'+v.roleVal+'</div></div>'
         +'<div style="position:absolute;top:68%;left:10%;right:10%;height:2px;background:linear-gradient(90deg,transparent,'+v.acc+',transparent);opacity:0.6;"></div>'
         +'<div style="position:absolute;top:70%;left:6%;right:6%;">'+fieldRowsHTML(v.fieldItems,v.pri,'#444','clamp(0.38rem,0.9vw,0.54rem)')+'</div>'
-        +'<div style="position:absolute;bottom:2%;left:50%;transform:translateX(-50%);">'+bc+'</div>'
+        +qrSlotHTML('bottom:2%;left:50%;transform:translateX(-50%);')
         +'</div>';
 }
 
 function renderVSplit(v) {
-    var bc = barcodeStr(v.pri,'55%');
     return '<div style="width:100%;height:100%;background:#ffffff;font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
         +'<div style="position:absolute;top:0;left:0;width:55%;height:52%;background:'+v.pri+';overflow:hidden;">'
         +'<div style="position:absolute;bottom:-4%;right:-4%;width:50%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.08);"></div></div>'
@@ -1084,7 +1193,7 @@ function renderVSplit(v) {
         +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#888;margin-top:1%;">'+v.roleVal+'</div></div>'
         +'<div style="position:absolute;top:56%;left:4%;right:4%;height:2px;background:linear-gradient(90deg,'+v.acc+',transparent);"></div>'
         +'<div style="position:absolute;top:58%;left:4%;right:4%;">'+fieldRowsHTML(v.fieldItems,v.pri,'#444','clamp(0.38rem,0.9vw,0.54rem)')+'</div>'
-        +'<div style="position:absolute;bottom:7%;left:4%;width:50%;">'+bc+'</div>'
+        +qrSlotHTML('bottom:7%;left:4%;')
         +'</div>';
 }
 
@@ -1093,7 +1202,6 @@ function renderVSplit(v) {
 //  New Landscape renderers (8 additional styles)
 // =============================================================================
 function renderGradientPro(v) {
-    var bc = barcodeStr('rgba(255,255,255,0.3)','48%');
     return '<div style="width:100%;height:100%;background:linear-gradient(135deg,'+v.pri+' 0%,'+v.acc+' 100%);font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
         +'<div style="position:absolute;inset:0;background:rgba(0,0,0,0.18);"></div>'
         +'<div style="position:absolute;top:5%;left:5%;display:flex;align-items:center;gap:5%;z-index:2;">'
@@ -1108,12 +1216,11 @@ function renderGradientPro(v) {
         +'<div style="width:80%;height:1.5px;background:rgba(255,255,255,0.35);border-radius:2px;margin-bottom:4%;"></div>'
         +fieldRowsHTML(v.fieldItems,'rgba(255,255,255,0.65)','rgba(255,255,255,0.9)')
         +'</div></div>'
-        +'<div style="position:absolute;bottom:4%;left:50%;transform:translateX(-50%);">'+bc+'</div>'
+        +qrSlotHTML('bottom:4%;left:50%;transform:translateX(-50%);')
         +'</div>';
 }
 
 function renderNeon(v) {
-    var bc = barcodeStr('rgba(255,255,255,0.18)','48%');
     return '<div style="width:100%;height:100%;background:#050a10;font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
         +'<div style="position:absolute;top:0;left:0;right:0;height:3px;background:'+v.pri+';box-shadow:0 0 10px '+v.pri+';"></div>'
         +'<div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:'+v.acc+';box-shadow:0 0 10px '+v.acc+';"></div>'
@@ -1126,13 +1233,12 @@ function renderNeon(v) {
         +'<div style="font-size:clamp(0.62rem,1.55vw,0.9rem);font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 0 12px rgba(255,255,255,0.3);">'+v.nameVal+'</div>'
         +'<div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:'+v.acc+';margin-top:2%;text-shadow:0 0 8px '+v.acc+'60;">'+v.roleVal+'</div></div>'
         +'<div style="position:absolute;bottom:10%;left:34%;max-width:58%;">'+fieldRowsHTML(v.fieldItems,'rgba(255,255,255,0.45)','rgba(255,255,255,0.85)')+'</div>'
-        +'<div style="position:absolute;bottom:4%;left:50%;transform:translateX(-50%);">'+bc+'</div>'
+        +qrSlotHTML('bottom:4%;left:50%;transform:translateX(-50%);')
         +'</div>';
 }
 
 function renderExecutive(v) {
     var gold = '#c9a84c';
-    var bc = barcodeStr('rgba(201,168,76,0.35)','48%');
     return '<div style="width:100%;height:100%;background:#1a1f2e;font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
         +'<div style="position:absolute;top:0;left:0;right:0;height:4px;background:'+gold+';"></div>'
         +'<div style="position:absolute;bottom:0;left:0;right:0;height:4px;background:'+gold+';"></div>'
@@ -1148,12 +1254,11 @@ function renderExecutive(v) {
         +'<div style="width:60%;height:1.5px;background:linear-gradient(90deg,'+gold+',transparent);margin-top:4%;margin-bottom:4%;"></div>'
         +fieldRowsHTML(v.fieldItems,'rgba(255,255,255,0.45)','rgba(255,255,255,0.88)')
         +'</div>'
-        +'<div style="position:absolute;bottom:4%;left:50%;transform:translateX(-50%);">'+bc+'</div>'
+        +qrSlotHTML('bottom:4%;left:50%;transform:translateX(-50%);')
         +'</div>';
 }
 
 function renderStripe(v) {
-    var bc = barcodeStr(v.pri,'48%');
     return '<div style="width:100%;height:100%;background:#f5f7fa;font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
         +'<div style="position:absolute;top:0;left:0;right:0;height:16%;background:'+v.pri+';"></div>'
         +'<div style="position:absolute;bottom:0;left:0;right:0;height:16%;background:'+v.acc+';"></div>'
@@ -1168,12 +1273,11 @@ function renderStripe(v) {
         +'<div style="width:60%;height:2px;background:linear-gradient(90deg,'+v.acc+',transparent);border-radius:2px;margin:4% 0;"></div>'
         +fieldRowsHTML(v.fieldItems,v.pri,'#555')
         +'</div>'
-        +'<div style="position:absolute;bottom:4%;left:50%;transform:translateX(-50%);">'+bc+'</div>'
+        +qrSlotHTML('bottom:4%;left:50%;transform:translateX(-50%);')
         +'</div>';
 }
 
 function renderMetro(v) {
-    var bc = barcodeStr('rgba(255,255,255,0.4)','100%');
     return '<div style="width:100%;height:100%;display:flex;overflow:hidden;font-family:\''+v.font+'\',sans-serif;">'
         +'<div style="width:35%;background:'+v.pri+';display:flex;flex-direction:column;align-items:center;flex-shrink:0;position:relative;">'
         +'<div style="position:absolute;top:0;right:0;width:4px;height:100%;background:'+v.acc+'88;"></div>'
@@ -1182,7 +1286,7 @@ function renderMetro(v) {
         +'<i class="fas fa-infinity" style="color:white;font-size:0.4rem;"></i></div>'
         +'<span style="font-size:clamp(0.3rem,0.7vw,0.44rem);color:rgba(255,255,255,0.7);font-weight:600;letter-spacing:0.08em;text-transform:uppercase;text-align:center;writing-mode:vertical-rl;transform:rotate(180deg);">'+v.tplName+'</span></div>'
         +'<div style="width:55%;aspect-ratio:1;border-radius:0;border:3px solid rgba(255,255,255,0.8);background:rgba(255,255,255,0.15);overflow:hidden;display:flex;align-items:center;justify-content:center;margin-top:4%;">'+v.photoHTML+'</div>'
-        +'<div style="margin-top:auto;padding-bottom:6%;width:80%;">'+bc+'</div></div>'
+        +qrSlotHTML('bottom:4%;right:4%;')+'</div>'
         +'<div style="flex:1;background:#ffffff;display:flex;flex-direction:column;justify-content:center;padding:6% 7%;min-width:0;position:relative;border-top:4px solid '+v.pri+';border-bottom:4px solid '+v.acc+';">'
         +'<div style="font-size:clamp(0.62rem,1.52vw,0.88rem);font-weight:800;color:'+v.pri+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
         +'<div style="font-size:clamp(0.36rem,0.82vw,0.52rem);color:#888;margin-top:1.5%;margin-bottom:4%;">'+v.roleVal+'</div>'
@@ -1192,7 +1296,6 @@ function renderMetro(v) {
 }
 
 function renderGlass(v) {
-    var bc = barcodeStr('rgba(255,255,255,0.3)','48%');
     return '<div style="width:100%;height:100%;background:linear-gradient(135deg,'+v.pri+' 0%,'+v.acc+' 100%);font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
         +'<div style="position:absolute;inset:8% 6%;background:rgba(255,255,255,0.15);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,0.35);border-radius:10px;overflow:hidden;">'
         +'<div style="position:absolute;top:-30%;left:-20%;width:60%;aspect-ratio:1;background:rgba(255,255,255,0.08);border-radius:50%;"></div>'
@@ -1209,12 +1312,11 @@ function renderGlass(v) {
         +'<div style="width:60%;height:1px;background:rgba(255,255,255,0.4);margin-bottom:4%;"></div>'
         +fieldRowsHTML(v.fieldItems,'rgba(255,255,255,0.7)','rgba(255,255,255,0.92)')
         +'</div>'
-        +'<div style="position:absolute;bottom:7%;left:50%;transform:translateX(-50%);">'+bc+'</div>'
+        +qrSlotHTML('bottom:7%;left:50%;transform:translateX(-50%);')
         +'</div>';
 }
 
 function renderZigzag(v) {
-    var bc = barcodeStr(v.pri,'48%');
     // Build zig-zag path bottom of header ~40% height
     var W = 85.6, H = 54;
     var zzPath = 'M0,0 L'+W+',0 L'+W+','+(H*0.4);
@@ -1238,12 +1340,11 @@ function renderZigzag(v) {
         +'<div style="font-size:clamp(0.62rem,1.55vw,0.9rem);font-weight:800;color:'+v.pri+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
         +'<div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:#888;margin-top:1%;">'+v.roleVal+'</div></div>'
         +'<div style="position:absolute;top:72%;left:5%;right:5%;display:grid;grid-template-columns:1fr 1fr;column-gap:3%;z-index:2;">'+fieldRowsHTML(v.fieldItems,v.pri,'#444')+'</div>'
-        +'<div style="position:absolute;bottom:3%;left:50%;transform:translateX(-50%);z-index:2;">'+bc+'</div>'
+        +qrSlotHTML('bottom:3%;left:50%;transform:translateX(-50%);z-index:2;')
         +'</div>';
 }
 
 function renderRibbon(v) {
-    var bc = barcodeStr('rgba(255,255,255,0.25)','48%');
     return '<div style="width:100%;height:100%;background:#111827;font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
         +'<svg style="position:absolute;inset:0;width:100%;height:100%;" viewBox="0 0 85.6 54" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">'
         +'<polygon points="0,15 85.6,8 85.6,27 0,34" fill="'+v.pri+'" opacity="0.92"/>'
@@ -1258,7 +1359,7 @@ function renderRibbon(v) {
         +'<div style="font-size:clamp(0.62rem,1.55vw,0.9rem);font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+v.nameVal+'</div>'
         +'<div style="font-size:clamp(0.36rem,0.85vw,0.54rem);color:rgba(255,255,255,0.75);margin-top:2%;">'+v.roleVal+'</div></div>'
         +'<div style="position:absolute;bottom:8%;left:5%;max-width:52%;z-index:2;">'+fieldRowsHTML(v.fieldItems,'rgba(255,255,255,0.5)','rgba(255,255,255,0.88)')+'</div>'
-        +'<div style="position:absolute;bottom:4%;right:5%;width:34%;z-index:2;">'+bc+'</div>'
+        +qrSlotHTML('bottom:4%;right:5%;z-index:2;')
         +'</div>';
 }
 
@@ -1266,7 +1367,6 @@ function renderRibbon(v) {
 //  New Portrait renderers (7 additional styles)
 // =============================================================================
 function renderVRibbon(v) {
-    var bc = barcodeStr(v.pri,'62%');
     return '<div style="width:100%;height:100%;background:#f7f8fc;font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
         // Top narrow band
         +'<div style="position:absolute;top:0;left:0;right:0;height:20%;background:'+v.pri+';"></div>'
@@ -1286,12 +1386,11 @@ function renderVRibbon(v) {
         +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#777;margin-top:1%;">'+v.roleVal+'</div></div>'
         +'<div style="position:absolute;top:51%;left:10%;right:10%;height:1.5px;background:linear-gradient(90deg,transparent,'+v.acc+',transparent);opacity:0.6;"></div>'
         +'<div style="position:absolute;top:53%;left:6%;right:6%;">'+fieldRowsHTML(v.fieldItems,v.pri,'#444','clamp(0.38rem,0.9vw,0.54rem)')+'</div>'
-        +'<div style="position:absolute;bottom:2%;left:50%;transform:translateX(-50%);">'+bc+'</div>'
+        +qrSlotHTML('bottom:2%;left:50%;transform:translateX(-50%);')
         +'</div>';
 }
 
 function renderVArch(v) {
-    var bc = barcodeStr(v.pri,'62%');
     return '<div style="width:100%;height:100%;background:#ffffff;font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
         // Arch SVG header — fills top ~60% with curved arch bottom
         +'<svg style="position:absolute;top:0;left:0;width:100%;height:62%;" viewBox="0 0 54 54" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">'
@@ -1311,12 +1410,11 @@ function renderVArch(v) {
         +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#888;margin-top:1%;">'+v.roleVal+'</div></div>'
         +'<div style="position:absolute;top:72%;left:10%;right:10%;height:1px;background:'+v.pri+';opacity:0.2;"></div>'
         +'<div style="position:absolute;top:74%;left:6%;right:6%;">'+fieldRowsHTML(v.fieldItems,v.pri,'#444','clamp(0.38rem,0.9vw,0.54rem)')+'</div>'
-        +'<div style="position:absolute;bottom:2%;left:50%;transform:translateX(-50%);">'+bc+'</div>'
+        +qrSlotHTML('bottom:2%;left:50%;transform:translateX(-50%);')
         +'</div>';
 }
 
 function renderVDiamond(v) {
-    var bc = barcodeStr(v.pri,'62%');
     return '<div style="width:100%;height:100%;background:#f7f8fc;font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
         +'<div style="position:absolute;top:0;left:0;right:0;height:50%;background:'+v.pri+';overflow:hidden;">'
         +'<svg style="position:absolute;bottom:-2%;left:0;width:100%;height:22%;" viewBox="0 0 54 12" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">'
@@ -1341,12 +1439,12 @@ function renderVDiamond(v) {
         +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#888;margin-top:1%;">'+v.roleVal+'</div></div>'
         +'<div style="position:absolute;top:68%;left:8%;right:8%;height:1.5px;background:'+v.pri+';opacity:0.25;"></div>'
         +'<div style="position:absolute;top:70%;left:6%;right:6%;">'+fieldRowsHTML(v.fieldItems,v.pri,'#444','clamp(0.38rem,0.9vw,0.54rem)')+'</div>'
-        +'<div style="position:absolute;bottom:2%;left:50%;transform:translateX(-50%);">'+bc+'</div>'
+        +qrSlotHTML('bottom:2%;left:50%;transform:translateX(-50%);')
         +'</div>';
 }
 
 function renderVCorner(v) {
-    var bc = barcodeStr(v.pri,'62%');
+    return '<div style="width:100%;height:100%;background:#ffffff;font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
     return '<div style="width:100%;height:100%;background:#ffffff;font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
         // Large triangle top-left
         +'<svg style="position:absolute;top:0;left:0;width:100%;height:100%;" viewBox="0 0 54 85.6" xmlns="http://www.w3.org/2000/svg">'
@@ -1369,12 +1467,11 @@ function renderVCorner(v) {
         +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#888;margin-top:1%;">'+v.roleVal+'</div></div>'
         +'<div style="position:absolute;top:61%;left:10%;right:10%;height:1.5px;background:linear-gradient(90deg,transparent,'+v.acc+',transparent);opacity:0.5;"></div>'
         +'<div style="position:absolute;top:63%;left:6%;right:6%;">'+fieldRowsHTML(v.fieldItems,v.pri,'#444','clamp(0.38rem,0.9vw,0.54rem)')+'</div>'
-        +'<div style="position:absolute;bottom:2%;left:50%;transform:translateX(-50%);">'+bc+'</div>'
+        +qrSlotHTML('bottom:2%;left:50%;transform:translateX(-50%);')
         +'</div>';
 }
 
 function renderVDual(v) {
-    var bc = barcodeStr(v.pri,'62%');
     return '<div style="width:100%;height:100%;background:#f7f8fc;font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
         // Top band
         +'<div style="position:absolute;top:0;left:0;right:0;height:20%;background:'+v.pri+';"></div>'
@@ -1393,13 +1490,12 @@ function renderVDual(v) {
         +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#777;margin-top:1%;">'+v.roleVal+'</div></div>'
         +'<div style="position:absolute;top:65%;left:10%;right:10%;height:1px;background:'+v.pri+';opacity:0.2;"></div>'
         +'<div style="position:absolute;top:67%;left:6%;right:6%;">'+fieldRowsHTML(v.fieldItems,v.pri,'#444','clamp(0.38rem,0.9vw,0.54rem)')+'</div>'
-        // Barcode sits above bottom band
-        +'<div style="position:absolute;bottom:20%;left:50%;transform:translateX(-50%);">'+bc+'</div>'
+        // QR sits above bottom band
+        +qrSlotHTML('bottom:20%;left:50%;transform:translateX(-50%);')
         +'</div>';
 }
 
 function renderVStripe(v) {
-    var bc = barcodeStr('rgba(255,255,255,0.3)','62%');
     return '<div style="width:100%;height:100%;background:linear-gradient(135deg,'+v.pri+' 0%,'+v.acc+' 100%);font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
         // Frosted inner panel
         +'<div style="position:absolute;top:5%;left:5%;right:5%;bottom:5%;background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.35);border-radius:8px;backdrop-filter:blur(3px);"></div>'
@@ -1416,12 +1512,11 @@ function renderVStripe(v) {
         +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:rgba(255,255,255,0.8);margin-top:1%;">'+v.roleVal+'</div></div>'
         +'<div style="position:absolute;top:64%;left:10%;right:10%;height:1px;background:rgba(255,255,255,0.4);"></div>'
         +'<div style="position:absolute;top:66%;left:9%;right:9%;">'+fieldRowsHTML(v.fieldItems,'rgba(255,255,255,0.7)','rgba(255,255,255,0.92)','clamp(0.38rem,0.9vw,0.54rem)')+'</div>'
-        +'<div style="position:absolute;bottom:7%;left:50%;transform:translateX(-50%);">'+bc+'</div>'
+        +qrSlotHTML('bottom:7%;left:50%;transform:translateX(-50%);')
         +'</div>';
 }
 
 function renderVBadge(v) {
-    var bc = barcodeStr(v.pri,'62%');
     return '<div style="width:100%;height:100%;background:#f7f8fc;font-family:\''+v.font+'\',sans-serif;position:relative;overflow:hidden;">'
         // Shield/badge shape fills top portion using SVG clip
         +'<svg style="position:absolute;top:0;left:0;width:100%;height:100%;" viewBox="0 0 54 85.6" xmlns="http://www.w3.org/2000/svg">'
@@ -1442,7 +1537,7 @@ function renderVBadge(v) {
         +'<div style="font-size:clamp(0.42rem,1vw,0.58rem);color:#888;margin-top:1%;">'+v.roleVal+'</div></div>'
         +'<div style="position:absolute;top:68%;left:8%;right:8%;height:1.5px;background:'+v.pri+';opacity:0.25;"></div>'
         +'<div style="position:absolute;top:70%;left:6%;right:6%;">'+fieldRowsHTML(v.fieldItems,v.pri,'#444','clamp(0.38rem,0.9vw,0.54rem)')+'</div>'
-        +'<div style="position:absolute;bottom:2%;left:50%;transform:translateX(-50%);">'+bc+'</div>'
+        +qrSlotHTML('bottom:2%;left:50%;transform:translateX(-50%);')
         +'</div>';
 }
 
@@ -1483,6 +1578,7 @@ function updatePreview() {
         default:              html = renderClassic(v);      break;
     }
     preview.innerHTML = html;
+    setTimeout(renderQRCode, 10);
 }
 
 // =============================================================================
@@ -1529,6 +1625,22 @@ function getAISuggestions() {
 //  Reset & submit
 // =============================================================================
 function resetForm() { photoDataUrl = null; setTimeout(updatePreview, 50); }
+
+function toggleSection(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    var hidden = el.classList.toggle('collapsible-hidden');
+    var chevronMap = {
+        'dynamicFields': 'infoChevron',
+        'styleBody': 'styleChevron',
+        'coloursBody': 'coloursChevron'
+    };
+    var chevronId = Object.keys(chevronMap).reduce(function(acc, k) { return k === id ? chevronMap[k] : acc; }, null);
+    if (chevronId) {
+        var ch = document.getElementById(chevronId);
+        if (ch) { ch.classList.toggle('fa-chevron-up', !hidden); ch.classList.toggle('fa-chevron-down', hidden); }
+    }
+}
 document.getElementById('cardForm').addEventListener('submit',function(){
     var btn=document.getElementById('generateBtn');
     btn.disabled=true;
@@ -1542,12 +1654,8 @@ document.getElementById('cardForm').addEventListener('submit',function(){
 //  Init
 // =============================================================================
 (function init() {
-    var isPrt = isPortraitTemplate(currentTpl);
-    currentStyle = isPrt ? PORTRAIT_STYLES[0].key : LANDSCAPE_STYLES[0].key;
+    currentStyle = 'classic';
     document.getElementById('design_style').value = currentStyle;
-    if (isPrt) { document.getElementById('cardPreview').classList.add('portrait'); }
-    var oriEl = document.getElementById('previewOrientation');
-    if (oriEl) oriEl.textContent = isPrt ? '· Portrait' : '· Landscape';
     buildStylePicker();
     updatePreview();
 })();
