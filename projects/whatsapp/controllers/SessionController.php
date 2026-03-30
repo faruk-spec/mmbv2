@@ -394,7 +394,7 @@ class SessionController
                 'qr_code' => $qrData['image'],
                 'qr_text' => $qrData['text'],
                 'expires_at' => $qrData['expires_at'],
-                'message' => 'Real QR code generated from WhatsApp Web.js bridge'
+                'message' => 'Real QR code generated from WhatsApp Baileys bridge'
             ]);
             
         } catch (\Exception $e) {

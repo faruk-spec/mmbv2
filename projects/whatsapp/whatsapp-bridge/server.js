@@ -1,167 +1,169 @@
-const { Client, LocalAuth } = require('whatsapp-web.js');
-const express = require('express');
+/**
+ * WhatsApp Bridge — powered by Baileys (no browser / no Puppeteer).
+ *
+ * Baileys implements the WhatsApp Web protocol directly over WebSockets so
+ * there is no dependency on Chrome and no net::ERR_TIMED_OUT from a browser
+ * trying to load the WhatsApp Web page.
+ *
+ * API surface is identical to the previous whatsapp-web.js bridge so the PHP
+ * back-end (SessionController) and the frontend require no changes.
+ */
+
+// Baileys ships a CJS build; the socket factory is the default export.
+const baileys = require('@whiskeysockets/baileys');
+const makeWASocket        = baileys.default || baileys.makeWASocket;
+const useMultiFileAuthState = baileys.useMultiFileAuthState;
+const DisconnectReason    = baileys.DisconnectReason;
+
+const pino       = require('pino');
+const rateLimit  = require('express-rate-limit');
+const express    = require('express');
 const bodyParser = require('body-parser');
-const QRCode = require('qrcode');
-const fs = require('fs');
-const path = require('path');
+const QRCode     = require('qrcode');
+const fs         = require('fs');
+const path       = require('path');
 
 const app = express();
 app.use(bodyParser.json());
 
-// Polling configuration constants
-const POLLING_INTERVAL_MS     = 500;  // How often to check for QR / readiness
-const MAX_QR_POLLING_ATTEMPTS = 80;   // Max polls before giving up (80 × 500 ms = 40 s)
-                                      // 40 s > Chrome's default 30 s nav timeout, so a
-                                      // net::ERR_TIMED_OUT will be caught in the polling
-                                      // loop before we fall through to the generic 408.
-const QR_CACHE_TTL_MS         = 60000; // How long a generated QR stays valid (60 s)
+// Rate-limiting: the bridge is intended to be called by the PHP back-end only
+// (localhost), but we apply limits as a defence-in-depth measure.
+// QR generation is intentionally generous (10/min) because Chrome/Puppeteer is
+// gone and each Baileys connection is lightweight.
+const qrLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 10,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { success: false, error_type: 'RATE_LIMITED', message: 'Too many QR requests. Please wait a moment.' },
+});
+const apiLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 60,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { success: false, error_type: 'RATE_LIMITED', message: 'Too many requests. Please wait a moment.' },
+});
 
-// Per-session client state: { client, userId, connected, initializing, error }
+// ── Polling configuration ────────────────────────────────────────────────────
+const POLLING_INTERVAL_MS     = 500;  // How often to check for QR / readiness
+const MAX_QR_POLLING_ATTEMPTS = 60;   // 60 × 500 ms = 30 s
+const QR_CACHE_TTL_MS         = 60000; // How long a cached QR stays valid (60 s)
+
+// Auth credentials are stored per-session in this directory.
+const AUTH_BASE_DIR = path.resolve(process.cwd(), '.baileys_auth');
+
+// Per-session state: { sock, userId, connected, initializing, error, phoneNumber }
 const clientStates = {};
 
-// Per-session QR cache: { data (dataURL), expiry (ms timestamp) }
+// Per-session QR cache: { data (data-URL), expiry (ms timestamp) }
 const qrCache = {};
 
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 /**
- * Delete LocalAuth storage for a session so the next initialize() call is
- * forced to display a fresh QR code rather than restoring stale credentials.
+ * Validate sessionId: allow only alphanumeric characters, hyphens and
+ * underscores to prevent path-traversal attacks.
+ */
+function validateSessionId(sessionId) {
+    return /^[a-zA-Z0-9_-]+$/.test(sessionId);
+}
+
+/**
+ * Return the auth directory for a session, asserting it stays inside
+ * AUTH_BASE_DIR.  Uses path.relative() for a platform-agnostic traversal
+ * check that handles both '\\' and '/' separators correctly.
+ */
+function getAuthDir(sessionId) {
+    const authDir  = path.resolve(AUTH_BASE_DIR, sessionId);
+    const relative = path.relative(AUTH_BASE_DIR, authDir);
+    // If the relative path starts with '..' or is absolute it escaped the base.
+    if (relative.startsWith('..') || path.isAbsolute(relative)) {
+        throw new Error(`Path escape detected for sessionId "${sessionId}"`);
+    }
+    return authDir;
+}
+
+/**
+ * Delete Baileys auth state so the next connection is forced to show a fresh
+ * QR code rather than silently restoring stale credentials.
  */
 function clearSessionAuth(sessionId) {
-    // Sanitize sessionId: allow only alphanumeric characters, hyphens and
-    // underscores to prevent path-traversal attacks.
-    if (!/^[a-zA-Z0-9_-]+$/.test(sessionId)) {
-        console.error(`Refusing to clear LocalAuth: invalid sessionId "${sessionId}"`);
+    if (!validateSessionId(sessionId)) {
+        console.error(`Refusing to clear auth: invalid sessionId "${sessionId}"`);
         return;
     }
-
-    const baseDir = path.resolve(process.cwd(), '.wwebjs_auth');
-    const authDir = path.resolve(baseDir, `session-${sessionId}`);
-
-    // Double-check that the resolved path is still inside baseDir
-    if (!authDir.startsWith(baseDir + path.sep) && authDir !== baseDir) {
-        console.error(`Refusing to clear LocalAuth: path escape detected for sessionId "${sessionId}"`);
-        return;
-    }
-
     try {
+        const authDir = getAuthDir(sessionId);
         if (fs.existsSync(authDir)) {
             fs.rmSync(authDir, { recursive: true, force: true });
-            console.log(`Cleared stale LocalAuth for session ${sessionId}`);
+            console.log(`Cleared stale auth for session ${sessionId}`);
         }
     } catch (err) {
-        console.error(`Failed to clear LocalAuth for session ${sessionId}:`, err.message);
+        console.error(`Failed to clear auth for session ${sessionId}:`, err.message);
     }
 }
 
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-    res.json({ 
-        success: true, 
-        status: 'running',
-        message: 'WhatsApp Bridge is operational',
-        timestamp: new Date().toISOString()
-    });
-});
-
-// Health check with POST (for consistency)
-app.post('/api/health', (req, res) => {
-    res.json({ 
-        success: true, 
-        status: 'running',
-        message: 'WhatsApp Bridge is operational',
-        timestamp: new Date().toISOString()
-    });
-});
-
-// Generate QR Code for session
-app.post('/api/generate-qr', async (req, res) => {
-    const { sessionId, userId } = req.body;
-    
-    console.log(`[${new Date().toISOString()}] QR generation request:`, { sessionId, userId });
-    
-    if (!sessionId || !userId) {
-        console.error('Missing required fields:', { sessionId, userId });
-        return res.status(400).json({ 
-            success: false, 
-            message: 'Missing sessionId or userId',
-            received: { sessionId: !!sessionId, userId: !!userId }
-        });
+/**
+ * Remove all event listeners from a socket and close it without logging out.
+ * After this call the session is removed from clientStates and qrCache.
+ */
+function destroySession(sessionId) {
+    const state = clientStates[sessionId];
+    if (state && state.sock) {
+        try {
+            state.sock.ev.removeAllListeners(); // prevent close handler from firing
+            state.sock.end(undefined);
+        } catch (_) {}
     }
+    delete clientStates[sessionId];
+    delete qrCache[sessionId];
+}
 
-    try {
-        // ── Fast path: return a still-fresh cached QR immediately ──────────
-        if (qrCache[sessionId] && qrCache[sessionId].expiry > Date.now()) {
-            console.log(`Returning cached QR for session ${sessionId}`);
-            return res.json({
-                success: true,
-                qr: qrCache[sessionId].data,
-                sessionId: sessionId,
-                generated_at: new Date().toISOString()
-            });
-        }
+/**
+ * Create a new Baileys WebSocket connection for a session.
+ * The caller must have already cleared any stale clientStates / qrCache entries.
+ * Auth credentials are read from (and persisted to) the per-session directory.
+ */
+async function createBaileysSocket(sessionId, userId) {
+    const authDir = getAuthDir(sessionId);
+    fs.mkdirSync(authDir, { recursive: true });
 
-        // ── Dedup: if a client is already initializing, wait for its QR ───
-        if (clientStates[sessionId] && clientStates[sessionId].initializing) {
-            console.log(`Client already initializing for session ${sessionId}, waiting for QR...`);
-            for (let i = 0; i < MAX_QR_POLLING_ATTEMPTS; i++) {
-                if (qrCache[sessionId] && qrCache[sessionId].expiry > Date.now()) {
-                    return res.json({
-                        success: true,
-                        qr: qrCache[sessionId].data,
-                        sessionId: sessionId,
-                        generated_at: new Date().toISOString()
-                    });
-                }
-                if (clientStates[sessionId] && clientStates[sessionId].error) {
-                    throw new Error(clientStates[sessionId].error);
-                }
-                await new Promise(resolve => setTimeout(resolve, POLLING_INTERVAL_MS));
-            }
-            return res.status(408).json({
-                success: false,
-                message: 'QR code generation timeout. Please try again.',
-                sessionId: sessionId
-            });
-        }
+    const { state, saveCreds } = await useMultiFileAuthState(authDir);
 
-        // ── Destroy any stale (non-initializing) client for this session ───
-        if (clientStates[sessionId] && clientStates[sessionId].client) {
-            console.log(`Destroying stale client for session ${sessionId}...`);
-            try {
-                await clientStates[sessionId].client.destroy();
-            } catch (e) {
-                console.error(`Error destroying existing client:`, e.message);
-            }
-            delete clientStates[sessionId];
-        }
-        delete qrCache[sessionId];
+    const sock = makeWASocket({
+        auth: state,
+        printQRInTerminal: false,
+        // Suppress noisy internal logs; errors surface through the event system.
+        logger: pino({ level: 'silent' }),
+        // Identify as a recent Chrome desktop browser.
+        // Can be overridden via the BAILEYS_BROWSER_VERSION env var.
+        browser: ['WhatsApp Bridge', 'Chrome', process.env.BAILEYS_BROWSER_VERSION || '124.0.0'],
+        // Do not fetch the full message history on reconnect.
+        syncFullHistory: false,
+    });
 
-        // ── Create fresh client ────────────────────────────────────────────
-        console.log(`Creating new WhatsApp client for session ${sessionId}...`);
+    clientStates[sessionId] = {
+        sock,
+        userId,
+        connected: false,
+        initializing: true,
+        error: null,
+        phoneNumber: null,
+    };
 
-        const client = new Client({
-            authStrategy: new LocalAuth({ clientId: sessionId }),
-            puppeteer: { 
-                headless: true,
-                // timeout: 0 disables Puppeteer's browser-launch timeout so
-                // slow environments don't fail before Chrome even starts.
-                timeout: 0,
-                args: [
-                    '--no-sandbox',
-                    '--disable-setuid-sandbox',
-                    '--disable-dev-shm-usage',
-                    '--disable-accelerated-2d-canvas',
-                    '--no-first-run',
-                    '--no-zygote',
-                    '--disable-gpu'
-                ]
-            }
-        });
+    // Persist credentials whenever they change.
+    sock.ev.on('creds.update', saveCreds);
 
-        clientStates[sessionId] = { client, userId, connected: false, initializing: true, error: null };
+    sock.ev.on('connection.update', async (update) => {
+        const { connection, lastDisconnect, qr } = update;
 
-        // When QR code is generated
-        client.on('qr', async (qr) => {
+        // ── New QR code emitted ──────────────────────────────────────────────
+        if (qr) {
             console.log(`✓ QR Code generated for session ${sessionId}`);
             try {
                 const dataUrl = await QRCode.toDataURL(qr);
@@ -173,149 +175,234 @@ app.post('/api/generate-qr', async (req, res) => {
                     clientStates[sessionId].error = 'Failed to convert QR to image: ' + err.message;
                 }
             }
-        });
+        }
 
-        // When authenticated
-        client.on('authenticated', () => {
-            console.log(`✓ Session ${sessionId} authenticated`);
-        });
-
-        // When ready
-        client.on('ready', () => {
-            console.log(`✓ Session ${sessionId} is ready`);
+        // ── Successfully connected ───────────────────────────────────────────
+        if (connection === 'open') {
+            console.log(`✓ Session ${sessionId} connected`);
             if (clientStates[sessionId]) {
-                clientStates[sessionId].connected = true;
+                // Baileys user id: "628xxx:YY@s.whatsapp.net" — extract the number.
+                const phoneNumber = phoneFromBaileysId(sock.user?.id);
+                clientStates[sessionId].connected    = true;
+                clientStates[sessionId].initializing = false;
+                clientStates[sessionId].phoneNumber  = phoneNumber;
+            }
+        }
+
+        // ── Connection closed ────────────────────────────────────────────────
+        if (connection === 'close') {
+            const statusCode = lastDisconnect?.error?.output?.statusCode;
+            console.log(`Session ${sessionId} closed (code ${statusCode})`);
+
+            if (clientStates[sessionId]) {
+                if (statusCode === DisconnectReason.loggedOut) {
+                    console.log(`Session ${sessionId} logged out — clearing auth`);
+                    clearSessionAuth(sessionId);
+                    clientStates[sessionId].error = 'Logged out from WhatsApp. Please scan QR again.';
+                } else {
+                    const errMsg = lastDisconnect?.error?.message || 'Connection closed unexpectedly';
+                    clientStates[sessionId].error = errMsg;
+                }
+                clientStates[sessionId].connected    = false;
                 clientStates[sessionId].initializing = false;
             }
-        });
-
-        // When disconnected
-        client.on('disconnected', () => {
-            console.log(`Session ${sessionId} disconnected`);
-            delete clientStates[sessionId];
             delete qrCache[sessionId];
-        });
-        
-        // Auth failure: stale credentials — clear LocalAuth so next call gets a fresh QR
-        client.on('auth_failure', (msg) => {
-            console.error(`Auth failure for session ${sessionId}:`, msg);
-            if (clientStates[sessionId]) {
-                clientStates[sessionId].error = 'Authentication failed. Please try again.';
-                clientStates[sessionId].initializing = false;
-            }
-            clearSessionAuth(sessionId);
-            delete qrCache[sessionId];
-        });
+        }
+    });
+}
 
-        // Start initialization WITHOUT awaiting — initialize() only resolves after
-        // the user scans the QR and the session is fully authenticated.
-        console.log(`Initializing client for session ${sessionId}...`);
-        client.initialize().catch((err) => {
-            console.error(`Initialization error for session ${sessionId}:`, err.message);
-            if (clientStates[sessionId]) {
-                clientStates[sessionId].error = err.message;
-                clientStates[sessionId].initializing = false;
-            }
-        });
+/**
+ * Extract the plain phone number from a Baileys user id.
+ *
+ * Baileys user IDs have the form "628xxxxxxxxx:YY@s.whatsapp.net".
+ * We want just the numeric part before the colon (the international number
+ * without the country-code prefix "+" or any punctuation).
+ */
+function phoneFromBaileysId(uid) {
+    if (!uid || typeof uid !== 'string') return null;
+    // Strip everything from the colon or '@' onwards, whichever comes first.
+    const atPart = uid.split('@')[0];       // "628xxx:YY"
+    return atPart.split(':')[0] || null;     // "628xxx"
+}
 
-        // Wait up to 40 seconds (MAX_QR_POLLING_ATTEMPTS × POLLING_INTERVAL_MS) for the QR to appear
+app.get('/api/health', (req, res) => {
+    res.json({
+        success: true,
+        status: 'running',
+        message: 'WhatsApp Bridge is operational (Baileys)',
+        timestamp: new Date().toISOString(),
+    });
+});
+
+app.post('/api/health', (req, res) => {
+    res.json({
+        success: true,
+        status: 'running',
+        message: 'WhatsApp Bridge is operational (Baileys)',
+        timestamp: new Date().toISOString(),
+    });
+});
+
+// Generate QR Code for a session
+app.post('/api/generate-qr', qrLimiter, async (req, res) => {
+    const { sessionId, userId } = req.body;
+
+    console.log(`[${new Date().toISOString()}] QR generation request:`, { sessionId, userId });
+
+    if (!sessionId || !userId) {
+        return res.status(400).json({
+            success: false,
+            message: 'Missing sessionId or userId',
+            received: { sessionId: !!sessionId, userId: !!userId },
+        });
+    }
+
+    if (!validateSessionId(sessionId)) {
+        return res.status(400).json({
+            success: false,
+            message: 'Invalid sessionId format',
+        });
+    }
+
+    try {
+        // ── Fast path: return a still-fresh cached QR ────────────────────────
+        if (qrCache[sessionId] && qrCache[sessionId].expiry > Date.now()) {
+            console.log(`Returning cached QR for session ${sessionId}`);
+            return res.json({
+                success: true,
+                qr: qrCache[sessionId].data,
+                sessionId,
+                generated_at: new Date().toISOString(),
+            });
+        }
+
+        // ── Dedup: if a socket is already initializing, wait for its QR ──────
+        if (clientStates[sessionId] && clientStates[sessionId].initializing) {
+            console.log(`Socket already initializing for session ${sessionId}, waiting for QR...`);
+            for (let i = 0; i < MAX_QR_POLLING_ATTEMPTS; i++) {
+                if (qrCache[sessionId] && qrCache[sessionId].expiry > Date.now()) {
+                    return res.json({
+                        success: true,
+                        qr: qrCache[sessionId].data,
+                        sessionId,
+                        generated_at: new Date().toISOString(),
+                    });
+                }
+                if (clientStates[sessionId]?.error) {
+                    throw new Error(clientStates[sessionId].error);
+                }
+                await sleep(POLLING_INTERVAL_MS);
+            }
+            return res.status(408).json({
+                success: false,
+                error_type: 'QR_TIMEOUT',
+                message: 'WhatsApp is taking longer than usual to load. Please click Retry.',
+                sessionId,
+            });
+        }
+
+        // ── Tear down any stale (non-initializing) socket ────────────────────
+        if (clientStates[sessionId]) {
+            console.log(`Destroying stale socket for session ${sessionId}...`);
+            destroySession(sessionId);
+        }
+
+        // ── Clear stale credentials so a fresh QR is always shown ────────────
+        clearSessionAuth(sessionId);
+
+        // ── Create new Baileys socket ─────────────────────────────────────────
+        console.log(`Creating new Baileys socket for session ${sessionId}...`);
+        await createBaileysSocket(sessionId, userId);
+
+        // ── Poll for QR code (Baileys fires it quickly — typically < 2 s) ────
         console.log(`Waiting for QR code for session ${sessionId}...`);
         for (let i = 0; i < MAX_QR_POLLING_ATTEMPTS; i++) {
             if (qrCache[sessionId] && qrCache[sessionId].expiry > Date.now()) {
                 console.log(`✓ Returning QR code for session ${sessionId}`);
-                return res.json({ 
-                    success: true, 
+                return res.json({
+                    success: true,
                     qr: qrCache[sessionId].data,
-                    sessionId: sessionId,
-                    generated_at: new Date().toISOString()
+                    sessionId,
+                    generated_at: new Date().toISOString(),
                 });
             }
-            if (clientStates[sessionId] && clientStates[sessionId].error) {
+            if (clientStates[sessionId]?.error) {
                 throw new Error(clientStates[sessionId].error);
             }
-            await new Promise(resolve => setTimeout(resolve, POLLING_INTERVAL_MS));
+            await sleep(POLLING_INTERVAL_MS);
         }
 
-        // Timeout — the background client keeps running; the QR may still arrive
-        // and will be served immediately on the next request (qrCache fast path).
+        // ── Timeout ───────────────────────────────────────────────────────────
         console.error(`QR code generation timeout for session ${sessionId}`);
         if (clientStates[sessionId]) {
             clientStates[sessionId].initializing = false;
         }
-        res.status(408).json({ 
+        return res.status(408).json({
             success: false,
             error_type: 'QR_TIMEOUT',
             message: 'WhatsApp is taking longer than usual to load. Please click Retry.',
-            sessionId: sessionId
+            sessionId,
         });
 
     } catch (error) {
         console.error(`[${new Date().toISOString()}] Error generating QR for session ${sessionId}:`, error.message);
-        
+
         // Clean up on hard error
-        if (clientStates[sessionId] && clientStates[sessionId].initializing) {
-            try { await clientStates[sessionId].client.destroy(); } catch (_) {}
-            delete clientStates[sessionId];
+        if (clientStates[sessionId]) {
+            destroySession(sessionId);
         }
-        
-        // Provide helpful error messages based on error type
+
         let userMessage = error.message;
-        let helpText = '';
-        let errorType = 'CHROME_ERROR';
-        
-        if (error.message.includes('Failed to launch') || error.message.includes('cannot open shared object')) {
-            userMessage = 'Chrome/Puppeteer dependencies are missing';
-            helpText = 'Run: sudo ./install-chrome-deps.sh in the whatsapp-bridge directory. See CHROME_SETUP.md for details.';
-            errorType = 'CHROME_MISSING';
-        } else if (error.message.includes('ECONNREFUSED')) {
-            userMessage = 'Cannot connect to Chrome';
-            helpText = 'Chrome may not be installed or Puppeteer may need configuration.';
-            errorType = 'CHROME_ERROR';
-        } else if (error.message.includes('ERR_TIMED_OUT') || error.message.includes('net::ERR_')) {
-            userMessage = 'The bridge server cannot reach WhatsApp servers (net::ERR_TIMED_OUT).';
-            helpText = 'Ensure the server has outbound HTTPS access to web.whatsapp.com. Check firewall rules, DNS resolution, and proxy settings.';
-            errorType = 'NETWORK_ERROR';
-        } else if (error.message.includes('timeout')) {
-            userMessage = 'QR code generation timed out';
-            helpText = 'This can happen if WhatsApp servers are slow. Try again in a moment.';
-            errorType = 'QR_TIMEOUT';
+        let helpText    = '';
+        let errorType   = 'QR_GENERATION_ERROR';
+
+        if (error.message.includes('ECONNREFUSED') || error.message.includes('ENOTFOUND')) {
+            userMessage = 'Cannot connect to WhatsApp servers';
+            helpText    = 'Ensure the server has outbound HTTPS/WSS access to WhatsApp servers.';
+            errorType   = 'NETWORK_ERROR';
+        } else if (error.message.includes('ETIMEDOUT') || error.message.toLowerCase().includes('timeout')) {
+            userMessage = 'Connection to WhatsApp timed out';
+            helpText    = 'Check firewall rules and DNS resolution for WhatsApp servers.';
+            errorType   = 'NETWORK_ERROR';
+        } else if (error.message.includes('Logged out')) {
+            userMessage = error.message;
+            errorType   = 'AUTH_FAILURE';
         }
-        
-        res.status(500).json({ 
+
+        return res.status(500).json({
             success: false,
             error_type: errorType,
             message: userMessage,
             help: helpText,
             technicalError: error.message,
-            sessionId: sessionId
+            sessionId,
         });
     }
 });
 
 // Check session status
-app.post('/api/check-status', (req, res) => {
+app.post('/api/check-status', apiLimiter, (req, res) => {
     const { sessionId } = req.body;
-    
+
     if (!sessionId) {
         return res.status(400).json({ success: false, message: 'Missing sessionId' });
     }
 
     const state = clientStates[sessionId];
     if (state && state.connected) {
-        res.json({ 
-            success: true, 
+        return res.json({
+            success: true,
             connected: true,
-            phoneNumber: state.client.info?.wid?.user || 'Connected'
+            phoneNumber: state.phoneNumber || 'Connected',
         });
-    } else {
-        res.json({ success: true, connected: false });
     }
+    return res.json({ success: true, connected: false });
 });
 
-// Send message
-app.post('/api/send-message', async (req, res) => {
+// Send a text message
+app.post('/api/send-message', apiLimiter, async (req, res) => {
     const { sessionId, phoneNumber, message } = req.body;
-    
+
     if (!sessionId || !phoneNumber || !message) {
         return res.status(400).json({ success: false, message: 'Missing required fields' });
     }
@@ -326,22 +413,20 @@ app.post('/api/send-message', async (req, res) => {
     }
 
     try {
-        // Format phone number (remove special chars, add country code if needed)
-        const formattedNumber = phoneNumber.replace(/[^0-9]/g, '') + '@c.us';
-        
-        await state.client.sendMessage(formattedNumber, message);
-        
-        res.json({ success: true, message: 'Message sent successfully' });
+        // Baileys JID for individual contacts: <digits>@s.whatsapp.net
+        const jid = phoneNumber.replace(/[^0-9]/g, '') + '@s.whatsapp.net';
+        await state.sock.sendMessage(jid, { text: message });
+        return res.json({ success: true, message: 'Message sent successfully' });
     } catch (error) {
         console.error('Error sending message:', error);
-        res.status(500).json({ success: false, message: error.message });
+        return res.status(500).json({ success: false, message: error.message });
     }
 });
 
-// Disconnect session
-app.post('/api/disconnect', async (req, res) => {
+// Disconnect / log out a session
+app.post('/api/disconnect', apiLimiter, async (req, res) => {
     const { sessionId } = req.body;
-    
+
     if (!sessionId) {
         return res.status(400).json({ success: false, message: 'Missing sessionId' });
     }
@@ -349,24 +434,24 @@ app.post('/api/disconnect', async (req, res) => {
     const state = clientStates[sessionId];
     if (state) {
         try {
-            await state.client.destroy();
-            delete clientStates[sessionId];
-            delete qrCache[sessionId];
-            res.json({ success: true, message: 'Session disconnected' });
-        } catch (error) {
-            res.status(500).json({ success: false, message: error.message });
-        }
-    } else {
-        res.json({ success: true, message: 'Session not found' });
+            state.sock.ev.removeAllListeners();
+            await state.sock.logout();
+        } catch (_) {}
+        delete clientStates[sessionId];
+        delete qrCache[sessionId];
+        clearSessionAuth(sessionId);
+        return res.json({ success: true, message: 'Session disconnected' });
     }
+    return res.json({ success: true, message: 'Session not found' });
 });
 
-// Start server
+// ── Start server ──────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
-const HOST = process.env.HOST || '0.0.0.0'; // Listen on all interfaces for production
+const HOST = process.env.HOST || '0.0.0.0';
 
 app.listen(PORT, HOST, () => {
-    console.log(`WhatsApp Bridge running on http://${HOST}:${PORT}`);
+    console.log(`WhatsApp Bridge (Baileys) running on http://${HOST}:${PORT}`);
     console.log(`Health check: http://localhost:${PORT}/api/health`);
     console.log(`Server started at: ${new Date().toISOString()}`);
 });
+
