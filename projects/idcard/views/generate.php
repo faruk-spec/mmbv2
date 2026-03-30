@@ -11,7 +11,7 @@ $csrfToken = \Core\Security::generateCsrfToken();
 
 <style>
 /* ── Generate page ── */
-.gen-wrap { display:grid; grid-template-columns:1fr 440px; gap:20px; align-items:start; }
+.gen-wrap { display:grid; grid-template-columns:1fr 400px; gap:20px; align-items:start; }
 @media(max-width:960px){ .gen-wrap{ grid-template-columns:1fr; } }
 
 /* Template picker */
@@ -25,7 +25,6 @@ $csrfToken = \Core\Security::generateCsrfToken();
 
 /* Design style picker */
 .style-picker { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; }
-.style-picker.portrait { grid-template-columns:repeat(5,1fr); }
 @media(max-width:680px){ .style-picker{ grid-template-columns:repeat(3,1fr); } }
 .style-card {
     border:2px solid var(--border-color); border-radius:10px; cursor:pointer;
@@ -37,10 +36,18 @@ $csrfToken = \Core\Security::generateCsrfToken();
 .style-label { font-size:0.62rem; font-weight:600; text-align:center; margin-top:5px; color:var(--text-secondary); }
 .style-label.active { color:var(--indigo); }
 
-/* Live preview */
-.preview-area { position:sticky; top:80px; max-height:calc(100vh - 100px); overflow-y:auto; }
+/* Live preview — sticky sidebar */
+.preview-area {
+    position:sticky;
+    top:72px;
+    height:calc(100vh - 88px);
+    overflow-y:auto;
+    scrollbar-width:thin;
+}
+@media(max-width:960px){ .preview-area{ position:static; height:auto; } }
+
 .id-card-preview {
-    width:100%; max-width:400px; margin:0 auto;
+    width:100%; max-width:360px; margin:0 auto;
     border-radius:14px; overflow:hidden;
     box-shadow:0 20px 60px rgba(0,0,0,0.4);
     font-family:'Poppins',sans-serif;
@@ -50,8 +57,32 @@ $csrfToken = \Core\Security::generateCsrfToken();
 }
 .id-card-preview.portrait {
     aspect-ratio:54/85.6;
-    max-width:220px;
+    max-width:200px;
 }
+
+/* Compact controls row (desktop) */
+.compact-controls {
+    display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;
+}
+.compact-controls .ctrl-group {
+    flex:1; min-width:60px;
+}
+.compact-controls .ctrl-color {
+    flex:0 0 52px;
+}
+.compact-controls label { font-size:0.68rem; display:block; margin-bottom:3px; color:var(--text-secondary); font-weight:600; }
+.compact-controls input[type=color] { width:100%; height:34px; padding:2px 4px; cursor:pointer; border-radius:6px; border:1px solid var(--border-color); }
+.compact-controls select.form-input { padding:6px 8px; font-size:0.78rem; }
+.compact-controls .qr-toggle { display:flex; align-items:center; gap:5px; font-size:0.75rem; cursor:pointer; white-space:nowrap; padding-bottom:6px; }
+
+/* Photo & Logo compact */
+.photo-logo-row { display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; }
+.photo-logo-row .photo-ctrl { flex:1; min-width:120px; }
+.photo-logo-row label { font-size:0.68rem; display:block; margin-bottom:3px; color:var(--text-secondary); font-weight:600; }
+.photo-logo-row input[type=file] { font-size:0.75rem; padding:4px 6px; }
+
+/* Category dropdown smaller */
+#categorySelect { max-width:260px; }
 
 /* AI panel */
 .spinner { display:inline-block; width:14px; height:14px; border:2px solid rgba(99,102,241,0.3); border-top-color:var(--indigo); border-radius:50%; animation:spin 0.7s linear infinite; }
@@ -69,6 +100,39 @@ $csrfToken = \Core\Security::generateCsrfToken();
 
 /* Collapsible */
 .collapsible-hidden { display:none !important; }
+
+/* ── Mobile floating preview button ── */
+.mobile-preview-btn {
+    display:none;
+    position:fixed; bottom:20px; right:20px; z-index:1000;
+    background:var(--indigo); color:#fff;
+    border:none; border-radius:50px; padding:12px 20px;
+    font-size:0.85rem; font-weight:700; cursor:pointer;
+    box-shadow:0 4px 20px rgba(99,102,241,0.5);
+    align-items:center; gap:8px;
+}
+@media(max-width:960px){
+    .mobile-preview-btn { display:flex; }
+    #categorySelect { max-width:100%; }
+    .compact-controls .ctrl-color { flex:0 0 44px; }
+}
+
+/* ── Mobile preview modal ── */
+.preview-modal-overlay {
+    display:none; position:fixed; inset:0; z-index:2000;
+    background:rgba(0,0,0,0.75); align-items:center; justify-content:center;
+    padding:16px;
+}
+.preview-modal-overlay.open { display:flex; }
+.preview-modal-box {
+    background:var(--bg-card,#fff); border-radius:16px;
+    padding:18px; max-width:420px; width:100%;
+    max-height:90vh; overflow-y:auto; position:relative;
+}
+.preview-modal-close {
+    position:absolute; top:10px; right:12px;
+    background:none; border:none; font-size:1.3rem; cursor:pointer; color:var(--text-secondary);
+}
 </style>
 
 <a href="/projects/idcard" class="back-link"><i class="fas fa-arrow-left"></i> Dashboard</a>
@@ -137,23 +201,72 @@ $csrfToken = \Core\Security::generateCsrfToken();
                 </div>
             </div>
 
-            <!-- Photo & Logo -->
+            <!-- Photo & Logo + Colours & Font + QR — compact single row -->
             <div class="card" style="margin-bottom:16px;">
-                <h3 style="font-size:0.9rem;font-weight:600;margin-bottom:14px;color:var(--indigo);display:flex;align-items:center;gap:6px;">
-                    <i class="fas fa-camera"></i> Photo &amp; Logo
-                </h3>
-                <div class="grid grid-2" style="gap:12px;">
-                    <div class="form-group" style="margin-bottom:0;">
-                        <label class="form-label" style="font-size:0.78rem;">Profile Photo</label>
-                        <input type="file" name="photo" id="photoInput" class="form-input" accept="image/*"
-                               style="padding:6px;font-size:0.8rem;" onchange="previewPhoto(this)">
-                        <p style="font-size:0.68rem;color:var(--text-secondary);margin-top:4px;">JPG/PNG, max 5 MB</p>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+                    <h3 style="font-size:0.9rem;font-weight:600;color:var(--indigo);display:flex;align-items:center;gap:6px;margin:0;">
+                        <i class="fas fa-sliders-h"></i> Design Controls
+                    </h3>
+                    <button type="button" onclick="toggleSection('designControls')" class="btn btn-secondary btn-sm" style="padding:3px 10px;font-size:0.72rem;">
+                        <i class="fas fa-chevron-up" id="controlsChevron"></i>
+                    </button>
+                </div>
+                <div id="designControls">
+                    <!-- Photo & Logo row -->
+                    <div class="photo-logo-row" style="margin-bottom:10px;">
+                        <div class="photo-ctrl form-group" style="margin-bottom:0;">
+                            <label>📷 Profile Photo</label>
+                            <input type="file" name="photo" id="photoInput" class="form-input" accept="image/*"
+                                   style="padding:4px 6px;font-size:0.75rem;" onchange="previewPhoto(this)">
+                        </div>
+                        <div class="photo-ctrl form-group" style="margin-bottom:0;" id="logoWrap">
+                            <label>🏢 Organisation Logo</label>
+                            <input type="file" name="logo" id="logoInput" class="form-input" accept="image/*"
+                                   style="padding:4px 6px;font-size:0.75rem;">
+                        </div>
                     </div>
-                    <div class="form-group" style="margin-bottom:0;" id="logoWrap">
-                        <label class="form-label" style="font-size:0.78rem;">Organisation Logo</label>
-                        <input type="file" name="logo" id="logoInput" class="form-input" accept="image/*"
-                               style="padding:6px;font-size:0.8rem;">
-                        <p style="font-size:0.68rem;color:var(--text-secondary);margin-top:4px;">PNG recommended</p>
+                    <!-- Colours + Font + QR single row -->
+                    <div class="compact-controls">
+                        <div class="ctrl-color">
+                            <label>Primary</label>
+                            <input type="color" name="primary_color" id="primaryColor"
+                                   value="<?= htmlspecialchars($tplConfig['color']) ?>" oninput="updatePreview()">
+                        </div>
+                        <div class="ctrl-color">
+                            <label>Accent</label>
+                            <input type="color" name="accent_color" id="accentColor"
+                                   value="<?= htmlspecialchars($tplConfig['accent']) ?>" oninput="updatePreview()">
+                        </div>
+                        <div class="ctrl-color">
+                            <label>Background</label>
+                            <input type="color" name="bg_color" id="bgColor"
+                                   value="<?= htmlspecialchars($tplConfig['bg']) ?>" oninput="updatePreview()">
+                        </div>
+                        <div class="ctrl-color">
+                            <label>Text</label>
+                            <input type="color" name="text_color" id="textColor"
+                                   value="<?= htmlspecialchars($tplConfig['text']) ?>" oninput="updatePreview()">
+                        </div>
+                        <div class="ctrl-group" style="min-width:100px;">
+                            <label>Font</label>
+                            <select name="font_family" id="fontFamily" class="form-input" onchange="updatePreview()">
+                                <?php foreach(['Poppins','Inter','Roboto','Lato','Open Sans','Montserrat','Raleway'] as $f): ?>
+                                <option value="<?= $f ?>"><?= $f ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="ctrl-group" style="min-width:90px;">
+                            <label>QR Size: <span id="qrSizeVal">54</span>px</label>
+                            <input type="range" id="qrSize" name="qr_size" min="36" max="90" value="54" style="width:100%;"
+                                   oninput="document.getElementById('qrSizeVal').textContent=this.value;updatePreview()">
+                        </div>
+                        <div class="ctrl-group" style="flex:0;min-width:auto;">
+                            <label>&nbsp;</label>
+                            <label class="qr-toggle">
+                                <input type="checkbox" name="show_qr" id="showQr" onchange="updatePreview()" checked>
+                                <span>QR</span>
+                            </label>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -176,63 +289,6 @@ $csrfToken = \Core\Security::generateCsrfToken();
                         <button type="button" id="filterPortrait" class="filter-btn" onclick="setStyleFilter('portrait')">📱 Portrait (12)</button>
                     </div>
                     <div class="style-picker" id="stylePicker" style="grid-template-columns:repeat(5,1fr);"></div>
-                </div>
-            </div>
-
-            <!-- Colours & Font -->
-            <div class="card" style="margin-bottom:16px;">
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-                    <h3 style="font-size:0.9rem;font-weight:600;color:var(--indigo);display:flex;align-items:center;gap:6px;margin:0;">
-                        <i class="fas fa-paint-brush"></i> Colours &amp; Font
-                    </h3>
-                    <button type="button" onclick="toggleSection('coloursBody')" class="btn btn-secondary btn-sm" style="padding:3px 10px;font-size:0.72rem;">
-                        <i class="fas fa-chevron-up" id="coloursChevron"></i>
-                    </button>
-                </div>
-                <div id="coloursBody">
-                <div class="grid grid-2" style="gap:12px;">
-                    <div class="form-group" style="margin-bottom:0;">
-                        <label class="form-label" style="font-size:0.78rem;">Primary Colour</label>
-                        <input type="color" name="primary_color" id="primaryColor"
-                               class="form-input" style="height:38px;padding:2px 6px;cursor:pointer;"
-                               value="<?= htmlspecialchars($tplConfig['color']) ?>" oninput="updatePreview()">
-                    </div>
-                    <div class="form-group" style="margin-bottom:0;">
-                        <label class="form-label" style="font-size:0.78rem;">Accent Colour</label>
-                        <input type="color" name="accent_color" id="accentColor"
-                               class="form-input" style="height:38px;padding:2px 6px;cursor:pointer;"
-                               value="<?= htmlspecialchars($tplConfig['accent']) ?>" oninput="updatePreview()">
-                    </div>
-                    <div class="form-group" style="margin-bottom:0;">
-                        <label class="form-label" style="font-size:0.78rem;">Background Colour</label>
-                        <input type="color" name="bg_color" id="bgColor"
-                               class="form-input" style="height:38px;padding:2px 6px;cursor:pointer;"
-                               value="<?= htmlspecialchars($tplConfig['bg']) ?>" oninput="updatePreview()">
-                    </div>
-                    <div class="form-group" style="margin-bottom:0;">
-                        <label class="form-label" style="font-size:0.78rem;">Text Colour</label>
-                        <input type="color" name="text_color" id="textColor"
-                               class="form-input" style="height:38px;padding:2px 6px;cursor:pointer;"
-                               value="<?= htmlspecialchars($tplConfig['text']) ?>" oninput="updatePreview()">
-                    </div>
-                </div>
-                <div class="form-group" style="margin-top:12px;margin-bottom:0;">
-                    <label class="form-label" style="font-size:0.78rem;">Font Family</label>
-                    <select name="font_family" id="fontFamily" class="form-input" style="padding:8px 12px;font-size:0.85rem;" onchange="updatePreview()">
-                        <?php foreach(['Poppins','Inter','Roboto','Lato','Open Sans','Montserrat','Raleway'] as $f): ?>
-                        <option value="<?= $f ?>"><?= $f ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div style="margin-top:12px;">
-                    <label style="display:flex;align-items:center;gap:8px;font-size:0.8rem;cursor:pointer;margin-bottom:10px;">
-                        <input type="checkbox" name="show_qr" id="showQr" onchange="updatePreview()" checked> Show QR Code
-                    </label>
-                    <div id="qrSizeWrap">
-                        <label class="form-label" style="font-size:0.78rem;">QR Code Size: <span id="qrSizeVal">54</span>px</label>
-                        <input type="range" id="qrSize" name="qr_size" min="36" max="90" value="54" style="width:100%;" oninput="document.getElementById('qrSizeVal').textContent=this.value;updatePreview()">
-                    </div>
-                </div>
                 </div>
             </div>
 
@@ -291,6 +347,26 @@ $csrfToken = \Core\Security::generateCsrfToken();
                 <?php endforeach; ?>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Mobile floating preview button -->
+<button type="button" class="mobile-preview-btn" onclick="openMobilePreview()">
+    <i class="fas fa-eye"></i> Preview Card
+</button>
+
+<!-- Mobile preview modal -->
+<div class="preview-modal-overlay" id="mobilePreviewModal">
+    <div class="preview-modal-box">
+        <button class="preview-modal-close" onclick="closeMobilePreview()" aria-label="Close">&times;</button>
+        <h3 style="font-size:0.88rem;font-weight:700;margin-bottom:14px;color:var(--indigo);display:flex;align-items:center;gap:6px;">
+            <i class="fas fa-eye"></i> Live Preview
+            <span id="mobilePreviewTplName" style="color:var(--text-secondary);font-weight:500;font-size:0.78rem;"></span>
+        </h3>
+        <div id="mobileCardPreview" style="width:100%;max-width:340px;margin:0 auto;border-radius:14px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,0.35);aspect-ratio:85.6/54;position:relative;" class="id-card-preview"></div>
+        <p style="text-align:center;font-size:0.7rem;color:var(--text-secondary);margin-top:10px;">
+            <i class="fas fa-info-circle"></i> Preview is approximate
+        </p>
     </div>
 </div>
 
@@ -1599,6 +1675,19 @@ function updatePreview() {
         default:              html = renderClassic(v);      break;
     }
     preview.innerHTML = html;
+    // Sync mobile preview modal if open
+    var mob = document.getElementById('mobileCardPreview');
+    if (mob) {
+        mob.innerHTML = html;
+        mob.style.fontFamily = "'"+v.font+"',sans-serif";
+        if (isPortraitStyle(currentStyle)) {
+            mob.classList.add('portrait');
+            mob.style.aspectRatio = '54/85.6'; mob.style.maxWidth = '200px';
+        } else {
+            mob.classList.remove('portrait');
+            mob.style.aspectRatio = '85.6/54'; mob.style.maxWidth = '340px';
+        }
+    }
     setTimeout(renderQRCode, 10);
 }
 
@@ -1653,15 +1742,52 @@ function toggleSection(id) {
     var hidden = el.classList.toggle('collapsible-hidden');
     var chevronMap = {
         'dynamicFields': 'infoChevron',
-        'styleBody': 'styleChevron',
-        'coloursBody': 'coloursChevron'
+        'styleBody':     'styleChevron',
+        'designControls':'controlsChevron'
     };
-    var chevronId = Object.keys(chevronMap).reduce(function(acc, k) { return k === id ? chevronMap[k] : acc; }, null);
+    var chevronId = chevronMap[id] || null;
     if (chevronId) {
         var ch = document.getElementById(chevronId);
         if (ch) { ch.classList.toggle('fa-chevron-up', !hidden); ch.classList.toggle('fa-chevron-down', hidden); }
     }
 }
+
+function openMobilePreview() {
+    var modal = document.getElementById('mobilePreviewModal');
+    if (!modal) return;
+    modal.classList.add('open');
+    // Sync name label
+    var tplNameEl = document.getElementById('previewTplName');
+    var mobLabel  = document.getElementById('mobilePreviewTplName');
+    if (tplNameEl && mobLabel) mobLabel.textContent = tplNameEl.textContent;
+    updatePreview();
+    setTimeout(function() {
+        var mob = document.getElementById('mobileCardPreview');
+        var slot = mob ? mob.querySelector('.qr-slot') : null;
+        if (slot) {
+            var showQrEl = document.getElementById('showQr');
+            var show = showQrEl && showQrEl.checked;
+            if (show) {
+                var sizeEl = document.getElementById('qrSize');
+                var size = sizeEl ? parseInt(sizeEl.value) : 54;
+                var data = buildQRData();
+                slot.innerHTML = '';
+                try { new QRCode(slot, { text:data, width:size, height:size, correctLevel:QRCode.CorrectLevel.L }); } catch(e) {}
+            }
+        }
+    }, 30);
+}
+
+function closeMobilePreview() {
+    var modal = document.getElementById('mobilePreviewModal');
+    if (modal) modal.classList.remove('open');
+}
+
+// Close modal on backdrop click
+document.addEventListener('click', function(e) {
+    var modal = document.getElementById('mobilePreviewModal');
+    if (modal && e.target === modal) closeMobilePreview();
+});
 document.getElementById('cardForm').addEventListener('submit',function(){
     var btn=document.getElementById('generateBtn');
     btn.disabled=true;
