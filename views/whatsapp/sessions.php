@@ -528,25 +528,58 @@ function loadQRCode(sessionId) {
                         </button>
                     </div>
                 `;
+            } else if (data.error_type === 'SSL_ERROR') {
+                // TLS handshake failure — VPS/firewall is blocking WhatsApp's WSS endpoint
+                clearInterval(qrPollInterval);
+                updateQRStatus('TLS/SSL error', 'error');
+                document.getElementById('qrIntegrationNote').style.display = 'none';
+                document.getElementById('qrCodeContainer').innerHTML = `
+                    <div style="width: 100%; max-width: 360px; margin: 0 auto; background: rgba(255, 107, 107, 0.08); border: 2px solid #ff6b6b; border-radius: 12px; padding: 24px; text-align: left;">
+                        <div style="text-align: center; margin-bottom: 16px;">
+                            <i class="fas fa-lock" style="font-size: 40px; color: #ff6b6b;"></i>
+                        </div>
+                        <div style="font-weight: 700; font-size: 1rem; color: #ff6b6b; margin-bottom: 8px; text-align: center;">TLS/SSL Handshake Failed</div>
+                        <p style="font-size: 0.83rem; color: var(--text-secondary); margin-bottom: 14px; text-align: center; line-height: 1.55;">
+                            The server's TLS stack cannot connect to <strong>web.whatsapp.com</strong>.<br>
+                            This usually means the VPS or firewall is <strong>blocking WhatsApp traffic</strong>.
+                        </p>
+                        <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 14px; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px; line-height: 1.7;">
+                            <strong>Diagnose</strong> — run on the server:<br>
+                            <code style="color:#25D366;">curl https://web.whatsapp.com</code><br>
+                            If you see <em>SSL error</em>, you need a proxy.
+                        </div>
+                        <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 14px; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.7;">
+                            <strong>Fix</strong> — set before starting the bridge:<br>
+                            <code style="color:#25D366; word-break:break-all;">WHATSAPP_PROXY_URL=socks5://user:pass@proxy-host:1080 npm start</code>
+                        </div>
+                        <button onclick="retryLoadQRCode()" style="width: 100%; padding: 10px; background: #ff6b6b; color: #fff; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.9rem;">
+                            <i class="fas fa-redo" style="margin-right: 6px;"></i>Retry
+                        </button>
+                    </div>
+                `;
             } else if (data.error_type === 'NETWORK_ERROR') {
-                // Bridge is running but Chrome can't reach web.whatsapp.com
+                // Bridge is running but cannot reach WhatsApp's WebSocket endpoint
                 clearInterval(qrPollInterval);
                 updateQRStatus('Network error', 'error');
                 document.getElementById('qrIntegrationNote').style.display = 'none';
                 document.getElementById('qrCodeContainer').innerHTML = `
-                    <div style="width: 100%; max-width: 320px; margin: 0 auto; background: rgba(255, 107, 107, 0.08); border: 2px solid #ff6b6b; border-radius: 12px; padding: 24px; text-align: left;">
+                    <div style="width: 100%; max-width: 360px; margin: 0 auto; background: rgba(255, 107, 107, 0.08); border: 2px solid #ff6b6b; border-radius: 12px; padding: 24px; text-align: left;">
                         <div style="text-align: center; margin-bottom: 16px;">
                             <i class="fas fa-wifi" style="font-size: 40px; color: #ff6b6b;"></i>
                         </div>
                         <div style="font-weight: 700; font-size: 1rem; color: #ff6b6b; margin-bottom: 8px; text-align: center;">Cannot Reach WhatsApp</div>
-                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 14px; text-align: center;">
-                            The bridge server is running but cannot connect to <strong>web.whatsapp.com</strong>.
+                        <p style="font-size: 0.83rem; color: var(--text-secondary); margin-bottom: 14px; text-align: center; line-height: 1.55;">
+                            The bridge is running but cannot connect to WhatsApp's servers.
                         </p>
-                        <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 14px; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.6;">
+                        <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 14px; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px; line-height: 1.7;">
                             Check on the server:<br>
-                            &bull; Outbound HTTPS (port 443) is allowed<br>
+                            &bull; Outbound WSS / HTTPS (port 443) is allowed<br>
                             &bull; DNS resolves <code>web.whatsapp.com</code><br>
-                            &bull; No proxy/firewall is blocking the connection
+                            &bull; Run: <code style="color:#25D366;">curl https://web.whatsapp.com</code>
+                        </div>
+                        <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 14px; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.7;">
+                            If <code>curl</code> shows an SSL error, use a proxy:<br>
+                            <code style="color:#25D366; word-break:break-all;">WHATSAPP_PROXY_URL=socks5://user:pass@host:1080 npm start</code>
                         </div>
                         <button onclick="retryLoadQRCode()" style="width: 100%; padding: 10px; background: #ff6b6b; color: #fff; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.9rem;">
                             <i class="fas fa-redo" style="margin-right: 6px;"></i>Retry
@@ -554,20 +587,28 @@ function loadQRCode(sessionId) {
                     </div>
                 `;
             } else if (data.error_type === 'QR_TIMEOUT') {
-                // Bridge is loading WhatsApp but took longer than the wait window
+                // Bridge is loading WhatsApp but took longer than the wait window.
+                // This can happen when a proxy is misconfigured or very slow.
                 clearInterval(qrPollInterval);
                 updateQRStatus('Still loading…', 'warning');
                 document.getElementById('qrIntegrationNote').style.display = 'none';
+                const timeoutHint = data.hint || '';
                 document.getElementById('qrCodeContainer').innerHTML = `
-                    <div style="width: 100%; max-width: 320px; margin: 0 auto; background: rgba(0, 136, 204, 0.08); border: 2px solid #0088cc; border-radius: 12px; padding: 24px; text-align: center;">
+                    <div style="width: 100%; max-width: 360px; margin: 0 auto; background: rgba(0, 136, 204, 0.08); border: 2px solid #0088cc; border-radius: 12px; padding: 24px; text-align: center;">
                         <div style="margin-bottom: 16px;">
                             <i class="fas fa-hourglass-half" style="font-size: 40px; color: #0088cc;"></i>
                         </div>
-                        <div style="font-weight: 700; font-size: 1rem; color: #0088cc; margin-bottom: 8px;">WhatsApp Is Loading</div>
-                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.6;">
-                            WhatsApp is taking longer than usual to respond.<br>
-                            Click <strong>Retry</strong> — the QR code should appear shortly.
+                        <div style="font-weight: 700; font-size: 1rem; color: #0088cc; margin-bottom: 8px;">WhatsApp Is Not Responding</div>
+                        <p style="font-size: 0.83rem; color: var(--text-secondary); margin-bottom: 12px; line-height: 1.6;">
+                            WhatsApp did not return a QR code within 30 seconds.<br>
+                            This almost always means the server <strong>cannot reach WhatsApp's servers</strong>.
                         </p>
+                        ${timeoutHint ? `<p style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:12px;line-height:1.5;background:var(--bg-primary);border:1px solid var(--border-color);border-radius:8px;padding:8px 12px;text-align:left;">${timeoutHint}</p>` : ''}
+                        <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 14px; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.7; text-align: left;">
+                            Run on the bridge server to diagnose:<br>
+                            <code style="color:#25D366;">curl https://web.whatsapp.com</code><br>
+                            If SSL error → set <code style="color:#25D366;">WHATSAPP_PROXY_URL</code> and restart.
+                        </div>
                         <button onclick="retryLoadQRCode()" style="width: 100%; padding: 10px; background: #0088cc; color: #fff; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.9rem;">
                             <i class="fas fa-redo" style="margin-right: 6px;"></i>Retry
                         </button>
