@@ -69,6 +69,7 @@ $fieldLabelMap = [
     'joining_date'    => 'JOINED',
     'company_address' => 'ADDRESS',
     'school_address'  => 'ADDRESS',
+    'person_address'  => 'ADDRESS',
 ];
 
 // Fields to skip in detail list (shown elsewhere on card)

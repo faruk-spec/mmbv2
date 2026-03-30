@@ -34,7 +34,7 @@ return [
             'bg'          => '#ffffff',
             'text'        => '#1e293b',
             'orientation' => 'landscape',
-            'fields'      => ['name','company_name','company_address','designation','department','employee_id','dob','phone','email','photo'],
+            'fields'      => ['name','company_name','company_address','designation','department','employee_id','dob','person_address','phone','email','photo'],
             'logo'        => true,
         ],
         'student' => [
@@ -45,7 +45,7 @@ return [
             'bg'          => '#ffffff',
             'text'        => '#064e3b',
             'orientation' => 'landscape',
-            'fields'      => ['name','school_name','school_address','course','roll_number','year','dob','phone','email','photo'],
+            'fields'      => ['name','school_name','school_address','course','roll_number','year','dob','person_address','phone','email','photo'],
             'logo'        => true,
         ],
         'event' => [
@@ -78,7 +78,7 @@ return [
             'bg'          => '#f0f9ff',
             'text'        => '#0c4a6e',
             'orientation' => 'landscape',
-            'fields'      => ['name','company_name','company_address','designation','department','license_no','dob','phone','email','blood_group','photo'],
+            'fields'      => ['name','company_name','company_address','designation','department','license_no','dob','person_address','phone','email','blood_group','photo'],
             'logo'        => true,
         ],
         'tech' => [
@@ -100,7 +100,7 @@ return [
             'bg'          => '#ffffff',
             'text'        => '#1e293b',
             'orientation' => 'landscape',
-            'fields'      => ['name','company_name','company_address','designation','branch','employee_id','dob','phone','email','photo'],
+            'fields'      => ['name','company_name','company_address','designation','branch','employee_id','dob','person_address','phone','email','photo'],
             'logo'        => true,
         ],
         'media' => [
@@ -122,7 +122,7 @@ return [
             'bg'          => '#f0fdf4',
             'text'        => '#14532d',
             'orientation' => 'landscape',
-            'fields'      => ['name','company_name','company_address','designation','department','employee_id','nationality','dob','phone','email','photo'],
+            'fields'      => ['name','company_name','company_address','designation','department','employee_id','nationality','dob','person_address','phone','email','photo'],
             'logo'        => true,
         ],
         'security' => [
@@ -147,7 +147,7 @@ return [
             'bg'          => '#ffffff',
             'text'        => '#1e293b',
             'orientation' => 'portrait',
-            'fields'      => ['name','company_name','company_address','designation','department','employee_id','dob','blood_group','phone','email','photo'],
+            'fields'      => ['name','company_name','company_address','designation','department','employee_id','dob','person_address','blood_group','phone','email','photo'],
             'logo'        => true,
         ],
         'student_v' => [
@@ -158,7 +158,7 @@ return [
             'bg'          => '#ffffff',
             'text'        => '#064e3b',
             'orientation' => 'portrait',
-            'fields'      => ['name','school_name','school_address','roll_number','course','year','dob','blood_group','phone','email','photo'],
+            'fields'      => ['name','school_name','school_address','roll_number','course','year','dob','person_address','blood_group','phone','email','photo'],
             'logo'        => true,
         ],
         'hospital_v' => [
@@ -169,7 +169,7 @@ return [
             'bg'          => '#f0f9ff',
             'text'        => '#0c4a6e',
             'orientation' => 'portrait',
-            'fields'      => ['name','company_name','company_address','designation','department','license_no','dob','blood_group','phone','email','photo'],
+            'fields'      => ['name','company_name','company_address','designation','department','license_no','dob','person_address','blood_group','phone','email','photo'],
             'logo'        => true,
         ],
         'event_v' => [
@@ -202,7 +202,7 @@ return [
             'bg'          => '#f0fdf4',
             'text'        => '#14532d',
             'orientation' => 'portrait',
-            'fields'      => ['name','company_name','company_address','designation','department','employee_id','nationality','dob','blood_group','phone','email','photo'],
+            'fields'      => ['name','company_name','company_address','designation','department','employee_id','nationality','dob','person_address','blood_group','phone','email','photo'],
             'logo'        => true,
         ],
         'ngo_v' => [
@@ -257,7 +257,7 @@ return [
             'bg'          => '#f0f9ff',
             'text'        => '#0c4a6e',
             'orientation' => 'portrait',
-            'fields'      => ['name','company_name','company_address','designation','department','employee_id','dob','phone','email','photo'],
+            'fields'      => ['name','company_name','company_address','designation','department','employee_id','dob','person_address','phone','email','photo'],
             'logo'        => true,
         ],
         'security_v' => [
@@ -326,5 +326,6 @@ return [
         'rank'              => 'Rank / Grade',
         'gender'            => 'Gender',
         'joining_date'      => 'Joining Date',
+        'person_address'    => 'Person\'s Address',
     ],
 ];

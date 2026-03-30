@@ -97,6 +97,7 @@ class IDCardController
             'show_qr'        => !empty($_POST['show_qr']),
             'qr_size'        => max(36, min(90, (int)($_POST['qr_size'] ?? 54))),
             'card_width'     => 'standard',
+            'profile_shape'  => in_array($this->sanitize($_POST['profile_shape'] ?? 'circle'), ['circle','oval','square'], true) ? $this->sanitize($_POST['profile_shape'] ?? 'circle') : 'circle',
         ];
 
         // Handle photo upload
