@@ -9,9 +9,12 @@ const app = express();
 app.use(bodyParser.json());
 
 // Polling configuration constants
-const POLLING_INTERVAL_MS   = 500;   // How often to check for QR / readiness
-const MAX_QR_POLLING_ATTEMPTS = 40;  // Max polls before giving up (40 × 500 ms = 20 s)
-const QR_CACHE_TTL_MS       = 60000; // How long a generated QR stays valid (60 s)
+const POLLING_INTERVAL_MS     = 500;  // How often to check for QR / readiness
+const MAX_QR_POLLING_ATTEMPTS = 80;   // Max polls before giving up (80 × 500 ms = 40 s)
+                                      // 40 s > Chrome's default 30 s nav timeout, so a
+                                      // net::ERR_TIMED_OUT will be caught in the polling
+                                      // loop before we fall through to the generic 408.
+const QR_CACHE_TTL_MS         = 60000; // How long a generated QR stays valid (60 s)
 
 // Per-session client state: { client, userId, connected, initializing, error }
 const clientStates = {};
@@ -140,6 +143,9 @@ app.post('/api/generate-qr', async (req, res) => {
             authStrategy: new LocalAuth({ clientId: sessionId }),
             puppeteer: { 
                 headless: true,
+                // timeout: 0 disables Puppeteer's browser-launch timeout so
+                // slow environments don't fail before Chrome even starts.
+                timeout: 0,
                 args: [
                     '--no-sandbox',
                     '--disable-setuid-sandbox',
@@ -212,7 +218,7 @@ app.post('/api/generate-qr', async (req, res) => {
             }
         });
 
-        // Wait up to 20 seconds (MAX_QR_POLLING_ATTEMPTS × POLLING_INTERVAL_MS) for the QR to appear
+        // Wait up to 40 seconds (MAX_QR_POLLING_ATTEMPTS × POLLING_INTERVAL_MS) for the QR to appear
         console.log(`Waiting for QR code for session ${sessionId}...`);
         for (let i = 0; i < MAX_QR_POLLING_ATTEMPTS; i++) {
             if (qrCache[sessionId] && qrCache[sessionId].expiry > Date.now()) {
@@ -237,8 +243,9 @@ app.post('/api/generate-qr', async (req, res) => {
             clientStates[sessionId].initializing = false;
         }
         res.status(408).json({ 
-            success: false, 
-            message: 'QR code generation timeout. Please try again.',
+            success: false,
+            error_type: 'QR_TIMEOUT',
+            message: 'WhatsApp is taking longer than usual to load. Please click Retry.',
             sessionId: sessionId
         });
 
@@ -254,20 +261,29 @@ app.post('/api/generate-qr', async (req, res) => {
         // Provide helpful error messages based on error type
         let userMessage = error.message;
         let helpText = '';
+        let errorType = 'CHROME_ERROR';
         
         if (error.message.includes('Failed to launch') || error.message.includes('cannot open shared object')) {
             userMessage = 'Chrome/Puppeteer dependencies are missing';
             helpText = 'Run: sudo ./install-chrome-deps.sh in the whatsapp-bridge directory. See CHROME_SETUP.md for details.';
+            errorType = 'CHROME_MISSING';
         } else if (error.message.includes('ECONNREFUSED')) {
             userMessage = 'Cannot connect to Chrome';
             helpText = 'Chrome may not be installed or Puppeteer may need configuration.';
+            errorType = 'CHROME_ERROR';
+        } else if (error.message.includes('ERR_TIMED_OUT') || error.message.includes('net::ERR_')) {
+            userMessage = 'The bridge server cannot reach WhatsApp servers (net::ERR_TIMED_OUT).';
+            helpText = 'Ensure the server has outbound HTTPS access to web.whatsapp.com. Check firewall rules, DNS resolution, and proxy settings.';
+            errorType = 'NETWORK_ERROR';
         } else if (error.message.includes('timeout')) {
             userMessage = 'QR code generation timed out';
             helpText = 'This can happen if WhatsApp servers are slow. Try again in a moment.';
+            errorType = 'QR_TIMEOUT';
         }
         
         res.status(500).json({ 
-            success: false, 
+            success: false,
+            error_type: errorType,
             message: userMessage,
             help: helpText,
             technicalError: error.message,

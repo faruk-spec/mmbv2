@@ -528,6 +528,51 @@ function loadQRCode(sessionId) {
                         </button>
                     </div>
                 `;
+            } else if (data.error_type === 'NETWORK_ERROR') {
+                // Bridge is running but Chrome can't reach web.whatsapp.com
+                clearInterval(qrPollInterval);
+                updateQRStatus('Network error', 'error');
+                document.getElementById('qrIntegrationNote').style.display = 'none';
+                document.getElementById('qrCodeContainer').innerHTML = `
+                    <div style="width: 100%; max-width: 320px; margin: 0 auto; background: rgba(255, 107, 107, 0.08); border: 2px solid #ff6b6b; border-radius: 12px; padding: 24px; text-align: left;">
+                        <div style="text-align: center; margin-bottom: 16px;">
+                            <i class="fas fa-wifi" style="font-size: 40px; color: #ff6b6b;"></i>
+                        </div>
+                        <div style="font-weight: 700; font-size: 1rem; color: #ff6b6b; margin-bottom: 8px; text-align: center;">Cannot Reach WhatsApp</div>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 14px; text-align: center;">
+                            The bridge server is running but cannot connect to <strong>web.whatsapp.com</strong>.
+                        </p>
+                        <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 14px; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.6;">
+                            Check on the server:<br>
+                            &bull; Outbound HTTPS (port 443) is allowed<br>
+                            &bull; DNS resolves <code>web.whatsapp.com</code><br>
+                            &bull; No proxy/firewall is blocking the connection
+                        </div>
+                        <button onclick="retryLoadQRCode()" style="width: 100%; padding: 10px; background: #ff6b6b; color: #fff; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.9rem;">
+                            <i class="fas fa-redo" style="margin-right: 6px;"></i>Retry
+                        </button>
+                    </div>
+                `;
+            } else if (data.error_type === 'QR_TIMEOUT') {
+                // Bridge is loading WhatsApp but took longer than the wait window
+                clearInterval(qrPollInterval);
+                updateQRStatus('Still loading…', 'warning');
+                document.getElementById('qrIntegrationNote').style.display = 'none';
+                document.getElementById('qrCodeContainer').innerHTML = `
+                    <div style="width: 100%; max-width: 320px; margin: 0 auto; background: rgba(0, 136, 204, 0.08); border: 2px solid #0088cc; border-radius: 12px; padding: 24px; text-align: center;">
+                        <div style="margin-bottom: 16px;">
+                            <i class="fas fa-hourglass-half" style="font-size: 40px; color: #0088cc;"></i>
+                        </div>
+                        <div style="font-weight: 700; font-size: 1rem; color: #0088cc; margin-bottom: 8px;">WhatsApp Is Loading</div>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.6;">
+                            WhatsApp is taking longer than usual to respond.<br>
+                            Click <strong>Retry</strong> — the QR code should appear shortly.
+                        </p>
+                        <button onclick="retryLoadQRCode()" style="width: 100%; padding: 10px; background: #0088cc; color: #fff; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.9rem;">
+                            <i class="fas fa-redo" style="margin-right: 6px;"></i>Retry
+                        </button>
+                    </div>
+                `;
             } else {
                 throw new Error(data.message || 'Failed to load QR code');
             }

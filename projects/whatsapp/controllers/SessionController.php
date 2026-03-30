@@ -367,13 +367,23 @@ class SessionController
             $qrData = $this->getQRFromBridge($session['session_id']);
             
             if ($qrData === null) {
-                // Return a specific error_type so the frontend can render
-                // a helpful "start the bridge" panel instead of a generic error.
+                // Connection-level failure — bridge is not reachable at all
                 echo json_encode([
                     'success' => false,
                     'message' => 'The WhatsApp bridge server is not running.',
                     'error_type' => 'BRIDGE_OFFLINE',
                     'help' => 'cd projects/whatsapp/whatsapp-bridge && npm start'
+                ]);
+                return;
+            }
+            
+            if (isset($qrData['success']) && $qrData['success'] === false) {
+                // Bridge is running but returned a specific error (network, timeout, etc.)
+                echo json_encode([
+                    'success' => false,
+                    'error_type' => $qrData['error_type'],
+                    'message' => $qrData['message'],
+                    'help' => $qrData['help'] ?? ''
                 ]);
                 return;
             }
@@ -613,8 +623,8 @@ class SessionController
                     'Content-Type: application/json',
                     'Content-Length: ' . strlen($postData)
                 ]);
-                // 25 s gives the bridge (20 s polling + Chrome startup) enough headroom
-                curl_setopt($ch, CURLOPT_TIMEOUT, 25);
+                // 50 s gives the bridge (40 s polling + Chrome startup) enough headroom
+                curl_setopt($ch, CURLOPT_TIMEOUT, 50);
                 curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
                 
                 $response = curl_exec($ch);
@@ -641,11 +651,18 @@ class SessionController
                 }
                 
                 $errorMsg = $data['message'] ?? "HTTP $httpCode error from bridge";
-                error_log("WhatsApp Bridge: API returned error - $errorMsg (HTTP $httpCode)");
+                $errorType = $data['error_type'] ?? 'QR_GENERATION_ERROR';
+                error_log("WhatsApp Bridge: API returned error ($errorType) - $errorMsg (HTTP $httpCode)");
                 if (isset($data['help'])) {
                     error_log("WhatsApp Bridge: Help - " . $data['help']);
                 }
-                return null;
+                // Return error details so callers can surface the right message
+                return [
+                    'success' => false,
+                    'error_type' => $errorType,
+                    'message' => $errorMsg,
+                    'help' => $data['help'] ?? ''
+                ];
             }
             
             // cURL not available: fall back to file_get_contents
@@ -655,7 +672,7 @@ class SessionController
                     'header' => "Content-Type: application/json\r\n" .
                                "Content-Length: " . strlen($postData) . "\r\n",
                     'content' => $postData,
-                    'timeout' => 25,
+                    'timeout' => 50,
                     'ignore_errors' => true
                 ]
             ]);
@@ -679,11 +696,17 @@ class SessionController
             }
             
             $errorMsg = $data['message'] ?? 'Unknown error';
-            error_log("WhatsApp Bridge: API returned error - $errorMsg");
+            $errorType = $data['error_type'] ?? 'QR_GENERATION_ERROR';
+            error_log("WhatsApp Bridge: API returned error ($errorType) - $errorMsg");
             if (isset($data['help'])) {
                 error_log("WhatsApp Bridge: Help - " . $data['help']);
             }
-            return null;
+            return [
+                'success' => false,
+                'error_type' => $errorType,
+                'message' => $errorMsg,
+                'help' => $data['help'] ?? ''
+            ];
             
         } catch (\Exception $e) {
             error_log("WhatsApp Bridge: Exception - " . $e->getMessage());
