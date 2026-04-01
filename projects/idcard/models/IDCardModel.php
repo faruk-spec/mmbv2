@@ -28,6 +28,22 @@ class IDCardModel
     {
         try {
             $this->db->query(
+                "CREATE TABLE IF NOT EXISTS `idcard_bulk_jobs` (
+                    `id`            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `user_id`       INT UNSIGNED NOT NULL,
+                    `template_key`  VARCHAR(50)  NOT NULL DEFAULT 'corporate',
+                    `total_rows`    INT UNSIGNED NOT NULL DEFAULT 0,
+                    `completed`     INT UNSIGNED NOT NULL DEFAULT 0,
+                    `failed`        INT UNSIGNED NOT NULL DEFAULT 0,
+                    `status`        ENUM('pending','processing','done','error') DEFAULT 'pending',
+                    `created_at`    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+                    `updated_at`    TIMESTAMP    NULL ON UPDATE CURRENT_TIMESTAMP,
+                    INDEX `idx_ibj_user`    (`user_id`),
+                    INDEX `idx_ibj_status`  (`status`),
+                    INDEX `idx_ibj_created` (`created_at`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+            );
+            $this->db->query(
                 "CREATE TABLE IF NOT EXISTS `idcard_cards` (
                     `id`             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                     `user_id`        INT UNSIGNED NOT NULL,
@@ -340,6 +356,67 @@ class IDCardModel
              ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = NOW()",
             [$key, $encoded]
         );
+    }
+
+    // ------------------------------------------------------------------ //
+    //  Bulk Job CRUD                                                       //
+    // ------------------------------------------------------------------ //
+
+    public function createBulkJob(int $userId, string $templateKey, int $totalRows): int
+    {
+        $this->db->query(
+            "INSERT INTO idcard_bulk_jobs (user_id, template_key, total_rows, status)
+             VALUES (?, ?, ?, 'pending')",
+            [$userId, $templateKey, $totalRows]
+        );
+        return (int) $this->db->lastInsertId();
+    }
+
+    public function updateBulkJob(int $jobId, int $completed, int $failed, string $status = 'done'): void
+    {
+        $this->db->query(
+            "UPDATE idcard_bulk_jobs SET completed = ?, failed = ?, status = ? WHERE id = ?",
+            [$completed, $failed, $status, $jobId]
+        );
+    }
+
+    public function getBulkJobsByUser(int $userId, int $limit = 20): array
+    {
+        return $this->db->fetchAll(
+            "SELECT * FROM idcard_bulk_jobs WHERE user_id = ? ORDER BY created_at DESC LIMIT ?",
+            [$userId, $limit]
+        ) ?: [];
+    }
+
+    public function getAllBulkJobs(int $limit = 50, int $offset = 0): array
+    {
+        return $this->db->fetchAll(
+            "SELECT j.*, u.name user_name, u.email user_email
+             FROM idcard_bulk_jobs j
+             LEFT JOIN users u ON u.id = j.user_id
+             ORDER BY j.created_at DESC LIMIT ? OFFSET ?",
+            [$limit, $offset]
+        ) ?: [];
+    }
+
+    public function countAllBulkJobs(): int
+    {
+        $row = $this->db->fetch("SELECT COUNT(*) c FROM idcard_bulk_jobs");
+        return (int) ($row['c'] ?? 0);
+    }
+
+    public function countBulkJobsToday(): int
+    {
+        $row = $this->db->fetch(
+            "SELECT COUNT(*) c FROM idcard_bulk_jobs WHERE DATE(created_at) = CURDATE()"
+        );
+        return (int) ($row['c'] ?? 0);
+    }
+
+    public function sumBulkCardsGenerated(): int
+    {
+        $row = $this->db->fetch("SELECT COALESCE(SUM(completed), 0) c FROM idcard_bulk_jobs");
+        return (int) ($row['c'] ?? 0);
     }
 
     // ------------------------------------------------------------------ //

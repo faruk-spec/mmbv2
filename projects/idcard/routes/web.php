@@ -81,6 +81,18 @@ switch ($segments[0]) {
         }
         break;
 
+    case 'bulk':
+        require_once PROJECT_PATH . '/controllers/BulkController.php';
+        $controller = new \Projects\IDCard\Controllers\BulkController();
+        if ($segments[1] === 'upload' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+            $controller->upload();
+        } elseif ($segments[1] === 'sample-csv') {
+            $controller->sampleCsv();
+        } else {
+            $controller->index();
+        }
+        break;
+
     case 'ai-suggest':
         require_once PROJECT_PATH . '/controllers/IDCardController.php';
         $controller = new \Projects\IDCard\Controllers\IDCardController();

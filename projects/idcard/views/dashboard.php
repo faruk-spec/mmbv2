@@ -95,6 +95,9 @@
         <a href="/projects/idcard/history" class="btn btn-secondary">
             <i class="fas fa-layer-group"></i> My Cards
         </a>
+        <a href="/projects/idcard/bulk" class="btn btn-secondary">
+            <i class="fas fa-table"></i> Bulk Generate
+        </a>
     </div>
 </div>
 

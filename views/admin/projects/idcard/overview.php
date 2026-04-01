@@ -10,6 +10,7 @@
     </div>
     <div style="display:flex;gap:8px;">
         <a href="/admin/projects/idcard/cards" class="btn btn-secondary"><i class="fas fa-list"></i> All Cards</a>
+        <a href="/admin/projects/idcard/bulk-jobs" class="btn btn-secondary"><i class="fas fa-layer-group"></i> Bulk Jobs</a>
         <a href="/admin/projects/idcard/settings" class="btn btn-secondary"><i class="fas fa-cog"></i> Settings</a>
         <a href="/projects/idcard" class="btn btn-primary" target="_blank"><i class="fas fa-external-link-alt"></i> Open CardX</a>
     </div>
@@ -32,6 +33,27 @@
     <div class="stat-card" style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:20px;">
         <div style="font-size:2rem;font-weight:700;color:var(--magenta);"><?= number_format((int)($activeUsers ?? 0)) ?></div>
         <div style="color:var(--text-secondary);font-size:13px;">Active Users (30d)</div>
+    </div>
+</div>
+
+<!-- Bulk generation stats -->
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px;">
+    <div style="background:var(--bg-card);border:1px solid rgba(99,102,241,0.25);border-radius:12px;padding:18px;">
+        <div style="font-size:1.6rem;font-weight:700;color:#6366f1;"><?= number_format((int)($bulkStats['total'] ?? 0)) ?></div>
+        <div style="color:var(--text-secondary);font-size:12px;">Total Bulk Jobs</div>
+    </div>
+    <div style="background:var(--bg-card);border:1px solid rgba(99,102,241,0.25);border-radius:12px;padding:18px;">
+        <div style="font-size:1.6rem;font-weight:700;color:var(--cyan);"><?= number_format((int)($bulkStats['today'] ?? 0)) ?></div>
+        <div style="color:var(--text-secondary);font-size:12px;">Bulk Jobs Today</div>
+    </div>
+    <div style="background:var(--bg-card);border:1px solid rgba(99,102,241,0.25);border-radius:12px;padding:18px;display:flex;align-items:center;gap:12px;justify-content:space-between;">
+        <div>
+            <div style="font-size:1.6rem;font-weight:700;color:var(--green);"><?= number_format((int)($bulkStats['cards_sum'] ?? 0)) ?></div>
+            <div style="color:var(--text-secondary);font-size:12px;">Cards via Bulk</div>
+        </div>
+        <a href="/admin/projects/idcard/bulk-jobs" class="btn btn-secondary btn-sm" style="white-space:nowrap;">
+            <i class="fas fa-layer-group"></i> View All
+        </a>
     </div>
 </div>
 
