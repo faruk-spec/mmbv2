@@ -190,6 +190,9 @@ $editDesign   = $editDesign   ?? [];
     /* Hide the right-column preview area elements on mobile since they are
        duplicated in the mobile-only form sections */
     .preview-area .card:not(:first-child) { display:none !important; }
+    /* Hide the step-progress banner on mobile — the bottom nav already
+       provides category/section navigation */
+    #stepProgressBanner { display:none !important; }
 }
 </style>
 
@@ -198,8 +201,8 @@ $editDesign   = $editDesign   ?? [];
 </div>
 
 <?php if (!$isEditMode): ?>
-<!-- Step progress indicator (create mode only) -->
-<div style="background:linear-gradient(135deg,rgba(99,102,241,0.12),rgba(0,240,255,0.05));border:1px solid rgba(99,102,241,0.2);border-radius:14px;padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+<!-- Step progress indicator (create mode only, hidden on mobile) -->
+<div id="stepProgressBanner" style="background:linear-gradient(135deg,rgba(99,102,241,0.12),rgba(0,240,255,0.05));border:1px solid rgba(99,102,241,0.2);border-radius:14px;padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
     <div style="width:44px;height:44px;background:linear-gradient(135deg,#6366f1,#00f0ff);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
         <i class="fas fa-id-card" style="color:#fff;font-size:1.2rem;"></i>
     </div>
