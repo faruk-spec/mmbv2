@@ -88,6 +88,8 @@ switch ($segments[0]) {
             $controller->upload();
         } elseif ($segments[1] === 'sample-csv') {
             $controller->sampleCsv();
+        } elseif ($segments[1] === 'cards') {
+            $controller->viewCards();
         } else {
             $controller->index();
         }

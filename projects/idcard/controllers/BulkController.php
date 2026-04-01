@@ -141,6 +141,33 @@ class BulkController
         // Build field list for this template (excluding photo)
         $tplFields = array_filter($tplConfig['fields'], fn($f) => $f !== 'photo');
 
+        // Build design from submitted fields
+        $allowedStyles = ['classic','gradient_pro','neon','executive','stripe','metro',
+                          'glass','zigzag','ribbon',
+                          'v_sharp','v_curve','v_hex','v_circle','v_split',
+                          'v_ribbon','v_arch','v_diamond','v_corner','v_dual',
+                          'v_stripe','v_badge'];
+        $isPortrait  = ($tplConfig['orientation'] ?? 'landscape') === 'portrait';
+        $defStyle    = $isPortrait ? 'v_sharp' : 'classic';
+        $rawStyle    = trim($_POST['design_style'] ?? '');
+        $designStyle = in_array($rawStyle, $allowedStyles, true) ? $rawStyle : $defStyle;
+
+        $design = [
+            'primary_color'  => $this->sanitizeColor($_POST['primary_color']  ?? $tplConfig['color']),
+            'accent_color'   => $this->sanitizeColor($_POST['accent_color']   ?? $tplConfig['accent']),
+            'bg_color'       => $this->sanitizeColor($_POST['bg_color']       ?? $tplConfig['bg']),
+            'text_color'     => $this->sanitizeColor($_POST['text_color']     ?? $tplConfig['text']),
+            'font_family'    => $this->sanitizeFont($_POST['font_family']     ?? 'Poppins'),
+            'design_style'   => $designStyle,
+            'show_qr'        => false,
+            'qr_size'        => 54,
+            'card_width'     => 'standard',
+            'profile_shape'  => in_array(
+                trim($_POST['profile_shape'] ?? 'circle'),
+                ['circle','oval','square'], true
+            ) ? trim($_POST['profile_shape'] ?? 'circle') : 'circle',
+        ];
+
         $completed = 0;
         $failed    = 0;
         $cardIds   = [];
@@ -169,7 +196,7 @@ class BulkController
                     'user_id'      => $userId,
                     'template_key' => $templateKey,
                     'card_data'    => $cardData,
-                    'design'       => [],
+                    'design'       => $design,
                     'status'       => 'generated',
                 ]);
                 $completed++;
@@ -366,6 +393,39 @@ class BulkController
     }
 
     // ------------------------------------------------------------------ //
+    //  View all cards generated via bulk (user's bulk card list)          //
+    // ------------------------------------------------------------------ //
+
+    public function viewCards(): void
+    {
+        $userId = Auth::id();
+        if (!$userId) {
+            header('Location: /login');
+            exit;
+        }
+
+        $page    = max(1, (int) ($_GET['page'] ?? 1));
+        $perPage = 30;
+        $offset  = ($page - 1) * $perPage;
+
+        // Fetch all cards for this user, newest first
+        $cards = $this->model->getByUser($userId, $perPage, $offset);
+        $total = $this->model->countByUser($userId);
+        $pages = max(1, (int) ceil($total / $perPage));
+
+        $this->render('bulk_cards', [
+            'title'     => 'My Bulk-Generated Cards',
+            'user'      => Auth::user(),
+            'cards'     => $cards,
+            'total'     => $total,
+            'page'      => $page,
+            'perPage'   => $perPage,
+            'pages'     => $pages,
+            'templates' => $this->config['templates'],
+        ]);
+    }
+
+    // ------------------------------------------------------------------ //
     //  Helpers                                                             //
     // ------------------------------------------------------------------ //
 
@@ -388,6 +448,21 @@ class BulkController
     private function sanitize(string $value): string
     {
         return htmlspecialchars(strip_tags(trim($value)), ENT_QUOTES, 'UTF-8');
+    }
+
+    private function sanitizeColor(string $value): string
+    {
+        $value = trim($value);
+        if (preg_match('/^#[0-9a-fA-F]{3,6}$/', $value)) {
+            return $value;
+        }
+        return '#000000';
+    }
+
+    private function sanitizeFont(string $value): string
+    {
+        $allowed = ['Poppins','Inter','Roboto','Lato','Open Sans','Montserrat','Raleway'];
+        return in_array($value, $allowed, true) ? $value : 'Poppins';
     }
 
     protected function render(string $view, array $data = []): void
