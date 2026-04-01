@@ -150,6 +150,63 @@ class IDCardModel
         return true;
     }
 
+
+    /**
+     * Update an existing card (only if it belongs to the user).
+     */
+    public function update(int $id, int $userId, array $data): bool
+    {
+        $card = $this->findById($id, $userId);
+        if (!$card) {
+            return false;
+        }
+
+        $sets   = [];
+        $params = [];
+
+        if (isset($data['template_key'])) {
+            $sets[]   = 'template_key = ?';
+            $params[] = $data['template_key'];
+        }
+        if (isset($data['card_data'])) {
+            $sets[]   = 'card_data = ?';
+            $params[] = json_encode($data['card_data']);
+        }
+        if (isset($data['design'])) {
+            $sets[]   = 'design = ?';
+            $params[] = json_encode($data['design']);
+        }
+        if (array_key_exists('photo_path', $data)) {
+            $sets[]   = 'photo_path = ?';
+            $params[] = $data['photo_path'];
+        }
+        if (array_key_exists('logo_path', $data)) {
+            $sets[]   = 'logo_path = ?';
+            $params[] = $data['logo_path'];
+        }
+        if (isset($data['ai_prompt'])) {
+            $sets[]   = 'ai_prompt = ?';
+            $params[] = $data['ai_prompt'];
+        }
+        if (isset($data['ai_suggestions'])) {
+            $sets[]   = 'ai_suggestions = ?';
+            $params[] = json_encode($data['ai_suggestions']);
+        }
+
+        if (empty($sets)) {
+            // No fields to update — treat as no-op success
+            return true;
+        }
+
+        $params[] = $id;
+        $params[] = $userId;
+        $this->db->query(
+            "UPDATE idcard_cards SET " . implode(', ', $sets) . " WHERE id = ? AND user_id = ?",
+            $params
+        );
+        return true;
+    }
+
     // ------------------------------------------------------------------ //
     //  Admin helpers                                                       //
     // ------------------------------------------------------------------ //

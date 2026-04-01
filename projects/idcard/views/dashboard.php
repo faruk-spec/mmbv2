@@ -1,84 +1,143 @@
 <?php /** @var int $total @var array $recent @var array $templates @var array $user */ ?>
 
-<div class="page-header" style="margin-bottom:30px;text-align:center;">
-    <h1 style="font-size:2.2rem;font-weight:700;background:linear-gradient(135deg,#6366f1,#00f0ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
-        CardX Dashboard
-    </h1>
-    <p style="color:var(--text-secondary);margin-top:8px;font-size:1.05rem;">
-        AI-powered professional ID card generator
-    </p>
-</div>
+<style>
+/* Dashboard page enhancements */
+.dash-hero {
+    background: linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(0,240,255,0.06) 100%);
+    border: 1px solid rgba(99,102,241,0.25);
+    border-radius: 16px;
+    padding: 32px 28px;
+    margin-bottom: 28px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+.dash-hero-icon {
+    width: 72px; height: 72px; flex-shrink: 0;
+    background: linear-gradient(135deg, #6366f1, #00f0ff);
+    border-radius: 18px;
+    display: flex; align-items: center; justify-content: center;
+}
+.dash-hero-title {
+    font-size: clamp(1.5rem, 4vw, 2.1rem);
+    font-weight: 800;
+    background: linear-gradient(135deg, #6366f1, #00f0ff);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    margin-bottom: 4px;
+}
+.dash-hero-sub { color: var(--text-secondary); font-size: 0.95rem; }
+.dash-hero-cta { margin-left: auto; display: flex; gap: 10px; flex-wrap: wrap; }
+@media (max-width: 560px) {
+    .dash-hero { padding: 20px 16px; gap: 16px; }
+    .dash-hero-cta { margin-left: 0; width: 100%; }
+    .dash-hero-cta .btn { flex: 1; justify-content: center; }
+}
 
-<!-- Quick Actions -->
-<div style="display:flex;gap:15px;margin-bottom:30px;flex-wrap:wrap;justify-content:center;">
-    <a href="/projects/idcard/generate"
-       style="flex:1;min-width:200px;max-width:250px;background:linear-gradient(135deg,#6366f1,#4f46e5);color:white;padding:20px;border-radius:12px;text-decoration:none;text-align:center;box-shadow:0 4px 15px rgba(99,102,241,0.3);transition:transform 0.2s;"
-       onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform='none'">
-        <i class="fas fa-id-card" style="font-size:2rem;margin-bottom:10px;display:block;"></i>
-        <strong style="font-size:1.1rem;">Create ID Card</strong>
-        <p style="margin:5px 0 0;font-size:0.85rem;opacity:0.9;">AI-powered generator</p>
-    </a>
-    <a href="/projects/idcard/history"
-       style="flex:1;min-width:200px;max-width:250px;background:linear-gradient(135deg,#10b981,#059669);color:white;padding:20px;border-radius:12px;text-decoration:none;text-align:center;box-shadow:0 4px 15px rgba(16,185,129,0.3);transition:transform 0.2s;"
-       onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform='none'">
-        <i class="fas fa-layer-group" style="font-size:2rem;margin-bottom:10px;display:block;"></i>
-        <strong style="font-size:1.1rem;">My Cards</strong>
-        <p style="margin:5px 0 0;font-size:0.85rem;opacity:0.9;"><?= number_format($total) ?> card<?= $total !== 1 ? 's' : '' ?> generated</p>
-    </a>
-</div>
+/* Quick stats strip */
+.dash-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 28px;
+}
+@media (max-width: 480px) { .dash-stats { grid-template-columns: 1fr; } }
+.dash-stat {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 18px 16px;
+    text-align: center;
+    transition: border-color 0.2s;
+}
+.dash-stat:hover { border-color: rgba(99,102,241,0.4); }
+.dash-stat-val {
+    font-size: 2rem; font-weight: 800;
+    background: linear-gradient(135deg, var(--indigo), var(--cyan));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.dash-stat-label { font-size: 0.78rem; color: var(--text-secondary); margin-top: 4px; }
 
-<!-- Stats -->
-<div class="grid grid-3" style="margin-bottom:30px;">
-    <div class="card stat-card">
-        <div class="stat-value"><?= number_format($total) ?></div>
-        <div class="stat-label"><i class="fas fa-id-card"></i> Cards Created</div>
-    </div>
-    <div class="card stat-card">
-        <div class="stat-value"><?= count($templates) ?></div>
-        <div class="stat-label"><i class="fas fa-palette"></i> Templates</div>
-    </div>
-    <div class="card stat-card">
-        <div class="stat-value" style="font-size:1.4rem;">AI✨</div>
-        <div class="stat-label"><i class="fas fa-magic"></i> Powered Design</div>
-    </div>
-</div>
+/* Template gallery */
+.tpl-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+}
+.tpl-card {
+    display: block; padding: 14px 12px; border-radius: 10px; text-decoration: none;
+    border: 1.5px solid var(--border-color); background: var(--bg-secondary);
+    transition: all 0.2s; text-align: center;
+}
+.tpl-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.2); }
+.tpl-icon {
+    width: 40px; height: 40px; border-radius: 10px; margin: 0 auto 10px;
+    display: flex; align-items: center; justify-content: center;
+}
+</style>
 
-<!-- AI Feature Banner -->
-<div class="card" style="margin-bottom:30px;background:linear-gradient(135deg,rgba(99,102,241,0.1),rgba(0,240,255,0.05));border:1.5px solid rgba(99,102,241,0.3);">
-    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
-        <div style="width:56px;height:56px;background:linear-gradient(135deg,#6366f1,#00f0ff);border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-            <i class="fas fa-robot" style="font-size:1.6rem;color:white;"></i>
+<!-- Hero -->
+<div class="dash-hero">
+    <div class="dash-hero-icon">
+        <i class="fas fa-id-card" style="font-size:2rem;color:#fff;"></i>
+    </div>
+    <div style="flex:1;min-width:180px;">
+        <div class="dash-hero-title">CardX Dashboard</div>
+        <div class="dash-hero-sub">
+            AI-powered professional ID card generator &mdash;
+            <span style="color:var(--indigo);font-weight:600;"><?= number_format($total) ?> card<?= $total !== 1 ? 's' : '' ?> created</span>
         </div>
-        <div style="flex:1;min-width:200px;">
-            <h3 style="font-size:1.1rem;font-weight:700;margin-bottom:4px;">
-                AI Design Assistant <span style="background:linear-gradient(135deg,#6366f1,#00f0ff);color:white;font-size:0.65rem;padding:2px 10px;border-radius:20px;font-weight:600;vertical-align:middle;">POWERED</span>
-            </h3>
-            <p style="color:var(--text-secondary);font-size:0.85rem;">
-                CardX analyses your content and provides real-time design tips, layout suggestions, and field recommendations — powered by AI.
-            </p>
-        </div>
-        <a href="/projects/idcard/generate" class="btn btn-primary" style="flex-shrink:0;">
-            <i class="fas fa-magic"></i> Generate Now
+    </div>
+    <div class="dash-hero-cta">
+        <a href="/projects/idcard/generate" class="btn btn-primary">
+            <i class="fas fa-magic"></i> Create Card
+        </a>
+        <a href="/projects/idcard/history" class="btn btn-secondary">
+            <i class="fas fa-layer-group"></i> My Cards
         </a>
     </div>
 </div>
 
+<!-- Stats strip -->
+<div class="dash-stats">
+    <div class="dash-stat">
+        <div class="dash-stat-val"><?= number_format($total) ?></div>
+        <div class="dash-stat-label"><i class="fas fa-id-card"></i> Cards Created</div>
+    </div>
+    <div class="dash-stat">
+        <div class="dash-stat-val"><?= count($templates) ?></div>
+        <div class="dash-stat-label"><i class="fas fa-palette"></i> Templates</div>
+    </div>
+    <div class="dash-stat" style="background:linear-gradient(135deg,rgba(99,102,241,0.08),rgba(0,240,255,0.04));border-color:rgba(99,102,241,0.2);">
+        <div class="dash-stat-val" style="font-size:1.5rem;">AI ✨</div>
+        <div class="dash-stat-label"><i class="fas fa-robot"></i> Powered Design</div>
+    </div>
+</div>
+
 <!-- Template Gallery -->
-<div class="card" style="margin-bottom:30px;">
-    <h3 style="font-size:1.1rem;margin-bottom:16px;display:flex;align-items:center;gap:8px;">
-        <i class="fas fa-palette" style="color:var(--indigo);"></i> Available Templates
-    </h3>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;">
+<div class="card" style="margin-bottom:24px;padding:20px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+        <h3 style="font-size:1rem;font-weight:700;display:flex;align-items:center;gap:8px;margin:0;">
+            <i class="fas fa-palette" style="color:var(--indigo);"></i> Templates
+        </h3>
+        <a href="/projects/idcard/generate" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Generate</a>
+    </div>
+    <div class="tpl-grid">
         <?php foreach ($templates as $key => $tpl): ?>
-        <a href="/projects/idcard/generate?template=<?= htmlspecialchars($key) ?>"
-           style="display:block;padding:16px;border-radius:10px;text-decoration:none;border:1.5px solid rgba(255,255,255,0.08);background:var(--bg-secondary);transition:all 0.2s;text-align:center;"
-           onmouseover="this.style.borderColor='<?= htmlspecialchars($tpl['color']) ?>';this.style.transform='translateY(-2px)';"
-           onmouseout="this.style.borderColor='rgba(255,255,255,0.08)';this.style.transform='none';">
-            <div style="width:40px;height:40px;background:<?= htmlspecialchars($tpl['color']) ?>;border-radius:10px;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;">
-                <i class="fas fa-id-card" style="color:white;font-size:1.1rem;"></i>
+        <a href="/projects/idcard/generate?template=<?= htmlspecialchars($key) ?>" class="tpl-card"
+           onmouseover="this.style.borderColor='<?= htmlspecialchars($tpl['color']) ?>'"
+           onmouseout="this.style.borderColor='var(--border-color)'">
+            <div class="tpl-icon" style="background:<?= htmlspecialchars($tpl['color']) ?>;">
+                <i class="fas fa-id-card" style="color:white;font-size:1rem;"></i>
             </div>
-            <div style="font-weight:600;font-size:0.85rem;color:var(--text-primary);margin-bottom:4px;"><?= htmlspecialchars($tpl['name']) ?></div>
-            <div style="font-size:0.72rem;color:var(--text-secondary);"><?= htmlspecialchars($tpl['description']) ?></div>
+            <div style="font-weight:600;font-size:0.82rem;color:var(--text-primary);margin-bottom:3px;
+                        white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                <?= htmlspecialchars($tpl['name']) ?>
+            </div>
+            <div style="font-size:0.68rem;color:var(--text-secondary);display:flex;align-items:center;justify-content:center;gap:4px;">
+                <span style="width:6px;height:6px;border-radius:50%;background:<?= htmlspecialchars($tpl['color']) ?>;display:inline-block;flex-shrink:0;"></span>
+                <?= $tpl['orientation'] === 'portrait' ? 'Portrait' : 'Landscape' ?>
+            </div>
         </a>
         <?php endforeach; ?>
     </div>
@@ -86,43 +145,58 @@
 
 <!-- Recent Cards -->
 <?php if (!empty($recent)): ?>
-<div class="card">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-        <h3 style="font-size:1.1rem;display:flex;align-items:center;gap:8px;">
+<div class="card" style="padding:20px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+        <h3 style="font-size:1rem;font-weight:700;display:flex;align-items:center;gap:8px;margin:0;">
             <i class="fas fa-clock" style="color:var(--indigo);"></i> Recent Cards
         </h3>
-        <a href="/projects/idcard/history" class="btn btn-secondary btn-sm">View All</a>
+        <a href="/projects/idcard/history" class="btn btn-secondary btn-sm"><i class="fas fa-layer-group"></i> View All</a>
     </div>
     <div style="overflow-x:auto;">
-        <table style="width:100%;border-collapse:collapse;">
+        <table style="width:100%;border-collapse:collapse;min-width:420px;">
             <thead>
                 <tr style="border-bottom:1px solid var(--border-color);">
-                    <th style="text-align:left;padding:8px 12px;font-size:0.78rem;color:var(--text-secondary);font-weight:600;">Card #</th>
-                    <th style="text-align:left;padding:8px 12px;font-size:0.78rem;color:var(--text-secondary);font-weight:600;">Name</th>
-                    <th style="text-align:left;padding:8px 12px;font-size:0.78rem;color:var(--text-secondary);font-weight:600;">Template</th>
-                    <th style="text-align:left;padding:8px 12px;font-size:0.78rem;color:var(--text-secondary);font-weight:600;">Date</th>
-                    <th style="text-align:center;padding:8px 12px;font-size:0.78rem;color:var(--text-secondary);font-weight:600;">Action</th>
+                    <th style="text-align:left;padding:8px 10px;font-size:0.72rem;color:var(--text-secondary);font-weight:600;">Card #</th>
+                    <th style="text-align:left;padding:8px 10px;font-size:0.72rem;color:var(--text-secondary);font-weight:600;">Name</th>
+                    <th style="text-align:left;padding:8px 10px;font-size:0.72rem;color:var(--text-secondary);font-weight:600;">Template</th>
+                    <th style="text-align:left;padding:8px 10px;font-size:0.72rem;color:var(--text-secondary);font-weight:600;">Date</th>
+                    <th style="text-align:center;padding:8px 10px;font-size:0.72rem;color:var(--text-secondary);font-weight:600;">Actions</th>
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($recent as $card): ?>
+                <?php foreach ($recent as $card):
+                    $tplKey = $card['template_key'];
+                    $tplDef = $templates[$tplKey] ?? null;
+                ?>
                 <tr style="border-bottom:1px solid var(--border-color);">
-                    <td style="padding:10px 12px;font-size:0.82rem;font-family:monospace;color:var(--text-secondary);"><?= htmlspecialchars($card['card_number']) ?></td>
-                    <td style="padding:10px 12px;font-size:0.85rem;font-weight:500;"><?= htmlspecialchars($card['card_data']['name'] ?? '—') ?></td>
-                    <td style="padding:10px 12px;">
-                        <?php $tplKey = $card['template_key']; $tplDef = $templates[$tplKey] ?? null; ?>
+                    <td style="padding:9px 10px;font-size:0.78rem;font-family:monospace;color:var(--text-secondary);">
+                        <?= htmlspecialchars($card['card_number']) ?>
+                    </td>
+                    <td style="padding:9px 10px;font-size:0.85rem;font-weight:500;">
+                        <?= htmlspecialchars($card['card_data']['name'] ?? '—') ?>
+                    </td>
+                    <td style="padding:9px 10px;">
                         <?php if ($tplDef): ?>
                         <span style="display:inline-flex;align-items:center;gap:5px;font-size:0.78rem;">
-                            <span style="width:8px;height:8px;border-radius:50%;background:<?= htmlspecialchars($tplDef['color']) ?>;"></span>
+                            <span style="width:8px;height:8px;border-radius:50%;background:<?= htmlspecialchars($tplDef['color']) ?>;flex-shrink:0;"></span>
                             <?= htmlspecialchars($tplDef['name']) ?>
                         </span>
                         <?php else: ?>
                         <span style="font-size:0.78rem;color:var(--text-secondary);"><?= htmlspecialchars($tplKey) ?></span>
                         <?php endif; ?>
                     </td>
-                    <td style="padding:10px 12px;font-size:0.8rem;color:var(--text-secondary);"><?= date('d M Y', strtotime($card['created_at'])) ?></td>
-                    <td style="padding:10px 12px;text-align:center;">
-                        <a href="/projects/idcard/view/<?= (int)$card['id'] ?>" class="btn btn-secondary btn-sm">View</a>
+                    <td style="padding:9px 10px;font-size:0.78rem;color:var(--text-secondary);">
+                        <?= date('d M Y', strtotime($card['created_at'])) ?>
+                    </td>
+                    <td style="padding:9px 10px;text-align:center;">
+                        <div style="display:inline-flex;gap:5px;">
+                            <a href="/projects/idcard/view/<?= (int)$card['id'] ?>" class="btn btn-primary btn-sm">
+                                <i class="fas fa-eye"></i> View
+                            </a>
+                            <a href="/projects/idcard/edit/<?= (int)$card['id'] ?>" class="btn btn-secondary btn-sm" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                        </div>
                     </td>
                 </tr>
                 <?php endforeach; ?>
@@ -131,10 +205,14 @@
     </div>
 </div>
 <?php else: ?>
-<div class="card" style="text-align:center;padding:40px;">
-    <div style="font-size:3rem;margin-bottom:12px;opacity:0.4;"><i class="fas fa-id-card"></i></div>
-    <h3 style="margin-bottom:8px;">No ID Cards Yet</h3>
-    <p style="color:var(--text-secondary);margin-bottom:20px;font-size:0.9rem;">Create your first professional ID card using our AI-powered generator.</p>
-    <a href="/projects/idcard/generate" class="btn btn-primary"><i class="fas fa-plus"></i> Create First Card</a>
+<div class="card" style="text-align:center;padding:48px 24px;">
+    <div style="font-size:3.5rem;margin-bottom:14px;opacity:0.35;"><i class="fas fa-id-card"></i></div>
+    <h3 style="font-size:1.1rem;margin-bottom:8px;">No ID Cards Yet</h3>
+    <p style="color:var(--text-secondary);margin-bottom:24px;font-size:0.9rem;max-width:380px;margin-left:auto;margin-right:auto;">
+        Create your first professional ID card using our AI-powered generator. Choose from <?= count($templates) ?> templates.
+    </p>
+    <a href="/projects/idcard/generate" class="btn btn-primary" style="font-size:0.95rem;">
+        <i class="fas fa-magic"></i> Create First Card
+    </a>
 </div>
 <?php endif; ?>

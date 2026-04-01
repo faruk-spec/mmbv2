@@ -5,8 +5,14 @@
  * @var array  $tplConfig
  * @var array  $field_labels
  * @var array  $user
+ * @var int|null    $editCardId   (optional, present when editing)
+ * @var array|null  $editCardData (optional, pre-fill field values)
+ * @var array|null  $editDesign   (optional, pre-fill design settings)
  */
-$csrfToken = \Core\Security::generateCsrfToken();
+$csrfToken    = \Core\Security::generateCsrfToken();
+$isEditMode   = isset($editCardId) && $editCardId > 0;
+$editCardData = $editCardData ?? [];
+$editDesign   = $editDesign   ?? [];
 ?>
 
 <style>
@@ -149,6 +155,14 @@ $csrfToken = \Core\Security::generateCsrfToken();
     white-space:nowrap; pointer-events:none; z-index:100;
 }
 
+/* ── Mobile nav bar height (used to offset sidebar toggle) ── */
+:root { --mobile-nav-height: 68px; }
+
+/* ── Sidebar toggle — lift above mobile nav bar ── */
+@media(max-width:600px) {
+    .sidebar-toggle { bottom: calc(var(--mobile-nav-height) + 8px) !important; z-index: 210 !important; }
+}
+
 /* ── Mobile bottom nav bar ── */
 .cx-mobile-nav-bar {
     display:none; position:fixed; bottom:0; left:0; right:0; z-index:200;
@@ -158,6 +172,7 @@ $csrfToken = \Core\Security::generateCsrfToken();
 .cx-mobile-nav-bar::-webkit-scrollbar { display:none; }
 .cx-mobile-nav-inner {
     display:flex; min-width:max-content; padding:4px 8px; gap:2px;
+    min-height:var(--mobile-nav-height);
 }
 .cx-mobile-nav-btn {
     display:flex; flex-direction:column; align-items:center; gap:2px;
@@ -176,7 +191,11 @@ $csrfToken = \Core\Security::generateCsrfToken();
 </style>
 
 <a href="/projects/idcard" class="back-link"><i class="fas fa-arrow-left"></i> Dashboard</a>
-<h2 class="section-title"><i class="fas fa-id-card" style="color:var(--indigo);"></i> Generate ID Card</h2>
+<h2 class="section-title">
+    <i class="fas fa-id-card" style="color:var(--indigo);"></i>
+    <?= $isEditMode ? 'Edit ID Card' : 'Generate ID Card' ?>
+    <?php if ($isEditMode): ?><span style="font-size:0.72rem;font-weight:400;color:var(--text-secondary);margin-left:8px;font-style:italic;">Editing saved card</span><?php endif; ?>
+</h2>
 
 <div class="gen-wrap">
     <!-- LEFT: Form -->
@@ -184,7 +203,10 @@ $csrfToken = \Core\Security::generateCsrfToken();
         <form id="cardForm" method="POST" action="/projects/idcard/generate" enctype="multipart/form-data">
             <input type="hidden" name="_token"       value="<?= htmlspecialchars($csrfToken) ?>">
             <input type="hidden" name="template_key" id="template_key" value="<?= htmlspecialchars($selectedTpl) ?>">
-            <input type="hidden" name="design_style" id="design_style" value="classic">
+            <input type="hidden" name="design_style" id="design_style" value="<?= htmlspecialchars($editDesign['design_style'] ?? 'classic') ?>">
+            <?php if ($isEditMode): ?>
+            <input type="hidden" name="edit_card_id" value="<?= (int)$editCardId ?>">
+            <?php endif; ?>
 
             <!-- Dynamic fields -->
             <div class="card" style="margin-bottom:16px;">
@@ -207,6 +229,7 @@ $csrfToken = \Core\Security::generateCsrfToken();
                             <input type="text" id="field_<?= $field ?>" name="<?= htmlspecialchars($field) ?>"
                                    class="form-input" style="padding:6px 10px;font-size:0.82rem;"
                                    placeholder="<?= strtolower(htmlspecialchars($field_labels[$field] ?? $field)) ?>"
+                                   value="<?= htmlspecialchars($editCardData[$field] ?? '', ENT_QUOTES, 'UTF-8') ?>"
                                    oninput="updatePreview()">
                         </div>
                     <?php endforeach; ?>
@@ -240,9 +263,10 @@ $csrfToken = \Core\Security::generateCsrfToken();
                         <div class="photo-ctrl form-group" style="margin-bottom:0;">
                             <label>🔵 Photo Shape</label>
                             <select name="profile_shape" id="profileShape" class="form-input" style="padding:6px 8px;font-size:0.78rem;" onchange="updatePreview()">
-                                <option value="circle">Circle</option>
-                                <option value="oval">Oval</option>
-                                <option value="square">Square</option>
+                                <?php $editShape = $editDesign['profile_shape'] ?? 'circle'; ?>
+                                <option value="circle"  <?= $editShape === 'circle'  ? 'selected' : '' ?>>Circle</option>
+                                <option value="oval"    <?= $editShape === 'oval'    ? 'selected' : '' ?>>Oval</option>
+                                <option value="square"  <?= $editShape === 'square'  ? 'selected' : '' ?>>Square</option>
                             </select>
                         </div>
                     </div>
@@ -251,40 +275,40 @@ $csrfToken = \Core\Security::generateCsrfToken();
                         <div class="ctrl-color">
                             <label>Primary</label>
                             <input type="color" name="primary_color" id="primaryColor"
-                                   value="<?= htmlspecialchars($tplConfig['color']) ?>" oninput="updatePreview()">
+                                   value="<?= htmlspecialchars($editDesign['primary_color'] ?? $tplConfig['color']) ?>" oninput="updatePreview()">
                         </div>
                         <div class="ctrl-color">
                             <label>Accent</label>
                             <input type="color" name="accent_color" id="accentColor"
-                                   value="<?= htmlspecialchars($tplConfig['accent']) ?>" oninput="updatePreview()">
+                                   value="<?= htmlspecialchars($editDesign['accent_color'] ?? $tplConfig['accent']) ?>" oninput="updatePreview()">
                         </div>
                         <div class="ctrl-color">
                             <label>Background</label>
                             <input type="color" name="bg_color" id="bgColor"
-                                   value="<?= htmlspecialchars($tplConfig['bg']) ?>" oninput="updatePreview()">
+                                   value="<?= htmlspecialchars($editDesign['bg_color'] ?? $tplConfig['bg']) ?>" oninput="updatePreview()">
                         </div>
                         <div class="ctrl-color">
                             <label>Text</label>
                             <input type="color" name="text_color" id="textColor"
-                                   value="<?= htmlspecialchars($tplConfig['text']) ?>" oninput="updatePreview()">
+                                   value="<?= htmlspecialchars($editDesign['text_color'] ?? $tplConfig['text']) ?>" oninput="updatePreview()">
                         </div>
                         <div class="ctrl-group" style="min-width:100px;">
                             <label>Font</label>
                             <select name="font_family" id="fontFamily" class="form-input" onchange="updatePreview()">
                                 <?php foreach(['Poppins','Inter','Roboto','Lato','Open Sans','Montserrat','Raleway'] as $f): ?>
-                                <option value="<?= $f ?>"><?= $f ?></option>
+                                <option value="<?= $f ?>" <?= ($editDesign['font_family'] ?? 'Poppins') === $f ? 'selected' : '' ?>><?= $f ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
                         <div class="ctrl-group" style="min-width:90px;">
                             <label>QR Size: <span id="qrSizeVal">54</span>px</label>
-                            <input type="range" id="qrSize" name="qr_size" min="36" max="90" value="54" style="width:100%;"
+                            <input type="range" id="qrSize" name="qr_size" min="36" max="90" value="<?= (int)($editDesign['qr_size'] ?? 54) ?>" style="width:100%;"
                                    oninput="document.getElementById('qrSizeVal').textContent=this.value;updatePreview()">
                         </div>
                         <div class="ctrl-group" style="flex:0;min-width:auto;">
                             <label>&nbsp;</label>
                             <label class="qr-toggle">
-                                <input type="checkbox" name="show_qr" id="showQr" onchange="updatePreview()" checked>
+                                <input type="checkbox" name="show_qr" id="showQr" onchange="updatePreview()" <?= (!$isEditMode || !empty($editDesign['show_qr'])) ? 'checked' : '' ?>>
                                 <span>QR</span>
                             </label>
                         </div>
@@ -334,7 +358,7 @@ $csrfToken = \Core\Security::generateCsrfToken();
             <!-- Submit -->
             <div class="form-actions">
                 <button type="submit" id="generateBtn" class="btn btn-primary" style="flex:1;justify-content:center;padding:14px;">
-                    <i class="fas fa-id-card"></i> Generate ID Card
+                    <i class="fas fa-<?= $isEditMode ? 'save' : 'id-card' ?>"></i> <?= $isEditMode ? 'Update Card' : 'Generate ID Card' ?>
                 </button>
                 <button type="reset" class="btn btn-secondary" onclick="resetForm()">
                     <i class="fas fa-undo"></i> Reset
@@ -1991,9 +2015,13 @@ function cxMobileNav(sectionId, btn) {
 //  Init
 // =============================================================================
 (function init() {
-    currentStyle = 'classic';
-    document.getElementById('design_style').value = currentStyle;
+    // When editing, use saved design style; otherwise default to 'classic'
+    var savedStyle = document.getElementById('design_style').value || 'classic';
+    currentStyle = savedStyle;
     buildStylePicker();
     updatePreview();
+    // Update qrSizeVal display
+    var qrEl = document.getElementById('qrSize');
+    if (qrEl) document.getElementById('qrSizeVal').textContent = qrEl.value;
 })();
 </script>

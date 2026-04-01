@@ -67,14 +67,17 @@ $csrfToken = \Core\Security::generateCsrfToken();
             <p style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:14px;">
                 <i class="fas fa-calendar-alt"></i> <?= date('d M Y, H:i', strtotime($card['created_at'])) ?>
             </p>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                <a href="/projects/idcard/view/<?= (int)$card['id'] ?>" class="btn btn-primary btn-sm" style="flex:1;justify-content:center;">
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                <a href="/projects/idcard/view/<?= (int)$card['id'] ?>" class="btn btn-primary btn-sm" style="flex:1;justify-content:center;min-width:0;">
                     <i class="fas fa-eye"></i> View
                 </a>
-                <a href="/projects/idcard/download/<?= (int)$card['id'] ?>" class="btn btn-secondary btn-sm">
-                    <i class="fas fa-download"></i>
+                <a href="/projects/idcard/edit/<?= (int)$card['id'] ?>" class="btn btn-secondary btn-sm" title="Edit card">
+                    <i class="fas fa-edit"></i>
                 </a>
-                <button type="button" class="btn btn-danger btn-sm" onclick="deleteCard(<?= (int)$card['id'] ?>)">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="openHistoryDownload(<?= (int)$card['id'] ?>)" title="Download card">
+                    <i class="fas fa-download"></i>
+                </button>
+                <button type="button" class="btn btn-danger btn-sm" onclick="deleteCard(<?= (int)$card['id'] ?>)" title="Delete card">
                     <i class="fas fa-trash"></i>
                 </button>
             </div>
@@ -115,7 +118,51 @@ $csrfToken = \Core\Security::generateCsrfToken();
     </div>
 </div>
 
+<!-- Download Format Modal (history page) -->
+<div id="historyDlModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1100;align-items:center;justify-content:center;padding:16px;">
+    <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:16px;padding:24px;max-width:340px;width:100%;text-align:center;">
+        <div style="font-size:2rem;margin-bottom:10px;"><i class="fas fa-download" style="color:var(--indigo);"></i></div>
+        <div style="font-size:1rem;font-weight:700;margin-bottom:5px;">Download ID Card</div>
+        <div style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:18px;">Choose your preferred format</div>
+        <div style="display:flex;gap:10px;justify-content:center;">
+            <a id="hdlJpgBtn" href="#" class="btn btn-primary" style="flex:1;" onclick="historyDlJpg(event)">
+                <i class="fas fa-image"></i> JPG Image
+            </a>
+            <a id="hdlPdfBtn" href="#" class="btn btn-secondary" style="flex:1;" target="_blank">
+                <i class="fas fa-file-pdf"></i> PDF / Print
+            </a>
+        </div>
+        <button onclick="closeHistoryDownload()" style="background:none;border:none;color:var(--text-secondary);font-size:0.8rem;margin-top:14px;cursor:pointer;">Cancel</button>
+    </div>
+</div>
+
 <script>
+var _hdlCardId = 0;
+
+function openHistoryDownload(id) {
+    _hdlCardId = id;
+    // Set JPG link: go to view page with auto-download trigger
+    document.getElementById('hdlJpgBtn').href = '/projects/idcard/view/' + id + '?dl=jpg';
+    // Set PDF link: go to view page and print
+    document.getElementById('hdlPdfBtn').href = '/projects/idcard/view/' + id + '?dl=pdf';
+    document.getElementById('historyDlModal').style.display = 'flex';
+}
+
+function historyDlJpg(e) {
+    // Open in new tab so download triggers automatically
+    e.preventDefault();
+    window.open('/projects/idcard/view/' + _hdlCardId + '?dl=jpg', '_blank');
+    closeHistoryDownload();
+}
+
+function closeHistoryDownload() {
+    document.getElementById('historyDlModal').style.display = 'none';
+}
+
+document.getElementById('historyDlModal').addEventListener('click', function(e){
+    if (e.target === this) closeHistoryDownload();
+});
+
 function deleteCard(id) {
     document.getElementById('deleteCardId').value = id;
     document.getElementById('deleteModal').style.display = 'flex';

@@ -58,6 +58,18 @@ switch ($segments[0]) {
         }
         break;
 
+    case 'edit':
+        require_once PROJECT_PATH . '/controllers/IDCardController.php';
+        $controller = new \Projects\IDCard\Controllers\IDCardController();
+        $id = (int) ($segments[1] ?? 0);
+        if ($id) {
+            $controller->edit($id);
+        } else {
+            http_response_code(404);
+            echo "Invalid ID card";
+        }
+        break;
+
     case 'delete':
         require_once PROJECT_PATH . '/controllers/IDCardController.php';
         $controller = new \Projects\IDCard\Controllers\IDCardController();

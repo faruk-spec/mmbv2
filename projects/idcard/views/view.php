@@ -161,6 +161,31 @@ function icardLogoEl(string $logoPath, string $size, string $iconColor = 'rgba(2
     width: 100%; max-width: 300px;
     aspect-ratio: 54/85.6;
 }
+/* Responsive view layout */
+.view-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    align-items: start;
+}
+@media (max-width: 680px) {
+    .view-grid { grid-template-columns: 1fr; }
+    .view-actions { flex-wrap: wrap; }
+    .view-actions .btn { font-size: 0.78rem !important; padding: 8px 10px !important; }
+}
+/* Download popup modal */
+.dl-modal-overlay {
+    display: none; position: fixed; inset: 0; z-index: 2000;
+    background: rgba(0,0,0,0.75); align-items: center; justify-content: center; padding: 16px;
+}
+.dl-modal-overlay.open { display: flex; }
+.dl-modal-box {
+    background: var(--bg-card); border: 1px solid var(--border-color);
+    border-radius: 16px; padding: 24px; max-width: 360px; width: 100%; text-align: center;
+}
+.dl-modal-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 6px; }
+.dl-modal-sub { font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 20px; }
+.dl-modal-btns { display: flex; gap: 12px; justify-content: center; }
 @media print {
     .back-link,.view-actions,.ai-panel-view,.navbar { display: none !important; }
     body { background: white; }
@@ -174,20 +199,24 @@ function icardLogoEl(string $logoPath, string $size, string $iconColor = 'rgba(2
 <?php if (!$printMode): ?>
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
     <a href="/projects/idcard/history" class="back-link"><i class="fas fa-arrow-left"></i> Back to My Cards</a>
-    <div class="view-actions" style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="btn btn-primary" onclick="downloadCardJpg()" id="btnDownloadJpg"><i class="fas fa-download"></i> Download JPG</button>
-        <button class="btn btn-secondary" onclick="window.print()"><i class="fas fa-print"></i> Print / PDF</button>
-        <a href="/projects/idcard/generate?template=<?= htmlspecialchars($card['template_key']) ?>" class="btn btn-secondary">
-            <i class="fas fa-plus"></i> New Card
+    <div class="view-actions" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <button class="btn btn-primary" onclick="openDownloadModal()" id="btnDownload">
+            <i class="fas fa-download"></i> Download
+        </button>
+        <a href="/projects/idcard/edit/<?= (int)$card['id'] ?>" class="btn btn-secondary">
+            <i class="fas fa-edit"></i> Edit
         </a>
-        <button class="btn btn-danger btn-sm" onclick="document.getElementById('delModal').style.display='flex'">
+        <a href="/projects/idcard/generate?template=<?= htmlspecialchars($card['template_key']) ?>" class="btn btn-secondary">
+            <i class="fas fa-plus"></i> New
+        </a>
+        <button class="btn btn-danger btn-sm" onclick="document.getElementById('delModal').style.display='flex'" title="Delete card">
             <i class="fas fa-trash"></i>
         </button>
     </div>
 </div>
 <?php endif; ?>
 
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start;">
+<div class="view-grid">
 
 <!-- ══════════════════════ CARD VISUAL ══════════════════════ -->
 <div style="text-align:center;">
@@ -918,7 +947,7 @@ elseif ($designStyle === 'v_ribbon'): ?>
     <?php endif; ?>
 </div>
 
-</div><!-- /grid -->
+</div><!-- /view-grid -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>
@@ -930,57 +959,95 @@ document.querySelectorAll('.view-qr-slot').forEach(function(slot) {
     } catch(e) {}
 });
 
+// ── Download modal ────────────────────────────────────────────────────────────
+function openDownloadModal() {
+    document.getElementById('dlModal').classList.add('open');
+}
+function closeDownloadModal() {
+    document.getElementById('dlModal').classList.remove('open');
+}
+document.addEventListener('click', function(e) {
+    var m = document.getElementById('dlModal');
+    if (m && e.target === m) closeDownloadModal();
+});
+
 /**
  * Download the rendered ID card as a JPEG image.
- * Renders at 3× scale to produce a high-quality output at standard ID card
- * dimensions: 856×540 px (landscape, 85.6×54 mm) or 540×856 px (portrait).
+ * Renders at 3x scale at standard ID card dimensions (856x540 or 540x856 px).
  */
 function downloadCardJpg() {
-    var btn = document.getElementById('btnDownloadJpg');
+    closeDownloadModal();
+    var btn = document.getElementById('btnDownload');
     if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Rendering…'; }
 
     var cardEl = document.querySelector('.id-card-display');
     if (!cardEl) {
         alert('Unable to locate the ID card for download. Please refresh the page and try again.');
-        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-download"></i> Download JPG'; }
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-download"></i> Download'; }
         return;
     }
 
     var isPortrait = cardEl.classList.contains('portrait');
-    // Standard ID card output size in pixels at 3× quality scale
-    var W = isPortrait ? 540  : 856;
-    var H = isPortrait ? 856  : 540;
+    var W = isPortrait ? 540 : 856;
+    var H = isPortrait ? 856 : 540;
     var scale = 3;
 
     html2canvas(cardEl, {
-        scale: scale,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: null,
-        width:  cardEl.offsetWidth,
-        height: cardEl.offsetHeight,
-        logging: false
+        scale: scale, useCORS: true, allowTaint: true,
+        backgroundColor: null, width: cardEl.offsetWidth, height: cardEl.offsetHeight, logging: false
     }).then(function(canvas) {
-        // Resize to exact ID card pixel dimensions
         var out = document.createElement('canvas');
-        out.width  = W * scale;
-        out.height = H * scale;
-        var ctx = out.getContext('2d');
-        ctx.drawImage(canvas, 0, 0, out.width, out.height);
-
+        out.width = W * scale; out.height = H * scale;
+        out.getContext('2d').drawImage(canvas, 0, 0, out.width, out.height);
         var link = document.createElement('a');
-        link.download = 'id-card-' + Date.now() + '.jpg';
+        link.download = 'id-card-<?= (int)$card['id'] ?>-' + Date.now() + '.jpg';
         link.href = out.toDataURL('image/jpeg', 0.96);
         link.click();
-
-        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-download"></i> Download JPG'; }
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-download"></i> Download'; }
     }).catch(function(err) {
-        alert('Failed to download the ID card. Error: ' + err.message + '. Please try again or contact support if the issue persists.');
-        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-download"></i> Download JPG'; }
+        alert('Download failed: ' + err.message);
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-download"></i> Download'; }
     });
 }
+
+function downloadCardPdf() {
+    closeDownloadModal();
+    window.print();
+}
+
+// ── Auto-download trigger from ?dl= parameter ─────────────────────────────────
+(function() {
+    var params = new URLSearchParams(window.location.search);
+    var dl = params.get('dl');
+    if (dl === 'jpg') {
+        // Allow 800ms for QR codes (qrcodejs) and html2canvas to finish initialising
+        // before triggering the download to ensure the full card is captured.
+        setTimeout(downloadCardJpg, 800);
+    } else if (dl === 'pdf') {
+        // Brief delay lets the page fully paint before opening print dialog.
+        setTimeout(downloadCardPdf, 500);
+    }
+})();
 </script>
 </div><!-- /view-card-wrap -->
+
+<!-- Download Format Modal -->
+<div id="dlModal" class="dl-modal-overlay">
+    <div class="dl-modal-box">
+        <div style="font-size:2rem;margin-bottom:12px;"><i class="fas fa-download" style="color:var(--indigo);"></i></div>
+        <div class="dl-modal-title">Download ID Card</div>
+        <div class="dl-modal-sub">Choose your preferred format</div>
+        <div class="dl-modal-btns">
+            <button class="btn btn-primary" onclick="downloadCardJpg()" style="flex:1;">
+                <i class="fas fa-image"></i> JPG Image
+            </button>
+            <button class="btn btn-secondary" onclick="downloadCardPdf()" style="flex:1;">
+                <i class="fas fa-file-pdf"></i> PDF / Print
+            </button>
+        </div>
+        <button onclick="closeDownloadModal()" style="background:none;border:none;color:var(--text-secondary);font-size:0.8rem;margin-top:14px;cursor:pointer;">Cancel</button>
+    </div>
+</div>
 
 <!-- Delete Confirmation Modal -->
 <div id="delModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;align-items:center;justify-content:center;">
