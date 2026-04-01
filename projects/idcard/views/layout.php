@@ -272,21 +272,7 @@ header("Expires: 0");
                     </a>
                 </nav>
             </div>
-            <div class="sidebar-section">
-                <div class="sidebar-title">Templates</div>
-                <nav class="sidebar-nav">
-                    <?php
-                    $tplConfig2 = require PROJECT_PATH . '/config.php';
-                    foreach ($tplConfig2['templates'] as $tKey => $tDef):
-                    ?>
-                    <a href="/projects/idcard/generate?template=<?= htmlspecialchars($tKey) ?>"
-                       style="font-size:0.8rem;">
-                        <span style="width:0.625rem;height:0.625rem;border-radius:50%;background:<?= htmlspecialchars($tDef['color']) ?>;display:inline-block;flex-shrink:0;"></span>
-                        <?= htmlspecialchars($tDef['name']) ?>
-                    </a>
-                    <?php endforeach; ?>
-                </nav>
-            </div>
+
         </aside>
 
         <!-- Overlay (mobile) -->

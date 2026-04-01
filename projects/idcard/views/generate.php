@@ -133,37 +133,50 @@ $csrfToken = \Core\Security::generateCsrfToken();
     position:absolute; top:10px; right:12px;
     background:none; border:none; font-size:1.3rem; cursor:pointer; color:var(--text-secondary);
 }
+
+/* ── Template theme colour dots ── */
+.tpl-theme-dots { display:flex; flex-wrap:wrap; gap:7px; }
+.tpl-theme-dot {
+    width:22px; height:22px; border-radius:50%; cursor:pointer;
+    border:2.5px solid transparent; transition:transform 0.15s, border-color 0.15s;
+    flex-shrink:0; position:relative;
+}
+.tpl-theme-dot:hover { transform:scale(1.18); }
+.tpl-theme-dot.active { border-color:#fff; box-shadow:0 0 0 2px var(--indigo); }
+.tpl-theme-dot[title]:hover::after {
+    content:attr(title); position:absolute; bottom:120%; left:50%; transform:translateX(-50%);
+    background:#111; color:#fff; font-size:0.6rem; padding:2px 6px; border-radius:4px;
+    white-space:nowrap; pointer-events:none; z-index:100;
+}
+
+/* ── Mobile bottom nav bar ── */
+.cx-mobile-nav-bar {
+    display:none; position:fixed; bottom:0; left:0; right:0; z-index:200;
+    background:var(--bg-card); border-top:1px solid var(--border-color);
+    overflow-x:auto; -webkit-overflow-scrolling:touch;
+}
+.cx-mobile-nav-bar::-webkit-scrollbar { display:none; }
+.cx-mobile-nav-inner {
+    display:flex; min-width:max-content; padding:4px 8px; gap:2px;
+}
+.cx-mobile-nav-btn {
+    display:flex; flex-direction:column; align-items:center; gap:2px;
+    padding:6px 12px; border-radius:8px; border:none;
+    background:transparent; color:var(--text-secondary);
+    font-size:0.62rem; font-weight:600; font-family:'Poppins',sans-serif;
+    cursor:pointer; white-space:nowrap; min-width:52px; transition:all 0.15s;
+}
+.cx-mobile-nav-btn.active { color:var(--indigo); background:rgba(99,102,241,0.1); }
+.cx-mobile-nav-btn:hover { color:var(--indigo); }
+@media(max-width:600px) {
+    .cx-mobile-nav-bar { display:flex !important; }
+    .cx-main { padding-bottom:72px !important; }
+    .mobile-preview-btn { display:none !important; }
+}
 </style>
 
 <a href="/projects/idcard" class="back-link"><i class="fas fa-arrow-left"></i> Dashboard</a>
 <h2 class="section-title"><i class="fas fa-id-card" style="color:var(--indigo);"></i> Generate ID Card</h2>
-
-<!-- Card Category -->
-<div class="card" style="margin-bottom:16px;padding:16px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
-        <p style="font-size:0.8rem;color:var(--text-secondary);font-weight:600;margin:0;"><i class="fas fa-tags" style="color:var(--indigo);margin-right:5px;"></i> SELECT CARD CATEGORY</p>
-    </div>
-    <select id="categorySelect" class="form-input" style="padding:9px 12px;font-size:0.88rem;cursor:pointer;" onchange="selectTemplate(this.value)">
-        <option value="corporate" <?= $selectedTpl === 'corporate' ? 'selected' : '' ?>>Corporate</option>
-        <option value="student" <?= $selectedTpl === 'student' ? 'selected' : '' ?>>Student / School</option>
-        <option value="event" <?= $selectedTpl === 'event' ? 'selected' : '' ?>>Event</option>
-        <option value="visitor" <?= $selectedTpl === 'visitor' ? 'selected' : '' ?>>Visitor</option>
-        <option value="medical" <?= $selectedTpl === 'medical' ? 'selected' : '' ?>>Medical Staff</option>
-        <option value="tech" <?= $selectedTpl === 'tech' ? 'selected' : '' ?>>Tech Company</option>
-        <option value="bank" <?= $selectedTpl === 'bank' ? 'selected' : '' ?>>Banking / Finance</option>
-        <option value="media" <?= $selectedTpl === 'media' ? 'selected' : '' ?>>Press / Media</option>
-        <option value="govt" <?= $selectedTpl === 'govt' ? 'selected' : '' ?>>Government</option>
-        <option value="security" <?= $selectedTpl === 'security' ? 'selected' : '' ?>>Security</option>
-        <option value="hospital_v" <?= $selectedTpl === 'hospital_v' ? 'selected' : '' ?>>Hospital</option>
-        <option value="ngo_v" <?= $selectedTpl === 'ngo_v' ? 'selected' : '' ?>>NGO / Non-Profit</option>
-        <option value="library_v" <?= $selectedTpl === 'library_v' ? 'selected' : '' ?>>Library Card</option>
-        <option value="gym_v" <?= $selectedTpl === 'gym_v' ? 'selected' : '' ?>>Gym / Fitness</option>
-        <option value="transport_v" <?= $selectedTpl === 'transport_v' ? 'selected' : '' ?>>Transport</option>
-        <option value="university_v" <?= $selectedTpl === 'university_v' ? 'selected' : '' ?>>University Faculty</option>
-        <option value="security_v" <?= $selectedTpl === 'security_v' ? 'selected' : '' ?>>Security Guard</option>
-        <option value="retail_v" <?= $selectedTpl === 'retail_v' ? 'selected' : '' ?>>Retail / Shop</option>
-    </select>
-</div>
 
 <div class="gen-wrap">
     <!-- LEFT: Form -->
@@ -301,7 +314,7 @@ $csrfToken = \Core\Security::generateCsrfToken();
             </div>
 
             <!-- AI Assistant -->
-            <div class="card" style="margin-bottom:16px;background:linear-gradient(135deg,rgba(99,102,241,0.06),rgba(0,240,255,0.03));border:1px solid rgba(99,102,241,0.2);">
+            <div id="aiSection" class="card" style="margin-bottom:16px;background:linear-gradient(135deg,rgba(99,102,241,0.06),rgba(0,240,255,0.03));border:1px solid rgba(99,102,241,0.2);">
                 <h3 style="font-size:0.9rem;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:6px;">
                     <i class="fas fa-robot" style="color:var(--indigo);"></i> AI Design Assistant
                     <span style="background:linear-gradient(135deg,#6366f1,#00f0ff);color:white;font-size:0.6rem;padding:2px 8px;border-radius:10px;">AI</span>
@@ -345,6 +358,45 @@ $csrfToken = \Core\Security::generateCsrfToken();
             </p>
         </div>
 
+        <!-- Category selector (moved from top) -->
+        <div class="card" style="margin-top:12px;padding:14px;">
+            <p style="font-size:0.75rem;color:var(--text-secondary);font-weight:600;margin:0 0 8px;"><i class="fas fa-tags" style="color:var(--indigo);margin-right:5px;"></i> SELECT CARD CATEGORY</p>
+            <select id="categorySelect" class="form-input" style="padding:8px 10px;font-size:0.82rem;cursor:pointer;" onchange="selectTemplate(this.value)">
+                <option value="corporate" <?= $selectedTpl === 'corporate' ? 'selected' : '' ?>>Corporate</option>
+                <option value="student" <?= $selectedTpl === 'student' ? 'selected' : '' ?>>Student / School</option>
+                <option value="event" <?= $selectedTpl === 'event' ? 'selected' : '' ?>>Event</option>
+                <option value="visitor" <?= $selectedTpl === 'visitor' ? 'selected' : '' ?>>Visitor</option>
+                <option value="medical" <?= $selectedTpl === 'medical' ? 'selected' : '' ?>>Medical Staff</option>
+                <option value="tech" <?= $selectedTpl === 'tech' ? 'selected' : '' ?>>Tech Company</option>
+                <option value="bank" <?= $selectedTpl === 'bank' ? 'selected' : '' ?>>Banking / Finance</option>
+                <option value="media" <?= $selectedTpl === 'media' ? 'selected' : '' ?>>Press / Media</option>
+                <option value="govt" <?= $selectedTpl === 'govt' ? 'selected' : '' ?>>Government</option>
+                <option value="security" <?= $selectedTpl === 'security' ? 'selected' : '' ?>>Security</option>
+                <option value="hospital_v" <?= $selectedTpl === 'hospital_v' ? 'selected' : '' ?>>Hospital</option>
+                <option value="ngo_v" <?= $selectedTpl === 'ngo_v' ? 'selected' : '' ?>>NGO / Non-Profit</option>
+                <option value="library_v" <?= $selectedTpl === 'library_v' ? 'selected' : '' ?>>Library Card</option>
+                <option value="gym_v" <?= $selectedTpl === 'gym_v' ? 'selected' : '' ?>>Gym / Fitness</option>
+                <option value="transport_v" <?= $selectedTpl === 'transport_v' ? 'selected' : '' ?>>Transport</option>
+                <option value="university_v" <?= $selectedTpl === 'university_v' ? 'selected' : '' ?>>University Faculty</option>
+                <option value="security_v" <?= $selectedTpl === 'security_v' ? 'selected' : '' ?>>Security Guard</option>
+                <option value="retail_v" <?= $selectedTpl === 'retail_v' ? 'selected' : '' ?>>Retail / Shop</option>
+            </select>
+        </div>
+
+        <!-- Template theme colour picker (no text, colour dots only) -->
+        <div class="card" style="margin-top:12px;padding:14px;">
+            <p style="font-size:0.75rem;color:var(--text-secondary);font-weight:600;margin:0 0 10px;"><i class="fas fa-palette" style="color:var(--indigo);margin-right:5px;"></i> THEME COLOUR</p>
+            <div class="tpl-theme-dots" id="tplThemeDots">
+                <?php foreach ($templates as $tKey => $tDef): ?>
+                <span class="tpl-theme-dot<?= $tKey === $selectedTpl ? ' active' : '' ?>"
+                      style="background:<?= htmlspecialchars($tDef['color']) ?>;"
+                      title="<?= htmlspecialchars($tDef['name']) ?>"
+                      data-tpl="<?= htmlspecialchars($tKey) ?>"
+                      onclick="applyThemeColor('<?= htmlspecialchars($tKey) ?>')"></span>
+                <?php endforeach; ?>
+            </div>
+        </div>
+
         <div class="card" style="margin-top:12px;padding:14px;">
             <h4 style="font-size:0.82rem;font-weight:600;margin-bottom:8px;color:var(--text-secondary);">TEMPLATE FIELDS</h4>
             <div id="tplFieldsList" style="display:flex;flex-wrap:wrap;gap:5px;">
@@ -375,6 +427,32 @@ $csrfToken = \Core\Security::generateCsrfToken();
         <p style="text-align:center;font-size:0.7rem;color:var(--text-secondary);margin-top:10px;">
             <i class="fas fa-info-circle"></i> Preview is approximate
         </p>
+    </div>
+</div>
+
+<!-- Mobile bottom navigation bar (shown on ≤600px) -->
+<div class="cx-mobile-nav-bar" id="cxMobileNavBar">
+    <div class="cx-mobile-nav-inner">
+        <button type="button" class="cx-mobile-nav-btn active" data-section="dynamicFields" onclick="cxMobileNav('dynamicFields',this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            Info
+        </button>
+        <button type="button" class="cx-mobile-nav-btn" data-section="designControls" onclick="cxMobileNav('designControls',this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M19.07 19.07l-1.41-1.41M4.93 19.07l1.41-1.41M12 2v2M12 20v2M2 12h2M20 12h2"></path></svg>
+            Design
+        </button>
+        <button type="button" class="cx-mobile-nav-btn" data-section="styleBody" onclick="cxMobileNav('styleBody',this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+            Style
+        </button>
+        <button type="button" class="cx-mobile-nav-btn" data-section="aiSection" onclick="cxMobileNav('aiSection',this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"></path><path d="M12 6v6l4 2"></path></svg>
+            AI
+        </button>
+        <button type="button" class="cx-mobile-nav-btn" onclick="openMobilePreview()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            Preview
+        </button>
     </div>
 </div>
 
@@ -1040,6 +1118,11 @@ function selectTemplate(key) {
     // Do NOT reset colours when switching category (Fix 1)
     document.getElementById('logoWrap').style.display = tpl.logo ? '' : 'none';
     document.getElementById('previewTplName').textContent = tpl.name;
+
+    // Sync theme colour dots
+    document.querySelectorAll('.tpl-theme-dot').forEach(function(d) {
+        d.classList.toggle('active', d.dataset.tpl === key);
+    });
 
     // Orientation badge
     var oriEl = document.getElementById('previewOrientation');
@@ -1864,6 +1947,45 @@ document.getElementById('cardForm').addEventListener('submit',function(){
 ['primaryColor','accentColor','bgColor','textColor'].forEach(function(id){
     document.getElementById(id).addEventListener('input', updateStyleThumbnails);
 });
+
+// =============================================================================
+//  Theme colour apply (dots — colour only, fields untouched)
+//  Applies only the primary/accent/bg/text colours from the specified template
+//  without modifying form input fields. Distinct from selectTemplate() which
+//  also rebuilds the field list.
+// =============================================================================
+function applyThemeColor(key) {
+    var tpl = TEMPLATES[key];
+    if (!tpl) return;
+    document.getElementById('primaryColor').value = tpl.color  || '#1e40af';
+    document.getElementById('accentColor').value  = tpl.accent || '#3b82f6';
+    document.getElementById('bgColor').value      = tpl.bg     || '#ffffff';
+    document.getElementById('textColor').value    = tpl.text   || '#1e293b';
+    document.querySelectorAll('.tpl-theme-dot').forEach(function(d) {
+        d.classList.toggle('active', d.dataset.tpl === key);
+    });
+    updatePreview();
+}
+
+// =============================================================================
+//  Mobile nav (bottom bar)
+//  Scrolls to the target section, expands it if collapsed, and marks the
+//  clicked nav button as active.
+// =============================================================================
+function cxMobileNav(sectionId, btn) {
+    var el = document.getElementById(sectionId);
+    if (el) {
+        // Expand section if it was collapsed
+        if (el.classList.contains('collapsible-hidden')) {
+            el.classList.remove('collapsible-hidden');
+        }
+        // Scroll to the parent card if available, otherwise scroll to the element
+        var scrollTarget = (typeof el.closest === 'function' && el.closest('.card')) ? el.closest('.card') : el;
+        scrollTarget.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    document.querySelectorAll('.cx-mobile-nav-btn').forEach(function(b){ b.classList.remove('active'); });
+    if (btn) btn.classList.add('active');
+}
 
 // =============================================================================
 //  Init

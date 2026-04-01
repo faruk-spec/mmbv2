@@ -175,7 +175,8 @@ function icardLogoEl(string $logoPath, string $size, string $iconColor = 'rgba(2
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
     <a href="/projects/idcard/history" class="back-link"><i class="fas fa-arrow-left"></i> Back to My Cards</a>
     <div class="view-actions" style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="btn btn-primary" onclick="window.print()"><i class="fas fa-print"></i> Print / Save PDF</button>
+        <button class="btn btn-primary" onclick="downloadCardJpg()" id="btnDownloadJpg"><i class="fas fa-download"></i> Download JPG</button>
+        <button class="btn btn-secondary" onclick="window.print()"><i class="fas fa-print"></i> Print / PDF</button>
         <a href="/projects/idcard/generate?template=<?= htmlspecialchars($card['template_key']) ?>" class="btn btn-secondary">
             <i class="fas fa-plus"></i> New Card
         </a>
@@ -859,7 +860,7 @@ elseif ($designStyle === 'v_ribbon'): ?>
 
 </div><!-- /.id-card-display -->
 <p style="font-size:0.75rem;color:var(--text-secondary);margin-top:14px;text-align:center;">
-    <i class="fas fa-info-circle"></i> <?= $isPortrait ? 'Portrait' : 'Landscape' ?> card &mdash; click "Print / Save PDF" to download
+    <i class="fas fa-info-circle"></i> <?= $isPortrait ? 'Portrait' : 'Landscape' ?> card &mdash; use "Download JPG" or "Print / PDF" above
 </p>
 </div><!-- /text-align center -->
 
@@ -919,6 +920,7 @@ elseif ($designStyle === 'v_ribbon'): ?>
 
 </div><!-- /grid -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>
 document.querySelectorAll('.view-qr-slot').forEach(function(slot) {
     var text = slot.getAttribute('data-qrtext') || 'CardX';
@@ -927,6 +929,56 @@ document.querySelectorAll('.view-qr-slot').forEach(function(slot) {
         new QRCode(slot, { text: text, width: size, height: size, correctLevel: QRCode.CorrectLevel.L });
     } catch(e) {}
 });
+
+/**
+ * Download the rendered ID card as a JPEG image.
+ * Renders at 3× scale to produce a high-quality output at standard ID card
+ * dimensions: 856×540 px (landscape, 85.6×54 mm) or 540×856 px (portrait).
+ */
+function downloadCardJpg() {
+    var btn = document.getElementById('btnDownloadJpg');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Rendering…'; }
+
+    var cardEl = document.querySelector('.id-card-display');
+    if (!cardEl) {
+        alert('Unable to locate the ID card for download. Please refresh the page and try again.');
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-download"></i> Download JPG'; }
+        return;
+    }
+
+    var isPortrait = cardEl.classList.contains('portrait');
+    // Standard ID card output size in pixels at 3× quality scale
+    var W = isPortrait ? 540  : 856;
+    var H = isPortrait ? 856  : 540;
+    var scale = 3;
+
+    html2canvas(cardEl, {
+        scale: scale,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: null,
+        width:  cardEl.offsetWidth,
+        height: cardEl.offsetHeight,
+        logging: false
+    }).then(function(canvas) {
+        // Resize to exact ID card pixel dimensions
+        var out = document.createElement('canvas');
+        out.width  = W * scale;
+        out.height = H * scale;
+        var ctx = out.getContext('2d');
+        ctx.drawImage(canvas, 0, 0, out.width, out.height);
+
+        var link = document.createElement('a');
+        link.download = 'id-card-' + Date.now() + '.jpg';
+        link.href = out.toDataURL('image/jpeg', 0.96);
+        link.click();
+
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-download"></i> Download JPG'; }
+    }).catch(function(err) {
+        alert('Failed to download the ID card. Error: ' + err.message + '. Please try again or contact support if the issue persists.');
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-download"></i> Download JPG'; }
+    });
+}
 </script>
 </div><!-- /view-card-wrap -->
 
