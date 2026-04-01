@@ -187,15 +187,50 @@ $editDesign   = $editDesign   ?? [];
     .cx-mobile-nav-bar { display:flex !important; }
     .cx-main { padding-bottom:72px !important; }
     .mobile-preview-btn { display:none !important; }
+    /* Hide the right-column preview area elements on mobile since they are
+       duplicated in the mobile-only form sections */
+    .preview-area .card:not(:first-child) { display:none !important; }
 }
 </style>
 
-<a href="/projects/idcard" class="back-link"><i class="fas fa-arrow-left"></i> Dashboard</a>
-<h2 class="section-title">
-    <i class="fas fa-id-card" style="color:var(--indigo);"></i>
-    <?= $isEditMode ? 'Edit ID Card' : 'Generate ID Card' ?>
-    <?php if ($isEditMode): ?><span style="font-size:0.72rem;font-weight:400;color:var(--text-secondary);margin-left:8px;font-style:italic;">Editing saved card</span><?php endif; ?>
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap;">
+    <a href="/projects/idcard" class="back-link" style="margin-bottom:0;"><i class="fas fa-arrow-left"></i> Dashboard</a>
+</div>
+
+<?php if (!$isEditMode): ?>
+<!-- Step progress indicator (create mode only) -->
+<div style="background:linear-gradient(135deg,rgba(99,102,241,0.12),rgba(0,240,255,0.05));border:1px solid rgba(99,102,241,0.2);border-radius:14px;padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+    <div style="width:44px;height:44px;background:linear-gradient(135deg,#6366f1,#00f0ff);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <i class="fas fa-id-card" style="color:#fff;font-size:1.2rem;"></i>
+    </div>
+    <div style="flex:1;min-width:160px;">
+        <div style="font-size:1.1rem;font-weight:800;background:linear-gradient(135deg,#6366f1,#00f0ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:2px;">
+            Create ID Card
+        </div>
+        <div style="font-size:0.78rem;color:var(--text-secondary);">
+            Select a category &rarr; fill details &rarr; pick a style &rarr; generate
+        </div>
+    </div>
+    <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">
+        <span style="width:24px;height:24px;border-radius:50%;background:var(--indigo);color:#fff;font-size:0.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;">1</span>
+        <span style="font-size:0.68rem;color:var(--indigo);font-weight:600;">Category</span>
+        <i class="fas fa-chevron-right" style="color:var(--text-secondary);font-size:0.6rem;margin:0 2px;"></i>
+        <span style="width:24px;height:24px;border-radius:50%;background:var(--bg-secondary);border:1.5px solid var(--border-color);color:var(--text-secondary);font-size:0.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;">2</span>
+        <span style="font-size:0.68rem;color:var(--text-secondary);font-weight:600;">Details</span>
+        <i class="fas fa-chevron-right" style="color:var(--text-secondary);font-size:0.6rem;margin:0 2px;"></i>
+        <span style="width:24px;height:24px;border-radius:50%;background:var(--bg-secondary);border:1.5px solid var(--border-color);color:var(--text-secondary);font-size:0.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;">3</span>
+        <span style="font-size:0.68rem;color:var(--text-secondary);font-weight:600;">Style</span>
+        <i class="fas fa-chevron-right" style="color:var(--text-secondary);font-size:0.6rem;margin:0 2px;"></i>
+        <span style="width:24px;height:24px;border-radius:50%;background:var(--bg-secondary);border:1.5px solid var(--border-color);color:var(--text-secondary);font-size:0.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;">4</span>
+        <span style="font-size:0.68rem;color:var(--text-secondary);font-weight:600;">Generate</span>
+    </div>
+</div>
+<?php else: ?>
+<h2 class="section-title" style="margin-bottom:18px;">
+    <i class="fas fa-edit" style="color:var(--indigo);"></i> Edit ID Card
+    <span style="font-size:0.72rem;font-weight:400;color:var(--text-secondary);margin-left:8px;font-style:italic;">Editing saved card</span>
 </h2>
+<?php endif; ?>
 
 <div class="gen-wrap">
     <!-- LEFT: Form -->
@@ -207,6 +242,34 @@ $editDesign   = $editDesign   ?? [];
             <?php if ($isEditMode): ?>
             <input type="hidden" name="edit_card_id" value="<?= (int)$editCardId ?>">
             <?php endif; ?>
+
+            <!-- Mobile-only: Category selector (desktop shows it in right sidebar) -->
+            <div class="card mobile-only-section" id="mobileCategorySection" style="margin-bottom:16px;display:none;">
+                <h3 style="font-size:0.9rem;font-weight:600;color:var(--indigo);margin:0 0 12px;display:flex;align-items:center;gap:6px;">
+                    <i class="fas fa-tags"></i> Select Card Category
+                </h3>
+                <select class="form-input" style="padding:8px 10px;font-size:0.85rem;cursor:pointer;"
+                        onchange="selectTemplate(this.value);syncCategorySelects(this.value);" id="mobileCategorySelect">
+                    <option value="corporate"   <?= $selectedTpl === 'corporate'   ? 'selected' : '' ?>>Corporate</option>
+                    <option value="student"     <?= $selectedTpl === 'student'     ? 'selected' : '' ?>>Student / School</option>
+                    <option value="event"       <?= $selectedTpl === 'event'       ? 'selected' : '' ?>>Event</option>
+                    <option value="visitor"     <?= $selectedTpl === 'visitor'     ? 'selected' : '' ?>>Visitor</option>
+                    <option value="medical"     <?= $selectedTpl === 'medical'     ? 'selected' : '' ?>>Medical Staff</option>
+                    <option value="tech"        <?= $selectedTpl === 'tech'        ? 'selected' : '' ?>>Tech Company</option>
+                    <option value="bank"        <?= $selectedTpl === 'bank'        ? 'selected' : '' ?>>Banking / Finance</option>
+                    <option value="media"       <?= $selectedTpl === 'media'       ? 'selected' : '' ?>>Press / Media</option>
+                    <option value="govt"        <?= $selectedTpl === 'govt'        ? 'selected' : '' ?>>Government</option>
+                    <option value="security"    <?= $selectedTpl === 'security'    ? 'selected' : '' ?>>Security</option>
+                    <option value="hospital_v"  <?= $selectedTpl === 'hospital_v'  ? 'selected' : '' ?>>Hospital</option>
+                    <option value="ngo_v"       <?= $selectedTpl === 'ngo_v'       ? 'selected' : '' ?>>NGO / Non-Profit</option>
+                    <option value="library_v"   <?= $selectedTpl === 'library_v'   ? 'selected' : '' ?>>Library Card</option>
+                    <option value="gym_v"       <?= $selectedTpl === 'gym_v'       ? 'selected' : '' ?>>Gym / Fitness</option>
+                    <option value="transport_v" <?= $selectedTpl === 'transport_v' ? 'selected' : '' ?>>Transport</option>
+                    <option value="university_v" <?= $selectedTpl === 'university_v' ? 'selected' : '' ?>>University Faculty</option>
+                    <option value="security_v"  <?= $selectedTpl === 'security_v'  ? 'selected' : '' ?>>Security Guard</option>
+                    <option value="retail_v"    <?= $selectedTpl === 'retail_v'    ? 'selected' : '' ?>>Retail / Shop</option>
+                </select>
+            </div>
 
             <!-- Dynamic fields -->
             <div class="card" style="margin-bottom:16px;">
@@ -316,6 +379,22 @@ $editDesign   = $editDesign   ?? [];
                 </div>
             </div>
 
+            <!-- Mobile-only: Theme colour picker -->
+            <div class="card mobile-only-section" id="mobileThemeSection" style="margin-bottom:16px;display:none;">
+                <h3 style="font-size:0.9rem;font-weight:600;color:var(--indigo);margin:0 0 12px;display:flex;align-items:center;gap:6px;">
+                    <i class="fas fa-palette"></i> Theme Colour
+                </h3>
+                <div class="tpl-theme-dots" id="mobileThemeDots">
+                    <?php foreach ($templates as $tKey => $tDef): ?>
+                    <span class="tpl-theme-dot<?= $tKey === $selectedTpl ? ' active' : '' ?>"
+                          style="background:<?= htmlspecialchars($tDef['color']) ?>;"
+                          title="<?= htmlspecialchars($tDef['name']) ?>"
+                          data-tpl="<?= htmlspecialchars($tKey) ?>"
+                          onclick="applyThemeColor('<?= htmlspecialchars($tKey) ?>');syncThemeDots('<?= htmlspecialchars($tKey) ?>')"></span>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
             <!-- Design Style Picker -->
             <div class="card" style="margin-bottom:16px;" id="styleSection">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
@@ -385,7 +464,7 @@ $editDesign   = $editDesign   ?? [];
         <!-- Category selector (moved from top) -->
         <div class="card" style="margin-top:12px;padding:14px;">
             <p style="font-size:0.75rem;color:var(--text-secondary);font-weight:600;margin:0 0 8px;"><i class="fas fa-tags" style="color:var(--indigo);margin-right:5px;"></i> SELECT CARD CATEGORY</p>
-            <select id="categorySelect" class="form-input" style="padding:8px 10px;font-size:0.82rem;cursor:pointer;" onchange="selectTemplate(this.value)">
+            <select id="categorySelect" class="form-input" style="padding:8px 10px;font-size:0.82rem;cursor:pointer;" onchange="selectTemplate(this.value);syncCategorySelects(this.value);">
                 <option value="corporate" <?= $selectedTpl === 'corporate' ? 'selected' : '' ?>>Corporate</option>
                 <option value="student" <?= $selectedTpl === 'student' ? 'selected' : '' ?>>Student / School</option>
                 <option value="event" <?= $selectedTpl === 'event' ? 'selected' : '' ?>>Event</option>
@@ -416,7 +495,7 @@ $editDesign   = $editDesign   ?? [];
                       style="background:<?= htmlspecialchars($tDef['color']) ?>;"
                       title="<?= htmlspecialchars($tDef['name']) ?>"
                       data-tpl="<?= htmlspecialchars($tKey) ?>"
-                      onclick="applyThemeColor('<?= htmlspecialchars($tKey) ?>')"></span>
+                      onclick="applyThemeColor('<?= htmlspecialchars($tKey) ?>');syncThemeDots('<?= htmlspecialchars($tKey) ?>')"></span>
                 <?php endforeach; ?>
             </div>
         </div>
@@ -455,19 +534,28 @@ $editDesign   = $editDesign   ?? [];
 </div>
 
 <!-- Mobile bottom navigation bar (shown on ≤600px) -->
+<!-- Order: Category → Info → Style → Design → Theme → AI → Preview -->
 <div class="cx-mobile-nav-bar" id="cxMobileNavBar">
     <div class="cx-mobile-nav-inner">
+        <button type="button" class="cx-mobile-nav-btn" data-section="mobileCategorySection" onclick="cxMobileNav('mobileCategorySection',this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+            Category
+        </button>
         <button type="button" class="cx-mobile-nav-btn active" data-section="dynamicFields" onclick="cxMobileNav('dynamicFields',this)">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
             Info
+        </button>
+        <button type="button" class="cx-mobile-nav-btn" data-section="styleBody" onclick="cxMobileNav('styleBody',this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+            Style
         </button>
         <button type="button" class="cx-mobile-nav-btn" data-section="designControls" onclick="cxMobileNav('designControls',this)">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M19.07 19.07l-1.41-1.41M4.93 19.07l1.41-1.41M12 2v2M12 20v2M2 12h2M20 12h2"></path></svg>
             Design
         </button>
-        <button type="button" class="cx-mobile-nav-btn" data-section="styleBody" onclick="cxMobileNav('styleBody',this)">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-            Style
+        <button type="button" class="cx-mobile-nav-btn" data-section="mobileThemeSection" onclick="cxMobileNav('mobileThemeSection',this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path></svg>
+            Theme
         </button>
         <button type="button" class="cx-mobile-nav-btn" data-section="aiSection" onclick="cxMobileNav('aiSection',this)">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"></path><path d="M12 6v6l4 2"></path></svg>
@@ -1997,6 +2085,15 @@ function applyThemeColor(key) {
 //  clicked nav button as active.
 // =============================================================================
 function cxMobileNav(sectionId, btn) {
+    // Mobile-only sections: show the selected, hide other mobile-only sections
+    var mobileOnlySections = ['mobileCategorySection', 'mobileThemeSection'];
+    mobileOnlySections.forEach(function(id) {
+        var mobileSectionEl = document.getElementById(id);
+        if (mobileSectionEl && window.innerWidth <= 600) {
+            mobileSectionEl.style.display = (id === sectionId) ? 'block' : 'none';
+        }
+    });
+
     var el = document.getElementById(sectionId);
     if (el) {
         // Expand section if it was collapsed
@@ -2009,6 +2106,25 @@ function cxMobileNav(sectionId, btn) {
     }
     document.querySelectorAll('.cx-mobile-nav-btn').forEach(function(b){ b.classList.remove('active'); });
     if (btn) btn.classList.add('active');
+}
+
+/**
+ * Keep both desktop + mobile category selects in sync.
+ */
+function syncCategorySelects(val) {
+    var d = document.getElementById('categorySelect');
+    var m = document.getElementById('mobileCategorySelect');
+    if (d && d.value !== val) d.value = val;
+    if (m && m.value !== val) m.value = val;
+}
+
+/**
+ * Sync all theme dot sets (desktop + mobile).
+ */
+function syncThemeDots(tpl) {
+    document.querySelectorAll('.tpl-theme-dot').forEach(function(dot) {
+        dot.classList.toggle('active', dot.getAttribute('data-tpl') === tpl);
+    });
 }
 
 // =============================================================================

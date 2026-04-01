@@ -889,7 +889,7 @@ elseif ($designStyle === 'v_ribbon'): ?>
 
 </div><!-- /.id-card-display -->
 <p style="font-size:0.75rem;color:var(--text-secondary);margin-top:14px;text-align:center;">
-    <i class="fas fa-info-circle"></i> <?= $isPortrait ? 'Portrait' : 'Landscape' ?> card &mdash; use "Download JPG" or "Print / PDF" above
+    <i class="fas fa-info-circle"></i> <?= $isPortrait ? 'Portrait' : 'Landscape' ?> card &mdash; use "Download" above to save as JPG or PDF
 </p>
 </div><!-- /text-align center -->
 
@@ -1010,9 +1010,61 @@ function downloadCardJpg() {
     });
 }
 
+/**
+ * Download the ID card as a PDF by rendering only the card element into a
+ * blank popup window, sizing the @page rule to the exact ID card dimensions,
+ * and triggering the browser's native print-to-PDF.  Nothing but the card
+ * is visible in the print output.
+ */
 function downloadCardPdf() {
     closeDownloadModal();
-    window.print();
+    var btn = document.getElementById('btnDownload');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Preparing PDF…'; }
+
+    var cardEl = document.querySelector('.id-card-display');
+    if (!cardEl) {
+        alert('Unable to locate the ID card. Please refresh and try again.');
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-download"></i> Download'; }
+        return;
+    }
+
+    var isPortrait = cardEl.classList.contains('portrait');
+    // Standard CR-80 card dimensions in mm
+    var W_MM = isPortrait ? 54   : 85.6;
+    var H_MM = isPortrait ? 85.6 : 54;
+    var scale = 3;
+
+    html2canvas(cardEl, {
+        scale: scale, useCORS: true, allowTaint: true,
+        backgroundColor: null, width: cardEl.offsetWidth, height: cardEl.offsetHeight, logging: false
+    }).then(function(canvas) {
+        var imgData = canvas.toDataURL('image/jpeg', 0.96);
+
+        // Open a minimal popup containing ONLY the card image,
+        // with @page sized to the card dimensions for pixel-perfect print-to-PDF.
+        var win = window.open('', '_blank', 'width=600,height=400');
+        if (!win) {
+            alert('Popup blocked. Please allow popups for this site and try again.');
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-download"></i> Download'; }
+            return;
+        }
+        win.document.write(
+            '<!DOCTYPE html><html><head><meta charset="UTF-8">' +
+            '<style>' +
+            '@page{size:' + W_MM + 'mm ' + H_MM + 'mm;margin:0}' +
+            'html,body{margin:0;padding:0;background:#fff;width:' + W_MM + 'mm;height:' + H_MM + 'mm;overflow:hidden}' +
+            'img{display:block;width:' + W_MM + 'mm;height:' + H_MM + 'mm;object-fit:contain}' +
+            '</style></head><body>' +
+            '<img src="' + imgData + '" alt="ID Card">' +
+            '<script>window.onload=function(){setTimeout(function(){window.print();setTimeout(function(){window.close();},1000);},200);};<\/script>' +
+            '</body></html>'
+        );
+        win.document.close();
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-download"></i> Download'; }
+    }).catch(function(err) {
+        alert('PDF generation failed: ' + err.message);
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-download"></i> Download'; }
+    });
 }
 
 // ── Auto-download trigger from ?dl= parameter ─────────────────────────────────
@@ -1024,8 +1076,8 @@ function downloadCardPdf() {
         // before triggering the download to ensure the full card is captured.
         setTimeout(downloadCardJpg, 800);
     } else if (dl === 'pdf') {
-        // Brief delay lets the page fully paint before opening print dialog.
-        setTimeout(downloadCardPdf, 500);
+        // Allow 1s for QR codes and html2canvas to initialise before rendering PDF.
+        setTimeout(downloadCardPdf, 1000);
     }
 })();
 </script>
@@ -1042,7 +1094,7 @@ function downloadCardPdf() {
                 <i class="fas fa-image"></i> JPG Image
             </button>
             <button class="btn btn-secondary" onclick="downloadCardPdf()" style="flex:1;">
-                <i class="fas fa-file-pdf"></i> PDF / Print
+                <i class="fas fa-file-pdf"></i> PDF
             </button>
         </div>
         <button onclick="closeDownloadModal()" style="background:none;border:none;color:var(--text-secondary);font-size:0.8rem;margin-top:14px;cursor:pointer;">Cancel</button>

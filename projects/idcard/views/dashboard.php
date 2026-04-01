@@ -89,11 +89,53 @@
         </div>
     </div>
     <div class="dash-hero-cta">
-        <a href="/projects/idcard/generate" class="btn btn-primary">
-            <i class="fas fa-magic"></i> Create Card
+        <a href="/projects/idcard/generate" class="btn btn-primary" style="font-size:0.95rem;padding:10px 20px;">
+            <i class="fas fa-plus"></i> Create ID Card
         </a>
         <a href="/projects/idcard/history" class="btn btn-secondary">
             <i class="fas fa-layer-group"></i> My Cards
+        </a>
+    </div>
+</div>
+
+<!-- Quick-start category cards -->
+<div style="margin-bottom:24px;">
+    <p style="font-size:0.78rem;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:10px;">
+        <i class="fas fa-bolt" style="color:var(--indigo);"></i> Quick Start — Pick a Category
+    </p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;">
+        <?php
+        $quickCats = [
+            'corporate'  => ['icon'=>'fa-building',     'label'=>'Corporate',    'color'=>'#1e40af'],
+            'student'    => ['icon'=>'fa-graduation-cap','label'=>'Student',      'color'=>'#065f46'],
+            'event'      => ['icon'=>'fa-calendar-star', 'label'=>'Event',        'color'=>'#b45309'],
+            'visitor'    => ['icon'=>'fa-user-check',    'label'=>'Visitor',      'color'=>'#0369a1'],
+            'medical'    => ['icon'=>'fa-stethoscope',   'label'=>'Medical',      'color'=>'#dc2626'],
+            'tech'       => ['icon'=>'fa-laptop-code',   'label'=>'Tech',         'color'=>'#7c3aed'],
+        ];
+        foreach ($quickCats as $catKey => $cat): ?>
+        <a href="/projects/idcard/generate?template=<?= $catKey ?>"
+           style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 8px;
+                  background:var(--bg-card);border:1.5px solid var(--border-color);border-radius:10px;
+                  text-decoration:none;transition:all 0.2s;text-align:center;"
+           onmouseover="this.style.borderColor='<?= $cat['color'] ?>';this.style.transform='translateY(-2px)'"
+           onmouseout="this.style.borderColor='var(--border-color)';this.style.transform='none'">
+            <div style="width:36px;height:36px;background:<?= $cat['color'] ?>;border-radius:8px;display:flex;align-items:center;justify-content:center;">
+                <i class="fas <?= $cat['icon'] ?>" style="color:#fff;font-size:0.95rem;"></i>
+            </div>
+            <span style="font-size:0.72rem;font-weight:600;color:var(--text-primary);"><?= $cat['label'] ?></span>
+        </a>
+        <?php endforeach; ?>
+        <a href="/projects/idcard/generate"
+           style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 8px;
+                  background:var(--bg-secondary);border:1.5px dashed var(--border-color);border-radius:10px;
+                  text-decoration:none;transition:all 0.2s;text-align:center;"
+           onmouseover="this.style.borderColor='var(--indigo)';this.style.transform='translateY(-2px)'"
+           onmouseout="this.style.borderColor='var(--border-color)';this.style.transform='none'">
+            <div style="width:36px;height:36px;background:var(--bg-secondary);border:2px dashed var(--indigo);border-radius:8px;display:flex;align-items:center;justify-content:center;">
+                <i class="fas fa-ellipsis-h" style="color:var(--indigo);font-size:0.95rem;"></i>
+            </div>
+            <span style="font-size:0.72rem;font-weight:600;color:var(--indigo);">More…</span>
         </a>
     </div>
 </div>
