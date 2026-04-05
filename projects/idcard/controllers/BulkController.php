@@ -454,7 +454,7 @@ class BulkController
     private function sanitizeColor(string $value): string
     {
         $value = trim($value);
-        if (preg_match('/^#[0-9a-fA-F]{3,6}$/', $value)) {
+        if (preg_match('/^#[0-9A-Fa-f]{3,8}$/', $value)) {
             return $value;
         }
         return '#000000';

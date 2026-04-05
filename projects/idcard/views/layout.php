@@ -273,29 +273,6 @@ header("Expires: 0");
                 </nav>
             </div>
 
-            <div class="sidebar-section">
-                <div class="sidebar-title" style="font-size:0.65rem;letter-spacing:0.08em;">BULK GENERATION</div>
-                <nav class="sidebar-nav">
-                    <a href="/projects/idcard/generate"
-                       class="<?= (strpos($currentUri, '/projects/idcard/generate') !== false || (strpos($currentUri, '/projects/idcard/bulk') !== false && strpos($currentUri, '/projects/idcard/bulk/cards') === false)) ? 'active' : '' ?>">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="3" width="18" height="4" rx="1"/>
-                            <rect x="3" y="10" width="18" height="4" rx="1"/>
-                            <rect x="3" y="17" width="18" height="4" rx="1"/>
-                        </svg>
-                        Bulk Generate
-                    </a>
-                    <a href="/projects/idcard/bulk/cards"
-                       class="<?= strpos($currentUri, '/projects/idcard/bulk/cards') !== false ? 'active' : '' ?>">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="2" y="5" width="20" height="14" rx="2"/>
-                            <path d="M2 10h20"/>
-                        </svg>
-                        View Bulk ID Cards
-                    </a>
-                </nav>
-            </div>
-
         </aside>
 
         <!-- Overlay (mobile) -->

@@ -473,8 +473,13 @@ class IDCardModel
 
     private function removeFile(string $path): void
     {
-        if ($path && file_exists(BASE_PATH . '/' . ltrim($path, '/'))) {
-            @unlink(BASE_PATH . '/' . ltrim($path, '/'));
+        if (!$path) {
+            return;
+        }
+        $base = realpath(BASE_PATH);
+        $full = realpath(BASE_PATH . '/' . ltrim($path, '/'));
+        if ($full && $base && strncmp($full, $base . DIRECTORY_SEPARATOR, strlen($base) + 1) === 0) {
+            unlink($full);
         }
     }
 
