@@ -1055,7 +1055,7 @@
                 <?php endif; ?>
 
                 <!-- Projects Management -->
-                <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('projects') || \Core\Auth::hasPermissionGroup('convertx') || \Core\Auth::hasPermissionGroup('codexpro') || \Core\Auth::hasPermissionGroup('imgtxt') || \Core\Auth::hasPermissionGroup('proshare') || \Core\Auth::hasPermissionGroup('billx') || \Core\Auth::hasPermissionGroup('whatsapp') || \Core\Auth::hasPermissionGroup('qr') || \Core\Auth::hasPermissionGroup('resumex') || \Core\Auth::hasPermissionGroup('idcard')): ?>
+                <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('projects') || \Core\Auth::hasPermissionGroup('convertx') || \Core\Auth::hasPermissionGroup('codexpro') || \Core\Auth::hasPermissionGroup('imgtxt') || \Core\Auth::hasPermissionGroup('proshare') || \Core\Auth::hasPermissionGroup('billx') || \Core\Auth::hasPermissionGroup('whatsapp') || \Core\Auth::hasPermissionGroup('qr') || \Core\Auth::hasPermissionGroup('resumex') || \Core\Auth::hasPermissionGroup('idcard') || \Core\Auth::hasPermissionGroup('formx')): ?>
                 <div class="menu-section">
                     <div class="menu-section-title">Projects</div>
                     
@@ -1669,6 +1669,37 @@
                         </div>
                     </div>
                     <?php endif; ?>
+
+                    <!-- FormX – Form Builder -->
+                    <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('formx')): ?>
+                    <div class="menu-item menu-dropdown">
+                        <div class="menu-dropdown-toggle <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/formx') === 0 || strpos($_SERVER['REQUEST_URI'] ?? '', '/projects/formx') === 0 ? 'active' : '' ?>">
+                            <div class="left">
+                                <i class="fas fa-wpforms"></i>
+                                <span>FormX</span>
+                            </div>
+                            <i class="fas fa-chevron-down arrow"></i>
+                        </div>
+                        <div class="menu-dropdown-content">
+                            <a href="/admin/formx/overview" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/formx/overview') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-chart-line"></i>
+                                <span>Overview</span>
+                            </a>
+                            <a href="/projects/formx" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/projects/formx') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-th-large"></i>
+                                <span>Dashboard</span>
+                            </a>
+                            <a href="/admin/formx" class="menu-link <?= ($_SERVER['REQUEST_URI'] ?? '') === '/admin/formx' ? 'active' : '' ?>">
+                                <i class="fas fa-list"></i>
+                                <span>All Forms</span>
+                            </a>
+                            <a href="/admin/formx/create" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/formx/create') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-plus-circle"></i>
+                                <span>New Form</span>
+                            </a>
+                        </div>
+                    </div>
+                    <?php endif; ?>
                 </div>
                 <?php endif; ?>
                 
@@ -1872,7 +1903,7 @@
                 <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('api') || \Core\Auth::hasPermissionGroup('websocket') || \Core\Auth::hasPermissionGroup('analytics') || \Core\Auth::hasPermissionGroup('email') || \Core\Auth::hasPermissionGroup('notifications') || \Core\Auth::hasPermissionGroup('performance')): ?>
                 <div class="menu-section">
                     <div class="menu-section-title">Advanced Features</div>
-                    
+
                     <!-- API Management -->
                     <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('api')): ?>
                     <div class="menu-item menu-dropdown">

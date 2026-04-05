@@ -112,9 +112,10 @@
     </div>
     <?php
     $visibleCols = array_values(array_filter([
-        $canCodexPro ? 'codexpro' : null,
-        $canImgTxt   ? 'imgtxt'   : null,
-        $canProShare ? 'proshare' : null,
+        $canCodexPro        ? 'codexpro' : null,
+        $canImgTxt          ? 'imgtxt'   : null,
+        $canProShare        ? 'proshare' : null,
+        ($canFormX ?? false) ? 'formx'   : null,
     ]));
     $colCount = count($visibleCols);
     ?>
@@ -198,6 +199,33 @@
             </div>
             <a href="/admin/projects/proshare" class="btn btn-secondary mt-2" style="width:100%;justify-content:center;">
                 <i class="fas fa-chart-line"></i> View Details
+            </a>
+        </div>
+        <?php endif; ?>
+
+        <?php if ($proj === 'formx'): ?>
+        <div style="padding: 20px;">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:15px;">
+                <div style="width:45px;height:45px;background:linear-gradient(135deg,var(--cyan),var(--purple));border-radius:10px;display:flex;align-items:center;justify-content:center;">
+                    <i class="fas fa-wpforms" style="font-size:20px;color:#06060a;"></i>
+                </div>
+                <div>
+                    <h4 style="font-size:1.1rem;margin-bottom:3px;">FormX</h4>
+                    <p style="font-size:12px;color:var(--text-secondary);">Form Builder</p>
+                </div>
+            </div>
+            <div class="grid grid-2" style="gap:15px;">
+                <div>
+                    <div style="font-size:1.8rem;font-weight:700;color:var(--cyan);"><?= $projectStats['formx']['forms'] ?? 0 ?></div>
+                    <div style="font-size:12px;color:var(--text-secondary);">Forms</div>
+                </div>
+                <div>
+                    <div style="font-size:1.8rem;font-weight:700;color:var(--purple);"><?= $projectStats['formx']['submissions'] ?? 0 ?></div>
+                    <div style="font-size:12px;color:var(--text-secondary);">Submissions</div>
+                </div>
+            </div>
+            <a href="/admin/formx/overview" class="btn btn-secondary mt-2" style="width:100%;justify-content:center;">
+                <i class="fas fa-chart-line"></i> View Overview
             </a>
         </div>
         <?php endif; ?>
@@ -342,6 +370,7 @@ if ($canQr)           $moduleLinks[] = ['label' => 'QR Codes',       'icon' => '
 if ($canConvertX)     $moduleLinks[] = ['label' => 'ConvertX',        'icon' => 'fas fa-file-export',    'href' => '/admin/projects/convertx',     'color' => '#9945ff'];
 if ($canBillX)        $moduleLinks[] = ['label' => 'BillX',           'icon' => 'fas fa-file-invoice',   'href' => '/admin/projects/billx',        'color' => '#ff8800'];
 if ($canWhatsApp)     $moduleLinks[] = ['label' => 'WhatsApp',        'icon' => 'fab fa-whatsapp',       'href' => '/admin/whatsapp',              'color' => '#25d366'];
+if ($canFormX ?? false) $moduleLinks[] = ['label' => 'FormX',         'icon' => 'fas fa-wpforms',        'href' => '/admin/formx/overview',        'color' => '#00f0ff'];
 if ($canSecurity)     $moduleLinks[] = ['label' => 'Security',        'icon' => 'fas fa-shield-alt',     'href' => '/admin/security',              'color' => '#ff4444'];
 if ($canPlatformPlans)$moduleLinks[] = ['label' => 'Platform Plans',  'icon' => 'fas fa-layer-group',    'href' => '/admin/platform-plans',        'color' => '#00bbff'];
 if ($canLogs && !$canUsers) $moduleLinks[] = ['label' => 'Activity Logs', 'icon' => 'fas fa-history',   'href' => '/admin/logs/activity',         'color' => '#ff8800'];
