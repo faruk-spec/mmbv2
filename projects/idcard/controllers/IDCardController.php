@@ -339,6 +339,13 @@ class IDCardController
 
     public function showAIGenerate(): void
     {
+        // Check if admin has disabled the AI Generate page
+        $adminConfig = $this->model->getSetting('admin_config', []);
+        if (is_array($adminConfig) && array_key_exists('ai_generate_page_enabled', $adminConfig) && !$adminConfig['ai_generate_page_enabled']) {
+            header('Location: /projects/idcard/generate');
+            exit;
+        }
+
         $template = $_GET['template'] ?? 'corporate';
         $templates = $this->config['templates'];
         if (!isset($templates[$template])) {

@@ -1,11 +1,19 @@
 <!DOCTYPE html>
 <?php
 $defaultTheme = 'dark';
+$aiGeneratePageEnabled = true;
 try {
     $db = \Core\Database::getInstance();
     $navbarSettings = $db->fetch("SELECT default_theme FROM navbar_settings WHERE id = 1");
     if ($navbarSettings && !empty($navbarSettings['default_theme'])) {
         $defaultTheme = $navbarSettings['default_theme'];
+    }
+    $adminConfigRow = $db->fetch("SELECT setting_value FROM idcard_settings WHERE setting_key = 'admin_config'");
+    if ($adminConfigRow && !empty($adminConfigRow['setting_value'])) {
+        $adminConfigData = json_decode($adminConfigRow['setting_value'], true);
+        if (is_array($adminConfigData) && array_key_exists('ai_generate_page_enabled', $adminConfigData)) {
+            $aiGeneratePageEnabled = (bool) $adminConfigData['ai_generate_page_enabled'];
+        }
     }
 } catch (\Exception $e) {}
 
@@ -263,6 +271,15 @@ header("Expires: 0");
                         </svg>
                         Generate ID Card
                     </a>
+                    <?php if ($aiGeneratePageEnabled): ?>
+                    <a href="/projects/idcard/ai-generate"
+                       class="<?= strpos($currentUri, '/projects/idcard/ai-generate') !== false ? 'active' : '' ?>">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                        </svg>
+                        Generate with AI
+                    </a>
+                    <?php endif; ?>
                     <a href="/projects/idcard/history"
                        class="<?= strpos($currentUri, '/projects/idcard/history') !== false ? 'active' : '' ?>">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

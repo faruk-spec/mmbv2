@@ -168,11 +168,12 @@ class IDCardAdminController extends BaseController
             }
 
             $cfg = [
-                'max_cards_per_user'  => max(1, (int) ($_POST['max_cards_per_user']  ?? 200)),
-                'allowed_templates'   => $_POST['allowed_templates']  ?? [],
-                'ai_enabled'          => !empty($_POST['ai_enabled']),
-                'bulk_enabled'        => !empty($_POST['bulk_enabled']),
-                'max_bulk_rows'       => max(1, min(1000, (int) ($_POST['max_bulk_rows'] ?? 200))),
+                'max_cards_per_user'         => max(1, (int) ($_POST['max_cards_per_user']  ?? 200)),
+                'allowed_templates'           => $_POST['allowed_templates']  ?? [],
+                'ai_enabled'                  => !empty($_POST['ai_enabled']),
+                'ai_generate_page_enabled'    => !empty($_POST['ai_generate_page_enabled']),
+                'bulk_enabled'                => !empty($_POST['bulk_enabled']),
+                'max_bulk_rows'               => max(1, min(1000, (int) ($_POST['max_bulk_rows'] ?? 200))),
             ];
 
             // Validate allowed_templates entries
@@ -191,11 +192,12 @@ class IDCardAdminController extends BaseController
 
         $saved  = $model->getSetting('admin_config', []);
         $defaults = [
-            'max_cards_per_user'  => 200,
-            'allowed_templates'   => [],
-            'ai_enabled'          => true,
-            'bulk_enabled'        => true,
-            'max_bulk_rows'       => 200,
+            'max_cards_per_user'         => 200,
+            'allowed_templates'           => [],
+            'ai_enabled'                  => true,
+            'ai_generate_page_enabled'    => true,
+            'bulk_enabled'                => true,
+            'max_bulk_rows'               => 200,
         ];
         $settings = array_merge($defaults, is_array($saved) ? $saved : []);
 
