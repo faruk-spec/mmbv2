@@ -116,9 +116,16 @@ class IDCardController
         $aiPrompt       = $this->sanitize($_POST['ai_prompt'] ?? '');
         $aiSuggestions  = $this->generateAISuggestions($templateKey, $cardData, $aiPrompt);
 
-        // Accept AI-generated card HTML (from the AI Generate page)
+        // Accept AI image path (DALL-E generated) or legacy AI HTML card
         $aiCardHtml = null;
-        if (!empty($_POST['ai_card_html'])) {
+        if (!empty($_POST['ai_image_path'])) {
+            // Validate path is within the expected storage location before storing
+            $rawPath = preg_replace('/[^\w\/.+-]/', '', (string)$_POST['ai_image_path']);
+            if (preg_match('/^storage\/idcard\/ai_cards\/[a-f0-9]{32}\.png$/', $rawPath)) {
+                $aiCardHtml = '__AI_IMG__:' . $rawPath;
+                $design['design_style'] = 'ai_generated';
+            }
+        } elseif (!empty($_POST['ai_card_html'])) {
             $aiCardHtml = $this->sanitizeCardHtml((string) $_POST['ai_card_html']);
             // Store 'ai_generated' as design_style so view.php knows to use the AI HTML
             $design['design_style'] = 'ai_generated';
@@ -381,14 +388,14 @@ class IDCardController
 
         $suggestions = $this->generateAISuggestions($templateKey, $sanitised, $prompt);
 
-        // When the AI Generate page requests actual card HTML, generate it via OpenAI
+        // When the AI Generate page requests an AI image card, generate it via DALL-E
         if ($generateHtml) {
-            $templates = $this->config['templates'];
-            $tplConfig = $templates[$templateKey] ?? $templates['corporate'];
-            $aiCardHtml = $this->callOpenAICardHTML($templateKey, $sanitised, $prompt, $tplConfig);
-            if ($aiCardHtml !== null) {
-                $suggestions['ai_card_html'] = $aiCardHtml;
-                $suggestions['ai_powered']   = true;
+            $templates   = $this->config['templates'];
+            $tplConfig   = $templates[$templateKey] ?? $templates['corporate'];
+            $aiImagePath = $this->callOpenAIImage($templateKey, $sanitised, $prompt, $tplConfig);
+            if ($aiImagePath !== null) {
+                $suggestions['ai_image_path'] = $aiImagePath;
+                $suggestions['ai_powered']    = true;
             }
         }
 
@@ -996,6 +1003,133 @@ USERPROMPT;
         }
 
         return $this->sanitizeCardHtml($html);
+    }
+
+    /**
+     * Call DALL-E 3 to generate a professional ID card IMAGE.
+     * Downloads the image to local storage and returns the relative path,
+     * or null on failure.
+     */
+    private function callOpenAIImage(string $tpl, array $data, string $prompt, array $tplConfig): ?string
+    {
+        $aiEnabled = $this->model->getSetting('idcard_ai_enabled', '1');
+        $dbApiKey  = $this->model->getSetting('idcard_openai_api_key', '');
+
+        if ($aiEnabled !== '1') {
+            return null;
+        }
+
+        $apiKey = !empty($dbApiKey) ? $dbApiKey : (defined('OPENAI_API_KEY') ? OPENAI_API_KEY : '');
+        if (empty($apiKey)) {
+            return null;
+        }
+
+        $isPortrait  = ($tplConfig['orientation'] ?? 'landscape') === 'portrait';
+        $imgSize     = $isPortrait ? '1024x1792' : '1792x1024';
+        $orientation = $isPortrait ? 'vertical portrait' : 'horizontal landscape';
+
+        // Key field values
+        $labelMap = $this->config['field_labels'] ?? [];
+        $nameVal  = $data['name'] ?? '';
+        $orgVal   = $data['company_name'] ?? $data['school_name'] ?? $data['organization'] ?? ($tplConfig['name'] ?? '');
+        $roleVal  = $data['designation'] ?? $data['title'] ?? $data['course'] ?? $data['event_name'] ?? '';
+
+        // Secondary fields (not the primary headline fields)
+        $skipKeys   = ['name', 'company_name', 'school_name', 'organization',
+                       'designation', 'title', 'course', 'event_name'];
+        $fieldLines = [];
+        foreach ($data as $k => $v) {
+            if ($v !== '' && $v !== null && !in_array($k, $skipKeys, true)) {
+                $label        = $labelMap[$k] ?? ucwords(str_replace('_', ' ', $k));
+                $fieldLines[] = $label . ': ' . mb_substr(strip_tags((string)$v), 0, 60);
+            }
+        }
+
+        $pri        = $tplConfig['color']  ?? '#1e40af';
+        $acc        = $tplConfig['accent'] ?? '#3b82f6';
+        $safePrompt = mb_substr(strip_tags($prompt), 0, 200);
+
+        $fieldText = !empty($fieldLines)
+            ? 'Include these details as legible text labels on the card: ' . implode(' | ', $fieldLines) . '. '
+            : '';
+
+        $dallePrompt =
+            "Professional printed ID card design, {$orientation} orientation, high-quality flat graphic design, white background, card centered. "
+            . "Card layout: (1) Bold colored header band at top in color {$pri}, diagonal angled bottom edge using CSS clip-path style, "
+            . "header contains organization name '{$orgVal}' in white bold text and a small rectangular logo placeholder box top-left. "
+            . "(2) Large circular photo frame with white border and drop-shadow, avatar silhouette inside, overlapping the header at center. "
+            . "(3) White body section below with '{$nameVal}' as the largest bold dark text, "
+            . ($roleVal ? "'{$roleVal}' as a subtitle line in a muted color, " : '')
+            . "a thin horizontal divider line, then neatly formatted label-value field rows in small text. "
+            . $fieldText
+            . "(4) Solid {$acc} colored footer strip at bottom edge of card. "
+            . "Thin barcode graphic near the bottom. "
+            . "Clean modern corporate style, crisp typography, the card fills the frame, no outer border or extra white space, "
+            . "professional print-quality ID card design"
+            . ($safePrompt ? ", {$safePrompt}" : '') . '.';
+
+        // Cap to DALL-E's prompt character limit
+        $dallePrompt = mb_substr($dallePrompt, 0, 3800);
+
+        $payload = json_encode([
+            'model'           => 'dall-e-3',
+            'prompt'          => $dallePrompt,
+            'n'               => 1,
+            'size'            => $imgSize,
+            'quality'         => 'standard',
+            'response_format' => 'b64_json',
+        ]);
+
+        $ch = curl_init('https://api.openai.com/v1/images/generations');
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => $payload,
+            CURLOPT_TIMEOUT        => 90,
+            CURLOPT_HTTPHEADER     => [
+                'Authorization: Bearer ' . $apiKey,
+                'Content-Type: application/json',
+            ],
+        ]);
+
+        $raw      = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlErr  = curl_error($ch);
+        curl_close($ch);
+
+        if ($raw === false || !empty($curlErr) || $httpCode !== 200) {
+            Logger::error('CardX DALL-E image: HTTP ' . $httpCode . ($curlErr ? ' — ' . $curlErr : '') . ' body: ' . mb_substr((string)$raw, 0, 300));
+            return null;
+        }
+
+        $response = json_decode($raw, true);
+        $b64      = $response['data'][0]['b64_json'] ?? '';
+
+        if (empty($b64)) {
+            Logger::error('CardX DALL-E image: empty b64_json in response');
+            return null;
+        }
+
+        $imgData = base64_decode($b64, true);
+        if ($imgData === false || strlen($imgData) < 1000) {
+            Logger::error('CardX DALL-E image: base64 decode failed or image too small');
+            return null;
+        }
+
+        $saveDir = BASE_PATH . '/storage/idcard/ai_cards/';
+        if (!is_dir($saveDir)) {
+            mkdir($saveDir, 0755, true);
+        }
+
+        $filename = bin2hex(random_bytes(16)) . '.png';
+        $savePath = $saveDir . $filename;
+
+        if (file_put_contents($savePath, $imgData) === false) {
+            Logger::error('CardX DALL-E image: failed to write image to ' . $savePath);
+            return null;
+        }
+
+        return 'storage/idcard/ai_cards/' . $filename;
     }
 
     /**

@@ -132,7 +132,7 @@ $csrfToken = \Core\Security::generateCsrfToken();
     <div class="ai-hero">
         <div class="ai-hero-icon">✨</div>
         <h1>Generate with AI</h1>
-        <p>Fill in your details — AI will design a completely unique, custom-styled ID card just for you.</p>
+        <p>Fill in your card details — AI will generate a professional ID card image for you.</p>
     </div>
 
     <!-- AI configuration warning banner (only shown when AI is not ready) -->
@@ -154,10 +154,11 @@ $csrfToken = \Core\Security::generateCsrfToken();
     </div>
     <?php endif; ?>
 
-    <!-- Step 1: Template -->
+    <!-- Step 1: Card Type (determines which fields to fill in) -->
     <div class="step-card">
         <div class="step-label">
-            <span class="step-num">1</span> Choose a Template
+            <span class="step-num">1</span> Select Card Type
+            <span style="font-size:0.65rem;color:var(--text-secondary);font-weight:400;margin-left:4px;">— determines which fields to fill in</span>
         </div>
         <div class="tpl-chips" id="tplChips">
             <?php foreach ($templates as $key => $tpl): ?>
@@ -222,7 +223,7 @@ $csrfToken = \Core\Security::generateCsrfToken();
                     <!-- AI-generated HTML injected here -->
                 </div>
                 <p style="font-size:0.72rem;color:var(--text-secondary);margin-top:10px;">
-                    <i class="fas fa-magic"></i> AI-generated unique design — no pre-built templates used
+                    <i class="fas fa-image"></i> AI-generated image — unique professional ID card design
                 </p>
             </div>
 
@@ -275,7 +276,7 @@ var currentTpl   = '<?= htmlspecialchars($selectedTpl) ?>';
 
 var _aiFieldSuggestions = {};
 var _aiColorSuggestions = {};
-var _aiCardHtml         = '';   // AI-generated card HTML (set after successful generation)
+var _aiImagePath        = '';   // DALL-E generated image path (set after successful generation)
 var _mergedFields       = {};   // user values; used by createCardFromAI()
 
 // Per-template placeholder hints shown as example prompt chips
@@ -398,7 +399,7 @@ function generateWithAI() {
     }
 
     btn.disabled = true;
-    btn.innerHTML = '<span class="ai-spinner"></span> Designing with AI…';
+    btn.innerHTML = '<span class="ai-spinner"></span> Generating image with AI…';
     status.style.display = 'none';
     document.getElementById('aiResults').style.display = 'none';
 
@@ -430,7 +431,7 @@ function generateWithAI() {
         var s = data.suggestions || {};
         _aiFieldSuggestions = s.field_suggestions  || {};
         _aiColorSuggestions = s.color_suggestions  || {};
-        _aiCardHtml         = s.ai_card_html        || '';
+        _aiImagePath        = s.ai_image_path       || '';
         _mergedFields       = cardData;
 
         // Badge
@@ -452,21 +453,16 @@ function generateWithAI() {
             status.style.display = 'none';
         }
 
-        // ── Show AI card HTML preview (primary result) ──
+        // ── Show AI-generated card image (primary result) ──
         var previewWrap = document.getElementById('cardPreviewWrap');
         var previewEl   = document.getElementById('aiCardPreview');
         var summaryWrap = document.getElementById('resultSummaryWrap');
 
-        if (_aiCardHtml) {
-            // Inject AI HTML; replace photo placeholder with a centred user icon
+        if (_aiImagePath) {
+            // Display the DALL-E generated image
             var tpl2 = TEMPLATES[currentTpl] || {};
             var isPortrait = (tpl2.orientation === 'portrait');
-            var photoIcon  = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.12);">'
-                           + '<svg viewBox="0 0 24 24" style="width:52%;height:52%;fill:rgba(255,255,255,0.7);" xmlns="http://www.w3.org/2000/svg">'
-                           + '<path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>'
-                           + '</svg></div>';
-            var rendered   = _aiCardHtml.replace('<!--CX_PHOTO_SLOT-->', photoIcon);
-            previewEl.innerHTML = rendered;
+            previewEl.innerHTML = '<img src="/' + _aiImagePath + '" style="width:100%;height:100%;object-fit:contain;display:block;" alt="AI Generated ID Card">';
             previewEl.className = 'ai-card-preview ' + (isPortrait ? 'portrait' : 'landscape');
             previewWrap.style.display = 'block';
             summaryWrap.style.display = 'none';
@@ -574,9 +570,9 @@ function createCardFromAI() {
     fd.append('profile_shape', 'circle');
     fd.append('ai_prompt',     document.getElementById('aiPrompt').value.trim());
 
-    // Pass the AI-generated card HTML so the server stores it
-    if (_aiCardHtml) {
-        fd.append('ai_card_html', _aiCardHtml);
+    // Pass the DALL-E generated image path so the server stores it
+    if (_aiImagePath) {
+        fd.append('ai_image_path', _aiImagePath);
     }
 
     fetch('/projects/idcard/generate', {
@@ -587,7 +583,7 @@ function createCardFromAI() {
     .then(function(r) { return r.json(); })
     .then(function(data) {
         btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-id-card"></i> Generate &amp; Save Card';
+        btn.innerHTML = '<i class="fas fa-id-card"></i> Save Card';
         if (data.success && data.card_id) {
             btn.style.display = 'none';
             var panel = document.getElementById('cardCreatedPanel');
@@ -601,7 +597,7 @@ function createCardFromAI() {
     })
     .catch(function() {
         btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-id-card"></i> Generate &amp; Save Card';
+        btn.innerHTML = '<i class="fas fa-id-card"></i> Save Card';
         document.getElementById('aiStatus').style.display = 'block';
         document.getElementById('aiStatus').innerHTML = '<div class="alert alert-error"><i class="fas fa-exclamation-circle"></i> Network error. Please try again.</div>';
     });
