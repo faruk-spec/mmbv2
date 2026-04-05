@@ -7,6 +7,9 @@
  * @var array  $tplConfig
  * @var array  $field_labels
  * @var array  $user
+ * @var bool   $aiConfigured
+ * @var bool   $aiEnabled
+ * @var bool   $aiKeySet
  */
 $csrfToken = \Core\Security::generateCsrfToken();
 ?>
@@ -116,6 +119,25 @@ $csrfToken = \Core\Security::generateCsrfToken();
         <h1>Generate with AI</h1>
         <p>Choose a template, fill in what you know, and let AI complete the rest — colors, design tips, and missing values.</p>
     </div>
+
+    <!-- AI configuration warning banner (only shown when AI is not ready) -->
+    <?php if (!($aiConfigured ?? true)): ?>
+    <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:flex-start;gap:12px;">
+        <i class="fas fa-exclamation-triangle" style="color:#ef4444;margin-top:2px;flex-shrink:0;"></i>
+        <div style="font-size:0.85rem;">
+            <?php if (!($aiEnabled ?? true)): ?>
+            <strong style="color:#ef4444;">AI is disabled.</strong>
+            The AI suggestion engine is currently turned off. Generation will use the rule-based fallback.
+            <?php else: ?>
+            <strong style="color:#f59e0b;">AI API key not configured.</strong>
+            No API key is set — generation will fall back to rule-based suggestions.
+            <?php endif; ?>
+            <?php if (\Core\Auth::hasRole('admin') || \Core\Auth::hasRole('super_admin')): ?>
+            <a href="/admin/projects/idcard/ai-settings" style="color:#6366f1;margin-left:6px;">Configure AI settings →</a>
+            <?php endif; ?>
+        </div>
+    </div>
+    <?php endif; ?>
 
     <!-- Step 1: Template -->
     <div class="step-card">
@@ -386,6 +408,21 @@ function generateWithAI() {
         // Badge
         var badge = document.getElementById('aiBadge');
         badge.style.display = s.ai_powered ? 'inline-flex' : 'none';
+
+        // Show a non-blocking notice if AI fell back to rule-based
+        if (!s.ai_powered && s.fallback_reason) {
+            var reasonMsgs = {
+                'ai_disabled': 'AI is currently disabled by the administrator. Results use the rule-based engine.',
+                'no_api_key':  'No AI API key is configured. Results use the rule-based engine.',
+                'rate_limited':'You have reached your daily AI limit. Results use the rule-based engine.',
+                'api_error':   'The AI service returned an error. Results use the rule-based engine.',
+            };
+            var msg = reasonMsgs[s.fallback_reason] || 'AI unavailable. Results use the rule-based engine.';
+            status.style.display = 'block';
+            status.innerHTML = '<div class="alert alert-warning" style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);color:#b45309;border-radius:8px;padding:10px 14px;font-size:0.82rem;"><i class="fas fa-info-circle"></i> ' + msg + '</div>';
+        } else {
+            status.style.display = 'none';
+        }
 
         // Fields — use user-provided values (all required); AI supplements design only
         _mergedFields = cardData;

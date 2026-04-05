@@ -328,6 +328,12 @@ class IDCardController
             $template = 'corporate';
         }
 
+        // Check if AI is properly configured so the view can show a warning if not
+        $aiEnabled    = $this->model->getSetting('idcard_ai_enabled', '1');
+        $dbKey        = $this->model->getSetting('idcard_openai_api_key', '');
+        $aiKeySet     = !empty($dbKey) || (defined('OPENAI_API_KEY') && !empty(OPENAI_API_KEY));
+        $aiConfigured = ($aiEnabled === '1') && $aiKeySet;
+
         $this->render('ai_generate', [
             'title'        => 'Generate with AI',
             'user'         => Auth::user(),
@@ -335,6 +341,9 @@ class IDCardController
             'selectedTpl'  => $template,
             'tplConfig'    => $templates[$template],
             'field_labels' => $this->config['field_labels'],
+            'aiConfigured' => $aiConfigured,
+            'aiEnabled'    => $aiEnabled === '1',
+            'aiKeySet'     => $aiKeySet,
         ]);
     }
 
@@ -379,7 +388,8 @@ class IDCardController
         $tplConfig   = $templates[$tpl] ?? $templates['corporate'];
 
         // --- Try OpenAI for richer, context-aware suggestions ---
-        $openAISuggestion = $this->callOpenAI($tpl, $data, $prompt, $tplConfig);
+        $fallbackReason   = '';
+        $openAISuggestion = $this->callOpenAI($tpl, $data, $prompt, $tplConfig, $fallbackReason);
         if ($openAISuggestion !== null) {
             $suggestions['ai_powered']        = true;
             $suggestions['design_tips']        = $openAISuggestion['design_tips']        ?? [];
@@ -394,7 +404,8 @@ class IDCardController
         }
 
         // --- Rule-based fallback ---
-        $suggestions['ai_powered']  = false;
+        $suggestions['ai_powered']       = false;
+        $suggestions['fallback_reason']  = $fallbackReason;
         $suggestions['design_tips'] = [
             "Use high contrast between background ({$tplConfig['bg']}) and text ({$tplConfig['text']}) for readability.",
             "Keep the primary colour ({$tplConfig['color']}) consistent with your organisation branding.",
@@ -447,40 +458,38 @@ class IDCardController
     /**
      * Call OpenAI API for ID card design suggestions.
      * Returns null if AI is disabled, not configured, or the call fails.
+     * Sets $fallbackReason to a human-readable explanation when returning null.
      */
-    private function callOpenAI(string $tpl, array $data, string $prompt, array $tplConfig): ?array
+    private function callOpenAI(string $tpl, array $data, string $prompt, array $tplConfig, string &$fallbackReason = ''): ?array
     {
-        // Load settings from DB
-        $settingKeys = ['idcard_ai_enabled', 'idcard_openai_api_key', 'idcard_openai_model', 'idcard_ai_daily_limit'];
-        $dbSettings  = [];
-        foreach ($settingKeys as $k) {
-            $row = \Core\Database::getInstance()->fetch(
-                "SELECT setting_value FROM idcard_settings WHERE setting_key = ?", [$k]
-            );
-            $dbSettings[$k] = $row ? $row['setting_value'] : null;
-        }
+        // Load settings via model (consistent, correct typing)
+        $aiEnabled   = $this->model->getSetting('idcard_ai_enabled', '1');
+        $dbApiKey    = $this->model->getSetting('idcard_openai_api_key', '');
+        $model       = $this->model->getSetting('idcard_openai_model', 'gpt-4o-mini');
+        $dailyLimit  = (int) $this->model->getSetting('idcard_ai_daily_limit', '0');
 
         // Check if AI is enabled
-        if (($dbSettings['idcard_ai_enabled'] ?? '1') !== '1') {
+        if ($aiEnabled !== '1') {
+            $fallbackReason = 'ai_disabled';
+            Logger::warning('CardX AI: disabled via admin settings (idcard_ai_enabled=' . $aiEnabled . ')');
             return null;
         }
 
         // Per-user daily rate limit
-        $dailyLimit = (int)($dbSettings['idcard_ai_daily_limit'] ?? 0);
         if ($dailyLimit > 0 && !$this->checkAndIncrementAIRateLimit($dailyLimit)) {
+            $fallbackReason = 'rate_limited';
+            Logger::warning('CardX AI: daily rate limit reached for user ' . \Core\Auth::id());
             return null;
         }
 
         // Resolve API key: DB setting → env constant
-        $apiKey = $dbSettings['idcard_openai_api_key'] ?? '';
+        $apiKey = !empty($dbApiKey) ? $dbApiKey : (defined('OPENAI_API_KEY') ? OPENAI_API_KEY : '');
         if (empty($apiKey)) {
-            $apiKey = defined('OPENAI_API_KEY') ? OPENAI_API_KEY : '';
-        }
-        if (empty($apiKey)) {
+            $fallbackReason = 'no_api_key';
+            Logger::warning('CardX AI: no API key configured (set idcard_openai_api_key in admin or define OPENAI_API_KEY)');
             return null;
         }
 
-        $model = $dbSettings['idcard_openai_model'] ?? 'gpt-4o-mini';
         if (empty($model)) {
             $model = 'gpt-4o-mini';
         }
@@ -567,7 +576,9 @@ class IDCardController
         curl_close($ch);
 
         if ($raw === false || !empty($curlErr) || $httpCode !== 200) {
-            Logger::error('CardX OpenAI API error: HTTP ' . $httpCode . ($curlErr ? ': ' . $curlErr : ''));
+            $fallbackReason = 'api_error';
+            $body = is_string($raw) ? substr($raw, 0, 300) : '';
+            Logger::error('CardX OpenAI API error: HTTP ' . $httpCode . ($curlErr ? ' curl: ' . $curlErr : '') . ($body ? ' body: ' . $body : ''));
             return null;
         }
 
@@ -575,6 +586,8 @@ class IDCardController
         $text     = $response['choices'][0]['message']['content'] ?? '';
 
         if (empty($text)) {
+            $fallbackReason = 'api_error';
+            Logger::error('CardX OpenAI: empty content in response');
             return null;
         }
 
@@ -610,6 +623,8 @@ class IDCardController
             }
         }
 
+        $fallbackReason = 'api_error';
+        Logger::error('CardX OpenAI: failed to parse response JSON — ' . substr($text, 0, 200));
         return null;
     }
 
