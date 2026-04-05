@@ -204,6 +204,13 @@ class FormController
         if (!is_array($fields))   $fields   = [];
         if (!is_array($settings)) $settings = [];
 
+        // Hash access_password if provided and not already a bcrypt hash
+        if (!empty($settings['access_password']) && $settings['access_mode'] === 'password') {
+            if (strlen($settings['access_password']) < 60 || !str_starts_with($settings['access_password'], '$2')) {
+                $settings['access_password'] = password_hash($settings['access_password'], PASSWORD_BCRYPT);
+            }
+        }
+
         $slug = $this->uniqueSlug($title);
 
         $this->db->query(
@@ -300,6 +307,13 @@ class FormController
         $settings = json_decode($settingsJson, true);
         if (!is_array($fields))   $fields   = [];
         if (!is_array($settings)) $settings = [];
+
+        // Hash access_password if provided and not already a bcrypt hash
+        if (!empty($settings['access_password']) && ($settings['access_mode'] ?? '') === 'password') {
+            if (strlen($settings['access_password']) < 60 || !str_starts_with($settings['access_password'], '$2')) {
+                $settings['access_password'] = password_hash($settings['access_password'], PASSWORD_BCRYPT);
+            }
+        }
 
         $this->db->query(
             "UPDATE formx_forms SET title=?, description=?, fields=?, settings=?, status=?, updated_at=NOW() WHERE id=? AND user_id=?",

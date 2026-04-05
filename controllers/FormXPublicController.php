@@ -44,9 +44,35 @@ class FormXPublicController extends BaseController
         $form['fields']   = json_decode($form['fields']   ?? '[]', true) ?: [];
         $form['settings'] = json_decode($form['settings'] ?? '{}', true) ?: [];
 
+        // ── Password-gate handling ──────────────────────────────────────────
+        $gateOpen  = true;
+        $gateError = false;
+        $accessMode     = $form['settings']['access_mode']     ?? 'public';
+        $accessPasswordHash = $form['settings']['access_password'] ?? '';
+
+        if ($accessMode === 'password' && $accessPasswordHash !== '') {
+            $sessionKey = 'formx_gate_' . (int)$form['id'];
+            if (!empty($_SESSION[$sessionKey])) {
+                $gateOpen = true;
+            } elseif (isset($_POST['_gate_password'])) {
+                $submitted = $_POST['_gate_password'] ?? '';
+                if (password_verify($submitted, $accessPasswordHash) || $submitted === $accessPasswordHash) {
+                    $_SESSION[$sessionKey] = true;
+                    $gateOpen = true;
+                } else {
+                    $gateOpen  = false;
+                    $gateError = true;
+                }
+            } else {
+                $gateOpen = false;
+            }
+        }
+
         \Core\View::render('formx/public-form', [
-            'title' => htmlspecialchars($form['title']),
-            'form'  => $form,
+            'title'     => htmlspecialchars($form['title']),
+            'form'      => $form,
+            'gateOpen'  => $gateOpen,
+            'gateError' => $gateError,
         ]);
     }
 
@@ -112,7 +138,8 @@ class FormXPublicController extends BaseController
 
         $rawIp     = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? null;
         // Use only the first address and strip whitespace to prevent spoofing via comma-separated list
-        $ip        = $rawIp ? trim(explode(',', $rawIp)[0]) : null;
+        $firstIp   = $rawIp ? trim(explode(',', $rawIp)[0]) : null;
+        $ip        = ($firstIp && filter_var($firstIp, FILTER_VALIDATE_IP)) ? $firstIp : ($_SERVER['REMOTE_ADDR'] ?? null);
         $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? null;
 
         $this->db->query(

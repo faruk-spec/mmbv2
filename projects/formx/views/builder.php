@@ -346,9 +346,8 @@
             </div>
             <!-- Password input -->
             <div id="sharePasswordField" style="display:none;margin-top:10px;">
-                <input type="text" id="sharePasswordInput" placeholder="Enter access password…"
-                       style="width:100%;padding:9px 12px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;color:var(--text-primary);font-size:.85rem;outline:none;"
-                       value="<?= htmlspecialchars($form['settings']['access_password'] ?? '') ?>">
+                <input type="password" id="sharePasswordInput" placeholder="<?= !empty($form['settings']['access_password']) ? '••••••• (password set — enter new to change)' : 'Enter access password…' ?>"
+                       style="width:100%;padding:9px 12px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;color:var(--text-primary);font-size:.85rem;outline:none;">
                 <p style="font-size:.74rem;color:var(--text-secondary);margin-top:4px;"><i class="fas fa-info-circle"></i> Save the form after updating the password.</p>
             </div>
         </div>
@@ -647,7 +646,10 @@ window.submitBuilder = function() {
         redirect_url:     document.getElementById('settingRedirect').value,
         notify_email:     document.getElementById('settingEmail').value,
         access_mode:      (document.getElementById('accessPassword') && document.getElementById('accessPassword').checked) ? 'password' : 'public',
-        access_password:  document.getElementById('sharePasswordInput') ? document.getElementById('sharePasswordInput').value : '',
+        // Only include access_password in payload if user typed a new one
+        access_password:  (document.getElementById('sharePasswordInput') && document.getElementById('sharePasswordInput').value)
+                            ? document.getElementById('sharePasswordInput').value
+                            : '<?= htmlspecialchars($form ? ($form['settings']['access_password'] ?? '') : '') ?>',
     });
     document.getElementById('builderForm').submit();
 };

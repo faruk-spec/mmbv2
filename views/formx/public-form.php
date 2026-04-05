@@ -171,31 +171,8 @@
     <?php endif; ?>
 
     <?php if (empty($success)): ?>
-    <?php
-    // ── Access control ───────────────────────────────────────────────────────
-    $accessMode     = $form['settings']['access_mode']     ?? 'public';
-    $accessPassword = $form['settings']['access_password'] ?? '';
-    $gateOpen = true;
-    if ($accessMode === 'password' && $accessPassword !== '') {
-        $submitted = $_POST['_gate_password'] ?? ($_SESSION['formx_gate'][$form['id']] ?? '');
-        if (session_status() === PHP_SESSION_NONE) session_start();
-        if (!empty($_SESSION['formx_gate'][$form['id']])) {
-            $gateOpen = true;
-        } elseif (isset($_POST['_gate_password'])) {
-            if ($_POST['_gate_password'] === $accessPassword) {
-                $_SESSION['formx_gate'][$form['id']] = true;
-                $gateOpen = true;
-            } else {
-                $gateOpen = false;
-                $gateError = true;
-            }
-        } else {
-            $gateOpen = false;
-        }
-    }
-    ?>
 
-    <?php if (!$gateOpen): ?>
+    <?php if (!($gateOpen ?? true)): ?>
     <div class="pw-gate">
         <div style="font-size:2.5rem;margin-bottom:12px;">🔒</div>
         <h2>Password Required</h2>
