@@ -766,53 +766,110 @@ class IDCardController
         }
 
         $isPortrait  = ($tplConfig['orientation'] ?? 'landscape') === 'portrait';
-        $orientation = $isPortrait
-            ? 'PORTRAIT (width:54mm, height:85.6mm — taller than wide)'
-            : 'LANDSCAPE (width:85.6mm, height:54mm — wider than tall)';
+        $orientation = $isPortrait ? 'PORTRAIT' : 'LANDSCAPE';
+        $cardW       = $isPortrait ? '54mm' : '85.6mm';
+        $cardH       = $isPortrait ? '85.6mm' : '54mm';
 
-        // Build field list string (skip empty values)
-        $fieldLines = [];
-        $labelMap   = $this->config['field_labels'] ?? [];
+        // Build per-field name→value pairs with clean labels
+        $labelMap  = $this->config['field_labels'] ?? [];
+        $fieldPairs = [];  // [ ['label'=>..., 'key'=>..., 'value'=>...], ... ]
         foreach ($data as $k => $v) {
             if ($v !== '' && $v !== null) {
                 $label = $labelMap[$k] ?? ucwords(str_replace('_', ' ', $k));
-                $fieldLines[] = $label . ': ' . mb_substr(strip_tags($v), 0, 80);
+                $fieldPairs[] = [
+                    'label' => $label,
+                    'key'   => $k,
+                    'value' => mb_substr(strip_tags((string)$v), 0, 100),
+                ];
             }
         }
-        $fieldStr = implode("\n", array_slice($fieldLines, 0, 12));
 
-        $orgVal  = $data['company_name'] ?? $data['school_name'] ?? ($tplConfig['name'] ?? '');
+        // Identify the most important fields for card layout
         $nameVal = $data['name'] ?? '';
+        $orgVal  = $data['company_name'] ?? $data['school_name'] ?? $data['organization'] ?? ($tplConfig['name'] ?? '');
         $roleVal = $data['designation'] ?? $data['title'] ?? $data['course'] ?? $data['event_name'] ?? '';
 
-        $systemPrompt = 'You are a world-class HTML/CSS ID card designer. Generate a beautiful, creative,'
-            . ' completely unique professional ID card as self-contained HTML.'
-            . ' STRICT RULES — violating any of these will break the card rendering:'
-            . ' (1) Return ONLY the single root <div> element. No markdown fences, no code blocks, no explanations, no text outside the div.'
-            . ' (2) Root <div> must have style="width:100%;height:100%;position:relative;overflow:hidden;" as the first style properties.'
-            . ' (3) Use ONLY inline CSS (style= attributes). Zero <style> tags, zero class names referencing external CSS.'
-            . ' (4) Allowed elements: div, span, svg, path, polygon, polyline, rect, circle, ellipse, line, g, defs, linearGradient, radialGradient, stop, clipPath, text, tspan.'
-            . ' (5) FORBIDDEN — will be stripped: script, style, link, iframe, object, embed, img, input, form, foreignObject, any on* event handlers, javascript:, expression().'
-            . ' (6) Photo placeholder: where the person\'s photo should appear, output EXACTLY the string <!--CX_PHOTO_SLOT--> inside a styled container div. Example: <div style="...dimensions/shape/border styles..."><!--CX_PHOTO_SLOT--></div>'
-            . ' (7) Use clamp() for responsive font sizes. Example: font-size:clamp(0.42rem,1.1vw,0.68rem).'
-            . ' (8) The design must be COMPLETELY ORIGINAL and VISUALLY STUNNING — use creative shapes, gradients, SVG decorations. Do NOT copy any known template.'
-            . ' (9) Fill every field value provided exactly as given — do not invent or change data.'
-            . ' (10) Design specifically for ' . ($isPortrait ? 'PORTRAIT (taller card)' : 'LANDSCAPE (wider card)') . ' orientation.';
-
-        $safePrompt = mb_substr(strip_tags($prompt), 0, 300);
-        $userPrompt = "Create a unique AI-designed ID card.\n"
-            . "Template type: {$tpl} ({$tplConfig['name']})\n"
-            . "Orientation: {$orientation}\n"
-            . "Organization: {$orgVal}\n"
-            . "Person name: {$nameVal}\n"
-            . "Role/Title: {$roleVal}\n"
-            . "All card fields:\n{$fieldStr}\n"
-            . "Primary colour: {$tplConfig['color']}\n"
-            . "Accent colour: {$tplConfig['accent']}\n";
-        if ($safePrompt) {
-            $userPrompt .= "Design instruction: {$safePrompt}\n";
+        // Remaining fields (not name/org/role) — these must also appear on the card
+        $extraFields = [];
+        $skipKeys = ['name', 'company_name', 'school_name', 'organization',
+                     'designation', 'title', 'course', 'event_name'];
+        foreach ($fieldPairs as $fp) {
+            if (!in_array($fp['key'], $skipKeys, true)) {
+                $extraFields[] = $fp['label'] . ': ' . $fp['value'];
+            }
         }
-        $userPrompt .= "\nRemember: output ONLY the <div> HTML — nothing else.";
+
+        // Build the complete field listing string (what the AI must print on the card)
+        $allFieldsStr = '';
+        foreach ($fieldPairs as $fp) {
+            $allFieldsStr .= '  • ' . $fp['label'] . ' = "' . $fp['value'] . '"' . "\n";
+        }
+
+        $extraFieldsBlock = implode("\n", array_map(fn($f) => "  • $f", $extraFields));
+
+        $pri = $tplConfig['color']  ?? '#1e40af';
+        $acc = $tplConfig['accent'] ?? '#3b82f6';
+
+        $safePrompt   = mb_substr(strip_tags($prompt), 0, 300);
+        $designHint   = $safePrompt ?: 'professional modern design';
+
+        // ── SYSTEM PROMPT ────────────────────────────────────────────────────────
+        $systemPrompt = <<<SYSPROMPT
+You are an expert HTML/CSS ID card designer. Your task is to generate a visually impressive, production-ready ID card as a single self-contained HTML div.
+
+═══ OUTPUT FORMAT (NON-NEGOTIABLE) ═══
+• Output ONLY the raw <div>…</div> element — no markdown code fences, no explanations, no extra text.
+• The root element MUST be: <div style="width:100%;height:100%;position:relative;overflow:hidden;font-family:'Segoe UI',Arial,sans-serif;">
+• Use ONLY inline CSS (style="…" attributes). Absolutely NO <style> tags, NO class attributes, NO external references.
+• Allowed HTML/SVG tags: div, span, svg, path, polygon, polyline, rect, circle, ellipse, line, defs, linearGradient, radialGradient, stop, g, text, tspan.
+• FORBIDDEN (will be stripped server-side): script, style, link, iframe, img, object, embed, form, input, foreignObject, any on* event handlers, javascript:, expression().
+
+═══ PHOTO PLACEHOLDER ═══
+• Where the person photo goes, output EXACTLY: <!--CX_PHOTO_SLOT-->
+• Wrap it in a <div> with shape/size/border CSS. Example:
+  <div style="width:22%;aspect-ratio:1/1;border-radius:50%;overflow:hidden;border:3px solid #fff;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.15);"><!--CX_PHOTO_SLOT--></div>
+
+═══ DATA RULES (MOST IMPORTANT) ═══
+• ALL field values listed in the user message MUST appear as readable text somewhere on the card.
+• Use the EXACT values provided — do not invent, abbreviate, or skip any field.
+• Important fields (always prominent): Full Name (large, bold), Organisation, Job Title/Role.
+• Secondary fields (smaller but clearly readable): Department, Employee ID, Phone, Email, Date of Birth, Address, etc.
+• Use font-size between 0.55rem and 1.1rem. Absolute minimum readable size: 0.5rem.
+• Every text element needs overflow:hidden;white-space:nowrap;text-overflow:ellipsis to prevent breakout.
+
+═══ DESIGN RULES ═══
+• Create a UNIQUE, visually distinct design with creative use of gradients, SVG shapes, and color.
+• Do NOT produce a blank/near-blank card. The card must be filled with rich visual design AND all the data.
+• Use clamp() for font sizes: e.g. font-size:clamp(0.5rem,1.2vw,0.75rem).
+• Ensure all text has sufficient contrast against its background.
+• The card should look like a premium professional ID card — think sleek corporate design.
+SYSPROMPT;
+
+        // ── USER PROMPT ──────────────────────────────────────────────────────────
+        $userPrompt = <<<USERPROMPT
+Generate a {$orientation} ID card ({$cardW} × {$cardH}) for the following person.
+
+━━━ CARD DATA (every item below MUST be printed on the card) ━━━
+{$allFieldsStr}
+━━━ KEY LAYOUT HINTS ━━━
+• Full Name "{$nameVal}" → largest text, prominent position
+• Organisation "{$orgVal}" → top of card, header area
+• Job Title "{$roleVal}" → below name, subtitle style
+• Photo → use <!--CX_PHOTO_SLOT--> placeholder in a circular/shaped frame
+• Remaining fields:
+{$extraFieldsBlock}
+
+━━━ DESIGN BRIEF ━━━
+Requested style: {$designHint}
+Primary colour: {$pri}
+Accent colour: {$acc}
+Template: {$tpl} ({$tplConfig['name']})
+
+━━━ REMINDER ━━━
+1. Output ONLY the raw <div>…</div> — no fences, no explanation.
+2. Every field value listed above MUST appear as readable text on the card.
+3. Photo slot: use <!--CX_PHOTO_SLOT--> inside a shaped container.
+USERPROMPT;
 
         $payload = json_encode([
             'model'       => $model,
@@ -820,8 +877,8 @@ class IDCardController
                 ['role' => 'system', 'content' => $systemPrompt],
                 ['role' => 'user',   'content' => $userPrompt],
             ],
-            'temperature' => 0.85,
-            'max_tokens'  => 3500,
+            'temperature' => 0.55,   // lower = more reliable data inclusion
+            'max_tokens'  => 4500,   // enough for a full rich card
         ]);
 
         $ch = curl_init('https://api.openai.com/v1/chat/completions');
@@ -829,7 +886,7 @@ class IDCardController
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_POST           => true,
             CURLOPT_POSTFIELDS     => $payload,
-            CURLOPT_TIMEOUT        => 40,
+            CURLOPT_TIMEOUT        => 50,
             CURLOPT_HTTPHEADER     => [
                 'Authorization: Bearer ' . $apiKey,
                 'Content-Type: application/json',
@@ -854,7 +911,7 @@ class IDCardController
         }
 
         // Strip markdown code fences that some models add despite instructions
-        $html = preg_replace('/^```(?:html|xml)?\s*/i', '', $html);
+        $html = preg_replace('/^```(?:html|xml|HTML)?\s*/i', '', $html);
         $html = preg_replace('/\s*```\s*$/i', '', $html);
         $html = trim($html);
 

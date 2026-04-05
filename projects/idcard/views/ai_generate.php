@@ -115,10 +115,12 @@ $csrfToken = \Core\Security::generateCsrfToken();
     box-shadow: 0 24px 72px rgba(0,0,0,0.45);
     position: relative;
     max-width: 100%;
+    background: #1a1a2e; /* dark fallback while loading */
 }
-.ai-card-preview.landscape { width: 100%; max-width: 480px; aspect-ratio: 85.6/54; }
-.ai-card-preview.portrait  { width: 100%; max-width: 280px; aspect-ratio: 54/85.6; }
-.ai-card-preview > * { font-family: 'Poppins', sans-serif !important; }
+.ai-card-preview.landscape { width: 100%; max-width: 520px; aspect-ratio: 85.6/54; }
+.ai-card-preview.portrait  { width: 100%; max-width: 300px; aspect-ratio: 54/85.6; }
+/* ensure the AI-generated root div fills the container */
+.ai-card-preview > div:first-child { position:absolute !important; inset:0 !important; }
 
 /* Action bar */
 .ai-actions { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:16px; }
@@ -456,10 +458,13 @@ function generateWithAI() {
         var summaryWrap = document.getElementById('resultSummaryWrap');
 
         if (_aiCardHtml) {
-            // Inject AI HTML; replace photo placeholder with user icon
-            var tpl = TEMPLATES[currentTpl] || {};
-            var isPortrait = (tpl.orientation === 'portrait');
-            var photoIcon  = '<svg viewBox="0 0 24 24" style="width:55%;fill:rgba(255,255,255,0.55);" xmlns="http://www.w3.org/2000/svg"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>';
+            // Inject AI HTML; replace photo placeholder with a centred user icon
+            var tpl2 = TEMPLATES[currentTpl] || {};
+            var isPortrait = (tpl2.orientation === 'portrait');
+            var photoIcon  = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.12);">'
+                           + '<svg viewBox="0 0 24 24" style="width:52%;height:52%;fill:rgba(255,255,255,0.7);" xmlns="http://www.w3.org/2000/svg">'
+                           + '<path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>'
+                           + '</svg></div>';
             var rendered   = _aiCardHtml.replace('<!--CX_PHOTO_SLOT-->', photoIcon);
             previewEl.innerHTML = rendered;
             previewEl.className = 'ai-card-preview ' + (isPortrait ? 'portrait' : 'landscape');

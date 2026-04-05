@@ -230,9 +230,17 @@ function icardLogoEl(string $logoPath, string $size, string $iconColor = 'rgba(2
 
 <?php if (!empty($aiCardHtml)):
     // ── AI-GENERATED CARD DESIGN ──────────────────────────────────────────────
-    // Replace the photo placeholder with the actual uploaded photo (or icon).
-    $photoSlotHtml = icardPhoto($photoPath, '2rem');
-    $renderedHtml  = str_replace('<!--CX_PHOTO_SLOT-->', $photoSlotHtml, $aiCardHtml);
+    // Replace the photo placeholder with the actual uploaded photo (or a user icon).
+    // Wrap in a flex container so both img and icon fill the slot correctly.
+    if ($photoPath) {
+        $photoSlotHtml = '<img src="' . htmlspecialchars($photoPath, ENT_QUOTES, 'UTF-8') . '" style="width:100%;height:100%;object-fit:cover;" alt="Photo">';
+    } else {
+        $photoSlotHtml = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.12);">'
+            . '<svg viewBox="0 0 24 24" style="width:52%;height:52%;fill:rgba(255,255,255,0.7);" xmlns="http://www.w3.org/2000/svg">'
+            . '<path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>'
+            . '</svg></div>';
+    }
+    $renderedHtml = str_replace('<!--CX_PHOTO_SLOT-->', $photoSlotHtml, $aiCardHtml);
     echo $renderedHtml;
 elseif (false): // padding dummy — real conditions follow
     /* never reached */
