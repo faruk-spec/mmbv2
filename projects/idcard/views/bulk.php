@@ -16,260 +16,252 @@ foreach ($templates as $key => $tpl) {
 }
 ?>
 <style>
-/* ── Bulk page ───────────────────────────────────────────────────── */
+/* ════════════════════════════════════════════════════════════════
+   BULK PAGE — optimised & responsive
+   breakpoints: 900 (tablet), 600 (large phone), 400 (small phone)
+════════════════════════════════════════════════════════════════ */
+
+/* ── Base card ──────────────────────────────────────────────────── */
 .bulk-card {
     background:var(--bg-card);
     border:1px solid var(--border-color);
     border-radius:14px;
-    padding:22px 24px;
-    margin-bottom:22px;
+    padding:20px 22px;
+    margin-bottom:18px;
 }
+@media(max-width:600px){ .bulk-card { padding:16px 14px; margin-bottom:14px; } }
+
 .step-num {
-    width:26px;height:26px;background:var(--indigo);color:#fff;border-radius:50%;
-    display:flex;align-items:center;justify-content:center;
+    width:26px;height:26px;min-width:26px;background:var(--indigo);color:#fff;
+    border-radius:50%;display:flex;align-items:center;justify-content:center;
     font-size:0.72rem;font-weight:800;flex-shrink:0;
 }
 
-/* ── Step 1: 3-column top row ───────────────────────────────────── */
+/* ── Hero banner ────────────────────────────────────────────────── */
+.bulk-hero {
+    background:linear-gradient(135deg,rgba(99,102,241,0.12),rgba(0,240,255,0.05));
+    border:1px solid rgba(99,102,241,0.2);border-radius:14px;
+    padding:16px 20px;margin-bottom:18px;
+    display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+}
+.bulk-hero-icon {
+    width:46px;height:46px;min-width:46px;background:linear-gradient(135deg,#6366f1,#00f0ff);
+    border-radius:12px;display:flex;align-items:center;justify-content:center;
+}
+.bulk-hero-title {
+    font-size:1.05rem;font-weight:800;
+    background:linear-gradient(135deg,#6366f1,#00f0ff);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+    margin-bottom:2px;
+}
+.bulk-hero-sub { font-size:0.78rem;color:var(--text-secondary);line-height:1.4; }
+@media(max-width:480px){
+    .bulk-hero { padding:14px 16px;gap:10px; }
+    .bulk-hero-title { font-size:0.95rem; }
+    .bulk-hero-sub { display:none; }
+}
+
+/* ── Step 1 row ─────────────────────────────────────────────────── */
+/* Desktop: [category 240px] | [divider] | [theme dots] | [divider] | [upload 240px] */
 .step1-row {
     display:grid;
-    grid-template-columns:240px auto auto auto 240px;
-    gap:16px;
+    grid-template-columns:240px auto minmax(120px,auto) auto 240px;
+    gap:14px;
     align-items:start;
 }
-@media(max-width:760px){ .step1-row { grid-template-columns:1fr; gap:14px; } }
+/* Tablet: 2-column, hide middle dividers  */
+@media(max-width:900px){
+    .step1-row {
+        grid-template-columns:1fr 1fr;
+        gap:12px;
+    }
+    .step1-divider { display:none; }
+    .theme-dots-col { grid-column:1 / -1; border-top:1px solid var(--border-color); padding-top:12px; }
+}
+/* Phone: single column */
+@media(max-width:540px){
+    .step1-row { grid-template-columns:1fr; gap:10px; }
+    .theme-dots-col { border-top:none; padding-top:0; }
+}
 
-/* Category dropdown */
+/* ── Category dropdown ──────────────────────────────────────────── */
 .tpl-select-wrap { position:relative; }
 .tpl-select-wrap select {
-    width:100%;padding:11px 38px 11px 14px;border-radius:10px;
+    width:100%;padding:10px 36px 10px 13px;border-radius:10px;
     background:var(--bg-secondary);border:2px solid var(--border-color);
-    color:var(--text-primary);font-size:0.88rem;cursor:pointer;
-    appearance:none;-webkit-appearance:none;
+    color:var(--text-primary);font-size:0.87rem;cursor:pointer;
+    appearance:none;-webkit-appearance:none;transition:border-color 0.2s;
 }
-.tpl-select-wrap select:focus { border-color:var(--indigo);outline:none; }
+.tpl-select-wrap select:focus { border-color:var(--indigo);outline:none;box-shadow:0 0 0 3px rgba(99,102,241,0.15); }
 .tpl-select-wrap::after {
-    content:'▾';position:absolute;right:12px;top:50%;transform:translateY(-50%);
+    content:'▾';position:absolute;right:11px;top:50%;transform:translateY(-50%);
     color:var(--text-secondary);pointer-events:none;font-size:1rem;
 }
 
-/* Theme colour dots */
-.theme-dots-col { text-align:center; min-width:140px; }
+/* ── Theme dots ─────────────────────────────────────────────────── */
+.theme-dots-col { text-align:center; }
 .tpl-theme-dot {
     display:inline-block;width:22px;height:22px;border-radius:50%;
     cursor:pointer;border:2.5px solid transparent;transition:all 0.18s;
-    margin:3px;vertical-align:middle;
+    margin:3px;vertical-align:middle;touch-action:manipulation;
 }
 .tpl-theme-dot.active { border-color:#fff;box-shadow:0 0 0 2px var(--indigo); }
-.tpl-theme-dot:hover { transform:scale(1.2); }
+.tpl-theme-dot:hover  { transform:scale(1.2); }
 
-/* Upload zone (compact) */
+/* ── Upload zone ────────────────────────────────────────────────── */
 .upload-zone-compact {
     border:2px dashed var(--border-color);border-radius:12px;
-    padding:18px 14px;text-align:center;cursor:pointer;transition:all 0.2s;
+    padding:16px 12px;text-align:center;cursor:pointer;transition:all 0.2s;
     background:var(--bg-secondary);
 }
 .upload-zone-compact:hover,.upload-zone-compact.dragover {
     border-color:var(--indigo);background:rgba(99,102,241,0.06);
 }
 .upload-zone-compact input[type=file] { display:none; }
-#uploadFilename { font-size:0.78rem;color:var(--indigo);margin-top:6px;font-weight:600; }
+#uploadFilename { font-size:0.78rem;color:var(--indigo);margin-top:6px;font-weight:600;word-break:break-all; }
 
-/* divider between cols */
+/* ── Divider between step-1 cols ────────────────────────────────── */
 .step1-divider {
-    width:1px;background:var(--border-color);align-self:stretch;
-    margin-top:4px;
+    width:1px;background:var(--border-color);align-self:stretch;margin-top:4px;
 }
-@media(max-width:760px){ .step1-divider { width:100%;height:1px; margin:0; } }
 
-/* ── Upload zone (old, kept for fallback) ────────────────────────── */
-.upload-zone {
-    border:2px dashed var(--border-color);border-radius:12px;
-    padding:34px 18px;text-align:center;cursor:pointer;transition:all 0.2s;
-    background:var(--bg-secondary);
+/* ── Design controls row ────────────────────────────────────────── */
+.design-row {
+    display:flex;flex-wrap:nowrap;gap:10px;
+    margin-top:14px;overflow-x:auto;
+    padding-bottom:6px;align-items:flex-end;
+    scrollbar-width:thin;scrollbar-color:var(--border-color) transparent;
 }
-.upload-zone:hover,.upload-zone.dragover { border-color:var(--indigo);background:rgba(99,102,241,0.06); }
-.upload-zone input[type=file] { display:none; }
-
-/* ── Upload zone ─────────────────────────────────────────────────── */
-.upload-zone {
-    border:2px dashed var(--border-color);border-radius:12px;
-    padding:34px 18px;text-align:center;cursor:pointer;transition:all 0.2s;
-    background:var(--bg-secondary);
-}
-.upload-zone:hover,.upload-zone.dragover { border-color:var(--indigo);background:rgba(99,102,241,0.06); }
-.upload-zone input[type=file] { display:none; }
-#uploadFilename { font-size:0.83rem;color:var(--indigo);margin-top:8px;font-weight:600; }
-
-/* ── 2-column layout ─────────────────────────────────────────────── */
-.bulk-gen-wrap { display:grid; grid-template-columns:1fr 360px; gap:20px; align-items:start; }
-@media(max-width:960px){ .bulk-gen-wrap { grid-template-columns:1fr; } }
-
-/* ── Live preview ────────────────────────────────────────────────── */
-.bulk-preview-area { position:sticky; top:20px; }
-.id-card-preview {
-    width:100%; max-width:340px; margin:0 auto;
-    border-radius:14px; overflow:hidden;
-    box-shadow:0 20px 60px rgba(0,0,0,0.4);
-    font-family:'Poppins',sans-serif;
-    transition:all 0.3s ease;
-    aspect-ratio:85.6/54; position:relative;
-}
-.id-card-preview.portrait { aspect-ratio:54/85.6; max-width:200px; }
-
-/* ── Design controls ─────────────────────────────────────────────── */
-.design-row { display:flex;flex-wrap:nowrap;gap:10px;margin-top:14px;overflow-x:auto;padding-bottom:4px;align-items:flex-end; }
 .design-row::-webkit-scrollbar { height:3px; }
 .design-row::-webkit-scrollbar-thumb { background:var(--border-color);border-radius:3px; }
 .design-ctrl { display:flex;flex-direction:column;gap:5px;flex-shrink:0; }
-.design-ctrl label { font-size:0.72rem;font-weight:600;color:var(--text-secondary); }
+.design-ctrl label { font-size:0.7rem;font-weight:600;color:var(--text-secondary);white-space:nowrap; }
 .design-ctrl input[type=color] {
-    width:44px;height:34px;border-radius:8px;border:1.5px solid var(--border-color);
+    width:42px;height:32px;border-radius:7px;border:1.5px solid var(--border-color);
     background:var(--bg-secondary);cursor:pointer;padding:2px 3px;
 }
 .design-ctrl select {
-    padding:7px 10px;background:var(--bg-secondary);border:1.5px solid var(--border-color);
-    border-radius:8px;color:var(--text-primary);font-size:0.82rem;cursor:pointer;
+    padding:6px 9px;background:var(--bg-secondary);border:1.5px solid var(--border-color);
+    border-radius:8px;color:var(--text-primary);font-size:0.8rem;cursor:pointer;
+    transition:border-color 0.18s;
 }
+.design-ctrl select:focus { border-color:var(--indigo);outline:none; }
 
-/* ── Style picker (matches generate page) ───────────────────────── */
-.style-picker { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; }
-@media(max-width:680px){ .style-picker { grid-template-columns:repeat(3,1fr); } }
+/* ── Style cards (see-all grid) ─────────────────────────────────── */
 .style-card {
-    border-radius:8px; border:2px solid var(--border-color);
-    aspect-ratio:85.6/54; overflow:hidden; cursor:pointer; transition:all 0.2s;
+    border-radius:8px;border:2px solid var(--border-color);
+    aspect-ratio:85.6/54;overflow:hidden;cursor:pointer;transition:all 0.2s;
     background:#111;
 }
 .style-card.portrait { aspect-ratio:54/85.6; }
-.style-card:hover { border-color:var(--indigo); transform:translateY(-2px); }
-.style-card.active { border-color:var(--indigo); box-shadow:0 0 0 2px rgba(99,102,241,0.3); }
-.style-label { font-size:0.62rem; font-weight:600; text-align:center; margin-top:5px; color:var(--text-secondary); }
+.style-card:hover  { border-color:var(--indigo);transform:translateY(-2px); }
+.style-card.active { border-color:var(--indigo);box-shadow:0 0 0 2px rgba(99,102,241,0.3); }
+.style-label { font-size:0.6rem;font-weight:600;text-align:center;margin-top:4px;color:var(--text-secondary); }
 .style-label.active { color:var(--indigo); }
+
+/* ── Filter buttons ─────────────────────────────────────────────── */
 .filter-btn {
-    padding:4px 12px; border-radius:16px; font-size:0.72rem; font-weight:600;
-    border:1.5px solid var(--border-color); cursor:pointer;
-    background:var(--bg-secondary); color:var(--text-secondary); transition:all 0.2s;
+    padding:5px 11px;border-radius:16px;font-size:0.72rem;font-weight:600;
+    border:1.5px solid var(--border-color);cursor:pointer;
+    background:var(--bg-secondary);color:var(--text-secondary);transition:all 0.2s;
+    touch-action:manipulation;
 }
-.filter-btn.active { background:var(--indigo); color:#fff; border-color:var(--indigo); }
+.filter-btn.active { background:var(--indigo);color:#fff;border-color:var(--indigo); }
 
-/* ── Mobile preview button ───────────────────────────────────────── */
-.bulk-preview-btn {
-    display:none; position:fixed; bottom:20px; right:20px; z-index:1000;
-    background:var(--indigo); color:#fff; border:none; border-radius:50px;
-    padding:12px 20px; font-size:0.85rem; font-weight:600; cursor:pointer;
-    box-shadow:0 4px 20px rgba(99,102,241,0.5);
-}
-@media(max-width:960px){ .bulk-preview-btn { display:flex; align-items:center; gap:8px; } }
-/* hide sticky preview panel on mobile */
-@media(max-width:960px){ .bulk-preview-area { display:none; } }
-
-/* ── Preview modal (mobile) ─────────────────────────────────────── */
-.preview-modal-overlay {
-    display:none; position:fixed; inset:0; z-index:2000;
-    background:rgba(0,0,0,0.75); align-items:center; justify-content:center;
-}
-.preview-modal-overlay.open { display:flex; }
-.preview-modal-box {
-    background:var(--bg-card); border-radius:18px; padding:24px 20px;
-    width:92%; max-width:380px; position:relative;
-}
-.preview-modal-close {
-    position:absolute; top:12px; right:14px; background:none; border:none;
-    font-size:1.4rem; cursor:pointer; color:var(--text-secondary);
-}
-
-/* ── Design filmstrip ────────────────────────────────────────────── */
+/* ── Filmstrip ──────────────────────────────────────────────────── */
 .filmstrip-wrap {
-    display:flex;
-    align-items:center;
-    gap:8px;
-    margin-top:14px;
+    display:flex;align-items:center;gap:8px;margin-top:14px;
 }
 .filmstrip-thumb-wrap {
-    flex-shrink:0;
-    width:100px;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    gap:4px;
-    cursor:pointer;
-    opacity:0.5;
-    transition:opacity 0.2s;
+    flex-shrink:0;width:90px;
+    display:flex;flex-direction:column;align-items:center;gap:4px;
+    cursor:pointer;opacity:0.48;transition:opacity 0.2s;
 }
-.filmstrip-thumb-wrap:hover { opacity:0.9; }
+.filmstrip-thumb-wrap:hover,.filmstrip-thumb-wrap:focus-visible { opacity:0.92; }
 .filmstrip-thumb-card {
-    width:100%;
-    border-radius:8px;
-    border:2px solid var(--border-color);
-    overflow:hidden;
-    aspect-ratio:85.6/54;
-    background:#111;
-    transition:border-color 0.18s;
+    width:100%;border-radius:7px;border:2px solid var(--border-color);
+    overflow:hidden;aspect-ratio:85.6/54;background:#111;transition:border-color 0.18s;
 }
 .filmstrip-thumb-card.portrait { aspect-ratio:54/85.6; }
 .filmstrip-thumb-wrap:hover .filmstrip-thumb-card { border-color:var(--indigo); }
 .filmstrip-center-wrap {
-    flex:1;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    min-width:0;
+    flex:1;display:flex;flex-direction:column;align-items:center;min-width:0;
 }
 .filmstrip-center-card {
-    width:100%;
-    max-width:440px;
-    border-radius:14px;
-    overflow:hidden;
-    box-shadow:0 20px 60px rgba(0,0,0,0.45);
-    aspect-ratio:85.6/54;
-    position:relative;
-    transition:all 0.3s ease;
+    width:100%;max-width:480px;border-radius:14px;overflow:hidden;
+    box-shadow:0 18px 56px rgba(0,0,0,0.45);
+    aspect-ratio:85.6/54;position:relative;
+    transition:aspect-ratio 0.3s ease,max-width 0.3s ease;
     background:#f7f8fc;
 }
-.filmstrip-center-card.portrait { aspect-ratio:54/85.6; max-width:250px; }
+.filmstrip-center-card.portrait { aspect-ratio:54/85.6;max-width:260px; }
 .filmstrip-nav-btn {
-    flex-shrink:0;width:34px;height:34px;border-radius:50%;
+    flex-shrink:0;width:36px;height:36px;border-radius:50%;
     background:var(--bg-secondary);border:1.5px solid var(--border-color);
     display:flex;align-items:center;justify-content:center;
-    cursor:pointer;font-size:1.4rem;line-height:1;color:var(--text-secondary);
-    transition:all 0.18s;user-select:none;padding:0;
+    cursor:pointer;font-size:1.5rem;line-height:1;color:var(--text-secondary);
+    transition:all 0.18s;user-select:none;padding:0;touch-action:manipulation;
 }
 .filmstrip-nav-btn:hover:not(:disabled) { border-color:var(--indigo);color:var(--indigo); }
-.filmstrip-nav-btn:disabled { opacity:0.22;cursor:not-allowed; }
-@media(max-width:680px){ .filmstrip-thumb-wrap { display:none; } }
+.filmstrip-nav-btn:disabled { opacity:0.2;cursor:not-allowed; }
+/* Hide thumbs on narrow screens */
+@media(max-width:640px){ .filmstrip-thumb-wrap { display:none; } }
+/* On small phones make center card full-width */
+@media(max-width:400px){ .filmstrip-center-card { max-width:100% !important; border-radius:10px; } }
 
-/* ── See All modal ───────────────────────────────────────────────── */
+/* ── See All modal ──────────────────────────────────────────────── */
 .see-all-modal-overlay {
     display:none;position:fixed;inset:0;z-index:3000;
-    background:rgba(0,0,0,0.75);align-items:flex-start;justify-content:center;
-    overflow-y:auto;padding:30px 16px;
+    background:rgba(0,0,0,0.78);align-items:flex-start;justify-content:center;
+    overflow-y:auto;padding:24px 12px;
 }
 .see-all-modal-overlay.open { display:flex; }
 .see-all-modal-box {
-    background:var(--bg-card);border-radius:18px;padding:24px;
+    background:var(--bg-card);border-radius:18px;padding:22px 20px;
     width:100%;max-width:720px;position:relative;
 }
 .see-all-modal-close {
     position:absolute;top:12px;right:14px;background:none;border:none;
     font-size:1.4rem;cursor:pointer;color:var(--text-secondary);
+    width:32px;height:32px;display:flex;align-items:center;justify-content:center;
+    border-radius:50%;transition:background 0.15s;
 }
+.see-all-modal-close:hover { background:var(--bg-secondary); }
 .see-all-grid {
     display:grid;
     grid-template-columns:repeat(5,1fr);
-    gap:10px;
-    margin-top:14px;
+    gap:10px;margin-top:14px;
 }
-@media(max-width:560px){ .see-all-grid { grid-template-columns:repeat(3,1fr); } }
-.progress-bar-wrap { background:var(--border-color);border-radius:99px;height:10px;overflow:hidden;margin-top:10px; }
+@media(max-width:560px){ .see-all-grid { grid-template-columns:repeat(3,1fr);gap:8px; } }
+@media(max-width:360px){ .see-all-grid { grid-template-columns:repeat(2,1fr); } }
+
+/* ── Progress & result ──────────────────────────────────────────── */
+.progress-bar-wrap { background:var(--border-color);border-radius:99px;height:8px;overflow:hidden;margin-top:8px; }
 .progress-bar-fill { height:100%;border-radius:99px;background:linear-gradient(90deg,#6366f1,#00f0ff);transition:width 0.4s; }
 .result-badge { display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:0.8rem;font-weight:600; }
 .badge-success { background:rgba(0,255,136,0.12);color:#00ff88; }
 .badge-fail    { background:rgba(239,68,68,0.12);color:#ef4444; }
 
-/* ── Jobs table ──────────────────────────────────────────────────── */
+/* ── Step 3 actions row ─────────────────────────────────────────── */
+.step3-actions {
+    display:flex;gap:10px;flex-wrap:wrap;align-items:center;
+}
+@media(max-width:400px){
+    .step3-actions { flex-direction:column;align-items:stretch; }
+    .step3-actions .btn { width:100%;justify-content:center; }
+    #readinessHint { text-align:center; }
+}
+
+/* ── Jobs table ─────────────────────────────────────────────────── */
 .jobs-table { width:100%;border-collapse:collapse;font-size:13px; }
 .jobs-table th { text-align:left;padding:9px 12px;color:var(--text-secondary);font-weight:600;border-bottom:1px solid var(--border-color); }
 .jobs-table td { padding:9px 12px;border-bottom:1px solid var(--border-color); }
+/* Hide less-important columns on mobile */
+@media(max-width:540px){
+    .jobs-table .col-total,
+    .jobs-table .col-failed,
+    .jobs-table .col-date { display:none; }
+}
 .status-chip { display:inline-block;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:700;letter-spacing:0.02em; }
 .status-done       { background:rgba(0,255,136,0.12);color:#00ff88; }
 .status-error      { background:rgba(239,68,68,0.12);color:#ef4444; }
@@ -278,21 +270,13 @@ foreach ($templates as $key => $tpl) {
 </style>
 
 <!-- Hero -->
-<div style="background:linear-gradient(135deg,rgba(99,102,241,0.12),rgba(0,240,255,0.05));
-     border:1px solid rgba(99,102,241,0.2);border-radius:14px;padding:18px 22px;
-     margin-bottom:22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
-    <div style="width:50px;height:50px;background:linear-gradient(135deg,#6366f1,#00f0ff);border-radius:13px;
-         display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-        <i class="fas fa-layer-group" style="color:#fff;font-size:1.25rem;"></i>
+<div class="bulk-hero">
+    <div class="bulk-hero-icon">
+        <i class="fas fa-layer-group" style="color:#fff;font-size:1.2rem;"></i>
     </div>
     <div style="flex:1;min-width:150px;">
-        <div style="font-size:1.1rem;font-weight:800;background:linear-gradient(135deg,#6366f1,#00f0ff);
-             -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:2px;">
-            Bulk ID Card Generator
-        </div>
-        <div style="font-size:0.8rem;color:var(--text-secondary);">
-            Select category &rarr; upload CSV &rarr; pick design &rarr; generate all cards at once
-        </div>
+        <div class="bulk-hero-title">Bulk ID Card Generator</div>
+        <div class="bulk-hero-sub">Select category &rarr; upload CSV &rarr; pick design &rarr; generate all cards at once</div>
     </div>
     <a href="/projects/idcard" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left"></i> Dashboard</a>
 </div>
@@ -501,7 +485,7 @@ foreach ($templates as $key => $tpl) {
         <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressBar" style="width:0%;"></div></div>
     </div>
 
-    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+    <div class="step3-actions">
         <button id="submitBtn" class="btn btn-primary" disabled onclick="submitBulk(event)">
             <i class="fas fa-bolt"></i> Generate All Cards
         </button>
@@ -536,7 +520,7 @@ foreach ($templates as $key => $tpl) {
         <table class="jobs-table">
             <thead>
                 <tr>
-                    <th>#</th><th>Template</th><th>Total</th><th>Done</th><th>Failed</th><th>Status</th><th>Date</th>
+                    <th>#</th><th>Template</th><th class="col-total">Total</th><th>Done</th><th class="col-failed">Failed</th><th>Status</th><th class="col-date">Date</th>
                 </tr>
             </thead>
             <tbody>
@@ -549,11 +533,11 @@ foreach ($templates as $key => $tpl) {
                             <?= htmlspecialchars($job['template_key']) ?>
                         </span>
                     </td>
-                    <td><?= (int)$job['total_rows'] ?></td>
+                    <td class="col-total"><?= (int)$job['total_rows'] ?></td>
                     <td style="color:#00ff88;font-weight:600;"><?= (int)$job['completed'] ?></td>
-                    <td style="color:<?= $job['failed'] > 0 ? '#ef4444' : 'var(--text-secondary)' ?>;font-weight:<?= $job['failed'] > 0 ? '600' : '400' ?>;"><?= (int)$job['failed'] ?></td>
+                    <td class="col-failed" style="color:<?= $job['failed'] > 0 ? '#ef4444' : 'var(--text-secondary)' ?>;font-weight:<?= $job['failed'] > 0 ? '600' : '400' ?>;"><?= (int)$job['failed'] ?></td>
                     <td><span class="status-chip status-<?= htmlspecialchars($job['status']) ?>"><?= htmlspecialchars(ucfirst($job['status'])) ?></span></td>
-                    <td style="font-size:12px;color:var(--text-secondary);"><?= date('d M Y, H:i', strtotime($job['created_at'])) ?></td>
+                    <td class="col-date" style="font-size:12px;color:var(--text-secondary);"><?= date('d M Y, H:i', strtotime($job['created_at'])) ?></td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>
