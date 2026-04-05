@@ -276,7 +276,6 @@ foreach ($templates as $key => $tpl) {
     </div>
     <div style="flex:1;min-width:150px;">
         <div class="bulk-hero-title">Bulk ID Card Generator</div>
-        <div class="bulk-hero-sub">Select category &rarr; upload CSV &rarr; pick design &rarr; generate all cards at once</div>
     </div>
     <a href="/projects/idcard" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left"></i> Dashboard</a>
 </div>
@@ -286,15 +285,12 @@ foreach ($templates as $key => $tpl) {
 <!-- ══════════════════════════════════════════════════════════════ -->
 <div class="bulk-card">
     <h3 style="font-size:0.95rem;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px;">
-        <span class="step-num">1</span> Setup &nbsp;<span style="font-size:0.72rem;color:var(--text-secondary);font-weight:400;">Category → Theme → Upload CSV</span>
+        <span class="step-num">1</span> Setup
     </h3>
 
     <div class="step1-row">
         <!-- Col A: Category dropdown -->
         <div>
-            <div style="font-size:0.72rem;font-weight:600;color:var(--text-secondary);margin-bottom:7px;">
-                <i class="fas fa-tags" style="color:var(--indigo);margin-right:4px;"></i> SELECT CARD CATEGORY
-            </div>
             <div class="tpl-select-wrap">
                 <select id="tplDropdown" onchange="selectTemplateByKey(this.value)">
                     <option value="">— choose a category —</option>
@@ -303,10 +299,7 @@ foreach ($templates as $key => $tpl) {
                     <?php endforeach; ?>
                 </select>
             </div>
-            <div style="margin-top:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-                <span style="font-size:0.78rem;color:var(--text-secondary);">
-                    Template: <strong id="selectedTplName" style="color:var(--indigo);">—</strong>
-                </span>
+            <div style="margin-top:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                 <a id="sampleCsvBtn" href="#"
                    style="pointer-events:none;opacity:0.4;" class="btn btn-secondary btn-sm">
                     <i class="fas fa-download"></i> Sample CSV
@@ -319,9 +312,6 @@ foreach ($templates as $key => $tpl) {
 
         <!-- Col B: Theme colour dots -->
         <div class="theme-dots-col">
-            <div style="font-size:0.72rem;font-weight:600;color:var(--text-secondary);margin-bottom:9px;">
-                <i class="fas fa-palette" style="color:var(--indigo);margin-right:4px;"></i> THEME COLOUR
-            </div>
             <div id="themeDots" style="display:flex;flex-wrap:wrap;justify-content:center;gap:4px;max-width:220px;margin:0 auto;">
                 <?php foreach ($templates as $key => $tpl): ?>
                 <span class="tpl-theme-dot"
@@ -338,10 +328,6 @@ foreach ($templates as $key => $tpl) {
 
         <!-- Col C: Upload CSV -->
         <div>
-            <div style="font-size:0.72rem;font-weight:600;color:var(--text-secondary);margin-bottom:7px;">
-                <i class="fas fa-upload" style="color:var(--indigo);margin-right:4px;"></i> UPLOAD YOUR CSV
-                <span style="font-size:0.65rem;font-weight:400;">(max <?= $maxBulkRows ?> rows)</span>
-            </div>
             <div class="upload-zone-compact" id="uploadZone"
                  onclick="document.getElementById('csvFileInput').click()"
                  ondragover="handleDragOver(event)"
@@ -363,7 +349,6 @@ foreach ($templates as $key => $tpl) {
 <div class="bulk-card">
     <h3 style="font-size:0.95rem;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:8px;">
         <span class="step-num">2</span> Choose Design
-        <span style="font-size:0.72rem;color:var(--text-secondary);font-weight:400;margin-left:4px;">(applied to all cards)</span>
     </h3>
 
     <!-- Colour + font + filter row (single horizontal scrollable line) -->
@@ -603,6 +588,43 @@ var fileSelected       = false;
 var currentStyleKey    = 'classic';
 var currentStyleFilter = 'all';
 
+var STYLE_COLOR_PRESETS = {
+    'classic':       { pri:'#1e40af', acc:'#3b82f6', bg:'#ffffff', txt:'#1e293b' },
+    'sidebar':       { pri:'#6366f1', acc:'#818cf8', bg:'#111827', txt:'#f1f5f9' },
+    'wave':          { pri:'#065f46', acc:'#10b981', bg:'#fdf8f3', txt:'#064e3b' },
+    'bold_header':   { pri:'#0369a1', acc:'#0ea5e9', bg:'#ffffff', txt:'#1e293b' },
+    'diagonal':      { pri:'#7c3aed', acc:'#a78bfa', bg:'#111827', txt:'#f5f3ff' },
+    'gradient_pro':  { pri:'#1e40af', acc:'#3b82f6', bg:'#1e3a8a', txt:'#ffffff' },
+    'neon':          { pri:'#00f0ff', acc:'#ff2ec4', bg:'#050a10', txt:'#e0f2fe' },
+    'executive':     { pri:'#1a1f2e', acc:'#c9a84c', bg:'#1a1f2e', txt:'#ffffff' },
+    'stripe':        { pri:'#dc2626', acc:'#f87171', bg:'#f5f7fa', txt:'#1e293b' },
+    'metro':         { pri:'#14532d', acc:'#22c55e', bg:'#ffffff', txt:'#1e293b' },
+    'glass':         { pri:'#7c3aed', acc:'#a78bfa', bg:'#7c3aed', txt:'#ffffff' },
+    'zigzag':        { pri:'#b45309', acc:'#f59e0b', bg:'#f7f8fc', txt:'#92400e' },
+    'ribbon':        { pri:'#6366f1', acc:'#818cf8', bg:'#111827', txt:'#f1f5f9' },
+    'v_sharp':       { pri:'#1e40af', acc:'#3b82f6', bg:'#f7f8fc', txt:'#1e293b' },
+    'v_curve':       { pri:'#065f46', acc:'#10b981', bg:'#fafafa', txt:'#064e3b' },
+    'v_hex':         { pri:'#0369a1', acc:'#0ea5e9', bg:'#ffffff', txt:'#1e293b' },
+    'v_circle':      { pri:'#7c3aed', acc:'#a78bfa', bg:'#f7f8fc', txt:'#1e293b' },
+    'v_split':       { pri:'#dc2626', acc:'#f87171', bg:'#ffffff', txt:'#1e293b' },
+    'v_ribbon':      { pri:'#14532d', acc:'#22c55e', bg:'#f7f8fc', txt:'#1e293b' },
+    'v_arch':        { pri:'#1e40af', acc:'#3b82f6', bg:'#ffffff', txt:'#1e293b' },
+    'v_diamond':     { pri:'#0891b2', acc:'#22d3ee', bg:'#f7f8fc', txt:'#1e293b' },
+    'v_corner':      { pri:'#7c3aed', acc:'#a78bfa', bg:'#ffffff', txt:'#1e293b' },
+    'v_dual':        { pri:'#b45309', acc:'#f59e0b', bg:'#f7f8fc', txt:'#92400e' },
+    'v_stripe':      { pri:'#6366f1', acc:'#818cf8', bg:'#6366f1', txt:'#ffffff' },
+    'v_badge':       { pri:'#14532d', acc:'#22c55e', bg:'#f7f8fc', txt:'#1e293b' }
+};
+
+function applyStyleColors(styleKey) {
+    var preset = STYLE_COLOR_PRESETS[styleKey];
+    if (!preset) return;
+    document.getElementById('d_primary').value = preset.pri;
+    document.getElementById('d_accent').value  = preset.acc;
+    document.getElementById('d_bg').value      = preset.bg;
+    document.getElementById('d_text').value    = preset.txt;
+}
+
 function getFilteredStyles() {
     if (currentStyleFilter === 'landscape') return ALL_STYLES.filter(function(s){ return !s.portrait; });
     if (currentStyleFilter === 'portrait')  return ALL_STYLES.filter(function(s){ return s.portrait; });
@@ -623,7 +645,9 @@ function setStyleFilter(f) {
     buildFilmstrip();
 }
 
-function qrSlotHTML(ps) { return ''; }
+function qrSlotHTML(posStyle) {
+    return '<div class="qr-slot" style="position:absolute;'+posStyle+';display:flex;align-items:center;justify-content:center;background:#fff;border-radius:3px;z-index:10;width:36px;height:36px;"></div>';
+}
 
 function fieldRowsHTML(items, lc, vc, fs) {
     fs = fs || 'clamp(0.38rem,0.9vw,0.54rem)';
@@ -1336,62 +1360,202 @@ function buildStyleThumbnail(key, pri, acc, portrait) {
     var W = 85.6, H = 54;
     if (portrait) { W = 54; H = 85.6; }
     var vb = '0 0 ' + W + ' ' + H;
-    var uid = key + (portrait?'p':'l');
     switch(key) {
+        // ── Landscape styles ─────────────────────────────────────────────────
         case 'classic':
-            return '<svg viewBox="'+vb+'" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block;">'
+            return '<svg viewBox="'+vb+'" xmlns="http://www.w3.org/2000/svg">'
+                +'<defs><linearGradient id="cg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="'+pri+'"/><stop offset="100%" stop-color="'+acc+'"/></linearGradient>'
+                +'<clipPath id="cc"><polygon points="0,0 '+W+',0 '+W+','+(H*0.56)+' 0,'+(H*0.72)+'"/></clipPath></defs>'
                 +'<rect width="'+W+'" height="'+H+'" fill="#f7f8fc"/>'
-                +'<rect width="'+W+'" height="'+H+'" fill="'+pri+'" clip-path="url(#cc'+uid+')"/>'
-                +'<defs><clipPath id="cc'+uid+'"><polygon points="0,0 '+W+',0 '+W+','+(H*0.56)+' 0,'+(H*0.72)+'"/></clipPath></defs>'
+                +'<rect width="'+W+'" height="'+H+'" fill="url(#cg)" clip-path="url(#cc)"/>'
+                +'<circle cx="'+W*0.1+'" cy="5" r="3" fill="rgba(255,255,255,0.3)"/>'
                 +'<circle cx="'+(W/2)+'" cy="'+(H*0.46)+'" r="7" fill="#fff" stroke="'+pri+'" stroke-width="1.5"/>'
                 +'<rect x="'+((W-26)/2)+'" y="'+(H*0.58)+'" width="26" height="3.5" rx="1.5" fill="'+pri+'" opacity="0.85"/>'
+                +'<rect x="'+((W-18)/2)+'" y="'+(H*0.65)+'" width="18" height="2" rx="1" fill="#aaa"/>'
+                +'<rect x="8" y="'+(H*0.73)+'" width="16" height="1.8" rx="0.8" fill="#555" opacity="0.5"/>'
+                +'<rect x="'+W/2+'" y="'+(H*0.73)+'" width="16" height="1.8" rx="0.8" fill="#555" opacity="0.5"/>'
+                +'<rect x="8" y="'+(H*0.80)+'" width="20" height="1.8" rx="0.8" fill="#555" opacity="0.4"/>'
+                +'<rect x="'+W/2+'" y="'+(H*0.80)+'" width="20" height="1.8" rx="0.8" fill="#555" opacity="0.4"/>'
+                +'<rect x="'+((W-24)/2)+'" y="'+(H*0.89)+'" width="24" height="4" rx="0.5" fill="#ddd"/>'
+                +'</svg>';
+        case 'sidebar':
+            return '<svg viewBox="'+vb+'" xmlns="http://www.w3.org/2000/svg">'
+                +'<rect width="'+W+'" height="'+H+'" fill="#111827"/>'
+                +'<rect x="'+(W*0.42)+'" y="'+(-H*0.2)+'" width="'+(W*0.75)+'" height="'+(W*0.75)+'" rx="3" fill="'+pri+'" transform="rotate(45 '+(W*0.82)+' '+(H*0.3)+')" opacity="0.9"/>'
+                +'<circle cx="'+(W*0.8)+'" cy="'+(H*0.35)+'" r="8" fill="rgba(255,255,255,0.18)" stroke="rgba(255,255,255,0.6)" stroke-width="1"/>'
+                +'<rect x="5" y="'+(H*0.56)+'" width="28" height="3.5" rx="1.5" fill="#fff" opacity="0.9"/>'
+                +'<rect x="5" y="'+(H*0.64)+'" width="20" height="2" rx="1" fill="'+acc+'" opacity="0.7"/>'
+                +'<rect x="5" y="'+(H*0.74)+'" width="24" height="1.6" rx="0.6" fill="rgba(255,255,255,0.3)"/>'
+                +'<rect x="5" y="'+(H*0.80)+'" width="20" height="1.6" rx="0.6" fill="rgba(255,255,255,0.25)"/>'
+                +'<rect x="'+(W*0.6)+'" y="'+(H*0.84)+'" width="22" height="5" rx="0.5" fill="rgba(255,255,255,0.12)"/>'
+                +'</svg>';
+        case 'wave':
+            return '<svg viewBox="'+vb+'" xmlns="http://www.w3.org/2000/svg">'
+                +'<rect width="'+W+'" height="'+H+'" fill="#fdf8f3"/>'
+                +'<path d="M0,0 L'+(W*0.55)+',0 Q'+(W*0.73)+','+(H*0.28)+' '+(W*0.65)+','+(H*0.5)+' Q'+(W*0.75)+','+(H*0.72)+' '+(W*0.58)+','+H+' L0,'+H+' Z" fill="'+pri+'"/>'
+                +'<circle cx="'+(W*0.42)+'" cy="'+(H*0.4)+'" r="8.5" fill="rgba(255,255,255,0.25)" stroke="rgba(255,255,255,0.7)" stroke-width="1.2"/>'
+                +'<rect x="4" y="'+(H*0.7)+'" width="22" height="3" rx="1" fill="#fff" opacity="0.9"/>'
+                +'<rect x="'+(W*0.68)+'" y="10" width="22" height="1.8" rx="0.7" fill="#888" opacity="0.5"/>'
+                +'<rect x="'+(W*0.68)+'" y="15" width="18" height="1.8" rx="0.7" fill="#888" opacity="0.45"/>'
+                +'<rect x="4" y="'+(H*0.88)+'" width="20" height="4" rx="0.4" fill="rgba(255,255,255,0.2)"/>'
+                +'</svg>';
+        case 'bold_header':
+            return '<svg viewBox="'+vb+'" xmlns="http://www.w3.org/2000/svg">'
+                +'<defs><linearGradient id="tbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="'+pri+'"/><stop offset="100%" stop-color="'+acc+'"/></linearGradient></defs>'
+                +'<rect x="0" y="0" width="'+(W*0.4)+'" height="'+H+'" fill="url(#tbg)"/>'
+                +'<rect x="'+(W*0.4)+'" y="0" width="'+(W*0.6)+'" height="'+H+'" fill="#fff"/>'
+                +'<rect x="'+(W*0.4)+'" y="0" width="'+(W*0.6)+'" height="3" fill="url(#tbg)"/>'
+                +'<circle cx="'+(W*0.2)+'" cy="'+(H*0.52)+'" r="10" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.7)" stroke-width="1.2"/>'
+                +'<rect x="'+(W*0.44)+'" y="14" width="30" height="3.5" rx="1.5" fill="'+pri+'" opacity="0.85"/>'
+                +'<rect x="'+(W*0.44)+'" y="20" width="20" height="2" rx="0.8" fill="#aaa"/>'
+                +'<rect x="'+(W*0.44)+'" y="26" width="28" height="1.5" rx="0.7" fill="'+acc+'" opacity="0.5"/>'
+                +'<rect x="'+(W*0.44)+'" y="31" width="24" height="1.8" rx="0.7" fill="#555" opacity="0.5"/>'
+                +'<rect x="'+(W*0.44)+'" y="36" width="28" height="1.8" rx="0.7" fill="#555" opacity="0.45"/>'
+                +'</svg>';
+        case 'diagonal':
+            return '<svg viewBox="'+vb+'" xmlns="http://www.w3.org/2000/svg">'
+                +'<rect width="'+W+'" height="'+H+'" fill="#111827"/>'
+                +'<rect x="'+(W*0.55)+'" y="0" width="'+(W*0.45)+'" height="'+H+'" fill="'+pri+'15"/>'
+                +'<polygon points="'+W+',0 '+W+','+(H*0.4)+' '+(W*0.55)+','+(H*0.2)+'" fill="'+pri+'"/>'
+                +'<polygon points="'+W+','+(H*0.34)+' '+W+','+(H*0.73)+' '+(W*0.58)+','+(H*0.535)+'" fill="'+acc+'" opacity="0.85"/>'
+                +'<polygon points="'+W+','+(H*0.64)+' '+W+','+H+' '+(W*0.56)+','+(H*0.83)+'" fill="'+pri+'" opacity="0.7"/>'
+                +'<circle cx="'+(W*0.14)+'" cy="'+(H*0.5)+'" r="9" fill="rgba(255,255,255,0.1)" stroke="'+acc+'" stroke-width="1.2"/>'
+                +'<rect x="'+(W*0.29)+'" y="17" width="22" height="3" rx="1" fill="#fff" opacity="0.9"/>'
+                +'<rect x="5" y="'+(H*0.74)+'" width="20" height="1.6" rx="0.6" fill="rgba(255,255,255,0.25)"/>'
+                +'<rect x="5" y="'+(H*0.81)+'" width="18" height="1.6" rx="0.6" fill="rgba(255,255,255,0.2)"/>'
+                +'</svg>';
+        case 'gradient_pro':
+            return '<svg viewBox="'+vb+'" xmlns="http://www.w3.org/2000/svg">'
+                +'<defs><linearGradient id="gpg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="'+pri+'"/><stop offset="100%" stop-color="'+acc+'"/></linearGradient></defs>'
+                +'<rect width="'+W+'" height="'+H+'" fill="url(#gpg)"/>'
+                +'<rect x="0" y="0" width="'+W+'" height="'+H+'" fill="rgba(0,0,0,0.18)"/>'
+                +'<circle cx="'+(W*0.28)+'" cy="'+(H*0.5)+'" r="11" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.7)" stroke-width="1.2"/>'
+                +'<rect x="'+(W*0.45)+'" y="12" width="30" height="3.5" rx="1.5" fill="#fff" opacity="0.95"/>'
+                +'<rect x="'+(W*0.45)+'" y="18" width="22" height="2" rx="1" fill="rgba(255,255,255,0.6)"/>'
+                +'<rect x="'+(W*0.45)+'" y="25" width="28" height="1.8" rx="0.7" fill="rgba(255,255,255,0.4)"/>'
+                +'<rect x="'+(W*0.45)+'" y="30" width="24" height="1.8" rx="0.7" fill="rgba(255,255,255,0.35)"/>'
                 +'</svg>';
         case 'neon':
-            return '<svg viewBox="'+vb+'" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block;">'
+            return '<svg viewBox="'+vb+'" xmlns="http://www.w3.org/2000/svg">'
                 +'<rect width="'+W+'" height="'+H+'" fill="#050a10"/>'
                 +'<rect x="0" y="0" width="'+W+'" height="3" fill="'+pri+'"/>'
                 +'<rect x="0" y="'+(H-3)+'" width="'+W+'" height="3" fill="'+acc+'"/>'
-                +'<circle cx="'+(W*0.22)+'" cy="'+(H*0.5)+'" r="9" fill="none" stroke="'+acc+'" stroke-width="1.5"/>'
-                +'<rect x="'+(W*0.38)+'" y="'+(H*0.35)+'" width="'+(W*0.38)+'" height="3" rx="1.5" fill="#fff" opacity="0.7"/>'
+                +'<circle cx="'+(W*0.22)+'" cy="'+(H*0.5)+'" r="11" fill="rgba(255,255,255,0.04)" stroke="'+acc+'" stroke-width="1.5"/>'
+                +'<rect x="'+(W*0.4)+'" y="10" width="32" height="3.5" rx="1.5" fill="'+pri+'" opacity="0.95"/>'
+                +'<rect x="'+(W*0.4)+'" y="16" width="22" height="2" rx="1" fill="'+acc+'" opacity="0.7"/>'
+                +'<rect x="'+(W*0.4)+'" y="23" width="28" height="1.5" rx="0.6" fill="rgba(255,255,255,0.2)"/>'
                 +'</svg>';
         case 'executive':
-            return '<svg viewBox="'+vb+'" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block;">'
+            return '<svg viewBox="'+vb+'" xmlns="http://www.w3.org/2000/svg">'
                 +'<rect width="'+W+'" height="'+H+'" fill="#1a1f2e"/>'
                 +'<rect x="0" y="0" width="'+W+'" height="4" fill="#c9a84c"/>'
                 +'<rect x="0" y="'+(H-4)+'" width="'+W+'" height="4" fill="#c9a84c"/>'
-                +'<circle cx="'+(W*0.22)+'" cy="'+(H*0.5)+'" r="9" fill="none" stroke="#c9a84c" stroke-width="1.2"/>'
-                +'</svg>';
-        case 'glass': case 'gradient_pro':
-            return '<svg viewBox="'+vb+'" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block;">'
-                +'<defs><linearGradient id="g'+uid+'" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="'+pri+'"/><stop offset="100%" stop-color="'+acc+'"/></linearGradient></defs>'
-                +'<rect width="'+W+'" height="'+H+'" fill="url(#g'+uid+')"/>'
-                +'<rect x="'+(W*0.08)+'" y="'+(H*0.1)+'" width="'+(W*0.84)+'" height="'+(H*0.8)+'" rx="4" fill="rgba(255,255,255,0.18)" stroke="rgba(255,255,255,0.3)" stroke-width="0.7"/>'
-                +'</svg>';
-        case 'sidebar': case 'ribbon': case 'diagonal':
-            return '<svg viewBox="'+vb+'" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block;">'
-                +'<rect width="'+W+'" height="'+H+'" fill="#111827"/>'
-                +'<rect x="'+(W*0.42)+'" y="'+(-H*0.2)+'" width="'+(W*0.75)+'" height="'+(W*0.75)+'" rx="3" fill="'+pri+'" transform="rotate(45 '+(W*0.82)+' '+(H*0.3)+')" opacity="0.9"/>'
-                +'<rect x="5" y="'+(H*0.56)+'" width="28" height="3.5" rx="1.5" fill="#fff" opacity="0.9"/>'
+                +'<rect x="4" y="4" width="'+(W-8)+'" height="'+(H-8)+'" fill="none" stroke="rgba(201,168,76,0.3)" stroke-width="0.5"/>'
+                +'<circle cx="'+(W*0.22)+'" cy="'+(H*0.5)+'" r="11" fill="rgba(201,168,76,0.15)" stroke="#c9a84c" stroke-width="1.2"/>'
+                +'<rect x="'+(W*0.38)+'" y="10" width="32" height="3.5" rx="1.5" fill="#fff" opacity="0.92"/>'
+                +'<rect x="'+(W*0.38)+'" y="16" width="22" height="2" rx="1" fill="#c9a84c" opacity="0.8"/>'
                 +'</svg>';
         case 'stripe':
-            return '<svg viewBox="'+vb+'" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block;">'
+            return '<svg viewBox="'+vb+'" xmlns="http://www.w3.org/2000/svg">'
                 +'<rect width="'+W+'" height="'+H+'" fill="#f5f7fa"/>'
                 +'<rect x="0" y="0" width="'+W+'" height="'+(H*0.18)+'" fill="'+pri+'"/>'
                 +'<rect x="0" y="'+(H*0.82)+'" width="'+W+'" height="'+(H*0.18)+'" fill="'+acc+'"/>'
+                +'<circle cx="'+(W*0.5)+'" cy="'+(H*0.5)+'" r="9" fill="rgba(0,0,0,0.05)" stroke="'+pri+'" stroke-width="1.2"/>'
+                +'<rect x="'+(W*0.55)+'" y="22" width="28" height="3.5" rx="1.5" fill="'+pri+'" opacity="0.85"/>'
+                +'<rect x="'+(W*0.55)+'" y="28" width="20" height="2" rx="0.8" fill="#888"/>'
                 +'</svg>';
-        case 'metro': case 'bold_header':
-            return '<svg viewBox="'+vb+'" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block;">'
+        case 'metro':
+            return '<svg viewBox="'+vb+'" xmlns="http://www.w3.org/2000/svg">'
                 +'<rect width="'+W+'" height="'+H+'" fill="#fff"/>'
                 +'<rect x="0" y="0" width="'+(W*0.36)+'" height="'+H+'" fill="'+pri+'"/>'
                 +'<rect x="0" y="0" width="'+W+'" height="4" fill="'+pri+'"/>'
+                +'<rect x="0" y="'+(H-4)+'" width="'+W+'" height="4" fill="'+acc+'"/>'
+                +'<circle cx="'+(W*0.18)+'" cy="'+(H*0.52)+'" r="9" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.6)" stroke-width="1.2"/>'
+                +'<rect x="'+(W*0.42)+'" y="14" width="28" height="3.5" rx="1.5" fill="'+pri+'" opacity="0.85"/>'
+                +'<rect x="'+(W*0.42)+'" y="20" width="20" height="2" rx="0.8" fill="#aaa"/>'
                 +'</svg>';
-        case 'wave': case 'zigzag':
-            return '<svg viewBox="'+vb+'" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block;">'
-                +'<rect width="'+W+'" height="'+H+'" fill="#fdf8f3"/>'
-                +'<path d="M0,0 L'+(W*0.55)+',0 Q'+(W*0.73)+','+(H*0.28)+' '+(W*0.65)+','+(H*0.5)+' Q'+(W*0.75)+','+(H*0.72)+' '+(W*0.58)+','+H+' L0,'+H+' Z" fill="'+pri+'"/>'
+        case 'glass':
+            return '<svg viewBox="'+vb+'" xmlns="http://www.w3.org/2000/svg">'
+                +'<defs><linearGradient id="gg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="'+pri+'"/><stop offset="100%" stop-color="'+acc+'"/></linearGradient></defs>'
+                +'<rect width="'+W+'" height="'+H+'" fill="url(#gg)"/>'
+                +'<rect x="'+(W*0.08)+'" y="'+(H*0.1)+'" width="'+(W*0.84)+'" height="'+(H*0.8)+'" rx="4" fill="rgba(255,255,255,0.18)" stroke="rgba(255,255,255,0.3)" stroke-width="0.7"/>'
+                +'<circle cx="'+(W*0.2)+'" cy="'+(H*0.5)+'" r="9" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.6)" stroke-width="1"/>'
+                +'</svg>';
+        case 'zigzag':
+            return '<svg viewBox="'+vb+'" xmlns="http://www.w3.org/2000/svg">'
+                +'<rect width="'+W+'" height="'+H+'" fill="#f7f8fc"/>'
+                +'<path d="M0,0 L'+W+',0 L'+W+','+(H*0.4)+' L'+(W*0.9)+','+(H*0.32)+' L'+(W*0.8)+','+(H*0.4)+' L'+(W*0.7)+','+(H*0.32)+' L'+(W*0.6)+','+(H*0.4)+' L'+(W*0.5)+','+(H*0.32)+' L'+(W*0.4)+','+(H*0.4)+' L'+(W*0.3)+','+(H*0.32)+' L'+(W*0.2)+','+(H*0.4)+' L'+(W*0.1)+','+(H*0.32)+' L0,'+(H*0.4)+' Z" fill="'+pri+'"/>'
+                +'<circle cx="'+(W*0.2)+'" cy="'+(H*0.68)+'" r="8" fill="none" stroke="'+pri+'" stroke-width="1.5"/>'
+                +'<rect x="'+(W*0.38)+'" y="'+(H*0.56)+'" width="28" height="3.5" rx="1.5" fill="'+pri+'" opacity="0.85"/>'
+                +'</svg>';
+        case 'ribbon':
+            return '<svg viewBox="'+vb+'" xmlns="http://www.w3.org/2000/svg">'
+                +'<rect width="'+W+'" height="'+H+'" fill="#111827"/>'
+                +'<polygon points="0,15 '+W+',8 '+W+',27 0,34" fill="'+pri+'" opacity="0.92"/>'
+                +'<polygon points="0,18 '+W+',11 '+W+',31 0,38" fill="'+acc+'" opacity="0.55"/>'
+                +'<circle cx="'+(W*0.8)+'" cy="'+(H*0.5)+'" r="8" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/>'
+                +'<rect x="5" y="'+(H*0.56)+'" width="24" height="3" rx="1" fill="#fff" opacity="0.9"/>'
+                +'</svg>';
+
+        // ── Portrait styles ───────────────────────────────────────────────────
+        case 'v_sharp':
+            return '<svg viewBox="'+vb+'" xmlns="http://www.w3.org/2000/svg">'
+                +'<rect width="'+W+'" height="'+H+'" fill="#f7f8fc"/>'
+                +'<polygon points="0,0 '+W+',0 '+W+','+(H*0.38)+' '+(W*0.5)+','+(H*0.48)+' 0,'+(H*0.38)+'" fill="'+pri+'"/>'
+                +'<circle cx="3" cy="4" r="3" fill="rgba(255,255,255,0.25)"/>'
+                +'<circle cx="'+(W*0.5)+'" cy="'+(H*0.43)+'" r="9" fill="#fff" stroke="'+pri+'" stroke-width="1.5"/>'
+                +'<rect x="'+(W*0.1)+'" y="'+(H*0.54)+'" width="'+(W*0.8)+'" height="4" rx="1.5" fill="'+pri+'" opacity="0.85"/>'
+                +'<rect x="'+(W*0.15)+'" y="'+(H*0.61)+'" width="'+(W*0.7)+'" height="2.5" rx="1" fill="#aaa"/>'
+                +'<rect x="'+(W*0.08)+'" y="'+(H*0.67)+'" width="'+(W*0.85)+'" height="2" rx="0.8" fill="#555" opacity="0.5"/>'
+                +'<rect x="'+(W*0.08)+'" y="'+(H*0.72)+'" width="'+(W*0.75)+'" height="2" rx="0.8" fill="#555" opacity="0.45"/>'
+                +'<rect x="'+(W*0.1)+'" y="'+(H*0.88)+'" width="'+(W*0.8)+'" height="4" rx="0.5" fill="#ddd"/>'
+                +'</svg>';
+        case 'v_curve':
+            return '<svg viewBox="'+vb+'" xmlns="http://www.w3.org/2000/svg">'
+                +'<rect width="'+W+'" height="'+H+'" fill="#fafafa"/>'
+                +'<path d="M0,0 L'+W+',0 L'+W+','+(H*0.55)+' Q'+(W*0.75)+','+(H*0.75)+' '+(W*0.5)+','+(H*0.62)+' Q'+(W*0.25)+','+(H*0.5)+' 0,'+(H*0.67)+' Z" fill="'+pri+'"/>'
+                +'<circle cx="3" cy="3" r="3" fill="rgba(255,255,255,0.25)"/>'
+                +'<circle cx="'+(W*0.5)+'" cy="'+(H*0.38)+'" r="10" fill="rgba(255,255,255,0.25)" stroke="rgba(255,255,255,0.7)" stroke-width="1.2"/>'
+                +'<rect x="'+(W*0.05)+'" y="'+(H*0.7)+'" width="'+(W*0.9)+'" height="4" rx="1.5" fill="'+pri+'" opacity="0.85"/>'
+                +'<rect x="'+(W*0.1)+'" y="'+(H*0.77)+'" width="'+(W*0.8)+'" height="2.5" rx="1" fill="#aaa"/>'
+                +'<rect x="'+(W*0.08)+'" y="'+(H*0.83)+'" width="'+(W*0.85)+'" height="2" rx="0.8" fill="#555" opacity="0.5"/>'
+                +'<rect x="'+(W*0.08)+'" y="'+(H*0.88)+'" width="'+(W*0.65)+'" height="3.5" rx="0.5" fill="#ddd"/>'
+                +'</svg>';
+        case 'v_hex':
+            return '<svg viewBox="'+vb+'" xmlns="http://www.w3.org/2000/svg">'
+                +'<rect width="'+W+'" height="'+H+'" fill="#ffffff"/>'
+                +'<rect x="0" y="0" width="'+W+'" height="'+(H*0.45)+'" fill="'+pri+'"/>'
+                +'<path d="M0,'+(H*0.42)+' Q'+(W*0.5)+','+(H*0.52)+' '+W+','+(H*0.42)+' L'+W+','+(H*0.45)+' L0,'+(H*0.45)+' Z" fill="#fff"/>'
+                +'<circle cx="3" cy="3" r="3" fill="rgba(255,255,255,0.25)"/>'
+                +'<polygon points="'+(W*0.5)+','+(H*0.23)+' '+(W*0.68)+','+(H*0.33)+' '+(W*0.68)+','+(H*0.53)+' '+(W*0.5)+','+(H*0.63)+' '+(W*0.32)+','+(H*0.53)+' '+(W*0.32)+','+(H*0.33)+'" fill="#fff" stroke="'+pri+'" stroke-width="1.5"/>'
+                +'<rect x="'+(W*0.08)+'" y="'+(H*0.65)+'" width="'+(W*0.84)+'" height="4" rx="1.5" fill="'+pri+'" opacity="0.85"/>'
+                +'<rect x="'+(W*0.08)+'" y="'+(H*0.72)+'" width="'+(W*0.75)+'" height="2.5" rx="1" fill="#aaa"/>'
+                +'<rect x="'+(W*0.08)+'" y="'+(H*0.93)+'" width="'+(W*0.84)+'" height="4" rx="0.5" fill="#ddd"/>'
+                +'</svg>';
+        case 'v_circle':
+            return '<svg viewBox="'+vb+'" xmlns="http://www.w3.org/2000/svg">'
+                +'<rect width="'+W+'" height="'+H+'" fill="#f7f8fc"/>'
+                +'<rect x="0" y="0" width="'+W+'" height="'+(H*0.46)+'" fill="'+pri+'"/>'
+                +'<circle cx="3" cy="3" r="3" fill="rgba(255,255,255,0.25)"/>'
+                +'<circle cx="'+(W*0.5)+'" cy="'+(H*0.37)+'" r="11" fill="#fff" stroke="'+acc+'" stroke-width="1.5"/>'
+                +'<rect x="'+(W*0.08)+'" y="'+(H*0.58)+'" width="'+(W*0.84)+'" height="4" rx="1.5" fill="'+pri+'" opacity="0.85"/>'
+                +'<rect x="'+(W*0.12)+'" y="'+(H*0.65)+'" width="'+(W*0.76)+'" height="2.5" rx="1" fill="#aaa"/>'
+                +'<rect x="'+(W*0.08)+'" y="'+(H*0.71)+'" width="'+(W*0.84)+'" height="2" rx="0.8" fill="#555" opacity="0.5"/>'
+                +'<rect x="'+(W*0.08)+'" y="'+(H*0.95)+'" width="'+(W*0.65)+'" height="3.5" rx="0.5" fill="#ddd"/>'
+                +'</svg>';
+        case 'v_split':
+            return '<svg viewBox="'+vb+'" xmlns="http://www.w3.org/2000/svg">'
+                +'<rect width="'+W+'" height="'+H+'" fill="#fff"/>'
+                +'<rect x="0" y="0" width="'+(W*0.58)+'" height="'+(H*0.52)+'" fill="'+pri+'"/>'
+                +'<polygon points="'+(W*0.48)+',0 '+W+',0 '+W+','+(H*0.4)+'" fill="'+acc+'" opacity="0.9"/>'
+                +'<circle cx="3" cy="3" r="3" fill="rgba(255,255,255,0.25)"/>'
+                +'<circle cx="'+(W*0.78)+'" cy="'+(H*0.17)+'" r="9" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.6)" stroke-width="1"/>'
+                +'<rect x="'+(W*0.06)+'" y="'+(H*0.54)+'" width="'+(W*0.88)+'" height="4" rx="1.5" fill="'+pri+'" opacity="0.85"/>'
+                +'<rect x="'+(W*0.06)+'" y="'+(H*0.61)+'" width="'+(W*0.75)+'" height="2.5" rx="1" fill="#aaa"/>'
+                +'<rect x="'+(W*0.06)+'" y="'+(H*0.92)+'" width="'+(W*0.55)+'" height="3.5" rx="0.5" fill="#ddd"/>'
                 +'</svg>';
         default:
-            return '<svg viewBox="'+vb+'" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block;">'
+            return '<svg viewBox="'+vb+'" xmlns="http://www.w3.org/2000/svg">'
                 +'<rect width="'+W+'" height="'+H+'" fill="#f7f8fc"/>'
                 +'<rect width="'+W+'" height="'+(H*0.48)+'" fill="'+pri+'"/>'
                 +'<circle cx="'+(W*0.5)+'" cy="'+(H*0.44)+'" r="'+(Math.min(W,H)*0.12)+'" fill="#fff" stroke="'+pri+'" stroke-width="1.5"/>'
@@ -1459,6 +1623,7 @@ function filmstripNavigate(dir) {
     var newIdx = idx + dir;
     if (newIdx >= 0 && newIdx < styles.length) {
         currentStyleKey = styles[newIdx].key;
+        if (!selectedTemplate) applyStyleColors(currentStyleKey);
         buildFilmstrip();
     }
 }
@@ -1511,6 +1676,7 @@ function pickStyle(key) {
     document.getElementById('d_style').value = key;
     var fStyle = document.getElementById('f_style');
     if (fStyle) fStyle.value = key;
+    if (!selectedTemplate) applyStyleColors(key);
     buildFilmstrip();
 }
 
@@ -1527,7 +1693,8 @@ function selectTemplateByKey(key) {
         d.classList.toggle('active', d.dataset.tpl === key);
     });
     var opt = document.querySelector('#tplDropdown option[value="'+key+'"]');
-    document.getElementById('selectedTplName').textContent = opt ? opt.textContent : key;
+    var tplNameEl = document.getElementById('selectedTplName');
+    if (tplNameEl) tplNameEl.textContent = opt ? opt.textContent : key;
     var btn = document.getElementById('sampleCsvBtn');
     btn.href = '/projects/idcard/bulk/sample-csv?template=' + encodeURIComponent(key);
     btn.style.pointerEvents = 'auto'; btn.style.opacity = '1';
@@ -1581,7 +1748,8 @@ function resetAll() {
     document.getElementById('csvFileInput').value = '';
     document.getElementById('uploadFilename').textContent = '';
     document.getElementById('bulkTemplateKey').value = '';
-    document.getElementById('selectedTplName').textContent = '—';
+    var tplNameEl2 = document.getElementById('selectedTplName');
+    if (tplNameEl2) tplNameEl2.textContent = '—';
     document.getElementById('progressWrap').style.display = 'none';
     document.getElementById('bulkResultsWrap').style.display = 'none';
     var btn = document.getElementById('sampleCsvBtn');
