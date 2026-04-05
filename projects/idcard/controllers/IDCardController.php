@@ -81,7 +81,7 @@ class IDCardController
                           'glass', 'zigzag', 'ribbon',
                           'v_sharp', 'v_curve', 'v_hex', 'v_circle', 'v_split',
                           'v_ribbon', 'v_arch', 'v_diamond', 'v_corner', 'v_dual',
-                          'v_stripe', 'v_badge'];
+                          'v_stripe', 'v_badge', 'ai_generated'];
         $rawStyle = $this->sanitize($_POST['design_style'] ?? 'classic');
         $isPortrait = ($tplConfig['orientation'] ?? 'landscape') === 'portrait';
         $defaultStyle = $isPortrait ? 'v_sharp' : 'classic';
@@ -116,6 +116,14 @@ class IDCardController
         $aiPrompt       = $this->sanitize($_POST['ai_prompt'] ?? '');
         $aiSuggestions  = $this->generateAISuggestions($templateKey, $cardData, $aiPrompt);
 
+        // Accept AI-generated card HTML (from the AI Generate page)
+        $aiCardHtml = null;
+        if (!empty($_POST['ai_card_html'])) {
+            $aiCardHtml = $this->sanitizeCardHtml((string) $_POST['ai_card_html']);
+            // Store 'ai_generated' as design_style so view.php knows to use the AI HTML
+            $design['design_style'] = 'ai_generated';
+        }
+
         $editCardId = (int)($_POST['edit_card_id'] ?? 0);
 
         if ($editCardId > 0) {
@@ -140,6 +148,7 @@ class IDCardController
                 'logo_path'      => $logoPath,
                 'ai_prompt'      => $aiPrompt,
                 'ai_suggestions' => $aiSuggestions,
+                'ai_card_html'   => $aiCardHtml,
             ]);
             Logger::activity($userId, 'idcard_updated', ['card_id' => $editCardId, 'template' => $templateKey]);
             if ($this->isAjax()) {
@@ -160,6 +169,7 @@ class IDCardController
             'logo_path'      => $logoPath,
             'ai_prompt'      => $aiPrompt,
             'ai_suggestions' => $aiSuggestions,
+            'ai_card_html'   => $aiCardHtml,
             'status'         => 'generated',
         ]);
 
@@ -361,6 +371,7 @@ class IDCardController
         $templateKey = $this->sanitize($_POST['template_key'] ?? 'corporate');
         $cardData    = $_POST['card_data'] ?? [];
         $prompt      = $this->sanitize($_POST['prompt'] ?? '');
+        $generateHtml = !empty($_POST['generate_html']);
 
         // Sanitise each card_data field
         $sanitised = [];
@@ -369,6 +380,18 @@ class IDCardController
         }
 
         $suggestions = $this->generateAISuggestions($templateKey, $sanitised, $prompt);
+
+        // When the AI Generate page requests actual card HTML, generate it via OpenAI
+        if ($generateHtml) {
+            $templates = $this->config['templates'];
+            $tplConfig = $templates[$templateKey] ?? $templates['corporate'];
+            $aiCardHtml = $this->callOpenAICardHTML($templateKey, $sanitised, $prompt, $tplConfig);
+            if ($aiCardHtml !== null) {
+                $suggestions['ai_card_html'] = $aiCardHtml;
+                $suggestions['ai_powered']   = true;
+            }
+        }
+
         echo json_encode(['success' => true, 'suggestions' => $suggestions]);
         exit;
     }
@@ -714,8 +737,179 @@ class IDCardController
         return $clean ?: null;
     }
 
-    private function handleUpload(array $file, string $subdir): ?string
+    /**
+     * Call OpenAI to generate a complete, self-contained HTML card design.
+     * Returns sanitized HTML string or null on failure.
+     */
+    private function callOpenAICardHTML(string $tpl, array $data, string $prompt, array $tplConfig): ?string
     {
+        $aiEnabled  = $this->model->getSetting('idcard_ai_enabled', '1');
+        $dbApiKey   = $this->model->getSetting('idcard_openai_api_key', '');
+
+        if ($aiEnabled !== '1') {
+            return null;
+        }
+
+        $apiKey = !empty($dbApiKey) ? $dbApiKey : (defined('OPENAI_API_KEY') ? OPENAI_API_KEY : '');
+        if (empty($apiKey)) {
+            return null;
+        }
+
+        // Use the admin-configured model; prefer gpt-4o for HTML generation quality
+        // but fall back to whatever is configured if it's already a capable model
+        $model = $this->model->getSetting('idcard_openai_model', 'gpt-4o');
+        // Note: HTML card generation needs a model that handles complex code well.
+        // If admin set gpt-4o-mini or gpt-3.5-turbo, silently upgrade to gpt-4o
+        // so the AI card design quality is sufficient.
+        if (in_array($model, ['gpt-4o-mini', 'gpt-3.5-turbo'], true)) {
+            $model = 'gpt-4o';
+        }
+
+        $isPortrait  = ($tplConfig['orientation'] ?? 'landscape') === 'portrait';
+        $orientation = $isPortrait
+            ? 'PORTRAIT (width:54mm, height:85.6mm — taller than wide)'
+            : 'LANDSCAPE (width:85.6mm, height:54mm — wider than tall)';
+
+        // Build field list string (skip empty values)
+        $fieldLines = [];
+        $labelMap   = $this->config['field_labels'] ?? [];
+        foreach ($data as $k => $v) {
+            if ($v !== '' && $v !== null) {
+                $label = $labelMap[$k] ?? ucwords(str_replace('_', ' ', $k));
+                $fieldLines[] = $label . ': ' . mb_substr(strip_tags($v), 0, 80);
+            }
+        }
+        $fieldStr = implode("\n", array_slice($fieldLines, 0, 12));
+
+        $orgVal  = $data['company_name'] ?? $data['school_name'] ?? ($tplConfig['name'] ?? '');
+        $nameVal = $data['name'] ?? '';
+        $roleVal = $data['designation'] ?? $data['title'] ?? $data['course'] ?? $data['event_name'] ?? '';
+
+        $systemPrompt = 'You are a world-class HTML/CSS ID card designer. Generate a beautiful, creative,'
+            . ' completely unique professional ID card as self-contained HTML.'
+            . ' STRICT RULES — violating any of these will break the card rendering:'
+            . ' (1) Return ONLY the single root <div> element. No markdown fences, no code blocks, no explanations, no text outside the div.'
+            . ' (2) Root <div> must have style="width:100%;height:100%;position:relative;overflow:hidden;" as the first style properties.'
+            . ' (3) Use ONLY inline CSS (style= attributes). Zero <style> tags, zero class names referencing external CSS.'
+            . ' (4) Allowed elements: div, span, svg, path, polygon, polyline, rect, circle, ellipse, line, g, defs, linearGradient, radialGradient, stop, clipPath, text, tspan.'
+            . ' (5) FORBIDDEN — will be stripped: script, style, link, iframe, object, embed, img, input, form, foreignObject, any on* event handlers, javascript:, expression().'
+            . ' (6) Photo placeholder: where the person\'s photo should appear, output EXACTLY the string <!--CX_PHOTO_SLOT--> inside a styled container div. Example: <div style="...dimensions/shape/border styles..."><!--CX_PHOTO_SLOT--></div>'
+            . ' (7) Use clamp() for responsive font sizes. Example: font-size:clamp(0.42rem,1.1vw,0.68rem).'
+            . ' (8) The design must be COMPLETELY ORIGINAL and VISUALLY STUNNING — use creative shapes, gradients, SVG decorations. Do NOT copy any known template.'
+            . ' (9) Fill every field value provided exactly as given — do not invent or change data.'
+            . ' (10) Design specifically for ' . ($isPortrait ? 'PORTRAIT (taller card)' : 'LANDSCAPE (wider card)') . ' orientation.';
+
+        $safePrompt = mb_substr(strip_tags($prompt), 0, 300);
+        $userPrompt = "Create a unique AI-designed ID card.\n"
+            . "Template type: {$tpl} ({$tplConfig['name']})\n"
+            . "Orientation: {$orientation}\n"
+            . "Organization: {$orgVal}\n"
+            . "Person name: {$nameVal}\n"
+            . "Role/Title: {$roleVal}\n"
+            . "All card fields:\n{$fieldStr}\n"
+            . "Primary colour: {$tplConfig['color']}\n"
+            . "Accent colour: {$tplConfig['accent']}\n";
+        if ($safePrompt) {
+            $userPrompt .= "Design instruction: {$safePrompt}\n";
+        }
+        $userPrompt .= "\nRemember: output ONLY the <div> HTML — nothing else.";
+
+        $payload = json_encode([
+            'model'       => $model,
+            'messages'    => [
+                ['role' => 'system', 'content' => $systemPrompt],
+                ['role' => 'user',   'content' => $userPrompt],
+            ],
+            'temperature' => 0.85,
+            'max_tokens'  => 3500,
+        ]);
+
+        $ch = curl_init('https://api.openai.com/v1/chat/completions');
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => $payload,
+            CURLOPT_TIMEOUT        => 40,
+            CURLOPT_HTTPHEADER     => [
+                'Authorization: Bearer ' . $apiKey,
+                'Content-Type: application/json',
+            ],
+        ]);
+
+        $raw      = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlErr  = curl_error($ch);
+        curl_close($ch);
+
+        if ($raw === false || !empty($curlErr) || $httpCode !== 200) {
+            Logger::error('CardX AI card HTML: HTTP ' . $httpCode . ($curlErr ? ' — ' . $curlErr : ''));
+            return null;
+        }
+
+        $response = json_decode($raw, true);
+        $html     = trim($response['choices'][0]['message']['content'] ?? '');
+
+        if (empty($html)) {
+            return null;
+        }
+
+        // Strip markdown code fences that some models add despite instructions
+        $html = preg_replace('/^```(?:html|xml)?\s*/i', '', $html);
+        $html = preg_replace('/\s*```\s*$/i', '', $html);
+        $html = trim($html);
+
+        // Must start with a <div — basic sanity check
+        if (!preg_match('/^\s*<div\b/i', $html)) {
+            Logger::error('CardX AI card HTML: unexpected response (not a div): ' . mb_substr($html, 0, 100));
+            return null;
+        }
+
+        return $this->sanitizeCardHtml($html);
+    }
+
+    /**
+     * Sanitize AI-generated card HTML to remove any dangerous content.
+     * Strips scripts, event handlers, forbidden tags, and javascript: URLs.
+     * Uses a multi-pass regex approach suitable for SVG/HTML mixed content
+     * (DOMDocument would mangle SVG elements).
+     */
+    private function sanitizeCardHtml(string $html): string
+    {
+        // Remove forbidden tags and their content entirely (multi-pass for nesting)
+        $forbidden = ['script', 'style', 'link', 'iframe', 'object', 'embed', 'meta',
+                      'base', 'form', 'input', 'button', 'select', 'textarea', 'foreignObject'];
+        // Two passes to handle nested same-tag structures in malformed HTML
+        for ($pass = 0; $pass < 2; $pass++) {
+            foreach ($forbidden as $tag) {
+                $html = preg_replace('/<' . $tag . '\b[^>]*>.*?<\/' . $tag . '>/is', '', $html);
+                $html = preg_replace('/<' . $tag . '\b[^>]*\/?>/is', '', $html);
+            }
+        }
+
+        // Remove all on* event handlers (onclick, onerror, onload, etc.)
+        $html = preg_replace('/\s+on[a-z]+\s*=\s*(?:"[^"]*"|\'[^\']*\'|[^\s>]*)/i', '', $html);
+
+        // Remove javascript: and vbscript: protocols
+        $html = preg_replace('/\b(javascript|vbscript)\s*:/i', 'blocked:', $html);
+
+        // Remove CSS expression()
+        $html = preg_replace('/\bexpression\s*\(/i', 'blocked(', $html);
+
+        // Remove img tags (no external image loading)
+        $html = preg_replace('/<img\b[^>]*\/?>/is', '', $html);
+
+        // Remove any data: URLs (could be used for XSS in certain browsers)
+        $html = preg_replace('/\bdata\s*:\s*(?!image\/(?:png|jpeg|gif|webp|svg\+xml))[^;\'")>\s]+/i', 'blocked:', $html);
+
+        // Cap at 80KB — generous but prevents runaway responses
+        if (strlen($html) > 80000) {
+            $html = mb_substr($html, 0, 80000) . '</div>';
+        }
+
+        return $html;
+    }
+
+    private function handleUpload(array $file, string $subdir): ?string    {
         $allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
         $allowedExts  = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
         $maxBytes     = 5 * 1024 * 1024; // 5 MB

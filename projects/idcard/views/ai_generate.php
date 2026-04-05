@@ -103,12 +103,25 @@ $csrfToken = \Core\Security::generateCsrfToken();
 .ai-spinner { display:inline-block; width:18px; height:18px; border:2px solid rgba(99,102,241,0.3); border-top-color:var(--indigo); border-radius:50%; animation:spin 0.7s linear infinite; vertical-align:middle; margin-right:6px; }
 @keyframes spin { to { transform:rotate(360deg); } }
 
+/* Card preview container */
+.ai-card-preview-wrap {
+    margin: 0 auto 18px;
+    text-align: center;
+}
+.ai-card-preview {
+    display: inline-block;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 24px 72px rgba(0,0,0,0.45);
+    position: relative;
+    max-width: 100%;
+}
+.ai-card-preview.landscape { width: 100%; max-width: 480px; aspect-ratio: 85.6/54; }
+.ai-card-preview.portrait  { width: 100%; max-width: 280px; aspect-ratio: 54/85.6; }
+.ai-card-preview > * { font-family: 'Poppins', sans-serif !important; }
+
 /* Action bar */
 .ai-actions { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:16px; }
-
-/* Loading overlay */
-.ai-loading { text-align:center; padding:28px 16px; }
-.ai-loading p { color:var(--text-secondary); font-size:0.85rem; margin-top:12px; }
 </style>
 
 <div class="ai-gen-wrap">
@@ -117,7 +130,7 @@ $csrfToken = \Core\Security::generateCsrfToken();
     <div class="ai-hero">
         <div class="ai-hero-icon">✨</div>
         <h1>Generate with AI</h1>
-        <p>Choose a template, fill in what you know, and let AI complete the rest — colors, design tips, and missing values.</p>
+        <p>Fill in your details — AI will design a completely unique, custom-styled ID card just for you.</p>
     </div>
 
     <!-- AI configuration warning banner (only shown when AI is not ready) -->
@@ -197,33 +210,42 @@ $csrfToken = \Core\Security::generateCsrfToken();
         <div class="step-card" style="border-color:rgba(99,102,241,0.3);">
             <div class="step-label">
                 <span class="step-num" style="background:linear-gradient(135deg,#6366f1,#10b981);">✓</span>
-                AI-Generated Card Data
+                AI-Designed Card
                 <span id="aiBadge" style="background:linear-gradient(135deg,#6366f1,#10b981);color:#fff;font-size:0.6rem;padding:2px 8px;border-radius:10px;font-weight:700;display:none;"><i class="fas fa-bolt"></i> AI</span>
             </div>
 
-            <div class="result-wrap">
-                <!-- Fields -->
-                <div class="result-fields">
-                    <div class="result-title"><i class="fas fa-list-ul" style="color:var(--indigo);"></i> Card Fields</div>
-                    <div id="resultFields"><p style="font-size:0.78rem;color:var(--text-secondary);">No field suggestions from AI.</p></div>
+            <!-- ── AI card visual preview ── -->
+            <div class="ai-card-preview-wrap" id="cardPreviewWrap" style="display:none;">
+                <div class="ai-card-preview" id="aiCardPreview">
+                    <!-- AI-generated HTML injected here -->
                 </div>
-                <!-- Colors -->
-                <div class="result-colors">
-                    <div class="result-title"><i class="fas fa-palette" style="color:#00f0ff;"></i> Suggested Colors</div>
-                    <div id="resultColors"><p style="font-size:0.78rem;color:var(--text-secondary);">No color suggestions.</p></div>
-                </div>
+                <p style="font-size:0.72rem;color:var(--text-secondary);margin-top:10px;">
+                    <i class="fas fa-magic"></i> AI-generated unique design — no pre-built templates used
+                </p>
             </div>
 
-            <!-- Tips -->
-            <div class="result-tips" id="resultTipsWrap" style="display:none;">
-                <div class="result-title"><i class="fas fa-lightbulb" style="color:#f59e0b;"></i> Design Tips</div>
-                <div id="resultTips"></div>
+            <!-- ── Fallback: field + color summary (shown if HTML not available) ── -->
+            <div id="resultSummaryWrap" style="display:none;">
+                <div class="result-wrap">
+                    <div class="result-fields">
+                        <div class="result-title"><i class="fas fa-list-ul" style="color:var(--indigo);"></i> Card Fields</div>
+                        <div id="resultFields"></div>
+                    </div>
+                    <div class="result-colors">
+                        <div class="result-title"><i class="fas fa-palette" style="color:#00f0ff;"></i> Suggested Colors</div>
+                        <div id="resultColors"></div>
+                    </div>
+                </div>
+                <div class="result-tips" id="resultTipsWrap" style="display:none;">
+                    <div class="result-title"><i class="fas fa-lightbulb" style="color:#f59e0b;"></i> Design Tips</div>
+                    <div id="resultTips"></div>
+                </div>
             </div>
 
             <!-- Actions -->
             <div class="ai-actions">
                 <button type="button" id="createCardBtn" class="btn btn-primary" style="display:none;" onclick="createCardFromAI()">
-                    <i class="fas fa-id-card"></i> Generate &amp; Save Card
+                    <i class="fas fa-id-card"></i> Save Card
                 </button>
                 <button type="button" class="btn btn-secondary" onclick="generateWithAI()">
                     <i class="fas fa-redo"></i> Regenerate
@@ -251,7 +273,8 @@ var currentTpl   = '<?= htmlspecialchars($selectedTpl) ?>';
 
 var _aiFieldSuggestions = {};
 var _aiColorSuggestions = {};
-var _mergedFields       = {};  // user values + AI suggestions combined; used by createCardFromAI()
+var _aiCardHtml         = '';   // AI-generated card HTML (set after successful generation)
+var _mergedFields       = {};   // user values; used by createCardFromAI()
 
 // Per-template placeholder hints shown as example prompt chips
 var TPL_PROMPT_EXAMPLES = {
@@ -373,7 +396,7 @@ function generateWithAI() {
     }
 
     btn.disabled = true;
-    btn.innerHTML = '<span class="ai-spinner"></span> Generating…';
+    btn.innerHTML = '<span class="ai-spinner"></span> Designing with AI…';
     status.style.display = 'none';
     document.getElementById('aiResults').style.display = 'none';
 
@@ -383,6 +406,7 @@ function generateWithAI() {
     fd.append('_token', CSRF_TOKEN);
     fd.append('template_key', currentTpl);
     fd.append('prompt', prompt);
+    fd.append('generate_html', '1');   // ask backend to generate actual card HTML via OpenAI
     Object.keys(cardData).forEach(function(k) { fd.append('card_data[' + k + ']', cardData[k]); });
 
     fetch('/projects/idcard/ai-suggest', {
@@ -404,6 +428,8 @@ function generateWithAI() {
         var s = data.suggestions || {};
         _aiFieldSuggestions = s.field_suggestions  || {};
         _aiColorSuggestions = s.color_suggestions  || {};
+        _aiCardHtml         = s.ai_card_html        || '';
+        _mergedFields       = cardData;
 
         // Badge
         var badge = document.getElementById('aiBadge');
@@ -424,66 +450,73 @@ function generateWithAI() {
             status.style.display = 'none';
         }
 
-        // Fields — use user-provided values (all required); AI supplements design only
-        _mergedFields = cardData;
+        // ── Show AI card HTML preview (primary result) ──
+        var previewWrap = document.getElementById('cardPreviewWrap');
+        var previewEl   = document.getElementById('aiCardPreview');
+        var summaryWrap = document.getElementById('resultSummaryWrap');
 
-        var fieldKeys = Object.keys(cardData);
-        var fHtml = '';
-        if (fieldKeys.length > 0) {
-            fieldKeys.forEach(function(fk) {
-                var label = FIELD_LABELS[fk] || fk;
-                fHtml += '<div class="field-row">'
-                       + '<span class="field-key">' + escAI(label) + '</span>'
-                       + '<span class="field-val">' + escAI(cardData[fk]) + '</span>'
-                       + '</div>';
-            });
+        if (_aiCardHtml) {
+            // Inject AI HTML; replace photo placeholder with user icon
+            var tpl = TEMPLATES[currentTpl] || {};
+            var isPortrait = (tpl.orientation === 'portrait');
+            var photoIcon  = '<svg viewBox="0 0 24 24" style="width:55%;fill:rgba(255,255,255,0.55);" xmlns="http://www.w3.org/2000/svg"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>';
+            var rendered   = _aiCardHtml.replace('<!--CX_PHOTO_SLOT-->', photoIcon);
+            previewEl.innerHTML = rendered;
+            previewEl.className = 'ai-card-preview ' + (isPortrait ? 'portrait' : 'landscape');
+            previewWrap.style.display = 'block';
+            summaryWrap.style.display = 'none';
         } else {
-            fHtml = '<p style="font-size:0.78rem;color:var(--text-secondary);">No field data. Please fill in the form above.</p>';
-        }
-        document.getElementById('resultFields').innerHTML = fHtml;
+            // Fallback: no HTML from AI — show field/color summary
+            previewWrap.style.display = 'none';
+            summaryWrap.style.display = 'block';
 
-        // Colors
-        var cHtml = '';
-        if (_aiColorSuggestions.primary_color || _aiColorSuggestions.accent_color) {
+            var fieldKeys = Object.keys(cardData);
+            var fHtml = '';
+            if (fieldKeys.length > 0) {
+                fieldKeys.forEach(function(fk) {
+                    var label = FIELD_LABELS[fk] || fk;
+                    fHtml += '<div class="field-row">'
+                           + '<span class="field-key">' + escAI(label) + '</span>'
+                           + '<span class="field-val">' + escAI(cardData[fk]) + '</span>'
+                           + '</div>';
+                });
+            } else {
+                fHtml = '<p style="font-size:0.78rem;color:var(--text-secondary);">No field data.</p>';
+            }
+            document.getElementById('resultFields').innerHTML = fHtml;
+
+            var cHtml = '';
             if (_aiColorSuggestions.primary_color) {
-                cHtml += '<div class="color-swatch-row">'
-                       + '<div class="color-swatch" style="background:' + escAI(_aiColorSuggestions.primary_color) + ';"></div>'
+                cHtml += '<div class="color-swatch-row"><div class="color-swatch" style="background:' + escAI(_aiColorSuggestions.primary_color) + ';"></div>'
                        + '<div><div style="font-size:0.72rem;font-weight:700;color:var(--text-primary);">Primary</div>'
-                       + '<div style="font-size:0.72rem;color:var(--text-secondary);">' + escAI(_aiColorSuggestions.primary_color) + '</div></div>'
-                       + '</div>';
+                       + '<div style="font-size:0.72rem;color:var(--text-secondary);">' + escAI(_aiColorSuggestions.primary_color) + '</div></div></div>';
             }
             if (_aiColorSuggestions.accent_color) {
-                cHtml += '<div class="color-swatch-row">'
-                       + '<div class="color-swatch" style="background:' + escAI(_aiColorSuggestions.accent_color) + ';"></div>'
+                cHtml += '<div class="color-swatch-row"><div class="color-swatch" style="background:' + escAI(_aiColorSuggestions.accent_color) + ';"></div>'
                        + '<div><div style="font-size:0.72rem;font-weight:700;color:var(--text-primary);">Accent</div>'
-                       + '<div style="font-size:0.72rem;color:var(--text-secondary);">' + escAI(_aiColorSuggestions.accent_color) + '</div></div>'
-                       + '</div>';
+                       + '<div style="font-size:0.72rem;color:var(--text-secondary);">' + escAI(_aiColorSuggestions.accent_color) + '</div></div></div>';
             }
-        } else {
-            cHtml = '<p style="font-size:0.78rem;color:var(--text-secondary);">No color suggestions.</p>';
-        }
-        document.getElementById('resultColors').innerHTML = cHtml;
+            if (!cHtml) cHtml = '<p style="font-size:0.78rem;color:var(--text-secondary);">No color suggestions.</p>';
+            document.getElementById('resultColors').innerHTML = cHtml;
 
-        // Tips
-        var tips = (s.design_tips || []);
-        if (s.template_tip) tips.unshift(s.template_tip);
-        if (s.prompt_hint && s.prompt_hint.length) tips.push(s.prompt_hint);
-        if (s.ai_text && s.ai_text.length) tips.push(s.ai_text);
-
-        var tipsWrap = document.getElementById('resultTipsWrap');
-        if (tips.length > 0) {
-            var tHtml = '';
-            tips.forEach(function(t) { tHtml += '<div class="tip-item">' + escAI(t) + '</div>'; });
-            document.getElementById('resultTips').innerHTML = tHtml;
-            tipsWrap.style.display = 'block';
-        } else {
-            tipsWrap.style.display = 'none';
+            var tips = (s.design_tips || []);
+            if (s.template_tip) tips.unshift(s.template_tip);
+            if (s.prompt_hint) tips.push(s.prompt_hint);
+            var tipsWrap = document.getElementById('resultTipsWrap');
+            if (tips.length > 0) {
+                var tHtml = '';
+                tips.forEach(function(t) { tHtml += '<div class="tip-item">' + escAI(t) + '</div>'; });
+                document.getElementById('resultTips').innerHTML = tHtml;
+                tipsWrap.style.display = 'block';
+            } else {
+                tipsWrap.style.display = 'none';
+            }
         }
 
-        // Show "Generate & Save Card" button when there are field values
+        // Show "Save Card" button when there are field values
         var createBtn = document.getElementById('createCardBtn');
         document.getElementById('cardCreatedPanel').style.display = 'none';
-        createBtn.style.display = (fieldKeys.length > 0) ? 'inline-flex' : 'none';
+        createBtn.style.display = (Object.keys(cardData).length > 0) ? 'inline-flex' : 'none';
 
         document.getElementById('aiResults').style.display = 'block';
         document.getElementById('aiResults').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -519,7 +552,7 @@ function createCardFromAI() {
     fd.append('_token', CSRF_TOKEN);
     fd.append('template_key', currentTpl);
 
-    // Flat field values: merge user-entered values with AI suggestions
+    // Flat field values (user-entered)
     fields.forEach(function(f) {
         var val = _mergedFields[f] || '';
         fd.append(f, val);
@@ -531,10 +564,15 @@ function createCardFromAI() {
     fd.append('bg_color',      tpl.bg   || '#ffffff');
     fd.append('text_color',    tpl.text || '#1e293b');
     fd.append('font_family',   'Poppins');
-    fd.append('design_style',  (tpl.orientation === 'portrait') ? 'v_sharp' : 'classic');
+    fd.append('design_style',  'ai_generated');
     fd.append('show_qr',       '0');
     fd.append('profile_shape', 'circle');
     fd.append('ai_prompt',     document.getElementById('aiPrompt').value.trim());
+
+    // Pass the AI-generated card HTML so the server stores it
+    if (_aiCardHtml) {
+        fd.append('ai_card_html', _aiCardHtml);
+    }
 
     fetch('/projects/idcard/generate', {
         method:  'POST',
