@@ -176,7 +176,7 @@ $csrfToken = \Core\Security::generateCsrfToken();
             <div class="step-label">
                 <span class="step-num" style="background:linear-gradient(135deg,#6366f1,#10b981);">✓</span>
                 AI-Generated Card Data
-                <span id="aiBadge" style="background:linear-gradient(135deg,#6366f1,#10b981);color:#fff;font-size:0.6rem;padding:2px 8px;border-radius:10px;font-weight:700;display:none;"><i class="fas fa-bolt"></i> OpenAI</span>
+                <span id="aiBadge" style="background:linear-gradient(135deg,#6366f1,#10b981);color:#fff;font-size:0.6rem;padding:2px 8px;border-radius:10px;font-weight:700;display:none;"><i class="fas fa-bolt"></i> AI</span>
             </div>
 
             <div class="result-wrap">
@@ -200,12 +200,21 @@ $csrfToken = \Core\Security::generateCsrfToken();
 
             <!-- Actions -->
             <div class="ai-actions">
-                <a id="applyAndGoBtn" href="#" class="btn btn-primary" style="display:none;">
-                    <i class="fas fa-arrow-right"></i> Apply &amp; Open Card Generator
-                </a>
+                <button type="button" id="createCardBtn" class="btn btn-primary" style="display:none;" onclick="createCardFromAI()">
+                    <i class="fas fa-id-card"></i> Generate &amp; Save Card
+                </button>
                 <button type="button" class="btn btn-secondary" onclick="generateWithAI()">
                     <i class="fas fa-redo"></i> Regenerate
                 </button>
+            </div>
+
+            <!-- Success panel (shown after card is saved) -->
+            <div id="cardCreatedPanel" style="display:none;margin-top:16px;padding:16px 18px;background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.3);border-radius:12px;">
+                <div style="font-size:0.85rem;font-weight:700;color:var(--green);margin-bottom:8px;"><i class="fas fa-check-circle"></i> Card saved successfully!</div>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                    <a id="viewCardLink" href="#" class="btn btn-primary btn-sm"><i class="fas fa-eye"></i> View Card</a>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="generateWithAI()"><i class="fas fa-redo"></i> Generate Another</button>
+                </div>
             </div>
         </div>
     </div>
@@ -220,6 +229,7 @@ var currentTpl   = '<?= htmlspecialchars($selectedTpl) ?>';
 
 var _aiFieldSuggestions = {};
 var _aiColorSuggestions = {};
+var _mergedFields       = {};  // user values + AI suggestions combined; used by createCardFromAI()
 
 // Per-template placeholder hints shown as example prompt chips
 var TPL_PROMPT_EXAMPLES = {
@@ -273,11 +283,14 @@ function renderTplFields(tplKey) {
 function renderPromptExamples(tplKey) {
     var examples = TPL_PROMPT_EXAMPLES[tplKey] || ['Professional style', 'Modern minimalist theme'];
     var wrap = document.getElementById('promptExamples');
-    var html = '';
+    wrap.innerHTML = '';
     examples.forEach(function(ex) {
-        html += '<button class="prompt-example" onclick="fillPrompt(\'' + escAI(ex).replace(/'/g, '\\\'') + '\')">' + escAI(ex) + '</button>';
+        var btn = document.createElement('button');
+        btn.className   = 'prompt-example';
+        btn.textContent = ex;
+        btn.addEventListener('click', function() { fillPrompt(ex); });
+        wrap.appendChild(btn);
     });
-    wrap.innerHTML = html;
 }
 
 function selectTpl(btn, key) {
@@ -365,6 +378,7 @@ function generateWithAI() {
         });
         // Also show AI suggestions even if no user input
         if (!Object.keys(mergedFields).length) mergedFields = _aiFieldSuggestions;
+        _mergedFields = mergedFields;  // store for createCardFromAI()
 
         var fieldKeys = Object.keys(mergedFields);
         var fHtml = '';
@@ -422,21 +436,10 @@ function generateWithAI() {
             tipsWrap.style.display = 'none';
         }
 
-        // "Apply & Open" button: build query string combining user values + AI values
-        var applyBtn = document.getElementById('applyAndGoBtn');
-        if (fieldKeys.length > 0 || _aiColorSuggestions.primary_color) {
-            var params = new URLSearchParams();
-            params.set('template', currentTpl);
-            fieldKeys.forEach(function(fk) {
-                params.set('ai_' + fk, mergedFields[fk]);
-            });
-            if (_aiColorSuggestions.primary_color) params.set('ai_primary_color', _aiColorSuggestions.primary_color);
-            if (_aiColorSuggestions.accent_color)  params.set('ai_accent_color',  _aiColorSuggestions.accent_color);
-            applyBtn.href = '/projects/idcard/generate?' + params.toString();
-            applyBtn.style.display = 'inline-flex';
-        } else {
-            applyBtn.style.display = 'none';
-        }
+        // Show "Generate & Save Card" button when there are field values
+        var createBtn = document.getElementById('createCardBtn');
+        document.getElementById('cardCreatedPanel').style.display = 'none';
+        createBtn.style.display = (fieldKeys.length > 0) ? 'inline-flex' : 'none';
 
         document.getElementById('aiResults').style.display = 'block';
         document.getElementById('aiResults').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -457,6 +460,64 @@ function escAI(str) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
+}
+
+// Directly save the card with AI-generated data (stays on this page)
+function createCardFromAI() {
+    var btn = document.getElementById('createCardBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="ai-spinner"></span> Saving…';
+
+    var tpl    = TEMPLATES[currentTpl] || {};
+    var fields = (tpl.fields || []).filter(function(f){ return f !== 'photo'; });
+
+    var fd = new FormData();
+    fd.append('_token', CSRF_TOKEN);
+    fd.append('template_key', currentTpl);
+
+    // Flat field values: merge user-entered values with AI suggestions
+    fields.forEach(function(f) {
+        var val = _mergedFields[f] || '';
+        fd.append(f, val);
+    });
+
+    // Design: use AI color suggestions if available, else template defaults
+    fd.append('primary_color', (_aiColorSuggestions.primary_color || tpl.color || '#1e40af'));
+    fd.append('accent_color',  (_aiColorSuggestions.accent_color  || tpl.accent || '#3b82f6'));
+    fd.append('bg_color',      tpl.bg   || '#ffffff');
+    fd.append('text_color',    tpl.text || '#1e293b');
+    fd.append('font_family',   'Poppins');
+    fd.append('design_style',  (tpl.orientation === 'portrait') ? 'v_sharp' : 'classic');
+    fd.append('show_qr',       '0');
+    fd.append('profile_shape', 'circle');
+    fd.append('ai_prompt',     document.getElementById('aiPrompt').value.trim());
+
+    fetch('/projects/idcard/generate', {
+        method:  'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body:    fd,
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-id-card"></i> Generate &amp; Save Card';
+        if (data.success && data.card_id) {
+            btn.style.display = 'none';
+            var panel = document.getElementById('cardCreatedPanel');
+            document.getElementById('viewCardLink').href = data.redirect || ('/projects/idcard/view/' + data.card_id);
+            panel.style.display = 'block';
+            panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } else {
+            document.getElementById('aiStatus').style.display = 'block';
+            document.getElementById('aiStatus').innerHTML = '<div class="alert alert-error"><i class="fas fa-exclamation-circle"></i> Could not save card. Please try again.</div>';
+        }
+    })
+    .catch(function() {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-id-card"></i> Generate &amp; Save Card';
+        document.getElementById('aiStatus').style.display = 'block';
+        document.getElementById('aiStatus').innerHTML = '<div class="alert alert-error"><i class="fas fa-exclamation-circle"></i> Network error. Please try again.</div>';
+    });
 }
 
 // Initialise on load

@@ -456,6 +456,32 @@ if (!$isEditMode) {
                 </div>
             </div>
 
+            <!-- AI Design Assistant -->
+            <div id="aiSection" class="card" style="margin-bottom:16px;background:linear-gradient(135deg,rgba(99,102,241,0.06),rgba(0,240,255,0.03));border:1px solid rgba(99,102,241,0.2);">
+                <h3 style="font-size:0.9rem;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+                    <i class="fas fa-robot" style="color:var(--indigo);"></i> AI Design Assistant
+                    <span style="background:linear-gradient(135deg,#6366f1,#00f0ff);color:white;font-size:0.6rem;padding:2px 8px;border-radius:10px;">AI</span>
+                </h3>
+                <div class="form-group" style="margin-bottom:10px;">
+                    <label class="form-label" style="font-size:0.78rem;">Describe your needs (optional)</label>
+                    <input type="text" name="ai_prompt" id="aiPrompt" class="form-input"
+                           style="padding:8px 12px;font-size:0.85rem;"
+                           placeholder="e.g. modern tech company, minimalist, blue theme...">
+                </div>
+                <button type="button" class="btn btn-secondary" style="width:100%;justify-content:center;" onclick="getAISuggestions()">
+                    <i class="fas fa-magic"></i> Get AI Suggestions
+                </button>
+                <div id="aiOutput" style="margin-top:12px;display:none;"></div>
+                <div id="aiActions" style="display:none;margin-top:10px;gap:8px;flex-wrap:wrap;">
+                    <button type="button" class="btn btn-primary btn-sm" onclick="applyAIFields()" id="applyFieldsBtn" style="display:none;">
+                        <i class="fas fa-fill-drip"></i> Apply to Fields
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="applyAIColors()" id="applyColorsBtn" style="display:none;">
+                        <i class="fas fa-palette"></i> Apply Colors
+                    </button>
+                </div>
+            </div>
+
             <!-- Inline Bulk Mode panel -->
             <div class="card" id="bulkModeCard" style="margin-bottom:16px;border-style:dashed;">
                 <label class="inline-bulk-toggle" for="bulkModeToggle">
@@ -630,6 +656,10 @@ if (!$isEditMode) {
         <button type="button" class="cx-mobile-nav-btn" data-section="mobileThemeSection" onclick="cxMobileNav('mobileThemeSection',this)">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path></svg>
             Theme
+        </button>
+        <button type="button" class="cx-mobile-nav-btn" data-section="aiSection" onclick="cxMobileNav('aiSection',this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"></path><path d="M12 6v6l4 2"></path></svg>
+            AI
         </button>
         <button type="button" class="cx-mobile-nav-btn" onclick="cxMobileNavBulk(this)">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
@@ -2041,6 +2071,127 @@ function previewPhoto(input) {
         reader.onload = function(e) { photoDataUrl = e.target.result; updatePreview(); };
         reader.readAsDataURL(input.files[0]);
     }
+}
+
+// =============================================================================
+//  AI Suggestions (AJAX)  — no AI provider branding shown to users
+// =============================================================================
+var _aiFieldSuggestions = {};
+var _aiColorSuggestions = {};
+
+function getAISuggestions() {
+    var prompt = document.getElementById('aiPrompt').value.trim();
+    var out    = document.getElementById('aiOutput');
+    out.style.display = 'block';
+    out.innerHTML = '<div style="text-align:center;padding:12px;"><div class="spinner"></div><p style="font-size:0.75rem;margin-top:6px;color:var(--text-secondary);">Generating suggestions...</p></div>';
+
+    document.getElementById('applyFieldsBtn').style.display = 'none';
+    document.getElementById('applyColorsBtn').style.display = 'none';
+    _aiFieldSuggestions = {};
+    _aiColorSuggestions = {};
+
+    var cardData = {};
+    var tpl = TEMPLATES[currentTpl] || {};
+    (tpl.fields||[]).forEach(function(f){ var el=document.getElementById('field_'+f); if(el) cardData[f]=el.value; });
+    var fd = new FormData();
+    fd.append('_token', CSRF_TOKEN);
+    fd.append('template_key', currentTpl);
+    fd.append('prompt', prompt);
+    Object.keys(cardData).forEach(function(k){ fd.append('card_data['+k+']', cardData[k]); });
+    fetch('/projects/idcard/ai-suggest',{method:'POST',headers:{'X-Requested-With':'XMLHttpRequest'},body:fd})
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+        if(!data.success){out.innerHTML='<div class="ai-suggestion">Could not get suggestions. Try again.</div>';return;}
+        var s = data.suggestions || {};
+        var html = '';
+
+        if(s.template_tip)   html+='<div class="ai-suggestion"><strong>💡 Tip:</strong> '+escAI(s.template_tip)+'</div>';
+        if(s.missing_fields) html+='<div class="ai-suggestion"><strong>✅ Completeness:</strong> '+escAI(s.missing_fields)+'</div>';
+        if(s.design_tips&&s.design_tips.length) s.design_tips.forEach(function(t){html+='<div class="ai-suggestion"><strong>🎨 Design:</strong> '+escAI(t)+'</div>';});
+        if(s.prompt_hint && s.prompt_hint.length) html+='<div class="ai-suggestion"><strong>🤖 AI:</strong> '+escAI(s.prompt_hint)+'</div>';
+        if(s.ai_text && s.ai_text.length)         html+='<div class="ai-suggestion">'+escAI(s.ai_text)+'</div>';
+
+        var fieldKeys = Object.keys(s.field_suggestions || {});
+        if (fieldKeys.length > 0) {
+            _aiFieldSuggestions = s.field_suggestions;
+            html += '<div style="margin-top:10px;padding:10px;background:rgba(99,102,241,0.08);border-radius:8px;border:1px solid rgba(99,102,241,0.2);">'
+                  + '<div style="font-size:0.75rem;font-weight:700;color:var(--indigo);margin-bottom:8px;"><i class="fas fa-fill-drip"></i> AI-Generated Field Values</div>';
+            fieldKeys.forEach(function(fk) {
+                var label = (FIELD_LABELS[fk] || fk);
+                html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid rgba(99,102,241,0.1);">'
+                      + '<span style="font-size:0.72rem;color:var(--text-secondary);">' + escAI(label) + '</span>'
+                      + '<span style="font-size:0.76rem;font-weight:600;color:var(--text-primary);max-width:60%;text-align:right;word-break:break-word;">' + escAI(s.field_suggestions[fk]) + '</span>'
+                      + '</div>';
+            });
+            html += '</div>';
+            document.getElementById('applyFieldsBtn').style.display = 'inline-flex';
+        }
+
+        var cs = s.color_suggestions || {};
+        if (cs.primary_color || cs.accent_color) {
+            _aiColorSuggestions = cs;
+            html += '<div style="margin-top:8px;padding:8px 10px;background:rgba(99,102,241,0.06);border-radius:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">'
+                  + '<span style="font-size:0.72rem;font-weight:700;color:var(--indigo);"><i class="fas fa-palette"></i> Suggested Colors</span>';
+            if (cs.primary_color) {
+                html += '<span style="display:inline-flex;align-items:center;gap:4px;font-size:0.72rem;color:var(--text-secondary);">'
+                      + '<span style="width:14px;height:14px;border-radius:50%;background:'+escAI(cs.primary_color)+';display:inline-block;border:1px solid rgba(0,0,0,0.2);"></span>'
+                      + 'Primary: '+escAI(cs.primary_color)+'</span>';
+            }
+            if (cs.accent_color) {
+                html += '<span style="display:inline-flex;align-items:center;gap:4px;font-size:0.72rem;color:var(--text-secondary);">'
+                      + '<span style="width:14px;height:14px;border-radius:50%;background:'+escAI(cs.accent_color)+';display:inline-block;border:1px solid rgba(0,0,0,0.2);"></span>'
+                      + 'Accent: '+escAI(cs.accent_color)+'</span>';
+            }
+            html += '</div>';
+            document.getElementById('applyColorsBtn').style.display = 'inline-flex';
+        }
+
+        out.innerHTML = html || '<div class="ai-suggestion">Looking good! Your card is well structured.</div>';
+
+        var anyBtn = document.getElementById('applyFieldsBtn').style.display !== 'none'
+                  || document.getElementById('applyColorsBtn').style.display !== 'none';
+        if (anyBtn) {
+            document.getElementById('aiActions').style.display = 'flex';
+        }
+    }).catch(function(){out.innerHTML='<div class="ai-suggestion">Network error. Please try again.</div>';});
+}
+
+function applyAIFields() {
+    var keys = Object.keys(_aiFieldSuggestions);
+    if (!keys.length) return;
+    keys.forEach(function(fk) {
+        var el = document.getElementById('field_' + fk);
+        if (el && _aiFieldSuggestions[fk]) {
+            el.value = _aiFieldSuggestions[fk];
+            el.style.transition = 'border-color 0.3s, background 0.3s';
+            el.style.borderColor = '#6366f1';
+            el.style.background  = 'rgba(99,102,241,0.06)';
+            setTimeout(function(){ el.style.borderColor = ''; el.style.background = ''; }, 1500);
+        }
+    });
+    updatePreview();
+}
+
+function applyAIColors() {
+    if (_aiColorSuggestions.primary_color) {
+        var pc = document.getElementById('primaryColor');
+        if (pc) { pc.value = _aiColorSuggestions.primary_color; }
+    }
+    if (_aiColorSuggestions.accent_color) {
+        var ac = document.getElementById('accentColor');
+        if (ac) { ac.value = _aiColorSuggestions.accent_color; }
+    }
+    updatePreview();
+}
+
+function escAI(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 
 // =============================================================================

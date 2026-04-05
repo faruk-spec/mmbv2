@@ -333,7 +333,8 @@ CREATE TABLE IF NOT EXISTS `idcard_cards` (
     `updated_at`     TIMESTAMP    NULL ON UPDATE CURRENT_TIMESTAMP,
     INDEX `idx_ic_user`    (`user_id`),
     INDEX `idx_ic_tpl`     (`template_key`),
-    INDEX `idx_ic_created` (`created_at`)
+    INDEX `idx_ic_created` (`created_at`),
+    INDEX `idx_ic_bulk`    (`bulk_job_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `idcard_settings` (
