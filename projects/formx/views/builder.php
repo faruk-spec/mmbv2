@@ -98,16 +98,19 @@
         .fx-left-panel{width:200px;}
     }
     @media(max-width:680px){
+        /* Allow vertical scrolling so left panel is reachable after tab switch */
+        .fx-builder-main{height:auto;min-height:calc(100vh - 130px);overflow-y:auto;overflow-x:hidden;}
+        .fx-builder-body{overflow:visible;flex:0 0 auto;min-height:0;}
         .fx-left-panel{display:none;}
         .fx-left-panel.mob-active{display:block;width:100%;border-right:none;border-bottom:1px solid var(--border-color);}
         .fx-builder-body{flex-direction:column;}
-        .fx-canvas-wrap{padding:14px;}
+        .fx-canvas-wrap{padding:14px;min-height:40vh;}
         .fx-canvas-wrap.mob-hidden{display:none;}
     }
     /* Mobile tab bar */
     .fx-mob-tabs{display:none;}
     @media(max-width:680px){
-        .fx-mob-tabs{display:flex;background:var(--bg-card);border-bottom:1px solid var(--border-color);padding:0;}
+        .fx-mob-tabs{display:flex;background:var(--bg-card);border-bottom:1px solid var(--border-color);padding:0;flex-shrink:0;position:sticky;top:0;z-index:10;}
         .fx-mob-tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:8px 4px;font-size:.7rem;font-weight:600;color:var(--text-secondary);cursor:pointer;border-bottom:2px solid transparent;transition:color .15s,border-color .15s;background:none;border-top:none;border-left:none;border-right:none;}
         .fx-mob-tab.active{color:var(--cyan);border-bottom-color:var(--cyan);}
         .fx-mob-tab i{font-size:.9rem;}
@@ -440,7 +443,7 @@ function mobSwitchTab(tab) {
     if (!leftPanel || !canvasWrap) return;
 
     // Only applies on small screens
-    if (window.innerWidth > 680) return;
+    if (!window.matchMedia('(max-width: 680px)').matches) return;
 
     // Reset tabs
     [tabCanvas, tabFields, tabSettings].forEach(function(t) { if (t) t.classList.remove('active'); });
@@ -449,20 +452,26 @@ function mobSwitchTab(tab) {
         leftPanel.classList.remove('mob-active');
         canvasWrap.classList.remove('mob-hidden');
         if (tabCanvas) tabCanvas.classList.add('active');
-        // Scroll palette into view not needed
+        // scroll page to top so canvas is visible
+        window.scrollTo({top: 0, behavior: 'smooth'});
     } else {
         // Show left panel, hide canvas; scroll to fields or settings
         leftPanel.classList.add('mob-active');
         canvasWrap.classList.add('mob-hidden');
-        if (tab === 'fields') {
-            if (tabFields) tabFields.classList.add('active');
-            // Scroll to palette section
-            var paletteTitle = document.getElementById('fxPaletteTitle');
-            if (paletteTitle) setTimeout(function(){ paletteTitle.scrollIntoView({behavior:'smooth', block:'start'}); }, 50);
-        } else {
-            if (tabSettings) tabSettings.classList.add('active');
-            leftPanel.scrollTop = 0;
-        }
+        // After making the panel visible, scroll the page to it
+        setTimeout(function() {
+            if (tab === 'fields') {
+                if (tabFields) tabFields.classList.add('active');
+                var paletteTitle = document.getElementById('fxPaletteTitle');
+                if (paletteTitle) {
+                    var rect = paletteTitle.getBoundingClientRect();
+                    window.scrollBy({top: rect.top - 60, behavior: 'smooth'});
+                }
+            } else {
+                if (tabSettings) tabSettings.classList.add('active');
+                window.scrollTo({top: 0, behavior: 'smooth'});
+            }
+        }, 30);
     }
 }
 

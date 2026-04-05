@@ -126,6 +126,17 @@ $statusColors = ['active' => 'var(--green)', 'inactive' => 'var(--red)', 'draft'
     .fx-action-btn.del { background: rgba(255,107,107,.07); border-color: rgba(255,107,107,.18); color: var(--red); }
     .fx-action-btn.del:hover { background: rgba(255,107,107,.15); text-decoration: none; color: var(--red); }
 
+    /* Chart */
+    .fx-chart-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; margin-bottom: 26px; }
+    .fx-chart-head { font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--text-secondary); margin: 0 0 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+    .fx-chart-head-lbl { display: flex; align-items: center; gap: 6px; }
+    .fx-chart-this-month { font-size: .82rem; font-weight: 700; color: var(--cyan); background: rgba(0,240,255,.1); border-radius: 20px; padding: 2px 10px; }
+    .fx-bar-chart { display: flex; align-items: flex-end; gap: 3px; height: 90px; }
+    .fx-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; }
+    .fx-bar { width: 100%; background: rgba(0,240,255,.2); border-radius: 3px 3px 0 0; transition: background .15s; }
+    .fx-bar:hover { background: rgba(0,240,255,.6); }
+    .fx-bar-lbl { font-size: .55rem; color: var(--text-secondary); writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; overflow: hidden; max-height: 34px; }
+
     /* Empty state */
     .fx-empty { text-align: center; padding: 52px 20px; color: var(--text-secondary); }
     .fx-empty i { font-size: 3rem; opacity: .2; display: block; margin-bottom: 14px; }
@@ -181,13 +192,31 @@ $statusColors = ['active' => 'var(--green)', 'inactive' => 'var(--red)', 'draft'
             </a>
         </div>
 
+        <?php if ($totalSubmissions > 0): ?>
+        <div class="fx-nav-section">
+            <div class="fx-nav-title">Analytics</div>
+            <?php foreach (array_slice($recentForms, 0, 3) as $rf): ?>
+            <a href="/projects/formx/<?= (int)$rf['id'] ?>/analytics" class="fx-nav-link" title="Analytics: <?= htmlspecialchars($rf['title']) ?>">
+                <i class="fas fa-chart-bar" style="font-size:.75rem;"></i>
+                <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><?= htmlspecialchars($rf['title']) ?></span>
+                <?php if ((int)($rf['submissions_count'] ?? 0) > 0): ?>
+                <span class="fx-nav-badge"><?= (int)$rf['submissions_count'] ?></span>
+                <?php endif; ?>
+            </a>
+            <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
+
         <?php if (!empty($recentForms)): ?>
         <div class="fx-nav-section">
             <div class="fx-nav-title">Recent Forms</div>
             <?php foreach (array_slice($recentForms, 0, 6) as $rf): ?>
             <a href="/projects/formx/<?= (int)$rf['id'] ?>/edit" class="fx-nav-link" title="<?= htmlspecialchars($rf['title']) ?>">
                 <i class="fas fa-file-alt" style="font-size:.75rem;"></i>
-                <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><?= htmlspecialchars($rf['title']) ?></span>
+                <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;"><?= htmlspecialchars($rf['title']) ?></span>
+                <?php if ((int)($rf['submissions_count'] ?? 0) > 0): ?>
+                <span class="fx-nav-badge" title="<?= (int)$rf['submissions_count'] ?> submissions"><?= (int)$rf['submissions_count'] ?></span>
+                <?php endif; ?>
             </a>
             <?php endforeach; ?>
         </div>

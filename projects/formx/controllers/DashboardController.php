@@ -47,8 +47,30 @@ class DashboardController
                 "SELECT * FROM formx_forms WHERE user_id = ? ORDER BY updated_at DESC LIMIT 6",
                 [$userId]
             );
+
+            // Daily submissions across all user forms – last 30 days
+            $dailyChart = $this->db->fetchAll(
+                "SELECT DATE(fs.created_at) AS day, COUNT(*) AS cnt
+                 FROM formx_submissions fs
+                 JOIN formx_forms ff ON ff.id = fs.form_id
+                 WHERE ff.user_id = ?
+                   AND fs.created_at >= DATE_SUB(CURDATE(), INTERVAL 29 DAY)
+                 GROUP BY DATE(fs.created_at) ORDER BY day ASC",
+                [$userId]
+            );
+
+            // This month vs last 30 days
+            $thisMonth = (int) $this->db->fetchColumn(
+                "SELECT COUNT(*) FROM formx_submissions fs
+                 JOIN formx_forms ff ON ff.id = fs.form_id
+                 WHERE ff.user_id = ?
+                   AND YEAR(fs.created_at)=YEAR(NOW()) AND MONTH(fs.created_at)=MONTH(NOW())",
+                [$userId]
+            );
         } catch (\Exception $e) {
             // tables may not exist yet — show empty state
+            $dailyChart = [];
+            $thisMonth  = 0;
         }
 
         View::render('projects/formx/dashboard', [
@@ -58,6 +80,8 @@ class DashboardController
             'draftForms'       => $draftForms,
             'totalSubmissions' => $totalSubmissions,
             'recentForms'      => $recentForms,
+            'dailyChart'       => $dailyChart,
+            'thisMonth'        => $thisMonth,
             'activePage'       => 'dashboard',
         ]);
     }
