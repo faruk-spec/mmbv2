@@ -198,6 +198,7 @@ class BulkController
                     'card_data'    => $cardData,
                     'design'       => $design,
                     'status'       => 'generated',
+                    'bulk_job_id'  => $jobId,
                 ]);
                 $completed++;
                 $cardIds[] = $id;
@@ -408,9 +409,9 @@ class BulkController
         $perPage = 30;
         $offset  = ($page - 1) * $perPage;
 
-        // Fetch all cards for this user, newest first
-        $cards = $this->model->getByUser($userId, $perPage, $offset);
-        $total = $this->model->countByUser($userId);
+        // Fetch only bulk-generated cards for this user, newest first
+        $cards = $this->model->getByUserBulk($userId, $perPage, $offset);
+        $total = $this->model->countByUserBulk($userId);
         $pages = max(1, (int) ceil($total / $perPage));
 
         $this->render('bulk_cards', [

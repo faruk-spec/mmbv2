@@ -73,6 +73,21 @@ class IDCardModel
                     INDEX `idx_ics_key` (`setting_key`)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
             );
+            // Migrate: add bulk_job_id column if it doesn't exist yet
+            try {
+                $this->db->query(
+                    "ALTER TABLE `idcard_cards` ADD COLUMN `bulk_job_id` INT UNSIGNED NULL"
+                );
+            } catch (\Exception $e) {
+                // Column already exists — ignore
+            }
+            try {
+                $this->db->query(
+                    "ALTER TABLE `idcard_cards` ADD INDEX `idx_ic_bulk` (`bulk_job_id`)"
+                );
+            } catch (\Exception $e) {
+                // Index already exists — ignore
+            }
         } catch (\Exception $e) {
             Logger::error('IDCard ensureTables: ' . $e->getMessage());
         }
@@ -89,8 +104,8 @@ class IDCardModel
     {
         $this->db->query(
             "INSERT INTO idcard_cards
-             (user_id, template_key, card_number, card_data, design, photo_path, logo_path, ai_prompt, ai_suggestions, status)
-             VALUES (?,?,?,?,?,?,?,?,?,?)",
+             (user_id, template_key, card_number, card_data, design, photo_path, logo_path, ai_prompt, ai_suggestions, status, bulk_job_id)
+             VALUES (?,?,?,?,?,?,?,?,?,?,?)",
             [
                 $data['user_id'],
                 $data['template_key']   ?? 'corporate',
@@ -102,6 +117,7 @@ class IDCardModel
                 $data['ai_prompt']      ?? null,
                 json_encode($data['ai_suggestions'] ?? []),
                 $data['status']         ?? 'generated',
+                $data['bulk_job_id']    ?? null,
             ]
         );
         return (int) $this->db->lastInsertId();
@@ -135,12 +151,36 @@ class IDCardModel
     }
 
     /**
+     * Return paginated cards generated via bulk jobs (bulk_job_id IS NOT NULL), newest first.
+     */
+    public function getByUserBulk(int $userId, int $limit = 20, int $offset = 0): array
+    {
+        $rows = $this->db->fetchAll(
+            "SELECT * FROM idcard_cards WHERE user_id = ? AND bulk_job_id IS NOT NULL ORDER BY created_at DESC LIMIT ? OFFSET ?",
+            [$userId, $limit, $offset]
+        );
+        return array_map([$this, 'decode'], $rows ?: []);
+    }
+
+    /**
      * Count total cards for a user.
      */
     public function countByUser(int $userId): int
     {
         $row = $this->db->fetch(
             "SELECT COUNT(*) c FROM idcard_cards WHERE user_id = ?",
+            [$userId]
+        );
+        return (int) ($row['c'] ?? 0);
+    }
+
+    /**
+     * Count bulk-generated cards for a user.
+     */
+    public function countByUserBulk(int $userId): int
+    {
+        $row = $this->db->fetch(
+            "SELECT COUNT(*) c FROM idcard_cards WHERE user_id = ? AND bulk_job_id IS NOT NULL",
             [$userId]
         );
         return (int) ($row['c'] ?? 0);
