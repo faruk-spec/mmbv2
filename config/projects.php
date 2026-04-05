@@ -102,4 +102,13 @@ return [
         'database' => 'mmb_idcard',
         'url' => '/projects/idcard'
     ],
+    'formx' => [
+        'name' => 'FormX',
+        'description' => 'Drag-and-drop form builder with analytics and submission management',
+        'icon' => 'wpforms',
+        'color' => '#00f0ff',
+        'enabled' => true,
+        'database' => 'mmb_formx',
+        'url' => '/projects/formx'
+    ],
 ];

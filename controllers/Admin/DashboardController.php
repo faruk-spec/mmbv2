@@ -40,11 +40,12 @@ class DashboardController extends BaseController
         $canQr           = Auth::isAdmin() || Auth::hasPermissionGroup('qr');
         $canSecurity     = Auth::isAdmin() || Auth::hasPermissionGroup('security');
         $canPlatformPlans= Auth::isAdmin() || Auth::hasPermissionGroup('platform_plans');
+        $canFormX        = Auth::isAdmin() || Auth::hasPermissionGroup('formx');
 
         // Determine whether the user has ANY visible module access
         $hasAnyAccess = $canUsers || $canLogs || $canProjects || $canCodexPro || $canImgTxt
             || $canProShare || $canConvertX || $canBillX || $canWhatsApp || $canQr
-            || $canSecurity || $canPlatformPlans;
+            || $canSecurity || $canPlatformPlans || $canFormX;
 
         // User stats — only if the user has access to the users section
         $stats = null;
@@ -137,6 +138,16 @@ class DashboardController extends BaseController
                 $projectStats['proshare'] = ['files' => 0, 'texts' => 0];
             }
         }
+        if ($canFormX) {
+            try {
+                $projectStats['formx'] = [
+                    'forms'       => (int) ($db->fetchColumn("SELECT COUNT(*) FROM formx_forms") ?: 0),
+                    'submissions' => (int) ($db->fetchColumn("SELECT COALESCE(SUM(submissions_count),0) FROM formx_forms") ?: 0),
+                ];
+            } catch (\Exception $e) {
+                $projectStats['formx'] = ['forms' => 0, 'submissions' => 0];
+            }
+        }
 
         $this->view('admin/dashboard', [
             'title'           => 'Admin Dashboard',
@@ -158,6 +169,7 @@ class DashboardController extends BaseController
             'canQr'           => $canQr,
             'canSecurity'     => $canSecurity,
             'canPlatformPlans'=> $canPlatformPlans,
+            'canFormX'        => $canFormX,
             'hasAnyAccess'    => $hasAnyAccess,
         ]);
     }
