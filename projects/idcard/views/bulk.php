@@ -30,46 +30,66 @@ foreach ($templates as $key => $tpl) {
     font-size:0.72rem;font-weight:800;flex-shrink:0;
 }
 
-/* ── Template dropdown (mobile-first) ───────────────────────────── */
-.tpl-dropdown-wrap { position:relative;display:none; }
-.tpl-dropdown-wrap select {
-    width:100%;padding:10px 14px;border-radius:10px;
-    background:var(--bg-secondary);border:2px solid var(--border-color);
-    color:var(--text-primary);font-size:0.9rem;cursor:pointer;
-    appearance:none;-webkit-appearance:none;
-    padding-right:36px;
+/* ── Step 1: 3-column top row ───────────────────────────────────── */
+.step1-row {
+    display:grid;
+    grid-template-columns:1fr auto auto auto 1fr;
+    gap:18px;
+    align-items:start;
 }
-.tpl-dropdown-wrap::after {
+@media(max-width:760px){ .step1-row { grid-template-columns:1fr; gap:14px; } }
+
+/* Category dropdown */
+.tpl-select-wrap { position:relative; }
+.tpl-select-wrap select {
+    width:100%;padding:11px 38px 11px 14px;border-radius:10px;
+    background:var(--bg-secondary);border:2px solid var(--border-color);
+    color:var(--text-primary);font-size:0.88rem;cursor:pointer;
+    appearance:none;-webkit-appearance:none;
+}
+.tpl-select-wrap select:focus { border-color:var(--indigo);outline:none; }
+.tpl-select-wrap::after {
     content:'▾';position:absolute;right:12px;top:50%;transform:translateY(-50%);
     color:var(--text-secondary);pointer-events:none;font-size:1rem;
 }
 
-/* ── Template grid (desktop) ────────────────────────────────────── */
-.tpl-select-grid {
-    display:grid;
-    grid-template-columns:repeat(auto-fill,minmax(130px,1fr));
-    gap:9px;
-    margin-top:12px;
+/* Theme colour dots */
+.theme-dots-col { text-align:center; min-width:140px; }
+.tpl-theme-dot {
+    display:inline-block;width:22px;height:22px;border-radius:50%;
+    cursor:pointer;border:2.5px solid transparent;transition:all 0.18s;
+    margin:3px;vertical-align:middle;
 }
-.tpl-btn {
-    display:flex;flex-direction:column;align-items:center;gap:6px;
-    padding:13px 8px;border-radius:10px;border:2px solid var(--border-color);
-    background:var(--bg-secondary);cursor:pointer;transition:all 0.2s;text-align:center;
-    user-select:none;
-}
-.tpl-btn:hover { transform:translateY(-2px); }
-.tpl-btn.active { box-shadow:0 0 0 2px var(--indigo); }
-.tpl-btn .tpl-icon {
-    width:34px;height:34px;border-radius:8px;
-    display:flex;align-items:center;justify-content:center;flex-shrink:0;
-}
+.tpl-theme-dot.active { border-color:#fff;box-shadow:0 0 0 2px var(--indigo); }
+.tpl-theme-dot:hover { transform:scale(1.2); }
 
-/* Switch grid→dropdown at ≤640px */
-@media(max-width:640px) {
-    .tpl-select-grid { display:none; }
-    .tpl-dropdown-wrap { display:block; }
-    .bulk-card { padding:18px 16px; }
+/* Upload zone (compact) */
+.upload-zone-compact {
+    border:2px dashed var(--border-color);border-radius:12px;
+    padding:18px 14px;text-align:center;cursor:pointer;transition:all 0.2s;
+    background:var(--bg-secondary);
 }
+.upload-zone-compact:hover,.upload-zone-compact.dragover {
+    border-color:var(--indigo);background:rgba(99,102,241,0.06);
+}
+.upload-zone-compact input[type=file] { display:none; }
+#uploadFilename { font-size:0.78rem;color:var(--indigo);margin-top:6px;font-weight:600; }
+
+/* divider between cols */
+.step1-divider {
+    width:1px;background:var(--border-color);align-self:stretch;
+    margin-top:4px;
+}
+@media(max-width:760px){ .step1-divider { width:100%;height:1px; margin:0; } }
+
+/* ── Upload zone (old, kept for fallback) ────────────────────────── */
+.upload-zone {
+    border:2px dashed var(--border-color);border-radius:12px;
+    padding:34px 18px;text-align:center;cursor:pointer;transition:all 0.2s;
+    background:var(--bg-secondary);
+}
+.upload-zone:hover,.upload-zone.dragover { border-color:var(--indigo);background:rgba(99,102,241,0.06); }
+.upload-zone input[type=file] { display:none; }
 
 /* ── Upload zone ─────────────────────────────────────────────────── */
 .upload-zone {
@@ -156,7 +176,60 @@ foreach ($templates as $key => $tpl) {
     font-size:1.4rem; cursor:pointer; color:var(--text-secondary);
 }
 
-/* ── Progress / results ──────────────────────────────────────────── */
+/* ── Style slider ────────────────────────────────────────────────── */
+.style-slider-wrap {
+    position:relative;
+    display:flex;
+    align-items:center;
+    gap:6px;
+    margin-top:12px;
+}
+.style-slider {
+    display:flex;
+    gap:10px;
+    overflow-x:auto;
+    scroll-behavior:smooth;
+    padding:4px 2px 8px;
+    flex:1;
+    -webkit-overflow-scrolling:touch;
+}
+.style-slider::-webkit-scrollbar { height:4px; }
+.style-slider::-webkit-scrollbar-track { background:transparent; }
+.style-slider::-webkit-scrollbar-thumb { background:var(--border-color);border-radius:4px; }
+.slider-arrow {
+    flex-shrink:0;width:30px;height:30px;border-radius:50%;
+    background:var(--bg-secondary);border:1.5px solid var(--border-color);
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;font-size:0.75rem;color:var(--text-secondary);
+    transition:all 0.18s;user-select:none;
+}
+.slider-arrow:hover { border-color:var(--indigo);color:var(--indigo); }
+.slider-item { flex-shrink:0;text-align:center;width:80px; }
+.slider-item .style-card { width:80px;height:50px;aspect-ratio:unset; }
+.slider-item .style-card.portrait { width:50px;height:80px;margin:0 auto; }
+
+/* ── See All modal ───────────────────────────────────────────────── */
+.see-all-modal-overlay {
+    display:none;position:fixed;inset:0;z-index:3000;
+    background:rgba(0,0,0,0.75);align-items:flex-start;justify-content:center;
+    overflow-y:auto;padding:30px 16px;
+}
+.see-all-modal-overlay.open { display:flex; }
+.see-all-modal-box {
+    background:var(--bg-card);border-radius:18px;padding:24px;
+    width:100%;max-width:720px;position:relative;
+}
+.see-all-modal-close {
+    position:absolute;top:12px;right:14px;background:none;border:none;
+    font-size:1.4rem;cursor:pointer;color:var(--text-secondary);
+}
+.see-all-grid {
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:10px;
+    margin-top:14px;
+}
+@media(max-width:560px){ .see-all-grid { grid-template-columns:repeat(3,1fr); } }
 .progress-bar-wrap { background:var(--border-color);border-radius:99px;height:10px;overflow:hidden;margin-top:10px; }
 .progress-bar-fill { height:100%;border-radius:99px;background:linear-gradient(90deg,#6366f1,#00f0ff);transition:width 0.4s; }
 .result-badge { display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:0.8rem;font-weight:600; }
@@ -195,97 +268,95 @@ foreach ($templates as $key => $tpl) {
 </div>
 
 <!-- ══════════════════════════════════════════════════════════════ -->
-<!-- STEP 1 — Category                                             -->
+<!-- STEP 1 — Category + Theme + Upload (one row)                  -->
 <!-- ══════════════════════════════════════════════════════════════ -->
 <div class="bulk-card">
-    <h3 style="font-size:0.95rem;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:8px;">
-        <span class="step-num">1</span> Select Card Category
+    <h3 style="font-size:0.95rem;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+        <span class="step-num">1</span> Setup &nbsp;<span style="font-size:0.72rem;color:var(--text-secondary);font-weight:400;">Category → Theme → Upload CSV</span>
     </h3>
-    <p style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:12px;">
-        Choose the template for all cards in your CSV, then download the matching sample.
-    </p>
 
-    <!-- Mobile dropdown -->
-    <div class="tpl-dropdown-wrap" id="tplDropdownWrap">
-        <select id="tplDropdown" onchange="selectTemplateByKey(this.value)">
-            <option value="">— choose a category —</option>
-            <?php foreach ($templates as $key => $tpl): ?>
-            <option value="<?= htmlspecialchars($key) ?>"><?= htmlspecialchars($tpl['name']) ?></option>
-            <?php endforeach; ?>
-        </select>
-    </div>
-
-    <!-- Desktop grid -->
-    <div class="tpl-select-grid" id="tplGrid">
-        <?php foreach ($templates as $key => $tpl): ?>
-        <div class="tpl-btn" id="tplBtn_<?= htmlspecialchars($key) ?>"
-             data-tpl="<?= htmlspecialchars($key) ?>"
-             data-color="<?= htmlspecialchars($tpl['color']) ?>"
-             data-orientation="<?= htmlspecialchars($tpl['orientation'] ?? 'landscape') ?>"
-             onclick="selectTemplate(this)">
-            <div class="tpl-icon" style="background:<?= htmlspecialchars($tpl['color']) ?>;">
-                <i class="fas fa-id-card" style="color:#fff;font-size:0.85rem;"></i>
+    <div class="step1-row">
+        <!-- Col A: Category dropdown -->
+        <div>
+            <div style="font-size:0.72rem;font-weight:600;color:var(--text-secondary);margin-bottom:7px;">
+                <i class="fas fa-tags" style="color:var(--indigo);margin-right:4px;"></i> SELECT CARD CATEGORY
             </div>
-            <span style="font-size:0.7rem;font-weight:600;color:var(--text-primary);line-height:1.3;">
-                <?= htmlspecialchars($tpl['name']) ?>
-            </span>
+            <div class="tpl-select-wrap">
+                <select id="tplDropdown" onchange="selectTemplateByKey(this.value)">
+                    <option value="">— choose a category —</option>
+                    <?php foreach ($templates as $key => $tpl): ?>
+                    <option value="<?= htmlspecialchars($key) ?>"><?= htmlspecialchars($tpl['name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div style="margin-top:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                <span style="font-size:0.78rem;color:var(--text-secondary);">
+                    Template: <strong id="selectedTplName" style="color:var(--indigo);">—</strong>
+                </span>
+                <a id="sampleCsvBtn" href="#"
+                   style="pointer-events:none;opacity:0.4;" class="btn btn-secondary btn-sm">
+                    <i class="fas fa-download"></i> Sample CSV
+                </a>
+            </div>
         </div>
-        <?php endforeach; ?>
-    </div>
 
-    <div style="margin-top:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-        <div style="font-size:0.85rem;color:var(--text-secondary);">
-            Selected: <strong id="selectedTplName" style="color:var(--indigo);">—</strong>
+        <!-- Divider -->
+        <div class="step1-divider"></div>
+
+        <!-- Col B: Theme colour dots -->
+        <div class="theme-dots-col">
+            <div style="font-size:0.72rem;font-weight:600;color:var(--text-secondary);margin-bottom:9px;">
+                <i class="fas fa-palette" style="color:var(--indigo);margin-right:4px;"></i> THEME COLOUR
+            </div>
+            <div id="themeDots" style="display:flex;flex-wrap:wrap;justify-content:center;gap:4px;max-width:220px;margin:0 auto;">
+                <?php foreach ($templates as $key => $tpl): ?>
+                <span class="tpl-theme-dot"
+                      style="background:<?= htmlspecialchars($tpl['color']) ?>;"
+                      title="<?= htmlspecialchars($tpl['name']) ?>"
+                      data-tpl="<?= htmlspecialchars($key) ?>"
+                      onclick="selectTemplateByKey('<?= htmlspecialchars($key) ?>')"></span>
+                <?php endforeach; ?>
+            </div>
         </div>
-        <a id="sampleCsvBtn" href="#"
-           style="pointer-events:none;opacity:0.4;" class="btn btn-secondary btn-sm">
-            <i class="fas fa-download"></i> Download Sample CSV
-        </a>
+
+        <!-- Divider -->
+        <div class="step1-divider"></div>
+
+        <!-- Col C: Upload CSV -->
+        <div>
+            <div style="font-size:0.72rem;font-weight:600;color:var(--text-secondary);margin-bottom:7px;">
+                <i class="fas fa-upload" style="color:var(--indigo);margin-right:4px;"></i> UPLOAD YOUR CSV
+                <span style="font-size:0.65rem;font-weight:400;">(max <?= $maxBulkRows ?> rows)</span>
+            </div>
+            <div class="upload-zone-compact" id="uploadZone"
+                 onclick="document.getElementById('csvFileInput').click()"
+                 ondragover="handleDragOver(event)"
+                 ondragleave="handleDragLeave(event)"
+                 ondrop="handleDrop(event)">
+                <i class="fas fa-file-csv" style="font-size:1.6rem;color:var(--indigo);opacity:0.6;margin-bottom:6px;display:block;"></i>
+                <div style="font-size:0.82rem;font-weight:600;color:var(--text-primary);">Click or drag &amp; drop</div>
+                <div style="font-size:0.7rem;color:var(--text-secondary);margin-top:2px;">.csv files only</div>
+                <input type="file" id="csvFileInput" accept=".csv,text/csv" onchange="handleFileSelect(this)">
+                <div id="uploadFilename"></div>
+            </div>
+        </div>
     </div>
 </div>
 
 <!-- ══════════════════════════════════════════════════════════════ -->
-<!-- STEP 2 — Upload CSV                                           -->
+<!-- STEP 2 — Design                                               -->
 <!-- ══════════════════════════════════════════════════════════════ -->
 <div class="bulk-card">
     <h3 style="font-size:0.95rem;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:8px;">
-        <span class="step-num">2</span> Upload Your CSV
+        <span class="step-num">2</span> Choose Design
+        <span style="font-size:0.72rem;color:var(--text-secondary);font-weight:400;margin-left:4px;">(applied to all cards)</span>
     </h3>
-    <p style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:14px;">
-        Fill the sample CSV with your data and upload it here. Maximum <?= $maxBulkRows ?> rows.
-    </p>
-
-    <div class="upload-zone" id="uploadZone"
-         onclick="document.getElementById('csvFileInput').click()"
-         ondragover="handleDragOver(event)"
-         ondragleave="handleDragLeave(event)"
-         ondrop="handleDrop(event)">
-        <i class="fas fa-file-csv" style="font-size:2.2rem;color:var(--indigo);opacity:0.6;margin-bottom:8px;display:block;"></i>
-        <div style="font-size:0.88rem;font-weight:600;color:var(--text-primary);">
-            Click to choose CSV or drag &amp; drop here
-        </div>
-        <div style="font-size:0.74rem;color:var(--text-secondary);margin-top:3px;">Accepts .csv files only</div>
-        <input type="file" id="csvFileInput" accept=".csv,text/csv" onchange="handleFileSelect(this)">
-        <div id="uploadFilename"></div>
-    </div>
-</div>
-
-<!-- ══════════════════════════════════════════════════════════════ -->
-<!-- STEP 3 — Design                                               -->
-<!-- ══════════════════════════════════════════════════════════════ -->
-<div class="bulk-card">
-    <h3 style="font-size:0.95rem;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:8px;">
-        <span class="step-num">3</span> Choose Design <span style="font-size:0.72rem;color:var(--text-secondary);font-weight:400;margin-left:4px;">(applied to all cards)</span>
-    </h3>
-    <p style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:10px;">
-        Pick a card style and customize colours &amp; font. This design will be used for every card in your CSV.
-    </p>
 
     <!-- Colour + font row -->
     <div class="design-row">
         <div class="design-ctrl">
             <label>Primary Color</label>
-            <input type="color" id="d_primary" value="#1e40af">
+            <input type="color" id="d_primary" value="#1e40af" oninput="refreshSliderThumbs()">
         </div>
         <div class="design-ctrl">
             <label>Accent Color</label>
@@ -293,7 +364,7 @@ foreach ($templates as $key => $tpl) {
         </div>
         <div class="design-ctrl">
             <label>Background</label>
-            <input type="color" id="d_bg" value="#ffffff">
+            <input type="color" id="d_bg" value="#ffffff" oninput="refreshSliderThumbs()">
         </div>
         <div class="design-ctrl">
             <label>Text Color</label>
@@ -317,24 +388,57 @@ foreach ($templates as $key => $tpl) {
         </div>
     </div>
 
-    <!-- Design style picker -->
-    <div style="margin-top:16px;">
-        <div style="font-size:0.78rem;font-weight:600;color:var(--text-secondary);margin-bottom:6px;">
-            Card Style — <span id="selectedStyleName" style="color:var(--indigo);">Angled Pro</span>
+    <!-- Filter + See All -->
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-top:18px;margin-bottom:8px;">
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button type="button" id="filterAll" class="filter-btn active" onclick="setStyleFilter('all')">All (25)</button>
+            <button type="button" id="filterLandscape" class="filter-btn" onclick="setStyleFilter('landscape')">🖥 Landscape (13)</button>
+            <button type="button" id="filterPortrait" class="filter-btn" onclick="setStyleFilter('portrait')">📱 Portrait (12)</button>
         </div>
-        <div class="style-mini-grid" id="styleMiniGrid">
-            <!-- populated by JS -->
-        </div>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="openSeeAll()">
+            <i class="fas fa-th"></i> See All
+        </button>
     </div>
+
+    <!-- Active style label -->
+    <div style="font-size:0.78rem;font-weight:600;color:var(--text-secondary);margin-bottom:4px;">
+        Card Style — <span id="selectedStyleName" style="color:var(--indigo);">Angled Pro</span>
+    </div>
+
+    <!-- Slider -->
+    <div class="style-slider-wrap">
+        <button type="button" class="slider-arrow" id="sliderPrev" onclick="slideStyles(-1)">&#8249;</button>
+        <div class="style-slider" id="styleSlider"><!-- populated by JS --></div>
+        <button type="button" class="slider-arrow" id="sliderNext" onclick="slideStyles(1)">&#8250;</button>
+    </div>
+
     <input type="hidden" id="d_style" value="classic">
 </div>
 
 <!-- ══════════════════════════════════════════════════════════════ -->
-<!-- STEP 4 — Generate                                             -->
+<!-- See All Modal                                                  -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="see-all-modal-overlay" id="seeAllModal">
+    <div class="see-all-modal-box">
+        <button class="see-all-modal-close" onclick="closeSeeAll()">&times;</button>
+        <h3 style="font-size:0.95rem;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:8px;">
+            <i class="fas fa-th" style="color:var(--indigo);"></i> All Card Styles
+        </h3>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;margin-top:8px;">
+            <button type="button" id="maAll" class="filter-btn active" onclick="setModalFilter('all')">All (25)</button>
+            <button type="button" id="maLandscape" class="filter-btn" onclick="setModalFilter('landscape')">🖥 Landscape</button>
+            <button type="button" id="maPortrait" class="filter-btn" onclick="setModalFilter('portrait')">📱 Portrait</button>
+        </div>
+        <div class="see-all-grid" id="seeAllGrid"><!-- populated by JS --></div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- STEP 3 — Generate                                             -->
 <!-- ══════════════════════════════════════════════════════════════ -->
 <div class="bulk-card">
     <h3 style="font-size:0.95rem;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
-        <span class="step-num">4</span> Generate All Cards
+        <span class="step-num">3</span> Generate All Cards
     </h3>
 
     <form id="bulkForm" onsubmit="submitBulk(event)">
@@ -435,65 +539,361 @@ echo json_encode($presets);
 ?>;
 
 /* ================================================================
-   Design style list
+   All 25 design styles
 ================================================================= */
-var STYLES_LANDSCAPE = [
-    {key:'classic',       label:'Angled Pro'},
-    {key:'gradient_pro',  label:'Gradient'},
-    {key:'neon',          label:'Neon'},
-    {key:'executive',     label:'Executive'},
-    {key:'stripe',        label:'Stripe'},
-    {key:'metro',         label:'Metro'},
-    {key:'glass',         label:'Glass'},
-    {key:'zigzag',        label:'Zigzag'},
-    {key:'ribbon',        label:'Ribbon'},
-];
-var STYLES_PORTRAIT = [
-    {key:'v_sharp',   label:'Sharp V'},
-    {key:'v_curve',   label:'Curve'},
-    {key:'v_hex',     label:'Hex'},
-    {key:'v_circle',  label:'Circle'},
-    {key:'v_split',   label:'Split'},
-    {key:'v_ribbon',  label:'Ribbon'},
-    {key:'v_arch',    label:'Arch'},
-    {key:'v_diamond', label:'Diamond'},
-    {key:'v_corner',  label:'Corner'},
-    {key:'v_dual',    label:'Dual'},
-    {key:'v_stripe',  label:'Stripe'},
-    {key:'v_badge',   label:'Badge'},
+var ALL_STYLES = [
+    { key:'classic',       label:'Angled Pro',    portrait:false },
+    { key:'sidebar',       label:'Dark Geo',      portrait:false },
+    { key:'wave',          label:'Wave Panel',    portrait:false },
+    { key:'bold_header',   label:'Bold Split',    portrait:false },
+    { key:'diagonal',      label:'Triangle Pro',  portrait:false },
+    { key:'gradient_pro',  label:'Gradient Pro',  portrait:false },
+    { key:'neon',          label:'Neon Glow',     portrait:false },
+    { key:'executive',     label:'Executive',     portrait:false },
+    { key:'stripe',        label:'Stripe Band',   portrait:false },
+    { key:'metro',         label:'Metro Flat',    portrait:false },
+    { key:'glass',         label:'Glassmorphism', portrait:false },
+    { key:'zigzag',        label:'Zig-Zag',       portrait:false },
+    { key:'ribbon',        label:'Ribbon',        portrait:false },
+    { key:'v_sharp',       label:'Sharp V',       portrait:true },
+    { key:'v_curve',       label:'Curve Wave',    portrait:true },
+    { key:'v_hex',         label:'Hex Badge',     portrait:true },
+    { key:'v_circle',      label:'Circle Top',    portrait:true },
+    { key:'v_split',       label:'Color Split',   portrait:true },
+    { key:'v_ribbon',      label:'Ribbon (V)',    portrait:true },
+    { key:'v_arch',        label:'Arch (V)',      portrait:true },
+    { key:'v_diamond',     label:'Diamond (V)',   portrait:true },
+    { key:'v_corner',      label:'Corner (V)',    portrait:true },
+    { key:'v_dual',        label:'Dual Band (V)', portrait:true },
+    { key:'v_stripe',      label:'Stripe (V)',    portrait:true },
+    { key:'v_badge',       label:'Badge (V)',     portrait:true }
 ];
 
+var currentStyleFilter = 'all';
+var currentStyleKey    = 'classic';
+var selectedTemplate   = '';
+var fileSelected       = false;
+
 /* ================================================================
-   State
+   Filter helpers
 ================================================================= */
-var selectedTemplate  = '';
-var fileSelected      = false;
-var currentPortrait   = false;
-var currentStyleKey   = 'classic';
+function getFilteredStyles() {
+    if (currentStyleFilter === 'landscape') return ALL_STYLES.filter(function(s){ return !s.portrait; });
+    if (currentStyleFilter === 'portrait')  return ALL_STYLES.filter(function(s){ return s.portrait; });
+    return ALL_STYLES;
+}
+
+function setStyleFilter(f) {
+    currentStyleFilter = f;
+    ['all','landscape','portrait'].forEach(function(id) {
+        var btn = document.getElementById('filter' + id.charAt(0).toUpperCase() + id.slice(1));
+        if (btn) btn.classList.toggle('active', id === f);
+    });
+    buildStyleSlider();
+}
+
+/* ================================================================
+   Tiny SVG thumbnail builder
+================================================================= */
+function buildThumb(key, pri, acc, portrait) {
+    var W = portrait ? 54 : 85.6, H = portrait ? 85.6 : 54;
+    var vb = '0 0 ' + W + ' ' + H;
+    var base = '<svg viewBox="' + vb + '" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;">';
+    switch(key) {
+        case 'classic':
+            return base+'<rect width="'+W+'" height="'+H+'" fill="#f7f8fc"/>'
+                +'<defs><linearGradient id="cg'+W+'"><stop offset="0%" stop-color="'+pri+'"/><stop offset="100%" stop-color="'+acc+'"/></linearGradient></defs>'
+                +'<rect width="'+W+'" height="'+H+'" fill="url(#cg'+W+')" clip-path="url(#cc'+W+')"/>'
+                +'<defs><clipPath id="cc'+W+'"><polygon points="0,0 '+W+',0 '+W+','+(H*0.56)+' 0,'+(H*0.72)+'"/></clipPath></defs>'
+                +'<circle cx="'+(W/2)+'" cy="'+(H*0.46)+'" r="7" fill="#fff" stroke="'+pri+'" stroke-width="1.5"/>'
+                +'<rect x="'+((W-26)/2)+'" y="'+(H*0.6)+'" width="26" height="3" rx="1.5" fill="'+pri+'" opacity="0.85"/>'
+                +'<rect x="8" y="'+(H*0.73)+'" width="16" height="1.8" rx="0.8" fill="#555" opacity="0.5"/>'
+                +'<rect x="'+W/2+'" y="'+(H*0.73)+'" width="16" height="1.8" rx="0.8" fill="#555" opacity="0.5"/>'
+                +'</svg>';
+        case 'neon':
+            return base+'<rect width="'+W+'" height="'+H+'" fill="#050a10"/>'
+                +'<rect x="0" y="0" width="'+W+'" height="3" fill="'+pri+'"/>'
+                +'<rect x="0" y="'+(H-3)+'" width="'+W+'" height="3" fill="'+acc+'"/>'
+                +'<circle cx="'+(W*0.22)+'" cy="'+(H*0.5)+'" r="9" fill="none" stroke="'+acc+'" stroke-width="1.5"/>'
+                +'<rect x="'+(W*0.4)+'" y="12" width="28" height="3" rx="1.5" fill="'+pri+'"/>'
+                +'</svg>';
+        case 'executive':
+            return base+'<rect width="'+W+'" height="'+H+'" fill="#1a1f2e"/>'
+                +'<rect x="0" y="0" width="'+W+'" height="4" fill="#c9a84c"/>'
+                +'<rect x="0" y="'+(H-4)+'" width="'+W+'" height="4" fill="#c9a84c"/>'
+                +'<circle cx="'+(W*0.22)+'" cy="'+(H*0.5)+'" r="9" fill="none" stroke="#c9a84c" stroke-width="1.2"/>'
+                +'<rect x="'+(W*0.38)+'" y="12" width="28" height="3" rx="1.5" fill="#fff" opacity="0.92"/>'
+                +'</svg>';
+        case 'stripe':
+            return base+'<rect width="'+W+'" height="'+H+'" fill="#f5f7fa"/>'
+                +'<rect x="0" y="0" width="'+W+'" height="'+(H*0.18)+'" fill="'+pri+'"/>'
+                +'<rect x="0" y="'+(H*0.82)+'" width="'+W+'" height="'+(H*0.18)+'" fill="'+acc+'"/>'
+                +'<circle cx="'+(W*0.22)+'" cy="'+(H*0.5)+'" r="11" fill="none" stroke="'+pri+'" stroke-width="1.5"/>'
+                +'</svg>';
+        case 'metro':
+            return base+'<rect width="'+W+'" height="'+H+'" fill="#fff"/>'
+                +'<rect x="0" y="0" width="'+(W*0.35)+'" height="'+H+'" fill="'+pri+'"/>'
+                +'<rect x="'+(W*0.35)+'" y="0" width="4" height="'+H+'" fill="'+acc+'"/>'
+                +'<circle cx="'+(W*0.175)+'" cy="'+(H*0.42)+'" r="8" fill="rgba(255,255,255,0.25)"/>'
+                +'</svg>';
+        case 'glass':
+            return base+'<defs><linearGradient id="gbg'+W+'"><stop offset="0%" stop-color="'+pri+'"/><stop offset="100%" stop-color="'+acc+'"/></linearGradient></defs>'
+                +'<rect width="'+W+'" height="'+H+'" fill="url(#gbg'+W+')" />'
+                +'<rect x="'+(W*0.08)+'" y="'+(H*0.1)+'" width="'+(W*0.84)+'" height="'+(H*0.8)+'" rx="5" fill="rgba(255,255,255,0.18)" stroke="rgba(255,255,255,0.35)" stroke-width="0.7"/>'
+                +'</svg>';
+        case 'zigzag':
+            return base+'<rect width="'+W+'" height="'+H+'" fill="#f7f8fc"/>'
+                +'<path d="M0,0 L'+W+',0 L'+W+','+(H*0.42)+' L'+(W*0.9)+','+(H*0.35)+' L'+(W*0.8)+','+(H*0.42)+' L'+(W*0.7)+','+(H*0.35)+' L'+(W*0.6)+','+(H*0.42)+' L'+(W*0.5)+','+(H*0.35)+' L'+(W*0.4)+','+(H*0.42)+' L'+(W*0.3)+','+(H*0.35)+' L'+(W*0.2)+','+(H*0.42)+' L'+(W*0.1)+','+(H*0.35)+' L0,'+(H*0.42)+' Z" fill="'+pri+'"/>'
+                +'</svg>';
+        case 'ribbon':
+            return base+'<rect width="'+W+'" height="'+H+'" fill="#111827"/>'
+                +'<polygon points="0,'+(H*0.28)+' '+W+','+(H*0.15)+' '+W+','+(H*0.5)+' 0,'+(H*0.63)+'" fill="'+pri+'" opacity="0.92"/>'
+                +'<polygon points="0,'+(H*0.32)+' '+W+','+(H*0.19)+' '+W+','+(H*0.54)+' 0,'+(H*0.67)+'" fill="'+acc+'" opacity="0.5"/>'
+                +'</svg>';
+        case 'sidebar':
+            return base+'<rect width="'+W+'" height="'+H+'" fill="#111827"/>'
+                +'<rect x="'+(W*0.42)+'" y="'+(-H*0.2)+'" width="'+(W*0.75)+'" height="'+(W*0.75)+'" rx="3" fill="'+pri+'" transform="rotate(45 '+(W*0.82)+' '+(H*0.3)+')"/>'
+                +'<circle cx="'+(W*0.8)+'" cy="'+(H*0.35)+'" r="8" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.6)" stroke-width="1"/>'
+                +'</svg>';
+        case 'wave':
+            return base+'<rect width="'+W+'" height="'+H+'" fill="#fdf8f3"/>'
+                +'<path d="M0,0 L'+(W*0.55)+',0 Q'+(W*0.73)+','+(H*0.28)+' '+(W*0.65)+','+(H*0.5)+' Q'+(W*0.75)+','+(H*0.72)+' '+(W*0.58)+','+H+' L0,'+H+' Z" fill="'+pri+'"/>'
+                +'<circle cx="'+(W*0.42)+'" cy="'+(H*0.4)+'" r="8" fill="rgba(255,255,255,0.25)" stroke="rgba(255,255,255,0.7)" stroke-width="1.2"/>'
+                +'</svg>';
+        case 'bold_header':
+            return base+'<rect x="0" y="0" width="'+(W*0.4)+'" height="'+H+'" fill="'+pri+'"/>'
+                +'<rect x="'+(W*0.4)+'" y="0" width="'+(W*0.6)+'" height="'+H+'" fill="#fff"/>'
+                +'<rect x="'+(W*0.4)+'" y="0" width="'+(W*0.6)+'" height="3" fill="'+acc+'"/>'
+                +'<circle cx="'+(W*0.2)+'" cy="'+(H*0.52)+'" r="10" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.7)" stroke-width="1.2"/>'
+                +'</svg>';
+        case 'diagonal':
+            return base+'<rect width="'+W+'" height="'+H+'" fill="#111827"/>'
+                +'<polygon points="'+W+',0 '+W+','+(H*0.4)+' '+(W*0.55)+','+(H*0.2)+'" fill="'+pri+'"/>'
+                +'<polygon points="'+W+','+(H*0.34)+' '+W+','+(H*0.73)+' '+(W*0.58)+','+(H*0.535)+'" fill="'+acc+'" opacity="0.85"/>'
+                +'<circle cx="'+(W*0.14)+'" cy="'+(H*0.5)+'" r="9" fill="rgba(255,255,255,0.1)" stroke="'+acc+'" stroke-width="1.2"/>'
+                +'</svg>';
+        case 'gradient_pro':
+            return base+'<defs><linearGradient id="gpg'+W+'" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="'+pri+'"/><stop offset="100%" stop-color="'+acc+'"/></linearGradient></defs>'
+                +'<rect width="'+W+'" height="'+H+'" fill="url(#gpg'+W+')"/>'
+                +'<rect x="0" y="0" width="'+W+'" height="'+H+'" fill="rgba(0,0,0,0.18)"/>'
+                +'<circle cx="'+(W*0.28)+'" cy="'+(H*0.5)+'" r="11" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.7)" stroke-width="1.2"/>'
+                +'</svg>';
+        // ── Portrait styles ─────────────────────────────────────────
+        case 'v_sharp':
+            return base+'<rect width="'+W+'" height="'+H+'" fill="#f7f8fc"/>'
+                +'<polygon points="0,0 '+W+',0 '+W+','+(H*0.38)+' '+(W*0.5)+','+(H*0.48)+' 0,'+(H*0.38)+'" fill="'+pri+'"/>'
+                +'<circle cx="'+(W*0.5)+'" cy="'+(H*0.43)+'" r="9" fill="#fff" stroke="'+pri+'" stroke-width="1.5"/>'
+                +'<rect x="'+(W*0.1)+'" y="'+(H*0.54)+'" width="'+(W*0.8)+'" height="4" rx="1.5" fill="'+pri+'" opacity="0.85"/>'
+                +'</svg>';
+        case 'v_curve':
+            return base+'<rect width="'+W+'" height="'+H+'" fill="#fafafa"/>'
+                +'<path d="M0,0 L'+W+',0 L'+W+','+(H*0.55)+' Q'+(W*0.75)+','+(H*0.75)+' '+(W*0.5)+','+(H*0.62)+' Q'+(W*0.25)+','+(H*0.5)+' 0,'+(H*0.67)+' Z" fill="'+pri+'"/>'
+                +'<circle cx="'+(W*0.5)+'" cy="'+(H*0.38)+'" r="10" fill="rgba(255,255,255,0.25)" stroke="rgba(255,255,255,0.7)" stroke-width="1.2"/>'
+                +'</svg>';
+        case 'v_hex':
+            return base+'<rect width="'+W+'" height="'+H+'" fill="#ffffff"/>'
+                +'<rect x="0" y="0" width="'+W+'" height="'+(H*0.45)+'" fill="'+pri+'"/>'
+                +'<polygon points="'+(W*0.5)+','+(H*0.23)+' '+(W*0.68)+','+(H*0.33)+' '+(W*0.68)+','+(H*0.53)+' '+(W*0.5)+','+(H*0.63)+' '+(W*0.32)+','+(H*0.53)+' '+(W*0.32)+','+(H*0.33)+'" fill="#fff" stroke="'+pri+'" stroke-width="1.5"/>'
+                +'</svg>';
+        case 'v_circle':
+            return base+'<rect width="'+W+'" height="'+H+'" fill="#f7f8fc"/>'
+                +'<rect x="0" y="0" width="'+W+'" height="'+(H*0.46)+'" fill="'+pri+'"/>'
+                +'<circle cx="'+(W*0.5)+'" cy="'+(H*0.37)+'" r="11" fill="#fff" stroke="'+acc+'" stroke-width="1.5"/>'
+                +'</svg>';
+        case 'v_split':
+            return base+'<rect width="'+W+'" height="'+H+'" fill="#fff"/>'
+                +'<rect x="0" y="0" width="'+(W*0.58)+'" height="'+(H*0.52)+'" fill="'+pri+'"/>'
+                +'<polygon points="'+(W*0.48)+',0 '+W+',0 '+W+','+(H*0.4)+'" fill="'+acc+'" opacity="0.9"/>'
+                +'<circle cx="'+(W*0.78)+'" cy="'+(H*0.17)+'" r="9" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.6)" stroke-width="1"/>'
+                +'</svg>';
+        case 'v_ribbon':
+            return base+'<rect width="'+W+'" height="'+H+'" fill="#f7f8fc"/>'
+                +'<rect x="0" y="0" width="'+W+'" height="'+(H*0.2)+'" fill="'+pri+'"/>'
+                +'<rect x="0" y="'+(H*0.28)+'" width="'+W+'" height="'+(H*0.14)+'" fill="'+acc+'"/>'
+                +'<circle cx="'+(W*0.5)+'" cy="'+(H*0.28)+'" r="'+(W*0.17)+'" fill="#fff" stroke="'+pri+'" stroke-width="1.5"/>'
+                +'</svg>';
+        case 'v_arch':
+            return base+'<rect width="'+W+'" height="'+H+'" fill="#ffffff"/>'
+                +'<path d="M0,0 L'+W+',0 L'+W+','+(H*0.5)+' Q'+W+','+(H*0.65)+' '+(W*0.5)+','+(H*0.65)+' Q0,'+(H*0.65)+' 0,'+(H*0.5)+' Z" fill="'+pri+'"/>'
+                +'<circle cx="'+(W*0.5)+'" cy="'+(H*0.28)+'" r="'+(W*0.18)+'" fill="rgba(255,255,255,0.25)" stroke="rgba(255,255,255,0.7)" stroke-width="1.2"/>'
+                +'</svg>';
+        case 'v_diamond':
+            return base+'<rect width="'+W+'" height="'+H+'" fill="#f7f8fc"/>'
+                +'<rect x="0" y="0" width="'+W+'" height="'+(H*0.5)+'" fill="'+pri+'"/>'
+                +'<polygon points="'+(W*0.5)+','+(H*0.52)+' '+W+','+(H*0.38)+' '+(W*0.5)+','+(H*0.24)+' 0,'+(H*0.38)+'" fill="'+acc+'" opacity="0.8"/>'
+                +'</svg>';
+        case 'v_corner':
+            return base+'<rect width="'+W+'" height="'+H+'" fill="#ffffff"/>'
+                +'<polygon points="0,0 '+(W*0.65)+',0 0,'+(H*0.55)+'" fill="'+pri+'"/>'
+                +'<polygon points="'+W+','+H+' '+(W*0.35)+','+H+' '+W+','+(H*0.45)+'" fill="'+acc+'" opacity="0.85"/>'
+                +'<circle cx="'+(W*0.5)+'" cy="'+(H*0.32)+'" r="'+(W*0.17)+'" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.7)" stroke-width="1.2"/>'
+                +'</svg>';
+        case 'v_dual':
+            return base+'<rect width="'+W+'" height="'+H+'" fill="#f7f8fc"/>'
+                +'<rect x="0" y="0" width="'+W+'" height="'+(H*0.22)+'" fill="'+pri+'"/>'
+                +'<rect x="0" y="'+(H*0.78)+'" width="'+W+'" height="'+(H*0.22)+'" fill="'+acc+'"/>'
+                +'<circle cx="'+(W*0.5)+'" cy="'+(H*0.4)+'" r="'+(W*0.18)+'" fill="#fff" stroke="'+pri+'" stroke-width="1.5"/>'
+                +'</svg>';
+        case 'v_stripe':
+            return base+'<defs><linearGradient id="vsg'+W+'" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="'+pri+'"/><stop offset="100%" stop-color="'+acc+'"/></linearGradient></defs>'
+                +'<rect width="'+W+'" height="'+H+'" fill="url(#vsg'+W+')"/>'
+                +'<rect x="'+(W*0.08)+'" y="'+(H*0.05)+'" width="'+(W*0.84)+'" height="'+(H*0.88)+'" rx="4" fill="rgba(255,255,255,0.22)" stroke="rgba(255,255,255,0.4)" stroke-width="0.6"/>'
+                +'<circle cx="'+(W*0.5)+'" cy="'+(H*0.3)+'" r="'+(W*0.18)+'" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.7)" stroke-width="1.2"/>'
+                +'</svg>';
+        case 'v_badge':
+            return base+'<rect width="'+W+'" height="'+H+'" fill="#f7f8fc"/>'
+                +'<path d="M'+(W*0.08)+',0 L'+(W*0.92)+',0 L'+W+','+(H*0.06)+' L'+W+','+(H*0.42)+' Q'+W+','+(H*0.56)+' '+(W*0.5)+','+(H*0.58)+' Q0,'+(H*0.56)+' 0,'+(H*0.42)+' L0,'+(H*0.06)+' Z" fill="'+pri+'"/>'
+                +'<circle cx="'+(W*0.5)+'" cy="'+(H*0.3)+'" r="'+(W*0.16)+'" fill="rgba(255,255,255,0.25)" stroke="rgba(255,255,255,0.75)" stroke-width="1.2"/>'
+                +'</svg>';
+        default:
+            return base+'<rect width="'+W+'" height="'+H+'" fill="'+pri+'"/>'
+                +'<rect x="0" y="0" width="'+W+'" height="'+(H*0.45)+'" fill="rgba(0,0,0,0.2)"/>'
+                +'</svg>';
+    }
+}
+
+/* ================================================================
+   Build / refresh the horizontal slider
+================================================================= */
+function buildStyleSlider() {
+    var styles = getFilteredStyles();
+    var slider = document.getElementById('styleSlider');
+    var pri    = document.getElementById('d_primary').value || '#1e40af';
+    var acc    = document.getElementById('d_accent').value  || '#3b82f6';
+
+    // Ensure currentStyleKey is valid for this filter
+    var keys = styles.map(function(s){ return s.key; });
+    if (keys.indexOf(currentStyleKey) === -1) {
+        currentStyleKey = styles[0] ? styles[0].key : 'classic';
+        document.getElementById('d_style').value = currentStyleKey;
+        document.getElementById('f_style').value = currentStyleKey;
+    }
+
+    slider.innerHTML = styles.map(function(s) {
+        var isActive  = s.key === currentStyleKey;
+        var isPrt     = s.portrait;
+        var thumb     = buildThumb(s.key, pri, acc, isPrt);
+        var cardCls   = 'style-card' + (isPrt ? ' portrait' : '') + (isActive ? ' active' : '');
+        return '<div class="slider-item">'
+            + '<div class="' + cardCls + '" id="sc_' + s.key + '" onclick="pickStyle(\'' + s.key + '\')">' + thumb + '</div>'
+            + '<div class="style-label' + (isActive ? ' active' : '') + '" id="sl_' + s.key + '">' + s.label + '</div>'
+            + '</div>';
+    }).join('');
+
+    document.getElementById('selectedStyleName').textContent =
+        (styles.find(function(s){ return s.key === currentStyleKey; }) || {label:currentStyleKey}).label;
+}
+
+function refreshSliderThumbs() {
+    var pri = document.getElementById('d_primary').value || '#1e40af';
+    var acc = document.getElementById('d_accent').value  || '#3b82f6';
+    getFilteredStyles().forEach(function(s) {
+        var el = document.getElementById('sc_' + s.key);
+        if (el) el.innerHTML = buildThumb(s.key, pri, acc, s.portrait);
+    });
+    // Also refresh modal if open
+    var modal = document.getElementById('seeAllModal');
+    if (modal && modal.classList.contains('open')) buildSeeAllGrid();
+}
+
+function slideStyles(dir) {
+    var slider = document.getElementById('styleSlider');
+    slider.scrollBy({ left: dir * 260, behavior: 'smooth' });
+}
+
+function pickStyle(key) {
+    var oldKey = currentStyleKey;
+    currentStyleKey = key;
+    document.getElementById('d_style').value = key;
+    document.getElementById('f_style').value = key;
+
+    // Update slider
+    var oldCard  = document.getElementById('sc_' + oldKey);
+    var oldLabel = document.getElementById('sl_' + oldKey);
+    var newCard  = document.getElementById('sc_' + key);
+    var newLabel = document.getElementById('sl_' + key);
+    if (oldCard)  oldCard.classList.remove('active');
+    if (oldLabel) oldLabel.classList.remove('active');
+    if (newCard)  { newCard.classList.add('active'); newCard.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'}); }
+    if (newLabel) newLabel.classList.add('active');
+
+    // Also sync modal grid if open
+    var mOld = document.getElementById('mc_' + oldKey);
+    var mNew = document.getElementById('mc_' + key);
+    if (mOld) mOld.classList.remove('active');
+    if (mNew) mNew.classList.add('active');
+
+    var s = ALL_STYLES.find(function(x){ return x.key === key; });
+    document.getElementById('selectedStyleName').textContent = s ? s.label : key;
+}
+
+/* ================================================================
+   See All modal
+================================================================= */
+function openSeeAll() {
+    buildSeeAllGrid();
+    document.getElementById('seeAllModal').classList.add('open');
+}
+function closeSeeAll() {
+    document.getElementById('seeAllModal').classList.remove('open');
+}
+
+var modalFilter = 'all';
+function setModalFilter(f) {
+    modalFilter = f;
+    ['all','landscape','portrait'].forEach(function(id) {
+        var btn = document.getElementById('ma' + id.charAt(0).toUpperCase() + id.slice(1));
+        if (btn) btn.classList.toggle('active', id === f);
+    });
+    buildSeeAllGrid();
+}
+
+function buildSeeAllGrid() {
+    var styles;
+    if (modalFilter === 'landscape') styles = ALL_STYLES.filter(function(s){ return !s.portrait; });
+    else if (modalFilter === 'portrait') styles = ALL_STYLES.filter(function(s){ return s.portrait; });
+    else styles = ALL_STYLES;
+
+    var pri  = document.getElementById('d_primary').value || '#1e40af';
+    var acc  = document.getElementById('d_accent').value  || '#3b82f6';
+    var grid = document.getElementById('seeAllGrid');
+    grid.innerHTML = styles.map(function(s) {
+        var isActive = s.key === currentStyleKey;
+        var isPrt    = s.portrait;
+        var thumb    = buildThumb(s.key, pri, acc, isPrt);
+        var cardCls  = 'style-card' + (isPrt ? ' portrait' : '') + (isActive ? ' active' : '');
+        return '<div style="text-align:center;">'
+            + '<div class="' + cardCls + '" id="mc_' + s.key + '" onclick="pickStyle(\'' + s.key + '\');closeSeeAll();" style="width:100%;">' + thumb + '</div>'
+            + '<div class="style-label' + (isActive ? ' active' : '') + '">' + s.label + '</div>'
+            + '</div>';
+    }).join('');
+}
+
+// Close modal on overlay click
+document.getElementById('seeAllModal').addEventListener('click', function(e) {
+    if (e.target === this) closeSeeAll();
+});
 
 /* ================================================================
    Template selection
 ================================================================= */
-function selectTemplate(el) {
-    document.querySelectorAll('.tpl-btn').forEach(function(b) {
-        b.classList.remove('active');
-        b.style.borderColor = 'var(--border-color)';
-    });
-    el.classList.add('active');
-    el.style.borderColor = el.dataset.color;
-    applyTemplate(el.dataset.tpl, el.querySelector('span').textContent.trim());
-}
-
 function selectTemplateByKey(key) {
     if (!key) return;
-    var el = document.getElementById('tplBtn_' + key);
-    var name = el ? el.querySelector('span').textContent.trim() : key;
-    applyTemplate(key, name);
-}
-
-function applyTemplate(key, name) {
     selectedTemplate = key;
     document.getElementById('bulkTemplateKey').value = key;
+
+    // Update dropdown
+    var dd = document.getElementById('tplDropdown');
+    if (dd) dd.value = key;
+
+    // Update theme dots
+    document.querySelectorAll('.tpl-theme-dot').forEach(function(d) {
+        d.classList.toggle('active', d.dataset.tpl === key);
+    });
+
+    // Find name
+    var opt = document.querySelector('#tplDropdown option[value="'+key+'"]');
+    var name = opt ? opt.textContent : key;
     document.getElementById('selectedTplName').textContent = name;
 
     // Enable sample CSV download
@@ -502,114 +902,30 @@ function applyTemplate(key, name) {
     btn.style.pointerEvents = 'auto';
     btn.style.opacity = '1';
 
-    // Set colour presets from template config
+    // Apply colour preset
     var p = TPL_COLORS[key];
     if (p) {
         document.getElementById('d_primary').value = p.color;
         document.getElementById('d_accent').value  = p.accent;
         document.getElementById('d_bg').value      = p.bg;
         document.getElementById('d_text').value    = p.text;
-        currentPortrait = (p.orientation === 'portrait');
+        // Auto-switch filter to match orientation
+        var isPortrait = (p.orientation === 'portrait');
+        if (currentStyleFilter === 'all') {
+            // keep all but auto-pick a default style for the orientation
+            if (isPortrait && !ALL_STYLES.find(function(s){ return s.key===currentStyleKey && s.portrait; })) {
+                currentStyleKey = 'v_sharp';
+            } else if (!isPortrait && ALL_STYLES.find(function(s){ return s.key===currentStyleKey && s.portrait; })) {
+                currentStyleKey = 'classic';
+            }
+        } else {
+            setStyleFilter(isPortrait ? 'portrait' : 'landscape');
+        }
     }
 
-    // Rebuild style mini-grid for orientation
-    buildStyleGrid(currentPortrait);
+    buildStyleSlider();
     updateSubmitState();
 }
-
-/* ================================================================
-   Build design style mini-grid
-================================================================= */
-function buildStyleGrid(portrait) {
-    var styles = portrait ? STYLES_PORTRAIT : STYLES_LANDSCAPE;
-    var defaultKey = portrait ? 'v_sharp' : 'classic';
-
-    // Keep current selection if still valid, else default
-    var validKeys = styles.map(function(s){return s.key;});
-    if (validKeys.indexOf(currentStyleKey) === -1) {
-        currentStyleKey = defaultKey;
-    }
-    document.getElementById('d_style').value = currentStyleKey;
-    document.getElementById('f_style').value = currentStyleKey;
-
-    var grid = document.getElementById('styleMiniGrid');
-    grid.innerHTML = '';
-    styles.forEach(function(s) {
-        var isActive = (s.key === currentStyleKey);
-        var wrap = document.createElement('div');
-        wrap.style.textAlign = 'center';
-        wrap.innerHTML =
-            '<div class="style-mini-card'+(portrait?' portrait':'')+(isActive?' active':'')+'" id="smc_'+s.key+'"'+
-            ' onclick="pickStyle(\''+s.key+'\')" title="'+s.label+'">'+
-            renderMiniPreview(s.key, portrait)+
-            '</div>'+
-            '<div class="style-mini-label'+(isActive?' active':'')+'" id="sml_'+s.key+'">'+s.label+'</div>';
-        grid.appendChild(wrap);
-    });
-
-    document.getElementById('selectedStyleName').textContent =
-        (styles.find(function(s){return s.key===currentStyleKey;}) || {label:currentStyleKey}).label;
-}
-
-function pickStyle(key) {
-    // Deactivate old
-    var oldCard  = document.getElementById('smc_' + currentStyleKey);
-    var oldLabel = document.getElementById('sml_' + currentStyleKey);
-    if (oldCard)  { oldCard.classList.remove('active'); }
-    if (oldLabel) { oldLabel.classList.remove('active'); }
-
-    currentStyleKey = key;
-    document.getElementById('d_style').value = key;
-    document.getElementById('f_style').value = key;
-
-    var newCard  = document.getElementById('smc_' + key);
-    var newLabel = document.getElementById('sml_' + key);
-    if (newCard)  { newCard.classList.add('active'); }
-    if (newLabel) { newLabel.classList.add('active'); }
-
-    var allStyles = currentPortrait ? STYLES_PORTRAIT : STYLES_LANDSCAPE;
-    document.getElementById('selectedStyleName').textContent =
-        (allStyles.find(function(s){return s.key===key;}) || {label:key}).label;
-}
-
-/* tiny SVG thumbnail per style */
-function renderMiniPreview(key, portrait) {
-    var w = portrait ? 54 : 86, h = portrait ? 86 : 54;
-    var pri = document.getElementById('d_primary').value || '#1e40af';
-    var bg  = document.getElementById('d_bg').value      || '#ffffff';
-
-    if (key.indexOf('v_') === 0 || key === 'gradient_pro') {
-        return '<svg viewBox="0 0 '+w+' '+h+'" style="width:100%;height:100%;">'+
-               '<rect width="'+w+'" height="'+h+'" fill="'+bg+'"/>'+
-               '<polygon points="0,0 '+w+',0 '+w+','+Math.round(h*0.45)+' 0,'+Math.round(h*0.55)+'" fill="'+pri+'" opacity="0.9"/>'+
-               '</svg>';
-    }
-    if (key === 'neon') {
-        return '<svg viewBox="0 0 '+w+' '+h+'" style="width:100%;height:100%;">'+
-               '<rect width="'+w+'" height="'+h+'" fill="#0f172a"/>'+
-               '<rect x="0" y="0" width="'+Math.round(w*0.3)+'" height="'+h+'" fill="'+pri+'" opacity="0.7"/>'+
-               '</svg>';
-    }
-    if (key === 'stripe' || key === 'v_stripe') {
-        return '<svg viewBox="0 0 '+w+' '+h+'" style="width:100%;height:100%;">'+
-               '<rect width="'+w+'" height="'+h+'" fill="'+bg+'"/>'+
-               '<rect x="0" y="0" width="'+w+'" height="'+Math.round(h*0.28)+'" fill="'+pri+'"/>'+
-               '<rect x="0" y="'+Math.round(h*0.72)+'" width="'+w+'" height="'+Math.round(h*0.06)+'" fill="'+pri+'" opacity="0.4"/>'+
-               '</svg>';
-    }
-    // default: angled top bar
-    return '<svg viewBox="0 0 '+w+' '+h+'" style="width:100%;height:100%;">'+
-           '<rect width="'+w+'" height="'+h+'" fill="'+bg+'"/>'+
-           '<polygon points="0,0 '+w+',0 '+w+','+Math.round(h*0.38)+' 0,'+Math.round(h*0.52)+'" fill="'+pri+'" opacity="0.85"/>'+
-           '</svg>';
-}
-
-// Refresh thumbnails when colours change
-['d_primary','d_bg'].forEach(function(id) {
-    document.getElementById(id).addEventListener('input', function() {
-        if (selectedTemplate) buildStyleGrid(currentPortrait);
-    });
-});
 
 /* ================================================================
    File handling
@@ -626,14 +942,10 @@ function handleDragLeave(e) { document.getElementById('uploadZone').classList.re
 function handleDrop(e) {
     e.preventDefault();
     document.getElementById('uploadZone').classList.remove('dragover');
-    var input = document.getElementById('csvFileInput');
     if (e.dataTransfer.files.length) {
-        // DataTransfer → input.files is read-only; use a workaround via the file list
-        // Just call handleFileSelect with the first file displayed
         var file = e.dataTransfer.files[0];
         document.getElementById('uploadFilename').textContent = '📎 ' + file.name;
         fileSelected = true;
-        // Store file reference for FormData
         window._droppedFile = file;
         updateSubmitState();
     }
@@ -668,16 +980,15 @@ function resetAll() {
     var btn = document.getElementById('sampleCsvBtn');
     btn.href = '#'; btn.style.pointerEvents = 'none'; btn.style.opacity = '0.4';
 
-    document.querySelectorAll('.tpl-btn').forEach(function(b) {
-        b.classList.remove('active'); b.style.borderColor = 'var(--border-color)';
-    });
     var dd = document.getElementById('tplDropdown');
     if (dd) dd.value = '';
+    document.querySelectorAll('.tpl-theme-dot').forEach(function(d){ d.classList.remove('active'); });
 
-    document.getElementById('styleMiniGrid').innerHTML = '';
-    document.getElementById('selectedStyleName').textContent = 'Angled Pro';
+    currentStyleKey = 'classic';
     document.getElementById('d_style').value = 'classic';
     document.getElementById('f_style').value = 'classic';
+    document.getElementById('selectedStyleName').textContent = 'Angled Pro';
+    buildStyleSlider();
 
     updateSubmitState();
 }
@@ -689,7 +1000,6 @@ function submitBulk(e) {
     e.preventDefault();
     if (!selectedTemplate || !fileSelected) return;
 
-    // Sync design fields from pickers → hidden form inputs
     document.getElementById('f_primary').value = document.getElementById('d_primary').value;
     document.getElementById('f_accent').value  = document.getElementById('d_accent').value;
     document.getElementById('f_bg').value      = document.getElementById('d_bg').value;
@@ -708,8 +1018,6 @@ function submitBulk(e) {
     document.getElementById('progressLabel').textContent = 'Uploading CSV and creating cards…';
 
     var fd = new FormData(document.getElementById('bulkForm'));
-
-    // Attach the CSV file (either from input or dropped)
     var csvInput = document.getElementById('csvFileInput');
     if (window._droppedFile) {
         fd.append('csv_file', window._droppedFile, window._droppedFile.name);
@@ -726,7 +1034,6 @@ function submitBulk(e) {
     .then(function(data) {
         document.getElementById('progressBar').style.width = '100%';
         document.getElementById('progressLabel').textContent = data.message || (data.success ? 'Done!' : 'Error');
-
         document.getElementById('bulkResultsWrap').style.display = 'block';
 
         if (data.success) {
@@ -761,6 +1068,6 @@ function submitBulk(e) {
     });
 }
 
-// Init: build a default style grid (landscape)
-buildStyleGrid(false);
+// Init
+buildStyleSlider();
 </script>
