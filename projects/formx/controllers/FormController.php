@@ -42,6 +42,15 @@ class FormController
                 }
             }
         }
+        // Apply v2 migration (idempotent: uses ALTER … ADD COLUMN IF NOT EXISTS + CREATE TABLE IF NOT EXISTS)
+        try {
+            $v2 = file_get_contents(BASE_PATH . '/migrations/formx_v2.sql');
+            if ($v2) {
+                foreach (array_filter(array_map('trim', explode(';', $v2))) as $stmt) {
+                    if ($stmt) { try { $this->db->query($stmt); } catch (\Exception $ex) {} }
+                }
+            }
+        } catch (\Exception $e) {}
     }
 
     private function userId(): int
@@ -192,6 +201,11 @@ class FormController
         $fieldsJson  = $this->input('fields_json', '[]');
         $settingsJson = $this->input('settings_json', '{}');
         $status      = $this->input('status', 'draft');
+        $expiresAt   = trim($this->input('expires_at', '')) ?: null;
+        // Convert local datetime-local value to MySQL datetime
+        if ($expiresAt) {
+            $expiresAt = date('Y-m-d H:i:s', strtotime($expiresAt)) ?: null;
+        }
 
         if (!$title) {
             $this->flash('error', 'Form title is required.');
@@ -214,8 +228,8 @@ class FormController
         $slug = $this->uniqueSlug($title);
 
         $this->db->query(
-            "INSERT INTO formx_forms (user_id, title, slug, description, fields, settings, status)
-             VALUES (?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO formx_forms (user_id, title, slug, description, fields, settings, status, expires_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
             [
                 $this->userId(),
                 $title,
@@ -224,6 +238,7 @@ class FormController
                 json_encode($fields),
                 json_encode($settings),
                 in_array($status, ['active', 'inactive', 'draft']) ? $status : 'draft',
+                $expiresAt,
             ]
         );
 
@@ -296,6 +311,10 @@ class FormController
         $fieldsJson  = $this->input('fields_json', '[]');
         $settingsJson = $this->input('settings_json', '{}');
         $status      = $this->input('status', 'draft');
+        $expiresAt   = trim($this->input('expires_at', '')) ?: null;
+        if ($expiresAt) {
+            $expiresAt = date('Y-m-d H:i:s', strtotime($expiresAt)) ?: null;
+        }
 
         if (!$title) {
             $this->flash('error', 'Form title is required.');
@@ -315,14 +334,42 @@ class FormController
             }
         }
 
+        // ── Save version snapshot before overwriting ──────────────────────────
+        try {
+            $current = $this->ownsForm($id);
+            if ($current) {
+                $this->db->query(
+                    "INSERT INTO formx_form_versions (form_id, user_id, title, description, fields, settings, status)
+                     VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    [
+                        $id,
+                        $this->userId(),
+                        $current['title'],
+                        $current['description'],
+                        is_string($current['fields']) ? $current['fields'] : json_encode($current['fields']),
+                        is_string($current['settings']) ? $current['settings'] : json_encode($current['settings']),
+                        $current['status'],
+                    ]
+                );
+                // Keep only the 20 most recent versions per form to avoid unbounded growth
+                $this->db->query(
+                    "DELETE FROM formx_form_versions WHERE form_id = ? AND id NOT IN (
+                        SELECT id FROM (SELECT id FROM formx_form_versions WHERE form_id = ? ORDER BY created_at DESC LIMIT 20) t
+                    )",
+                    [$id, $id]
+                );
+            }
+        } catch (\Exception $e) { /* ignore if versions table not yet created */ }
+
         $this->db->query(
-            "UPDATE formx_forms SET title=?, description=?, fields=?, settings=?, status=?, updated_at=NOW() WHERE id=? AND user_id=?",
+            "UPDATE formx_forms SET title=?, description=?, fields=?, settings=?, status=?, expires_at=?, updated_at=NOW() WHERE id=? AND user_id=?",
             [
                 $title,
                 $description ?: null,
                 json_encode($fields),
                 json_encode($settings),
                 in_array($status, ['active', 'inactive', 'draft']) ? $status : 'draft',
+                $expiresAt,
                 $id,
                 $this->userId(),
             ]
@@ -437,5 +484,201 @@ class FormController
             'sidebarForms' => $sidebarForms,
             'activePage'   => 'forms',
         ]);
+    }
+
+    // -------------------------------------------------------------------------
+    // View single submission
+    // -------------------------------------------------------------------------
+
+    public function viewSubmission(int $id, int $subId): void
+    {
+        $form = $this->ownsForm($id);
+        if (!$form) {
+            $this->flash('error', 'Form not found.');
+            $this->redirect('/projects/formx/forms');
+            return;
+        }
+
+        $sub = $this->db->fetch(
+            "SELECT * FROM formx_submissions WHERE id = ? AND form_id = ?",
+            [$subId, $id]
+        );
+        if (!$sub) {
+            $this->flash('error', 'Submission not found.');
+            $this->redirect('/projects/formx/' . $id . '/submissions');
+            return;
+        }
+
+        $form['fields']  = json_decode($form['fields']  ?? '[]', true) ?: [];
+        $sub['data']     = json_decode($sub['data']     ?? '{}', true) ?: [];
+
+        $sidebarForms = $this->db->fetchAll(
+            "SELECT id, title FROM formx_forms WHERE user_id = ? ORDER BY updated_at DESC LIMIT 8",
+            [$this->userId()]
+        );
+
+        View::render('projects/formx/submission-detail', [
+            'title'        => 'Submission #' . $subId,
+            'form'         => $form,
+            'sub'          => $sub,
+            'sidebarForms' => $sidebarForms,
+            'activePage'   => 'forms',
+        ]);
+    }
+
+    // -------------------------------------------------------------------------
+    // Analytics
+    // -------------------------------------------------------------------------
+
+    public function analytics(int $id): void
+    {
+        $form = $this->ownsForm($id);
+        if (!$form) {
+            $this->flash('error', 'Form not found.');
+            $this->redirect('/projects/formx/forms');
+            return;
+        }
+
+        // Submissions per day – last 30 days
+        $daily = $this->db->fetchAll(
+            "SELECT DATE(created_at) AS day, COUNT(*) AS cnt
+             FROM formx_submissions WHERE form_id = ?
+               AND created_at >= DATE_SUB(CURDATE(), INTERVAL 29 DAY)
+             GROUP BY DATE(created_at) ORDER BY day ASC",
+            [$id]
+        );
+
+        // Device breakdown (derived from device column or user_agent)
+        $devices = $this->db->fetchAll(
+            "SELECT
+                CASE
+                    WHEN device IS NOT NULL THEN device
+                    WHEN user_agent LIKE '%Mobile%' OR user_agent LIKE '%Android%' OR user_agent LIKE '%iPhone%' THEN 'Mobile'
+                    WHEN user_agent LIKE '%Tablet%' OR user_agent LIKE '%iPad%' THEN 'Tablet'
+                    ELSE 'Desktop'
+                END AS device_type,
+                COUNT(*) AS cnt
+             FROM formx_submissions WHERE form_id = ?
+             GROUP BY device_type ORDER BY cnt DESC",
+            [$id]
+        );
+
+        // Total & this month
+        $total       = (int)$this->db->fetchColumn("SELECT COUNT(*) FROM formx_submissions WHERE form_id=?", [$id]);
+        $thisMonth   = (int)$this->db->fetchColumn(
+            "SELECT COUNT(*) FROM formx_submissions WHERE form_id=? AND YEAR(created_at)=YEAR(NOW()) AND MONTH(created_at)=MONTH(NOW())",
+            [$id]
+        );
+        $lastMonth   = (int)$this->db->fetchColumn(
+            "SELECT COUNT(*) FROM formx_submissions WHERE form_id=? AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)",
+            [$id]
+        );
+
+        $sidebarForms = $this->db->fetchAll(
+            "SELECT id, title FROM formx_forms WHERE user_id = ? ORDER BY updated_at DESC LIMIT 8",
+            [$this->userId()]
+        );
+
+        View::render('projects/formx/analytics', [
+            'title'        => 'Analytics: ' . htmlspecialchars($form['title']),
+            'form'         => $form,
+            'daily'        => $daily,
+            'devices'      => $devices,
+            'total'        => $total,
+            'thisMonth'    => $thisMonth,
+            'lastMonth'    => $lastMonth,
+            'sidebarForms' => $sidebarForms,
+            'activePage'   => 'forms',
+        ]);
+    }
+
+    // -------------------------------------------------------------------------
+    // Version History
+    // -------------------------------------------------------------------------
+
+    public function versions(int $id): void
+    {
+        $form = $this->ownsForm($id);
+        if (!$form) {
+            $this->flash('error', 'Form not found.');
+            $this->redirect('/projects/formx/forms');
+            return;
+        }
+
+        $versions = [];
+        try {
+            $versions = $this->db->fetchAll(
+                "SELECT id, title, status, note, created_at FROM formx_form_versions
+                 WHERE form_id = ? ORDER BY created_at DESC LIMIT 20",
+                [$id]
+            );
+        } catch (\Exception $e) {}
+
+        $sidebarForms = $this->db->fetchAll(
+            "SELECT id, title FROM formx_forms WHERE user_id = ? ORDER BY updated_at DESC LIMIT 8",
+            [$this->userId()]
+        );
+
+        View::render('projects/formx/versions', [
+            'title'        => 'Version History: ' . htmlspecialchars($form['title']),
+            'form'         => $form,
+            'versions'     => $versions,
+            'sidebarForms' => $sidebarForms,
+            'activePage'   => 'forms',
+        ]);
+    }
+
+    public function restoreVersion(int $id, int $vid): void
+    {
+        $form = $this->ownsForm($id);
+        if (!$form || !$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request.');
+            $this->redirect('/projects/formx/' . $id . '/versions');
+            return;
+        }
+
+        $version = null;
+        try {
+            $version = $this->db->fetch(
+                "SELECT * FROM formx_form_versions WHERE id = ? AND form_id = ?",
+                [$vid, $id]
+            );
+        } catch (\Exception $e) {}
+
+        if (!$version) {
+            $this->flash('error', 'Version not found.');
+            $this->redirect('/projects/formx/' . $id . '/versions');
+            return;
+        }
+
+        // Snapshot current before restoring
+        try {
+            $this->db->query(
+                "INSERT INTO formx_form_versions (form_id, user_id, title, description, fields, settings, status, note)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                [
+                    $id, $this->userId(), $form['title'], $form['description'],
+                    is_string($form['fields']) ? $form['fields'] : json_encode($form['fields']),
+                    is_string($form['settings']) ? $form['settings'] : json_encode($form['settings']),
+                    $form['status'], 'Auto-snapshot before restore',
+                ]
+            );
+        } catch (\Exception $e) {}
+
+        $this->db->query(
+            "UPDATE formx_forms SET title=?, description=?, fields=?, settings=?, status=?, updated_at=NOW() WHERE id=? AND user_id=?",
+            [
+                $version['title'],
+                $version['description'],
+                $version['fields'],
+                $version['settings'],
+                $version['status'],
+                $id,
+                $this->userId(),
+            ]
+        );
+
+        $this->flash('success', 'Form restored to version from ' . date('M j Y H:i', strtotime($version['created_at'])) . '.');
+        $this->redirect('/projects/formx/' . $id . '/edit');
     }
 }

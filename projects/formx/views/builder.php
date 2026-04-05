@@ -140,6 +140,12 @@
                 <a href="/projects/formx/<?= $form['id'] ?>/submissions" class="fx-btn fx-btn-secondary">
                     <i class="fas fa-inbox"></i> <span>Submissions</span>
                 </a>
+                <a href="/projects/formx/<?= $form['id'] ?>/analytics" class="fx-btn fx-btn-secondary" title="Analytics">
+                    <i class="fas fa-chart-bar"></i> <span>Analytics</span>
+                </a>
+                <a href="/projects/formx/<?= $form['id'] ?>/versions" class="fx-btn fx-btn-secondary" title="Versions">
+                    <i class="fas fa-history"></i>
+                </a>
                 <?php if ($form['status'] === 'active'): ?>
                 <a href="/forms/<?= View::e($form['slug']) ?>" target="_blank" class="fx-btn fx-btn-secondary">
                     <i class="fas fa-external-link-alt"></i>
@@ -213,6 +219,12 @@
                     <input type="email" id="settingEmail" class="fx-input"
                            value="<?= View::e($form['settings']['notify_email'] ?? '') ?>"
                            placeholder="you@example.com">
+                </div>
+                <div class="fx-field-group">
+                    <label class="fx-label">Expires At <span style="color:var(--text-secondary);font-weight:400;">(optional)</span></label>
+                    <input type="datetime-local" id="settingExpiresAt" class="fx-input"
+                           value="<?= htmlspecialchars(!empty($form['expires_at']) ? date('Y-m-d\TH:i', strtotime($form['expires_at'])) : '') ?>">
+                    <p style="font-size:.72rem;color:var(--text-secondary);margin-top:3px;">Leave blank to never expire.</p>
                 </div>
 
                 <div style="border-top:1px solid var(--border-color);margin:16px 0 12px;"></div>
@@ -291,6 +303,7 @@
     <input type="hidden" name="title"        id="hiddenTitle">
     <input type="hidden" name="description"  id="hiddenDesc">
     <input type="hidden" name="status"       id="hiddenStatus">
+    <input type="hidden" name="expires_at"   id="hiddenExpiresAt">
     <input type="hidden" name="fields_json"  id="hiddenFields">
     <input type="hidden" name="settings_json" id="hiddenSettings">
 </form>
@@ -632,6 +645,7 @@ window.submitBuilder = function() {
     document.getElementById('hiddenTitle').value    = titleEl.value.trim();
     document.getElementById('hiddenDesc').value     = document.getElementById('settingDesc').value;
     document.getElementById('hiddenStatus').value   = document.getElementById('settingStatus').value;
+    document.getElementById('hiddenExpiresAt').value = document.getElementById('settingExpiresAt') ? document.getElementById('settingExpiresAt').value : '';
     // Normalize: convert options strings back to arrays for consistent DB storage
     const normalizedFields = fields.map(function(f) {
         var nf = Object.assign({}, f);

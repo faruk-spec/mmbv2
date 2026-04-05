@@ -147,11 +147,16 @@
                     <td style="font-size:.83rem;"><?= View::e(mb_strimwidth((string)$val, 0, 120, '…')) ?></td>
                     <?php endforeach; ?>
                     <td>
+                        <div style="display:flex;gap:6px;align-items:center;">
+                        <a href="/projects/formx/<?= $form['id'] ?>/submissions/<?= $sub['id'] ?>"
+                           class="fx-action-btn" style="background:rgba(0,240,255,.08);border-color:rgba(0,240,255,.2);color:var(--cyan);"
+                           title="View"><i class="fas fa-eye"></i></a>
                         <form method="POST" action="/admin/formx/<?= $form['id'] ?>/submissions/<?= $sub['id'] ?>/delete"
                               style="display:inline;" onsubmit="return confirm('Delete this submission?');">
                             <input type="hidden" name="_csrf_token" value="<?= Security::generateCsrfToken() ?>">
                             <button type="submit" class="fx-action-btn del" title="Delete"><i class="fas fa-trash"></i></button>
                         </form>
+                        </div>
                     </td>
                 </tr>
                 <?php endforeach; ?>

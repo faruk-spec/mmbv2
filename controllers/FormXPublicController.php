@@ -44,6 +44,12 @@ class FormXPublicController extends BaseController
         $form['fields']   = json_decode($form['fields']   ?? '[]', true) ?: [];
         $form['settings'] = json_decode($form['settings'] ?? '{}', true) ?: [];
 
+        // ── Expiry check ────────────────────────────────────────────────────
+        $isExpired = false;
+        if (!empty($form['expires_at'])) {
+            $isExpired = strtotime($form['expires_at']) < time();
+        }
+
         // ── Password-gate handling ──────────────────────────────────────────
         $gateOpen  = true;
         $gateError = false;
@@ -69,10 +75,11 @@ class FormXPublicController extends BaseController
         }
 
         \Core\View::render('formx/public-form', [
-            'title'     => htmlspecialchars($form['title']),
-            'form'      => $form,
-            'gateOpen'  => $gateOpen,
-            'gateError' => $gateError,
+            'title'      => htmlspecialchars($form['title']),
+            'form'       => $form,
+            'gateOpen'   => $gateOpen,
+            'gateError'  => $gateError,
+            'isExpired'  => $isExpired,
         ]);
     }
 
@@ -90,6 +97,13 @@ class FormXPublicController extends BaseController
         if (!$form) {
             http_response_code(404);
             exit;
+        }
+
+        // Check expiry
+        if (!empty($form['expires_at']) && strtotime($form['expires_at']) < time()) {
+            Helpers::flash('error', 'This form has expired and is no longer accepting submissions.');
+            Helpers::redirect('/forms/' . $slug);
+            return;
         }
 
         $token = $_POST['_csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
@@ -142,10 +156,34 @@ class FormXPublicController extends BaseController
         $ip        = ($firstIp && filter_var($firstIp, FILTER_VALIDATE_IP)) ? $firstIp : ($_SERVER['REMOTE_ADDR'] ?? null);
         $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? null;
 
-        $this->db->query(
-            "INSERT INTO formx_submissions (form_id, data, ip_address, user_agent) VALUES (?, ?, ?, ?)",
-            [$form['id'], json_encode($submittedData), $ip, $userAgent]
-        );
+        // Detect device type and browser from user-agent
+        $device  = 'Desktop';
+        $browser = 'Unknown';
+        if ($userAgent) {
+            if (preg_match('/iPhone|Android.*Mobile|BlackBerry|Windows Phone/i', $userAgent)) {
+                $device = 'Mobile';
+            } elseif (preg_match('/iPad|Android(?!.*Mobile)|Tablet/i', $userAgent)) {
+                $device = 'Tablet';
+            }
+            if      (str_contains($userAgent, 'Firefox'))            $browser = 'Firefox';
+            elseif  (str_contains($userAgent, 'Edg/'))               $browser = 'Edge';
+            elseif  (str_contains($userAgent, 'Chrome'))             $browser = 'Chrome';
+            elseif  (str_contains($userAgent, 'Safari'))             $browser = 'Safari';
+            elseif  (str_contains($userAgent, 'Opera') || str_contains($userAgent, 'OPR/')) $browser = 'Opera';
+        }
+
+        try {
+            $this->db->query(
+                "INSERT INTO formx_submissions (form_id, data, ip_address, user_agent, device, browser) VALUES (?, ?, ?, ?, ?, ?)",
+                [$form['id'], json_encode($submittedData), $ip, $userAgent, $device, $browser]
+            );
+        } catch (\Exception $e) {
+            // Fallback if device/browser columns don't exist yet (old schema)
+            $this->db->query(
+                "INSERT INTO formx_submissions (form_id, data, ip_address, user_agent) VALUES (?, ?, ?, ?)",
+                [$form['id'], json_encode($submittedData), $ip, $userAgent]
+            );
+        }
 
         $this->db->query(
             "UPDATE formx_forms SET submissions_count = submissions_count + 1 WHERE id = ?",

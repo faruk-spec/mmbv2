@@ -64,7 +64,22 @@ switch ($segments[0]) {
                     $ctrl->duplicate($id);
                     break;
                 case 'submissions':
-                    $ctrl->submissions($id);
+                    if (isset($segments[2]) && is_numeric($segments[2])) {
+                        $subId = (int) $segments[2];
+                        $ctrl->viewSubmission($id, $subId);
+                    } else {
+                        $ctrl->submissions($id);
+                    }
+                    break;
+                case 'analytics':
+                    $ctrl->analytics($id);
+                    break;
+                case 'versions':
+                    if (isset($segments[2]) && is_numeric($segments[2]) && isset($segments[3]) && $segments[3] === 'restore') {
+                        $ctrl->restoreVersion($id, (int)$segments[2]);
+                    } else {
+                        $ctrl->versions($id);
+                    }
                     break;
                 default:
                     http_response_code(404);
