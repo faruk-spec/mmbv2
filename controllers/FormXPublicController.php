@@ -91,7 +91,7 @@ class FormXPublicController extends BaseController
                 $gateOpen = true;
             } elseif (isset($_POST['_gate_password'])) {
                 $submitted = $_POST['_gate_password'] ?? '';
-                if (password_verify($submitted, $accessPasswordHash) || $submitted === $accessPasswordHash) {
+                if (password_verify($submitted, $accessPasswordHash)) {
                     $_SESSION[$sessionKey] = true;
                     $gateOpen = true;
                 } else {
