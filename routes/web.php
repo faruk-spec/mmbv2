@@ -154,3 +154,8 @@ $router->delete('/projects/{project}/{path:wildcard}', function($project, $path 
 // ProShare anonymous short URLs (must be defined here for global access)
 $router->get('/s/{shortcode}', 'Projects\ProShare\Controllers\DownloadController@download');
 $router->get('/t/{shortcode}', 'Projects\ProShare\Controllers\TextShareController@view');
+
+
+// ── FormX public form pages ───────────────────────────────────────────────────
+$router->get('/forms/{slug}',  'FormXPublicController@show');
+$router->post('/forms/{slug}', 'FormXPublicController@submit');

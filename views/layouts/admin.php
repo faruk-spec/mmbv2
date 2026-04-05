@@ -1872,7 +1872,30 @@
                 <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('api') || \Core\Auth::hasPermissionGroup('websocket') || \Core\Auth::hasPermissionGroup('analytics') || \Core\Auth::hasPermissionGroup('email') || \Core\Auth::hasPermissionGroup('notifications') || \Core\Auth::hasPermissionGroup('performance')): ?>
                 <div class="menu-section">
                     <div class="menu-section-title">Advanced Features</div>
-                    
+
+                    <!-- FormX – Form Builder -->
+                    <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('formx')): ?>
+                    <div class="menu-item menu-dropdown">
+                        <div class="menu-dropdown-toggle">
+                            <div class="left">
+                                <i class="fas fa-wpforms"></i>
+                                <span>FormX</span>
+                            </div>
+                            <i class="fas fa-chevron-down arrow"></i>
+                        </div>
+                        <div class="menu-dropdown-content">
+                            <a href="/admin/formx" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/formx') === 0 && ($_SERVER['REQUEST_URI'] ?? '') === '/admin/formx' ? 'active' : '' ?>">
+                                <i class="fas fa-list"></i>
+                                <span>All Forms</span>
+                            </a>
+                            <a href="/admin/formx/create" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/formx/create') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-plus-circle"></i>
+                                <span>New Form</span>
+                            </a>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
                     <!-- API Management -->
                     <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('api')): ?>
                     <div class="menu-item menu-dropdown">

@@ -337,6 +337,20 @@ $router->get('/admin/projects/resumex/resumes', 'Admin\\ResumeXAdminController@r
 $router->post('/admin/projects/resumex/templates/toggle-pro', 'Admin\\ResumeXAdminController@toggleTemplatePro', ['auth', 'admin']);
 $router->post('/admin/projects/resumex/templates/toggle-builtin-pro', 'Admin\\ResumeXAdminController@toggleBuiltinTemplatePro', ['auth', 'admin']);
 
+// ── FormX – Form Builder ─────────────────────────────────────────────────────
+$router->get('/admin/formx',                                         'Admin\\FormXController@index',            ['auth', 'admin']);
+$router->get('/admin/formx/create',                                  'Admin\\FormXController@create',           ['auth', 'admin']);
+$router->post('/admin/formx/save',                                   'Admin\\FormXController@save',             ['auth', 'admin']);
+$router->get('/admin/formx/{id}/edit',                               'Admin\\FormXController@edit',             ['auth', 'admin']);
+$router->post('/admin/formx/{id}/update',                            'Admin\\FormXController@update',           ['auth', 'admin']);
+$router->post('/admin/formx/{id}/delete',                            'Admin\\FormXController@delete',           ['auth', 'admin']);
+$router->post('/admin/formx/{id}/duplicate',                         'Admin\\FormXController@duplicate',        ['auth', 'admin']);
+$router->post('/admin/formx/{id}/toggle',                            'Admin\\FormXController@toggle',           ['auth', 'admin']);
+$router->get('/admin/formx/{id}/submissions',                        'Admin\\FormXController@submissions',      ['auth', 'admin']);
+$router->get('/admin/formx/{id}/export',                             'Admin\\FormXController@exportSubmissions', ['auth', 'admin']);
+$router->get('/admin/formx/{form_id}/submissions/{submission_id}',   'Admin\\FormXController@submissionDetail', ['auth', 'admin']);
+$router->post('/admin/formx/{form_id}/submissions/{submission_id}/delete', 'Admin\\FormXController@deleteSubmission', ['auth', 'admin']);
+
 // ── CardX (ID Card Generator) Admin ─────────────────────────────────────────
 $router->get('/admin/projects/idcard', 'Admin\\IDCardAdminController@overview', ['auth', 'admin']);
 $router->get('/admin/projects/idcard/cards', 'Admin\\IDCardAdminController@cards', ['auth', 'admin']);
