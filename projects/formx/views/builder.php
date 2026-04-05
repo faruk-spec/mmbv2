@@ -247,7 +247,7 @@
                            placeholder="0">
                 </div>
                 <div class="fx-field-group">
-                    <label class="fx-label">Max Submissions Per User <span style="color:var(--text-secondary);font-weight:400;">(0 = unlimited)</span></label>
+                    <label class="fx-label">Max Submissions Per IP Address <span style="color:var(--text-secondary);font-weight:400;">(0 = unlimited)</span></label>
                     <input type="number" id="settingMaxPerIP" class="fx-input" min="0" step="1"
                            value="<?= (int)($form['settings']['max_submissions_per_ip'] ?? 0) ?>"
                            placeholder="0">
