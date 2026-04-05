@@ -672,13 +672,16 @@ window.submitBuilder = function() {
     // Get access password: use new value if typed, otherwise preserve existing hash
     const accessModeEl = document.getElementById('settingAccessMode');
     const accessPwEl   = document.getElementById('settingAccessPassword');
-    const existingPwHash = '<?= htmlspecialchars($form ? ($form['settings']['access_password'] ?? '') : '') ?>';
+    // Use a boolean flag to avoid sending the existing hash to the client
+    const hasExistingPassword = <?= json_encode(!empty($form['settings']['access_password'])) ?>;
     document.getElementById('hiddenSettings').value = JSON.stringify({
-        success_message:  document.getElementById('settingSuccessMsg').value,
-        redirect_url:     document.getElementById('settingRedirect').value,
-        notify_email:     document.getElementById('settingEmail').value,
-        access_mode:      accessModeEl ? accessModeEl.value : 'public',
-        access_password:  (accessPwEl && accessPwEl.value) ? accessPwEl.value : existingPwHash,
+        success_message:     document.getElementById('settingSuccessMsg').value,
+        redirect_url:        document.getElementById('settingRedirect').value,
+        notify_email:        document.getElementById('settingEmail').value,
+        access_mode:         accessModeEl ? accessModeEl.value : 'public',
+        // Send new password if typed; send empty string to signal "keep existing" on server
+        access_password_new: (accessPwEl && accessPwEl.value) ? accessPwEl.value : '',
+        access_password_keep: (accessPwEl && accessPwEl.value) ? false : hasExistingPassword,
     });
     document.getElementById('builderForm').submit();
 };

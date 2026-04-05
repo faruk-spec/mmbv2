@@ -218,12 +218,13 @@ class FormController
         if (!is_array($fields))   $fields   = [];
         if (!is_array($settings)) $settings = [];
 
-        // Hash access_password if provided and not already a bcrypt hash
-        if (!empty($settings['access_password']) && $settings['access_mode'] === 'password') {
-            if (strlen($settings['access_password']) < 60 || !str_starts_with($settings['access_password'], '$2')) {
-                $settings['access_password'] = password_hash($settings['access_password'], PASSWORD_BCRYPT);
-            }
+        // Hash access_password if provided (new form create — no existing hash to preserve)
+        if (!empty($settings['access_password_new']) && ($settings['access_mode'] ?? '') === 'password') {
+            $settings['access_password'] = password_hash($settings['access_password_new'], PASSWORD_BCRYPT);
+        } else {
+            $settings['access_password'] = '';
         }
+        unset($settings['access_password_new'], $settings['access_password_keep']);
 
         $slug = $this->uniqueSlug($title);
 
@@ -327,12 +328,19 @@ class FormController
         if (!is_array($fields))   $fields   = [];
         if (!is_array($settings)) $settings = [];
 
-        // Hash access_password if provided and not already a bcrypt hash
-        if (!empty($settings['access_password']) && ($settings['access_mode'] ?? '') === 'password') {
-            if (strlen($settings['access_password']) < 60 || !str_starts_with($settings['access_password'], '$2')) {
-                $settings['access_password'] = password_hash($settings['access_password'], PASSWORD_BCRYPT);
-            }
+        // Handle access password: new value takes priority; keep existing if flagged
+        if (!empty($settings['access_password_new']) && ($settings['access_mode'] ?? '') === 'password') {
+            // New plain-text password — hash it
+            $settings['access_password'] = password_hash($settings['access_password_new'], PASSWORD_BCRYPT);
+        } elseif (!empty($settings['access_password_keep'])) {
+            // Keep the existing hash stored in DB
+            $current = $this->ownsForm($id);
+            $existingSettings = is_string($current['settings'] ?? '') ? json_decode($current['settings'] ?? '{}', true) : ($current['settings'] ?? []);
+            $settings['access_password'] = $existingSettings['access_password'] ?? '';
+        } else {
+            $settings['access_password'] = '';
         }
+        unset($settings['access_password_new'], $settings['access_password_keep']);
 
         // ── Save version snapshot before overwriting ──────────────────────────
         try {
