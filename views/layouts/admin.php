@@ -1609,12 +1609,7 @@
                                 <span>Settings</span>
                             </a>
                             <?php endif; ?>
-                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('idcard.settings')): ?>
-                            <a href="/admin/projects/idcard/ai-settings" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/idcard/ai-settings') === 0 ? 'active' : '' ?>">
-                                <i class="fas fa-robot"></i>
-                                <span>AI Integration</span>
-                            </a>
-                            <?php endif; ?>
+
                         </div>
                     </div>
                     <?php endif; ?>
