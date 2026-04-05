@@ -7,6 +7,7 @@
 
 namespace Controllers\Admin;
 
+use Controllers\BaseController;
 use Core\Database;
 use Core\View;
 

@@ -1,10 +1,7 @@
 -- LinkShortner Migration
 -- Run this after project creation to initialize the database tables
 -- Source: projects/linkshortner/schema.sql
-
--- Create the database if needed
-CREATE DATABASE IF NOT EXISTS `mmb_linkshortner` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE `mmb_linkshortner`;
+-- NOTE: The database mmb_linkshortner must already exist and testuser must have access to it.
 
 CREATE TABLE IF NOT EXISTS `short_links` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
