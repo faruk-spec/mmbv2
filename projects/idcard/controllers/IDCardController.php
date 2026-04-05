@@ -811,64 +811,138 @@ class IDCardController
         $acc = $tplConfig['accent'] ?? '#3b82f6';
 
         $safePrompt   = mb_substr(strip_tags($prompt), 0, 300);
-        $designHint   = $safePrompt ?: 'professional modern design';
+        $designHint   = $safePrompt ?: 'professional modern corporate design';
+
+        // Orientation-specific structural layout guidance
+        if ($isPortrait) {
+            $layoutGuide = <<<LAYOUT
+PORTRAIT LAYOUT STRUCTURE (follow this layer stack from top to bottom):
+Layer 1 — HEADER BAND (top 38% of card, full width):
+  • Fill with a rich gradient using the primary colour (e.g. linear-gradient from primary to a darker shade or accent).
+  • Add an SVG diagonal/angular cut at the bottom edge of this band (skew the band bottom edge by 8–12 degrees using a polygon or path).
+  • Place the organisation name "{$orgVal}" in bold white text inside this band (top area, font ≈ 0.75rem).
+  • Add a small rectangular "logo placeholder" div (white, 28×16px, top-left corner, border-radius:3px) to represent a logo.
+  • Add decorative SVG shapes inside this band: e.g. semi-transparent circles, angular polygons, or wave path in accent colour.
+
+Layer 2 — PHOTO ZONE (centred, overlapping header/body boundary):
+  • Large circular photo frame: width ≈ 27% of card width, aspect-ratio 1/1, border-radius 50%.
+  • Give it a 3–4px solid white border and a drop shadow (box-shadow:0 4px 14px rgba(0,0,0,0.35)).
+  • Position it so roughly 50% sits in the header and 50% in the body (use position:absolute, top ≈ 28%, left:50%, transform:translateX(-50%)).
+  • Inside the circle use <!--CX_PHOTO_SLOT-->.
+
+Layer 3 — BODY (remaining 62% below header, white or very light neutral background):
+  • Add top padding equal to ~half the photo circle height to clear the photo.
+  • Centre-align the person name in large bold dark text (1.0–1.15rem, font-weight:800, colour: dark version of primary).
+  • Below name: job title/designation in medium weight, primary colour, smaller size (0.72rem).
+  • Below title: a thin horizontal accent-colour divider line (width:55%, height:2px, margin:auto).
+  • Below divider: left-aligned field rows (padding-left:8%), each row as:
+      <div style="display:flex;gap:4px;margin:1.5px 0;">
+        <span style="font-weight:700;color:{$pri};min-width:35%;font-size:0.58rem;">LABEL:</span>
+        <span style="color:#444;font-size:0.58rem;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">VALUE</span>
+      </div>
+  • Fields to show in rows (in this order): Department, Employee ID, Date of Birth, Phone, Email, Address.
+
+Layer 4 — FOOTER STRIP (bottom 7% of card, full width):
+  • Solid accent colour background.
+  • Optionally show a small barcode-like SVG pattern (thin vertical lines) or repeat org name in white.
+LAYOUT;
+        } else {
+            $layoutGuide = <<<LAYOUT
+LANDSCAPE LAYOUT STRUCTURE (follow this two-panel layout):
+LEFT PANEL (leftmost 36% of card width, full height):
+  • Rich gradient background using primary colour (vertical or diagonal gradient).
+  • Add decorative SVG angular shapes or curves in accent colour inside this panel.
+  • At the top: organisation name "{$orgVal}" in small bold white text (≈0.62rem), with a small rectangular "logo placeholder" div (white, 26×14px, border-radius:2px) above it.
+  • Centre of left panel: Large circular photo frame, width ≈ 55% of panel width, aspect-ratio:1/1, border-radius:50%, border:3px solid white, box-shadow:0 4px 12px rgba(0,0,0,0.3).
+    Inside: <!--CX_PHOTO_SLOT-->.
+  • Below photo: person name in bold white, font-size ≈ 0.78rem, text-align:center, font-weight:800.
+  • Below name: job title in accent/light colour, font-size ≈ 0.6rem, text-align:center.
+
+RIGHT PANEL (remaining 64% of card width, full height):
+  • White or very light (#f8f9fa) background.
+  • Add a thin vertical accent-colour bar (width:4px) at the left edge of this panel.
+  • At the top: a large bold heading of the person name again in primary colour (1.0rem, font-weight:800).
+  • Below: job title in medium weight, darker accent, 0.7rem.
+  • Thin horizontal divider (primary colour, 50% width, 2px height, margin:4px 0).
+  • Below: left-aligned field rows, each:
+      <div style="display:flex;gap:4px;margin:2px 0;padding-left:8px;">
+        <span style="font-weight:700;color:{$pri};min-width:38%;font-size:0.58rem;">LABEL:</span>
+        <span style="color:#555;font-size:0.58rem;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">VALUE</span>
+      </div>
+  • Show in rows: Department, Employee ID, Date of Birth, Phone, Email (in order).
+  • At very bottom: a small accent-colour footer strip (height:12%, full width of right panel) with any remaining text or decorative barcode SVG.
+LAYOUT;
+        }
 
         // ── SYSTEM PROMPT ────────────────────────────────────────────────────────
         $systemPrompt = <<<SYSPROMPT
-You are an expert HTML/CSS ID card designer. Your task is to generate a visually impressive, production-ready ID card as a single self-contained HTML div.
+You are an expert HTML/CSS ID card designer. You produce professional ID cards that look like real-world printed employee/staff ID cards — NOT simple blue boxes with text. Your cards have distinct visual zones, decorative elements, and a polished layered structure like a premium printed card.
 
 ═══ OUTPUT FORMAT (NON-NEGOTIABLE) ═══
-• Output ONLY the raw <div>…</div> element — no markdown code fences, no explanations, no extra text.
-• The root element MUST be: <div style="width:100%;height:100%;position:relative;overflow:hidden;font-family:'Segoe UI',Arial,sans-serif;">
-• Use ONLY inline CSS (style="…" attributes). Absolutely NO <style> tags, NO class attributes, NO external references.
-• Allowed HTML/SVG tags: div, span, svg, path, polygon, polyline, rect, circle, ellipse, line, defs, linearGradient, radialGradient, stop, g, text, tspan.
-• FORBIDDEN (will be stripped server-side): script, style, link, iframe, img, object, embed, form, input, foreignObject, any on* event handlers, javascript:, expression().
+• Output ONLY the raw <div>…</div> element — no markdown code fences (no ```), no explanations, no text before or after the div.
+• Root element: <div style="width:100%;height:100%;position:relative;overflow:hidden;font-family:'Segoe UI',Arial,sans-serif;">
+• Use ONLY inline CSS (style="…" attributes). Zero <style> tags, zero class attributes, zero external references.
+• Allowed tags: div, span, svg, path, polygon, polyline, rect, circle, ellipse, line, defs, linearGradient, radialGradient, stop, g, text, tspan.
+• FORBIDDEN (stripped server-side): script, style, link, iframe, img, object, embed, form, input, foreignObject, on* event handlers, javascript:, expression().
 
 ═══ PHOTO PLACEHOLDER ═══
-• Where the person photo goes, output EXACTLY: <!--CX_PHOTO_SLOT-->
-• Wrap it in a <div> with shape/size/border CSS. Example:
-  <div style="width:22%;aspect-ratio:1/1;border-radius:50%;overflow:hidden;border:3px solid #fff;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.15);"><!--CX_PHOTO_SLOT--></div>
+• Photo placeholder MUST be: <!--CX_PHOTO_SLOT-->
+• Always wrap it in a <div> that defines the photo frame: size, border-radius, border, overflow:hidden, display:flex, align-items:center, justify-content:center.
+• Example: <div style="width:27%;aspect-ratio:1/1;border-radius:50%;overflow:hidden;border:3px solid #fff;box-shadow:0 4px 14px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.15);"><!--CX_PHOTO_SLOT--></div>
 
-═══ DATA RULES (MOST IMPORTANT) ═══
-• ALL field values listed in the user message MUST appear as readable text somewhere on the card.
-• Use the EXACT values provided — do not invent, abbreviate, or skip any field.
-• Important fields (always prominent): Full Name (large, bold), Organisation, Job Title/Role.
-• Secondary fields (smaller but clearly readable): Department, Employee ID, Phone, Email, Date of Birth, Address, etc.
-• Use font-size between 0.55rem and 1.1rem. Absolute minimum readable size: 0.5rem.
-• Every text element needs overflow:hidden;white-space:nowrap;text-overflow:ellipsis to prevent breakout.
+═══ DATA RULES (HIGHEST PRIORITY) ═══
+• EVERY field value listed in the user message MUST appear as readable printed text on the card — no exceptions.
+• Use exact values — do not invent, abbreviate, or omit any field.
+• Prominent: Full Name (largest text, bold), Organisation (header area), Job Title (subtitle below name).
+• Standard fields: Department, Employee ID, Date of Birth, Phone, Email, Address — shown as labelled rows.
+• Font sizes: name 0.9–1.1rem bold; title 0.65–0.75rem; field labels 0.55–0.62rem bold; field values 0.55–0.62rem.
+• Every text span: overflow:hidden;white-space:nowrap;text-overflow:ellipsis — prevents text spill outside card.
+• Use clamp() where possible: e.g. font-size:clamp(0.55rem,1.3vw,0.72rem).
 
-═══ DESIGN RULES ═══
-• Create a UNIQUE, visually distinct design with creative use of gradients, SVG shapes, and color.
-• Do NOT produce a blank/near-blank card. The card must be filled with rich visual design AND all the data.
-• Use clamp() for font sizes: e.g. font-size:clamp(0.5rem,1.2vw,0.75rem).
-• Ensure all text has sufficient contrast against its background.
-• The card should look like a premium professional ID card — think sleek corporate design.
+═══ DESIGN STRUCTURE (MANDATORY) ═══
+The card MUST have these visual zones — NOT a single flat background with all text on it:
+1. A HEADER/ACCENT ZONE with rich gradient + decorative SVG elements (diagonal edge, geometric shapes, curves).
+2. A PHOTO FRAME — large circular frame positioned prominently, good border and shadow.
+3. A BODY ZONE — contrasting background (white or light) where name, title, and field rows appear.
+4. A FOOTER STRIP — solid accent colour at the bottom edge.
+The diagonal/angular cut between header and body is essential — use SVG polygon or CSS skewY transform on a positioned div.
+Add at least two decorative SVG elements in the accent zone (circles, polygons, curved paths).
 SYSPROMPT;
 
         // ── USER PROMPT ──────────────────────────────────────────────────────────
         $userPrompt = <<<USERPROMPT
-Generate a {$orientation} ID card ({$cardW} × {$cardH}) for the following person.
+Generate a {$orientation} professional ID card ({$cardW} × {$cardH}).
 
-━━━ CARD DATA (every item below MUST be printed on the card) ━━━
+━━━ ALL CARD DATA (print EVERY item on the card — no exceptions) ━━━
 {$allFieldsStr}
-━━━ KEY LAYOUT HINTS ━━━
-• Full Name "{$nameVal}" → largest text, prominent position
-• Organisation "{$orgVal}" → top of card, header area
-• Job Title "{$roleVal}" → below name, subtitle style
-• Photo → use <!--CX_PHOTO_SLOT--> placeholder in a circular/shaped frame
-• Remaining fields:
+━━━ PRIMARY FIELDS (most prominent) ━━━
+• Full Name → "{$nameVal}"   (largest text, bold, prominent)
+• Organisation → "{$orgVal}"  (header zone)
+• Job Title → "{$roleVal}"    (subtitle below name)
+• Photo → <!--CX_PHOTO_SLOT--> in large circular frame
+
+━━━ SECONDARY FIELDS (show as labelled rows) ━━━
 {$extraFieldsBlock}
 
-━━━ DESIGN BRIEF ━━━
-Requested style: {$designHint}
-Primary colour: {$pri}
-Accent colour: {$acc}
-Template: {$tpl} ({$tplConfig['name']})
+━━━ LAYOUT SPECIFICATION ━━━
+{$layoutGuide}
 
-━━━ REMINDER ━━━
-1. Output ONLY the raw <div>…</div> — no fences, no explanation.
-2. Every field value listed above MUST appear as readable text on the card.
-3. Photo slot: use <!--CX_PHOTO_SLOT--> inside a shaped container.
+━━━ COLOURS ━━━
+Primary: {$pri}   Accent: {$acc}
+
+━━━ STYLE ━━━
+{$designHint}
+
+━━━ FINAL CHECKLIST (verify before outputting) ━━━
+☑ Root <div> uses width:100%;height:100%;position:relative;overflow:hidden
+☑ Header/accent zone with gradient + angular/diagonal SVG cut edge
+☑ At least 2 decorative SVG shapes in the accent zone
+☑ Large circular photo frame with <!--CX_PHOTO_SLOT-->
+☑ Person name in large bold text
+☑ Job title as subtitle
+☑ All secondary fields as labelled rows (label bold: value)
+☑ Footer accent strip at bottom
+☑ Output is raw <div>…</div> only — no fences, no explanation
 USERPROMPT;
 
         $payload = json_encode([
@@ -877,8 +951,8 @@ USERPROMPT;
                 ['role' => 'system', 'content' => $systemPrompt],
                 ['role' => 'user',   'content' => $userPrompt],
             ],
-            'temperature' => 0.55,   // lower = more reliable data inclusion
-            'max_tokens'  => 4500,   // enough for a full rich card
+            'temperature' => 0.65,   // balanced: creative design with reliable data inclusion
+            'max_tokens'  => 5000,   // enough for full rich layered card HTML
         ]);
 
         $ch = curl_init('https://api.openai.com/v1/chat/completions');
