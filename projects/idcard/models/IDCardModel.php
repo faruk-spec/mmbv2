@@ -74,19 +74,17 @@ class IDCardModel
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
             );
             // Migrate: add bulk_job_id column if it doesn't exist yet
-            try {
+            $colCheck = $this->db->fetch(
+                "SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+                  WHERE TABLE_SCHEMA = DATABASE()
+                    AND TABLE_NAME   = 'idcard_cards'
+                    AND COLUMN_NAME  = 'bulk_job_id'"
+            );
+            if (!$colCheck) {
                 $this->db->query(
-                    "ALTER TABLE `idcard_cards` ADD COLUMN `bulk_job_id` INT UNSIGNED NULL"
+                    "ALTER TABLE `idcard_cards` ADD COLUMN `bulk_job_id` INT UNSIGNED NULL,
+                     ADD INDEX `idx_ic_bulk` (`bulk_job_id`)"
                 );
-            } catch (\Exception $e) {
-                // Column already exists — ignore
-            }
-            try {
-                $this->db->query(
-                    "ALTER TABLE `idcard_cards` ADD INDEX `idx_ic_bulk` (`bulk_job_id`)"
-                );
-            } catch (\Exception $e) {
-                // Index already exists — ignore
             }
         } catch (\Exception $e) {
             Logger::error('IDCard ensureTables: ' . $e->getMessage());
