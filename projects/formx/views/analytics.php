@@ -99,8 +99,8 @@
                 <div class="fx-stat-lbl"><i class="fas fa-clock"></i> Last 30 Days</div>
             </div>
             <div class="fx-stat">
-                <div class="fx-stat-val" style="color:var(--orange);"><?= htmlspecialchars(ucfirst($form['status'])) ?></div>
-                <div class="fx-stat-lbl"><i class="fas fa-toggle-on"></i> Form Status</div>
+                <div class="fx-stat-val" style="color:var(--orange);"><?= number_format($avgPerDay ?? 0, 1) ?></div>
+                <div class="fx-stat-lbl"><i class="fas fa-chart-line"></i> Avg / Day</div>
             </div>
         </div>
 
@@ -115,6 +115,18 @@
             $counts[] = $dailyMap[$day] ?? 0;
         }
         $maxCount = max(1, max($counts));
+
+        // Build weekly chart data (8 weeks)
+        $weeklyMap = [];
+        foreach ($weekly ?? [] as $w) $weeklyMap[$w['yw']] = (int)$w['cnt'];
+        $wLabels = []; $wCounts = [];
+        for ($i = 7; $i >= 0; $i--) {
+            $ts = strtotime("-" . ($i * 7) . " days");
+            $yw = date('oW', $ts);
+            $wLabels[] = 'W' . date('W', $ts);
+            $wCounts[] = $weeklyMap[$yw] ?? 0;
+        }
+        $wMax = max(1, max($wCounts));
         ?>
 
         <!-- Daily submissions chart -->
@@ -139,9 +151,26 @@
             <?php endif; ?>
         </div>
 
-        <!-- Device breakdown -->
-        <?php if (!empty($devices)): ?>
+        <!-- Weekly chart -->
+        <?php if (array_sum($wCounts) > 0): ?>
         <div class="fx-card">
+            <h3><i class="fas fa-chart-line"></i> Weekly Trend – Last 8 Weeks</h3>
+            <div class="bar-chart">
+                <?php foreach ($wCounts as $i => $cnt): ?>
+                <div class="bar-wrap" title="<?= htmlspecialchars($wLabels[$i]) ?>: <?= $cnt ?>">
+                    <div class="bar" style="height:<?= round($cnt / $wMax * 100) ?>%;<?= $cnt > 0 ? 'background:rgba(153,69,255,.55);' : '' ?>"></div>
+                    <div class="bar-lbl"><?= htmlspecialchars($wLabels[$i]) ?></div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php endif; ?>
+
+        <!-- Device + Browser breakdown side-by-side -->
+        <?php if (!empty($devices) || !empty($browsers)): ?>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;" class="fx-two-charts">
+        <?php if (!empty($devices)): ?>
+        <div class="fx-card" style="margin-bottom:0;">
             <h3><i class="fas fa-mobile-alt"></i> Device Breakdown</h3>
             <?php
             $colors = ['#00f0ff', '#9945ff', '#ffaa00', '#ff6b6b', '#00ff88'];
@@ -175,6 +204,73 @@
             </div>
         </div>
         <?php endif; ?>
+        <?php if (!empty($browsers)): ?>
+        <div class="fx-card" style="margin-bottom:0;">
+            <h3><i class="fas fa-globe"></i> Browser Breakdown</h3>
+            <?php
+            $bcolors = ['#00f0ff', '#9945ff', '#ffaa00', '#ff6b6b', '#00ff88', '#00aaff'];
+            $totalBr = array_sum(array_column($browsers, 'cnt'));
+            ?>
+            <div class="donut-wrap">
+                <svg width="100" height="100" viewBox="0 0 36 36" style="transform:rotate(-90deg);flex-shrink:0;">
+                    <?php
+                    $offset2 = 0;
+                    $circ2 = 2 * M_PI * 15.91549;
+                    foreach ($browsers as $bi => $br):
+                        $pct2 = $totalBr > 0 ? $br['cnt'] / $totalBr : 0;
+                        $dash2 = $pct2 * $circ2;
+                        $gap2  = $circ2 - $dash2;
+                    ?>
+                    <circle cx="18" cy="18" r="15.91549" fill="none"
+                            stroke="<?= $bcolors[$bi % count($bcolors)] ?>" stroke-width="3.5"
+                            stroke-dasharray="<?= round($dash2, 2) ?> <?= round($gap2, 2) ?>"
+                            stroke-dashoffset="<?= round(-$offset2, 2) ?>"/>
+                    <?php $offset2 += $dash2; endforeach; ?>
+                </svg>
+                <div class="donut-legend">
+                    <?php foreach ($browsers as $bi => $br): ?>
+                    <div class="donut-item">
+                        <div class="donut-dot" style="background:<?= $bcolors[$bi % count($bcolors)] ?>;"></div>
+                        <span><?= View::e($br['browser_name']) ?></span>
+                        <span style="color:var(--text-secondary);margin-left:auto;padding-left:12px;"><?= $br['cnt'] ?> (<?= $totalBr > 0 ? round($br['cnt']/$totalBr*100) : 0 ?>%)</span>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+        </div>
+        <?php endif; ?>
+
+        <!-- Recent submissions -->
+        <?php if (!empty($recentSubmissions)): ?>
+        <div class="fx-card">
+            <h3><i class="fas fa-clock"></i> Recent Submissions</h3>
+            <table style="width:100%;border-collapse:collapse;">
+                <thead>
+                    <tr style="border-bottom:1px solid var(--border-color);">
+                        <th style="text-align:left;padding:7px 0;font-size:.73rem;color:var(--text-secondary);font-weight:600;text-transform:uppercase;letter-spacing:.05em;">#</th>
+                        <th style="text-align:left;padding:7px 0;font-size:.73rem;color:var(--text-secondary);font-weight:600;text-transform:uppercase;letter-spacing:.05em;">IP Address</th>
+                        <th style="text-align:right;padding:7px 0;font-size:.73rem;color:var(--text-secondary);font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <?php foreach ($recentSubmissions as $i => $rs): ?>
+                <tr style="border-bottom:1px solid var(--border-color);">
+                    <td style="padding:8px 0;font-size:.82rem;color:var(--text-secondary);"><?= $i + 1 ?></td>
+                    <td style="padding:8px 0;font-size:.82rem;">
+                        <a href="/projects/formx/<?= (int)$form['id'] ?>/submissions/<?= (int)$rs['id'] ?>" style="color:var(--cyan);text-decoration:none;"><?= View::e($rs['ip_address'] ?? '–') ?></a>
+                    </td>
+                    <td style="padding:8px 0;font-size:.78rem;color:var(--text-secondary);text-align:right;"><?= date('M j, g:ia', strtotime($rs['created_at'])) ?></td>
+                </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+            <div style="margin-top:12px;">
+                <a href="/projects/formx/<?= (int)$form['id'] ?>/submissions" style="font-size:.82rem;color:var(--cyan);text-decoration:none;">All submissions <i class="fas fa-arrow-right"></i></a>
+            </div>
+        </div>
+        <?php endif; ?>
 
         <!-- Links to related pages -->
         <div style="display:flex;gap:10px;flex-wrap:wrap;">
@@ -187,6 +283,9 @@
         </div>
     </main>
 </div>
+<style>
+@media(max-width:680px){.fx-two-charts{grid-template-columns:1fr!important;}}
+</style>
 
 <div class="fx-sidebar-overlay" id="fxOverlay"></div>
 <button class="fx-sidebar-toggle" id="fxToggle"><i class="fas fa-bars"></i></button>

@@ -339,6 +339,7 @@ $router->post('/admin/projects/resumex/templates/toggle-builtin-pro', 'Admin\\Re
 
 // ── FormX – Form Builder ─────────────────────────────────────────────────────
 $router->get('/admin/formx',                                         'Admin\\FormXController@index',            ['auth', 'admin']);
+$router->get('/admin/formx/overview',                                'Admin\\FormXController@overview',         ['auth', 'admin']);
 $router->get('/admin/formx/create',                                  'Admin\\FormXController@create',           ['auth', 'admin']);
 $router->post('/admin/formx/save',                                   'Admin\\FormXController@save',             ['auth', 'admin']);
 $router->get('/admin/formx/{id}/edit',                               'Admin\\FormXController@edit',             ['auth', 'admin']);

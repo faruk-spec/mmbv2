@@ -556,6 +556,15 @@ class FormController
             [$id]
         );
 
+        // Submissions per week – last 8 weeks
+        $weekly = $this->db->fetchAll(
+            "SELECT YEARWEEK(created_at, 1) AS yw, COUNT(*) AS cnt
+             FROM formx_submissions WHERE form_id = ?
+               AND created_at >= DATE_SUB(CURDATE(), INTERVAL 56 DAY)
+             GROUP BY YEARWEEK(created_at, 1) ORDER BY yw ASC",
+            [$id]
+        );
+
         // Device breakdown (derived from device column or user_agent)
         $devices = $this->db->fetchAll(
             "SELECT
@@ -571,6 +580,16 @@ class FormController
             [$id]
         );
 
+        // Browser breakdown
+        $browsers = $this->db->fetchAll(
+            "SELECT
+                COALESCE(NULLIF(browser, ''), 'Unknown') AS browser_name,
+                COUNT(*) AS cnt
+             FROM formx_submissions WHERE form_id = ?
+             GROUP BY browser_name ORDER BY cnt DESC LIMIT 6",
+            [$id]
+        );
+
         // Total & this month
         $total       = (int)$this->db->fetchColumn("SELECT COUNT(*) FROM formx_submissions WHERE form_id=?", [$id]);
         $thisMonth   = (int)$this->db->fetchColumn(
@@ -582,21 +601,43 @@ class FormController
             [$id]
         );
 
+        // Avg submissions per day (over lifetime)
+        $firstSub = $this->db->fetchColumn(
+            "SELECT MIN(created_at) FROM formx_submissions WHERE form_id=?", [$id]
+        );
+        $daysSinceFirst = 1;
+        if ($firstSub) {
+            $diff = (time() - strtotime($firstSub)) / 86400;
+            $daysSinceFirst = max(1, $diff);
+        }
+        $avgPerDay = $total > 0 ? round($total / $daysSinceFirst, 1) : 0;
+
+        // Recent submissions (last 5)
+        $recentSubmissions = $this->db->fetchAll(
+            "SELECT id, ip_address, created_at FROM formx_submissions
+             WHERE form_id = ? ORDER BY created_at DESC LIMIT 5",
+            [$id]
+        );
+
         $sidebarForms = $this->db->fetchAll(
             "SELECT id, title FROM formx_forms WHERE user_id = ? ORDER BY updated_at DESC LIMIT 8",
             [$this->userId()]
         );
 
         View::render('projects/formx/analytics', [
-            'title'        => 'Analytics: ' . htmlspecialchars($form['title']),
-            'form'         => $form,
-            'daily'        => $daily,
-            'devices'      => $devices,
-            'total'        => $total,
-            'thisMonth'    => $thisMonth,
-            'lastMonth'    => $lastMonth,
-            'sidebarForms' => $sidebarForms,
-            'activePage'   => 'forms',
+            'title'             => 'Analytics: ' . htmlspecialchars($form['title']),
+            'form'              => $form,
+            'daily'             => $daily,
+            'weekly'            => $weekly,
+            'devices'           => $devices,
+            'browsers'          => $browsers,
+            'total'             => $total,
+            'thisMonth'         => $thisMonth,
+            'lastMonth'         => $lastMonth,
+            'avgPerDay'         => $avgPerDay,
+            'recentSubmissions' => $recentSubmissions,
+            'sidebarForms'      => $sidebarForms,
+            'activePage'        => 'forms',
         ]);
     }
 

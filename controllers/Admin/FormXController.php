@@ -564,4 +564,89 @@ class FormXController extends BaseController
         fclose($out);
         exit;
     }
+
+    // -------------------------------------------------------------------------
+    // Global admin overview / analytics
+    // -------------------------------------------------------------------------
+
+    public function overview(): void
+    {
+        $this->requirePermission('formx');
+
+        // Summary stats
+        $totalForms       = (int)$this->db->fetchColumn("SELECT COUNT(*) FROM formx_forms");
+        $activeForms      = (int)$this->db->fetchColumn("SELECT COUNT(*) FROM formx_forms WHERE status = 'active'");
+        $totalSubmissions = (int)$this->db->fetchColumn("SELECT COALESCE(SUM(submissions_count),0) FROM formx_forms");
+        $totalUsers       = (int)$this->db->fetchColumn("SELECT COUNT(DISTINCT user_id) FROM formx_forms WHERE user_id IS NOT NULL");
+
+        // Submissions per day – last 30 days
+        $daily = $this->db->fetchAll(
+            "SELECT DATE(created_at) AS day, COUNT(*) AS cnt
+             FROM formx_submissions
+             WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 29 DAY)
+             GROUP BY DATE(created_at) ORDER BY day ASC"
+        );
+
+        // Submissions per week – last 8 weeks
+        $weekly = $this->db->fetchAll(
+            "SELECT YEARWEEK(created_at, 1) AS yw, COUNT(*) AS cnt
+             FROM formx_submissions
+             WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 56 DAY)
+             GROUP BY YEARWEEK(created_at, 1) ORDER BY yw ASC"
+        );
+
+        // Top 10 forms by submission count
+        $topForms = $this->db->fetchAll(
+            "SELECT id, title, slug, status, submissions_count, user_id
+             FROM formx_forms ORDER BY submissions_count DESC LIMIT 10"
+        );
+
+        // Device breakdown (all forms)
+        $devices = $this->db->fetchAll(
+            "SELECT
+                CASE
+                    WHEN device IS NOT NULL THEN device
+                    WHEN user_agent LIKE '%Mobile%' OR user_agent LIKE '%Android%' OR user_agent LIKE '%iPhone%' THEN 'Mobile'
+                    WHEN user_agent LIKE '%Tablet%' OR user_agent LIKE '%iPad%' THEN 'Tablet'
+                    ELSE 'Desktop'
+                END AS device_type,
+                COUNT(*) AS cnt
+             FROM formx_submissions
+             GROUP BY device_type ORDER BY cnt DESC"
+        );
+
+        // Recent submissions (last 10)
+        $recentSubmissions = $this->db->fetchAll(
+            "SELECT fs.id, fs.form_id, fs.ip_address, fs.created_at, ff.title AS form_title
+             FROM formx_submissions fs
+             JOIN formx_forms ff ON ff.id = fs.form_id
+             ORDER BY fs.created_at DESC LIMIT 10"
+        );
+
+        // This month vs last month
+        $thisMonth = (int)$this->db->fetchColumn(
+            "SELECT COUNT(*) FROM formx_submissions
+             WHERE YEAR(created_at)=YEAR(NOW()) AND MONTH(created_at)=MONTH(NOW())"
+        );
+        $lastMonthCount = (int)$this->db->fetchColumn(
+            "SELECT COUNT(*) FROM formx_submissions
+             WHERE created_at >= DATE_SUB(NOW(), INTERVAL 60 DAY)
+               AND created_at <  DATE_SUB(NOW(), INTERVAL 30 DAY)"
+        );
+
+        \Core\View::render('admin/formx/overview', [
+            'title'             => 'FormX – Overview',
+            'totalForms'        => $totalForms,
+            'activeForms'       => $activeForms,
+            'totalSubmissions'  => $totalSubmissions,
+            'totalUsers'        => $totalUsers,
+            'daily'             => $daily,
+            'weekly'            => $weekly,
+            'topForms'          => $topForms,
+            'devices'           => $devices,
+            'recentSubmissions' => $recentSubmissions,
+            'thisMonth'         => $thisMonth,
+            'lastMonthCount'    => $lastMonthCount,
+        ]);
+    }
 }

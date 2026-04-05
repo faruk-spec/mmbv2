@@ -1681,6 +1681,10 @@
                             <i class="fas fa-chevron-down arrow"></i>
                         </div>
                         <div class="menu-dropdown-content">
+                            <a href="/admin/formx/overview" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/formx/overview') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-chart-line"></i>
+                                <span>Overview</span>
+                            </a>
                             <a href="/projects/formx" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/projects/formx') === 0 ? 'active' : '' ?>">
                                 <i class="fas fa-th-large"></i>
                                 <span>Dashboard</span>

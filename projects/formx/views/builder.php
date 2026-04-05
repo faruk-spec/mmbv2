@@ -25,9 +25,9 @@
     /* === Builder main area === */
     .fx-builder-main{flex:1;min-width:0;display:flex;flex-direction:column;height:calc(100vh - 70px);overflow:hidden;}
     /* === Builder toolbar === */
-    .fx-toolbar{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:var(--bg-card);border-bottom:1px solid var(--border-color);gap:12px;flex-wrap:wrap;}
+    .fx-toolbar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--bg-card);border-bottom:1px solid var(--border-color);gap:8px;flex-wrap:wrap;}
     .fx-toolbar-title{font-weight:700;font-size:.95rem;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-    .fx-toolbar-actions{display:flex;gap:8px;align-items:center;flex-shrink:0;}
+    .fx-toolbar-actions{display:flex;gap:6px;align-items:center;flex-shrink:0;}
     .fx-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:.8rem;font-weight:600;cursor:pointer;text-decoration:none;border:1px solid transparent;transition:all .15s;line-height:1;}
     .fx-btn-primary{background:linear-gradient(135deg,var(--cyan),var(--purple));color:#06060a;border:none;box-shadow:0 3px 14px rgba(0,240,255,.3);}
     .fx-btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 22px rgba(0,240,255,.45);color:#06060a;text-decoration:none;}
@@ -35,6 +35,11 @@
     .fx-btn-secondary:hover{background:rgba(0,240,255,.07);border-color:rgba(0,240,255,.25);color:var(--text-primary);text-decoration:none;}
     .fx-btn-danger{background:rgba(255,107,107,.08);border-color:rgba(255,107,107,.2);color:var(--red);}
     .fx-btn-danger:hover{background:rgba(255,107,107,.18);text-decoration:none;color:var(--red);}
+    /* Hide text labels in toolbar on very small screens, keep icons */
+    @media(max-width:500px){
+        .fx-toolbar-btn-text{display:none;}
+        .fx-btn{padding:7px 10px;}
+    }
     /* === Builder body (3 columns) === */
     .fx-builder-body{display:flex;flex:1;overflow:hidden;}
     /* === Left panel === */
@@ -94,8 +99,19 @@
     }
     @media(max-width:680px){
         .fx-left-panel{display:none;}
+        .fx-left-panel.mob-active{display:block;width:100%;border-right:none;border-bottom:1px solid var(--border-color);}
         .fx-builder-body{flex-direction:column;}
         .fx-canvas-wrap{padding:14px;}
+        .fx-canvas-wrap.mob-hidden{display:none;}
+    }
+    /* Mobile tab bar */
+    .fx-mob-tabs{display:none;}
+    @media(max-width:680px){
+        .fx-mob-tabs{display:flex;background:var(--bg-card);border-bottom:1px solid var(--border-color);padding:0;}
+        .fx-mob-tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:8px 4px;font-size:.7rem;font-weight:600;color:var(--text-secondary);cursor:pointer;border-bottom:2px solid transparent;transition:color .15s,border-color .15s;background:none;border-top:none;border-left:none;border-right:none;}
+        .fx-mob-tab.active{color:var(--cyan);border-bottom-color:var(--cyan);}
+        .fx-mob-tab i{font-size:.9rem;}
+        .fx-sidebar-toggle{bottom:80px;}
     }
 </style>
 
@@ -138,10 +154,10 @@
             <div class="fx-toolbar-actions">
                 <?php if ($form): ?>
                 <a href="/projects/formx/<?= $form['id'] ?>/submissions" class="fx-btn fx-btn-secondary">
-                    <i class="fas fa-inbox"></i> <span>Submissions</span>
+                    <i class="fas fa-inbox"></i> <span class="fx-toolbar-btn-text">Submissions</span>
                 </a>
                 <a href="/projects/formx/<?= $form['id'] ?>/analytics" class="fx-btn fx-btn-secondary" title="Analytics">
-                    <i class="fas fa-chart-bar"></i> <span>Analytics</span>
+                    <i class="fas fa-chart-bar"></i> <span class="fx-toolbar-btn-text">Analytics</span>
                 </a>
                 <a href="/projects/formx/<?= $form['id'] ?>/versions" class="fx-btn fx-btn-secondary" title="Versions">
                     <i class="fas fa-history"></i>
@@ -152,7 +168,7 @@
                 </a>
                 <?php endif; ?>
                 <button type="button" class="fx-btn fx-btn-secondary" onclick="openShareModal()" title="Share">
-                    <i class="fas fa-share-alt"></i> Share
+                    <i class="fas fa-share-alt"></i> <span class="fx-toolbar-btn-text">Share</span>
                 </button>
                 <?php endif; ?>
                 <button type="button" class="fx-btn fx-btn-primary" onclick="submitBuilder()">
@@ -177,11 +193,18 @@
         </div>
         <?php endif; ?>
 
+        <!-- Mobile tab bar (only visible ≤680px) -->
+        <div class="fx-mob-tabs" id="fxMobTabs">
+            <button class="fx-mob-tab active" id="mobTabCanvas"  onclick="mobSwitchTab('canvas')"><i class="fas fa-th"></i>Canvas</button>
+            <button class="fx-mob-tab"        id="mobTabFields"  onclick="mobSwitchTab('fields')"><i class="fas fa-plus-circle"></i>Add Fields</button>
+            <button class="fx-mob-tab"        id="mobTabSettings" onclick="mobSwitchTab('settings')"><i class="fas fa-cog"></i>Settings</button>
+        </div>
+
         <!-- Builder body -->
         <div class="fx-builder-body">
 
             <!-- Left panel: settings + palette -->
-            <div class="fx-left-panel">
+            <div class="fx-left-panel" id="fxLeftPanel">
                 <!-- Form Settings -->
                 <div class="fx-panel-title">Form Settings</div>
                 <div class="fx-field-group">
@@ -262,7 +285,7 @@
                 </div>
 
                 <div style="border-top:1px solid var(--border-color);margin:16px 0 12px;"></div>
-                <div class="fx-panel-title">Add Fields</div>
+                <div class="fx-panel-title" id="fxPaletteTitle">Add Fields</div>
                 <p style="font-size:.74rem;color:var(--text-secondary);margin-bottom:10px;">Drag onto canvas →</p>
 
                 <?php
@@ -293,7 +316,7 @@
             </div>
 
             <!-- Canvas -->
-            <div class="fx-canvas-wrap">
+            <div class="fx-canvas-wrap" id="fxCanvasWrap">
                 <div id="fxCanvas"
                      ondragover="canvasDragOver(event)"
                      ondragleave="canvasDragLeave(event)"
@@ -406,6 +429,42 @@ function openSidebar()  { sidebar.classList.add('open'); overlay.classList.add('
 function closeSidebar() { sidebar.classList.remove('open'); overlay.classList.remove('active'); toggle.innerHTML='<i class="fas fa-bars"></i>'; }
 toggle.addEventListener('click', () => sidebar.classList.contains('open') ? closeSidebar() : openSidebar());
 overlay.addEventListener('click', closeSidebar);
+
+// ─── Mobile tab switcher ──────────────────────────────────────────────────────
+function mobSwitchTab(tab) {
+    var leftPanel  = document.getElementById('fxLeftPanel');
+    var canvasWrap = document.getElementById('fxCanvasWrap');
+    var tabCanvas  = document.getElementById('mobTabCanvas');
+    var tabFields  = document.getElementById('mobTabFields');
+    var tabSettings = document.getElementById('mobTabSettings');
+    if (!leftPanel || !canvasWrap) return;
+
+    // Only applies on small screens
+    if (window.innerWidth > 680) return;
+
+    // Reset tabs
+    [tabCanvas, tabFields, tabSettings].forEach(function(t) { if (t) t.classList.remove('active'); });
+
+    if (tab === 'canvas') {
+        leftPanel.classList.remove('mob-active');
+        canvasWrap.classList.remove('mob-hidden');
+        if (tabCanvas) tabCanvas.classList.add('active');
+        // Scroll palette into view not needed
+    } else {
+        // Show left panel, hide canvas; scroll to fields or settings
+        leftPanel.classList.add('mob-active');
+        canvasWrap.classList.add('mob-hidden');
+        if (tab === 'fields') {
+            if (tabFields) tabFields.classList.add('active');
+            // Scroll to palette section
+            var paletteTitle = document.getElementById('fxPaletteTitle');
+            if (paletteTitle) setTimeout(function(){ paletteTitle.scrollIntoView({behavior:'smooth', block:'start'}); }, 50);
+        } else {
+            if (tabSettings) tabSettings.classList.add('active');
+            leftPanel.scrollTop = 0;
+        }
+    }
+}
 
 // ─── State ────────────────────────────────────────────────────────────────────
 let fields = (function() {
