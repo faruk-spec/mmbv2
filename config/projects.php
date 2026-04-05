@@ -111,4 +111,24 @@ return [
         'database' => 'mmb_formx',
         'url' => '/projects/formx'
     ],
+
+    'linkshortner' => [
+        'name' => 'LinkShortner',
+        'description' => 'URL shortener with click analytics, QR codes, and branded links',
+        'icon' => 'link',
+        'color' => '#00d4ff',
+        'enabled' => true,
+        'database' => 'mmb_linkshortner',
+        'url' => '/projects/linkshortner'
+    ],
+
+    'notex' => [
+        'name' => 'NoteX',
+        'description' => 'Private cloud notes with rich text editor, folders, tags and secure sharing',
+        'icon' => 'sticky-note',
+        'color' => '#ffd700',
+        'enabled' => true,
+        'database' => 'mmb_notex',
+        'url' => '/projects/notex'
+    ],
 ];
