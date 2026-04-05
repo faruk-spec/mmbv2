@@ -145,10 +145,10 @@ class FormXController extends BaseController
     // Edit – show populated builder
     // -------------------------------------------------------------------------
 
-    public function edit(): void
+    public function edit(string $id = ''): void
     {
         $this->requirePermission('formx.edit');
-        $id   = (int) ($this->input('id') ?? 0);
+        $id   = (int) $id ?: (int) ($this->input('id') ?? 0);
         $form = $this->db->fetch("SELECT * FROM formx_forms WHERE id = ?", [$id]);
 
         if (!$form) {
@@ -232,10 +232,10 @@ class FormXController extends BaseController
     // Update (edit POST)
     // -------------------------------------------------------------------------
 
-    public function update(): void
+    public function update(string $id = ''): void
     {
         $this->requirePermission('formx.edit');
-        $id = (int) ($this->input('id') ?? 0);
+        $id = (int) $id ?: (int) ($this->input('id') ?? 0);
         $form = $this->db->fetch("SELECT * FROM formx_forms WHERE id = ?", [$id]);
 
         if (!$form) {
@@ -294,10 +294,10 @@ class FormXController extends BaseController
     // Duplicate a form
     // -------------------------------------------------------------------------
 
-    public function duplicate(): void
+    public function duplicate(string $id = ''): void
     {
         $this->requirePermission('formx.create');
-        $id   = (int) ($this->input('id') ?? 0);
+        $id   = (int) $id ?: (int) ($this->input('id') ?? 0);
         $form = $this->db->fetch("SELECT * FROM formx_forms WHERE id = ?", [$id]);
 
         if (!$form) {
@@ -330,10 +330,10 @@ class FormXController extends BaseController
     // Toggle status (active ↔ inactive)
     // -------------------------------------------------------------------------
 
-    public function toggle(): void
+    public function toggle(string $id = ''): void
     {
         $this->requirePermission('formx.edit');
-        $id   = (int) ($this->input('id') ?? 0);
+        $id   = (int) $id ?: (int) ($this->input('id') ?? 0);
         $form = $this->db->fetch("SELECT * FROM formx_forms WHERE id = ?", [$id]);
 
         if (!$form || !$this->validateCsrf()) {
@@ -353,10 +353,10 @@ class FormXController extends BaseController
     // Delete a form
     // -------------------------------------------------------------------------
 
-    public function delete(): void
+    public function delete(string $id = ''): void
     {
         $this->requirePermission('formx.delete');
-        $id   = (int) ($this->input('id') ?? 0);
+        $id   = (int) $id ?: (int) ($this->input('id') ?? 0);
         $form = $this->db->fetch("SELECT * FROM formx_forms WHERE id = ?", [$id]);
 
         if (!$form || !$this->validateCsrf()) {
@@ -382,10 +382,10 @@ class FormXController extends BaseController
     // Submissions list
     // -------------------------------------------------------------------------
 
-    public function submissions(): void
+    public function submissions(string $id = ''): void
     {
         $this->requirePermission('formx');
-        $id   = (int) ($this->input('id') ?? 0);
+        $id   = (int) $id ?: (int) ($this->input('id') ?? 0);
         $form = $this->db->fetch("SELECT * FROM formx_forms WHERE id = ?", [$id]);
 
         if (!$form) {
@@ -431,11 +431,11 @@ class FormXController extends BaseController
     // Single submission detail
     // -------------------------------------------------------------------------
 
-    public function submissionDetail(): void
+    public function submissionDetail(string $form_id = '', string $submission_id = ''): void
     {
         $this->requirePermission('formx');
-        $formId = (int) ($this->input('form_id') ?? 0);
-        $subId  = (int) ($this->input('submission_id') ?? 0);
+        $formId = (int) $form_id ?: (int) ($this->input('form_id') ?? 0);
+        $subId  = (int) $submission_id ?: (int) ($this->input('submission_id') ?? 0);
 
         $form       = $this->db->fetch("SELECT * FROM formx_forms WHERE id = ?", [$formId]);
         $submission = $this->db->fetch(
@@ -463,11 +463,11 @@ class FormXController extends BaseController
     // Delete a single submission
     // -------------------------------------------------------------------------
 
-    public function deleteSubmission(): void
+    public function deleteSubmission(string $form_id = '', string $submission_id = ''): void
     {
         $this->requirePermission('formx.delete');
-        $formId = (int) ($this->input('form_id') ?? 0);
-        $subId  = (int) ($this->input('submission_id') ?? 0);
+        $formId = (int) $form_id ?: (int) ($this->input('form_id') ?? 0);
+        $subId  = (int) $submission_id ?: (int) ($this->input('submission_id') ?? 0);
 
         if (!$this->validateCsrf()) {
             $this->flash('error', 'Invalid CSRF token.');
@@ -494,10 +494,10 @@ class FormXController extends BaseController
     // Export submissions as CSV
     // -------------------------------------------------------------------------
 
-    public function exportSubmissions(): void
+    public function exportSubmissions(string $id = ''): void
     {
         $this->requirePermission('formx');
-        $id   = (int) ($this->input('id') ?? 0);
+        $id   = (int) $id ?: (int) ($this->input('id') ?? 0);
         $form = $this->db->fetch("SELECT * FROM formx_forms WHERE id = ?", [$id]);
 
         if (!$form) {

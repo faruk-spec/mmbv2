@@ -74,14 +74,55 @@
         .cdown-unit{text-align:center;}
         .cdown-num{font-size:1.6rem;font-weight:700;color:var(--orange);line-height:1;display:block;}
         .cdown-lbl{font-size:.65rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);}
-        /* Powered */
-        .pwr{margin-top:22px;text-align:center;font-size:.72rem;color:rgba(255,255,255,.2);}
-        @media(max-width:480px){.fc{padding:16px;} .fh h1{font-size:1.3rem;}}
+        /* Unavailable / 404 states */
+        .unav-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:40px 24px;text-align:center;}
+        .unav-card .unav-ico{font-size:3rem;margin-bottom:16px;display:block;}
+        .unav-card h2{font-size:1.25rem;font-weight:700;margin-bottom:8px;}
+        .unav-card p{color:var(--muted);font-size:.9rem;line-height:1.6;max-width:380px;margin:0 auto;}
+        .unav-card .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:14px;}
+        .badge-draft{background:rgba(255,170,0,.12);border:1px solid rgba(255,170,0,.3);color:var(--orange);}
+        .badge-inactive{background:rgba(255,107,107,.1);border:1px solid rgba(255,107,107,.25);color:var(--red);}
+        .unav-promo{margin-top:24px;padding-top:20px;border-top:1px solid var(--border);}
+        .unav-promo p{font-size:.82rem;color:var(--muted);margin-bottom:10px;}
+        .btn-promo{display:inline-flex;align-items:center;gap:7px;padding:9px 20px;background:linear-gradient(135deg,var(--cyan),var(--purple));border:none;border-radius:9px;color:#fff;font-size:.875rem;font-weight:700;cursor:pointer;text-decoration:none;transition:opacity .2s,transform .1s;}
+        .btn-promo:hover{opacity:.9;transform:translateY(-1px);text-decoration:none;color:#fff;}
     </style>
 </head>
 <body>
 <?php use Core\Helpers; ?>
 <div class="wrap">
+
+    <?php if (!empty($unavailable)): ?>
+    <!-- ── Unavailable / Draft / Inactive state ───────────────────────────── -->
+    <div class="fh">
+        <h1><?= !empty($form['title']) ? htmlspecialchars($form['title']) : 'Form' ?></h1>
+    </div>
+    <div class="unav-card">
+        <?php if ($unavailable === 'notfound'): ?>
+        <span class="unav-ico">🔍</span>
+        <h2>Form Not Found</h2>
+        <p>This form link is invalid or the form has been removed. Double-check the link and try again.</p>
+        <?php elseif ($unavailable === 'draft'): ?>
+        <span class="unav-ico">🔧</span>
+        <div class="badge badge-draft">Draft</div>
+        <h2>Form Under Construction</h2>
+        <p>This form is not ready yet. Check back later or contact the form owner.</p>
+        <?php else: /* inactive */ ?>
+        <span class="unav-ico">🚫</span>
+        <div class="badge badge-inactive">Closed</div>
+        <h2>Form Closed</h2>
+        <p>This form is no longer accepting responses. It may have been closed by the owner.</p>
+        <?php endif; ?>
+        <div class="unav-promo">
+            <p>Need to create your own forms?</p>
+            <a href="/" class="btn-promo"><i class="fas fa-wpforms"></i> Try FormX — Free</a>
+        </div>
+    </div>
+    <p class="pwr">Powered by <strong>FormX</strong></p>
+    </div></body></html>
+    <?php return; ?>
+    <?php endif; ?>
+
     <div class="fh">
         <h1><?= htmlspecialchars($form['title']) ?></h1>
         <?php if (!empty($form['description'])): ?>
@@ -113,6 +154,17 @@
     </div>
 
     <?php elseif (!($gateOpen ?? true)): ?>
+    <!-- ── Gate: login required OR password ──────────────────────────────────── -->
+    <?php if (($gateMode ?? 'password') === 'login'): ?>
+    <div class="pgw">
+        <div class="ico">🔐</div>
+        <h2>Login Required</h2>
+        <p>You need to be logged in to access this form.</p>
+        <a href="/login?return=<?= urlencode($_SERVER['REQUEST_URI'] ?? '') ?>" class="btn-promo" style="margin-top:16px;display:inline-flex;">
+            <i class="fas fa-sign-in-alt"></i> Sign In
+        </a>
+    </div>
+    <?php else: ?>
     <!-- ── Password gate ────────────────────────────────────────────────────── -->
     <div class="pgw">
         <div class="ico">🔒</div>
@@ -127,6 +179,7 @@
             <button type="submit" class="btn-sub"><i class="fas fa-unlock-alt"></i> Unlock Form</button>
         </form>
     </div>
+    <?php endif; ?>
 
     <?php else: ?>
     <!-- ── Main form ─────────────────────────────────────────────────────────── -->

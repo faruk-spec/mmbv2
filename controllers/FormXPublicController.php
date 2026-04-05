@@ -30,15 +30,35 @@ class FormXPublicController extends BaseController
 
     public function show(string $slug = ''): void
     {
+        // Fetch regardless of status so we can show a branded "unavailable" page
         $form = $this->db->fetch(
-            "SELECT * FROM formx_forms WHERE slug = ? AND status = 'active'",
+            "SELECT * FROM formx_forms WHERE slug = ?",
             [$slug]
         );
 
         if (!$form) {
             http_response_code(404);
-            \Core\View::render('errors/404');
+            \Core\View::render('formx/public-form', [
+                'title'       => 'Form Not Found',
+                'form'        => null,
+                'unavailable' => 'notfound',
+                'gateOpen'    => false,
+                'gateError'   => false,
+                'isExpired'   => false,
+            ]);
             exit;
+        }
+
+        if ($form['status'] !== 'active') {
+            \Core\View::render('formx/public-form', [
+                'title'       => htmlspecialchars($form['title']),
+                'form'        => $form,
+                'unavailable' => $form['status'],
+                'gateOpen'    => false,
+                'gateError'   => false,
+                'isExpired'   => false,
+            ]);
+            return;
         }
 
         $form['fields']   = json_decode($form['fields']   ?? '[]', true) ?: [];
@@ -53,10 +73,19 @@ class FormXPublicController extends BaseController
         // ── Password-gate handling ──────────────────────────────────────────
         $gateOpen  = true;
         $gateError = false;
+        $gateMode  = 'public'; // 'public' | 'password' | 'login'
         $accessMode     = $form['settings']['access_mode']     ?? 'public';
         $accessPasswordHash = $form['settings']['access_password'] ?? '';
 
-        if ($accessMode === 'password' && $accessPasswordHash !== '') {
+        if ($accessMode === 'login') {
+            $gateMode = 'login';
+            if (\Core\Auth::check()) {
+                $gateOpen = true;
+            } else {
+                $gateOpen = false;
+            }
+        } elseif ($accessMode === 'password' && $accessPasswordHash !== '') {
+            $gateMode = 'password';
             $sessionKey = 'formx_gate_' . (int)$form['id'];
             if (!empty($_SESSION[$sessionKey])) {
                 $gateOpen = true;
@@ -79,6 +108,7 @@ class FormXPublicController extends BaseController
             'form'       => $form,
             'gateOpen'   => $gateOpen,
             'gateError'  => $gateError,
+            'gateMode'   => $gateMode,
             'isExpired'  => $isExpired,
         ]);
     }
@@ -95,8 +125,29 @@ class FormXPublicController extends BaseController
         );
 
         if (!$form) {
-            http_response_code(404);
-            exit;
+            // Show branded unavailable page instead of bare 404
+            $anyForm = $this->db->fetch("SELECT id, title, status FROM formx_forms WHERE slug = ?", [$slug]);
+            if ($anyForm && $anyForm['status'] !== 'active') {
+                \Core\View::render('formx/public-form', [
+                    'title'       => htmlspecialchars($anyForm['title']),
+                    'form'        => $anyForm,
+                    'unavailable' => $anyForm['status'],
+                    'gateOpen'    => false,
+                    'gateError'   => false,
+                    'isExpired'   => false,
+                ]);
+            } else {
+                http_response_code(404);
+                \Core\View::render('formx/public-form', [
+                    'title'       => 'Form Not Found',
+                    'form'        => null,
+                    'unavailable' => 'notfound',
+                    'gateOpen'    => false,
+                    'gateError'   => false,
+                    'isExpired'   => false,
+                ]);
+            }
+            return;
         }
 
         // Check expiry
@@ -210,7 +261,7 @@ class FormXPublicController extends BaseController
             }
         }
 
-        $successMsg  = $settings['success_message'] ?? 'Thank you! Your response has been submitted.';
+        $successMsg  = !empty($settings['success_message']) ? $settings['success_message'] : 'Thank you! Your response has been submitted.';
         $redirectUrl = $settings['redirect_url'] ?? '';
 
         if ($redirectUrl) {

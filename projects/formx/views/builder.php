@@ -226,6 +226,20 @@
                            value="<?= htmlspecialchars(!empty($form['expires_at']) ? date('Y-m-d\TH:i', strtotime($form['expires_at'])) : '') ?>">
                     <p style="font-size:.72rem;color:var(--text-secondary);margin-top:3px;">Leave blank to never expire.</p>
                 </div>
+                <div class="fx-field-group">
+                    <label class="fx-label">Access Control</label>
+                    <select id="settingAccessMode" class="fx-select fx-input">
+                        <option value="public"   <?= ($form['settings']['access_mode'] ?? 'public') === 'public'         ? 'selected' : '' ?>>Public (anyone)</option>
+                        <option value="password" <?= ($form['settings']['access_mode'] ?? '') === 'password'             ? 'selected' : '' ?>>Password Protected</option>
+                        <option value="login"    <?= ($form['settings']['access_mode'] ?? '') === 'login'                ? 'selected' : '' ?>>Login Required</option>
+                    </select>
+                </div>
+                <div class="fx-field-group" id="settingPasswordGroup" style="display:<?= ($form['settings']['access_mode'] ?? '') === 'password' ? '' : 'none' ?>;">
+                    <label class="fx-label">Access Password</label>
+                    <input type="password" id="settingAccessPassword" class="fx-input"
+                           placeholder="<?= !empty($form['settings']['access_password']) ? '(password set – enter new to change)' : 'Enter password…' ?>">
+                    <p style="font-size:.72rem;color:var(--text-secondary);margin-top:3px;"><i class="fas fa-info-circle"></i> Leave blank to keep existing password.</p>
+                </div>
 
                 <div style="border-top:1px solid var(--border-color);margin:16px 0 12px;"></div>
                 <div class="fx-panel-title">Add Fields</div>
@@ -655,15 +669,16 @@ window.submitBuilder = function() {
         return nf;
     });
     document.getElementById('hiddenFields').value   = JSON.stringify(normalizedFields);
+    // Get access password: use new value if typed, otherwise preserve existing hash
+    const accessModeEl = document.getElementById('settingAccessMode');
+    const accessPwEl   = document.getElementById('settingAccessPassword');
+    const existingPwHash = '<?= htmlspecialchars($form ? ($form['settings']['access_password'] ?? '') : '') ?>';
     document.getElementById('hiddenSettings').value = JSON.stringify({
         success_message:  document.getElementById('settingSuccessMsg').value,
         redirect_url:     document.getElementById('settingRedirect').value,
         notify_email:     document.getElementById('settingEmail').value,
-        access_mode:      (document.getElementById('accessPassword') && document.getElementById('accessPassword').checked) ? 'password' : 'public',
-        // Only include access_password in payload if user typed a new one
-        access_password:  (document.getElementById('sharePasswordInput') && document.getElementById('sharePasswordInput').value)
-                            ? document.getElementById('sharePasswordInput').value
-                            : '<?= htmlspecialchars($form ? ($form['settings']['access_password'] ?? '') : '') ?>',
+        access_mode:      accessModeEl ? accessModeEl.value : 'public',
+        access_password:  (accessPwEl && accessPwEl.value) ? accessPwEl.value : existingPwHash,
     });
     document.getElementById('builderForm').submit();
 };
@@ -678,6 +693,17 @@ function slugify(s) {
 
 // ─── Init ────────────────────────────────────────────────────────────────────
 renderCanvas();
+
+// Show/hide password field based on access mode selector
+(function(){
+    const modeEl = document.getElementById('settingAccessMode');
+    const pwGroup = document.getElementById('settingPasswordGroup');
+    if (modeEl && pwGroup) {
+        modeEl.addEventListener('change', function() {
+            pwGroup.style.display = this.value === 'password' ? '' : 'none';
+        });
+    }
+})();
 
 // ─── Share Modal ─────────────────────────────────────────────────────────────
 window.openShareModal = function() {
