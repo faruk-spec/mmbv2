@@ -361,3 +361,18 @@ $router->get('/admin/projects/idcard/settings', 'Admin\\IDCardAdminController@se
 $router->post('/admin/projects/idcard/settings', 'Admin\\IDCardAdminController@settings', ['auth', 'admin']);
 $router->get('/admin/projects/idcard/ai-settings', 'Admin\\IDCardAdminController@aiSettings', ['auth', 'admin']);
 $router->post('/admin/projects/idcard/ai-settings', 'Admin\\IDCardAdminController@aiSettings', ['auth', 'admin']);
+
+// ── LinkShortner Admin ────────────────────────────────────────────────────────
+$router->get('/admin/projects/linkshortner', 'Admin\\LinkShortnerAdminController@overview', ['auth', 'admin']);
+$router->get('/admin/projects/linkshortner/links', 'Admin\\LinkShortnerAdminController@links', ['auth', 'admin']);
+$router->post('/admin/projects/linkshortner/links/delete', 'Admin\\LinkShortnerAdminController@deleteLink', ['auth', 'admin']);
+$router->get('/admin/projects/linkshortner/analytics', 'Admin\\LinkShortnerAdminController@analytics', ['auth', 'admin']);
+$router->get('/admin/projects/linkshortner/users', 'Admin\\LinkShortnerAdminController@users', ['auth', 'admin']);
+$router->get('/admin/projects/linkshortner/settings', 'Admin\\LinkShortnerAdminController@settings', ['auth', 'admin']);
+
+// ── NoteX Admin ───────────────────────────────────────────────────────────────
+$router->get('/admin/projects/notex', 'Admin\\NoteXAdminController@overview', ['auth', 'admin']);
+$router->get('/admin/projects/notex/notes', 'Admin\\NoteXAdminController@notes', ['auth', 'admin']);
+$router->post('/admin/projects/notex/notes/delete', 'Admin\\NoteXAdminController@deleteNote', ['auth', 'admin']);
+$router->get('/admin/projects/notex/users', 'Admin\\NoteXAdminController@users', ['auth', 'admin']);
+$router->get('/admin/projects/notex/settings', 'Admin\\NoteXAdminController@settings', ['auth', 'admin']);

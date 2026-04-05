@@ -1055,7 +1055,7 @@
                 <?php endif; ?>
 
                 <!-- Projects Management -->
-                <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('projects') || \Core\Auth::hasPermissionGroup('convertx') || \Core\Auth::hasPermissionGroup('codexpro') || \Core\Auth::hasPermissionGroup('imgtxt') || \Core\Auth::hasPermissionGroup('proshare') || \Core\Auth::hasPermissionGroup('billx') || \Core\Auth::hasPermissionGroup('whatsapp') || \Core\Auth::hasPermissionGroup('qr') || \Core\Auth::hasPermissionGroup('resumex') || \Core\Auth::hasPermissionGroup('idcard') || \Core\Auth::hasPermissionGroup('formx')): ?>
+                <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('projects') || \Core\Auth::hasPermissionGroup('convertx') || \Core\Auth::hasPermissionGroup('codexpro') || \Core\Auth::hasPermissionGroup('imgtxt') || \Core\Auth::hasPermissionGroup('proshare') || \Core\Auth::hasPermissionGroup('billx') || \Core\Auth::hasPermissionGroup('whatsapp') || \Core\Auth::hasPermissionGroup('qr') || \Core\Auth::hasPermissionGroup('resumex') || \Core\Auth::hasPermissionGroup('idcard') || \Core\Auth::hasPermissionGroup('formx') || \Core\Auth::hasPermissionGroup('linkshortner') || \Core\Auth::hasPermissionGroup('notex')): ?>
                 <div class="menu-section">
                     <div class="menu-section-title">Projects</div>
                     
@@ -1700,6 +1700,80 @@
                         </div>
                     </div>
                     <?php endif; ?>
+                </div>
+                <?php endif; ?>
+                
+                <!-- LinkShortner – URL Shortener -->
+                <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('linkshortner')): ?>
+                <div class="menu-item menu-dropdown">
+                    <div class="menu-dropdown-toggle <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/linkshortner') === 0 || strpos($_SERVER['REQUEST_URI'] ?? '', '/projects/linkshortner') === 0 ? 'active' : '' ?>">
+                        <div class="left">
+                            <i class="fas fa-link" style="color:#00d4ff;"></i>
+                            <span>LinkShortner</span>
+                        </div>
+                        <i class="fas fa-chevron-down arrow"></i>
+                    </div>
+                    <div class="menu-dropdown-content">
+                        <a href="/admin/projects/linkshortner" class="menu-link <?= ($_SERVER['REQUEST_URI'] ?? '') === '/admin/projects/linkshortner' ? 'active' : '' ?>">
+                            <i class="fas fa-chart-line"></i>
+                            <span>Overview</span>
+                        </a>
+                        <a href="/projects/linkshortner" class="menu-link">
+                            <i class="fas fa-external-link-alt"></i>
+                            <span>My Links</span>
+                        </a>
+                        <a href="/admin/projects/linkshortner/links" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/linkshortner/links') === 0 ? 'active' : '' ?>">
+                            <i class="fas fa-list"></i>
+                            <span>All Links</span>
+                        </a>
+                        <a href="/admin/projects/linkshortner/analytics" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/linkshortner/analytics') === 0 ? 'active' : '' ?>">
+                            <i class="fas fa-chart-bar"></i>
+                            <span>Analytics</span>
+                        </a>
+                        <a href="/admin/projects/linkshortner/users" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/linkshortner/users') === 0 ? 'active' : '' ?>">
+                            <i class="fas fa-users"></i>
+                            <span>Users</span>
+                        </a>
+                        <a href="/admin/projects/linkshortner/settings" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/linkshortner/settings') === 0 ? 'active' : '' ?>">
+                            <i class="fas fa-cog"></i>
+                            <span>Settings</span>
+                        </a>
+                    </div>
+                </div>
+                <?php endif; ?>
+
+                <!-- NoteX – Private Notes -->
+                <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('notex')): ?>
+                <div class="menu-item menu-dropdown">
+                    <div class="menu-dropdown-toggle <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/notex') === 0 || strpos($_SERVER['REQUEST_URI'] ?? '', '/projects/notex') === 0 ? 'active' : '' ?>">
+                        <div class="left">
+                            <i class="fas fa-sticky-note" style="color:#ffd700;"></i>
+                            <span>NoteX</span>
+                        </div>
+                        <i class="fas fa-chevron-down arrow"></i>
+                    </div>
+                    <div class="menu-dropdown-content">
+                        <a href="/admin/projects/notex" class="menu-link <?= ($_SERVER['REQUEST_URI'] ?? '') === '/admin/projects/notex' ? 'active' : '' ?>">
+                            <i class="fas fa-chart-line"></i>
+                            <span>Overview</span>
+                        </a>
+                        <a href="/projects/notex" class="menu-link">
+                            <i class="fas fa-external-link-alt"></i>
+                            <span>My Notes</span>
+                        </a>
+                        <a href="/admin/projects/notex/notes" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/notex/notes') === 0 ? 'active' : '' ?>">
+                            <i class="fas fa-list"></i>
+                            <span>All Notes</span>
+                        </a>
+                        <a href="/admin/projects/notex/users" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/notex/users') === 0 ? 'active' : '' ?>">
+                            <i class="fas fa-users"></i>
+                            <span>Users</span>
+                        </a>
+                        <a href="/admin/projects/notex/settings" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/notex/settings') === 0 ? 'active' : '' ?>">
+                            <i class="fas fa-cog"></i>
+                            <span>Settings</span>
+                        </a>
+                    </div>
                 </div>
                 <?php endif; ?>
                 
