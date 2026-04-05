@@ -50,7 +50,11 @@ class RedirectController
         // Record click
         $ua     = $_SERVER['HTTP_USER_AGENT'] ?? '';
         $ip     = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
-        $ip     = explode(',', $ip)[0];
+        // Use only the first IP from a potentially comma-separated list, validate it
+        $ip     = trim(explode(',', $ip)[0]);
+        if (!filter_var($ip, FILTER_VALIDATE_IP)) {
+            $ip = '';
+        }
         $referer = $_SERVER['HTTP_REFERER'] ?? null;
         $device = $this->detectDevice($ua);
         $os     = $this->detectOS($ua);

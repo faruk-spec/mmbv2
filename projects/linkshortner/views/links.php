@@ -104,7 +104,13 @@
 
 <script>
 function copyText(text) {
-    navigator.clipboard.writeText(text).then(() => alert('Copied: ' + text));
+    navigator.clipboard.writeText(text).then(() => {
+        const msg = document.createElement('div');
+        msg.textContent = 'Copied!';
+        Object.assign(msg.style, {position:'fixed',bottom:'20px',right:'20px',background:'rgba(0,212,255,0.9)',color:'#000',padding:'10px 18px',borderRadius:'8px',fontFamily:'inherit',fontWeight:'600',zIndex:9999,transition:'opacity 0.3s'});
+        document.body.appendChild(msg);
+        setTimeout(() => { msg.style.opacity = '0'; setTimeout(() => msg.remove(), 300); }, 1800);
+    });
 }
 </script>
 <?php View::end(); ?>

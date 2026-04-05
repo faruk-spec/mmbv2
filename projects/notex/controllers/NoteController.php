@@ -291,7 +291,10 @@ class NoteController
             return;
         }
 
-        $token      = bin2hex(random_bytes(32));
+        // Generate a unique share token
+        do {
+            $token = bin2hex(random_bytes(32));
+        } while ($db->fetchColumn("SELECT COUNT(*) FROM notes WHERE share_token = ?", [$token]) > 0);
         $access     = in_array($_POST['access'] ?? '', ['view', 'edit']) ? $_POST['access'] : 'view';
         $expiresAt  = !empty($_POST['expires_at']) ? $_POST['expires_at'] : null;
 
