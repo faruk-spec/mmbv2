@@ -109,14 +109,13 @@
         .alert { padding:14px 16px; border-radius:10px; margin-bottom:20px; font-size:.9rem; }
         .alert-success { background:rgba(0,255,136,.1); border:1px solid #00ff88; color:#00ff88; }
         .alert-error   { background:rgba(255,107,107,.1); border:1px solid #ff6b6b; color:#ff6b6b; }
-        .rating-group { display:flex; gap:8px; }
+        .rating-group { display:flex; gap:8px; flex-direction: row-reverse; justify-content: flex-end; }
         .rating-group input[type=radio] { display:none; }
-        .rating-group label { font-size:1.5rem; cursor:pointer; color:#8892a6; transition:color .1s; }
+        .rating-group label { font-size:1.5rem; cursor:pointer; color:#8892a6; transition:color .15s; }
         .rating-group label:hover,
         .rating-group label:hover ~ label { color:#ffaa00; }
-        .rating-group input:checked ~ label { color:#8892a6; }
-        .rating-group input:checked + label,
-        .rating-group label:has(~ input:checked) { color:#ffaa00; }
+        .rating-group input:checked ~ label,
+        .rating-group input:checked + label { color:#ffaa00; }
         .powered {
             margin-top:28px;
             text-align:center;

@@ -488,7 +488,10 @@ function saveFieldEdits() {
     var getChk = function(id) { var el = document.getElementById(id); return el ? el.checked : false; };
 
     if (get('edLabel')       !== undefined) field.label       = get('edLabel');
-    if (get('edName')        !== undefined) field.name        = get('edName').replace(/\s+/g,'_').toLowerCase();
+    if (get('edName') !== undefined) {
+        var rawName = get('edName').replace(/\s+/g,'_').toLowerCase().replace(/[^a-z0-9_]/g, '');
+        field.name = rawName || field.name;
+    }
     if (get('edPlaceholder') !== undefined) field.placeholder = get('edPlaceholder');
     if (get('edContent')     !== undefined) field.content     = get('edContent');
     if (get('edRows')        !== undefined) field.rows        = parseInt(get('edRows')) || 4;
@@ -569,7 +572,11 @@ function escHtml(str) {
     return div.innerHTML;
 }
 function escAttr(str) {
-    return String(str).replace(/"/g, '&quot;');
+    var div = document.createElement('div');
+    div.setAttribute('data-v', str);
+    return div.getAttribute('data-v')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 </script>
 

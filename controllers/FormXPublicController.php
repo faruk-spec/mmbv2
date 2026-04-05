@@ -112,7 +112,9 @@ class FormXPublicController extends BaseController
             return;
         }
 
-        $ip        = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? null;
+        $rawIp     = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? null;
+        // Use only the first address and strip whitespace to prevent spoofing via comma-separated list
+        $ip        = $rawIp ? trim(explode(',', $rawIp)[0]) : null;
         $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? null;
 
         $this->db->query(
@@ -129,10 +131,15 @@ class FormXPublicController extends BaseController
         $notifyEmail = $settings['notify_email'] ?? '';
         if ($notifyEmail && filter_var($notifyEmail, FILTER_VALIDATE_EMAIL)) {
             try {
-                $subject = 'New FormX submission: ' . $form['title'];
-                $body    = "A new submission was received for form \"{$form['title']}\".\n\n";
+                $safeTitle = str_replace(["\r", "\n"], '', strip_tags($form['title']));
+                $subject = 'New FormX submission: ' . $safeTitle;
+                $body    = "A new submission was received for form \"{$safeTitle}\".\n\n";
                 foreach ($submittedData as $k => $v) {
-                    $body .= "{$k}: " . (is_array($v) ? implode(', ', $v) : $v) . "\n";
+                    $safeKey = str_replace(["\r", "\n"], '', $k);
+                    $safeVal = is_array($v)
+                        ? str_replace(["\r", "\n"], '', implode(', ', $v))
+                        : str_replace(["\r", "\n"], '', $v);
+                    $body .= "{$safeKey}: {$safeVal}\n";
                 }
                 mail($notifyEmail, $subject, $body);
             } catch (\Throwable $e) {
