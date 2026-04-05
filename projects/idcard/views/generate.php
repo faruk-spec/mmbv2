@@ -194,6 +194,22 @@ $editDesign   = $editDesign   ?? [];
        provides category/section navigation */
     #stepProgressBanner { display:none !important; }
 }
+
+/* ── Inline bulk panel ── */
+.inline-bulk-panel { display:none; }
+.inline-bulk-panel.visible { display:block; }
+.inline-bulk-toggle { display:flex; align-items:center; gap:8px; cursor:pointer; user-select:none; width:100%; }
+.inline-bulk-upload-zone {
+    border:2px dashed var(--border-color); border-radius:10px;
+    padding:14px 12px; text-align:center; cursor:pointer; transition:all 0.2s;
+    background:var(--bg-secondary); margin-top:10px;
+}
+.inline-bulk-upload-zone:hover, .inline-bulk-upload-zone.dragover {
+    border-color:var(--indigo); background:rgba(99,102,241,0.06);
+}
+.inline-bulk-upload-zone input[type=file] { display:none; }
+.inline-bulk-progress-wrap { background:var(--border-color); border-radius:99px; height:7px; overflow:hidden; margin-top:6px; }
+.inline-bulk-progress-fill { height:100%; border-radius:99px; background:linear-gradient(90deg,#6366f1,#00f0ff); transition:width 0.4s; }
 </style>
 
 <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap;">
@@ -437,6 +453,58 @@ $editDesign   = $editDesign   ?? [];
                 <div id="aiOutput" style="margin-top:12px;display:none;"></div>
             </div>
 
+            <!-- Inline Bulk Mode panel -->
+            <div class="card" id="bulkModeCard" style="margin-bottom:16px;border-style:dashed;">
+                <label class="inline-bulk-toggle" for="bulkModeToggle">
+                    <input type="checkbox" id="bulkModeToggle" style="width:16px;height:16px;cursor:pointer;" onchange="toggleBulkMode()">
+                    <span style="font-size:0.9rem;font-weight:700;color:var(--indigo);display:flex;align-items:center;gap:6px;">
+                        <i class="fas fa-layer-group"></i> Bulk Mode
+                    </span>
+                    <span style="font-size:0.72rem;color:var(--text-secondary);">Generate multiple cards from a CSV</span>
+                </label>
+                <div class="inline-bulk-panel" id="inlineBulkPanel">
+                    <div style="display:flex;gap:12px;margin-top:14px;flex-wrap:wrap;align-items:flex-start;">
+                        <!-- Sample CSV -->
+                        <div style="flex:1;min-width:150px;">
+                            <div style="font-size:0.7rem;font-weight:600;color:var(--text-secondary);margin-bottom:6px;"><i class="fas fa-download" style="color:var(--indigo);margin-right:3px;"></i> Step 1 — Download template</div>
+                            <a id="inlineSampleCsvBtn" href="#" style="pointer-events:none;opacity:0.4;" class="btn btn-secondary btn-sm">
+                                <i class="fas fa-download"></i> Sample CSV
+                            </a>
+                            <div style="font-size:0.65rem;color:var(--text-secondary);margin-top:4px;">Contains all fields for the selected category</div>
+                        </div>
+                        <!-- Upload -->
+                        <div style="flex:1;min-width:150px;">
+                            <div style="font-size:0.7rem;font-weight:600;color:var(--text-secondary);margin-bottom:6px;"><i class="fas fa-upload" style="color:var(--indigo);margin-right:3px;"></i> Step 2 — Upload filled CSV</div>
+                            <div class="inline-bulk-upload-zone" id="inlineUploadZone"
+                                 onclick="document.getElementById('inlineCsvFile').click()"
+                                 ondragover="inlineDragOver(event)"
+                                 ondragleave="inlineDragLeave(event)"
+                                 ondrop="inlineDrop(event)">
+                                <i class="fas fa-file-csv" style="font-size:1.4rem;color:var(--indigo);opacity:0.7;display:block;margin-bottom:4px;"></i>
+                                <div style="font-size:0.78rem;font-weight:600;">Click or drag CSV here</div>
+                                <div style="font-size:0.68rem;color:var(--text-secondary);margin-top:2px;">.csv files only</div>
+                                <input type="file" id="inlineCsvFile" accept=".csv,text/csv" onchange="inlineFileSelected(this)">
+                                <div id="inlineCsvFilename" style="font-size:0.74rem;color:var(--indigo);margin-top:5px;font-weight:600;word-break:break-all;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Progress -->
+                    <div id="inlineBulkProgress" style="display:none;margin-top:12px;">
+                        <div style="font-size:0.78rem;color:var(--text-secondary);" id="inlineBulkProgressLabel">Processing…</div>
+                        <div class="inline-bulk-progress-wrap"><div class="inline-bulk-progress-fill" id="inlineBulkProgressBar" style="width:0%;"></div></div>
+                    </div>
+                    <!-- Result -->
+                    <div id="inlineBulkResult" style="display:none;margin-top:12px;"></div>
+                    <!-- Generate button -->
+                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px;">
+                        <button type="button" id="inlineBulkBtn" class="btn btn-primary" onclick="submitInlineBulk()">
+                            <i class="fas fa-bolt"></i> Generate All Cards
+                        </button>
+                        <span id="inlineBulkHint" style="font-size:0.74rem;color:var(--text-secondary);">Upload a CSV to generate all cards at once.</span>
+                    </div>
+                </div>
+            </div>
+
             <!-- Submit -->
             <div class="form-actions">
                 <button type="submit" id="generateBtn" class="btn btn-primary" style="flex:1;justify-content:center;padding:14px;">
@@ -563,6 +631,10 @@ $editDesign   = $editDesign   ?? [];
         <button type="button" class="cx-mobile-nav-btn" data-section="aiSection" onclick="cxMobileNav('aiSection',this)">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"></path><path d="M12 6v6l4 2"></path></svg>
             AI
+        </button>
+        <button type="button" class="cx-mobile-nav-btn" onclick="cxMobileNavBulk(this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            Bulk
         </button>
         <button type="button" class="cx-mobile-nav-btn" onclick="openMobilePreview()">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
@@ -1256,6 +1328,10 @@ function selectTemplate(key) {
 
     buildStylePicker();
     updatePreview();
+    // Refresh inline bulk sample CSV link if bulk mode is open
+    if (document.getElementById('bulkModeToggle') && document.getElementById('bulkModeToggle').checked) {
+        updateInlineSampleCsv();
+    }
 }
 
 // =============================================================================
@@ -2128,6 +2204,135 @@ function syncThemeDots(tpl) {
     document.querySelectorAll('.tpl-theme-dot').forEach(function(dot) {
         dot.classList.toggle('active', dot.getAttribute('data-tpl') === tpl);
     });
+}
+
+// =============================================================================
+//  Inline Bulk Mode
+// =============================================================================
+var inlineBulkCsvSelected = false;
+var inlineDroppedFile     = null;
+
+function toggleBulkMode() {
+    var toggle = document.getElementById('bulkModeToggle');
+    var panel  = document.getElementById('inlineBulkPanel');
+    if (toggle.checked) {
+        panel.classList.add('visible');
+        updateInlineSampleCsv();
+    } else {
+        panel.classList.remove('visible');
+        inlineBulkCsvSelected = false;
+        inlineDroppedFile     = null;
+        document.getElementById('inlineCsvFilename').textContent = '';
+        document.getElementById('inlineBulkResult').style.display   = 'none';
+        document.getElementById('inlineBulkProgress').style.display = 'none';
+    }
+}
+
+function updateInlineSampleCsv() {
+    var btn = document.getElementById('inlineSampleCsvBtn');
+    if (!btn) return;
+    btn.href = '/projects/idcard/bulk/sample-csv?template=' + encodeURIComponent(currentTpl || 'corporate');
+    btn.style.pointerEvents = 'auto';
+    btn.style.opacity = '1';
+}
+
+function inlineDragOver(e)  { e.preventDefault(); document.getElementById('inlineUploadZone').classList.add('dragover'); }
+function inlineDragLeave(e) { document.getElementById('inlineUploadZone').classList.remove('dragover'); }
+function inlineDrop(e) {
+    e.preventDefault();
+    document.getElementById('inlineUploadZone').classList.remove('dragover');
+    if (e.dataTransfer.files.length) {
+        var file = e.dataTransfer.files[0];
+        document.getElementById('inlineCsvFilename').textContent = '📎 ' + file.name;
+        inlineBulkCsvSelected = true;
+        inlineDroppedFile     = file;
+    }
+}
+function inlineFileSelected(input) {
+    if (input.files && input.files[0]) {
+        document.getElementById('inlineCsvFilename').textContent = '📎 ' + input.files[0].name;
+        inlineBulkCsvSelected = true;
+        inlineDroppedFile     = null;
+    }
+}
+
+function submitInlineBulk() {
+    if (!inlineBulkCsvSelected) {
+        document.getElementById('inlineBulkHint').textContent = '⚠ Please upload a CSV file first.';
+        document.getElementById('inlineBulkHint').style.color = '#ef4444';
+        return;
+    }
+    var btn = document.getElementById('inlineBulkBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner"></div> Generating…';
+    var prog = document.getElementById('inlineBulkProgress');
+    prog.style.display = 'block';
+    document.getElementById('inlineBulkProgressBar').style.width = '25%';
+    document.getElementById('inlineBulkProgressLabel').textContent = 'Uploading CSV and creating cards…';
+    document.getElementById('inlineBulkResult').style.display = 'none';
+
+    var fd = new FormData();
+    fd.append('_token',        CSRF_TOKEN);
+    fd.append('template_key',  currentTpl || 'corporate');
+    fd.append('primary_color', document.getElementById('primaryColor').value);
+    fd.append('accent_color',  document.getElementById('accentColor').value);
+    fd.append('bg_color',      document.getElementById('bgColor').value);
+    fd.append('text_color',    document.getElementById('textColor').value);
+    fd.append('font_family',   document.getElementById('fontFamily').value);
+    fd.append('profile_shape', document.getElementById('profileShape').value);
+    fd.append('design_style',  document.getElementById('design_style').value);
+    var csvInput = document.getElementById('inlineCsvFile');
+    if (inlineDroppedFile) {
+        fd.append('csv_file', inlineDroppedFile, inlineDroppedFile.name);
+    } else if (csvInput.files && csvInput.files[0]) {
+        fd.append('csv_file', csvInput.files[0]);
+    }
+
+    fetch('/projects/idcard/bulk/upload', {
+        method:'POST', body:fd, headers:{'X-Requested-With':'XMLHttpRequest'}
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(data) {
+        document.getElementById('inlineBulkProgressBar').style.width = '100%';
+        document.getElementById('inlineBulkProgressLabel').textContent = data.message || (data.success ? 'Done!' : 'Error');
+        var res = document.getElementById('inlineBulkResult');
+        res.style.display = 'block';
+        if (data.success) {
+            res.innerHTML = '<div style="padding:12px;background:rgba(0,255,136,0.06);border:1px solid rgba(0,255,136,0.2);border-radius:10px;">'
+                +'<div style="font-weight:700;color:#00ff88;margin-bottom:6px;font-size:0.88rem;"><i class="fas fa-check-circle"></i> Generation Complete!</div>'
+                +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">'
+                +'<span style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:16px;font-size:0.78rem;font-weight:600;background:rgba(0,255,136,0.12);color:#00ff88;"><i class="fas fa-id-card"></i> '+data.completed+' cards created</span>'
+                +(data.failed>0?'<span style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:16px;font-size:0.78rem;font-weight:600;background:rgba(239,68,68,0.12);color:#ef4444;"><i class="fas fa-exclamation-triangle"></i> '+data.failed+' rows skipped</span>':'')
+                +'</div>'
+                +'<div style="display:flex;gap:8px;flex-wrap:wrap;">'
+                +'<a href="/projects/idcard/bulk/cards" class="btn btn-primary btn-sm"><i class="fas fa-eye"></i> View Bulk Cards</a>'
+                +'<a href="/projects/idcard/history" class="btn btn-secondary btn-sm"><i class="fas fa-list"></i> All My Cards</a>'
+                +'</div></div>';
+        } else {
+            res.innerHTML = '<div style="padding:10px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);border-radius:8px;color:#ef4444;">'
+                +'<i class="fas fa-times-circle"></i> '+(data.message||'An error occurred.')+'</div>';
+        }
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-bolt"></i> Generate All Cards';
+    })
+    .catch(function() {
+        document.getElementById('inlineBulkProgressLabel').textContent = 'Request failed.';
+        var res = document.getElementById('inlineBulkResult');
+        res.style.display = 'block';
+        res.innerHTML = '<div style="padding:10px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);border-radius:8px;color:#ef4444;">'
+            +'<i class="fas fa-times-circle"></i> Network error. Please try again.</div>';
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-bolt"></i> Generate All Cards';
+    });
+}
+
+function cxMobileNavBulk(btn) {
+    var toggle = document.getElementById('bulkModeToggle');
+    if (toggle && !toggle.checked) { toggle.checked = true; toggleBulkMode(); }
+    var card = document.getElementById('bulkModeCard');
+    if (card) card.scrollIntoView({ behavior:'smooth', block:'start' });
+    document.querySelectorAll('.cx-mobile-nav-btn').forEach(function(b){ b.classList.remove('active'); });
+    if (btn) btn.classList.add('active');
 }
 
 // =============================================================================
