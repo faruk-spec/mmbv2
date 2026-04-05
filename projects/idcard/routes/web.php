@@ -91,7 +91,9 @@ switch ($segments[0]) {
         } elseif ($segments[1] === 'cards') {
             $controller->viewCards();
         } else {
-            $controller->index();
+            // The standalone bulk page has been removed; redirect to generate
+            header('Location: /projects/idcard/generate', true, 301);
+            exit;
         }
         break;
 

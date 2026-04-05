@@ -94,7 +94,7 @@
         </p>
     </div>
     <div class="bc-header-actions">
-        <a href="/projects/idcard/bulk" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left"></i> Bulk Generator</a>
+        <a href="/projects/idcard/generate" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left"></i> Generate Cards</a>
         <a href="/projects/idcard/history" class="btn btn-secondary btn-sm"><i class="fas fa-list"></i> All My Cards</a>
     </div>
 </div>
@@ -117,7 +117,7 @@
 <div style="text-align:center;padding:56px 20px;background:var(--bg-card);border:1px solid var(--border-color);border-radius:14px;">
     <i class="fas fa-id-card" style="font-size:2.5rem;opacity:0.22;display:block;margin-bottom:12px;color:var(--indigo);"></i>
     <p style="color:var(--text-secondary);margin-bottom:14px;">No bulk-generated cards yet.</p>
-    <a href="/projects/idcard/bulk" class="btn btn-primary btn-sm"><i class="fas fa-bolt"></i> Create Bulk Cards</a>
+    <a href="/projects/idcard/generate" class="btn btn-primary btn-sm"><i class="fas fa-bolt"></i> Create Bulk Cards</a>
 </div>
 <?php else: ?>
 
