@@ -267,14 +267,37 @@ class FormXController extends BaseController
         if (!is_array($fields))   $fields   = [];
         if (!is_array($settings)) $settings = [];
 
+        // Handle expires_at from settings payload
+        $expiresAt = null;
+        if (!empty($settings['expires_at'])) {
+            $parsed = strtotime($settings['expires_at']);
+            if ($parsed) {
+                $expiresAt = date('Y-m-d H:i:s', $parsed);
+            }
+        }
+        unset($settings['expires_at']);
+
+        // Handle access password: new value takes priority; keep existing if flagged
+        if (!empty($settings['access_password_new']) && ($settings['access_mode'] ?? '') === 'password') {
+            $settings['access_password'] = password_hash($settings['access_password_new'], PASSWORD_BCRYPT);
+        } elseif (!empty($settings['access_password_keep'])) {
+            $current = $this->db->fetch("SELECT settings FROM formx_forms WHERE id = ?", [$id]);
+            $existingSettings = is_string($current['settings'] ?? '') ? json_decode($current['settings'] ?? '{}', true) : ($current['settings'] ?? []);
+            $settings['access_password'] = $existingSettings['access_password'] ?? '';
+        } else {
+            $settings['access_password'] = '';
+        }
+        unset($settings['access_password_new'], $settings['access_password_keep']);
+
         $this->db->query(
-            "UPDATE formx_forms SET title=?, description=?, fields=?, settings=?, status=?, updated_at=NOW() WHERE id=?",
+            "UPDATE formx_forms SET title=?, description=?, fields=?, settings=?, status=?, expires_at=?, updated_at=NOW() WHERE id=?",
             [
                 $title,
                 $description ?: null,
                 json_encode($fields),
                 json_encode($settings),
                 in_array($status, ['active','inactive','draft']) ? $status : 'draft',
+                $expiresAt,
                 $id,
             ]
         );

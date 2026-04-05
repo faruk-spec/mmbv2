@@ -77,6 +77,50 @@
                                value="<?= View::e($form['settings']['notify_email'] ?? '') ?>"
                                style="width:100%;padding:8px 10px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:6px;color:var(--text-primary);font-size:.85rem;">
                     </div>
+                    <div>
+                        <label style="font-size:.8rem;color:var(--text-secondary);display:block;margin-bottom:4px;">Expires At <small style="font-weight:400;">(optional)</small></label>
+                        <input type="datetime-local" id="settingExpiresAt"
+                               value="<?= htmlspecialchars(!empty($form['expires_at']) ? date('Y-m-d\TH:i', strtotime($form['expires_at'])) : '') ?>"
+                               style="width:100%;padding:8px 10px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:6px;color:var(--text-primary);font-size:.85rem;">
+                        <p style="font-size:.72rem;color:var(--text-secondary);margin-top:2px;">Leave blank to never expire.</p>
+                    </div>
+                    <hr style="border:none;border-top:1px solid var(--border-color);margin:4px 0;">
+                    <div>
+                        <label style="font-size:.8rem;color:var(--text-secondary);display:block;margin-bottom:4px;">Access Control</label>
+                        <select id="settingAccessMode"
+                                style="width:100%;padding:8px 10px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:6px;color:var(--text-primary);font-size:.85rem;">
+                            <option value="public"   <?= ($form['settings']['access_mode'] ?? 'public') === 'public'   ? 'selected' : '' ?>>Public (anyone)</option>
+                            <option value="password" <?= ($form['settings']['access_mode'] ?? '') === 'password'       ? 'selected' : '' ?>>Password Protected</option>
+                            <option value="login"    <?= ($form['settings']['access_mode'] ?? '') === 'login'          ? 'selected' : '' ?>>Login Required</option>
+                        </select>
+                    </div>
+                    <div id="adminPwGroup" style="display:<?= ($form['settings']['access_mode'] ?? '') === 'password' ? '' : 'none' ?>;">
+                        <label style="font-size:.8rem;color:var(--text-secondary);display:block;margin-bottom:4px;">Access Password</label>
+                        <input type="password" id="settingAccessPassword"
+                               placeholder="<?= !empty($form['settings']['access_password']) ? '(password set – enter new to change)' : 'Enter password…' ?>"
+                               style="width:100%;padding:8px 10px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:6px;color:var(--text-primary);font-size:.85rem;">
+                        <p style="font-size:.72rem;color:var(--text-secondary);margin-top:2px;"><i class="fas fa-info-circle"></i> Leave blank to keep existing.</p>
+                    </div>
+                    <hr style="border:none;border-top:1px solid var(--border-color);margin:4px 0;">
+                    <div>
+                        <label style="font-size:.8rem;color:var(--text-secondary);display:block;margin-bottom:4px;">Max Total Submissions <small style="font-weight:400;">(0 = unlimited)</small></label>
+                        <input type="number" id="settingMaxSubmissions" min="0" step="1"
+                               value="<?= (int)($form['settings']['max_submissions'] ?? 0) ?>"
+                               style="width:100%;padding:8px 10px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:6px;color:var(--text-primary);font-size:.85rem;">
+                    </div>
+                    <div>
+                        <label style="font-size:.8rem;color:var(--text-secondary);display:block;margin-bottom:4px;">Max Submissions Per IP <small style="font-weight:400;">(0 = unlimited)</small></label>
+                        <input type="number" id="settingMaxPerIP" min="0" step="1"
+                               value="<?= (int)($form['settings']['max_submissions_per_ip'] ?? 0) ?>"
+                               style="width:100%;padding:8px 10px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:6px;color:var(--text-primary);font-size:.85rem;">
+                    </div>
+                    <div>
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.8rem;color:var(--text-secondary);">
+                            <input type="checkbox" id="settingConfirmSubmit" style="accent-color:var(--cyan);"
+                                   <?= !empty($form['settings']['confirm_submit']) ? 'checked' : '' ?>>
+                            Show confirmation popup before submit
+                        </label>
+                    </div>
                 </div>
             </div>
 
@@ -557,13 +601,35 @@ function syncHidden() {
 // Sync settings before submit
 document.getElementById('builderForm').addEventListener('submit', function() {
     syncHidden();
+    var accessModeEl  = document.getElementById('settingAccessMode');
+    var accessPwEl    = document.getElementById('settingAccessPassword');
+    var hasExistingPw = <?= json_encode(!empty($form['settings']['access_password'])) ?>;
+    var expiresEl     = document.getElementById('settingExpiresAt');
     var settings = {
-        success_message: document.getElementById('settingSuccessMessage').value,
-        redirect_url:    document.getElementById('settingRedirectUrl').value,
-        notify_email:    document.getElementById('settingNotifyEmail').value,
+        success_message:        document.getElementById('settingSuccessMessage').value,
+        redirect_url:           document.getElementById('settingRedirectUrl').value,
+        notify_email:           document.getElementById('settingNotifyEmail').value,
+        expires_at:             expiresEl ? expiresEl.value : '',
+        access_mode:            accessModeEl ? accessModeEl.value : 'public',
+        access_password_new:    (accessPwEl && accessPwEl.value) ? accessPwEl.value : '',
+        access_password_keep:   (accessPwEl && accessPwEl.value) ? false : hasExistingPw,
+        max_submissions:        parseInt(document.getElementById('settingMaxSubmissions')?.value, 10) || 0,
+        max_submissions_per_ip: parseInt(document.getElementById('settingMaxPerIP')?.value, 10) || 0,
+        confirm_submit:         !!(document.getElementById('settingConfirmSubmit')?.checked),
     };
     document.getElementById('settingsJsonInput').value = JSON.stringify(settings);
 });
+
+// Show/hide password field based on access mode
+(function() {
+    var modeEl  = document.getElementById('settingAccessMode');
+    var pwGroup = document.getElementById('adminPwGroup');
+    if (modeEl && pwGroup) {
+        modeEl.addEventListener('change', function() {
+            pwGroup.style.display = this.value === 'password' ? '' : 'none';
+        });
+    }
+})();
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function escHtml(str) {
