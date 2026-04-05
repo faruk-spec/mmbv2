@@ -135,7 +135,7 @@ class IDCardAdminController extends BaseController
 
     public function deleteCard(): void
     {
-        if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
+        if (!Security::validateCsrfToken($_POST['_csrf_token'] ?? '')) {
             $this->json(['success' => false, 'message' => 'Invalid token']);
             return;
         }
@@ -162,7 +162,7 @@ class IDCardAdminController extends BaseController
         $model = $this->model();
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
+            if (!Security::validateCsrfToken($_POST['_csrf_token'] ?? '')) {
                 $this->redirectWithError('/admin/projects/idcard/settings', 'Invalid token');
                 return;
             }
@@ -218,7 +218,7 @@ class IDCardAdminController extends BaseController
         $model = $this->model();
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
+            if (!Security::validateCsrfToken($_POST['_csrf_token'] ?? '')) {
                 $this->redirectWithError('/admin/projects/idcard/ai-settings', 'Invalid token');
                 return;
             }

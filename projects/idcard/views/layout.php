@@ -255,13 +255,20 @@ header("Expires: 0");
                         Dashboard
                     </a>
                     <a href="/projects/idcard/generate"
-                       class="<?= strpos($currentUri, '/projects/idcard/generate') !== false ? 'active' : '' ?>">
+                       class="<?= strpos($currentUri, '/projects/idcard/generate') !== false && strpos($currentUri, '/projects/idcard/ai-generate') === false ? 'active' : '' ?>">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <rect x="2" y="5" width="20" height="14" rx="2"/>
                             <circle cx="8" cy="12" r="3"/>
                             <path d="M13 9h6M13 12h4M13 15h6"/>
                         </svg>
                         Generate ID Card
+                    </a>
+                    <a href="/projects/idcard/ai-generate"
+                       class="<?= strpos($currentUri, '/projects/idcard/ai-generate') !== false ? 'active' : '' ?>">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                        </svg>
+                        Generate with AI
                     </a>
                     <a href="/projects/idcard/history"
                        class="<?= strpos($currentUri, '/projects/idcard/history') !== false ? 'active' : '' ?>">

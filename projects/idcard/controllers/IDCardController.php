@@ -317,6 +317,28 @@ class IDCardController
     }
 
     // ------------------------------------------------------------------ //
+    //  AI Generate page                                                    //
+    // ------------------------------------------------------------------ //
+
+    public function showAIGenerate(): void
+    {
+        $template = $_GET['template'] ?? 'corporate';
+        $templates = $this->config['templates'];
+        if (!isset($templates[$template])) {
+            $template = 'corporate';
+        }
+
+        $this->render('ai_generate', [
+            'title'        => 'Generate with AI',
+            'user'         => Auth::user(),
+            'templates'    => $templates,
+            'selectedTpl'  => $template,
+            'tplConfig'    => $templates[$template],
+            'field_labels' => $this->config['field_labels'],
+        ]);
+    }
+
+    // ------------------------------------------------------------------ //
     //  AI Suggestions (AJAX)                                              //
     // ------------------------------------------------------------------ //
 
@@ -359,10 +381,12 @@ class IDCardController
         // --- Try OpenAI for richer, context-aware suggestions ---
         $openAISuggestion = $this->callOpenAI($tpl, $data, $prompt, $tplConfig);
         if ($openAISuggestion !== null) {
-            $suggestions['ai_powered']   = true;
-            $suggestions['design_tips']  = $openAISuggestion['design_tips']  ?? [];
-            $suggestions['template_tip'] = $openAISuggestion['template_tip'] ?? '';
-            $suggestions['ai_text']      = $openAISuggestion['ai_text']      ?? '';
+            $suggestions['ai_powered']        = true;
+            $suggestions['design_tips']        = $openAISuggestion['design_tips']        ?? [];
+            $suggestions['template_tip']       = $openAISuggestion['template_tip']       ?? '';
+            $suggestions['ai_text']            = $openAISuggestion['ai_text']            ?? '';
+            $suggestions['field_suggestions']  = $openAISuggestion['field_suggestions']  ?? [];
+            $suggestions['color_suggestions']  = $openAISuggestion['color_suggestions']  ?? [];
             if ($prompt) {
                 $suggestions['prompt_hint'] = $openAISuggestion['prompt_hint'] ?? '';
             }
@@ -543,7 +567,7 @@ class IDCardController
         curl_close($ch);
 
         if ($raw === false || !empty($curlErr) || $httpCode !== 200) {
-            Logger::error('CardX OpenAI API error: HTTP ' . $httpCode . ' ' . $curlErr);
+            Logger::error('CardX OpenAI API error: HTTP ' . $httpCode . ($curlErr ? ': ' . $curlErr : ''));
             return null;
         }
 
@@ -731,7 +755,7 @@ class IDCardController
     private function sanitizeColor(string $color): string
     {
         $color = trim($color);
-        if (preg_match('/^#[0-9A-Fa-f]{3,8}$/', $color)) {
+        if (preg_match('/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{4}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$/', $color)) {
             return $color;
         }
         return '#000000';

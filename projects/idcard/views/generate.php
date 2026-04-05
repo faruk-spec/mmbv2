@@ -13,6 +13,27 @@ $csrfToken    = \Core\Security::generateCsrfToken();
 $isEditMode   = isset($editCardId) && $editCardId > 0;
 $editCardData = $editCardData ?? [];
 $editDesign   = $editDesign   ?? [];
+
+// Pre-fill from AI-generate page query params (ai_fieldname=...)
+if (!$isEditMode) {
+    foreach ($_GET as $k => $v) {
+        if (strncmp($k, 'ai_', 3) === 0) {
+            $field = substr($k, 3);
+            if ($field === 'primary_color' || $field === 'accent_color') {
+                // Validate hex colour before passing to design
+                if (preg_match('/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{4}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$/', trim($v))) {
+                    $editDesign[$field] = trim($v);
+                }
+            } else {
+                // Allow only printable chars, cap at 120
+                $clean = mb_substr(strip_tags((string) $v), 0, 120);
+                if ($clean !== '') {
+                    $editCardData[$field] = $clean;
+                }
+            }
+        }
+    }
+}
 ?>
 
 <style>
@@ -445,13 +466,13 @@ $editDesign   = $editDesign   ?? [];
                     <label class="form-label" style="font-size:0.78rem;">Describe your needs (optional)</label>
                     <input type="text" name="ai_prompt" id="aiPrompt" class="form-input"
                            style="padding:8px 12px;font-size:0.85rem;"
-                           placeholder="e.g. modern tech company, John Smith, software engineer, blue theme...">
+                           placeholder="e.g. modern tech company, minimalist, blue theme...">
                 </div>
-                <button type="button" class="btn btn-primary" style="width:100%;justify-content:center;" onclick="getAISuggestions()">
-                    <i class="fas fa-magic"></i> Generate with AI
+                <button type="button" class="btn btn-secondary" style="width:100%;justify-content:center;" onclick="getAISuggestions()">
+                    <i class="fas fa-magic"></i> Get AI Suggestions
                 </button>
                 <div id="aiOutput" style="margin-top:12px;display:none;"></div>
-                <!-- Apply actions (shown after AI returns results) -->
+                <!-- Apply actions (shown after AI returns field/color suggestions) -->
                 <div id="aiActions" style="display:none;margin-top:10px;gap:8px;flex-wrap:wrap;">
                     <button type="button" class="btn btn-primary btn-sm" onclick="applyAIFields()" id="applyFieldsBtn" style="display:none;">
                         <i class="fas fa-fill-drip"></i> Apply to Fields

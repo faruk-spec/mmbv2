@@ -97,6 +97,12 @@ switch ($segments[0]) {
         }
         break;
 
+    case 'ai-generate':
+        require_once PROJECT_PATH . '/controllers/IDCardController.php';
+        $controller = new \Projects\IDCard\Controllers\IDCardController();
+        $controller->showAIGenerate();
+        break;
+
     case 'ai-suggest':
         require_once PROJECT_PATH . '/controllers/IDCardController.php';
         $controller = new \Projects\IDCard\Controllers\IDCardController();
