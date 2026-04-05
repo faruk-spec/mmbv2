@@ -86,6 +86,16 @@
         .unav-promo p{font-size:.82rem;color:var(--muted);margin-bottom:10px;}
         .btn-promo{display:inline-flex;align-items:center;gap:7px;padding:9px 20px;background:linear-gradient(135deg,var(--cyan),var(--purple));border:none;border-radius:9px;color:#fff;font-size:.875rem;font-weight:700;cursor:pointer;text-decoration:none;transition:opacity .2s,transform .1s;}
         .btn-promo:hover{opacity:.9;transform:translateY(-1px);text-decoration:none;color:#fff;}
+        /* Confirm modal */
+        .cfm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px;}
+        .cfm-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px 24px;max-width:380px;width:100%;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,.5);}
+        .cfm-ico{font-size:2.4rem;margin-bottom:14px;}
+        .cfm-box h2{font-size:1.1rem;font-weight:700;margin-bottom:8px;}
+        .cfm-box p{color:var(--muted);font-size:.875rem;line-height:1.6;margin-bottom:20px;}
+        .cfm-btns{display:flex;gap:10px;}
+        .cfm-btns .btn-sub{margin:0;flex:1;}
+        .cfm-cancel{flex:1;padding:11px;background:transparent;border:1px solid var(--border);border-radius:9px;color:var(--muted);font-size:.9rem;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:all .18s;}
+        .cfm-cancel:hover{border-color:var(--red);color:var(--red);}
     </style>
 </head>
 <body>
@@ -343,6 +353,25 @@
     </div>
     <?php endif; /* gate/expired/success */ ?>
 
+    <!-- ── Confirmation modal (rendered always, hidden until needed) ─────────── -->
+    <?php if (!empty($form) && !empty($form['settings']['confirm_submit'])): ?>
+    <div id="fxConfirmModal" class="cfm-overlay" style="display:none;" onclick="if(event.target===this)document.getElementById('fxConfirmModal').style.display='none'">
+        <div class="cfm-box">
+            <div class="cfm-ico">📋</div>
+            <h2>Ready to Submit?</h2>
+            <p>Please review your answers before submitting. Once submitted, you may not be able to edit your response.</p>
+            <div class="cfm-btns">
+                <button class="cfm-cancel" onclick="document.getElementById('fxConfirmModal').style.display='none'">
+                    <i class="fas fa-arrow-left"></i> Go Back
+                </button>
+                <button class="btn-sub" onclick="window._fxConfirmed=true;document.getElementById('fxConfirmModal').style.display='none';document.getElementById('fxPublicForm').requestSubmit()">
+                    <i class="fas fa-paper-plane"></i> Submit
+                </button>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <p class="pwr">Powered by <strong>FormX</strong></p>
 </div>
 
@@ -410,10 +439,21 @@
         });
     }
 
-    // Clear draft on successful submit
-    document.getElementById('fxPublicForm') && document.getElementById('fxPublicForm').addEventListener('submit', function() {
-        localStorage.removeItem(DRAFT_KEY);
-    });
+    // Clear draft on successful submit; also handle confirmation modal intercept
+    var fxForm = document.getElementById('fxPublicForm');
+    if (fxForm) {
+        var needConfirm = <?= json_encode(!empty($form['settings']['confirm_submit'])) ?>;
+        fxForm.addEventListener('submit', function(e) {
+            if (needConfirm && !window._fxConfirmed) {
+                e.preventDefault();
+                var modal = document.getElementById('fxConfirmModal');
+                if (modal) modal.style.display = 'flex';
+                return false;
+            }
+            window._fxConfirmed = false;
+            localStorage.removeItem(DRAFT_KEY);
+        });
+    }
 
 })();
 </script>

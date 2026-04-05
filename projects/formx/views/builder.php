@@ -240,6 +240,26 @@
                            placeholder="<?= !empty($form['settings']['access_password']) ? '(password set – enter new to change)' : 'Enter password…' ?>">
                     <p style="font-size:.72rem;color:var(--text-secondary);margin-top:3px;"><i class="fas fa-info-circle"></i> Leave blank to keep existing password.</p>
                 </div>
+                <div class="fx-field-group">
+                    <label class="fx-label">Max Total Submissions <span style="color:var(--text-secondary);font-weight:400;">(0 = unlimited)</span></label>
+                    <input type="number" id="settingMaxSubmissions" class="fx-input" min="0" step="1"
+                           value="<?= (int)($form['settings']['max_submissions'] ?? 0) ?>"
+                           placeholder="0">
+                </div>
+                <div class="fx-field-group">
+                    <label class="fx-label">Max Submissions Per User <span style="color:var(--text-secondary);font-weight:400;">(0 = unlimited)</span></label>
+                    <input type="number" id="settingMaxPerIP" class="fx-input" min="0" step="1"
+                           value="<?= (int)($form['settings']['max_submissions_per_ip'] ?? 0) ?>"
+                           placeholder="0">
+                    <p style="font-size:.72rem;color:var(--text-secondary);margin-top:3px;">Limit per IP address.</p>
+                </div>
+                <div class="fx-field-group">
+                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                        <input type="checkbox" id="settingConfirmSubmit" style="accent-color:var(--cyan);"
+                               <?= !empty($form['settings']['confirm_submit']) ? 'checked' : '' ?>>
+                        <span class="fx-label" style="margin:0;">Show confirmation popup before submit</span>
+                    </label>
+                </div>
 
                 <div style="border-top:1px solid var(--border-color);margin:16px 0 12px;"></div>
                 <div class="fx-panel-title">Add Fields</div>
@@ -352,33 +372,6 @@
             </div>
         </div>
 
-        <!-- Access control -->
-        <div style="margin-bottom:18px;">
-            <label style="font-size:.78rem;color:var(--text-secondary);display:block;margin-bottom:8px;">Access Control</label>
-            <div style="display:flex;flex-direction:column;gap:8px;">
-                <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;cursor:pointer;" id="accessPublicLabel">
-                    <input type="radio" name="shareAccess" value="public" id="accessPublic" style="accent-color:var(--cyan);">
-                    <div>
-                        <div style="font-size:.85rem;font-weight:600;">Public</div>
-                        <div style="font-size:.75rem;color:var(--text-secondary);">Anyone with the link can fill the form</div>
-                    </div>
-                </label>
-                <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;cursor:pointer;" id="accessPasswordLabel">
-                    <input type="radio" name="shareAccess" value="password" id="accessPassword" style="accent-color:var(--cyan);">
-                    <div>
-                        <div style="font-size:.85rem;font-weight:600;">Password Protected</div>
-                        <div style="font-size:.75rem;color:var(--text-secondary);">Require a password to access the form</div>
-                    </div>
-                </label>
-            </div>
-            <!-- Password input -->
-            <div id="sharePasswordField" style="display:none;margin-top:10px;">
-                <input type="password" id="sharePasswordInput" placeholder="<?= !empty($form['settings']['access_password']) ? '••••••• (password set — enter new to change)' : 'Enter access password…' ?>"
-                       style="width:100%;padding:9px 12px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;color:var(--text-primary);font-size:.85rem;outline:none;">
-                <p style="font-size:.74rem;color:var(--text-secondary);margin-top:4px;"><i class="fas fa-info-circle"></i> Save the form after updating the password.</p>
-            </div>
-        </div>
-
         <!-- QR code placeholder -->
         <div style="margin-bottom:18px;text-align:center;">
             <div style="display:inline-block;padding:12px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:10px;">
@@ -391,10 +384,9 @@
         </div>
 
         <div style="display:flex;gap:10px;">
-            <button onclick="saveShareSettings()" class="fx-btn fx-btn-primary" style="flex:1;">
-                <i class="fas fa-save"></i> Apply &amp; Save
+            <button onclick="saveShareSettings()" class="fx-btn fx-btn-secondary" style="flex:1;">
+                <i class="fas fa-times"></i> Close
             </button>
-            <button onclick="closeShareModal()" class="fx-btn fx-btn-secondary" style="flex:1;">Cancel</button>
         </div>
     </div>
 </div>
@@ -675,13 +667,16 @@ window.submitBuilder = function() {
     // Use a boolean flag to avoid sending the existing hash to the client
     const hasExistingPassword = <?= json_encode(!empty($form['settings']['access_password'])) ?>;
     document.getElementById('hiddenSettings').value = JSON.stringify({
-        success_message:     document.getElementById('settingSuccessMsg').value,
-        redirect_url:        document.getElementById('settingRedirect').value,
-        notify_email:        document.getElementById('settingEmail').value,
-        access_mode:         accessModeEl ? accessModeEl.value : 'public',
+        success_message:        document.getElementById('settingSuccessMsg').value,
+        redirect_url:           document.getElementById('settingRedirect').value,
+        notify_email:           document.getElementById('settingEmail').value,
+        access_mode:            accessModeEl ? accessModeEl.value : 'public',
         // Send new password if typed; send empty string to signal "keep existing" on server
-        access_password_new: (accessPwEl && accessPwEl.value) ? accessPwEl.value : '',
-        access_password_keep: (accessPwEl && accessPwEl.value) ? false : hasExistingPassword,
+        access_password_new:    (accessPwEl && accessPwEl.value) ? accessPwEl.value : '',
+        access_password_keep:   (accessPwEl && accessPwEl.value) ? false : hasExistingPassword,
+        max_submissions:        parseInt(document.getElementById('settingMaxSubmissions')?.value, 10) || 0,
+        max_submissions_per_ip: parseInt(document.getElementById('settingMaxPerIP')?.value, 10) || 0,
+        confirm_submit:         !!(document.getElementById('settingConfirmSubmit')?.checked),
     });
     document.getElementById('builderForm').submit();
 };
@@ -713,24 +708,6 @@ window.openShareModal = function() {
     const modal = document.getElementById('fxShareModal');
     if (!modal) return;
     modal.style.display = 'flex';
-    // Restore saved access mode
-    const accessMode = '<?= htmlspecialchars($form ? ($form['settings']['access_mode'] ?? 'public') : 'public') ?>';
-    const passEl = document.getElementById('accessPassword');
-    const pubEl  = document.getElementById('accessPublic');
-    if (accessMode === 'password' && passEl) {
-        passEl.checked = true;
-        const pf = document.getElementById('sharePasswordField');
-        if (pf) pf.style.display = '';
-    } else if (pubEl) {
-        pubEl.checked = true;
-    }
-    // Wire access radio buttons
-    document.querySelectorAll('input[name="shareAccess"]').forEach(r => {
-        r.addEventListener('change', function() {
-            const pf = document.getElementById('sharePasswordField');
-            if (pf) pf.style.display = this.value === 'password' ? '' : 'none';
-        });
-    });
 };
 
 window.closeShareModal = function() {
@@ -750,12 +727,7 @@ window.copyShareUrl = function() {
 };
 
 window.saveShareSettings = function() {
-    // Save access settings into the builder settings and submit the form
-    const accessMode = document.querySelector('input[name="shareAccess"]:checked')?.value || 'public';
-    const passInp = document.getElementById('sharePasswordInput');
-    // Store in hidden settings before submit
     closeShareModal();
-    submitBuilder();
 };
 
 // Close modal on backdrop click

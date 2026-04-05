@@ -110,6 +110,7 @@ class FormXPublicController extends BaseController
             'gateError'  => $gateError,
             'gateMode'   => $gateMode,
             'isExpired'  => $isExpired,
+            'success'    => Helpers::hasFlash('formx_success') ? Helpers::getFlash('formx_success') : null,
         ]);
     }
 
@@ -167,6 +168,53 @@ class FormXPublicController extends BaseController
         $fields   = json_decode($form['fields']   ?? '[]', true) ?: [];
         $settings = json_decode($form['settings'] ?? '{}', true) ?: [];
 
+        // Enforce access gate on direct POST submissions
+        $accessMode = $settings['access_mode'] ?? 'public';
+        if ($accessMode === 'login' && !\Core\Auth::check()) {
+            Helpers::redirect('/forms/' . $slug);
+            return;
+        }
+        if ($accessMode === 'password') {
+            $sessionKey = 'formx_gate_' . (int)$form['id'];
+            if (empty($_SESSION[$sessionKey])) {
+                Helpers::redirect('/forms/' . $slug);
+                return;
+            }
+        }
+
+        // Resolve IP address (used for per-IP limit checks)
+        $rawIp   = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? null;
+        $firstIp = $rawIp ? trim(explode(',', $rawIp)[0]) : null;
+        $ip      = ($firstIp && filter_var($firstIp, FILTER_VALIDATE_IP)) ? $firstIp : ($_SERVER['REMOTE_ADDR'] ?? null);
+
+        // Check overall submission limit
+        $maxSubmissions = (int)($settings['max_submissions'] ?? 0);
+        if ($maxSubmissions > 0) {
+            $totalCount = (int)$this->db->fetchColumn(
+                "SELECT COUNT(*) FROM formx_submissions WHERE form_id = ?",
+                [$form['id']]
+            );
+            if ($totalCount >= $maxSubmissions) {
+                Helpers::flash('error', 'This form has reached its maximum number of submissions and is no longer accepting responses.');
+                Helpers::redirect('/forms/' . $slug);
+                return;
+            }
+        }
+
+        // Check per-IP submission limit
+        $maxPerIp = (int)($settings['max_submissions_per_ip'] ?? 0);
+        if ($maxPerIp > 0 && $ip) {
+            $ipCount = (int)$this->db->fetchColumn(
+                "SELECT COUNT(*) FROM formx_submissions WHERE form_id = ? AND ip_address = ?",
+                [$form['id'], $ip]
+            );
+            if ($ipCount >= $maxPerIp) {
+                Helpers::flash('error', 'You have already submitted this form the maximum number of times allowed.');
+                Helpers::redirect('/forms/' . $slug);
+                return;
+            }
+        }
+
         // Collect and validate submitted data
         $submittedData = [];
         $errors = [];
@@ -201,10 +249,6 @@ class FormXPublicController extends BaseController
             return;
         }
 
-        $rawIp     = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? null;
-        // Use only the first address and strip whitespace to prevent spoofing via comma-separated list
-        $firstIp   = $rawIp ? trim(explode(',', $rawIp)[0]) : null;
-        $ip        = ($firstIp && filter_var($firstIp, FILTER_VALIDATE_IP)) ? $firstIp : ($_SERVER['REMOTE_ADDR'] ?? null);
         $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? null;
 
         // Detect device type and browser from user-agent
@@ -270,13 +314,7 @@ class FormXPublicController extends BaseController
             return;
         }
 
-        $form['fields']   = $fields;
-        $form['settings'] = $settings;
-
-        \Core\View::render('formx/public-form', [
-            'title'   => htmlspecialchars($form['title']),
-            'form'    => $form,
-            'success' => $successMsg,
-        ]);
+        Helpers::flash('formx_success', $successMsg);
+        Helpers::redirect('/forms/' . $slug);
     }
 }
