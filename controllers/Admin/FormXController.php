@@ -216,9 +216,12 @@ class FormXController extends BaseController
 
         $newId = $this->db->lastInsertId();
 
-        ActivityLogger::log('formx.create', "Created form \"{$title}\" (slug: {$slug})", [
+        ActivityLogger::log(Auth::id(), 'formx.create', [
+            'module'        => 'formx',
             'resource_type' => 'formx_form',
             'resource_id'   => $newId,
+            'entity_name'   => $title,
+            'new_values'    => ['title' => $title, 'slug' => $slug],
         ]);
 
         $this->flash('success', 'Form created successfully.');
@@ -276,9 +279,11 @@ class FormXController extends BaseController
             ]
         );
 
-        ActivityLogger::log('formx.update', "Updated form \"{$title}\" (id: {$id})", [
+        ActivityLogger::log(Auth::id(), 'formx.update', [
+            'module'        => 'formx',
             'resource_type' => 'formx_form',
             'resource_id'   => $id,
+            'entity_name'   => $title,
         ]);
 
         $this->flash('success', 'Form saved successfully.');
@@ -362,9 +367,11 @@ class FormXController extends BaseController
 
         $this->db->query("DELETE FROM formx_forms WHERE id = ?", [$id]);
 
-        ActivityLogger::log('formx.delete', "Deleted form \"{$form['title']}\" (id: {$id})", [
+        ActivityLogger::log(Auth::id(), 'formx.delete', [
+            'module'        => 'formx',
             'resource_type' => 'formx_form',
             'resource_id'   => $id,
+            'entity_name'   => $form['title'],
         ]);
 
         $this->flash('success', 'Form deleted.');
