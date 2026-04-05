@@ -138,7 +138,7 @@ $csrfToken = \Core\Security::generateCsrfToken();
     <div class="step-card" id="fieldsCard">
         <div class="step-label">
             <span class="step-num">2</span> Fill in Card Details
-            <span style="font-size:0.68rem;color:var(--text-secondary);font-weight:400;margin-left:4px;">(AI will fill anything left blank)</span>
+            <span style="font-size:0.68rem;color:var(--text-secondary);font-weight:400;margin-left:4px;">(all fields required)</span>
         </div>
         <div id="tplFieldsWrap">
             <!-- injected by JS -->
@@ -264,15 +264,13 @@ function renderTplFields(tplKey) {
         var inputType = DATE_FIELDS.indexOf(f) !== -1 ? 'date' : 'text';
         var isTextarea = TEXTAREA_FIELDS.indexOf(f) !== -1;
         html += '<div style="display:flex;flex-direction:column;gap:4px;">'
-              + '<label style="font-size:0.72rem;font-weight:600;color:var(--text-secondary);">' + escAI(label) + '</label>';
+              + '<label style="font-size:0.72rem;font-weight:600;color:var(--text-secondary);">' + escAI(label) + ' <span style="color:#ef4444;">*</span></label>';
         if (isTextarea) {
-            html += '<textarea id="aifield_' + escAI(f) + '" class="prompt-area" rows="2"'
-                  + ' style="min-height:56px;font-size:0.82rem;padding:8px 10px;"'
-                  + ' placeholder="Leave blank — AI will suggest"></textarea>';
+            html += '<textarea id="aifield_' + escAI(f) + '" class="prompt-area" rows="2" required'
+                  + ' style="min-height:56px;font-size:0.82rem;padding:8px 10px;"></textarea>';
         } else {
-            html += '<input type="' + inputType + '" id="aifield_' + escAI(f) + '" class="prompt-area"'
-                  + ' style="min-height:unset;font-size:0.82rem;padding:8px 10px;"'
-                  + ' placeholder="Leave blank — AI will suggest">';
+            html += '<input type="' + inputType + '" id="aifield_' + escAI(f) + '" class="prompt-area" required'
+                  + ' style="min-height:unset;font-size:0.82rem;padding:8px 10px;">';
         }
         html += '</div>';
     });
@@ -315,16 +313,42 @@ function getFieldValues() {
     var data   = {};
     fields.forEach(function(f) {
         var el = document.getElementById('aifield_' + f);
-        if (el && el.value.trim()) {
+        if (el) {
             data[f] = el.value.trim();
         }
     });
     return data;
 }
 
+function validateRequiredFields() {
+    var tpl    = TEMPLATES[currentTpl] || {};
+    var fields = (tpl.fields || []).filter(function(f){ return f !== 'photo'; });
+    var first  = null;
+    fields.forEach(function(f) {
+        var el = document.getElementById('aifield_' + f);
+        if (el && !el.value.trim()) {
+            el.style.borderColor = '#ef4444';
+            if (!first) first = el;
+        } else if (el) {
+            el.style.borderColor = '';
+        }
+    });
+    return first; // null = all valid, element = first empty field
+}
+
 function generateWithAI() {
     var btn    = document.getElementById('generateBtn');
     var status = document.getElementById('aiStatus');
+
+    // Validate required fields first
+    var invalid = validateRequiredFields();
+    if (invalid) {
+        status.style.display = 'block';
+        status.innerHTML = '<div class="alert alert-error"><i class="fas fa-exclamation-circle"></i> Please fill in all required fields before generating.</div>';
+        invalid.focus();
+        invalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+    }
 
     btn.disabled = true;
     btn.innerHTML = '<span class="ai-spinner"></span> Generating…';
@@ -338,9 +362,6 @@ function generateWithAI() {
     fd.append('template_key', currentTpl);
     fd.append('prompt', prompt);
     Object.keys(cardData).forEach(function(k) { fd.append('card_data[' + k + ']', cardData[k]); });
-    if (!Object.keys(cardData).length) {
-        fd.append('card_data[_empty]', '1');
-    }
 
     fetch('/projects/idcard/ai-suggest', {
         method:  'POST',
@@ -366,35 +387,21 @@ function generateWithAI() {
         var badge = document.getElementById('aiBadge');
         badge.style.display = s.ai_powered ? 'inline-flex' : 'none';
 
-        // Fields — merge AI suggestions with user-provided values
-        var tpl    = TEMPLATES[currentTpl] || {};
-        var tplFields = (tpl.fields || []).filter(function(f){ return f !== 'photo'; });
-        var mergedFields = {};
-        // Start with user-provided values
-        Object.assign(mergedFields, cardData);
-        // Fill blanks with AI suggestions
-        Object.keys(_aiFieldSuggestions).forEach(function(fk) {
-            if (!mergedFields[fk]) mergedFields[fk] = _aiFieldSuggestions[fk];
-        });
-        // Also show AI suggestions even if no user input
-        if (!Object.keys(mergedFields).length) mergedFields = _aiFieldSuggestions;
-        _mergedFields = mergedFields;  // store for createCardFromAI()
+        // Fields — use user-provided values (all required); AI supplements design only
+        _mergedFields = cardData;
 
-        var fieldKeys = Object.keys(mergedFields);
+        var fieldKeys = Object.keys(cardData);
         var fHtml = '';
         if (fieldKeys.length > 0) {
             fieldKeys.forEach(function(fk) {
-                var label   = FIELD_LABELS[fk] || fk;
-                var isAI    = !cardData[fk];
-                var valHtml = escAI(mergedFields[fk]);
-                if (isAI) valHtml = '<span style="color:var(--indigo);">' + valHtml + '</span>';
+                var label = FIELD_LABELS[fk] || fk;
                 fHtml += '<div class="field-row">'
-                       + '<span class="field-key">' + escAI(label) + (isAI ? ' <span style="font-size:0.6rem;color:var(--indigo);">AI</span>' : '') + '</span>'
-                       + '<span class="field-val">' + valHtml + '</span>'
+                       + '<span class="field-key">' + escAI(label) + '</span>'
+                       + '<span class="field-val">' + escAI(cardData[fk]) + '</span>'
                        + '</div>';
             });
         } else {
-            fHtml = '<p style="font-size:0.78rem;color:var(--text-secondary);">No field suggestions. Fill in some details or try a more descriptive prompt.</p>';
+            fHtml = '<p style="font-size:0.78rem;color:var(--text-secondary);">No field data. Please fill in the form above.</p>';
         }
         document.getElementById('resultFields').innerHTML = fHtml;
 

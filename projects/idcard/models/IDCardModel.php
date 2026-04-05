@@ -376,8 +376,16 @@ class IDCardModel
                 [$key]
             );
             if ($row && $row['setting_value'] !== null) {
-                $decoded = json_decode($row['setting_value'], true);
-                return ($decoded !== null) ? $decoded : $row['setting_value'];
+                $val = $row['setting_value'];
+                // Only JSON-decode arrays/objects; return plain strings as-is so that
+                // values like '1' / '0' stay strings and === comparisons work correctly.
+                if (strlen($val) > 0 && ($val[0] === '{' || $val[0] === '[')) {
+                    $decoded = json_decode($val, true);
+                    if ($decoded !== null) {
+                        return $decoded;
+                    }
+                }
+                return $val;
             }
         } catch (\Exception $e) {
             // table may not exist yet
