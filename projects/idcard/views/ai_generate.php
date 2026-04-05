@@ -114,7 +114,7 @@ $csrfToken = \Core\Security::generateCsrfToken();
     <div class="ai-hero">
         <div class="ai-hero-icon">✨</div>
         <h1>Generate with AI</h1>
-        <p>Describe your card in plain language — AI fills in the fields, picks colors, and suggests a design style.</p>
+        <p>Choose a template, fill in what you know, and let AI complete the rest — colors, design tips, and missing values.</p>
     </div>
 
     <!-- Step 1: Template -->
@@ -134,25 +134,33 @@ $csrfToken = \Core\Security::generateCsrfToken();
         </div>
     </div>
 
-    <!-- Step 2: Describe -->
-    <div class="step-card">
+    <!-- Step 2: Template fields -->
+    <div class="step-card" id="fieldsCard">
         <div class="step-label">
-            <span class="step-num">2</span> Describe Your Card
+            <span class="step-num">2</span> Fill in Card Details
+            <span style="font-size:0.68rem;color:var(--text-secondary);font-weight:400;margin-left:4px;">(AI will fill anything left blank)</span>
         </div>
-        <textarea id="aiPrompt" class="prompt-area"
-                  placeholder="e.g. John Smith, Senior Software Engineer at TechCorp, blue modern theme..."></textarea>
-        <div class="prompt-examples">
-            <button class="prompt-example" onclick="fillPrompt('John Smith, Marketing Manager at ABC Corp, professional blue theme')">Corporate example</button>
-            <button class="prompt-example" onclick="fillPrompt('Emily Davis, BSc Computer Science, 3rd year student at State University')">Student example</button>
-            <button class="prompt-example" onclick="fillPrompt('Dr. Raj Kumar, Cardiologist, City Hospital, emergency contact available')">Medical example</button>
-            <button class="prompt-example" onclick="fillPrompt('Security Guard, Night Shift, Zone A, professional dark theme')">Security example</button>
+        <div id="tplFieldsWrap">
+            <!-- injected by JS -->
         </div>
     </div>
 
-    <!-- Step 3: Generate -->
+    <!-- Step 3: Optional prompt -->
     <div class="step-card">
         <div class="step-label">
-            <span class="step-num">3</span> Generate
+            <span class="step-num">3</span> Optional: Describe Your Needs
+        </div>
+        <textarea id="aiPrompt" class="prompt-area"
+                  placeholder="e.g. blue modern theme, formal style, minimalist..."></textarea>
+        <div class="prompt-examples" id="promptExamples">
+            <!-- injected by JS based on template -->
+        </div>
+    </div>
+
+    <!-- Step 4: Generate -->
+    <div class="step-card">
+        <div class="step-label">
+            <span class="step-num">4</span> Generate
         </div>
         <button type="button" id="generateBtn" class="btn btn-primary"
                 style="width:100%;justify-content:center;padding:12px;"
@@ -213,10 +221,74 @@ var currentTpl   = '<?= htmlspecialchars($selectedTpl) ?>';
 var _aiFieldSuggestions = {};
 var _aiColorSuggestions = {};
 
+// Per-template placeholder hints shown as example prompt chips
+var TPL_PROMPT_EXAMPLES = {
+    'corporate':   ['Professional blue theme', 'Formal minimalist style', 'Dark executive look'],
+    'student':     ['Bright academic style', 'Modern university theme', 'Green & white clean look'],
+    'event':       ['Bold conference badge', 'Vibrant event colors', 'Dark tech summit style'],
+    'visitor':     ['Clean visitor pass', 'Amber security tone', 'Minimalist modern look'],
+    'medical':     ['Clinical white theme', 'Emergency-ready red accents', 'Professional hospital look'],
+    'tech':        ['Dark neon tech style', 'Modern startup feel', 'Minimalist dark card'],
+    'bank':        ['Classic navy & gold', 'Formal banking style', 'Professional finance look'],
+    'media':       ['Bold press red theme', 'Journalist credentialing style'],
+    'govt':        ['Official green theme', 'Government formal style'],
+    'security':    ['Dark tactical look', 'Bold amber security style'],
+};
+
+// Fields that should use a textarea (longer text)
+var TEXTAREA_FIELDS = ['company_address', 'school_address', 'purpose', 'person_address'];
+// Fields for date input
+var DATE_FIELDS = ['dob', 'visit_date', 'expiry_date', 'valid_from', 'valid_till', 'joining_date'];
+
+function renderTplFields(tplKey) {
+    var tpl  = TEMPLATES[tplKey] || {};
+    var fields = (tpl.fields || []).filter(function(f){ return f !== 'photo'; });
+    var wrap = document.getElementById('tplFieldsWrap');
+    if (!fields.length) {
+        wrap.innerHTML = '<p style="font-size:0.8rem;color:var(--text-secondary);">No fields for this template.</p>';
+        return;
+    }
+    var html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;">';
+    fields.forEach(function(f) {
+        var label = FIELD_LABELS[f] || f;
+        var inputType = DATE_FIELDS.indexOf(f) !== -1 ? 'date' : 'text';
+        var isTextarea = TEXTAREA_FIELDS.indexOf(f) !== -1;
+        html += '<div style="display:flex;flex-direction:column;gap:4px;">'
+              + '<label style="font-size:0.72rem;font-weight:600;color:var(--text-secondary);">' + escAI(label) + '</label>';
+        if (isTextarea) {
+            html += '<textarea id="aifield_' + escAI(f) + '" class="prompt-area" rows="2"'
+                  + ' style="min-height:56px;font-size:0.82rem;padding:8px 10px;"'
+                  + ' placeholder="Leave blank — AI will suggest"></textarea>';
+        } else {
+            html += '<input type="' + inputType + '" id="aifield_' + escAI(f) + '" class="prompt-area"'
+                  + ' style="min-height:unset;font-size:0.82rem;padding:8px 10px;"'
+                  + ' placeholder="Leave blank — AI will suggest">';
+        }
+        html += '</div>';
+    });
+    html += '</div>';
+    wrap.innerHTML = html;
+}
+
+function renderPromptExamples(tplKey) {
+    var examples = TPL_PROMPT_EXAMPLES[tplKey] || ['Professional style', 'Modern minimalist theme'];
+    var wrap = document.getElementById('promptExamples');
+    var html = '';
+    examples.forEach(function(ex) {
+        html += '<button class="prompt-example" onclick="fillPrompt(\'' + escAI(ex).replace(/'/g, '\\\'') + '\')">' + escAI(ex) + '</button>';
+    });
+    wrap.innerHTML = html;
+}
+
 function selectTpl(btn, key) {
     document.querySelectorAll('.tpl-chip').forEach(function(b){ b.classList.remove('active'); });
     btn.classList.add('active');
     currentTpl = key;
+    renderTplFields(key);
+    renderPromptExamples(key);
+    // Clear previous results when template changes
+    document.getElementById('aiResults').style.display = 'none';
+    document.getElementById('aiStatus').style.display  = 'none';
 }
 
 function fillPrompt(text) {
@@ -224,13 +296,20 @@ function fillPrompt(text) {
     document.getElementById('aiPrompt').focus();
 }
 
-function generateWithAI() {
-    var prompt = document.getElementById('aiPrompt').value.trim();
-    if (!prompt) {
-        document.getElementById('aiPrompt').focus();
-        return;
-    }
+function getFieldValues() {
+    var tpl    = TEMPLATES[currentTpl] || {};
+    var fields = (tpl.fields || []).filter(function(f){ return f !== 'photo'; });
+    var data   = {};
+    fields.forEach(function(f) {
+        var el = document.getElementById('aifield_' + f);
+        if (el && el.value.trim()) {
+            data[f] = el.value.trim();
+        }
+    });
+    return data;
+}
 
+function generateWithAI() {
     var btn    = document.getElementById('generateBtn');
     var status = document.getElementById('aiStatus');
 
@@ -239,13 +318,16 @@ function generateWithAI() {
     status.style.display = 'none';
     document.getElementById('aiResults').style.display = 'none';
 
-    var tpl = TEMPLATES[currentTpl] || {};
-    var fd  = new FormData();
+    var cardData = getFieldValues();
+    var prompt   = document.getElementById('aiPrompt').value.trim();
+    var fd = new FormData();
     fd.append('_token', CSRF_TOKEN);
     fd.append('template_key', currentTpl);
     fd.append('prompt', prompt);
-    // Don't pre-fill card_data — let AI generate from scratch
-    fd.append('card_data[_empty]', '1');
+    Object.keys(cardData).forEach(function(k) { fd.append('card_data[' + k + ']', cardData[k]); });
+    if (!Object.keys(cardData).length) {
+        fd.append('card_data[_empty]', '1');
+    }
 
     fetch('/projects/idcard/ai-suggest', {
         method:  'POST',
@@ -271,16 +353,34 @@ function generateWithAI() {
         var badge = document.getElementById('aiBadge');
         badge.style.display = s.ai_powered ? 'inline-flex' : 'none';
 
-        // Fields
-        var fieldKeys = Object.keys(_aiFieldSuggestions);
+        // Fields — merge AI suggestions with user-provided values
+        var tpl    = TEMPLATES[currentTpl] || {};
+        var tplFields = (tpl.fields || []).filter(function(f){ return f !== 'photo'; });
+        var mergedFields = {};
+        // Start with user-provided values
+        Object.assign(mergedFields, cardData);
+        // Fill blanks with AI suggestions
+        Object.keys(_aiFieldSuggestions).forEach(function(fk) {
+            if (!mergedFields[fk]) mergedFields[fk] = _aiFieldSuggestions[fk];
+        });
+        // Also show AI suggestions even if no user input
+        if (!Object.keys(mergedFields).length) mergedFields = _aiFieldSuggestions;
+
+        var fieldKeys = Object.keys(mergedFields);
         var fHtml = '';
         if (fieldKeys.length > 0) {
             fieldKeys.forEach(function(fk) {
-                var label = FIELD_LABELS[fk] || fk;
-                fHtml += '<div class="field-row"><span class="field-key">' + escAI(label) + '</span><span class="field-val">' + escAI(_aiFieldSuggestions[fk]) + '</span></div>';
+                var label   = FIELD_LABELS[fk] || fk;
+                var isAI    = !cardData[fk];
+                var valHtml = escAI(mergedFields[fk]);
+                if (isAI) valHtml = '<span style="color:var(--indigo);">' + valHtml + '</span>';
+                fHtml += '<div class="field-row">'
+                       + '<span class="field-key">' + escAI(label) + (isAI ? ' <span style="font-size:0.6rem;color:var(--indigo);">AI</span>' : '') + '</span>'
+                       + '<span class="field-val">' + valHtml + '</span>'
+                       + '</div>';
             });
         } else {
-            fHtml = '<p style="font-size:0.78rem;color:var(--text-secondary);">No field suggestions. Try a more descriptive prompt.</p>';
+            fHtml = '<p style="font-size:0.78rem;color:var(--text-secondary);">No field suggestions. Fill in some details or try a more descriptive prompt.</p>';
         }
         document.getElementById('resultFields').innerHTML = fHtml;
 
@@ -322,13 +422,13 @@ function generateWithAI() {
             tipsWrap.style.display = 'none';
         }
 
-        // "Apply & Open" button: build query string with AI values
+        // "Apply & Open" button: build query string combining user values + AI values
         var applyBtn = document.getElementById('applyAndGoBtn');
         if (fieldKeys.length > 0 || _aiColorSuggestions.primary_color) {
             var params = new URLSearchParams();
             params.set('template', currentTpl);
             fieldKeys.forEach(function(fk) {
-                params.set('ai_' + fk, _aiFieldSuggestions[fk]);
+                params.set('ai_' + fk, mergedFields[fk]);
             });
             if (_aiColorSuggestions.primary_color) params.set('ai_primary_color', _aiColorSuggestions.primary_color);
             if (_aiColorSuggestions.accent_color)  params.set('ai_accent_color',  _aiColorSuggestions.accent_color);
@@ -358,4 +458,8 @@ function escAI(str) {
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
 }
+
+// Initialise on load
+renderTplFields(currentTpl);
+renderPromptExamples(currentTpl);
 </script>
