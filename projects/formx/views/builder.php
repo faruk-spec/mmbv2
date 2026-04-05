@@ -145,6 +145,9 @@
                     <i class="fas fa-external-link-alt"></i>
                 </a>
                 <?php endif; ?>
+                <button type="button" class="fx-btn fx-btn-secondary" onclick="openShareModal()" title="Share">
+                    <i class="fas fa-share-alt"></i> Share
+                </button>
                 <?php endif; ?>
                 <button type="button" class="fx-btn fx-btn-primary" onclick="submitBuilder()">
                     <i class="fas fa-save"></i> Save
@@ -291,6 +294,85 @@
     <input type="hidden" name="fields_json"  id="hiddenFields">
     <input type="hidden" name="settings_json" id="hiddenSettings">
 </form>
+
+<!-- ── Share Modal ─────────────────────────────────────────────────────── -->
+<?php if ($form): ?>
+<div id="fxShareModal" style="display:none;position:fixed;inset:0;z-index:200;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);">
+    <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:14px;padding:28px;width:min(480px,92vw);box-shadow:0 20px 60px rgba(0,0,0,.5);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+            <h3 style="font-size:1rem;font-weight:700;margin:0;"><i class="fas fa-share-alt" style="color:var(--cyan);margin-right:8px;"></i>Share Form</h3>
+            <button onclick="closeShareModal()" style="background:none;border:none;cursor:pointer;color:var(--text-secondary);font-size:1.2rem;padding:4px 8px;">&times;</button>
+        </div>
+
+        <!-- Form status notice -->
+        <?php if ($form['status'] !== 'active'): ?>
+        <div style="background:rgba(255,170,0,.1);border:1px solid rgba(255,170,0,.3);color:var(--orange);padding:10px 14px;border-radius:8px;font-size:.82rem;margin-bottom:16px;">
+            <i class="fas fa-exclamation-triangle"></i> Form is currently <strong><?= htmlspecialchars($form['status']) ?></strong>. Set status to <strong>Active</strong> and save before sharing.
+        </div>
+        <?php endif; ?>
+
+        <!-- Public link -->
+        <div style="margin-bottom:18px;">
+            <label style="font-size:.78rem;color:var(--text-secondary);display:block;margin-bottom:6px;">Public Link</label>
+            <div style="display:flex;gap:8px;">
+                <input id="shareUrlInput" type="text" readonly
+                       value="<?= htmlspecialchars((isset($_SERVER['HTTP_HOST']) ? 'https://'.$_SERVER['HTTP_HOST'] : '') . '/forms/' . $form['slug']) ?>"
+                       style="flex:1;padding:9px 12px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;color:var(--text-primary);font-size:.85rem;outline:none;">
+                <button onclick="copyShareUrl()" id="copyShareBtn"
+                        style="padding:9px 16px;background:rgba(0,240,255,.1);border:1px solid rgba(0,240,255,.25);border-radius:8px;color:var(--cyan);cursor:pointer;font-size:.82rem;font-weight:600;white-space:nowrap;">
+                    <i class="fas fa-copy"></i> Copy
+                </button>
+            </div>
+        </div>
+
+        <!-- Access control -->
+        <div style="margin-bottom:18px;">
+            <label style="font-size:.78rem;color:var(--text-secondary);display:block;margin-bottom:8px;">Access Control</label>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+                <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;cursor:pointer;" id="accessPublicLabel">
+                    <input type="radio" name="shareAccess" value="public" id="accessPublic" style="accent-color:var(--cyan);">
+                    <div>
+                        <div style="font-size:.85rem;font-weight:600;">Public</div>
+                        <div style="font-size:.75rem;color:var(--text-secondary);">Anyone with the link can fill the form</div>
+                    </div>
+                </label>
+                <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;cursor:pointer;" id="accessPasswordLabel">
+                    <input type="radio" name="shareAccess" value="password" id="accessPassword" style="accent-color:var(--cyan);">
+                    <div>
+                        <div style="font-size:.85rem;font-weight:600;">Password Protected</div>
+                        <div style="font-size:.75rem;color:var(--text-secondary);">Require a password to access the form</div>
+                    </div>
+                </label>
+            </div>
+            <!-- Password input -->
+            <div id="sharePasswordField" style="display:none;margin-top:10px;">
+                <input type="text" id="sharePasswordInput" placeholder="Enter access password…"
+                       style="width:100%;padding:9px 12px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;color:var(--text-primary);font-size:.85rem;outline:none;"
+                       value="<?= htmlspecialchars($form['settings']['access_password'] ?? '') ?>">
+                <p style="font-size:.74rem;color:var(--text-secondary);margin-top:4px;"><i class="fas fa-info-circle"></i> Save the form after updating the password.</p>
+            </div>
+        </div>
+
+        <!-- QR code placeholder -->
+        <div style="margin-bottom:18px;text-align:center;">
+            <div style="display:inline-block;padding:12px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:10px;">
+                <div id="qrCodePlaceholder" style="width:120px;height:120px;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:6px;">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=<?= urlencode((isset($_SERVER['HTTP_HOST']) ? 'https://'.$_SERVER['HTTP_HOST'] : '') . '/forms/' . $form['slug']) ?>"
+                         alt="QR Code" style="width:120px;height:120px;border-radius:6px;" onerror="this.parentElement.innerHTML='<span style=\'font-size:.75rem;color:#666;\'>QR N/A</span>'">
+                </div>
+            </div>
+            <p style="font-size:.75rem;color:var(--text-secondary);margin-top:6px;">Scan to open form</p>
+        </div>
+
+        <div style="display:flex;gap:10px;">
+            <button onclick="saveShareSettings()" class="fx-btn fx-btn-primary" style="flex:1;">
+                <i class="fas fa-save"></i> Apply &amp; Save
+            </button>
+            <button onclick="closeShareModal()" class="fx-btn fx-btn-secondary" style="flex:1;">Cancel</button>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
 
 <div class="fx-sidebar-overlay" id="fxOverlay"></div>
 <button class="fx-sidebar-toggle" id="fxToggle"><i class="fas fa-bars"></i></button>
@@ -561,9 +643,11 @@ window.submitBuilder = function() {
     });
     document.getElementById('hiddenFields').value   = JSON.stringify(normalizedFields);
     document.getElementById('hiddenSettings').value = JSON.stringify({
-        success_message: document.getElementById('settingSuccessMsg').value,
-        redirect_url:    document.getElementById('settingRedirect').value,
-        notify_email:    document.getElementById('settingEmail').value,
+        success_message:  document.getElementById('settingSuccessMsg').value,
+        redirect_url:     document.getElementById('settingRedirect').value,
+        notify_email:     document.getElementById('settingEmail').value,
+        access_mode:      (document.getElementById('accessPassword') && document.getElementById('accessPassword').checked) ? 'password' : 'public',
+        access_password:  document.getElementById('sharePasswordInput') ? document.getElementById('sharePasswordInput').value : '',
     });
     document.getElementById('builderForm').submit();
 };
@@ -578,6 +662,61 @@ function slugify(s) {
 
 // ─── Init ────────────────────────────────────────────────────────────────────
 renderCanvas();
+
+// ─── Share Modal ─────────────────────────────────────────────────────────────
+window.openShareModal = function() {
+    const modal = document.getElementById('fxShareModal');
+    if (!modal) return;
+    modal.style.display = 'flex';
+    // Restore saved access mode
+    const accessMode = '<?= htmlspecialchars($form ? ($form['settings']['access_mode'] ?? 'public') : 'public') ?>';
+    const passEl = document.getElementById('accessPassword');
+    const pubEl  = document.getElementById('accessPublic');
+    if (accessMode === 'password' && passEl) {
+        passEl.checked = true;
+        const pf = document.getElementById('sharePasswordField');
+        if (pf) pf.style.display = '';
+    } else if (pubEl) {
+        pubEl.checked = true;
+    }
+    // Wire access radio buttons
+    document.querySelectorAll('input[name="shareAccess"]').forEach(r => {
+        r.addEventListener('change', function() {
+            const pf = document.getElementById('sharePasswordField');
+            if (pf) pf.style.display = this.value === 'password' ? '' : 'none';
+        });
+    });
+};
+
+window.closeShareModal = function() {
+    const modal = document.getElementById('fxShareModal');
+    if (modal) modal.style.display = 'none';
+};
+
+window.copyShareUrl = function() {
+    const inp = document.getElementById('shareUrlInput');
+    if (!inp) return;
+    inp.select();
+    inp.setSelectionRange(0, 9999);
+    navigator.clipboard.writeText(inp.value).then(() => {
+        const btn = document.getElementById('copyShareBtn');
+        if (btn) { btn.innerHTML = '<i class="fas fa-check"></i> Copied!'; setTimeout(() => btn.innerHTML = '<i class="fas fa-copy"></i> Copy', 2000); }
+    }).catch(() => { document.execCommand('copy'); });
+};
+
+window.saveShareSettings = function() {
+    // Save access settings into the builder settings and submit the form
+    const accessMode = document.querySelector('input[name="shareAccess"]:checked')?.value || 'public';
+    const passInp = document.getElementById('sharePasswordInput');
+    // Store in hidden settings before submit
+    closeShareModal();
+    submitBuilder();
+};
+
+// Close modal on backdrop click
+document.getElementById('fxShareModal') && document.getElementById('fxShareModal').addEventListener('click', function(e) {
+    if (e.target === this) closeShareModal();
+});
 
 })();
 </script>

@@ -106,6 +106,28 @@
             margin-top:8px;
         }
         .btn-submit:hover { opacity:.9; transform:translateY(-1px); }
+        .btn-draft {
+            width:100%;
+            padding:11px;
+            background:transparent;
+            border:1px solid rgba(153,69,255,.5);
+            border-radius:10px;
+            color:#9945ff;
+            font-size:.875rem;
+            font-weight:600;
+            cursor:pointer;
+            font-family:'Poppins',sans-serif;
+            transition:all .2s;
+            margin-top:10px;
+        }
+        .btn-draft:hover { background:rgba(153,69,255,.12); border-color:#9945ff; }
+        .draft-restored { display:flex;align-items:center;gap:10px;padding:12px 16px;background:rgba(153,69,255,.1);border:1px solid rgba(153,69,255,.3);border-radius:10px;font-size:.85rem;color:#9945ff;margin-bottom:16px;justify-content:space-between; }
+        /* Password gate */
+        .pw-gate { background:#0f0f18; border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:32px; text-align:center; }
+        .pw-gate h2 { font-size:1.2rem; font-weight:700; margin-bottom:8px; }
+        .pw-gate p  { color:#8892a6; font-size:.9rem; margin-bottom:20px; }
+        .pw-gate .form-control { max-width:340px; margin:0 auto 14px; display:block; }
+        .pw-gate .btn-submit   { max-width:340px; margin:0 auto; }
         .alert { padding:14px 16px; border-radius:10px; margin-bottom:20px; font-size:.9rem; }
         .alert-success { background:rgba(0,255,136,.1); border:1px solid #00ff88; color:#00ff88; }
         .alert-error   { background:rgba(255,107,107,.1); border:1px solid #ff6b6b; color:#ff6b6b; }
@@ -149,8 +171,53 @@
     <?php endif; ?>
 
     <?php if (empty($success)): ?>
+    <?php
+    // ── Access control ───────────────────────────────────────────────────────
+    $accessMode     = $form['settings']['access_mode']     ?? 'public';
+    $accessPassword = $form['settings']['access_password'] ?? '';
+    $gateOpen = true;
+    if ($accessMode === 'password' && $accessPassword !== '') {
+        $submitted = $_POST['_gate_password'] ?? ($_SESSION['formx_gate'][$form['id']] ?? '');
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        if (!empty($_SESSION['formx_gate'][$form['id']])) {
+            $gateOpen = true;
+        } elseif (isset($_POST['_gate_password'])) {
+            if ($_POST['_gate_password'] === $accessPassword) {
+                $_SESSION['formx_gate'][$form['id']] = true;
+                $gateOpen = true;
+            } else {
+                $gateOpen = false;
+                $gateError = true;
+            }
+        } else {
+            $gateOpen = false;
+        }
+    }
+    ?>
+
+    <?php if (!$gateOpen): ?>
+    <div class="pw-gate">
+        <div style="font-size:2.5rem;margin-bottom:12px;">🔒</div>
+        <h2>Password Required</h2>
+        <p>This form is protected. Enter the password to continue.</p>
+        <?php if (!empty($gateError)): ?>
+        <div class="alert alert-error" style="max-width:340px;margin:0 auto 14px;"><i class="fas fa-exclamation-circle"></i> Incorrect password.</div>
+        <?php endif; ?>
+        <form method="POST">
+            <input type="hidden" name="_csrf_token" value="<?= \Core\Security::generateCsrfToken() ?>">
+            <input type="password" name="_gate_password" class="form-control" placeholder="Enter password…" required autofocus>
+            <button type="submit" class="btn-submit"><i class="fas fa-unlock-alt"></i> Unlock Form</button>
+        </form>
+    </div>
+    <?php else: ?>
     <div class="form-card">
-        <form method="POST" action="/forms/<?= htmlspecialchars($form['slug']) ?>" enctype="multipart/form-data">
+        <!-- Draft restore banner -->
+        <div id="draftBanner" style="display:none;" class="draft-restored">
+            <span><i class="fas fa-bookmark"></i> You have a saved draft. <a href="#" id="loadDraftLink" style="color:#9945ff;text-decoration:underline;">Restore it?</a></span>
+            <button onclick="discardDraft()" style="background:none;border:none;cursor:pointer;color:#8892a6;font-size:.85rem;">✕ Discard</button>
+        </div>
+
+        <form id="fxPublicForm" method="POST" action="/forms/<?= htmlspecialchars($form['slug']) ?>" enctype="multipart/form-data">
             <input type="hidden" name="_csrf_token" value="<?= \Core\Security::generateCsrfToken() ?>">
 
             <?php foreach ($form['fields'] as $field): ?>
@@ -160,7 +227,13 @@
             $label    = $field['label'] ?? $name;
             $ph       = $field['placeholder'] ?? '';
             $required = !empty($field['required']);
-            $options  = $field['options'] ?? [];
+            $rawOpts  = $field['options'] ?? [];
+            // Normalize options: stored as array (new builder) or newline-separated string (legacy)
+            if (is_string($rawOpts)) {
+                $options = array_filter(array_map('trim', explode("\n", $rawOpts)));
+            } else {
+                $options = $rawOpts;
+            }
             ?>
 
             <?php if ($type === 'divider'): ?>
@@ -260,11 +333,87 @@
             <button type="submit" class="btn-submit">
                 <i class="fas fa-paper-plane"></i> Submit
             </button>
+            <button type="button" class="btn-draft" onclick="saveDraft()">
+                <i class="fas fa-bookmark"></i> Save as Draft
+            </button>
         </form>
     </div>
-    <?php endif; ?>
+    <?php endif; /* gateOpen */ ?>
+    <?php endif; /* success */ ?>
 
     <p class="powered">Powered by <strong>FormX</strong></p>
 </div>
+
+<script>
+(function() {
+    var DRAFT_KEY = 'formx_draft_<?= (int)$form['id'] ?>';
+
+    // ── Draft: check on load ──────────────────────────────────────────────
+    function loadDraftData() {
+        try { return JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null'); } catch(e) { return null; }
+    }
+
+    function applyDraft(data) {
+        if (!data) return;
+        Object.keys(data).forEach(function(name) {
+            var val = data[name];
+            var inputs = document.querySelectorAll('#fxPublicForm [name="' + CSS.escape(name) + '"]');
+            if (!inputs.length) return;
+            if (inputs[0].type === 'checkbox') {
+                var vals = Array.isArray(val) ? val : [val];
+                inputs.forEach(function(inp) { inp.checked = vals.indexOf(inp.value) !== -1; });
+            } else if (inputs[0].type === 'radio') {
+                inputs.forEach(function(inp) { inp.checked = inp.value === val; });
+            } else {
+                inputs[0].value = val;
+            }
+        });
+    }
+
+    window.saveDraft = function() {
+        var form = document.getElementById('fxPublicForm');
+        if (!form) return;
+        var data = {};
+        var fd = new FormData(form);
+        fd.forEach(function(v, k) {
+            if (k === '_csrf_token' || k === '_gate_password') return;
+            if (k.endsWith('[]')) {
+                var key = k.slice(0, -2);
+                if (!Array.isArray(data[key])) data[key] = [];
+                data[key].push(v);
+            } else {
+                data[k] = v;
+            }
+        });
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
+        // Show brief confirmation
+        var btn = document.querySelector('.btn-draft');
+        if (btn) { var orig = btn.innerHTML; btn.innerHTML = '<i class="fas fa-check"></i> Draft Saved!'; btn.disabled = true; setTimeout(function(){ btn.innerHTML = orig; btn.disabled = false; }, 2000); }
+    };
+
+    window.discardDraft = function() {
+        localStorage.removeItem(DRAFT_KEY);
+        var banner = document.getElementById('draftBanner');
+        if (banner) banner.style.display = 'none';
+    };
+
+    // Show restore banner if draft exists
+    var draft = loadDraftData();
+    if (draft && document.getElementById('draftBanner')) {
+        document.getElementById('draftBanner').style.display = 'flex';
+        document.getElementById('loadDraftLink').addEventListener('click', function(e) {
+            e.preventDefault();
+            applyDraft(draft);
+            document.getElementById('draftBanner').style.display = 'none';
+        });
+    }
+
+    // Clear draft on successful submit
+    document.getElementById('fxPublicForm') && document.getElementById('fxPublicForm').addEventListener('submit', function() {
+        localStorage.removeItem(DRAFT_KEY);
+    });
+
+})();
+</script>
 </body>
 </html>

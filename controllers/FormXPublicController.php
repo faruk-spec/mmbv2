@@ -28,9 +28,8 @@ class FormXPublicController extends BaseController
     // Public form page
     // -------------------------------------------------------------------------
 
-    public function show(): void
+    public function show(string $slug = ''): void
     {
-        $slug = Helpers::input('slug', '');
         $form = $this->db->fetch(
             "SELECT * FROM formx_forms WHERE slug = ? AND status = 'active'",
             [$slug]
@@ -55,9 +54,8 @@ class FormXPublicController extends BaseController
     // Handle public form submission
     // -------------------------------------------------------------------------
 
-    public function submit(): void
+    public function submit(string $slug = ''): void
     {
-        $slug = Helpers::input('slug', '');
         $form = $this->db->fetch(
             "SELECT * FROM formx_forms WHERE slug = ? AND status = 'active'",
             [$slug]
