@@ -463,8 +463,8 @@ class IDCardController
 
         // Sanitize inputs to prevent prompt injection
         // Strip control characters, cap length, and remove common instruction-override patterns
-        $safeTpl    = mb_substr(preg_replace('/[\x00-\x1F\x7F]/u', '', $tpl),    0, 50);
-        $safePrompt = mb_substr(preg_replace('/[\x00-\x1F\x7F]/u', '', $prompt), 0, 200);
+        $safeTpl    = $this->sanitizeInput($tpl,    50);
+        $safePrompt = $this->sanitizeInput($prompt, 200);
         // Reject prompts that attempt to override system instructions
         $injectionPatterns = [
             '/ignore\s+(previous|all|prior)\s+instructions/i',
@@ -483,29 +483,36 @@ class IDCardController
         $fieldSummary = [];
         foreach ($data as $k => $v) {
             if (!empty($v)) {
-                $cleanKey = mb_substr(preg_replace('/[\x00-\x1F\x7F]/u', '', $k), 0, 30);
-                $cleanVal = mb_substr(preg_replace('/[\x00-\x1F\x7F]/u', '', $v), 0, 60);
+                $cleanKey = $this->sanitizeInput($k, 30);
+                $cleanVal = $this->sanitizeInput($v, 60);
                 $fieldSummary[] = "{$cleanKey}: {$cleanVal}";
             }
         }
         $fieldStr = implode(', ', array_slice($fieldSummary, 0, 10));
 
-        $systemPrompt = 'You are an expert ID card designer. '
+        // Build the list of form fields the template uses (exclude 'photo')
+        $templateFields = array_values(array_filter($tplConfig['fields'] ?? [], fn($f) => $f !== 'photo'));
+        $fieldsJson = json_encode($templateFields);
+
+        $systemPrompt = 'You are an expert ID card designer and content generator. '
             . 'Always respond with a valid JSON object only — no markdown, no extra text. '
             . 'The JSON must have exactly these keys: '
             . '"design_tips" (array of 3 practical design tips as strings), '
             . '"template_tip" (string, one specific tip for this template type), '
             . '"ai_text" (string, a 2-3 sentence design recommendation based on the card data and user request), '
-            . '"prompt_hint" (string, direct response to the user\'s design request, or empty string if no request).';
+            . '"prompt_hint" (string, direct response to the user\'s design request, or empty string if no request), '
+            . '"field_suggestions" (object: for each field in the provided fields list, suggest a realistic sample value appropriate for the template and user request — only include fields that can be meaningfully filled from the prompt/context; leave out fields you cannot determine), '
+            . '"color_suggestions" (object with keys "primary_color" and "accent_color" as hex values that suit the template type and user request).';
 
         $userPrompt = "Template type: {$safeTpl}. ";
+        $userPrompt .= "Template fields: {$fieldsJson}. ";
         if ($fieldStr) {
-            $userPrompt .= "Card data: {$fieldStr}. ";
+            $userPrompt .= "Existing card data: {$fieldStr}. ";
         }
         if ($safePrompt) {
-            $userPrompt .= "User design request: {$safePrompt}. ";
+            $userPrompt .= "User request: {$safePrompt}. ";
         }
-        $userPrompt .= "Primary colour: {$tplConfig['color']}, Accent: {$tplConfig['accent']}, Background: {$tplConfig['bg']}.";
+        $userPrompt .= "Current colours — Primary: {$tplConfig['color']}, Accent: {$tplConfig['accent']}, Background: {$tplConfig['bg']}.";
 
         $payload = json_encode([
             'model'           => $model,
@@ -514,7 +521,7 @@ class IDCardController
                 ['role' => 'user',   'content' => $userPrompt],
             ],
             'temperature'     => 0.7,
-            'max_tokens'      => 500,
+            'max_tokens'      => 700,
             'response_format' => ['type' => 'json_object'],
         ]);
 
@@ -555,6 +562,26 @@ class IDCardController
                 && isset($parsed['design_tips'], $parsed['template_tip'], $parsed['ai_text'])
                 && is_array($parsed['design_tips'])
             ) {
+                // Sanitize field_suggestions: only allow known template fields, string values ≤ 120 chars
+                if (!empty($parsed['field_suggestions']) && is_array($parsed['field_suggestions'])) {
+                    $clean = [];
+                    foreach ($parsed['field_suggestions'] as $fk => $fv) {
+                        if (in_array($fk, $templateFields, true) && is_string($fv)) {
+                            $clean[$fk] = mb_substr(strip_tags($fv), 0, 120);
+                        }
+                    }
+                    $parsed['field_suggestions'] = $clean;
+                } else {
+                    $parsed['field_suggestions'] = [];
+                }
+
+                // Sanitize color_suggestions: validate hex values
+                $cs = $parsed['color_suggestions'] ?? [];
+                $parsed['color_suggestions'] = [
+                    'primary_color' => $this->sanitizeColor($cs['primary_color'] ?? ''),
+                    'accent_color'  => $this->sanitizeColor($cs['accent_color']  ?? ''),
+                ];
+
                 return $parsed;
             }
         }
@@ -694,6 +721,13 @@ class IDCardController
         return htmlspecialchars(strip_tags((string) $value), ENT_QUOTES, 'UTF-8');
     }
 
+    /**
+     * Strip ASCII control characters and cap the string length.
+     */
+    private function sanitizeInput(string $value, int $maxLen): string
+    {
+        return mb_substr(preg_replace('/[\x00-\x1F\x7F]/u', '', $value), 0, $maxLen);
+    }
     private function sanitizeColor(string $color): string
     {
         $color = trim($color);

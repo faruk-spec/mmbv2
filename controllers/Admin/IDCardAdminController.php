@@ -309,13 +309,6 @@ class IDCardAdminController extends BaseController
     //  Helpers                                                             //
     // ------------------------------------------------------------------ //
 
-    private function json(array $data): void
-    {
-        header('Content-Type: application/json');
-        echo json_encode($data);
-        exit;
-    }
-
     private function redirectWithError(string $url, string $msg): void
     {
         header('Location: ' . $url . '?error=' . urlencode($msg));
