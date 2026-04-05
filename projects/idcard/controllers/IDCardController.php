@@ -347,8 +347,8 @@ class IDCardController
     // ------------------------------------------------------------------ //
 
     /**
-     * Rule-based AI suggestions (no external API required).
-     * Falls back gracefully when HUGGING_FACE_API_TOKEN is not set.
+     * Generate AI design suggestions.
+     * Tries OpenAI first (when configured), then Hugging Face, then falls back to rule-based.
      */
     private function generateAISuggestions(string $tpl, array $data, string $prompt): array
     {
@@ -356,7 +356,21 @@ class IDCardController
         $templates   = $this->config['templates'];
         $tplConfig   = $templates[$tpl] ?? $templates['corporate'];
 
-        // --- Design recommendations ---
+        // --- Try OpenAI for richer, context-aware suggestions ---
+        $openAISuggestion = $this->callOpenAI($tpl, $data, $prompt, $tplConfig);
+        if ($openAISuggestion !== null) {
+            $suggestions['ai_powered']   = true;
+            $suggestions['design_tips']  = $openAISuggestion['design_tips']  ?? [];
+            $suggestions['template_tip'] = $openAISuggestion['template_tip'] ?? '';
+            $suggestions['ai_text']      = $openAISuggestion['ai_text']      ?? '';
+            if ($prompt) {
+                $suggestions['prompt_hint'] = $openAISuggestion['prompt_hint'] ?? '';
+            }
+            return $suggestions;
+        }
+
+        // --- Rule-based fallback ---
+        $suggestions['ai_powered']  = false;
         $suggestions['design_tips'] = [
             "Use high contrast between background ({$tplConfig['bg']}) and text ({$tplConfig['text']}) for readability.",
             "Keep the primary colour ({$tplConfig['color']}) consistent with your organisation branding.",
@@ -404,6 +418,184 @@ class IDCardController
         }
 
         return $suggestions;
+    }
+
+    /**
+     * Call OpenAI API for ID card design suggestions.
+     * Returns null if AI is disabled, not configured, or the call fails.
+     */
+    private function callOpenAI(string $tpl, array $data, string $prompt, array $tplConfig): ?array
+    {
+        // Load settings from DB
+        $settingKeys = ['idcard_ai_enabled', 'idcard_openai_api_key', 'idcard_openai_model', 'idcard_ai_daily_limit'];
+        $dbSettings  = [];
+        foreach ($settingKeys as $k) {
+            $row = \Core\Database::getInstance()->fetch(
+                "SELECT setting_value FROM idcard_settings WHERE setting_key = ?", [$k]
+            );
+            $dbSettings[$k] = $row ? $row['setting_value'] : null;
+        }
+
+        // Check if AI is enabled
+        if (($dbSettings['idcard_ai_enabled'] ?? '1') !== '1') {
+            return null;
+        }
+
+        // Per-user daily rate limit
+        $dailyLimit = (int)($dbSettings['idcard_ai_daily_limit'] ?? 0);
+        if ($dailyLimit > 0 && !$this->checkAndIncrementAIRateLimit($dailyLimit)) {
+            return null;
+        }
+
+        // Resolve API key: DB setting → env constant
+        $apiKey = $dbSettings['idcard_openai_api_key'] ?? '';
+        if (empty($apiKey)) {
+            $apiKey = defined('OPENAI_API_KEY') ? OPENAI_API_KEY : '';
+        }
+        if (empty($apiKey)) {
+            return null;
+        }
+
+        $model = $dbSettings['idcard_openai_model'] ?? 'gpt-4o-mini';
+        if (empty($model)) {
+            $model = 'gpt-4o-mini';
+        }
+
+        // Sanitize inputs to prevent prompt injection
+        // Strip control characters, cap length, and remove common instruction-override patterns
+        $safeTpl    = mb_substr(preg_replace('/[\x00-\x1F\x7F]/u', '', $tpl),    0, 50);
+        $safePrompt = mb_substr(preg_replace('/[\x00-\x1F\x7F]/u', '', $prompt), 0, 200);
+        // Reject prompts that attempt to override system instructions
+        $injectionPatterns = [
+            '/ignore\s+(previous|all|prior)\s+instructions/i',
+            '/you\s+are\s+now/i',
+            '/act\s+as\s+(?:a\s+)?(?:DAN|jailbreak|unrestricted)/i',
+            '/forget\s+(your\s+)?(previous|all|prior)/i',
+            '/disregard\s+(previous|all|prior)/i',
+        ];
+        foreach ($injectionPatterns as $pattern) {
+            if (preg_match($pattern, $safePrompt)) {
+                $safePrompt = '';
+                break;
+            }
+        }
+
+        $fieldSummary = [];
+        foreach ($data as $k => $v) {
+            if (!empty($v)) {
+                $cleanKey = mb_substr(preg_replace('/[\x00-\x1F\x7F]/u', '', $k), 0, 30);
+                $cleanVal = mb_substr(preg_replace('/[\x00-\x1F\x7F]/u', '', $v), 0, 60);
+                $fieldSummary[] = "{$cleanKey}: {$cleanVal}";
+            }
+        }
+        $fieldStr = implode(', ', array_slice($fieldSummary, 0, 10));
+
+        $systemPrompt = 'You are an expert ID card designer. '
+            . 'Always respond with a valid JSON object only — no markdown, no extra text. '
+            . 'The JSON must have exactly these keys: '
+            . '"design_tips" (array of 3 practical design tips as strings), '
+            . '"template_tip" (string, one specific tip for this template type), '
+            . '"ai_text" (string, a 2-3 sentence design recommendation based on the card data and user request), '
+            . '"prompt_hint" (string, direct response to the user\'s design request, or empty string if no request).';
+
+        $userPrompt = "Template type: {$safeTpl}. ";
+        if ($fieldStr) {
+            $userPrompt .= "Card data: {$fieldStr}. ";
+        }
+        if ($safePrompt) {
+            $userPrompt .= "User design request: {$safePrompt}. ";
+        }
+        $userPrompt .= "Primary colour: {$tplConfig['color']}, Accent: {$tplConfig['accent']}, Background: {$tplConfig['bg']}.";
+
+        $payload = json_encode([
+            'model'           => $model,
+            'messages'        => [
+                ['role' => 'system', 'content' => $systemPrompt],
+                ['role' => 'user',   'content' => $userPrompt],
+            ],
+            'temperature'     => 0.7,
+            'max_tokens'      => 500,
+            'response_format' => ['type' => 'json_object'],
+        ]);
+
+        $ch = curl_init('https://api.openai.com/v1/chat/completions');
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => $payload,
+            CURLOPT_TIMEOUT        => 20,
+            CURLOPT_HTTPHEADER     => [
+                'Authorization: Bearer ' . $apiKey,
+                'Content-Type: application/json',
+            ],
+        ]);
+
+        $raw      = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlErr  = curl_error($ch);
+        curl_close($ch);
+
+        if ($raw === false || !empty($curlErr) || $httpCode !== 200) {
+            Logger::error('CardX OpenAI API error: HTTP ' . $httpCode . ' ' . $curlErr);
+            return null;
+        }
+
+        $response = json_decode($raw, true);
+        $text     = $response['choices'][0]['message']['content'] ?? '';
+
+        if (empty($text)) {
+            return null;
+        }
+
+        // Extract and validate JSON from response
+        if (preg_match('/\{.*\}/s', $text, $m)) {
+            $parsed = json_decode($m[0], true);
+            if (
+                is_array($parsed)
+                && isset($parsed['design_tips'], $parsed['template_tip'], $parsed['ai_text'])
+                && is_array($parsed['design_tips'])
+            ) {
+                return $parsed;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Check and increment the per-user daily AI rate limit.
+     * Uses a temporary counter stored in idcard_settings with a date suffix.
+     */
+    private function checkAndIncrementAIRateLimit(int $limit): bool
+    {
+        if ($limit <= 0) {
+            return true;
+        }
+
+        $userId  = \Core\Auth::id();
+        $today   = date('Y-m-d');
+        $key     = "ai_rate_{$userId}_{$today}";
+
+        try {
+            $db  = \Core\Database::getInstance();
+            $row = $db->fetch("SELECT setting_value FROM idcard_settings WHERE setting_key = ?", [$key]);
+            $count = (int)($row['setting_value'] ?? 0);
+
+            if ($count >= $limit) {
+                return false;
+            }
+
+            $db->query(
+                "INSERT INTO idcard_settings (setting_key, setting_value)
+                 VALUES (?, ?)
+                 ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = NOW()",
+                [$key, (string)($count + 1)]
+            );
+        } catch (\Exception $e) {
+            // Allow request on DB error
+        }
+
+        return true;
     }
 
     /**

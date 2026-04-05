@@ -1055,7 +1055,7 @@
                 <?php endif; ?>
 
                 <!-- Projects Management -->
-                <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('projects') || \Core\Auth::hasPermissionGroup('convertx') || \Core\Auth::hasPermissionGroup('codexpro') || \Core\Auth::hasPermissionGroup('imgtxt') || \Core\Auth::hasPermissionGroup('proshare') || \Core\Auth::hasPermissionGroup('billx') || \Core\Auth::hasPermissionGroup('whatsapp') || \Core\Auth::hasPermissionGroup('qr') || \Core\Auth::hasPermissionGroup('resumex')): ?>
+                <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('projects') || \Core\Auth::hasPermissionGroup('convertx') || \Core\Auth::hasPermissionGroup('codexpro') || \Core\Auth::hasPermissionGroup('imgtxt') || \Core\Auth::hasPermissionGroup('proshare') || \Core\Auth::hasPermissionGroup('billx') || \Core\Auth::hasPermissionGroup('whatsapp') || \Core\Auth::hasPermissionGroup('qr') || \Core\Auth::hasPermissionGroup('resumex') || \Core\Auth::hasPermissionGroup('idcard')): ?>
                 <div class="menu-section">
                     <div class="menu-section-title">Projects</div>
                     
@@ -1568,6 +1568,51 @@
                             <a href="/admin/qr/api-keys" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/qr/api-keys') === 0 ? 'active' : '' ?>">
                                 <i class="fas fa-key"></i>
                                 <span>QR API Keys</span>
+                            </a>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
+                    <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('idcard')): ?>
+                    <!-- CardX -->
+                    <div class="menu-item menu-dropdown">
+                        <div class="menu-dropdown-toggle <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/idcard') === 0 ? 'active' : '' ?>">
+                            <div class="left">
+                                <i class="fas fa-id-card"></i>
+                                <span>CardX</span>
+                            </div>
+                            <i class="fas fa-chevron-down arrow"></i>
+                        </div>
+                        <div class="menu-dropdown-content">
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('idcard')): ?>
+                            <a href="/admin/projects/idcard" class="menu-link <?= ($_SERVER['REQUEST_URI'] ?? '') === '/admin/projects/idcard' ? 'active' : '' ?>">
+                                <i class="fas fa-chart-line"></i>
+                                <span>Overview</span>
+                            </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('idcard.cards')): ?>
+                            <a href="/admin/projects/idcard/cards" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/idcard/cards') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-id-card-alt"></i>
+                                <span>All Cards</span>
+                            </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('idcard.bulk_jobs')): ?>
+                            <a href="/admin/projects/idcard/bulk-jobs" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/idcard/bulk-jobs') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-layer-group"></i>
+                                <span>Bulk Jobs</span>
+                            </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('idcard.settings')): ?>
+                            <a href="/admin/projects/idcard/settings" class="menu-link <?= ($_SERVER['REQUEST_URI'] ?? '') === '/admin/projects/idcard/settings' ? 'active' : '' ?>">
+                                <i class="fas fa-cog"></i>
+                                <span>Settings</span>
+                            </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('idcard.settings')): ?>
+                            <a href="/admin/projects/idcard/ai-settings" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/idcard/ai-settings') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-robot"></i>
+                                <span>AI Integration</span>
                             </a>
                             <?php endif; ?>
                         </div>

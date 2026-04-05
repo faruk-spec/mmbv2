@@ -210,6 +210,70 @@ class IDCardAdminController extends BaseController
     }
 
     // ------------------------------------------------------------------ //
+    //  AI Integration Settings                                            //
+    // ------------------------------------------------------------------ //
+
+    public function aiSettings(): void
+    {
+        $model = $this->model();
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
+                $this->redirectWithError('/admin/projects/idcard/ai-settings', 'Invalid token');
+                return;
+            }
+
+            $cfg = [
+                'idcard_ai_enabled'       => !empty($_POST['idcard_ai_enabled']) ? '1' : '0',
+                'idcard_openai_api_key'   => trim($_POST['idcard_openai_api_key'] ?? ''),
+                'idcard_openai_model'     => trim($_POST['idcard_openai_model'] ?? 'gpt-4o-mini'),
+                'idcard_ai_daily_limit'   => max(0, (int) ($_POST['idcard_ai_daily_limit'] ?? 0)),
+                'idcard_pro_templates'    => !empty($_POST['idcard_pro_templates']) ? '1' : '0',
+                'idcard_pro_styles'       => !empty($_POST['idcard_pro_styles']) ? '1' : '0',
+            ];
+
+            if (empty($cfg['idcard_openai_model'])) {
+                $cfg['idcard_openai_model'] = 'gpt-4o-mini';
+            }
+
+            foreach ($cfg as $key => $value) {
+                $model->setSetting($key, $value);
+            }
+
+            ActivityLogger::log(Auth::id(), 'admin_idcard_ai_settings_updated');
+            header('Location: /admin/projects/idcard/ai-settings?saved=1');
+            exit;
+        }
+
+        $keys = [
+            'idcard_ai_enabled', 'idcard_openai_api_key', 'idcard_openai_model',
+            'idcard_ai_daily_limit', 'idcard_pro_templates', 'idcard_pro_styles',
+        ];
+        $settings = [];
+        foreach ($keys as $k) {
+            $settings[$k] = $model->getSetting($k, null);
+        }
+        $defaults = [
+            'idcard_ai_enabled'     => '1',
+            'idcard_openai_api_key' => '',
+            'idcard_openai_model'   => 'gpt-4o-mini',
+            'idcard_ai_daily_limit' => '0',
+            'idcard_pro_templates'  => '0',
+            'idcard_pro_styles'     => '0',
+        ];
+        foreach ($defaults as $k => $v) {
+            if ($settings[$k] === null) {
+                $settings[$k] = $v;
+            }
+        }
+
+        $this->view('admin/projects/idcard/ai_settings', [
+            'title'    => 'CardX Admin — AI Integration',
+            'settings' => $settings,
+        ]);
+    }
+
+    // ------------------------------------------------------------------ //
     //  Bulk jobs                                                          //
     // ------------------------------------------------------------------ //
 
