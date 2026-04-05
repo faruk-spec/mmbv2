@@ -13,6 +13,27 @@ $csrfToken    = \Core\Security::generateCsrfToken();
 $isEditMode   = isset($editCardId) && $editCardId > 0;
 $editCardData = $editCardData ?? [];
 $editDesign   = $editDesign   ?? [];
+
+// Pre-fill from AI-generate page query params (ai_fieldname=...)
+if (!$isEditMode) {
+    foreach ($_GET as $k => $v) {
+        if (strncmp($k, 'ai_', 3) === 0) {
+            $field = substr($k, 3);
+            if ($field === 'primary_color' || $field === 'accent_color') {
+                // Validate hex colour before passing to design
+                if (preg_match('/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{4}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$/', trim($v))) {
+                    $editDesign[$field] = trim($v);
+                }
+            } else {
+                // Allow only printable chars, cap at 120
+                $clean = mb_substr(strip_tags((string) $v), 0, 120);
+                if ($clean !== '') {
+                    $editCardData[$field] = $clean;
+                }
+            }
+        }
+    }
+}
 ?>
 
 <style>
@@ -435,7 +456,7 @@ $editDesign   = $editDesign   ?? [];
                 </div>
             </div>
 
-            <!-- AI Assistant -->
+            <!-- AI Design Assistant -->
             <div id="aiSection" class="card" style="margin-bottom:16px;background:linear-gradient(135deg,rgba(99,102,241,0.06),rgba(0,240,255,0.03));border:1px solid rgba(99,102,241,0.2);">
                 <h3 style="font-size:0.9rem;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:6px;">
                     <i class="fas fa-robot" style="color:var(--indigo);"></i> AI Design Assistant
@@ -451,6 +472,14 @@ $editDesign   = $editDesign   ?? [];
                     <i class="fas fa-magic"></i> Get AI Suggestions
                 </button>
                 <div id="aiOutput" style="margin-top:12px;display:none;"></div>
+                <div id="aiActions" style="display:none;margin-top:10px;gap:8px;flex-wrap:wrap;">
+                    <button type="button" class="btn btn-primary btn-sm" onclick="applyAIFields()" id="applyFieldsBtn" style="display:none;">
+                        <i class="fas fa-fill-drip"></i> Apply to Fields
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="applyAIColors()" id="applyColorsBtn" style="display:none;">
+                        <i class="fas fa-palette"></i> Apply Colors
+                    </button>
+                </div>
             </div>
 
             <!-- Inline Bulk Mode panel -->
@@ -2045,13 +2074,22 @@ function previewPhoto(input) {
 }
 
 // =============================================================================
-//  AI Suggestions (AJAX)
+//  AI Suggestions (AJAX)  — no AI provider branding shown to users
 // =============================================================================
+var _aiFieldSuggestions = {};
+var _aiColorSuggestions = {};
+
 function getAISuggestions() {
     var prompt = document.getElementById('aiPrompt').value.trim();
     var out    = document.getElementById('aiOutput');
     out.style.display = 'block';
     out.innerHTML = '<div style="text-align:center;padding:12px;"><div class="spinner"></div><p style="font-size:0.75rem;margin-top:6px;color:var(--text-secondary);">Generating suggestions...</p></div>';
+
+    document.getElementById('applyFieldsBtn').style.display = 'none';
+    document.getElementById('applyColorsBtn').style.display = 'none';
+    _aiFieldSuggestions = {};
+    _aiColorSuggestions = {};
+
     var cardData = {};
     var tpl = TEMPLATES[currentTpl] || {};
     (tpl.fields||[]).forEach(function(f){ var el=document.getElementById('field_'+f); if(el) cardData[f]=el.value; });
@@ -2064,13 +2102,96 @@ function getAISuggestions() {
     .then(function(r){ return r.json(); })
     .then(function(data){
         if(!data.success){out.innerHTML='<div class="ai-suggestion">Could not get suggestions. Try again.</div>';return;}
-        var s=data.suggestions||{};var html='';
-        if(s.template_tip)   html+='<div class="ai-suggestion"><strong>Tip:</strong> '+s.template_tip+'</div>';
-        if(s.missing_fields) html+='<div class="ai-suggestion"><strong>Completeness:</strong> '+s.missing_fields+'</div>';
-        if(s.design_tips&&s.design_tips.length) s.design_tips.forEach(function(t){html+='<div class="ai-suggestion"><strong>Design:</strong> '+t+'</div>';});
-        if(s.ai_text)        html+='<div class="ai-suggestion"><strong>AI:</strong> '+s.ai_text+'</div>';
-        out.innerHTML=html||'<div class="ai-suggestion">Looking good! Your card is well structured.</div>';
+        var s = data.suggestions || {};
+        var html = '';
+
+        if(s.template_tip)   html+='<div class="ai-suggestion"><strong>💡 Tip:</strong> '+escAI(s.template_tip)+'</div>';
+        if(s.missing_fields) html+='<div class="ai-suggestion"><strong>✅ Completeness:</strong> '+escAI(s.missing_fields)+'</div>';
+        if(s.design_tips&&s.design_tips.length) s.design_tips.forEach(function(t){html+='<div class="ai-suggestion"><strong>🎨 Design:</strong> '+escAI(t)+'</div>';});
+        if(s.prompt_hint && s.prompt_hint.length) html+='<div class="ai-suggestion"><strong>🤖 AI:</strong> '+escAI(s.prompt_hint)+'</div>';
+        if(s.ai_text && s.ai_text.length)         html+='<div class="ai-suggestion">'+escAI(s.ai_text)+'</div>';
+
+        var fieldKeys = Object.keys(s.field_suggestions || {});
+        if (fieldKeys.length > 0) {
+            _aiFieldSuggestions = s.field_suggestions;
+            html += '<div style="margin-top:10px;padding:10px;background:rgba(99,102,241,0.08);border-radius:8px;border:1px solid rgba(99,102,241,0.2);">'
+                  + '<div style="font-size:0.75rem;font-weight:700;color:var(--indigo);margin-bottom:8px;"><i class="fas fa-fill-drip"></i> AI-Generated Field Values</div>';
+            fieldKeys.forEach(function(fk) {
+                var label = (FIELD_LABELS[fk] || fk);
+                html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid rgba(99,102,241,0.1);">'
+                      + '<span style="font-size:0.72rem;color:var(--text-secondary);">' + escAI(label) + '</span>'
+                      + '<span style="font-size:0.76rem;font-weight:600;color:var(--text-primary);max-width:60%;text-align:right;word-break:break-word;">' + escAI(s.field_suggestions[fk]) + '</span>'
+                      + '</div>';
+            });
+            html += '</div>';
+            document.getElementById('applyFieldsBtn').style.display = 'inline-flex';
+        }
+
+        var cs = s.color_suggestions || {};
+        if (cs.primary_color || cs.accent_color) {
+            _aiColorSuggestions = cs;
+            html += '<div style="margin-top:8px;padding:8px 10px;background:rgba(99,102,241,0.06);border-radius:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">'
+                  + '<span style="font-size:0.72rem;font-weight:700;color:var(--indigo);"><i class="fas fa-palette"></i> Suggested Colors</span>';
+            if (cs.primary_color) {
+                html += '<span style="display:inline-flex;align-items:center;gap:4px;font-size:0.72rem;color:var(--text-secondary);">'
+                      + '<span style="width:14px;height:14px;border-radius:50%;background:'+escAI(cs.primary_color)+';display:inline-block;border:1px solid rgba(0,0,0,0.2);"></span>'
+                      + 'Primary: '+escAI(cs.primary_color)+'</span>';
+            }
+            if (cs.accent_color) {
+                html += '<span style="display:inline-flex;align-items:center;gap:4px;font-size:0.72rem;color:var(--text-secondary);">'
+                      + '<span style="width:14px;height:14px;border-radius:50%;background:'+escAI(cs.accent_color)+';display:inline-block;border:1px solid rgba(0,0,0,0.2);"></span>'
+                      + 'Accent: '+escAI(cs.accent_color)+'</span>';
+            }
+            html += '</div>';
+            document.getElementById('applyColorsBtn').style.display = 'inline-flex';
+        }
+
+        out.innerHTML = html || '<div class="ai-suggestion">Looking good! Your card is well structured.</div>';
+
+        var anyBtn = document.getElementById('applyFieldsBtn').style.display !== 'none'
+                  || document.getElementById('applyColorsBtn').style.display !== 'none';
+        if (anyBtn) {
+            document.getElementById('aiActions').style.display = 'flex';
+        }
     }).catch(function(){out.innerHTML='<div class="ai-suggestion">Network error. Please try again.</div>';});
+}
+
+function applyAIFields() {
+    var keys = Object.keys(_aiFieldSuggestions);
+    if (!keys.length) return;
+    keys.forEach(function(fk) {
+        var el = document.getElementById('field_' + fk);
+        if (el && _aiFieldSuggestions[fk]) {
+            el.value = _aiFieldSuggestions[fk];
+            el.style.transition = 'border-color 0.3s, background 0.3s';
+            el.style.borderColor = '#6366f1';
+            el.style.background  = 'rgba(99,102,241,0.06)';
+            setTimeout(function(){ el.style.borderColor = ''; el.style.background = ''; }, 1500);
+        }
+    });
+    updatePreview();
+}
+
+function applyAIColors() {
+    if (_aiColorSuggestions.primary_color) {
+        var pc = document.getElementById('primaryColor');
+        if (pc) { pc.value = _aiColorSuggestions.primary_color; }
+    }
+    if (_aiColorSuggestions.accent_color) {
+        var ac = document.getElementById('accentColor');
+        if (ac) { ac.value = _aiColorSuggestions.accent_color; }
+    }
+    updatePreview();
+}
+
+function escAI(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 
 // =============================================================================

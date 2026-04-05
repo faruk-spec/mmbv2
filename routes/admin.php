@@ -344,3 +344,5 @@ $router->post('/admin/projects/idcard/cards/delete', 'Admin\\IDCardAdminControll
 $router->get('/admin/projects/idcard/bulk-jobs', 'Admin\\IDCardAdminController@bulkJobs', ['auth', 'admin']);
 $router->get('/admin/projects/idcard/settings', 'Admin\\IDCardAdminController@settings', ['auth', 'admin']);
 $router->post('/admin/projects/idcard/settings', 'Admin\\IDCardAdminController@settings', ['auth', 'admin']);
+$router->get('/admin/projects/idcard/ai-settings', 'Admin\\IDCardAdminController@aiSettings', ['auth', 'admin']);
+$router->post('/admin/projects/idcard/ai-settings', 'Admin\\IDCardAdminController@aiSettings', ['auth', 'admin']);

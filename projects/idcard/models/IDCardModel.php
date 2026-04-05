@@ -86,6 +86,18 @@ class IDCardModel
                      ADD INDEX `idx_ic_bulk` (`bulk_job_id`)"
                 );
             }
+            // Migrate: add ai_card_html column for AI-generated card designs
+            $htmlColCheck = $this->db->fetch(
+                "SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+                  WHERE TABLE_SCHEMA = DATABASE()
+                    AND TABLE_NAME   = 'idcard_cards'
+                    AND COLUMN_NAME  = 'ai_card_html'"
+            );
+            if (!$htmlColCheck) {
+                $this->db->query(
+                    "ALTER TABLE `idcard_cards` ADD COLUMN `ai_card_html` MEDIUMTEXT NULL"
+                );
+            }
         } catch (\Exception $e) {
             Logger::error('IDCard ensureTables: ' . $e->getMessage());
         }
@@ -102,8 +114,8 @@ class IDCardModel
     {
         $this->db->query(
             "INSERT INTO idcard_cards
-             (user_id, template_key, card_number, card_data, design, photo_path, logo_path, ai_prompt, ai_suggestions, status, bulk_job_id)
-             VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+             (user_id, template_key, card_number, card_data, design, photo_path, logo_path, ai_prompt, ai_suggestions, ai_card_html, status, bulk_job_id)
+             VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
             [
                 $data['user_id'],
                 $data['template_key']   ?? 'corporate',
@@ -114,6 +126,7 @@ class IDCardModel
                 $data['logo_path']      ?? null,
                 $data['ai_prompt']      ?? null,
                 json_encode($data['ai_suggestions'] ?? []),
+                $data['ai_card_html']   ?? null,
                 $data['status']         ?? 'generated',
                 $data['bulk_job_id']    ?? null,
             ]
@@ -246,6 +259,10 @@ class IDCardModel
             $sets[]   = 'ai_suggestions = ?';
             $params[] = json_encode($data['ai_suggestions']);
         }
+        if (array_key_exists('ai_card_html', $data)) {
+            $sets[]   = 'ai_card_html = ?';
+            $params[] = $data['ai_card_html'];
+        }
 
         if (empty($sets)) {
             // No fields to update — treat as no-op success
@@ -376,8 +393,16 @@ class IDCardModel
                 [$key]
             );
             if ($row && $row['setting_value'] !== null) {
-                $decoded = json_decode($row['setting_value'], true);
-                return ($decoded !== null) ? $decoded : $row['setting_value'];
+                $val = $row['setting_value'];
+                // Only JSON-decode arrays/objects; return plain strings as-is so that
+                // values like '1' / '0' stay strings and === comparisons work correctly.
+                if (strlen($val) > 0 && ($val[0] === '{' || $val[0] === '[')) {
+                    $decoded = json_decode($val, true);
+                    if ($decoded !== null) {
+                        return $decoded;
+                    }
+                }
+                return $val;
             }
         } catch (\Exception $e) {
             // table may not exist yet

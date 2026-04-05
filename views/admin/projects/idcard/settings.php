@@ -8,7 +8,10 @@
         <h1><i class="fas fa-cog" style="color:#6366f1;"></i> CardX — Settings</h1>
         <p style="color:var(--text-secondary);">Configure the ID card generator for all users</p>
     </div>
-    <a href="/admin/projects/idcard" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Overview</a>
+    <div style="display:flex;gap:10px;">
+        <a href="/admin/projects/idcard/ai-settings" class="btn btn-primary"><i class="fas fa-robot"></i> AI Integration</a>
+        <a href="/admin/projects/idcard" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Overview</a>
+    </div>
 </div>
 
 <?php if (!empty($_GET['saved'])): ?>
@@ -42,7 +45,18 @@
                 <span style="font-weight:600;">Enable AI Design Assistant</span>
             </label>
             <p style="font-size:12px;color:var(--text-secondary);margin-top:4px;margin-left:22px;">
-                When enabled, users can request AI-powered design suggestions. Requires HUGGING_FACE_API_TOKEN for advanced AI (rule-based tips always work).
+                When enabled, users can request AI-powered design suggestions.
+                Configure the OpenAI API key and model in <a href="/admin/projects/idcard/ai-settings" style="color:#6366f1;">AI Integration settings</a>.
+            </p>
+        </div>
+
+        <div style="margin-top:16px;">
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
+                <input type="checkbox" name="ai_generate_page_enabled" value="1" <?= !empty($settings['ai_generate_page_enabled']) ? 'checked' : '' ?>>
+                <span style="font-weight:600;">Enable "Generate with AI" page in user sidebar</span>
+            </label>
+            <p style="font-size:12px;color:var(--text-secondary);margin-top:4px;margin-left:22px;">
+                When disabled, the AI Generate page is hidden from the user sidebar and direct URL access is blocked.
             </p>
         </div>
     </div>
@@ -101,6 +115,7 @@
 
     <div style="display:flex;gap:12px;">
         <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Settings</button>
+        <a href="/admin/projects/idcard/ai-settings" class="btn btn-secondary"><i class="fas fa-robot"></i> AI Integration</a>
         <a href="/admin/projects/idcard" class="btn btn-secondary">Cancel</a>
     </div>
 </form>

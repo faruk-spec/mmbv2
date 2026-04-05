@@ -22,11 +22,17 @@ $allowedStyles = ['classic','sidebar','wave','bold_header','diagonal',
                   'glass','zigzag','ribbon',
                   'v_sharp','v_curve','v_hex','v_circle','v_split',
                   'v_ribbon','v_arch','v_diamond','v_corner','v_dual',
-                  'v_stripe','v_badge'];
+                  'v_stripe','v_badge','ai_generated'];
 $rawStyle      = $design['design_style'] ?? 'classic';
 $designStyle   = in_array($rawStyle, $allowedStyles, true) ? $rawStyle : 'classic';
 $portraitStyleKeys = ['v_sharp','v_curve','v_hex','v_circle','v_split','v_ribbon','v_arch','v_diamond','v_corner','v_dual','v_stripe','v_badge'];
 $isPortrait    = in_array($designStyle, $portraitStyleKeys, true);
+
+// For AI-generated cards, orientation comes from the template config
+$aiCardHtml = $card['ai_card_html'] ?? '';
+if (!empty($aiCardHtml)) {
+    $isPortrait = ($tplConfig['orientation'] ?? 'landscape') === 'portrait';
+}
 
 // ── Data helpers ──────────────────────────────────────────────────────────────
 $roleKeys = ['designation','title','course','event_name'];
@@ -222,10 +228,34 @@ function icardLogoEl(string $logoPath, string $size, string $iconColor = 'rgba(2
 <div style="text-align:center;">
 <div class="id-card-display <?= $isPortrait ? 'portrait' : 'landscape' ?>" style="font-family:'<?= $font ?>','Poppins',sans-serif;">
 
+<?php if (!empty($aiCardHtml)):
+    // ── AI-GENERATED CARD ─────────────────────────────────────────────────────
+    if (strncmp($aiCardHtml, '__AI_IMG__:', 11) === 0) {
+        // DALL-E generated image card — display the saved PNG directly
+        $aiImgPath = substr($aiCardHtml, 11);
+        echo '<img src="/' . htmlspecialchars(ltrim($aiImgPath, '/'), ENT_QUOTES, 'UTF-8') . '" '
+           . 'style="width:100%;height:100%;object-fit:contain;" alt="AI Generated ID Card">';
+    } else {
+        // Legacy AI HTML card (HTML/CSS generated)
+        // Replace the photo placeholder with the actual uploaded photo (or a user icon).
+        if ($photoPath) {
+            $photoSlotHtml = '<img src="' . htmlspecialchars($photoPath, ENT_QUOTES, 'UTF-8') . '" style="width:100%;height:100%;object-fit:cover;" alt="Photo">';
+        } else {
+            $photoSlotHtml = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.12);">'
+                . '<svg viewBox="0 0 24 24" style="width:52%;height:52%;fill:rgba(255,255,255,0.7);" xmlns="http://www.w3.org/2000/svg">'
+                . '<path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>'
+                . '</svg></div>';
+        }
+        $renderedHtml = str_replace('<!--CX_PHOTO_SLOT-->', $photoSlotHtml, $aiCardHtml);
+        echo $renderedHtml;
+    }
+elseif (false): // padding dummy — real conditions follow
+    /* never reached */
+?>
 <?php /* ══════════════════════════════════════════════════════
         LANDSCAPE STYLES (horizontal cards)
    ══════════════════════════════════════════════════════ */
-if ($designStyle === 'classic'): ?>
+elseif ($designStyle === 'classic'): ?>
 <!-- ── ANGLED PRO (landscape) ── school name centered header, 3-col layout ── -->
 <div style="width:100%;height:100%;background:#f7f8fc;position:relative;overflow:hidden;">
     <div style="position:absolute;top:0;left:0;right:0;height:100%;overflow:hidden;pointer-events:none;">
@@ -885,7 +915,7 @@ elseif ($designStyle === 'v_ribbon'): ?>
     <?= $showQr ? icardQrSlot('bottom:2%;left:50%;transform:translateX(-50%);', $qrData, $qrSize) : '' ?>
 </div>
 
-<?php endif; // end design styles ?>
+<?php endif; // end design styles / AI HTML ?>
 
 </div><!-- /.id-card-display -->
 <p style="font-size:0.75rem;color:var(--text-secondary);margin-top:14px;text-align:center;">

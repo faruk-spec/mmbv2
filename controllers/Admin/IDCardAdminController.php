@@ -135,7 +135,7 @@ class IDCardAdminController extends BaseController
 
     public function deleteCard(): void
     {
-        if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
+        if (!Security::validateCsrfToken($_POST['_csrf_token'] ?? '')) {
             $this->json(['success' => false, 'message' => 'Invalid token']);
             return;
         }
@@ -162,17 +162,18 @@ class IDCardAdminController extends BaseController
         $model = $this->model();
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
+            if (!Security::validateCsrfToken($_POST['_csrf_token'] ?? '')) {
                 $this->redirectWithError('/admin/projects/idcard/settings', 'Invalid token');
                 return;
             }
 
             $cfg = [
-                'max_cards_per_user'  => max(1, (int) ($_POST['max_cards_per_user']  ?? 200)),
-                'allowed_templates'   => $_POST['allowed_templates']  ?? [],
-                'ai_enabled'          => !empty($_POST['ai_enabled']),
-                'bulk_enabled'        => !empty($_POST['bulk_enabled']),
-                'max_bulk_rows'       => max(1, min(1000, (int) ($_POST['max_bulk_rows'] ?? 200))),
+                'max_cards_per_user'         => max(1, (int) ($_POST['max_cards_per_user']  ?? 200)),
+                'allowed_templates'           => $_POST['allowed_templates']  ?? [],
+                'ai_enabled'                  => !empty($_POST['ai_enabled']),
+                'ai_generate_page_enabled'    => !empty($_POST['ai_generate_page_enabled']),
+                'bulk_enabled'                => !empty($_POST['bulk_enabled']),
+                'max_bulk_rows'               => max(1, min(1000, (int) ($_POST['max_bulk_rows'] ?? 200))),
             ];
 
             // Validate allowed_templates entries
@@ -191,11 +192,12 @@ class IDCardAdminController extends BaseController
 
         $saved  = $model->getSetting('admin_config', []);
         $defaults = [
-            'max_cards_per_user'  => 200,
-            'allowed_templates'   => [],
-            'ai_enabled'          => true,
-            'bulk_enabled'        => true,
-            'max_bulk_rows'       => 200,
+            'max_cards_per_user'         => 200,
+            'allowed_templates'           => [],
+            'ai_enabled'                  => true,
+            'ai_generate_page_enabled'    => true,
+            'bulk_enabled'                => true,
+            'max_bulk_rows'               => 200,
         ];
         $settings = array_merge($defaults, is_array($saved) ? $saved : []);
 
@@ -206,6 +208,70 @@ class IDCardAdminController extends BaseController
             'title'          => 'CardX Admin — Settings',
             'settings'       => $settings,
             'templates'      => $projectConfig['templates'] ?? [],
+        ]);
+    }
+
+    // ------------------------------------------------------------------ //
+    //  AI Integration Settings                                            //
+    // ------------------------------------------------------------------ //
+
+    public function aiSettings(): void
+    {
+        $model = $this->model();
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!Security::validateCsrfToken($_POST['_csrf_token'] ?? '')) {
+                $this->redirectWithError('/admin/projects/idcard/ai-settings', 'Invalid token');
+                return;
+            }
+
+            $cfg = [
+                'idcard_ai_enabled'       => !empty($_POST['idcard_ai_enabled']) ? '1' : '0',
+                'idcard_openai_api_key'   => trim($_POST['idcard_openai_api_key'] ?? ''),
+                'idcard_openai_model'     => trim($_POST['idcard_openai_model'] ?? 'gpt-4o-mini'),
+                'idcard_ai_daily_limit'   => max(0, (int) ($_POST['idcard_ai_daily_limit'] ?? 0)),
+                'idcard_pro_templates'    => !empty($_POST['idcard_pro_templates']) ? '1' : '0',
+                'idcard_pro_styles'       => !empty($_POST['idcard_pro_styles']) ? '1' : '0',
+            ];
+
+            if (empty($cfg['idcard_openai_model'])) {
+                $cfg['idcard_openai_model'] = 'gpt-4o-mini';
+            }
+
+            foreach ($cfg as $key => $value) {
+                $model->setSetting($key, $value);
+            }
+
+            ActivityLogger::log(Auth::id(), 'admin_idcard_ai_settings_updated');
+            header('Location: /admin/projects/idcard/ai-settings?saved=1');
+            exit;
+        }
+
+        $keys = [
+            'idcard_ai_enabled', 'idcard_openai_api_key', 'idcard_openai_model',
+            'idcard_ai_daily_limit', 'idcard_pro_templates', 'idcard_pro_styles',
+        ];
+        $settings = [];
+        foreach ($keys as $k) {
+            $settings[$k] = $model->getSetting($k, null);
+        }
+        $defaults = [
+            'idcard_ai_enabled'     => '1',
+            'idcard_openai_api_key' => '',
+            'idcard_openai_model'   => 'gpt-4o-mini',
+            'idcard_ai_daily_limit' => '0',
+            'idcard_pro_templates'  => '0',
+            'idcard_pro_styles'     => '0',
+        ];
+        foreach ($defaults as $k => $v) {
+            if ($settings[$k] === null) {
+                $settings[$k] = $v;
+            }
+        }
+
+        $this->view('admin/projects/idcard/ai_settings', [
+            'title'    => 'CardX Admin — AI Integration',
+            'settings' => $settings,
         ]);
     }
 
@@ -244,13 +310,6 @@ class IDCardAdminController extends BaseController
     // ------------------------------------------------------------------ //
     //  Helpers                                                             //
     // ------------------------------------------------------------------ //
-
-    private function json(array $data): void
-    {
-        header('Content-Type: application/json');
-        echo json_encode($data);
-        exit;
-    }
 
     private function redirectWithError(string $url, string $msg): void
     {
