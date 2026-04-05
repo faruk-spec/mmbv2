@@ -5,8 +5,14 @@
  * @var array  $tplConfig
  * @var array  $field_labels
  * @var array  $user
+ * @var int|null    $editCardId   (optional, present when editing)
+ * @var array|null  $editCardData (optional, pre-fill field values)
+ * @var array|null  $editDesign   (optional, pre-fill design settings)
  */
-$csrfToken = \Core\Security::generateCsrfToken();
+$csrfToken    = \Core\Security::generateCsrfToken();
+$isEditMode   = isset($editCardId) && $editCardId > 0;
+$editCardData = $editCardData ?? [];
+$editDesign   = $editDesign   ?? [];
 ?>
 
 <style>
@@ -133,37 +139,117 @@ $csrfToken = \Core\Security::generateCsrfToken();
     position:absolute; top:10px; right:12px;
     background:none; border:none; font-size:1.3rem; cursor:pointer; color:var(--text-secondary);
 }
+
+/* ── Template theme colour dots ── */
+.tpl-theme-dots { display:flex; flex-wrap:wrap; gap:7px; }
+.tpl-theme-dot {
+    width:22px; height:22px; border-radius:50%; cursor:pointer;
+    border:2.5px solid transparent; transition:transform 0.15s, border-color 0.15s;
+    flex-shrink:0; position:relative;
+}
+.tpl-theme-dot:hover { transform:scale(1.18); }
+.tpl-theme-dot.active { border-color:#fff; box-shadow:0 0 0 2px var(--indigo); }
+.tpl-theme-dot[title]:hover::after {
+    content:attr(title); position:absolute; bottom:120%; left:50%; transform:translateX(-50%);
+    background:#111; color:#fff; font-size:0.6rem; padding:2px 6px; border-radius:4px;
+    white-space:nowrap; pointer-events:none; z-index:100;
+}
+
+/* ── Mobile nav bar height (used to offset sidebar toggle) ── */
+:root { --mobile-nav-height: 68px; }
+
+/* ── Sidebar toggle — lift above mobile nav bar ── */
+@media(max-width:600px) {
+    .sidebar-toggle { bottom: calc(var(--mobile-nav-height) + 8px) !important; z-index: 210 !important; }
+}
+
+/* ── Mobile bottom nav bar ── */
+.cx-mobile-nav-bar {
+    display:none; position:fixed; bottom:0; left:0; right:0; z-index:200;
+    background:var(--bg-card); border-top:1px solid var(--border-color);
+    overflow-x:auto; -webkit-overflow-scrolling:touch;
+}
+.cx-mobile-nav-bar::-webkit-scrollbar { display:none; }
+.cx-mobile-nav-inner {
+    display:flex; min-width:max-content; padding:4px 8px; gap:2px;
+    min-height:var(--mobile-nav-height);
+}
+.cx-mobile-nav-btn {
+    display:flex; flex-direction:column; align-items:center; gap:2px;
+    padding:6px 12px; border-radius:8px; border:none;
+    background:transparent; color:var(--text-secondary);
+    font-size:0.62rem; font-weight:600; font-family:'Poppins',sans-serif;
+    cursor:pointer; white-space:nowrap; min-width:52px; transition:all 0.15s;
+}
+.cx-mobile-nav-btn.active { color:var(--indigo); background:rgba(99,102,241,0.1); }
+.cx-mobile-nav-btn:hover { color:var(--indigo); }
+@media(max-width:600px) {
+    .cx-mobile-nav-bar { display:flex !important; }
+    .cx-main { padding-bottom:72px !important; }
+    .mobile-preview-btn { display:none !important; }
+    /* Hide the right-column preview area elements on mobile since they are
+       duplicated in the mobile-only form sections */
+    .preview-area .card:not(:first-child) { display:none !important; }
+    /* Hide the step-progress banner on mobile — the bottom nav already
+       provides category/section navigation */
+    #stepProgressBanner { display:none !important; }
+}
+
+/* ── Inline bulk panel ── */
+.inline-bulk-panel { display:none; }
+.inline-bulk-panel.visible { display:block; }
+.inline-bulk-toggle { display:flex; align-items:center; gap:8px; cursor:pointer; user-select:none; width:100%; }
+.inline-bulk-upload-zone {
+    border:2px dashed var(--border-color); border-radius:10px;
+    padding:14px 12px; text-align:center; cursor:pointer; transition:all 0.2s;
+    background:var(--bg-secondary); margin-top:10px;
+}
+.inline-bulk-upload-zone:hover, .inline-bulk-upload-zone.dragover {
+    border-color:var(--indigo); background:rgba(99,102,241,0.06);
+}
+.inline-bulk-upload-zone input[type=file] { display:none; }
+.inline-bulk-progress-wrap { background:var(--border-color); border-radius:99px; height:7px; overflow:hidden; margin-top:6px; }
+.inline-bulk-progress-fill { height:100%; border-radius:99px; background:linear-gradient(90deg,#6366f1,#00f0ff); transition:width 0.4s; }
 </style>
 
-<a href="/projects/idcard" class="back-link"><i class="fas fa-arrow-left"></i> Dashboard</a>
-<h2 class="section-title"><i class="fas fa-id-card" style="color:var(--indigo);"></i> Generate ID Card</h2>
-
-<!-- Card Category -->
-<div class="card" style="margin-bottom:16px;padding:16px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
-        <p style="font-size:0.8rem;color:var(--text-secondary);font-weight:600;margin:0;"><i class="fas fa-tags" style="color:var(--indigo);margin-right:5px;"></i> SELECT CARD CATEGORY</p>
-    </div>
-    <select id="categorySelect" class="form-input" style="padding:9px 12px;font-size:0.88rem;cursor:pointer;" onchange="selectTemplate(this.value)">
-        <option value="corporate" <?= $selectedTpl === 'corporate' ? 'selected' : '' ?>>Corporate</option>
-        <option value="student" <?= $selectedTpl === 'student' ? 'selected' : '' ?>>Student / School</option>
-        <option value="event" <?= $selectedTpl === 'event' ? 'selected' : '' ?>>Event</option>
-        <option value="visitor" <?= $selectedTpl === 'visitor' ? 'selected' : '' ?>>Visitor</option>
-        <option value="medical" <?= $selectedTpl === 'medical' ? 'selected' : '' ?>>Medical Staff</option>
-        <option value="tech" <?= $selectedTpl === 'tech' ? 'selected' : '' ?>>Tech Company</option>
-        <option value="bank" <?= $selectedTpl === 'bank' ? 'selected' : '' ?>>Banking / Finance</option>
-        <option value="media" <?= $selectedTpl === 'media' ? 'selected' : '' ?>>Press / Media</option>
-        <option value="govt" <?= $selectedTpl === 'govt' ? 'selected' : '' ?>>Government</option>
-        <option value="security" <?= $selectedTpl === 'security' ? 'selected' : '' ?>>Security</option>
-        <option value="hospital_v" <?= $selectedTpl === 'hospital_v' ? 'selected' : '' ?>>Hospital</option>
-        <option value="ngo_v" <?= $selectedTpl === 'ngo_v' ? 'selected' : '' ?>>NGO / Non-Profit</option>
-        <option value="library_v" <?= $selectedTpl === 'library_v' ? 'selected' : '' ?>>Library Card</option>
-        <option value="gym_v" <?= $selectedTpl === 'gym_v' ? 'selected' : '' ?>>Gym / Fitness</option>
-        <option value="transport_v" <?= $selectedTpl === 'transport_v' ? 'selected' : '' ?>>Transport</option>
-        <option value="university_v" <?= $selectedTpl === 'university_v' ? 'selected' : '' ?>>University Faculty</option>
-        <option value="security_v" <?= $selectedTpl === 'security_v' ? 'selected' : '' ?>>Security Guard</option>
-        <option value="retail_v" <?= $selectedTpl === 'retail_v' ? 'selected' : '' ?>>Retail / Shop</option>
-    </select>
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap;">
+    <a href="/projects/idcard" class="back-link" style="margin-bottom:0;"><i class="fas fa-arrow-left"></i> Dashboard</a>
 </div>
+
+<?php if (!$isEditMode): ?>
+<!-- Step progress indicator (create mode only, hidden on mobile) -->
+<div id="stepProgressBanner" style="background:linear-gradient(135deg,rgba(99,102,241,0.12),rgba(0,240,255,0.05));border:1px solid rgba(99,102,241,0.2);border-radius:14px;padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+    <div style="width:44px;height:44px;background:linear-gradient(135deg,#6366f1,#00f0ff);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <i class="fas fa-id-card" style="color:#fff;font-size:1.2rem;"></i>
+    </div>
+    <div style="flex:1;min-width:160px;">
+        <div style="font-size:1.1rem;font-weight:800;background:linear-gradient(135deg,#6366f1,#00f0ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:2px;">
+            Create ID Card
+        </div>
+        <div style="font-size:0.78rem;color:var(--text-secondary);">
+            Select a category &rarr; fill details &rarr; pick a style &rarr; generate
+        </div>
+    </div>
+    <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">
+        <span style="width:24px;height:24px;border-radius:50%;background:var(--indigo);color:#fff;font-size:0.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;">1</span>
+        <span style="font-size:0.68rem;color:var(--indigo);font-weight:600;">Category</span>
+        <i class="fas fa-chevron-right" style="color:var(--text-secondary);font-size:0.6rem;margin:0 2px;"></i>
+        <span style="width:24px;height:24px;border-radius:50%;background:var(--bg-secondary);border:1.5px solid var(--border-color);color:var(--text-secondary);font-size:0.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;">2</span>
+        <span style="font-size:0.68rem;color:var(--text-secondary);font-weight:600;">Details</span>
+        <i class="fas fa-chevron-right" style="color:var(--text-secondary);font-size:0.6rem;margin:0 2px;"></i>
+        <span style="width:24px;height:24px;border-radius:50%;background:var(--bg-secondary);border:1.5px solid var(--border-color);color:var(--text-secondary);font-size:0.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;">3</span>
+        <span style="font-size:0.68rem;color:var(--text-secondary);font-weight:600;">Style</span>
+        <i class="fas fa-chevron-right" style="color:var(--text-secondary);font-size:0.6rem;margin:0 2px;"></i>
+        <span style="width:24px;height:24px;border-radius:50%;background:var(--bg-secondary);border:1.5px solid var(--border-color);color:var(--text-secondary);font-size:0.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;">4</span>
+        <span style="font-size:0.68rem;color:var(--text-secondary);font-weight:600;">Generate</span>
+    </div>
+</div>
+<?php else: ?>
+<h2 class="section-title" style="margin-bottom:18px;">
+    <i class="fas fa-edit" style="color:var(--indigo);"></i> Edit ID Card
+    <span style="font-size:0.72rem;font-weight:400;color:var(--text-secondary);margin-left:8px;font-style:italic;">Editing saved card</span>
+</h2>
+<?php endif; ?>
 
 <div class="gen-wrap">
     <!-- LEFT: Form -->
@@ -171,7 +257,38 @@ $csrfToken = \Core\Security::generateCsrfToken();
         <form id="cardForm" method="POST" action="/projects/idcard/generate" enctype="multipart/form-data">
             <input type="hidden" name="_token"       value="<?= htmlspecialchars($csrfToken) ?>">
             <input type="hidden" name="template_key" id="template_key" value="<?= htmlspecialchars($selectedTpl) ?>">
-            <input type="hidden" name="design_style" id="design_style" value="classic">
+            <input type="hidden" name="design_style" id="design_style" value="<?= htmlspecialchars($editDesign['design_style'] ?? 'classic') ?>">
+            <?php if ($isEditMode): ?>
+            <input type="hidden" name="edit_card_id" value="<?= (int)$editCardId ?>">
+            <?php endif; ?>
+
+            <!-- Mobile-only: Category selector (desktop shows it in right sidebar) -->
+            <div class="card mobile-only-section" id="mobileCategorySection" style="margin-bottom:16px;display:none;">
+                <h3 style="font-size:0.9rem;font-weight:600;color:var(--indigo);margin:0 0 12px;display:flex;align-items:center;gap:6px;">
+                    <i class="fas fa-tags"></i> Select Card Category
+                </h3>
+                <select class="form-input" style="padding:8px 10px;font-size:0.85rem;cursor:pointer;"
+                        onchange="selectTemplate(this.value);syncCategorySelects(this.value);" id="mobileCategorySelect">
+                    <option value="corporate"   <?= $selectedTpl === 'corporate'   ? 'selected' : '' ?>>Corporate</option>
+                    <option value="student"     <?= $selectedTpl === 'student'     ? 'selected' : '' ?>>Student / School</option>
+                    <option value="event"       <?= $selectedTpl === 'event'       ? 'selected' : '' ?>>Event</option>
+                    <option value="visitor"     <?= $selectedTpl === 'visitor'     ? 'selected' : '' ?>>Visitor</option>
+                    <option value="medical"     <?= $selectedTpl === 'medical'     ? 'selected' : '' ?>>Medical Staff</option>
+                    <option value="tech"        <?= $selectedTpl === 'tech'        ? 'selected' : '' ?>>Tech Company</option>
+                    <option value="bank"        <?= $selectedTpl === 'bank'        ? 'selected' : '' ?>>Banking / Finance</option>
+                    <option value="media"       <?= $selectedTpl === 'media'       ? 'selected' : '' ?>>Press / Media</option>
+                    <option value="govt"        <?= $selectedTpl === 'govt'        ? 'selected' : '' ?>>Government</option>
+                    <option value="security"    <?= $selectedTpl === 'security'    ? 'selected' : '' ?>>Security</option>
+                    <option value="hospital_v"  <?= $selectedTpl === 'hospital_v'  ? 'selected' : '' ?>>Hospital</option>
+                    <option value="ngo_v"       <?= $selectedTpl === 'ngo_v'       ? 'selected' : '' ?>>NGO / Non-Profit</option>
+                    <option value="library_v"   <?= $selectedTpl === 'library_v'   ? 'selected' : '' ?>>Library Card</option>
+                    <option value="gym_v"       <?= $selectedTpl === 'gym_v'       ? 'selected' : '' ?>>Gym / Fitness</option>
+                    <option value="transport_v" <?= $selectedTpl === 'transport_v' ? 'selected' : '' ?>>Transport</option>
+                    <option value="university_v" <?= $selectedTpl === 'university_v' ? 'selected' : '' ?>>University Faculty</option>
+                    <option value="security_v"  <?= $selectedTpl === 'security_v'  ? 'selected' : '' ?>>Security Guard</option>
+                    <option value="retail_v"    <?= $selectedTpl === 'retail_v'    ? 'selected' : '' ?>>Retail / Shop</option>
+                </select>
+            </div>
 
             <!-- Dynamic fields -->
             <div class="card" style="margin-bottom:16px;">
@@ -194,6 +311,7 @@ $csrfToken = \Core\Security::generateCsrfToken();
                             <input type="text" id="field_<?= $field ?>" name="<?= htmlspecialchars($field) ?>"
                                    class="form-input" style="padding:6px 10px;font-size:0.82rem;"
                                    placeholder="<?= strtolower(htmlspecialchars($field_labels[$field] ?? $field)) ?>"
+                                   value="<?= htmlspecialchars($editCardData[$field] ?? '', ENT_QUOTES, 'UTF-8') ?>"
                                    oninput="updatePreview()">
                         </div>
                     <?php endforeach; ?>
@@ -227,9 +345,10 @@ $csrfToken = \Core\Security::generateCsrfToken();
                         <div class="photo-ctrl form-group" style="margin-bottom:0;">
                             <label>🔵 Photo Shape</label>
                             <select name="profile_shape" id="profileShape" class="form-input" style="padding:6px 8px;font-size:0.78rem;" onchange="updatePreview()">
-                                <option value="circle">Circle</option>
-                                <option value="oval">Oval</option>
-                                <option value="square">Square</option>
+                                <?php $editShape = $editDesign['profile_shape'] ?? 'circle'; ?>
+                                <option value="circle"  <?= $editShape === 'circle'  ? 'selected' : '' ?>>Circle</option>
+                                <option value="oval"    <?= $editShape === 'oval'    ? 'selected' : '' ?>>Oval</option>
+                                <option value="square"  <?= $editShape === 'square'  ? 'selected' : '' ?>>Square</option>
                             </select>
                         </div>
                     </div>
@@ -238,44 +357,60 @@ $csrfToken = \Core\Security::generateCsrfToken();
                         <div class="ctrl-color">
                             <label>Primary</label>
                             <input type="color" name="primary_color" id="primaryColor"
-                                   value="<?= htmlspecialchars($tplConfig['color']) ?>" oninput="updatePreview()">
+                                   value="<?= htmlspecialchars($editDesign['primary_color'] ?? $tplConfig['color']) ?>" oninput="updatePreview()">
                         </div>
                         <div class="ctrl-color">
                             <label>Accent</label>
                             <input type="color" name="accent_color" id="accentColor"
-                                   value="<?= htmlspecialchars($tplConfig['accent']) ?>" oninput="updatePreview()">
+                                   value="<?= htmlspecialchars($editDesign['accent_color'] ?? $tplConfig['accent']) ?>" oninput="updatePreview()">
                         </div>
                         <div class="ctrl-color">
                             <label>Background</label>
                             <input type="color" name="bg_color" id="bgColor"
-                                   value="<?= htmlspecialchars($tplConfig['bg']) ?>" oninput="updatePreview()">
+                                   value="<?= htmlspecialchars($editDesign['bg_color'] ?? $tplConfig['bg']) ?>" oninput="updatePreview()">
                         </div>
                         <div class="ctrl-color">
                             <label>Text</label>
                             <input type="color" name="text_color" id="textColor"
-                                   value="<?= htmlspecialchars($tplConfig['text']) ?>" oninput="updatePreview()">
+                                   value="<?= htmlspecialchars($editDesign['text_color'] ?? $tplConfig['text']) ?>" oninput="updatePreview()">
                         </div>
                         <div class="ctrl-group" style="min-width:100px;">
                             <label>Font</label>
                             <select name="font_family" id="fontFamily" class="form-input" onchange="updatePreview()">
                                 <?php foreach(['Poppins','Inter','Roboto','Lato','Open Sans','Montserrat','Raleway'] as $f): ?>
-                                <option value="<?= $f ?>"><?= $f ?></option>
+                                <option value="<?= $f ?>" <?= ($editDesign['font_family'] ?? 'Poppins') === $f ? 'selected' : '' ?>><?= $f ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
                         <div class="ctrl-group" style="min-width:90px;">
                             <label>QR Size: <span id="qrSizeVal">54</span>px</label>
-                            <input type="range" id="qrSize" name="qr_size" min="36" max="90" value="54" style="width:100%;"
+                            <input type="range" id="qrSize" name="qr_size" min="36" max="90" value="<?= (int)($editDesign['qr_size'] ?? 54) ?>" style="width:100%;"
                                    oninput="document.getElementById('qrSizeVal').textContent=this.value;updatePreview()">
                         </div>
                         <div class="ctrl-group" style="flex:0;min-width:auto;">
                             <label>&nbsp;</label>
                             <label class="qr-toggle">
-                                <input type="checkbox" name="show_qr" id="showQr" onchange="updatePreview()" checked>
+                                <input type="checkbox" name="show_qr" id="showQr" onchange="updatePreview()" <?= (!$isEditMode || !empty($editDesign['show_qr'])) ? 'checked' : '' ?>>
                                 <span>QR</span>
                             </label>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Mobile-only: Theme colour picker -->
+            <div class="card mobile-only-section" id="mobileThemeSection" style="margin-bottom:16px;display:none;">
+                <h3 style="font-size:0.9rem;font-weight:600;color:var(--indigo);margin:0 0 12px;display:flex;align-items:center;gap:6px;">
+                    <i class="fas fa-palette"></i> Theme Colour
+                </h3>
+                <div class="tpl-theme-dots" id="mobileThemeDots">
+                    <?php foreach ($templates as $tKey => $tDef): ?>
+                    <span class="tpl-theme-dot<?= $tKey === $selectedTpl ? ' active' : '' ?>"
+                          style="background:<?= htmlspecialchars($tDef['color']) ?>;"
+                          title="<?= htmlspecialchars($tDef['name']) ?>"
+                          data-tpl="<?= htmlspecialchars($tKey) ?>"
+                          onclick="applyThemeColor('<?= htmlspecialchars($tKey) ?>');syncThemeDots('<?= htmlspecialchars($tKey) ?>')"></span>
+                    <?php endforeach; ?>
                 </div>
             </div>
 
@@ -301,7 +436,7 @@ $csrfToken = \Core\Security::generateCsrfToken();
             </div>
 
             <!-- AI Assistant -->
-            <div class="card" style="margin-bottom:16px;background:linear-gradient(135deg,rgba(99,102,241,0.06),rgba(0,240,255,0.03));border:1px solid rgba(99,102,241,0.2);">
+            <div id="aiSection" class="card" style="margin-bottom:16px;background:linear-gradient(135deg,rgba(99,102,241,0.06),rgba(0,240,255,0.03));border:1px solid rgba(99,102,241,0.2);">
                 <h3 style="font-size:0.9rem;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:6px;">
                     <i class="fas fa-robot" style="color:var(--indigo);"></i> AI Design Assistant
                     <span style="background:linear-gradient(135deg,#6366f1,#00f0ff);color:white;font-size:0.6rem;padding:2px 8px;border-radius:10px;">AI</span>
@@ -318,10 +453,62 @@ $csrfToken = \Core\Security::generateCsrfToken();
                 <div id="aiOutput" style="margin-top:12px;display:none;"></div>
             </div>
 
+            <!-- Inline Bulk Mode panel -->
+            <div class="card" id="bulkModeCard" style="margin-bottom:16px;border-style:dashed;">
+                <label class="inline-bulk-toggle" for="bulkModeToggle">
+                    <input type="checkbox" id="bulkModeToggle" style="width:16px;height:16px;cursor:pointer;" onchange="toggleBulkMode()">
+                    <span style="font-size:0.9rem;font-weight:700;color:var(--indigo);display:flex;align-items:center;gap:6px;">
+                        <i class="fas fa-layer-group"></i> Bulk Mode
+                    </span>
+                    <span style="font-size:0.72rem;color:var(--text-secondary);">Generate multiple cards from a CSV</span>
+                </label>
+                <div class="inline-bulk-panel" id="inlineBulkPanel">
+                    <div style="display:flex;gap:12px;margin-top:14px;flex-wrap:wrap;align-items:flex-start;">
+                        <!-- Sample CSV -->
+                        <div style="flex:1;min-width:150px;">
+                            <div style="font-size:0.7rem;font-weight:600;color:var(--text-secondary);margin-bottom:6px;"><i class="fas fa-download" style="color:var(--indigo);margin-right:3px;"></i> Step 1 — Download template</div>
+                            <a id="inlineSampleCsvBtn" href="#" style="pointer-events:none;opacity:0.4;" class="btn btn-secondary btn-sm">
+                                <i class="fas fa-download"></i> Sample CSV
+                            </a>
+                            <div style="font-size:0.65rem;color:var(--text-secondary);margin-top:4px;">Contains all fields for the selected category</div>
+                        </div>
+                        <!-- Upload -->
+                        <div style="flex:1;min-width:150px;">
+                            <div style="font-size:0.7rem;font-weight:600;color:var(--text-secondary);margin-bottom:6px;"><i class="fas fa-upload" style="color:var(--indigo);margin-right:3px;"></i> Step 2 — Upload filled CSV</div>
+                            <div class="inline-bulk-upload-zone" id="inlineUploadZone"
+                                 onclick="document.getElementById('inlineCsvFile').click()"
+                                 ondragover="inlineDragOver(event)"
+                                 ondragleave="inlineDragLeave(event)"
+                                 ondrop="inlineDrop(event)">
+                                <i class="fas fa-file-csv" style="font-size:1.4rem;color:var(--indigo);opacity:0.7;display:block;margin-bottom:4px;"></i>
+                                <div style="font-size:0.78rem;font-weight:600;">Click or drag CSV here</div>
+                                <div style="font-size:0.68rem;color:var(--text-secondary);margin-top:2px;">.csv files only</div>
+                                <input type="file" id="inlineCsvFile" accept=".csv,text/csv" onchange="inlineFileSelected(this)">
+                                <div id="inlineCsvFilename" style="font-size:0.74rem;color:var(--indigo);margin-top:5px;font-weight:600;word-break:break-all;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Progress -->
+                    <div id="inlineBulkProgress" style="display:none;margin-top:12px;">
+                        <div style="font-size:0.78rem;color:var(--text-secondary);" id="inlineBulkProgressLabel">Processing…</div>
+                        <div class="inline-bulk-progress-wrap"><div class="inline-bulk-progress-fill" id="inlineBulkProgressBar" style="width:0%;"></div></div>
+                    </div>
+                    <!-- Result -->
+                    <div id="inlineBulkResult" style="display:none;margin-top:12px;"></div>
+                    <!-- Generate button -->
+                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px;">
+                        <button type="button" id="inlineBulkBtn" class="btn btn-primary" onclick="submitInlineBulk()">
+                            <i class="fas fa-bolt"></i> Generate All Cards
+                        </button>
+                        <span id="inlineBulkHint" style="font-size:0.74rem;color:var(--text-secondary);">Upload a CSV to generate all cards at once.</span>
+                    </div>
+                </div>
+            </div>
+
             <!-- Submit -->
             <div class="form-actions">
                 <button type="submit" id="generateBtn" class="btn btn-primary" style="flex:1;justify-content:center;padding:14px;">
-                    <i class="fas fa-id-card"></i> Generate ID Card
+                    <i class="fas fa-<?= $isEditMode ? 'save' : 'id-card' ?>"></i> <?= $isEditMode ? 'Update Card' : 'Generate ID Card' ?>
                 </button>
                 <button type="reset" class="btn btn-secondary" onclick="resetForm()">
                     <i class="fas fa-undo"></i> Reset
@@ -343,6 +530,45 @@ $csrfToken = \Core\Security::generateCsrfToken();
             <p style="text-align:center;font-size:0.72rem;color:var(--text-secondary);margin-top:10px;">
                 <i class="fas fa-info-circle"></i> Preview is approximate &mdash; final card will be pixel-perfect
             </p>
+        </div>
+
+        <!-- Category selector (moved from top) -->
+        <div class="card" style="margin-top:12px;padding:14px;">
+            <p style="font-size:0.75rem;color:var(--text-secondary);font-weight:600;margin:0 0 8px;"><i class="fas fa-tags" style="color:var(--indigo);margin-right:5px;"></i> SELECT CARD CATEGORY</p>
+            <select id="categorySelect" class="form-input" style="padding:8px 10px;font-size:0.82rem;cursor:pointer;" onchange="selectTemplate(this.value);syncCategorySelects(this.value);">
+                <option value="corporate" <?= $selectedTpl === 'corporate' ? 'selected' : '' ?>>Corporate</option>
+                <option value="student" <?= $selectedTpl === 'student' ? 'selected' : '' ?>>Student / School</option>
+                <option value="event" <?= $selectedTpl === 'event' ? 'selected' : '' ?>>Event</option>
+                <option value="visitor" <?= $selectedTpl === 'visitor' ? 'selected' : '' ?>>Visitor</option>
+                <option value="medical" <?= $selectedTpl === 'medical' ? 'selected' : '' ?>>Medical Staff</option>
+                <option value="tech" <?= $selectedTpl === 'tech' ? 'selected' : '' ?>>Tech Company</option>
+                <option value="bank" <?= $selectedTpl === 'bank' ? 'selected' : '' ?>>Banking / Finance</option>
+                <option value="media" <?= $selectedTpl === 'media' ? 'selected' : '' ?>>Press / Media</option>
+                <option value="govt" <?= $selectedTpl === 'govt' ? 'selected' : '' ?>>Government</option>
+                <option value="security" <?= $selectedTpl === 'security' ? 'selected' : '' ?>>Security</option>
+                <option value="hospital_v" <?= $selectedTpl === 'hospital_v' ? 'selected' : '' ?>>Hospital</option>
+                <option value="ngo_v" <?= $selectedTpl === 'ngo_v' ? 'selected' : '' ?>>NGO / Non-Profit</option>
+                <option value="library_v" <?= $selectedTpl === 'library_v' ? 'selected' : '' ?>>Library Card</option>
+                <option value="gym_v" <?= $selectedTpl === 'gym_v' ? 'selected' : '' ?>>Gym / Fitness</option>
+                <option value="transport_v" <?= $selectedTpl === 'transport_v' ? 'selected' : '' ?>>Transport</option>
+                <option value="university_v" <?= $selectedTpl === 'university_v' ? 'selected' : '' ?>>University Faculty</option>
+                <option value="security_v" <?= $selectedTpl === 'security_v' ? 'selected' : '' ?>>Security Guard</option>
+                <option value="retail_v" <?= $selectedTpl === 'retail_v' ? 'selected' : '' ?>>Retail / Shop</option>
+            </select>
+        </div>
+
+        <!-- Template theme colour picker (no text, colour dots only) -->
+        <div class="card" style="margin-top:12px;padding:14px;">
+            <p style="font-size:0.75rem;color:var(--text-secondary);font-weight:600;margin:0 0 10px;"><i class="fas fa-palette" style="color:var(--indigo);margin-right:5px;"></i> THEME COLOUR</p>
+            <div class="tpl-theme-dots" id="tplThemeDots">
+                <?php foreach ($templates as $tKey => $tDef): ?>
+                <span class="tpl-theme-dot<?= $tKey === $selectedTpl ? ' active' : '' ?>"
+                      style="background:<?= htmlspecialchars($tDef['color']) ?>;"
+                      title="<?= htmlspecialchars($tDef['name']) ?>"
+                      data-tpl="<?= htmlspecialchars($tKey) ?>"
+                      onclick="applyThemeColor('<?= htmlspecialchars($tKey) ?>');syncThemeDots('<?= htmlspecialchars($tKey) ?>')"></span>
+                <?php endforeach; ?>
+            </div>
         </div>
 
         <div class="card" style="margin-top:12px;padding:14px;">
@@ -375,6 +601,45 @@ $csrfToken = \Core\Security::generateCsrfToken();
         <p style="text-align:center;font-size:0.7rem;color:var(--text-secondary);margin-top:10px;">
             <i class="fas fa-info-circle"></i> Preview is approximate
         </p>
+    </div>
+</div>
+
+<!-- Mobile bottom navigation bar (shown on ≤600px) -->
+<!-- Order: Category → Info → Style → Design → Theme → AI → Preview -->
+<div class="cx-mobile-nav-bar" id="cxMobileNavBar">
+    <div class="cx-mobile-nav-inner">
+        <button type="button" class="cx-mobile-nav-btn" data-section="mobileCategorySection" onclick="cxMobileNav('mobileCategorySection',this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+            Category
+        </button>
+        <button type="button" class="cx-mobile-nav-btn active" data-section="dynamicFields" onclick="cxMobileNav('dynamicFields',this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            Info
+        </button>
+        <button type="button" class="cx-mobile-nav-btn" data-section="styleBody" onclick="cxMobileNav('styleBody',this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+            Style
+        </button>
+        <button type="button" class="cx-mobile-nav-btn" data-section="designControls" onclick="cxMobileNav('designControls',this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M19.07 19.07l-1.41-1.41M4.93 19.07l1.41-1.41M12 2v2M12 20v2M2 12h2M20 12h2"></path></svg>
+            Design
+        </button>
+        <button type="button" class="cx-mobile-nav-btn" data-section="mobileThemeSection" onclick="cxMobileNav('mobileThemeSection',this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path></svg>
+            Theme
+        </button>
+        <button type="button" class="cx-mobile-nav-btn" data-section="aiSection" onclick="cxMobileNav('aiSection',this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"></path><path d="M12 6v6l4 2"></path></svg>
+            AI
+        </button>
+        <button type="button" class="cx-mobile-nav-btn" onclick="cxMobileNavBulk(this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            Bulk
+        </button>
+        <button type="button" class="cx-mobile-nav-btn" onclick="openMobilePreview()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            Preview
+        </button>
     </div>
 </div>
 
@@ -1041,6 +1306,11 @@ function selectTemplate(key) {
     document.getElementById('logoWrap').style.display = tpl.logo ? '' : 'none';
     document.getElementById('previewTplName').textContent = tpl.name;
 
+    // Sync theme colour dots
+    document.querySelectorAll('.tpl-theme-dot').forEach(function(d) {
+        d.classList.toggle('active', d.dataset.tpl === key);
+    });
+
     // Orientation badge
     var oriEl = document.getElementById('previewOrientation');
     if (oriEl) oriEl.textContent = '';
@@ -1058,6 +1328,10 @@ function selectTemplate(key) {
 
     buildStylePicker();
     updatePreview();
+    // Refresh inline bulk sample CSV link if bulk mode is open
+    if (document.getElementById('bulkModeToggle') && document.getElementById('bulkModeToggle').checked) {
+        updateInlineSampleCsv();
+    }
 }
 
 // =============================================================================
@@ -1866,12 +2140,212 @@ document.getElementById('cardForm').addEventListener('submit',function(){
 });
 
 // =============================================================================
+//  Theme colour apply (dots — colour only, fields untouched)
+//  Applies only the primary/accent/bg/text colours from the specified template
+//  without modifying form input fields. Distinct from selectTemplate() which
+//  also rebuilds the field list.
+// =============================================================================
+function applyThemeColor(key) {
+    var tpl = TEMPLATES[key];
+    if (!tpl) return;
+    document.getElementById('primaryColor').value = tpl.color  || '#1e40af';
+    document.getElementById('accentColor').value  = tpl.accent || '#3b82f6';
+    document.getElementById('bgColor').value      = tpl.bg     || '#ffffff';
+    document.getElementById('textColor').value    = tpl.text   || '#1e293b';
+    document.querySelectorAll('.tpl-theme-dot').forEach(function(d) {
+        d.classList.toggle('active', d.dataset.tpl === key);
+    });
+    updatePreview();
+}
+
+// =============================================================================
+//  Mobile nav (bottom bar)
+//  Scrolls to the target section, expands it if collapsed, and marks the
+//  clicked nav button as active.
+// =============================================================================
+function cxMobileNav(sectionId, btn) {
+    // Mobile-only sections: show the selected, hide other mobile-only sections
+    var mobileOnlySections = ['mobileCategorySection', 'mobileThemeSection'];
+    mobileOnlySections.forEach(function(id) {
+        var mobileSectionEl = document.getElementById(id);
+        if (mobileSectionEl && window.innerWidth <= 600) {
+            mobileSectionEl.style.display = (id === sectionId) ? 'block' : 'none';
+        }
+    });
+
+    var el = document.getElementById(sectionId);
+    if (el) {
+        // Expand section if it was collapsed
+        if (el.classList.contains('collapsible-hidden')) {
+            el.classList.remove('collapsible-hidden');
+        }
+        // Scroll to the parent card if available, otherwise scroll to the element
+        var scrollTarget = (typeof el.closest === 'function' && el.closest('.card')) ? el.closest('.card') : el;
+        scrollTarget.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    document.querySelectorAll('.cx-mobile-nav-btn').forEach(function(b){ b.classList.remove('active'); });
+    if (btn) btn.classList.add('active');
+}
+
+/**
+ * Keep both desktop + mobile category selects in sync.
+ */
+function syncCategorySelects(val) {
+    var d = document.getElementById('categorySelect');
+    var m = document.getElementById('mobileCategorySelect');
+    if (d && d.value !== val) d.value = val;
+    if (m && m.value !== val) m.value = val;
+}
+
+/**
+ * Sync all theme dot sets (desktop + mobile).
+ */
+function syncThemeDots(tpl) {
+    document.querySelectorAll('.tpl-theme-dot').forEach(function(dot) {
+        dot.classList.toggle('active', dot.getAttribute('data-tpl') === tpl);
+    });
+}
+
+// =============================================================================
+//  Inline Bulk Mode
+// =============================================================================
+var inlineBulkCsvSelected = false;
+var inlineDroppedFile     = null;
+
+function toggleBulkMode() {
+    var toggle = document.getElementById('bulkModeToggle');
+    var panel  = document.getElementById('inlineBulkPanel');
+    if (toggle.checked) {
+        panel.classList.add('visible');
+        updateInlineSampleCsv();
+    } else {
+        panel.classList.remove('visible');
+        inlineBulkCsvSelected = false;
+        inlineDroppedFile     = null;
+        document.getElementById('inlineCsvFilename').textContent = '';
+        document.getElementById('inlineBulkResult').style.display   = 'none';
+        document.getElementById('inlineBulkProgress').style.display = 'none';
+    }
+}
+
+function updateInlineSampleCsv() {
+    var btn = document.getElementById('inlineSampleCsvBtn');
+    if (!btn) return;
+    btn.href = '/projects/idcard/bulk/sample-csv?template=' + encodeURIComponent(currentTpl || 'corporate');
+    btn.style.pointerEvents = 'auto';
+    btn.style.opacity = '1';
+}
+
+function inlineDragOver(e)  { e.preventDefault(); document.getElementById('inlineUploadZone').classList.add('dragover'); }
+function inlineDragLeave(e) { document.getElementById('inlineUploadZone').classList.remove('dragover'); }
+function inlineDrop(e) {
+    e.preventDefault();
+    document.getElementById('inlineUploadZone').classList.remove('dragover');
+    if (e.dataTransfer.files.length) {
+        var file = e.dataTransfer.files[0];
+        document.getElementById('inlineCsvFilename').textContent = '📎 ' + file.name;
+        inlineBulkCsvSelected = true;
+        inlineDroppedFile     = file;
+    }
+}
+function inlineFileSelected(input) {
+    if (input.files && input.files[0]) {
+        document.getElementById('inlineCsvFilename').textContent = '📎 ' + input.files[0].name;
+        inlineBulkCsvSelected = true;
+        inlineDroppedFile     = null;
+    }
+}
+
+function submitInlineBulk() {
+    if (!inlineBulkCsvSelected) {
+        document.getElementById('inlineBulkHint').textContent = '⚠ Please upload a CSV file first.';
+        document.getElementById('inlineBulkHint').style.color = '#ef4444';
+        return;
+    }
+    var btn = document.getElementById('inlineBulkBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner"></div> Generating…';
+    var prog = document.getElementById('inlineBulkProgress');
+    prog.style.display = 'block';
+    document.getElementById('inlineBulkProgressBar').style.width = '25%';
+    document.getElementById('inlineBulkProgressLabel').textContent = 'Uploading CSV and creating cards…';
+    document.getElementById('inlineBulkResult').style.display = 'none';
+
+    var fd = new FormData();
+    fd.append('_token',        CSRF_TOKEN);
+    fd.append('template_key',  currentTpl || 'corporate');
+    fd.append('primary_color', document.getElementById('primaryColor').value);
+    fd.append('accent_color',  document.getElementById('accentColor').value);
+    fd.append('bg_color',      document.getElementById('bgColor').value);
+    fd.append('text_color',    document.getElementById('textColor').value);
+    fd.append('font_family',   document.getElementById('fontFamily').value);
+    fd.append('profile_shape', document.getElementById('profileShape').value);
+    fd.append('design_style',  document.getElementById('design_style').value);
+    var csvInput = document.getElementById('inlineCsvFile');
+    if (inlineDroppedFile) {
+        fd.append('csv_file', inlineDroppedFile, inlineDroppedFile.name);
+    } else if (csvInput.files && csvInput.files[0]) {
+        fd.append('csv_file', csvInput.files[0]);
+    }
+
+    fetch('/projects/idcard/bulk/upload', {
+        method:'POST', body:fd, headers:{'X-Requested-With':'XMLHttpRequest'}
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(data) {
+        document.getElementById('inlineBulkProgressBar').style.width = '100%';
+        document.getElementById('inlineBulkProgressLabel').textContent = data.message || (data.success ? 'Done!' : 'Error');
+        var res = document.getElementById('inlineBulkResult');
+        res.style.display = 'block';
+        if (data.success) {
+            res.innerHTML = '<div style="padding:12px;background:rgba(0,255,136,0.06);border:1px solid rgba(0,255,136,0.2);border-radius:10px;">'
+                +'<div style="font-weight:700;color:#00ff88;margin-bottom:6px;font-size:0.88rem;"><i class="fas fa-check-circle"></i> Generation Complete!</div>'
+                +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">'
+                +'<span style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:16px;font-size:0.78rem;font-weight:600;background:rgba(0,255,136,0.12);color:#00ff88;"><i class="fas fa-id-card"></i> '+data.completed+' cards created</span>'
+                +(data.failed>0?'<span style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:16px;font-size:0.78rem;font-weight:600;background:rgba(239,68,68,0.12);color:#ef4444;"><i class="fas fa-exclamation-triangle"></i> '+data.failed+' rows skipped</span>':'')
+                +'</div>'
+                +'<div style="display:flex;gap:8px;flex-wrap:wrap;">'
+                +'<a href="/projects/idcard/bulk/cards" class="btn btn-primary btn-sm"><i class="fas fa-eye"></i> View Bulk Cards</a>'
+                +'<a href="/projects/idcard/history" class="btn btn-secondary btn-sm"><i class="fas fa-list"></i> All My Cards</a>'
+                +'</div></div>';
+        } else {
+            res.innerHTML = '<div style="padding:10px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);border-radius:8px;color:#ef4444;">'
+                +'<i class="fas fa-times-circle"></i> '+(data.message||'An error occurred.')+'</div>';
+        }
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-bolt"></i> Generate All Cards';
+    })
+    .catch(function() {
+        document.getElementById('inlineBulkProgressLabel').textContent = 'Request failed.';
+        var res = document.getElementById('inlineBulkResult');
+        res.style.display = 'block';
+        res.innerHTML = '<div style="padding:10px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);border-radius:8px;color:#ef4444;">'
+            +'<i class="fas fa-times-circle"></i> Network error. Please try again.</div>';
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-bolt"></i> Generate All Cards';
+    });
+}
+
+function cxMobileNavBulk(btn) {
+    var toggle = document.getElementById('bulkModeToggle');
+    if (toggle && !toggle.checked) { toggle.checked = true; toggleBulkMode(); }
+    var card = document.getElementById('bulkModeCard');
+    if (card) card.scrollIntoView({ behavior:'smooth', block:'start' });
+    document.querySelectorAll('.cx-mobile-nav-btn').forEach(function(b){ b.classList.remove('active'); });
+    if (btn) btn.classList.add('active');
+}
+
+// =============================================================================
 //  Init
 // =============================================================================
 (function init() {
-    currentStyle = 'classic';
-    document.getElementById('design_style').value = currentStyle;
+    // When editing, use saved design style; otherwise default to 'classic'
+    var savedStyle = document.getElementById('design_style').value || 'classic';
+    currentStyle = savedStyle;
     buildStylePicker();
     updatePreview();
+    // Update qrSizeVal display
+    var qrEl = document.getElementById('qrSize');
+    if (qrEl) document.getElementById('qrSizeVal').textContent = qrEl.value;
 })();
 </script>

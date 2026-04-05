@@ -341,5 +341,6 @@ $router->post('/admin/projects/resumex/templates/toggle-builtin-pro', 'Admin\\Re
 $router->get('/admin/projects/idcard', 'Admin\\IDCardAdminController@overview', ['auth', 'admin']);
 $router->get('/admin/projects/idcard/cards', 'Admin\\IDCardAdminController@cards', ['auth', 'admin']);
 $router->post('/admin/projects/idcard/cards/delete', 'Admin\\IDCardAdminController@deleteCard', ['auth', 'admin']);
+$router->get('/admin/projects/idcard/bulk-jobs', 'Admin\\IDCardAdminController@bulkJobs', ['auth', 'admin']);
 $router->get('/admin/projects/idcard/settings', 'Admin\\IDCardAdminController@settings', ['auth', 'admin']);
 $router->post('/admin/projects/idcard/settings', 'Admin\\IDCardAdminController@settings', ['auth', 'admin']);

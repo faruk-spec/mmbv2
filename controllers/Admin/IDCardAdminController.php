@@ -56,6 +56,11 @@ class IDCardAdminController extends BaseController
         ];
         $activeUsers = $model->countActiveUsers();
         $recent      = $model->getRecentAll(10);
+        $bulkStats   = [
+            'total'     => $model->countAllBulkJobs(),
+            'today'     => $model->countBulkJobsToday(),
+            'cards_sum' => $model->sumBulkCardsGenerated(),
+        ];
 
         $this->view('admin/projects/idcard/overview', [
             'title'       => 'CardX Admin — Overview',
@@ -63,6 +68,7 @@ class IDCardAdminController extends BaseController
             'activeUsers' => $activeUsers,
             'recent'      => $recent,
             'dbConnected' => true,
+            'bulkStats'   => $bulkStats,
         ]);
     }
 
@@ -165,6 +171,8 @@ class IDCardAdminController extends BaseController
                 'max_cards_per_user'  => max(1, (int) ($_POST['max_cards_per_user']  ?? 200)),
                 'allowed_templates'   => $_POST['allowed_templates']  ?? [],
                 'ai_enabled'          => !empty($_POST['ai_enabled']),
+                'bulk_enabled'        => !empty($_POST['bulk_enabled']),
+                'max_bulk_rows'       => max(1, min(1000, (int) ($_POST['max_bulk_rows'] ?? 200))),
             ];
 
             // Validate allowed_templates entries
@@ -186,6 +194,8 @@ class IDCardAdminController extends BaseController
             'max_cards_per_user'  => 200,
             'allowed_templates'   => [],
             'ai_enabled'          => true,
+            'bulk_enabled'        => true,
+            'max_bulk_rows'       => 200,
         ];
         $settings = array_merge($defaults, is_array($saved) ? $saved : []);
 
@@ -196,6 +206,38 @@ class IDCardAdminController extends BaseController
             'title'          => 'CardX Admin — Settings',
             'settings'       => $settings,
             'templates'      => $projectConfig['templates'] ?? [],
+        ]);
+    }
+
+    // ------------------------------------------------------------------ //
+    //  Bulk jobs                                                          //
+    // ------------------------------------------------------------------ //
+
+    public function bulkJobs(): void
+    {
+        $model    = $this->model();
+        $page     = max(1, (int) ($_GET['page'] ?? 1));
+        $perPage  = 30;
+        $offset   = ($page - 1) * $perPage;
+
+        $total = $model->countAllBulkJobs();
+        $jobs  = $model->getAllBulkJobs($perPage, $offset);
+        $pages = max(1, (int) ceil($total / $perPage));
+
+        $stats = [
+            'total'     => $total,
+            'today'     => $model->countBulkJobsToday(),
+            'cards_sum' => $model->sumBulkCardsGenerated(),
+        ];
+
+        $this->view('admin/projects/idcard/bulk_jobs', [
+            'title'   => 'CardX Admin — Bulk Jobs',
+            'jobs'    => $jobs,
+            'total'   => $total,
+            'page'    => $page,
+            'perPage' => $perPage,
+            'pages'   => $pages,
+            'stats'   => $stats,
         ]);
     }
 

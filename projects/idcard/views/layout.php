@@ -133,7 +133,7 @@ header("Expires: 0");
             border:none; color:#fff; cursor:pointer; display:none;
             align-items:center; justify-content:center;
             box-shadow:0 0.25rem 0.75rem rgba(99,102,241,0.4);
-            z-index:101; transition:transform 0.2s ease;
+            z-index:210; transition:transform 0.2s ease;
         }
         .sidebar-toggle svg { width:1.5rem; height:1.5rem; }
         .sidebar-overlay {
@@ -272,21 +272,7 @@ header("Expires: 0");
                     </a>
                 </nav>
             </div>
-            <div class="sidebar-section">
-                <div class="sidebar-title">Templates</div>
-                <nav class="sidebar-nav">
-                    <?php
-                    $tplConfig2 = require PROJECT_PATH . '/config.php';
-                    foreach ($tplConfig2['templates'] as $tKey => $tDef):
-                    ?>
-                    <a href="/projects/idcard/generate?template=<?= htmlspecialchars($tKey) ?>"
-                       style="font-size:0.8rem;">
-                        <span style="width:0.625rem;height:0.625rem;border-radius:50%;background:<?= htmlspecialchars($tDef['color']) ?>;display:inline-block;flex-shrink:0;"></span>
-                        <?= htmlspecialchars($tDef['name']) ?>
-                    </a>
-                    <?php endforeach; ?>
-                </nav>
-            </div>
+
         </aside>
 
         <!-- Overlay (mobile) -->

@@ -116,6 +116,41 @@ class IDCardController
         $aiPrompt       = $this->sanitize($_POST['ai_prompt'] ?? '');
         $aiSuggestions  = $this->generateAISuggestions($templateKey, $cardData, $aiPrompt);
 
+        $editCardId = (int)($_POST['edit_card_id'] ?? 0);
+
+        if ($editCardId > 0) {
+            // ── UPDATE existing card ──────────────────────────────────────
+            $existing = $this->model->findById($editCardId, $userId);
+            if (!$existing) {
+                $this->jsonError('Card not found or access denied.');
+                return;
+            }
+            // Preserve existing photo/logo when user updates card without uploading new files
+            if ($photoPath === null) {
+                $photoPath = $existing['photo_path'] ?? null;
+            }
+            if ($logoPath === null) {
+                $logoPath = $existing['logo_path'] ?? null;
+            }
+            $this->model->update($editCardId, $userId, [
+                'template_key'   => $templateKey,
+                'card_data'      => $cardData,
+                'design'         => $design,
+                'photo_path'     => $photoPath,
+                'logo_path'      => $logoPath,
+                'ai_prompt'      => $aiPrompt,
+                'ai_suggestions' => $aiSuggestions,
+            ]);
+            Logger::activity($userId, 'idcard_updated', ['card_id' => $editCardId, 'template' => $templateKey]);
+            if ($this->isAjax()) {
+                echo json_encode(['success' => true, 'card_id' => $editCardId, 'redirect' => '/projects/idcard/view/' . $editCardId]);
+                exit;
+            }
+            header('Location: /projects/idcard/view/' . $editCardId);
+            exit;
+        }
+
+        // ── CREATE new card ───────────────────────────────────────────────
         $cardId = $this->model->create([
             'user_id'        => $userId,
             'template_key'   => $templateKey,
@@ -165,6 +200,41 @@ class IDCardController
         ]);
     }
 
+
+    // ------------------------------------------------------------------ //
+    //  Edit (GET — pre-filled form)                                       //
+    // ------------------------------------------------------------------ //
+
+    public function edit(int $id): void
+    {
+        $userId = Auth::id();
+        $card   = $this->model->findById($id, $userId);
+
+        if (!$card) {
+            http_response_code(404);
+            echo "ID card not found.";
+            return;
+        }
+
+        $templates   = $this->config['templates'];
+        $templateKey = $card['template_key'];
+        if (!isset($templates[$templateKey])) {
+            $templateKey = 'corporate';
+        }
+
+        $this->render('generate', [
+            'title'        => 'Edit ID Card',
+            'user'         => Auth::user(),
+            'templates'    => $templates,
+            'selectedTpl'  => $templateKey,
+            'tplConfig'    => $templates[$templateKey],
+            'field_labels' => $this->config['field_labels'],
+            'editCardId'   => $id,
+            'editCardData' => $card['card_data'] ?? [],
+            'editDesign'   => $card['design'] ?? [],
+        ]);
+    }
+
     // ------------------------------------------------------------------ //
     //  History                                                             //
     // ------------------------------------------------------------------ //
@@ -206,18 +276,13 @@ class IDCardController
             return;
         }
 
-        // Serve the card view in a print-optimised layout
-        $templates = $this->config['templates'];
-        $tplConfig = $templates[$card['template_key']] ?? $templates['corporate'];
-
-        $this->render('view', [
-            'title'        => 'Download ID Card',
-            'user'         => Auth::user(),
-            'card'         => $card,
-            'tplConfig'    => $tplConfig,
-            'field_labels' => $this->config['field_labels'],
-            'printMode'    => true,
-        ]);
+        // Redirect to view page with auto-download trigger
+        $format = $this->sanitize($_GET['format'] ?? 'jpg');
+        if (!in_array($format, ['jpg', 'pdf'], true)) {
+            $format = 'jpg';
+        }
+        header('Location: /projects/idcard/view/' . $id . '?dl=' . $format);
+        exit;
     }
 
     // ------------------------------------------------------------------ //
