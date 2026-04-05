@@ -1639,7 +1639,6 @@ function submitBulk(e) {
                 +'<a href="/projects/idcard/bulk/cards" class="btn btn-primary btn-sm"><i class="fas fa-eye"></i> View Bulk Cards</a>'
                 +'<a href="/projects/idcard/history" class="btn btn-secondary btn-sm"><i class="fas fa-list"></i> All My Cards</a>'
                 +'</div></div>';
-            setTimeout(function(){ window.location.reload(); }, 3500);
         } else {
             document.getElementById('bulkResultInner').innerHTML =
                 '<div style="padding:12px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);border-radius:10px;color:#ef4444;">'
