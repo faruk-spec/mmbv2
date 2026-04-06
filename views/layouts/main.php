@@ -1993,7 +1993,8 @@ try {
 
     <?php
     // ── 2FA Setup Reminder Popup ──────────────────────────────────────────────
-    if (\Core\Auth::check()) {
+    $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+    if (\Core\Auth::check() && $currentPath !== '/2fa/setup') {
         $u2fa = \Core\Auth::user();
         $has2fa = !empty($u2fa['two_factor_enabled']) && (int)$u2fa['two_factor_enabled'] === 1;
         if (!$has2fa) {
@@ -2017,9 +2018,7 @@ try {
     <?php if (!empty($showPopup)): ?>
     <div id="twoFaPopup" style="display:flex;position:fixed;top:0;left:0;width:100%;height:100%;z-index:99999;align-items:center;justify-content:center;background:rgba(0,0,0,0.65);backdrop-filter:blur(5px);">
         <div id="twoFaCard" style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:18px;padding:28px 26px 24px;box-shadow:0 16px 56px rgba(0,0,0,0.55);max-width:360px;width:calc(100% - 40px);position:relative;transform:translateY(24px);opacity:0;transition:transform 0.4s cubic-bezier(.34,1.56,.64,1),opacity 0.3s ease;">
-            <?php if (empty($isNewUser)): ?>
             <button onclick="closeTwoFaPopup()" style="position:absolute;top:12px;right:14px;background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:1.2rem;line-height:1;" aria-label="Close">&times;</button>
-            <?php endif; ?>
             <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
                 <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--purple));display:flex;align-items:center;justify-content:center;flex-shrink:0;">
                     <i class="fas fa-shield-alt" style="color:#06060a;font-size:1.1rem;"></i>
@@ -2033,7 +2032,7 @@ try {
             </div>
             <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:18px;line-height:1.5;">
                 <?php if (!empty($isNewUser)): ?>
-                    Welcome! Please set up two-factor authentication to keep your new account safe.
+                    Welcome! Please set up two-factor authentication to keep your account safe.
                 <?php else: ?>
                     Your account doesn't have two-factor authentication enabled. Enable it now to add an extra layer of security.
                 <?php endif; ?>
@@ -2042,11 +2041,9 @@ try {
                 <a href="/2fa/setup" style="display:block;padding:10px 14px;border-radius:9px;background:linear-gradient(135deg,var(--cyan),var(--purple));color:#06060a;font-size:0.9rem;font-weight:700;text-decoration:none;text-align:center;">
                     <i class="fas fa-qrcode" style="margin-right:6px;"></i>Set up 2FA now
                 </a>
-                <?php if (empty($isNewUser)): ?>
                 <button onclick="closeTwoFaPopup()" style="padding:9px 14px;border-radius:9px;border:1px solid var(--border-color);background:transparent;color:var(--text-secondary);font-size:0.85rem;font-weight:500;cursor:pointer;width:100%;">
                     Remind me later
                 </button>
-                <?php endif; ?>
             </div>
         </div>
     </div>
