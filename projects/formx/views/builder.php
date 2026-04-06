@@ -85,6 +85,8 @@
     .fx-url-bar{margin-top:16px;padding:11px 14px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;font-size:.8rem;color:var(--text-secondary);display:flex;align-items:center;gap:8px;}
     .fx-url-bar a{color:var(--cyan);text-decoration:none;}
     .fx-url-bar a:hover{text-decoration:underline;}
+    /* Desktop/mobile visibility helpers */
+    .fx-mob-only{display:none;}
     /* Mobile */
     .fx-mob-field-edit{display:none;}
     .fx-sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99;}
@@ -107,6 +109,15 @@
         .fx-builder-body{flex-direction:column;}
         .fx-canvas-wrap{padding:14px;min-height:40vh;}
         .fx-canvas-wrap.mob-hidden{display:none;}
+        /* Tap-to-add palette: look like buttons */
+        .fx-palette-item{cursor:pointer;justify-content:space-between;}
+        .fx-palette-item::after{content:'+';font-size:1.1rem;font-weight:700;color:var(--cyan);flex-shrink:0;}
+        .fx-palette-item:active{background:rgba(0,240,255,.08);border-color:var(--cyan);}
+        /* Larger touch targets for field card action buttons */
+        .fx-field-card-btn{padding:7px 12px !important;font-size:.85rem !important;}
+        /* Desktop/mobile text */
+        .fx-mob-only{display:block !important;}
+        .fx-desk-only{display:none !important;}
     }
     /* Mobile tab bar */
     .fx-mob-tabs{display:none;}
@@ -305,7 +316,8 @@
 
                 <div style="border-top:1px solid var(--border-color);margin:16px 0 12px;"></div>
                 <div class="fx-panel-title" id="fxPaletteTitle">Add Fields</div>
-                <p style="font-size:.74rem;color:var(--text-secondary);margin-bottom:10px;">Drag onto canvas →</p>
+                <p class="fx-desk-only" style="font-size:.74rem;color:var(--text-secondary);margin-bottom:10px;">Drag onto canvas →</p>
+                <p class="fx-mob-only" style="font-size:.74rem;color:var(--text-secondary);margin-bottom:10px;">Tap any field to add it →</p>
 
                 <?php
                 $palette = [
@@ -342,7 +354,8 @@
                      ondrop="canvasDrop(event)">
                     <div id="fxPlaceholder" class="fx-canvas-placeholder">
                         <i class="fas fa-hand-pointer"></i>
-                        <p style="font-size:.875rem;">Drag fields here to build your form</p>
+                        <p class="fx-desk-only" style="font-size:.875rem;">Drag fields here to build your form</p>
+                        <p class="fx-mob-only" style="font-size:.875rem;">Tap <strong>Add Fields</strong> above to add your first field</p>
                     </div>
                 </div>
 
@@ -726,6 +739,16 @@ document.querySelectorAll('.fx-palette-item').forEach(el => {
     el.addEventListener('dragstart', e => {
         e.dataTransfer.setData('newField', el.dataset.fieldType);
         e.dataTransfer.effectAllowed = 'copy';
+    });
+    // Mobile: tap to add field directly (HTML5 DnD doesn't fire on touch)
+    el.addEventListener('click', function() {
+        if (!window.matchMedia('(max-width: 680px)').matches) return;
+        addField(el.dataset.fieldType);
+        mobSwitchTab('canvas');
+        setTimeout(function() {
+            var cards = document.getElementById('fxCanvas').querySelectorAll('.fx-field-card');
+            if (cards.length) cards[cards.length - 1].scrollIntoView({behavior: 'smooth', block: 'nearest'});
+        }, 60);
     });
 });
 
