@@ -36,7 +36,7 @@ class DashboardController
         );
 
         $folders = $db->fetchAll(
-            "SELECT nf.*, COUNT(n.id) as note_count FROM notex_folders nf LEFT JOIN notes n ON n.folder_id = nf.id AND n.status = 'active' WHERE nf.user_id = ? GROUP BY nf.id ORDER BY nf.sort_order ASC",
+            "SELECT nf.*, COUNT(n.id) as note_count FROM notex_folders nf LEFT JOIN notex_notes n ON n.folder_id = nf.id AND n.status = 'active' WHERE nf.user_id = ? GROUP BY nf.id ORDER BY nf.sort_order ASC",
             [$user['id']]
         );
 
