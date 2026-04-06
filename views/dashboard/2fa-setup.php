@@ -46,13 +46,34 @@
                 </p>
                 
                 <?php if (isset($secret) && isset($provisioningUri)): ?>
-                <div style="background: var(--bg-secondary); padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                    <div style="background: var(--bg-secondary); padding: 20px; border-radius: 10px; margin-bottom: 20px;">
                     <h3 style="font-size: 1rem; margin-bottom: 15px;">Step 1: Scan QR Code</h3>
                     <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 15px;">
                         Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.)
                     </p>
                     <div style="text-align: center; padding: 20px; background: white; border-radius: 10px; margin-bottom: 15px;">
-                        <canvas id="qrCanvas" style="max-width: 200px; height: auto; display: block; margin: 0 auto;"></canvas>
+                        <?php if (!empty($qrCodeUrl)): ?>
+                            <img src="<?= htmlspecialchars($qrCodeUrl) ?>" alt="2FA QR Code" style="max-width: 200px; height: auto; display: block; margin: 0 auto;">
+                        <?php else: ?>
+                            <canvas id="qrCanvas" style="max-width: 200px; height: auto; display: block; margin: 0 auto;"></canvas>
+                            <script>
+                            (function() {
+                                var uri = <?= json_encode($provisioningUri) ?>;
+                                function loadQR() {
+                                    if (typeof QRCode === 'undefined') return;
+                                    try {
+                                        var qr = new QRCode(uri, 'M');
+                                        qr.toCanvas(document.getElementById('qrCanvas'), {moduleSize: 4, quiet: 4});
+                                    } catch(e) {}
+                                }
+                                if (document.readyState === 'loading') {
+                                    document.addEventListener('DOMContentLoaded', loadQR);
+                                } else {
+                                    loadQR();
+                                }
+                            })();
+                            </script>
+                        <?php endif; ?>
                     </div>
                     
                     <h3 style="font-size: 1rem; margin-bottom: 10px;">Or enter this code manually:</h3>
@@ -60,26 +81,6 @@
                         <?= View::e($secret) ?>
                     </div>
                 </div>
-                <script>
-                (function() {
-                    var uri = <?= json_encode($provisioningUri) ?>;
-                    function loadQR() {
-                        if (typeof QRCode === 'undefined') return;
-                        try {
-                            var qr = new QRCode(uri, 'M');
-                            qr.toCanvas(document.getElementById('qrCanvas'), {moduleSize: 4, quiet: 4});
-                        } catch(e) {
-                            document.getElementById('qrCanvas').insertAdjacentHTML('afterend',
-                                '<p style="color:#666;font-size:0.85rem;">Could not render QR code. Use the manual code below.</p>');
-                        }
-                    }
-                    if (document.readyState === 'loading') {
-                        document.addEventListener('DOMContentLoaded', loadQR);
-                    } else {
-                        loadQR();
-                    }
-                })();
-                </script>
                 
                 <form method="POST" action="/2fa/enable">
                     <?= \Core\Security::csrfField() ?>
