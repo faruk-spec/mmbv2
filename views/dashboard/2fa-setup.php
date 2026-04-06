@@ -52,19 +52,30 @@
                         Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.)
                     </p>
                     <div style="text-align: center; padding: 20px; background: white; border-radius: 10px; margin-bottom: 15px;">
-                        <canvas id="qrCanvas" style="display: block; margin: 0 auto;"></canvas>
+                        <div id="qrCanvas" style="display: inline-block;"></div>
                     </div>
+                    <script src="https://unpkg.com/qr-code-styling@1.6.0-rc.1/lib/qr-code-styling.js"></script>
                     <script>
                     (function() {
                         var uri = <?= json_encode($provisioningUri) ?>;
                         function renderQR() {
-                            var canvas = document.getElementById('qrCanvas');
-                            if (!canvas || typeof QRCode === 'undefined') return;
+                            var container = document.getElementById('qrCanvas');
+                            if (!container || typeof QRCodeStyling === 'undefined') {
+                                setTimeout(renderQR, 100);
+                                return;
+                            }
                             try {
-                                var qr = new QRCode(uri, 'M');
-                                qr.toCanvas(canvas, {moduleSize: 6, quiet: 4});
+                                var qr = new QRCodeStyling({
+                                    width: 220,
+                                    height: 220,
+                                    data: uri,
+                                    dotsOptions: { color: '#000000', type: 'square' },
+                                    backgroundOptions: { color: '#ffffff' },
+                                    qrOptions: { errorCorrectionLevel: 'M' }
+                                });
+                                qr.append(container);
                             } catch(e) {
-                                canvas.parentNode.innerHTML =
+                                container.innerHTML =
                                     '<p style="color:#666;font-size:0.85rem;">Could not render QR code. Please use the manual code below.</p>';
                             }
                         }
