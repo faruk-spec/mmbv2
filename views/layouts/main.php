@@ -2002,8 +2002,8 @@ try {
             $isNewUser   = (time() - $createdAt) < 86400; // account < 24 h old
             $today       = date('Y-m-d');
             $lastPrompt  = $_SESSION['2fa_prompt_shown_date'] ?? '';
-            $showPopup   = $isNewUser || $lastPrompt !== $today;
-            if ($showPopup && !$isNewUser) {
+            $showPopup   = $lastPrompt !== $today;
+            if ($showPopup) {
                 $_SESSION['2fa_prompt_shown_date'] = $today;
             }
         } else {
