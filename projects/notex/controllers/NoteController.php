@@ -60,12 +60,14 @@ class NoteController
         $db      = Database::projectConnection('notex');
         $folders = $db->fetchAll("SELECT * FROM notex_folders WHERE user_id = ? ORDER BY sort_order ASC", [$user['id']]);
         $tags    = $db->fetchAll("SELECT * FROM notex_tags WHERE user_id = ? ORDER BY name ASC", [$user['id']]);
+        $preselectedFolder = isset($_GET['folder']) ? (int) $_GET['folder'] : null;
 
         View::render('projects/notex/create', [
             'title'   => 'New Note',
             'subtitle'=> 'Create a note',
             'folders' => $folders,
             'tags'    => $tags,
+            'preselectedFolder' => $preselectedFolder,
         ]);
     }
 

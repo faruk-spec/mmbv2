@@ -2,131 +2,230 @@
 <?php View::extend('notex:app'); ?>
 <?php View::section('content'); ?>
 
-<div style="max-width:900px;">
-<div class="card mb-3">
-    <div class="card-header" style="margin-bottom:16px;">
-        <div class="card-title"><i class="fas fa-edit" style="color:var(--accent);"></i> <?= View::e($note['title']) ?></div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <form method="POST" action="/projects/notex/notes/<?= $note['id'] ?>/pin" style="display:inline;">
-                <input type="hidden" name="_token" value="<?= Security::generateCsrfToken() ?>">
-                <button type="submit" class="btn btn-secondary btn-sm" title="<?= $note['is_pinned'] ? 'Unpin' : 'Pin' ?>">
-                    <i class="fas fa-thumbtack" style="color:<?= $note['is_pinned'] ? 'var(--accent)' : 'inherit' ?>;"></i>
+<style>
+    .nx-editor-layout {
+        display: grid;
+        grid-template-columns: 1fr 18rem;
+        gap: 1rem;
+        align-items: start;
+    }
+    .nx-editor-main { display: flex; flex-direction: column; gap: 0.75rem; }
+    .nx-editor-sidebar { display: flex; flex-direction: column; gap: 0.75rem; }
+    .nx-field-title {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 0.5rem;
+        color: var(--text-primary);
+        font-family: inherit;
+        font-size: 1.1rem;
+        font-weight: 600;
+        transition: border-color 0.2s;
+    }
+    .nx-field-title:focus { outline: none; border-color: var(--nx-accent); box-shadow: 0 0 0 3px rgba(245,158,11,0.1); }
+    .nx-field-content {
+        width: 100%;
+        min-height: 28rem;
+        padding: 1rem;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 0.5rem;
+        color: var(--text-primary);
+        font-family: inherit;
+        font-size: var(--font-sm);
+        line-height: 1.8;
+        resize: vertical;
+        transition: border-color 0.2s;
+    }
+    .nx-field-content:focus { outline: none; border-color: var(--nx-accent); box-shadow: 0 0 0 3px rgba(245,158,11,0.1); }
+    .nx-sidebar-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 0.625rem;
+        padding: 1rem;
+    }
+    .nx-sidebar-card-title {
+        font-size: var(--font-xs);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-secondary);
+        margin-bottom: 0.75rem;
+    }
+    .nx-pin-toggle {
+        display: flex;
+        align-items: center;
+        gap: 0.625rem;
+        cursor: pointer;
+        padding: 0.5rem 0.75rem;
+        border-radius: 0.375rem;
+        background: var(--bg-secondary);
+        transition: background 0.2s;
+    }
+    .nx-pin-toggle:hover { background: rgba(245,158,11,0.1); }
+    .nx-tag-chip {
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+        padding: 0.3125rem 0.625rem;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 1.25rem;
+        font-size: var(--font-xs);
+        cursor: pointer;
+        transition: border-color 0.2s;
+        user-select: none;
+    }
+    .nx-tag-chip input[type=checkbox] { display: none; }
+    .nx-tag-chip.checked { border-color: var(--nx-accent); background: rgba(245,158,11,0.1); }
+    .nx-danger-row {
+        display: flex;
+        gap: 0.5rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid var(--border-color);
+        margin-top: 0.25rem;
+    }
+    @media (max-width: 56rem) {
+        .nx-editor-layout { grid-template-columns: 1fr; }
+        .nx-editor-sidebar { order: -1; }
+        .nx-field-content { min-height: 14rem; }
+    }
+</style>
+
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
+    <h2 style="font-size:var(--font-xl);font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:70%;">
+        <i class="fas fa-edit" style="color:var(--nx-accent);margin-right:0.375rem;"></i><?= View::e($note['title']) ?>
+    </h2>
+    <a href="/projects/notex/notes" class="btn btn-secondary btn-sm">
+        <i class="fas fa-arrow-left"></i> Back
+    </a>
+</div>
+
+<form method="POST" action="/projects/notex/notes/<?= $note['id'] ?>/update">
+    <input type="hidden" name="_token" value="<?= Security::generateCsrfToken() ?>">
+    <div class="nx-editor-layout">
+        <!-- Main Column -->
+        <div class="nx-editor-main">
+            <input type="text" name="title" class="nx-field-title"
+                   value="<?= View::e($note['title']) ?>" required>
+            <textarea name="content" class="nx-field-content"><?= View::e($note['content'] ?? '') ?></textarea>
+            <div style="display:flex;gap:0.625rem;flex-wrap:wrap;">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save
                 </button>
-            </form>
-            <form method="POST" action="/projects/notex/notes/<?= $note['id'] ?>/delete" onsubmit="return confirm('Move to trash?');" style="display:inline;">
-                <input type="hidden" name="_token" value="<?= Security::generateCsrfToken() ?>">
-                <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></button>
-            </form>
-        </div>
-    </div>
-
-    <form method="POST" action="/projects/notex/notes/<?= $note['id'] ?>/update">
-        <input type="hidden" name="_token" value="<?= Security::generateCsrfToken() ?>">
-
-        <div class="form-group">
-            <label class="form-label">Title</label>
-            <input type="text" name="title" class="form-input" value="<?= View::e($note['title']) ?>" required>
+                <a href="/projects/notex/notes" class="btn btn-secondary">Back to Notes</a>
+            </div>
         </div>
 
-        <div class="form-group">
-            <label class="form-label">Content</label>
-            <textarea name="content" class="form-input" style="min-height:350px;"><?= View::e($note['content'] ?? '') ?></textarea>
-        </div>
-
-        <div class="form-row">
-            <div class="form-group">
-                <label class="form-label">Folder</label>
-                <select name="folder_id" class="form-input">
+        <!-- Sidebar -->
+        <div class="nx-editor-sidebar">
+            <!-- Folder -->
+            <div class="nx-sidebar-card">
+                <div class="nx-sidebar-card-title"><i class="fas fa-folder" style="margin-right:0.3rem;"></i> Folder</div>
+                <select name="folder_id" class="form-input form-select" style="font-size:var(--font-sm);">
                     <option value="">No folder</option>
                     <?php foreach ($folders as $folder): ?>
-                    <option value="<?= $folder['id'] ?>" <?= $note['folder_id'] == $folder['id'] ? 'selected' : '' ?>><?= View::e($folder['name']) ?></option>
+                    <option value="<?= $folder['id'] ?>" <?= $note['folder_id'] == $folder['id'] ? 'selected' : '' ?>>
+                        <?= View::e($folder['name']) ?>
+                    </option>
                     <?php endforeach; ?>
                 </select>
             </div>
-            <div class="form-group">
-                <label class="form-label">Note Color</label>
-                <input type="color" name="color" class="form-input" value="<?= View::e($note['color'] ?? '#ffd700') ?>" style="height:44px;padding:4px 8px;cursor:pointer;">
-            </div>
-        </div>
 
-        <?php if (!empty($allTags)): ?>
-        <div class="form-group">
-            <label class="form-label">Tags</label>
-            <div style="display:flex;flex-wrap:wrap;gap:8px;">
-                <?php foreach ($allTags as $tag): ?>
-                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px 12px;background:var(--bg-secondary);border-radius:20px;font-size:13px;">
-                    <input type="checkbox" name="tag_ids[]" value="<?= $tag['id'] ?>"
-                           <?= in_array($tag['id'], $noteTagIds ?? []) ? 'checked' : '' ?>
-                           style="accent-color:var(--accent);">
-                    <span style="color:<?= View::e($tag['color']) ?>;">● </span><?= View::e($tag['name']) ?>
+            <!-- Note Color -->
+            <div class="nx-sidebar-card">
+                <div class="nx-sidebar-card-title"><i class="fas fa-palette" style="margin-right:0.3rem;"></i> Note Color</div>
+                <input type="color" name="color" class="form-input"
+                       value="<?= View::e($note['color'] ?? '#f59e0b') ?>"
+                       style="height:2.75rem;padding:0.25rem 0.5rem;cursor:pointer;width:100%;">
+            </div>
+
+            <!-- Pin & Actions -->
+            <div class="nx-sidebar-card">
+                <div class="nx-sidebar-card-title"><i class="fas fa-sliders-h" style="margin-right:0.3rem;"></i> Options</div>
+                <label class="nx-pin-toggle">
+                    <input type="checkbox" name="is_pinned" value="1"
+                           <?= $note['is_pinned'] ? 'checked' : '' ?>
+                           style="width:1rem;height:1rem;accent-color:var(--nx-accent);">
+                    <i class="fas fa-thumbtack" style="color:var(--nx-accent);font-size:0.8125rem;"></i>
+                    <span style="font-size:var(--font-sm);">Pin this note</span>
                 </label>
-                <?php endforeach; ?>
+                <div class="nx-danger-row">
+                    <form method="POST" action="/projects/notex/notes/<?= $note['id'] ?>/delete"
+                          onsubmit="return confirm('Move to trash?');" style="flex:1;">
+                        <input type="hidden" name="_token" value="<?= Security::generateCsrfToken() ?>">
+                        <button type="submit" class="btn btn-danger btn-sm" style="width:100%;">
+                            <i class="fas fa-trash"></i> Move to Trash
+                        </button>
+                    </form>
+                </div>
             </div>
-        </div>
-        <?php endif; ?>
 
-        <div class="form-group">
-            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-                <input type="checkbox" name="is_pinned" value="1"
-                       <?= $note['is_pinned'] ? 'checked' : '' ?>
-                       style="width:16px;height:16px;accent-color:var(--accent);">
-                <span><i class="fas fa-thumbtack" style="color:var(--accent);margin-right:4px;"></i> Pin this note</span>
-            </label>
-        </div>
+            <?php if (!empty($allTags)): ?>
+            <!-- Tags -->
+            <div class="nx-sidebar-card">
+                <div class="nx-sidebar-card-title"><i class="fas fa-tags" style="margin-right:0.3rem;"></i> Tags</div>
+                <div style="display:flex;flex-wrap:wrap;gap:0.375rem;">
+                    <?php foreach ($allTags as $tag): ?>
+                    <?php $isChecked = in_array($tag['id'], $noteTagIds ?? []); ?>
+                    <label class="nx-tag-chip <?= $isChecked ? 'checked' : '' ?>">
+                        <input type="checkbox" name="tag_ids[]" value="<?= $tag['id'] ?>"
+                               <?= $isChecked ? 'checked' : '' ?>
+                               onchange="this.closest('label').classList.toggle('checked', this.checked)">
+                        <span style="color:<?= View::e($tag['color']) ?>;font-size:0.625rem;">●</span>
+                        <?= View::e($tag['name']) ?>
+                    </label>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php endif; ?>
 
-        <div style="display:flex;gap:12px;">
-            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save</button>
-            <a href="/projects/notex/notes" class="btn btn-secondary">Back</a>
-        </div>
-    </form>
-</div>
+            <!-- Share Note -->
+            <div class="nx-sidebar-card">
+                <div class="nx-sidebar-card-title"><i class="fas fa-share-alt" style="margin-right:0.3rem;color:var(--cyan);"></i> Share</div>
+                <form method="POST" action="/projects/notex/notes/<?= $note['id'] ?>/share">
+                    <input type="hidden" name="_token" value="<?= Security::generateCsrfToken() ?>">
+                    <div style="margin-bottom:0.5rem;">
+                        <label class="form-label" style="font-size:var(--font-xs);">Access</label>
+                        <select name="access" class="form-input form-select" style="font-size:var(--font-sm);">
+                            <option value="view">View only</option>
+                            <option value="edit">Can edit</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom:0.625rem;">
+                        <label class="form-label" style="font-size:var(--font-xs);">Expires</label>
+                        <input type="datetime-local" name="expires_at" class="form-input" style="font-size:var(--font-sm);">
+                    </div>
+                    <button type="submit" class="btn btn-secondary btn-sm" style="width:100%;">
+                        <i class="fas fa-link"></i> Generate Link
+                    </button>
+                </form>
+                <?php if ($note['share_token']): ?>
+                <div style="margin-top:0.625rem;padding:0.625rem;background:var(--bg-secondary);border-radius:0.375rem;font-size:var(--font-xs);word-break:break-all;">
+                    <a href="/projects/notex/shared/<?= View::e($note['share_token']) ?>" style="color:var(--cyan);" target="_blank">
+                        /shared/<?= View::e($note['share_token']) ?>
+                    </a>
+                </div>
+                <?php endif; ?>
+            </div>
 
-<!-- Share Note -->
-<div class="card mb-3">
-    <div class="card-header">
-        <div class="card-title"><i class="fas fa-share-alt" style="color:var(--cyan);"></i> Share Note</div>
+            <?php if (!empty($versions)): ?>
+            <!-- Version History -->
+            <div class="nx-sidebar-card">
+                <div class="nx-sidebar-card-title"><i class="fas fa-history" style="margin-right:0.3rem;color:var(--magenta);"></i> Version History</div>
+                <div style="display:flex;flex-direction:column;gap:0.375rem;">
+                    <?php foreach ($versions as $i => $ver): ?>
+                    <div style="display:flex;justify-content:space-between;align-items:center;font-size:var(--font-xs);padding:0.375rem 0.5rem;background:var(--bg-secondary);border-radius:0.375rem;">
+                        <span style="color:var(--text-secondary);">v<?= count($versions) - $i ?></span>
+                        <span style="color:var(--text-secondary);"><?= date('M d, H:i', strtotime($ver['created_at'])) ?></span>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php endif; ?>
+        </div>
     </div>
-    <form method="POST" action="/projects/notex/notes/<?= $note['id'] ?>/share" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
-        <input type="hidden" name="_token" value="<?= Security::generateCsrfToken() ?>">
-        <div class="form-group" style="margin:0;min-width:120px;">
-            <label class="form-label">Access</label>
-            <select name="access" class="form-input">
-                <option value="view">View only</option>
-                <option value="edit">Can edit</option>
-            </select>
-        </div>
-        <div class="form-group" style="margin:0;min-width:180px;">
-            <label class="form-label">Expires</label>
-            <input type="datetime-local" name="expires_at" class="form-input">
-        </div>
-        <button type="submit" class="btn btn-secondary" style="align-self:flex-end;margin-bottom:18px;"><i class="fas fa-link"></i> Generate Link</button>
-    </form>
-    <?php if ($note['share_token']): ?>
-    <div style="margin-top:10px;padding:12px;background:var(--bg-secondary);border-radius:8px;font-size:13px;">
-        Current share link: <a href="/projects/notex/shared/<?= View::e($note['share_token']) ?>" style="color:var(--cyan);">/shared/<?= View::e($note['share_token']) ?></a>
-    </div>
-    <?php endif; ?>
-</div>
-
-<!-- Version history -->
-<?php if (!empty($versions)): ?>
-<div class="card">
-    <div class="card-title" style="margin-bottom:14px;"><i class="fas fa-history" style="color:var(--accent2);"></i> Version History</div>
-    <div class="table-container">
-        <table>
-            <thead><tr><th>#</th><th>Saved At</th></tr></thead>
-            <tbody>
-            <?php foreach ($versions as $i => $ver): ?>
-            <tr>
-                <td><?= count($versions) - $i ?></td>
-                <td><?= date('M d, Y H:i', strtotime($ver['created_at'])) ?></td>
-            </tr>
-            <?php endforeach; ?>
-            </tbody>
-        </table>
-    </div>
-</div>
-<?php endif; ?>
-</div>
+</form>
 
 <?php View::end(); ?>
