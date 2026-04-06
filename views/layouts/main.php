@@ -29,12 +29,12 @@ try {
 // Apply user display settings (date format etc.)
 try {
     if (\Core\Auth::check()) {
-        $__userProfile = isset($userProfile) ? $userProfile : 
+        $userSettingsProfile = isset($userProfile) ? $userProfile : 
             $db->fetch("SELECT display_settings FROM user_profiles WHERE user_id = ?", [\Core\Auth::id()]);
-        if ($__userProfile && !empty($__userProfile['display_settings'])) {
-            $__ds = json_decode($__userProfile['display_settings'], true);
-            if (!empty($__ds['date_format'])) {
-                \Core\Helpers::$userDateFormat = $__ds['date_format'];
+        if ($userSettingsProfile && !empty($userSettingsProfile['display_settings'])) {
+            $userDisplaySettings = json_decode($userSettingsProfile['display_settings'], true);
+            if (!empty($userDisplaySettings['date_format'])) {
+                \Core\Helpers::$userDateFormat = $userDisplaySettings['date_format'];
             }
         }
     }
@@ -1421,8 +1421,8 @@ try {
                         $dbStatus = false;
                         $dbLabel = 'Error';
                         try {
-                            $statusDb = \Core\Database::getInstance();
-                            $statusDb->fetch("SELECT 1");
+                            $statusDbCheck = \Core\Database::getInstance();
+                            $statusDbCheck->fetch("SELECT 1");
                             $dbStatus = true;
                             $dbLabel = 'Connected';
                         } catch (\Exception $_) {

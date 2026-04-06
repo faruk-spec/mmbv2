@@ -330,7 +330,8 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
                     <?php
                     // Show full name: first word only, max 10 characters
                     $displayName = $user['name'] ?? $user['username'] ?? 'User';
-                    $firstName = explode(' ', trim($displayName))[0];
+                    $nameParts = explode(' ', trim($displayName));
+                    $firstName = $nameParts[0] !== '' ? $nameParts[0] : ($user['username'] ?? 'User');
                     if (strlen($firstName) > 10) {
                         $firstName = substr($firstName, 0, 10) . '…';
                     }
