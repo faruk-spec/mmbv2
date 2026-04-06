@@ -342,19 +342,8 @@ class HomeContentController extends BaseController
         // Store uploads under /storage/uploads/home – served via the /uploads/{path} route
         $uploadDir = BASE_PATH . '/storage/uploads/home';
         if (!is_dir($uploadDir)) {
-            if (!mkdir($uploadDir, 0775, true)) {
-                Logger::error('Failed to create upload directory: ' . $uploadDir);
-                throw new \Exception('Failed to create upload directory.');
-            }
-        }
-
-        // Ensure the directory is writable
-        if (!is_writable($uploadDir)) {
-            @chmod($uploadDir, 0775);
-            if (!is_writable($uploadDir)) {
-                Logger::error('Upload directory is not writable: ' . $uploadDir);
-                throw new \Exception('Upload directory is not writable. Please check file permissions.');
-            }
+            @mkdir($uploadDir, 0777, true);
+            @chmod($uploadDir, 0777);
         }
 
         // Validate MIME type using finfo (not the browser-supplied value)

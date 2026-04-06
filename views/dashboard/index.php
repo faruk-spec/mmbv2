@@ -32,7 +32,7 @@
                     $cardColor = htmlspecialchars($project['color'] ?? '#00f0ff');
                     if (!preg_match('/^#[0-9A-Fa-f]{6}$/', $cardColor)) { $cardColor = '#00f0ff'; }
                 ?>
-                    <a href="<?= htmlspecialchars($project['url'] ?? '/projects/' . $key) ?>" class="application-card" style="display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border-color); padding: 20px 12px 16px; transition: all 0.3s ease; text-align: center; text-decoration: none; color: inherit; aspect-ratio: 1; overflow: hidden;">
+                    <a href="<?= htmlspecialchars($project['url'] ?? '/projects/' . $key) ?>" class="application-card" style="display: flex; flex-direction: column; align-items: center; justify-content: flex-start; background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border-color); padding: 20px 12px 16px; transition: all 0.3s ease; text-align: center; text-decoration: none; color: inherit; aspect-ratio: 1; overflow: hidden;">
                         <div style="width: 64px; height: 64px; min-width: 64px; min-height: 64px; background: <?= $cardColor ?>20; border-radius: 14px; border: 2px solid <?= $cardColor ?>40; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; overflow: hidden; flex-shrink: 0;">
                             <?php if (!empty($project['logo_url'])): ?>
                                 <img src="<?= htmlspecialchars($project['logo_url']) ?>" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">
