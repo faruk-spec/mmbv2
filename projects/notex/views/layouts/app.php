@@ -23,6 +23,7 @@
             --text-secondary: #8892a6;
             --border-color: rgba(255,255,255,0.1);
             --sidebar-width: 270px;
+            --navbar-height: 3.75rem;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Poppins', sans-serif; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; }
@@ -35,7 +36,7 @@
         .app-container { display: flex; min-height: 100vh; }
 
         /* Sidebar */
-        .sidebar { width: var(--sidebar-width); background: rgba(12,12,18,0.97); border-right: 1px solid var(--border-color); position: fixed; height: 100vh; overflow-y: auto; z-index: 1000; }
+        .sidebar { width: var(--sidebar-width); background: rgba(12,12,18,0.97); border-right: 1px solid var(--border-color); position: fixed; top: var(--navbar-height); height: calc(100vh - var(--navbar-height)); overflow-y: auto; z-index: 1000; }
         .sidebar::-webkit-scrollbar { width: 4px; }
         .sidebar::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 2px; }
         .sidebar-header { padding: 22px 20px; border-bottom: 1px solid var(--border-color); }
@@ -136,6 +137,7 @@
     </style>
 </head>
 <body>
+<?php require_once BASE_PATH . '/views/layouts/navbar.php'; ?>
 <div class="app-container">
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
