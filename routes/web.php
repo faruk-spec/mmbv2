@@ -46,6 +46,7 @@ $router->get('/security', 'DashboardController@security', ['auth']);
 $router->post('/security/set-password', 'DashboardController@setPassword', ['auth']);
 $router->post('/security/password', 'DashboardController@updatePassword', ['auth']);
 $router->post('/security/revoke-session', 'DashboardController@revokeSession', ['auth']);
+$router->post('/security/revoke-sessions-bulk', 'DashboardController@revokeSessionsBulk', ['auth']);
 $router->get('/activity', 'DashboardController@activity', ['auth']);
 $router->get('/settings', 'DashboardController@settings', ['auth']);
 $router->post('/settings', 'DashboardController@updateSettings', ['auth']);

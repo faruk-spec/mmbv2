@@ -290,13 +290,25 @@ if (\Core\GoogleOAuth::isEnabled()) {
 
 <div class="card mt-3" style="border-radius: 10px; overflow: hidden; border: 1px solid var(--border-color); margin-top: 24px;">
     <div class="card-header" style="background: linear-gradient(135deg, rgba(0, 255, 136, 0.1) 0%, rgba(0, 240, 255, 0.1) 100%); border-bottom: 1px solid var(--border-color); padding: 12px;">
-        <h3 class="card-title" style="font-size: 0.9rem; display: flex; align-items: center; gap: 10px; margin: 0;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2">
-                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
-                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
-            </svg>
-            Active Sessions
-        </h3>
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+            <h3 class="card-title" style="font-size: 0.9rem; display: flex; align-items: center; gap: 10px; margin: 0;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2">
+                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                </svg>
+                Active Sessions
+                <span style="background: rgba(0,255,136,0.15); color: var(--green); border-radius: 12px; padding: 2px 8px; font-size: 0.75rem;"><?= count($sessions) ?></span>
+            </h3>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <label style="font-size: 0.8rem; color: var(--text-secondary);">Rows:</label>
+                <select id="sessionsPerPage" style="padding: 4px 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-primary); font-size: 0.8rem;" onchange="changeSessionsPerPage(this.value)">
+                    <option value="10" selected>10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+            </div>
+        </div>
     </div>
     
     <div style="padding: 12px;">
@@ -310,60 +322,194 @@ if (\Core\GoogleOAuth::isEnabled()) {
                 No active sessions found
             </p>
         <?php else: ?>
-            <div style="overflow-x: auto;">
-                <table class="table" style="width: 100%; border-collapse: separate; border-spacing: 0;">
-                    <thead>
-                        <tr style="background: var(--bg-secondary);">
-                            <th style="padding: 16px; text-align: left; border-bottom: 1px solid var(--border-color); font-weight: 600; color: var(--text-primary);">Device</th>
-                            <th style="padding: 16px; text-align: left; border-bottom: 1px solid var(--border-color); font-weight: 600; color: var(--text-primary);">IP Address</th>
-                            <th style="padding: 16px; text-align: left; border-bottom: 1px solid var(--border-color); font-weight: 600; color: var(--text-primary);">Last Activity</th>
-                            <th style="padding: 16px; text-align: left; border-bottom: 1px solid var(--border-color); font-weight: 600; color: var(--text-primary);">Status</th>
-                            <th style="padding: 16px; text-align: left; border-bottom: 1px solid var(--border-color); font-weight: 600; color: var(--text-primary);">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($sessions as $session): ?>
-                            <?php 
-                                $deviceInfo = json_decode($session['device_info'], true);
-                                $isCurrentSession = $session['session_id'] === session_id();
-                            ?>
-                            <tr style="border-bottom: 1px solid var(--border-color);">
-                                <td style="padding: 16px; color: var(--text-primary);">
-                                    <?= View::e($deviceInfo['browser'] ?? 'Unknown') ?> on <?= View::e($deviceInfo['platform'] ?? 'Unknown') ?>
-                                    <?php if ($isCurrentSession): ?>
-                                        <span style="color: var(--green); font-size: 0.8rem;"> (Current)</span>
-                                    <?php endif; ?>
-                                </td>
-                                <td style="padding: 16px; color: var(--text-secondary);"><code><?= View::e($session['ip_address']) ?></code></td>
-                                <td style="padding: 16px; color: var(--text-secondary);"><?= Helpers::timeAgo($session['last_activity_at']) ?></td>
-                                <td style="padding: 16px; color: var(--text-secondary);">
-                                    <?php if (strtotime($session['expires_at']) > time()): ?>
-                                        <span style="color: var(--green);">Active</span>
-                                    <?php else: ?>
-                                        <span style="color: var(--orange);">Expired</span>
-                                    <?php endif; ?>
-                                </td>
-                                <td style="padding: 16px;">
-                                    <?php if (!$isCurrentSession): ?>
-                                        <form method="POST" action="/security/revoke-session" style="display: inline;">
-                                            <?= \Core\Security::csrfField() ?>
-                                            <input type="hidden" name="session_id" value="<?= $session['id'] ?>">
-                                            <button type="submit" onclick="return confirm('Revoke this session?')" style="padding: 6px 12px; background: var(--red); border: none; border-radius: 6px; color: white; font-size: 0.8rem; cursor: pointer;">
+            <!-- Bulk revoke form -->
+            <form method="POST" action="/security/revoke-sessions-bulk" id="bulkRevokeForm">
+                <?= \Core\Security::csrfField() ?>
+                
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+                    <label style="display: flex; align-items: center; gap: 6px; font-size: 0.85rem; cursor: pointer; color: var(--text-secondary);">
+                        <input type="checkbox" id="selectAllSessions" onchange="toggleAllSessions(this)" style="width: 15px; height: 15px;">
+                        Select All Non-Current
+                    </label>
+                    <button type="button" id="bulkRevokeBtn" onclick="confirmBulkRevoke()" 
+                            style="display: none; padding: 6px 14px; background: var(--red); border: none; border-radius: 6px; color: white; font-size: 0.8rem; cursor: pointer; font-weight: 600;">
+                        Revoke Selected
+                    </button>
+                </div>
+                
+                <div style="overflow-x: auto;">
+                    <table class="table" style="width: 100%; border-collapse: separate; border-spacing: 0;">
+                        <thead>
+                            <tr style="background: var(--bg-secondary);">
+                                <th style="padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border-color); font-weight: 600; color: var(--text-primary); width: 36px;"></th>
+                                <th style="padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border-color); font-weight: 600; color: var(--text-primary);">Device</th>
+                                <th style="padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border-color); font-weight: 600; color: var(--text-primary);">IP Address</th>
+                                <th style="padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border-color); font-weight: 600; color: var(--text-primary);">Last Activity</th>
+                                <th style="padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border-color); font-weight: 600; color: var(--text-primary);">Status</th>
+                                <th style="padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border-color); font-weight: 600; color: var(--text-primary);">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sessionsTableBody">
+                            <?php foreach ($sessions as $idx => $session): ?>
+                                <?php 
+                                    $deviceInfo = json_decode($session['device_info'], true);
+                                    $isCurrentSession = $session['session_id'] === session_id();
+                                ?>
+                                <tr class="session-row" style="border-bottom: 1px solid var(--border-color);" data-index="<?= $idx ?>">
+                                    <td style="padding: 10px 12px;">
+                                        <?php if (!$isCurrentSession): ?>
+                                            <input type="checkbox" name="session_ids[]" value="<?= $session['id'] ?>" class="session-checkbox" onchange="updateBulkButton()" style="width: 15px; height: 15px;">
+                                        <?php endif; ?>
+                                    </td>
+                                    <td style="padding: 10px 12px; color: var(--text-primary);">
+                                        <?= View::e($deviceInfo['browser'] ?? 'Unknown') ?> on <?= View::e($deviceInfo['platform'] ?? 'Unknown') ?>
+                                        <?php if ($isCurrentSession): ?>
+                                            <span style="color: var(--green); font-size: 0.75rem;"> (Current)</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td style="padding: 10px 12px; color: var(--text-secondary);"><code><?= View::e($session['ip_address']) ?></code></td>
+                                    <td style="padding: 10px 12px; color: var(--text-secondary);"><?= Helpers::timeAgo($session['last_activity_at']) ?></td>
+                                    <td style="padding: 10px 12px;">
+                                        <?php if (strtotime($session['expires_at']) > time()): ?>
+                                            <span style="color: var(--green);">Active</span>
+                                        <?php else: ?>
+                                            <span style="color: var(--orange);">Expired</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td style="padding: 10px 12px;">
+                                        <?php if (!$isCurrentSession): ?>
+                                            <button type="button" onclick="revokeSession(<?= $session['id'] ?>, this)" 
+                                                    style="padding: 5px 10px; background: rgba(255,107,107,0.15); border: 1px solid var(--red); border-radius: 6px; color: var(--red); font-size: 0.75rem; cursor: pointer;">
                                                 Revoke
                                             </button>
-                                        </form>
-                                    <?php else: ?>
-                                        <span style="color: var(--text-secondary); font-size: 0.8rem;">Current</span>
-                                    <?php endif; ?>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
+                                        <?php else: ?>
+                                            <span style="color: var(--text-secondary); font-size: 0.8rem;">Current</span>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Hidden individual revoke form -->
+                <form method="POST" action="/security/revoke-session" id="singleRevokeForm" style="display: none;">
+                    <?= \Core\Security::csrfField() ?>
+                    <input type="hidden" name="session_id" id="singleRevokeSessionId">
+                </form>
+            </form>
+            
+            <!-- Pagination -->
+            <div id="sessionsPagination" style="display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-color); flex-wrap: wrap; gap: 8px;">
+                <div style="font-size: 0.8rem; color: var(--text-secondary);" id="sessionsPageInfo"></div>
+                <div style="display: flex; align-items: center; gap: 4px;" id="sessionsPaginationBtns"></div>
             </div>
         <?php endif; ?>
     </div>
 </div>
+
+<script>
+(function() {
+    var sessionsPerPage = 10;
+    var currentPage = 1;
+    var rows = [];
+    
+    function initSessionsPagination() {
+        rows = Array.from(document.querySelectorAll('.session-row'));
+        renderPage();
+    }
+    
+    function renderPage() {
+        var total = rows.length;
+        var totalPages = Math.ceil(total / sessionsPerPage);
+        if (currentPage > totalPages) currentPage = Math.max(1, totalPages);
+        
+        var start = (currentPage - 1) * sessionsPerPage;
+        var end = Math.min(start + sessionsPerPage, total);
+        
+        rows.forEach(function(row, i) {
+            row.style.display = (i >= start && i < end) ? '' : 'none';
+        });
+        
+        var info = document.getElementById('sessionsPageInfo');
+        var btns = document.getElementById('sessionsPaginationBtns');
+        
+        if (info) info.textContent = 'Showing ' + (total === 0 ? 0 : start + 1) + '–' + end + ' of ' + total + ' sessions';
+        if (btns) {
+            btns.innerHTML = '';
+            if (totalPages <= 1) return;
+            // Prev
+            var prev = document.createElement('button');
+            prev.textContent = '‹';
+            prev.disabled = currentPage === 1;
+            prev.style.cssText = 'padding:4px 10px;border:1px solid var(--border-color);border-radius:4px;background:var(--bg-secondary);color:var(--text-primary);cursor:pointer;font-size:0.85rem;';
+            prev.onclick = function() { currentPage--; renderPage(); };
+            btns.appendChild(prev);
+            // Pages
+            for (var p = 1; p <= totalPages; p++) {
+                (function(page) {
+                    var btn = document.createElement('button');
+                    btn.textContent = page;
+                    btn.style.cssText = 'padding:4px 10px;border:1px solid var(--border-color);border-radius:4px;background:' + (page === currentPage ? 'var(--cyan)' : 'var(--bg-secondary)') + ';color:' + (page === currentPage ? '#06060a' : 'var(--text-primary)') + ';cursor:pointer;font-size:0.85rem;';
+                    btn.onclick = function() { currentPage = page; renderPage(); };
+                    btns.appendChild(btn);
+                })(p);
+            }
+            // Next
+            var next = document.createElement('button');
+            next.textContent = '›';
+            next.disabled = currentPage === totalPages;
+            next.style.cssText = 'padding:4px 10px;border:1px solid var(--border-color);border-radius:4px;background:var(--bg-secondary);color:var(--text-primary);cursor:pointer;font-size:0.85rem;';
+            next.onclick = function() { currentPage++; renderPage(); };
+            btns.appendChild(next);
+        }
+    }
+    
+    window.changeSessionsPerPage = function(val) {
+        sessionsPerPage = parseInt(val);
+        currentPage = 1;
+        renderPage();
+    };
+    
+    window.toggleAllSessions = function(checkbox) {
+        document.querySelectorAll('.session-checkbox').forEach(function(cb) {
+            cb.checked = checkbox.checked;
+        });
+        updateBulkButton();
+    };
+    
+    window.updateBulkButton = function() {
+        var checked = document.querySelectorAll('.session-checkbox:checked').length;
+        var btn = document.getElementById('bulkRevokeBtn');
+        if (btn) btn.style.display = checked > 0 ? '' : 'none';
+        // Update select-all state
+        var total = document.querySelectorAll('.session-checkbox').length;
+        var selectAll = document.getElementById('selectAllSessions');
+        if (selectAll) {
+            selectAll.checked = checked > 0 && checked === total;
+            selectAll.indeterminate = checked > 0 && checked < total;
+        }
+    };
+    
+    window.confirmBulkRevoke = function() {
+        var checked = document.querySelectorAll('.session-checkbox:checked');
+        if (checked.length === 0) return;
+        if (confirm('Revoke ' + checked.length + ' selected session(s)?')) {
+            document.getElementById('bulkRevokeForm').submit();
+        }
+    };
+    
+    window.revokeSession = function(sessionId, btn) {
+        if (!confirm('Revoke this session?')) return;
+        document.getElementById('singleRevokeSessionId').value = sessionId;
+        document.getElementById('singleRevokeForm').submit();
+    };
+    
+    document.addEventListener('DOMContentLoaded', initSessionsPagination);
+})();
+</script>
+
+
 
 <!-- Remember Me Devices -->
 <div class="card mt-3" style="border-radius: 10px; overflow: hidden; border: 1px solid var(--border-color); margin-top: 24px;">

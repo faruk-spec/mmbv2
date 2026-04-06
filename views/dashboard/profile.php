@@ -134,9 +134,15 @@
     
     <div>
         <div class="card" style="text-align: center; border-radius: 10px; overflow: hidden; border: 1px solid var(--border-color); padding: 16px;">
+            <?php if (!empty($user['avatar'])): ?>
+                <img src="/storage/uploads/avatars/<?= htmlspecialchars($user['avatar']) ?>" 
+                     alt="Profile Photo" 
+                     style="width: 120px; height: 120px; border-radius: 50%; margin: 0 auto 20px; display: block; object-fit: cover; box-shadow: 0 8px 30px rgba(0, 240, 255, 0.3); border: 3px solid var(--cyan);">
+            <?php else: ?>
             <div style="width: 120px; height: 120px; background: linear-gradient(135deg, var(--cyan), var(--magenta)); border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: 600; box-shadow: 0 8px 30px rgba(0, 240, 255, 0.3);">
                 <?= strtoupper(substr($user['name'], 0, 1)) ?>
             </div>
+            <?php endif; ?>
             
             <h3 style="font-size: 0.9rem; margin-bottom: 6px;"><?= View::e($user['name']) ?></h3>
             <p style="color: var(--text-secondary); margin-bottom: 16px; font-size: 0.95rem;"><?= View::e($user['email']) ?></p>

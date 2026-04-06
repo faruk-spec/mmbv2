@@ -570,6 +570,7 @@ try {
         .btn-primary {
             background: linear-gradient(135deg, var(--cyan), var(--magenta));
             color: var(--bg-primary);
+            text-align: center;
         }
         
         .btn-primary:hover {
@@ -1063,7 +1064,7 @@ try {
     <main class="main">
         <?php 
         // Check if this is a dashboard page that needs sidebar
-        $isDashboardPage = isset($title) && in_array($title, ['Dashboard', 'Profile', 'Security Settings', 'Activity Log', 'Settings', 'My Plans', 'Subscribe to Plan', 'All Notifications']);
+        $isDashboardPage = isset($title) && in_array($title, ['Dashboard', 'Profile', 'Security Settings', 'Activity Log', 'Settings', 'My Plans', 'Subscribe to Plan', 'All Notifications', 'Two-Factor Authentication', 'Backup Codes']);
         ?>
         
         <?php if ($isDashboardPage): ?>
@@ -1110,10 +1111,12 @@ try {
                                 <div style="font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 3px;">Email</div>
                                 <div style="font-size: 0.75rem; font-weight: 500; color: var(--text-primary); overflow-wrap: break-word;"><?= htmlspecialchars(Auth::user()['email'] ?? 'N/A') ?></div>
                             </div>
+                            <?php if (in_array(Auth::user()['role'] ?? '', ['admin', 'super_admin'])): ?>
                             <div class="nav-text">
                                 <div style="font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 3px;">Role</div>
                                 <div style="display: inline-block; font-size: 0.7rem; padding: 3px 8px; background: rgba(0, 240, 255, 0.1); color: var(--cyan); border-radius: 4px; font-weight: 600; text-transform: capitalize;"><?= htmlspecialchars(Auth::user()['role'] ?? 'User') ?></div>
                             </div>
+                            <?php endif; ?>
                         </div>
                         
                         <!-- Account Section -->
@@ -1144,7 +1147,21 @@ try {
                                             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                                             <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                                         </svg>
-                                        <span class="nav-text">Security</span>
+                                        <span class="nav-text">Security Settings</span>
+                                    </a>
+                                    <a href="/settings" class="nav-sub-item" style="display: flex; align-items: center; gap: 12px; padding: 8px 16px 8px 44px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.8rem;" onmouseover="this.style.background='rgba(0,240,255,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="3"></circle>
+                                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                                        </svg>
+                                        <span class="nav-text">Settings</span>
+                                    </a>
+                                    <a href="/2fa/setup" class="nav-sub-item" style="display: flex; align-items: center; gap: 12px; padding: 8px 16px 8px 44px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.8rem;" onmouseover="this.style.background='rgba(0,240,255,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                                            <path d="M9 12l2 2 4-4"></path>
+                                        </svg>
+                                        <span class="nav-text">Two-Factor Authentication</span>
                                     </a>
                                     <a href="/activity" class="nav-sub-item" style="display: flex; align-items: center; gap: 12px; padding: 8px 16px 8px 44px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.8rem;" onmouseover="this.style.background='rgba(0,240,255,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1257,10 +1274,12 @@ try {
                                 <span style="color: var(--text-secondary);">Status</span>
                                 <span style="color: var(--green); font-weight: 600;">Active</span>
                             </div>
+                            <?php if (in_array(Auth::user()['role'] ?? '', ['admin', 'super_admin'])): ?>
                             <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-color); font-size: 0.8rem;">
                                 <span style="color: var(--text-secondary);">Role</span>
                                 <span style="color: var(--text-primary); font-weight: 600;"><?= ucfirst(Auth::user()['role'] ?? 'User') ?></span>
                             </div>
+                            <?php endif; ?>
                             <div style="display: flex; justify-content: space-between; padding: 8px 0; font-size: 0.8rem;">
                                 <span style="color: var(--text-secondary);">Member Since</span>
                                 <span style="color: var(--text-primary); font-weight: 600;"><?= date('M Y', strtotime(Auth::user()['created_at'] ?? 'now')) ?></span>
@@ -1367,27 +1386,49 @@ try {
                             </svg>
                             System Status
                         </h3>
+                        <?php
+                        // Real system status checks
+                        $dbStatus = false;
+                        $dbLabel = 'Error';
+                        try {
+                            $statusDb = \Core\Database::getInstance();
+                            $statusDb->fetch("SELECT 1");
+                            $dbStatus = true;
+                            $dbLabel = 'Connected';
+                        } catch (\Exception $_) {
+                            $dbLabel = 'Error';
+                        }
+                        $phpVersion = PHP_VERSION;
+                        $memUsage = round(memory_get_usage(true) / 1024 / 1024, 1) . ' MB';
+                        ?>
                         <div style="space-y: 8px;">
-                            <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 0; font-size: 0.8rem;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-color); font-size: 0.8rem;">
                                 <div style="display: flex; align-items: center; gap: 6px;">
                                     <div style="width: 6px; height: 6px; background: var(--green); border-radius: 50%;"></div>
                                     <span style="color: var(--text-secondary);">All Systems</span>
                                 </div>
                                 <span style="color: var(--green); font-weight: 600; font-size: 0.75rem;">Operational</span>
                             </div>
-                            <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 0; font-size: 0.8rem;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-color); font-size: 0.8rem;">
                                 <div style="display: flex; align-items: center; gap: 6px;">
-                                    <div style="width: 6px; height: 6px; background: var(--green); border-radius: 50%;"></div>
-                                    <span style="color: var(--text-secondary);">API</span>
+                                    <div style="width: 6px; height: 6px; background: <?= $dbStatus ? 'var(--green)' : 'var(--red)' ?>; border-radius: 50%;"></div>
+                                    <span style="color: var(--text-secondary);">Database</span>
                                 </div>
-                                <span style="color: var(--green); font-weight: 600; font-size: 0.75rem;">Online</span>
+                                <span style="color: <?= $dbStatus ? 'var(--green)' : 'var(--red)' ?>; font-weight: 600; font-size: 0.75rem;"><?= $dbLabel ?></span>
+                            </div>
+                            <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-color); font-size: 0.8rem;">
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <div style="width: 6px; height: 6px; background: var(--cyan); border-radius: 50%;"></div>
+                                    <span style="color: var(--text-secondary);">PHP</span>
+                                </div>
+                                <span style="color: var(--cyan); font-weight: 600; font-size: 0.75rem;"><?= htmlspecialchars($phpVersion) ?></span>
                             </div>
                             <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 0; font-size: 0.8rem;">
                                 <div style="display: flex; align-items: center; gap: 6px;">
-                                    <div style="width: 6px; height: 6px; background: var(--green); border-radius: 50%;"></div>
-                                    <span style="color: var(--text-secondary);">Database</span>
+                                    <div style="width: 6px; height: 6px; background: var(--purple); border-radius: 50%;"></div>
+                                    <span style="color: var(--text-secondary);">Memory</span>
                                 </div>
-                                <span style="color: var(--green); font-weight: 600; font-size: 0.75rem;">Connected</span>
+                                <span style="color: var(--purple); font-weight: 600; font-size: 0.75rem;"><?= htmlspecialchars($memUsage) ?></span>
                             </div>
                         </div>
                     </div>

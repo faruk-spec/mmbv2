@@ -325,6 +325,58 @@ class DashboardController extends BaseController
     }
     
     /**
+     * Bulk revoke sessions
+     */
+    public function revokeSessionsBulk(): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request.');
+            $this->redirect('/security');
+            return;
+        }
+        
+        $sessionIds = $_POST['session_ids'] ?? [];
+        if (empty($sessionIds) || !is_array($sessionIds)) {
+            $this->flash('error', 'No sessions selected.');
+            $this->redirect('/security');
+            return;
+        }
+        
+        try {
+            $db = Database::getInstance();
+            $revoked = 0;
+            $currentSessionId = session_id();
+            
+            foreach ($sessionIds as $rawId) {
+                $sessionId = (int) $rawId;
+                $session = $db->fetch(
+                    "SELECT * FROM user_sessions WHERE id = ? AND user_id = ?",
+                    [$sessionId, Auth::id()]
+                );
+                
+                if (!$session || $session['session_id'] === $currentSessionId) {
+                    continue;
+                }
+                
+                $db->update('user_sessions', [
+                    'is_active' => 0,
+                    'last_activity_at' => date('Y-m-d H:i:s')
+                ], 'id = ?', [$sessionId]);
+                $revoked++;
+            }
+            
+            Logger::activity(Auth::id(), 'sessions_bulk_revoked', ['count' => $revoked]);
+            $this->flash('success', $revoked . ' session(s) revoked successfully.');
+            
+        } catch (\Exception $e) {
+            Logger::error('Bulk session revoke error: ' . $e->getMessage());
+            $this->flash('error', 'Failed to revoke sessions.');
+        }
+        
+        $this->redirect('/security');
+    }
+    
+    /**
      * Activity log page
      */
     public function activity(): void
