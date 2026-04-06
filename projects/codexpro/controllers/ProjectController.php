@@ -54,13 +54,7 @@ class ProjectController
             return;
         }
         
-        $projectId = $db->insert('projects', [
-            'user_id' => $user['id'],
-            'name' => $name,
-            'description' => $description,
-            'language' => $language,
-            'visibility' => $visibility,
-        ]);
+        $projectId = $db->insert('codexpro_projects', [
         
         if ($projectId) {
             try { ActivityLogger::logCreate($user['id'], 'codexpro', 'project', $projectId, ['name' => $name, 'language' => $language]); } catch (\Throwable $_) {}
@@ -117,11 +111,7 @@ class ProjectController
         $description = Security::sanitize($_POST['description'] ?? $project['description']);
         $visibility = Security::sanitize($_POST['visibility'] ?? $project['visibility']);
         
-        $updated = $db->update('projects', [
-            'name' => $name,
-            'description' => $description,
-            'visibility' => $visibility,
-        ], ['id' => $id]);
+        $updated = $db->update('codexpro_projects', [
         
         try { ActivityLogger::logUpdate($user['id'], 'codexpro', 'project', $id, [], ['name' => $name, 'description' => $description, 'visibility' => $visibility]); } catch (\Throwable $_) {}
         echo json_encode(['success' => $updated]);
@@ -149,10 +139,7 @@ class ProjectController
                 return;
             }
             
-            $deleted = $db->delete('projects', [
-                'id' => $id,
-                'user_id' => $user['id'],
-            ]);
+            $deleted = $db->delete('codexpro_projects', [
             
             if ($deleted !== false && $deleted > 0) {
                 try { ActivityLogger::logDelete($user['id'], 'codexpro', 'project', $id, ['id' => $id]); } catch (\Throwable $_) {}
@@ -219,10 +206,7 @@ class ProjectController
                 return;
             }
             
-            $updated = $db->update('projects', $updateData, [
-                'id' => $id,
-                'user_id' => $user['id'],
-            ]);
+            $updated = $db->update('codexpro_projects', $updateData, [
             
             if ($updated !== false) {
                 try { ActivityLogger::logUpdate($user['id'], 'codexpro', 'project', $id, [], $updateData); } catch (\Throwable $_) {}

@@ -293,7 +293,7 @@ class ApiController
                 'visibility' => 'private'
             ];
             
-            $projectId = $db->insert('projects', $projectData);
+            $projectId = $db->insert('codexpro_projects', $projectData);
             
             echo json_encode([
                 'success' => true,

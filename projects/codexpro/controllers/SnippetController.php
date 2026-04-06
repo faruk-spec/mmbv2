@@ -56,15 +56,7 @@ class SnippetController
             return;
         }
         
-        $snippetId = $db->insert('snippets', [
-            'user_id' => $user['id'],
-            'title' => $title,
-            'description' => $description,
-            'code' => $code,
-            'language' => $language,
-            'tags' => $tags,
-            'is_public' => $isPublic,
-        ]);
+        $snippetId = $db->insert('codexpro_snippets', [
         
         if ($snippetId) {
             try { ActivityLogger::logCreate($user['id'], 'codexpro', 'snippet', $snippetId, ['title' => $title, 'language' => $language]); } catch (\Throwable $_) {}
@@ -173,14 +165,7 @@ class SnippetController
             return;
         }
         
-        $updated = $db->update('snippets', [
-            'title' => $title,
-            'description' => $description,
-            'code' => $code,
-            'language' => $language,
-            'tags' => $tags,
-            'is_public' => $isPublic,
-        ], [
+        $updated = $db->update('codexpro_snippets', [
             'id' => $id,
             'user_id' => $user['id'],
         ]);
@@ -215,10 +200,7 @@ class SnippetController
                 return;
             }
             
-            $deleted = $db->delete('snippets', [
-                'id' => $id,
-                'user_id' => $user['id'],
-            ]);
+            $deleted = $db->delete('codexpro_snippets', [
             
             if ($deleted !== false && $deleted > 0) {
                 try { ActivityLogger::logDelete($user['id'], 'codexpro', 'snippet', $id, ['id' => $id]); } catch (\Throwable $_) {}
@@ -285,10 +267,7 @@ class SnippetController
                 return;
             }
             
-            $updated = $db->update('snippets', $updateData, [
-                'id' => $id,
-                'user_id' => $user['id'],
-            ]);
+            $updated = $db->update('codexpro_snippets', $updateData, [
             
             if ($updated !== false) {
                 try { ActivityLogger::logUpdate($user['id'], 'codexpro', 'snippet', $id, [], $updateData); } catch (\Throwable $_) {}

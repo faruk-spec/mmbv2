@@ -32,7 +32,7 @@ class EditorController
         
         if (!$settings) {
             // Create default settings
-            $db->insert('user_settings', ['user_id' => $user['id']]);
+            $db->insert('codexpro_user_settings', ['user_id' => $user['id']]);
             $settings = $db->fetch(
                 "SELECT * FROM codexpro_user_settings WHERE user_id = ?",
                 [$user['id']]
@@ -114,28 +114,13 @@ class EditorController
                 return;
             }
             
-            $updated = $db->update('projects', [
-                'name' => $name,
-                'description' => $description,
-                'html_content' => $htmlContent,
-                'css_content' => $cssContent,
-                'js_content' => $jsContent,
-                'visibility' => $visibility,
-            ], ['id' => $projectId]);
+            $updated = $db->update('codexpro_projects', [
             
             try { ActivityLogger::logUpdate($user['id'], 'codexpro', 'file', $projectId, [], ['name' => $name, 'action' => 'file_saved']); } catch (\Throwable $_) {}
             echo json_encode(['success' => $updated, 'project_id' => $projectId]);
         } else {
             // Create new project
-            $projectId = $db->insert('projects', [
-                'user_id' => $user['id'],
-                'name' => $name,
-                'description' => $description,
-                'html_content' => $htmlContent,
-                'css_content' => $cssContent,
-                'js_content' => $jsContent,
-                'visibility' => $visibility,
-            ]);
+            $projectId = $db->insert('codexpro_projects', [
             
             if ($projectId) {
                 try { ActivityLogger::logCreate($user['id'], 'codexpro', 'file', $projectId, ['name' => $name, 'action' => 'file_saved']); } catch (\Throwable $_) {}
@@ -177,11 +162,7 @@ class EditorController
         $cssContent = $_POST['css_content'] ?? '';
         $jsContent = $_POST['js_content'] ?? '';
         
-        $updated = $db->update('projects', [
-            'html_content' => $htmlContent,
-            'css_content' => $cssContent,
-            'js_content' => $jsContent,
-        ], ['id' => $projectId]);
+        $updated = $db->update('codexpro_projects', [
         
         try { ActivityLogger::logUpdate($user['id'], 'codexpro', 'file', $projectId, [], ['action' => 'file_saved']); } catch (\Throwable $_) {}
         echo json_encode(['success' => $updated]);
