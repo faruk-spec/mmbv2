@@ -101,7 +101,7 @@
         <!-- Main Column -->
         <div class="nx-editor-main">
             <input type="text" name="title" class="nx-field-title"
-                   placeholder="Note title…" value="Untitled Note">
+                   placeholder="Note title…" value="">
             <textarea name="content" class="nx-field-content"
                       placeholder="Write your note here… Supports plain text and basic markdown."></textarea>
             <div style="display:flex;gap:0.625rem;flex-wrap:wrap;">

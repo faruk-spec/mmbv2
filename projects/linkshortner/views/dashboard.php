@@ -171,7 +171,10 @@
                 </thead>
                 <tbody>
                 <?php foreach ($recentLinks as $link): ?>
-                <tr onclick="window.open('/l/<?= View::e($link['code']) ?>','_blank')" style="cursor:pointer;">
+                <tr onclick="window.open('/l/<?= View::e($link['code']) ?>','_blank')"
+                    tabindex="0"
+                    onkeydown="if(event.key==='Enter'||event.key===' ')window.open('/l/<?= View::e($link['code']) ?>','_blank')"
+                    style="cursor:pointer;">
                     <td>
                         <a href="/l/<?= View::e($link['code']) ?>" target="_blank" class="ls-link-code"
                            onclick="event.stopPropagation();">
