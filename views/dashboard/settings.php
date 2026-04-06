@@ -13,8 +13,6 @@ $securityAlerts = $userProfile['security_alerts'] ?? 1;
 $productUpdates = $userProfile['product_updates'] ?? 1;
 $savedTheme = $userProfile['theme_preference'] ?? 'dark';
 ?>
-
-<?php View::section('content'); ?>
 <?php if (Helpers::hasFlash('success')): ?>
     <div class="alert alert-success" style="margin-bottom: 12px; padding: 10px; background: rgba(0, 255, 136, 0.1); border: 1px solid var(--green); border-radius: 6px; color: var(--green); font-size: 0.8rem;">
         ✓ <?= View::e(Helpers::getFlash('success')) ?>

@@ -332,7 +332,7 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
                     $displayName = $user['name'] ?? $user['username'] ?? 'User';
                     $firstName = explode(' ', trim($displayName))[0];
                     if (strlen($firstName) > 10) {
-                        $firstName = substr($firstName, 0, 10);
+                        $firstName = substr($firstName, 0, 10) . '…';
                     }
                     ?>
                     <span class="profile-username"><?= htmlspecialchars($firstName) ?></span>

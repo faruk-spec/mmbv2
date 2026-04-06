@@ -124,7 +124,8 @@ class TOTP
         try {
             return QRCodeGenerator::generate($provisioningUri, $size, '#000000', '#ffffff');
         } catch (\Exception $e) {
-            // Fallback to Google Charts API if local generation fails
+            // Log the error and fall back to Google Charts API
+            error_log('QRCodeGenerator failed for 2FA QR: ' . $e->getMessage());
             return 'https://chart.googleapis.com/chart?chs=' . $size . 'x' . $size . 
                    '&chld=M|0&cht=qr&chl=' . urlencode($provisioningUri);
         }

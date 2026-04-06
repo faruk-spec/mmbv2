@@ -328,7 +328,9 @@ if (\Core\GoogleOAuth::isEnabled()) {
                 
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
                     <label style="display: flex; align-items: center; gap: 6px; font-size: 0.85rem; cursor: pointer; color: var(--text-secondary);">
-                        <input type="checkbox" id="selectAllSessions" onchange="toggleAllSessions(this)" style="width: 15px; height: 15px;">
+                        <input type="checkbox" id="selectAllSessions" onchange="toggleAllSessions(this)" 
+                               aria-label="Select all non-current sessions for bulk revoke"
+                               style="width: 15px; height: 15px;">
                         Select All Non-Current
                     </label>
                     <button type="button" id="bulkRevokeBtn" onclick="confirmBulkRevoke()" 
@@ -440,7 +442,7 @@ if (\Core\GoogleOAuth::isEnabled()) {
             if (totalPages <= 1) return;
             // Prev
             var prev = document.createElement('button');
-            prev.textContent = '‹';
+            prev.textContent = 'Prev';
             prev.disabled = currentPage === 1;
             prev.style.cssText = 'padding:4px 10px;border:1px solid var(--border-color);border-radius:4px;background:var(--bg-secondary);color:var(--text-primary);cursor:pointer;font-size:0.85rem;';
             prev.onclick = function() { currentPage--; renderPage(); };
@@ -457,7 +459,7 @@ if (\Core\GoogleOAuth::isEnabled()) {
             }
             // Next
             var next = document.createElement('button');
-            next.textContent = '›';
+            next.textContent = 'Next';
             next.disabled = currentPage === totalPages;
             next.style.cssText = 'padding:4px 10px;border:1px solid var(--border-color);border-radius:4px;background:var(--bg-secondary);color:var(--text-primary);cursor:pointer;font-size:0.85rem;';
             next.onclick = function() { currentPage++; renderPage(); };
