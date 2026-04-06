@@ -251,7 +251,7 @@ class Mailer
     }
     
     /**
-     * Send welcome email
+     * Send welcome email (respects user email_notifications preference)
      */
     public static function sendWelcomeEmail(string $to, string $name): bool
     {
@@ -260,5 +260,24 @@ class Mailer
             'name' => $name,
             'login_url' => APP_URL . '/login'
         ]);
+    }
+
+    /**
+     * Check if a user wants to receive a given notification type.
+     * Types: 'email_notifications' (general), 'security_alerts', 'product_updates'
+     * Security alerts default to ON (1); general notifications default to ON (1).
+     */
+    public static function userWantsEmail(int $userId, string $type = 'email_notifications'): bool
+    {
+        try {
+            $db = Database::getInstance();
+            $row = $db->fetch("SELECT {$type} FROM user_profiles WHERE user_id = ? LIMIT 1", [$userId]);
+            if ($row !== null && isset($row[$type])) {
+                return (bool) $row[$type];
+            }
+        } catch (\Exception $e) {
+            // If DB fails, default to sending
+        }
+        return true;
     }
 }

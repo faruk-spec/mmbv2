@@ -385,9 +385,22 @@ class DashboardController extends BaseController
         
         $page = max(1, (int) $this->input('page', 1));
         $allowedPerPage = [10, 25, 50, 100];
-        $perPage = (int) $this->input('per_page', 10);
+        
+        // Default from user's display settings, fallback to 10
+        $defaultPerPage = 10;
+        try {
+            $userProfile = $db->fetch("SELECT display_settings FROM user_profiles WHERE user_id = ?", [Auth::id()]);
+            if ($userProfile && !empty($userProfile['display_settings'])) {
+                $ds = json_decode($userProfile['display_settings'], true);
+                if (!empty($ds['items_per_page'])) {
+                    $defaultPerPage = (int) $ds['items_per_page'];
+                }
+            }
+        } catch (\Exception $e) { /* ignore */ }
+        
+        $perPage = (int) $this->input('per_page', $defaultPerPage);
         if (!in_array($perPage, $allowedPerPage)) {
-            $perPage = 10;
+            $perPage = $defaultPerPage;
         }
         $offset = ($page - 1) * $perPage;
         
@@ -466,16 +479,11 @@ class DashboardController extends BaseController
                             'updated_at' => date('Y-m-d H:i:s')
                         ], 'user_id = ?', [Auth::id()]);
                         
-                        // Also update navbar_settings for global theme
-                        $db->query("UPDATE navbar_settings SET default_theme = ? WHERE id = 1", [$theme]);
-                        
                         Logger::activity(Auth::id(), 'theme_changed', ['theme' => $theme]);
                         $this->flash('success', 'Theme preference updated successfully.');
                     } catch (\Exception $e) {
-                        // Fallback: just update navbar_settings
-                        $db->query("UPDATE navbar_settings SET default_theme = ? WHERE id = 1", [$theme]);
-                        Logger::activity(Auth::id(), 'theme_changed', ['theme' => $theme]);
-                        $this->flash('success', 'Theme updated successfully.');
+                        Logger::error('Theme update error: ' . $e->getMessage());
+                        $this->flash('error', 'Failed to save theme preference.');
                     }
                     break;
                     

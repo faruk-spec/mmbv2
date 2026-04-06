@@ -26,6 +26,21 @@ try {
 } catch (\Exception $e) {
     // Use default if query fails
 }
+// Apply user display settings (date format etc.)
+try {
+    if (\Core\Auth::check()) {
+        $__userProfile = isset($userProfile) ? $userProfile : 
+            $db->fetch("SELECT display_settings FROM user_profiles WHERE user_id = ?", [\Core\Auth::id()]);
+        if ($__userProfile && !empty($__userProfile['display_settings'])) {
+            $__ds = json_decode($__userProfile['display_settings'], true);
+            if (!empty($__ds['date_format'])) {
+                \Core\Helpers::$userDateFormat = $__ds['date_format'];
+            }
+        }
+    }
+} catch (\Exception $e) {
+    // ignore
+}
 ?>
 <!DOCTYPE html>
 <html lang="en" data-theme="<?= htmlspecialchars($defaultTheme) ?>">
