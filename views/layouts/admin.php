@@ -1069,15 +1069,7 @@
                     </div>
                     <?php endif; ?>
                     
-                    <!-- Database Setup -->
-                    <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('projects.database_setup')): ?>
-                    <div class="menu-item">
-                        <a href="/admin/projects/database-setup" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/database-setup') === 0 ? 'active' : '' ?>">
-                            <i class="fas fa-database"></i>
-                            <span>Database Setup</span>
-                        </a>
-                    </div>
-                    <?php endif; ?>
+
                     <?php endif; ?>
                     
                     <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('convertx')): ?>

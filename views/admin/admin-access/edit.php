@@ -89,7 +89,6 @@ foreach ($permissions as $key => $perm) {
         'Projects'           => 'fas fa-th',
         'ConvertX'           => 'fas fa-file-export',
         'CodeXPro'           => 'fas fa-code',
-        'ImgTxt'             => 'fas fa-image',
         'ProShare'           => 'fas fa-share-alt',
         'BillX'              => 'fas fa-file-invoice',
         'WhatsApp'           => 'fab fa-whatsapp',
