@@ -23,7 +23,7 @@ class ProShareAdminController extends BaseController
     {
         $this->requireAuth();
         $this->requirePermissionGroup('proshare');
-        $this->projectDb = Database::projectConnection('proshare');
+        $this->projectDb = Database::getInstance();
         $this->mainDb = Database::getInstance();
         
         // Get main database name from config
@@ -43,12 +43,12 @@ class ProShareAdminController extends BaseController
         $this->requirePermission('proshare');
         // Get statistics
         $stats = [
-            'total_files' => $this->projectDb->fetch("SELECT COUNT(*) as count FROM files")['count'] ?? 0,
-            'total_texts' => $this->projectDb->fetch("SELECT COUNT(*) as count FROM text_shares")['count'] ?? 0,
+            'total_files' => $this->projectDb->fetch("SELECT COUNT(*) as count FROM proshare_files")['count'] ?? 0,
+            'total_texts' => $this->projectDb->fetch("SELECT COUNT(*) as count FROM proshare_text_shares")['count'] ?? 0,
             'total_downloads' => $this->getDownloadCount(),
             'total_views' => $this->getViewCount(),
-            'active_files' => $this->projectDb->fetch("SELECT COUNT(*) as count FROM files WHERE expires_at > NOW() OR expires_at IS NULL")['count'] ?? 0,
-            'active_users' => $this->projectDb->fetch("SELECT COUNT(DISTINCT user_id) as count FROM files WHERE user_id IS NOT NULL")['count'] ?? 0,
+            'active_files' => $this->projectDb->fetch("SELECT COUNT(*) as count FROM proshare_files WHERE expires_at > NOW() OR expires_at IS NULL")['count'] ?? 0,
+            'active_users' => $this->projectDb->fetch("SELECT COUNT(DISTINCT user_id) as count FROM proshare_files WHERE user_id IS NOT NULL")['count'] ?? 0,
         ];
         
         // Get storage usage
@@ -56,7 +56,7 @@ class ProShareAdminController extends BaseController
         
         // Get recent files
         $recentFiles = $this->projectDb->fetchAll(
-            "SELECT * FROM files 
+            "SELECT * FROM proshare_files 
              ORDER BY created_at DESC 
              LIMIT 10"
         );
@@ -98,7 +98,7 @@ class ProShareAdminController extends BaseController
         
         // Get recent texts
         $recentTexts = $this->projectDb->fetchAll(
-            "SELECT * FROM text_shares 
+            "SELECT * FROM proshare_text_shares 
              ORDER BY created_at DESC 
              LIMIT 10"
         );
@@ -143,11 +143,11 @@ class ProShareAdminController extends BaseController
         for ($i = 6; $i >= 0; $i--) {
             $date = date('Y-m-d', strtotime("-{$i} days"));
             $fileCount = $this->projectDb->fetch(
-                "SELECT COUNT(*) as count FROM files WHERE DATE(created_at) = ?",
+                "SELECT COUNT(*) as count FROM proshare_files WHERE DATE(created_at) = ?",
                 [$date]
             )['count'] ?? 0;
             $textCount = $this->projectDb->fetch(
-                "SELECT COUNT(*) as count FROM text_shares WHERE DATE(created_at) = ?",
+                "SELECT COUNT(*) as count FROM proshare_text_shares WHERE DATE(created_at) = ?",
                 [$date]
             )['count'] ?? 0;
             
@@ -181,7 +181,7 @@ class ProShareAdminController extends BaseController
         }
         
         // Get current settings from key-value table
-        $settingsRows = $this->projectDb->fetchAll("SELECT `key`, `value` FROM settings");
+        $settingsRows = $this->projectDb->fetchAll("SELECT `key`, `value` FROM proshare_settings");
         $settings = [];
         foreach ($settingsRows as $row) {
             $settings[$row['key']] = $row['value'];
@@ -232,7 +232,7 @@ class ProShareAdminController extends BaseController
         
         // Update each setting using key-value structure
         foreach ($settings as $key => $value) {
-            $existing = $this->projectDb->fetch("SELECT id FROM settings WHERE `key` = ?", [$key]);
+            $existing = $this->projectDb->fetch("SELECT id FROM proshare_settings WHERE `key` = ?", [$key]);
             
             if ($existing) {
                 // Check if updated_at column exists
@@ -298,7 +298,7 @@ class ProShareAdminController extends BaseController
         
         // Get files from project DB
         $files = $this->projectDb->fetchAll(
-            "SELECT * FROM files 
+            "SELECT * FROM proshare_files 
              $whereClause
              ORDER BY created_at DESC 
              LIMIT ? OFFSET ?",
@@ -344,7 +344,7 @@ class ProShareAdminController extends BaseController
         
         // Get total count
         $totalCount = $this->projectDb->fetch(
-            "SELECT COUNT(*) as count FROM files $whereClause"
+            "SELECT COUNT(*) as count FROM proshare_files $whereClause"
         )['count'];
         
         $totalPages = ceil($totalCount / $perPage);
@@ -382,7 +382,7 @@ class ProShareAdminController extends BaseController
         
         // Get text shares from project DB
         $texts = $this->projectDb->fetchAll(
-            "SELECT * FROM text_shares 
+            "SELECT * FROM proshare_text_shares 
              $whereClause
              ORDER BY created_at DESC 
              LIMIT ? OFFSET ?",
@@ -419,7 +419,7 @@ class ProShareAdminController extends BaseController
         
         // Get total count
         $totalCount = $this->projectDb->fetch(
-            "SELECT COUNT(*) as count FROM text_shares $whereClause"
+            "SELECT COUNT(*) as count FROM proshare_text_shares $whereClause"
         )['count'];
         
         $totalPages = ceil($totalCount / $perPage);
@@ -447,7 +447,7 @@ class ProShareAdminController extends BaseController
         
         // Get notifications from project DB
         $notifications = $this->projectDb->fetchAll(
-            "SELECT * FROM notifications 
+            "SELECT * FROM proshare_notifications 
              ORDER BY created_at DESC 
              LIMIT ? OFFSET ?",
             [$perPage, $offset]
@@ -484,15 +484,15 @@ class ProShareAdminController extends BaseController
         }
         
         // Get total count
-        $totalCount = $this->projectDb->fetch("SELECT COUNT(*) as count FROM notifications")['count'];
+        $totalCount = $this->projectDb->fetch("SELECT COUNT(*) as count FROM proshare_notifications")['count'];
         $totalPages = ceil($totalCount / $perPage);
         
         // Get notification stats
         $stats = [
             'total' => $totalCount,
-            'unread' => $this->projectDb->fetch("SELECT COUNT(*) as count FROM notifications WHERE is_read = 0")['count'] ?? 0,
-            'download_alerts' => $this->projectDb->fetch("SELECT COUNT(*) as count FROM notifications WHERE type = 'download'")['count'] ?? 0,
-            'expiry_warnings' => $this->projectDb->fetch("SELECT COUNT(*) as count FROM notifications WHERE type = 'expiry_warning'")['count'] ?? 0,
+            'unread' => $this->projectDb->fetch("SELECT COUNT(*) as count FROM proshare_notifications WHERE is_read = 0")['count'] ?? 0,
+            'download_alerts' => $this->projectDb->fetch("SELECT COUNT(*) as count FROM proshare_notifications WHERE type = 'download'")['count'] ?? 0,
+            'expiry_warnings' => $this->projectDb->fetch("SELECT COUNT(*) as count FROM proshare_notifications WHERE type = 'expiry_warning'")['count'] ?? 0,
         ];
         
         $this->view('admin/projects/proshare/notifications', [
@@ -520,7 +520,7 @@ class ProShareAdminController extends BaseController
         
         if ($id > 0) {
             // Get file info for logging and physical deletion
-            $file = $this->projectDb->fetch("SELECT * FROM files WHERE id = ?", [$id]);
+            $file = $this->projectDb->fetch("SELECT * FROM proshare_files WHERE id = ?", [$id]);
             
             if ($file) {
                 // Delete physical file if exists
@@ -595,12 +595,12 @@ class ProShareAdminController extends BaseController
     private function getDownloadCount(): int
     {
         try {
-            $result = $this->projectDb->fetch("SELECT SUM(download_count) as count FROM files");
+            $result = $this->projectDb->fetch("SELECT SUM(download_count) as count FROM proshare_files");
             return (int)($result['count'] ?? 0);
         } catch (\PDOException $e) {
             // Column doesn't exist, check if downloads column exists
             try {
-                $result = $this->projectDb->fetch("SELECT SUM(downloads) as count FROM files");
+                $result = $this->projectDb->fetch("SELECT SUM(downloads) as count FROM proshare_files");
                 return (int)($result['count'] ?? 0);
             } catch (\PDOException $e2) {
                 // Neither column exists, return 0
@@ -616,12 +616,12 @@ class ProShareAdminController extends BaseController
     private function getViewCount(): int
     {
         try {
-            $result = $this->projectDb->fetch("SELECT SUM(view_count) as count FROM text_shares");
+            $result = $this->projectDb->fetch("SELECT SUM(view_count) as count FROM proshare_text_shares");
             return (int)($result['count'] ?? 0);
         } catch (\PDOException $e) {
             // Column doesn't exist, check if views column exists
             try {
-                $result = $this->projectDb->fetch("SELECT SUM(views) as count FROM text_shares");
+                $result = $this->projectDb->fetch("SELECT SUM(views) as count FROM proshare_text_shares");
                 return (int)($result['count'] ?? 0);
             } catch (\PDOException $e2) {
                 // Neither column exists, return 0
@@ -637,12 +637,12 @@ class ProShareAdminController extends BaseController
     private function getStorageUsage(): float
     {
         try {
-            $result = $this->projectDb->fetch("SELECT SUM(file_size) as bytes FROM files");
+            $result = $this->projectDb->fetch("SELECT SUM(file_size) as bytes FROM proshare_files");
             return round(($result['bytes'] ?? 0) / (1024 * 1024 * 1024), 2);
         } catch (\PDOException $e) {
             // Column doesn't exist, check if size column exists
             try {
-                $result = $this->projectDb->fetch("SELECT SUM(size) as bytes FROM files");
+                $result = $this->projectDb->fetch("SELECT SUM(size) as bytes FROM proshare_files");
                 return round(($result['bytes'] ?? 0) / (1024 * 1024 * 1024), 2);
             } catch (\PDOException $e2) {
                 // Neither column exists, return 0
@@ -660,7 +660,7 @@ class ProShareAdminController extends BaseController
         $this->requirePermission('proshare.user_dashboard');
         // Get all user IDs from ProShare files
         $userIdsFromFiles = $this->projectDb->fetchAll(
-            "SELECT DISTINCT user_id FROM files WHERE user_id IS NOT NULL"
+            "SELECT DISTINCT user_id FROM proshare_files WHERE user_id IS NOT NULL"
         );
         
         $users = [];
@@ -692,7 +692,7 @@ class ProShareAdminController extends BaseController
         
         // Get all user IDs from ProShare files
         $userIdsFromFiles = $this->projectDb->fetchAll(
-            "SELECT DISTINCT user_id FROM files WHERE user_id IS NOT NULL"
+            "SELECT DISTINCT user_id FROM proshare_files WHERE user_id IS NOT NULL"
         );
         
         $users = [];
@@ -722,12 +722,12 @@ class ProShareAdminController extends BaseController
             
             // Get user's files
             $files = $this->projectDb->fetchAll(
-                "SELECT * FROM files WHERE user_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?",
+                "SELECT * FROM proshare_files WHERE user_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?",
                 [$userId, $perPage, $offset]
             );
             
             $totalCount = $this->projectDb->fetch(
-                "SELECT COUNT(*) as count FROM files WHERE user_id = ?",
+                "SELECT COUNT(*) as count FROM proshare_files WHERE user_id = ?",
                 [$userId]
             )['count'];
         }
@@ -1003,7 +1003,7 @@ class ProShareAdminController extends BaseController
                 "SELECT COUNT(*) as count FROM activity_logs WHERE action LIKE '%upload%'"
             )['count'] ?? 0,
             'downloads' => $this->projectDb->fetch(
-                "SELECT COUNT(*) as count FROM file_downloads"
+                "SELECT COUNT(*) as count FROM proshare_file_downloads"
             )['count'] ?? 0,
             'deletes' => $this->projectDb->fetch(
                 "SELECT COUNT(*) as count FROM activity_logs WHERE action LIKE '%delete%'"
@@ -1122,7 +1122,7 @@ class ProShareAdminController extends BaseController
         // Get storage per user
         $storagePerUser = $this->projectDb->fetchAll(
             "SELECT user_id, SUM(size) as total_size, COUNT(*) as file_count 
-             FROM files 
+             FROM proshare_files 
              WHERE user_id IS NOT NULL
              GROUP BY user_id
              ORDER BY total_size DESC"
@@ -1154,7 +1154,7 @@ class ProShareAdminController extends BaseController
         for ($i = 29; $i >= 0; $i--) {
             $date = date('Y-m-d', strtotime("-{$i} days"));
             $size = $this->projectDb->fetch(
-                "SELECT SUM(size) as size FROM files WHERE DATE(created_at) = ?",
+                "SELECT SUM(size) as size FROM proshare_files WHERE DATE(created_at) = ?",
                 [$date]
             )['size'] ?? 0;
             
@@ -1167,11 +1167,11 @@ class ProShareAdminController extends BaseController
         // Get storage statistics
         $stats = [
             'total_storage_gb' => $totalStorage,
-            'total_files' => $this->projectDb->fetch("SELECT COUNT(*) as count FROM files")['count'] ?? 0,
+            'total_files' => $this->projectDb->fetch("SELECT COUNT(*) as count FROM proshare_files")['count'] ?? 0,
             'total_users' => count($storagePerUser),
             'avg_file_size_mb' => $this->projectDb->fetch(
-                "SELECT AVG(size) as avg FROM files"
-            )['avg'] ? round($this->projectDb->fetch("SELECT AVG(size) as avg FROM files")['avg'] / (1024 * 1024), 2) : 0
+                "SELECT AVG(size) as avg FROM proshare_files"
+            )['avg'] ? round($this->projectDb->fetch("SELECT AVG(size) as avg FROM proshare_files")['avg'] / (1024 * 1024), 2) : 0
         ];
         
         $this->view('admin/projects/proshare/storage', [
@@ -1364,7 +1364,7 @@ class ProShareAdminController extends BaseController
         // Get most downloaded files
         $mostDownloaded = $this->projectDb->fetchAll(
             "SELECT f.*, COUNT(d.id) as download_count
-             FROM files f
+             FROM proshare_files f
              LEFT JOIN file_downloads d ON f.id = d.file_id
              GROUP BY f.id
              ORDER BY download_count DESC
@@ -1408,13 +1408,13 @@ class ProShareAdminController extends BaseController
             $date = date('Y-m-d', strtotime("-{$i} days"));
             
             $uploads = $this->projectDb->fetch(
-                "SELECT COUNT(*) as count FROM files WHERE DATE(created_at) = ?",
+                "SELECT COUNT(*) as count FROM proshare_files WHERE DATE(created_at) = ?",
                 [$date]
             )['count'] ?? 0;
             
             // Use created_at instead of downloaded_at for file_downloads
             $downloads = $this->projectDb->fetch(
-                "SELECT COUNT(*) as count FROM file_downloads WHERE DATE(created_at) = ?",
+                "SELECT COUNT(*) as count FROM proshare_file_downloads WHERE DATE(created_at) = ?",
                 [$date]
             )['count'] ?? 0;
             
@@ -1428,19 +1428,19 @@ class ProShareAdminController extends BaseController
         // Get statistics
         $stats = [
             'active_users_30d' => count($activeUsers),
-            'total_downloads' => $this->projectDb->fetch("SELECT COUNT(*) as count FROM file_downloads")['count'] ?? 0,
-            'total_uploads' => $this->projectDb->fetch("SELECT COUNT(*) as count FROM files")['count'] ?? 0,
+            'total_downloads' => $this->projectDb->fetch("SELECT COUNT(*) as count FROM proshare_file_downloads")['count'] ?? 0,
+            'total_uploads' => $this->projectDb->fetch("SELECT COUNT(*) as count FROM proshare_files")['count'] ?? 0,
             'avg_downloads_per_file' => $this->projectDb->fetch(
                 "SELECT AVG(download_count) as avg FROM (
                     SELECT COUNT(d.id) as download_count 
-                    FROM files f 
+                    FROM proshare_files f 
                     LEFT JOIN file_downloads d ON f.id = d.file_id 
                     GROUP BY f.id
                 ) as subquery"
             )['avg'] ? round($this->projectDb->fetch(
                 "SELECT AVG(download_count) as avg FROM (
                     SELECT COUNT(d.id) as download_count 
-                    FROM files f 
+                    FROM proshare_files f 
                     LEFT JOIN file_downloads d ON f.id = d.file_id 
                     GROUP BY f.id
                 ) as subquery"

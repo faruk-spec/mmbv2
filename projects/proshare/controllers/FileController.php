@@ -195,11 +195,11 @@ class FileController
                 return;
             }
             
-            $db = \Core\Database::projectConnection('proshare');
+            $db = \Core\Database::getInstance();
             
             // Get file info
             $file = $db->fetch(
-                "SELECT * FROM files WHERE short_code = ? AND user_id = ?",
+                "SELECT * FROM proshare_files WHERE short_code = ? AND user_id = ?",
                 [$shortcode, $user['id']]
             );
             

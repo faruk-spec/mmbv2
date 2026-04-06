@@ -53,7 +53,7 @@ class TextShareController
                 return;
             }
             
-            $db = Database::projectConnection('proshare');
+            $db = Database::getInstance();
             
             // Generate unique short code
             $shortCode = $this->generateShortCode();
@@ -73,7 +73,7 @@ class TextShareController
             $userSettings = null;
             if ($userId) {
                 $userSettings = $db->fetch(
-                    "SELECT auto_delete, default_expiry FROM user_settings WHERE user_id = ?",
+                    "SELECT auto_delete, default_expiry FROM proshare_user_settings WHERE user_id = ?",
                     [$userId]
                 );
             }
@@ -145,10 +145,10 @@ class TextShareController
      */
     public function view(string $shortcode): void
     {
-        $db = Database::projectConnection('proshare');
+        $db = Database::getInstance();
         
         $text = $db->fetch(
-            "SELECT * FROM text_shares WHERE short_code = ? AND status = 'active'",
+            "SELECT * FROM proshare_text_shares WHERE short_code = ? AND status = 'active'",
             [$shortcode]
         );
         
@@ -209,7 +209,7 @@ class TextShareController
         }
         
         // Increment view counter
-        $db->query("UPDATE text_shares SET views = views + 1 WHERE id = ?", [$text['id']]);
+        $db->query("UPDATE proshare_text_shares SET views = views + 1 WHERE id = ?", [$text['id']]);
         
         // Log view
         $this->logAudit($text['user_id'], 'text_view', 'text', $text['id'], [
@@ -252,9 +252,9 @@ class TextShareController
             return;
         }
         
-        $db = Database::projectConnection('proshare');
+        $db = Database::getInstance();
         $text = $db->fetch(
-            "SELECT * FROM text_shares WHERE short_code = ? AND status = 'active'",
+            "SELECT * FROM proshare_text_shares WHERE short_code = ? AND status = 'active'",
             [$shortCode]
         );
         
@@ -400,8 +400,8 @@ class TextShareController
         }
         
         // Check if code already exists
-        $db = Database::projectConnection('proshare');
-        $exists = $db->fetch("SELECT id FROM text_shares WHERE short_code = ?", [$code]);
+        $db = Database::getInstance();
+        $exists = $db->fetch("SELECT id FROM proshare_text_shares WHERE short_code = ?", [$code]);
         
         if ($exists) {
             return $this->generateShortCode($length);
@@ -415,7 +415,7 @@ class TextShareController
      */
     private function logAudit(?int $userId, string $action, string $resourceType, ?int $resourceId, array $details = []): void
     {
-        $db = Database::projectConnection('proshare');
+        $db = Database::getInstance();
         
         // Log to audit_logs (with JSON details)
         $db->insert('audit_logs', [
@@ -446,7 +446,7 @@ class TextShareController
      */
     private function createNotification(int $userId, string $type, string $message, ?int $relatedId = null): void
     {
-        $db = Database::projectConnection('proshare');
+        $db = Database::getInstance();
         
         $db->insert('notifications', [
             'user_id' => $userId,

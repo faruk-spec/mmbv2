@@ -19,10 +19,10 @@ class NotificationController
     public function index(): void
     {
         $user = Auth::user();
-        $db = Database::projectConnection('proshare');
+        $db = Database::getInstance();
         
         $notifications = $db->fetchAll(
-            "SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 50",
+            "SELECT * FROM proshare_notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 50",
             [$user['id']]
         );
         
@@ -41,19 +41,19 @@ class NotificationController
         header('Content-Type: application/json');
         
         $user = Auth::user();
-        $db = Database::projectConnection('proshare');
+        $db = Database::getInstance();
         
         $notificationId = (int)($_POST['notification_id'] ?? 0);
         
         if ($notificationId) {
             $db->query(
-                "UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?",
+                "UPDATE proshare_notifications SET is_read = 1 WHERE id = ? AND user_id = ?",
                 [$notificationId, $user['id']]
             );
         } else {
             // Mark all as read
             $db->query(
-                "UPDATE notifications SET is_read = 1 WHERE user_id = ?",
+                "UPDATE proshare_notifications SET is_read = 1 WHERE user_id = ?",
                 [$user['id']]
             );
         }

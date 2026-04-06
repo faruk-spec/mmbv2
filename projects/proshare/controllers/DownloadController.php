@@ -19,11 +19,11 @@ class DownloadController
      */
     public function download(string $shortcode): void
     {
-        $db = Database::projectConnection('proshare');
+        $db = Database::getInstance();
         
         // Get file info
         $file = $db->fetch(
-            "SELECT * FROM files WHERE short_code = ? AND status = 'active'",
+            "SELECT * FROM proshare_files WHERE short_code = ? AND status = 'active'",
             [$shortcode]
         );
         
@@ -115,7 +115,7 @@ class DownloadController
         ]);
         
         // Increment download counter
-        $db->query("UPDATE files SET downloads = downloads + 1 WHERE id = ?", [$file['id']]);
+        $db->query("UPDATE proshare_files SET downloads = downloads + 1 WHERE id = ?", [$file['id']]);
         
         // Log download
         $this->logAudit($file['user_id'], 'file_download', 'file', $file['id'], [
@@ -172,9 +172,9 @@ class DownloadController
             return;
         }
         
-        $db = Database::projectConnection('proshare');
+        $db = Database::getInstance();
         $file = $db->fetch(
-            "SELECT * FROM files WHERE short_code = ? AND status = 'active'",
+            "SELECT * FROM proshare_files WHERE short_code = ? AND status = 'active'",
             [$shortCode]
         );
         
@@ -318,7 +318,7 @@ class DownloadController
      */
     private function logAudit(?int $userId, string $action, string $resourceType, ?int $resourceId, array $details = []): void
     {
-        $db = Database::projectConnection('proshare');
+        $db = Database::getInstance();
         
         // Log to audit_logs (with JSON details)
         $db->insert('audit_logs', [
@@ -349,7 +349,7 @@ class DownloadController
      */
     private function sendNotification(int $userId, string $type, string $message, ?int $relatedId = null): void
     {
-        $db = Database::projectConnection('proshare');
+        $db = Database::getInstance();
         
         $db->insert('notifications', [
             'user_id' => $userId,
@@ -364,11 +364,11 @@ class DownloadController
      */
     public function preview(string $shortcode): void
     {
-        $db = Database::projectConnection('proshare');
+        $db = Database::getInstance();
         
         // Get file info
         $file = $db->fetch(
-            "SELECT * FROM files WHERE short_code = ? AND status = 'active'",
+            "SELECT * FROM proshare_files WHERE short_code = ? AND status = 'active'",
             [$shortcode]
         );
         

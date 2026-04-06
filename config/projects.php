@@ -17,13 +17,12 @@ return [
     ],
     
     'devzone' => [
-        'name' => 'DevZone',
+        'name'        => 'DevZone',
         'description' => 'Developer collaboration and project management',
-        'icon' => 'users',
-        'color' => '#ff2ec4',
-        'enabled' => true,
-        'database' => 'mmb_devzone',
-        'url' => '/projects/devzone'
+        'icon'        => 'terminal',
+        'color'       => '#ff2ec4',
+        'enabled'     => true,
+        'url'         => '/projects/devzone',
     ],
     
     'proshare' => [

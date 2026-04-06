@@ -25,7 +25,7 @@ class CodeXProAdminController extends BaseController
     {
         $this->requireAuth();
         $this->requirePermissionGroup('codexpro');
-        $this->projectDb = Database::projectConnection('codexpro');
+        $this->projectDb = Database::getInstance();
         $this->mainDb = Database::getInstance();
         
         // Get main database name from config
@@ -46,16 +46,16 @@ class CodeXProAdminController extends BaseController
         // Cache statistics for 5 minutes
         $stats = Cache::remember('codexpro_stats', function() {
             return [
-                'total_projects' => $this->projectDb->fetch("SELECT COUNT(*) as count FROM projects")['count'] ?? 0,
-                'total_snippets' => $this->projectDb->fetch("SELECT COUNT(*) as count FROM snippets")['count'] ?? 0,
-                'total_templates' => $this->projectDb->fetch("SELECT COUNT(*) as count FROM templates")['count'] ?? 0,
-                'active_users' => $this->projectDb->fetch("SELECT COUNT(DISTINCT user_id) as count FROM projects")['count'] ?? 0,
+                'total_projects' => $this->projectDb->fetch("SELECT COUNT(*) as count FROM codexpro_projects")['count'] ?? 0,
+                'total_snippets' => $this->projectDb->fetch("SELECT COUNT(*) as count FROM codexpro_snippets")['count'] ?? 0,
+                'total_templates' => $this->projectDb->fetch("SELECT COUNT(*) as count FROM codexpro_templates")['count'] ?? 0,
+                'active_users' => $this->projectDb->fetch("SELECT COUNT(DISTINCT user_id) as count FROM codexpro_projects")['count'] ?? 0,
             ];
         }, 300);
         
         // Get recent projects from project database
         $recentProjects = $this->projectDb->fetchAll(
-            "SELECT * FROM projects 
+            "SELECT * FROM codexpro_projects 
              ORDER BY updated_at DESC 
              LIMIT 10"
         );
@@ -96,7 +96,7 @@ class CodeXProAdminController extends BaseController
         $storageUsageMB = Cache::remember('codexpro_storage', function() {
             $storageUsage = $this->projectDb->fetch(
                 "SELECT SUM(CHAR_LENGTH(html_content) + CHAR_LENGTH(css_content) + CHAR_LENGTH(js_content)) as bytes 
-                 FROM projects"
+                 FROM codexpro_projects"
             );
             return round(($storageUsage['bytes'] ?? 0) / (1024 * 1024), 2);
         }, 600);
@@ -107,7 +107,7 @@ class CodeXProAdminController extends BaseController
             for ($i = 6; $i >= 0; $i--) {
                 $date = date('Y-m-d', strtotime("-{$i} days"));
                 $count = $this->projectDb->fetch(
-                    "SELECT COUNT(*) as count FROM projects WHERE DATE(created_at) = ?",
+                    "SELECT COUNT(*) as count FROM codexpro_projects WHERE DATE(created_at) = ?",
                     [$date]
                 );
                 $data[] = [
@@ -139,7 +139,7 @@ class CodeXProAdminController extends BaseController
         }
         
         // Get current settings
-        $settings = $this->projectDb->fetch("SELECT * FROM settings WHERE id = 1") ?? [
+        $settings = $this->projectDb->fetch("SELECT * FROM codexpro_settings WHERE id = 1") ?? [
             'max_project_size_kb' => 5000,
             'max_projects_per_user' => 50,
             'auto_save_interval' => 30,
@@ -179,7 +179,7 @@ class CodeXProAdminController extends BaseController
         
         // Update each setting using key-value structure
         foreach ($settings as $key => $value) {
-            $existing = $this->projectDb->fetch("SELECT id FROM settings WHERE `key` = ?", [$key]);
+            $existing = $this->projectDb->fetch("SELECT id FROM codexpro_settings WHERE `key` = ?", [$key]);
             
             if ($existing) {
                 $this->projectDb->update('settings', [
@@ -233,7 +233,7 @@ class CodeXProAdminController extends BaseController
             $placeholders = str_repeat('?,', count($userIds) - 1) . '?';
             $projectCounts = $this->projectDb->fetchAll(
                 "SELECT user_id, COUNT(*) as project_count, MAX(updated_at) as last_project_update
-                 FROM projects
+                 FROM codexpro_projects
                  WHERE user_id IN ($placeholders)
                  GROUP BY user_id",
                 $userIds
@@ -286,7 +286,7 @@ class CodeXProAdminController extends BaseController
         
         // Get all templates from project DB
         $templates = $this->projectDb->fetchAll(
-            "SELECT * FROM templates
+            "SELECT * FROM codexpro_templates
              ORDER BY created_at DESC
              LIMIT ? OFFSET ?",
             [$perPage, $offset]
@@ -319,7 +319,7 @@ class CodeXProAdminController extends BaseController
         }
         
         // Get total count
-        $totalCount = $this->projectDb->fetch("SELECT COUNT(*) as count FROM templates")['count'];
+        $totalCount = $this->projectDb->fetch("SELECT COUNT(*) as count FROM codexpro_templates")['count'];
         $totalPages = ceil($totalCount / $perPage);
         
         $this->view('admin/projects/codexpro/templates', [
@@ -372,7 +372,7 @@ class CodeXProAdminController extends BaseController
         $id = (int)($_POST['template_id'] ?? 0);
         
         if ($id > 0) {
-            $template = $this->projectDb->fetch("SELECT is_active FROM templates WHERE id = ?", [$id]);
+            $template = $this->projectDb->fetch("SELECT is_active FROM codexpro_templates WHERE id = ?", [$id]);
             if ($template) {
                 $newStatus = $template['is_active'] ? 0 : 1;
                 $this->projectDb->update('templates', ['is_active' => $newStatus], 'id = ?', [$id]);

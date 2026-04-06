@@ -22,10 +22,10 @@ class ProjectController
     public function index(): void
     {
         $user = Auth::user();
-        $db = Database::projectConnection('codexpro');
+        $db = Database::getInstance();
         
         $projects = $db->fetchAll(
-            "SELECT * FROM projects WHERE user_id = ? ORDER BY updated_at DESC",
+            "SELECT * FROM codexpro_projects WHERE user_id = ? ORDER BY updated_at DESC",
             [$user['id']]
         );
         
@@ -42,7 +42,7 @@ class ProjectController
         header('Content-Type: application/json');
         
         $user = Auth::user();
-        $db = Database::projectConnection('codexpro');
+        $db = Database::getInstance();
         
         $name = Security::sanitize($_POST['name'] ?? '');
         $description = Security::sanitize($_POST['description'] ?? '');
@@ -76,10 +76,10 @@ class ProjectController
     public function show(int $id): void
     {
         $user = Auth::user();
-        $db = Database::projectConnection('codexpro');
+        $db = Database::getInstance();
         
         $project = $db->fetch(
-            "SELECT * FROM projects WHERE id = ? AND user_id = ?",
+            "SELECT * FROM codexpro_projects WHERE id = ? AND user_id = ?",
             [$id, $user['id']]
         );
         
@@ -101,10 +101,10 @@ class ProjectController
         header('Content-Type: application/json');
         
         $user = Auth::user();
-        $db = Database::projectConnection('codexpro');
+        $db = Database::getInstance();
         
         $project = $db->fetch(
-            "SELECT * FROM projects WHERE id = ? AND user_id = ?",
+            "SELECT * FROM codexpro_projects WHERE id = ? AND user_id = ?",
             [$id, $user['id']]
         );
         
@@ -136,11 +136,11 @@ class ProjectController
         
         try {
             $user = Auth::user();
-            $db = Database::projectConnection('codexpro');
+            $db = Database::getInstance();
             
             // Verify ownership
             $project = $db->fetch(
-                "SELECT * FROM projects WHERE id = ? AND user_id = ?",
+                "SELECT * FROM codexpro_projects WHERE id = ? AND user_id = ?",
                 [$id, $user['id']]
             );
             
@@ -175,11 +175,11 @@ class ProjectController
         
         try {
             $user = Auth::user();
-            $db = Database::projectConnection('codexpro');
+            $db = Database::getInstance();
             
             // Verify ownership
             $project = $db->fetch(
-                "SELECT * FROM projects WHERE id = ? AND user_id = ?",
+                "SELECT * FROM codexpro_projects WHERE id = ? AND user_id = ?",
                 [$id, $user['id']]
             );
             

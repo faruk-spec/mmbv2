@@ -25,7 +25,6 @@ class PlatformPlansController extends BaseController
         'whatsapp' => 'WhatsApp API',
         'proshare' => 'ProShare',
         'codexpro' => 'CodeXPro',
-        'imgtxt'   => 'ImgTxt',
         'resumex'  => 'ResumeX',
         'devzone'  => 'DevZone',
     ];
@@ -349,7 +348,6 @@ class PlatformPlansController extends BaseController
         'whatsapp'  => ['bulk_messaging','auto_reply','media_messages','api_access','webhooks','analytics','multi_device'],
         'proshare'  => ['password_protected','expiry_links','analytics','custom_domain','api_access'],
         'codexpro'  => ['ai_completion','private_snippets','team_sharing','api_access'],
-        'imgtxt'    => ['batch_processing','high_accuracy','api_access'],
     ];
 
     /** Sanitise and build plan data array from POST */

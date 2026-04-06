@@ -1055,7 +1055,7 @@
                 <?php endif; ?>
 
                 <!-- Projects Management -->
-                <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('projects') || \Core\Auth::hasPermissionGroup('convertx') || \Core\Auth::hasPermissionGroup('codexpro') || \Core\Auth::hasPermissionGroup('imgtxt') || \Core\Auth::hasPermissionGroup('proshare') || \Core\Auth::hasPermissionGroup('billx') || \Core\Auth::hasPermissionGroup('whatsapp') || \Core\Auth::hasPermissionGroup('qr') || \Core\Auth::hasPermissionGroup('resumex') || \Core\Auth::hasPermissionGroup('idcard') || \Core\Auth::hasPermissionGroup('formx') || \Core\Auth::hasPermissionGroup('linkshortner') || \Core\Auth::hasPermissionGroup('notex')): ?>
+                <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('projects') || \Core\Auth::hasPermissionGroup('convertx') || \Core\Auth::hasPermissionGroup('codexpro') || \Core\Auth::hasPermissionGroup('proshare') || \Core\Auth::hasPermissionGroup('billx') || \Core\Auth::hasPermissionGroup('whatsapp') || \Core\Auth::hasPermissionGroup('qr') || \Core\Auth::hasPermissionGroup('resumex') || \Core\Auth::hasPermissionGroup('idcard') || \Core\Auth::hasPermissionGroup('formx') || \Core\Auth::hasPermissionGroup('linkshortner') || \Core\Auth::hasPermissionGroup('notex')): ?>
                 <div class="menu-section">
                     <div class="menu-section-title">Projects</div>
                     
@@ -1170,93 +1170,6 @@
                             <a href="/admin/projects/codexpro/templates" class="menu-link">
                                 <i class="fas fa-file-code"></i>
                                 <span>Templates</span>
-                            </a>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                    <?php endif; ?>
-                    
-                    <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('imgtxt')): ?>
-                    <!-- ImgTxt -->
-                    <div class="menu-item menu-dropdown">
-                        <div class="menu-dropdown-toggle">
-                            <div class="left">
-                                <i class="fas fa-image"></i>
-                                <span>ImgTxt</span>
-                            </div>
-                            <i class="fas fa-chevron-down arrow"></i>
-                        </div>
-                        <div class="menu-dropdown-content">
-                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('imgtxt')): ?>
-                            <a href="/admin/projects/imgtxt" class="menu-link">
-                                <i class="fas fa-chart-line"></i>
-                                <span>Overview</span>
-                            </a>
-                            <?php endif; ?>
-                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('imgtxt')): ?>
-                            <a href="/projects/imgtxt/dashboard" class="menu-link">
-                                <i class="fas fa-tachometer-alt"></i>
-                                <span>Dashboard</span>
-                            </a>
-                            <?php endif; ?>
-                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('imgtxt')): ?>
-                            <a href="/projects/imgtxt/upload" class="menu-link">
-                                <i class="fas fa-cloud-upload-alt"></i>
-                                <span>Upload & Extract</span>
-                            </a>
-                            <?php endif; ?>
-                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('imgtxt')): ?>
-                            <a href="/projects/imgtxt/batch" class="menu-link">
-                                <i class="fas fa-layer-group"></i>
-                                <span>Batch Processing</span>
-                            </a>
-                            <?php endif; ?>
-                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('imgtxt')): ?>
-                            <a href="/projects/imgtxt/history" class="menu-link">
-                                <i class="fas fa-history"></i>
-                                <span>History</span>
-                            </a>
-                            <?php endif; ?>
-                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('imgtxt.jobs')): ?>
-                            <a href="/admin/projects/imgtxt/jobs" class="menu-link">
-                                <i class="fas fa-tasks"></i>
-                                <span>All OCR Jobs</span>
-                            </a>
-                            <?php endif; ?>
-                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('imgtxt')): ?>
-                            <a href="/projects/imgtxt/settings" class="menu-link">
-                                <i class="fas fa-cog"></i>
-                                <span>User Settings</span>
-                            </a>
-                            <?php endif; ?>
-                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('imgtxt.settings')): ?>
-                            <a href="/admin/projects/imgtxt/settings" class="menu-link">
-                                <i class="fas fa-wrench"></i>
-                                <span>Admin Settings</span>
-                            </a>
-                            <?php endif; ?>
-                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('imgtxt.languages')): ?>
-                            <a href="/admin/projects/imgtxt/languages" class="menu-link">
-                                <i class="fas fa-language"></i>
-                                <span>Languages Config</span>
-                            </a>
-                            <?php endif; ?>
-                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('imgtxt.users')): ?>
-                            <a href="/admin/projects/imgtxt/users" class="menu-link">
-                                <i class="fas fa-users"></i>
-                                <span>User Management</span>
-                            </a>
-                            <?php endif; ?>
-                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('imgtxt.statistics')): ?>
-                            <a href="/admin/projects/imgtxt/statistics" class="menu-link">
-                                <i class="fas fa-chart-bar"></i>
-                                <span>Statistics</span>
-                            </a>
-                            <?php endif; ?>
-                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('imgtxt.activity')): ?>
-                            <a href="/admin/projects/imgtxt/activity" class="menu-link">
-                                <i class="fas fa-stream"></i>
-                                <span>Activity Logs</span>
                             </a>
                             <?php endif; ?>
                         </div>

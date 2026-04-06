@@ -22,11 +22,11 @@ class EditorController
     public function index(): void
     {
         $user = Auth::user();
-        $db = Database::projectConnection('codexpro');
+        $db = Database::getInstance();
         
         // Get user settings
         $settings = $db->fetch(
-            "SELECT * FROM user_settings WHERE user_id = ?",
+            "SELECT * FROM codexpro_user_settings WHERE user_id = ?",
             [$user['id']]
         );
         
@@ -34,7 +34,7 @@ class EditorController
             // Create default settings
             $db->insert('user_settings', ['user_id' => $user['id']]);
             $settings = $db->fetch(
-                "SELECT * FROM user_settings WHERE user_id = ?",
+                "SELECT * FROM codexpro_user_settings WHERE user_id = ?",
                 [$user['id']]
             );
         }
@@ -59,10 +59,10 @@ class EditorController
     public function edit(int $id): void
     {
         $user = Auth::user();
-        $db = Database::projectConnection('codexpro');
+        $db = Database::getInstance();
         
         $project = $db->fetch(
-            "SELECT * FROM projects WHERE id = ? AND user_id = ?",
+            "SELECT * FROM codexpro_projects WHERE id = ? AND user_id = ?",
             [$id, $user['id']]
         );
         
@@ -74,7 +74,7 @@ class EditorController
         
         // Get user settings
         $settings = $db->fetch(
-            "SELECT * FROM user_settings WHERE user_id = ?",
+            "SELECT * FROM codexpro_user_settings WHERE user_id = ?",
             [$user['id']]
         );
         
@@ -92,7 +92,7 @@ class EditorController
         header('Content-Type: application/json');
         
         $user = Auth::user();
-        $db = Database::projectConnection('codexpro');
+        $db = Database::getInstance();
         
         $projectId = (int)($_POST['project_id'] ?? 0);
         $name = Security::sanitize($_POST['name'] ?? 'Untitled Project');
@@ -105,7 +105,7 @@ class EditorController
         if ($projectId) {
             // Update existing project
             $project = $db->fetch(
-                "SELECT * FROM projects WHERE id = ? AND user_id = ?",
+                "SELECT * FROM codexpro_projects WHERE id = ? AND user_id = ?",
                 [$projectId, $user['id']]
             );
             
@@ -154,7 +154,7 @@ class EditorController
         header('Content-Type: application/json');
         
         $user = Auth::user();
-        $db = Database::projectConnection('codexpro');
+        $db = Database::getInstance();
         
         $projectId = (int)($_POST['project_id'] ?? 0);
         
@@ -164,7 +164,7 @@ class EditorController
         }
         
         $project = $db->fetch(
-            "SELECT * FROM projects WHERE id = ? AND user_id = ?",
+            "SELECT * FROM codexpro_projects WHERE id = ? AND user_id = ?",
             [$projectId, $user['id']]
         );
         
