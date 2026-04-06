@@ -28,6 +28,7 @@ $router->post('/projects/notex/notes/{id}/share', 'Projects\NoteX\Controllers\No
 // Folders
 $router->get('/projects/notex/folders', 'Projects\NoteX\Controllers\FolderController@index');
 $router->post('/projects/notex/folders/create', 'Projects\NoteX\Controllers\FolderController@create');
+$router->post('/projects/notex/folders/{id}/rename', 'Projects\NoteX\Controllers\FolderController@rename');
 $router->post('/projects/notex/folders/{id}/delete', 'Projects\NoteX\Controllers\FolderController@delete');
 
 // Settings

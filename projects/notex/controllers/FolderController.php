@@ -56,6 +56,38 @@ class FolderController
         exit;
     }
 
+    public function rename(int $id): void
+    {
+        if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
+            $_SESSION['error'] = 'Invalid security token.';
+            header('Location: /projects/notex/folders');
+            exit;
+        }
+
+        $user = Auth::user();
+        $db   = Database::projectConnection('notex');
+        $name = trim($_POST['name'] ?? '');
+
+        if (empty($name)) {
+            $_SESSION['error'] = 'Folder name is required.';
+            header('Location: /projects/notex/folders');
+            exit;
+        }
+
+        $folder = $db->fetch("SELECT id FROM notex_folders WHERE id = ? AND user_id = ?", [$id, $user['id']]);
+        if (!$folder) {
+            $_SESSION['error'] = 'Folder not found.';
+            header('Location: /projects/notex/folders');
+            exit;
+        }
+
+        $db->query("UPDATE notex_folders SET name = ? WHERE id = ? AND user_id = ?", [$name, $id, $user['id']]);
+
+        $_SESSION['success'] = "Folder renamed to '{$name}'.";
+        header('Location: /projects/notex/folders');
+        exit;
+    }
+
     public function delete(int $id): void
     {
         if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
