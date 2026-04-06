@@ -1243,18 +1243,21 @@ try {
                             'idcard'      => '<rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>',
                             'formx'       => '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><line x1="9" y1="13" x2="15" y2="13"></line><line x1="9" y1="17" x2="15" y2="17"></line>',
                         ];
-                        // Map project keys to admin sub-routes that exist
-                        $_adminRoutes = [
-                            'proshare'    => ['Overview' => '', 'Analytics' => '/analytics', 'Files' => '/files', 'Settings' => '/settings'],
-                            'codexpro'    => ['Overview' => '', 'Users' => '/users', 'Settings' => '/settings'],
-                            'resumex'     => ['Overview' => '', 'Analytics' => '/analytics', 'Templates' => '/templates', 'Settings' => '/settings'],
-                            'billx'       => ['Overview' => '', 'Bills' => '/bills', 'Activity Logs' => '/activity-logs', 'Settings' => '/settings'],
-                            'convertx'    => ['Overview' => '', 'Jobs' => '/jobs', 'Users' => '/users', 'Settings' => '/settings'],
-                            'idcard'      => ['Overview' => '', 'Cards' => '/cards', 'Settings' => '/settings'],
-                            'linkshortner'=> ['Overview' => '', 'Links' => '/links', 'Analytics' => '/analytics', 'Settings' => '/settings'],
-                            'notex'       => ['Overview' => '', 'Notes' => '/notes', 'Settings' => '/settings'],
+                        // Map project keys to user-facing sub-routes
+                        $_userRoutes = [
+                            'proshare'    => ['Dashboard' => '', 'My Files' => '/files', 'Upload' => '/upload', 'Text Share' => '/text'],
+                            'codexpro'    => ['Dashboard' => '', 'Editor' => '/editor', 'Projects' => '/projects', 'Snippets' => '/snippets'],
+                            'resumex'     => ['Dashboard' => '', 'My Resumes' => '/resumes', 'Templates' => '/templates'],
+                            'billx'       => ['Dashboard' => '', 'Bills' => '/bills', 'Create Bill' => '/create'],
+                            'convertx'    => ['Dashboard' => '', 'Convert File' => '/convert'],
+                            'idcard'      => ['Dashboard' => '', 'My Cards' => '/cards', 'Generate' => '/generate'],
+                            'linkshortner'=> ['Dashboard' => '', 'My Links' => '/links', 'Analytics' => '/analytics', 'Settings' => '/settings'],
+                            'notex'       => ['Dashboard' => '', 'My Notes' => '/notes', 'Folders' => '/folders', 'Settings' => '/settings'],
+                            'whatsapp'    => ['Dashboard' => '', 'Sessions' => '/sessions', 'Messages' => '/messages'],
+                            'qr'          => ['Dashboard' => ''],
+                            'devzone'     => ['Dashboard' => ''],
+                            'formx'       => ['Dashboard' => ''],
                         ];
-                        $isAdmin = in_array(Auth::user()['role'] ?? '', ['admin', 'super_admin']);
                         ?>
                         <div class="nav-section" style="margin-bottom: 8px;">
                             <a href="/dashboard" class="nav-item" style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.85rem;" onmouseover="this.style.background='rgba(0,240,255,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
@@ -1269,7 +1272,8 @@ try {
                                 $_key   = $_sp['project_key'] ?? '';
                                 $_color = htmlspecialchars($_sp['color'] ?? '#00f0ff');
                                 $_svgIcon = $_iconMap[$_key] ?? '<rect x="3" y="3" width="18" height="18" rx="2"/>';
-                                $_adminSubs = $isAdmin ? ($_adminRoutes[$_key] ?? []) : [];
+                                $_userSubs = $_userRoutes[$_key] ?? [];
+                                $_baseUrl  = rtrim($_sp['url'] ?? '/projects/' . $_key, '/');
                             ?>
                             <div class="nav-group">
                                 <div class="nav-group-header" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 16px; cursor: pointer; user-select: none;">
@@ -1286,28 +1290,35 @@ try {
                                     </svg>
                                 </div>
                                 <div class="nav-group-content" style="max-height: 0; overflow: hidden; transition: max-height 0.3s ease;">
-                                    <!-- Launch link -->
-                                    <a href="<?= htmlspecialchars($_sp['url'] ?? '/projects/' . $_key) ?>" class="nav-sub-item" style="display: flex; align-items: center; gap: 10px; padding: 8px 16px 8px 44px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.8rem;" onmouseover="this.style.background='rgba(0,240,255,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
-                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-                                        <span class="nav-text">Launch App</span>
-                                    </a>
-                                    <?php if ($isAdmin && !empty($_adminSubs)):
-                                        foreach ($_adminSubs as $_label => $_sub):
-                                            $_href = '/admin/projects/' . $_key . $_sub;
+                                    <?php if (!empty($_userSubs)):
+                                        foreach ($_userSubs as $_label => $_sub):
+                                            $_href = $_baseUrl . $_sub;
                                     ?>
-                                    <a href="<?= $_href ?>" class="nav-sub-item" style="display: flex; align-items: center; gap: 10px; padding: 7px 16px 7px 44px; color: var(--text-secondary); text-decoration: none; transition: all 0.3s; font-size: 0.78rem;" onmouseover="this.style.background='rgba(0,240,255,0.08)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-secondary)'">
-                                        <?php if ($_label === 'Analytics'): ?>
+                                    <a href="<?= htmlspecialchars($_href) ?>" class="nav-sub-item" style="display: flex; align-items: center; gap: 10px; padding: 7px 16px 7px 44px; color: var(--text-secondary); text-decoration: none; transition: all 0.3s; font-size: 0.8rem;" onmouseover="this.style.background='rgba(0,240,255,0.08)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-secondary)'">
+                                        <?php if ($_label === 'Dashboard' || $_label === 'Overview'): ?>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                                        <?php elseif (stripos($_label, 'file') !== false || stripos($_label, 'upload') !== false): ?>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
+                                        <?php elseif (stripos($_label, 'analytic') !== false): ?>
                                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-                                        <?php elseif ($_label === 'Settings'): ?>
+                                        <?php elseif (stripos($_label, 'setting') !== false): ?>
                                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                                        <?php elseif ($_label === 'Activity Logs' || $_label === 'Logs'): ?>
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                                        <?php elseif (stripos($_label, 'create') !== false || stripos($_label, 'generate') !== false || stripos($_label, 'new') !== false): ?>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                        <?php elseif (stripos($_label, 'message') !== false || stripos($_label, 'text') !== false): ?>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                                         <?php else: ?>
                                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 8 12 12 14 14"/></svg>
                                         <?php endif; ?>
                                         <span class="nav-text"><?= htmlspecialchars($_label) ?></span>
                                     </a>
-                                    <?php endforeach; endif; ?>
+                                    <?php endforeach;
+                                    else: ?>
+                                    <a href="<?= htmlspecialchars($_baseUrl) ?>" class="nav-sub-item" style="display: flex; align-items: center; gap: 10px; padding: 7px 16px 7px 44px; color: var(--text-secondary); text-decoration: none; transition: all 0.3s; font-size: 0.8rem;" onmouseover="this.style.background='rgba(0,240,255,0.08)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-secondary)'">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                                        <span class="nav-text">Dashboard</span>
+                                    </a>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                             <?php endforeach; ?>
@@ -1928,8 +1939,8 @@ try {
     </script>
     
     <!-- Toast Notification System -->
-    <script src="/assets/js/toast.js"></script>
-    <script src="/assets/js/qrcode.js"></script>
+    <script src="/public/assets/js/toast.js"></script>
+    <script src="/public/assets/js/qrcode.js"></script>
 
     <!-- ── Post-logout Login Suggestion Popup ───────────────────────────────── -->
     <?php if (isset($_GET['logged_out']) && !(\Core\Auth::check())): ?>
