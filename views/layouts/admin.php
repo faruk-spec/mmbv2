@@ -1605,8 +1605,6 @@
                         </div>
                     </div>
                     <?php endif; ?>
-                </div>
-                <?php endif; ?>
                 
                 <!-- LinkShortner – URL Shortener -->
                 <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('linkshortner')): ?>
@@ -1681,6 +1679,8 @@
                     </div>
                 </div>
                 <?php endif; ?>
+                </div>
+                <?php endif; ?>
                 
                 <!-- User Management -->
                 <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('users')): ?>
@@ -1691,6 +1691,12 @@
                         <a href="/admin/users" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/users') === 0 ? 'active' : '' ?>">
                             <i class="fas fa-users"></i>
                             <span>Users</span>
+                        </a>
+                    </div>
+                    <div class="menu-item">
+                        <a href="/admin/users/create" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/users/create') === 0 ? 'active' : '' ?>">
+                            <i class="fas fa-user-plus"></i>
+                            <span>Create User</span>
                         </a>
                     </div>
 

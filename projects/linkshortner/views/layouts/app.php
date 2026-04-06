@@ -239,13 +239,24 @@ header("Expires: 0");
         .grid-4 { grid-template-columns: repeat(4, 1fr); }
 
         /* Stats */
-        .stat-card { text-align: center; padding: var(--space-xl); }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.875rem; margin-bottom: var(--space-lg); }
+        .stat-card {
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            border-radius: 0.75rem; padding: 1.125rem;
+            display: flex; align-items: center; gap: 0.875rem;
+            transition: border-color 0.2s, transform 0.2s;
+        }
+        .stat-card:hover { border-color: rgba(0,212,255,0.25); transform: translateY(-2px); }
+        .stat-icon {
+            width: 2.75rem; height: 2.75rem; border-radius: 0.5rem; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center; font-size: 1.1rem;
+        }
         .stat-value {
-            font-size: 2.5rem; font-weight: 700;
+            font-size: 1.75rem; font-weight: 700; line-height: 1;
             background: linear-gradient(135deg, var(--ls-accent), var(--magenta));
             -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
         }
-        .stat-label { color: var(--text-secondary); margin-top: var(--space-xs); font-size: var(--font-sm); }
+        .stat-label { color: var(--text-secondary); margin-top: 0.2rem; font-size: var(--font-sm); }
 
         /* Badges */
         .badge { display: inline-block; padding: 0.1875rem 0.625rem; border-radius: 1.25rem; font-size: var(--font-xs); font-weight: 600; }
@@ -285,7 +296,8 @@ header("Expires: 0");
             .ls-main { margin-left: 0; padding: var(--space-lg) 0.9375rem; overflow-x: auto !important; max-width: 100vw; }
             .sidebar-toggle { display: flex; }
             .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
-            .stat-value { font-size: 2rem; }
+            .stat-value { font-size: 1.5rem; }
+            .stat-icon { width: 2.25rem; height: 2.25rem; font-size: 0.875rem; }
             .card, .glass-card { padding: var(--space-lg); }
             .section-title { font-size: var(--font-lg); }
             .form-row { grid-template-columns: 1fr; }
@@ -293,7 +305,7 @@ header("Expires: 0");
         @media (max-width: 30rem) {
             .ls-main { padding: 0.9375rem 0.625rem; }
             .btn:not(.btn-sm):not(.btn-icon) { width: 100%; justify-content: center; padding: 0.75rem 1rem; }
-            .stat-value { font-size: 1.8rem; }
+            .stat-value { font-size: 1.3rem; }
             .form-actions { flex-direction: column; width: 100%; }
             .form-actions .btn { width: 100%; }
         }

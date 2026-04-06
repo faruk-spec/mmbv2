@@ -519,6 +519,16 @@ function mobSwitchTab(tab) {
 }
 window.mobSwitchTab = mobSwitchTab;
 
+// ─── Unsaved-changes guard ────────────────────────────────────────────────────
+let isDirty = false;
+function markDirty() { isDirty = true; }
+window.addEventListener('beforeunload', function(e) {
+    if (!isDirty) return;
+    e.preventDefault();
+    e.returnValue = 'You have unsaved changes. Leave without saving?';
+    return e.returnValue;
+});
+
 // ─── State ────────────────────────────────────────────────────────────────────
 let fields = (function() {
     var raw = <?= json_encode($form ? ($form['fields'] ?? []) : []) ?>;
@@ -586,6 +596,7 @@ function buildCard(field, idx) {
             const moved = fields.splice(from, 1)[0];
             fields.splice(idx, 0, moved);
             if (selectedIdx === from) selectedIdx = idx;
+            markDirty();
             renderCanvas();
         }
     });
@@ -730,6 +741,7 @@ window.saveFieldSettings = function(idx) {
     if (get('rpContent'))     f.content     = get('rpContent').value;
     if (get('rpValue'))       f.value       = get('rpValue').value;
     fields[idx] = f;
+    markDirty();
     renderCanvas();
     showFieldSettings(f, idx);
 };
@@ -769,6 +781,7 @@ function addField(type) {
     if (type === 'paragraph') field.content = 'Enter your paragraph text here.';
     fields.push(field);
     selectedIdx = fields.length - 1;
+    markDirty();
     renderCanvas();
     showFieldSettings(fields[selectedIdx], selectedIdx);
 }
@@ -778,12 +791,14 @@ window.moveField = function(idx, dir) {
     if (newIdx < 0 || newIdx >= fields.length) return;
     [fields[idx], fields[newIdx]] = [fields[newIdx], fields[idx]];
     if (selectedIdx === idx) selectedIdx = newIdx;
+    markDirty();
     renderCanvas();
 };
 
 window.removeField = function(idx) {
     fields.splice(idx, 1);
     selectedIdx = null;
+    markDirty();
     document.getElementById('fxRightEmpty').style.display = '';
     document.getElementById('fxRightForm').style.display = 'none';
     // Reset mobile edit panel
@@ -836,6 +851,7 @@ window.submitBuilder = function() {
         confirm_submit:         !!(document.getElementById('settingConfirmSubmit')?.checked),
     });
     document.getElementById('builderForm').submit();
+    isDirty = false; // clear before navigation
 };
 
 // ─── Utils ────────────────────────────────────────────────────────────────────
@@ -848,6 +864,18 @@ function slugify(s) {
 
 // ─── Init ────────────────────────────────────────────────────────────────────
 renderCanvas();
+
+// Mark dirty when any form-settings input changes
+(function(){
+    var settingIds = ['settingTitle','settingDesc','settingStatus','settingSuccessMsg',
+        'settingRedirect','settingEmail','settingExpiresAt','settingAccessMode',
+        'settingAccessPassword','settingMaxSubmissions','settingMaxPerIP','settingConfirmSubmit'];
+    settingIds.forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.addEventListener('input', markDirty);
+        if (el) el.addEventListener('change', markDirty);
+    });
+})();
 
 // Show/hide password field based on access mode selector
 (function(){
