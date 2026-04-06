@@ -46,40 +46,52 @@
                 </p>
                 
                 <?php if (isset($secret) && isset($provisioningUri)): ?>
-                <div style="background: var(--bg-secondary); padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                    <div style="background: var(--bg-secondary); padding: 20px; border-radius: 10px; margin-bottom: 20px;">
                     <h3 style="font-size: 1rem; margin-bottom: 15px;">Step 1: Scan QR Code</h3>
                     <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 15px;">
                         Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.)
                     </p>
                     <div style="text-align: center; padding: 20px; background: white; border-radius: 10px; margin-bottom: 15px;">
-                        <canvas id="qrCanvas" style="max-width: 200px; height: auto; display: block; margin: 0 auto;"></canvas>
+                        <div id="qrCanvas" style="display: inline-block;"></div>
                     </div>
+                    <script src="https://unpkg.com/qr-code-styling@1.6.0-rc.1/lib/qr-code-styling.js"></script>
+                    <script>
+                    (function() {
+                        var uri = <?= json_encode($provisioningUri) ?>;
+                        function renderQR() {
+                            var container = document.getElementById('qrCanvas');
+                            if (!container || typeof QRCodeStyling === 'undefined') {
+                                setTimeout(renderQR, 100);
+                                return;
+                            }
+                            try {
+                                var qr = new QRCodeStyling({
+                                    width: 220,
+                                    height: 220,
+                                    data: uri,
+                                    dotsOptions: { color: '#000000', type: 'square' },
+                                    backgroundOptions: { color: '#ffffff' },
+                                    qrOptions: { errorCorrectionLevel: 'M' }
+                                });
+                                qr.append(container);
+                            } catch(e) {
+                                container.innerHTML =
+                                    '<p style="color:#666;font-size:0.85rem;">Could not render QR code. Please use the manual code below.</p>';
+                            }
+                        }
+                        if (document.readyState === 'loading') {
+                            document.addEventListener('DOMContentLoaded', renderQR);
+                        } else {
+                            renderQR();
+                        }
+                    })();
+                    </script>
                     
                     <h3 style="font-size: 1rem; margin-bottom: 10px;">Or enter this code manually:</h3>
                     <div style="background: var(--bg-primary); padding: 15px; border-radius: 8px; font-family: monospace; font-size: 1.1rem; text-align: center; letter-spacing: 2px; word-break: break-all;">
                         <?= View::e($secret) ?>
                     </div>
                 </div>
-                <script>
-                (function() {
-                    var uri = <?= json_encode($provisioningUri) ?>;
-                    function loadQR() {
-                        if (typeof QRCode === 'undefined') return;
-                        try {
-                            var qr = new QRCode(uri, 'M');
-                            qr.toCanvas(document.getElementById('qrCanvas'), {moduleSize: 4, quiet: 4});
-                        } catch(e) {
-                            document.getElementById('qrCanvas').insertAdjacentHTML('afterend',
-                                '<p style="color:#666;font-size:0.85rem;">Could not render QR code. Use the manual code below.</p>');
-                        }
-                    }
-                    if (document.readyState === 'loading') {
-                        document.addEventListener('DOMContentLoaded', loadQR);
-                    } else {
-                        loadQR();
-                    }
-                })();
-                </script>
                 
                 <form method="POST" action="/2fa/enable">
                     <?= \Core\Security::csrfField() ?>

@@ -246,6 +246,30 @@ class HomeContentController extends BaseController
                 $tier = 'free';
             }
             
+            // Handle project logo (square) upload or removal
+            $logoUrl = $this->input('current_project_logo_url', '');
+            $removeLogo = $this->input('remove_project_logo', '0') === '1';
+            if ($removeLogo) {
+                if (!empty($logoUrl)) {
+                    $oldFilePath = BASE_PATH . $logoUrl;
+                    if (file_exists($oldFilePath)) {
+                        @unlink($oldFilePath);
+                    }
+                }
+                $logoUrl = '';
+            } elseif (isset($_FILES['project_logo']) && $_FILES['project_logo']['error'] === UPLOAD_ERR_OK) {
+                if (!empty($logoUrl)) {
+                    $oldFilePath = BASE_PATH . $logoUrl;
+                    if (file_exists($oldFilePath)) {
+                        @unlink($oldFilePath);
+                    }
+                }
+                if ($_FILES['project_logo']['size'] > 2 * 1024 * 1024) {
+                    throw new \Exception('Logo image size must be less than 2MB.');
+                }
+                $logoUrl = $this->handleImageUpload($_FILES['project_logo'], 'logo');
+            }
+
             // Handle image upload or removal
             $imageUrl = $this->input('current_project_image_url', '');
             $removeImage = $this->input('remove_project_image', '0') === '1';
@@ -277,6 +301,7 @@ class HomeContentController extends BaseController
                 'icon' => $icon,
                 'tier' => $tier,
                 'features' => $featuresJson,
+                'logo_url' => $logoUrl,
                 'image_url' => $imageUrl,
                 'is_enabled' => $isEnabled,
                 'updated_at' => date('Y-m-d H:i:s')
@@ -307,16 +332,6 @@ class HomeContentController extends BaseController
             if (!mkdir($uploadDir, 0775, true)) {
                 Logger::error('Failed to create upload directory: ' . $uploadDir);
                 throw new \Exception('Failed to create upload directory.');
-            }
-            chmod($uploadDir, 0775);
-        }
-        
-        // Ensure directory is writable
-        if (!is_writable($uploadDir)) {
-            chmod($uploadDir, 0775);
-            if (!is_writable($uploadDir)) {
-                Logger::error('Upload directory is not writable: ' . $uploadDir);
-                throw new \Exception('Upload directory is not writable. Please set permissions to 775.');
             }
         }
         

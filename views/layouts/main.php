@@ -1204,45 +1204,124 @@ try {
                         </div>
                         
                         <!-- Applications Section -->
+                        <?php
+                        // Load enabled projects dynamically from DB, falling back to config
+                        $sidebarProjects = [];
+                        try {
+                            $_sidebarDb = \Core\Database::getInstance();
+                            $sidebarProjects = $_sidebarDb->fetchAll(
+                                "SELECT project_key, name, color, url, logo_url, icon FROM home_projects WHERE is_enabled = 1 ORDER BY sort_order ASC"
+                            );
+                        } catch (\Exception $_e) {}
+                        if (empty($sidebarProjects)) {
+                            $_cfgProjects = require BASE_PATH . '/config/projects.php';
+                            foreach ($_cfgProjects as $_k => $_c) {
+                                if (!empty($_c['enabled'])) {
+                                    $sidebarProjects[] = [
+                                        'project_key' => $_k,
+                                        'name'        => $_c['name'] ?? $_k,
+                                        'color'       => $_c['color'] ?? '#00f0ff',
+                                        'url'         => $_c['url']  ?? '/projects/' . $_k,
+                                        'logo_url'    => '',
+                                        'icon'        => $_c['icon'] ?? '',
+                                    ];
+                                }
+                            }
+                        }
+                        // Map of known project keys to SVG path snippets
+                        $_iconMap = [
+                            'proshare'    => '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>',
+                            'codexpro'    => '<polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline>',
+                            'devzone'     => '<circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon>',
+                            'qr'          => '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>',
+                            'resumex'     => '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline>',
+                            'billx'       => '<rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>',
+                            'notex'       => '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>',
+                            'whatsapp'    => '<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>',
+                            'convertx'    => '<polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path>',
+                            'linkshortner'=> '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>',
+                            'idcard'      => '<rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>',
+                            'formx'       => '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><line x1="9" y1="13" x2="15" y2="13"></line><line x1="9" y1="17" x2="15" y2="17"></line>',
+                        ];
+                        // Map project keys to user-facing sub-routes
+                        $_userRoutes = [
+                            'proshare'    => ['Dashboard' => '', 'My Files' => '/files', 'Upload' => '/upload', 'Text Share' => '/text'],
+                            'codexpro'    => ['Dashboard' => '', 'Editor' => '/editor', 'Projects' => '/projects', 'Snippets' => '/snippets'],
+                            'resumex'     => ['Dashboard' => '', 'My Resumes' => '/resumes', 'Templates' => '/templates'],
+                            'billx'       => ['Dashboard' => '', 'Bills' => '/bills', 'Create Bill' => '/create'],
+                            'convertx'    => ['Dashboard' => '', 'Convert File' => '/convert'],
+                            'idcard'      => ['Dashboard' => '', 'My Cards' => '/cards', 'Generate' => '/generate'],
+                            'linkshortner'=> ['Dashboard' => '', 'My Links' => '/links', 'Analytics' => '/analytics', 'Settings' => '/settings'],
+                            'notex'       => ['Dashboard' => '', 'My Notes' => '/notes', 'Folders' => '/folders', 'Settings' => '/settings'],
+                            'whatsapp'    => ['Dashboard' => '', 'Sessions' => '/sessions', 'Messages' => '/messages'],
+                            'qr'          => ['Dashboard' => ''],
+                            'devzone'     => ['Dashboard' => ''],
+                            'formx'       => ['Dashboard' => ''],
+                        ];
+                        ?>
                         <div class="nav-section" style="margin-bottom: 8px;">
-                            <a href="/browse" class="nav-item" style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.85rem;" onmouseover="this.style.background='rgba(0,240,255,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
+                            <a href="/dashboard" class="nav-item" style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.85rem;" onmouseover="this.style.background='rgba(0,240,255,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                                 </svg>
                                 <span class="nav-text">Browse Applications</span>
                             </a>
-                            
+
+                            <!-- One collapsible group per enabled application -->
+                            <?php foreach ($sidebarProjects as $_sp):
+                                $_key   = $_sp['project_key'] ?? '';
+                                $_color = htmlspecialchars($_sp['color'] ?? '#00f0ff');
+                                $_svgIcon = $_iconMap[$_key] ?? '<rect x="3" y="3" width="18" height="18" rx="2"/>';
+                                $_userSubs = $_userRoutes[$_key] ?? [];
+                                $_baseUrl  = rtrim($_sp['url'] ?? '/projects/' . $_key, '/');
+                            ?>
                             <div class="nav-group">
                                 <div class="nav-group-header" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 16px; cursor: pointer; user-select: none;">
-                                    <div style="display: flex; align-items: center; gap: 12px; color: var(--text-secondary); font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
-                                            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
-                                        </svg>
-                                        <span class="nav-text">Your Applications</span>
+                                    <div style="display: flex; align-items: center; gap: 10px; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">
+                                        <?php if (!empty($_sp['logo_url'])): ?>
+                                            <img src="<?= htmlspecialchars($_sp['logo_url']) ?>" alt="" style="width:16px;height:16px;border-radius:3px;object-fit:cover;flex-shrink:0;">
+                                        <?php else: ?>
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="<?= $_color ?>" stroke-width="2"><?= $_svgIcon ?></svg>
+                                        <?php endif; ?>
+                                        <span class="nav-text"><?= htmlspecialchars($_sp['name'] ?? '') ?></span>
                                     </div>
                                     <svg class="group-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2" style="transition: transform 0.3s;">
                                         <polyline points="6 9 12 15 18 9"></polyline>
                                     </svg>
                                 </div>
                                 <div class="nav-group-content" style="max-height: 0; overflow: hidden; transition: max-height 0.3s ease;">
-                                    <?php
-                                    $projects = [
-                                        ['name' => 'ProShare', 'url' => '/projects/proshare', 'icon' => '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>'],
-                                        ['name' => 'CodeXPro', 'url' => '/projects/codexpro', 'icon' => '<polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline>'],
-                                        ['name' => 'DevZone', 'url' => '/projects/devzone', 'icon' => '<circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon>'],
-                                    ];
-                                    foreach ($projects as $project):
+                                    <?php if (!empty($_userSubs)):
+                                        foreach ($_userSubs as $_label => $_sub):
+                                            $_href = $_baseUrl . $_sub;
                                     ?>
-                                        <a href="<?= $project['url'] ?>" class="nav-sub-item" style="display: flex; align-items: center; gap: 12px; padding: 8px 16px 8px 44px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.8rem;" onmouseover="this.style.background='rgba(0,240,255,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <?= $project['icon'] ?>
-                                            </svg>
-                                            <span class="nav-text"><?= $project['name'] ?></span>
-                                        </a>
-                                    <?php endforeach; ?>
+                                    <a href="<?= htmlspecialchars($_href) ?>" class="nav-sub-item" style="display: flex; align-items: center; gap: 10px; padding: 7px 16px 7px 44px; color: var(--text-secondary); text-decoration: none; transition: all 0.3s; font-size: 0.8rem;" onmouseover="this.style.background='rgba(0,240,255,0.08)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-secondary)'">
+                                        <?php if ($_label === 'Dashboard' || $_label === 'Overview'): ?>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                                        <?php elseif (stripos($_label, 'file') !== false || stripos($_label, 'upload') !== false): ?>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
+                                        <?php elseif (stripos($_label, 'analytic') !== false): ?>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                                        <?php elseif (stripos($_label, 'setting') !== false): ?>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                                        <?php elseif (stripos($_label, 'create') !== false || stripos($_label, 'generate') !== false || stripos($_label, 'new') !== false): ?>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                        <?php elseif (stripos($_label, 'message') !== false || stripos($_label, 'text') !== false): ?>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                                        <?php else: ?>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 8 12 12 14 14"/></svg>
+                                        <?php endif; ?>
+                                        <span class="nav-text"><?= htmlspecialchars($_label) ?></span>
+                                    </a>
+                                    <?php endforeach;
+                                    else: ?>
+                                    <a href="<?= htmlspecialchars($_baseUrl) ?>" class="nav-sub-item" style="display: flex; align-items: center; gap: 10px; padding: 7px 16px 7px 44px; color: var(--text-secondary); text-decoration: none; transition: all 0.3s; font-size: 0.8rem;" onmouseover="this.style.background='rgba(0,240,255,0.08)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-secondary)'">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                                        <span class="nav-text">Dashboard</span>
+                                    </a>
+                                    <?php endif; ?>
                                 </div>
                             </div>
+                            <?php endforeach; ?>
                         </div>
                         
                         <!-- Settings Section -->
@@ -1735,12 +1814,22 @@ try {
                                 const isOpen = group.classList.contains('open');
                                 
                                 if (isOpen) {
-                                    // Close
+                                    // Close this group
                                     group.classList.remove('open');
                                     if (content) content.style.maxHeight = '0';
                                     if (chevron) chevron.style.transform = 'rotate(0deg)';
                                 } else {
-                                    // Open
+                                    // Close all other groups first (accordion)
+                                    navGroups.forEach(otherGroup => {
+                                        if (otherGroup !== group && otherGroup.classList.contains('open')) {
+                                            otherGroup.classList.remove('open');
+                                            const otherContent = otherGroup.querySelector('.nav-group-content');
+                                            const otherChevron = otherGroup.querySelector('.group-chevron');
+                                            if (otherContent) otherContent.style.maxHeight = '0';
+                                            if (otherChevron) otherChevron.style.transform = 'rotate(0deg)';
+                                        }
+                                    });
+                                    // Open this group
                                     group.classList.add('open');
                                     if (content) content.style.maxHeight = content.scrollHeight + 'px';
                                     if (chevron) chevron.style.transform = 'rotate(180deg)';
@@ -1850,8 +1939,8 @@ try {
     </script>
     
     <!-- Toast Notification System -->
-    <script src="/assets/js/toast.js"></script>
-    <script src="/assets/js/qrcode.js"></script>
+    <script src="/public/assets/js/toast.js"></script>
+    <script src="/public/assets/js/qrcode.js"></script>
 
     <!-- ── Post-logout Login Suggestion Popup ───────────────────────────────── -->
     <?php if (isset($_GET['logged_out']) && !(\Core\Auth::check())): ?>
@@ -1901,7 +1990,86 @@ try {
     })();
     </script>
     <?php endif; ?>
-    
+
+    <?php
+    // ── 2FA Setup Reminder Popup ──────────────────────────────────────────────
+    $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+    if (\Core\Auth::check() && $currentPath !== '/2fa/setup') {
+        $u2fa = \Core\Auth::user();
+        $has2fa = !empty($u2fa['two_factor_enabled']) && (int)$u2fa['two_factor_enabled'] === 1;
+        if (!$has2fa) {
+            $createdAt   = strtotime($u2fa['created_at'] ?? 'now');
+            $isNewUser   = (time() - $createdAt) < 86400; // account < 24 h old
+            $today       = date('Y-m-d');
+            $lastPrompt  = $_SESSION['2fa_prompt_shown_date'] ?? '';
+            $showPopup   = $lastPrompt !== $today;
+            if ($showPopup) {
+                $_SESSION['2fa_prompt_shown_date'] = $today;
+            }
+        } else {
+            $showPopup = false;
+            $isNewUser = false;
+        }
+    } else {
+        $showPopup = false;
+        $isNewUser = false;
+    }
+    ?>
+    <?php if (!empty($showPopup)): ?>
+    <div id="twoFaPopup" style="display:flex;position:fixed;top:0;left:0;width:100%;height:100%;z-index:99999;align-items:center;justify-content:center;background:rgba(0,0,0,0.65);backdrop-filter:blur(5px);">
+        <div id="twoFaCard" style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:18px;padding:28px 26px 24px;box-shadow:0 16px 56px rgba(0,0,0,0.55);max-width:360px;width:calc(100% - 40px);position:relative;transform:translateY(24px);opacity:0;transition:transform 0.4s cubic-bezier(.34,1.56,.64,1),opacity 0.3s ease;">
+            <button onclick="closeTwoFaPopup()" style="position:absolute;top:12px;right:14px;background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:1.2rem;line-height:1;" aria-label="Close">&times;</button>
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+                <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--purple));display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <i class="fas fa-shield-alt" style="color:#06060a;font-size:1.1rem;"></i>
+                </div>
+                <div>
+                    <div style="font-weight:700;font-size:1rem;color:var(--text-primary);">
+                        <?php if (!empty($isNewUser)): ?>Secure your account<?php else: ?>Enable Two-Factor Auth<?php endif; ?>
+                    </div>
+                    <div style="font-size:0.75rem;color:var(--text-secondary);">Protect your account with 2FA</div>
+                </div>
+            </div>
+            <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:18px;line-height:1.5;">
+                <?php if (!empty($isNewUser)): ?>
+                    Welcome! Please set up two-factor authentication to keep your account safe.
+                <?php else: ?>
+                    Your account doesn't have two-factor authentication enabled. Enable it now to add an extra layer of security.
+                <?php endif; ?>
+            </p>
+            <div style="display:flex;gap:8px;flex-direction:column;">
+                <a href="/2fa/setup" style="display:block;padding:10px 14px;border-radius:9px;background:linear-gradient(135deg,var(--cyan),var(--purple));color:#06060a;font-size:0.9rem;font-weight:700;text-decoration:none;text-align:center;">
+                    <i class="fas fa-qrcode" style="margin-right:6px;"></i>Set up 2FA now
+                </a>
+                <button onclick="closeTwoFaPopup()" style="padding:9px 14px;border-radius:9px;border:1px solid var(--border-color);background:transparent;color:var(--text-secondary);font-size:0.85rem;font-weight:500;cursor:pointer;width:100%;">
+                    Remind me later
+                </button>
+            </div>
+        </div>
+    </div>
+    <script>
+    (function () {
+        var popup = document.getElementById('twoFaPopup');
+        var card  = document.getElementById('twoFaCard');
+        if (!popup) return;
+        setTimeout(function () {
+            requestAnimationFrame(function () {
+                requestAnimationFrame(function () {
+                    card.style.transform = 'translateY(0)';
+                    card.style.opacity   = '1';
+                });
+            });
+        }, 400);
+        function closeTwoFaPopup() {
+            card.style.transform = 'translateY(20px)';
+            card.style.opacity   = '0';
+            setTimeout(function () { popup.style.display = 'none'; }, 350);
+        }
+        window.closeTwoFaPopup = closeTwoFaPopup;
+    })();
+    </script>
+    <?php endif; ?>
+
     <?php View::yield('scripts'); ?>
 </body>
 </html>

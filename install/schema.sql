@@ -194,6 +194,7 @@ CREATE TABLE IF NOT EXISTS `home_projects` (
     `name` VARCHAR(100) NOT NULL,
     `description` TEXT NULL,
     `image_url` VARCHAR(255) NULL,
+    `logo_url` VARCHAR(255) NULL,
     `icon` VARCHAR(50) NULL,
     `color` VARCHAR(20) NULL,
     `is_enabled` TINYINT(1) DEFAULT 1,
