@@ -19,37 +19,37 @@ class DashboardController
     public function index(): void
     {
         $user = Auth::user();
-        $db = Database::projectConnection('proshare');
+        $db = Database::getInstance();
         
         // Get statistics
         $stats = [
-            'total_files' => $db->fetchColumn("SELECT COUNT(*) FROM files WHERE user_id = ?", [$user['id']]),
-            'total_texts' => $db->fetchColumn("SELECT COUNT(*) FROM text_shares WHERE user_id = ?", [$user['id']]),
+            'total_files' => $db->fetchColumn("SELECT COUNT(*) FROM proshare_files WHERE user_id = ?", [$user['id']]),
+            'total_texts' => $db->fetchColumn("SELECT COUNT(*) FROM proshare_text_shares WHERE user_id = ?", [$user['id']]),
             'total_downloads' => $db->fetchColumn(
-                "SELECT SUM(downloads) FROM files WHERE user_id = ?", 
+                "SELECT SUM(downloads) FROM proshare_files WHERE user_id = ?", 
                 [$user['id']]
             ) ?: 0,
             'active_shares' => $db->fetchColumn(
-                "SELECT COUNT(*) FROM files WHERE user_id = ? AND status = 'active'", 
+                "SELECT COUNT(*) FROM proshare_files WHERE user_id = ? AND status = 'active'", 
                 [$user['id']]
             ),
         ];
         
         // Get recent files
         $recentFiles = $db->fetchAll(
-            "SELECT * FROM files WHERE user_id = ? ORDER BY created_at DESC LIMIT 5",
+            "SELECT * FROM proshare_files WHERE user_id = ? ORDER BY created_at DESC LIMIT 5",
             [$user['id']]
         );
         
         // Get recent text shares
         $recentTexts = $db->fetchAll(
-            "SELECT * FROM text_shares WHERE user_id = ? ORDER BY created_at DESC LIMIT 5",
+            "SELECT * FROM proshare_text_shares WHERE user_id = ? ORDER BY created_at DESC LIMIT 5",
             [$user['id']]
         );
         
         // Get unread notifications
         $notifications = $db->fetchAll(
-            "SELECT * FROM notifications WHERE user_id = ? AND is_read = 0 ORDER BY created_at DESC LIMIT 5",
+            "SELECT * FROM proshare_notifications WHERE user_id = ? AND is_read = 0 ORDER BY created_at DESC LIMIT 5",
             [$user['id']]
         );
         
@@ -69,10 +69,10 @@ class DashboardController
     public function myFiles(): void
     {
         $user = Auth::user();
-        $db = Database::projectConnection('proshare');
+        $db = Database::getInstance();
         
         $files = $db->fetchAll(
-            "SELECT * FROM files WHERE user_id = ? ORDER BY created_at DESC",
+            "SELECT * FROM proshare_files WHERE user_id = ? ORDER BY created_at DESC",
             [$user['id']]
         );
         

@@ -22,19 +22,19 @@ class EditorController
     public function index(): void
     {
         $user = Auth::user();
-        $db = Database::projectConnection('codexpro');
+        $db = Database::getInstance();
         
         // Get user settings
         $settings = $db->fetch(
-            "SELECT * FROM user_settings WHERE user_id = ?",
+            "SELECT * FROM codexpro_user_settings WHERE user_id = ?",
             [$user['id']]
         );
         
         if (!$settings) {
             // Create default settings
-            $db->insert('user_settings', ['user_id' => $user['id']]);
+            $db->insert('codexpro_user_settings', ['user_id' => $user['id']]);
             $settings = $db->fetch(
-                "SELECT * FROM user_settings WHERE user_id = ?",
+                "SELECT * FROM codexpro_user_settings WHERE user_id = ?",
                 [$user['id']]
             );
         }
@@ -59,10 +59,10 @@ class EditorController
     public function edit(int $id): void
     {
         $user = Auth::user();
-        $db = Database::projectConnection('codexpro');
+        $db = Database::getInstance();
         
         $project = $db->fetch(
-            "SELECT * FROM projects WHERE id = ? AND user_id = ?",
+            "SELECT * FROM codexpro_projects WHERE id = ? AND user_id = ?",
             [$id, $user['id']]
         );
         
@@ -74,7 +74,7 @@ class EditorController
         
         // Get user settings
         $settings = $db->fetch(
-            "SELECT * FROM user_settings WHERE user_id = ?",
+            "SELECT * FROM codexpro_user_settings WHERE user_id = ?",
             [$user['id']]
         );
         
@@ -92,7 +92,7 @@ class EditorController
         header('Content-Type: application/json');
         
         $user = Auth::user();
-        $db = Database::projectConnection('codexpro');
+        $db = Database::getInstance();
         
         $projectId = (int)($_POST['project_id'] ?? 0);
         $name = Security::sanitize($_POST['name'] ?? 'Untitled Project');
@@ -105,7 +105,7 @@ class EditorController
         if ($projectId) {
             // Update existing project
             $project = $db->fetch(
-                "SELECT * FROM projects WHERE id = ? AND user_id = ?",
+                "SELECT * FROM codexpro_projects WHERE id = ? AND user_id = ?",
                 [$projectId, $user['id']]
             );
             
@@ -114,28 +114,13 @@ class EditorController
                 return;
             }
             
-            $updated = $db->update('projects', [
-                'name' => $name,
-                'description' => $description,
-                'html_content' => $htmlContent,
-                'css_content' => $cssContent,
-                'js_content' => $jsContent,
-                'visibility' => $visibility,
-            ], ['id' => $projectId]);
+            $updated = $db->update('codexpro_projects', [
             
             try { ActivityLogger::logUpdate($user['id'], 'codexpro', 'file', $projectId, [], ['name' => $name, 'action' => 'file_saved']); } catch (\Throwable $_) {}
             echo json_encode(['success' => $updated, 'project_id' => $projectId]);
         } else {
             // Create new project
-            $projectId = $db->insert('projects', [
-                'user_id' => $user['id'],
-                'name' => $name,
-                'description' => $description,
-                'html_content' => $htmlContent,
-                'css_content' => $cssContent,
-                'js_content' => $jsContent,
-                'visibility' => $visibility,
-            ]);
+            $projectId = $db->insert('codexpro_projects', [
             
             if ($projectId) {
                 try { ActivityLogger::logCreate($user['id'], 'codexpro', 'file', $projectId, ['name' => $name, 'action' => 'file_saved']); } catch (\Throwable $_) {}
@@ -154,7 +139,7 @@ class EditorController
         header('Content-Type: application/json');
         
         $user = Auth::user();
-        $db = Database::projectConnection('codexpro');
+        $db = Database::getInstance();
         
         $projectId = (int)($_POST['project_id'] ?? 0);
         
@@ -164,7 +149,7 @@ class EditorController
         }
         
         $project = $db->fetch(
-            "SELECT * FROM projects WHERE id = ? AND user_id = ?",
+            "SELECT * FROM codexpro_projects WHERE id = ? AND user_id = ?",
             [$projectId, $user['id']]
         );
         
@@ -177,11 +162,7 @@ class EditorController
         $cssContent = $_POST['css_content'] ?? '';
         $jsContent = $_POST['js_content'] ?? '';
         
-        $updated = $db->update('projects', [
-            'html_content' => $htmlContent,
-            'css_content' => $cssContent,
-            'js_content' => $jsContent,
-        ], ['id' => $projectId]);
+        $updated = $db->update('codexpro_projects', [
         
         try { ActivityLogger::logUpdate($user['id'], 'codexpro', 'file', $projectId, [], ['action' => 'file_saved']); } catch (\Throwable $_) {}
         echo json_encode(['success' => $updated]);

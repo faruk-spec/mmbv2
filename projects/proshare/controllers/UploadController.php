@@ -32,19 +32,19 @@ class UploadController
     public function index(): void
     {
         $user = Auth::check() ? Auth::user() : null;
-        $db = Database::projectConnection('proshare');
+        $db = Database::getInstance();
         
         // Get user settings if logged in
         $settings = null;
         if ($user) {
             $settings = $db->fetch(
-                "SELECT * FROM user_settings WHERE user_id = ?",
+                "SELECT * FROM proshare_user_settings WHERE user_id = ?",
                 [$user['id']]
             );
             
             if (!$settings) {
                 $db->insert('user_settings', ['user_id' => $user['id']]);
-                $settings = $db->fetch("SELECT * FROM user_settings WHERE user_id = ?", [$user['id']]);
+                $settings = $db->fetch("SELECT * FROM proshare_user_settings WHERE user_id = ?", [$user['id']]);
             }
         }
         
@@ -123,7 +123,7 @@ class UploadController
             }
             
             // Store in database
-            $db = Database::projectConnection('proshare');
+            $db = Database::getInstance();
             
             $password = isset($_POST['password']) && !empty($_POST['password']) 
                 ? Security::hashPassword($_POST['password']) 
@@ -140,7 +140,7 @@ class UploadController
             $userSettings = null;
             if ($userId) {
                 $userSettings = $db->fetch(
-                    "SELECT auto_delete, default_expiry FROM user_settings WHERE user_id = ?",
+                    "SELECT auto_delete, default_expiry FROM proshare_user_settings WHERE user_id = ?",
                     [$userId]
                 );
             }
@@ -235,8 +235,8 @@ class UploadController
         }
         
         // Check if code already exists
-        $db = Database::projectConnection('proshare');
-        $exists = $db->fetch("SELECT id FROM files WHERE short_code = ?", [$code]);
+        $db = Database::getInstance();
+        $exists = $db->fetch("SELECT id FROM proshare_files WHERE short_code = ?", [$code]);
         
         if ($exists) {
             return $this->generateShortCode($length);
@@ -250,7 +250,7 @@ class UploadController
      */
     private function logAudit(?int $userId, string $action, string $resourceType, ?int $resourceId, array $details = []): void
     {
-        $db = Database::projectConnection('proshare');
+        $db = Database::getInstance();
         
         // Log to audit_logs (with JSON details)
         $db->insert('audit_logs', [
@@ -281,7 +281,7 @@ class UploadController
      */
     private function createBackup(int $fileId, string $filePath, int $fileSize): void
     {
-        $db = Database::projectConnection('proshare');
+        $db = Database::getInstance();
         
         $backupDir = BASE_PATH . '/storage/backups/proshare/' . date('Y/m');
         if (!is_dir($backupDir)) {

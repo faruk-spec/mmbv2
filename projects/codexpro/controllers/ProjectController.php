@@ -22,10 +22,10 @@ class ProjectController
     public function index(): void
     {
         $user = Auth::user();
-        $db = Database::projectConnection('codexpro');
+        $db = Database::getInstance();
         
         $projects = $db->fetchAll(
-            "SELECT * FROM projects WHERE user_id = ? ORDER BY updated_at DESC",
+            "SELECT * FROM codexpro_projects WHERE user_id = ? ORDER BY updated_at DESC",
             [$user['id']]
         );
         
@@ -42,7 +42,7 @@ class ProjectController
         header('Content-Type: application/json');
         
         $user = Auth::user();
-        $db = Database::projectConnection('codexpro');
+        $db = Database::getInstance();
         
         $name = Security::sanitize($_POST['name'] ?? '');
         $description = Security::sanitize($_POST['description'] ?? '');
@@ -54,13 +54,7 @@ class ProjectController
             return;
         }
         
-        $projectId = $db->insert('projects', [
-            'user_id' => $user['id'],
-            'name' => $name,
-            'description' => $description,
-            'language' => $language,
-            'visibility' => $visibility,
-        ]);
+        $projectId = $db->insert('codexpro_projects', [
         
         if ($projectId) {
             try { ActivityLogger::logCreate($user['id'], 'codexpro', 'project', $projectId, ['name' => $name, 'language' => $language]); } catch (\Throwable $_) {}
@@ -76,10 +70,10 @@ class ProjectController
     public function show(int $id): void
     {
         $user = Auth::user();
-        $db = Database::projectConnection('codexpro');
+        $db = Database::getInstance();
         
         $project = $db->fetch(
-            "SELECT * FROM projects WHERE id = ? AND user_id = ?",
+            "SELECT * FROM codexpro_projects WHERE id = ? AND user_id = ?",
             [$id, $user['id']]
         );
         
@@ -101,10 +95,10 @@ class ProjectController
         header('Content-Type: application/json');
         
         $user = Auth::user();
-        $db = Database::projectConnection('codexpro');
+        $db = Database::getInstance();
         
         $project = $db->fetch(
-            "SELECT * FROM projects WHERE id = ? AND user_id = ?",
+            "SELECT * FROM codexpro_projects WHERE id = ? AND user_id = ?",
             [$id, $user['id']]
         );
         
@@ -117,11 +111,7 @@ class ProjectController
         $description = Security::sanitize($_POST['description'] ?? $project['description']);
         $visibility = Security::sanitize($_POST['visibility'] ?? $project['visibility']);
         
-        $updated = $db->update('projects', [
-            'name' => $name,
-            'description' => $description,
-            'visibility' => $visibility,
-        ], ['id' => $id]);
+        $updated = $db->update('codexpro_projects', [
         
         try { ActivityLogger::logUpdate($user['id'], 'codexpro', 'project', $id, [], ['name' => $name, 'description' => $description, 'visibility' => $visibility]); } catch (\Throwable $_) {}
         echo json_encode(['success' => $updated]);
@@ -136,11 +126,11 @@ class ProjectController
         
         try {
             $user = Auth::user();
-            $db = Database::projectConnection('codexpro');
+            $db = Database::getInstance();
             
             // Verify ownership
             $project = $db->fetch(
-                "SELECT * FROM projects WHERE id = ? AND user_id = ?",
+                "SELECT * FROM codexpro_projects WHERE id = ? AND user_id = ?",
                 [$id, $user['id']]
             );
             
@@ -149,10 +139,7 @@ class ProjectController
                 return;
             }
             
-            $deleted = $db->delete('projects', [
-                'id' => $id,
-                'user_id' => $user['id'],
-            ]);
+            $deleted = $db->delete('codexpro_projects', [
             
             if ($deleted !== false && $deleted > 0) {
                 try { ActivityLogger::logDelete($user['id'], 'codexpro', 'project', $id, ['id' => $id]); } catch (\Throwable $_) {}
@@ -175,11 +162,11 @@ class ProjectController
         
         try {
             $user = Auth::user();
-            $db = Database::projectConnection('codexpro');
+            $db = Database::getInstance();
             
             // Verify ownership
             $project = $db->fetch(
-                "SELECT * FROM projects WHERE id = ? AND user_id = ?",
+                "SELECT * FROM codexpro_projects WHERE id = ? AND user_id = ?",
                 [$id, $user['id']]
             );
             
@@ -219,10 +206,7 @@ class ProjectController
                 return;
             }
             
-            $updated = $db->update('projects', $updateData, [
-                'id' => $id,
-                'user_id' => $user['id'],
-            ]);
+            $updated = $db->update('codexpro_projects', $updateData, [
             
             if ($updated !== false) {
                 try { ActivityLogger::logUpdate($user['id'], 'codexpro', 'project', $id, [], $updateData); } catch (\Throwable $_) {}

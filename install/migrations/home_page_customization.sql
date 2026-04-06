@@ -47,7 +47,6 @@ INSERT INTO `home_content` (`section`, `title`, `subtitle`, `description`, `is_a
 INSERT INTO `home_projects` (`project_key`, `name`, `description`, `icon`, `color`, `is_enabled`, `sort_order`, `database_name`, `url`) VALUES
 ('codexpro', 'CodeXPro', 'Advanced code editor and IDE platform', 'code', '#00f0ff', 1, 1, 'mmb_codexpro', '/projects/codexpro'),
 ('devzone', 'DevZone', 'Developer collaboration and project management', 'users', '#ff2ec4', 1, 2, 'mmb_devzone', '/projects/devzone'),
-('imgtxt', 'ImgTxt', 'Image to text converter and OCR tool', 'image', '#00ff88', 1, 3, 'mmb_imgtxt', '/projects/imgtxt'),
-('proshare', 'ProShare', 'Secure file sharing platform', 'share-2', '#ffaa00', 1, 4, 'mmb_proshare', '/projects/proshare'),
-('qr', 'QR Generator', 'QR code generation and management', 'grid', '#9945ff', 1, 5, 'mmb_qr', '/projects/qr'),
-('resumex', 'ResumeX', 'Professional resume builder', 'file-text', '#ff6b6b', 1, 6, 'mmb_resumex', '/projects/resumex');
+('proshare', 'ProShare', 'Secure file sharing platform', 'share-2', '#ffaa00', 1, 3, 'mmb_proshare', '/projects/proshare'),
+('qr', 'QR Generator', 'QR code generation and management', 'grid', '#9945ff', 1, 4, 'mmb_qr', '/projects/qr'),
+('resumex', 'ResumeX', 'Professional resume builder', 'file-text', '#ff6b6b', 1, 5, 'mmb_resumex', '/projects/resumex');

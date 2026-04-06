@@ -59,7 +59,7 @@ class AuditController extends BaseController
      */
     private const KNOWN_MODULES = [
         'auth', 'admin', 'qr', 'whatsapp', 'proshare', 'codexpro',
-        'imgtxt', 'convertx', 'billx', 'resumex', 'devzone',
+        'convertx', 'billx', 'resumex', 'devzone', 'formx',
         'settings', 'users', 'security', 'api', 'platform_plans', 'audit',
     ];
 

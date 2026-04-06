@@ -459,7 +459,7 @@ class LogController extends BaseController
         // Category filter — use isAdminAction() prefixes/exact list from the static helper
         $adminPrefixPatterns = [
             'admin_%', 'settings_%', 'ip_%', 'session%', 'maintenance_%', 'security_%',
-            'project_%', 'oauth_%', 'navbar_%', 'proshare_%', 'codexpro_%', 'imgtxt_%',
+            'project_%', 'oauth_%', 'navbar_%', 'proshare_%', 'codexpro_%', 'devzone_%',
         ];
         $adminExactActions = [
             'user_created', 'user_updated', 'user_deleted', 'user_status_changed',
@@ -500,7 +500,7 @@ class LogController extends BaseController
     {
         static $adminPrefixes = [
             'admin_', 'settings_', 'ip_', 'session', 'maintenance_', 'security_',
-            'project_', 'oauth_', 'navbar_', 'proshare_', 'codexpro_', 'imgtxt_',
+            'project_', 'oauth_', 'navbar_', 'proshare_', 'codexpro_', 'devzone_',
         ];
         static $adminExact = [
             'user_created', 'user_updated', 'user_deleted', 'user_status_changed',

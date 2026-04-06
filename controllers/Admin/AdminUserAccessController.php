@@ -217,56 +217,6 @@ class AdminUserAccessController extends BaseController
             'parent'      => 'codexpro',
         ],
 
-        // ImgTxt
-        'imgtxt' => [
-            'label'       => 'ImgTxt',
-            'icon'        => 'fas fa-image',
-            'description' => 'Access ImgTxt admin panel',
-            'group'       => 'ImgTxt',
-        ],
-        'imgtxt.jobs' => [
-            'label'       => 'Jobs',
-            'icon'        => 'fas fa-tasks',
-            'description' => 'Monitor ImgTxt processing jobs',
-            'group'       => 'ImgTxt',
-            'parent'      => 'imgtxt',
-        ],
-        'imgtxt.settings' => [
-            'label'       => 'Admin Settings',
-            'icon'        => 'fas fa-cog',
-            'description' => 'Configure ImgTxt admin settings',
-            'group'       => 'ImgTxt',
-            'parent'      => 'imgtxt',
-        ],
-        'imgtxt.languages' => [
-            'label'       => 'Languages',
-            'icon'        => 'fas fa-language',
-            'description' => 'Manage OCR language packs',
-            'group'       => 'ImgTxt',
-            'parent'      => 'imgtxt',
-        ],
-        'imgtxt.users' => [
-            'label'       => 'Users',
-            'icon'        => 'fas fa-users',
-            'description' => 'Manage ImgTxt users',
-            'group'       => 'ImgTxt',
-            'parent'      => 'imgtxt',
-        ],
-        'imgtxt.statistics' => [
-            'label'       => 'Statistics',
-            'icon'        => 'fas fa-chart-line',
-            'description' => 'View ImgTxt usage statistics',
-            'group'       => 'ImgTxt',
-            'parent'      => 'imgtxt',
-        ],
-        'imgtxt.activity' => [
-            'label'       => 'Activity',
-            'icon'        => 'fas fa-history',
-            'description' => 'View ImgTxt activity log',
-            'group'       => 'ImgTxt',
-            'parent'      => 'imgtxt',
-        ],
-
         // ProShare
         'proshare' => [
             'label'       => 'ProShare',

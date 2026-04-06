@@ -21,24 +21,24 @@ class SettingsController
     public function index(): void
     {
         $user = Auth::user();
-        $db = Database::projectConnection('proshare');
+        $db = Database::getInstance();
         
         $settings = $db->fetch(
-            "SELECT * FROM user_settings WHERE user_id = ?",
+            "SELECT * FROM proshare_user_settings WHERE user_id = ?",
             [$user['id']]
         );
         
         if (!$settings) {
             $db->insert('user_settings', ['user_id' => $user['id']]);
-            $settings = $db->fetch("SELECT * FROM user_settings WHERE user_id = ?", [$user['id']]);
+            $settings = $db->fetch("SELECT * FROM proshare_user_settings WHERE user_id = ?", [$user['id']]);
         }
         
         // Get statistics
         $stats = [
-            'total_files' => $db->fetchColumn("SELECT COUNT(*) FROM files WHERE user_id = ?", [$user['id']]),
-            'total_texts' => $db->fetchColumn("SELECT COUNT(*) FROM text_shares WHERE user_id = ?", [$user['id']]),
-            'total_downloads' => $db->fetchColumn("SELECT SUM(downloads) FROM files WHERE user_id = ?", [$user['id']]) ?: 0,
-            'storage_used' => number_format($db->fetchColumn("SELECT SUM(size) FROM files WHERE user_id = ?", [$user['id']]) / 1024 / 1024, 2),
+            'total_files' => $db->fetchColumn("SELECT COUNT(*) FROM proshare_files WHERE user_id = ?", [$user['id']]),
+            'total_texts' => $db->fetchColumn("SELECT COUNT(*) FROM proshare_text_shares WHERE user_id = ?", [$user['id']]),
+            'total_downloads' => $db->fetchColumn("SELECT SUM(downloads) FROM proshare_files WHERE user_id = ?", [$user['id']]) ?: 0,
+            'storage_used' => number_format($db->fetchColumn("SELECT SUM(size) FROM proshare_files WHERE user_id = ?", [$user['id']]) / 1024 / 1024, 2),
         ];
         
         View::render('projects/proshare/settings', [
@@ -62,7 +62,7 @@ class SettingsController
             return;
         }
         
-        $db = Database::projectConnection('proshare');
+        $db = Database::getInstance();
         
         $emailNotifications = isset($_POST['email_notifications']) ? 1 : 0;
         $smsNotifications = isset($_POST['sms_notifications']) ? 1 : 0;
@@ -86,7 +86,7 @@ class SettingsController
             // If no rows were updated, settings may not exist yet - try insert
             if ($updated === 0) {
                 // Check if record exists
-                $exists = $db->fetch("SELECT id FROM user_settings WHERE user_id = ?", [$user['id']]);
+                $exists = $db->fetch("SELECT id FROM proshare_user_settings WHERE user_id = ?", [$user['id']]);
                 if (!$exists) {
                     // Insert new settings record
                     $db->insert('user_settings', [

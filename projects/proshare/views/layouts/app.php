@@ -1,45 +1,107 @@
-<?php use Core\View; use Core\Security; use Core\Auth; ?>
+<?php
+use Core\View;
+use Core\Auth;
+use Core\Security;
+
+// Dynamic theme from DB (same as ConvertX/BillX pattern)
+$defaultTheme = 'dark';
+$allowedThemes = ['dark', 'light'];
+try {
+    $db = \Core\Database::getInstance();
+    $navbarSettings = $db->fetch("SELECT default_theme FROM navbar_settings WHERE id = 1");
+    if ($navbarSettings && !empty($navbarSettings['default_theme'])
+        && in_array($navbarSettings['default_theme'], $allowedThemes, true)) {
+        $defaultTheme = $navbarSettings['default_theme'];
+    }
+} catch (\Exception $e) { /* fall through */ }
+
+$uiVersion = '20260406000000';
+$_uri = $_SERVER['REQUEST_URI'] ?? '';
+?>
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="<?= htmlspecialchars($defaultTheme) ?>">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="ProShare - Secure File Sharing Platform">
-    <title><?= View::e($title ?? 'ProShare') ?> - MyMultiBranch</title>
-    
-    <!-- Fonts -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <meta name="csrf-token" content="<?= Security::generateCsrfToken() ?>">
+    <title><?= View::e($title ?? 'ProShare') ?> – ProShare</title>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+          integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw=="
+          crossorigin="anonymous" referrerpolicy="no-referrer">
+
+    <!-- Universal theme (loaded first) -->
+    <link rel="stylesheet" href="/css/universal-theme.css?v=<?= $uiVersion ?>">
+
     <style>
+        /* ══════════════════════════════════════════════════════
+           ProShare CSS Variables & Brand
+        ══════════════════════════════════════════════════════ */
         :root {
-            --bg-primary: #06060a;
-            --bg-secondary: #0c0c12;
-            --bg-card: #0f0f18;
-            --cyan: #00f0ff;
+            --ps-primary:   #ffaa00;
+            --ps-secondary: #ff2ec4;
+            --ps-accent:    #00f0ff;
+            --ps-success:   #00ff88;
+            --ps-warning:   #ffaa00;
+            --ps-danger:    #ff6b6b;
+
+            /* Map onto platform vars */
+            --orange:  #ffaa00;
             --magenta: #ff2ec4;
-            --green: #00ff88;
-            --orange: #ffaa00;
-            --purple: #9945ff;
-            --red: #ff6b6b;
-            --text-primary: #e8eefc;
+            --cyan:    #00f0ff;
+            --green:   #00ff88;
+
+            /* Dark mode structural */
+            --bg-primary:    #06060a;
+            --bg-secondary:  #0c0c12;
+            --bg-card:       #0f0f18;
+            --bg-tertiary:   #13131f;
+            --text-primary:  #e8eefc;
             --text-secondary: #8892a6;
-            --border-color: rgba(255, 255, 255, 0.1);
-            --shadow-glow: 0 0 20px rgba(0, 240, 255, 0.2);
-            --transition: all 0.3s ease;
-            --sidebar-width: 280px;
+            --text-muted:    #8892a6;
+            --border-color:  rgba(255,255,255,0.08);
+
+            /* Layout */
+            --sidebar-width: 15rem;
+            --navbar-height: 3.75rem;
+
+            /* Spacing */
+            --space-xs:  0.25rem;
+            --space-sm:  0.375rem;
+            --space-md:  0.75rem;
+            --space-lg:  1rem;
+            --space-xl:  1.5rem;
+            --space-2xl: 2rem;
+
+            /* Font scale */
+            --font-xs:  0.75rem;
+            --font-sm:  0.875rem;
+            --font-md:  1rem;
+            --font-lg:  1.125rem;
+            --font-xl:  1.25rem;
+            --font-2xl: 1.5rem;
         }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+
+        [data-theme="light"] {
+            --bg-primary:    #f4f6fb;
+            --bg-secondary:  #ffffff;
+            --bg-card:       #ffffff;
+            --bg-tertiary:   #eef1f8;
+            --text-primary:  #1a2035;
+            --text-secondary: #5a6379;
+            --text-muted:    #8892a6;
+            --border-color:  rgba(0,0,0,0.1);
+            --orange:  #e07b00;
+            --magenta: #b0107a;
+            --cyan:    #0369a1;
+            --green:   #16a34a;
         }
-        
+
+        /* ── Reset ── */
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Poppins', sans-serif;
             background: var(--bg-primary);
@@ -47,740 +109,378 @@
             min-height: 100vh;
             line-height: 1.6;
         }
-        
-        /* Background Effects */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: 
-                radial-gradient(ellipse at 20% 0%, rgba(0, 240, 255, 0.1) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 100%, rgba(255, 46, 196, 0.1) 0%, transparent 50%);
-            pointer-events: none;
-            z-index: -1;
-        }
-        
-        /* Layout */
-        .proshare-container {
+
+        /* ── Dashboard wrapper ── */
+        .ps-dashboard {
             display: flex;
             min-height: 100vh;
+            flex-direction: column;
         }
-        
-        /* Sidebar */
-        .sidebar {
-            width: var(--sidebar-width);
-            background: rgba(12, 12, 18, 0.95);
-            backdrop-filter: blur(20px);
-            border-right: 1px solid var(--border-color);
+
+        /* ── Sidebar ── */
+        .ps-sidebar {
             position: fixed;
-            height: 100vh;
-            overflow-y: auto;
-            overflow-x: hidden;
-            z-index: 1000;
-            transition: var(--transition);
-        }
-        
-        .sidebar::-webkit-scrollbar {
-            width: 6px;
-        }
-        
-        .sidebar::-webkit-scrollbar-track {
-            background: var(--bg-secondary);
-        }
-        
-        .sidebar::-webkit-scrollbar-thumb {
-            background: var(--cyan);
-            border-radius: 3px;
-        }
-        
-        .sidebar-header {
-            padding: 25px 20px;
-            border-bottom: 1px solid var(--border-color);
-        }
-        
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--cyan);
-            text-decoration: none;
-        }
-        
-        .logo i {
-            font-size: 1.8rem;
-        }
-        
-        .sidebar-menu {
-            padding: 20px 0;
-        }
-        
-        .menu-section {
-            margin-bottom: 25px;
-        }
-        
-        .menu-section-title {
-            padding: 0 20px 10px;
-            font-size: 11px;
-            text-transform: uppercase;
-            color: var(--text-secondary);
-            font-weight: 600;
-            letter-spacing: 1px;
-        }
-        
-        .menu-item {
-            position: relative;
-        }
-        
-        .menu-link {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 20px;
-            color: var(--text-secondary);
-            text-decoration: none;
-            transition: var(--transition);
-            position: relative;
-        }
-        
-        .menu-link:hover {
-            background: rgba(0, 240, 255, 0.05);
-            color: var(--cyan);
-        }
-        
-        .menu-link.active {
-            background: rgba(0, 240, 255, 0.1);
-            color: var(--cyan);
-            border-left: 3px solid var(--cyan);
-        }
-        
-        .menu-link i {
-            width: 20px;
-            font-size: 16px;
-        }
-        
-        .menu-link .badge {
-            margin-left: auto;
-            background: var(--red);
-            color: white;
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-size: 11px;
-            font-weight: 600;
-        }
-        
-        /* Sidebar Overlay for Mobile */
-        .sidebar-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            z-index: 999;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-        
-        .sidebar-overlay.active {
-            display: block;
-            opacity: 1;
-        }
-        
-        /* Main Content */
-        .main-content {
-            margin-left: var(--sidebar-width);
-            flex: 1;
+            top: var(--navbar-height);
+            width: var(--sidebar-width);
+            height: calc(100vh - var(--navbar-height));
+            background: var(--bg-card);
+            border-right: 1px solid var(--border-color);
+            overflow-y: auto;
+            z-index: 200;
             display: flex;
             flex-direction: column;
-            min-height: 100vh;
+            transition: transform 0.25s ease;
         }
-        
-        /* Top Bar */
-        .topbar {
-            background: rgba(12, 12, 18, 0.95);
-            backdrop-filter: blur(20px);
+        .ps-sidebar::-webkit-scrollbar { width: 0.25rem; }
+        .ps-sidebar::-webkit-scrollbar-track { background: transparent; }
+        .ps-sidebar::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 0.125rem; }
+
+        .ps-sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.625rem;
+            padding: 1rem 1.125rem 1rem;
             border-bottom: 1px solid var(--border-color);
-            padding: 15px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-        
-        .topbar-left {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-        
-        .mobile-menu-btn {
-            display: none;
-            background: none;
-            border: none;
-            color: var(--text-primary);
-            font-size: 1.5rem;
-            cursor: pointer;
-            padding: 5px;
-        }
-        
-        .topbar-title h1 {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-        
-        .topbar-title p {
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-        }
-        
-        .topbar-right {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-        
-        .topbar-btn {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 16px;
-            background: rgba(0, 240, 255, 0.1);
-            border: 1px solid var(--cyan);
-            border-radius: 8px;
-            color: var(--cyan);
             text-decoration: none;
-            font-size: 0.9rem;
-            transition: var(--transition);
         }
-        
-        .topbar-btn:hover {
-            background: rgba(0, 240, 255, 0.2);
+        .ps-sidebar-logo .logo-icon {
+            width: 2rem; height: 2rem;
+            border-radius: 0.5rem;
+            background: linear-gradient(135deg, var(--ps-primary), var(--ps-secondary));
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800; color: #06060a; font-size: 0.875rem; flex-shrink: 0;
         }
-        
-        .user-menu {
-            display: flex;
-            align-items: center;
-            gap: 10px;
+        .ps-sidebar-logo .logo-text {
+            font-size: 1rem; font-weight: 800;
+            background: linear-gradient(135deg, var(--ps-primary), var(--ps-secondary));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
         }
-        
-        .user-avatar {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, var(--cyan), var(--magenta));
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            font-size: 1rem;
+
+        /* Sidebar sections & nav */
+        .sidebar-section { padding: 0.625rem 0; }
+        .sidebar-title {
+            padding: 0.375rem 1rem 0.25rem;
+            font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.08em; color: var(--text-secondary); opacity: 0.6;
         }
-        
-        /* Content */
-        .content {
-            flex: 1;
-            padding: 30px;
-        }
-        
-        /* Cards */
-        .card {
-            background: rgba(15, 15, 24, 0.8);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 20px;
-        }
-        
-        .card-header {
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid var(--border-color);
-        }
-        
-        .card-title {
-            font-size: 1.3rem;
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-        
-        /* Grid System */
-        .grid {
-            display: grid;
-            gap: 20px;
-        }
-        
-        .grid-2 { grid-template-columns: repeat(2, 1fr); }
-        .grid-3 { grid-template-columns: repeat(3, 1fr); }
-        .grid-4 { grid-template-columns: repeat(4, 1fr); }
-        
-        /* Stat Cards */
-        .stat-card {
-            background: linear-gradient(135deg, rgba(15, 15, 24, 0.8), rgba(12, 12, 18, 0.8));
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 24px;
+        .sidebar-nav a {
+            display: flex; align-items: center; gap: 0.625rem;
+            padding: 0.5rem 1rem;
+            color: var(--text-secondary); text-decoration: none;
+            font-size: 0.875rem; font-weight: 500;
+            border-radius: 0; transition: background 0.15s, color 0.15s;
             position: relative;
-            overflow: hidden;
         }
-        
-        .stat-card::before {
+        .sidebar-nav a:hover {
+            background: rgba(255,170,0,0.06);
+            color: var(--text-primary);
+            text-decoration: none;
+        }
+        .sidebar-nav a.active {
+            background: rgba(255,170,0,0.1);
+            color: var(--ps-primary);
+        }
+        .sidebar-nav a.active::after {
             content: '';
             position: absolute;
-            top: 0;
-            right: 0;
-            width: 100px;
-            height: 100px;
-            background: radial-gradient(circle, var(--cyan) 0%, transparent 70%);
-            opacity: 0.1;
+            right: 0; top: 50%;
+            transform: translateY(-50%);
+            width: 0.1875rem; height: 60%;
+            background: var(--ps-primary);
+            border-radius: 0.1875rem 0 0 0.1875rem;
         }
-        
-        .stat-value {
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin-bottom: 5px;
-            color: var(--cyan);
+        .sidebar-nav a i { width: 1rem; text-align: center; flex-shrink: 0; font-size: 0.875rem; }
+        .sidebar-nav a .badge {
+            margin-left: auto;
+            background: rgba(255,170,0,0.15); color: var(--ps-primary);
+            border-radius: 1rem; padding: 0.0625rem 0.5rem;
+            font-size: 0.7rem; font-weight: 700;
         }
-        
-        .stat-label {
-            color: var(--text-secondary);
-            font-size: 14px;
+
+        /* Sidebar overlay (mobile) */
+        .ps-sidebar-overlay {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 190;
         }
-        
-        /* Buttons */
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 12px 24px;
-            border: none;
-            border-radius: 8px;
-            font-size: 0.95rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: var(--transition);
-            text-decoration: none;
-            justify-content: center;
+        .ps-sidebar-overlay.active { display: block; }
+
+        /* Floating toggle (mobile) */
+        .ps-sidebar-toggle {
+            display: none;
+            position: fixed; bottom: 1.5rem; right: 1.25rem;
+            z-index: 210;
+            width: 3rem; height: 3rem;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--ps-primary), var(--ps-secondary));
+            border: none; cursor: pointer;
+            align-items: center; justify-content: center;
+            box-shadow: 0 0.25rem 1.125rem rgba(255,170,0,0.4);
+            color: #06060a; font-size: 1.1rem;
         }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, var(--cyan), var(--purple));
-            color: white;
+
+        /* ── Main content ── */
+        .ps-main {
+            margin-left: var(--sidebar-width);
+            margin-top: var(--navbar-height);
+            flex: 1;
+            min-height: calc(100vh - var(--navbar-height));
+            padding: 1.75rem;
         }
-        
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(0, 240, 255, 0.3);
-        }
-        
-        .btn-secondary {
-            background: rgba(136, 146, 166, 0.1);
-            border: 1px solid var(--border-color);
-            color: var(--text-primary);
-        }
-        
-        .btn-secondary:hover {
-            background: rgba(136, 146, 166, 0.2);
-        }
-        
-        .btn-danger {
-            background: var(--red);
-            color: white;
-        }
-        
-        .btn-success {
-            background: var(--green);
-            color: #000;
-        }
-        
-        /* Forms */
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        .form-label {
-            display: block;
-            margin-bottom: 8px;
-            color: var(--text-primary);
-            font-weight: 500;
-        }
-        
-        .form-control {
-            width: 100%;
-            padding: 12px 16px;
-            background: rgba(12, 12, 18, 0.5);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            color: var(--text-primary);
-            font-family: inherit;
-            font-size: 0.95rem;
-            transition: var(--transition);
-        }
-        
-        .form-control:focus {
-            outline: none;
-            border-color: var(--cyan);
-            box-shadow: 0 0 0 3px rgba(0, 240, 255, 0.1);
-        }
-        
-        textarea.form-control {
-            resize: vertical;
-            min-height: 120px;
-        }
-        
-        select.form-control {
-            cursor: pointer;
-        }
-        
-        /* Tables */
-        .table-container {
-            overflow-x: auto;
-        }
-        
-        .table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        .table th,
-        .table td {
-            padding: 12px 16px;
-            text-align: left;
-            border-bottom: 1px solid var(--border-color);
-        }
-        
-        .table th {
-            background: rgba(0, 240, 255, 0.05);
-            color: var(--cyan);
-            font-weight: 600;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        .table tr:hover {
-            background: rgba(0, 240, 255, 0.03);
-        }
-        
-        /* Badges */
-        .badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-        
-        .badge-success {
-            background: var(--green);
-            color: #000;
-        }
-        
-        .badge-danger {
-            background: var(--red);
-            color: white;
-        }
-        
-        .badge-warning {
-            background: var(--orange);
-            color: #000;
-        }
-        
-        .badge-info {
-            background: var(--cyan);
-            color: #000;
-        }
-        
-        /* Alerts */
+
+        /* ── Alerts ── */
         .alert {
-            padding: 15px 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            border-left: 4px solid;
+            display: flex; align-items: center; gap: 0.625rem;
+            padding: 0.875rem 1rem;
+            border-radius: 0.625rem;
+            font-size: 0.875rem;
+            margin-bottom: 1.25rem;
         }
-        
-        .alert-success {
-            background: rgba(0, 255, 136, 0.1);
-            border-color: var(--green);
-            color: var(--green);
+        .alert-success { background: rgba(0,255,136,0.08); border: 1px solid rgba(0,255,136,0.3); color: var(--green); }
+        .alert-error   { background: rgba(255,107,107,0.08); border: 1px solid rgba(255,107,107,0.3); color: var(--ps-danger); }
+        .alert-warning { background: rgba(255,170,0,0.08); border: 1px solid rgba(255,170,0,0.3); color: var(--ps-warning); }
+
+        /* ── Shared component classes ── */
+        .ps-page-header { margin-bottom: 1.5rem; }
+        .ps-page-title { font-size: 1.5rem; font-weight: 800; margin-bottom: 0.25rem; }
+        .ps-page-subtitle { font-size: 0.875rem; color: var(--text-secondary); }
+
+        .ps-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 0.875rem;
+            padding: 1.25rem;
+            margin-bottom: 1.25rem;
         }
-        
-        .alert-danger {
-            background: rgba(255, 107, 107, 0.1);
-            border-color: var(--red);
-            color: var(--red);
-        }
-        
-        .alert-warning {
-            background: rgba(255, 170, 0, 0.1);
-            border-color: var(--orange);
-            color: var(--orange);
-        }
-        
-        .alert-info {
-            background: rgba(0, 240, 255, 0.1);
-            border-color: var(--cyan);
-            color: var(--cyan);
-        }
-        
-        /* Utility Classes */
-        .mb-1 { margin-bottom: 10px; }
-        .mb-2 { margin-bottom: 20px; }
-        .mb-3 { margin-bottom: 30px; }
-        .mt-1 { margin-top: 10px; }
-        .mt-2 { margin-top: 20px; }
-        .mt-3 { margin-top: 30px; }
-        
-        .text-center { text-align: center; }
-        .text-muted { color: var(--text-secondary); }
-        
-        /* Empty State */
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
+        .ps-card-title {
+            font-size: 0.875rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.06em;
             color: var(--text-secondary);
+            margin-bottom: 1rem;
+            display: flex; align-items: center; gap: 0.5rem;
         }
-        
-        .empty-state i {
-            font-size: 4rem;
-            margin-bottom: 20px;
-            opacity: 0.3;
+
+        .ps-btn {
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            padding: 0.5625rem 1.125rem;
+            border-radius: 0.5rem; font-size: 0.875rem; font-weight: 600;
+            cursor: pointer; text-decoration: none;
+            border: 1px solid transparent; transition: all 0.15s; line-height: 1;
         }
-        
-        .empty-state h3 {
-            font-size: 1.3rem;
-            margin-bottom: 10px;
+        .ps-btn-primary {
+            background: linear-gradient(135deg, var(--ps-primary), var(--ps-secondary));
+            color: #06060a; border: none;
+            box-shadow: 0 0.1875rem 0.875rem rgba(255,170,0,0.3);
         }
-        
-        /* Responsive Design */
+        .ps-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 0.375rem 1.375rem rgba(255,170,0,0.45); color: #06060a; text-decoration: none; }
+        .ps-btn-secondary {
+            background: var(--bg-secondary); border-color: var(--border-color); color: var(--text-secondary);
+        }
+        .ps-btn-secondary:hover { background: rgba(255,170,0,0.07); border-color: rgba(255,170,0,0.25); color: var(--text-primary); text-decoration: none; }
+        .ps-btn-danger { background: rgba(255,107,107,0.08); border-color: rgba(255,107,107,0.2); color: var(--ps-danger); }
+        .ps-btn-danger:hover { background: rgba(255,107,107,0.18); text-decoration: none; color: var(--ps-danger); }
+
+        /* Grid helpers */
+        .ps-grid { display: grid; gap: 1rem; }
+        .ps-grid-2 { grid-template-columns: repeat(2, 1fr); }
+        .ps-grid-3 { grid-template-columns: repeat(3, 1fr); }
+        .ps-grid-4 { grid-template-columns: repeat(4, 1fr); }
+        @media (max-width: 1024px) { .ps-grid-4 { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 768px)  { .ps-grid-2, .ps-grid-3, .ps-grid-4 { grid-template-columns: 1fr; } }
+
+        /* Legacy class aliases for existing views */
+        .card       { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 0.875rem; padding: 1.25rem; margin-bottom: 1.25rem; }
+        .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color); }
+        .card-title { font-size: 0.875rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; }
+        .btn        { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 600; cursor: pointer; text-decoration: none; border: 1px solid transparent; transition: all 0.15s; line-height: 1; font-family: inherit; }
+        .btn-primary { background: linear-gradient(135deg, var(--ps-primary), var(--ps-secondary)); color: #06060a; border: none; }
+        .btn-primary:hover { transform: translateY(-1px); color: #06060a; text-decoration: none; }
+        .btn-secondary { background: var(--bg-secondary); border-color: var(--border-color); color: var(--text-secondary); }
+        .btn-secondary:hover { color: var(--text-primary); text-decoration: none; }
+        .btn-danger { background: rgba(255,107,107,0.08); border-color: rgba(255,107,107,0.2); color: var(--ps-danger); }
+        .btn-success { background: rgba(0,255,136,0.1); border-color: rgba(0,255,136,0.3); color: var(--green); }
+        .btn-sm { padding: 0.375rem 0.75rem; font-size: 0.8rem; }
+        .grid { display: grid; gap: 1rem; }
+        .grid-2 { grid-template-columns: repeat(2, 1fr); }
+        .grid-4 { grid-template-columns: repeat(4, 1fr); }
+        .mb-3 { margin-bottom: 1rem; }
+        .form-group { margin-bottom: 1.25rem; }
+        .form-label { display: block; margin-bottom: 0.375rem; color: var(--text-secondary); font-size: 0.875rem; font-weight: 500; }
+        .form-input { width: 100%; padding: 0.625rem 0.875rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 0.5rem; color: var(--text-primary); font-family: inherit; font-size: 0.875rem; transition: border-color 0.15s; }
+        .form-input:focus { outline: none; border-color: var(--ps-primary); }
+        .form-textarea { width: 100%; padding: 0.625rem 0.875rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 0.5rem; color: var(--text-primary); font-family: inherit; font-size: 0.875rem; resize: vertical; min-height: 6rem; }
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+        table th { padding: 0.75rem 1rem; text-align: left; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary); border-bottom: 1px solid var(--border-color); background: var(--bg-secondary); }
+        table td { padding: 0.875rem 1rem; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
+        table tr:last-child td { border-bottom: none; }
+        table tr:hover td { background: rgba(255,170,0,0.02); }
+        .badge { display: inline-flex; align-items: center; padding: 0.125rem 0.5rem; border-radius: 1rem; font-size: 0.7rem; font-weight: 700; }
+        .badge-success { background: rgba(0,255,136,0.12); color: var(--green); }
+        .badge-warning { background: rgba(255,170,0,0.12); color: var(--ps-warning); }
+        .badge-danger  { background: rgba(255,107,107,0.12); color: var(--ps-danger); }
+        .badge-secondary { background: rgba(136,146,166,0.12); color: var(--text-secondary); }
+        .stat-card { text-align: center; padding: 1.5rem; }
+        .stat-value { font-size: 2rem; font-weight: 700; color: var(--ps-primary); }
+        .stat-label { color: var(--text-secondary); margin-top: 0.25rem; font-size: 0.85rem; }
+        .upload-zone { border: 2px dashed var(--border-color); border-radius: 0.75rem; padding: 3.5rem 2rem; text-align: center; cursor: pointer; transition: all 0.2s; }
+        .upload-zone:hover { border-color: var(--ps-primary); background: rgba(255,170,0,0.04); }
+        .file-item { display: flex; align-items: center; gap: 0.875rem; padding: 0.875rem; background: var(--bg-secondary); border-radius: 0.5rem; margin-bottom: 0.5rem; }
+        .file-icon { width: 2.75rem; height: 2.75rem; background: rgba(255,170,0,0.1); border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .file-info { flex: 1; min-width: 0; }
+        .file-name { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .file-meta { font-size: 0.78rem; color: var(--text-secondary); }
+        .back-link { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); text-decoration: none; margin-bottom: 1rem; font-size: 0.875rem; }
+        .back-link:hover { color: var(--ps-primary); }
+        .empty-state { text-align: center; padding: 3.5rem 1.25rem; color: var(--text-secondary); }
+        .empty-state i { font-size: 3rem; opacity: 0.2; display: block; margin-bottom: 1rem; }
+        .text-center { text-align: center; }
+        .text-muted   { color: var(--text-secondary); }
+        .text-success { color: var(--green); }
+        .text-danger  { color: var(--ps-danger); }
+        .text-warning { color: var(--ps-warning); }
+        .d-flex { display: flex; }
+        .align-items-center { align-items: center; }
+        .justify-content-between { justify-content: space-between; }
+        .gap-2 { gap: 0.5rem; }
+        .gap-3 { gap: 0.75rem; }
+        .mt-2 { margin-top: 0.5rem; }
+        .mt-3 { margin-top: 0.75rem; }
+        .ms-auto { margin-left: auto; }
+
+        /* Responsive */
         @media (max-width: 1024px) {
-            .grid-4 {
-                grid-template-columns: repeat(2, 1fr);
-            }
+            .grid-4 { grid-template-columns: repeat(2, 1fr); }
         }
-        
-        @media (max-width: 768px) {
-            :root {
-                --sidebar-width: 280px;
+        @media (max-width: 900px) {
+            .ps-sidebar {
+                transform: translateX(calc(-1 * var(--sidebar-width)));
             }
-            
-            .sidebar {
-                transform: translateX(-100%);
-            }
-            
-            .sidebar.active {
+            .ps-sidebar.open {
                 transform: translateX(0);
             }
-            
-            .main-content {
-                margin-left: 0;
-            }
-            
-            .mobile-menu-btn {
-                display: block;
-            }
-            
-            .topbar {
-                padding: 15px 20px;
-            }
-            
-            .content {
-                padding: 20px 15px;
-            }
-            
-            .grid-2,
-            .grid-3,
-            .grid-4 {
-                grid-template-columns: 1fr;
-            }
-            
-            .topbar-btn span {
-                display: none;
-            }
+            .ps-sidebar-toggle { display: flex; }
+            .ps-main { margin-left: 0; }
         }
-        
-        @media (max-width: 480px) {
-            .topbar-title h1 {
-                font-size: 1.2rem;
-            }
-            
-            .card {
-                padding: 16px;
-            }
-            
-            .user-menu span {
-                display: none;
-            }
-            
-            .table th,
-            .table td {
-                padding: 8px 12px;
-                font-size: 0.9rem;
-            }
+        @media (max-width: 768px) {
+            .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+            .ps-main { padding: 1rem; }
         }
     </style>
-    
+
     <?php View::yield('styles'); ?>
 </head>
 <body>
-    <div class="proshare-container">
-        <!-- Sidebar -->
-        <aside class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <a href="/projects/proshare" class="logo">
-                    <i class="fas fa-share-alt"></i>
-                    <span>ProShare</span>
+<?php
+// Include platform navbar
+\Core\Timezone::init(\Core\Auth::id());
+include BASE_PATH . '/views/layouts/navbar.php';
+?>
+
+<div class="ps-dashboard">
+    <!-- ── Sidebar ── -->
+    <aside class="ps-sidebar" id="psSidebar">
+        <a href="/projects/proshare" class="ps-sidebar-logo" style="text-decoration:none;">
+            <div class="logo-icon"><i class="fas fa-share-alt" style="-webkit-text-fill-color:#06060a;"></i></div>
+            <div class="logo-text">ProShare</div>
+        </a>
+
+        <div class="sidebar-section">
+            <div class="sidebar-title">Main</div>
+            <nav class="sidebar-nav">
+                <a href="/projects/proshare/dashboard"
+                   class="<?= (trim(parse_url($_uri, PHP_URL_PATH), '/') === 'projects/proshare' || trim(parse_url($_uri, PHP_URL_PATH), '/') === 'projects/proshare/dashboard') ? 'active' : '' ?>">
+                    <i class="fas fa-home"></i> Dashboard
                 </a>
-            </div>
-            
-            <nav class="sidebar-menu">
-                <!-- Main -->
-                <div class="menu-section">
-                    <div class="menu-item">
-                        <a href="/projects/proshare/dashboard" class="menu-link <?= ($_SERVER['REQUEST_URI'] ?? '') == '/projects/proshare/dashboard' || ($_SERVER['REQUEST_URI'] ?? '') == '/projects/proshare' ? 'active' : '' ?>">
-                            <i class="fas fa-home"></i>
-                            <span>Dashboard</span>
-                        </a>
-                    </div>
-                </div>
-                
-                <!-- Sharing -->
-                <div class="menu-section">
-                    <div class="menu-section-title">Sharing</div>
-                    
-                    <div class="menu-item">
-                        <a href="/projects/proshare/upload" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/projects/proshare/upload') === 0 ? 'active' : '' ?>">
-                            <i class="fas fa-cloud-upload-alt"></i>
-                            <span>Upload Files</span>
-                        </a>
-                    </div>
-                    
-                    <div class="menu-item">
-                        <a href="/projects/proshare/text" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/projects/proshare/text') === 0 ? 'active' : '' ?>">
-                            <i class="fas fa-file-alt"></i>
-                            <span>Share Text</span>
-                        </a>
-                    </div>
-                    
-                    <div class="menu-item">
-                        <a href="/projects/proshare/files" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/projects/proshare/files') === 0 ? 'active' : '' ?>">
-                            <i class="fas fa-folder"></i>
-                            <span>My Files</span>
-                        </a>
-                    </div>
-                </div>
-                
-                <!-- Account -->
-                <div class="menu-section">
-                    <div class="menu-section-title">Account</div>
-                    
-                    <div class="menu-item">
-                        <a href="/projects/proshare/notifications" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/projects/proshare/notifications') === 0 ? 'active' : '' ?>">
-                            <i class="fas fa-bell"></i>
-                            <span>Notifications</span>
-                            <?php if (isset($unreadNotifications) && $unreadNotifications > 0): ?>
-                                <span class="badge"><?= $unreadNotifications ?></span>
-                            <?php endif; ?>
-                        </a>
-                    </div>
-                    
-                    <div class="menu-item">
-                        <a href="/projects/proshare/settings" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/projects/proshare/settings') === 0 ? 'active' : '' ?>">
-                            <i class="fas fa-cog"></i>
-                            <span>Settings</span>
-                        </a>
-                    </div>
-                </div>
-                
-                <!-- System -->
-                <div class="menu-section">
-                    <div class="menu-section-title">System</div>
-                    
-                    <div class="menu-item">
-                        <a href="/dashboard" class="menu-link">
-                            <i class="fas fa-th-large"></i>
-                            <span>Main Dashboard</span>
-                        </a>
-                    </div>
-                    
-                    <div class="menu-item">
-                        <a href="/logout" class="menu-link">
-                            <i class="fas fa-sign-out-alt"></i>
-                            <span>Logout</span>
-                        </a>
-                    </div>
-                </div>
             </nav>
-        </aside>
-        
-        <!-- Sidebar Overlay for Mobile -->
-        <div class="sidebar-overlay" id="sidebarOverlay"></div>
-        
-        <!-- Main Content -->
-        <div class="main-content">
-            <!-- Top Bar -->
-            <div class="topbar">
-                <div class="topbar-left">
-                    <button class="mobile-menu-btn" id="mobileMenuBtn">
-                        <i class="fas fa-bars"></i>
-                    </button>
-                    <div class="topbar-title">
-                        <h1><?= View::e($title ?? 'ProShare') ?></h1>
-                        <?php if (isset($subtitle)): ?>
-                            <p><?= View::e($subtitle) ?></p>
-                        <?php endif; ?>
-                    </div>
-                </div>
-                <div class="topbar-right">
-                    <?php $user = Auth::user(); ?>
-                    <a href="/dashboard" class="topbar-btn">
-                        <i class="fas fa-home"></i>
-                        <span>Main Site</span>
-                    </a>
-                    <div class="user-menu">
-                        <div class="user-avatar">
-                            <?= strtoupper(substr($user['name'] ?? 'U', 0, 1)) ?>
-                        </div>
-                        <span><?= View::e($user['name'] ?? 'User') ?></span>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Content -->
-            <div class="content">
-                <?php View::yield('content'); ?>
-            </div>
         </div>
-    </div>
-    
-    <script>
-        // Mobile menu toggle
-        const sidebar = document.getElementById('sidebar');
-        const sidebarOverlay = document.getElementById('sidebarOverlay');
-        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-        
-        if (mobileMenuBtn) {
-            mobileMenuBtn.addEventListener('click', () => {
-                sidebar.classList.toggle('active');
-                sidebarOverlay.classList.toggle('active');
-            });
-        }
-        
-        if (sidebarOverlay) {
-            sidebarOverlay.addEventListener('click', () => {
-                sidebar.classList.remove('active');
-                sidebarOverlay.classList.remove('active');
-            });
-        }
-    </script>
-    
-    <?php View::yield('scripts'); ?>
+
+        <div class="sidebar-section">
+            <div class="sidebar-title">Sharing</div>
+            <nav class="sidebar-nav">
+                <a href="/projects/proshare/upload"
+                   class="<?= strpos($_uri, '/projects/proshare/upload') === 0 ? 'active' : '' ?>">
+                    <i class="fas fa-cloud-upload-alt"></i> Upload Files
+                </a>
+                <a href="/projects/proshare/text"
+                   class="<?= strpos($_uri, '/projects/proshare/text') === 0 ? 'active' : '' ?>">
+                    <i class="fas fa-file-alt"></i> Share Text
+                </a>
+                <a href="/projects/proshare/files"
+                   class="<?= strpos($_uri, '/projects/proshare/files') === 0 ? 'active' : '' ?>">
+                    <i class="fas fa-folder"></i> My Files
+                </a>
+            </nav>
+        </div>
+
+        <div class="sidebar-section">
+            <div class="sidebar-title">Account</div>
+            <nav class="sidebar-nav">
+                <a href="/projects/proshare/notifications"
+                   class="<?= strpos($_uri, '/projects/proshare/notifications') === 0 ? 'active' : '' ?>">
+                    <i class="fas fa-bell"></i> Notifications
+                    <?php if (!empty($unreadNotifications) && $unreadNotifications > 0): ?>
+                    <span class="badge"><?= (int)$unreadNotifications ?></span>
+                    <?php endif; ?>
+                </a>
+                <a href="/projects/proshare/settings"
+                   class="<?= strpos($_uri, '/projects/proshare/settings') === 0 ? 'active' : '' ?>">
+                    <i class="fas fa-cog"></i> Settings
+                </a>
+            </nav>
+        </div>
+    </aside>
+
+    <!-- Overlay for mobile -->
+    <div class="ps-sidebar-overlay" id="psOverlay"></div>
+
+    <!-- ── Main content ── -->
+    <main class="ps-main" id="psMain">
+        <?php
+        $flash = $_SESSION['_flash'] ?? [];
+        unset($_SESSION['_flash']);
+        if (!empty($flash['success'])): ?>
+            <div class="alert alert-success">
+                <i class="fa-solid fa-circle-check"></i>
+                <?= htmlspecialchars($flash['success']) ?>
+            </div>
+        <?php endif;
+        if (!empty($flash['error'])): ?>
+            <div class="alert alert-error">
+                <i class="fa-solid fa-circle-xmark"></i>
+                <?= htmlspecialchars($flash['error']) ?>
+            </div>
+        <?php endif; ?>
+
+        <?php View::yield('content'); ?>
+    </main>
+
+    <!-- Floating mobile sidebar toggle -->
+    <button class="ps-sidebar-toggle" id="psToggle" aria-label="Toggle navigation">
+        <i class="fa-solid fa-bars"></i>
+    </button>
+</div>
+
+<script>
+(function () {
+    var sidebar = document.getElementById('psSidebar');
+    var overlay = document.getElementById('psOverlay');
+    var toggle  = document.getElementById('psToggle');
+
+    function openSidebar()  { sidebar.classList.add('open'); overlay.classList.add('active'); toggle.innerHTML = '<i class="fa-solid fa-times"></i>'; }
+    function closeSidebar() { sidebar.classList.remove('open'); overlay.classList.remove('active'); toggle.innerHTML = '<i class="fa-solid fa-bars"></i>'; }
+
+    if (toggle)  toggle.addEventListener('click', function () { sidebar.classList.contains('open') ? closeSidebar() : openSidebar(); });
+    if (overlay) overlay.addEventListener('click', closeSidebar);
+
+    // Close on link click (mobile)
+    sidebar && sidebar.querySelectorAll('.sidebar-nav a').forEach(function (a) {
+        a.addEventListener('click', function () { if (window.innerWidth <= 900) closeSidebar(); });
+    });
+}());
+</script>
+<?php View::yield('scripts'); ?>
 </body>
 </html>

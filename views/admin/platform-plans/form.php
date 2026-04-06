@@ -127,9 +127,6 @@
             'codexpro' => ['title'=>'CodeXPro','color'=>'#00f0ff',
                 'numbers'=>['max_projects'=>['label'=>'Max Projects','placeholder'=>'-1 = unlimited'],'max_executions_day'=>['label'=>'Max Executions/Day','placeholder'=>'-1 = unlimited']],
                 'booleans'=>['ai_completion'=>'AI Completion','private_snippets'=>'Private Snippets','team_sharing'=>'Team Sharing','api_access'=>'API Access']],
-            'imgtxt' => ['title'=>'ImgTxt','color'=>'#00ff88',
-                'numbers'=>['max_jobs_day'=>['label'=>'Max Jobs/Day','placeholder'=>'-1 = unlimited'],'max_image_size_mb'=>['label'=>'Max Image Size (MB)','placeholder'=>'e.g. 10']],
-                'booleans'=>['batch_processing'=>'Batch Processing','high_accuracy'=>'High Accuracy Mode','api_access'=>'API Access']],
         ];
         $savedFeatures = $plan['app_features_arr'] ?? [];
         ?>

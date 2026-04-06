@@ -98,7 +98,7 @@
 </div>
 <?php endif; ?>
 
-<?php if ($canCodexPro || $canImgTxt || $canProShare): ?>
+<?php if ($canCodexPro || $canProShare): ?>
 <div class="card mb-3">
     <div class="card-header">
         <h3 class="card-title" style="font-size: 1.3rem;">
@@ -113,7 +113,6 @@
     <?php
     $visibleCols = array_values(array_filter([
         $canCodexPro        ? 'codexpro' : null,
-        $canImgTxt          ? 'imgtxt'   : null,
         $canProShare        ? 'proshare' : null,
         ($canFormX ?? false) ? 'formx'   : null,
     ]));
@@ -144,33 +143,6 @@
                 </div>
             </div>
             <a href="/admin/projects/codexpro" class="btn btn-secondary mt-2" style="width:100%;justify-content:center;">
-                <i class="fas fa-chart-line"></i> View Details
-            </a>
-        </div>
-        <?php endif; ?>
-
-        <?php if ($proj === 'imgtxt'): ?>
-        <div style="padding: 20px; <?= $index < $colCount - 1 ? 'border-right: 1px solid var(--border-color);' : '' ?>">
-            <div style="display:flex;align-items:center;gap:12px;margin-bottom:15px;">
-                <div style="width:45px;height:45px;background:linear-gradient(135deg,var(--green),var(--cyan));border-radius:10px;display:flex;align-items:center;justify-content:center;">
-                    <i class="fas fa-image" style="font-size:20px;"></i>
-                </div>
-                <div>
-                    <h4 style="font-size:1.1rem;margin-bottom:3px;">ImgTxt</h4>
-                    <p style="font-size:12px;color:var(--text-secondary);">OCR Tool</p>
-                </div>
-            </div>
-            <div class="grid grid-2" style="gap:15px;">
-                <div>
-                    <div style="font-size:1.8rem;font-weight:700;color:var(--green);"><?= $projectStats['imgtxt']['total_jobs'] ?? 0 ?></div>
-                    <div style="font-size:12px;color:var(--text-secondary);">OCR Jobs</div>
-                </div>
-                <div>
-                    <div style="font-size:1.8rem;font-weight:700;color:var(--orange);"><?= $projectStats['imgtxt']['completed'] ?? 0 ?></div>
-                    <div style="font-size:12px;color:var(--text-secondary);">Completed</div>
-                </div>
-            </div>
-            <a href="/admin/projects/imgtxt" class="btn btn-secondary mt-2" style="width:100%;justify-content:center;">
                 <i class="fas fa-chart-line"></i> View Details
             </a>
         </div>
@@ -374,7 +346,7 @@ if ($canFormX ?? false) $moduleLinks[] = ['label' => 'FormX',         'icon' => 
 if ($canSecurity)     $moduleLinks[] = ['label' => 'Security',        'icon' => 'fas fa-shield-alt',     'href' => '/admin/security',              'color' => '#ff4444'];
 if ($canPlatformPlans)$moduleLinks[] = ['label' => 'Platform Plans',  'icon' => 'fas fa-layer-group',    'href' => '/admin/platform-plans',        'color' => '#00bbff'];
 if ($canLogs && !$canUsers) $moduleLinks[] = ['label' => 'Activity Logs', 'icon' => 'fas fa-history',   'href' => '/admin/logs/activity',         'color' => '#ff8800'];
-if ($canProjects && !$canCodexPro && !$canImgTxt && !$canProShare)
+if ($canProjects && !$canCodexPro && !$canProShare)
                       $moduleLinks[] = ['label' => 'Projects',        'icon' => 'fas fa-folder',         'href' => '/admin/projects',              'color' => '#44cc44'];
 ?>
 

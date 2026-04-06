@@ -1162,6 +1162,42 @@ html:not([data-theme="light"]) .universal-header .dropdown-item:hover {
         display: block;
     }
 }
+
+/* iPad portrait (769px–1024px) — prevent profile/notif dropdowns from overflowing the viewport */
+@media (min-width: 769px) and (max-width: 1024px) {
+    /* Tighten nav link padding so everything fits */
+    .universal-nav .nav-link {
+        padding: 6px 8px;
+        font-size: 13px;
+        gap: 4px;
+    }
+
+    /* Profile and notif dropdowns: fixed so overflow-x:hidden on body can't clip them */
+    .header-end-actions .dropdown .dropdown-menu {
+        position: fixed !important;
+        top: 58px !important;
+        right: 8px !important;
+        left: auto !important;
+        width: min(240px, calc(100vw - 20px));
+        z-index: 10002 !important;
+    }
+
+    .notif-panel {
+        position: fixed !important;
+        top: 64px !important;
+        right: 8px !important;
+        left: auto !important;
+        width: min(340px, calc(100vw - 16px)) !important;
+        max-height: 70vh;
+        overflow-y: auto;
+        z-index: 10001 !important;
+    }
+
+    /* Hide username text on mid-sized tablets to save header space */
+    .profile-username {
+        display: none;
+    }
+}
 </style>
 
 <!-- ── Logout Confirmation Modal ───────────────────────────────────────────── -->

@@ -5,12 +5,22 @@
 <!-- Overview Stats -->
 <div class="stats-grid mb-4">
     <div class="stat-card">
-        <div class="stat-value" style="color:var(--accent);"><?= number_format($totalClicks) ?></div>
-        <div class="stat-label"><i class="fas fa-mouse-pointer" style="margin-right:5px;"></i> Total Clicks</div>
+        <div class="stat-icon" style="background:rgba(0,212,255,0.12);">
+            <i class="fas fa-mouse-pointer" style="color:var(--ls-accent);"></i>
+        </div>
+        <div>
+            <div class="stat-value" style="color:var(--accent);"><?= number_format($totalClicks) ?></div>
+            <div class="stat-label">Total Clicks</div>
+        </div>
     </div>
     <div class="stat-card">
-        <div class="stat-value" style="color:var(--green);"><?= number_format($clicksToday) ?></div>
-        <div class="stat-label"><i class="fas fa-calendar-day" style="margin-right:5px;"></i> Clicks Today</div>
+        <div class="stat-icon" style="background:rgba(0,255,136,0.12);">
+            <i class="fas fa-calendar-day" style="color:var(--green);"></i>
+        </div>
+        <div>
+            <div class="stat-value" style="color:var(--green);"><?= number_format($clicksToday) ?></div>
+            <div class="stat-label">Clicks Today</div>
+        </div>
     </div>
 </div>
 

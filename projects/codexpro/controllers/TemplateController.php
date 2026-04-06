@@ -22,11 +22,11 @@ class TemplateController
      */
     public function index(): void
     {
-        $db = Database::projectConnection('codexpro');
+        $db = Database::getInstance();
         
         // Get database templates
         $dbTemplates = $db->fetchAll(
-            "SELECT * FROM templates WHERE is_active = 1 ORDER BY category, name"
+            "SELECT * FROM codexpro_templates WHERE is_active = 1 ORDER BY category, name"
         );
         
         // Get starter templates from TemplateManager
@@ -60,10 +60,10 @@ class TemplateController
     {
         header('Content-Type: application/json');
         
-        $db = Database::projectConnection('codexpro');
+        $db = Database::getInstance();
         
         $template = $db->fetch(
-            "SELECT * FROM templates WHERE id = ? AND is_active = 1",
+            "SELECT * FROM codexpro_templates WHERE id = ? AND is_active = 1",
             [$id]
         );
         

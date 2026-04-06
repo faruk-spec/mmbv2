@@ -45,7 +45,14 @@
             <div class="fx-nav-title">Workspace</div>
             <a href="/projects/formx" class="fx-nav-link"><i class="fas fa-th-large"></i><span>Dashboard</span></a>
             <a href="/projects/formx/create" class="fx-nav-link"><i class="fas fa-plus-circle"></i><span>New Form</span></a>
-            <a href="/projects/formx/forms" class="fx-nav-link active"><i class="fas fa-list"></i><span>My Forms</span></a>
+            <a href="/projects/formx/forms" class="fx-nav-link"><i class="fas fa-list"></i><span>My Forms</span></a>
+        </div>
+        <div class="fx-nav-section">
+            <div class="fx-nav-title">This Form</div>
+            <a href="/projects/formx/<?= (int)$form['id'] ?>/edit" class="fx-nav-link"><i class="fas fa-edit"></i><span>Edit Builder</span></a>
+            <a href="/projects/formx/<?= (int)$form['id'] ?>/submissions" class="fx-nav-link"><i class="fas fa-inbox"></i><span>Submissions</span></a>
+            <a href="/projects/formx/<?= (int)$form['id'] ?>/analytics" class="fx-nav-link"><i class="fas fa-chart-bar"></i><span>Analytics</span></a>
+            <a href="/projects/formx/<?= (int)$form['id'] ?>/versions" class="fx-nav-link active"><i class="fas fa-history"></i><span>Versions</span></a>
         </div>
         <?php if (!empty($sidebarForms)): ?>
         <div class="fx-nav-section">

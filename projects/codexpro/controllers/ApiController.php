@@ -219,12 +219,12 @@ class ApiController
     public function exportProject(int $projectId): void
     {
         $user = Auth::user();
-        $db = Database::projectConnection('codexpro');
+        $db = Database::getInstance();
         
         try {
             // Get project
             $project = $db->fetch(
-                "SELECT * FROM projects WHERE id = ? AND user_id = ?",
+                "SELECT * FROM codexpro_projects WHERE id = ? AND user_id = ?",
                 [$projectId, $user['id']]
             );
             
@@ -269,7 +269,7 @@ class ApiController
         header('Content-Type: application/json');
         
         $user = Auth::user();
-        $db = Database::projectConnection('codexpro');
+        $db = Database::getInstance();
         
         $templateKey = $_POST['template'] ?? '';
         
@@ -293,7 +293,7 @@ class ApiController
                 'visibility' => 'private'
             ];
             
-            $projectId = $db->insert('projects', $projectData);
+            $projectId = $db->insert('codexpro_projects', $projectData);
             
             echo json_encode([
                 'success' => true,

@@ -179,7 +179,7 @@
                 <p style="color:var(--text-secondary);font-size:12px;">No data yet.</p>
             <?php else:
                 $maxCnt = max(array_column($moduleBreakdown, 'cnt') ?: [1]);
-                $modColors = ['whatsapp'=>'#25d366','qr'=>'var(--cyan)','proshare'=>'var(--magenta, #ff2ec4)','imgtxt'=>'var(--orange)','billx'=>'#f39c12','codexpro'=>'#9b59b6','convertx'=>'#3498db','auth'=>'#2ecc71','core'=>'var(--text-secondary)'];
+                $modColors = ['whatsapp'=>'#25d366','qr'=>'var(--cyan)','proshare'=>'var(--magenta, #ff2ec4)','billx'=>'#f39c12','codexpro'=>'#9b59b6','convertx'=>'#3498db','auth'=>'#2ecc71','devzone'=>'#ff2ec4','core'=>'var(--text-secondary)'];
                 foreach ($moduleBreakdown as $m):
                     $color = $modColors[strtolower($m['module'])] ?? 'var(--cyan)';
                     $pct = round(($m['cnt'] / $maxCnt) * 100);

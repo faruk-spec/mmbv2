@@ -34,6 +34,20 @@ try {
     <link rel="stylesheet" href="/css/universal-theme.css">
     
     <style>
+        /* Light theme support */
+        [data-theme="light"] {
+            --bg-primary:   #f4f6fb;
+            --bg-secondary: #ffffff;
+            --bg-card:      #ffffff;
+            --text-primary: #1a2035;
+            --text-secondary: #5a6379;
+            --border-color: rgba(0,0,0,0.1);
+            --cyan:    #0369a1;
+            --magenta: #b0107a;
+            --green:   #16a34a;
+            --orange:  #e07b00;
+        }
+
         :root {
             --bg-primary: #06060a;
             --bg-secondary: #0c0c12;
@@ -49,7 +63,8 @@ try {
             --border-color: rgba(255, 255, 255, 0.1);
             --shadow-glow: 0 0 20px rgba(0, 240, 255, 0.2);
             --transition: all 0.3s ease;
-            --sidebar-width: 280px;
+            --sidebar-width: 17.5rem;
+            --navbar-height: 3.75rem;
         }
         
         * {
@@ -90,14 +105,14 @@ try {
         /* Sidebar */
         .sidebar {
             width: var(--sidebar-width);
-            background: rgba(12, 12, 18, 0.95);
-            backdrop-filter: blur(20px);
+            background: var(--bg-card);
             border-right: 1px solid var(--border-color);
             position: fixed;
-            height: 100vh;
+            top: var(--navbar-height);
+            height: calc(100vh - var(--navbar-height));
             overflow-y: auto;
             overflow-x: hidden;
-            z-index: 1000;
+            z-index: 200;
             transition: var(--transition);
         }
         
@@ -179,33 +194,10 @@ try {
         .main-content {
             flex: 1;
             margin-left: var(--sidebar-width);
-            min-height: 100vh;
+            margin-top: var(--navbar-height);
+            min-height: calc(100vh - var(--navbar-height));
             display: flex;
             flex-direction: column;
-        }
-        
-        /* Top Bar */
-        .topbar {
-            background: rgba(12, 12, 18, 0.95);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--border-color);
-            padding: 0 30px;
-            height: 70px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            position: sticky;
-            top: 0;
-            z-index: 999;
-        }
-        
-        .topbar-left h1 {
-            font-size: 1.5rem;
-            font-weight: 600;
-            background: linear-gradient(135deg, var(--cyan), var(--magenta));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
         }
         
         .topbar-right {
@@ -229,12 +221,12 @@ try {
         .mobile-overlay {
             display: none;
             position: fixed;
-            top: 0;
+            top: var(--navbar-height);
             left: 0;
             width: 100%;
             height: 100%;
             background: rgba(0, 0, 0, 0.7);
-            z-index: 999;
+            z-index: 390;
         }
         
         .user-menu {
@@ -733,7 +725,8 @@ try {
             
             .sidebar {
                 transform: translateX(-100%);
-                z-index: 1000;
+                z-index: 400;
+                top: var(--navbar-height);
             }
             
             .sidebar.mobile-open {
@@ -842,22 +835,6 @@ try {
         
         <!-- Main Content -->
         <main class="main-content">
-            <!-- Top Bar -->
-            <div class="topbar">
-                <div class="topbar-left">
-                    <button class="mobile-menu-toggle" id="mobileMenuToggle">
-                        <i class="fas fa-bars"></i>
-                    </button>
-                    <h1><?= View::e($pageTitle ?? 'CodeXPro') ?></h1>
-                </div>
-                <div class="topbar-right">
-                    <div class="user-menu">
-                        <div class="user-avatar"><?= strtoupper(substr($user['name'] ?? 'U', 0, 1)) ?></div>
-                        <span class="user-name"><?= View::e($user['name'] ?? 'User') ?></span>
-                    </div>
-                </div>
-            </div>
-            
             <!-- Content -->
             <div class="content-area">
                 <?= $content ?? '' ?>

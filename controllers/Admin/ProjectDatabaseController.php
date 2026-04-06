@@ -8,7 +8,7 @@ use Core\Database;
 class ProjectDatabaseController extends BaseController
 {
     private $configPath;
-    private $projects = ['codexpro', 'imgtxt', 'proshare'];
+    private $projects = ['codexpro', 'proshare'];
     
     public function __construct()
     {
@@ -277,7 +277,6 @@ class ProjectDatabaseController extends BaseController
         if (!file_exists($this->configPath)) {
             return [
                 'codexpro' => ['status' => 'unconfigured'],
-                'imgtxt' => ['status' => 'unconfigured'],
                 'proshare' => ['status' => 'unconfigured'],
             ];
         }

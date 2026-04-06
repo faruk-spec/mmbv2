@@ -1182,7 +1182,6 @@ try {
                                     <?php
                                     $projects = [
                                         ['name' => 'ProShare', 'url' => '/projects/proshare', 'icon' => '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>'],
-                                        ['name' => 'ImgTxt', 'url' => '/projects/imgtxt', 'icon' => '<rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline>'],
                                         ['name' => 'CodeXPro', 'url' => '/projects/codexpro', 'icon' => '<polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline>'],
                                         ['name' => 'DevZone', 'url' => '/projects/devzone', 'icon' => '<circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon>'],
                                     ];

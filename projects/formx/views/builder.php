@@ -85,7 +85,10 @@
     .fx-url-bar{margin-top:16px;padding:11px 14px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;font-size:.8rem;color:var(--text-secondary);display:flex;align-items:center;gap:8px;}
     .fx-url-bar a{color:var(--cyan);text-decoration:none;}
     .fx-url-bar a:hover{text-decoration:underline;}
+    /* Desktop/mobile visibility helpers */
+    .fx-mob-only{display:none;}
     /* Mobile */
+    .fx-mob-field-edit{display:none;}
     .fx-sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99;}
     .fx-sidebar-toggle{display:none;position:fixed;bottom:24px;right:20px;z-index:100;width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--purple));border:none;cursor:pointer;align-items:center;justify-content:center;box-shadow:0 4px 18px rgba(0,240,255,.4);color:#06060a;font-size:1.1rem;}
     @media(max-width:1100px){.fx-right-panel{display:none;}}
@@ -106,6 +109,15 @@
         .fx-builder-body{flex-direction:column;}
         .fx-canvas-wrap{padding:14px;min-height:40vh;}
         .fx-canvas-wrap.mob-hidden{display:none;}
+        /* Tap-to-add palette: look like buttons */
+        .fx-palette-item{cursor:pointer;justify-content:space-between;}
+        .fx-palette-item::after{content:'+';font-size:1.1rem;font-weight:700;color:var(--cyan);flex-shrink:0;}
+        .fx-palette-item:active{background:rgba(0,240,255,.08);border-color:var(--cyan);}
+        /* Larger touch targets for field card action buttons */
+        .fx-field-card-btn{padding:7px 12px !important;font-size:.85rem !important;}
+        /* Desktop/mobile text */
+        .fx-mob-only{display:block !important;}
+        .fx-desk-only{display:none !important;}
     }
     /* Mobile tab bar */
     .fx-mob-tabs{display:none;}
@@ -115,6 +127,11 @@
         .fx-mob-tab.active{color:var(--cyan);border-bottom-color:var(--cyan);}
         .fx-mob-tab i{font-size:.9rem;}
         .fx-sidebar-toggle{bottom:80px;}
+        /* Mobile field edit panel */
+        .fx-mob-field-edit{display:none;background:var(--bg-secondary);border-bottom:1px solid var(--border-color);padding:14px 12px;order:-1;}
+        .fx-mob-field-edit.mob-active{display:block;}
+        #mobTabEdit{display:none;}
+        #mobTabEdit.visible{display:flex;}
     }
 </style>
 
@@ -201,10 +218,20 @@
             <button class="fx-mob-tab active" id="mobTabCanvas"  onclick="mobSwitchTab('canvas')"><i class="fas fa-th"></i>Canvas</button>
             <button class="fx-mob-tab"        id="mobTabFields"  onclick="mobSwitchTab('fields')"><i class="fas fa-plus-circle"></i>Add Fields</button>
             <button class="fx-mob-tab"        id="mobTabSettings" onclick="mobSwitchTab('settings')"><i class="fas fa-cog"></i>Settings</button>
+            <button class="fx-mob-tab"        id="mobTabEdit"    onclick="mobSwitchTab('edit')"><i class="fas fa-edit"></i>Edit Field</button>
         </div>
 
         <!-- Builder body -->
         <div class="fx-builder-body">
+
+            <!-- Mobile field edit panel (visible only on mobile when a field is selected) -->
+            <div class="fx-mob-field-edit" id="fxMobFieldEdit">
+                <div id="fxMobFieldEditEmpty" style="text-align:center;padding:20px;color:var(--text-secondary);font-size:.82rem;">
+                    <i class="fas fa-mouse-pointer" style="font-size:1.5rem;opacity:.3;display:block;margin-bottom:8px;"></i>
+                    Tap a field on the canvas to edit it
+                </div>
+                <div id="fxMobFieldEditForm" style="display:none;"></div>
+            </div>
 
             <!-- Left panel: settings + palette -->
             <div class="fx-left-panel" id="fxLeftPanel">
@@ -289,7 +316,8 @@
 
                 <div style="border-top:1px solid var(--border-color);margin:16px 0 12px;"></div>
                 <div class="fx-panel-title" id="fxPaletteTitle">Add Fields</div>
-                <p style="font-size:.74rem;color:var(--text-secondary);margin-bottom:10px;">Drag onto canvas →</p>
+                <p class="fx-desk-only" style="font-size:.74rem;color:var(--text-secondary);margin-bottom:10px;">Drag onto canvas →</p>
+                <p class="fx-mob-only" style="font-size:.74rem;color:var(--text-secondary);margin-bottom:10px;">Tap any field to add it →</p>
 
                 <?php
                 $palette = [
@@ -326,7 +354,8 @@
                      ondrop="canvasDrop(event)">
                     <div id="fxPlaceholder" class="fx-canvas-placeholder">
                         <i class="fas fa-hand-pointer"></i>
-                        <p style="font-size:.875rem;">Drag fields here to build your form</p>
+                        <p class="fx-desk-only" style="font-size:.875rem;">Drag fields here to build your form</p>
+                        <p class="fx-mob-only" style="font-size:.875rem;">Tap <strong>Add Fields</strong> above to add your first field</p>
                     </div>
                 </div>
 
@@ -435,29 +464,43 @@ overlay.addEventListener('click', closeSidebar);
 
 // ─── Mobile tab switcher ──────────────────────────────────────────────────────
 function mobSwitchTab(tab) {
-    var leftPanel  = document.getElementById('fxLeftPanel');
-    var canvasWrap = document.getElementById('fxCanvasWrap');
-    var tabCanvas  = document.getElementById('mobTabCanvas');
-    var tabFields  = document.getElementById('mobTabFields');
+    var leftPanel   = document.getElementById('fxLeftPanel');
+    var canvasWrap  = document.getElementById('fxCanvasWrap');
+    var mobEditPanel = document.getElementById('fxMobFieldEdit');
+    var tabCanvas   = document.getElementById('mobTabCanvas');
+    var tabFields   = document.getElementById('mobTabFields');
     var tabSettings = document.getElementById('mobTabSettings');
+    var tabEdit     = document.getElementById('mobTabEdit');
     if (!leftPanel || !canvasWrap) return;
 
     // Only applies on small screens
     if (!window.matchMedia('(max-width: 680px)').matches) return;
 
     // Reset tabs
-    [tabCanvas, tabFields, tabSettings].forEach(function(t) { if (t) t.classList.remove('active'); });
+    [tabCanvas, tabFields, tabSettings, tabEdit].forEach(function(t) { if (t) t.classList.remove('active'); });
 
     if (tab === 'canvas') {
         leftPanel.classList.remove('mob-active');
         canvasWrap.classList.remove('mob-hidden');
+        if (mobEditPanel) mobEditPanel.classList.remove('mob-active');
         if (tabCanvas) tabCanvas.classList.add('active');
-        // scroll page to top so canvas is visible
         window.scrollTo({top: 0, behavior: 'smooth'});
+    } else if (tab === 'edit') {
+        leftPanel.classList.remove('mob-active');
+        canvasWrap.classList.remove('mob-hidden');
+        if (mobEditPanel) mobEditPanel.classList.add('mob-active');
+        if (tabEdit) tabEdit.classList.add('active');
+        setTimeout(function() {
+            if (mobEditPanel) {
+                var rect = mobEditPanel.getBoundingClientRect();
+                window.scrollBy({top: rect.top - 60, behavior: 'smooth'});
+            }
+        }, 30);
     } else {
         // Show left panel, hide canvas; scroll to fields or settings
         leftPanel.classList.add('mob-active');
         canvasWrap.classList.add('mob-hidden');
+        if (mobEditPanel) mobEditPanel.classList.remove('mob-active');
         // After making the panel visible, scroll the page to it
         setTimeout(function() {
             if (tab === 'fields') {
@@ -474,6 +517,17 @@ function mobSwitchTab(tab) {
         }, 30);
     }
 }
+window.mobSwitchTab = mobSwitchTab;
+
+// ─── Unsaved-changes guard ────────────────────────────────────────────────────
+let isDirty = false;
+function markDirty() { isDirty = true; }
+window.addEventListener('beforeunload', function(e) {
+    if (!isDirty) return;
+    e.preventDefault();
+    e.returnValue = 'You have unsaved changes. Leave without saving?';
+    return e.returnValue;
+});
 
 // ─── State ────────────────────────────────────────────────────────────────────
 let fields = (function() {
@@ -542,6 +596,7 @@ function buildCard(field, idx) {
             const moved = fields.splice(from, 1)[0];
             fields.splice(idx, 0, moved);
             if (selectedIdx === from) selectedIdx = idx;
+            markDirty();
             renderCanvas();
         }
     });
@@ -559,10 +614,10 @@ function fieldPreview(f) {
             const opts = (f.options || '').split('\n').map(o => `<option>${escHtml(o.trim())}</option>`).join('');
             return `<select tabindex="-1"><option value="">-- Select --</option>${opts}</select>`;
         case 'radio':
-            return (f.options || 'Option 1\nOption 2').split('\n').slice(0,3).map(o =>
+            return (f.options || 'Option 1\nOption 2').split('\n').map(o =>
                 `<label style="display:block;margin:2px 0;font-size:.78rem;"><input type="radio" disabled> ${escHtml(o.trim())}</label>`).join('');
         case 'checkbox':
-            return (f.options || 'Option 1\nOption 2').split('\n').slice(0,3).map(o =>
+            return (f.options || 'Option 1\nOption 2').split('\n').map(o =>
                 `<label style="display:block;margin:2px 0;font-size:.78rem;"><input type="checkbox" disabled> ${escHtml(o.trim())}</label>`).join('');
         case 'file':
             return `<input type="file" tabindex="-1" disabled style="font-size:.78rem;">`;
@@ -586,6 +641,13 @@ function selectField(idx) {
     selectedIdx = idx;
     renderCanvas();
     showFieldSettings(fields[idx], idx);
+
+    // On mobile (≤680px) auto-switch to the "Edit Field" tab
+    if (window.matchMedia('(max-width: 680px)').matches) {
+        var tabEdit = document.getElementById('mobTabEdit');
+        if (tabEdit) tabEdit.classList.add('visible');
+        mobSwitchTab('edit');
+    }
 }
 
 function showFieldSettings(field, idx) {
@@ -596,7 +658,7 @@ function showFieldSettings(field, idx) {
     const needsOpts = ['select','radio','checkbox'].includes(field.type);
     const isContent = ['heading','paragraph','divider'].includes(field.type);
 
-    form.innerHTML = `
+    const settingsHtml = `
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
             <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-secondary);">Field Settings</div>
             <span style="font-size:.7rem;padding:2px 8px;border-radius:4px;background:rgba(0,240,255,.1);color:var(--cyan);">${escHtml(field.type)}</span>
@@ -650,18 +712,36 @@ function showFieldSettings(field, idx) {
         <button type="button" class="fx-btn fx-btn-danger" style="width:100%;margin-top:8px;" onclick="removeField(${idx})">
             <i class="fas fa-trash"></i> Remove Field
         </button>`;
+
+    form.innerHTML = settingsHtml;
+
+    // Also populate mobile field edit panel (visible on ≤680px)
+    if (window.matchMedia('(max-width: 680px)').matches) {
+        const mobEmpty = document.getElementById('fxMobFieldEditEmpty');
+        const mobForm  = document.getElementById('fxMobFieldEditForm');
+        if (mobEmpty) mobEmpty.style.display = 'none';
+        if (mobForm)  { mobForm.style.display = ''; mobForm.innerHTML = settingsHtml; }
+    }
 }
 
 window.saveFieldSettings = function(idx) {
     const f = { ...fields[idx] };
-    if (document.getElementById('rpLabel'))       f.label       = document.getElementById('rpLabel').value.trim();
-    if (document.getElementById('rpName'))        f.name        = document.getElementById('rpName').value.trim() || slugify(f.label);
-    if (document.getElementById('rpRequired'))    f.required    = document.getElementById('rpRequired').checked;
-    if (document.getElementById('rpPlaceholder')) f.placeholder = document.getElementById('rpPlaceholder').value;
-    if (document.getElementById('rpOptions'))     f.options     = document.getElementById('rpOptions').value;
-    if (document.getElementById('rpContent'))     f.content     = document.getElementById('rpContent').value;
-    if (document.getElementById('rpValue'))       f.value       = document.getElementById('rpValue').value;
+    // Read from mobile panel on mobile, right panel on desktop
+    const isMob = window.matchMedia('(max-width: 680px)').matches;
+    const container = isMob
+        ? document.getElementById('fxMobFieldEditForm')
+        : document.getElementById('fxRightForm');
+    if (!container) return;
+    const get = id => container.querySelector('#' + id);
+    if (get('rpLabel'))       f.label       = get('rpLabel').value.trim();
+    if (get('rpName'))        f.name        = get('rpName').value.trim() || slugify(f.label);
+    if (get('rpRequired'))    f.required    = get('rpRequired').checked;
+    if (get('rpPlaceholder')) f.placeholder = get('rpPlaceholder').value;
+    if (get('rpOptions'))     f.options     = get('rpOptions').value;
+    if (get('rpContent'))     f.content     = get('rpContent').value;
+    if (get('rpValue'))       f.value       = get('rpValue').value;
     fields[idx] = f;
+    markDirty();
     renderCanvas();
     showFieldSettings(f, idx);
 };
@@ -671,6 +751,16 @@ document.querySelectorAll('.fx-palette-item').forEach(el => {
     el.addEventListener('dragstart', e => {
         e.dataTransfer.setData('newField', el.dataset.fieldType);
         e.dataTransfer.effectAllowed = 'copy';
+    });
+    // Mobile: tap to add field directly (HTML5 DnD doesn't fire on touch)
+    el.addEventListener('click', function() {
+        if (!window.matchMedia('(max-width: 680px)').matches) return;
+        addField(el.dataset.fieldType);
+        mobSwitchTab('canvas');
+        setTimeout(function() {
+            var cards = document.getElementById('fxCanvas').querySelectorAll('.fx-field-card');
+            if (cards.length) cards[cards.length - 1].scrollIntoView({behavior: 'smooth', block: 'nearest'});
+        }, 60);
     });
 });
 
@@ -691,6 +781,7 @@ function addField(type) {
     if (type === 'paragraph') field.content = 'Enter your paragraph text here.';
     fields.push(field);
     selectedIdx = fields.length - 1;
+    markDirty();
     renderCanvas();
     showFieldSettings(fields[selectedIdx], selectedIdx);
 }
@@ -700,14 +791,27 @@ window.moveField = function(idx, dir) {
     if (newIdx < 0 || newIdx >= fields.length) return;
     [fields[idx], fields[newIdx]] = [fields[newIdx], fields[idx]];
     if (selectedIdx === idx) selectedIdx = newIdx;
+    markDirty();
     renderCanvas();
 };
 
 window.removeField = function(idx) {
     fields.splice(idx, 1);
     selectedIdx = null;
+    markDirty();
     document.getElementById('fxRightEmpty').style.display = '';
     document.getElementById('fxRightForm').style.display = 'none';
+    // Reset mobile edit panel
+    var mobEmpty = document.getElementById('fxMobFieldEditEmpty');
+    var mobForm  = document.getElementById('fxMobFieldEditForm');
+    var mobEditPanel = document.getElementById('fxMobFieldEdit');
+    var tabEdit = document.getElementById('mobTabEdit');
+    if (mobEmpty) mobEmpty.style.display = '';
+    if (mobForm) { mobForm.style.display = 'none'; mobForm.innerHTML = ''; }
+    if (mobEditPanel) mobEditPanel.classList.remove('mob-active');
+    if (tabEdit) { tabEdit.classList.remove('visible', 'active'); }
+    // Switch back to canvas tab on mobile
+    if (window.matchMedia('(max-width: 680px)').matches) mobSwitchTab('canvas');
     renderCanvas();
 };
 
@@ -747,6 +851,7 @@ window.submitBuilder = function() {
         confirm_submit:         !!(document.getElementById('settingConfirmSubmit')?.checked),
     });
     document.getElementById('builderForm').submit();
+    isDirty = false; // clear before navigation
 };
 
 // ─── Utils ────────────────────────────────────────────────────────────────────
@@ -759,6 +864,18 @@ function slugify(s) {
 
 // ─── Init ────────────────────────────────────────────────────────────────────
 renderCanvas();
+
+// Mark dirty when any form-settings input changes
+(function(){
+    var settingIds = ['settingTitle','settingDesc','settingStatus','settingSuccessMsg',
+        'settingRedirect','settingEmail','settingExpiresAt','settingAccessMode',
+        'settingAccessPassword','settingMaxSubmissions','settingMaxPerIP','settingConfirmSubmit'];
+    settingIds.forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.addEventListener('input', markDirty);
+        if (el) el.addEventListener('change', markDirty);
+    });
+})();
 
 // Show/hide password field based on access mode selector
 (function(){

@@ -21,17 +21,15 @@ class SettingsController
     public function index(): void
     {
         $user = Auth::user();
-        $db = Database::projectConnection('codexpro');
+        $db = Database::getInstance();
         
         $settings = $db->fetch(
-            "SELECT * FROM user_settings WHERE user_id = ?",
+            "SELECT * FROM codexpro_user_settings WHERE user_id = ?",
             [$user['id']]
         );
         
         if (!$settings) {
-            $db->insert('user_settings', ['user_id' => $user['id']]);
-            $settings = $db->fetch(
-                "SELECT * FROM user_settings WHERE user_id = ?",
+            $db->insert('codexpro_user_settings', ['user_id' => $user['id']]);
                 [$user['id']]
             );
         }
@@ -50,7 +48,7 @@ class SettingsController
         
         try {
             $user = Auth::user();
-            $db = Database::projectConnection('codexpro');
+            $db = Database::getInstance();
             
             $theme = Security::sanitize($_POST['theme'] ?? 'dark');
             $fontSize = (int)($_POST['font_size'] ?? 14);
@@ -61,33 +59,18 @@ class SettingsController
             
             // Ensure settings record exists
             $existing = $db->fetch(
-                "SELECT * FROM user_settings WHERE user_id = ?",
+                "SELECT * FROM codexpro_user_settings WHERE user_id = ?",
                 [$user['id']]
             );
             
             if (!$existing) {
                 // Insert new settings
-                $db->insert('user_settings', [
-                    'user_id' => $user['id'],
-                    'theme' => $theme,
-                    'font_size' => $fontSize,
-                    'tab_size' => $tabSize,
-                    'auto_save' => $autoSave,
-                    'auto_preview' => $autoPreview,
-                    'key_bindings' => $keyBindings,
-                ]);
+                $db->insert('codexpro_user_settings', [
                 $updated = true;
                 try { ActivityLogger::logUpdate($user['id'], 'codexpro', 'settings', $user['id'], [], ['theme' => $theme, 'font_size' => $fontSize, 'tab_size' => $tabSize]); } catch (\Throwable $_) {}
             } else {
                 // Update existing settings
-                $updated = $db->update('user_settings', [
-                    'theme' => $theme,
-                    'font_size' => $fontSize,
-                    'tab_size' => $tabSize,
-                    'auto_save' => $autoSave,
-                    'auto_preview' => $autoPreview,
-                    'key_bindings' => $keyBindings,
-                ], ['user_id' => $user['id']]);
+                $updated = $db->update('codexpro_user_settings', [
                 try { ActivityLogger::logUpdate($user['id'], 'codexpro', 'settings', $user['id'], [], ['theme' => $theme, 'font_size' => $fontSize, 'tab_size' => $tabSize]); } catch (\Throwable $_) {}
             }
             

@@ -17,23 +17,12 @@ return [
     ],
     
     'devzone' => [
-        'name' => 'DevZone',
+        'name'        => 'DevZone',
         'description' => 'Developer collaboration and project management',
-        'icon' => 'users',
-        'color' => '#ff2ec4',
-        'enabled' => true,
-        'database' => 'mmb_devzone',
-        'url' => '/projects/devzone'
-    ],
-    
-    'imgtxt' => [
-        'name' => 'ImgTxt',
-        'description' => 'Image to text converter and OCR tool',
-        'icon' => 'image',
-        'color' => '#00ff88',
-        'enabled' => true,
-        'database' => 'mmb_imgtxt',
-        'url' => '/projects/imgtxt'
+        'icon'        => 'terminal',
+        'color'       => '#ff2ec4',
+        'enabled'     => true,
+        'url'         => '/projects/devzone',
     ],
     
     'proshare' => [

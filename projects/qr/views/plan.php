@@ -254,8 +254,8 @@ use Core\Auth;
             <div style="font-size:.72rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Includes</div>
             <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px;">
                 <?php
-                $appNames = ['qr'=>'QR Generator','whatsapp'=>'WhatsApp API','proshare'=>'ProShare','codexpro'=>'CodeXPro','imgtxt'=>'ImgTxt','resumex'=>'ResumeX'];
-                $appColors= ['qr'=>'#9945ff','whatsapp'=>'#25D366','proshare'=>'#ffaa00','codexpro'=>'#00f0ff','imgtxt'=>'#00ff88','resumex'=>'#ff6b6b'];
+                $appNames = ['qr'=>'QR Generator','whatsapp'=>'WhatsApp API','proshare'=>'ProShare','codexpro'=>'CodeXPro','resumex'=>'ResumeX','devzone'=>'DevZone'];
+                $appColors= ['qr'=>'#9945ff','whatsapp'=>'#25D366','proshare'=>'#ffaa00','codexpro'=>'#00f0ff','resumex'=>'#ff6b6b','devzone'=>'#ff2ec4'];
                 foreach ($apps as $appKey):
                     $appName  = $appNames[$appKey]  ?? ucfirst($appKey);
                     $appColor = $appColors[$appKey] ?? '#aaa';

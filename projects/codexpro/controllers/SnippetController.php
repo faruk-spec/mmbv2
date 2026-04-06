@@ -21,10 +21,10 @@ class SnippetController
     public function index(): void
     {
         $user = Auth::user();
-        $db = Database::projectConnection('codexpro');
+        $db = Database::getInstance();
         
         $snippets = $db->fetchAll(
-            "SELECT * FROM snippets WHERE user_id = ? OR is_public = 1 
+            "SELECT * FROM codexpro_snippets WHERE user_id = ? OR is_public = 1 
              ORDER BY created_at DESC",
             [$user['id']]
         );
@@ -42,7 +42,7 @@ class SnippetController
         header('Content-Type: application/json');
         
         $user = Auth::user();
-        $db = Database::projectConnection('codexpro');
+        $db = Database::getInstance();
         
         $title = Security::sanitize($_POST['title'] ?? '');
         $description = Security::sanitize($_POST['description'] ?? '');
@@ -56,15 +56,7 @@ class SnippetController
             return;
         }
         
-        $snippetId = $db->insert('snippets', [
-            'user_id' => $user['id'],
-            'title' => $title,
-            'description' => $description,
-            'code' => $code,
-            'language' => $language,
-            'tags' => $tags,
-            'is_public' => $isPublic,
-        ]);
+        $snippetId = $db->insert('codexpro_snippets', [
         
         if ($snippetId) {
             try { ActivityLogger::logCreate($user['id'], 'codexpro', 'snippet', $snippetId, ['title' => $title, 'language' => $language]); } catch (\Throwable $_) {}
@@ -80,10 +72,10 @@ class SnippetController
     public function show(int $id): void
     {
         $user = Auth::user();
-        $db = Database::projectConnection('codexpro');
+        $db = Database::getInstance();
         
         $snippet = $db->fetch(
-            "SELECT * FROM snippets WHERE id = ? AND (user_id = ? OR is_public = 1)",
+            "SELECT * FROM codexpro_snippets WHERE id = ? AND (user_id = ? OR is_public = 1)",
             [$id, $user['id']]
         );
         
@@ -94,7 +86,7 @@ class SnippetController
         }
         
         // Increment views
-        $db->query("UPDATE snippets SET views = views + 1 WHERE id = ?", [$id]);
+        $db->query("UPDATE codexpro_snippets SET views = views + 1 WHERE id = ?", [$id]);
         
         View::render('projects/codexpro/snippet', [
             'snippet' => $snippet,
@@ -107,10 +99,10 @@ class SnippetController
     public function edit(int $id): void
     {
         $user = Auth::user();
-        $db = Database::projectConnection('codexpro');
+        $db = Database::getInstance();
         
         $snippet = $db->fetch(
-            "SELECT * FROM snippets WHERE id = ? AND user_id = ?",
+            "SELECT * FROM codexpro_snippets WHERE id = ? AND user_id = ?",
             [$id, $user['id']]
         );
         
@@ -133,11 +125,11 @@ class SnippetController
         header('Content-Type: application/json');
         
         $user = Auth::user();
-        $db = Database::projectConnection('codexpro');
+        $db = Database::getInstance();
         
         // Verify ownership
         $snippet = $db->fetch(
-            "SELECT * FROM snippets WHERE id = ? AND user_id = ?",
+            "SELECT * FROM codexpro_snippets WHERE id = ? AND user_id = ?",
             [$id, $user['id']]
         );
         
@@ -173,14 +165,7 @@ class SnippetController
             return;
         }
         
-        $updated = $db->update('snippets', [
-            'title' => $title,
-            'description' => $description,
-            'code' => $code,
-            'language' => $language,
-            'tags' => $tags,
-            'is_public' => $isPublic,
-        ], [
+        $updated = $db->update('codexpro_snippets', [
             'id' => $id,
             'user_id' => $user['id'],
         ]);
@@ -202,11 +187,11 @@ class SnippetController
         
         try {
             $user = Auth::user();
-            $db = Database::projectConnection('codexpro');
+            $db = Database::getInstance();
             
             // Verify ownership
             $snippet = $db->fetch(
-                "SELECT * FROM snippets WHERE id = ? AND user_id = ?",
+                "SELECT * FROM codexpro_snippets WHERE id = ? AND user_id = ?",
                 [$id, $user['id']]
             );
             
@@ -215,10 +200,7 @@ class SnippetController
                 return;
             }
             
-            $deleted = $db->delete('snippets', [
-                'id' => $id,
-                'user_id' => $user['id'],
-            ]);
+            $deleted = $db->delete('codexpro_snippets', [
             
             if ($deleted !== false && $deleted > 0) {
                 try { ActivityLogger::logDelete($user['id'], 'codexpro', 'snippet', $id, ['id' => $id]); } catch (\Throwable $_) {}
@@ -241,11 +223,11 @@ class SnippetController
         
         try {
             $user = Auth::user();
-            $db = Database::projectConnection('codexpro');
+            $db = Database::getInstance();
             
             // Verify ownership
             $snippet = $db->fetch(
-                "SELECT * FROM snippets WHERE id = ? AND user_id = ?",
+                "SELECT * FROM codexpro_snippets WHERE id = ? AND user_id = ?",
                 [$id, $user['id']]
             );
             
@@ -285,10 +267,7 @@ class SnippetController
                 return;
             }
             
-            $updated = $db->update('snippets', $updateData, [
-                'id' => $id,
-                'user_id' => $user['id'],
-            ]);
+            $updated = $db->update('codexpro_snippets', $updateData, [
             
             if ($updated !== false) {
                 try { ActivityLogger::logUpdate($user['id'], 'codexpro', 'snippet', $id, [], $updateData); } catch (\Throwable $_) {}
