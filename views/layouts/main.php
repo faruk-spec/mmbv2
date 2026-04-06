@@ -1990,7 +1990,89 @@ try {
     })();
     </script>
     <?php endif; ?>
-    
+
+    <?php
+    // ── 2FA Setup Reminder Popup ──────────────────────────────────────────────
+    if (\Core\Auth::check()) {
+        $u2fa = \Core\Auth::user();
+        $has2fa = !empty($u2fa['two_factor_enabled']) && (int)$u2fa['two_factor_enabled'] === 1;
+        if (!$has2fa) {
+            $createdAt   = strtotime($u2fa['created_at'] ?? 'now');
+            $isNewUser   = (time() - $createdAt) < 86400; // account < 24 h old
+            $today       = date('Y-m-d');
+            $lastPrompt  = $_SESSION['2fa_prompt_shown_date'] ?? '';
+            $showPopup   = $isNewUser || $lastPrompt !== $today;
+            if ($showPopup && !$isNewUser) {
+                $_SESSION['2fa_prompt_shown_date'] = $today;
+            }
+        } else {
+            $showPopup = false;
+            $isNewUser = false;
+        }
+    } else {
+        $showPopup = false;
+        $isNewUser = false;
+    }
+    ?>
+    <?php if (!empty($showPopup)): ?>
+    <div id="twoFaPopup" style="display:flex;position:fixed;top:0;left:0;width:100%;height:100%;z-index:99999;align-items:center;justify-content:center;background:rgba(0,0,0,0.65);backdrop-filter:blur(5px);">
+        <div id="twoFaCard" style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:18px;padding:28px 26px 24px;box-shadow:0 16px 56px rgba(0,0,0,0.55);max-width:360px;width:calc(100% - 40px);position:relative;transform:translateY(24px);opacity:0;transition:transform 0.4s cubic-bezier(.34,1.56,.64,1),opacity 0.3s ease;">
+            <?php if (empty($isNewUser)): ?>
+            <button onclick="closeTwoFaPopup()" style="position:absolute;top:12px;right:14px;background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:1.2rem;line-height:1;" aria-label="Close">&times;</button>
+            <?php endif; ?>
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+                <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--purple));display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <i class="fas fa-shield-alt" style="color:#06060a;font-size:1.1rem;"></i>
+                </div>
+                <div>
+                    <div style="font-weight:700;font-size:1rem;color:var(--text-primary);">
+                        <?php if (!empty($isNewUser)): ?>Secure your account<?php else: ?>Enable Two-Factor Auth<?php endif; ?>
+                    </div>
+                    <div style="font-size:0.75rem;color:var(--text-secondary);">Protect your account with 2FA</div>
+                </div>
+            </div>
+            <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:18px;line-height:1.5;">
+                <?php if (!empty($isNewUser)): ?>
+                    Welcome! Please set up two-factor authentication to keep your new account safe.
+                <?php else: ?>
+                    Your account doesn't have two-factor authentication enabled. Enable it now to add an extra layer of security.
+                <?php endif; ?>
+            </p>
+            <div style="display:flex;gap:8px;flex-direction:column;">
+                <a href="/2fa/setup" style="display:block;padding:10px 14px;border-radius:9px;background:linear-gradient(135deg,var(--cyan),var(--purple));color:#06060a;font-size:0.9rem;font-weight:700;text-decoration:none;text-align:center;">
+                    <i class="fas fa-qrcode" style="margin-right:6px;"></i>Set up 2FA now
+                </a>
+                <?php if (empty($isNewUser)): ?>
+                <button onclick="closeTwoFaPopup()" style="padding:9px 14px;border-radius:9px;border:1px solid var(--border-color);background:transparent;color:var(--text-secondary);font-size:0.85rem;font-weight:500;cursor:pointer;width:100%;">
+                    Remind me later
+                </button>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+    <script>
+    (function () {
+        var popup = document.getElementById('twoFaPopup');
+        var card  = document.getElementById('twoFaCard');
+        if (!popup) return;
+        setTimeout(function () {
+            requestAnimationFrame(function () {
+                requestAnimationFrame(function () {
+                    card.style.transform = 'translateY(0)';
+                    card.style.opacity   = '1';
+                });
+            });
+        }, 400);
+        function closeTwoFaPopup() {
+            card.style.transform = 'translateY(20px)';
+            card.style.opacity   = '0';
+            setTimeout(function () { popup.style.display = 'none'; }, 350);
+        }
+        window.closeTwoFaPopup = closeTwoFaPopup;
+    })();
+    </script>
+    <?php endif; ?>
+
     <?php View::yield('scripts'); ?>
 </body>
 </html>
