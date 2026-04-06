@@ -140,8 +140,12 @@
                 <input type="hidden" name="project_id" value="<?= $project['id'] ?>">
                 
                 <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
-                    <div style="width: 40px; height: 40px; background: <?= $safeColor ?>; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
-                        <?= strtoupper(substr($project['name'], 0, 2)) ?>
+                    <div style="width: 48px; height: 48px; background: <?= $safeColor ?>20; border-radius: 10px; border: 2px solid <?= $safeColor ?>40; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0;">
+                        <?php if (!empty($project['logo_url'])): ?>
+                            <img src="<?= View::e($project['logo_url']) ?>" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">
+                        <?php else: ?>
+                            <span style="font-size: 1rem; font-weight: 700; color: <?= $safeColor ?>;"><?= strtoupper(substr($project['name'], 0, 2)) ?></span>
+                        <?php endif; ?>
                     </div>
                     <h3 style="color: <?= $safeColor ?>;"><?= View::e($project['name']) ?></h3>
                 </div>
@@ -192,6 +196,24 @@
                         }
                     ?></textarea>
                     <small style="color: var(--text-secondary);">These features will appear in the collapsible section on project cards</small>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Square Logo (64×64)</label>
+                    <?php if (!empty($project['logo_url'])): ?>
+                        <div style="margin-bottom: 10px; display: flex; align-items: center; gap: 12px;">
+                            <img src="<?= View::e($project['logo_url']) ?>" alt="Logo" style="width:64px;height:64px;object-fit:cover;border-radius:10px;border:2px solid var(--border-color);">
+                            <button type="button" class="btn btn-danger remove-project-logo" data-project-id="<?= $project['id'] ?>" style="padding: 5px 10px; font-size: 12px;">
+                                <i class="fas fa-times"></i> Remove
+                            </button>
+                        </div>
+                        <input type="hidden" name="remove_project_logo" class="remove-project-logo-input-<?= $project['id'] ?>" value="0">
+                    <?php else: ?>
+                        <div style="margin-bottom: 10px; width:64px;height:64px;border:2px dashed var(--border-color);border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--text-secondary);font-size:11px;text-align:center;">Logo</div>
+                    <?php endif; ?>
+                    <input type="file" name="project_logo" class="form-input" accept="image/*">
+                    <input type="hidden" name="current_project_logo_url" value="<?= View::e($project['logo_url'] ?? '') ?>">
+                    <small style="color: var(--text-secondary);">Square logo, best 64×64 px (max 2MB, JPEG/PNG/WebP)</small>
                 </div>
                 
                 <div class="form-group">
@@ -269,6 +291,16 @@ document.addEventListener('click', function(e) {
             if (input) {
                 input.value = '1';
             }
+            btn.closest('div').remove();
+        }
+    }
+    // Handle project logo removal
+    if (e.target.classList.contains('remove-project-logo') || e.target.closest('.remove-project-logo')) {
+        const btn = e.target.classList.contains('remove-project-logo') ? e.target : e.target.closest('.remove-project-logo');
+        const projectId = btn.getAttribute('data-project-id');
+        if (confirm('Are you sure you want to remove this project logo?')) {
+            const input = document.querySelector('.remove-project-logo-input-' + projectId);
+            if (input) input.value = '1';
             btn.closest('div').remove();
         }
     }

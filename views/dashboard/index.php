@@ -27,21 +27,21 @@
         <?php if (empty($projects)): ?>
             <p style="color: var(--text-secondary); text-align: center; padding: 32px 16px; font-size: 0.875rem;">No applications available</p>
         <?php else: ?>
-            <div class="applications-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px;">
-                <?php foreach ($projects as $key => $project): ?>
-                    <a href="<?= $project['url'] ?>" class="application-card" style="display: block; background: var(--bg-secondary); border-radius: 10px; border: 1px solid var(--border-color); padding: 16px; transition: all 0.3s ease; text-align: center;">
-                        <div style="width: 48px; height: 48px; background: <?= $project['color'] ?>20; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="<?= $project['color'] ?>" stroke-width="2">
-                                <rect x="3" y="3" width="18" height="18" rx="2"/>
-                            </svg>
+            <div class="applications-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 16px;">
+                <?php foreach ($projects as $key => $project): 
+                    $cardColor = htmlspecialchars($project['color'] ?? '#00f0ff');
+                    if (!preg_match('/^#[0-9A-Fa-f]{6}$/', $cardColor)) { $cardColor = '#00f0ff'; }
+                ?>
+                    <a href="<?= htmlspecialchars($project['url'] ?? '/projects/' . $key) ?>" class="application-card" style="display: flex; flex-direction: column; align-items: center; background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border-color); padding: 20px 12px 16px; transition: all 0.3s ease; text-align: center; text-decoration: none; color: inherit;">
+                        <div style="width: 64px; height: 64px; background: <?= $cardColor ?>20; border-radius: 14px; border: 2px solid <?= $cardColor ?>40; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; overflow: hidden; flex-shrink: 0;">
+                            <?php if (!empty($project['logo_url'])): ?>
+                                <img src="<?= htmlspecialchars($project['logo_url']) ?>" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">
+                            <?php else: ?>
+                                <span style="font-size: 1.6rem; font-weight: 700; color: <?= $cardColor ?>; line-height: 1;"><?= strtoupper(substr($project['name'] ?? $key, 0, 2)) ?></span>
+                            <?php endif; ?>
                         </div>
-                        <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 6px;"><?= View::e($project['name']) ?></div>
-                        <div style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4;"><?= View::e($project['description']) ?></div>
-                        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-color);">
-                            <button style="width: 100%; padding: 8px; background: <?= $project['color'] ?>; color: #06060a; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 0.85rem;">
-                                Access Application
-                            </button>
-                        </div>
+                        <div style="font-weight: 600; font-size: 0.85rem; margin-bottom: 4px; color: var(--text-primary);"><?= View::e($project['name']) ?></div>
+                        <div style="font-size: 0.72rem; color: var(--text-secondary); line-height: 1.4;"><?= View::e($project['description'] ?? '') ?></div>
                     </a>
                 <?php endforeach; ?>
             </div>
@@ -54,11 +54,9 @@
         background: var(--bg-card) !important;
         border-color: var(--cyan) !important;
         transform: translateY(-5px);
-        box-shadow: 0 8px 30px rgba(0, 240, 255, 0.3);
-    }
-    
-    .application-card:hover button {
-        transform: scale(1.05);
+        box-shadow: 0 8px 30px rgba(0, 240, 255, 0.2);
+        text-decoration: none;
+        color: inherit;
     }
     
     .quick-action-btn {

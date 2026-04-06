@@ -515,10 +515,12 @@ if ($showStats):
             </div>
             
             <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px; margin-top: 8px;">
-                <div style="width: 36px; height: 36px; background: <?= $projectColor ?>20; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="<?= $projectColor ?>" stroke-width="2">
-                        <rect x="3" y="3" width="18" height="18" rx="2"/>
-                    </svg>
+                <div style="width: 48px; height: 48px; background: <?= $projectColor ?>20; border-radius: 10px; border: 1px solid <?= $projectColor ?>40; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0;">
+                    <?php if (!empty($project['logo_url'])): ?>
+                        <img src="<?= htmlspecialchars($project['logo_url']) ?>" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:9px;">
+                    <?php else: ?>
+                        <span style="font-size: 1.1rem; font-weight: 700; color: <?= $projectColor ?>;"><?= strtoupper(substr($projectName, 0, 2)) ?></span>
+                    <?php endif; ?>
                 </div>
                 <h3 style="color: <?= $projectColor ?>; font-size: 1.1rem;"><?= htmlspecialchars($projectName) ?></h3>
             </div>
