@@ -325,6 +325,58 @@ class DashboardController extends BaseController
     }
     
     /**
+     * Bulk revoke sessions
+     */
+    public function revokeSessionsBulk(): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request.');
+            $this->redirect('/security');
+            return;
+        }
+        
+        $sessionIds = $_POST['session_ids'] ?? [];
+        if (empty($sessionIds) || !is_array($sessionIds)) {
+            $this->flash('error', 'No sessions selected.');
+            $this->redirect('/security');
+            return;
+        }
+        
+        try {
+            $db = Database::getInstance();
+            $revoked = 0;
+            $currentSessionId = session_id();
+            
+            foreach ($sessionIds as $rawId) {
+                $sessionId = (int) $rawId;
+                $session = $db->fetch(
+                    "SELECT * FROM user_sessions WHERE id = ? AND user_id = ?",
+                    [$sessionId, Auth::id()]
+                );
+                
+                if (!$session || $session['session_id'] === $currentSessionId) {
+                    continue;
+                }
+                
+                $db->update('user_sessions', [
+                    'is_active' => 0,
+                    'last_activity_at' => date('Y-m-d H:i:s')
+                ], 'id = ?', [$sessionId]);
+                $revoked++;
+            }
+            
+            Logger::activity(Auth::id(), 'sessions_bulk_revoked', ['count' => $revoked]);
+            $this->flash('success', $revoked . ' session(s) revoked successfully.');
+            
+        } catch (\Exception $e) {
+            Logger::error('Bulk session revoke error: ' . $e->getMessage());
+            $this->flash('error', 'Failed to revoke sessions.');
+        }
+        
+        $this->redirect('/security');
+    }
+    
+    /**
      * Activity log page
      */
     public function activity(): void
@@ -332,7 +384,24 @@ class DashboardController extends BaseController
         $db = Database::getInstance();
         
         $page = max(1, (int) $this->input('page', 1));
-        $perPage = 20;
+        $allowedPerPage = [10, 25, 50, 100];
+        
+        // Default from user's display settings, fallback to 10
+        $defaultPerPage = 10;
+        try {
+            $userProfile = $db->fetch("SELECT display_settings FROM user_profiles WHERE user_id = ?", [Auth::id()]);
+            if ($userProfile && !empty($userProfile['display_settings'])) {
+                $ds = json_decode($userProfile['display_settings'], true);
+                if (!empty($ds['items_per_page'])) {
+                    $defaultPerPage = (int) $ds['items_per_page'];
+                }
+            }
+        } catch (\Exception $e) { /* ignore */ }
+        
+        $perPage = (int) $this->input('per_page', $defaultPerPage);
+        if (!in_array($perPage, $allowedPerPage)) {
+            $perPage = $defaultPerPage;
+        }
         $offset = ($page - 1) * $perPage;
         
         $activity = $db->fetchAll(
@@ -410,16 +479,11 @@ class DashboardController extends BaseController
                             'updated_at' => date('Y-m-d H:i:s')
                         ], 'user_id = ?', [Auth::id()]);
                         
-                        // Also update navbar_settings for global theme
-                        $db->query("UPDATE navbar_settings SET default_theme = ? WHERE id = 1", [$theme]);
-                        
                         Logger::activity(Auth::id(), 'theme_changed', ['theme' => $theme]);
                         $this->flash('success', 'Theme preference updated successfully.');
                     } catch (\Exception $e) {
-                        // Fallback: just update navbar_settings
-                        $db->query("UPDATE navbar_settings SET default_theme = ? WHERE id = 1", [$theme]);
-                        Logger::activity(Auth::id(), 'theme_changed', ['theme' => $theme]);
-                        $this->flash('success', 'Theme updated successfully.');
+                        Logger::error('Theme update error: ' . $e->getMessage());
+                        $this->flash('error', 'Failed to save theme preference.');
                     }
                     break;
                     

@@ -46,6 +46,7 @@ $router->get('/security', 'DashboardController@security', ['auth']);
 $router->post('/security/set-password', 'DashboardController@setPassword', ['auth']);
 $router->post('/security/password', 'DashboardController@updatePassword', ['auth']);
 $router->post('/security/revoke-session', 'DashboardController@revokeSession', ['auth']);
+$router->post('/security/revoke-sessions-bulk', 'DashboardController@revokeSessionsBulk', ['auth']);
 $router->get('/activity', 'DashboardController@activity', ['auth']);
 $router->get('/settings', 'DashboardController@settings', ['auth']);
 $router->post('/settings', 'DashboardController@updateSettings', ['auth']);
@@ -70,7 +71,45 @@ $router->get('/2fa/backup-codes', 'TwoFactorController@showBackupCodes', ['auth'
 $router->get('/2fa/verify', 'TwoFactorController@showVerify');
 $router->post('/2fa/verify', 'TwoFactorController@verify');
 
-// Project routes - handled by project index.php files
+// Serve uploaded files (avatars, etc.) - route since storage/ is blocked by htaccess
+$router->get('/uploads/{path:wildcard}', function($path) {
+    // Only allow image files in uploads directory
+    $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+    
+    if (!in_array($ext, $allowedExtensions)) {
+        http_response_code(403);
+        exit('Forbidden');
+    }
+    
+    // Prevent path traversal
+    $realBase = realpath(BASE_PATH . '/storage/uploads');
+    $filePath = realpath(BASE_PATH . '/storage/uploads/' . $path);
+    
+    if (!$filePath || !str_starts_with($filePath, $realBase)) {
+        http_response_code(404);
+        exit('Not found');
+    }
+    
+    if (!file_exists($filePath)) {
+        http_response_code(404);
+        exit('Not found');
+    }
+    
+    $mimeTypes = [
+        'jpg'  => 'image/jpeg',
+        'jpeg' => 'image/jpeg',
+        'png'  => 'image/png',
+        'gif'  => 'image/gif',
+        'webp' => 'image/webp',
+    ];
+    
+    header('Content-Type: ' . ($mimeTypes[$ext] ?? 'application/octet-stream'));
+    header('Content-Length: ' . filesize($filePath));
+    header('Cache-Control: public, max-age=31536000');
+    readfile($filePath);
+    exit;
+});
 $router->get('/projects/{project}', function($project) {
     // Check if project is enabled
     if (!\Core\Helpers::isProjectEnabled($project)) {

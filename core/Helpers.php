@@ -9,6 +9,9 @@ namespace Core;
 
 class Helpers
 {
+    /** @var string User-preferred date format, applied by main layout when user is logged in */
+    public static string $userDateFormat = 'M d, Y';
+
     /**
      * Redirect to URL
      */
@@ -104,9 +107,10 @@ class Helpers
     /**
      * Format date
      */
-    public static function formatDate(string $date, string $format = 'M d, Y'): string
+    public static function formatDate(string $date, ?string $format = null): string
     {
-        return date($format, strtotime($date));
+        $fmt = $format ?? self::$userDateFormat;
+        return date($fmt, strtotime($date));
     }
     
     /**

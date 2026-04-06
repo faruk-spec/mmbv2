@@ -2,6 +2,17 @@
 <?php View::extend('main'); ?>
 
 <?php View::section('content'); ?>
+<?php
+// Load user profile settings
+$db = Core\Database::getInstance();
+$userProfile = $db->fetch("SELECT * FROM user_profiles WHERE user_id = ?", [Auth::id()]);
+$displaySettings = !empty($userProfile['display_settings']) ? json_decode($userProfile['display_settings'], true) : [];
+$projectSettings = !empty($userProfile['project_settings']) ? json_decode($userProfile['project_settings'], true) : [];
+$emailNotifications = $userProfile['email_notifications'] ?? 1;
+$securityAlerts = $userProfile['security_alerts'] ?? 1;
+$productUpdates = $userProfile['product_updates'] ?? 1;
+$savedTheme = $userProfile['theme_preference'] ?? 'dark';
+?>
 <?php if (Helpers::hasFlash('success')): ?>
     <div class="alert alert-success" style="margin-bottom: 12px; padding: 10px; background: rgba(0, 255, 136, 0.1); border: 1px solid var(--green); border-radius: 6px; color: var(--green); font-size: 0.8rem;">
         ✓ <?= View::e(Helpers::getFlash('success')) ?>
@@ -100,7 +111,7 @@
                             </svg>
                             Email Notifications
                         </span>
-                        <input type="checkbox" name="email_notifications" value="1" checked style="width: 16px; height: 16px; cursor: pointer;">
+                        <input type="checkbox" name="email_notifications" value="1" <?= $emailNotifications ? 'checked' : '' ?> style="width: 16px; height: 16px; cursor: pointer;">
                     </label>
                 </div>
                 
@@ -112,7 +123,7 @@
                             </svg>
                             Security Alerts
                         </span>
-                        <input type="checkbox" name="security_alerts" value="1" checked style="width: 16px; height: 16px; cursor: pointer;">
+                        <input type="checkbox" name="security_alerts" value="1" <?= $securityAlerts ? 'checked' : '' ?> style="width: 16px; height: 16px; cursor: pointer;">
                     </label>
                 </div>
                 
@@ -124,7 +135,7 @@
                             </svg>
                             Product Updates
                         </span>
-                        <input type="checkbox" name="product_updates" value="1" checked style="width: 16px; height: 16px; cursor: pointer;">
+                        <input type="checkbox" name="product_updates" value="1" <?= $productUpdates ? 'checked' : '' ?> style="width: 16px; height: 16px; cursor: pointer;">
                     </label>
                 </div>
                 
@@ -161,10 +172,10 @@
                         Items Per Page
                     </label>
                     <select id="items_per_page" name="items_per_page" class="form-input" style="width: 100%; padding: 8px 12px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary); font-size: 0.85rem;">
-                        <option value="10">10 items</option>
-                        <option value="20" selected>20 items</option>
-                        <option value="30">30 items</option>
-                        <option value="50">50 items</option>
+                        <option value="10" <?= ($displaySettings['items_per_page'] ?? 20) == 10 ? 'selected' : '' ?>>10 items</option>
+                        <option value="20" <?= ($displaySettings['items_per_page'] ?? 20) == 20 ? 'selected' : '' ?>>20 items</option>
+                        <option value="30" <?= ($displaySettings['items_per_page'] ?? 20) == 30 ? 'selected' : '' ?>>30 items</option>
+                        <option value="50" <?= ($displaySettings['items_per_page'] ?? 20) == 50 ? 'selected' : '' ?>>50 items</option>
                     </select>
                 </div>
                 
@@ -173,9 +184,9 @@
                         Date Format
                     </label>
                     <select id="date_format" name="date_format" class="form-input" style="width: 100%; padding: 8px 12px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary); font-size: 0.85rem;">
-                        <option value="M d, Y">Jan 01, 2024</option>
-                        <option value="d/m/Y">01/01/2024</option>
-                        <option value="Y-m-d">2024-01-01</option>
+                        <option value="M d, Y" <?= ($displaySettings['date_format'] ?? 'M d, Y') === 'M d, Y' ? 'selected' : '' ?>>Jan 01, 2024</option>
+                        <option value="d/m/Y" <?= ($displaySettings['date_format'] ?? '') === 'd/m/Y' ? 'selected' : '' ?>>01/01/2024</option>
+                        <option value="Y-m-d" <?= ($displaySettings['date_format'] ?? '') === 'Y-m-d' ? 'selected' : '' ?>>2024-01-01</option>
                     </select>
                 </div>
                 
@@ -195,7 +206,6 @@
                 </svg>
                 Projects
             </h3>
-            </h3>
         </div>
         
         <div style="padding: 16px;">
@@ -206,18 +216,18 @@
                 <div style="margin-bottom: 8px;">
                     <label style="display: flex; align-items: center; justify-content: space-between; padding: 10px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; font-size: 0.85rem;">
                         <span>💾 Auto-Save</span>
-                        <input type="checkbox" name="auto_save_enabled" value="1" checked style="width: 16px; height: 16px; cursor: pointer;">
+                        <input type="checkbox" name="auto_save" value="1" <?= ($projectSettings['auto_save'] ?? 1) ? 'checked' : '' ?> style="width: 16px; height: 16px; cursor: pointer;">
                     </label>
                 </div>
                 
                 <div style="margin-bottom: 12px;">
-                    <label class="form-label" for="default_project_view" style="display: block; margin-bottom: 6px; font-weight: 600; font-size: 0.85rem;">
+                    <label class="form-label" for="default_view" style="display: block; margin-bottom: 6px; font-weight: 600; font-size: 0.85rem;">
                         Default View
                     </label>
-                    <select id="default_project_view" name="default_project_view" class="form-input" style="width: 100%; padding: 8px 12px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary); font-size: 0.85rem;">
-                        <option value="grid">Grid View</option>
-                        <option value="list">List View</option>
-                        <option value="compact">Compact View</option>
+                    <select id="default_view" name="default_view" class="form-input" style="width: 100%; padding: 8px 12px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary); font-size: 0.85rem;">
+                        <option value="grid" <?= ($projectSettings['default_view'] ?? 'grid') === 'grid' ? 'selected' : '' ?>>Grid View</option>
+                        <option value="list" <?= ($projectSettings['default_view'] ?? '') === 'list' ? 'selected' : '' ?>>List View</option>
+                        <option value="compact" <?= ($projectSettings['default_view'] ?? '') === 'compact' ? 'selected' : '' ?>>Compact View</option>
                     </select>
                 </div>
                 

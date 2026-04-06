@@ -113,16 +113,22 @@ class TOTP
     
     /**
      * Get QR code data URL for the provisioning URI
-     * Uses Google Charts API to generate QR code
+     * Uses local QRCodeGenerator (no external API dependency)
      * 
      * @param string $provisioningUri The otpauth:// URI
      * @param int $size QR code size in pixels (default 200)
-     * @return string The QR code image URL
+     * @return string The QR code data URL (base64 PNG)
      */
     public static function getQRCodeUrl(string $provisioningUri, int $size = 200): string
     {
-        return 'https://chart.googleapis.com/chart?chs=' . $size . 'x' . $size . 
-               '&chld=M|0&cht=qr&chl=' . urlencode($provisioningUri);
+        try {
+            return QRCodeGenerator::generate($provisioningUri, $size, '#000000', '#ffffff');
+        } catch (\Exception $e) {
+            // Log the error and fall back to Google Charts API
+            error_log('QRCodeGenerator failed for 2FA QR: ' . $e->getMessage());
+            return 'https://chart.googleapis.com/chart?chs=' . $size . 'x' . $size . 
+                   '&chld=M|0&cht=qr&chl=' . urlencode($provisioningUri);
+        }
     }
     
     /**
