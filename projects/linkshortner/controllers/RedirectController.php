@@ -17,7 +17,7 @@ class RedirectController
         try {
             $db   = Database::projectConnection('linkshortner');
             $link = $db->fetch(
-                "SELECT * FROM short_links WHERE code = ? AND status = 'active'",
+                "SELECT * FROM linkshortner_links WHERE code = ? AND status = 'active'",
                 [$code]
             );
         } catch (\Exception $e) {
@@ -34,7 +34,7 @@ class RedirectController
 
         // Check expiry
         if ($link['expires_at'] && strtotime($link['expires_at']) < time()) {
-            $db->query("UPDATE short_links SET status = 'expired' WHERE id = ?", [$link['id']]);
+            $db->query("UPDATE linkshortner_links SET status = 'expired' WHERE id = ?", [$link['id']]);
             http_response_code(410);
             echo '<!DOCTYPE html><html><body><h1>Link has expired</h1></body></html>';
             exit;
@@ -61,12 +61,12 @@ class RedirectController
         $browser = $this->detectBrowser($ua);
 
         $db->query(
-            "INSERT INTO link_clicks (link_id, ip_address, user_agent, referer, device, os, browser) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO linkshortner_clicks (link_id, ip_address, user_agent, referer, device, os, browser) VALUES (?, ?, ?, ?, ?, ?, ?)",
             [$link['id'], $ip, $ua, $referer, $device, $os, $browser]
         );
 
         $db->query(
-            "UPDATE short_links SET total_clicks = total_clicks + 1 WHERE id = ?",
+            "UPDATE linkshortner_links SET total_clicks = total_clicks + 1 WHERE id = ?",
             [$link['id']]
         );
 

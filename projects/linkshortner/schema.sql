@@ -1,7 +1,7 @@
 -- LinkShortner Project Database Schema
--- Database: mmb_linkshortner
+-- Run this against the main application database (same DB as the main app).
 
-CREATE TABLE IF NOT EXISTS `short_links` (
+CREATE TABLE IF NOT EXISTS `linkshortner_links` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `user_id` INT UNSIGNED NOT NULL,
     `code` VARCHAR(20) NOT NULL UNIQUE,
@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS `short_links` (
     INDEX `idx_expires_at` (`expires_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `link_clicks` (
+CREATE TABLE IF NOT EXISTS `linkshortner_clicks` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `link_id` INT UNSIGNED NOT NULL,
     `ip_address` VARCHAR(45) NULL,
@@ -37,13 +37,13 @@ CREATE TABLE IF NOT EXISTS `link_clicks` (
     `os` VARCHAR(100) NULL,
     `browser` VARCHAR(100) NULL,
     `clicked_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (`link_id`) REFERENCES `short_links`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`link_id`) REFERENCES `linkshortner_links`(`id`) ON DELETE CASCADE,
     INDEX `idx_link_id` (`link_id`),
     INDEX `idx_clicked_at` (`clicked_at`),
     INDEX `idx_ip` (`ip_address`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `link_settings` (
+CREATE TABLE IF NOT EXISTS `linkshortner_settings` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `user_id` INT UNSIGNED NOT NULL UNIQUE,
     `default_expiry_days` INT NULL,

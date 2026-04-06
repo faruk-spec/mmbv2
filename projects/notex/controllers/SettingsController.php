@@ -19,7 +19,7 @@ class SettingsController
         $user     = Auth::user();
         $db       = Database::projectConnection('notex');
         $settings = $db->fetch("SELECT * FROM notex_settings WHERE user_id = ?", [$user['id']]);
-        $tags     = $db->fetchAll("SELECT * FROM note_tags WHERE user_id = ? ORDER BY name ASC", [$user['id']]);
+        $tags     = $db->fetchAll("SELECT * FROM notex_tags WHERE user_id = ? ORDER BY name ASC", [$user['id']]);
 
         View::render('projects/notex/settings', [
             'title'    => 'Settings',
@@ -61,7 +61,7 @@ class SettingsController
         if ($newTag !== '') {
             $tagColor = $_POST['new_tag_color'] ?? '#ffd700';
             $db->query(
-                "INSERT IGNORE INTO note_tags (user_id, name, color) VALUES (?, ?, ?)",
+                "INSERT IGNORE INTO notex_tags (user_id, name, color) VALUES (?, ?, ?)",
                 [$user['id'], $newTag, $tagColor]
             );
         }
@@ -69,7 +69,7 @@ class SettingsController
         // Delete tags
         $deleteTagId = !empty($_POST['delete_tag']) ? (int) $_POST['delete_tag'] : null;
         if ($deleteTagId) {
-            $db->query("DELETE FROM note_tags WHERE id = ? AND user_id = ?", [$deleteTagId, $user['id']]);
+            $db->query("DELETE FROM notex_tags WHERE id = ? AND user_id = ?", [$deleteTagId, $user['id']]);
         }
 
         $_SESSION['success'] = 'Settings saved.';

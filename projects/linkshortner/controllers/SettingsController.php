@@ -18,7 +18,7 @@ class SettingsController
     {
         $user     = Auth::user();
         $db       = Database::projectConnection('linkshortner');
-        $settings = $db->fetch("SELECT * FROM link_settings WHERE user_id = ?", [$user['id']]);
+        $settings = $db->fetch("SELECT * FROM linkshortner_settings WHERE user_id = ?", [$user['id']]);
 
         View::render('projects/linkshortner/settings', [
             'title'    => 'Settings',
@@ -41,15 +41,15 @@ class SettingsController
         $defaultExpiry         = !empty($_POST['default_expiry_days']) ? (int) $_POST['default_expiry_days'] : null;
         $notificationsEnabled  = isset($_POST['notifications_enabled']) ? 1 : 0;
 
-        $existing = $db->fetchColumn("SELECT id FROM link_settings WHERE user_id = ?", [$user['id']]);
+        $existing = $db->fetchColumn("SELECT id FROM linkshortner_settings WHERE user_id = ?", [$user['id']]);
         if ($existing) {
             $db->query(
-                "UPDATE link_settings SET default_expiry_days = ?, notifications_enabled = ?, updated_at = NOW() WHERE user_id = ?",
+                "UPDATE linkshortner_settings SET default_expiry_days = ?, notifications_enabled = ?, updated_at = NOW() WHERE user_id = ?",
                 [$defaultExpiry, $notificationsEnabled, $user['id']]
             );
         } else {
             $db->query(
-                "INSERT INTO link_settings (user_id, default_expiry_days, notifications_enabled) VALUES (?, ?, ?)",
+                "INSERT INTO linkshortner_settings (user_id, default_expiry_days, notifications_enabled) VALUES (?, ?, ?)",
                 [$user['id'], $defaultExpiry, $notificationsEnabled]
             );
         }

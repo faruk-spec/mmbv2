@@ -15,7 +15,7 @@ return [
     'database' => [
         'host'     => $mainConfig['host']     ?? 'localhost',
         'port'     => $mainConfig['port']     ?? '3306',
-        'database' => 'mmb_notex',
+        'database' => $mainConfig['database'] ?? 'testuser',
         'username' => $mainConfig['username'] ?? 'testuser',
         'password' => $mainConfig['password'] ?? 'testuser',
     ],

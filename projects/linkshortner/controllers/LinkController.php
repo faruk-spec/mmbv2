@@ -22,7 +22,7 @@ class LinkController
             for ($i = 0; $i < $length; $i++) {
                 $code .= $chars[random_int(0, strlen($chars) - 1)];
             }
-        } while ($db->fetchColumn("SELECT COUNT(*) FROM short_links WHERE code = ?", [$code]) > 0);
+        } while ($db->fetchColumn("SELECT COUNT(*) FROM linkshortner_links WHERE code = ?", [$code]) > 0);
         return $code;
     }
 
@@ -34,9 +34,9 @@ class LinkController
         $limit = 20;
         $offset = ($page - 1) * $limit;
 
-        $total = (int) $db->fetchColumn("SELECT COUNT(*) FROM short_links WHERE user_id = ?", [$user['id']]);
+        $total = (int) $db->fetchColumn("SELECT COUNT(*) FROM linkshortner_links WHERE user_id = ?", [$user['id']]);
         $links = $db->fetchAll(
-            "SELECT * FROM short_links WHERE user_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?",
+            "SELECT * FROM linkshortner_links WHERE user_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?",
             [$user['id'], $limit, $offset]
         );
 
@@ -83,7 +83,7 @@ class LinkController
                 header('Location: /projects/linkshortner/create');
                 exit;
             }
-            if ($db->fetchColumn("SELECT COUNT(*) FROM short_links WHERE code = ?", [$customCode]) > 0) {
+            if ($db->fetchColumn("SELECT COUNT(*) FROM linkshortner_links WHERE code = ?", [$customCode]) > 0) {
                 $_SESSION['error'] = 'That custom code is already taken.';
                 header('Location: /projects/linkshortner/create');
                 exit;
@@ -102,7 +102,7 @@ class LinkController
         $utmCampaign = trim($_POST['utm_campaign'] ?? '') ?: null;
 
         $db->query(
-            "INSERT INTO short_links (user_id, code, original_url, title, password, expires_at, click_limit, utm_source, utm_medium, utm_campaign) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO linkshortner_links (user_id, code, original_url, title, password, expires_at, click_limit, utm_source, utm_medium, utm_campaign) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             [$user['id'], $code, $originalUrl, $title, $password, $expiresAt, $clickLimit, $utmSource, $utmMedium, $utmCampaign]
         );
 
@@ -115,7 +115,7 @@ class LinkController
     {
         $user = Auth::user();
         $db   = Database::projectConnection('linkshortner');
-        $link = $db->fetch("SELECT * FROM short_links WHERE id = ? AND user_id = ?", [$id, $user['id']]);
+        $link = $db->fetch("SELECT * FROM linkshortner_links WHERE id = ? AND user_id = ?", [$id, $user['id']]);
         if (!$link) {
             http_response_code(404);
             View::render('errors/404');
@@ -138,7 +138,7 @@ class LinkController
 
         $user = Auth::user();
         $db   = Database::projectConnection('linkshortner');
-        $link = $db->fetch("SELECT * FROM short_links WHERE id = ? AND user_id = ?", [$id, $user['id']]);
+        $link = $db->fetch("SELECT * FROM linkshortner_links WHERE id = ? AND user_id = ?", [$id, $user['id']]);
         if (!$link) {
             http_response_code(404);
             View::render('errors/404');
@@ -160,7 +160,7 @@ class LinkController
         $utmCampaign = trim($_POST['utm_campaign'] ?? '') ?: null;
 
         $db->query(
-            "UPDATE short_links SET original_url = ?, title = ?, expires_at = ?, click_limit = ?, utm_source = ?, utm_medium = ?, utm_campaign = ?, updated_at = NOW() WHERE id = ? AND user_id = ?",
+            "UPDATE linkshortner_links SET original_url = ?, title = ?, expires_at = ?, click_limit = ?, utm_source = ?, utm_medium = ?, utm_campaign = ?, updated_at = NOW() WHERE id = ? AND user_id = ?",
             [$originalUrl, $title, $expiresAt, $clickLimit, $utmSource, $utmMedium, $utmCampaign, $id, $user['id']]
         );
 
@@ -179,7 +179,7 @@ class LinkController
 
         $user = Auth::user();
         $db   = Database::projectConnection('linkshortner');
-        $db->query("DELETE FROM short_links WHERE id = ? AND user_id = ?", [$id, $user['id']]);
+        $db->query("DELETE FROM linkshortner_links WHERE id = ? AND user_id = ?", [$id, $user['id']]);
 
         $_SESSION['success'] = 'Link deleted.';
         header('Location: /projects/linkshortner/links');
@@ -196,7 +196,7 @@ class LinkController
 
         $user = Auth::user();
         $db   = Database::projectConnection('linkshortner');
-        $link = $db->fetch("SELECT id, status FROM short_links WHERE id = ? AND user_id = ?", [$id, $user['id']]);
+        $link = $db->fetch("SELECT id, status FROM linkshortner_links WHERE id = ? AND user_id = ?", [$id, $user['id']]);
         if (!$link) {
             http_response_code(404);
             echo json_encode(['error' => 'Not found']);
@@ -204,7 +204,7 @@ class LinkController
         }
 
         $newStatus = $link['status'] === 'active' ? 'disabled' : 'active';
-        $db->query("UPDATE short_links SET status = ?, updated_at = NOW() WHERE id = ?", [$newStatus, $id]);
+        $db->query("UPDATE linkshortner_links SET status = ?, updated_at = NOW() WHERE id = ?", [$newStatus, $id]);
 
         header('Content-Type: application/json');
         echo json_encode(['success' => true, 'status' => $newStatus]);

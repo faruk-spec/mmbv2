@@ -36,12 +36,12 @@ class NoteController
         }
 
         $notes = $db->fetchAll(
-            "SELECT n.*, nf.name as folder_name FROM notes n LEFT JOIN note_folders nf ON n.folder_id = nf.id WHERE {$where} ORDER BY n.is_pinned DESC, n.updated_at DESC",
+            "SELECT n.*, nf.name as folder_name FROM notex_notes n LEFT JOIN notex_folders nf ON n.folder_id = nf.id WHERE {$where} ORDER BY n.is_pinned DESC, n.updated_at DESC",
             $params
         );
 
-        $folders = $db->fetchAll("SELECT * FROM note_folders WHERE user_id = ? ORDER BY sort_order ASC", [$user['id']]);
-        $tags    = $db->fetchAll("SELECT * FROM note_tags WHERE user_id = ? ORDER BY name ASC", [$user['id']]);
+        $folders = $db->fetchAll("SELECT * FROM notex_folders WHERE user_id = ? ORDER BY sort_order ASC", [$user['id']]);
+        $tags    = $db->fetchAll("SELECT * FROM notex_tags WHERE user_id = ? ORDER BY name ASC", [$user['id']]);
 
         View::render('projects/notex/notes', [
             'title'   => 'My Notes',
@@ -58,8 +58,8 @@ class NoteController
     {
         $user    = Auth::user();
         $db      = Database::projectConnection('notex');
-        $folders = $db->fetchAll("SELECT * FROM note_folders WHERE user_id = ? ORDER BY sort_order ASC", [$user['id']]);
-        $tags    = $db->fetchAll("SELECT * FROM note_tags WHERE user_id = ? ORDER BY name ASC", [$user['id']]);
+        $folders = $db->fetchAll("SELECT * FROM notex_folders WHERE user_id = ? ORDER BY sort_order ASC", [$user['id']]);
+        $tags    = $db->fetchAll("SELECT * FROM notex_tags WHERE user_id = ? ORDER BY name ASC", [$user['id']]);
 
         View::render('projects/notex/create', [
             'title'   => 'New Note',
@@ -86,22 +86,22 @@ class NoteController
         $isPinned = isset($_POST['is_pinned']) ? 1 : 0;
 
         $db->query(
-            "INSERT INTO notes (user_id, title, content, folder_id, color, is_pinned) VALUES (?, ?, ?, ?, ?, ?)",
+            "INSERT INTO notex_notes (user_id, title, content, folder_id, color, is_pinned) VALUES (?, ?, ?, ?, ?, ?)",
             [$user['id'], $title, $content, $folder, $color, $isPinned]
         );
 
         $noteId = $db->lastInsertId();
 
         // Save version
-        $db->query("INSERT INTO note_versions (note_id, content) VALUES (?, ?)", [$noteId, $content]);
+        $db->query("INSERT INTO notex_versions (note_id, content) VALUES (?, ?)", [$noteId, $content]);
 
         // Attach tags
         $tagIds = $_POST['tag_ids'] ?? [];
         foreach ($tagIds as $tagId) {
             $tagId = (int) $tagId;
-            $tag   = $db->fetch("SELECT id FROM note_tags WHERE id = ? AND user_id = ?", [$tagId, $user['id']]);
+            $tag   = $db->fetch("SELECT id FROM notex_tags WHERE id = ? AND user_id = ?", [$tagId, $user['id']]);
             if ($tag) {
-                $db->query("INSERT IGNORE INTO note_tag_map (note_id, tag_id) VALUES (?, ?)", [$noteId, $tagId]);
+                $db->query("INSERT IGNORE INTO notex_tag_map (note_id, tag_id) VALUES (?, ?)", [$noteId, $tagId]);
             }
         }
 
@@ -114,13 +114,13 @@ class NoteController
     {
         $user = Auth::user();
         $db   = Database::projectConnection('notex');
-        $note = $db->fetch("SELECT n.*, nf.name as folder_name FROM notes n LEFT JOIN note_folders nf ON n.folder_id = nf.id WHERE n.id = ? AND n.user_id = ?", [$id, $user['id']]);
+        $note = $db->fetch("SELECT n.*, nf.name as folder_name FROM notex_notes n LEFT JOIN notex_folders nf ON n.folder_id = nf.id WHERE n.id = ? AND n.user_id = ?", [$id, $user['id']]);
         if (!$note) {
             http_response_code(404);
             View::render('errors/404');
             return;
         }
-        $tags = $db->fetchAll("SELECT nt.* FROM note_tags nt JOIN note_tag_map ntm ON nt.id = ntm.tag_id WHERE ntm.note_id = ?", [$id]);
+        $tags = $db->fetchAll("SELECT nt.* FROM notex_tags nt JOIN notex_tag_map ntm ON nt.id = ntm.tag_id WHERE ntm.note_id = ?", [$id]);
 
         View::render('projects/notex/view', [
             'title'   => $note['title'],
@@ -134,18 +134,18 @@ class NoteController
     {
         $user = Auth::user();
         $db   = Database::projectConnection('notex');
-        $note = $db->fetch("SELECT * FROM notes WHERE id = ? AND user_id = ?", [$id, $user['id']]);
+        $note = $db->fetch("SELECT * FROM notex_notes WHERE id = ? AND user_id = ?", [$id, $user['id']]);
         if (!$note) {
             http_response_code(404);
             View::render('errors/404');
             return;
         }
 
-        $folders    = $db->fetchAll("SELECT * FROM note_folders WHERE user_id = ? ORDER BY sort_order ASC", [$user['id']]);
-        $allTags    = $db->fetchAll("SELECT * FROM note_tags WHERE user_id = ? ORDER BY name ASC", [$user['id']]);
-        $noteTags   = $db->fetchAll("SELECT tag_id FROM note_tag_map WHERE note_id = ?", [$id]);
+        $folders    = $db->fetchAll("SELECT * FROM notex_folders WHERE user_id = ? ORDER BY sort_order ASC", [$user['id']]);
+        $allTags    = $db->fetchAll("SELECT * FROM notex_tags WHERE user_id = ? ORDER BY name ASC", [$user['id']]);
+        $noteTags   = $db->fetchAll("SELECT tag_id FROM notex_tag_map WHERE note_id = ?", [$id]);
         $noteTagIds = array_column($noteTags, 'tag_id');
-        $versions   = $db->fetchAll("SELECT id, created_at FROM note_versions WHERE note_id = ? ORDER BY created_at DESC LIMIT 10", [$id]);
+        $versions   = $db->fetchAll("SELECT id, created_at FROM notex_versions WHERE note_id = ? ORDER BY created_at DESC LIMIT 10", [$id]);
 
         View::render('projects/notex/edit', [
             'title'      => 'Edit Note',
@@ -168,7 +168,7 @@ class NoteController
 
         $user    = Auth::user();
         $db      = Database::projectConnection('notex');
-        $note    = $db->fetch("SELECT id, content FROM notes WHERE id = ? AND user_id = ?", [$id, $user['id']]);
+        $note    = $db->fetch("SELECT id, content FROM notex_notes WHERE id = ? AND user_id = ?", [$id, $user['id']]);
         if (!$note) {
             http_response_code(404);
             View::render('errors/404');
@@ -183,22 +183,22 @@ class NoteController
 
         // Save version if content changed
         if ($content !== $note['content']) {
-            $db->query("INSERT INTO note_versions (note_id, content) VALUES (?, ?)", [$id, $note['content']]);
+            $db->query("INSERT INTO notex_versions (note_id, content) VALUES (?, ?)", [$id, $note['content']]);
         }
 
         $db->query(
-            "UPDATE notes SET title = ?, content = ?, folder_id = ?, color = ?, is_pinned = ?, updated_at = NOW() WHERE id = ? AND user_id = ?",
+            "UPDATE notex_notes SET title = ?, content = ?, folder_id = ?, color = ?, is_pinned = ?, updated_at = NOW() WHERE id = ? AND user_id = ?",
             [$title, $content, $folder, $color, $isPinned, $id, $user['id']]
         );
 
         // Update tags
-        $db->query("DELETE FROM note_tag_map WHERE note_id = ?", [$id]);
+        $db->query("DELETE FROM notex_tag_map WHERE note_id = ?", [$id]);
         $tagIds = $_POST['tag_ids'] ?? [];
         foreach ($tagIds as $tagId) {
             $tagId = (int) $tagId;
-            $tag   = $db->fetch("SELECT id FROM note_tags WHERE id = ? AND user_id = ?", [$tagId, $user['id']]);
+            $tag   = $db->fetch("SELECT id FROM notex_tags WHERE id = ? AND user_id = ?", [$tagId, $user['id']]);
             if ($tag) {
-                $db->query("INSERT IGNORE INTO note_tag_map (note_id, tag_id) VALUES (?, ?)", [$id, $tagId]);
+                $db->query("INSERT IGNORE INTO notex_tag_map (note_id, tag_id) VALUES (?, ?)", [$id, $tagId]);
             }
         }
 
@@ -217,7 +217,7 @@ class NoteController
 
         $user = Auth::user();
         $db   = Database::projectConnection('notex');
-        $db->query("UPDATE notes SET status = 'trashed', updated_at = NOW() WHERE id = ? AND user_id = ?", [$id, $user['id']]);
+        $db->query("UPDATE notex_notes SET status = 'trashed', updated_at = NOW() WHERE id = ? AND user_id = ?", [$id, $user['id']]);
 
         $_SESSION['success'] = 'Note moved to trash.';
         header('Location: /projects/notex/notes');
@@ -234,7 +234,7 @@ class NoteController
 
         $user = Auth::user();
         $db   = Database::projectConnection('notex');
-        $note = $db->fetch("SELECT id, is_pinned FROM notes WHERE id = ? AND user_id = ?", [$id, $user['id']]);
+        $note = $db->fetch("SELECT id, is_pinned FROM notex_notes WHERE id = ? AND user_id = ?", [$id, $user['id']]);
         if (!$note) {
             http_response_code(404);
             echo json_encode(['error' => 'Not found']);
@@ -242,7 +242,7 @@ class NoteController
         }
 
         $newPin = $note['is_pinned'] ? 0 : 1;
-        $db->query("UPDATE notes SET is_pinned = ?, updated_at = NOW() WHERE id = ?", [$newPin, $id]);
+        $db->query("UPDATE notex_notes SET is_pinned = ?, updated_at = NOW() WHERE id = ?", [$newPin, $id]);
 
         header('Content-Type: application/json');
         echo json_encode(['success' => true, 'pinned' => (bool) $newPin]);
@@ -259,7 +259,7 @@ class NoteController
 
         $user = Auth::user();
         $db   = Database::projectConnection('notex');
-        $note = $db->fetch("SELECT id, is_archived FROM notes WHERE id = ? AND user_id = ?", [$id, $user['id']]);
+        $note = $db->fetch("SELECT id, is_archived FROM notex_notes WHERE id = ? AND user_id = ?", [$id, $user['id']]);
         if (!$note) {
             http_response_code(404);
             echo json_encode(['error' => 'Not found']);
@@ -267,7 +267,7 @@ class NoteController
         }
 
         $newArchive = $note['is_archived'] ? 0 : 1;
-        $db->query("UPDATE notes SET is_archived = ?, updated_at = NOW() WHERE id = ?", [$newArchive, $id]);
+        $db->query("UPDATE notex_notes SET is_archived = ?, updated_at = NOW() WHERE id = ?", [$newArchive, $id]);
 
         header('Content-Type: application/json');
         echo json_encode(['success' => true, 'archived' => (bool) $newArchive]);
@@ -284,7 +284,7 @@ class NoteController
 
         $user   = Auth::user();
         $db     = Database::projectConnection('notex');
-        $note   = $db->fetch("SELECT id FROM notes WHERE id = ? AND user_id = ?", [$id, $user['id']]);
+        $note   = $db->fetch("SELECT id FROM notex_notes WHERE id = ? AND user_id = ?", [$id, $user['id']]);
         if (!$note) {
             http_response_code(404);
             View::render('errors/404');
@@ -294,12 +294,12 @@ class NoteController
         // Generate a unique share token
         do {
             $token = bin2hex(random_bytes(32));
-        } while ($db->fetchColumn("SELECT COUNT(*) FROM notes WHERE share_token = ?", [$token]) > 0);
+        } while ($db->fetchColumn("SELECT COUNT(*) FROM notex_notes WHERE share_token = ?", [$token]) > 0);
         $access     = in_array($_POST['access'] ?? '', ['view', 'edit']) ? $_POST['access'] : 'view';
         $expiresAt  = !empty($_POST['expires_at']) ? $_POST['expires_at'] : null;
 
         $db->query(
-            "UPDATE notes SET share_token = ?, share_access = ?, share_expires_at = ?, updated_at = NOW() WHERE id = ?",
+            "UPDATE notex_notes SET share_token = ?, share_access = ?, share_expires_at = ?, updated_at = NOW() WHERE id = ?",
             [$token, $access, $expiresAt, $id]
         );
 
@@ -312,7 +312,7 @@ class NoteController
     public function viewShared(string $token): void
     {
         $db   = Database::projectConnection('notex');
-        $note = $db->fetch("SELECT * FROM notes WHERE share_token = ? AND status = 'active'", [$token]);
+        $note = $db->fetch("SELECT * FROM notex_notes WHERE share_token = ? AND status = 'active'", [$token]);
         if (!$note) {
             http_response_code(404);
             View::render('errors/404');

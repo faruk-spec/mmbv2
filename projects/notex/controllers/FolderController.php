@@ -19,7 +19,7 @@ class FolderController
         $user    = Auth::user();
         $db      = Database::projectConnection('notex');
         $folders = $db->fetchAll(
-            "SELECT nf.*, COUNT(n.id) as note_count FROM note_folders nf LEFT JOIN notes n ON n.folder_id = nf.id AND n.status = 'active' WHERE nf.user_id = ? GROUP BY nf.id ORDER BY nf.sort_order ASC",
+            "SELECT nf.*, COUNT(n.id) as note_count FROM notex_folders nf LEFT JOIN notes n ON n.folder_id = nf.id AND n.status = 'active' WHERE nf.user_id = ? GROUP BY nf.id ORDER BY nf.sort_order ASC",
             [$user['id']]
         );
 
@@ -49,7 +49,7 @@ class FolderController
             exit;
         }
 
-        $db->query("INSERT INTO note_folders (user_id, name, color) VALUES (?, ?, ?)", [$user['id'], $name, $color]);
+        $db->query("INSERT INTO notex_folders (user_id, name, color) VALUES (?, ?, ?)", [$user['id'], $name, $color]);
 
         $_SESSION['success'] = "Folder '{$name}' created.";
         header('Location: /projects/notex/folders');
@@ -67,8 +67,8 @@ class FolderController
         $user = Auth::user();
         $db   = Database::projectConnection('notex');
         // Move notes out of this folder before deleting
-        $db->query("UPDATE notes SET folder_id = NULL WHERE folder_id = ? AND user_id = ?", [$id, $user['id']]);
-        $db->query("DELETE FROM note_folders WHERE id = ? AND user_id = ?", [$id, $user['id']]);
+        $db->query("UPDATE notex_notes SET folder_id = NULL WHERE folder_id = ? AND user_id = ?", [$id, $user['id']]);
+        $db->query("DELETE FROM notex_folders WHERE id = ? AND user_id = ?", [$id, $user['id']]);
 
         $_SESSION['success'] = 'Folder deleted.';
         header('Location: /projects/notex/folders');

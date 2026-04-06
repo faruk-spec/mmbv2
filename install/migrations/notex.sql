@@ -1,9 +1,27 @@
 -- NoteX Migration
--- Run this after project creation to initialize the database tables
+-- Run this against the main application database (same DB as the main app).
 -- Source: projects/notex/schema.sql
--- NOTE: The database mmb_notex must already exist and testuser must have access to it.
+--
+-- If you previously ran the old migration (which created tables without the
+-- notex_ prefix), run the RENAME TABLE block first, then skip to the end.
+-- For a fresh install, run only the CREATE TABLE block.
 
-CREATE TABLE IF NOT EXISTS `notes` (
+-- ============================================================
+-- STEP 1 (existing installs only): rename old tables
+-- Skip this block if you have never run the old notex migration.
+-- ============================================================
+-- RENAME TABLE `notes`        TO `notex_notes`;
+-- RENAME TABLE `note_folders` TO `notex_folders`;
+-- RENAME TABLE `note_tags`    TO `notex_tags`;
+-- RENAME TABLE `note_tag_map` TO `notex_tag_map`;
+-- RENAME TABLE `note_versions` TO `notex_versions`;
+-- (notex_settings already has the correct name — no rename needed)
+
+-- ============================================================
+-- STEP 2: create tables (safe to run on a fresh install)
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS `notex_notes` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `user_id` INT UNSIGNED NOT NULL,
     `title` VARCHAR(255) NOT NULL DEFAULT 'Untitled Note',
@@ -26,7 +44,7 @@ CREATE TABLE IF NOT EXISTS `notes` (
     FULLTEXT KEY `ft_search` (`title`, `content`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `note_folders` (
+CREATE TABLE IF NOT EXISTS `notex_folders` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `user_id` INT UNSIGNED NOT NULL,
     `name` VARCHAR(100) NOT NULL,
@@ -36,7 +54,7 @@ CREATE TABLE IF NOT EXISTS `note_folders` (
     INDEX `idx_user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `note_tags` (
+CREATE TABLE IF NOT EXISTS `notex_tags` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `user_id` INT UNSIGNED NOT NULL,
     `name` VARCHAR(50) NOT NULL,
@@ -45,20 +63,20 @@ CREATE TABLE IF NOT EXISTS `note_tags` (
     UNIQUE KEY `uk_user_tag` (`user_id`, `name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `note_tag_map` (
+CREATE TABLE IF NOT EXISTS `notex_tag_map` (
     `note_id` INT UNSIGNED NOT NULL,
     `tag_id` INT UNSIGNED NOT NULL,
     PRIMARY KEY (`note_id`, `tag_id`),
-    FOREIGN KEY (`note_id`) REFERENCES `notes`(`id`) ON DELETE CASCADE,
-    FOREIGN KEY (`tag_id`) REFERENCES `note_tags`(`id`) ON DELETE CASCADE
+    FOREIGN KEY (`note_id`) REFERENCES `notex_notes`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`tag_id`) REFERENCES `notex_tags`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `note_versions` (
+CREATE TABLE IF NOT EXISTS `notex_versions` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `note_id` INT UNSIGNED NOT NULL,
     `content` LONGTEXT NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (`note_id`) REFERENCES `notes`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`note_id`) REFERENCES `notex_notes`(`id`) ON DELETE CASCADE,
     INDEX `idx_note_id` (`note_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
