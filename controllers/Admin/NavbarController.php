@@ -124,9 +124,12 @@ class NavbarController extends BaseController
 
             // Handle logo image upload
             if (isset($_FILES['logo_image']) && $_FILES['logo_image']['error'] === UPLOAD_ERR_OK) {
-                $uploadDir = BASE_PATH . '/public/uploads/navbar/';
+                $uploadDir = BASE_PATH . '/storage/uploads/navbar/';
                 if (!is_dir($uploadDir)) {
-                    mkdir($uploadDir, 0755, true);
+                    mkdir($uploadDir, 0775, true);
+                }
+                if (!is_writable($uploadDir)) {
+                    @chmod($uploadDir, 0775);
                 }
 
                 $filename = 'logo_' . time() . '_' . basename($_FILES['logo_image']['name']);
@@ -134,6 +137,11 @@ class NavbarController extends BaseController
 
                 if (move_uploaded_file($_FILES['logo_image']['tmp_name'], $targetPath)) {
                     $logoImageUrl = '/uploads/navbar/' . $filename;
+                } elseif (@copy($_FILES['logo_image']['tmp_name'], $targetPath)) {
+                    @unlink($_FILES['logo_image']['tmp_name']);
+                    $logoImageUrl = '/uploads/navbar/' . $filename;
+                } else {
+                    Logger::error('NavbarController: failed to store logo upload to ' . $targetPath);
                 }
             }
 
