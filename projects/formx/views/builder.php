@@ -86,6 +86,7 @@
     .fx-url-bar a{color:var(--cyan);text-decoration:none;}
     .fx-url-bar a:hover{text-decoration:underline;}
     /* Mobile */
+    .fx-mob-field-edit{display:none;}
     .fx-sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99;}
     .fx-sidebar-toggle{display:none;position:fixed;bottom:24px;right:20px;z-index:100;width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--purple));border:none;cursor:pointer;align-items:center;justify-content:center;box-shadow:0 4px 18px rgba(0,240,255,.4);color:#06060a;font-size:1.1rem;}
     @media(max-width:1100px){.fx-right-panel{display:none;}}
@@ -503,6 +504,7 @@ function mobSwitchTab(tab) {
         }, 30);
     }
 }
+window.mobSwitchTab = mobSwitchTab;
 
 // ─── State ────────────────────────────────────────────────────────────────────
 let fields = (function() {
@@ -588,10 +590,10 @@ function fieldPreview(f) {
             const opts = (f.options || '').split('\n').map(o => `<option>${escHtml(o.trim())}</option>`).join('');
             return `<select tabindex="-1"><option value="">-- Select --</option>${opts}</select>`;
         case 'radio':
-            return (f.options || 'Option 1\nOption 2').split('\n').slice(0,3).map(o =>
+            return (f.options || 'Option 1\nOption 2').split('\n').map(o =>
                 `<label style="display:block;margin:2px 0;font-size:.78rem;"><input type="radio" disabled> ${escHtml(o.trim())}</label>`).join('');
         case 'checkbox':
-            return (f.options || 'Option 1\nOption 2').split('\n').slice(0,3).map(o =>
+            return (f.options || 'Option 1\nOption 2').split('\n').map(o =>
                 `<label style="display:block;margin:2px 0;font-size:.78rem;"><input type="checkbox" disabled> ${escHtml(o.trim())}</label>`).join('');
         case 'file':
             return `<input type="file" tabindex="-1" disabled style="font-size:.78rem;">`;
@@ -690,10 +692,12 @@ function showFieldSettings(field, idx) {
     form.innerHTML = settingsHtml;
 
     // Also populate mobile field edit panel (visible on ≤680px)
-    const mobEmpty = document.getElementById('fxMobFieldEditEmpty');
-    const mobForm  = document.getElementById('fxMobFieldEditForm');
-    if (mobEmpty) mobEmpty.style.display = 'none';
-    if (mobForm)  { mobForm.style.display = ''; mobForm.innerHTML = settingsHtml; }
+    if (window.matchMedia('(max-width: 680px)').matches) {
+        const mobEmpty = document.getElementById('fxMobFieldEditEmpty');
+        const mobForm  = document.getElementById('fxMobFieldEditForm');
+        if (mobEmpty) mobEmpty.style.display = 'none';
+        if (mobForm)  { mobForm.style.display = ''; mobForm.innerHTML = settingsHtml; }
+    }
 }
 
 window.saveFieldSettings = function(idx) {
