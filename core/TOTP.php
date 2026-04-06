@@ -108,7 +108,13 @@ class TOTP
             'period' => '30'
         ];
         
-        return 'otpauth://totp/' . rawurlencode($issuer . ':' . $accountName) . '?' . http_build_query($params);
+        $query = 'secret=' . rawurlencode($params['secret'])
+            . '&issuer=' . rawurlencode($params['issuer'])
+            . '&algorithm=' . rawurlencode($params['algorithm'])
+            . '&digits=' . rawurlencode($params['digits'])
+            . '&period=' . rawurlencode($params['period']);
+
+        return 'otpauth://totp/' . rawurlencode($issuer . ':' . $accountName) . '?' . $query;
     }
     
     /**

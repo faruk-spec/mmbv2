@@ -52,29 +52,29 @@
                         Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.)
                     </p>
                     <div style="text-align: center; padding: 20px; background: white; border-radius: 10px; margin-bottom: 15px;">
-                        <?php if (!empty($qrCodeUrl)): ?>
-                            <img src="<?= htmlspecialchars($qrCodeUrl) ?>" alt="2FA QR Code" style="max-width: 200px; height: auto; display: block; margin: 0 auto;">
-                        <?php else: ?>
-                            <canvas id="qrCanvas" style="max-width: 200px; height: auto; display: block; margin: 0 auto;"></canvas>
-                            <script>
-                            (function() {
-                                var uri = <?= json_encode($provisioningUri) ?>;
-                                function loadQR() {
-                                    if (typeof QRCode === 'undefined') return;
-                                    try {
-                                        var qr = new QRCode(uri, 'M');
-                                        qr.toCanvas(document.getElementById('qrCanvas'), {moduleSize: 4, quiet: 4});
-                                    } catch(e) {}
-                                }
-                                if (document.readyState === 'loading') {
-                                    document.addEventListener('DOMContentLoaded', loadQR);
-                                } else {
-                                    loadQR();
-                                }
-                            })();
-                            </script>
-                        <?php endif; ?>
+                        <canvas id="qrCanvas" style="display: block; margin: 0 auto;"></canvas>
                     </div>
+                    <script>
+                    (function() {
+                        var uri = <?= json_encode($provisioningUri) ?>;
+                        function renderQR() {
+                            var canvas = document.getElementById('qrCanvas');
+                            if (!canvas || typeof QRCode === 'undefined') return;
+                            try {
+                                var qr = new QRCode(uri, 'M');
+                                qr.toCanvas(canvas, {moduleSize: 6, quiet: 4});
+                            } catch(e) {
+                                canvas.parentNode.innerHTML =
+                                    '<p style="color:#666;font-size:0.85rem;">Could not render QR code. Please use the manual code below.</p>';
+                            }
+                        }
+                        if (document.readyState === 'loading') {
+                            document.addEventListener('DOMContentLoaded', renderQR);
+                        } else {
+                            renderQR();
+                        }
+                    })();
+                    </script>
                     
                     <h3 style="font-size: 1rem; margin-bottom: 10px;">Or enter this code manually:</h3>
                     <div style="background: var(--bg-primary); padding: 15px; border-radius: 8px; font-family: monospace; font-size: 1.1rem; text-align: center; letter-spacing: 2px; word-break: break-all;">
