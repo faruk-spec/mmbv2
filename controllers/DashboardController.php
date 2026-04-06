@@ -384,7 +384,11 @@ class DashboardController extends BaseController
         $db = Database::getInstance();
         
         $page = max(1, (int) $this->input('page', 1));
-        $perPage = 20;
+        $allowedPerPage = [10, 25, 50, 100];
+        $perPage = (int) $this->input('per_page', 10);
+        if (!in_array($perPage, $allowedPerPage)) {
+            $perPage = 10;
+        }
         $offset = ($page - 1) * $perPage;
         
         $activity = $db->fetchAll(

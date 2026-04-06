@@ -4,12 +4,24 @@
 <?php View::section('content'); ?>
 <div class="card" style="border-radius: 10px; overflow: hidden; border: 1px solid var(--border-color);">
     <div class="card-header" style="background: linear-gradient(135deg, rgba(0, 240, 255, 0.1) 0%, rgba(255, 46, 196, 0.1) 100%); border-bottom: 1px solid var(--border-color); padding: 12px;">
-        <h3 class="card-title" style="font-size: 1rem; font-weight: 700; display: flex; align-items: center; gap: 10px; margin: 0;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
-                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-            </svg>
-            Recent Activities
-        </h3>
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+            <h3 class="card-title" style="font-size: 1rem; font-weight: 700; display: flex; align-items: center; gap: 10px; margin: 0;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                </svg>
+                Recent Activities
+            </h3>
+            <form method="GET" action="/activity" id="perPageForm" style="display: flex; align-items: center; gap: 6px;">
+                <label style="font-size: 0.8rem; color: var(--text-secondary);">Rows:</label>
+                <select name="per_page" onchange="document.getElementById('perPageForm').submit()"
+                        style="padding: 4px 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-primary); font-size: 0.8rem;">
+                    <?php foreach ([10, 25, 50, 100] as $opt): ?>
+                        <option value="<?= $opt ?>" <?= $pagination['perPage'] == $opt ? 'selected' : '' ?>><?= $opt ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <input type="hidden" name="page" value="1">
+            </form>
+        </div>
     </div>
     
     <div style="padding: 12px;">
@@ -118,7 +130,7 @@
             <?php if ($pagination['total'] > 1): ?>
                 <div style="margin-top: 30px; display: flex; justify-content: center; align-items: center; gap: 12px; flex-wrap: wrap;">
                     <?php if ($pagination['current'] > 1): ?>
-                        <a href="?page=<?= $pagination['current'] - 1 ?>" class="btn btn-sm btn-secondary" style="padding: 10px 20px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); font-weight: 600; text-decoration: none; transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 6px;">
+                        <a href="?page=<?= $pagination['current'] - 1 ?>&per_page=<?= $pagination['perPage'] ?>" class="btn btn-sm btn-secondary" style="padding: 10px 20px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); font-weight: 600; text-decoration: none; transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 6px;">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="15 18 9 12 15 6"></polyline>
                             </svg>
@@ -131,7 +143,7 @@
                     </span>
                     
                     <?php if ($pagination['current'] < $pagination['total']): ?>
-                        <a href="?page=<?= $pagination['current'] + 1 ?>" class="btn btn-sm btn-secondary" style="padding: 10px 20px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); font-weight: 600; text-decoration: none; transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 6px;">
+                        <a href="?page=<?= $pagination['current'] + 1 ?>&per_page=<?= $pagination['perPage'] ?>" class="btn btn-sm btn-secondary" style="padding: 10px 20px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); font-weight: 600; text-decoration: none; transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 6px;">
                             Next
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="9 18 15 12 9 6"></polyline>

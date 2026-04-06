@@ -1,12 +1,27 @@
 <?php use Core\View; use Core\Security; use Core\Auth; ?>
 <?php
-// Set theme from localStorage via cookie or use default
+// Set theme: prefer user's own preference, fall back to global navbar_settings
 $defaultTheme = 'dark';
 try {
     $db = \Core\Database::getInstance();
-    $navbarSettings = $db->fetch("SELECT default_theme FROM navbar_settings WHERE id = 1");
-    if ($navbarSettings && !empty($navbarSettings['default_theme'])) {
-        $defaultTheme = $navbarSettings['default_theme'];
+    if (\Core\Auth::check()) {
+        $userTheme = $db->fetch(
+            "SELECT theme_preference FROM user_profiles WHERE user_id = ?",
+            [\Core\Auth::id()]
+        );
+        if ($userTheme && !empty($userTheme['theme_preference'])) {
+            $defaultTheme = $userTheme['theme_preference'];
+        } else {
+            $navbarSettings = $db->fetch("SELECT default_theme FROM navbar_settings WHERE id = 1");
+            if ($navbarSettings && !empty($navbarSettings['default_theme'])) {
+                $defaultTheme = $navbarSettings['default_theme'];
+            }
+        }
+    } else {
+        $navbarSettings = $db->fetch("SELECT default_theme FROM navbar_settings WHERE id = 1");
+        if ($navbarSettings && !empty($navbarSettings['default_theme'])) {
+            $defaultTheme = $navbarSettings['default_theme'];
+        }
     }
 } catch (\Exception $e) {
     // Use default if query fails
@@ -1668,18 +1683,34 @@ try {
                     
                     // Left Sidebar Navigation Groups
                     const navGroups = document.querySelectorAll('.nav-group');
+                    const currentPath = window.location.pathname;
+                    
                     navGroups.forEach(group => {
                         const header = group.querySelector('.nav-group-header');
                         const content = group.querySelector('.nav-group-content');
                         const chevron = group.querySelector('.group-chevron');
                         
-                        // Start collapsed by default (closed)
-                        group.classList.remove('open');
-                        if (content) {
-                            content.style.maxHeight = '0';
-                        }
-                        if (chevron) {
-                            chevron.style.transform = 'rotate(0deg)';
+                        // Check if this group contains a link matching the current path
+                        const links = content ? content.querySelectorAll('a[href]') : [];
+                        let hasActiveLink = false;
+                        links.forEach(link => {
+                            const href = link.getAttribute('href');
+                            if (href && (currentPath === href || currentPath.startsWith(href + '/'))) {
+                                link.style.color = 'var(--cyan)';
+                                link.style.background = 'rgba(0,240,255,0.08)';
+                                hasActiveLink = true;
+                            }
+                        });
+                        
+                        // Expand the group if it contains the active page
+                        if (hasActiveLink) {
+                            group.classList.add('open');
+                            if (content) content.style.maxHeight = content.scrollHeight + 'px';
+                            if (chevron) chevron.style.transform = 'rotate(180deg)';
+                        } else {
+                            group.classList.remove('open');
+                            if (content) content.style.maxHeight = '0';
+                            if (chevron) chevron.style.transform = 'rotate(0deg)';
                         }
                         
                         // Add click handler
@@ -1805,6 +1836,7 @@ try {
     
     <!-- Toast Notification System -->
     <script src="/assets/js/toast.js"></script>
+    <script src="/assets/js/qrcode.js"></script>
 
     <!-- ── Post-logout Login Suggestion Popup ───────────────────────────────── -->
     <?php if (isset($_GET['logged_out']) && !(\Core\Auth::check())): ?>

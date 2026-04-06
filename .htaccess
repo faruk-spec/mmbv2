@@ -14,7 +14,7 @@ DirectoryIndex index.php public/index.php
     RewriteEngine On
     RewriteBase /
     
-    # Block direct access to sensitive directories
+    # Block direct access to sensitive directories (storage/uploads served via PHP route)
     RewriteRule ^(config|core|controllers|views|storage|routes)(/|$) - [F,L]
     
     # Block path traversal attempts in projects (any occurrence of ..)

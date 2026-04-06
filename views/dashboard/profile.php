@@ -135,7 +135,7 @@
     <div>
         <div class="card" style="text-align: center; border-radius: 10px; overflow: hidden; border: 1px solid var(--border-color); padding: 16px;">
             <?php if (!empty($user['avatar'])): ?>
-                <img src="/storage/uploads/avatars/<?= htmlspecialchars($user['avatar']) ?>" 
+                <img src="/uploads/avatars/<?= htmlspecialchars($user['avatar']) ?>" 
                      alt="Profile Photo" 
                      style="width: 120px; height: 120px; border-radius: 50%; margin: 0 auto 20px; display: block; object-fit: cover; box-shadow: 0 8px 30px rgba(0, 240, 255, 0.3); border: 3px solid var(--cyan);">
             <?php else: ?>
