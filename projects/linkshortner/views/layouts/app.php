@@ -40,6 +40,8 @@ header("Expires: 0");
             --bg-card: #0f0f18;
             --ls-accent: #00d4ff;
             --ls-accent-dark: #0099cc;
+            --accent: #00d4ff;
+            --accent2: #ff2ec4;
             --cyan: #00f0ff;
             --magenta: #ff2ec4;
             --green: #00ff88;
