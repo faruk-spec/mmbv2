@@ -149,6 +149,28 @@ switch ($segments[0]) {
         };
         break;
 
+    case 'ocr':
+        require_once PROJECT_PATH . '/controllers/OcrController.php';
+        $ctrl   = new \Projects\ConvertX\Controllers\OcrController();
+        $action = $segments[1] ?? '';
+        if ($action === 'process' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+            $ctrl->process();
+        } else {
+            $ctrl->show();
+        }
+        break;
+
+    case 'ocr-ai':
+        require_once PROJECT_PATH . '/controllers/OcrController.php';
+        $ctrl   = new \Projects\ConvertX\Controllers\OcrController();
+        $action = $segments[1] ?? '';
+        if ($action === 'process' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+            $ctrl->processAi();
+        } else {
+            $ctrl->showAi();
+        }
+        break;
+
     case 'docs':
         require_once PROJECT_PATH . '/controllers/DashboardController.php';
         (new \Projects\ConvertX\Controllers\DashboardController())->docs();

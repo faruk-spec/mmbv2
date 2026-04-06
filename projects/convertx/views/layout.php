@@ -1141,6 +1141,20 @@ include BASE_PATH . '/views/layouts/navbar.php';
         </div>
 
         <div class="sidebar-section">
+            <div class="sidebar-title">OCR &amp; Text</div>
+            <nav class="sidebar-nav">
+                <a href="/projects/convertx/ocr"
+                   class="<?= ($currentView === 'ocr') ? 'active' : '' ?>">
+                    <i class="fa-solid fa-file-image"></i> OCR Extract
+                </a>
+                <a href="/projects/convertx/ocr-ai"
+                   class="<?= ($currentView === 'ocr-ai') ? 'active' : '' ?>">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> AI OCR
+                </a>
+            </nav>
+        </div>
+
+        <div class="sidebar-section">
             <div class="sidebar-title">PDF &amp; Image Tools</div>
             <nav class="sidebar-nav">
                 <a href="/projects/convertx/pdf-merge"

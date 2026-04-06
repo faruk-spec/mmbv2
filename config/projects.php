@@ -26,16 +26,6 @@ return [
         'url' => '/projects/devzone'
     ],
     
-    'imgtxt' => [
-        'name' => 'ImgTxt',
-        'description' => 'Image to text converter and OCR tool',
-        'icon' => 'image',
-        'color' => '#00ff88',
-        'enabled' => true,
-        'database' => 'mmb_imgtxt',
-        'url' => '/projects/imgtxt'
-    ],
-    
     'proshare' => [
         'name' => 'ProShare',
         'description' => 'Secure file sharing platform',

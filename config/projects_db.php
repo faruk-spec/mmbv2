@@ -16,16 +16,6 @@ return array (
     'status' => 'active',
     'last_tested' => '2026-01-02 07:39:04',
   ),
-  'imgtxt' => 
-  array (
-    'host' => 'localhost',
-    'port' => '3306',
-    'database' => 'imgtxt',
-    'username' => '',
-    'password' => '',
-    'status' => 'unconfigured',
-    'last_tested' => NULL,
-  ),
   'proshare' => 
   array (
     'host' => 'localhost',

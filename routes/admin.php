@@ -106,18 +106,6 @@ $router->get('/admin/projects/codexpro/templates', 'Admin\\CodeXProAdminControll
 $router->post('/admin/projects/codexpro/templates/delete', 'Admin\\CodeXProAdminController@deleteTemplate', ['auth', 'admin']);
 $router->post('/admin/projects/codexpro/templates/toggle', 'Admin\\CodeXProAdminController@toggleTemplate', ['auth', 'admin']);
 
-// ImgTxt admin routes
-$router->get('/admin/projects/imgtxt', 'Admin\\ImgTxtAdminController@overview', ['auth', 'admin']);
-$router->get('/admin/projects/imgtxt/settings', 'Admin\\ImgTxtAdminController@settings', ['auth', 'admin']);
-$router->post('/admin/projects/imgtxt/settings', 'Admin\\ImgTxtAdminController@settings', ['auth', 'admin']);
-$router->get('/admin/projects/imgtxt/jobs', 'Admin\\ImgTxtAdminController@jobs', ['auth', 'admin']);
-$router->post('/admin/projects/imgtxt/jobs/retry', 'Admin\\ImgTxtAdminController@retryJob', ['auth', 'admin']);
-$router->post('/admin/projects/imgtxt/jobs/delete', 'Admin\\ImgTxtAdminController@deleteJob', ['auth', 'admin']);
-$router->get('/admin/projects/imgtxt/languages', 'Admin\\ImgTxtAdminController@languages', ['auth', 'admin']);
-$router->get('/admin/projects/imgtxt/users', 'Admin\\ImgTxtAdminController@users', ['auth', 'admin']);
-$router->get('/admin/projects/imgtxt/statistics', 'Admin\\ImgTxtAdminController@statistics', ['auth', 'admin']);
-$router->get('/admin/projects/imgtxt/activity', 'Admin\\ImgTxtAdminController@activity', ['auth', 'admin']);
-
 // ProShare admin routes
 $router->get('/admin/projects/proshare', 'Admin\\ProShareAdminController@overview', ['auth', 'admin']);
 $router->get('/admin/projects/proshare/settings', 'Admin\\ProShareAdminController@settings', ['auth', 'admin']);

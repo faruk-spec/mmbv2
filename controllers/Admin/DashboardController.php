@@ -32,7 +32,6 @@ class DashboardController extends BaseController
         $canLogs         = Auth::isAdmin() || Auth::hasPermissionGroup('logs');
         $canProjects     = Auth::isAdmin() || Auth::hasPermissionGroup('projects');
         $canCodexPro     = Auth::isAdmin() || Auth::hasPermissionGroup('codexpro');
-        $canImgTxt       = Auth::isAdmin() || Auth::hasPermissionGroup('imgtxt');
         $canProShare     = Auth::isAdmin() || Auth::hasPermissionGroup('proshare');
         $canConvertX     = Auth::isAdmin() || Auth::hasPermissionGroup('convertx');
         $canBillX        = Auth::isAdmin() || Auth::hasPermissionGroup('billx');
@@ -43,7 +42,7 @@ class DashboardController extends BaseController
         $canFormX        = Auth::isAdmin() || Auth::hasPermissionGroup('formx');
 
         // Determine whether the user has ANY visible module access
-        $hasAnyAccess = $canUsers || $canLogs || $canProjects || $canCodexPro || $canImgTxt
+        $hasAnyAccess = $canUsers || $canLogs || $canProjects || $canCodexPro
             || $canProShare || $canConvertX || $canBillX || $canWhatsApp || $canQr
             || $canSecurity || $canPlatformPlans || $canFormX;
 
@@ -118,16 +117,6 @@ class DashboardController extends BaseController
                 $projectStats['codexpro'] = ['projects' => 0, 'snippets' => 0];
             }
         }
-        if ($canImgTxt) {
-            try {
-                $projectStats['imgtxt'] = [
-                    'total_jobs' => (int) ($db->fetchColumn("SELECT COUNT(*) FROM imgtxt_jobs") ?: 0),
-                    'completed'  => (int) ($db->fetchColumn("SELECT COUNT(*) FROM imgtxt_jobs WHERE status = 'completed'") ?: 0),
-                ];
-            } catch (\Exception $e) {
-                $projectStats['imgtxt'] = ['total_jobs' => 0, 'completed' => 0];
-            }
-        }
         if ($canProShare) {
             try {
                 $projectStats['proshare'] = [
@@ -161,7 +150,6 @@ class DashboardController extends BaseController
             'canLogs'         => $canLogs,
             'canProjects'     => $canProjects,
             'canCodexPro'     => $canCodexPro,
-            'canImgTxt'       => $canImgTxt,
             'canProShare'     => $canProShare,
             'canConvertX'     => $canConvertX,
             'canBillX'        => $canBillX,
