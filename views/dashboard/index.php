@@ -27,21 +27,21 @@
         <?php if (empty($projects)): ?>
             <p style="color: var(--text-secondary); text-align: center; padding: 32px 16px; font-size: 0.875rem;">No applications available</p>
         <?php else: ?>
-            <div class="applications-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px; justify-items: stretch;">
+            <div class="applications-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 16px;">
                 <?php foreach ($projects as $key => $project): 
                     $cardColor = htmlspecialchars($project['color'] ?? '#00f0ff');
                     if (!preg_match('/^#[0-9A-Fa-f]{6}$/', $cardColor)) { $cardColor = '#00f0ff'; }
                 ?>
-                    <a href="<?= htmlspecialchars($project['url'] ?? '/projects/' . $key) ?>" class="application-card" style="display: flex; flex-direction: column; align-items: center; justify-content: flex-start; background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border-color); padding: 20px 12px 16px; transition: all 0.3s ease; text-align: center; text-decoration: none; color: inherit; aspect-ratio: 1; overflow: hidden;">
-                        <div style="width: 64px; height: 64px; min-width: 64px; min-height: 64px; background: <?= $cardColor ?>20; border-radius: 14px; border: 2px solid <?= $cardColor ?>40; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; overflow: hidden; flex-shrink: 0;">
+                    <a href="<?= htmlspecialchars($project['url'] ?? '/projects/' . $key) ?>" class="application-card" style="display: flex; flex-direction: column; align-items: center; justify-content: flex-start; background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border-color); padding: 20px 12px 16px; transition: all 0.3s ease; text-align: center; text-decoration: none; color: inherit; min-height: 155px;">
+                        <div style="width: 60px; height: 60px; min-width: 60px; min-height: 60px; background: <?= $cardColor ?>20; border-radius: 14px; border: 2px solid <?= $cardColor ?>40; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; overflow: hidden; flex-shrink: 0;">
                             <?php if (!empty($project['logo_url'])): ?>
                                 <img src="<?= htmlspecialchars($project['logo_url']) ?>" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">
                             <?php else: ?>
-                                <span style="font-size: 1.6rem; font-weight: 700; color: <?= $cardColor ?>; line-height: 1;"><?= strtoupper(substr($project['name'] ?? $key, 0, 2)) ?></span>
+                                <span style="font-size: 1.5rem; font-weight: 700; color: <?= $cardColor ?>; line-height: 1;"><?= strtoupper(substr($project['name'] ?? $key, 0, 2)) ?></span>
                             <?php endif; ?>
                         </div>
-                        <div style="font-weight: 600; font-size: 0.85rem; margin-bottom: 4px; color: var(--text-primary); width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;"><?= View::e($project['name']) ?></div>
-                        <div style="font-size: 0.72rem; color: var(--text-secondary); line-height: 1.4; width: 100%; overflow: hidden; max-height: 2.8em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-clamp: 2;"><?= View::e($project['description'] ?? '') ?></div>
+                        <div style="font-weight: 600; font-size: 0.82rem; margin-bottom: 4px; color: var(--text-primary); width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;"><?= View::e($project['name']) ?></div>
+                        <div style="font-size: 0.70rem; color: var(--text-secondary); line-height: 1.4; width: 100%; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;"><?= View::e($project['description'] ?? '') ?></div>
                     </a>
                 <?php endforeach; ?>
             </div>
@@ -99,11 +99,7 @@
     
     @media (max-width: 768px) {
         .applications-grid {
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
-        }
-        
-        .application-card {
-            aspect-ratio: 1;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)) !important;
         }
         
         .quick-actions-grid {
@@ -113,6 +109,17 @@
         /* Make sections collapsible on mobile */
         .collapsible-section .collapsible-header {
             cursor: pointer;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .applications-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 12px !important;
+        }
+        
+        .application-card {
+            padding: 16px 10px 14px !important;
         }
     }
     
