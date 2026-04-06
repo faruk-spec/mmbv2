@@ -155,6 +155,9 @@ $router->delete('/projects/{project}/{path:wildcard}', function($project, $path 
 $router->get('/s/{shortcode}', 'Projects\ProShare\Controllers\DownloadController@download');
 $router->get('/t/{shortcode}', 'Projects\ProShare\Controllers\TextShareController@view');
 
+// LinkShortner – public redirect (no auth required)
+$router->get('/l/{code}', 'Projects\LinkShortner\Controllers\RedirectController@redirect');
+
 
 // ── FormX public form pages ───────────────────────────────────────────────────
 $router->get('/forms/{slug}',  'FormXPublicController@show');
