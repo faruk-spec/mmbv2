@@ -38,7 +38,7 @@ function rsGeneratorPoly(degree) {
         }
         g = ng;
     }
-    return g;
+    return g.slice().reverse();
 }
 
 function rsEncode(data, numEC) {
@@ -199,10 +199,10 @@ function writeFormatInfo(qr, ecLevel, mask) {
     for (var i = 0; i < 15; i++) {
         var bit = (fmt >> i) & 1;
         qr.mat[places[i][0]][places[i][1]] = bit;
-        if (i < 8) {
+        if (i < 7) {
             qr.mat[s-1-i][8] = bit;
         } else {
-            qr.mat[8][s-7+(i-8)] = bit;
+            qr.mat[8][s-8+(i-7)] = bit;
         }
     }
 }
@@ -322,7 +322,7 @@ function QRCode(text, ecLevel) {
         for (var j = 7; j >= 0; j--) finalBits.push((finalCW[i] >> j) & 1);
     }
     // Remainder bits
-    var rem = [0,7,7,7,4,4,4,0,0,0,0][ver];
+    var rem = [0,0,7,7,7,7,7,0,0,0,0][ver];
     for (var i = 0; i < rem; i++) finalBits.push(0);
     
     // Build matrix
