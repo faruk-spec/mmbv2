@@ -130,12 +130,16 @@
     <a href="/projects/notex/notes?folder=<?= $folder['id'] ?>" class="nx-folder-tile">
         <div class="nx-tile-actions" onclick="event.preventDefault();event.stopPropagation();">
             <button type="button" class="nx-tile-btn"
-                    onclick="openRename(<?= $folder['id'] ?>, <?= htmlspecialchars(json_encode($folder['name'])) ?>)"
+                    data-action="rename"
+                    data-folder-id="<?= $folder['id'] ?>"
+                    data-folder-name="<?= View::e($folder['name']) ?>"
                     title="Rename">
                 <i class="fas fa-pencil-alt"></i>
             </button>
             <button type="button" class="nx-tile-btn danger"
-                    onclick="deleteFolder(<?= $folder['id'] ?>, <?= htmlspecialchars(json_encode($folder['name'])) ?>)"
+                    data-action="delete"
+                    data-folder-id="<?= $folder['id'] ?>"
+                    data-folder-name="<?= View::e($folder['name']) ?>"
                     title="Delete">
                 <i class="fas fa-times"></i>
             </button>
@@ -166,11 +170,15 @@
                 <i class="fas fa-eye"></i> View
             </a>
             <button type="button" class="btn btn-secondary btn-sm"
-                    onclick="openRename(<?= $folder['id'] ?>, <?= htmlspecialchars(json_encode($folder['name'])) ?>)">
+                    data-action="rename"
+                    data-folder-id="<?= $folder['id'] ?>"
+                    data-folder-name="<?= View::e($folder['name']) ?>">
                 <i class="fas fa-pencil-alt"></i> Rename
             </button>
             <button type="button" class="btn btn-danger btn-sm"
-                    onclick="deleteFolder(<?= $folder['id'] ?>, <?= htmlspecialchars(json_encode($folder['name'])) ?>)">
+                    data-action="delete"
+                    data-folder-id="<?= $folder['id'] ?>"
+                    data-folder-name="<?= View::e($folder['name']) ?>">
                 <i class="fas fa-trash"></i>
             </button>
         </div>
@@ -243,16 +251,28 @@ function openRename(id, currentName) {
     document.getElementById('renameForm').action = '/projects/notex/folders/' + id + '/rename';
     document.getElementById('renameInput').value = currentName;
     document.getElementById('renameBackdrop').classList.add('open');
-    setTimeout(() => document.getElementById('renameInput').focus(), 50);
+    setTimeout(function() { document.getElementById('renameInput').focus(); }, 50);
 }
 function closeRename() {
     document.getElementById('renameBackdrop').classList.remove('open');
 }
-function deleteFolder(id, name) {
-    if (confirm('Delete folder "' + name + '"? Notes will not be deleted.')) {
-        document.getElementById('deleteForm' + id).submit();
+document.addEventListener('click', function(e) {
+    var btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    e.preventDefault();
+    e.stopPropagation();
+    var action = btn.dataset.action;
+    var folderId = btn.dataset.folderId;
+    var folderName = btn.dataset.folderName;
+    if (action === 'rename') {
+        openRename(folderId, folderName);
+    } else if (action === 'delete') {
+        if (confirm('Delete folder "' + folderName + '"? Notes will not be deleted.')) {
+            var form = document.getElementById('deleteForm' + folderId);
+            if (form) form.submit();
+        }
     }
-}
+});
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') closeRename();
 });

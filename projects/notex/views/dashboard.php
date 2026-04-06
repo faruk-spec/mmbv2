@@ -208,7 +208,7 @@
                 <tbody>
                 <?php foreach ($recentNotes as $note): ?>
                 <tr onclick="location.href='/projects/notex/notes/<?= $note['id'] ?>/edit'" style="cursor:pointer;"
-                    tabindex="0" onkeydown="if(event.key==='Enter')location.href='/projects/notex/notes/<?= $note['id'] ?>/edit'">
+                    tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')location.href='/projects/notex/notes/<?= $note['id'] ?>/edit'">
                     <td>
                         <?php if ($note['is_pinned']): ?>
                             <i class="fas fa-thumbtack" style="color:var(--nx-accent);font-size:0.6875rem;margin-right:0.25rem;"></i>
