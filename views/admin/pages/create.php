@@ -85,7 +85,7 @@ function autoSlug(title) {
         .replace(/[^a-z0-9\s\-]/g, '')
         .replace(/\s+/g, '-')
         .replace(/-+/g, '-')
-        .trim('-');
+        .replace(/^-+|-+$/g, '');
     document.getElementById('slugInput').value = slug;
 }
 </script>

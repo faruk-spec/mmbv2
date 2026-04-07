@@ -172,7 +172,8 @@ class PagesController extends BaseController
     public function toggleStatus(string $id): void
     {
         if (!$this->validateCsrf()) {
-            $this->json(['error' => 'Invalid request'], 403);
+            $this->flash('error', 'Invalid request.');
+            $this->redirect('/admin/pages');
             return;
         }
 
@@ -180,16 +181,19 @@ class PagesController extends BaseController
             $db = Database::getInstance();
             $page = $db->fetch("SELECT * FROM pages WHERE id = ?", [(int)$id]);
             if (!$page) {
-                $this->json(['error' => 'Not found'], 404);
+                $this->flash('error', 'Page not found.');
+                $this->redirect('/admin/pages');
                 return;
             }
             $newStatus = $page['status'] === 'published' ? 'draft' : 'published';
             $db->update('pages', ['status' => $newStatus], 'id = ?', [(int)$id]);
             ActivityLogger::log(Auth::id(), 'page_status_changed', 'pages', (int)$id, ['status' => $newStatus]);
-            $this->json(['success' => true, 'status' => $newStatus]);
+            $this->flash('success', 'Page status changed to ' . $newStatus . '.');
         } catch (\Exception $e) {
-            $this->json(['error' => $e->getMessage()], 500);
+            $this->flash('error', $e->getMessage());
         }
+
+        $this->redirect('/admin/pages');
     }
 
     private function sanitizeSlug(string $slug): string
