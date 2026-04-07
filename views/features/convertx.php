@@ -1,448 +1,287 @@
-<?php use Core\View; ?>
+<?php use Core\View; use Core\Auth; ?>
 <?php View::extend('main'); ?>
-
 <?php $title = 'ConvertX – Features'; ?>
 
 <?php View::section('styles'); ?>
 <style>
-
-/* Feature Page – shared styles. Theme-aware via platform CSS variables. */
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap');
+:root{--gradient-primary:linear-gradient(135deg,#9945ff,#00f0ff);--font-heading:'Space Grotesk',sans-serif;--radius-full:9999px;--radius-lg:16px;--radius-xl:24px;--glow-cyan:0 0 24px rgba(0,240,255,.3);--glow-purple:0 0 24px rgba(153,69,255,.3);}
 .fp-wrap{max-width:1100px;margin:0 auto;padding:0 20px 80px;}
-
-/* ── Hero ── */
-.fp-hero{padding:48px 0 40px;text-align:center;position:relative;}
-.fp-hero::before{content:'';position:absolute;top:-40px;left:50%;transform:translateX(-50%);
-  width:700px;height:420px;
-  background:radial-gradient(ellipse,rgba(153,69,255,.14) 0%,transparent 70%);
-  pointer-events:none;z-index:0;}
-.fp-badge{display:inline-flex;align-items:center;gap:7px;
-  background:rgba(153,69,255,.12);border:1px solid rgba(153,69,255,.35);
-  color:var(--purple);padding:5px 16px;border-radius:50px;
-  font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;
-  margin-bottom:18px;position:relative;z-index:1;}
-.fp-hero h1{font-size:clamp(1.9rem,5vw,3.4rem);font-weight:800;line-height:1.1;
-  margin-bottom:14px;
-  background:linear-gradient(135deg,var(--purple),var(--cyan));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-  position:relative;z-index:1;}
-.fp-hero p{font-size:1.03rem;color:var(--text-secondary);
-  max-width:560px;margin:0 auto 28px;position:relative;z-index:1;}
-.fp-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;position:relative;z-index:1;}
-.fp-btn{background:linear-gradient(135deg,var(--purple),var(--cyan));
-  color:#fff;padding:11px 26px;border-radius:50px;font-weight:600;font-size:.93rem;
-  display:inline-flex;align-items:center;gap:7px;transition:var(--transition);}
-.fp-btn:hover{opacity:.85;transform:translateY(-2px);color:#fff;}
-.fp-btn-o{border:1px solid rgba(0,240,255,.35);color:var(--cyan);
-  padding:11px 26px;border-radius:50px;font-weight:600;font-size:.93rem;
-  display:inline-flex;align-items:center;gap:7px;transition:var(--transition);}
-.fp-btn-o:hover{background:rgba(0,240,255,.08);border-color:var(--cyan);}
-
-/* ── Stats ── */
-.fp-stats{display:flex;gap:32px;justify-content:center;flex-wrap:wrap;
-  margin-top:36px;padding:20px 0;
-  border-top:1px solid var(--border-color);border-bottom:1px solid var(--border-color);}
-.fp-stat{text-align:center;}
-.fp-sn{font-size:1.7rem;font-weight:800;
-  background:linear-gradient(135deg,var(--purple),var(--cyan));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
-.fp-sl{font-size:.7rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.07em;}
-
-/* ── Section ── */
-.fp-sec{padding:56px 0;}
-.fp-sec-hd{text-align:center;margin-bottom:40px;}
-.fp-lbl{display:inline-block;
-  background:rgba(0,240,255,.08);border:1px solid rgba(0,240,255,.2);
-  color:var(--cyan);padding:4px 13px;border-radius:50px;
-  font-size:.71rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;}
-.fp-sec-hd h2{font-size:clamp(1.45rem,3.4vw,2.2rem);font-weight:700;
-  margin-bottom:9px;color:var(--text-primary);}
-.fp-sec-hd p{color:var(--text-secondary);max-width:500px;margin:0 auto;}
-.fp-alt{background:var(--bg-secondary);border-radius:16px;padding:56px 28px;margin:0 -10px;}
-@media(max-width:600px){.fp-alt{padding:40px 16px;margin:0;}}
-
-/* ── Collapsible Category ── */
-.fp-cat{margin-bottom:34px;}
-.fp-cat-btn{display:flex;align-items:center;gap:10px;width:100%;background:none;
-  border:none;border-bottom:1px solid var(--border-color);
-  padding-bottom:11px;margin-bottom:20px;text-align:left;
-  cursor:pointer;font-family:inherit;color:var(--text-primary);
-  font-size:.98rem;font-weight:700;transition:var(--transition);}
-.fp-cat-btn:hover{color:var(--cyan);}
-.fp-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
-.fp-arr{margin-left:auto;font-size:.78rem;color:var(--text-secondary);
-  transition:transform .24s ease;display:none;}
-.fp-cat-btn[aria-expanded="false"] .fp-arr{transform:rotate(-90deg);}
-@media(max-width:768px){
-  .fp-arr{display:inline-block;}
-  .fp-cat-body.is-closed{display:none;}
-}
-
-/* ── Feature Cards Grid ── */
-.fp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:17px;}
-@media(max-width:900px){.fp-grid{grid-template-columns:repeat(2,1fr);}}
-@media(max-width:560px){.fp-grid{grid-template-columns:1fr;}}
-
-.fp-card{background:var(--bg-card);border:1px solid var(--border-color);
-  border-radius:13px;padding:22px;transition:var(--transition);}
-.fp-card:hover{border-color:rgba(0,240,255,.3);transform:translateY(-3px);box-shadow:var(--shadow);}
-.fp-ic{width:46px;height:46px;border-radius:11px;display:flex;align-items:center;
-  justify-content:center;font-size:1.15rem;margin-bottom:14px;}
-.ic-c{background:rgba(0,240,255,.1);color:var(--cyan);}
-.ic-p{background:rgba(153,69,255,.12);color:var(--purple);}
-.ic-g{background:rgba(0,255,136,.08);color:var(--green);}
-.ic-o{background:rgba(255,170,0,.1);color:var(--orange);}
-.ic-m{background:rgba(255,46,196,.1);color:var(--magenta);}
-.fp-card h3{font-size:.95rem;font-weight:600;margin-bottom:7px;color:var(--text-primary);}
-.fp-card p{color:var(--text-secondary);font-size:.83rem;line-height:1.63;}
-.fp-tag{display:inline-block;margin-top:10px;
-  background:rgba(153,69,255,.14);color:var(--purple);
-  font-size:.67rem;font-weight:600;padding:2px 9px;border-radius:50px;}
-
-/* ── API Block ── */
-.fp-api{background:var(--bg-card);border:1px solid var(--border-color);
-  border-radius:13px;overflow:hidden;margin-bottom:18px;}
-.fp-api-h{display:flex;align-items:center;gap:9px;padding:11px 16px;
-  background:rgba(153,69,255,.07);border-bottom:1px solid var(--border-color);}
-.fp-m{padding:3px 9px;border-radius:5px;font-size:.71rem;font-weight:700;}
-.fp-m-get{background:rgba(0,255,136,.12);color:var(--green);}
-.fp-m-post{background:rgba(0,240,255,.12);color:var(--cyan);}
-.fp-m-patch{background:rgba(255,170,0,.12);color:var(--orange);}
-.fp-api-p{font-family:'Courier New',monospace;font-size:.81rem;color:var(--text-primary);}
-.fp-api-b{padding:13px 16px;font-family:'Courier New',monospace;
-  font-size:.79rem;color:var(--text-secondary);line-height:1.8;overflow-x:auto;}
-
-/* ── Steps ── */
-.fp-steps{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:14px;}
-.fp-step{background:var(--bg-card);border:1px solid var(--border-color);
-  border-radius:13px;padding:20px 14px;text-align:center;}
-.fp-step-n{width:32px;height:32px;border-radius:50%;
-  background:linear-gradient(135deg,var(--purple),var(--cyan));
-  display:flex;align-items:center;justify-content:center;
-  font-weight:700;font-size:.86rem;margin:0 auto 11px;}
-.fp-step h4{font-size:.86rem;font-weight:600;margin-bottom:5px;color:var(--text-primary);}
-.fp-step p{font-size:.77rem;color:var(--text-secondary);}
-
-/* ── Table ── */
-.fp-tw{overflow-x:auto;border-radius:13px;border:1px solid var(--border-color);}
-.fp-t{width:100%;border-collapse:collapse;background:var(--bg-card);}
-.fp-t th{background:rgba(153,69,255,.08);color:var(--text-primary);
-  padding:12px 15px;text-align:left;font-size:.8rem;font-weight:600;
-  border-bottom:1px solid var(--border-color);}
-.fp-t td{padding:10px 15px;color:var(--text-secondary);font-size:.8rem;
-  border-bottom:1px solid var(--border-color);}
-.fp-t tr:last-child td{border-bottom:none;}
-.fp-t tr:hover td{background:rgba(0,240,255,.03);color:var(--text-primary);}
-.ck{color:var(--green);}.no{color:var(--red);}.pt{color:var(--orange);}
-
-/* ── Highlight box ── */
-.fp-hl{background:linear-gradient(135deg,rgba(153,69,255,.1),rgba(0,240,255,.06));
-  border:1px solid rgba(153,69,255,.22);border-radius:13px;
-  padding:30px;text-align:center;margin:36px 0;}
-.fp-hl h3{font-size:1.25rem;font-weight:700;margin-bottom:9px;
-  background:linear-gradient(135deg,var(--purple),var(--cyan));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
-.fp-hl p{color:var(--text-secondary);max-width:520px;margin:0 auto;}
-
-/* ── Format badges ── */
-.fp-fmts{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:9px;}
-.fp-fmt{background:var(--bg-card);border:1px solid var(--border-color);
-  border-radius:9px;padding:11px 14px;display:flex;align-items:center;gap:8px;
-  font-size:.8rem;font-weight:500;color:var(--text-secondary);transition:var(--transition);}
-.fp-fmt:hover{border-color:var(--cyan);color:var(--cyan);}
-
-/* Tabs */
-.fp-tabs{display:flex;gap:5px;border-bottom:1px solid var(--border-color);
-  margin-bottom:22px;flex-wrap:wrap;}
-.fp-tab-btn{background:none;border:none;border-bottom:2px solid transparent;
-  color:var(--text-secondary);padding:8px 16px;font-family:inherit;
-  font-size:.82rem;font-weight:500;cursor:pointer;transition:var(--transition);margin-bottom:-1px;}
-.fp-tab-btn.active{color:var(--cyan);border-bottom-color:var(--cyan);}
-.fp-tab-btn:hover{color:var(--text-primary);}
-.fp-tab-p{display:none;}.fp-tab-p.active{display:block;}
-
-/* Scroll-in animation */
-.fp-anim{opacity:0;transform:translateY(16px);transition:opacity .42s ease,transform .42s ease;}
-.fp-anim.vis{opacity:1;transform:translateY(0);}
-
+.fp-hero{padding:64px 0 48px;text-align:center;position:relative;overflow:hidden;}
+.fp-hero::before{content:'';position:absolute;top:-60px;left:50%;transform:translateX(-50%);width:800px;height:500px;background:radial-gradient(ellipse,rgba(153,69,255,.18) 0%,rgba(0,240,255,.08) 50%,transparent 70%);pointer-events:none;z-index:0;animation:heroBlob 8s ease-in-out infinite alternate;}
+@keyframes heroBlob{from{transform:translateX(-50%) scale(1);}to{transform:translateX(-50%) scale(1.12);}}
+.fp-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(153,69,255,.12);border:1px solid rgba(153,69,255,.4);color:var(--purple);padding:6px 18px;border-radius:var(--radius-full);font-size:.74rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:22px;position:relative;z-index:1;animation:badgePulse 3s ease-in-out infinite;}
+@keyframes badgePulse{0%,100%{box-shadow:0 0 0 0 rgba(153,69,255,.35);}50%{box-shadow:0 0 0 8px rgba(153,69,255,0);}}
+.fp-hero h1{font-size:clamp(2.3rem,6vw,3.9rem);font-weight:800;line-height:1.08;margin-bottom:18px;font-family:var(--font-heading);background:var(--gradient-primary);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;position:relative;z-index:1;}
+.fp-hero p{font-size:1.08rem;color:var(--text-secondary);max-width:600px;margin:0 auto 32px;line-height:1.7;position:relative;z-index:1;}
+.fp-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;position:relative;z-index:1;margin-bottom:36px;}
+.fp-btn-primary{display:inline-flex;align-items:center;gap:8px;background:var(--gradient-primary);color:#fff;font-weight:700;padding:13px 30px;border-radius:var(--radius-full);text-decoration:none;font-size:.96rem;transition:var(--transition);box-shadow:var(--glow-purple);}
+.fp-btn-primary:hover{transform:translateY(-2px);box-shadow:var(--glow-cyan);}
+.fp-btn-outline{display:inline-flex;align-items:center;gap:8px;background:transparent;color:var(--text-primary);font-weight:600;padding:12px 28px;border-radius:var(--radius-full);text-decoration:none;font-size:.96rem;border:1.5px solid var(--border-color);transition:var(--transition);}
+.fp-btn-outline:hover{border-color:var(--cyan);color:var(--cyan);transform:translateY(-2px);}
+.fp-stats{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;position:relative;z-index:1;}
+.fp-stat{background:rgba(255,255,255,.04);border:1px solid var(--border-color);border-radius:var(--radius-full);padding:6px 16px;font-size:.8rem;color:var(--text-secondary);font-weight:500;}
+.fp-stat strong{color:var(--cyan);font-weight:700;}
+.fp-section{margin-top:68px;}
+.fp-lbl{display:inline-flex;align-items:center;gap:6px;background:rgba(0,240,255,.1);border:1px solid rgba(0,240,255,.3);color:var(--cyan);padding:4px 14px;border-radius:var(--radius-full);font-size:.71rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;}
+.fp-section h2{font-family:var(--font-heading);font-size:clamp(1.55rem,3vw,2.25rem);font-weight:800;margin-bottom:8px;color:var(--text-primary);}
+.fp-sub{color:var(--text-secondary);font-size:.97rem;margin-bottom:32px;max-width:600px;line-height:1.6;}
+.fp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px;}
+.fp-card{background:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:26px;transition:var(--transition);position:relative;overflow:hidden;}
+.fp-card::after{content:'';position:absolute;inset:0;border-radius:var(--radius-lg);background:var(--gradient-primary);opacity:0;transition:opacity .3s;pointer-events:none;}
+.fp-card:hover{transform:translateY(-5px);border-color:rgba(0,240,255,.4);box-shadow:0 10px 36px rgba(0,240,255,.14);}
+.fp-card:hover::after{opacity:.035;}
+.fp-card-icon{width:50px;height:50px;border-radius:13px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;font-size:1.3rem;flex-shrink:0;}
+.fp-card-icon.c-cyan{background:rgba(0,240,255,.12);color:var(--cyan);}
+.fp-card-icon.c-purple{background:rgba(153,69,255,.12);color:var(--purple);}
+.fp-card-icon.c-green{background:rgba(39,174,96,.12);color:var(--green);}
+.fp-card-icon.c-orange{background:rgba(243,156,18,.12);color:var(--orange);}
+.fp-card-icon.c-magenta{background:rgba(236,64,122,.12);color:#ec407a;}
+.fp-card h3{font-family:var(--font-heading);font-size:1.02rem;font-weight:700;margin-bottom:12px;color:var(--text-primary);}
+.fp-card ul{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:5px;}
+.fp-card ul li{font-size:.84rem;color:var(--text-secondary);display:flex;align-items:center;gap:8px;line-height:1.4;}
+.fp-card ul li::before{content:'';width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+.dot-cyan::before{background:var(--cyan)!important;}
+.dot-purple::before{background:var(--purple)!important;}
+.dot-green::before{background:var(--green)!important;}
+.dot-orange::before{background:var(--orange)!important;}
+.dot-magenta::before{background:#ec407a!important;}
+.fp-steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px;margin-top:32px;position:relative;}
+.fp-steps::before{content:'';position:absolute;top:27px;left:10%;width:80%;height:2px;background:linear-gradient(90deg,transparent,rgba(153,69,255,.5),rgba(0,240,255,.5),transparent);z-index:0;}
+.fp-step{text-align:center;padding:24px 16px;position:relative;z-index:1;}
+.fp-step-num{width:56px;height:56px;border-radius:50%;background:var(--bg-secondary);border:2px solid rgba(153,69,255,.5);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-family:var(--font-heading);font-size:1.25rem;font-weight:800;color:var(--purple);transition:var(--transition);}
+.fp-step:hover .fp-step-num{border-color:var(--cyan);color:var(--cyan);box-shadow:var(--glow-cyan);background:rgba(0,240,255,.06);}
+.fp-step h4{font-family:var(--font-heading);font-size:.95rem;font-weight:700;color:var(--text-primary);margin-bottom:6px;}
+.fp-step p{font-size:.83rem;color:var(--text-secondary);line-height:1.55;}
+.fp-api{background:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius-xl);padding:28px 32px;margin-top:32px;}
+.fp-api h3{font-family:var(--font-heading);font-size:1.1rem;font-weight:700;margin-bottom:18px;color:var(--text-primary);display:flex;align-items:center;gap:8px;}
+.fp-endpoint{display:flex;align-items:center;gap:10px;padding:11px 16px;background:rgba(0,0,0,.25);border-radius:10px;margin-bottom:10px;font-family:'Courier New',monospace;font-size:.86rem;border:1px solid rgba(255,255,255,.05);}
+.fp-method{padding:3px 10px;border-radius:6px;font-weight:700;font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;flex-shrink:0;}
+.fp-method.get{background:rgba(39,174,96,.2);color:var(--green);}
+.fp-method.post{background:rgba(0,240,255,.15);color:var(--cyan);}
+.fp-endpoint code{color:var(--text-primary);flex:1;}
+.ep-desc{color:var(--text-secondary);font-size:.78rem;font-family:inherit;margin-left:auto;white-space:nowrap;}
+.fp-t-wrap{overflow-x:auto;border-radius:var(--radius-lg);margin-top:32px;border:1px solid var(--border-color);}
+.fp-t{width:100%;border-collapse:collapse;}
+.fp-t thead tr{background:rgba(153,69,255,.08);}
+.fp-t thead th{padding:14px 16px;font-family:var(--font-heading);font-weight:700;font-size:.84rem;text-align:center;color:var(--text-primary);}
+.fp-t thead th:first-child{text-align:left;}
+.fp-t thead th.pro{background:rgba(0,240,255,.08);color:var(--cyan);}
+.fp-t thead th.pro .badge-pop{display:inline-block;font-size:.58rem;background:var(--gradient-primary);color:#fff;padding:2px 8px;border-radius:var(--radius-full);margin-left:6px;vertical-align:middle;font-weight:700;}
+.fp-t tbody tr{border-top:1px solid var(--border-color);transition:background .15s;}
+.fp-t tbody tr:hover{background:rgba(255,255,255,.025);}
+.fp-t tbody td{padding:11px 16px;font-size:.87rem;text-align:center;color:var(--text-secondary);}
+.fp-t tbody td:first-child{text-align:left;font-weight:600;color:var(--text-primary);}
+.fp-t tbody td.pro{background:rgba(0,240,255,.03);}
+.fp-t .chk{color:var(--cyan);}
+.fp-t .x{color:rgba(255,255,255,.18);}
+.fp-hl{margin-top:68px;border-radius:var(--radius-xl);padding:52px 40px;text-align:center;background:var(--bg-card);border:1px solid var(--border-color);position:relative;overflow:hidden;}
+.fp-hl::before{content:'';position:absolute;inset:0;background:var(--gradient-primary);opacity:.05;pointer-events:none;}
+.fp-hl::after{content:'';position:absolute;top:-80px;right:-80px;width:320px;height:320px;border-radius:50%;background:radial-gradient(circle,rgba(153,69,255,.15),transparent 70%);pointer-events:none;}
+.fp-hl-inner{position:relative;z-index:1;}
+.fp-hl h2{font-family:var(--font-heading);font-size:clamp(1.7rem,3.5vw,2.5rem);font-weight:800;background:var(--gradient-primary);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:14px;}
+.fp-hl p{color:var(--text-secondary);font-size:1rem;max-width:550px;margin:0 auto 24px;line-height:1.7;}
+.fp-hl-tags{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:20px;}
+.fp-hl-tag{padding:5px 14px;border-radius:var(--radius-full);font-size:.78rem;font-weight:600;background:rgba(0,240,255,.1);border:1px solid rgba(0,240,255,.25);color:var(--cyan);}
+.fp-cta{margin-top:68px;border-radius:var(--radius-xl);padding:60px 40px;text-align:center;position:relative;overflow:hidden;background:var(--bg-card);border:1.5px solid rgba(153,69,255,.3);}
+.fp-cta::before{content:'';position:absolute;top:-120px;left:-80px;width:360px;height:360px;border-radius:50%;background:radial-gradient(circle,rgba(153,69,255,.12),transparent 70%);pointer-events:none;}
+.fp-cta::after{content:'';position:absolute;bottom:-100px;right:-60px;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,rgba(0,240,255,.1),transparent 70%);pointer-events:none;}
+.fp-cta h2{font-family:var(--font-heading);font-size:clamp(1.7rem,3vw,2.3rem);font-weight:800;color:var(--text-primary);margin-bottom:10px;position:relative;z-index:1;}
+.fp-cta>p{color:var(--text-secondary);margin-bottom:28px;font-size:1.02rem;position:relative;z-index:1;}
+.fp-cta .fp-btns{position:relative;z-index:1;margin:0;}
+.fp-anim{opacity:0;transform:translateY(28px);transition:opacity .55s ease,transform .55s ease;}
+.fp-anim.vis{opacity:1;transform:none;}
+.fp-anim[data-d="1"]{transition-delay:.1s;}
+.fp-anim[data-d="2"]{transition-delay:.2s;}
+.fp-anim[data-d="3"]{transition-delay:.3s;}
+@media(max-width:768px){.fp-steps::before{display:none;}.fp-steps{grid-template-columns:1fr 1fr;}.fp-hl,.fp-cta{padding:32px 24px;}.fp-api{padding:20px;}.fp-section h2{font-size:1.5rem;}}
+@media(max-width:480px){.fp-steps{grid-template-columns:1fr;}.fp-btns{flex-direction:column;align-items:stretch;}.fp-btn-primary,.fp-btn-outline{justify-content:center;}}
 </style>
 <?php View::endSection(); ?>
 
 <?php View::section('content'); ?>
-<div class="fp-wrap" style="padding-top:30px;">
-<section class="fp-hero fp-anim">
-  <div class="fp-badge"><i class="fas fa-exchange-alt"></i> ConvertX Module</div>
-  <h1>Convert Any File<br>To Anything</h1>
-  <p>200+ format conversions across documents, images, audio, video, and data files. Fast, secure, API-first cloud conversion engine.</p>
-  <div class="fp-btns">
-    <a href="#" class="fp-btn"><i class="fas fa-upload"></i> Upload &amp; Convert</a>
-    <a href="#formats" class="fp-btn-o"><i class="fas fa-list"></i> View All Formats</a>
-  </div>
-  <div class="fp-stats">
-  <div class="fp-stat"><div class="fp-sn">200+</div><div class="fp-sl">Formats</div></div>
-  <div class="fp-stat"><div class="fp-sn">OCR</div><div class="fp-sl">Text Extraction</div></div>
-  <div class="fp-stat"><div class="fp-sn">Batch</div><div class="fp-sl">Processing</div></div>
-  <div class="fp-stat"><div class="fp-sn">API</div><div class="fp-sl">First</div></div>
-  </div>
-</section><div class="fp-sec" id="formats">
-<div class="fp-sec-hd fp-anim">
-  <span class="fp-lbl">Supported Formats</span>
-  <h2>200+ Conversions</h2>
-  <p>Documents, images, audio, video, spreadsheets, and data — all in one engine.</p>
-</div><div class="fp-cat fp-anim">
-  <button class="fp-cat-btn" aria-expanded="true"><span class="fp-dot" style="background:var(--cyan);"></span>Document Formats<i class="fas fa-chevron-down fp-arr"></i></button>
-  <div class="fp-cat-body"><div class="fp-fmts">
-    <div class="fp-fmt"><i class="fas fa-file-alt" style="color:var(--cyan);"></i> PDF &rarr; DOCX / HTML / TXT</div>
-    <div class="fp-fmt"><i class="fas fa-file-alt" style="color:var(--cyan);"></i> DOCX &rarr; PDF / HTML</div>
-    <div class="fp-fmt"><i class="fas fa-file-alt" style="color:var(--cyan);"></i> PPTX &rarr; PDF / Images</div>
-    <div class="fp-fmt"><i class="fas fa-file-alt" style="color:var(--cyan);"></i> XLSX &rarr; CSV / PDF</div>
-    <div class="fp-fmt"><i class="fas fa-file-alt" style="color:var(--cyan);"></i> TXT &rarr; PDF / DOCX</div>
-    <div class="fp-fmt"><i class="fas fa-file-alt" style="color:var(--cyan);"></i> HTML &rarr; PDF / DOCX</div>
-    <div class="fp-fmt"><i class="fas fa-file-alt" style="color:var(--cyan);"></i> ODT / ODS / ODP</div>
-    <div class="fp-fmt"><i class="fas fa-file-alt" style="color:var(--cyan);"></i> RTF &#8596; DOCX</div>
-    <div class="fp-fmt"><i class="fas fa-file-alt" style="color:var(--cyan);"></i> EPUB &rarr; PDF / MOBI</div>
-    <div class="fp-fmt"><i class="fas fa-file-alt" style="color:var(--cyan);"></i> Markdown &rarr; PDF / HTML</div>
-  </div></div>
-</div>
-<div class="fp-cat fp-anim">
-  <button class="fp-cat-btn" aria-expanded="true"><span class="fp-dot" style="background:var(--green);"></span>Image Formats<i class="fas fa-chevron-down fp-arr"></i></button>
-  <div class="fp-cat-body"><div class="fp-fmts">
-    <div class="fp-fmt"><i class="fas fa-file-image" style="color:var(--green);"></i> JPEG &#8596; PNG / WEBP / AVIF</div>
-    <div class="fp-fmt"><i class="fas fa-file-image" style="color:var(--green);"></i> SVG &rarr; PNG / PDF</div>
-    <div class="fp-fmt"><i class="fas fa-file-image" style="color:var(--green);"></i> HEIC &rarr; JPEG / PNG</div>
-    <div class="fp-fmt"><i class="fas fa-file-image" style="color:var(--green);"></i> TIFF &rarr; JPEG / PNG</div>
-    <div class="fp-fmt"><i class="fas fa-file-image" style="color:var(--green);"></i> BMP &rarr; Any Format</div>
-    <div class="fp-fmt"><i class="fas fa-file-image" style="color:var(--green);"></i> GIF &rarr; MP4 / WebP</div>
-    <div class="fp-fmt"><i class="fas fa-file-image" style="color:var(--green);"></i> RAW (CR2 / NEF / ARW)</div>
-    <div class="fp-fmt"><i class="fas fa-file-image" style="color:var(--green);"></i> PSD &rarr; PNG / JPEG</div>
-    <div class="fp-fmt"><i class="fas fa-file-image" style="color:var(--green);"></i> ICO &rarr; PNG</div>
-    <div class="fp-fmt"><i class="fas fa-file-image" style="color:var(--green);"></i> WebP &rarr; Any Format</div>
-  </div></div>
-</div>
-<div class="fp-cat fp-anim">
-  <button class="fp-cat-btn" aria-expanded="true"><span class="fp-dot" style="background:var(--orange);"></span>Audio &amp; Video<i class="fas fa-chevron-down fp-arr"></i></button>
-  <div class="fp-cat-body"><div class="fp-fmts">
-    <div class="fp-fmt"><i class="fas fa-film" style="color:var(--orange);"></i> MP3 &#8596; WAV / FLAC / OGG</div>
-    <div class="fp-fmt"><i class="fas fa-film" style="color:var(--orange);"></i> AAC &rarr; MP3 / WAV</div>
-    <div class="fp-fmt"><i class="fas fa-film" style="color:var(--orange);"></i> M4A &#8596; MP3</div>
-    <div class="fp-fmt"><i class="fas fa-film" style="color:var(--orange);"></i> MP4 &#8596; AVI / MKV / MOV</div>
-    <div class="fp-fmt"><i class="fas fa-film" style="color:var(--orange);"></i> WebM &rarr; MP4 / GIF</div>
-    <div class="fp-fmt"><i class="fas fa-film" style="color:var(--orange);"></i> Extract Audio from Video</div>
-    <div class="fp-fmt"><i class="fas fa-film" style="color:var(--orange);"></i> Video &rarr; GIF / Frames</div>
-    <div class="fp-fmt"><i class="fas fa-film" style="color:var(--orange);"></i> MKV &rarr; MP4</div>
-  </div></div>
-</div>
-<div class="fp-cat fp-anim">
-  <button class="fp-cat-btn" aria-expanded="true"><span class="fp-dot" style="background:var(--purple);"></span>Data &amp; Code<i class="fas fa-chevron-down fp-arr"></i></button>
-  <div class="fp-cat-body"><div class="fp-fmts">
-    <div class="fp-fmt"><i class="fas fa-file-code" style="color:var(--purple);"></i> JSON &#8596; CSV / XML / YAML</div>
-    <div class="fp-fmt"><i class="fas fa-file-code" style="color:var(--purple);"></i> CSV &rarr; JSON / Excel / PDF</div>
-    <div class="fp-fmt"><i class="fas fa-file-code" style="color:var(--purple);"></i> XML &#8596; JSON / CSV</div>
-    <div class="fp-fmt"><i class="fas fa-file-code" style="color:var(--purple);"></i> SQL &rarr; CSV / JSON</div>
-    <div class="fp-fmt"><i class="fas fa-file-code" style="color:var(--purple);"></i> HTML &rarr; Markdown</div>
-    <div class="fp-fmt"><i class="fas fa-file-code" style="color:var(--purple);"></i> Base64 &#8596; File</div>
-  </div></div>
-</div>
-</div>
-<div class="fp-alt">
-<div class="fp-sec">
-<div class="fp-sec-hd fp-anim">
-  <span class="fp-lbl">Core Features</span>
-  <h2>Smart Conversion Engine</h2>
-  
-</div><div class="fp-cat fp-anim">
-  <button class="fp-cat-btn" aria-expanded="true">
-    <span class="fp-dot" style="background:var(--cyan);"></span>
-    Conversion &amp; Processing
-    <i class="fas fa-chevron-down fp-arr"></i>
-  </button>
-  <div class="fp-cat-body">
+<div class="fp-wrap">
+  <section class="fp-hero">
+    <div class="fp-badge fp-anim"><i class="fas fa-exchange-alt"></i>&nbsp; ConvertX Module</div>
+    <h1 class="fp-anim" data-d="1">Convert Any File<br>Format Instantly</h1>
+    <p class="fp-anim" data-d="2">Powerful file conversion for images, documents, audio, and video. Batch process hundreds of files with a single click.</p>
+    <div class="fp-btns fp-anim" data-d="3">
+      <?php if(Auth::check()): ?>
+        <a href="/dashboard" class="fp-btn-primary"><i class="fas fa-rocket"></i> Go to Dashboard</a>
+      <?php else: ?>
+        <a href="/register" class="fp-btn-primary"><i class="fas fa-rocket"></i> Get Started Free</a>
+        <a href="/login" class="fp-btn-outline"><i class="fas fa-sign-in-alt"></i> Sign In</a>
+      <?php endif; ?>
+    </div>
+    <div class="fp-stats fp-anim" data-d="3">
+      <span class="fp-stat"><strong>50+</strong> Formats</span>
+      <span class="fp-stat"><strong>Batch</strong> Convert</span>
+      <span class="fp-stat"><strong>OCR</strong> Ready</span>
+      <span class="fp-stat"><strong>REST</strong> API</span>
+    </div>
+  </section>
+
+  <section class="fp-section fp-anim">
+    <div class="fp-lbl"><i class="fas fa-layer-group"></i> Feature Categories</div>
+    <h2>Convert Everything, Instantly</h2>
+    <p class="fp-sub">Images, documents, compression &mdash; one unified pipeline with blazing-fast performance.</p>
     <div class="fp-grid">
+
       <div class="fp-card">
-        <div class="fp-ic ic-c"><i class="fas fa-eye"></i></div>
-        <h3>Live Preview Before Download</h3>
-        <p>Preview converted output before downloading. Image preview, document first-page preview, and audio waveform.</p>
-      </div>      <div class="fp-card">
-        <div class="fp-ic ic-p"><i class="fas fa-compress"></i></div>
-        <h3>Compression &amp; Quality Control</h3>
-        <p>Per-format quality sliders (JPEG 1–100, video bitrate, audio kbps). Estimated output size shown before conversion.</p>
-      </div>      <div class="fp-card">
-        <div class="fp-ic ic-g"><i class="fas fa-crop-alt"></i></div>
-        <h3>Image Resize &amp; Crop</h3>
-        <p>Set target dimensions, maintain aspect ratio, pad/fill, or free-crop before final output.</p>
-      </div>      <div class="fp-card">
-        <div class="fp-ic ic-o"><i class="fas fa-font"></i></div>
-        <h3>OCR Text Extraction</h3>
-        <p>Tesseract OCR with 100+ language support. Output as TXT, DOCX, or searchable PDF.</p>
-      <span class="fp-tag">OCR</span>
-      </div>      <div class="fp-card">
-        <div class="fp-ic ic-m"><i class="fas fa-lock"></i></div>
-        <h3>PDF Password Protection</h3>
-        <p>Encrypt PDF output with owner + user passwords. Set permissions (print, copy, edit) per document.</p>
-      </div>      <div class="fp-card">
-        <div class="fp-ic ic-c"><i class="fas fa-object-group"></i></div>
-        <h3>PDF Merge &amp; Split</h3>
-        <p>Merge multiple PDFs into one document. Split by page range, every N pages, or by bookmarks.</p>
-      </div>      <div class="fp-card">
-        <div class="fp-ic ic-p"><i class="fas fa-stamp"></i></div>
-        <h3>Watermark Injection</h3>
-        <p>Add text or image watermarks. Configurable opacity, position, rotation, and font.</p>
-      </div>      <div class="fp-card">
-        <div class="fp-ic ic-g"><i class="fas fa-redo"></i></div>
-        <h3>Image Rotation &amp; Flip</h3>
-        <p>Rotate by arbitrary degrees, flip horizontal/vertical, and auto-rotate via EXIF data.</p>
-      </div>      <div class="fp-card">
-        <div class="fp-ic ic-o"><i class="fas fa-cut"></i></div>
-        <h3>Video Trim &amp; Clip</h3>
-        <p>Frame-accurate in/out points via FFmpeg. Extract exactly the segment you need before conversion.</p>
+        <div class="fp-card-icon c-cyan">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        </div>
+        <h3>Image Conversion</h3>
+        <ul>
+          <li class="dot-cyan">JPG / PNG / WebP / AVIF</li>
+          <li class="dot-cyan">SVG / TIFF / BMP / GIF</li>
+          <li class="dot-cyan">Resize &amp; crop</li>
+          <li class="dot-cyan">Smart compression</li>
+          <li class="dot-cyan">Background removal (AI)</li>
+          <li class="dot-cyan">Colour space conversion</li>
+          <li class="dot-cyan">Watermark overlay</li>
+          <li class="dot-cyan">Batch rename on export</li>
+        </ul>
+      </div>
+
+      <div class="fp-card">
+        <div class="fp-card-icon c-purple">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        </div>
+        <h3>Document Conversion</h3>
+        <ul>
+          <li class="dot-purple">PDF &harr; Word / Excel / PPT</li>
+          <li class="dot-purple">HTML &rarr; PDF rendering</li>
+          <li class="dot-purple">Markdown &rarr; PDF / HTML</li>
+          <li class="dot-purple">OCR text extraction</li>
+          <li class="dot-purple">Image &rarr; searchable PDF</li>
+          <li class="dot-purple">Merge &amp; split PDFs</li>
+          <li class="dot-purple">Password protect PDFs</li>
+          <li class="dot-purple">Form field extraction</li>
+        </ul>
+      </div>
+
+      <div class="fp-card">
+        <div class="fp-card-icon c-green">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <h3>Compression</h3>
+        <ul>
+          <li class="dot-green">Smart auto-compression</li>
+          <li class="dot-green">Quality slider control</li>
+          <li class="dot-green">Lossless &amp; lossy modes</li>
+          <li class="dot-green">Before/after size preview</li>
+          <li class="dot-green">Target file size mode</li>
+          <li class="dot-green">PDF compression</li>
+          <li class="dot-green">ZIP archive packing</li>
+          <li class="dot-green">Compression ratio report</li>
+        </ul>
+      </div>
+
+      <div class="fp-card">
+        <div class="fp-card-icon c-orange">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+        </div>
+        <h3>Batch Processing</h3>
+        <ul>
+          <li class="dot-orange">Multi-file drag &amp; drop upload</li>
+          <li class="dot-orange">ZIP output download</li>
+          <li class="dot-orange">Live progress tracking</li>
+          <li class="dot-orange">Queue management</li>
+          <li class="dot-orange">Error file reporting</li>
+          <li class="dot-orange">Folder structure preserve</li>
+          <li class="dot-orange">Scheduled batch jobs</li>
+          <li class="dot-orange">Email on completion</li>
+        </ul>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="fp-section fp-anim">
+    <div class="fp-lbl"><i class="fas fa-route"></i> Workflow</div>
+    <h2>How It Works</h2>
+    <p class="fp-sub">Upload, configure, convert, and download in four frictionless steps.</p>
+    <div class="fp-steps">
+      <div class="fp-step"><div class="fp-step-num">1</div><h4>Upload</h4><p>Drag and drop single files or entire ZIP archives into the conversion panel.</p></div>
+      <div class="fp-step"><div class="fp-step-num">2</div><h4>Select Format</h4><p>Choose your target format, quality, resolution, and any advanced options.</p></div>
+      <div class="fp-step"><div class="fp-step-num">3</div><h4>Convert</h4><p>Our pipeline processes files in parallel &mdash; most conversions complete in seconds.</p></div>
+      <div class="fp-step"><div class="fp-step-num">4</div><h4>Download</h4><p>Download converted files individually or as a single ZIP archive.</p></div>
+    </div>
+  </section>
+
+  <section class="fp-section fp-anim">
+    <div class="fp-lbl"><i class="fas fa-code"></i> Developer API</div>
+    <h2>REST API Access</h2>
+    <p class="fp-sub">Integrate file conversion directly into your app &mdash; submit jobs and poll for results asynchronously.</p>
+    <div class="fp-api">
+      <h3><i class="fas fa-terminal"></i> Endpoints</h3>
+      <div class="fp-endpoint"><span class="fp-method post">POST</span><code>/api/v1/convert</code><span class="ep-desc">Submit a conversion job</span></div>
+      <div class="fp-endpoint"><span class="fp-method get">GET</span><code>/api/v1/jobs/{id}</code><span class="ep-desc">Poll job status</span></div>
+      <div class="fp-endpoint"><span class="fp-method get">GET</span><code>/api/v1/jobs/{id}/download</code><span class="ep-desc">Download result file</span></div>
+      <div class="fp-endpoint"><span class="fp-method post">POST</span><code>/api/v1/convert/batch</code><span class="ep-desc">Submit a batch job</span></div>
+    </div>
+  </section>
+
+  <section class="fp-section fp-anim">
+    <div class="fp-lbl"><i class="fas fa-table"></i> Plans</div>
+    <h2>Compare Plans</h2>
+    <p class="fp-sub">Choose the ConvertX plan that matches your volume and format requirements.</p>
+    <div class="fp-t-wrap">
+      <table class="fp-t">
+        <thead><tr>
+          <th>Feature</th><th>Free</th><th>Starter</th>
+          <th class="pro">Pro <span class="badge-pop">Popular</span></th><th>Enterprise</th>
+        </tr></thead>
+        <tbody>
+          <tr><td>Image Convert</td><td><i class="fas fa-check chk"></i></td><td><i class="fas fa-check chk"></i></td><td class="pro"><i class="fas fa-check chk"></i></td><td><i class="fas fa-check chk"></i></td></tr>
+          <tr><td>Document Convert</td><td><i class="fas fa-times x"></i></td><td><i class="fas fa-check chk"></i></td><td class="pro"><i class="fas fa-check chk"></i></td><td><i class="fas fa-check chk"></i></td></tr>
+          <tr><td>Video Convert</td><td><i class="fas fa-times x"></i></td><td><i class="fas fa-times x"></i></td><td class="pro"><i class="fas fa-check chk"></i></td><td><i class="fas fa-check chk"></i></td></tr>
+          <tr><td>Batch Processing</td><td><i class="fas fa-times x"></i></td><td>10 files</td><td class="pro">Unlimited</td><td>Unlimited</td></tr>
+          <tr><td>OCR</td><td><i class="fas fa-times x"></i></td><td><i class="fas fa-times x"></i></td><td class="pro"><i class="fas fa-check chk"></i></td><td><i class="fas fa-check chk"></i></td></tr>
+          <tr><td>API Access</td><td><i class="fas fa-times x"></i></td><td><i class="fas fa-times x"></i></td><td class="pro"><i class="fas fa-check chk"></i></td><td><i class="fas fa-check chk"></i></td></tr>
+          <tr><td>Priority Queue</td><td><i class="fas fa-times x"></i></td><td><i class="fas fa-times x"></i></td><td class="pro"><i class="fas fa-check chk"></i></td><td><i class="fas fa-check chk"></i></td></tr>
+          <tr><td>White-Label</td><td><i class="fas fa-times x"></i></td><td><i class="fas fa-times x"></i></td><td class="pro"><i class="fas fa-times x"></i></td><td><i class="fas fa-check chk"></i></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="fp-hl fp-anim">
+    <div class="fp-hl-inner">
+      <h2>Blazing Fast Conversion Pipeline</h2>
+      <p>Powered by an async parallel-processing engine, ConvertX handles thousands of concurrent jobs &mdash; images in &lt;200ms, documents in seconds.</p>
+      <div class="fp-hl-tags">
+        <span class="fp-hl-tag">50+ Formats</span>
+        <span class="fp-hl-tag">Async Jobs</span>
+        <span class="fp-hl-tag">OCR Engine</span>
+        <span class="fp-hl-tag">ZIP Output</span>
+        <span class="fp-hl-tag">Priority Queue</span>
       </div>
     </div>
   </div>
-</div></div>
-</div>
-<div class="fp-sec">
-<div class="fp-sec-hd fp-anim">
-  <span class="fp-lbl">Batch Processing</span>
-  <h2>Convert Thousands at Once</h2>
-  
-</div><div class="fp-steps fp-anim">
-  <div class="fp-step"><div class="fp-step-n">1</div><h4>Multi-File Upload</h4><p>Drag &amp; drop up to 500 files. Parallel upload with per-file progress.</p></div>
-  <div class="fp-step"><div class="fp-step-n">2</div><h4>Apply Settings</h4><p>Set output format and options globally for all files.</p></div>
-  <div class="fp-step"><div class="fp-step-n">3</div><h4>Queue &amp; Priority</h4><p>Redis-backed queue. Priority lanes for Pro plans. Pause/resume.</p></div>
-  <div class="fp-step"><div class="fp-step-n">4</div><h4>Notification</h4><p>Email/webhook alert on batch complete with partial-success report.</p></div>
-  <div class="fp-step"><div class="fp-step-n">5</div><h4>ZIP Download</h4><p>All files in one ZIP. CDN-hosted with 24 h expiry link.</p></div>
-</div></div>
-<div class="fp-alt">
-<div class="fp-sec">
-<div class="fp-sec-hd fp-anim">
-  <span class="fp-lbl">Developer API</span>
-  <h2>API-First Conversion</h2>
-  
-</div><div class="fp-api fp-anim">
-  <div class="fp-api-h"><span class="fp-m fp-m-post">POST</span><span class="fp-api-p">/api/v1/convert</span></div>
-  <div class="fp-api-b">{
-  "input_url": "https://example.com/document.docx",
-  "output_format": "pdf",
-  "options": {
-    "quality": 90,
-    "watermark": { "text": "CONFIDENTIAL", "opacity": 0.3 },
-    "password": "secret123"
-  },
-  "webhook_url": "https://yourapp.com/webhook/convert",
-  "async": true
-}</div>
-</div><div class="fp-api fp-anim">
-  <div class="fp-api-h"><span class="fp-m fp-m-get">GET</span><span class="fp-api-p">/api/v1/jobs/{id}/status</span></div>
-  <div class="fp-api-b">{ "status": "completed", "input_format": "docx", "output_format": "pdf",
-  "file_size_kb": 248, "download_url": "https://cdn.example.com/out/job_xyz.pdf",
-  "expires_at": "2025-12-31T23:59:59Z" }</div>
-</div><div class="fp-grid fp-anim">
-      <div class="fp-card">
-        <div class="fp-ic ic-c"><i class="fas fa-link"></i></div>
-        <h3>URL &amp; S3 Input Sources</h3>
-        <p>Submit files via direct URL, Amazon S3 presigned URL, Google Cloud Storage, or Dropbox/Drive links.</p>
-      </div>      <div class="fp-card">
-        <div class="fp-ic ic-p"><i class="fas fa-cloud-upload-alt"></i></div>
-        <h3>S3 Output Delivery</h3>
-        <p>Deliver converted files directly to your S3 bucket, GCS bucket, or FTP/SFTP server.</p>
-      </div>      <div class="fp-card">
-        <div class="fp-ic ic-g"><i class="fas fa-tachometer-alt"></i></div>
-        <h3>Throughput SLAs</h3>
-        <p>P95 target: under 5 s for documents, under 30 s per minute of video content.</p>
-      </div></div>
-</div>
-</div>
-<div class="fp-sec">
-<div class="fp-sec-hd fp-anim">
-  <span class="fp-lbl">Security</span>
-  <h2>Your Files Are Safe</h2>
-  
-</div><div class="fp-grid fp-anim">
-      <div class="fp-card">
-        <div class="fp-ic ic-m"><i class="fas fa-trash-alt"></i></div>
-        <h3>Auto-Delete After Conversion</h3>
-        <p>All uploaded files and outputs permanently deleted after 1 hour (configurable). Zero long-term storage.</p>
-      </div>      <div class="fp-card">
-        <div class="fp-ic ic-c"><i class="fas fa-shield-alt"></i></div>
-        <h3>End-to-End Encryption</h3>
-        <p>Files encrypted in transit (TLS 1.3) and at rest (AES-256). Per-user keys on Enterprise.</p>
-      </div>      <div class="fp-card">
-        <div class="fp-ic ic-p"><i class="fas fa-virus-slash"></i></div>
-        <h3>Malware Scanning</h3>
-        <p>All uploads scanned with ClamAV before processing. Infected files rejected with detailed error report.</p>
-      </div>      <div class="fp-card">
-        <div class="fp-ic ic-g"><i class="fas fa-eye-slash"></i></div>
-        <h3>Isolated Sandbox</h3>
-        <p>Files processed in per-request sandboxed containers. No cross-tenant data access possible.</p>
-      </div>      <div class="fp-card">
-        <div class="fp-ic ic-o"><i class="fas fa-file-contract"></i></div>
-        <h3>GDPR Compliance</h3>
-        <p>Right-to-erasure endpoint, data processing agreements, and processing log export for audits.</p>
-      </div>      <div class="fp-card">
-        <div class="fp-ic ic-m"><i class="fas fa-list-alt"></i></div>
-        <h3>File Type Controls</h3>
-        <p>Configurable per-plan file size limits. Extension whitelist/blacklist for security hardening.</p>
-      </div></div>
-</div>
-<div class="fp-tw fp-anim">
-  <table class="fp-t">
-    <thead><tr><th>Feature</th><th>Free</th><th>Pro</th><th>Enterprise</th></tr></thead>
-    <tbody><tr><td>Max File Size</td><td>25 MB</td><td>500 MB</td><td>10 GB</td></tr>
-<tr><td>Formats</td><td>50+</td><td>200+</td><td>200+</td></tr>
-<tr><td>OCR</td><td><i class="fas fa-times no"></i></td><td><i class="fas fa-check ck"></i></td><td><i class="fas fa-check ck"></i></td></tr>
-<tr><td>Batch Processing</td><td><i class="fas fa-times no"></i></td><td><i class="fas fa-check ck"></i></td><td><i class="fas fa-check ck"></i></td></tr>
-<tr><td>API Access</td><td><i class="fas fa-times no"></i></td><td><i class="fas fa-check ck"></i></td><td><i class="fas fa-check ck"></i></td></tr>
-<tr><td>S3 Delivery</td><td><i class="fas fa-times no"></i></td><td><i class="fas fa-times no"></i></td><td><i class="fas fa-check ck"></i></td></tr>
-<tr><td>SLA Guarantee</td><td><i class="fas fa-times no"></i></td><td><i class="fas fa-times no"></i></td><td><i class="fas fa-check ck"></i></td></tr>
-</tbody>
-  </table>
-</div><div class="fp-hl fp-anim">
-  <h3><i class="fas fa-bolt"></i> Powered by FFmpeg &amp; LibreOffice</h3>
-  <p>ConvertX uses battle-tested open-source engines under a hardened API layer — giving you reliable, high-fidelity conversions at any scale.</p>
-</div>
+
+  <div class="fp-cta fp-anim">
+    <h2>Convert Your First File Free</h2>
+    <p>No sign-up required for basic conversions. Go Pro for batch processing, OCR, and full API access.</p>
+    <div class="fp-btns">
+      <?php if(Auth::check()): ?>
+        <a href="/dashboard" class="fp-btn-primary"><i class="fas fa-rocket"></i> Go to Dashboard</a>
+      <?php else: ?>
+        <a href="/register" class="fp-btn-primary"><i class="fas fa-rocket"></i> Get Started Free</a>
+        <a href="/login" class="fp-btn-outline"><i class="fas fa-sign-in-alt"></i> Sign In</a>
+      <?php endif; ?>
+    </div>
+  </div>
 </div>
 <script>
-
-// Scroll-in animations
 (function(){
-  var obs = new IntersectionObserver(function(entries){
-    entries.forEach(function(e){ if(e.isIntersecting) e.target.classList.add('vis'); });
-  },{threshold:0.1});
-  document.querySelectorAll('.fp-anim').forEach(function(el){ obs.observe(el); });
+  var els=document.querySelectorAll('.fp-anim');
+  if(!els.length)return;
+  var io=new IntersectionObserver(function(entries){
+    entries.forEach(function(e){if(e.isIntersecting){e.target.classList.add('vis');io.unobserve(e.target);}});
+  },{threshold:.12});
+  els.forEach(function(el){io.observe(el);});
 })();
-
-// Mobile accordions
-(function(){
-  document.querySelectorAll('.fp-cat-btn').forEach(function(btn){
-    btn.addEventListener('click',function(){
-      if(window.innerWidth > 768) return;
-      var expanded = btn.getAttribute('aria-expanded') === 'true';
-      btn.setAttribute('aria-expanded', expanded ? 'false' : 'true');
-      var body = btn.nextElementSibling;
-      if(body) body.classList.toggle('is-closed', expanded);
-    });
-    // Start collapsed on mobile
-    if(window.innerWidth <= 768){
-      btn.setAttribute('aria-expanded','false');
-      var body = btn.nextElementSibling;
-      if(body) body.classList.add('is-closed');
-    }
-  });
-})();
-
-// Tabs
-(function(){
-  document.querySelectorAll('.fp-tab-btn').forEach(function(btn){
-    btn.addEventListener('click',function(){
-      var panel = btn.dataset.tab;
-      var wrap = btn.closest('.fp-tab-wrap');
-      wrap.querySelectorAll('.fp-tab-btn').forEach(function(b){ b.classList.remove('active'); });
-      wrap.querySelectorAll('.fp-tab-p').forEach(function(p){ p.classList.remove('active'); });
-      btn.classList.add('active');
-      var target = wrap.querySelector('#'+panel);
-      if(target) target.classList.add('active');
-    });
-  });
-})();
-
 </script>
 <?php View::endSection(); ?>
