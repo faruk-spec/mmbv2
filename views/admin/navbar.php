@@ -330,17 +330,18 @@
             </div>
             
             <div id="logo-image-section" class="form-group" <?= $settings['logo_type'] !== 'image' ? 'style="display:none"' : '' ?>>
-                <label>Logo Image / SVG</label>
-                <input type="file" name="logo_image" class="form-control" accept="image/*,.svg">
-                <small>Upload a logo image (PNG, JPG, GIF, WebP, SVG). Current: <?= $settings['logo_image_url'] ? View::e($settings['logo_image_url']) : 'None' ?></small>
-                <?php if ($settings['logo_image_url']): ?>
-                    <div style="margin-top: 10px;">
-                        <img src="<?= View::e($settings['logo_image_url']) ?>" alt="Current Logo" style="max-height: 50px; border-radius: 6px;">
-                    </div>
-                <?php endif; ?>
+                <label>Logo Image / SVG — Upload</label>
+                <input type="file" name="logo_image" class="form-control" accept="image/*,.svg" onchange="previewNavbarLogo(this)">
+                <small>Upload a logo image (PNG, JPG, GIF, WebP, SVG). Uploaded file takes priority over the URL below.</small>
+                
+                <label style="margin-top: 14px; display: block;">Or paste an image URL</label>
+                <input type="text" name="logo_image_url" class="form-control" value="<?= View::e($settings['logo_image_url'] ?? '') ?>" placeholder="https://example.com/logo.png  or  /uploads/navbar/logo.svg">
+                <small>You can type or paste any accessible image URL here. Leave blank to keep the currently uploaded file.</small>
+                
+                <div id="logo-image-preview" style="margin-top: 10px; <?= $settings['logo_image_url'] ? '' : 'display:none;' ?>">
+                    <img id="logo-img-tag" src="<?= View::e($settings['logo_image_url'] ?? '') ?>" alt="Logo Preview" style="max-height: 50px; border-radius: 6px;">
+                </div>
             </div>
-            
-            <input type="hidden" name="logo_image_url" value="<?= View::e($settings['logo_image_url'] ?? '') ?>">
         </div>
 
         <!-- Link Visibility -->
@@ -601,10 +602,43 @@ function toggleLogoType(value) {
     document.getElementById('logo-image-section').style.display = value === 'image' ? '' : 'none';
 }
 
+function previewNavbarLogo(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const preview = document.getElementById('logo-image-preview');
+            const img     = document.getElementById('logo-img-tag');
+            img.src = e.target.result;
+            preview.style.display = '';
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+// Live preview when URL is pasted/typed
+document.addEventListener('DOMContentLoaded', function() {
+    const urlInput = document.querySelector('input[name="logo_image_url"]');
+    if (urlInput) {
+        urlInput.addEventListener('input', function() {
+            const preview = document.getElementById('logo-image-preview');
+            const img     = document.getElementById('logo-img-tag');
+            if (this.value.trim()) {
+                img.src = this.value.trim();
+                preview.style.display = '';
+            } else {
+                preview.style.display = 'none';
+            }
+        });
+    }
+});
+</script>
+
+<script>
+let linkCounter = <?= !empty($settings['custom_links']) ? count($settings['custom_links']) : 0 ?>;
+
 function previewLinkLogo(input) {
-    const row    = input.closest('.upload-row');
-    const urlBox = row.querySelector('input[type="text"]');
-    const img    = row.querySelector('img.logo-preview');
+    const row = input.closest('.upload-row');
+    const img = row.querySelector('img.logo-preview');
     if (input.files && input.files[0]) {
         const reader = new FileReader();
         reader.onload = e => {
@@ -614,10 +648,6 @@ function previewLinkLogo(input) {
         reader.readAsDataURL(input.files[0]);
     }
 }
-</script>
-
-<script>
-let linkCounter = <?= !empty($settings['custom_links']) ? count($settings['custom_links']) : 0 ?>;
 
 function addCustomLink() {
     const container = document.getElementById('custom-links-container');

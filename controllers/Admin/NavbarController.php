@@ -177,10 +177,9 @@ class NavbarController extends BaseController
             $updateFields[] = "logo_text = ?";
             $updateValues[] = $logoText;
             
-            if (!empty($logoImageUrl)) {
-                $updateFields[] = "logo_image_url = ?";
-                $updateValues[] = $logoImageUrl;
-            }
+            // Always update logo_image_url – allows clearing it when the field is emptied
+            $updateFields[] = "logo_image_url = ?";
+            $updateValues[] = $logoImageUrl ?: null;
             
             // Check if extended columns exist by trying to describe the table
             $columns = $this->db->fetchAll("DESCRIBE navbar_settings");
