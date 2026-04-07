@@ -150,9 +150,11 @@ class NavbarController extends BaseController
                                 'icon'        => $diIcons[$si] ?? '',
                                 'logo_url'    => $diLogoUrls[$si] ?? '',
                                 'description' => $diDescs[$si] ?? '',
-                                'text_color'  => $diColors[$si] ?? '',
+                                // Validate hex color to prevent CSS injection at render time
+                                'text_color'  => preg_match('/^#[0-9A-Fa-f]{6}$/', $diColors[$si] ?? '') ? $diColors[$si] : '',
                                 'font_bold'   => ($diBolds[$si] ?? 'normal') === 'bold',
-                                'font_size'   => (int)($diSizes[$si] ?? 14),
+                                // Clamp font size to safe range (matches HTML min/max attributes)
+                                'font_size'   => min(max((int)($diSizes[$si] ?? 14), 10), 32),
                             ];
                         }
                     }
@@ -339,7 +341,7 @@ class NavbarController extends BaseController
             @chmod($uploadDir, 0775);
         }
 
-        $filename   = 'logo_' . time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $originalName);
+        $filename   = 'logo_' . uniqid('', true) . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $originalName);
         $targetPath = $uploadDir . $filename;
 
         if (move_uploaded_file($tmpPath, $targetPath)) {

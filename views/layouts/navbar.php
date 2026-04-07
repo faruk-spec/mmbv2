@@ -151,9 +151,15 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
                                 <?php foreach ($link['dropdown_items'] as $subLink): ?>
                                     <?php
                                         $diStyle = '';
-                                        if (!empty($subLink['text_color'])) $diStyle .= 'color:' . htmlspecialchars($subLink['text_color']) . ';';
-                                        if (!empty($subLink['font_bold']))   $diStyle .= 'font-weight:bold;';
-                                        if (!empty($subLink['font_size']))   $diStyle .= 'font-size:' . (int)$subLink['font_size'] . 'px;';
+                                        // Validate hex color before inserting into style attribute to prevent CSS injection
+                                        $rawColor = $subLink['text_color'] ?? '';
+                                        if (preg_match('/^#[0-9A-Fa-f]{6}$/', $rawColor)) {
+                                            $diStyle .= 'color:' . $rawColor . ';';
+                                        }
+                                        if (!empty($subLink['font_bold'])) $diStyle .= 'font-weight:bold;';
+                                        $rawSize = (int)($subLink['font_size'] ?? 14);
+                                        $rawSize = min(max($rawSize, 10), 32);
+                                        $diStyle .= 'font-size:' . $rawSize . 'px;';
                                     ?>
                                     <a href="<?= htmlspecialchars($subLink['url']) ?>" class="dropdown-item" style="<?= $diStyle ?>">
                                         <?php if (!empty($subLink['logo_url'])): ?>

@@ -108,7 +108,7 @@ $router->get('/uploads/{path:wildcard}', function($path) {
     header('Content-Type: ' . ($mimeTypes[$ext] ?? 'application/octet-stream'));
     // Restrict SVG execution context for security
     if ($ext === 'svg') {
-        header('Content-Security-Policy: default-src \'none\'; style-src \'unsafe-inline\'');
+        header('Content-Security-Policy: default-src \'none\'');
         header('X-Content-Type-Options: nosniff');
     }
     header('Content-Length: ' . filesize($filePath));
