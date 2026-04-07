@@ -552,7 +552,6 @@ $featuresSubheading = $sections['features']['subheading'] ?? 'Powerful capabilit
     backdrop-filter: blur(10px);
     z-index: 3;
     font-family: var(--font-heading);
-    animation: hp-chip-float 0.1s linear;
 }
 
 .hp-chip-1 { top: 12%;    left: 2%;   animation: hp-chip-bob 5s ease-in-out infinite; }
@@ -1533,14 +1532,14 @@ $timelineItems = $db->fetchAll("SELECT * FROM home_timeline WHERE is_active = 1 
 /* Animated stat counters — count up when scrolled into view */
 (function() {
     function parseNum(val) {
-        var clean = val.replace(/[^0-9.]/g, '');
-        return parseFloat(clean) || 0;
+        var clean = val.replace(/[^0-9]/g, '');
+        return parseInt(clean, 10) || 0;
     }
     function formatNum(n, template) {
         var rounded = Math.round(n);
         // Re-apply suffix/prefix found in the original string
         var prefix = template.match(/^[^0-9]*/)[0] || '';
-        var suffix = template.match(/[^0-9.]+$/);
+        var suffix = template.match(/[^0-9]+$/);
         suffix = suffix ? suffix[0] : '';
         // Format with commas
         var formatted = rounded.toLocaleString();
