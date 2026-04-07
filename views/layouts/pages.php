@@ -16,7 +16,7 @@ try {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="<?= View::e($page['meta_description'] ?? '') ?>">
     <meta name="csrf-token" content="<?= Security::generateCsrfToken() ?>">
-    <title><?= View::e($title ?? 'Page') ?> - <?= APP_NAME ?></title>
+    <title><?= View::e($title ?? 'Page') ?> - <?= htmlspecialchars(APP_NAME, ENT_QUOTES, 'UTF-8') ?></title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -42,7 +42,7 @@ try {
 <nav class="page-navbar">
     <div class="container">
         <div class="nav-inner">
-            <a href="/" class="brand"><i class="fas fa-bolt"></i> <?= APP_NAME ?></a>
+            <a href="/" class="brand"><i class="fas fa-bolt"></i> <?= htmlspecialchars(APP_NAME, ENT_QUOTES, 'UTF-8') ?></a>
             <div>
                 <?php if (\Core\Auth::check()): ?>
                     <a href="/dashboard" style="color:var(--text-secondary);margin-right:15px;"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
@@ -65,7 +65,7 @@ try {
 <?php if ($show_footer ?? true): ?>
 <footer class="page-footer">
     <div class="container">
-        <p>&copy; <?= date('Y') ?> <?= APP_NAME ?>. All rights reserved.</p>
+        <p>&copy; <?= date('Y') ?> <?= htmlspecialchars(APP_NAME, ENT_QUOTES, 'UTF-8') ?>. All rights reserved.</p>
     </div>
 </footer>
 <?php endif; ?>

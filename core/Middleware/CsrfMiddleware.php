@@ -38,7 +38,13 @@ class CsrfMiddleware
                 Helpers::json(['error' => 'CSRF token mismatch'], 419);
             } else {
                 Helpers::flash('error', 'Your session has expired or the request was invalid. Please try again.');
+                // Validate referer is from the same origin to prevent open redirect
                 $referer = $_SERVER['HTTP_REFERER'] ?? '/';
+                $host = $_SERVER['HTTP_HOST'] ?? '';
+                $refererHost = parse_url($referer, PHP_URL_HOST) ?? '';
+                if (!empty($refererHost) && $refererHost !== $host) {
+                    $referer = '/';
+                }
                 Helpers::redirect($referer);
             }
             return false;

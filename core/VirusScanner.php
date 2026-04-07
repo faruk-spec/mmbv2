@@ -103,7 +103,7 @@ class VirusScanner
     {
         try {
             $encodedUrl = rtrim(strtr(base64_encode($url), '+/', '-_'), '=');
-            $ch = curl_init("https://www.virustotalapi.com/api/v3/urls/{$encodedUrl}");
+            $ch = curl_init("https://www.virustotal.com/api/v3/urls/{$encodedUrl}");
             curl_setopt_array($ch, [
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_TIMEOUT        => 5,
