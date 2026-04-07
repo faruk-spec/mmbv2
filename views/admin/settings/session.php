@@ -148,7 +148,9 @@
                     <select name="user_id" class="form-input" required>
                         <option value="">-- Select User --</option>
                         <?php foreach (($activeSessions ?? []) as $us): ?>
-                        <option value="<?= (int)$us['user_id'] ?>"><?= View::e($us['user_name'] ?? $us['email'] ?? 'User #' . $us['user_id']) ?> (<?= (int)$us['session_count'] ?> active session<?= $us['session_count'] > 1 ? 's' : '' ?>)</option>
+                        <option value="<?= (int)$us['user_id'] ?>">
+                            <?= View::e($us['user_name'] ?: 'User #' . $us['user_id']) ?> — <?= View::e($us['email'] ?? '') ?> (<?= (int)$us['session_count'] ?> active session<?= $us['session_count'] > 1 ? 's' : '' ?>)
+                        </option>
                         <?php endforeach; ?>
                     </select>
                 </div>

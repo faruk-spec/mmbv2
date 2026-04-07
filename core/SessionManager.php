@@ -128,6 +128,22 @@ class SessionManager
             return false;
         }
         
+        // Check database to see if this session was force-terminated by an admin
+        try {
+            $db = Database::getInstance();
+            $sessionId = session_id();
+            $row = $db->fetch(
+                "SELECT is_active FROM user_sessions WHERE session_id = ? AND user_id = ? LIMIT 1",
+                [$sessionId, Auth::id()]
+            );
+            if ($row && (int)$row['is_active'] === 0) {
+                self::terminateSession('force_logout');
+                return false;
+            }
+        } catch (\Exception $e) {
+            Logger::error('Session is_active check failed: ' . $e->getMessage());
+        }
+
         // Update activity timestamp
         self::updateActivity();
         

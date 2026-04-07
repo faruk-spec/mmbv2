@@ -1102,9 +1102,9 @@ try {
     <div style="height:56px;"></div>
     <?php endif; ?>
     <?php
-    // Check if a new login happened on another device for the current session
-    if (\Core\Auth::check() && !isset($_SESSION['_new_login_notification_checked'])) {
-        $_SESSION['_new_login_notification_checked'] = true;
+    // Check if a new login happened on another device — runs on every page load so existing
+    // sessions always get notified even after the first load post-login.
+    if (\Core\Auth::check()) {
         try {
             $dbNL = \Core\Database::getInstance();
             $nlNotify = $dbNL->fetch(
@@ -1114,8 +1114,10 @@ try {
             if ($nlNotify) {
                 $nlData = json_decode($nlNotify['value'], true);
                 $sessionCreatedAt = $_SESSION['_login_time'] ?? 0;
+                // Only show if notification is newer than this session (with 5-second buffer)
                 if (!empty($nlData['time']) && $nlData['time'] > $sessionCreatedAt + 5) {
                     $_SESSION['_show_new_login_alert'] = $nlData;
+                    // Delete so it shows exactly once per notification
                     $dbNL->delete('settings', '`key` = ?', ['new_login_notify_' . \Core\Auth::id()]);
                 }
             }

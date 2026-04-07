@@ -44,7 +44,7 @@ class VirusScanner
             return ['safe' => false, 'reason' => 'URL contains a blocked or unsafe target.'];
         }
 
-        $apiKey = defined('VIRUSTOTAL_API_KEY') ? VIRUSTOTAL_API_KEY : (config('virus_scan.virustotal_api_key') ?? '');
+        $apiKey = defined('VIRUSTOTAL_API_KEY') ? VIRUSTOTAL_API_KEY : (\Core\Helpers::config('virus_scan.virustotal_api_key') ?? '');
         if (!empty($apiKey)) {
             $result = self::checkVirusTotal($url, $apiKey);
             if ($result !== null) return $result;

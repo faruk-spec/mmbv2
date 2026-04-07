@@ -21,7 +21,7 @@ class PagesController extends BaseController
                 return;
             }
 
-            View::extend('pages');
+            View::extend('main');
             View::render('pages/show', [
                 'title'       => $page['meta_title'] ?: $page['title'],
                 'page'        => $page,

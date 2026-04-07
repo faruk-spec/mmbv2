@@ -222,7 +222,6 @@ foreach ($knownProjects as $_proj) {
             \Core\View::render('errors/project-disabled', ['project' => $_proj]);
             return;
         }
-        $_SERVER['REQUEST_URI'] = '/projects/' . $_proj;
         $f = BASE_PATH . '/projects/' . $_proj . '/index.php';
         if (file_exists($f)) require_once $f;
         else { http_response_code(404); \Core\View::render('errors/404'); }
@@ -233,9 +232,6 @@ foreach ($knownProjects as $_proj) {
             \Core\View::render('errors/project-disabled', ['project' => $_proj]);
             return;
         }
-        $originalUri = $_SERVER['REQUEST_URI'];
-        $qs = strpos($originalUri, '?') !== false ? substr($originalUri, strpos($originalUri, '?')) : '';
-        $_SERVER['REQUEST_URI'] = '/projects/' . $_proj . '/' . ltrim($path, '/') . $qs;
         $f = BASE_PATH . '/projects/' . $_proj . '/index.php';
         if (file_exists($f)) require_once $f;
         else { http_response_code(404); \Core\View::render('errors/404'); }
@@ -246,9 +242,6 @@ foreach ($knownProjects as $_proj) {
             \Core\Helpers::json(['error' => 'Project is disabled'], 503);
             return;
         }
-        $originalUri = $_SERVER['REQUEST_URI'];
-        $qs = strpos($originalUri, '?') !== false ? substr($originalUri, strpos($originalUri, '?')) : '';
-        $_SERVER['REQUEST_URI'] = '/projects/' . $_proj . '/' . ltrim($path, '/') . $qs;
         $f = BASE_PATH . '/projects/' . $_proj . '/index.php';
         if (file_exists($f)) require_once $f;
         else { http_response_code(404); \Core\View::render('errors/404'); }
@@ -259,9 +252,6 @@ foreach ($knownProjects as $_proj) {
             \Core\Helpers::json(['error' => 'Project is disabled'], 503);
             return;
         }
-        $originalUri = $_SERVER['REQUEST_URI'];
-        $qs = strpos($originalUri, '?') !== false ? substr($originalUri, strpos($originalUri, '?')) : '';
-        $_SERVER['REQUEST_URI'] = '/projects/' . $_proj . '/' . ltrim($path, '/') . $qs;
         $f = BASE_PATH . '/projects/' . $_proj . '/index.php';
         if (file_exists($f)) require_once $f;
         else { http_response_code(404); \Core\View::render('errors/404'); }
@@ -272,9 +262,6 @@ foreach ($knownProjects as $_proj) {
             \Core\Helpers::json(['error' => 'Project is disabled'], 503);
             return;
         }
-        $originalUri = $_SERVER['REQUEST_URI'];
-        $qs = strpos($originalUri, '?') !== false ? substr($originalUri, strpos($originalUri, '?')) : '';
-        $_SERVER['REQUEST_URI'] = '/projects/' . $_proj . '/' . ltrim($path, '/') . $qs;
         $f = BASE_PATH . '/projects/' . $_proj . '/index.php';
         if (file_exists($f)) require_once $f;
         else { http_response_code(404); \Core\View::render('errors/404'); }
