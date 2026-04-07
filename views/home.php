@@ -226,6 +226,40 @@
         box-shadow: 0 12px 36px rgba(124, 58, 237, 0.18), 0 0 0 1px rgba(124, 58, 237, 0.08) !important;
     }
 
+    /* ===== Section Labels & Headings ===== */
+    .hp-section-label {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--purple);
+        background: rgba(153, 69, 255, 0.1);
+        border: 1px solid rgba(153, 69, 255, 0.25);
+        padding: 4px 14px;
+        border-radius: var(--radius-full);
+        margin-bottom: 14px;
+        font-family: var(--font-heading);
+    }
+
+    .hp-section-h2 {
+        font-size: 2rem !important;
+        font-family: var(--font-heading) !important;
+        font-weight: 800 !important;
+        letter-spacing: -0.025em !important;
+        background: var(--gradient-primary);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        display: inline-block;
+    }
+
+    [data-theme="light"] .hp-section-label {
+        color: var(--purple);
+        background: rgba(124, 58, 237, 0.08);
+        border-color: rgba(124, 58, 237, 0.2);
+    }
+
     @media (max-width: 768px) {
         .grid-3, .grid-4 {
             grid-template-columns: 1fr;
@@ -237,6 +271,10 @@
 
         .hero h2 {
             font-size: 1.2rem !important;
+        }
+
+        .hp-section-h2 {
+            font-size: 1.5rem !important;
         }
     }
 </style>
@@ -284,44 +322,94 @@ $featuresHeading = $sections['features']['heading'] ?? 'Platform Features';
 $featuresSubheading = $sections['features']['subheading'] ?? 'Powerful capabilities across all projects';
 ?>
 
-<div class="hero" style="padding: 50px 20px; max-width: 1400px; margin: 0 auto;">
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center;">
+<div class="hero" style="padding: 70px 20px 50px; max-width: 1400px; margin: 0 auto;">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 50px; align-items: center;">
         <!-- Left side: Text content -->
         <div style="text-align: left;">
-            <h1 style="font-size: 2.5rem; margin-bottom: 16px; background: linear-gradient(135deg, var(--cyan), var(--magenta)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1.2;">
+            <!-- Animated badge -->
+            <div class="hp-hero-badge">
+                <span class="hp-hero-badge-dot"></span>
+                <span>Multi-Project Platform</span>
+            </div>
+
+            <h1 class="hp-hero-h1">
                 <?= htmlspecialchars($heroTitle) ?>
             </h1>
             <?php if ($heroSubtitle && $heroSubtitle !== $heroTitle): ?>
-            <h2 style="font-size: 1.5rem; margin-bottom: 12px; color: var(--text-primary);">
+            <h2 style="font-size: 1.3rem; margin-bottom: 14px; color: var(--text-primary); font-weight: 500; font-family: var(--font-body);">
                 <?= htmlspecialchars($heroSubtitle) ?>
             </h2>
             <?php endif; ?>
-            <p style="font-size: 1.05rem; color: var(--text-secondary); margin-bottom: 30px; line-height: 1.6;">
+            <p style="font-size: 1rem; color: var(--text-secondary); margin-bottom: 34px; line-height: 1.7; max-width: 480px;">
                 <?= htmlspecialchars($heroDescription) ?>
             </p>
             
-            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+            <div style="display: flex; gap: 14px; flex-wrap: wrap; align-items: center;">
                 <?php if (Auth::check()): ?>
-                    <a href="/dashboard" class="btn btn-primary">Go to Dashboard</a>
+                    <a href="/dashboard" class="btn btn-primary btn-lg">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                        Dashboard
+                    </a>
                 <?php else: ?>
-                    <a href="/register" class="btn btn-primary">Get Started</a>
-                    <a href="/login" class="btn btn-secondary">Sign In</a>
+                    <a href="/register" class="btn btn-primary btn-lg">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                        Get Started Free
+                    </a>
+                    <a href="/login" class="btn btn-secondary btn-lg">Sign In</a>
                 <?php endif; ?>
+            </div>
+
+            <!-- Trust indicators -->
+            <div class="hp-trust-row">
+                <div class="hp-trust-item">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>No credit card</span>
+                </div>
+                <div class="hp-trust-item">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>CSRF &amp; XSS protected</span>
+                </div>
+                <div class="hp-trust-item">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>Dark &amp; Light mode</span>
+                </div>
             </div>
         </div>
         
         <!-- Right side: Hero banner image -->
-        <div style="text-align: center;">
+        <div style="text-align: center; position: relative;">
             <?php if (!empty($heroBanner)): ?>
-                <img src="<?= htmlspecialchars($heroBanner) ?>" alt="Hero Banner" class="hero-banner" style="max-width: 100%; height: auto; border-radius: 12px; box-shadow: var(--shadow-glow);">
+                <img src="<?= htmlspecialchars($heroBanner) ?>" alt="Hero Banner" class="hero-banner" style="max-width: 100%; height: auto; border-radius: var(--radius-lg); box-shadow: var(--glow-purple), 0 24px 64px rgba(0,0,0,0.45);">
             <?php else: ?>
-                <!-- Placeholder if no image -->
-                <div style="width: 100%; aspect-ratio: 16/10; background: linear-gradient(135deg, rgba(0, 240, 255, 0.1), rgba(255, 46, 196, 0.1)); border-radius: 12px; display: flex; align-items: center; justify-content: center; border: 2px dashed var(--border-color);">
-                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.5">
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                        <polyline points="21 15 16 10 5 21"></polyline>
-                    </svg>
+                <!-- Hero visual placeholder -->
+                <div class="hp-hero-visual">
+                    <div class="hp-hero-orb hp-hero-orb-1"></div>
+                    <div class="hp-hero-orb hp-hero-orb-2"></div>
+                    <!-- Central icon -->
+                    <div class="hp-hero-center-icon">
+                        <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="url(#hg)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <defs><linearGradient id="hg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#9945ff"/><stop offset="100%" stop-color="#00f0ff"/></linearGradient></defs>
+                            <rect x="3" y="3" width="18" height="18" rx="3"/>
+                            <path d="M3 9h18M9 21V9"/>
+                        </svg>
+                    </div>
+                    <!-- Floating feature chips -->
+                    <div class="hp-chip hp-chip-1">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        Secure Auth
+                    </div>
+                    <div class="hp-chip hp-chip-2">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2.5"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                        12+ Projects
+                    </div>
+                    <div class="hp-chip hp-chip-3">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                        Admin Panel
+                    </div>
+                    <div class="hp-chip hp-chip-4">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2.5"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
+                        Analytics
+                    </div>
                 </div>
             <?php endif; ?>
         </div>
@@ -329,28 +417,182 @@ $featuresSubheading = $sections['features']['subheading'] ?? 'Powerful capabilit
 </div>
 
 <style>
+/* ===== Hero Section v2 ===== */
+.hp-hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    background: rgba(153, 69, 255, 0.12);
+    border: 1px solid rgba(153, 69, 255, 0.3);
+    border-radius: var(--radius-full);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--purple);
+    margin-bottom: 22px;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    font-family: var(--font-heading);
+}
+
+.hp-hero-badge-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--purple);
+    animation: hp-badge-pulse 2s ease-in-out infinite;
+    flex-shrink: 0;
+}
+
+@keyframes hp-badge-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(153, 69, 255, 0.6); }
+    50% { box-shadow: 0 0 0 5px rgba(153, 69, 255, 0); }
+}
+
+.hp-hero-h1 {
+    font-size: 3rem !important;
+    line-height: 1.1 !important;
+    margin-bottom: 18px !important;
+    font-family: var(--font-heading) !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.03em !important;
+    background: linear-gradient(135deg, var(--purple) 0%, var(--cyan) 60%) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+}
+
+.hp-trust-row {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color);
+}
+
+.hp-trust-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+/* Hero visual placeholder */
+.hp-hero-visual {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    max-width: 420px;
+    margin: 0 auto;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hp-hero-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(60px);
+    pointer-events: none;
+}
+
+.hp-hero-orb-1 {
+    width: 280px;
+    height: 280px;
+    background: rgba(153, 69, 255, 0.25);
+    top: 10%;
+    left: 10%;
+    animation: hp-float 7s ease-in-out infinite alternate;
+}
+
+.hp-hero-orb-2 {
+    width: 200px;
+    height: 200px;
+    background: rgba(0, 240, 255, 0.18);
+    bottom: 10%;
+    right: 10%;
+    animation: hp-float 9s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes hp-float {
+    from { transform: translateY(0) scale(1); }
+    to   { transform: translateY(-20px) scale(1.05); }
+}
+
+.hp-hero-center-icon {
+    width: 120px;
+    height: 120px;
+    background: rgba(153, 69, 255, 0.1);
+    border: 1px solid rgba(153, 69, 255, 0.3);
+    border-radius: var(--radius-xl);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 2;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 0 40px rgba(153, 69, 255, 0.2), 0 0 80px rgba(0, 240, 255, 0.1);
+}
+
+.hp-chip {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-full);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    backdrop-filter: blur(10px);
+    z-index: 3;
+    font-family: var(--font-heading);
+    animation: hp-chip-float 0.1s linear;
+}
+
+.hp-chip-1 { top: 12%;    left: 2%;   animation: hp-chip-bob 5s ease-in-out infinite; }
+.hp-chip-2 { top: 5%;    right: 5%;  animation: hp-chip-bob 6s ease-in-out infinite 0.8s; }
+.hp-chip-3 { bottom: 12%; left: 2%;   animation: hp-chip-bob 7s ease-in-out infinite 1.4s; }
+.hp-chip-4 { bottom: 5%;  right: 3%;  animation: hp-chip-bob 5.5s ease-in-out infinite 0.4s; }
+
+@keyframes hp-chip-bob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+}
+
+[data-theme="light"] .hp-hero-badge {
+    background: rgba(124, 58, 237, 0.08);
+    border-color: rgba(124, 58, 237, 0.25);
+    color: var(--purple);
+}
+
+[data-theme="light"] .hp-hero-badge-dot { background: var(--purple); }
+
+[data-theme="light"] .hp-hero-h1 {
+    background: linear-gradient(135deg, var(--purple) 0%, var(--cyan) 60%) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+}
+
 /* Responsive hero section */
-@media (max-width: 768px) {
+@media (max-width: 900px) {
     .hero > div {
         grid-template-columns: 1fr !important;
-        gap: 30px !important;
+        gap: 40px !important;
     }
-    
-    .hero h1 {
-        font-size: 1.8rem !important;
-    }
-    
-    .hero h2 {
-        font-size: 1.2rem !important;
-    }
-    
-    .hero > div > div:first-child {
-        text-align: center !important;
-    }
-    
-    .hero > div > div:first-child > div {
-        justify-content: center !important;
-    }
+    .hp-hero-h1 { font-size: 2.2rem !important; }
+}
+
+@media (max-width: 480px) {
+    .hp-hero-h1 { font-size: 1.8rem !important; }
+    .hero { padding: 40px 16px 30px !important; }
+    .hp-trust-row { gap: 12px; }
 }
 </style>
 
@@ -414,8 +656,9 @@ try {
 if ($showStats): 
 ?>
 <div style="margin-top: 60px; text-align: center; max-width: 1500px; margin-left: auto; margin-right: auto; padding: 0 20px;">
-    <h2 style="margin-bottom: 12px; font-size: 1.75rem;"><?= htmlspecialchars($statsHeading) ?></h2>
-    <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 40px;"><?= htmlspecialchars($statsSubheading) ?></p>
+    <div class="hp-section-label">Platform Stats</div>
+    <h2 class="hp-section-h2" style="margin-bottom: 12px;"><?= htmlspecialchars($statsHeading) ?></h2>
+    <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 48px;"><?= htmlspecialchars($statsSubheading) ?></p>
     
     <div class="grid grid-4">
         <?php 
@@ -428,8 +671,8 @@ if ($showStats):
             }
             $renderedStatIds[] = $stat['id'];
         ?>
-        <div class="card stat-card animate-fade-in" style="animation-delay: <?= $delay ?>s;">
-            <div class="stat-value" style="font-size: 2.5rem; font-weight: 700;">
+        <div class="card stat-card animate-fade-in" style="text-align: center; animation-delay: <?= $delay ?>s;">
+            <div class="stat-value hp-stat-count" data-target="<?= htmlspecialchars($stat['value']) ?>" style="font-size: 2.5rem; font-weight: 700;">
                 <?= htmlspecialchars($stat['value']) ?>
             </div>
             <h4 style="margin-bottom: 4px; font-size: 1rem; color: var(--text-primary); font-weight: 600;"><?= htmlspecialchars($stat['label']) ?></h4>
@@ -448,7 +691,8 @@ if ($showStats):
 
 
 <div style="margin-top: 60px; text-align: center; max-width: 1500px; margin-left: auto; margin-right: auto; padding: 0 20px;">
-    <h2 style="margin-bottom: 20px; font-size: 1.75rem;"><?= htmlspecialchars($projectsSectionTitle) ?></h2>
+    <div class="hp-section-label">Our Products</div>
+    <h2 class="hp-section-h2" style="margin-bottom: 20px;"><?= htmlspecialchars($projectsSectionTitle) ?></h2>
     
     <!-- Filter Buttons -->
     <div style="display: flex; justify-content: center; gap: 12px; margin-bottom: 40px; flex-wrap: wrap;">
@@ -702,9 +946,10 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-<div style="margin-top: 60px; padding: 40px 20px; background: rgba(0, 240, 255, 0.02); border-radius: 16px; max-width: 1500px; margin-left: auto; margin-right: auto;">
-    <div style="text-align: center; margin-bottom: 30px;">
-        <h2 style="margin-bottom: 12px; font-size: 1.75rem;"><?= htmlspecialchars($featuresHeading) ?></h2>
+<div style="margin-top: 60px; padding: 40px 20px; background: rgba(0, 240, 255, 0.02); border-radius: var(--radius-lg); max-width: 1500px; margin-left: auto; margin-right: auto;">
+    <div style="text-align: center; margin-bottom: 36px;">
+        <div class="hp-section-label">Capabilities</div>
+        <h2 class="hp-section-h2" style="margin-bottom: 10px;"><?= htmlspecialchars($featuresHeading) ?></h2>
         <p style="color: var(--text-secondary); font-size: 0.95rem;"><?= htmlspecialchars($featuresSubheading) ?></p>
     </div>
     
@@ -822,8 +1067,9 @@ $timelineItems = $db->fetchAll("SELECT * FROM home_timeline WHERE is_active = 1 
 <?php if (!empty($timelineItems)): ?>
 <div style="margin-top: 80px; padding: 60px 0;">
     <div style="text-align: center; margin-bottom: 60px;">
-        <h2 style="margin-bottom: 15px; font-size: 2rem;"><?= View::e($timelineHeading) ?></h2>
-        <p style="color: var(--text-secondary); font-size: 1.1rem;"><?= View::e($timelineSubheading) ?></p>
+        <div class="hp-section-label">Milestones</div>
+        <h2 class="hp-section-h2" style="margin-bottom: 15px;"><?= View::e($timelineHeading) ?></h2>
+        <p style="color: var(--text-secondary); font-size: 1rem;"><?= View::e($timelineSubheading) ?></p>
     </div>
     
     <div style="max-width: 900px; margin: 0 auto; position: relative; padding: 0 40px;">
@@ -1199,6 +1445,138 @@ $timelineItems = $db->fetchAll("SELECT * FROM home_timeline WHERE is_active = 1 
 
     resize(); init(); draw();
     window.addEventListener('resize', function() { cancelAnimationFrame(raf); resize(); init(); draw(); });
+})();
+</script>
+
+<!-- ===== Bottom CTA Section ===== -->
+<div class="hp-cta-section">
+    <div class="hp-cta-bg-orb hp-cta-bg-orb-1"></div>
+    <div class="hp-cta-bg-orb hp-cta-bg-orb-2"></div>
+    <div style="position: relative; z-index: 1; text-align: center;">
+        <div class="hp-section-label" style="margin-bottom: 20px;">Ready to build?</div>
+        <h2 style="font-size: 2.2rem; font-family: var(--font-heading); font-weight: 800; letter-spacing: -0.025em; margin-bottom: 16px; color: var(--text-primary);">
+            Launch your projects today
+        </h2>
+        <p style="font-size: 1rem; color: var(--text-secondary); max-width: 520px; margin: 0 auto 36px; line-height: 1.7;">
+            Join developers and teams using <?= htmlspecialchars(APP_NAME) ?> — one platform, unified login, 12+ tools ready to go.
+        </p>
+        <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
+            <?php if (Auth::check()): ?>
+                <a href="/dashboard" class="btn btn-primary btn-lg">Go to Dashboard</a>
+            <?php else: ?>
+                <a href="/register" class="btn btn-primary btn-lg">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+                    Create Free Account
+                </a>
+                <a href="/login" class="btn btn-secondary btn-lg">Sign In</a>
+            <?php endif; ?>
+        </div>
+    </div>
+</div>
+
+<style>
+.hp-cta-section {
+    margin: 80px auto 40px;
+    max-width: 900px;
+    padding: 70px 30px;
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--radius-xl);
+    border: 1px solid rgba(153, 69, 255, 0.2);
+    background: rgba(153, 69, 255, 0.04);
+}
+
+.hp-cta-bg-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.hp-cta-bg-orb-1 {
+    width: 350px;
+    height: 350px;
+    background: rgba(153, 69, 255, 0.18);
+    top: -100px;
+    left: -80px;
+}
+
+.hp-cta-bg-orb-2 {
+    width: 280px;
+    height: 280px;
+    background: rgba(0, 240, 255, 0.14);
+    bottom: -80px;
+    right: -60px;
+}
+
+[data-theme="light"] .hp-cta-section {
+    background: rgba(124, 58, 237, 0.03);
+    border-color: rgba(124, 58, 237, 0.15);
+}
+
+[data-theme="light"] .hp-cta-bg-orb-1 {
+    background: rgba(124, 58, 237, 0.10);
+}
+
+[data-theme="light"] .hp-cta-bg-orb-2 {
+    background: rgba(3, 105, 161, 0.08);
+}
+
+@media (max-width: 600px) {
+    .hp-cta-section { margin: 50px 16px 20px; padding: 50px 20px; }
+    .hp-cta-section h2 { font-size: 1.6rem !important; }
+}
+</style>
+
+<script>
+/* Animated stat counters — count up when scrolled into view */
+(function() {
+    function parseNum(val) {
+        var clean = val.replace(/[^0-9.]/g, '');
+        return parseFloat(clean) || 0;
+    }
+    function formatNum(n, template) {
+        var rounded = Math.round(n);
+        // Re-apply suffix/prefix found in the original string
+        var prefix = template.match(/^[^0-9]*/)[0] || '';
+        var suffix = template.match(/[^0-9.]+$/);
+        suffix = suffix ? suffix[0] : '';
+        // Format with commas
+        var formatted = rounded.toLocaleString();
+        return prefix + formatted + suffix;
+    }
+    function animateCounter(el) {
+        var target = el.dataset.target || el.textContent;
+        var num = parseNum(target);
+        if (num === 0) return;
+        var duration = 1600;
+        var start = null;
+        function step(ts) {
+            if (!start) start = ts;
+            var progress = Math.min((ts - start) / duration, 1);
+            // ease-out
+            var eased = 1 - Math.pow(1 - progress, 3);
+            el.textContent = formatNum(num * eased, target);
+            if (progress < 1) requestAnimationFrame(step);
+            else el.textContent = target; // restore original
+        }
+        requestAnimationFrame(step);
+    }
+
+    if (!window.IntersectionObserver) return;
+    var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+                animateCounter(entry.target);
+                observer.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.4 });
+
+    document.querySelectorAll('.hp-stat-count').forEach(function(el) {
+        observer.observe(el);
+    });
 })();
 </script>
 <?php View::endSection(); ?>

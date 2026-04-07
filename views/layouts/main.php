@@ -54,7 +54,7 @@ try {
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <!-- Icons - No external dependencies needed, using inline SVG -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -78,6 +78,20 @@ try {
             --transition: all 0.3s ease;
             --hover-bg: rgba(0, 240, 255, 0.1);
             --shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+
+            /* Extended design tokens */
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 16px;
+            --radius-xl: 24px;
+            --radius-full: 9999px;
+            --gradient-primary: linear-gradient(135deg, var(--purple), var(--cyan));
+            --gradient-accent: linear-gradient(135deg, var(--cyan), var(--magenta));
+            --gradient-warm: linear-gradient(135deg, var(--orange), var(--magenta));
+            --font-heading: 'Space Grotesk', 'Poppins', sans-serif;
+            --font-body: 'Poppins', sans-serif;
+            --glow-cyan: 0 0 24px rgba(0, 240, 255, 0.35);
+            --glow-purple: 0 0 24px rgba(153, 69, 255, 0.35);
         }
         
         /* Light Theme */
@@ -98,6 +112,8 @@ try {
             --shadow-glow: 0 0 20px rgba(124, 58, 237, 0.12);
             --hover-bg: rgba(124, 58, 237, 0.08);
             --shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+            --glow-cyan: 0 0 24px rgba(3, 105, 161, 0.18);
+            --glow-purple: 0 0 24px rgba(124, 58, 237, 0.18);
         }
 
         /* Animated light-mode background */
@@ -156,7 +172,7 @@ try {
         }
         
         body {
-            font-family: 'Poppins', sans-serif;
+            font-family: var(--font-body);
             background: var(--bg-primary);
             color: var(--text-primary);
             min-height: 100vh;
@@ -164,6 +180,11 @@ try {
             font-size: 14px;
             overflow-x: hidden;
             position: relative;
+        }
+        
+        h1, h2, h3, h4, h5, h6 {
+            font-family: var(--font-heading);
+            letter-spacing: -0.02em;
         }
         
         h1 { font-size: 2rem; }
@@ -221,6 +242,17 @@ try {
             z-index: 100;
             width: 100%;
         }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: var(--gradient-primary);
+            opacity: 0.4;
+        }
         
         .header-content {
             display: flex;
@@ -231,13 +263,15 @@ try {
         
         .logo {
             font-size: 1.3rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, var(--cyan), var(--magenta));
+            font-weight: 800;
+            font-family: var(--font-heading);
+            background: var(--gradient-primary);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
             display: flex;
             align-items: center;
+            letter-spacing: -0.02em;
         }
         
         .logo img {
@@ -264,15 +298,33 @@ try {
             gap: 6px;
             font-size: 14px;
             cursor: pointer;
-            border-radius: 6px;
+            border-radius: var(--radius-sm);
             transition: var(--transition);
+        }
+        
+        .nav a::after, .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: 4px;
+            left: 50%;
+            transform: translateX(-50%) scaleX(0);
+            width: calc(100% - 24px);
+            height: 2px;
+            background: var(--gradient-primary);
+            border-radius: var(--radius-full);
+            transition: transform 0.25s ease;
         }
         
         .nav a:hover,
         .nav a.active,
         .nav-link:hover {
             color: var(--text-primary);
-            background: rgba(0, 240, 255, 0.1);
+            background: rgba(0, 240, 255, 0.07);
+        }
+
+        .nav a:hover::after,
+        .nav a.active::after {
+            transform: translateX(-50%) scaleX(1);
         }
         
         /* Dropdown Menu */
@@ -424,13 +476,14 @@ try {
             width: 32px;
             height: 32px;
             border-radius: 50%;
-            background: linear-gradient(135deg, var(--cyan), var(--magenta));
+            background: var(--gradient-primary);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: 600;
-            font-size: 14px;
-            color: var(--bg-primary);
+            font-weight: 700;
+            font-size: 13px;
+            color: #fff;
+            flex-shrink: 0;
         }
         
         .user-menu-dropdown {
@@ -586,60 +639,76 @@ try {
         .btn {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-            padding: 10px 20px;
+            gap: 7px;
+            padding: 10px 22px;
             border: none;
-            border-radius: 6px;
-            font-family: inherit;
+            border-radius: var(--radius-full);
+            font-family: var(--font-heading);
             font-size: 13px;
-            font-weight: 500;
+            font-weight: 600;
             cursor: pointer;
             transition: var(--transition);
+            letter-spacing: 0.01em;
+            text-decoration: none;
         }
         
         .btn-primary {
-            background: linear-gradient(135deg, var(--cyan), var(--magenta));
-            color: var(--bg-primary);
+            background: var(--gradient-primary);
+            color: #fff;
             text-align: center;
+            box-shadow: 0 4px 18px rgba(153, 69, 255, 0.35);
         }
         
         .btn-primary:hover {
-            box-shadow: var(--shadow-glow);
+            box-shadow: 0 6px 28px rgba(153, 69, 255, 0.55), 0 0 0 1px rgba(0, 240, 255, 0.3);
             transform: translateY(-2px);
+            color: #fff;
         }
         
         .btn-secondary {
-            background: var(--bg-card);
+            background: rgba(255, 255, 255, 0.04);
             color: var(--text-primary);
             border: 1px solid var(--border-color);
+            backdrop-filter: blur(8px);
         }
         
         .btn-secondary:hover {
             border-color: var(--cyan);
-            box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+            background: rgba(0, 240, 255, 0.07);
+            box-shadow: var(--glow-cyan);
+            color: var(--cyan);
         }
         
         .btn-danger {
-            background: rgba(255, 107, 107, 0.2);
+            background: rgba(255, 107, 107, 0.15);
             color: var(--red);
-            border: 1px solid var(--red);
+            border: 1px solid rgba(255, 107, 107, 0.4);
         }
         
         .btn-danger:hover {
             background: var(--red);
-            color: var(--bg-primary);
+            color: #fff;
+            box-shadow: 0 4px 18px rgba(255, 107, 107, 0.4);
         }
         
         .btn-sm {
-            padding: 6px 14px;
+            padding: 6px 16px;
             font-size: 12px;
         }
+        
+        .btn-lg {
+            padding: 13px 30px;
+            font-size: 15px;
+        }
+        
+        [data-theme="light"] .btn-primary { color: #fff; }
+        [data-theme="light"] .btn-primary:hover { color: #fff; }
         
         /* Cards */
         .card {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
-            border-radius: 10px;
+            border-radius: var(--radius-md);
             padding: 20px;
             transition: var(--transition);
             /* Required by rotating border animation */
@@ -736,12 +805,12 @@ try {
         
         .form-input {
             width: 100%;
-            padding: 10px 14px;
+            padding: 11px 15px;
             background: var(--bg-secondary);
             border: 1px solid var(--border-color);
-            border-radius: 6px;
+            border-radius: var(--radius-sm);
             color: var(--text-primary);
-            font-family: inherit;
+            font-family: var(--font-body);
             font-size: 13px;
             transition: var(--transition);
         }
@@ -749,7 +818,7 @@ try {
         .form-input:focus {
             outline: none;
             border-color: var(--cyan);
-            box-shadow: 0 0 0 3px rgba(0, 240, 255, 0.1);
+            box-shadow: 0 0 0 3px rgba(0, 240, 255, 0.12), var(--glow-cyan);
         }
         
         .form-input::placeholder {
@@ -867,10 +936,24 @@ try {
         .footer {
             background: var(--bg-secondary);
             border-top: 1px solid var(--border-color);
-            padding: 16px 0;
+            padding: 20px 0;
             text-align: center;
             color: var(--text-secondary);
             font-size: 13px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .footer::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 1px;
+            background: var(--gradient-primary);
+            opacity: 0.5;
         }
         
         /* Grid */
@@ -963,22 +1046,23 @@ try {
             position: fixed;
             bottom: 30px;
             right: 30px;
-            width: 45px;
-            height: 45px;
-            background: linear-gradient(135deg, var(--cyan), var(--magenta));
+            width: 44px;
+            height: 44px;
+            background: var(--gradient-primary);
             border: none;
-            border-radius: 50%;
+            border-radius: var(--radius-full);
             cursor: pointer;
             display: none;
             align-items: center;
             justify-content: center;
             transition: var(--transition);
             z-index: 99;
+            box-shadow: 0 4px 16px rgba(153, 69, 255, 0.45);
         }
         
         .scroll-top:hover {
-            transform: translateY(-3px);
-            box-shadow: var(--shadow-glow);
+            transform: translateY(-3px) scale(1.08);
+            box-shadow: 0 6px 24px rgba(153, 69, 255, 0.6);
         }
         
         .scroll-top.visible {
@@ -989,6 +1073,11 @@ try {
         [data-theme="light"] .header {
             background: rgba(255, 255, 255, 0.95);
             box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        [data-theme="light"] .header::after {
+            background: var(--gradient-primary);
+            opacity: 0.3;
         }
 
         [data-theme="light"] .nav a:hover,
@@ -1765,15 +1854,15 @@ try {
                         position: fixed;
                         bottom: 20px;
                         right: 20px;
-                        width: 56px;
-                        height: 56px;
-                        background: linear-gradient(135deg, var(--cyan), var(--magenta));
+                        width: 52px;
+                        height: 52px;
+                        background: var(--gradient-primary);
                         border: none;
-                        border-radius: 50%;
+                        border-radius: var(--radius-full);
                         align-items: center;
                         justify-content: center;
                         cursor: pointer;
-                        box-shadow: 0 4px 20px rgba(0, 240, 255, 0.4);
+                        box-shadow: 0 4px 20px rgba(153, 69, 255, 0.45);
                         z-index: 9999;
                         transition: all 0.3s ease;
                     }
