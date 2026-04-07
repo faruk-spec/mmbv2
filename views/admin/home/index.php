@@ -217,12 +217,12 @@
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label">Project Image</label>
+                    <label class="form-label">Project Thumbnail Image (covers card background)</label>
                     <?php if (!empty($project['image_url'])): ?>
-                        <div style="margin-bottom: 10px; border: 2px solid var(--border-color); border-radius: 8px; overflow: hidden; position: relative;">
-                            <img src="<?= View::e($project['image_url']) ?>" alt="Project Image" 
-                                 style="width: 100%; height: 150px; object-fit: cover;">
-                            <button type="button" class="btn btn-danger remove-project-image" 
+                        <div style="margin-bottom: 10px; border: 2px solid var(--border-color); border-radius: 10px; overflow: hidden; position: relative;">
+                            <img src="<?= View::e($project['image_url']) ?>" alt="Project Thumbnail"
+                                 style="width: 100%; height: 180px; object-fit: cover; display: block;">
+                            <button type="button" class="btn btn-danger remove-project-image"
                                     data-project-id="<?= $project['id'] ?>"
                                     style="position: absolute; top: 10px; right: 10px; padding: 5px 10px; font-size: 12px;">
                                 <i class="fas fa-times"></i> Remove
@@ -230,14 +230,30 @@
                         </div>
                         <input type="hidden" name="remove_project_image" class="remove-project-image-input-<?= $project['id'] ?>" value="0">
                     <?php else: ?>
-                        <div style="margin-bottom: 10px; border: 2px dashed var(--border-color); border-radius: 8px; padding: 40px; text-align: center; color: var(--text-secondary);">
+                        <div style="margin-bottom: 10px; border: 2px dashed var(--border-color); border-radius: 10px; padding: 40px; text-align: center; color: var(--text-secondary);">
                             <i class="fas fa-image" style="font-size: 2rem; margin-bottom: 10px;"></i>
-                            <p>No image uploaded</p>
+                            <p>No thumbnail uploaded — upload one to use as card background</p>
                         </div>
                     <?php endif; ?>
                     <input type="file" name="project_image" class="form-input" accept="image/*">
                     <input type="hidden" name="current_project_image_url" value="<?= View::e($project['image_url'] ?? '') ?>">
-                    <small style="color: var(--text-secondary);">Upload project image (max 5MB)</small>
+                    <small style="color: var(--text-secondary);">Upload thumbnail (max 5MB, JPEG/PNG/WebP). This image covers the entire project card.</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">"Show Features" Button Text</label>
+                    <input type="text" name="show_features_text" class="form-input"
+                           value="<?= View::e($project['show_features_text'] ?? 'Show Features') ?>"
+                           placeholder="Show Features">
+                    <small style="color: var(--text-secondary);">Label shown on the first button of each project card</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">"Show Features" Button URL (optional)</label>
+                    <input type="url" name="show_features_url" class="form-input"
+                           value="<?= View::e($project['show_features_url'] ?? '') ?>"
+                           placeholder="https://example.com/features">
+                    <small style="color: var(--text-secondary);">Leave blank to display the button as non-clickable text</small>
                 </div>
                 
                 <div class="form-group">

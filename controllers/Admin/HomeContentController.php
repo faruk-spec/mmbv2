@@ -301,6 +301,8 @@ class HomeContentController extends BaseController
                 'icon' => $icon,
                 'tier' => $tier,
                 'features' => $featuresJson,
+                'show_features_text' => Security::sanitize($this->input('show_features_text', 'Show Features')) ?: 'Show Features',
+                'show_features_url'  => Security::sanitize($this->input('show_features_url', '')),
                 'logo_url' => $logoUrl,
                 'image_url' => $imageUrl,
                 'is_enabled' => $isEnabled,
