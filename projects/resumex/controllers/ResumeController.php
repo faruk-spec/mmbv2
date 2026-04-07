@@ -40,7 +40,7 @@ class ResumeController
      */
     public function store(): void
     {
-        Security::validateCsrfToken($_POST['_token'] ?? '');
+        Security::validateCsrfToken($_POST['_csrf_token'] ?? '');
 
         $userId   = Auth::id();
         $title    = trim($_POST['title'] ?? 'My Resume');
@@ -129,10 +129,10 @@ class ResumeController
         $body = file_get_contents('php://input');
         if (!empty($body)) {
             $payload = json_decode($body, true);
-            $token   = $payload['_token'] ?? ($_POST['_token'] ?? '');
+            $token   = $payload['_token'] ?? ($_POST['_csrf_token'] ?? '');
         } else {
             $payload = $_POST;
-            $token   = $_POST['_token'] ?? '';
+            $token   = $_POST['_csrf_token'] ?? '';
         }
 
         Security::validateCsrfToken($token);
@@ -224,7 +224,7 @@ class ResumeController
      */
     public function delete(): void
     {
-        Security::validateCsrfToken($_POST['_token'] ?? '');
+        Security::validateCsrfToken($_POST['_csrf_token'] ?? '');
 
         $userId = Auth::id();
         $id     = (int) ($_POST['id'] ?? 0);
@@ -243,7 +243,7 @@ class ResumeController
      */
     public function duplicate(): void
     {
-        Security::validateCsrfToken($_POST['_token'] ?? '');
+        Security::validateCsrfToken($_POST['_csrf_token'] ?? '');
 
         $userId = Auth::id();
         $id     = (int) ($_POST['id'] ?? 0);
@@ -538,7 +538,7 @@ class ResumeController
      */
     public function storeImport(): void
     {
-        if (!\Core\Security::validateCsrfToken($_POST['_token'] ?? '')) {
+        if (!\Core\Security::validateCsrfToken($_POST['_csrf_token'] ?? '')) {
             header('Location: /projects/resumex/import?error=token');
             exit;
         }
@@ -594,7 +594,7 @@ class ResumeController
      */
     public function generateShareLink(): void
     {
-        if (!\Core\Security::validateCsrfToken($_POST['_token'] ?? '')) {
+        if (!\Core\Security::validateCsrfToken($_POST['_csrf_token'] ?? '')) {
             header('Content-Type: application/json');
             http_response_code(403);
             echo json_encode(['success' => false]);

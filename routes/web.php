@@ -62,6 +62,33 @@ $router->post('/api/notifications/mark-read', 'NotificationController@markRead',
 $router->post('/api/notifications/mark-all-read', 'NotificationController@markAllRead', ['auth']);
 $router->get('/notifications', 'NotificationController@viewAll', ['auth']);
 
+// Session alert polling — checked every ~30 s by logged-in browsers
+$router->get('/api/session-alerts', function() {
+    if (!\Core\Auth::check()) {
+        \Core\Helpers::json(['alert' => null]);
+        return;
+    }
+    $userId = \Core\Auth::id();
+    try {
+        $db = \Core\Database::getInstance();
+        $row = $db->fetch(
+            "SELECT `value` FROM settings WHERE `key` = ?",
+            ['new_login_notify_' . $userId]
+        );
+        if ($row) {
+            $data = json_decode($row['value'], true);
+            $sessionCreatedAt = $_SESSION['_login_time'] ?? 0;
+            if (!empty($data['time']) && $data['time'] > $sessionCreatedAt + 5) {
+                // Consume the notification so it shows only once
+                $db->delete('settings', '`key` = ?', ['new_login_notify_' . $userId]);
+                \Core\Helpers::json(['alert' => $data]);
+                return;
+            }
+        }
+    } catch (\Exception $e) { /* non-fatal */ }
+    \Core\Helpers::json(['alert' => null]);
+}, ['auth']);
+
 // 2FA routes
 // Two-Factor Authentication routes
 $router->get('/2fa/setup', 'TwoFactorController@setup', ['auth']);

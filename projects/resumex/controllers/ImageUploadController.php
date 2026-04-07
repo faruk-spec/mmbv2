@@ -65,7 +65,7 @@ class ImageUploadController
         }
 
         // CSRF check
-        if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
+        if (!Security::validateCsrfToken($_POST['_csrf_token'] ?? '')) {
             http_response_code(403);
             echo json_encode(['success' => false, 'error' => 'Invalid security token.']);
             exit;

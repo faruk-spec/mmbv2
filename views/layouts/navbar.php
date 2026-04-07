@@ -802,6 +802,15 @@ body {
     text-decoration: none;
 }
 
+/* Reset gradient-text clip for image logos so the <img> is always visible */
+.universal-header .logo img {
+    display: block;
+    max-height: 40px;
+    -webkit-background-clip: initial;
+    background-clip: initial;
+    -webkit-text-fill-color: initial;
+}
+
 .universal-nav {
     display: flex;
     gap: 20px;
