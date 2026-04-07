@@ -489,7 +489,7 @@ if ($showStats):
             $projectColor = $project['color'] ?? '#00f0ff';
             $projectUrl = $project['url'] ?? '';
             $projectTier = $project['tier'] ?? 'free';
-            $showFeaturesText = !empty($project['show_features_text']) ? $project['show_features_text'] : 'Show Features';
+            $showFeaturesText = $project['show_features_text'] ?? 'Show Features';
             $showFeaturesUrl  = $project['show_features_url'] ?? '';
         ?>
         <div class="project-card" data-tier="<?= htmlspecialchars($projectTier) ?>">
@@ -539,9 +539,9 @@ if ($showStats):
                             <?= htmlspecialchars($showFeaturesText) ?>
                         </a>
                     <?php else: ?>
-                        <span class="project-card__btn project-card__btn--outline" style="border-color:<?= $projectColor ?>80;color:<?= $projectColor ?>;">
+                        <button type="button" disabled class="project-card__btn project-card__btn--outline" style="border-color:<?= $projectColor ?>80;color:<?= $projectColor ?>;opacity:0.7;cursor:default;">
                             <?= htmlspecialchars($showFeaturesText) ?>
-                        </span>
+                        </button>
                     <?php endif; ?>
                     <?php if (Auth::check()): ?>
                         <a href="<?= htmlspecialchars($projectUrl) ?>" class="project-card__btn project-card__btn--primary" style="background:<?= $projectColor ?>;border-color:<?= $projectColor ?>;">
