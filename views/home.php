@@ -492,7 +492,7 @@ if ($showStats):
             $showFeaturesText = $project['show_features_text'] ?? 'Show Features';
             $showFeaturesUrl  = $project['show_features_url'] ?? '';
         ?>
-        <div class="project-card pc-animate" data-tier="<?= htmlspecialchars($projectTier) ?>">
+        <div class="project-card" data-tier="<?= htmlspecialchars($projectTier) ?>">
             <!-- Thumbnail image covers full card -->
             <?php if (!empty($project['image_url'])): ?>
                 <img class="project-card__thumb" src="<?= htmlspecialchars($project['image_url']) ?>" alt="">
@@ -603,20 +603,6 @@ if ($showStats):
     display: none;
 }
 
-/* Entry animation */
-@keyframes pc-rise {
-    from { opacity: 0; transform: translateY(28px) scale(0.97); }
-    to   { opacity: 1; transform: translateY(0)    scale(1);    }
-}
-
-.pc-animate {
-    opacity: 0;
-}
-
-.pc-animate.pc-visible {
-    animation: pc-rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
-
 /* Thumbnail fills card */
 .project-card__thumb {
     position: absolute;
@@ -625,11 +611,6 @@ if ($showStats):
     height: 100%;
     object-fit: cover;
     z-index: 0;
-    transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.project-card:hover .project-card__thumb {
-    transform: scale(1.05);
 }
 
 .project-card__thumb--placeholder {
@@ -672,7 +653,6 @@ if ($showStats):
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.6px;
-    backdrop-filter: blur(6px);
 }
 
 /* Content sits above overlay */
@@ -694,25 +674,18 @@ if ($showStats):
     text-align: center;
 }
 
-/* Larger logo */
+/* Logo */
 .project-card__logo {
-    width: 64px;
-    height: 64px;
-    border-radius: 14px;
+    width: 128px;
+    height: 128px;
+    border-radius: 20px;
     border: 2px solid;
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
     flex-shrink: 0;
-    backdrop-filter: blur(8px);
     box-shadow: 0 4px 16px rgba(0,0,0,0.5);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.project-card:hover .project-card__logo {
-    transform: scale(1.08);
-    box-shadow: 0 6px 22px rgba(0,0,0,0.65);
 }
 
 .project-card__title {
@@ -796,26 +769,6 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     });
-
-    // Smooth entry animation via IntersectionObserver
-    if ('IntersectionObserver' in window) {
-        const io = new IntersectionObserver((entries) => {
-            entries.forEach((entry, i) => {
-                if (entry.isIntersecting) {
-                    const card = entry.target;
-                    const idx  = Array.from(projectCards).indexOf(card);
-                    card.style.animationDelay = (idx * 0.07) + 's';
-                    card.classList.add('pc-visible');
-                    io.unobserve(card);
-                }
-            });
-        }, { threshold: 0.12 });
-
-        projectCards.forEach(card => io.observe(card));
-    } else {
-        // Fallback: show immediately
-        projectCards.forEach(card => card.classList.add('pc-visible'));
-    }
 });
 </script>
 
