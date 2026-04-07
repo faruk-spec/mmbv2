@@ -2083,7 +2083,7 @@ window.aiSuggestSummary = function () {
         box.innerHTML = '<div style="font-size:0.8rem;color:var(--text-secondary);padding:8px 0;">⏳ Generating suggestions…</div>';
         box.classList.add('open');
         var fd = new FormData();
-        fd.append('_token', csrfToken);
+        fd.append('_csrf_token', csrfToken);
         fd.append('job_title', jt);
         fd.append('experience_years', expYears);
         fd.append('skills', skillStr);
@@ -2228,7 +2228,7 @@ window.aiSuggestBullets = function (i) {
     box.innerHTML = '<div style="font-size:0.8rem;color:var(--text-secondary);padding:8px 0;">⏳ Generating suggestions…</div>';
     box.classList.add('open');
     var fd = new FormData();
-    fd.append('_token', csrfToken);
+    fd.append('_csrf_token', csrfToken);
     fd.append('job_title', exp.title || '');
     fd.append('company', exp.company || '');
     fetch('/projects/resumex/ai/suggest-bullets', { method: 'POST', body: fd })
@@ -2381,7 +2381,7 @@ window.aiSuggestSkills = function () {
         box.innerHTML = '<div style="font-size:0.8rem;color:var(--text-secondary);padding:8px 0;">⏳ Generating skill suggestions…</div>';
         box.classList.add('open');
         var fd = new FormData();
-        fd.append('_token', csrfToken);
+        fd.append('_csrf_token', csrfToken);
         fd.append('job_title', jt);
         fetch('/projects/resumex/ai/suggest-skills', { method:'POST', body:fd })
         .then(function (r) { return r.json(); })
@@ -3269,7 +3269,7 @@ setTimeout(updateLivePreview, 400);
         statusEl.textContent   = '⏳ Uploading…';
 
         var fd = new FormData();
-        fd.append('_token', csrfToken);
+        fd.append('_csrf_token', csrfToken);
         fd.append('photo',  file);
 
         fetch('/projects/resumex/upload-image', { method: 'POST', body: fd })

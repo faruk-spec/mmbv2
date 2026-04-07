@@ -83,7 +83,7 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
                         <p id="fromLabel" style="font-size:0.78rem;font-weight:600;color:var(--text-secondary);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em;">From (Issuer)</p>
                         <div class="form-group" style="margin-bottom:8px;">
                             <label class="form-label">Name *</label>
-                            <input type="text" name="from_name" id="from_name" class="form-input" placeholder="Your name / company" required>
+                            <input type="text" name="from_name" id="from_name" class="form-input" placeholder="Your name / company" required maxlength="255">
                         </div>
                         <div class="form-group" style="margin-bottom:8px;">
                             <label class="form-label">Address</label>
@@ -91,7 +91,7 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
                         </div>
                         <div class="form-group" style="margin-bottom:8px;">
                             <label class="form-label">Phone</label>
-                            <input type="text" name="from_phone" id="from_phone" class="form-input" placeholder="+91 XXXXX XXXXX">
+                            <input type="tel" name="from_phone" id="from_phone" class="form-input" placeholder="+91 XXXXX XXXXX" maxlength="20">
                         </div>
                         <div class="form-group" style="margin:0;">
                             <label class="form-label">Email</label>
@@ -102,7 +102,7 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
                         <p id="toLabel" style="font-size:0.78rem;font-weight:600;color:var(--text-secondary);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em;">To (Recipient)</p>
                         <div class="form-group" style="margin-bottom:8px;">
                             <label class="form-label">Name *</label>
-                            <input type="text" name="to_name" id="to_name" class="form-input" placeholder="Recipient name" required>
+                            <input type="text" name="to_name" id="to_name" class="form-input" placeholder="Recipient name" required maxlength="255">
                         </div>
                         <div class="form-group" style="margin-bottom:8px;">
                             <label class="form-label">Address</label>
@@ -110,7 +110,7 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
                         </div>
                         <div class="form-group" style="margin-bottom:8px;">
                             <label class="form-label">Phone</label>
-                            <input type="text" name="to_phone" id="to_phone" class="form-input" placeholder="+91 XXXXX XXXXX">
+                            <input type="tel" name="to_phone" id="to_phone" class="form-input" placeholder="+91 XXXXX XXXXX" maxlength="20">
                         </div>
                         <div class="form-group" style="margin:0;">
                             <label class="form-label">Email</label>

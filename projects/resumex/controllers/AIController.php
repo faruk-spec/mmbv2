@@ -580,7 +580,7 @@ class AIController
             $p = json_decode($body, true);
             return $p['_token'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
         }
-        return $_POST['_token'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
+        return $_POST['_csrf_token'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
     }
 
     private function buildSummaries(string $jobTitle, int $years, string $skills): array

@@ -329,7 +329,23 @@ if (!$isEditMode) {
                             <label class="form-label" style="font-size:0.72rem;" for="field_<?= $field ?>">
                                 <?= htmlspecialchars($field_labels[$field] ?? ucfirst(str_replace('_',' ',$field))) ?>
                             </label>
-                            <input type="text" id="field_<?= $field ?>" name="<?= htmlspecialchars($field) ?>"
+                            <input <?php
+                                // Derive semantic input type and validation attrs from field name
+                                $fieldLower = strtolower($field);
+                                if (in_array($fieldLower, ['email','email_address','work_email','personal_email'], true)) {
+                                    echo 'type="email" maxlength="255"';
+                                } elseif (in_array($fieldLower, ['phone','mobile','contact','phone_number','mobile_number','contact_number'], true)) {
+                                    echo 'type="tel" maxlength="25" pattern="[+\d\s\-\(\)]{4,25}"';
+                                } elseif (in_array($fieldLower, ['year','batch','passing_year','admission_year'], true)) {
+                                    echo 'type="number" min="1900" max="2099" maxlength="4"';
+                                } elseif (in_array($fieldLower, ['dob','date_of_birth','birth_date','visit_date','joining_date','valid_from','valid_till','expiry_date'], true)) {
+                                    echo 'type="date"';
+                                } elseif (in_array($fieldLower, ['age'], true)) {
+                                    echo 'type="number" min="1" max="120"';
+                                } else {
+                                    echo 'type="text" maxlength="255"';
+                                }
+                                ?> id="field_<?= $field ?>" name="<?= htmlspecialchars($field) ?>"
                                    class="form-input" style="padding:6px 10px;font-size:0.82rem;"
                                    placeholder="<?= strtolower(htmlspecialchars($field_labels[$field] ?? $field)) ?>"
                                    value="<?= htmlspecialchars($editCardData[$field] ?? '', ENT_QUOTES, 'UTF-8') ?>"
@@ -782,7 +798,7 @@ function buildQRData() {
     // Scan ALL visible input fields in the dynamic fields container
     var container = document.getElementById('dynamicFields');
     if (container) {
-        var inputs = container.querySelectorAll('input[type=text]');
+        var inputs = container.querySelectorAll('input[type=text],input[type=email],input[type=tel],input[type=number],input[type=date]');
         inputs.forEach(function(inp) {
             if (!inp.value || !inp.id) return;
             var fieldKey = inp.id.replace(/^field_/, '');
@@ -1312,7 +1328,7 @@ function selectTemplate(key) {
     // Save existing field values BEFORE clearing (Fix 5)
     var savedValues = {};
     var container = document.getElementById('dynamicFields');
-    container.querySelectorAll('input[type=text]').forEach(function(inp) {
+    container.querySelectorAll('input[type=text],input[type=email],input[type=tel],input[type=number],input[type=date]').forEach(function(inp) {
         if (inp.id && inp.value) savedValues[inp.id] = inp.value;
     });
 
@@ -1322,10 +1338,23 @@ function selectTemplate(key) {
         if (field === 'photo') return;
         var label = FIELD_LABELS[field] || field.replace(/_/g,' ');
         var savedVal = savedValues['field_'+field] || '';
+        var fl = field.toLowerCase();
+        var inputAttrs = 'type="text" maxlength="255"';
+        if (['email','email_address','work_email','personal_email'].indexOf(fl) !== -1) {
+            inputAttrs = 'type="email" maxlength="255"';
+        } else if (['phone','mobile','contact','phone_number','mobile_number','contact_number'].indexOf(fl) !== -1) {
+            inputAttrs = 'type="tel" maxlength="25" pattern="[+\\d\\s\\-\\(\\)]{4,25}"';
+        } else if (['year','batch','passing_year','admission_year'].indexOf(fl) !== -1) {
+            inputAttrs = 'type="number" min="1900" max="2099" maxlength="4"';
+        } else if (['dob','date_of_birth','birth_date','visit_date','joining_date','valid_from','valid_till','expiry_date'].indexOf(fl) !== -1) {
+            inputAttrs = 'type="date"';
+        } else if (['age'].indexOf(fl) !== -1) {
+            inputAttrs = 'type="number" min="1" max="120"';
+        }
         container.querySelector('.grid').innerHTML +=
             '<div class="form-group" style="margin-bottom:0;">'
             +'<label class="form-label" style="font-size:0.72rem;" for="field_'+field+'">'+label+'</label>'
-            +'<input type="text" id="field_'+field+'" name="'+field+'" class="form-input" '
+            +'<input '+inputAttrs+' id="field_'+field+'" name="'+field+'" class="form-input" '
             +'style="padding:6px 10px;font-size:0.82rem;" placeholder="'+label.toLowerCase()+'" value="'+savedVal+'" oninput="updatePreview()">'
             +'</div>';
     });

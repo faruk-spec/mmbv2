@@ -9,6 +9,15 @@
 $router->get('/admin', 'Admin\\DashboardController@index', ['auth', 'admin']);
 $router->get('/admin/dashboard', 'Admin\\DashboardController@index', ['auth', 'admin']);
 
+// Pages CMS
+$router->get('/admin/pages', 'Admin\\PagesController@index', ['auth', 'admin']);
+$router->get('/admin/pages/create', 'Admin\\PagesController@create', ['auth', 'admin']);
+$router->post('/admin/pages/create', 'Admin\\PagesController@store', ['auth', 'admin']);
+$router->get('/admin/pages/{id}/edit', 'Admin\\PagesController@edit', ['auth', 'admin']);
+$router->post('/admin/pages/{id}/update', 'Admin\\PagesController@update', ['auth', 'admin']);
+$router->post('/admin/pages/{id}/delete', 'Admin\\PagesController@delete', ['auth', 'admin']);
+$router->post('/admin/pages/{id}/toggle', 'Admin\\PagesController@toggleStatus', ['auth', 'admin']);
+
 // Platform Plans (Universal multi-app plans)
 $router->get('/admin/platform-plans', 'Admin\\PlatformPlansController@index', ['auth', 'admin']);
 $router->get('/admin/platform-plans/create', 'Admin\\PlatformPlansController@createForm', ['auth', 'admin']);
@@ -217,6 +226,12 @@ $router->post('/admin/settings', 'Admin\\SettingsController@update', ['auth', 'a
 $router->get('/admin/settings/session', 'Admin\\SettingsController@session', ['auth', 'admin']);
 $router->post('/admin/settings/session', 'Admin\\SettingsController@updateSession', ['auth', 'admin']);
 $router->post('/admin/settings/security-policy', 'Admin\\SettingsController@updateSecurityPolicy', ['auth', 'admin']);
+$router->post('/admin/settings/force-logout-all', 'Admin\\SettingsController@forceLogoutAll', ['auth', 'admin']);
+$router->post('/admin/settings/force-logout-user', 'Admin\\SettingsController@forceLogoutUser', ['auth', 'admin']);
+
+// ── Tools ─────────────────────────────────────────────────────────────────────
+$router->get('/admin/tools/scanner', 'Admin\\ToolsController@scanner', ['auth', 'admin']);
+$router->post('/admin/tools/scanner', 'Admin\\ToolsController@scanUrl', ['auth', 'admin']);
 $router->get('/admin/settings/maintenance', 'Admin\\SettingsController@maintenance', ['auth', 'admin']);
 $router->post('/admin/settings/maintenance', 'Admin\\SettingsController@toggleMaintenance', ['auth', 'admin']);
 $router->post('/admin/settings/maintenance/update', 'Admin\\SettingsController@updateMaintenanceSettings', ['auth', 'admin']);

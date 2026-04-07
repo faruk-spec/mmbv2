@@ -338,6 +338,8 @@
                        placeholder="<?= htmlspecialchars($ph) ?>"
                        <?= isset($field['min']) ? 'min="'.htmlspecialchars($field['min']).'"' : '' ?>
                        <?= isset($field['max']) ? 'max="'.htmlspecialchars($field['max']).'"' : '' ?>
+                       <?= isset($field['maxlength']) ? 'maxlength="'.htmlspecialchars($field['maxlength']).'"' : ($type === 'text' ? 'maxlength="1000"' : ($type === 'email' ? 'maxlength="255"' : ($type === 'tel' || $type === 'phone' ? 'maxlength="20"' : ''))) ?>
+                       <?= isset($field['pattern']) ? 'pattern="'.htmlspecialchars($field['pattern']).'"' : '' ?>
                        <?= $required ? 'required' : '' ?>>
             </div>
             <?php endif; ?>

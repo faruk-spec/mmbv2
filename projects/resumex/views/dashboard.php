@@ -674,7 +674,7 @@
         deleteBtn.disabled = true;
         deleteBtn.textContent = 'Deleting...';
         var fd = new FormData();
-        fd.append('_token', token);
+        fd.append('_csrf_token', token);
         fd.append('id', id);
         fetch('/projects/resumex/delete', { method: 'POST', body: fd })
             .then(function () { window.location.reload(); })
@@ -730,7 +730,7 @@
         shareGenBtn.disabled = true;
         shareGenBtn.textContent = 'Working…';
         var fd = new FormData();
-        fd.append('_token', token);
+        fd.append('_csrf_token', token);
         fd.append('id', id);
         fetch('/projects/resumex/share/generate', { method: 'POST', body: fd })
             .then(function (r) { return r.json(); })

@@ -62,6 +62,33 @@ $router->post('/api/notifications/mark-read', 'NotificationController@markRead',
 $router->post('/api/notifications/mark-all-read', 'NotificationController@markAllRead', ['auth']);
 $router->get('/notifications', 'NotificationController@viewAll', ['auth']);
 
+// Session alert polling — checked every ~30 s by logged-in browsers
+$router->get('/api/session-alerts', function() {
+    if (!\Core\Auth::check()) {
+        \Core\Helpers::json(['alert' => null]);
+        return;
+    }
+    $userId = \Core\Auth::id();
+    try {
+        $db = \Core\Database::getInstance();
+        $row = $db->fetch(
+            "SELECT `value` FROM settings WHERE `key` = ?",
+            ['new_login_notify_' . $userId]
+        );
+        if ($row) {
+            $data = json_decode($row['value'], true);
+            $sessionCreatedAt = $_SESSION['_login_time'] ?? 0;
+            if (!empty($data['time']) && $data['time'] > $sessionCreatedAt + 5) {
+                // Consume the notification so it shows only once
+                $db->delete('settings', '`key` = ?', ['new_login_notify_' . $userId]);
+                \Core\Helpers::json(['alert' => $data]);
+                return;
+            }
+        }
+    } catch (\Exception $e) { /* non-fatal */ }
+    \Core\Helpers::json(['alert' => null]);
+}, ['auth']);
+
 // 2FA routes
 // Two-Factor Authentication routes
 $router->get('/2fa/setup', 'TwoFactorController@setup', ['auth']);
@@ -116,6 +143,10 @@ $router->get('/uploads/{path:wildcard}', function($path) {
     readfile($filePath);
     exit;
 });
+
+// Public pages (no auth required)
+$router->get('/pages/{slug:wildcard}', 'PagesController@show');
+
 $router->get('/projects/{project}', function($project) {
     // Check if project is enabled
     if (!\Core\Helpers::isProjectEnabled($project)) {
@@ -207,3 +238,60 @@ $router->get('/l/{code}', 'Projects\LinkShortner\Controllers\RedirectController@
 // ── FormX public form pages ───────────────────────────────────────────────────
 $router->get('/forms/{slug}',  'FormXPublicController@show');
 $router->post('/forms/{slug}', 'FormXPublicController@submit');
+
+// ── Short URL routes — hide /projects/ prefix from users ──────────────────────
+// These mirror the /projects/{project}/... routes but without the /projects/ segment.
+$knownProjects = ['qr','proshare','formx','codexpro','convertx','idcard','linkshortner','notex','resumex','billx','whatsapp','devzone'];
+
+foreach ($knownProjects as $_proj) {
+    $router->get('/' . $_proj, function() use ($_proj) {
+        if (!\Core\Helpers::isProjectEnabled($_proj)) {
+            \Core\View::render('errors/project-disabled', ['project' => $_proj]);
+            return;
+        }
+        $f = BASE_PATH . '/projects/' . $_proj . '/index.php';
+        if (file_exists($f)) require_once $f;
+        else { http_response_code(404); \Core\View::render('errors/404'); }
+    }, ['auth']);
+
+    $router->get('/' . $_proj . '/{path:wildcard}', function($path = '') use ($_proj) {
+        if (!\Core\Helpers::isProjectEnabled($_proj)) {
+            \Core\View::render('errors/project-disabled', ['project' => $_proj]);
+            return;
+        }
+        $f = BASE_PATH . '/projects/' . $_proj . '/index.php';
+        if (file_exists($f)) require_once $f;
+        else { http_response_code(404); \Core\View::render('errors/404'); }
+    }, ['auth']);
+
+    $router->post('/' . $_proj . '/{path:wildcard}', function($path = '') use ($_proj) {
+        if (!\Core\Helpers::isProjectEnabled($_proj)) {
+            \Core\Helpers::json(['error' => 'Project is disabled'], 503);
+            return;
+        }
+        $f = BASE_PATH . '/projects/' . $_proj . '/index.php';
+        if (file_exists($f)) require_once $f;
+        else { http_response_code(404); \Core\View::render('errors/404'); }
+    }, ['auth']);
+
+    $router->put('/' . $_proj . '/{path:wildcard}', function($path = '') use ($_proj) {
+        if (!\Core\Helpers::isProjectEnabled($_proj)) {
+            \Core\Helpers::json(['error' => 'Project is disabled'], 503);
+            return;
+        }
+        $f = BASE_PATH . '/projects/' . $_proj . '/index.php';
+        if (file_exists($f)) require_once $f;
+        else { http_response_code(404); \Core\View::render('errors/404'); }
+    }, ['auth']);
+
+    $router->delete('/' . $_proj . '/{path:wildcard}', function($path = '') use ($_proj) {
+        if (!\Core\Helpers::isProjectEnabled($_proj)) {
+            \Core\Helpers::json(['error' => 'Project is disabled'], 503);
+            return;
+        }
+        $f = BASE_PATH . '/projects/' . $_proj . '/index.php';
+        if (file_exists($f)) require_once $f;
+        else { http_response_code(404); \Core\View::render('errors/404'); }
+    }, ['auth']);
+}
+unset($_proj);

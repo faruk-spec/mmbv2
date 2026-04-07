@@ -64,7 +64,7 @@
             <div class="form-group">
                 <label class="form-label" for="password">Password</label>
                 <input type="password" id="password" name="password" class="form-input" 
-                       placeholder="••••••••" required>
+                       placeholder="••••••••" required minlength="1">
                 <?php if (View::hasError('password')): ?>
                     <div class="form-error"><?= View::error('password') ?></div>
                 <?php endif; ?>

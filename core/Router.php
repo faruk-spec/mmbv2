@@ -88,6 +88,18 @@ class Router
      */
     public function dispatch(string $method, string $uri): void
     {
+        // Send security headers on every response
+        if (class_exists('Core\\Middleware\\SecurityHeadersMiddleware')) {
+            \Core\Middleware\SecurityHeadersMiddleware::handle();
+        }
+
+        // Global CSRF enforcement for mutating requests
+        if (class_exists('Core\\Middleware\\CsrfMiddleware')) {
+            if (!\Core\Middleware\CsrfMiddleware::handle()) {
+                return;
+            }
+        }
+
         // Run global middleware (maintenance mode check)
         // This runs before all routes
         if (class_exists('Core\\Middleware\\MaintenanceMiddleware')) {
