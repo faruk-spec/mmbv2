@@ -151,7 +151,7 @@
         <h3>Templates &amp; Design</h3>
         <ul>
           <li class="dot-purple">10+ professional templates</li>
-          <li class="dot-purple">Colour theme picker</li>
+          <li class="dot-purple">Color theme picker</li>
           <li class="dot-purple">Font family selector</li>
           <li class="dot-purple">Spacing &amp; margin controls</li>
           <li class="dot-purple">Header layout variations</li>
@@ -201,10 +201,10 @@
   <section class="fp-section fp-anim">
     <div class="fp-lbl"><i class="fas fa-route"></i> Workflow</div>
     <h2>How It Works</h2>
-    <p class="fp-sub">Four steps from blank page to interview-ready, ATS-optimised resume.</p>
+    <p class="fp-sub">Four steps from blank page to interview-ready, ATS-optimized resume.</p>
     <div class="fp-steps">
       <div class="fp-step"><div class="fp-step-num">1</div><h4>Fill</h4><p>Enter your work experience, education, skills, and contact details section by section.</p></div>
-      <div class="fp-step"><div class="fp-step-num">2</div><h4>Choose Template</h4><p>Pick from 10+ pro templates and customise the colour scheme, fonts, and layout.</p></div>
+      <div class="fp-step"><div class="fp-step-num">2</div><h4>Choose Template</h4><p>Pick from 10+ pro templates and customize the color scheme, fonts, and layout.</p></div>
       <div class="fp-step"><div class="fp-step-num">3</div><h4>Preview</h4><p>See a real-time PDF preview and check your ATS score before downloading.</p></div>
       <div class="fp-step"><div class="fp-step-num">4</div><h4>Export</h4><p>Download a pixel-perfect PDF, or share your public resume link with recruiters.</p></div>
     </div>
@@ -250,7 +250,7 @@
   <div class="fp-hl fp-anim">
     <div class="fp-hl-inner">
       <h2>Land Your Dream Job Faster</h2>
-      <p>ATS-optimised, beautifully designed, and always up-to-date &mdash; your resume works for you even while you sleep with a live shareable link.</p>
+      <p>ATS-optimized, beautifully designed, and always up-to-date &mdash; your resume works for you even while you sleep with a live shareable link.</p>
       <div class="fp-hl-tags">
         <span class="fp-hl-tag">ATS Optimised</span>
         <span class="fp-hl-tag">10+ Templates</span>

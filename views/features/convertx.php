@@ -138,7 +138,7 @@
           <li class="dot-cyan">Resize &amp; crop</li>
           <li class="dot-cyan">Smart compression</li>
           <li class="dot-cyan">Background removal (AI)</li>
-          <li class="dot-cyan">Colour space conversion</li>
+          <li class="dot-cyan">Color space conversion</li>
           <li class="dot-cyan">Watermark overlay</li>
           <li class="dot-cyan">Batch rename on export</li>
         </ul>

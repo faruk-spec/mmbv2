@@ -124,7 +124,7 @@
   <section class="fp-section fp-anim">
     <div class="fp-lbl"><i class="fas fa-layer-group"></i> Feature Categories</div>
     <h2>Every Click Tells a Story</h2>
-    <p class="fp-sub">Short links that do more than shorten &mdash; track, target, test, and optimise every URL in your campaigns.</p>
+    <p class="fp-sub">Short links that do more than shorten &mdash; track, target, test, and optimize every URL in your campaigns.</p>
     <div class="fp-grid">
 
       <div class="fp-card">
@@ -263,7 +263,7 @@
 
   <div class="fp-cta fp-anim">
     <h2>Start Shortening Smarter Links</h2>
-    <p>Join marketers and developers using LinkShortner to track every click and optimise every campaign.</p>
+    <p>Join marketers and developers using LinkShortner to track every click and optimize every campaign.</p>
     <div class="fp-btns">
       <?php if(Auth::check()): ?>
         <a href="/dashboard" class="fp-btn-primary"><i class="fas fa-rocket"></i> Go to Dashboard</a>
