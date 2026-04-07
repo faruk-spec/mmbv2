@@ -492,41 +492,42 @@ if ($showStats):
             $showFeaturesText = $project['show_features_text'] ?? 'Show Features';
             $showFeaturesUrl  = $project['show_features_url'] ?? '';
         ?>
-        <div class="project-card" data-tier="<?= htmlspecialchars($projectTier) ?>">
+        <div class="project-card pc-animate" data-tier="<?= htmlspecialchars($projectTier) ?>">
             <!-- Thumbnail image covers full card -->
             <?php if (!empty($project['image_url'])): ?>
                 <img class="project-card__thumb" src="<?= htmlspecialchars($project['image_url']) ?>" alt="">
             <?php else: ?>
-                <div class="project-card__thumb project-card__thumb--placeholder" style="background: linear-gradient(135deg, <?= $projectColor ?>22, <?= $projectColor ?>08);"></div>
+                <div class="project-card__thumb project-card__thumb--placeholder" style="background: linear-gradient(135deg, <?= $projectColor ?>33, <?= $projectColor ?>11);"></div>
             <?php endif; ?>
 
             <!-- Gradient overlay for readability -->
             <div class="project-card__overlay"></div>
 
+            <!-- Tier badge – absolute top-right -->
+            <?php
+            $badgeStyles = [
+                'free'       => 'background:rgba(0,255,136,0.28);color:#00ff88;border:1px solid rgba(0,255,136,0.55);',
+                'freemium'   => 'background:rgba(255,170,0,0.28);color:#ffaa00;border:1px solid rgba(255,170,0,0.55);',
+                'enterprise' => 'background:rgba(153,69,255,0.28);color:#bb88ff;border:1px solid rgba(153,69,255,0.55);',
+            ];
+            $badgeStyle = $badgeStyles[$projectTier] ?? $badgeStyles['free'];
+            ?>
+            <span class="project-card__tier" style="<?= $badgeStyle ?>">
+                <?= htmlspecialchars($projectTier === 'enterprise' ? 'Enterprise' : ucfirst($projectTier)) ?>
+            </span>
+
             <!-- Inner content above overlay -->
             <div class="project-card__body">
                 <!-- Top-center: logo + title -->
                 <div class="project-card__header">
-                    <div class="project-card__logo" style="background: <?= $projectColor ?>30; border-color: <?= $projectColor ?>60;">
+                    <div class="project-card__logo" style="background: <?= $projectColor ?>40; border-color: <?= $projectColor ?>80;">
                         <?php if (!empty($project['logo_url'])): ?>
-                            <img src="<?= htmlspecialchars($project['logo_url']) ?>" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:7px;">
+                            <img src="<?= htmlspecialchars($project['logo_url']) ?>" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:9px;">
                         <?php else: ?>
-                            <span style="font-size: 1rem; font-weight: 700; color: <?= $projectColor ?>;"><?= strtoupper(substr($projectName, 0, 2)) ?></span>
+                            <span style="font-size: 1.3rem; font-weight: 700; color: <?= $projectColor ?>;"><?= strtoupper(substr($projectName, 0, 2)) ?></span>
                         <?php endif; ?>
                     </div>
-                    <h3 class="project-card__title" style="color: <?= $projectColor ?>;"><?= htmlspecialchars($projectName) ?></h3>
-                    <!-- Tier badge -->
-                    <?php
-                    $badgeStyles = [
-                        'free'       => 'background:rgba(0,255,136,0.22);color:var(--green);border:1px solid var(--green);',
-                        'freemium'   => 'background:rgba(255,170,0,0.22);color:var(--orange);border:1px solid var(--orange);',
-                        'enterprise' => 'background:rgba(153,69,255,0.22);color:var(--purple);border:1px solid var(--purple);',
-                    ];
-                    $badgeStyle = $badgeStyles[$projectTier] ?? $badgeStyles['free'];
-                    ?>
-                    <span class="project-card__tier" style="<?= $badgeStyle ?>">
-                        <?= htmlspecialchars($projectTier === 'enterprise' ? 'Enterprise' : ucfirst($projectTier)) ?>
-                    </span>
+                    <h3 class="project-card__title" style="color: #fff; text-shadow: 0 0 12px <?= $projectColor ?>, 0 2px 6px rgba(0,0,0,0.8);"><?= htmlspecialchars($projectName) ?></h3>
                 </div>
 
                 <!-- Description -->
@@ -602,6 +603,20 @@ if ($showStats):
     display: none;
 }
 
+/* Entry animation */
+@keyframes pc-rise {
+    from { opacity: 0; transform: translateY(28px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+
+.pc-animate {
+    opacity: 0;
+}
+
+.pc-animate.pc-visible {
+    animation: pc-rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
 /* Thumbnail fills card */
 .project-card__thumb {
     position: absolute;
@@ -610,6 +625,11 @@ if ($showStats):
     height: 100%;
     object-fit: cover;
     z-index: 0;
+    transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.project-card:hover .project-card__thumb {
+    transform: scale(1.05);
 }
 
 .project-card__thumb--placeholder {
@@ -618,26 +638,41 @@ if ($showStats):
     z-index: 0;
 }
 
-/* Dark gradient overlay */
+/* Stronger gradient overlay for legibility */
 .project-card__overlay {
     position: absolute;
     inset: 0;
     z-index: 1;
     background: linear-gradient(
         to bottom,
-        rgba(8, 10, 20, 0.72) 0%,
-        rgba(8, 10, 20, 0.45) 45%,
-        rgba(8, 10, 20, 0.80) 100%
+        rgba(6, 8, 18, 0.80) 0%,
+        rgba(6, 8, 18, 0.40) 40%,
+        rgba(6, 8, 18, 0.88) 100%
     );
 }
 
 [data-theme="light"] .project-card__overlay {
     background: linear-gradient(
         to bottom,
-        rgba(20, 20, 40, 0.60) 0%,
-        rgba(20, 20, 40, 0.30) 45%,
-        rgba(20, 20, 40, 0.70) 100%
+        rgba(10, 10, 28, 0.75) 0%,
+        rgba(10, 10, 28, 0.38) 40%,
+        rgba(10, 10, 28, 0.82) 100%
     );
+}
+
+/* Tier badge – absolute top-right corner */
+.project-card__tier {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 3;
+    padding: 3px 10px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    backdrop-filter: blur(6px);
 }
 
 /* Content sits above overlay */
@@ -650,60 +685,55 @@ if ($showStats):
     padding: 16px;
 }
 
-/* Top-center: logo + title + badge */
+/* Top-center: logo + title */
 .project-card__header {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     text-align: center;
 }
 
+/* Larger logo */
 .project-card__logo {
-    width: 48px;
-    height: 48px;
-    border-radius: 10px;
-    border: 1.5px solid;
+    width: 64px;
+    height: 64px;
+    border-radius: 14px;
+    border: 2px solid;
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
     flex-shrink: 0;
-    backdrop-filter: blur(6px);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.project-card:hover .project-card__logo {
+    transform: scale(1.08);
+    box-shadow: 0 6px 22px rgba(0,0,0,0.65);
 }
 
 .project-card__title {
-    font-size: 1.05rem;
+    font-size: 1.1rem;
     font-weight: 700;
     margin: 0;
-    text-shadow: 0 1px 4px rgba(0,0,0,0.6);
-}
-
-.project-card__tier {
-    padding: 2px 10px;
-    border-radius: 10px;
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.2px;
 }
 
 /* Description */
 .project-card__desc {
     flex: 1;
-    color: rgba(255,255,255,0.82);
+    color: rgba(255,255,255,0.90);
     font-size: 12px;
-    line-height: 1.5;
-    margin: 10px 0 0;
+    line-height: 1.55;
+    margin: 12px 0 0;
     display: -webkit-box;
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
-}
-
-[data-theme="light"] .project-card__desc {
-    color: rgba(255,255,255,0.90);
+    text-shadow: 0 1px 4px rgba(0,0,0,0.7);
 }
 
 /* Action buttons – bottom-right */
@@ -724,19 +754,20 @@ if ($showStats):
     font-weight: 600;
     cursor: pointer;
     text-decoration: none;
-    transition: opacity 0.2s ease, box-shadow 0.2s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
     white-space: nowrap;
     border: 1.5px solid transparent;
 }
 
 .project-card__btn:hover {
-    opacity: 0.88;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+    opacity: 0.92;
 }
 
 .project-card__btn--outline {
-    background: rgba(0,0,0,0.3);
-    backdrop-filter: blur(4px);
+    background: rgba(0,0,0,0.35);
+    backdrop-filter: blur(6px);
 }
 
 .project-card__btn--primary {
@@ -746,6 +777,7 @@ if ($showStats):
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Filter functionality
     const filterBtns = document.querySelectorAll('.filter-btn');
     const projectCards = document.querySelectorAll('.project-card');
 
@@ -764,6 +796,26 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     });
+
+    // Smooth entry animation via IntersectionObserver
+    if ('IntersectionObserver' in window) {
+        const io = new IntersectionObserver((entries) => {
+            entries.forEach((entry, i) => {
+                if (entry.isIntersecting) {
+                    const card = entry.target;
+                    const idx  = Array.from(projectCards).indexOf(card);
+                    card.style.animationDelay = (idx * 0.07) + 's';
+                    card.classList.add('pc-visible');
+                    io.unobserve(card);
+                }
+            });
+        }, { threshold: 0.12 });
+
+        projectCards.forEach(card => io.observe(card));
+    } else {
+        // Fallback: show immediately
+        projectCards.forEach(card => card.classList.add('pc-visible'));
+    }
 });
 </script>
 
