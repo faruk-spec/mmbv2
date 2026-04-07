@@ -464,4 +464,28 @@ class SettingsController extends BaseController
         
         $this->redirect('/admin/settings/session');
     }
+
+    public function forceLogoutAll(): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request.');
+            $this->redirect('/admin/settings/session');
+            return;
+        }
+
+        try {
+            $db = Database::getInstance();
+            $currentSessionId = session_id();
+            $affected = $db->execute(
+                "UPDATE user_sessions SET is_active = 0, last_activity_at = NOW() WHERE session_id != ? AND is_active = 1",
+                [$currentSessionId]
+            );
+            ActivityLogger::log(Auth::id(), 'force_logout_all', 'sessions', null, ['affected' => $affected]);
+            $this->flash('success', "Force logout complete. {$affected} session(s) were terminated.");
+        } catch (\Exception $e) {
+            $this->flash('error', 'Failed to force logout: ' . $e->getMessage());
+        }
+
+        $this->redirect('/admin/settings/session');
+    }
 }

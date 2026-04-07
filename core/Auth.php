@@ -95,7 +95,20 @@ class Auth
             
             // Set session
             self::setUserSession($user);
-            
+
+            // Check for existing active sessions (concurrent session detection)
+            try {
+                $activeSessions = $db->fetchAll(
+                    "SELECT id FROM user_sessions WHERE user_id = ? AND is_active = 1 AND expires_at > NOW()",
+                    [$userId]
+                );
+                if (count($activeSessions) > 0) {
+                    $_SESSION['_concurrent_session_warning'] = count($activeSessions);
+                }
+            } catch (\Exception $e) {
+                // non-fatal
+            }
+
             // Track session
             SessionManager::track($user['id']);
             

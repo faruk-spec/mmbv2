@@ -38,7 +38,7 @@
             <div class="form-group">
                 <label class="form-label" for="name">Full Name</label>
                 <input type="text" id="name" name="name" class="form-input" 
-                       value="<?= View::old('name') ?>" placeholder="John Doe" required>
+                       value="<?= View::old('name') ?>" placeholder="John Doe" required minlength="2" maxlength="50">
                 <?php if (View::hasError('name')): ?>
                     <div class="form-error"><?= View::error('name') ?></div>
                 <?php endif; ?>
@@ -65,7 +65,7 @@
             <div class="form-group">
                 <label class="form-label" for="password_confirmation">Confirm Password</label>
                 <input type="password" id="password_confirmation" name="password_confirmation" 
-                       class="form-input" placeholder="Repeat password" required>
+                       class="form-input" placeholder="Repeat password" required minlength="8">
             </div>
             
             <button type="submit" class="btn btn-primary" style="width: 100%;">Create Account</button>
@@ -76,4 +76,19 @@
         </p>
     </div>
 </div>
+<script>
+(function() {
+    var form = document.querySelector('form[action="/register"]');
+    if (!form) return;
+    form.addEventListener('submit', function(e) {
+        var pw = document.getElementById('password');
+        var pw2 = document.getElementById('password_confirmation');
+        if (pw && pw2 && pw.value !== pw2.value) {
+            e.preventDefault();
+            alert('Passwords do not match. Please try again.');
+            pw2.focus();
+        }
+    });
+})();
+</script>
 <?php View::endSection(); ?>

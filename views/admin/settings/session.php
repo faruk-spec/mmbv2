@@ -124,6 +124,19 @@
     
     <div class="card" style="margin-top: 20px;">
         <div class="card-header">
+            <h3><i class="fas fa-sign-out-alt"></i> Force Logout All Users</h3>
+        </div>
+        <div class="card-body" style="padding:20px;">
+            <p style="color:var(--text-secondary);margin-bottom:15px;">Terminate all active user sessions (except your own). Use in case of a security incident.</p>
+            <form method="POST" action="/admin/settings/force-logout-all" onsubmit="return confirm('This will log out ALL users. Are you sure?')">
+                <?= Security::csrfField() ?>
+                <button type="submit" class="btn btn-danger"><i class="fas fa-power-off"></i> Force Logout All Users</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card" style="margin-top: 20px;">
+        <div class="card-header">
             <h3>Session Statistics</h3>
         </div>
         <div class="card-body">

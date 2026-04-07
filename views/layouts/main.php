@@ -1083,6 +1083,24 @@ try {
     <?php View::yield('styles'); ?>
 </head>
 <body>
+    <?php if (!empty($_SESSION['_concurrent_session_warning'])): ?>
+    <?php $sessionCount = (int)$_SESSION['_concurrent_session_warning']; unset($_SESSION['_concurrent_session_warning']); ?>
+    <div id="concurrent-session-banner" style="position:fixed;top:0;left:0;right:0;z-index:99999;background:linear-gradient(135deg,#ff6b6b,#ffaa00);color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 20px rgba(0,0,0,0.4);font-family:'Poppins',sans-serif;font-size:14px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span>You are already signed in on <strong><?= $sessionCount ?> other device<?= $sessionCount > 1 ? 's' : '' ?></strong>. Want to revoke those sessions?</span>
+        </div>
+        <div style="display:flex;gap:10px;">
+            <form method="POST" action="/security/revoke-sessions-bulk" style="display:inline;">
+                <input type="hidden" name="_csrf_token" value="<?= \Core\Security::generateCsrfToken() ?>">
+                <input type="hidden" name="revoke_type" value="other">
+                <button type="submit" style="background:rgba(255,255,255,0.3);border:1px solid rgba(255,255,255,0.6);color:#fff;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:13px;font-family:inherit;">Revoke Other Sessions</button>
+            </form>
+            <button onclick="document.getElementById('concurrent-session-banner').style.display='none'" style="background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.4);color:#fff;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:13px;font-family:inherit;">Dismiss</button>
+        </div>
+    </div>
+    <div style="height:56px;"></div>
+    <?php endif; ?>
     <?php
     // Initialise user timezone for all date displays in dashboard pages.
     if (\Core\Auth::check()) {
