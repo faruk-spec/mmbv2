@@ -351,11 +351,22 @@ class SettingsController extends BaseController
         // Calculate average session duration
         $avgDuration = $db->fetch("SELECT AVG(TIMESTAMPDIFF(MINUTE, created_at, last_activity_at)) as avg_minutes FROM user_sessions WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)");
         $stats['avg_duration'] = $avgDuration && $avgDuration['avg_minutes'] ? round($avgDuration['avg_minutes']) . ' min' : 'N/A';
+
+        $activeSessions = $db->fetchAll(
+            "SELECT us.user_id, u.name as user_name, u.email, COUNT(*) as session_count 
+             FROM user_sessions us 
+             LEFT JOIN users u ON us.user_id = u.id 
+             WHERE us.is_active = 1 AND us.expires_at > NOW()
+             GROUP BY us.user_id, u.name, u.email
+             ORDER BY session_count DESC
+             LIMIT 50"
+        );
         
         $this->view('admin/settings/session', [
             'title' => 'Session & Security Settings',
             'settings' => $settingsMap,
-            'stats' => $stats
+            'stats' => $stats,
+            'activeSessions' => $activeSessions,
         ]);
     }
     
@@ -474,16 +485,68 @@ class SettingsController extends BaseController
         }
 
         try {
+            sleep(1);
             $db = Database::getInstance();
             $currentSessionId = session_id();
-            $affected = $db->execute(
+            $stmt = $db->query(
                 "UPDATE user_sessions SET is_active = 0, last_activity_at = NOW() WHERE session_id != ? AND is_active = 1",
                 [$currentSessionId]
             );
-            ActivityLogger::log(Auth::id(), 'force_logout_all', 'sessions', null, ['affected' => $affected]);
+            $affected = $stmt->rowCount();
+            ActivityLogger::log(Auth::id(), 'force_logout_all', ['module' => 'sessions', 'entity_name' => 'All users', 'new_values' => ['affected' => $affected]]);
             $this->flash('success', "Force logout complete. {$affected} session(s) were terminated.");
         } catch (\Exception $e) {
             $this->flash('error', 'Failed to force logout: ' . $e->getMessage());
+        }
+
+        $this->redirect('/admin/settings/session');
+    }
+
+
+    public function forceLogoutUser(): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request.');
+            $this->redirect('/admin/settings/session');
+            return;
+        }
+
+        $targetUserId = (int)$this->input('user_id');
+        if ($targetUserId <= 0) {
+            $this->flash('error', 'Please select a user.');
+            $this->redirect('/admin/settings/session');
+            return;
+        }
+
+        if ($targetUserId === Auth::id()) {
+            $this->flash('error', 'You cannot force logout yourself.');
+            $this->redirect('/admin/settings/session');
+            return;
+        }
+
+        try {
+            sleep(1);
+            $db = Database::getInstance();
+            $stmt = $db->query(
+                "UPDATE user_sessions SET is_active = 0, last_activity_at = NOW() WHERE user_id = ? AND is_active = 1",
+                [$targetUserId]
+            );
+            $affected = $stmt->rowCount();
+
+            $targetUser = $db->fetch("SELECT name, email FROM users WHERE id = ?", [$targetUserId]);
+            $userName = $targetUser ? ($targetUser['name'] ?: $targetUser['email']) : 'User #' . $targetUserId;
+
+            ActivityLogger::log(Auth::id(), 'force_logout_user', [
+                'module' => 'sessions',
+                'entity_name' => $userName,
+                'resource_type' => 'user',
+                'resource_id' => $targetUserId,
+                'new_values' => ['affected_sessions' => $affected]
+            ]);
+
+            $this->flash('success', "Logged out {$affected} session(s) for {$userName}.");
+        } catch (\Exception $e) {
+            $this->flash('error', 'Failed to force logout user: ' . $e->getMessage());
         }
 
         $this->redirect('/admin/settings/session');

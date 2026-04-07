@@ -334,7 +334,22 @@ class DashboardController extends BaseController
             $this->redirect('/security');
             return;
         }
-        
+
+        // Handle "revoke all other sessions" from the concurrent session banner
+        $revokeType = $this->input('revoke_type', '');
+        if ($revokeType === 'other') {
+            try {
+                $count = \Core\SessionManager::revokeAllOtherSessions(Auth::id());
+                \Core\Logger::activity(Auth::id(), 'sessions_other_revoked', ['count' => $count]);
+                $this->flash('success', $count . ' other session(s) revoked.');
+            } catch (\Exception $e) {
+                \Core\Logger::error('Revoke other sessions error: ' . $e->getMessage());
+                $this->flash('error', 'Failed to revoke sessions.');
+            }
+            $this->redirect('/dashboard');
+            return;
+        }
+
         $sessionIds = $_POST['session_ids'] ?? [];
         if (empty($sessionIds) || !is_array($sessionIds)) {
             $this->flash('error', 'No sessions selected.');

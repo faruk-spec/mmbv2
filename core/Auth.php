@@ -95,6 +95,7 @@ class Auth
             
             // Set session
             self::setUserSession($user);
+            $_SESSION['_login_time'] = time();
 
             // Check for existing active sessions (concurrent session detection)
             try {
@@ -104,6 +105,17 @@ class Auth
                 );
                 if (count($activeSessions) > 0) {
                     $_SESSION['_concurrent_session_warning'] = count($activeSessions);
+                    // Notify those existing sessions about this new login
+                    $db->query(
+                        "INSERT INTO settings (`key`, `value`, `type`, `updated_at`) 
+                         VALUES (?, ?, 'json', NOW())
+                         ON DUPLICATE KEY UPDATE `value` = ?, `updated_at` = NOW()",
+                        [
+                            'new_login_notify_' . $userId,
+                            json_encode(['time' => time(), 'ip' => $_SERVER['REMOTE_ADDR'] ?? 'unknown', 'ua' => substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 100)]),
+                            json_encode(['time' => time(), 'ip' => $_SERVER['REMOTE_ADDR'] ?? 'unknown', 'ua' => substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 100)])
+                        ]
+                    );
                 }
             } catch (\Exception $e) {
                 // non-fatal

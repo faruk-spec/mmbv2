@@ -2087,18 +2087,26 @@
                 <?php endif; ?>
                 
                 <!-- Settings -->
-                <!-- Pages CMS -->
-                <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('pages')): ?>
+                <!-- Pages CMS + Tools -->
                 <div class="menu-section">
                     <div class="menu-section-title">Content</div>
+                    <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('pages')): ?>
                     <div class="menu-item">
                         <a href="/admin/pages" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/pages') === 0 ? 'active' : '' ?>">
                             <i class="fas fa-file-alt"></i>
                             <span>Pages</span>
                         </a>
                     </div>
+                    <?php endif; ?>
+                    <?php if (\Core\Auth::isAdmin()): ?>
+                    <div class="menu-item">
+                        <a href="/admin/tools/scanner" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/tools/scanner') === 0 ? 'active' : '' ?>">
+                            <i class="fas fa-shield-virus"></i>
+                            <span>URL/Virus Scanner</span>
+                        </a>
+                    </div>
+                    <?php endif; ?>
                 </div>
-                <?php endif; ?>
 
                 <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('settings') || \Core\Auth::hasPermission('navbar')): ?>
                 <div class="menu-section">

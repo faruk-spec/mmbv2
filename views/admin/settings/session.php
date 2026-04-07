@@ -137,6 +137,28 @@
 
     <div class="card" style="margin-top: 20px;">
         <div class="card-header">
+            <h3><i class="fas fa-user-times"></i> Force Logout Specific User</h3>
+        </div>
+        <div class="card-body" style="padding:20px;">
+            <p style="color:var(--text-secondary);margin-bottom:15px;">Force logout all sessions for a specific user.</p>
+            <form method="POST" action="/admin/settings/force-logout-user" onsubmit="return confirm('Force logout this user?')">
+                <?= Security::csrfField() ?>
+                <div class="form-group" style="margin-bottom:15px;">
+                    <label class="form-label">Select User</label>
+                    <select name="user_id" class="form-input" required>
+                        <option value="">-- Select User --</option>
+                        <?php foreach (($activeSessions ?? []) as $us): ?>
+                        <option value="<?= (int)$us['user_id'] ?>"><?= View::e($us['user_name'] ?? $us['email'] ?? 'User #' . $us['user_id']) ?> (<?= (int)$us['session_count'] ?> active session<?= $us['session_count'] > 1 ? 's' : '' ?>)</option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-warning"><i class="fas fa-sign-out-alt"></i> Force Logout User</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card" style="margin-top: 20px;">
+        <div class="card-header">
             <h3>Session Statistics</h3>
         </div>
         <div class="card-body">

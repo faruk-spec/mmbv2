@@ -1102,6 +1102,37 @@ try {
     <div style="height:56px;"></div>
     <?php endif; ?>
     <?php
+    // Check if a new login happened on another device for the current session
+    if (\Core\Auth::check() && !isset($_SESSION['_new_login_notification_checked'])) {
+        $_SESSION['_new_login_notification_checked'] = true;
+        try {
+            $dbNL = \Core\Database::getInstance();
+            $nlNotify = $dbNL->fetch(
+                "SELECT `value` FROM settings WHERE `key` = ?",
+                ['new_login_notify_' . \Core\Auth::id()]
+            );
+            if ($nlNotify) {
+                $nlData = json_decode($nlNotify['value'], true);
+                $sessionCreatedAt = $_SESSION['_login_time'] ?? 0;
+                if (!empty($nlData['time']) && $nlData['time'] > $sessionCreatedAt + 5) {
+                    $_SESSION['_show_new_login_alert'] = $nlData;
+                    $dbNL->delete('settings', '`key` = ?', ['new_login_notify_' . \Core\Auth::id()]);
+                }
+            }
+        } catch (\Exception $e) { /* non-fatal */ }
+    }
+    ?>
+    <?php if (!empty($_SESSION['_show_new_login_alert'])): ?>
+    <?php $nlAlert = $_SESSION['_show_new_login_alert']; unset($_SESSION['_show_new_login_alert']); ?>
+    <div id="new-login-alert-banner" style="position:fixed;top:<?= !empty($sessionCount) ? '56px' : '0' ?>;left:0;right:0;z-index:99998;background:linear-gradient(135deg,#9945ff,#0099cc);color:#fff;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 20px rgba(0,0,0,0.4);font-family:'Poppins',sans-serif;font-size:14px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+            <i class="fas fa-sign-in-alt"></i>
+            <span>⚠️ New login detected on your account from IP <strong><?= htmlspecialchars($nlAlert['ip'] ?? 'unknown', ENT_QUOTES) ?></strong>. Not you? <a href="/security" style="color:#fff;text-decoration:underline;">Review sessions</a></span>
+        </div>
+        <button onclick="this.parentElement.style.display='none'" style="background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.4);color:#fff;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:13px;font-family:inherit;">✕</button>
+    </div>
+    <?php endif; ?>
+    <?php
     // Initialise user timezone for all date displays in dashboard pages.
     if (\Core\Auth::check()) {
         \Core\Timezone::init(\Core\Auth::id());
@@ -2089,5 +2120,37 @@ try {
     <?php endif; ?>
 
     <?php View::yield('scripts'); ?>
+<script>
+(function() {
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('form').forEach(function(form) {
+            form.addEventListener('invalid', function(e) {
+                e.preventDefault();
+                var field = e.target;
+                var existing = field.parentElement.querySelector('.client-form-error');
+                var msg = field.validationMessage || 'This field is required.';
+                if (!existing) {
+                    var errEl = document.createElement('div');
+                    errEl.className = 'client-form-error';
+                    errEl.style.cssText = 'color:#ff6b6b;font-size:12px;margin-top:4px;';
+                    errEl.textContent = msg;
+                    field.parentElement.appendChild(errEl);
+                } else {
+                    existing.textContent = msg;
+                }
+                field.style.borderColor = '#ff6b6b';
+            }, true);
+            form.addEventListener('input', function(e) {
+                var field = e.target;
+                if (field.checkValidity && field.checkValidity()) {
+                    var existing = field.parentElement.querySelector('.client-form-error');
+                    if (existing) existing.remove();
+                    field.style.borderColor = '';
+                }
+            }, true);
+        });
+    });
+})();
+</script>
 </body>
 </html>

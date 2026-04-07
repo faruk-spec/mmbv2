@@ -211,13 +211,14 @@ class SessionManager
             $db = Database::getInstance();
             
             // Mark expired sessions as inactive
-            $result = $db->execute(
+            $stmt = $db->query(
                 "UPDATE user_sessions SET is_active = 0 
                  WHERE expires_at < NOW() AND is_active = 1"
             );
+            $result = $stmt->rowCount();
             
             // Delete old inactive sessions (older than 30 days)
-            $db->execute(
+            $db->query(
                 "DELETE FROM user_sessions 
                  WHERE is_active = 0 AND last_activity_at < DATE_SUB(NOW(), INTERVAL 30 DAY)"
             );
@@ -275,12 +276,13 @@ class SessionManager
         try {
             $currentSessionId = session_id();
             $db = Database::getInstance();
-            
-            return $db->execute(
+            sleep(1);
+            $stmt = $db->query(
                 "UPDATE user_sessions SET is_active = 0 
                  WHERE user_id = ? AND session_id != ? AND is_active = 1",
                 [$userId, $currentSessionId]
             );
+            return $stmt->rowCount();
         } catch (\Exception $e) {
             Logger::error('Revoke all sessions error: ' . $e->getMessage());
             return 0;

@@ -227,6 +227,11 @@ $router->get('/admin/settings/session', 'Admin\\SettingsController@session', ['a
 $router->post('/admin/settings/session', 'Admin\\SettingsController@updateSession', ['auth', 'admin']);
 $router->post('/admin/settings/security-policy', 'Admin\\SettingsController@updateSecurityPolicy', ['auth', 'admin']);
 $router->post('/admin/settings/force-logout-all', 'Admin\\SettingsController@forceLogoutAll', ['auth', 'admin']);
+$router->post('/admin/settings/force-logout-user', 'Admin\\SettingsController@forceLogoutUser', ['auth', 'admin']);
+
+// ── Tools ─────────────────────────────────────────────────────────────────────
+$router->get('/admin/tools/scanner', 'Admin\\ToolsController@scanner', ['auth', 'admin']);
+$router->post('/admin/tools/scanner', 'Admin\\ToolsController@scanUrl', ['auth', 'admin']);
 $router->get('/admin/settings/maintenance', 'Admin\\SettingsController@maintenance', ['auth', 'admin']);
 $router->post('/admin/settings/maintenance', 'Admin\\SettingsController@toggleMaintenance', ['auth', 'admin']);
 $router->post('/admin/settings/maintenance/update', 'Admin\\SettingsController@updateMaintenanceSettings', ['auth', 'admin']);

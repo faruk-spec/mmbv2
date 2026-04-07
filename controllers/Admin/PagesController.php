@@ -73,7 +73,7 @@ class PagesController extends BaseController
                 'created_by'       => Auth::id(),
             ]);
 
-            ActivityLogger::log(Auth::id(), 'page_created', 'pages', $id, ['title' => $this->input('title')]);
+            ActivityLogger::log(Auth::id(), 'page_created', ['module' => 'pages', 'resource_type' => 'page', 'resource_id' => $id, 'entity_name' => $this->input('title'), 'new_values' => ['title' => $this->input('title')]]);
             $this->flash('success', 'Page created successfully.');
             $this->redirect('/admin/pages');
         } catch (\Exception $e) {
@@ -137,7 +137,7 @@ class PagesController extends BaseController
                 'sort_order'       => (int)$this->input('sort_order', 0),
             ], 'id = ?', [(int)$id]);
 
-            ActivityLogger::log(Auth::id(), 'page_updated', 'pages', (int)$id, ['title' => $this->input('title')]);
+            ActivityLogger::log(Auth::id(), 'page_updated', ['module' => 'pages', 'resource_type' => 'page', 'resource_id' => (int)$id, 'entity_name' => $this->input('title')]);
             $this->flash('success', 'Page updated successfully.');
             $this->redirect('/admin/pages');
         } catch (\Exception $e) {
@@ -158,8 +158,8 @@ class PagesController extends BaseController
             $db = Database::getInstance();
             $page = $db->fetch("SELECT * FROM pages WHERE id = ?", [(int)$id]);
             if ($page) {
-                $db->execute("DELETE FROM pages WHERE id = ?", [(int)$id]);
-                ActivityLogger::log(Auth::id(), 'page_deleted', 'pages', (int)$id, ['title' => $page['title']]);
+                $db->delete('pages', 'id = ?', [(int)$id]);
+                ActivityLogger::log(Auth::id(), 'page_deleted', ['module' => 'pages', 'resource_type' => 'page', 'resource_id' => (int)$id, 'entity_name' => $page['title']]);
                 $this->flash('success', 'Page deleted.');
             }
         } catch (\Exception $e) {
@@ -187,7 +187,7 @@ class PagesController extends BaseController
             }
             $newStatus = $page['status'] === 'published' ? 'draft' : 'published';
             $db->update('pages', ['status' => $newStatus], 'id = ?', [(int)$id]);
-            ActivityLogger::log(Auth::id(), 'page_status_changed', 'pages', (int)$id, ['status' => $newStatus]);
+            ActivityLogger::log(Auth::id(), 'page_status_changed', ['module' => 'pages', 'resource_type' => 'page', 'resource_id' => (int)$id, 'entity_name' => $page['title'] ?? '', 'new_values' => ['status' => $newStatus]]);
             $this->flash('success', 'Page status changed to ' . $newStatus . '.');
         } catch (\Exception $e) {
             $this->flash('error', $e->getMessage());
