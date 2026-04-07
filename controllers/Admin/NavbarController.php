@@ -131,31 +131,63 @@ class NavbarController extends BaseController
 
                     // Handle dropdown items for this link
                     if ($linkData['is_dropdown']) {
-                        $diTitles      = $_POST['dropdown_item_title_'       . $idx] ?? [];
-                        $diUrls        = $_POST['dropdown_item_url_'         . $idx] ?? [];
-                        $diIcons       = $_POST['dropdown_item_icon_'        . $idx] ?? [];
-                        $diLogoUrls    = $_POST['dropdown_item_logo_url_'    . $idx] ?? [];
-                        $diDescs       = $_POST['dropdown_item_description_' . $idx] ?? [];
-                        $diColors      = $_POST['dropdown_item_text_color_'  . $idx] ?? [];
-                        $diBolds       = $_POST['dropdown_item_font_bold_'   . $idx] ?? [];
-                        $diSizes       = $_POST['dropdown_item_font_size_'   . $idx] ?? [];
+                        $diTitles        = $_POST['dropdown_item_title_'          . $idx] ?? [];
+                        $diUrls          = $_POST['dropdown_item_url_'            . $idx] ?? [];
+                        $diIcons         = $_POST['dropdown_item_icon_'           . $idx] ?? [];
+                        $diLogoUrls      = $_POST['dropdown_item_logo_url_'       . $idx] ?? [];
+                        $diDescs         = $_POST['dropdown_item_description_'    . $idx] ?? [];
+                        $diColors        = $_POST['dropdown_item_text_color_'     . $idx] ?? [];
+                        $diBolds         = $_POST['dropdown_item_font_bold_'      . $idx] ?? [];
+                        $diSizes         = $_POST['dropdown_item_font_size_'      . $idx] ?? [];
+                        // Sub-index tracker and sub-dropdown flag (mirrors custom_link_idx pattern)
+                        $diSubIndices    = $_POST['dropdown_item_sub_idx_'        . $idx] ?? [];
+                        $diIsSubDropArr  = $_POST['dropdown_item_is_sub_dropdown_'. $idx] ?? [];
 
                         foreach ($diTitles as $si => $subTitle) {
                             if (empty($subTitle) || empty($diUrls[$si])) {
                                 continue;
                             }
-                            $linkData['dropdown_items'][] = [
-                                'title'       => $subTitle,
-                                'url'         => $diUrls[$si],
-                                'icon'        => $diIcons[$si] ?? '',
-                                'logo_url'    => $diLogoUrls[$si] ?? '',
-                                'description' => $diDescs[$si] ?? '',
+                            // Stable sub-index for sub-item field names
+                            $subIdx = isset($diSubIndices[$si]) ? (string)$diSubIndices[$si] : (string)$si;
+
+                            $isSubDropdown = in_array($subIdx, $diIsSubDropArr);
+
+                            $dropdownItem = [
+                                'title'           => $subTitle,
+                                'url'             => $diUrls[$si],
+                                'icon'            => $diIcons[$si] ?? '',
+                                'logo_url'        => $diLogoUrls[$si] ?? '',
+                                'description'     => $diDescs[$si] ?? '',
                                 // Validate hex color to prevent CSS injection at render time
-                                'text_color'  => preg_match('/^#[0-9A-Fa-f]{6}$/', $diColors[$si] ?? '') ? $diColors[$si] : '',
-                                'font_bold'   => ($diBolds[$si] ?? 'normal') === 'bold',
+                                'text_color'      => preg_match('/^#[0-9A-Fa-f]{6}$/', $diColors[$si] ?? '') ? $diColors[$si] : '',
+                                'font_bold'       => ($diBolds[$si] ?? 'normal') === 'bold',
                                 // Clamp font size to safe range (matches HTML min/max attributes)
-                                'font_size'   => min(max((int)($diSizes[$si] ?? 14), 10), 32),
+                                'font_size'       => min(max((int)($diSizes[$si] ?? 14), 10), 32),
+                                'is_sub_dropdown' => $isSubDropdown,
+                                'sub_items'       => [],
                             ];
+
+                            // Parse sub-sub items if this item is itself a sub-dropdown
+                            if ($isSubDropdown) {
+                                $siTitles   = $_POST['sub_item_title_'   . $idx . '_' . $subIdx] ?? [];
+                                $siUrls     = $_POST['sub_item_url_'     . $idx . '_' . $subIdx] ?? [];
+                                $siIcons    = $_POST['sub_item_icon_'    . $idx . '_' . $subIdx] ?? [];
+                                $siLogoUrls = $_POST['sub_item_logo_url_'. $idx . '_' . $subIdx] ?? [];
+
+                                foreach ($siTitles as $ti => $subSubTitle) {
+                                    if (empty($subSubTitle) || empty($siUrls[$ti])) {
+                                        continue;
+                                    }
+                                    $dropdownItem['sub_items'][] = [
+                                        'title'    => $subSubTitle,
+                                        'url'      => $siUrls[$ti],
+                                        'icon'     => $siIcons[$ti] ?? '',
+                                        'logo_url' => $siLogoUrls[$ti] ?? '',
+                                    ];
+                                }
+                            }
+
+                            $linkData['dropdown_items'][] = $dropdownItem;
                         }
                     }
 

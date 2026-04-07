@@ -160,20 +160,51 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
                                         $rawSize = (int)($subLink['font_size'] ?? 14);
                                         $rawSize = min(max($rawSize, 10), 32);
                                         $diStyle .= 'font-size:' . $rawSize . 'px;';
+                                        $isSubDropdown = !empty($subLink['is_sub_dropdown']) && !empty($subLink['sub_items']);
                                     ?>
-                                    <a href="<?= htmlspecialchars($subLink['url']) ?>" class="dropdown-item" style="<?= $diStyle ?>">
-                                        <?php if (!empty($subLink['logo_url'])): ?>
-                                            <img src="<?= htmlspecialchars($subLink['logo_url']) ?>" alt="" style="width:20px;height:20px;object-fit:contain;vertical-align:middle;flex-shrink:0;">
-                                        <?php elseif (!empty($subLink['icon'])): ?>
-                                            <i class="<?= htmlspecialchars($subLink['icon']) ?>"></i>
-                                        <?php endif; ?>
-                                        <span style="display:inline-flex;flex-direction:column;vertical-align:middle;">
-                                            <span><?= htmlspecialchars($subLink['title']) ?></span>
-                                            <?php if (!empty($subLink['description'])): ?>
-                                                <small style="opacity:0.65;font-weight:normal;font-size:0.78em;"><?= htmlspecialchars($subLink['description']) ?></small>
+                                    <?php if ($isSubDropdown): ?>
+                                        <!-- Sub-sub dropdown item -->
+                                        <div class="dropdown-item has-submenu" style="<?= $diStyle ?>">
+                                            <?php if (!empty($subLink['logo_url'])): ?>
+                                                <img src="<?= htmlspecialchars($subLink['logo_url']) ?>" alt="" style="width:20px;height:20px;object-fit:contain;vertical-align:middle;flex-shrink:0;">
+                                            <?php elseif (!empty($subLink['icon'])): ?>
+                                                <i class="<?= htmlspecialchars($subLink['icon']) ?>"></i>
                                             <?php endif; ?>
-                                        </span>
-                                    </a>
+                                            <span style="display:inline-flex;flex-direction:column;vertical-align:middle;flex:1;">
+                                                <span><?= htmlspecialchars($subLink['title']) ?></span>
+                                                <?php if (!empty($subLink['description'])): ?>
+                                                    <small style="opacity:0.65;font-weight:normal;font-size:0.78em;"><?= htmlspecialchars($subLink['description']) ?></small>
+                                                <?php endif; ?>
+                                            </span>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;opacity:0.6;"><path d="M9 6l6 6-6 6"/></svg>
+                                            <div class="submenu">
+                                                <?php foreach ($subLink['sub_items'] as $subSubLink): ?>
+                                                    <a href="<?= htmlspecialchars($subSubLink['url']) ?>" class="dropdown-item">
+                                                        <?php if (!empty($subSubLink['logo_url'])): ?>
+                                                            <img src="<?= htmlspecialchars($subSubLink['logo_url']) ?>" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;flex-shrink:0;">
+                                                        <?php elseif (!empty($subSubLink['icon'])): ?>
+                                                            <i class="<?= htmlspecialchars($subSubLink['icon']) ?>"></i>
+                                                        <?php endif; ?>
+                                                        <?= htmlspecialchars($subSubLink['title']) ?>
+                                                    </a>
+                                                <?php endforeach; ?>
+                                            </div>
+                                        </div>
+                                    <?php else: ?>
+                                        <a href="<?= htmlspecialchars($subLink['url']) ?>" class="dropdown-item" style="<?= $diStyle ?>">
+                                            <?php if (!empty($subLink['logo_url'])): ?>
+                                                <img src="<?= htmlspecialchars($subLink['logo_url']) ?>" alt="" style="width:20px;height:20px;object-fit:contain;vertical-align:middle;flex-shrink:0;">
+                                            <?php elseif (!empty($subLink['icon'])): ?>
+                                                <i class="<?= htmlspecialchars($subLink['icon']) ?>"></i>
+                                            <?php endif; ?>
+                                            <span style="display:inline-flex;flex-direction:column;vertical-align:middle;">
+                                                <span><?= htmlspecialchars($subLink['title']) ?></span>
+                                                <?php if (!empty($subLink['description'])): ?>
+                                                    <small style="opacity:0.65;font-weight:normal;font-size:0.78em;"><?= htmlspecialchars($subLink['description']) ?></small>
+                                                <?php endif; ?>
+                                            </span>
+                                        </a>
+                                    <?php endif; ?>
                                 <?php endforeach; ?>
                             </div>
                         </div>
@@ -486,7 +517,36 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
         }
     });
     
-    // Close dropdowns when clicking outside (but allow navigation on dropdown items)
+    // Sub-sub (flyout) dropdown — click support for touch / no-hover devices
+    document.querySelectorAll('.has-submenu').forEach(item => {
+        item.addEventListener('click', (e) => {
+            // If the user clicked an actual link inside the submenu, let it navigate
+            if (e.target.closest('a.dropdown-item')) return;
+            e.stopPropagation();
+
+            const submenu = item.querySelector(':scope > .submenu');
+            if (!submenu) return;
+
+            const isOpen = item.classList.contains('active');
+
+            // Close all other open submenus in the same dropdown-menu
+            const parentMenu = item.closest('.dropdown-menu');
+            if (parentMenu) {
+                parentMenu.querySelectorAll('.has-submenu.active').forEach(s => {
+                    if (s !== item) s.classList.remove('active');
+                });
+            }
+            item.classList.toggle('active', !isOpen);
+
+            // Flip submenu to the left if it would overflow the viewport
+            if (!isOpen) {
+                const rect = submenu.getBoundingClientRect();
+                submenu.classList.toggle('flip-left', rect.right > window.innerWidth);
+            }
+        });
+    });
+
+    // Close sub-sub dropdowns when clicking outside
     document.addEventListener('click', (e) => {
         // Check if we clicked inside a dropdown menu
         const clickedInsideDropdown = e.target.closest('.dropdown-menu');
@@ -498,11 +558,13 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
                 // Let the link navigate, then close dropdown
                 setTimeout(() => {
                     dropdowns.forEach(d => d.classList.remove('active'));
+                    document.querySelectorAll('.has-submenu.active').forEach(s => s.classList.remove('active'));
                 }, 100);
             }
         } else {
-            // Clicked outside, close all dropdowns
+            // Clicked outside, close all dropdowns and submenus
             dropdowns.forEach(d => d.classList.remove('active'));
+            document.querySelectorAll('.has-submenu.active').forEach(s => s.classList.remove('active'));
         }
     });
     
@@ -850,6 +912,45 @@ body {
     height: 1px;
     background: var(--border-color);
     margin: 8px 0;
+}
+
+/* ── Sub-sub (flyout) dropdown ──────────────────────────────────────────── */
+.has-submenu {
+    position: relative;
+    cursor: pointer;
+    user-select: none;
+}
+
+.has-submenu > .submenu {
+    display: none;
+    position: absolute;
+    top: -8px;
+    left: 100%;
+    background: var(--bg-card, #1c1c2a);
+    border: 1px solid var(--border-color, rgba(255,255,255,0.15));
+    border-radius: 8px;
+    min-width: 180px;
+    padding: 8px 0;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.06);
+    z-index: 10002;
+}
+
+/* Open on hover (desktop) */
+@media (hover: hover) {
+    .has-submenu:hover > .submenu {
+        display: block;
+    }
+}
+
+/* Also open on JS .active class (click / mobile) */
+.has-submenu.active > .submenu {
+    display: block;
+}
+
+/* Flip submenu to the left when too close to the right edge */
+.has-submenu > .submenu.flip-left {
+    left: auto;
+    right: 100%;
 }
 
 /* ── Universal-header dropdown: forced visible in dark mode ────────────────

@@ -494,8 +494,10 @@
                                 <div class="dropdown-items-list">
                                     <?php if (!empty($link['dropdown_items'])): ?>
                                         <?php foreach ($link['dropdown_items'] as $subIndex => $subLink): ?>
-                                            <div class="dropdown-item-card">
-                                                <!-- Row 1: Logo upload + Title + URL -->
+                                            <div class="dropdown-item-card" data-sub-index="<?= $subIndex ?>">
+                                                <!-- Hidden sub-index (mirrors custom_link_idx pattern) -->
+                                                <input type="hidden" name="dropdown_item_sub_idx_<?= $index ?>[]" value="<?= $subIndex ?>">
+                                                <!-- Row 1: Title + URL -->
                                                 <div class="di-grid">
                                                     <div>
                                                         <label style="font-size:12px;color:var(--text-secondary);">Title *</label>
@@ -540,6 +542,49 @@
                                                     </div>
                                                     <button type="button" onclick="this.closest('.dropdown-item-card').remove()" style="padding: 8px 12px; background: var(--danger); color: white; border: none; border-radius: 6px; cursor: pointer; margin-top:14px;">
                                                         <i class="fas fa-times"></i>
+                                                    </button>
+                                                </div>
+                                                <!-- Sub-sub dropdown toggle -->
+                                                <div style="margin-top:10px;display:flex;align-items:center;gap:8px;">
+                                                    <input type="checkbox"
+                                                           name="dropdown_item_is_sub_dropdown_<?= $index ?>[]"
+                                                           value="<?= $subIndex ?>"
+                                                           <?= !empty($subLink['is_sub_dropdown']) ? 'checked' : '' ?>
+                                                           onchange="toggleSubDropdownItems(this)">
+                                                    <span style="font-size:13px;color:var(--text-secondary);">Make this a flyout sub-menu</span>
+                                                </div>
+                                                <!-- Sub-sub items list -->
+                                                <div class="sub-items-container" style="<?= empty($subLink['is_sub_dropdown']) ? 'display:none;' : '' ?> margin-top:10px; padding-left:18px; border-left:3px solid var(--warning,#f59e0b);">
+                                                    <p style="color:var(--text-secondary);font-size:12px;margin-bottom:8px;font-weight:600;">Sub-menu Items <small style="font-weight:400;">(Title + URL required)</small></p>
+                                                    <div class="sub-items-list">
+                                                        <?php if (!empty($subLink['sub_items'])): ?>
+                                                            <?php foreach ($subLink['sub_items'] as $ti => $subSubLink): ?>
+                                                                <div class="sub-item-row" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:8px;margin-bottom:8px;align-items:end;">
+                                                                    <div>
+                                                                        <label style="font-size:11px;color:var(--text-secondary);">Title *</label>
+                                                                        <input type="text" name="sub_item_title_<?= $index ?>_<?= $subIndex ?>[]" class="form-control" placeholder="Sub-item title" value="<?= View::e($subSubLink['title']) ?>">
+                                                                    </div>
+                                                                    <div>
+                                                                        <label style="font-size:11px;color:var(--text-secondary);">URL *</label>
+                                                                        <input type="text" name="sub_item_url_<?= $index ?>_<?= $subIndex ?>[]" class="form-control" placeholder="/path" value="<?= View::e($subSubLink['url']) ?>">
+                                                                    </div>
+                                                                    <div>
+                                                                        <label style="font-size:11px;color:var(--text-secondary);">FA Icon</label>
+                                                                        <input type="text" name="sub_item_icon_<?= $index ?>_<?= $subIndex ?>[]" class="form-control" placeholder="fas fa-star" value="<?= View::e($subSubLink['icon'] ?? '') ?>">
+                                                                    </div>
+                                                                    <div>
+                                                                        <label style="font-size:11px;color:var(--text-secondary);">Logo URL</label>
+                                                                        <input type="text" name="sub_item_logo_url_<?= $index ?>_<?= $subIndex ?>[]" class="form-control" placeholder="URL" value="<?= View::e($subSubLink['logo_url'] ?? '') ?>">
+                                                                    </div>
+                                                                    <button type="button" onclick="this.closest('.sub-item-row').remove()" style="padding:6px 10px;background:var(--danger);color:white;border:none;border-radius:6px;cursor:pointer;">
+                                                                        <i class="fas fa-times"></i>
+                                                                    </button>
+                                                                </div>
+                                                            <?php endforeach; ?>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                    <button type="button" onclick="addSubDropdownItem(this)" style="padding:5px 10px;background:var(--warning,#f59e0b);color:#000;border:none;border-radius:6px;cursor:pointer;font-size:12px;margin-top:4px;">
+                                                        <i class="fas fa-plus"></i> Add Sub-item
                                                     </button>
                                                 </div>
                                             </div>
@@ -705,9 +750,14 @@ function addDropdownItem(button) {
     const linkIdx   = linkItem.getAttribute('data-index');
     const diList    = linkItem.querySelector('.dropdown-items-list');
 
+    // Assign a unique sub-index by counting existing cards
+    const subIdx = diList.querySelectorAll('.dropdown-item-card').length;
+
     const card      = document.createElement('div');
     card.className  = 'dropdown-item-card';
+    card.setAttribute('data-sub-index', subIdx);
     card.innerHTML  = `
+        <input type="hidden" name="dropdown_item_sub_idx_${linkIdx}[]" value="${subIdx}">
         <div class="di-grid">
             <div>
                 <label style="font-size:12px;color:var(--text-secondary);">Title *</label>
@@ -752,8 +802,66 @@ function addDropdownItem(button) {
                 <i class="fas fa-times"></i>
             </button>
         </div>
+        <!-- Sub-sub dropdown toggle -->
+        <div style="margin-top:10px;display:flex;align-items:center;gap:8px;">
+            <input type="checkbox"
+                   name="dropdown_item_is_sub_dropdown_${linkIdx}[]"
+                   value="${subIdx}"
+                   onchange="toggleSubDropdownItems(this)">
+            <span style="font-size:13px;color:var(--text-secondary);">Make this a flyout sub-menu</span>
+        </div>
+        <!-- Sub-sub items list -->
+        <div class="sub-items-container" style="display:none; margin-top:10px; padding-left:18px; border-left:3px solid var(--warning,#f59e0b);">
+            <p style="color:var(--text-secondary);font-size:12px;margin-bottom:8px;font-weight:600;">Sub-menu Items <small style="font-weight:400;">(Title + URL required)</small></p>
+            <div class="sub-items-list"></div>
+            <button type="button" onclick="addSubDropdownItem(this)" style="padding:5px 10px;background:var(--warning,#f59e0b);color:#000;border:none;border-radius:6px;cursor:pointer;font-size:12px;margin-top:4px;">
+                <i class="fas fa-plus"></i> Add Sub-item
+            </button>
+        </div>
     `;
     diList.appendChild(card);
+}
+
+function toggleSubDropdownItems(checkbox) {
+    const card = checkbox.closest('.dropdown-item-card');
+    const container = card.querySelector('.sub-items-container');
+    container.style.display = checkbox.checked ? 'block' : 'none';
+}
+
+function addSubDropdownItem(button) {
+    const card    = button.closest('.dropdown-item-card');
+    const siList  = card.querySelector('.sub-items-list');
+    // Determine the link index and sub-index from the hidden inputs in the card
+    const hiddenSubIdx = card.querySelector('input[type="hidden"][name^="dropdown_item_sub_idx_"]');
+    const subIdx  = hiddenSubIdx ? hiddenSubIdx.value : '0';
+    // Link index is the numeric suffix of the hidden input's name
+    const linkIdx = hiddenSubIdx ? hiddenSubIdx.name.replace('dropdown_item_sub_idx_', '').replace('[]', '') : '0';
+
+    const row = document.createElement('div');
+    row.className = 'sub-item-row';
+    row.style.cssText = 'display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:8px;margin-bottom:8px;align-items:end;';
+    row.innerHTML = `
+        <div>
+            <label style="font-size:11px;color:var(--text-secondary);">Title *</label>
+            <input type="text" name="sub_item_title_${linkIdx}_${subIdx}[]" class="form-control" placeholder="Sub-item title">
+        </div>
+        <div>
+            <label style="font-size:11px;color:var(--text-secondary);">URL *</label>
+            <input type="text" name="sub_item_url_${linkIdx}_${subIdx}[]" class="form-control" placeholder="/path">
+        </div>
+        <div>
+            <label style="font-size:11px;color:var(--text-secondary);">FA Icon</label>
+            <input type="text" name="sub_item_icon_${linkIdx}_${subIdx}[]" class="form-control" placeholder="fas fa-star">
+        </div>
+        <div>
+            <label style="font-size:11px;color:var(--text-secondary);">Logo URL</label>
+            <input type="text" name="sub_item_logo_url_${linkIdx}_${subIdx}[]" class="form-control" placeholder="URL">
+        </div>
+        <button type="button" onclick="this.closest('.sub-item-row').remove()" style="padding:6px 10px;background:var(--danger);color:white;border:none;border-radius:6px;cursor:pointer;">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    siList.appendChild(row);
 }
 
 // Sync color picker with text input
