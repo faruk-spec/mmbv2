@@ -223,6 +223,47 @@
         background: var(--bg-card);
     }
     
+    .dropdown-item-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 14px;
+        margin-bottom: 10px;
+    }
+    
+    .di-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 8px;
+    }
+    
+    .di-row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+    
+    .di-row .form-control { flex: 1; }
+    
+    .logo-preview {
+        width: 40px;
+        height: 40px;
+        object-fit: contain;
+        border-radius: 6px;
+        border: 1px solid var(--border-color);
+    }
+    
+    .upload-row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+    
+    .upload-row input[type="file"] { flex: 1; }
+    .upload-row input[type="text"] { flex: 2; }
+    
     .radio-group {
         display: flex;
         gap: 20px;
@@ -274,24 +315,24 @@
                 <label>Logo Type</label>
                 <div class="radio-group">
                     <label>
-                        <input type="radio" name="logo_type" value="text" <?= $settings['logo_type'] === 'text' ? 'checked' : '' ?>> Text
+                        <input type="radio" name="logo_type" value="text" <?= $settings['logo_type'] === 'text' ? 'checked' : '' ?> onchange="toggleLogoType(this.value)"> Text
                     </label>
                     <label>
-                        <input type="radio" name="logo_type" value="image" <?= $settings['logo_type'] === 'image' ? 'checked' : '' ?>> Image
+                        <input type="radio" name="logo_type" value="image" <?= $settings['logo_type'] === 'image' ? 'checked' : '' ?> onchange="toggleLogoType(this.value)"> Image / SVG
                     </label>
                 </div>
             </div>
             
-            <div class="form-group">
+            <div id="logo-text-section" class="form-group" <?= $settings['logo_type'] === 'image' ? 'style="display:none"' : '' ?>>
                 <label>Logo Text</label>
                 <input type="text" name="logo_text" class="form-control" value="<?= View::e($settings['logo_text']) ?>" placeholder="MyMultiBranch">
                 <small>Text displayed when logo type is set to "Text"</small>
             </div>
             
-            <div class="form-group">
-                <label>Logo Image</label>
-                <input type="file" name="logo_image" class="form-control" accept="image/*">
-                <small>Upload a logo image (PNG, JPG, SVG recommended). Current: <?= $settings['logo_image_url'] ? View::e($settings['logo_image_url']) : 'None' ?></small>
+            <div id="logo-image-section" class="form-group" <?= $settings['logo_type'] !== 'image' ? 'style="display:none"' : '' ?>>
+                <label>Logo Image / SVG</label>
+                <input type="file" name="logo_image" class="form-control" accept="image/*,.svg">
+                <small>Upload a logo image (PNG, JPG, GIF, WebP, SVG). Current: <?= $settings['logo_image_url'] ? View::e($settings['logo_image_url']) : 'None' ?></small>
                 <?php if ($settings['logo_image_url']): ?>
                     <div style="margin-top: 10px;">
                         <img src="<?= View::e($settings['logo_image_url']) ?>" alt="Current Logo" style="max-height: 50px; border-radius: 6px;">
@@ -404,18 +445,37 @@
         <!-- Custom Links -->
         <div class="settings-card">
             <h3><i class="fas fa-link"></i> Custom Links</h3>
-            <p style="color: var(--text-secondary); margin-bottom: 16px;">Add custom menu links to your navbar. Custom links appear after the Home link.</p>
+            <p style="color: var(--text-secondary); margin-bottom: 16px;">Add custom menu links to your navbar. You can make any link a dropdown with rich sub-items (logo, title, description, styling).</p>
             
             <div id="custom-links-container">
                 <?php if (!empty($settings['custom_links'])): ?>
                     <?php foreach ($settings['custom_links'] as $index => $link): ?>
                         <div class="custom-link-item" data-index="<?= $index ?>">
+                            <!-- Hidden field so the controller can match this link's data-index regardless of delete order -->
+                            <input type="hidden" name="custom_link_idx[]" value="<?= $index ?>">
+                            
                             <div class="form-row">
                                 <input type="text" name="custom_link_title[]" class="form-control" placeholder="Link Title" value="<?= View::e($link['title']) ?>">
                                 <input type="text" name="custom_link_url[]" class="form-control" placeholder="/path or https://..." value="<?= View::e($link['url']) ?>">
-                                <input type="text" name="custom_link_icon[]" class="form-control" placeholder="fas fa-icon" value="<?= View::e($link['icon'] ?? '') ?>">
+                                <input type="text" name="custom_link_icon[]" class="form-control" placeholder="fas fa-icon (optional)" value="<?= View::e($link['icon'] ?? '') ?>">
                                 <input type="number" name="custom_link_position[]" class="form-control" placeholder="Order" value="<?= $link['position'] ?? 0 ?>" min="0">
                             </div>
+                            
+                            <!-- Per-link logo/SVG upload -->
+                            <div class="form-group" style="margin-top:10px;">
+                                <label style="font-size:13px; color:var(--text-secondary);">Link Logo / SVG (optional)</label>
+                                <div class="upload-row">
+                                    <input type="file" name="custom_link_logo[]" class="form-control" accept="image/*,.svg" onchange="previewLinkLogo(this)">
+                                    <input type="text" name="custom_link_logo_url[]" class="form-control" placeholder="Or paste image URL" value="<?= View::e($link['logo_url'] ?? '') ?>">
+                                    <?php if (!empty($link['logo_url'])): ?>
+                                        <img src="<?= View::e($link['logo_url']) ?>" class="logo-preview" alt="">
+                                    <?php else: ?>
+                                        <img class="logo-preview" alt="" style="display:none;">
+                                    <?php endif; ?>
+                                </div>
+                                <small>Upload or paste a URL for this link's icon (PNG, JPG, SVG). Overrides the icon class above.</small>
+                            </div>
+                            
                             <div class="form-row" style="margin-top: 10px;">
                                 <label class="switch" style="margin-right: 10px;">
                                     <input type="checkbox" name="custom_link_is_dropdown[]" value="<?= $index ?>" <?= !empty($link['is_dropdown']) ? 'checked' : '' ?> onchange="toggleDropdownItems(this)">
@@ -429,17 +489,58 @@
                             
                             <!-- Dropdown Items Container -->
                             <div class="dropdown-items-container" style="<?= empty($link['is_dropdown']) ? 'display: none;' : '' ?> margin-top: 15px; padding-left: 20px; border-left: 3px solid var(--cyan);">
-                                <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 10px;">Dropdown Menu Items:</p>
+                                <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 10px; font-weight:600;">Dropdown Menu Items <small style="font-weight:400;">(Logo + Title + Description visible in navbar)</small></p>
                                 <div class="dropdown-items-list">
                                     <?php if (!empty($link['dropdown_items'])): ?>
                                         <?php foreach ($link['dropdown_items'] as $subIndex => $subLink): ?>
-                                            <div class="dropdown-item-row" style="display: flex; gap: 8px; margin-bottom: 8px;">
-                                                <input type="text" name="dropdown_item_title_<?= $index ?>[]" class="form-control" placeholder="Item Title" value="<?= View::e($subLink['title']) ?>" style="flex: 2;">
-                                                <input type="text" name="dropdown_item_url_<?= $index ?>[]" class="form-control" placeholder="URL" value="<?= View::e($subLink['url']) ?>" style="flex: 2;">
-                                                <input type="text" name="dropdown_item_icon_<?= $index ?>[]" class="form-control" placeholder="Icon" value="<?= View::e($subLink['icon'] ?? '') ?>" style="flex: 1;">
-                                                <button type="button" onclick="this.closest('.dropdown-item-row').remove()" style="padding: 8px 12px; background: var(--danger); color: white; border: none; border-radius: 6px; cursor: pointer;">
-                                                    <i class="fas fa-times"></i>
-                                                </button>
+                                            <div class="dropdown-item-card">
+                                                <!-- Row 1: Logo upload + Title + URL -->
+                                                <div class="di-grid">
+                                                    <div>
+                                                        <label style="font-size:12px;color:var(--text-secondary);">Title *</label>
+                                                        <input type="text" name="dropdown_item_title_<?= $index ?>[]" class="form-control" placeholder="Item Title" value="<?= View::e($subLink['title']) ?>">
+                                                    </div>
+                                                    <div>
+                                                        <label style="font-size:12px;color:var(--text-secondary);">URL *</label>
+                                                        <input type="text" name="dropdown_item_url_<?= $index ?>[]" class="form-control" placeholder="/path" value="<?= View::e($subLink['url']) ?>">
+                                                    </div>
+                                                </div>
+                                                <!-- Row 2: Description + Logo URL -->
+                                                <div class="di-grid">
+                                                    <div>
+                                                        <label style="font-size:12px;color:var(--text-secondary);">Description</label>
+                                                        <input type="text" name="dropdown_item_description_<?= $index ?>[]" class="form-control" placeholder="Short description" value="<?= View::e($subLink['description'] ?? '') ?>">
+                                                    </div>
+                                                    <div>
+                                                        <label style="font-size:12px;color:var(--text-secondary);">Logo URL (image/SVG)</label>
+                                                        <input type="text" name="dropdown_item_logo_url_<?= $index ?>[]" class="form-control" placeholder="/uploads/navbar/icon.svg" value="<?= View::e($subLink['logo_url'] ?? '') ?>">
+                                                    </div>
+                                                </div>
+                                                <!-- Row 3: Text colour + Bold + Font size + FA icon + Remove -->
+                                                <div class="di-row">
+                                                    <div style="display:flex;flex-direction:column;gap:2px;">
+                                                        <label style="font-size:11px;color:var(--text-secondary);">Text Colour</label>
+                                                        <input type="color" name="dropdown_item_text_color_<?= $index ?>[]" value="<?= View::e($subLink['text_color'] ?: '#e8eefc') ?>" style="width:42px;height:32px;border:1px solid var(--border-color);border-radius:6px;cursor:pointer;">
+                                                    </div>
+                                                    <div style="display:flex;flex-direction:column;gap:2px;">
+                                                        <label style="font-size:11px;color:var(--text-secondary);">Bold</label>
+                                                        <select name="dropdown_item_font_bold_<?= $index ?>[]" class="form-control" style="width:90px;">
+                                                            <option value="normal" <?= empty($subLink['font_bold']) ? 'selected' : '' ?>>Normal</option>
+                                                            <option value="bold"   <?= !empty($subLink['font_bold'])  ? 'selected' : '' ?>>Bold</option>
+                                                        </select>
+                                                    </div>
+                                                    <div style="display:flex;flex-direction:column;gap:2px;">
+                                                        <label style="font-size:11px;color:var(--text-secondary);">Size (px)</label>
+                                                        <input type="number" name="dropdown_item_font_size_<?= $index ?>[]" class="form-control" value="<?= (int)($subLink['font_size'] ?? 14) ?>" min="10" max="32" style="width:70px;">
+                                                    </div>
+                                                    <div style="display:flex;flex-direction:column;gap:2px;flex:1;">
+                                                        <label style="font-size:11px;color:var(--text-secondary);">FA Icon (optional)</label>
+                                                        <input type="text" name="dropdown_item_icon_<?= $index ?>[]" class="form-control" placeholder="fas fa-star" value="<?= View::e($subLink['icon'] ?? '') ?>">
+                                                    </div>
+                                                    <button type="button" onclick="this.closest('.dropdown-item-card').remove()" style="padding: 8px 12px; background: var(--danger); color: white; border: none; border-radius: 6px; cursor: pointer; margin-top:14px;">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                </div>
                                             </div>
                                         <?php endforeach; ?>
                                     <?php endif; ?>
@@ -495,23 +596,55 @@ function resetNavbarSettings(e) {
 </script>
 
 <script>
+function toggleLogoType(value) {
+    document.getElementById('logo-text-section').style.display  = value === 'text'  ? '' : 'none';
+    document.getElementById('logo-image-section').style.display = value === 'image' ? '' : 'none';
+}
+
+function previewLinkLogo(input) {
+    const row    = input.closest('.upload-row');
+    const urlBox = row.querySelector('input[type="text"]');
+    const img    = row.querySelector('img.logo-preview');
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            img.src = e.target.result;
+            img.style.display = '';
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+</script>
+
+<script>
 let linkCounter = <?= !empty($settings['custom_links']) ? count($settings['custom_links']) : 0 ?>;
 
 function addCustomLink() {
     const container = document.getElementById('custom-links-container');
-    const linkItem = document.createElement('div');
+    const idx       = linkCounter;
+    const linkItem  = document.createElement('div');
     linkItem.className = 'custom-link-item';
-    linkItem.setAttribute('data-index', linkCounter);
+    linkItem.setAttribute('data-index', idx);
     linkItem.innerHTML = `
+        <input type="hidden" name="custom_link_idx[]" value="${idx}">
         <div class="form-row">
             <input type="text" name="custom_link_title[]" class="form-control" placeholder="Link Title">
             <input type="text" name="custom_link_url[]" class="form-control" placeholder="/path or https://...">
-            <input type="text" name="custom_link_icon[]" class="form-control" placeholder="fas fa-icon">
+            <input type="text" name="custom_link_icon[]" class="form-control" placeholder="fas fa-icon (optional)">
             <input type="number" name="custom_link_position[]" class="form-control" placeholder="Order" value="0" min="0">
+        </div>
+        <div class="form-group" style="margin-top:10px;">
+            <label style="font-size:13px; color:var(--text-secondary);">Link Logo / SVG (optional)</label>
+            <div class="upload-row">
+                <input type="file" name="custom_link_logo[]" class="form-control" accept="image/*,.svg" onchange="previewLinkLogo(this)">
+                <input type="text" name="custom_link_logo_url[]" class="form-control" placeholder="Or paste image URL">
+                <img class="logo-preview" alt="" style="display:none;">
+            </div>
+            <small>Upload or paste a URL for this link's icon (PNG, JPG, SVG).</small>
         </div>
         <div class="form-row" style="margin-top: 10px;">
             <label class="switch" style="margin-right: 10px;">
-                <input type="checkbox" name="custom_link_is_dropdown[]" value="${linkCounter}" onchange="toggleDropdownItems(this)">
+                <input type="checkbox" name="custom_link_is_dropdown[]" value="${idx}" onchange="toggleDropdownItems(this)">
                 <span class="slider"></span>
             </label>
             <span style="color: var(--text-secondary); font-size: 14px; flex: 1;">Make this a dropdown menu</span>
@@ -519,10 +652,8 @@ function addCustomLink() {
                 <i class="fas fa-trash"></i> Remove
             </button>
         </div>
-        
-        <!-- Dropdown Items Container -->
         <div class="dropdown-items-container" style="display: none; margin-top: 15px; padding-left: 20px; border-left: 3px solid var(--cyan);">
-            <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 10px;">Dropdown Menu Items:</p>
+            <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 10px; font-weight:600;">Dropdown Menu Items <small style="font-weight:400;">(Logo + Title + Description visible in navbar)</small></p>
             <div class="dropdown-items-list"></div>
             <button type="button" class="btn-add-dropdown-item" onclick="addDropdownItem(this)" style="padding: 6px 12px; background: var(--cyan); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; margin-top: 8px;">
                 <i class="fas fa-plus"></i> Add Dropdown Item
@@ -534,36 +665,75 @@ function addCustomLink() {
 }
 
 function toggleDropdownItems(checkbox) {
-    const linkItem = checkbox.closest('.custom-link-item');
+    const linkItem         = checkbox.closest('.custom-link-item');
     const dropdownContainer = linkItem.querySelector('.dropdown-items-container');
     dropdownContainer.style.display = checkbox.checked ? 'block' : 'none';
 }
 
 function addDropdownItem(button) {
-    const linkItem = button.closest('.custom-link-item');
-    const linkIndex = linkItem.getAttribute('data-index');
-    const dropdownList = linkItem.querySelector('.dropdown-items-list');
-    
-    const itemRow = document.createElement('div');
-    itemRow.className = 'dropdown-item-row';
-    itemRow.style.cssText = 'display: flex; gap: 8px; margin-bottom: 8px;';
-    itemRow.innerHTML = `
-        <input type="text" name="dropdown_item_title_${linkIndex}[]" class="form-control" placeholder="Item Title" style="flex: 2;">
-        <input type="text" name="dropdown_item_url_${linkIndex}[]" class="form-control" placeholder="URL" style="flex: 2;">
-        <input type="text" name="dropdown_item_icon_${linkIndex}[]" class="form-control" placeholder="Icon" style="flex: 1;">
-        <button type="button" onclick="this.closest('.dropdown-item-row').remove()" style="padding: 8px 12px; background: var(--danger); color: white; border: none; border-radius: 6px; cursor: pointer;">
-            <i class="fas fa-times"></i>
-        </button>
+    const linkItem  = button.closest('.custom-link-item');
+    const linkIdx   = linkItem.getAttribute('data-index');
+    const diList    = linkItem.querySelector('.dropdown-items-list');
+
+    const card      = document.createElement('div');
+    card.className  = 'dropdown-item-card';
+    card.innerHTML  = `
+        <div class="di-grid">
+            <div>
+                <label style="font-size:12px;color:var(--text-secondary);">Title *</label>
+                <input type="text" name="dropdown_item_title_${linkIdx}[]" class="form-control" placeholder="Item Title">
+            </div>
+            <div>
+                <label style="font-size:12px;color:var(--text-secondary);">URL *</label>
+                <input type="text" name="dropdown_item_url_${linkIdx}[]" class="form-control" placeholder="/path">
+            </div>
+        </div>
+        <div class="di-grid">
+            <div>
+                <label style="font-size:12px;color:var(--text-secondary);">Description</label>
+                <input type="text" name="dropdown_item_description_${linkIdx}[]" class="form-control" placeholder="Short description">
+            </div>
+            <div>
+                <label style="font-size:12px;color:var(--text-secondary);">Logo URL (image/SVG)</label>
+                <input type="text" name="dropdown_item_logo_url_${linkIdx}[]" class="form-control" placeholder="/uploads/navbar/icon.svg">
+            </div>
+        </div>
+        <div class="di-row">
+            <div style="display:flex;flex-direction:column;gap:2px;">
+                <label style="font-size:11px;color:var(--text-secondary);">Text Colour</label>
+                <input type="color" name="dropdown_item_text_color_${linkIdx}[]" value="#e8eefc" style="width:42px;height:32px;border:1px solid var(--border-color);border-radius:6px;cursor:pointer;">
+            </div>
+            <div style="display:flex;flex-direction:column;gap:2px;">
+                <label style="font-size:11px;color:var(--text-secondary);">Bold</label>
+                <select name="dropdown_item_font_bold_${linkIdx}[]" class="form-control" style="width:90px;">
+                    <option value="normal">Normal</option>
+                    <option value="bold">Bold</option>
+                </select>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:2px;">
+                <label style="font-size:11px;color:var(--text-secondary);">Size (px)</label>
+                <input type="number" name="dropdown_item_font_size_${linkIdx}[]" class="form-control" value="14" min="10" max="32" style="width:70px;">
+            </div>
+            <div style="display:flex;flex-direction:column;gap:2px;flex:1;">
+                <label style="font-size:11px;color:var(--text-secondary);">FA Icon (optional)</label>
+                <input type="text" name="dropdown_item_icon_${linkIdx}[]" class="form-control" placeholder="fas fa-star">
+            </div>
+            <button type="button" onclick="this.closest('.dropdown-item-card').remove()" style="padding: 8px 12px; background: var(--danger); color: white; border: none; border-radius: 6px; cursor: pointer; margin-top:14px;">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
     `;
-    dropdownList.appendChild(itemRow);
+    diList.appendChild(card);
 }
 
 // Sync color picker with text input
 document.querySelectorAll('input[type="color"]').forEach(colorInput => {
     const textInput = colorInput.nextElementSibling;
-    colorInput.addEventListener('input', function() {
-        textInput.value = this.value;
-    });
+    if (textInput && textInput.type === 'text') {
+        colorInput.addEventListener('input', function() {
+            textInput.value = this.value;
+        });
+    }
 });
 </script>
 

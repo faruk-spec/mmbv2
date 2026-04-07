@@ -137,7 +137,9 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
                         <!-- Dropdown Custom Link -->
                         <div class="dropdown nav-item">
                             <button class="nav-link dropdown-toggle">
-                                <?php if (!empty($link['icon'])): ?>
+                                <?php if (!empty($link['logo_url'])): ?>
+                                    <img src="<?= htmlspecialchars($link['logo_url']) ?>" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;margin-right:4px;">
+                                <?php elseif (!empty($link['icon'])): ?>
                                     <i class="<?= htmlspecialchars($link['icon']) ?>"></i>
                                 <?php endif; ?>
                                 <?= htmlspecialchars($link['title']) ?>
@@ -147,11 +149,24 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
                             </button>
                             <div class="dropdown-menu">
                                 <?php foreach ($link['dropdown_items'] as $subLink): ?>
-                                    <a href="<?= htmlspecialchars($subLink['url']) ?>" class="dropdown-item">
-                                        <?php if (!empty($subLink['icon'])): ?>
+                                    <?php
+                                        $diStyle = '';
+                                        if (!empty($subLink['text_color'])) $diStyle .= 'color:' . htmlspecialchars($subLink['text_color']) . ';';
+                                        if (!empty($subLink['font_bold']))   $diStyle .= 'font-weight:bold;';
+                                        if (!empty($subLink['font_size']))   $diStyle .= 'font-size:' . (int)$subLink['font_size'] . 'px;';
+                                    ?>
+                                    <a href="<?= htmlspecialchars($subLink['url']) ?>" class="dropdown-item" style="<?= $diStyle ?>">
+                                        <?php if (!empty($subLink['logo_url'])): ?>
+                                            <img src="<?= htmlspecialchars($subLink['logo_url']) ?>" alt="" style="width:20px;height:20px;object-fit:contain;vertical-align:middle;flex-shrink:0;">
+                                        <?php elseif (!empty($subLink['icon'])): ?>
                                             <i class="<?= htmlspecialchars($subLink['icon']) ?>"></i>
                                         <?php endif; ?>
-                                        <?= htmlspecialchars($subLink['title']) ?>
+                                        <span style="display:inline-flex;flex-direction:column;vertical-align:middle;">
+                                            <span><?= htmlspecialchars($subLink['title']) ?></span>
+                                            <?php if (!empty($subLink['description'])): ?>
+                                                <small style="opacity:0.65;font-weight:normal;font-size:0.78em;"><?= htmlspecialchars($subLink['description']) ?></small>
+                                            <?php endif; ?>
+                                        </span>
                                     </a>
                                 <?php endforeach; ?>
                             </div>
@@ -159,7 +174,9 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
                     <?php else: ?>
                         <!-- Regular Custom Link -->
                         <a href="<?= htmlspecialchars($link['url']) ?>" class="nav-link">
-                            <?php if (!empty($link['icon'])): ?>
+                            <?php if (!empty($link['logo_url'])): ?>
+                                <img src="<?= htmlspecialchars($link['logo_url']) ?>" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;margin-right:4px;">
+                            <?php elseif (!empty($link['icon'])): ?>
                                 <i class="<?= htmlspecialchars($link['icon']) ?>"></i>
                             <?php endif; ?>
                             <?= htmlspecialchars($link['title']) ?>
