@@ -1124,7 +1124,7 @@ try {
     ?>
     <?php if (!empty($_SESSION['_show_new_login_alert'])): ?>
     <?php $nlAlert = $_SESSION['_show_new_login_alert']; unset($_SESSION['_show_new_login_alert']); ?>
-    <div id="new-login-alert-banner" style="position:fixed;top:<?= !empty($sessionCount) ? '56px' : '0' ?>;left:0;right:0;z-index:99998;background:linear-gradient(135deg,#9945ff,#0099cc);color:#fff;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 20px rgba(0,0,0,0.4);font-family:'Poppins',sans-serif;font-size:14px;">
+    <div id="new-login-alert-banner" style="position:fixed;top:<?= !empty($_SESSION['_concurrent_session_warning']) ? '56px' : '0' ?>;left:0;right:0;z-index:99998;background:linear-gradient(135deg,#9945ff,#0099cc);color:#fff;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 20px rgba(0,0,0,0.4);font-family:'Poppins',sans-serif;font-size:14px;">
         <div style="display:flex;align-items:center;gap:10px;">
             <i class="fas fa-sign-in-alt"></i>
             <span>⚠️ New login detected on your account from IP <strong><?= htmlspecialchars($nlAlert['ip'] ?? 'unknown', ENT_QUOTES) ?></strong>. Not you? <a href="/security" style="color:#fff;text-decoration:underline;">Review sessions</a></span>
