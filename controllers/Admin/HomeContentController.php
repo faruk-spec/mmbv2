@@ -116,7 +116,7 @@ class HomeContentController extends BaseController
             if ($removeImage) {
                 // Delete the old image file if it exists
                 if (!empty($imageUrl)) {
-                    $oldFilePath = BASE_PATH . $imageUrl;
+                    $oldFilePath = $this->resolveFilePath($imageUrl);
                     if (file_exists($oldFilePath)) {
                         @unlink($oldFilePath);
                     }
@@ -125,7 +125,7 @@ class HomeContentController extends BaseController
             } elseif (isset($_FILES['hero_image']) && $_FILES['hero_image']['error'] === UPLOAD_ERR_OK) {
                 // Delete old image if uploading a new one
                 if (!empty($imageUrl)) {
-                    $oldFilePath = BASE_PATH . $imageUrl;
+                    $oldFilePath = $this->resolveFilePath($imageUrl);
                     if (file_exists($oldFilePath)) {
                         @unlink($oldFilePath);
                     }
@@ -251,7 +251,7 @@ class HomeContentController extends BaseController
             $removeLogo = $this->input('remove_project_logo', '0') === '1';
             if ($removeLogo) {
                 if (!empty($logoUrl)) {
-                    $oldFilePath = BASE_PATH . $logoUrl;
+                    $oldFilePath = $this->resolveFilePath($logoUrl);
                     if (file_exists($oldFilePath)) {
                         @unlink($oldFilePath);
                     }
@@ -259,7 +259,7 @@ class HomeContentController extends BaseController
                 $logoUrl = '';
             } elseif (isset($_FILES['project_logo']) && $_FILES['project_logo']['error'] === UPLOAD_ERR_OK) {
                 if (!empty($logoUrl)) {
-                    $oldFilePath = BASE_PATH . $logoUrl;
+                    $oldFilePath = $this->resolveFilePath($logoUrl);
                     if (file_exists($oldFilePath)) {
                         @unlink($oldFilePath);
                     }
@@ -277,7 +277,7 @@ class HomeContentController extends BaseController
             if ($removeImage) {
                 // Delete the old image file if it exists
                 if (!empty($imageUrl)) {
-                    $oldFilePath = BASE_PATH . $imageUrl;
+                    $oldFilePath = $this->resolveFilePath($imageUrl);
                     if (file_exists($oldFilePath)) {
                         @unlink($oldFilePath);
                     }
@@ -286,7 +286,7 @@ class HomeContentController extends BaseController
             } elseif (isset($_FILES['project_image']) && $_FILES['project_image']['error'] === UPLOAD_ERR_OK) {
                 // Delete old image if uploading a new one
                 if (!empty($imageUrl)) {
-                    $oldFilePath = BASE_PATH . $imageUrl;
+                    $oldFilePath = $this->resolveFilePath($imageUrl);
                     if (file_exists($oldFilePath)) {
                         @unlink($oldFilePath);
                     }
@@ -322,58 +322,77 @@ class HomeContentController extends BaseController
     }
     
     /**
+     * Resolve the physical filesystem path for a stored image URL.
+     * Handles both the old /public/uploads/home/ format and the new /uploads/home/ format.
+     */
+    private function resolveFilePath(string $url): string
+    {
+        if (str_starts_with($url, '/uploads/home/')) {
+            return BASE_PATH . '/storage/uploads/home/' . basename($url);
+        }
+        // Legacy path stored as /public/uploads/home/…
+        return BASE_PATH . $url;
+    }
+
+    /**
      * Handle image upload
      */
     private function handleImageUpload(array $file, string $prefix): string
     {
-        // Create uploads directory in public folder if it doesn't exist
-        $uploadDir = BASE_PATH . '/public/uploads/home';
+        // Store uploads under /storage/uploads/home – served via the /uploads/{path} route
+        $uploadDir = BASE_PATH . '/storage/uploads/home';
         if (!is_dir($uploadDir)) {
-            if (!mkdir($uploadDir, 0775, true)) {
-                Logger::error('Failed to create upload directory: ' . $uploadDir);
-                throw new \Exception('Failed to create upload directory.');
-            }
+            @mkdir($uploadDir, 0777, true);
+            @chmod($uploadDir, 0777);
         }
-        
-        // Validate file type using MIME type
+
+        // Validate MIME type using finfo (not the browser-supplied value)
         $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-        if (!in_array($file['type'], $allowedTypes)) {
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mimeType = $finfo ? finfo_file($finfo, $file['tmp_name']) : $file['type'];
+        if ($finfo) {
+            finfo_close($finfo);
+        }
+        if (!in_array($mimeType, $allowedTypes)) {
             throw new \Exception('Invalid image type. Only JPEG, PNG, GIF, and WebP are allowed.');
         }
-        
+
         // Additional validation: check actual file content using getimagesize
         $imageInfo = @getimagesize($file['tmp_name']);
         if ($imageInfo === false) {
             throw new \Exception('File is not a valid image.');
         }
-        
+
         // Validate file size (max 5MB)
         if ($file['size'] > 5 * 1024 * 1024) {
             throw new \Exception('Image size must be less than 5MB.');
         }
-        
+
         // Validate and sanitize file extension
         $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
         $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-        
+
         if (!in_array($extension, $allowedExtensions)) {
             throw new \Exception('Invalid file extension.');
         }
-        
+
         // Generate unique filename with sanitized extension
         $filename = $prefix . '_' . uniqid() . '_' . time() . '.' . $extension;
         $filepath = $uploadDir . '/' . $filename;
-        
-        // Move uploaded file
+
+        // Move uploaded file with copy() fallback for cross-mount or permission edge-cases
         if (!move_uploaded_file($file['tmp_name'], $filepath)) {
-            $error = error_get_last();
-            Logger::error('Failed to move uploaded file: ' . ($error['message'] ?? 'Unknown error'));
-            throw new \Exception('Failed to upload image. Please check file permissions.');
+            Logger::error('move_uploaded_file failed, trying copy() fallback.');
+            if (!@copy($file['tmp_name'], $filepath)) {
+                $error = error_get_last();
+                Logger::error('Failed to store uploaded file: ' . ($error['message'] ?? 'Unknown error'));
+                throw new \Exception('Failed to upload image. Please check file permissions.');
+            }
+            @unlink($file['tmp_name']);
         }
-        
-        // Return relative URL accessible from web
-        // Since document root is project root (not public/), include /public/ in path
-        return '/public/uploads/home/' . $filename;
+
+        // Return URL served via the /uploads/{path} PHP route
+        return '/uploads/home/' . $filename;
     }
     
     /**

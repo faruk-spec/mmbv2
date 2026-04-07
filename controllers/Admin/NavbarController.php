@@ -78,64 +78,124 @@ class NavbarController extends BaseController
             $navbarBorderColor = $_POST['navbar_border_color'] ?? '#1a1a2e';
             $customCss = $_POST['custom_css'] ?? '';
 
+            // Handle main logo image upload
+            if (isset($_FILES['logo_image']) && $_FILES['logo_image']['error'] === UPLOAD_ERR_OK) {
+                $uploaded = $this->storeUpload($_FILES['logo_image']['name'], $_FILES['logo_image']['tmp_name']);
+                if ($uploaded) {
+                    $logoImageUrl = $uploaded;
+                }
+            }
+
             // Handle custom links
             $customLinks = [];
             if (!empty($_POST['custom_link_title'])) {
-                $titles = $_POST['custom_link_title'];
-                $urls = $_POST['custom_link_url'];
-                $icons = $_POST['custom_link_icon'];
-                $positions = $_POST['custom_link_position'];
-                $isDropdownArray = $_POST['custom_link_is_dropdown'] ?? [];
+                $titles        = $_POST['custom_link_title'];
+                $urls          = $_POST['custom_link_url'];
+                $icons         = $_POST['custom_link_icon'] ?? [];
+                $positions     = $_POST['custom_link_position'] ?? [];
+                $logoUrls      = $_POST['custom_link_logo_url'] ?? [];
+                // hidden index field that preserves the JS data-index for each link
+                $dataIndices   = $_POST['custom_link_idx'] ?? [];
+                $isDropdownArr = $_POST['custom_link_is_dropdown'] ?? [];
 
-                foreach ($titles as $index => $title) {
-                    if (!empty($title) && !empty($urls[$index])) {
-                        $linkData = [
-                            'title' => $title,
-                            'url' => $urls[$index],
-                            'icon' => $icons[$index] ?? '',
-                            'position' => (int)($positions[$index] ?? 0),
-                            'is_dropdown' => in_array((string)$index, $isDropdownArray),
-                            'dropdown_items' => []
-                        ];
-                        
-                        // Handle dropdown items if this is a dropdown
-                        if ($linkData['is_dropdown']) {
-                            $dropdownTitles = $_POST['dropdown_item_title_' . $index] ?? [];
-                            $dropdownUrls = $_POST['dropdown_item_url_' . $index] ?? [];
-                            $dropdownIcons = $_POST['dropdown_item_icon_' . $index] ?? [];
-                            
-                            foreach ($dropdownTitles as $subIndex => $subTitle) {
-                                if (!empty($subTitle) && !empty($dropdownUrls[$subIndex])) {
-                                    $linkData['dropdown_items'][] = [
-                                        'title' => $subTitle,
-                                        'url' => $dropdownUrls[$subIndex],
-                                        'icon' => $dropdownIcons[$subIndex] ?? ''
+                foreach ($titles as $i => $title) {
+                    if (empty($title) || empty($urls[$i])) {
+                        continue;
+                    }
+
+                    // The data-index for this link (used to name dropdown-item fields)
+                    $idx = isset($dataIndices[$i]) ? (string)$dataIndices[$i] : (string)$i;
+
+                    // Per-link logo file upload (custom_link_logo[])
+                    $linkLogoUrl = $logoUrls[$i] ?? '';
+                    if (isset($_FILES['custom_link_logo']['error'][$i]) &&
+                        $_FILES['custom_link_logo']['error'][$i] === UPLOAD_ERR_OK) {
+                        $uploaded = $this->storeUpload(
+                            $_FILES['custom_link_logo']['name'][$i],
+                            $_FILES['custom_link_logo']['tmp_name'][$i]
+                        );
+                        if ($uploaded) {
+                            $linkLogoUrl = $uploaded;
+                        }
+                    }
+
+                    $linkData = [
+                        'title'          => $title,
+                        'url'            => $urls[$i],
+                        'icon'           => $icons[$i] ?? '',
+                        'logo_url'       => $linkLogoUrl,
+                        'position'       => (int)($positions[$i] ?? 0),
+                        'is_dropdown'    => in_array($idx, $isDropdownArr),
+                        'dropdown_items' => []
+                    ];
+
+                    // Handle dropdown items for this link
+                    if ($linkData['is_dropdown']) {
+                        $diTitles        = $_POST['dropdown_item_title_'          . $idx] ?? [];
+                        $diUrls          = $_POST['dropdown_item_url_'            . $idx] ?? [];
+                        $diIcons         = $_POST['dropdown_item_icon_'           . $idx] ?? [];
+                        $diLogoUrls      = $_POST['dropdown_item_logo_url_'       . $idx] ?? [];
+                        $diDescs         = $_POST['dropdown_item_description_'    . $idx] ?? [];
+                        $diColors        = $_POST['dropdown_item_text_color_'     . $idx] ?? [];
+                        $diBolds         = $_POST['dropdown_item_font_bold_'      . $idx] ?? [];
+                        $diSizes         = $_POST['dropdown_item_font_size_'      . $idx] ?? [];
+                        // Sub-index tracker and sub-dropdown flag (mirrors custom_link_idx pattern)
+                        $diSubIndices    = $_POST['dropdown_item_sub_idx_'        . $idx] ?? [];
+                        $diIsSubDropArr  = $_POST['dropdown_item_is_sub_dropdown_'. $idx] ?? [];
+
+                        foreach ($diTitles as $si => $subTitle) {
+                            if (empty($subTitle) || empty($diUrls[$si])) {
+                                continue;
+                            }
+                            // Stable sub-index for sub-item field names
+                            $subIdx = isset($diSubIndices[$si]) ? (string)$diSubIndices[$si] : (string)$si;
+
+                            $isSubDropdown = in_array($subIdx, $diIsSubDropArr);
+
+                            $dropdownItem = [
+                                'title'           => $subTitle,
+                                'url'             => $diUrls[$si],
+                                'icon'            => $diIcons[$si] ?? '',
+                                'logo_url'        => $diLogoUrls[$si] ?? '',
+                                'description'     => $diDescs[$si] ?? '',
+                                // Validate hex color to prevent CSS injection at render time
+                                'text_color'      => preg_match('/^#[0-9A-Fa-f]{6}$/', $diColors[$si] ?? '') ? $diColors[$si] : '',
+                                'font_bold'       => ($diBolds[$si] ?? 'normal') === 'bold',
+                                // Clamp font size to safe range (matches HTML min/max attributes)
+                                'font_size'       => min(max((int)($diSizes[$si] ?? 14), 10), 32),
+                                'is_sub_dropdown' => $isSubDropdown,
+                                'sub_items'       => [],
+                            ];
+
+                            // Parse sub-sub items if this item is itself a sub-dropdown
+                            if ($isSubDropdown) {
+                                $siTitles   = $_POST['sub_item_title_'   . $idx . '_' . $subIdx] ?? [];
+                                $siUrls     = $_POST['sub_item_url_'     . $idx . '_' . $subIdx] ?? [];
+                                $siIcons    = $_POST['sub_item_icon_'    . $idx . '_' . $subIdx] ?? [];
+                                $siLogoUrls = $_POST['sub_item_logo_url_'. $idx . '_' . $subIdx] ?? [];
+
+                                foreach ($siTitles as $ti => $subSubTitle) {
+                                    if (empty($subSubTitle) || empty($siUrls[$ti])) {
+                                        continue;
+                                    }
+                                    $dropdownItem['sub_items'][] = [
+                                        'title'    => $subSubTitle,
+                                        'url'      => $siUrls[$ti],
+                                        'icon'     => $siIcons[$ti] ?? '',
+                                        'logo_url' => $siLogoUrls[$ti] ?? '',
                                     ];
                                 }
                             }
+
+                            $linkData['dropdown_items'][] = $dropdownItem;
                         }
-                        
-                        $customLinks[] = $linkData;
                     }
+
+                    $customLinks[] = $linkData;
                 }
             }
 
             $customLinksJson = json_encode($customLinks);
-
-            // Handle logo image upload
-            if (isset($_FILES['logo_image']) && $_FILES['logo_image']['error'] === UPLOAD_ERR_OK) {
-                $uploadDir = BASE_PATH . '/public/uploads/navbar/';
-                if (!is_dir($uploadDir)) {
-                    mkdir($uploadDir, 0755, true);
-                }
-
-                $filename = 'logo_' . time() . '_' . basename($_FILES['logo_image']['name']);
-                $targetPath = $uploadDir . $filename;
-
-                if (move_uploaded_file($_FILES['logo_image']['tmp_name'], $targetPath)) {
-                    $logoImageUrl = '/uploads/navbar/' . $filename;
-                }
-            }
 
             // Update database - check which columns exist to avoid errors
             // Build dynamic UPDATE query based on available columns
@@ -149,10 +209,9 @@ class NavbarController extends BaseController
             $updateFields[] = "logo_text = ?";
             $updateValues[] = $logoText;
             
-            if (!empty($logoImageUrl)) {
-                $updateFields[] = "logo_image_url = ?";
-                $updateValues[] = $logoImageUrl;
-            }
+            // Always update logo_image_url – allows clearing it when the field is emptied
+            $updateFields[] = "logo_image_url = ?";
+            $updateValues[] = $logoImageUrl ?: null;
             
             // Check if extended columns exist by trying to describe the table
             $columns = $this->db->fetchAll("DESCRIBE navbar_settings");
@@ -290,5 +349,41 @@ class NavbarController extends BaseController
         }
 
         return $this->redirect('/admin/navbar');
+    }
+
+    /**
+     * Store an uploaded file to the navbar uploads directory.
+     * Returns the public URL on success, or null on failure.
+     */
+    private function storeUpload(string $originalName, string $tmpPath): ?string
+    {
+        $allowedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
+        $ext = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+        if (!in_array($ext, $allowedExts)) {
+            Logger::error('NavbarController: rejected upload with extension "' . $ext . '"');
+            return null;
+        }
+
+        $uploadDir = BASE_PATH . '/storage/uploads/navbar/';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0775, true);
+        }
+        if (!is_writable($uploadDir)) {
+            @chmod($uploadDir, 0775);
+        }
+
+        $filename   = 'logo_' . uniqid('', true) . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $originalName);
+        $targetPath = $uploadDir . $filename;
+
+        if (move_uploaded_file($tmpPath, $targetPath)) {
+            return '/uploads/navbar/' . $filename;
+        }
+        if (@copy($tmpPath, $targetPath)) {
+            @unlink($tmpPath);
+            return '/uploads/navbar/' . $filename;
+        }
+
+        Logger::error('NavbarController: failed to store upload to ' . $targetPath);
+        return null;
     }
 }

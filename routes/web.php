@@ -74,7 +74,7 @@ $router->post('/2fa/verify', 'TwoFactorController@verify');
 // Serve uploaded files (avatars, etc.) - route since storage/ is blocked by htaccess
 $router->get('/uploads/{path:wildcard}', function($path) {
     // Only allow image files in uploads directory
-    $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
     $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
     
     if (!in_array($ext, $allowedExtensions)) {
@@ -102,9 +102,15 @@ $router->get('/uploads/{path:wildcard}', function($path) {
         'png'  => 'image/png',
         'gif'  => 'image/gif',
         'webp' => 'image/webp',
+        'svg'  => 'image/svg+xml',
     ];
     
     header('Content-Type: ' . ($mimeTypes[$ext] ?? 'application/octet-stream'));
+    // Restrict SVG execution context for security
+    if ($ext === 'svg') {
+        header('Content-Security-Policy: default-src \'none\'');
+        header('X-Content-Type-Options: nosniff');
+    }
     header('Content-Length: ' . filesize($filePath));
     header('Cache-Control: public, max-age=31536000');
     readfile($filePath);
