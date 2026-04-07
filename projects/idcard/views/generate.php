@@ -335,7 +335,7 @@ if (!$isEditMode) {
                                 if (in_array($fieldLower, ['email','email_address','work_email','personal_email'], true)) {
                                     echo 'type="email" maxlength="255"';
                                 } elseif (in_array($fieldLower, ['phone','mobile','contact','phone_number','mobile_number','contact_number'], true)) {
-                                    echo 'type="tel" maxlength="20" pattern="[+\d\s\-\(\)]{6,20}"';
+                                    echo 'type="tel" maxlength="25" pattern="[+\d\s\-\(\)]{4,25}"';
                                 } elseif (in_array($fieldLower, ['year','batch','passing_year','admission_year'], true)) {
                                     echo 'type="number" min="1900" max="2099" maxlength="4"';
                                 } elseif (in_array($fieldLower, ['dob','date_of_birth','birth_date','visit_date','joining_date','valid_from','valid_till','expiry_date'], true)) {
@@ -1343,7 +1343,7 @@ function selectTemplate(key) {
         if (['email','email_address','work_email','personal_email'].indexOf(fl) !== -1) {
             inputAttrs = 'type="email" maxlength="255"';
         } else if (['phone','mobile','contact','phone_number','mobile_number','contact_number'].indexOf(fl) !== -1) {
-            inputAttrs = 'type="tel" maxlength="20" pattern="[+\\d\\s\\-\\(\\)]{6,20}"';
+            inputAttrs = 'type="tel" maxlength="25" pattern="[+\\d\\s\\-\\(\\)]{4,25}"';
         } else if (['year','batch','passing_year','admission_year'].indexOf(fl) !== -1) {
             inputAttrs = 'type="number" min="1900" max="2099" maxlength="4"';
         } else if (['dob','date_of_birth','birth_date','visit_date','joining_date','valid_from','valid_till','expiry_date'].indexOf(fl) !== -1) {

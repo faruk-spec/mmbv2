@@ -1149,6 +1149,8 @@ try {
             document.body.insertBefore(banner, document.body.firstChild);
         }
         function poll() {
+            // Skip polling when tab is hidden (Page Visibility API)
+            if (document.visibilityState && document.visibilityState === 'hidden') return;
             fetch('/api/session-alerts', { credentials: 'same-origin' })
                 .then(function(r) { return r.json(); })
                 .then(function(d) { if (d && d.alert) showNewLoginBanner(d.alert.ip); })
