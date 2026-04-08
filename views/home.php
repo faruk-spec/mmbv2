@@ -713,6 +713,7 @@ if ($showStats):
 .project-card {
     position: relative;
     overflow: hidden;
+    isolation: isolate;
     border-radius: 14px;
     aspect-ratio: 4 / 3;
     box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
