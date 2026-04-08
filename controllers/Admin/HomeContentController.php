@@ -315,6 +315,8 @@ class HomeContentController extends BaseController
                 'logo_url' => $logoUrl,
                 'image_url' => $imageUrl,
                 'is_enabled' => $isEnabled,
+                'show_title' => $this->input('show_title', '0') === '1' ? 1 : 0,
+                'thumb_intensity' => min(100, max(0, (int)$this->input('thumb_intensity', 60))),
                 'updated_at' => date('Y-m-d H:i:s')
             ];
             

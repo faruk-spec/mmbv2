@@ -576,11 +576,13 @@ if ($showStats):
             $projectTier = $project['tier'] ?? 'free';
             $showFeaturesText = $project['show_features_text'] ?? 'Show Features';
             $showFeaturesUrl  = $project['show_features_url'] ?? '';
+            $showTitle = isset($project['show_title']) ? (bool)(int)$project['show_title'] : true;
+            $thumbIntensity = isset($project['thumb_intensity']) ? min(100, max(0, (int)$project['thumb_intensity'])) : 60;
         ?>
         <div class="project-card" data-tier="<?= htmlspecialchars($projectTier) ?>">
             <!-- Thumbnail image covers full card -->
             <?php if (!empty($project['image_url'])): ?>
-                <img class="project-card__thumb" src="<?= htmlspecialchars($project['image_url']) ?>" alt="">
+                <img class="project-card__thumb" src="<?= htmlspecialchars($project['image_url']) ?>" alt="" style="opacity:<?= round($thumbIntensity / 100, 2) ?>;">
             <?php else: ?>
                 <div class="project-card__thumb project-card__thumb--placeholder" style="background: linear-gradient(135deg, <?= $projectColor ?>33, <?= $projectColor ?>11);"></div>
             <?php endif; ?>
@@ -612,11 +614,14 @@ if ($showStats):
                             <span style="font-size: 1.3rem; font-weight: 700; color: <?= $projectColor ?>;"><?= strtoupper(substr($projectName, 0, 2)) ?></span>
                         <?php endif; ?>
                     </div>
+                    <?php if ($showTitle): ?>
                     <h3 class="project-card__title" style="color: #fff; text-shadow: 0 0 12px <?= $projectColor ?>, 0 2px 6px rgba(0,0,0,0.8);"><?= htmlspecialchars($projectName) ?></h3>
+                    <?php endif; ?>
                 </div>
 
                 <!-- Description -->
                 <p class="project-card__desc"><?= htmlspecialchars($projectDescription) ?></p>
+
 
                 <!-- Buttons: bottom-right -->
                 <div class="project-card__actions">
