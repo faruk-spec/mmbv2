@@ -252,8 +252,15 @@ try {
 $heroTitle = $heroContent['title'] ?? 'Welcome to ' . APP_NAME;
 $heroSubtitle = $heroContent['subtitle'] ?? 'A powerful multi-project platform';
 $heroDescription = $heroContent['description'] ?? 'A powerful multi-project platform with centralized authentication, unified admin panel, and secure architecture.';
-$heroBanner = $heroContent['image_url'] ?? '';
 $projectsSectionTitle = $projectsSection['title'] ?? 'Explore Our Super Fast Products';
+
+// Get hero banner slides
+$heroSlides = [];
+try {
+    $heroSlides = $db->fetchAll("SELECT * FROM home_hero_slides WHERE is_active = 1 ORDER BY sort_order ASC, id ASC");
+} catch (Exception $e) {
+    // Table may not exist yet
+}
 
 // Get section headings with error handling
 $sections = [];
@@ -301,12 +308,27 @@ $featuresSubheading = $sections['features']['subheading'] ?? 'Powerful capabilit
             </div>
         </div>
         
-        <!-- Right side: Hero banner image -->
+        <!-- Right side: Hero banner slideshow -->
         <div style="text-align: center;">
-            <?php if (!empty($heroBanner)): ?>
-                <img src="<?= htmlspecialchars($heroBanner) ?>" alt="Hero Banner" class="hero-banner" style="max-width: 100%; height: auto; border-radius: 12px; box-shadow: var(--shadow-glow);">
+            <?php if (!empty($heroSlides)): ?>
+            <div class="hero-slideshow" id="heroSlideshow">
+                <?php foreach ($heroSlides as $i => $slide): ?>
+                <?php $tag = !empty($slide['link_url']) ? 'a' : 'div'; ?>
+                <?php $attrs = !empty($slide['link_url']) ? ' href="' . htmlspecialchars($slide['link_url']) . '"' : ''; ?>
+                <<?= $tag . $attrs ?> class="hero-slide<?= $i === 0 ? ' hero-slide--active' : '' ?>" aria-hidden="<?= $i === 0 ? 'false' : 'true' ?>">
+                    <img src="<?= htmlspecialchars($slide['image_url']) ?>" alt="Banner <?= $i + 1 ?>" class="hero-banner" style="max-width: 100%; height: auto; border-radius: 12px; box-shadow: var(--shadow-glow);">
+                </<?= $tag ?>>
+                <?php endforeach; ?>
+                <?php if (count($heroSlides) > 1): ?>
+                <div class="hero-dots" role="tablist" aria-label="Banner slides">
+                    <?php foreach ($heroSlides as $i => $slide): ?>
+                    <button class="hero-dot<?= $i === 0 ? ' hero-dot--active' : '' ?>" data-index="<?= $i ?>" role="tab" aria-selected="<?= $i === 0 ? 'true' : 'false' ?>" aria-label="Slide <?= $i + 1 ?>"></button>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
+            </div>
             <?php else: ?>
-                <!-- Placeholder if no image -->
+                <!-- Placeholder if no slides -->
                 <div style="width: 100%; aspect-ratio: 16/10; background: linear-gradient(135deg, rgba(0, 240, 255, 0.1), rgba(255, 46, 196, 0.1)); border-radius: 12px; display: flex; align-items: center; justify-content: center; border: 2px dashed var(--border-color);">
                     <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.5">
                         <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
@@ -318,6 +340,69 @@ $featuresSubheading = $sections['features']['subheading'] ?? 'Powerful capabilit
         </div>
     </div>
 </div>
+
+<style>
+/* Hero slideshow */
+.hero-slideshow {
+    position: relative;
+}
+.hero-slide {
+    display: none;
+    text-decoration: none;
+}
+.hero-slide--active {
+    display: block;
+}
+.hero-dots {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 12px;
+}
+.hero-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: none;
+    background: var(--border-color);
+    cursor: pointer;
+    padding: 0;
+    transition: background 0.2s;
+}
+.hero-dot--active {
+    background: var(--cyan);
+}
+</style>
+
+<script>
+(function () {
+    var ss = document.getElementById('heroSlideshow');
+    if (!ss) return;
+    var slides = ss.querySelectorAll('.hero-slide');
+    var dots   = ss.querySelectorAll('.hero-dot');
+    if (slides.length < 2) return;
+    var current = 0;
+    var timer;
+
+    function show(idx) {
+        slides[current].classList.remove('hero-slide--active');
+        slides[current].setAttribute('aria-hidden', 'true');
+        if (dots[current]) { dots[current].classList.remove('hero-dot--active'); dots[current].setAttribute('aria-selected', 'false'); }
+        current = (idx + slides.length) % slides.length;
+        slides[current].classList.add('hero-slide--active');
+        slides[current].setAttribute('aria-hidden', 'false');
+        if (dots[current]) { dots[current].classList.add('hero-dot--active'); dots[current].setAttribute('aria-selected', 'true'); }
+    }
+
+    function next() { show(current + 1); }
+
+    dots.forEach(function (dot, i) {
+        dot.addEventListener('click', function () { clearInterval(timer); show(i); timer = setInterval(next, 4000); });
+    });
+
+    timer = setInterval(next, 4000);
+}());
+</script>
 
 <style>
 /* Responsive hero section */

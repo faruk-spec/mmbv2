@@ -254,6 +254,8 @@ $router->post('/admin/home-content/timeline', 'Admin\\HomeContentController@upda
 $router->get('/admin/home-content/timeline/get/{id}', 'Admin\\HomeContentController@getTimeline', ['auth', 'admin']);
 $router->post('/admin/home-content/timeline/delete', 'Admin\\HomeContentController@deleteTimeline', ['auth', 'admin']);
 $router->post('/admin/home-content/section', 'Admin\\HomeContentController@updateSection', ['auth', 'admin']);
+$router->post('/admin/home-content/hero-slide/add', 'Admin\\HomeContentController@addHeroSlide', ['auth', 'admin']);
+$router->post('/admin/home-content/hero-slide/delete', 'Admin\\HomeContentController@deleteHeroSlide', ['auth', 'admin']);
 
 // API Management routes
 $router->get('/admin/api/keys', 'Admin\\ApiController@keys', ['auth', 'admin']);

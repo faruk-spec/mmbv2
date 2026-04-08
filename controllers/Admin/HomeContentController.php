@@ -61,6 +61,14 @@ class HomeContentController extends BaseController
         // Get hero section content
         $heroContent = $db->fetch("SELECT * FROM home_content WHERE section = 'hero'");
         
+        // Get hero banner slides
+        $heroSlides = [];
+        try {
+            $heroSlides = $db->fetchAll("SELECT * FROM home_hero_slides ORDER BY sort_order ASC, id ASC");
+        } catch (\Exception $e) {
+            // Table may not exist yet; ignore
+        }
+        
         // Get projects section content
         $projectsSection = $db->fetch("SELECT * FROM home_content WHERE section = 'projects_section'");
         
@@ -83,6 +91,7 @@ class HomeContentController extends BaseController
         $this->view('admin/home/index', [
             'title' => 'Home Page Management',
             'heroContent' => $heroContent,
+            'heroSlides' => $heroSlides,
             'projectsSection' => $projectsSection,
             'projects' => $projects,
             'stats' => $stats,
@@ -323,6 +332,93 @@ class HomeContentController extends BaseController
         $this->redirect('/admin/home-content');
     }
     
+    /**
+     * Add a hero banner slide (image + optional link)
+     */
+    public function addHeroSlide(): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request.');
+            $this->redirect('/admin/home-content');
+            return;
+        }
+
+        try {
+            if (!isset($_FILES['slide_image']) || $_FILES['slide_image']['error'] !== UPLOAD_ERR_OK) {
+                throw new \Exception('Please select an image to upload.');
+            }
+
+            $linkUrl = Security::sanitize($this->input('slide_link_url', ''));
+            // Basic URL validation when provided
+            if ($linkUrl !== '' && !filter_var($linkUrl, FILTER_VALIDATE_URL) && !str_starts_with($linkUrl, '/')) {
+                throw new \Exception('Invalid link URL. Use a full URL (https://…) or a relative path (/…).');
+            }
+
+            $imageUrl = $this->handleImageUpload($_FILES['slide_image'], 'slide');
+
+            $db = Database::getInstance();
+            $maxOrder = (int)($db->fetchColumn("SELECT COALESCE(MAX(sort_order), 0) FROM home_hero_slides") ?? 0);
+
+            $db->insert('home_hero_slides', [
+                'image_url'  => $imageUrl,
+                'link_url'   => $linkUrl ?: null,
+                'sort_order' => $maxOrder + 1,
+                'is_active'  => 1,
+                'created_at' => date('Y-m-d H:i:s'),
+            ]);
+
+            Logger::activity(Auth::id(), 'hero_slide_added');
+            $this->flash('success', 'Banner slide added successfully.');
+
+        } catch (\Exception $e) {
+            Logger::error('Hero slide add error: ' . $e->getMessage());
+            $this->flash('error', 'Failed to add slide: ' . $e->getMessage());
+        }
+
+        $this->redirect('/admin/home-content');
+    }
+
+    /**
+     * Delete a hero banner slide
+     */
+    public function deleteHeroSlide(): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request.');
+            $this->redirect('/admin/home-content');
+            return;
+        }
+
+        try {
+            $db    = Database::getInstance();
+            $id    = (int)$this->input('slide_id');
+            $slide = $db->fetch("SELECT * FROM home_hero_slides WHERE id = ?", [$id]);
+
+            if (!$slide) {
+                throw new \Exception('Slide not found.');
+            }
+
+            // Remove image file
+            if (!empty($slide['image_url'])) {
+                $filePath = $this->resolveFilePath($slide['image_url']);
+                if (file_exists($filePath)) {
+                    @unlink($filePath);
+                }
+            }
+
+            $db->delete('home_hero_slides', 'id = ?', [$id]);
+
+            Logger::activity(Auth::id(), 'hero_slide_deleted');
+            $this->flash('success', 'Banner slide removed.');
+
+        } catch (\Exception $e) {
+            Logger::error('Hero slide delete error: ' . $e->getMessage());
+            $this->flash('error', 'Failed to remove slide: ' . $e->getMessage());
+        }
+
+        $this->redirect('/admin/home-content');
+    }
+
     /**
      * Resolve the physical filesystem path for a stored image URL.
      * Handles both the old /public/uploads/home/ format and the new /uploads/home/ format.
