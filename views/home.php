@@ -617,7 +617,7 @@ if ($showStats):
                 }
             }
         ?>
-        <a href="<?= $cardHref ?>" class="project-card" data-tier="<?= htmlspecialchars($projectTier) ?>" style="display:block;text-decoration:none;color:inherit;">
+        <a href="<?= $cardHref ?>" class="project-card" data-tier="<?= htmlspecialchars($projectTier) ?>" style="display:block;text-decoration:none;color:inherit;position:relative;overflow:hidden;">
             <!-- Thumbnail image covers full card -->
             <?php if (!empty($project['image_url'])): ?>
                 <img class="project-card__thumb" src="<?= htmlspecialchars($project['image_url']) ?>" alt="" style="opacity:<?= round($thumbIntensity / 100, 2) ?>;">
@@ -799,6 +799,7 @@ if ($showStats):
     display: flex;
     flex-direction: column;
     padding: 16px;
+    overflow: hidden;
 }
 
 /* Top-center: logo + title */
@@ -812,9 +813,9 @@ if ($showStats):
 
 /* Logo */
 .project-card__logo {
-    width: 128px;
-    height: 128px;
-    border-radius: 20px;
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
     border: 2px solid;
     display: flex;
     align-items: center;
