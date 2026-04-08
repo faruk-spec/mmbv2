@@ -188,13 +188,17 @@ class HomeContentController extends BaseController
             $db = Database::getInstance();
             
             $title = Security::sanitize($this->input('projects_title'));
+            $globalThumbIntensity  = min(100, max(0, (int)$this->input('global_thumb_intensity', 60)));
+            $overrideThumbIntensity = $this->input('override_thumb_intensity', '0') === '1' ? 1 : 0;
             
             // Check if projects section content exists
             $existing = $db->fetch("SELECT id FROM home_content WHERE section = 'projects_section'");
             
             $data = [
-                'title' => $title,
-                'updated_at' => date('Y-m-d H:i:s')
+                'title'                   => $title,
+                'global_thumb_intensity'  => $globalThumbIntensity,
+                'override_thumb_intensity'=> $overrideThumbIntensity,
+                'updated_at'              => date('Y-m-d H:i:s')
             ];
             
             if ($existing) {

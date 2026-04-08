@@ -570,16 +570,32 @@ if ($showStats):
         foreach ($projects as $key => $project): 
             // Handle both database and config array formats
             $projectName = $project['name'] ?? '';
-            $projectDescription = $project['description'] ?? '';
             $projectColor = $project['color'] ?? '#00f0ff';
             $projectUrl = $project['url'] ?? '';
             $projectTier = $project['tier'] ?? 'free';
             $showFeaturesText = $project['show_features_text'] ?? 'Show Features';
             $showFeaturesUrl  = $project['show_features_url'] ?? '';
             $showTitle = isset($project['show_title']) ? (bool)(int)$project['show_title'] : true;
-            $thumbIntensity = isset($project['thumb_intensity']) ? min(100, max(0, (int)$project['thumb_intensity'])) : 60;
+
+            // Resolve thumb intensity: global override takes precedence
+            $globalOverride = !empty($projectsSection['override_thumb_intensity']);
+            $thumbIntensity = $globalOverride
+                ? min(100, max(0, (int)($projectsSection['global_thumb_intensity'] ?? 60)))
+                : (isset($project['thumb_intensity']) ? min(100, max(0, (int)$project['thumb_intensity'])) : 60);
+
+            // Parse features from JSON
+            $projectFeatures = [];
+            if (!empty($project['features'])) {
+                $decoded = json_decode($project['features'], true);
+                if (is_array($decoded)) {
+                    $projectFeatures = array_slice($decoded, 0, 5);
+                }
+            }
+
+            // Card link: authenticated → project URL, else → login redirect
+            $cardLink = Auth::check() ? htmlspecialchars($projectUrl) : '/login?redirect=' . urlencode($projectUrl);
         ?>
-        <div class="project-card" data-tier="<?= htmlspecialchars($projectTier) ?>">
+        <a href="<?= $cardLink ?>" class="project-card" data-tier="<?= htmlspecialchars($projectTier) ?>" style="text-decoration:none;display:block;">
             <!-- Thumbnail image covers full card -->
             <?php if (!empty($project['image_url'])): ?>
                 <img class="project-card__thumb" src="<?= htmlspecialchars($project['image_url']) ?>" alt="" style="opacity:<?= round($thumbIntensity / 100, 2) ?>;">
@@ -619,33 +635,32 @@ if ($showStats):
                     <?php endif; ?>
                 </div>
 
-                <!-- Description -->
-                <p class="project-card__desc"><?= htmlspecialchars($projectDescription) ?></p>
-
+                <!-- Key Features list -->
+                <?php if (!empty($projectFeatures)): ?>
+                <ul class="project-card__features">
+                    <?php foreach ($projectFeatures as $feat): ?>
+                    <li><?= htmlspecialchars($feat) ?></li>
+                    <?php endforeach; ?>
+                </ul>
+                <?php endif; ?>
 
                 <!-- Buttons: bottom-right -->
                 <div class="project-card__actions">
                     <?php if (!empty($showFeaturesUrl)): ?>
-                        <a href="<?= htmlspecialchars($showFeaturesUrl) ?>" class="project-card__btn project-card__btn--outline" style="border-color:<?= $projectColor ?>80;color:<?= $projectColor ?>;">
+                        <span class="project-card__btn project-card__btn--outline" style="border-color:<?= $projectColor ?>80;color:<?= $projectColor ?>;" onclick="event.stopPropagation();event.preventDefault();window.location.href='<?= htmlspecialchars($showFeaturesUrl) ?>';">
                             <?= htmlspecialchars($showFeaturesText) ?>
-                        </a>
+                        </span>
                     <?php else: ?>
-                        <button type="button" disabled class="project-card__btn project-card__btn--outline" style="border-color:<?= $projectColor ?>80;color:<?= $projectColor ?>;opacity:0.7;cursor:default;">
+                        <span class="project-card__btn project-card__btn--outline" style="border-color:<?= $projectColor ?>80;color:<?= $projectColor ?>;opacity:0.7;cursor:default;">
                             <?= htmlspecialchars($showFeaturesText) ?>
-                        </button>
+                        </span>
                     <?php endif; ?>
-                    <?php if (Auth::check()): ?>
-                        <a href="<?= htmlspecialchars($projectUrl) ?>" class="project-card__btn project-card__btn--primary" style="background:<?= $projectColor ?>;border-color:<?= $projectColor ?>;">
-                            Explore
-                        </a>
-                    <?php else: ?>
-                        <a href="/login?redirect=<?= urlencode($projectUrl) ?>" class="project-card__btn project-card__btn--primary" style="background:<?= $projectColor ?>;border-color:<?= $projectColor ?>;">
-                            Explore
-                        </a>
-                    <?php endif; ?>
+                    <span class="project-card__btn project-card__btn--primary" style="background:<?= $projectColor ?>;border-color:<?= $projectColor ?>;">
+                        Explore
+                    </span>
                 </div>
             </div>
-        </div>
+        </a>
         <?php endforeach; ?>
     </div>
 </div>
@@ -675,6 +690,15 @@ if ($showStats):
 }
 
 /* ── Project Card ── */
+/* Clickable card — <a> wrapper keeps block layout */
+a.project-card {
+    color: inherit;
+    cursor: pointer;
+}
+a.project-card:hover {
+    text-decoration: none;
+}
+
 .project-card {
     position: relative;
     overflow: hidden;
@@ -785,18 +809,31 @@ if ($showStats):
     letter-spacing: 0.2px;
 }
 
-/* Description */
-.project-card__desc {
+/* Key Features list */
+.project-card__features {
     flex: 1;
-    color: rgba(255,255,255,0.90);
-    font-size: 12px;
-    line-height: 1.55;
-    margin: 12px 0 0;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+    list-style: none;
+    padding: 0;
+    margin: 10px 0 0;
+}
+.project-card__features li {
+    color: rgba(255,255,255,0.88);
+    font-size: 11px;
+    line-height: 1.5;
+    padding: 2px 0 2px 14px;
+    position: relative;
     text-shadow: 0 1px 4px rgba(0,0,0,0.7);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+.project-card__features li::before {
+    content: '✦';
+    position: absolute;
+    left: 0;
+    font-size: 8px;
+    top: 4px;
+    opacity: 0.7;
 }
 
 /* Action buttons – bottom-right */

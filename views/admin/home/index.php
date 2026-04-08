@@ -148,9 +148,31 @@
                    value="<?= View::e($projectsSection['title'] ?? 'Explore Our Super Fast Products') ?>" required>
             <small style="color: var(--text-secondary);">Title for the projects section on home page</small>
         </div>
+
+        <div class="form-group" style="margin-top: 16px;">
+            <label class="form-label">Universal Thumbnail Image Intensity</label>
+            <div style="display:flex;align-items:center;gap:12px;">
+                <input type="range" name="global_thumb_intensity" min="0" max="100" step="1"
+                       value="<?= (int)($projectsSection['global_thumb_intensity'] ?? 60) ?>"
+                       class="form-range-input"
+                       oninput="this.nextElementSibling.textContent = this.value + '%'"
+                       style="flex:1;">
+                <span style="min-width:38px;text-align:right;color:var(--text-secondary);font-size:.9rem;"><?= (int)($projectsSection['global_thumb_intensity'] ?? 60) ?>%</span>
+            </div>
+            <small style="color: var(--text-secondary);">Global opacity applied to all project card thumbnails when override is enabled (0 = invisible, 100 = fully visible)</small>
+        </div>
+
+        <div class="form-group">
+            <label class="form-checkbox" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                <input type="checkbox" name="override_thumb_intensity" value="1"
+                       <?= !empty($projectsSection['override_thumb_intensity']) ? 'checked' : '' ?>>
+                <span>Override individual Thumbnail Image Intensity</span>
+            </label>
+            <small style="color: var(--text-secondary); margin-top: 4px; display: block;">When checked, the universal intensity above is applied to all project cards, ignoring each card's own setting</small>
+        </div>
         
         <button type="submit" class="btn btn-primary">
-            <i class="fas fa-save"></i> Save Section Title
+            <i class="fas fa-save"></i> Save Section Settings
         </button>
     </form>
 </div>
