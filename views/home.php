@@ -254,6 +254,20 @@ $heroSubtitle = $heroContent['subtitle'] ?? 'A powerful multi-project platform';
 $heroDescription = $heroContent['description'] ?? 'A powerful multi-project platform with centralized authentication, unified admin panel, and secure architecture.';
 $projectsSectionTitle = $projectsSection['title'] ?? 'Explore Our Super Fast Products';
 
+// Parse global card display settings
+$_cardGlobal = [
+    'global_thumb_intensity'  => 60,
+    'override_thumb_intensity' => 0,
+    'global_show_title'       => 1,
+    'override_show_title'     => 0,
+];
+if (!empty($projectsSection['description'])) {
+    $_decoded = json_decode($projectsSection['description'], true);
+    if (is_array($_decoded)) {
+        $_cardGlobal = array_merge($_cardGlobal, $_decoded);
+    }
+}
+
 // Get hero banner slides
 $heroSlides = [];
 try {
@@ -576,10 +590,34 @@ if ($showStats):
             $projectTier = $project['tier'] ?? 'free';
             $showFeaturesText = $project['show_features_text'] ?? 'Show Features';
             $showFeaturesUrl  = $project['show_features_url'] ?? '';
-            $showTitle = isset($project['show_title']) ? (bool)(int)$project['show_title'] : true;
-            $thumbIntensity = isset($project['thumb_intensity']) ? min(100, max(0, (int)$project['thumb_intensity'])) : 60;
+
+            // Resolve show_title: global override wins if enabled
+            if (!empty($_cardGlobal['override_show_title'])) {
+                $showTitle = (bool)(int)$_cardGlobal['global_show_title'];
+            } else {
+                $showTitle = isset($project['show_title']) ? (bool)(int)$project['show_title'] : true;
+            }
+
+            // Resolve thumb_intensity: global override wins if enabled
+            if (!empty($_cardGlobal['override_thumb_intensity'])) {
+                $thumbIntensity = min(100, max(0, (int)$_cardGlobal['global_thumb_intensity']));
+            } else {
+                $thumbIntensity = isset($project['thumb_intensity']) ? min(100, max(0, (int)$project['thumb_intensity'])) : (int)$_cardGlobal['global_thumb_intensity'];
+            }
+
+            // Card link (auth-aware)
+            $cardHref = Auth::check() ? htmlspecialchars($projectUrl) : '/login?redirect=' . urlencode($projectUrl);
+
+            // Decode features for display
+            $cardFeatures = [];
+            if (!empty($project['features'])) {
+                $_decoded = json_decode($project['features'], true);
+                if (is_array($_decoded)) {
+                    $cardFeatures = $_decoded;
+                }
+            }
         ?>
-        <div class="project-card" data-tier="<?= htmlspecialchars($projectTier) ?>">
+        <a href="<?= $cardHref ?>" class="project-card" data-tier="<?= htmlspecialchars($projectTier) ?>" style="display:block;text-decoration:none;color:inherit;">
             <!-- Thumbnail image covers full card -->
             <?php if (!empty($project['image_url'])): ?>
                 <img class="project-card__thumb" src="<?= htmlspecialchars($project['image_url']) ?>" alt="" style="opacity:<?= round($thumbIntensity / 100, 2) ?>;">
@@ -619,33 +657,40 @@ if ($showStats):
                     <?php endif; ?>
                 </div>
 
-                <!-- Description -->
+                <!-- Key features list (falls back to description) -->
+                <?php if (!empty($cardFeatures)): ?>
+                <ul class="project-card__features">
+                    <?php foreach ($cardFeatures as $feat): ?>
+                    <li><?= htmlspecialchars($feat) ?></li>
+                    <?php endforeach; ?>
+                </ul>
+                <?php else: ?>
                 <p class="project-card__desc"><?= htmlspecialchars($projectDescription) ?></p>
-
+                <?php endif; ?>
 
                 <!-- Buttons: bottom-right -->
                 <div class="project-card__actions">
                     <?php if (!empty($showFeaturesUrl)): ?>
-                        <a href="<?= htmlspecialchars($showFeaturesUrl) ?>" class="project-card__btn project-card__btn--outline" style="border-color:<?= $projectColor ?>80;color:<?= $projectColor ?>;">
+                        <a href="<?= htmlspecialchars($showFeaturesUrl) ?>" class="project-card__btn project-card__btn--outline" style="border-color:<?= $projectColor ?>80;color:<?= $projectColor ?>;" onclick="event.stopPropagation();">
                             <?= htmlspecialchars($showFeaturesText) ?>
                         </a>
                     <?php else: ?>
-                        <button type="button" disabled class="project-card__btn project-card__btn--outline" style="border-color:<?= $projectColor ?>80;color:<?= $projectColor ?>;opacity:0.7;cursor:default;">
+                        <button type="button" disabled class="project-card__btn project-card__btn--outline" style="border-color:<?= $projectColor ?>80;color:<?= $projectColor ?>;opacity:0.7;cursor:default;" onclick="event.stopPropagation();">
                             <?= htmlspecialchars($showFeaturesText) ?>
                         </button>
                     <?php endif; ?>
                     <?php if (Auth::check()): ?>
-                        <a href="<?= htmlspecialchars($projectUrl) ?>" class="project-card__btn project-card__btn--primary" style="background:<?= $projectColor ?>;border-color:<?= $projectColor ?>;">
+                        <a href="<?= htmlspecialchars($projectUrl) ?>" class="project-card__btn project-card__btn--primary" style="background:<?= $projectColor ?>;border-color:<?= $projectColor ?>;" onclick="event.stopPropagation();">
                             Explore
                         </a>
                     <?php else: ?>
-                        <a href="/login?redirect=<?= urlencode($projectUrl) ?>" class="project-card__btn project-card__btn--primary" style="background:<?= $projectColor ?>;border-color:<?= $projectColor ?>;">
+                        <a href="/login?redirect=<?= urlencode($projectUrl) ?>" class="project-card__btn project-card__btn--primary" style="background:<?= $projectColor ?>;border-color:<?= $projectColor ?>;" onclick="event.stopPropagation();">
                             Explore
                         </a>
                     <?php endif; ?>
                 </div>
             </div>
-        </div>
+        </a>
         <?php endforeach; ?>
     </div>
 </div>
@@ -669,9 +714,10 @@ if ($showStats):
 }
 
 .filter-btn.active {
-    background: var(--cyan) !important;
-    border-color: var(--cyan) !important;
+    background: linear-gradient(135deg, #00c8ff 0%, #0070f3 100%) !important;
+    border-color: transparent !important;
     color: #ffffff !important;
+    box-shadow: 0 4px 18px rgba(0, 112, 243, 0.45) !important;
 }
 
 /* ── Project Card ── */
@@ -797,6 +843,39 @@ if ($showStats):
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-shadow: 0 1px 4px rgba(0,0,0,0.7);
+}
+
+/* Key features list inside project card */
+.project-card__features {
+    flex: 1;
+    list-style: none;
+    padding: 0;
+    margin: 10px 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    overflow: hidden;
+}
+
+.project-card__features li {
+    color: rgba(255,255,255,0.88);
+    font-size: 11.5px;
+    line-height: 1.45;
+    padding-left: 14px;
+    position: relative;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.7);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.project-card__features li::before {
+    content: '✦';
+    position: absolute;
+    left: 0;
+    font-size: 8px;
+    top: 2px;
+    opacity: 0.75;
 }
 
 /* Action buttons – bottom-right */

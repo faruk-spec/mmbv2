@@ -148,9 +148,49 @@
                    value="<?= View::e($projectsSection['title'] ?? 'Explore Our Super Fast Products') ?>" required>
             <small style="color: var(--text-secondary);">Title for the projects section on home page</small>
         </div>
+
+        <hr style="border-color:var(--border-color);margin:20px 0;">
+        <h3 style="margin-bottom:14px;font-size:1rem;">Global Card Display Settings</h3>
+
+        <div class="form-group">
+            <label class="form-label">Universal Thumbnail Image Intensity</label>
+            <div style="display:flex;align-items:center;gap:12px;">
+                <input type="range" name="global_thumb_intensity" min="0" max="100" step="1"
+                       value="<?= (int)($cardSettings['global_thumb_intensity'] ?? 60) ?>"
+                       class="form-range-input"
+                       oninput="this.nextElementSibling.textContent = this.value + '%'"
+                       style="flex:1;">
+                <span style="min-width:38px;text-align:right;color:var(--text-secondary);font-size:.9rem;"><?= (int)($cardSettings['global_thumb_intensity'] ?? 60) ?>%</span>
+            </div>
+            <small style="color: var(--text-secondary);">Global thumbnail opacity applied to all cards</small>
+        </div>
+        <div class="form-group">
+            <label class="form-checkbox" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                <input type="checkbox" name="override_thumb_intensity" value="1"
+                       <?= !empty($cardSettings['override_thumb_intensity']) ? 'checked' : '' ?>>
+                <span>Override individual Thumbnail Image Intensity</span>
+            </label>
+            <small style="color: var(--text-secondary); margin-top:4px; display:block;">When checked, the universal value above overrides each card's own intensity setting</small>
+        </div>
+
+        <div class="form-group">
+            <label class="form-checkbox" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                <input type="checkbox" name="global_show_title" value="1"
+                       <?= ($cardSettings['global_show_title'] ?? 1) ? 'checked' : '' ?>>
+                <span>Show project title on all cards (universal)</span>
+            </label>
+        </div>
+        <div class="form-group">
+            <label class="form-checkbox" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                <input type="checkbox" name="override_show_title" value="1"
+                       <?= !empty($cardSettings['override_show_title']) ? 'checked' : '' ?>>
+                <span>Override individual project-card title visibility</span>
+            </label>
+            <small style="color: var(--text-secondary); margin-top:4px; display:block;">When checked, the universal show-title setting above overrides each card's own setting</small>
+        </div>
         
         <button type="submit" class="btn btn-primary">
-            <i class="fas fa-save"></i> Save Section Title
+            <i class="fas fa-save"></i> Save Section Settings
         </button>
     </form>
 </div>

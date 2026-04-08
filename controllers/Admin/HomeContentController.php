@@ -72,6 +72,20 @@ class HomeContentController extends BaseController
         // Get projects section content
         $projectsSection = $db->fetch("SELECT * FROM home_content WHERE section = 'projects_section'");
         
+        // Parse global card display settings stored as JSON in projects_section.description
+        $cardSettings = [
+            'global_thumb_intensity'  => 60,
+            'override_thumb_intensity' => 0,
+            'global_show_title'       => 1,
+            'override_show_title'     => 0,
+        ];
+        if (!empty($projectsSection['description'])) {
+            $decoded = json_decode($projectsSection['description'], true);
+            if (is_array($decoded)) {
+                $cardSettings = array_merge($cardSettings, $decoded);
+            }
+        }
+        
         // Get all projects
         $projects = $db->fetchAll("SELECT * FROM home_projects ORDER BY sort_order ASC");
         
@@ -93,6 +107,7 @@ class HomeContentController extends BaseController
             'heroContent' => $heroContent,
             'heroSlides' => $heroSlides,
             'projectsSection' => $projectsSection,
+            'cardSettings' => $cardSettings,
             'projects' => $projects,
             'stats' => $stats,
             'timelines' => $timelines,
@@ -189,12 +204,25 @@ class HomeContentController extends BaseController
             
             $title = Security::sanitize($this->input('projects_title'));
             
+            // Global card display settings
+            $globalThumbIntensity   = min(100, max(0, (int)$this->input('global_thumb_intensity', 60)));
+            $overrideThumbIntensity = $this->input('override_thumb_intensity', '0') === '1' ? 1 : 0;
+            $globalShowTitle        = $this->input('global_show_title', '1') === '1' ? 1 : 0;
+            $overrideShowTitle      = $this->input('override_show_title', '0') === '1' ? 1 : 0;
+            $settingsJson = json_encode([
+                'global_thumb_intensity'  => $globalThumbIntensity,
+                'override_thumb_intensity' => $overrideThumbIntensity,
+                'global_show_title'       => $globalShowTitle,
+                'override_show_title'     => $overrideShowTitle,
+            ]);
+            
             // Check if projects section content exists
             $existing = $db->fetch("SELECT id FROM home_content WHERE section = 'projects_section'");
             
             $data = [
-                'title' => $title,
-                'updated_at' => date('Y-m-d H:i:s')
+                'title'       => $title,
+                'description' => $settingsJson,
+                'updated_at'  => date('Y-m-d H:i:s')
             ];
             
             if ($existing) {
