@@ -202,7 +202,6 @@ CREATE TABLE IF NOT EXISTS `home_projects` (
     `show_features_text` VARCHAR(100) NULL DEFAULT 'Show Features',
     `show_features_url` VARCHAR(255) NULL DEFAULT NULL,
     `is_enabled` TINYINT(1) DEFAULT 1,
-    `thumb_intensity` TINYINT(3) UNSIGNED NOT NULL DEFAULT 60,
     `sort_order` INT DEFAULT 0,
     `database_name` VARCHAR(50) NULL,
     `url` VARCHAR(255) NULL,

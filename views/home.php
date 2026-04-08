@@ -254,18 +254,6 @@ $heroSubtitle = $heroContent['subtitle'] ?? 'A powerful multi-project platform';
 $heroDescription = $heroContent['description'] ?? 'A powerful multi-project platform with centralized authentication, unified admin panel, and secure architecture.';
 $projectsSectionTitle = $projectsSection['title'] ?? 'Explore Our Super Fast Products';
 
-// Parse global card display settings
-$_cardGlobal = [
-    'global_thumb_intensity'  => 60,
-    'override_thumb_intensity' => 0,
-];
-if (!empty($projectsSection['description'])) {
-    $_decoded = json_decode($projectsSection['description'], true);
-    if (is_array($_decoded)) {
-        $_cardGlobal = array_merge($_cardGlobal, $_decoded);
-    }
-}
-
 // Get hero banner slides
 $heroSlides = [];
 try {
@@ -588,27 +576,10 @@ if ($showStats):
             $projectTier = $project['tier'] ?? 'free';
             $showFeaturesText = $project['show_features_text'] ?? 'Show Features';
             $showFeaturesUrl  = $project['show_features_url'] ?? '';
-
-            // Resolve thumb_intensity: global override wins if enabled
-            if (!empty($_cardGlobal['override_thumb_intensity'])) {
-                $thumbIntensity = min(100, max(0, (int)$_cardGlobal['global_thumb_intensity']));
-            } else {
-                $thumbIntensity = isset($project['thumb_intensity']) ? min(100, max(0, (int)$project['thumb_intensity'])) : (int)$_cardGlobal['global_thumb_intensity'];
-            }
-
-            // Card link (auth-aware)
-            $cardHref = Auth::check() ? htmlspecialchars($projectUrl) : '/login?redirect=' . urlencode($projectUrl);
-
-            // Decode features for display
-            $cardFeatures = [];
-            if (!empty($project['features'])) {
-                $_decoded = json_decode($project['features'], true);
-                if (is_array($_decoded)) {
-                    $cardFeatures = $_decoded;
-                }
-            }
+            $showTitle = isset($project['show_title']) ? (bool)(int)$project['show_title'] : true;
+            $thumbIntensity = isset($project['thumb_intensity']) ? min(100, max(0, (int)$project['thumb_intensity'])) : 60;
         ?>
-        <a href="<?= $cardHref ?>" class="project-card" data-tier="<?= htmlspecialchars($projectTier) ?>" style="display:block;text-decoration:none;color:inherit;position:relative;overflow:hidden;">
+        <div class="project-card" data-tier="<?= htmlspecialchars($projectTier) ?>">
             <!-- Thumbnail image covers full card -->
             <?php if (!empty($project['image_url'])): ?>
                 <img class="project-card__thumb" src="<?= htmlspecialchars($project['image_url']) ?>" alt="" style="opacity:<?= round($thumbIntensity / 100, 2) ?>;">
@@ -643,43 +614,38 @@ if ($showStats):
                             <span style="font-size: 1.3rem; font-weight: 700; color: <?= $projectColor ?>;"><?= strtoupper(substr($projectName, 0, 2)) ?></span>
                         <?php endif; ?>
                     </div>
+                    <?php if ($showTitle): ?>
                     <h3 class="project-card__title" style="color: #fff; text-shadow: 0 0 12px <?= $projectColor ?>, 0 2px 6px rgba(0,0,0,0.8);"><?= htmlspecialchars($projectName) ?></h3>
+                    <?php endif; ?>
                 </div>
 
-                <!-- Key features list (falls back to description) -->
-                <?php if (!empty($cardFeatures)): ?>
-                <ul class="project-card__features">
-                    <?php foreach ($cardFeatures as $feat): ?>
-                    <li><?= htmlspecialchars($feat) ?></li>
-                    <?php endforeach; ?>
-                </ul>
-                <?php else: ?>
+                <!-- Description -->
                 <p class="project-card__desc"><?= htmlspecialchars($projectDescription) ?></p>
-                <?php endif; ?>
+
 
                 <!-- Buttons: bottom-right -->
                 <div class="project-card__actions">
                     <?php if (!empty($showFeaturesUrl)): ?>
-                        <a href="<?= htmlspecialchars($showFeaturesUrl) ?>" class="project-card__btn project-card__btn--outline" style="border-color:<?= $projectColor ?>80;color:<?= $projectColor ?>;" onclick="event.stopPropagation();">
+                        <a href="<?= htmlspecialchars($showFeaturesUrl) ?>" class="project-card__btn project-card__btn--outline" style="border-color:<?= $projectColor ?>80;color:<?= $projectColor ?>;">
                             <?= htmlspecialchars($showFeaturesText) ?>
                         </a>
                     <?php else: ?>
-                        <button type="button" disabled class="project-card__btn project-card__btn--outline" style="border-color:<?= $projectColor ?>80;color:<?= $projectColor ?>;opacity:0.7;cursor:default;" onclick="event.stopPropagation();">
+                        <button type="button" disabled class="project-card__btn project-card__btn--outline" style="border-color:<?= $projectColor ?>80;color:<?= $projectColor ?>;opacity:0.7;cursor:default;">
                             <?= htmlspecialchars($showFeaturesText) ?>
                         </button>
                     <?php endif; ?>
                     <?php if (Auth::check()): ?>
-                        <a href="<?= htmlspecialchars($projectUrl) ?>" class="project-card__btn project-card__btn--primary" style="background:<?= $projectColor ?>;border-color:<?= $projectColor ?>;" onclick="event.stopPropagation();">
+                        <a href="<?= htmlspecialchars($projectUrl) ?>" class="project-card__btn project-card__btn--primary" style="background:<?= $projectColor ?>;border-color:<?= $projectColor ?>;">
                             Explore
                         </a>
                     <?php else: ?>
-                        <a href="/login?redirect=<?= urlencode($projectUrl) ?>" class="project-card__btn project-card__btn--primary" style="background:<?= $projectColor ?>;border-color:<?= $projectColor ?>;" onclick="event.stopPropagation();">
+                        <a href="/login?redirect=<?= urlencode($projectUrl) ?>" class="project-card__btn project-card__btn--primary" style="background:<?= $projectColor ?>;border-color:<?= $projectColor ?>;">
                             Explore
                         </a>
                     <?php endif; ?>
                 </div>
             </div>
-        </a>
+        </div>
         <?php endforeach; ?>
     </div>
 </div>
@@ -703,17 +669,15 @@ if ($showStats):
 }
 
 .filter-btn.active {
-    background: linear-gradient(135deg, #00c8ff 0%, #0070f3 100%) !important;
-    border-color: transparent !important;
+    background: var(--cyan) !important;
+    border-color: var(--cyan) !important;
     color: #ffffff !important;
-    box-shadow: 0 4px 18px rgba(0, 112, 243, 0.45) !important;
 }
 
 /* ── Project Card ── */
 .project-card {
     position: relative;
     overflow: hidden;
-    isolation: isolate;
     border-radius: 14px;
     aspect-ratio: 4 / 3;
     box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
@@ -789,7 +753,6 @@ if ($showStats):
     display: flex;
     flex-direction: column;
     padding: 16px;
-    overflow: hidden;
 }
 
 /* Top-center: logo + title */
@@ -803,9 +766,9 @@ if ($showStats):
 
 /* Logo */
 .project-card__logo {
-    width: 56px;
-    height: 56px;
-    border-radius: 12px;
+    width: 128px;
+    height: 128px;
+    border-radius: 20px;
     border: 2px solid;
     display: flex;
     align-items: center;
@@ -834,39 +797,6 @@ if ($showStats):
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-shadow: 0 1px 4px rgba(0,0,0,0.7);
-}
-
-/* Key features list inside project card */
-.project-card__features {
-    flex: 1;
-    list-style: none;
-    padding: 0;
-    margin: 10px 0 0;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    overflow: hidden;
-}
-
-.project-card__features li {
-    color: rgba(255,255,255,0.88);
-    font-size: 11.5px;
-    line-height: 1.45;
-    padding-left: 14px;
-    position: relative;
-    text-shadow: 0 1px 4px rgba(0,0,0,0.7);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.project-card__features li::before {
-    content: '✦';
-    position: absolute;
-    left: 0;
-    font-size: 8px;
-    top: 2px;
-    opacity: 0.75;
 }
 
 /* Action buttons – bottom-right */

@@ -148,33 +148,9 @@
                    value="<?= View::e($projectsSection['title'] ?? 'Explore Our Super Fast Products') ?>" required>
             <small style="color: var(--text-secondary);">Title for the projects section on home page</small>
         </div>
-
-        <hr style="border-color:var(--border-color);margin:20px 0;">
-        <h3 style="margin-bottom:14px;font-size:1rem;">Global Card Display Settings</h3>
-
-        <div class="form-group">
-            <label class="form-label">Universal Thumbnail Image Intensity</label>
-            <div style="display:flex;align-items:center;gap:12px;">
-                <input type="range" name="global_thumb_intensity" min="0" max="100" step="1"
-                       value="<?= (int)($cardSettings['global_thumb_intensity'] ?? 60) ?>"
-                       class="form-range-input"
-                       oninput="this.nextElementSibling.textContent = this.value + '%'"
-                       style="flex:1;">
-                <span style="min-width:38px;text-align:right;color:var(--text-secondary);font-size:.9rem;"><?= (int)($cardSettings['global_thumb_intensity'] ?? 60) ?>%</span>
-            </div>
-            <small style="color: var(--text-secondary);">Global thumbnail opacity applied to all cards</small>
-        </div>
-        <div class="form-group">
-            <label class="form-checkbox" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-                <input type="checkbox" name="override_thumb_intensity" value="1"
-                       <?= !empty($cardSettings['override_thumb_intensity']) ? 'checked' : '' ?>>
-                <span>Override individual Thumbnail Image Intensity</span>
-            </label>
-            <small style="color: var(--text-secondary); margin-top:4px; display:block;">When checked, the universal value above overrides each card's own intensity setting</small>
-        </div>
-
+        
         <button type="submit" class="btn btn-primary">
-            <i class="fas fa-save"></i> Save Section Settings
+            <i class="fas fa-save"></i> Save Section Title
         </button>
     </form>
 </div>
@@ -190,7 +166,7 @@
         Project Cards
     </h2>
     
-    <div class="grid grid-3" style="gap: 20px;">
+    <div class="grid grid-2" style="gap: 20px;">
         <?php foreach ($projects as $project): 
             // Sanitize and validate color value for safe CSS output
             $safeColor = View::e($project['color']);
@@ -198,28 +174,22 @@
             if (!preg_match('/^#[0-9A-Fa-f]{6}$/', $safeColor)) {
                 $safeColor = '#00f0ff';
             }
-            $collapseId = 'proj-body-' . (int)$project['id'];
         ?>
-        <div class="card proj-card-admin" style="background: rgba(<?= hexdec(substr($safeColor, 1, 2)) ?>, <?= hexdec(substr($safeColor, 3, 2)) ?>, <?= hexdec(substr($safeColor, 5, 2)) ?>, 0.05); border-color: <?= $safeColor ?>30; padding: 0; overflow: hidden;">
-            <!-- Collapsible toggle header -->
-            <div class="proj-card-admin__hdr" onclick="toggleProjCard('<?= $collapseId ?>', this)">
-                <div style="width:36px;height:36px;background:<?= $safeColor ?>20;border-radius:7px;border:2px solid <?= $safeColor ?>40;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;">
-                    <?php if (!empty($project['logo_url'])): ?>
-                        <img src="<?= View::e($project['logo_url']) ?>" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:5px;">
-                    <?php else: ?>
-                        <span style="font-size:.8rem;font-weight:700;color:<?= $safeColor ?>;"><?= strtoupper(substr($project['name'], 0, 2)) ?></span>
-                    <?php endif; ?>
-                </div>
-                <span style="flex:1;font-weight:600;font-size:.9rem;color:<?= $safeColor ?>;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><?= View::e($project['name']) ?></span>
-                <svg class="proj-chevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <polyline points="6 9 12 15 18 9"></polyline>
-                </svg>
-            </div>
-            <!-- Collapsible body – hidden by default -->
-            <div id="<?= $collapseId ?>" class="proj-card-admin__body" style="display:none;">
+        <div class="card" style="background: rgba(<?= hexdec(substr($safeColor, 1, 2)) ?>, <?= hexdec(substr($safeColor, 3, 2)) ?>, <?= hexdec(substr($safeColor, 5, 2)) ?>, 0.05); border-color: <?= $safeColor ?>30;">
             <form method="POST" action="/admin/home-content/project" enctype="multipart/form-data">
                 <?= \Core\Security::csrfField() ?>
-                <input type="hidden" name="project_id" value="<?= $project['id'] ?>"><?php // removed old title header ?>
+                <input type="hidden" name="project_id" value="<?= $project['id'] ?>">
+                
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                    <div style="width: 48px; height: 48px; background: <?= $safeColor ?>20; border-radius: 10px; border: 2px solid <?= $safeColor ?>40; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0;">
+                        <?php if (!empty($project['logo_url'])): ?>
+                            <img src="<?= View::e($project['logo_url']) ?>" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">
+                        <?php else: ?>
+                            <span style="font-size: 1rem; font-weight: 700; color: <?= $safeColor ?>;"><?= strtoupper(substr($project['name'], 0, 2)) ?></span>
+                        <?php endif; ?>
+                    </div>
+                    <h3 style="color: <?= $safeColor ?>;"><?= View::e($project['name']) ?></h3>
+                </div>
                 
                 <div class="form-group">
                     <label class="form-label">Project Name</label>
@@ -329,6 +299,16 @@
                 <?php endif; ?>
 
                 <div class="form-group">
+                    <label class="form-checkbox" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                        <input type="checkbox" name="show_title" value="1"
+                               <?= ($project['show_title'] ?? 1) ? 'checked' : '' ?>>
+                        <span>Show project title on card</span>
+                    </label>
+                    <small style="color: var(--text-secondary); margin-top: 4px; display: block;">Uncheck to hide the title text from the public-facing project card</small>
+                </div>
+
+
+                <div class="form-group">
                     <label class="form-label">"Show Features" Button Text</label>
                     <input type="text" name="show_features_text" class="form-input"
                            value="<?= View::e($project['show_features_text'] ?? 'Show Features') ?>"
@@ -356,7 +336,6 @@
                     <i class="fas fa-save"></i> Update Project
                 </button>
             </form>
-            </div><!-- /.proj-card-admin__body -->
         </div>
         <?php endforeach; ?>
     </div>
@@ -371,44 +350,9 @@
 .form-input[type="file"] {
     padding: 8px;
 }
-
-/* Collapsible project card – admin */
-.proj-card-admin__hdr {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px 14px;
-    cursor: pointer;
-    user-select: none;
-    transition: background 0.18s;
-    border-radius: 10px 10px 0 0;
-}
-.proj-card-admin__hdr:hover {
-    background: rgba(255,255,255,0.04);
-}
-.proj-card-admin__body {
-    padding: 16px;
-    border-top: 1px solid var(--border-color);
-}
-.proj-chevron {
-    flex-shrink: 0;
-    color: var(--text-secondary);
-    transition: transform 0.22s ease;
-}
-.proj-card-admin.is-open .proj-chevron {
-    transform: rotate(180deg);
-}
 </style>
 
 <script>
-function toggleProjCard(bodyId, hdr) {
-    const body = document.getElementById(bodyId);
-    const card = hdr.closest('.proj-card-admin');
-    const isOpen = body.style.display !== 'none';
-    body.style.display = isOpen ? 'none' : 'block';
-    card.classList.toggle('is-open', !isOpen);
-}
-
 // Handle project image removal
 document.addEventListener('click', function(e) {
     if (e.target.classList.contains('remove-project-image') || e.target.closest('.remove-project-image')) {
