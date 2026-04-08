@@ -173,22 +173,6 @@
             <small style="color: var(--text-secondary); margin-top:4px; display:block;">When checked, the universal value above overrides each card's own intensity setting</small>
         </div>
 
-        <div class="form-group">
-            <label class="form-checkbox" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-                <input type="checkbox" name="global_show_title" value="1"
-                       <?= ($cardSettings['global_show_title'] ?? 1) ? 'checked' : '' ?>>
-                <span>Show project title on all cards (universal)</span>
-            </label>
-        </div>
-        <div class="form-group">
-            <label class="form-checkbox" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-                <input type="checkbox" name="override_show_title" value="1"
-                       <?= !empty($cardSettings['override_show_title']) ? 'checked' : '' ?>>
-                <span>Override individual project-card title visibility</span>
-            </label>
-            <small style="color: var(--text-secondary); margin-top:4px; display:block;">When checked, the universal show-title setting above overrides each card's own setting</small>
-        </div>
-        
         <button type="submit" class="btn btn-primary">
             <i class="fas fa-save"></i> Save Section Settings
         </button>
@@ -343,16 +327,6 @@
                 <?php else: ?>
                     <input type="hidden" name="thumb_intensity" value="<?= (int)($project['thumb_intensity'] ?? 60) ?>">
                 <?php endif; ?>
-
-                <div class="form-group">
-                    <label class="form-checkbox" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-                        <input type="checkbox" name="show_title" value="1"
-                               <?= ($project['show_title'] ?? 1) ? 'checked' : '' ?>>
-                        <span>Show project title on card</span>
-                    </label>
-                    <small style="color: var(--text-secondary); margin-top: 4px; display: block;">Uncheck to hide the title text from the public-facing project card</small>
-                </div>
-
 
                 <div class="form-group">
                     <label class="form-label">"Show Features" Button Text</label>

@@ -258,8 +258,6 @@ $projectsSectionTitle = $projectsSection['title'] ?? 'Explore Our Super Fast Pro
 $_cardGlobal = [
     'global_thumb_intensity'  => 60,
     'override_thumb_intensity' => 0,
-    'global_show_title'       => 1,
-    'override_show_title'     => 0,
 ];
 if (!empty($projectsSection['description'])) {
     $_decoded = json_decode($projectsSection['description'], true);
@@ -591,13 +589,6 @@ if ($showStats):
             $showFeaturesText = $project['show_features_text'] ?? 'Show Features';
             $showFeaturesUrl  = $project['show_features_url'] ?? '';
 
-            // Resolve show_title: global override wins if enabled
-            if (!empty($_cardGlobal['override_show_title'])) {
-                $showTitle = (bool)(int)$_cardGlobal['global_show_title'];
-            } else {
-                $showTitle = isset($project['show_title']) ? (bool)(int)$project['show_title'] : true;
-            }
-
             // Resolve thumb_intensity: global override wins if enabled
             if (!empty($_cardGlobal['override_thumb_intensity'])) {
                 $thumbIntensity = min(100, max(0, (int)$_cardGlobal['global_thumb_intensity']));
@@ -652,9 +643,7 @@ if ($showStats):
                             <span style="font-size: 1.3rem; font-weight: 700; color: <?= $projectColor ?>;"><?= strtoupper(substr($projectName, 0, 2)) ?></span>
                         <?php endif; ?>
                     </div>
-                    <?php if ($showTitle): ?>
                     <h3 class="project-card__title" style="color: #fff; text-shadow: 0 0 12px <?= $projectColor ?>, 0 2px 6px rgba(0,0,0,0.8);"><?= htmlspecialchars($projectName) ?></h3>
-                    <?php endif; ?>
                 </div>
 
                 <!-- Key features list (falls back to description) -->

@@ -76,8 +76,6 @@ class HomeContentController extends BaseController
         $cardSettings = [
             'global_thumb_intensity'  => 60,
             'override_thumb_intensity' => 0,
-            'global_show_title'       => 1,
-            'override_show_title'     => 0,
         ];
         if (!empty($projectsSection['description'])) {
             $decoded = json_decode($projectsSection['description'], true);
@@ -207,13 +205,9 @@ class HomeContentController extends BaseController
             // Global card display settings
             $globalThumbIntensity   = min(100, max(0, (int)$this->input('global_thumb_intensity', 60)));
             $overrideThumbIntensity = $this->input('override_thumb_intensity', '0') === '1' ? 1 : 0;
-            $globalShowTitle        = $this->input('global_show_title', '1') === '1' ? 1 : 0;
-            $overrideShowTitle      = $this->input('override_show_title', '0') === '1' ? 1 : 0;
             $settingsJson = json_encode([
                 'global_thumb_intensity'  => $globalThumbIntensity,
                 'override_thumb_intensity' => $overrideThumbIntensity,
-                'global_show_title'       => $globalShowTitle,
-                'override_show_title'     => $overrideShowTitle,
             ]);
             
             // Check if projects section content exists
@@ -343,7 +337,6 @@ class HomeContentController extends BaseController
                 'logo_url' => $logoUrl,
                 'image_url' => $imageUrl,
                 'is_enabled' => $isEnabled,
-                'show_title' => $this->input('show_title', '0') === '1' ? 1 : 0,
                 'thumb_intensity' => min(100, max(0, (int)$this->input('thumb_intensity', 60))),
                 'updated_at' => date('Y-m-d H:i:s')
             ];
