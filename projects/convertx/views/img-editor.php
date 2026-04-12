@@ -174,7 +174,9 @@ $csrfToken   = \Core\Security::generateCsrfToken();
     });
 
     function initCanvas(w, h) {
-        if (state.rotation === 90 || state.rotation === 270) { canvas.width=h; canvas.height=w; }
+        // Swap dimensions for 90° and 270° rotations
+        var rot = ((state.rotation % 360) + 360) % 360;
+        if (rot === 90 || rot === 270) { canvas.width=h; canvas.height=w; }
         else { canvas.width=w; canvas.height=h; }
     }
 

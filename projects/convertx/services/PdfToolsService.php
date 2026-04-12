@@ -626,7 +626,7 @@ class PdfToolsService
 
     /**
      * Load an image via GD and return [resource|null, format_string].
-     * @return array{0:\GdImage|null, 1:string}
+     * @return array  First element is \GdImage|null, second is string format
      */
     public function loadImage(string $path): array
     {
@@ -653,13 +653,16 @@ class PdfToolsService
     /** Calculate the destination X,Y for a watermark given its position. */
     private function calcWatermarkPos(string $pos, int $imgW, int $imgH, int $wmW, int $wmH): array
     {
-        $pad = 10;
+        $pad  = 10;
+        // Clamp watermark dimensions to image size
+        $wmW  = min($wmW, $imgW - $pad);
+        $wmH  = min($wmH, $imgH - $pad);
         return match ($pos) {
             'topleft'     => [$pad, $pad],
-            'topright'    => [$imgW - $wmW - $pad, $pad],
-            'bottomleft'  => [$pad, $imgH - $wmH - $pad],
+            'topright'    => [max($pad, $imgW - $wmW - $pad), $pad],
+            'bottomleft'  => [$pad, max($pad, $imgH - $wmH - $pad)],
             'center'      => [(int)(($imgW - $wmW) / 2), (int)(($imgH - $wmH) / 2)],
-            default       => [$imgW - $wmW - $pad, $imgH - $wmH - $pad], // bottomright
+            default       => [max($pad, $imgW - $wmW - $pad), max($pad, $imgH - $wmH - $pad)], // bottomright
         };
     }
 

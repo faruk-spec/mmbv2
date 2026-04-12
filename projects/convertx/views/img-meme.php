@@ -45,8 +45,8 @@ $hasGd       = $hasGd ?? false;
             <!-- Live preview -->
             <div id="previewWrap" style="display:none;position:relative;border-radius:.5rem;overflow:hidden;background:#000;">
                 <img id="previewImg" style="display:block;max-width:100%;height:auto;" alt="Preview">
-                <div id="topTextPreview" style="position:absolute;top:5%;left:50%;transform:translateX(-50%);white-space:nowrap;font-weight:900;text-shadow:-2px -2px 0 #000,2px -2px 0 #000,-2px 2px 0 #000,2px 2px 0 #000;font-family:Impact,Arial Black,sans-serif;color:#fff;font-size:2.5rem;text-transform:uppercase;pointer-events:none;"></div>
-                <div id="botTextPreview" style="position:absolute;bottom:5%;left:50%;transform:translateX(-50%);white-space:nowrap;font-weight:900;text-shadow:-2px -2px 0 #000,2px -2px 0 #000,-2px 2px 0 #000,2px 2px 0 #000;font-family:Impact,Arial Black,sans-serif;color:#fff;font-size:2.5rem;text-transform:uppercase;pointer-events:none;"></div>
+                <div id="topTextPreview" class="meme-text-overlay" style="top:5%;"></div>
+                <div id="botTextPreview" class="meme-text-overlay" style="bottom:5%;"></div>
             </div>
         </form>
     </div>
@@ -117,6 +117,13 @@ $hasGd       = $hasGd ?? false;
 <style>
 .cx-batch-grid { display:grid; grid-template-columns:1.2fr 1fr; gap:1.25rem; align-items:start; }
 @media (max-width:768px) { .cx-batch-grid { grid-template-columns:1fr; } }
+.meme-text-overlay {
+    position:absolute; left:50%; transform:translateX(-50%);
+    white-space:nowrap; font-weight:900;
+    text-shadow:-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000;
+    font-family:Impact,'Arial Black',sans-serif; color:#fff;
+    font-size:2.5rem; text-transform:uppercase; pointer-events:none;
+}
 </style>
 
 <script>

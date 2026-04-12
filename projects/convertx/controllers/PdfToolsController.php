@@ -1117,6 +1117,7 @@ class PdfToolsController
             return;
         }
 
+        // Normalize degrees to [0, 359] range (handles negative values too)
         $degrees = (int) ($_POST['degrees'] ?? 90);
         $degrees = ((($degrees % 360) + 360) % 360);
 

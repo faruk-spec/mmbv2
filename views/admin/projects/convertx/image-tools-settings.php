@@ -131,8 +131,9 @@ View::extend('admin');
                                 <input type="text" class="form-control" id="removebg_api_provider"
                                        name="removebg_api_provider"
                                        value="<?= htmlspecialchars($settings['removebg_api_provider'] ?? 'iloveapi') ?>"
-                                       readonly>
-                                <small class="form-text text-muted">Provider is fixed to <strong>iloveapi</strong>.</small>
+                                       readonly
+                                       aria-label="Provider is fixed to iloveapi and cannot be changed">
+                                <small class="form-text text-muted">Provider is fixed to <strong>iloveapi</strong> — this field is read-only.</small>
                             </div>
 
                             <div class="form-group">
