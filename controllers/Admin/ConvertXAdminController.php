@@ -940,4 +940,80 @@ class ConvertXAdminController extends BaseController
             return [];
         }
     }
+
+    // ------------------------------------------------------------------ //
+    //  Image Tools Settings                                                //
+    // ------------------------------------------------------------------ //
+
+    public function imageToolsSettings(): void
+    {
+        $this->requirePermission('convertx.settings');
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $this->updateImageToolsSettings();
+            return;
+        }
+
+        $rows     = [];
+        try {
+            $rows = $this->db->fetchAll('SELECT setting_key, setting_value FROM convertx_image_tools_settings');
+        } catch (\Exception $e) {
+            // Table may not exist yet
+        }
+
+        $settings = [];
+        foreach ($rows as $row) {
+            $settings[$row['setting_key']] = $row['setting_value'];
+        }
+
+        $defaults = [
+            'upscale_api_key'      => '',
+            'upscale_api_provider' => '',
+            'removebg_api_key'     => '',
+            'removebg_api_provider'=> 'iloveapi',
+        ];
+        foreach ($defaults as $k => $v) {
+            if (!array_key_exists($k, $settings)) {
+                $settings[$k] = $v;
+            }
+        }
+
+        $this->view('admin/projects/convertx/image-tools-settings', [
+            'title'    => 'Image Tools APIs',
+            'settings' => $settings,
+        ]);
+    }
+
+    public function updateImageToolsSettings(): void
+    {
+        $this->requirePermission('convertx.settings');
+
+        if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
+            $this->redirect('/admin/projects/convertx/image-tools-settings');
+            return;
+        }
+
+        $keys = ['upscale_api_key', 'upscale_api_provider', 'removebg_api_key', 'removebg_api_provider'];
+        foreach ($keys as $k) {
+            $v = trim((string) ($_POST[$k] ?? ''));
+            try {
+                $this->db->execute(
+                    'INSERT INTO convertx_image_tools_settings (setting_key, setting_value, updated_at)
+                     VALUES (:k, :v, NOW())
+                     ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = NOW()',
+                    [':k' => $k, ':v' => $v]
+                );
+            } catch (\Exception $e) {
+                Logger::error('ImageToolsSettings update failed for key ' . $k . ': ' . $e->getMessage());
+            }
+        }
+
+        try {
+            ActivityLogger::logSettingsUpdated(Auth::id(), 'convertx', [], ['image_tools_settings' => 'updated']);
+        } catch (\Throwable $_) {}
+
+        $_SESSION['_flash']['success'] = 'Image Tools API settings saved.';
+        $this->redirect('/admin/projects/convertx/image-tools-settings');
+    }
 }
+

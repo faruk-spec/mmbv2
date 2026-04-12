@@ -289,6 +289,435 @@ class PdfToolsService
     }
 
     // ------------------------------------------------------------------ //
+    //  Resize Image                                                        //
+    // ------------------------------------------------------------------ //
+
+    /**
+     * Resize an image by pixel dimensions or percentage.
+     *
+     * @param string $inputPath
+     * @param string $outputPath
+     * @param array  $opts  Keys: width, height, percent (0-200), maintain_ratio (bool), quality (1-100)
+     */
+    public function resizeImage(string $inputPath, string $outputPath, array $opts): bool
+    {
+        if (!$this->hasGd()) {
+            throw new \RuntimeException('Image resize requires the PHP GD extension.');
+        }
+
+        [$im, $fmt] = $this->loadImage($inputPath);
+        if ($im === null) {
+            throw new \RuntimeException('Could not open image.');
+        }
+
+        $origW = imagesx($im);
+        $origH = imagesy($im);
+
+        $percent       = isset($opts['percent']) ? (int) $opts['percent'] : 0;
+        $maintainRatio = !empty($opts['maintain_ratio']);
+        $quality       = max(1, min(100, (int) ($opts['quality'] ?? 82)));
+
+        if ($percent > 0) {
+            $newW = (int) round($origW * $percent / 100);
+            $newH = (int) round($origH * $percent / 100);
+        } else {
+            $newW = isset($opts['width'])  ? max(1, (int) $opts['width'])  : 0;
+            $newH = isset($opts['height']) ? max(1, (int) $opts['height']) : 0;
+
+            if ($maintainRatio) {
+                if ($newW > 0 && $newH === 0) {
+                    $newH = (int) round($origH * $newW / $origW);
+                } elseif ($newH > 0 && $newW === 0) {
+                    $newW = (int) round($origW * $newH / $origH);
+                } elseif ($newW > 0 && $newH > 0) {
+                    $scaleW = $newW / $origW;
+                    $scaleH = $newH / $origH;
+                    $scale  = min($scaleW, $scaleH);
+                    $newW   = (int) round($origW * $scale);
+                    $newH   = (int) round($origH * $scale);
+                }
+            }
+
+            if ($newW <= 0) {
+                $newW = $origW;
+            }
+            if ($newH <= 0) {
+                $newH = $origH;
+            }
+        }
+
+        $outExt = strtolower(pathinfo($outputPath, PATHINFO_EXTENSION)) ?: $fmt;
+
+        $resized = imagecreatetruecolor($newW, $newH);
+        imagealphablending($resized, false);
+        imagesavealpha($resized, true);
+        $transparent = imagecolorallocatealpha($resized, 0, 0, 0, 127);
+        imagefill($resized, 0, 0, $transparent);
+        imagecopyresampled($resized, $im, 0, 0, 0, 0, $newW, $newH, $origW, $origH);
+        imagedestroy($im);
+
+        $ok = $this->saveImage($resized, $outputPath, $outExt, $quality);
+        imagedestroy($resized);
+
+        if (!$ok || !file_exists($outputPath) || filesize($outputPath) === 0) {
+            throw new \RuntimeException('Image resize failed: could not write output file.');
+        }
+
+        return true;
+    }
+
+    // ------------------------------------------------------------------ //
+    //  Crop Image                                                          //
+    // ------------------------------------------------------------------ //
+
+    /**
+     * Crop an image to the given rectangle.
+     *
+     * @param array $opts  Keys: x, y, crop_width, crop_height
+     */
+    public function cropImage(string $inputPath, string $outputPath, array $opts): bool
+    {
+        if (!$this->hasGd()) {
+            throw new \RuntimeException('Image crop requires the PHP GD extension.');
+        }
+
+        [$im, $fmt] = $this->loadImage($inputPath);
+        if ($im === null) {
+            throw new \RuntimeException('Could not open image.');
+        }
+
+        $x          = max(0, (int) ($opts['x']           ?? 0));
+        $y          = max(0, (int) ($opts['y']           ?? 0));
+        $cropWidth  = max(1, (int) ($opts['crop_width']  ?? imagesx($im)));
+        $cropHeight = max(1, (int) ($opts['crop_height'] ?? imagesy($im)));
+        $quality    = max(1, min(100, (int) ($opts['quality'] ?? 90)));
+
+        $outExt = strtolower(pathinfo($outputPath, PATHINFO_EXTENSION)) ?: $fmt;
+
+        $rect    = ['x' => $x, 'y' => $y, 'width' => $cropWidth, 'height' => $cropHeight];
+        $cropped = imagecrop($im, $rect);
+        imagedestroy($im);
+
+        if ($cropped === false) {
+            throw new \RuntimeException('imagecrop() failed — coordinates may be out of bounds.');
+        }
+
+        $ok = $this->saveImage($cropped, $outputPath, $outExt, $quality);
+        imagedestroy($cropped);
+
+        if (!$ok || !file_exists($outputPath) || filesize($outputPath) === 0) {
+            throw new \RuntimeException('Image crop failed: could not write output file.');
+        }
+
+        return true;
+    }
+
+    // ------------------------------------------------------------------ //
+    //  Watermark Image                                                     //
+    // ------------------------------------------------------------------ //
+
+    /**
+     * Apply a text or image watermark.
+     *
+     * @param array $opts  Keys: text, font_size (8-72), opacity (0-100), position, color_hex, watermark_image_path
+     */
+    public function watermarkImage(string $inputPath, string $outputPath, array $opts): bool
+    {
+        if (!$this->hasGd()) {
+            throw new \RuntimeException('Image watermark requires the PHP GD extension.');
+        }
+
+        [$im, $fmt] = $this->loadImage($inputPath);
+        if ($im === null) {
+            throw new \RuntimeException('Could not open image.');
+        }
+
+        $imgW    = imagesx($im);
+        $imgH    = imagesy($im);
+        $opacity = max(0, min(100, (int) ($opts['opacity'] ?? 50)));
+        $quality = max(1, min(100, (int) ($opts['quality'] ?? 90)));
+        $outExt  = strtolower(pathinfo($outputPath, PATHINFO_EXTENSION)) ?: $fmt;
+
+        $wmImagePath = $opts['watermark_image_path'] ?? '';
+
+        if (!empty($wmImagePath) && file_exists($wmImagePath)) {
+            // Image watermark
+            [$wmIm, ] = $this->loadImage($wmImagePath);
+            if ($wmIm !== null) {
+                $wmW   = imagesx($wmIm);
+                $wmH   = imagesy($wmIm);
+                [$dstX, $dstY] = $this->calcWatermarkPos(
+                    $opts['position'] ?? 'bottomright',
+                    $imgW, $imgH, $wmW, $wmH
+                );
+                imagecopymerge($im, $wmIm, $dstX, $dstY, 0, 0, $wmW, $wmH, $opacity);
+                imagedestroy($wmIm);
+            }
+        } else {
+            // Text watermark
+            $text     = (string) ($opts['text']      ?? 'Watermark');
+            $fontSize = max(8, min(72, (int) ($opts['font_size'] ?? 24)));
+            $colorHex = ltrim($opts['color_hex'] ?? '#ffffff', '#');
+            $r = hexdec(substr($colorHex, 0, 2));
+            $g = hexdec(substr($colorHex, 2, 2));
+            $b = hexdec(substr($colorHex, 4, 2));
+
+            // Try TTF first
+            $fontPath = $this->findFont();
+            if ($fontPath && function_exists('imagettftext')) {
+                $bbox   = imagettfbbox($fontSize, 0, $fontPath, $text);
+                $textW  = abs($bbox[2] - $bbox[0]);
+                $textH  = abs($bbox[5] - $bbox[1]);
+                [$dstX, $dstY] = $this->calcWatermarkPos(
+                    $opts['position'] ?? 'bottomright',
+                    $imgW, $imgH, $textW, $textH
+                );
+
+                // Merge onto temp canvas for opacity support
+                $overlay = imagecreatetruecolor($imgW, $imgH);
+                imagecopy($overlay, $im, 0, 0, 0, 0, $imgW, $imgH);
+                $col = imagecolorallocate($overlay, (int)$r, (int)$g, (int)$b);
+                imagettftext($overlay, $fontSize, 0, $dstX, $dstY + $textH, $col, $fontPath, $text);
+                imagecopymerge($im, $overlay, 0, 0, 0, 0, $imgW, $imgH, $opacity);
+                imagedestroy($overlay);
+            } else {
+                // Fallback: imagestring (fixed 5 = 9px wide chars)
+                $charW  = 9;
+                $charH  = 15;
+                $textW  = strlen($text) * $charW;
+                $textH  = $charH;
+                [$dstX, $dstY] = $this->calcWatermarkPos(
+                    $opts['position'] ?? 'bottomright',
+                    $imgW, $imgH, $textW, $textH
+                );
+                $col = imagecolorallocate($im, (int)$r, (int)$g, (int)$b);
+                imagestring($im, 5, $dstX, $dstY, $text, $col);
+            }
+        }
+
+        $ok = $this->saveImage($im, $outputPath, $outExt, $quality);
+        imagedestroy($im);
+
+        if (!$ok || !file_exists($outputPath) || filesize($outputPath) === 0) {
+            throw new \RuntimeException('Watermark failed: could not write output file.');
+        }
+
+        return true;
+    }
+
+    // ------------------------------------------------------------------ //
+    //  Rotate Image                                                        //
+    // ------------------------------------------------------------------ //
+
+    /**
+     * Rotate an image by the specified degrees (clockwise).
+     */
+    public function rotateImage(string $inputPath, string $outputPath, int $degrees): bool
+    {
+        if (!$this->hasGd()) {
+            throw new \RuntimeException('Image rotate requires the PHP GD extension.');
+        }
+
+        [$im, $fmt] = $this->loadImage($inputPath);
+        if ($im === null) {
+            throw new \RuntimeException('Could not open image.');
+        }
+
+        $outExt = strtolower(pathinfo($outputPath, PATHINFO_EXTENSION)) ?: $fmt;
+
+        // imagerotate rotates counter-clockwise, so negate for clockwise
+        $rotated    = imagerotate($im, -$degrees, 0);
+        imagedestroy($im);
+
+        if ($rotated === false) {
+            throw new \RuntimeException('imagerotate() failed.');
+        }
+
+        $ok = $this->saveImage($rotated, $outputPath, $outExt, 90);
+        imagedestroy($rotated);
+
+        if (!$ok || !file_exists($outputPath) || filesize($outputPath) === 0) {
+            throw new \RuntimeException('Image rotate failed: could not write output file.');
+        }
+
+        return true;
+    }
+
+    // ------------------------------------------------------------------ //
+    //  Meme Generator                                                      //
+    // ------------------------------------------------------------------ //
+
+    /**
+     * Add classic meme-style top/bottom text to an image.
+     *
+     * @param array $opts  Keys: top_text, bottom_text, font_size, text_color, stroke_color, font_path
+     */
+    public function addMemeText(string $inputPath, string $outputPath, array $opts): bool
+    {
+        if (!$this->hasGd()) {
+            throw new \RuntimeException('Meme generator requires the PHP GD extension.');
+        }
+
+        [$im, $fmt] = $this->loadImage($inputPath);
+        if ($im === null) {
+            throw new \RuntimeException('Could not open image.');
+        }
+
+        $outExt    = strtolower(pathinfo($outputPath, PATHINFO_EXTENSION)) ?: $fmt;
+        $imgW      = imagesx($im);
+        $imgH      = imagesy($im);
+        $topText   = strtoupper((string) ($opts['top_text']    ?? ''));
+        $botText   = strtoupper((string) ($opts['bottom_text'] ?? ''));
+        $fontSize  = max(12, min(120, (int) ($opts['font_size'] ?? 48)));
+        $textColor = $opts['text_color']   ?? 'white';
+        $strokeClr = $opts['stroke_color'] ?? 'black';
+
+        $colorMap = [
+            'white'  => [255, 255, 255],
+            'black'  => [0,   0,   0],
+            'yellow' => [255, 255, 0],
+        ];
+        [$tr, $tg, $tb] = $colorMap[$textColor]  ?? [255, 255, 255];
+        [$sr, $sg, $sb] = $colorMap[$strokeClr]  ?? [0,   0,   0];
+
+        $fontPath = $opts['font_path'] ?? $this->findFont();
+        $margin   = (int) ($imgH * 0.03);
+
+        if ($fontPath && function_exists('imagettftext')) {
+            $this->drawMemeTextTtf($im, $topText, $fontPath, $fontSize, $imgW, $margin,
+                                   $tr, $tg, $tb, $sr, $sg, $sb, true);
+            $this->drawMemeTextTtf($im, $botText, $fontPath, $fontSize, $imgW, $imgH - $margin,
+                                   $tr, $tg, $tb, $sr, $sg, $sb, false);
+        } else {
+            $col    = imagecolorallocate($im, $tr, $tg, $tb);
+            $stroke = imagecolorallocate($im, $sr, $sg, $sb);
+            $font   = 5;
+            $charW  = 9;
+            $charH  = 15;
+
+            if ($topText !== '') {
+                $tw = strlen($topText) * $charW;
+                $tx = (int) (($imgW - $tw) / 2);
+                imagestring($im, $font, $tx + 1, $margin + 1, $topText, $stroke);
+                imagestring($im, $font, $tx, $margin, $topText, $col);
+            }
+            if ($botText !== '') {
+                $tw = strlen($botText) * $charW;
+                $tx = (int) (($imgW - $tw) / 2);
+                $ty = $imgH - $margin - $charH;
+                imagestring($im, $font, $tx + 1, $ty + 1, $botText, $stroke);
+                imagestring($im, $font, $tx, $ty, $botText, $col);
+            }
+        }
+
+        $ok = $this->saveImage($im, $outputPath, $outExt, 92);
+        imagedestroy($im);
+
+        if (!$ok || !file_exists($outputPath) || filesize($outputPath) === 0) {
+            throw new \RuntimeException('Meme generation failed: could not write output file.');
+        }
+
+        return true;
+    }
+
+    // ------------------------------------------------------------------ //
+    //  Shared image helpers (public so controller can use them if needed)  //
+    // ------------------------------------------------------------------ //
+
+    /**
+     * Load an image via GD and return [resource|null, format_string].
+     * @return array{0:\GdImage|null, 1:string}
+     */
+    public function loadImage(string $path): array
+    {
+        if (!file_exists($path)) {
+            return [null, ''];
+        }
+        $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+        $im  = $this->gdLoadImage($path, $ext);
+        return [$im, $ext];
+    }
+
+    /**
+     * Save a GD image resource to disk.
+     */
+    public function saveImage(\GdImage $img, string $outputPath, string $fmt, int $quality = 90): bool
+    {
+        return $this->gdSaveImage($img, $outputPath, $fmt, $quality);
+    }
+
+    // ------------------------------------------------------------------ //
+    //  Private helpers for new image tools                                 //
+    // ------------------------------------------------------------------ //
+
+    /** Calculate the destination X,Y for a watermark given its position. */
+    private function calcWatermarkPos(string $pos, int $imgW, int $imgH, int $wmW, int $wmH): array
+    {
+        $pad = 10;
+        return match ($pos) {
+            'topleft'     => [$pad, $pad],
+            'topright'    => [$imgW - $wmW - $pad, $pad],
+            'bottomleft'  => [$pad, $imgH - $wmH - $pad],
+            'center'      => [(int)(($imgW - $wmW) / 2), (int)(($imgH - $wmH) / 2)],
+            default       => [$imgW - $wmW - $pad, $imgH - $wmH - $pad], // bottomright
+        };
+    }
+
+    /** Find a TTF font file bundled with the project. */
+    private function findFont(): ?string
+    {
+        $candidates = [
+            defined('PROJECT_PATH') ? PROJECT_PATH . '/assets/fonts/impact.ttf'    : null,
+            defined('PROJECT_PATH') ? PROJECT_PATH . '/assets/fonts/Arial.ttf'     : null,
+            defined('PROJECT_PATH') ? PROJECT_PATH . '/assets/fonts/DejaVuSans.ttf': null,
+            '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
+            '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf',
+            '/usr/share/fonts/truetype/freefont/FreeSansBold.ttf',
+        ];
+        foreach ($candidates as $c) {
+            if ($c && file_exists($c)) {
+                return $c;
+            }
+        }
+        return null;
+    }
+
+    /** Draw a single meme text line with TTF including a stroke effect. */
+    private function drawMemeTextTtf(
+        \GdImage $im,
+        string   $text,
+        string   $fontPath,
+        int      $fontSize,
+        int      $imgW,
+        int      $baseY,
+        int      $tr, int $tg, int $tb,
+        int      $sr, int $sg, int $sb,
+        bool     $isTop
+    ): void {
+        if ($text === '') {
+            return;
+        }
+        $bbox  = imagettfbbox($fontSize, 0, $fontPath, $text);
+        $textW = abs($bbox[2] - $bbox[0]);
+        $textH = abs($bbox[5] - $bbox[1]);
+        $x     = (int) (($imgW - $textW) / 2);
+        $y     = $isTop ? $baseY + $textH : $baseY;
+
+        $stroke = imagecolorallocate($im, $sr, $sg, $sb);
+        $fill   = imagecolorallocate($im, $tr, $tg, $tb);
+        $sw     = max(2, (int) ($fontSize / 20));
+
+        for ($dx = -$sw; $dx <= $sw; $dx++) {
+            for ($dy = -$sw; $dy <= $sw; $dy++) {
+                if ($dx !== 0 || $dy !== 0) {
+                    imagettftext($im, $fontSize, 0, $x + $dx, $y + $dy, $stroke, $fontPath, $text);
+                }
+            }
+        }
+        imagettftext($im, $fontSize, 0, $x, $y, $fill, $fontPath, $text);
+    }
+
+    // ------------------------------------------------------------------ //
     //  Helpers                                                             //
     // ------------------------------------------------------------------ //
 

@@ -1113,6 +1113,12 @@
                                 <span>Settings</span>
                             </a>
                             <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('convertx.settings')): ?>
+                            <a href="/admin/projects/convertx/image-tools-settings" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/convertx/image-tools-settings') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-magic"></i>
+                                <span>Image Tools APIs</span>
+                            </a>
+                            <?php endif; ?>
                             <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('convertx.storage')): ?>
                             <a href="/admin/projects/convertx/storage" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/convertx/storage') === 0 ? 'active' : '' ?>">
                                 <i class="fas fa-hdd"></i>
