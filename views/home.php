@@ -204,17 +204,8 @@
         background: linear-gradient(135deg, #7C3AED, #0369a1) !important;
     }
 
-    [data-theme="light"] .toggle-details {
-        background: rgba(0, 0, 0, 0.04) !important;
-        border-color: rgba(0, 0, 0, 0.12) !important;
-    }
-
-    [data-theme="light"] .project-details > div {
-        background: rgba(124, 58, 237, 0.04) !important;
-    }
-
     [data-theme="light"] .project-card:hover {
-        box-shadow: 0 12px 40px rgba(124, 58, 237, 0.20) !important;
+        box-shadow: 0 8px 28px rgba(124, 58, 237, 0.18) !important;
     }
 
     [data-theme="light"] #hp-mouse-glow {
@@ -261,8 +252,15 @@ try {
 $heroTitle = $heroContent['title'] ?? 'Welcome to ' . APP_NAME;
 $heroSubtitle = $heroContent['subtitle'] ?? 'A powerful multi-project platform';
 $heroDescription = $heroContent['description'] ?? 'A powerful multi-project platform with centralized authentication, unified admin panel, and secure architecture.';
-$heroBanner = $heroContent['image_url'] ?? '';
 $projectsSectionTitle = $projectsSection['title'] ?? 'Explore Our Super Fast Products';
+
+// Get hero banner slides
+$heroSlides = [];
+try {
+    $heroSlides = $db->fetchAll("SELECT * FROM home_hero_slides WHERE is_active = 1 ORDER BY sort_order ASC, id ASC");
+} catch (Exception $e) {
+    // Table may not exist yet
+}
 
 // Get section headings with error handling
 $sections = [];
@@ -310,12 +308,27 @@ $featuresSubheading = $sections['features']['subheading'] ?? 'Powerful capabilit
             </div>
         </div>
         
-        <!-- Right side: Hero banner image -->
+        <!-- Right side: Hero banner slideshow -->
         <div style="text-align: center;">
-            <?php if (!empty($heroBanner)): ?>
-                <img src="<?= htmlspecialchars($heroBanner) ?>" alt="Hero Banner" class="hero-banner" style="max-width: 100%; height: auto; border-radius: 12px; box-shadow: var(--shadow-glow);">
+            <?php if (!empty($heroSlides)): ?>
+            <div class="hero-slideshow" id="heroSlideshow">
+                <?php foreach ($heroSlides as $i => $slide): ?>
+                <?php $tag = !empty($slide['link_url']) ? 'a' : 'div'; ?>
+                <?php $attrs = !empty($slide['link_url']) ? ' href="' . htmlspecialchars($slide['link_url']) . '"' : ''; ?>
+                <<?= $tag . $attrs ?> class="hero-slide<?= $i === 0 ? ' hero-slide--active' : '' ?>" aria-hidden="<?= $i === 0 ? 'false' : 'true' ?>">
+                    <img src="<?= htmlspecialchars($slide['image_url']) ?>" alt="Banner <?= $i + 1 ?>" class="hero-banner" style="max-width: 100%; height: auto; border-radius: 12px; box-shadow: var(--shadow-glow);">
+                </<?= $tag ?>>
+                <?php endforeach; ?>
+                <?php if (count($heroSlides) > 1): ?>
+                <div class="hero-dots" role="tablist" aria-label="Banner slides">
+                    <?php foreach ($heroSlides as $i => $slide): ?>
+                    <button class="hero-dot<?= $i === 0 ? ' hero-dot--active' : '' ?>" data-index="<?= $i ?>" role="tab" aria-selected="<?= $i === 0 ? 'true' : 'false' ?>" aria-label="Slide <?= $i + 1 ?>"></button>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
+            </div>
             <?php else: ?>
-                <!-- Placeholder if no image -->
+                <!-- Placeholder if no slides -->
                 <div style="width: 100%; aspect-ratio: 16/10; background: linear-gradient(135deg, rgba(0, 240, 255, 0.1), rgba(255, 46, 196, 0.1)); border-radius: 12px; display: flex; align-items: center; justify-content: center; border: 2px dashed var(--border-color);">
                     <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.5">
                         <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
@@ -327,6 +340,69 @@ $featuresSubheading = $sections['features']['subheading'] ?? 'Powerful capabilit
         </div>
     </div>
 </div>
+
+<style>
+/* Hero slideshow */
+.hero-slideshow {
+    position: relative;
+}
+.hero-slide {
+    display: none;
+    text-decoration: none;
+}
+.hero-slide--active {
+    display: block;
+}
+.hero-dots {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 12px;
+}
+.hero-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: none;
+    background: var(--border-color);
+    cursor: pointer;
+    padding: 0;
+    transition: background 0.2s;
+}
+.hero-dot--active {
+    background: var(--cyan);
+}
+</style>
+
+<script>
+(function () {
+    var ss = document.getElementById('heroSlideshow');
+    if (!ss) return;
+    var slides = ss.querySelectorAll('.hero-slide');
+    var dots   = ss.querySelectorAll('.hero-dot');
+    if (slides.length < 2) return;
+    var current = 0;
+    var timer;
+
+    function show(idx) {
+        slides[current].classList.remove('hero-slide--active');
+        slides[current].setAttribute('aria-hidden', 'true');
+        if (dots[current]) { dots[current].classList.remove('hero-dot--active'); dots[current].setAttribute('aria-selected', 'false'); }
+        current = (idx + slides.length) % slides.length;
+        slides[current].classList.add('hero-slide--active');
+        slides[current].setAttribute('aria-hidden', 'false');
+        if (dots[current]) { dots[current].classList.add('hero-dot--active'); dots[current].setAttribute('aria-selected', 'true'); }
+    }
+
+    function next() { show(current + 1); }
+
+    dots.forEach(function (dot, i) {
+        dot.addEventListener('click', function () { clearInterval(timer); show(i); timer = setInterval(next, 4000); });
+    });
+
+    timer = setInterval(next, 4000);
+}());
+</script>
 
 <style>
 /* Responsive hero section */
@@ -491,109 +567,101 @@ if ($showStats):
             }
         }
         
-        $delay = 0;
         foreach ($projects as $key => $project): 
             // Handle both database and config array formats
             $projectName = $project['name'] ?? '';
-            $projectDescription = $project['description'] ?? '';
             $projectColor = $project['color'] ?? '#00f0ff';
             $projectUrl = $project['url'] ?? '';
-            $projectTier = $project['tier'] ?? 'free'; // Default to free
+            $projectTier = $project['tier'] ?? 'free';
+            $showFeaturesText = $project['show_features_text'] ?? 'Show Features';
+            $showFeaturesUrl  = $project['show_features_url'] ?? '';
+            $showTitle = isset($project['show_title']) ? (bool)(int)$project['show_title'] : true;
+
+            // Resolve thumb intensity: global override takes precedence
+            $globalOverride = !empty($projectsSection['override_thumb_intensity']);
+            $thumbIntensity = $globalOverride
+                ? min(100, max(0, (int)($projectsSection['global_thumb_intensity'] ?? 60)))
+                : (isset($project['thumb_intensity']) ? min(100, max(0, (int)$project['thumb_intensity'])) : 60);
+
+            // Parse features from JSON
+            $projectFeatures = [];
+            if (!empty($project['features'])) {
+                $decoded = json_decode($project['features'], true);
+                if (is_array($decoded)) {
+                    $projectFeatures = array_slice($decoded, 0, 5);
+                }
+            }
+
+            // Card link: authenticated → project URL, else → login redirect
+            $cardLink = Auth::check() ? htmlspecialchars($projectUrl) : '/login?redirect=' . urlencode($projectUrl);
         ?>
-        <div class="card animate-fade-in project-card" data-tier="<?= htmlspecialchars($projectTier) ?>" style="border-color: <?= $projectColor ?>30; animation-delay: <?= $delay ?>s; position: relative; overflow: hidden; transition: all 0.4s ease;">
-            <!-- Tier Badge -->
-            <div style="position: absolute; top: 12px; right: 12px; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; 
-                <?php 
-                $badgeStyles = [
-                    'free' => 'background: rgba(0, 255, 136, 0.2); color: var(--green); border: 1px solid var(--green);',
-                    'freemium' => 'background: rgba(255, 170, 0, 0.2); color: var(--orange); border: 1px solid var(--orange);',
-                    'enterprise' => 'background: rgba(153, 69, 255, 0.2); color: var(--purple); border: 1px solid var(--purple);'
-                ];
-                echo $badgeStyles[$projectTier] ?? $badgeStyles['free'];
-                ?>">
-                <?= htmlspecialchars(ucfirst($projectTier === 'enterprise' ? 'Enterprise' : $projectTier)) ?>
-            </div>
-            
-            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px; margin-top: 8px;">
-                <div style="width: 48px; height: 48px; background: <?= $projectColor ?>20; border-radius: 10px; border: 1px solid <?= $projectColor ?>40; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0;">
-                    <?php if (!empty($project['logo_url'])): ?>
-                        <img src="<?= htmlspecialchars($project['logo_url']) ?>" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:9px;">
-                    <?php else: ?>
-                        <span style="font-size: 1.1rem; font-weight: 700; color: <?= $projectColor ?>;"><?= strtoupper(substr($projectName, 0, 2)) ?></span>
+        <a href="<?= $cardLink ?>" class="project-card" data-tier="<?= htmlspecialchars($projectTier) ?>" style="text-decoration:none;display:block;">
+            <!-- Thumbnail image covers full card -->
+            <?php if (!empty($project['image_url'])): ?>
+                <img class="project-card__thumb" src="<?= htmlspecialchars($project['image_url']) ?>" alt="" style="opacity:<?= round($thumbIntensity / 100, 2) ?>;">
+            <?php else: ?>
+                <div class="project-card__thumb project-card__thumb--placeholder" style="background: linear-gradient(135deg, <?= $projectColor ?>33, <?= $projectColor ?>11);"></div>
+            <?php endif; ?>
+
+            <!-- Gradient overlay for readability -->
+            <div class="project-card__overlay"></div>
+
+            <!-- Tier badge – absolute top-right -->
+            <?php
+            $badgeStyles = [
+                'free'       => 'background:rgba(0,255,136,0.28);color:#00ff88;border:1px solid rgba(0,255,136,0.55);',
+                'freemium'   => 'background:rgba(255,170,0,0.28);color:#ffaa00;border:1px solid rgba(255,170,0,0.55);',
+                'enterprise' => 'background:rgba(153,69,255,0.28);color:#bb88ff;border:1px solid rgba(153,69,255,0.55);',
+            ];
+            $badgeStyle = $badgeStyles[$projectTier] ?? $badgeStyles['free'];
+            ?>
+            <span class="project-card__tier" style="<?= $badgeStyle ?>">
+                <?= htmlspecialchars($projectTier === 'enterprise' ? 'Enterprise' : ucfirst($projectTier)) ?>
+            </span>
+
+            <!-- Inner content above overlay -->
+            <div class="project-card__body">
+                <!-- Top-center: logo + title -->
+                <div class="project-card__header">
+                    <div class="project-card__logo" style="background: <?= $projectColor ?>40; border-color: <?= $projectColor ?>80;">
+                        <?php if (!empty($project['logo_url'])): ?>
+                            <img src="<?= htmlspecialchars($project['logo_url']) ?>" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:9px;">
+                        <?php else: ?>
+                            <span style="font-size: 1.3rem; font-weight: 700; color: <?= $projectColor ?>;"><?= strtoupper(substr($projectName, 0, 2)) ?></span>
+                        <?php endif; ?>
+                    </div>
+                    <?php if ($showTitle): ?>
+                    <h3 class="project-card__title" style="color: #fff; text-shadow: 0 0 12px <?= $projectColor ?>, 0 2px 6px rgba(0,0,0,0.8);"><?= htmlspecialchars($projectName) ?></h3>
                     <?php endif; ?>
                 </div>
-                <h3 style="color: <?= $projectColor ?>; font-size: 1.1rem;"><?= htmlspecialchars($projectName) ?></h3>
-            </div>
-            
-            <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 16px; line-height: 1.5;">
-                <?= htmlspecialchars($projectDescription) ?>
-            </p>
-            
-            <!-- Collapsible Features Section -->
-            <div class="project-details" style="max-height: 0; overflow: hidden; transition: max-height 0.4s ease; margin-bottom: 16px;">
-                <div style="padding: 12px; background: rgba(0, 240, 255, 0.03); border-radius: 8px; margin-bottom: 12px;">
-                    <h4 style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Key Features</h4>
-                    <ul style="list-style: none; padding: 0; margin: 0;">
-                        <?php
-                        // Get features from database or use default
-                        $projectFeatures = [];
-                        if (!empty($project['features'])) {
-                            $projectFeatures = json_decode($project['features'], true) ?? [];
-                        }
-                        
-                        // Fallback to default features if none in database
-                        if (empty($projectFeatures)) {
-                            $projectFeatures = [
-                                'Advanced capabilities',
-                                'Professional tools',
-                                'Cloud integration'
-                            ];
-                        }
-                        
-                        foreach (array_slice($projectFeatures, 0, 3) as $feature): 
-                        ?>
-                        <li style="font-size: 12px; color: var(--text-primary); padding: 4px 0; display: flex; align-items: center; gap: 8px;">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="<?= $projectColor ?>" stroke-width="3">
-                                <polyline points="20 6 9 17 4 12"></polyline>
-                            </svg>
-                            <?= htmlspecialchars($feature) ?>
-                        </li>
-                        <?php endforeach; ?>
-                    </ul>
+
+                <!-- Key Features list -->
+                <?php if (!empty($projectFeatures)): ?>
+                <ul class="project-card__features">
+                    <?php foreach ($projectFeatures as $feat): ?>
+                    <li><?= htmlspecialchars($feat) ?></li>
+                    <?php endforeach; ?>
+                </ul>
+                <?php endif; ?>
+
+                <!-- Buttons: bottom-right -->
+                <div class="project-card__actions">
+                    <?php if (!empty($showFeaturesUrl)): ?>
+                        <span class="project-card__btn project-card__btn--outline" style="border-color:<?= $projectColor ?>80;color:<?= $projectColor ?>;" onclick="event.stopPropagation();event.preventDefault();window.location.href='<?= htmlspecialchars($showFeaturesUrl) ?>';">
+                            <?= htmlspecialchars($showFeaturesText) ?>
+                        </span>
+                    <?php else: ?>
+                        <span class="project-card__btn project-card__btn--outline" style="border-color:<?= $projectColor ?>80;color:<?= $projectColor ?>;opacity:0.7;cursor:default;">
+                            <?= htmlspecialchars($showFeaturesText) ?>
+                        </span>
+                    <?php endif; ?>
+                    <span class="project-card__btn project-card__btn--primary" style="background:<?= $projectColor ?>;border-color:<?= $projectColor ?>;">
+                        Explore
+                    </span>
                 </div>
             </div>
-            
-            <!-- Toggle Details Button -->
-            <button class="toggle-details" style="width: 100%; padding: 8px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-secondary); font-size: 12px; cursor: pointer; margin-bottom: 12px; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 6px;">
-                <span class="toggle-text">Show Features</span>
-                <svg class="toggle-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition: transform 0.3s ease;">
-                    <polyline points="6 9 12 15 18 9"></polyline>
-                </svg>
-            </button>
-            
-            <?php if (Auth::check()): ?>
-                <a href="<?= htmlspecialchars($projectUrl) ?>" class="btn btn-primary" style="width: 100%; background: <?= $projectColor ?>; border-color: <?= $projectColor ?>;">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 6px;">
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                        <polyline points="12 5 19 12 12 19"></polyline>
-                    </svg>
-                    Access Application
-                </a>
-            <?php else: ?>
-                <a href="/login?redirect=<?= urlencode($projectUrl) ?>" class="btn btn-secondary" style="width: 100%;">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 6px;">
-                        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
-                        <polyline points="10 17 15 12 10 7"></polyline>
-                        <line x1="15" y1="12" x2="3" y2="12"></line>
-                    </svg>
-                    Sign In to Access
-                </a>
-            <?php endif; ?>
-        </div>
-        <?php 
-        $delay += 0.1;
-        endforeach; 
-        ?>
+        </a>
+        <?php endforeach; ?>
     </div>
 </div>
 
@@ -612,12 +680,7 @@ if ($showStats):
 }
 
 .filter-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 240, 255, 0.3);
-}
-
-[data-theme="light"] .filter-btn:hover {
-    box-shadow: 0 4px 12px color-mix(in srgb, var(--cyan) 25%, transparent);
+    box-shadow: 0 4px 12px rgba(0, 240, 255, 0.25);
 }
 
 .filter-btn.active {
@@ -626,77 +689,211 @@ if ($showStats):
     color: #ffffff !important;
 }
 
-/* Project Card Enhancements */
-.project-card {
+/* ── Project Card ── */
+/* Clickable card — <a> wrapper keeps block layout */
+a.project-card {
+    color: inherit;
     cursor: pointer;
 }
-
-.project-card:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+a.project-card:hover {
+    text-decoration: none;
 }
 
-.project-card .toggle-details:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: var(--cyan);
+.project-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 14px;
+    aspect-ratio: 4 / 3;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255,255,255,0.08);
 }
 
-.project-card.expanded .project-details {
-    max-height: 300px !important;
+[data-theme="light"] .project-card {
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.12);
+    border-color: rgba(0,0,0,0.08);
 }
 
-.project-card.expanded .toggle-icon {
-    transform: rotate(180deg);
-}
-
-/* Project Card Animation */
 .project-card.filtered-out {
     display: none;
-    opacity: 0;
-    transform: scale(0.8);
+}
+
+/* Thumbnail fills card */
+.project-card__thumb {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+}
+
+.project-card__thumb--placeholder {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+}
+
+/* Stronger gradient overlay for legibility */
+.project-card__overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: linear-gradient(
+        to bottom,
+        rgba(6, 8, 18, 0.80) 0%,
+        rgba(6, 8, 18, 0.40) 40%,
+        rgba(6, 8, 18, 0.88) 100%
+    );
+}
+
+[data-theme="light"] .project-card__overlay {
+    background: linear-gradient(
+        to bottom,
+        rgba(10, 10, 28, 0.75) 0%,
+        rgba(10, 10, 28, 0.38) 40%,
+        rgba(10, 10, 28, 0.82) 100%
+    );
+}
+
+/* Tier badge – absolute top-right corner */
+.project-card__tier {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 3;
+    padding: 3px 10px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+}
+
+/* Content sits above overlay */
+.project-card__body {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+}
+
+/* Top-center: logo + title */
+.project-card__header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    text-align: center;
+}
+
+/* Logo */
+.project-card__logo {
+    width: 128px;
+    height: 128px;
+    border-radius: 20px;
+    border: 2px solid;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    flex-shrink: 0;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+}
+
+.project-card__title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: 0.2px;
+}
+
+/* Key Features list */
+.project-card__features {
+    flex: 1;
+    list-style: none;
+    padding: 0;
+    margin: 10px 0 0;
+}
+.project-card__features li {
+    color: rgba(255,255,255,0.88);
+    font-size: 11px;
+    line-height: 1.5;
+    padding: 2px 0 2px 14px;
+    position: relative;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.7);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+.project-card__features li::before {
+    content: '✦';
+    position: absolute;
+    left: 0;
+    font-size: 8px;
+    top: 4px;
+    opacity: 0.7;
+}
+
+/* Action buttons – bottom-right */
+.project-card__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+}
+
+.project-card__btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+    white-space: nowrap;
+    border: 1.5px solid transparent;
+}
+
+.project-card__btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+    opacity: 0.92;
+}
+
+.project-card__btn--outline {
+    background: rgba(0,0,0,0.35);
+    backdrop-filter: blur(6px);
+}
+
+.project-card__btn--primary {
+    color: #fff !important;
 }
 </style>
 
 <script>
-// Filter functionality
 document.addEventListener('DOMContentLoaded', function() {
+    // Filter functionality
     const filterBtns = document.querySelectorAll('.filter-btn');
     const projectCards = document.querySelectorAll('.project-card');
-    
+
     filterBtns.forEach(btn => {
         btn.addEventListener('click', function() {
-            // Update active state
             filterBtns.forEach(b => b.classList.remove('active'));
             this.classList.add('active');
-            
+
             const filter = this.dataset.filter;
-            
-            // Filter projects with animation
-            projectCards.forEach((card, index) => {
-                const tier = card.dataset.tier;
-                
-                if (filter === 'all' || tier === filter) {
+            projectCards.forEach(card => {
+                if (filter === 'all' || card.dataset.tier === filter) {
                     card.classList.remove('filtered-out');
-                    card.style.animation = `fadeIn 0.5s ease forwards ${index * 0.1}s`;
                 } else {
                     card.classList.add('filtered-out');
                 }
             });
-        });
-    });
-    
-    // Toggle details functionality
-    document.querySelectorAll('.toggle-details').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            const card = this.closest('.project-card');
-            const isExpanded = card.classList.contains('expanded');
-            const toggleText = this.querySelector('.toggle-text');
-            
-            card.classList.toggle('expanded');
-            toggleText.textContent = isExpanded ? 'Show Features' : 'Hide Features';
         });
     });
 });

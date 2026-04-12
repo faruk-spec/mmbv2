@@ -62,30 +62,71 @@
                     <small style="color: var(--text-secondary);">Detailed description of your platform</small>
                 </div>
             </div>
-            
-            <div>
-                <div class="form-group">
-                    <label class="form-label">Hero Banner Image</label>
-                    <?php if (!empty($heroContent['image_url'])): ?>
-                        <div style="margin-bottom: 10px; border: 2px solid var(--border-color); border-radius: 8px; overflow: hidden; position: relative;">
-                            <img src="<?= View::e($heroContent['image_url']) ?>" alt="Current Hero Image" 
-                                 style="width: 100%; height: 200px; object-fit: cover;">
-                            <button type="button" class="btn btn-danger" id="removeHeroImageBtn" 
-                                    style="position: absolute; top: 10px; right: 10px; padding: 5px 10px; font-size: 12px;">
-                                <i class="fas fa-times"></i> Remove
-                            </button>
-                        </div>
-                        <input type="hidden" name="remove_hero_image" id="removeHeroImageInput" value="0">
-                    <?php endif; ?>
-                    <input type="file" name="hero_image" class="form-input" accept="image/*">
-                    <input type="hidden" name="current_image_url" value="<?= View::e($heroContent['image_url'] ?? '') ?>">
-                    <small style="color: var(--text-secondary);">Upload banner image (max 5MB, JPEG/PNG/GIF/WebP)</small>
-                </div>
-            </div>
         </div>
         
         <button type="submit" class="btn btn-primary">
             <i class="fas fa-save"></i> Save Hero Section
+        </button>
+    </form>
+</div>
+
+<!-- Hero Banner Slides -->
+<div class="card" style="margin-bottom: 30px;">
+    <h2 style="margin-bottom: 6px; display: flex; align-items: center; gap: 10px;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><polyline points="8 21 12 17 16 21"></polyline>
+        </svg>
+        Hero Banner Slides
+    </h2>
+    <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 0.9rem;">
+        Add multiple banner images (each can be a link). They will auto-play as a slideshow on the homepage.
+    </p>
+
+    <!-- Existing slides -->
+    <?php if (!empty($heroSlides)): ?>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+        <?php foreach ($heroSlides as $slide): ?>
+        <div style="border: 2px solid var(--border-color); border-radius: 10px; overflow: hidden; position: relative;">
+            <img src="<?= View::e($slide['image_url']) ?>" alt="Slide"
+                 style="width: 100%; height: 130px; object-fit: cover; display: block;">
+            <?php if (!empty($slide['link_url'])): ?>
+            <div style="padding: 6px 10px; font-size: 0.78rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: var(--bg-secondary);">
+                <i class="fas fa-link" style="margin-right: 4px;"></i><?= View::e($slide['link_url']) ?>
+            </div>
+            <?php endif; ?>
+            <form method="POST" action="/admin/home-content/hero-slide/delete" style="position: absolute; top: 8px; right: 8px;">
+                <?= \Core\Security::csrfField() ?>
+                <input type="hidden" name="slide_id" value="<?= (int)$slide['id'] ?>">
+                <button type="submit" class="btn btn-danger"
+                        style="padding: 4px 8px; font-size: 11px;"
+                        onclick="return confirm('Remove this slide?')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </form>
+        </div>
+        <?php endforeach; ?>
+    </div>
+    <?php else: ?>
+    <p style="color: var(--text-secondary); margin-bottom: 20px;">No slides yet. Add your first banner image below.</p>
+    <?php endif; ?>
+
+    <!-- Add slide form -->
+    <form method="POST" action="/admin/home-content/hero-slide/add" enctype="multipart/form-data">
+        <?= \Core\Security::csrfField() ?>
+        <div class="grid grid-2" style="gap: 16px; align-items: end;">
+            <div class="form-group" style="margin: 0;">
+                <label class="form-label">Slide Image <span style="color:var(--danger)">*</span></label>
+                <input type="file" name="slide_image" class="form-input" accept="image/*" required>
+                <small style="color: var(--text-secondary);">JPEG / PNG / GIF / WebP, max 5 MB</small>
+            </div>
+            <div class="form-group" style="margin: 0;">
+                <label class="form-label">Link URL <em style="font-weight:400;">(optional)</em></label>
+                <input type="text" name="slide_link_url" class="form-input" placeholder="https://example.com or /projects/myapp">
+                <small style="color: var(--text-secondary);">Where to go when the slide is clicked</small>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary" style="margin-top: 16px;">
+            <i class="fas fa-plus"></i> Add Slide
         </button>
     </form>
 </div>
@@ -107,9 +148,31 @@
                    value="<?= View::e($projectsSection['title'] ?? 'Explore Our Super Fast Products') ?>" required>
             <small style="color: var(--text-secondary);">Title for the projects section on home page</small>
         </div>
+
+        <div class="form-group" style="margin-top: 16px;">
+            <label class="form-label">Universal Thumbnail Image Intensity</label>
+            <div style="display:flex;align-items:center;gap:12px;">
+                <input type="range" name="global_thumb_intensity" min="0" max="100" step="1"
+                       value="<?= (int)($projectsSection['global_thumb_intensity'] ?? 60) ?>"
+                       class="form-range-input"
+                       oninput="this.nextElementSibling.textContent = this.value + '%'"
+                       style="flex:1;">
+                <span style="min-width:38px;text-align:right;color:var(--text-secondary);font-size:.9rem;"><?= (int)($projectsSection['global_thumb_intensity'] ?? 60) ?>%</span>
+            </div>
+            <small style="color: var(--text-secondary);">Global opacity applied to all project card thumbnails when override is enabled (0 = invisible, 100 = fully visible)</small>
+        </div>
+
+        <div class="form-group">
+            <label class="form-checkbox" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                <input type="checkbox" name="override_thumb_intensity" value="1"
+                       <?= !empty($projectsSection['override_thumb_intensity']) ? 'checked' : '' ?>>
+                <span>Override individual Thumbnail Image Intensity</span>
+            </label>
+            <small style="color: var(--text-secondary); margin-top: 4px; display: block;">When checked, the universal intensity above is applied to all project cards, ignoring each card's own setting</small>
+        </div>
         
         <button type="submit" class="btn btn-primary">
-            <i class="fas fa-save"></i> Save Section Title
+            <i class="fas fa-save"></i> Save Section Settings
         </button>
     </form>
 </div>
@@ -217,12 +280,12 @@
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label">Project Image</label>
+                    <label class="form-label">Project Thumbnail Image (covers card background)</label>
                     <?php if (!empty($project['image_url'])): ?>
-                        <div style="margin-bottom: 10px; border: 2px solid var(--border-color); border-radius: 8px; overflow: hidden; position: relative;">
-                            <img src="<?= View::e($project['image_url']) ?>" alt="Project Image" 
-                                 style="width: 100%; height: 150px; object-fit: cover;">
-                            <button type="button" class="btn btn-danger remove-project-image" 
+                        <div style="margin-bottom: 10px; border: 2px solid var(--border-color); border-radius: 10px; overflow: hidden; position: relative;">
+                            <img src="<?= View::e($project['image_url']) ?>" alt="Project Thumbnail"
+                                 style="width: 100%; height: 180px; object-fit: cover; display: block;">
+                            <button type="button" class="btn btn-danger remove-project-image"
                                     data-project-id="<?= $project['id'] ?>"
                                     style="position: absolute; top: 10px; right: 10px; padding: 5px 10px; font-size: 12px;">
                                 <i class="fas fa-times"></i> Remove
@@ -230,14 +293,57 @@
                         </div>
                         <input type="hidden" name="remove_project_image" class="remove-project-image-input-<?= $project['id'] ?>" value="0">
                     <?php else: ?>
-                        <div style="margin-bottom: 10px; border: 2px dashed var(--border-color); border-radius: 8px; padding: 40px; text-align: center; color: var(--text-secondary);">
+                        <div style="margin-bottom: 10px; border: 2px dashed var(--border-color); border-radius: 10px; padding: 40px; text-align: center; color: var(--text-secondary);">
                             <i class="fas fa-image" style="font-size: 2rem; margin-bottom: 10px;"></i>
-                            <p>No image uploaded</p>
+                            <p>No thumbnail uploaded — upload one to use as card background</p>
                         </div>
                     <?php endif; ?>
                     <input type="file" name="project_image" class="form-input" accept="image/*">
                     <input type="hidden" name="current_project_image_url" value="<?= View::e($project['image_url'] ?? '') ?>">
-                    <small style="color: var(--text-secondary);">Upload project image (max 5MB)</small>
+                    <small style="color: var(--text-secondary);">Upload thumbnail (max 5MB, JPEG/PNG/WebP). This image covers the entire project card.</small>
+                </div>
+
+                <?php if (!empty($project['image_url'])): ?>
+                <div class="form-group">
+                    <label class="form-label">Thumbnail Image Intensity</label>
+                    <div style="display:flex;align-items:center;gap:12px;">
+                        <input type="range" name="thumb_intensity" min="0" max="100" step="1"
+                               value="<?= (int)($project['thumb_intensity'] ?? 60) ?>"
+                               class="form-range-input"
+                               oninput="this.nextElementSibling.textContent = this.value + '%'"
+                               style="flex:1;">
+                        <span style="min-width:38px;text-align:right;color:var(--text-secondary);font-size:.9rem;"><?= (int)($project['thumb_intensity'] ?? 60) ?>%</span>
+                    </div>
+                    <small style="color: var(--text-secondary);">Controls the opacity of the background thumbnail (0 = invisible, 100 = fully visible)</small>
+                </div>
+                <?php else: ?>
+                    <input type="hidden" name="thumb_intensity" value="<?= (int)($project['thumb_intensity'] ?? 60) ?>">
+                <?php endif; ?>
+
+                <div class="form-group">
+                    <label class="form-checkbox" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                        <input type="checkbox" name="show_title" value="1"
+                               <?= ($project['show_title'] ?? 1) ? 'checked' : '' ?>>
+                        <span>Show project title on card</span>
+                    </label>
+                    <small style="color: var(--text-secondary); margin-top: 4px; display: block;">Uncheck to hide the title text from the public-facing project card</small>
+                </div>
+
+
+                <div class="form-group">
+                    <label class="form-label">"Show Features" Button Text</label>
+                    <input type="text" name="show_features_text" class="form-input"
+                           value="<?= View::e($project['show_features_text'] ?? 'Show Features') ?>"
+                           placeholder="Show Features">
+                    <small style="color: var(--text-secondary);">Label shown on the first button of each project card</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">"Show Features" Button URL (optional)</label>
+                    <input type="url" name="show_features_url" class="form-input"
+                           value="<?= View::e($project['show_features_url'] ?? '') ?>"
+                           placeholder="https://example.com/features">
+                    <small style="color: var(--text-secondary);">Leave blank to display the button as non-clickable text</small>
                 </div>
                 
                 <div class="form-group">
@@ -269,17 +375,6 @@
 </style>
 
 <script>
-// Handle hero image removal
-const removeHeroImageBtn = document.getElementById('removeHeroImageBtn');
-if (removeHeroImageBtn) {
-    removeHeroImageBtn.addEventListener('click', function() {
-        if (confirm('Are you sure you want to remove the hero banner image?')) {
-            document.getElementById('removeHeroImageInput').value = '1';
-            this.closest('div').remove();
-        }
-    });
-}
-
 // Handle project image removal
 document.addEventListener('click', function(e) {
     if (e.target.classList.contains('remove-project-image') || e.target.closest('.remove-project-image')) {
