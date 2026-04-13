@@ -41,6 +41,39 @@ class PdfToolsController
     }
 
     /**
+     * Record a completed/failed synchronous tool operation in `convertx_tool_jobs`.
+     *
+     * @param string $toolType     e.g. 'pdf_merge', 'img_compress'
+     * @param array  $names        original input filenames
+     * @param string $outFilename  download filename (e.g. 'merged.pdf')
+     * @param int    $origSize     total original bytes
+     * @param int    $outSize      total output bytes
+     * @param string $status       'completed' or 'failed'
+     * @param string $errorMsg
+     */
+    private function logToolJob(
+        string $toolType,
+        array  $names,
+        string $outFilename,
+        int    $origSize = 0,
+        int    $outSize  = 0,
+        string $status   = 'completed',
+        string $errorMsg = ''
+    ): void {
+        $userId = Auth::id();
+        if (!$userId) {
+            return;
+        }
+        try {
+            require_once PROJECT_PATH . '/models/ConversionJobModel.php';
+            (new \Projects\ConvertX\Models\ConversionJobModel())->createToolJob(
+                $userId, $toolType, count($names), $names,
+                $outFilename, $origSize, $outSize, $status, $errorMsg
+            );
+        } catch (\Throwable $_) {}
+    }
+
+    /**
      * Load admin-configured image-tool limits from DB (cached per request).
      */
     private function imgLimits(): array
@@ -223,6 +256,7 @@ class PdfToolsController
                 'output_size' => $size,
             ]);
         } catch (\Throwable $_) {}
+        $this->logToolJob('pdf_merge', array_map('basename', $savedPaths), 'merged.pdf', 0, $size);
 
         $this->cleanOutputBuffers();
         header('Content-Type: application/json');
@@ -336,6 +370,7 @@ class PdfToolsController
                 'pages_extracted' => count($pages),
             ]);
         } catch (\Throwable $_) {}
+        $this->logToolJob('pdf_split', [$file['name']], 'split_pages.zip');
 
         $this->cleanOutputBuffers();
         header('Content-Type: application/json');
@@ -427,6 +462,7 @@ class PdfToolsController
                 'quality'        => $quality,
             ]);
         } catch (\Throwable $_) {}
+        $this->logToolJob('pdf_compress', [$file['name']], $origFilename, $origSize, $newSize);
 
         $this->cleanOutputBuffers();
         header('Content-Type: application/json');
@@ -523,6 +559,7 @@ class PdfToolsController
                 $newSize = file_exists($outPath) ? filesize($outPath) : 0;
                 $results[] = [
                     'src_path'    => $srcPath,
+                    'src_name'    => $f['name'],
                     'out_path'    => $outPath,
                     'out_name'    => $outName,
                     'orig_size'   => $origSize,
@@ -603,6 +640,12 @@ class PdfToolsController
                 'compressed_size'=> $totalNew,
             ]);
         } catch (\Throwable $_) {}
+        $this->logToolJob(
+            'img_compress',
+            array_column($results, 'src_name'),
+            'compressed_images.zip',
+            $totalOrig, $totalNew
+        );
 
         $this->cleanOutputBuffers();
         header('Content-Type: application/json');
@@ -716,6 +759,7 @@ class PdfToolsController
                 $newSize   = file_exists($outPath) ? filesize($outPath) : 0;
                 $results[] = [
                     'src_path'  => $srcPath,
+                    'src_name'  => $f['name'],
                     'out_path'  => $outPath,
                     'out_name'  => $outName,
                     'orig_size' => $origSize,
@@ -778,8 +822,7 @@ class PdfToolsController
         foreach ($results as $r) { @unlink($r['out_path']); }
 
         $token = $this->storeDownloadToken($zipPath, 'resized_images.zip', 'application/zip');
-
-        $this->cleanOutputBuffers();
+        $this->logToolJob('img_resize', array_column($results, 'src_name'), 'resized_images.zip', $totalOrig, $totalNew);
         header('Content-Type: application/json');
         echo json_encode([
             'success'       => true,
@@ -888,6 +931,7 @@ class PdfToolsController
                 $this->svc->cropImage($srcPath, $outPath, $opts);
                 $results[] = [
                     'src_path' => $srcPath,
+                    'src_name' => $f['name'],
                     'out_path' => $outPath,
                     'out_name' => $outName,
                     'new_size' => file_exists($outPath) ? filesize($outPath) : 0,
@@ -944,6 +988,7 @@ class PdfToolsController
         foreach ($results as $r) { @unlink($r['out_path']); }
 
         $token = $this->storeDownloadToken($zipPath, 'cropped_images.zip', 'application/zip');
+        $this->logToolJob('img_crop', array_column($results, 'src_name'), 'cropped_images.zip', 0, array_sum(array_column($results, 'new_size')));
         $this->cleanOutputBuffers();
         header('Content-Type: application/json');
         echo json_encode([
@@ -1063,6 +1108,7 @@ class PdfToolsController
                 $this->svc->watermarkImage($srcPath, $outPath, $opts);
                 $results[] = [
                     'src_path' => $srcPath,
+                    'src_name' => $f['name'],
                     'out_path' => $outPath,
                     'out_name' => $outName,
                     'new_size' => file_exists($outPath) ? filesize($outPath) : 0,
@@ -1121,6 +1167,7 @@ class PdfToolsController
         foreach ($results as $r) { @unlink($r['out_path']); }
 
         $token = $this->storeDownloadToken($zipPath, 'watermarked_images.zip', 'application/zip');
+        $this->logToolJob('img_watermark', array_column($results, 'src_name'), 'watermarked_images.zip', 0, array_sum(array_column($results, 'new_size')));
 
         $this->cleanOutputBuffers();
         header('Content-Type: application/json');
@@ -1230,6 +1277,7 @@ class PdfToolsController
                 $this->svc->addMemeText($srcPath, $outPath, $opts);
                 $results[] = [
                     'src_path' => $srcPath,
+                    'src_name' => $f['name'],
                     'out_path' => $outPath,
                     'out_name' => $outName,
                     'new_size' => file_exists($outPath) ? filesize($outPath) : 0,
@@ -1286,6 +1334,7 @@ class PdfToolsController
         foreach ($results as $r) { @unlink($r['out_path']); }
 
         $token = $this->storeDownloadToken($zipPath, 'memes.zip', 'application/zip');
+        $this->logToolJob('img_meme', array_column($results, 'src_name'), 'memes.zip', 0, array_sum(array_column($results, 'new_size')));
         $this->cleanOutputBuffers();
         header('Content-Type: application/json');
         echo json_encode([
@@ -1384,6 +1433,7 @@ class PdfToolsController
                 $this->svc->rotateImage($srcPath, $outPath, $degrees, $quality);
                 $results[] = [
                     'src_path' => $srcPath,
+                    'src_name' => $f['name'],
                     'out_path' => $outPath,
                     'out_name' => $outName,
                     'new_size' => file_exists($outPath) ? filesize($outPath) : 0,
@@ -1439,6 +1489,7 @@ class PdfToolsController
         foreach ($results as $r) { @unlink($r['out_path']); }
 
         $token = $this->storeDownloadToken($zipPath, 'rotated_images.zip', 'application/zip');
+        $this->logToolJob('img_rotate', array_column($results, 'src_name'), 'rotated_images.zip', 0, array_sum(array_column($results, 'new_size')));
 
         $this->cleanOutputBuffers();
         header('Content-Type: application/json');

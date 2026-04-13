@@ -101,6 +101,8 @@ $router->post('/admin/projects/convertx/settings/delete-provider', 'Admin\\Conve
 $router->post('/admin/projects/convertx/settings/test-provider', 'Admin\\ConvertXAdminController@testProvider', ['auth', 'admin']);
 $router->get('/admin/projects/convertx/image-tools-settings', 'Admin\\ConvertXAdminController@imageToolsSettings', ['auth', 'admin']);
 $router->post('/admin/projects/convertx/image-tools-settings', 'Admin\\ConvertXAdminController@imageToolsSettings', ['auth', 'admin']);
+$router->get('/admin/projects/convertx/upload-limits', 'Admin\\ConvertXAdminController@uploadLimits', ['auth', 'admin']);
+$router->post('/admin/projects/convertx/upload-limits', 'Admin\\ConvertXAdminController@uploadLimits', ['auth', 'admin']);
 $router->get('/admin/projects/convertx/storage', 'Admin\\ConvertXAdminController@storage', ['auth', 'admin']);
 $router->get('/admin/projects/convertx/plans', 'Admin\\ConvertXAdminController@plans', ['auth', 'admin']);
 $router->post('/admin/projects/convertx/plans/create', 'Admin\\ConvertXAdminController@createPlan', ['auth', 'admin']);
