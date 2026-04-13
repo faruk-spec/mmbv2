@@ -2,14 +2,19 @@
 /**
  * ConvertX – Resize Images View
  */
-$currentView = 'img-resize';
-$csrfToken   = \Core\Security::generateCsrfToken();
-$hasGd       = $hasGd ?? false;
+$currentView  = 'img-resize';
+$csrfToken    = \Core\Security::generateCsrfToken();
+$hasGd        = $hasGd        ?? false;
+$maxFiles     = $maxFiles     ?? 20;
+$maxSizeMb    = $maxSizeMb    ?? 50;
+$allowedExts  = $allowedExts  ?? ['jpg','jpeg','png','gif','webp','bmp'];
+$allowedLabel = implode(', ', array_map('strtoupper', array_unique($allowedExts)));
+$acceptAttr   = implode(',', array_map(fn($e) => '.'.$e, $allowedExts));
 ?>
 
 <div class="page-header">
     <h1><i class="fa-solid fa-expand" style="color:var(--cx-primary);"></i> Resize Images</h1>
-    <p>Resize images by exact pixel dimensions or percentage — upload up to 20 images at once</p>
+    <p>Resize images by exact pixel dimensions or percentage — upload up to <?= (int)$maxFiles ?> images at once</p>
 </div>
 
 <?php if (!$hasGd): ?>
@@ -36,14 +41,14 @@ $hasGd       = $hasGd ?? false;
                 <label class="form-label">
                     <i class="fa-solid fa-file-circle-plus" style="color:var(--cx-primary);"></i>
                     Upload Images
-                    <span style="font-size:.73rem;font-weight:400;color:var(--text-muted);margin-left:.4rem;">Max 20 · JPG, PNG, GIF, WebP, BMP</span>
+                    <span style="font-size:.73rem;font-weight:400;color:var(--text-muted);margin-left:.4rem;">Max <?= (int)$maxFiles ?> · <?= htmlspecialchars($allowedLabel) ?></span>
                 </label>
                 <div class="upload-zone" id="uploadZone">
                     <i class="fa-solid fa-images upload-icon" style="font-size:1.75rem;color:var(--cx-primary);"></i>
                     <p style="font-weight:600;font-size:.875rem;margin:.35rem 0 .2rem;">Drag &amp; drop images or <strong>click to browse</strong></p>
-                    <p style="font-size:.73rem;color:var(--text-muted);">JPG, PNG, GIF, WebP, BMP · max 50 MB each</p>
+                    <p style="font-size:.73rem;color:var(--text-muted);"><?= htmlspecialchars($allowedLabel) ?> · max <?= (int)$maxSizeMb ?> MB each</p>
                     <input type="file" name="images[]" id="fileInput" multiple
-                           accept=".jpg,.jpeg,.png,.gif,.webp,.bmp" style="display:none;">
+                           accept="<?= htmlspecialchars($acceptAttr) ?>" style="display:none;">
                 </div>
                 <div id="fileList" style="margin-top:.75rem;display:flex;flex-direction:column;gap:.35rem;"></div>
             </div>
@@ -162,6 +167,10 @@ $hasGd       = $hasGd ?? false;
 
 <script>
 (function () {
+    var MAX_FILES = <?= (int)$maxFiles ?>;
+    var MAX_MB    = <?= (int)$maxSizeMb ?>;
+    var ALLOWED   = <?= json_encode(array_values($allowedExts)) ?>;
+
     var zone       = document.getElementById('uploadZone');
     var input      = document.getElementById('fileInput');
     var listEl     = document.getElementById('fileList');
@@ -189,12 +198,12 @@ $hasGd       = $hasGd ?? false;
     input.addEventListener('change', function () { addFiles(Array.from(input.files)); input.value = ''; });
 
     function addFiles(files) {
-        var ALLOWED = ['jpg','jpeg','png','gif','webp','bmp'];
         files.forEach(function (f) {
             var ext = f.name.split('.').pop().toLowerCase();
             if (ALLOWED.indexOf(ext) === -1) return;
+            if (f.size > MAX_MB * 1024 * 1024) { alert(f.name + ': too large (max ' + MAX_MB + ' MB)'); return; }
             var dup = selectedFiles.some(function (sf) { return sf.name===f.name && sf.size===f.size; });
-            if (!dup && selectedFiles.length < 20) selectedFiles.push(f);
+            if (!dup && selectedFiles.length < MAX_FILES) selectedFiles.push(f);
         });
         renderList();
     }

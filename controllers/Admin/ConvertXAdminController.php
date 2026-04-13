@@ -954,7 +954,7 @@ class ConvertXAdminController extends BaseController
             return;
         }
 
-        $rows     = [];
+        $rows = [];
         try {
             $rows = $this->db->fetchAll('SELECT setting_key, setting_value FROM convertx_image_tools_settings');
         } catch (\Exception $e) {
@@ -967,10 +967,13 @@ class ConvertXAdminController extends BaseController
         }
 
         $defaults = [
-            'upscale_api_key'      => '',
-            'upscale_api_provider' => '',
-            'removebg_api_key'     => '',
-            'removebg_api_provider'=> 'iloveapi',
+            'upscale_api_key'       => '',
+            'upscale_api_provider'  => '',
+            'removebg_api_key'      => '',
+            'removebg_api_provider' => 'iloveapi',
+            'max_files'             => '20',
+            'max_file_size_mb'      => '50',
+            'allowed_image_formats' => 'jpg,jpeg,png,gif,webp,bmp',
         ];
         foreach ($defaults as $k => $v) {
             if (!array_key_exists($k, $settings)) {
@@ -979,7 +982,7 @@ class ConvertXAdminController extends BaseController
         }
 
         $this->view('admin/projects/convertx/image-tools-settings', [
-            'title'    => 'Image Tools APIs',
+            'title'    => 'Image Tools Settings',
             'settings' => $settings,
         ]);
     }
@@ -993,15 +996,32 @@ class ConvertXAdminController extends BaseController
             return;
         }
 
-        $keys = ['upscale_api_key', 'upscale_api_provider', 'removebg_api_key', 'removebg_api_provider'];
+        $keys = [
+            'upscale_api_key', 'upscale_api_provider',
+            'removebg_api_key', 'removebg_api_provider',
+            'max_files', 'max_file_size_mb', 'allowed_image_formats',
+        ];
         foreach ($keys as $k) {
-            $v = trim((string) ($_POST[$k] ?? ''));
+            $raw = trim((string) ($_POST[$k] ?? ''));
+            // Sanitize numeric fields
+            if ($k === 'max_files') {
+                $v = (string) max(1, min(100, (int) $raw ?: 20));
+            } elseif ($k === 'max_file_size_mb') {
+                $v = (string) max(1, min(500, (int) $raw ?: 50));
+            } elseif ($k === 'allowed_image_formats') {
+                // Allow only safe extension characters
+                $exts = array_filter(array_map('trim', explode(',', strtolower($raw))));
+                $exts = array_filter($exts, fn($e) => preg_match('/^[a-z0-9]{1,10}$/', $e));
+                $v    = implode(',', $exts) ?: 'jpg,jpeg,png,gif,webp,bmp';
+            } else {
+                $v = $raw;
+            }
             try {
-                $this->db->execute(
+                $this->db->query(
                     'INSERT INTO convertx_image_tools_settings (setting_key, setting_value, updated_at)
                      VALUES (:k, :v, NOW())
                      ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = NOW()',
-                    [':k' => $k, ':v' => $v]
+                    ['k' => $k, 'v' => $v]
                 );
             } catch (\Exception $e) {
                 Logger::error('ImageToolsSettings update failed for key ' . $k . ': ' . $e->getMessage());
@@ -1012,8 +1032,7 @@ class ConvertXAdminController extends BaseController
             ActivityLogger::logSettingsUpdated(Auth::id(), 'convertx', [], ['image_tools_settings' => 'updated']);
         } catch (\Throwable $_) {}
 
-        $_SESSION['_flash']['success'] = 'Image Tools API settings saved.';
+        $_SESSION['_flash']['success'] = 'Image Tools settings saved.';
         $this->redirect('/admin/projects/convertx/image-tools-settings');
     }
 }
-
