@@ -161,4 +161,68 @@ class DashboardController extends BaseController
             'hasAnyAccess'    => $hasAnyAccess,
         ]);
     }
+
+    /**
+     * GET /admin/api/live-stats
+     * JSON endpoint polled by the admin dashboard every 15 seconds.
+     */
+    public function liveStats(): void
+    {
+        try {
+            $db = Database::getInstance();
+
+            // Active sessions in the last 15 minutes (users with recent activity)
+            $onlineNow = 0;
+            try {
+                $onlineNow = (int) $db->fetchColumn(
+                    "SELECT COUNT(DISTINCT user_id) FROM user_sessions WHERE is_active = 1 AND expires_at > NOW()"
+                );
+            } catch (\Exception $e) {}
+
+            // Logins today
+            $loginsToday = 0;
+            try {
+                $loginsToday = (int) $db->fetchColumn(
+                    "SELECT COUNT(*) FROM activity_logs WHERE action = 'login' AND DATE(created_at) = CURDATE()"
+                );
+            } catch (\Exception $e) {}
+
+            // Registrations today
+            $registrationsToday = 0;
+            try {
+                $registrationsToday = (int) $db->fetchColumn(
+                    "SELECT COUNT(*) FROM users WHERE DATE(created_at) = CURDATE()"
+                );
+            } catch (\Exception $e) {}
+
+            // Recent activity (last 5 events)
+            $recentActivity = [];
+            try {
+                $rows = $db->fetchAll(
+                    "SELECT al.action, al.created_at, u.name as user_name
+                     FROM activity_logs al
+                     LEFT JOIN users u ON u.id = al.user_id
+                     ORDER BY al.created_at DESC LIMIT 5"
+                );
+                foreach ($rows as $row) {
+                    $recentActivity[] = [
+                        'action'    => $row['action'],
+                        'user'      => $row['user_name'] ?? 'Unknown',
+                        'time'      => $row['created_at'],
+                    ];
+                }
+            } catch (\Exception $e) {}
+
+            $this->json([
+                'success'             => true,
+                'online_now'          => $onlineNow,
+                'logins_today'        => $loginsToday,
+                'registrations_today' => $registrationsToday,
+                'recent_activity'     => $recentActivity,
+                'ts'                  => time(),
+            ]);
+        } catch (\Exception $e) {
+            $this->json(['success' => false], 500);
+        }
+    }
 }

@@ -397,5 +397,111 @@ if ($canProjects && !$canCodexPro && !$canProShare)
 </div>
 <?php endif; ?>
 
+<!-- ── Real-time Live Stats Panel ─────────────────────────────────────────── -->
+<div class="card mb-3" id="liveStatsCard">
+    <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
+        <h3 class="card-title" style="font-size:1.1rem;display:flex;align-items:center;gap:8px;">
+            <span style="width:8px;height:8px;border-radius:50%;background:#00ff88;display:inline-block;animation:livePulse 2s ease-in-out infinite;flex-shrink:0;"></span>
+            Live Activity
+        </h3>
+        <span id="liveStatsTs" style="font-size:.75rem;color:var(--text-secondary);">updating…</span>
+    </div>
+    <div style="padding:16px 20px;">
+        <div class="grid grid-4" style="gap:12px;margin-bottom:16px;">
+            <div style="background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:10px;padding:14px 16px;text-align:center;">
+                <div id="lsOnline" style="font-size:1.8rem;font-weight:700;color:var(--cyan,#00f0ff);">—</div>
+                <div style="font-size:.75rem;color:var(--text-secondary);margin-top:2px;">Online Now</div>
+            </div>
+            <div style="background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:10px;padding:14px 16px;text-align:center;">
+                <div id="lsLogins" style="font-size:1.8rem;font-weight:700;color:var(--green,#00ff88);">—</div>
+                <div style="font-size:.75rem;color:var(--text-secondary);margin-top:2px;">Logins Today</div>
+            </div>
+            <div style="background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:10px;padding:14px 16px;text-align:center;">
+                <div id="lsRegs" style="font-size:1.8rem;font-weight:700;color:var(--magenta,#ff2ec4);">—</div>
+                <div style="font-size:.75rem;color:var(--text-secondary);margin-top:2px;">Registrations</div>
+            </div>
+            <div style="background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:10px;padding:14px 16px;text-align:center;">
+                <div id="lsNotifs" style="font-size:1.8rem;font-weight:700;color:var(--orange,#f97316);" title="Unread admin notifications">—</div>
+                <div style="font-size:.75rem;color:var(--text-secondary);margin-top:2px;">Unread Notifs</div>
+            </div>
+        </div>
+        <div>
+            <div style="font-size:.8rem;font-weight:600;color:var(--text-secondary);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em;">Recent Activity</div>
+            <div id="lsActivity" style="font-size:.825rem;display:flex;flex-direction:column;gap:4px;">
+                <div style="color:var(--text-secondary);">Loading…</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>@keyframes livePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.3)}}</style>
+<script>
+(function () {
+    var online  = document.getElementById('lsOnline');
+    var logins  = document.getElementById('lsLogins');
+    var regs    = document.getElementById('lsRegs');
+    var notifs  = document.getElementById('lsNotifs');
+    var activity= document.getElementById('lsActivity');
+    var tsEl    = document.getElementById('liveStatsTs');
+
+    function timeAgo(d) {
+        var s = Math.floor((Date.now() - new Date(d).getTime()) / 1000);
+        if (s < 60) return 'just now';
+        if (s < 3600) return Math.floor(s / 60) + 'm ago';
+        if (s < 86400) return Math.floor(s / 3600) + 'h ago';
+        return Math.floor(s / 86400) + 'd ago';
+    }
+
+    function actionLabel(action) {
+        var labels = {
+            login: 'Logged in', logout: 'Logged out', register: 'Registered',
+            '2fa_enabled': 'Enabled 2FA', '2fa_disabled': 'Disabled 2FA',
+            password_changed: 'Changed password', profile_updated: 'Updated profile',
+        };
+        return labels[action] || action.replace(/_/g, ' ');
+    }
+
+    function fetchStats() {
+        if (document.hidden) return;
+        fetch('/admin/api/live-stats', {credentials: 'same-origin'})
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                if (!d.success) return;
+                if (online)  online.textContent  = d.online_now          ?? '—';
+                if (logins)  logins.textContent  = d.logins_today        ?? '—';
+                if (regs)    regs.textContent    = d.registrations_today ?? '—';
+
+                // Unread notification count from admin badge
+                var badge = document.getElementById('adminNotifBadge');
+                if (notifs) notifs.textContent = badge ? (parseInt(badge.textContent, 10) || 0) : '—';
+
+                if (activity && d.recent_activity && d.recent_activity.length) {
+                    activity.innerHTML = d.recent_activity.map(function (a) {
+                        return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.05);">' +
+                            '<span style="width:6px;height:6px;border-radius:50%;background:var(--cyan,#00f0ff);flex-shrink:0;"></span>' +
+                            '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' +
+                                '<strong style="color:var(--text-primary);">' + (a.user || 'Unknown') + '</strong> — ' + actionLabel(a.action) +
+                            '</span>' +
+                            '<span style="color:var(--text-secondary);font-size:.75rem;white-space:nowrap;">' + timeAgo(a.time) + '</span>' +
+                        '</div>';
+                    }).join('');
+                } else if (activity) {
+                    activity.innerHTML = '<div style="color:var(--text-secondary);">No recent activity.</div>';
+                }
+
+                if (tsEl) {
+                    var now = new Date();
+                    tsEl.textContent = 'updated ' + now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0') + ':' + now.getSeconds().toString().padStart(2,'0');
+                }
+            })
+            .catch(function () {});
+    }
+
+    fetchStats();
+    setInterval(fetchStats, 15000);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) fetchStats(); });
+})();
+</script>
+
 <?php View::endSection(); ?>
 

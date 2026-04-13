@@ -65,10 +65,45 @@ class NetworkInspectorMiddleware
             'status'        => $statusCode,
             'response_time' => round($responseTime, 3),
             'request_body'  => $this->redact($requestBody),
-            'response_body' => $this->truncate($this->redactString($responseBody), 300),
+            // message is a human-readable summary, never raw user data
+            'message'       => $this->summarize($statusCode, $responseBody),
         ];
 
         $this->writeEntry($entry);
+    }
+
+    /**
+     * Produce a human-readable one-line summary from HTTP status + response body.
+     * Never exposes raw user data — only well-known keys (success, message, error).
+     */
+    private function summarize(int $status, string $body): string
+    {
+        // First try to get a message from the JSON body
+        $decoded = json_decode($body, true);
+        if (is_array($decoded)) {
+            if (!empty($decoded['message']) && is_string($decoded['message'])) {
+                return $this->truncate($decoded['message'], 120);
+            }
+            if (!empty($decoded['error']) && is_string($decoded['error'])) {
+                return $this->truncate($decoded['error'], 120);
+            }
+            if (isset($decoded['success'])) {
+                return $decoded['success'] ? 'Success' : 'Failed';
+            }
+        }
+
+        // Fall back to HTTP status description
+        $descriptions = [
+            200 => 'OK', 201 => 'Created', 204 => 'No Content',
+            301 => 'Moved Permanently', 302 => 'Found', 304 => 'Not Modified',
+            400 => 'Bad Request', 401 => 'Unauthorized', 403 => 'Forbidden',
+            404 => 'Not Found', 405 => 'Method Not Allowed', 409 => 'Conflict',
+            422 => 'Unprocessable Entity', 429 => 'Too Many Requests',
+            500 => 'Internal Server Error', 502 => 'Bad Gateway',
+            503 => 'Service Unavailable',
+        ];
+
+        return $descriptions[$status] ?? 'HTTP ' . $status;
     }
 
     /**
@@ -84,30 +119,6 @@ class NetworkInspectorMiddleware
             }
         }
         return $data;
-    }
-
-    /**
-     * Redact sensitive keys from a raw JSON/text string.
-     * Handles both string values ("key":"value") and non-string values ("key":123 / true / null).
-     */
-    private function redactString(string $body): string
-    {
-        foreach (self::SENSITIVE_KEYS as $key) {
-            $escaped = preg_quote($key, '/');
-            // Match quoted string values: "key": "..."
-            $body = preg_replace(
-                '/"' . $escaped . '"\s*:\s*"[^"]*"/i',
-                '"' . $key . '":"[REDACTED]"',
-                $body
-            );
-            // Match non-string values (numbers, booleans, null): "key": 123 / true / false / null
-            $body = preg_replace(
-                '/"' . $escaped . '"\s*:\s*(?!")[^\s,}\]]+/i',
-                '"' . $key . '":"[REDACTED]"',
-                $body
-            );
-        }
-        return $body;
     }
 
     private function truncate(string $s, int $max): string

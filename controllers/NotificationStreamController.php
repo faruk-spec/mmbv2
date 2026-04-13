@@ -1,10 +1,10 @@
 <?php
 /**
- * Server-Sent Events (SSE) Notification Stream Controller
+ * Lightweight SSE Notification Endpoint
  *
- * Streams new notifications to the client in real-time using SSE.
- * The client reconnects automatically after ~55 seconds so PHP workers
- * are never held indefinitely.
+ * "Fire-and-close" pattern: check once for new notifications, emit events,
+ * then exit immediately. The browser's EventSource reconnects automatically
+ * using the `retry:` interval. This avoids holding PHP-FPM workers open.
  *
  * @package MMB\Controllers
  */
@@ -20,61 +20,47 @@ class NotificationStreamController extends BaseController
     /**
      * GET /notifications/stream
      *
-     * Streams SSE events with new notifications for the logged-in user.
-     * Query param: last_id (int) – only return notifications newer than this ID.
+     * Checks once for notifications newer than last_id, emits them as SSE
+     * events, then exits. The browser reconnects every POLL_INTERVAL_MS ms.
      */
     public function stream(): void
     {
-        // Auth check — respond with 401 instead of redirecting (SSE clients handle this via onerror)
+        // Auth check — 401 instead of a redirect so EventSource onerror fires
         if (!Auth::check()) {
             http_response_code(401);
             exit;
         }
 
-        // Disable every layer of output buffering so events flush immediately
+        // Disable output buffering so events reach the client immediately
         while (ob_get_level() > 0) {
             ob_end_clean();
         }
 
         header('Content-Type: text/event-stream');
         header('Cache-Control: no-cache');
-        header('X-Accel-Buffering: no');   // Disable nginx buffering
-        header('Connection: keep-alive');
+        header('X-Accel-Buffering: no');   // nginx: disable proxy buffering
+        header('Connection: close');        // fire-and-close: no keep-alive
+
+        // Reconnect interval sent to the browser (15 seconds)
+        $pollMs = 15000;
+        echo "retry: {$pollMs}\n\n";
 
         $userId = Auth::id();
         $lastId = max(0, (int) ($_GET['last_id'] ?? 0));
-        $start  = time();
-        $maxAge = 55; // seconds — ask client to reconnect after this
 
-        // Tell the client to retry in 3 seconds on disconnection
-        echo "retry: 3000\n\n";
-        flush();
+        try {
+            $db   = Database::getInstance();
+            $rows = $db->fetchAll(
+                "SELECT * FROM notifications WHERE user_id = ? AND id > ? ORDER BY id ASC LIMIT 10",
+                [$userId, $lastId]
+            );
 
-        while (true) {
-            // Stop if the connection was closed by the client
-            if (connection_aborted()) {
-                break;
-            }
-
-            // Stop and let the client reconnect after maxAge
-            if ((time() - $start) >= $maxAge) {
-                echo "event: reconnect\ndata: {\"type\":\"reconnect\"}\n\n";
-                flush();
-                break;
-            }
-
-            try {
-                $db    = Database::getInstance();
-                $rows  = $db->fetchAll(
-                    "SELECT * FROM notifications WHERE user_id = ? AND id > ? ORDER BY id ASC LIMIT 10",
-                    [$userId, $lastId]
-                );
+            if (!empty($rows)) {
+                $unreadCount = Notification::getUnreadCount($userId);
 
                 foreach ($rows as $row) {
-                    $lastId = (int) $row['id'];
+                    $rowId       = (int) $row['id'];
                     $row['data'] = !empty($row['data']) ? json_decode($row['data'], true) : null;
-
-                    $unreadCount = Notification::getUnreadCount($userId);
 
                     $payload = json_encode([
                         'type'         => 'notification',
@@ -82,22 +68,16 @@ class NotificationStreamController extends BaseController
                         'unread_count' => $unreadCount,
                     ]);
 
-                    echo "id: {$lastId}\ndata: {$payload}\n\n";
-                    flush();
+                    echo "id: {$rowId}\ndata: {$payload}\n\n";
                 }
-            } catch (\Exception $e) {
-                // Non-fatal — just skip this tick
             }
-
-            // SSE comment lines (starting with ':') act as keep-alive messages.
-            // They carry no data but prevent proxies and load balancers from closing
-            // what appears to be an idle TCP connection, while using minimal bandwidth.
-            echo ": heartbeat\n\n";
-            flush();
-
-            sleep(5);
+        } catch (\Exception $e) {
+            // Non-fatal — the browser will reconnect on next poll
         }
 
+        // SSE comment keeps proxies happy on empty responses
+        echo ": ok\n\n";
+        flush();
         exit;
     }
 }

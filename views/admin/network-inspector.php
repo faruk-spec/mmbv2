@@ -52,16 +52,37 @@
                         <th style="padding:10px 12px;color:var(--text-secondary);font-weight:600;">URL</th>
                         <th style="padding:10px 12px;color:var(--text-secondary);font-weight:600;">Status</th>
                         <th style="padding:10px 12px;color:var(--text-secondary);font-weight:600;">Time (s)</th>
-                        <th style="padding:10px 12px;color:var(--text-secondary);font-weight:600;">Response Preview</th>
+                        <th style="padding:10px 12px;color:var(--text-secondary);font-weight:600;">Message</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($entries as $entry): ?>
+                    <?php
+                    $httpLabels = [200=>'OK',201=>'Created',204=>'No Content',400=>'Bad Request',401=>'Unauthorized',403=>'Forbidden',404=>'Not Found',500=>'Server Error'];
+                    foreach ($entries as $entry): ?>
                     <?php
                         $status = (int) ($entry['status'] ?? 0);
                         $statusColor = $status >= 500 ? '#ff6b6b' : ($status >= 400 ? '#ffc107' : ($status >= 300 ? '#00b4d8' : '#00ff88'));
                         $methodColors = ['GET' => '#00f0ff', 'POST' => '#a855f7', 'PUT' => '#f97316', 'PATCH' => '#f59e0b', 'DELETE' => '#ef4444'];
                         $methodColor = $methodColors[$entry['method'] ?? ''] ?? 'var(--text-secondary)';
+
+                        // Support both new entries (message) and legacy entries (response_body)
+                        $message = $entry['message'] ?? null;
+                        if (!$message && !empty($entry['response_body'])) {
+                            // Legacy: extract a readable message from raw JSON
+                            $decoded = json_decode($entry['response_body'], true);
+                            if (is_array($decoded)) {
+                                if (!empty($decoded['message']) && is_string($decoded['message'])) {
+                                    $message = mb_substr($decoded['message'], 0, 120);
+                                } elseif (!empty($decoded['error']) && is_string($decoded['error'])) {
+                                    $message = mb_substr($decoded['error'], 0, 120);
+                                } elseif (isset($decoded['success'])) {
+                                    $message = $decoded['success'] ? 'Success' : 'Failed';
+                                }
+                            }
+                        }
+                        if (!$message) {
+                            $message = $httpLabels[$status] ?? 'HTTP ' . $status;
+                        }
                     ?>
                     <tr style="border-bottom:1px solid rgba(255,255,255,.05);">
                         <td style="padding:10px 12px;white-space:nowrap;color:var(--text-secondary);"><?= View::e($entry['timestamp'] ?? '') ?></td>
@@ -77,8 +98,8 @@
                             <span style="color:<?= $statusColor ?>;font-weight:600;"><?= View::e((string) $status) ?></span>
                         </td>
                         <td style="padding:10px 12px;font-family:monospace;"><?= View::e(number_format((float) ($entry['response_time'] ?? 0), 3)) ?></td>
-                        <td style="padding:10px 12px;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:monospace;font-size:.75rem;color:var(--text-secondary);" title="<?= View::e($entry['response_body'] ?? '') ?>">
-                            <?= View::e($entry['response_body'] ?? '—') ?>
+                        <td style="padding:10px 12px;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.825rem;color:var(--text-primary);" title="<?= View::e($message) ?>">
+                            <?= View::e($message) ?>
                         </td>
                     </tr>
                     <?php endforeach; ?>

@@ -8,6 +8,7 @@
 // Admin dashboard
 $router->get('/admin', 'Admin\\DashboardController@index', ['auth', 'admin']);
 $router->get('/admin/dashboard', 'Admin\\DashboardController@index', ['auth', 'admin']);
+$router->get('/admin/api/live-stats', 'Admin\\DashboardController@liveStats', ['auth', 'admin']);
 
 // Pages CMS
 $router->get('/admin/pages', 'Admin\\PagesController@index', ['auth', 'admin']);
