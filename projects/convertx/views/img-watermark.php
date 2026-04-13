@@ -261,7 +261,7 @@ $acceptAttr   = implode(',', array_map(fn($e) => '.'.$e, $allowedExts));
         selectedFiles.forEach(function (f) { fd.append('images[]', f); });
 
         try {
-            var res  = await fetch('/projects/convertx/img-watermark', { method:'POST', body:fd });
+            var res  = await fetch('/projects/convertx/img-watermark', { method:'POST', body:fd, headers:{'Accept':'application/json'} });
             var data = await res.json();
             resultCard.style.display = '';
             resultCard.scrollIntoView({ behavior:'smooth', block:'nearest' });

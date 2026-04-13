@@ -171,7 +171,7 @@ highlightPreset('ebook');
         if (q) fd.append('quality', q.value);
 
         try {
-            var res  = await fetch('/projects/convertx/pdf-compress', { method:'POST', body:fd });
+            var res  = await fetch('/projects/convertx/pdf-compress', { method:'POST', body:fd, headers:{'Accept':'application/json'} });
             var data = await res.json();
             resultCard.style.display = '';
             resultCard.scrollIntoView({ behavior:'smooth', block:'nearest' });

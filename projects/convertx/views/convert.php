@@ -588,7 +588,7 @@ function toggleAiOptions() {
 
         var fd = new FormData(form);
         try {
-            var res  = await fetch('/projects/convertx/convert', { method: 'POST', body: fd });
+            var res  = await fetch('/projects/convertx/convert', { method: 'POST', body: fd, headers: {'Accept': 'application/json'} });
             var data = await res.json();
             if (data.success) {
                 hideConvertingOverlay();

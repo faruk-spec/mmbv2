@@ -193,7 +193,7 @@ $hasGs       = $hasGs ?? false;
         selectedFiles.forEach(function (f) { fd.append('pdfs[]', f); });
 
         try {
-            var res  = await fetch('/projects/convertx/pdf-merge', { method:'POST', body:fd });
+            var res  = await fetch('/projects/convertx/pdf-merge', { method:'POST', body:fd, headers:{'Accept':'application/json'} });
             var data = await res.json();
             resultCard.style.display = '';
             resultCard.scrollIntoView({ behavior:'smooth', block:'nearest' });

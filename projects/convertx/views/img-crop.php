@@ -247,7 +247,7 @@ $acceptAttr   = implode(',', array_map(fn($e) => '.'.$e, $allowedExts));
         fd.append('crop_height', document.getElementById('cropH').value);
 
         try {
-            var res  = await fetch('/projects/convertx/img-crop', { method:'POST', body:fd });
+            var res  = await fetch('/projects/convertx/img-crop', { method:'POST', body:fd, headers:{'Accept':'application/json'} });
             var data = await res.json();
             resultCard.style.display = '';
             resultCard.scrollIntoView({ behavior:'smooth', block:'nearest' });

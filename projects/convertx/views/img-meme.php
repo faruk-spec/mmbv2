@@ -238,7 +238,7 @@ $acceptAttr   = implode(',', array_map(fn($e) => '.'.$e, $allowedExts));
         fd.append('text_color',  document.querySelector('[name="text_color"]:checked').value);
 
         try {
-            var res  = await fetch('/projects/convertx/img-meme', { method:'POST', body:fd });
+            var res  = await fetch('/projects/convertx/img-meme', { method:'POST', body:fd, headers:{'Accept':'application/json'} });
             var data = await res.json();
             resultCard.style.display = '';
             resultCard.scrollIntoView({ behavior:'smooth', block:'nearest' });
