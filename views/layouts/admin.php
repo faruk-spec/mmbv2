@@ -1131,6 +1131,12 @@
                                 <span>Plans</span>
                             </a>
                             <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('convertx.settings')): ?>
+                            <a href="/admin/projects/convertx/schema" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/convertx/schema') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-database"></i>
+                                <span>Schema</span>
+                            </a>
+                            <?php endif; ?>
                         </div>
                     </div>
                     <?php endif; ?>

@@ -154,7 +154,7 @@ $currentView = 'ocr-ai';
         fd.append('prompt', document.getElementById('ocrAiPrompt').value);
         fd.append('_token', document.querySelector('meta[name="csrf-token"]').content);
 
-        fetch('/projects/convertx/ocr-ai/process', { method: 'POST', body: fd })
+        fetch('/projects/convertx/ocr-ai/process', { method: 'POST', body: fd, headers: { 'Accept': 'application/json' } })
             .then(function (r) { return r.json(); })
             .then(function (data) {
                 document.getElementById('ocrAiProgress').style.display = 'none';

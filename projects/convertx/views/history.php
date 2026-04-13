@@ -196,7 +196,7 @@ async function cancelJob(jobId) {
     var csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     var res  = await fetch('/projects/convertx/job/' + jobId + '/cancel', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json' },
         body: '_token=' + encodeURIComponent(csrfToken)
     });
     var data = await res.json();
