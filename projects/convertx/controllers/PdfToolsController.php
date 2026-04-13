@@ -787,6 +787,7 @@ class PdfToolsController
         ]);
         } catch (\Throwable $e) {
             Logger::error('submitResizeImages: ' . $e->getMessage());
+            $this->cleanOutputBuffers();
             $this->jsonError('Server error: ' . $e->getMessage(), 500);
         }
     }
@@ -948,6 +949,7 @@ class PdfToolsController
         ]);
         } catch (\Throwable $e) {
             Logger::error('submitCropImage: ' . $e->getMessage());
+            $this->cleanOutputBuffers();
             $this->jsonError('Server error: ' . $e->getMessage(), 500);
         }
     }
@@ -1121,6 +1123,7 @@ class PdfToolsController
         ]);
         } catch (\Throwable $e) {
             Logger::error('submitWatermarkImage: ' . $e->getMessage());
+            $this->cleanOutputBuffers();
             $this->jsonError('Server error: ' . $e->getMessage(), 500);
         }
     }
@@ -1283,6 +1286,7 @@ class PdfToolsController
         ]);
         } catch (\Throwable $e) {
             Logger::error('submitMemeGenerator: ' . $e->getMessage());
+            $this->cleanOutputBuffers();
             $this->jsonError('Server error: ' . $e->getMessage(), 500);
         }
     }
@@ -1435,6 +1439,7 @@ class PdfToolsController
         ]);
         } catch (\Throwable $e) {
             Logger::error('submitRotateImages: ' . $e->getMessage());
+            $this->cleanOutputBuffers();
             $this->jsonError('Server error: ' . $e->getMessage(), 500);
         }
     }
