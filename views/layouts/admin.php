@@ -1113,6 +1113,18 @@
                                 <span>Settings</span>
                             </a>
                             <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('convertx.settings')): ?>
+                            <a href="/admin/projects/convertx/upload-limits" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/convertx/upload-limits') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-upload"></i>
+                                <span>Upload Limits</span>
+                            </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('convertx.settings')): ?>
+                            <a href="/admin/projects/convertx/image-tools-settings" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/convertx/image-tools-settings') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-magic"></i>
+                                <span>Image Tool APIs</span>
+                            </a>
+                            <?php endif; ?>
                             <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('convertx.storage')): ?>
                             <a href="/admin/projects/convertx/storage" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/convertx/storage') === 0 ? 'active' : '' ?>">
                                 <i class="fas fa-hdd"></i>
@@ -1123,6 +1135,12 @@
                             <a href="/admin/projects/convertx/plans" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/convertx/plans') === 0 ? 'active' : '' ?>">
                                 <i class="fas fa-tags"></i>
                                 <span>Plans</span>
+                            </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('convertx.settings')): ?>
+                            <a href="/admin/projects/convertx/schema" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/convertx/schema') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-database"></i>
+                                <span>Schema</span>
                             </a>
                             <?php endif; ?>
                         </div>

@@ -447,7 +447,7 @@ foreach ($groupedFormats as $group => $fmts) {
         selectedFiles.forEach(function (f) { fd.append('files[]', f); });
 
         try {
-            var res  = await fetch('/projects/convertx/batch', { method: 'POST', body: fd });
+            var res  = await fetch('/projects/convertx/batch', { method: 'POST', body: fd, headers: {'Accept': 'application/json'} });
             var data = await res.json();
 
             resultDiv.style.display = 'block';

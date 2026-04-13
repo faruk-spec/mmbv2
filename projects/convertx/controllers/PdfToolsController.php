@@ -14,6 +14,7 @@
 namespace Projects\ConvertX\Controllers;
 
 use Core\Auth;
+use Core\Database;
 use Core\Security;
 use Core\Logger;
 use Core\ActivityLogger;
@@ -22,15 +23,95 @@ use Projects\ConvertX\Services\PdfToolsService;
 class PdfToolsController
 {
     private PdfToolsService $svc;
+    private ?array $imgLimits = null;   // admin-configured limits (lazy-loaded)
 
     private const MAX_PDF_SIZE_BYTES   = 200 * 1024 * 1024;   // 200 MB per file
     private const MAX_IMAGE_SIZE_BYTES =  50 * 1024 * 1024;   //  50 MB per file
     private const MAX_MERGE_FILES      = 20;
     private const MAX_COMPRESS_FILES   = 20;
 
+    // Defaults used when admin has not configured limits yet
+    private const DEFAULT_MAX_FILES      = 20;
+    private const DEFAULT_MAX_SIZE_MB    = 50;
+    private const DEFAULT_ALLOWED_EXTS   = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'];
+
     public function __construct()
     {
         $this->svc = new PdfToolsService();
+    }
+
+    /**
+     * Record a completed/failed synchronous tool operation in `convertx_tool_jobs`.
+     *
+     * @param string $toolType     e.g. 'pdf_merge', 'img_compress'
+     * @param array  $names        original input filenames
+     * @param string $outFilename  download filename (e.g. 'merged.pdf')
+     * @param int    $origSize     total original bytes
+     * @param int    $outSize      total output bytes
+     * @param string $status       'completed' or 'failed'
+     * @param string $errorMsg
+     */
+    private function logToolJob(
+        string $toolType,
+        array  $names,
+        string $outFilename,
+        int    $origSize = 0,
+        int    $outSize  = 0,
+        string $status   = 'completed',
+        string $errorMsg = ''
+    ): void {
+        $userId = Auth::id();
+        if (!$userId) {
+            return;
+        }
+        try {
+            require_once PROJECT_PATH . '/models/ConversionJobModel.php';
+            (new \Projects\ConvertX\Models\ConversionJobModel())->createToolJob(
+                $userId, $toolType, count($names), $names,
+                $outFilename, $origSize, $outSize, $status, $errorMsg
+            );
+        } catch (\Throwable $_) {}
+    }
+
+    /**
+     * Load admin-configured image-tool limits from DB (cached per request).
+     */
+    private function imgLimits(): array
+    {
+        if ($this->imgLimits !== null) {
+            return $this->imgLimits;
+        }
+        $settings = [];
+        try {
+            $rows = Database::getInstance()->fetchAll(
+                'SELECT setting_key, setting_value FROM convertx_image_tools_settings
+                  WHERE setting_key IN (:k1, :k2, :k3)',
+                ['k1' => 'max_files', 'k2' => 'max_file_size_mb', 'k3' => 'allowed_image_formats']
+            );
+            foreach ($rows as $r) {
+                $settings[$r['setting_key']] = $r['setting_value'];
+            }
+        } catch (\Throwable $_) { /* table may not exist yet */ }
+
+        $maxFiles   = isset($settings['max_files'])       && (int)$settings['max_files']       > 0
+                        ? (int)$settings['max_files']       : self::DEFAULT_MAX_FILES;
+        $maxSizeMb  = isset($settings['max_file_size_mb']) && (int)$settings['max_file_size_mb'] > 0
+                        ? (int)$settings['max_file_size_mb'] : self::DEFAULT_MAX_SIZE_MB;
+        $allowedRaw = !empty($settings['allowed_image_formats'])
+                        ? $settings['allowed_image_formats']
+                        : implode(',', self::DEFAULT_ALLOWED_EXTS);
+        $allowedExts = array_filter(array_map('trim', explode(',', strtolower($allowedRaw))));
+        if (empty($allowedExts)) {
+            $allowedExts = self::DEFAULT_ALLOWED_EXTS;
+        }
+
+        $this->imgLimits = [
+            'max_files'    => $maxFiles,
+            'max_size_bytes' => $maxSizeMb * 1024 * 1024,
+            'max_size_mb'  => $maxSizeMb,
+            'allowed_exts' => array_values($allowedExts),
+        ];
+        return $this->imgLimits;
     }
 
     // ================================================================== //
@@ -69,10 +150,14 @@ class PdfToolsController
 
     public function showCompressImages(): void
     {
+        $limits = $this->imgLimits();
         $this->render('img-compress', [
-            'title'    => 'Compress Images',
-            'user'     => Auth::user(),
-            'hasGd'    => $this->svc->hasGd(),
+            'title'       => 'Compress Images',
+            'user'        => Auth::user(),
+            'hasGd'       => $this->svc->hasGd(),
+            'maxFiles'    => $limits['max_files'],
+            'maxSizeMb'   => $limits['max_size_mb'],
+            'allowedExts' => $limits['allowed_exts'],
         ]);
     }
 
@@ -171,6 +256,7 @@ class PdfToolsController
                 'output_size' => $size,
             ]);
         } catch (\Throwable $_) {}
+        $this->logToolJob('pdf_merge', array_map('basename', $savedPaths), 'merged.pdf', 0, $size);
 
         $this->cleanOutputBuffers();
         header('Content-Type: application/json');
@@ -284,6 +370,7 @@ class PdfToolsController
                 'pages_extracted' => count($pages),
             ]);
         } catch (\Throwable $_) {}
+        $this->logToolJob('pdf_split', [$file['name']], 'split_pages.zip');
 
         $this->cleanOutputBuffers();
         header('Content-Type: application/json');
@@ -375,6 +462,7 @@ class PdfToolsController
                 'quality'        => $quality,
             ]);
         } catch (\Throwable $_) {}
+        $this->logToolJob('pdf_compress', [$file['name']], $origFilename, $origSize, $newSize);
 
         $this->cleanOutputBuffers();
         header('Content-Type: application/json');
@@ -413,9 +501,10 @@ class PdfToolsController
             return;
         }
 
+        $limits   = $this->imgLimits();
         $fileList = $this->normaliseFiles($files);
-        if (count($fileList) > self::MAX_COMPRESS_FILES) {
-            $this->jsonError('Maximum ' . self::MAX_COMPRESS_FILES . ' images at once.', 400);
+        if (count($fileList) > $limits['max_files']) {
+            $this->jsonError('Maximum ' . $limits['max_files'] . ' images at once.', 400);
             return;
         }
 
@@ -432,7 +521,7 @@ class PdfToolsController
             mkdir($tmpDir, 0755, true);
         }
 
-        $imageExts  = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'];
+        $imageExts  = $limits['allowed_exts'];
         $results    = [];
         $errors     = [];
 
@@ -441,13 +530,13 @@ class PdfToolsController
                 $errors[] = $f['name'] . ': upload error';
                 continue;
             }
-            if ($f['size'] > self::MAX_IMAGE_SIZE_BYTES) {
-                $errors[] = $f['name'] . ': file too large (max 50 MB)';
+            if ($f['size'] > $limits['max_size_bytes']) {
+                $errors[] = $f['name'] . ': file too large (max ' . $limits['max_size_mb'] . ' MB)';
                 continue;
             }
             $ext = strtolower(pathinfo($f['name'], PATHINFO_EXTENSION));
             if (!in_array($ext, $imageExts, true)) {
-                $errors[] = $f['name'] . ': unsupported format (use JPG, PNG, GIF, WebP, BMP)';
+                $errors[] = $f['name'] . ': unsupported format';
                 continue;
             }
 
@@ -470,6 +559,7 @@ class PdfToolsController
                 $newSize = file_exists($outPath) ? filesize($outPath) : 0;
                 $results[] = [
                     'src_path'    => $srcPath,
+                    'src_name'    => $f['name'],
                     'out_path'    => $outPath,
                     'out_name'    => $outName,
                     'orig_size'   => $origSize,
@@ -550,6 +640,12 @@ class PdfToolsController
                 'compressed_size'=> $totalNew,
             ]);
         } catch (\Throwable $_) {}
+        $this->logToolJob(
+            'img_compress',
+            array_column($results, 'src_name'),
+            'compressed_images.zip',
+            $totalOrig, $totalNew
+        );
 
         $this->cleanOutputBuffers();
         header('Content-Type: application/json');
@@ -563,6 +659,879 @@ class PdfToolsController
             'saved_pct'     => $totalOrig > 0 ? round(max(0, $totalOrig - $totalNew) / $totalOrig * 100, 1) : 0,
             'count'         => count($results),
             'errors'        => $errors,
+        ]);
+    }
+
+    // ================================================================== //
+    //  Resize Images                                                      //
+    // ================================================================== //
+
+    public function showResizeImages(): void
+    {
+        $limits = $this->imgLimits();
+        $this->render('img-resize', [
+            'title'        => 'Resize Images',
+            'user'         => Auth::user(),
+            'hasGd'        => $this->svc->hasGd(),
+            'maxFiles'     => $limits['max_files'],
+            'maxSizeMb'    => $limits['max_size_mb'],
+            'allowedExts'  => $limits['allowed_exts'],
+        ]);
+    }
+
+    public function submitResizeImages(): void
+    {
+        ob_start();
+        try {
+        if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
+            $this->jsonError('Invalid request token', 403);
+            return;
+        }
+        $userId = Auth::id();
+        if (!$userId) {
+            $this->jsonError('Authentication required', 401);
+            return;
+        }
+
+        $limits   = $this->imgLimits();
+        $files    = $_FILES['images'] ?? null;
+        if (!$files || empty($files['name'])) {
+            $this->jsonError('No files uploaded', 400);
+            return;
+        }
+
+        $fileList = $this->normaliseFiles($files);
+        if (count($fileList) > $limits['max_files']) {
+            $this->jsonError('Maximum ' . $limits['max_files'] . ' images at once.', 400);
+            return;
+        }
+
+        $opts = [
+            'width'          => max(0, (int) ($_POST['width']  ?? 0)),
+            'height'         => max(0, (int) ($_POST['height'] ?? 0)),
+            'percent'        => max(0, min(200, (int) ($_POST['percent'] ?? 0))),
+            'maintain_ratio' => !empty($_POST['maintain_ratio']),
+            'quality'        => max(1, min(100, (int) ($_POST['quality'] ?? 90))),
+        ];
+
+        $outputFmt = strtolower(trim($_POST['output_format'] ?? ''));
+        if (!in_array($outputFmt, array_merge($limits['allowed_exts'], ['jpeg', '']), true)) {
+            $outputFmt = '';
+        }
+
+        $tmpDir = BASE_PATH . '/storage/uploads/convertx/' . $userId . '/pdftools';
+        if (!is_dir($tmpDir)) {
+            mkdir($tmpDir, 0755, true);
+        }
+
+        $results = [];
+        $errors  = [];
+
+        foreach ($fileList as $f) {
+            if ($f['error'] !== UPLOAD_ERR_OK) {
+                $errors[] = $f['name'] . ': upload error';
+                continue;
+            }
+            if ($f['size'] > $limits['max_size_bytes']) {
+                $errors[] = $f['name'] . ': file too large (max ' . $limits['max_size_mb'] . ' MB)';
+                continue;
+            }
+            $ext = strtolower(pathinfo($f['name'], PATHINFO_EXTENSION));
+            if (!in_array($ext, $limits['allowed_exts'], true)) {
+                $errors[] = $f['name'] . ': unsupported format';
+                continue;
+            }
+
+            $srcPath = $tmpDir . '/' . uniqid('resize_src_', true) . '.' . $ext;
+            if (!move_uploaded_file($f['tmp_name'], $srcPath)) {
+                $errors[] = $f['name'] . ': could not save file';
+                continue;
+            }
+
+            $outExt   = $outputFmt ?: $ext;
+            $outExt   = ($outExt === 'jpeg') ? 'jpg' : $outExt;
+            $outName  = pathinfo($f['name'], PATHINFO_FILENAME) . '_resized.' . $outExt;
+            $outPath  = $tmpDir . '/' . uniqid('resize_out_', true) . '.' . $outExt;
+            $origSize = filesize($srcPath);
+
+            try {
+                $this->svc->resizeImage($srcPath, $outPath, $opts);
+                $newSize   = file_exists($outPath) ? filesize($outPath) : 0;
+                $results[] = [
+                    'src_path'  => $srcPath,
+                    'src_name'  => $f['name'],
+                    'out_path'  => $outPath,
+                    'out_name'  => $outName,
+                    'orig_size' => $origSize,
+                    'new_size'  => $newSize,
+                ];
+            } catch (\Throwable $e) {
+                @unlink($srcPath);
+                $errors[] = $f['name'] . ': ' . $e->getMessage();
+            }
+        }
+
+        foreach ($results as $r) {
+            @unlink($r['src_path']);
+        }
+
+        if (empty($results)) {
+            $this->jsonError('No images could be resized. ' . implode('; ', $errors), 400);
+            return;
+        }
+
+        if (count($results) === 1) {
+            $r     = $results[0];
+            $token = $this->storeDownloadToken($r['out_path'], $r['out_name'], 'image/*');
+            $this->cleanOutputBuffers();
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success'       => true,
+                'token'         => $token,
+                'filename'      => $r['out_name'],
+                'original_size' => $r['orig_size'],
+                'new_size'      => $r['new_size'],
+                'count'         => 1,
+                'errors'        => $errors,
+            ]);
+            return;
+        }
+
+        // Multiple — ZIP
+        if (!class_exists('ZipArchive')) {
+            foreach ($results as $r) { @unlink($r['out_path']); }
+            $this->jsonError('ZIP creation requires the PHP ZipArchive extension.', 501);
+            return;
+        }
+
+        $zipPath = $tmpDir . '/' . uniqid('resize_zip_', true) . '.zip';
+        $zip     = new \ZipArchive();
+        if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
+            foreach ($results as $r) { @unlink($r['out_path']); }
+            $this->jsonError('Could not create ZIP archive.', 500);
+            return;
+        }
+        $totalOrig = 0;
+        $totalNew  = 0;
+        foreach ($results as $r) {
+            $zip->addFile($r['out_path'], $r['out_name']);
+            $totalOrig += $r['orig_size'];
+            $totalNew  += $r['new_size'];
+        }
+        $zip->close();
+        foreach ($results as $r) { @unlink($r['out_path']); }
+
+        $token = $this->storeDownloadToken($zipPath, 'resized_images.zip', 'application/zip');
+        $this->logToolJob('img_resize', array_column($results, 'src_name'), 'resized_images.zip', $totalOrig, $totalNew);
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success'       => true,
+            'token'         => $token,
+            'filename'      => 'resized_images.zip',
+            'original_size' => $totalOrig,
+            'new_size'      => $totalNew,
+            'count'         => count($results),
+            'errors'        => $errors,
+        ]);
+        } catch (\Throwable $e) {
+            Logger::error('submitResizeImages: ' . $e->getMessage());
+            $this->cleanOutputBuffers();
+            $this->jsonError('Server error: ' . $e->getMessage(), 500);
+        }
+    }
+
+    // ================================================================== //
+    //  Crop Image                                                         //
+    // ================================================================== //
+
+    public function showCropImage(): void
+    {
+        $limits = $this->imgLimits();
+        $this->render('img-crop', [
+            'title'       => 'Crop Image',
+            'user'        => Auth::user(),
+            'hasGd'       => $this->svc->hasGd(),
+            'maxFiles'    => $limits['max_files'],
+            'maxSizeMb'   => $limits['max_size_mb'],
+            'allowedExts' => $limits['allowed_exts'],
+        ]);
+    }
+
+    public function submitCropImage(): void
+    {
+        ob_start();
+        try {
+        if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
+            $this->jsonError('Invalid request token', 403);
+            return;
+        }
+        $userId = Auth::id();
+        if (!$userId) {
+            $this->jsonError('Authentication required', 401);
+            return;
+        }
+
+        $limits = $this->imgLimits();
+
+        // Accept either single file (images[0]) or multi-file (images[])
+        $rawFiles = $_FILES['images'] ?? null;
+        if (!$rawFiles || empty($rawFiles['name'])) {
+            $this->jsonError('No files uploaded', 400);
+            return;
+        }
+
+        $fileList = $this->normaliseFiles($rawFiles);
+        if (count($fileList) > $limits['max_files']) {
+            $this->jsonError('Maximum ' . $limits['max_files'] . ' images at once.', 400);
+            return;
+        }
+
+        $opts = [
+            'x'           => max(0, (int) ($_POST['x']           ?? 0)),
+            'y'           => max(0, (int) ($_POST['y']           ?? 0)),
+            'crop_width'  => max(1, (int) ($_POST['crop_width']  ?? 100)),
+            'crop_height' => max(1, (int) ($_POST['crop_height'] ?? 100)),
+            'quality'     => max(1, min(100, (int) ($_POST['quality'] ?? 90))),
+        ];
+
+        $tmpDir = BASE_PATH . '/storage/uploads/convertx/' . $userId . '/pdftools';
+        if (!is_dir($tmpDir)) {
+            mkdir($tmpDir, 0755, true);
+        }
+
+        $results = [];
+        $errors  = [];
+
+        foreach ($fileList as $f) {
+            if ($f['error'] !== UPLOAD_ERR_OK) {
+                $errors[] = $f['name'] . ': upload error';
+                continue;
+            }
+            if ($f['size'] > $limits['max_size_bytes']) {
+                $errors[] = $f['name'] . ': file too large (max ' . $limits['max_size_mb'] . ' MB)';
+                continue;
+            }
+            $ext = strtolower(pathinfo($f['name'], PATHINFO_EXTENSION));
+            if (!in_array($ext, $limits['allowed_exts'], true)) {
+                $errors[] = $f['name'] . ': unsupported format';
+                continue;
+            }
+
+            $srcPath = $tmpDir . '/' . uniqid('crop_src_', true) . '.' . $ext;
+            if (!move_uploaded_file($f['tmp_name'], $srcPath)) {
+                $errors[] = $f['name'] . ': could not save file';
+                continue;
+            }
+
+            $outExt  = ($ext === 'jpeg') ? 'jpg' : $ext;
+            $outName = pathinfo($f['name'], PATHINFO_FILENAME) . '_cropped.' . $outExt;
+            $outPath = $tmpDir . '/' . uniqid('crop_out_', true) . '.' . $outExt;
+
+            try {
+                $this->svc->cropImage($srcPath, $outPath, $opts);
+                $results[] = [
+                    'src_path' => $srcPath,
+                    'src_name' => $f['name'],
+                    'out_path' => $outPath,
+                    'out_name' => $outName,
+                    'new_size' => file_exists($outPath) ? filesize($outPath) : 0,
+                ];
+            } catch (\Throwable $e) {
+                @unlink($srcPath);
+                $errors[] = $f['name'] . ': ' . $e->getMessage();
+            }
+        }
+
+        foreach ($results as $r) {
+            @unlink($r['src_path']);
+        }
+
+        if (empty($results)) {
+            $this->jsonError('No images could be cropped. ' . implode('; ', $errors), 400);
+            return;
+        }
+
+        if (count($results) === 1) {
+            $r     = $results[0];
+            $token = $this->storeDownloadToken($r['out_path'], $r['out_name'], 'image/*');
+            $this->cleanOutputBuffers();
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success'  => true,
+                'token'    => $token,
+                'filename' => $r['out_name'],
+                'new_size' => $r['new_size'],
+                'count'    => 1,
+                'errors'   => $errors,
+            ]);
+            return;
+        }
+
+        // Multiple — ZIP
+        if (!class_exists('ZipArchive')) {
+            foreach ($results as $r) { @unlink($r['out_path']); }
+            $this->jsonError('ZIP creation requires the PHP ZipArchive extension.', 501);
+            return;
+        }
+
+        $zipPath = $tmpDir . '/' . uniqid('crop_zip_', true) . '.zip';
+        $zip     = new \ZipArchive();
+        if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
+            foreach ($results as $r) { @unlink($r['out_path']); }
+            $this->jsonError('Could not create ZIP archive.', 500);
+            return;
+        }
+        foreach ($results as $r) {
+            $zip->addFile($r['out_path'], $r['out_name']);
+        }
+        $zip->close();
+        foreach ($results as $r) { @unlink($r['out_path']); }
+
+        $token = $this->storeDownloadToken($zipPath, 'cropped_images.zip', 'application/zip');
+        $this->logToolJob('img_crop', array_column($results, 'src_name'), 'cropped_images.zip', 0, array_sum(array_column($results, 'new_size')));
+        $this->cleanOutputBuffers();
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success'  => true,
+            'token'    => $token,
+            'filename' => 'cropped_images.zip',
+            'count'    => count($results),
+            'errors'   => $errors,
+        ]);
+        } catch (\Throwable $e) {
+            Logger::error('submitCropImage: ' . $e->getMessage());
+            $this->cleanOutputBuffers();
+            $this->jsonError('Server error: ' . $e->getMessage(), 500);
+        }
+    }
+
+    // ================================================================== //
+    //  Watermark Image                                                    //
+    // ================================================================== //
+
+    public function showWatermarkImage(): void
+    {
+        $limits = $this->imgLimits();
+        $this->render('img-watermark', [
+            'title'       => 'Watermark Image',
+            'user'        => Auth::user(),
+            'hasGd'       => $this->svc->hasGd(),
+            'maxFiles'    => $limits['max_files'],
+            'maxSizeMb'   => $limits['max_size_mb'],
+            'allowedExts' => $limits['allowed_exts'],
+        ]);
+    }
+
+    public function submitWatermarkImage(): void
+    {
+        ob_start();
+        try {
+        if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
+            $this->jsonError('Invalid request token', 403);
+            return;
+        }
+        $userId = Auth::id();
+        if (!$userId) {
+            $this->jsonError('Authentication required', 401);
+            return;
+        }
+
+        $limits = $this->imgLimits();
+        $files  = $_FILES['images'] ?? null;
+        if (!$files || empty($files['name'])) {
+            $this->jsonError('No files uploaded', 400);
+            return;
+        }
+
+        $fileList = $this->normaliseFiles($files);
+        if (count($fileList) > $limits['max_files']) {
+            $this->jsonError('Maximum ' . $limits['max_files'] . ' images at once.', 400);
+            return;
+        }
+
+        $tmpDir = BASE_PATH . '/storage/uploads/convertx/' . $userId . '/pdftools';
+        if (!is_dir($tmpDir)) {
+            mkdir($tmpDir, 0755, true);
+        }
+
+        // Handle optional watermark image upload
+        $wmImagePath = null;
+        $wmFile      = $_FILES['watermark_image'] ?? null;
+        if ($wmFile && $wmFile['error'] === UPLOAD_ERR_OK) {
+            $wmExt = strtolower(pathinfo($wmFile['name'], PATHINFO_EXTENSION));
+            if (in_array($wmExt, ['jpg', 'jpeg', 'png', 'gif', 'webp'], true)) {
+                $wmImagePath = $tmpDir . '/' . uniqid('wm_', true) . '.' . $wmExt;
+                move_uploaded_file($wmFile['tmp_name'], $wmImagePath);
+            }
+        }
+
+        $opts = [
+            'text'                => (string) ($_POST['text']       ?? 'Watermark'),
+            'font_size'           => max(8, min(72, (int) ($_POST['font_size'] ?? 24))),
+            'opacity'             => max(0, min(100, (int) ($_POST['opacity']  ?? 50))),
+            'position'            => in_array($_POST['position'] ?? '', ['center','topleft','topright','bottomleft','bottomright','custom'], true)
+                                        ? $_POST['position'] : 'bottomright',
+            'color_hex'           => preg_match('/^#?[0-9a-fA-F]{6}$/', $_POST['color_hex'] ?? '')
+                                        ? ltrim($_POST['color_hex'], '#') : 'ffffff',
+            'watermark_image_path'=> $wmImagePath,
+            'quality'             => max(1, min(100, (int) ($_POST['quality'] ?? 90))),
+            'rotation'            => (int) ($_POST['rotation'] ?? 0),
+            'custom_x_pct'        => max(0, min(100, (float) ($_POST['custom_x_pct'] ?? 90))),
+            'custom_y_pct'        => max(0, min(100, (float) ($_POST['custom_y_pct'] ?? 90))),
+        ];
+
+        $results = [];
+        $errors  = [];
+
+        foreach ($fileList as $f) {
+            if ($f['error'] !== UPLOAD_ERR_OK || $f['size'] > $limits['max_size_bytes']) {
+                $errors[] = $f['name'] . ': upload error or too large';
+                continue;
+            }
+            $ext = strtolower(pathinfo($f['name'], PATHINFO_EXTENSION));
+            if (!in_array($ext, $limits['allowed_exts'], true)) {
+                $errors[] = $f['name'] . ': unsupported format';
+                continue;
+            }
+
+            $srcPath = $tmpDir . '/' . uniqid('wm_src_', true) . '.' . $ext;
+            if (!move_uploaded_file($f['tmp_name'], $srcPath)) {
+                $errors[] = $f['name'] . ': could not save file';
+                continue;
+            }
+
+            $outExt  = ($ext === 'jpeg') ? 'jpg' : $ext;
+            $outName = pathinfo($f['name'], PATHINFO_FILENAME) . '_watermarked.' . $outExt;
+            $outPath = $tmpDir . '/' . uniqid('wm_out_', true) . '.' . $outExt;
+
+            try {
+                $this->svc->watermarkImage($srcPath, $outPath, $opts);
+                $results[] = [
+                    'src_path' => $srcPath,
+                    'src_name' => $f['name'],
+                    'out_path' => $outPath,
+                    'out_name' => $outName,
+                    'new_size' => file_exists($outPath) ? filesize($outPath) : 0,
+                ];
+            } catch (\Throwable $e) {
+                @unlink($srcPath);
+                $errors[] = $f['name'] . ': ' . $e->getMessage();
+            }
+        }
+
+        if ($wmImagePath) {
+            @unlink($wmImagePath);
+        }
+        foreach ($results as $r) {
+            @unlink($r['src_path']);
+        }
+
+        if (empty($results)) {
+            $this->jsonError('No images could be watermarked. ' . implode('; ', $errors), 400);
+            return;
+        }
+
+        if (count($results) === 1) {
+            $r     = $results[0];
+            $token = $this->storeDownloadToken($r['out_path'], $r['out_name'], 'image/*');
+            $this->cleanOutputBuffers();
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success'  => true,
+                'token'    => $token,
+                'filename' => $r['out_name'],
+                'new_size' => $r['new_size'],
+                'count'    => 1,
+                'errors'   => $errors,
+            ]);
+            return;
+        }
+
+        if (!class_exists('ZipArchive')) {
+            foreach ($results as $r) { @unlink($r['out_path']); }
+            $this->jsonError('ZIP creation requires the PHP ZipArchive extension.', 501);
+            return;
+        }
+
+        $zipPath = $tmpDir . '/' . uniqid('wm_zip_', true) . '.zip';
+        $zip     = new \ZipArchive();
+        if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
+            foreach ($results as $r) { @unlink($r['out_path']); }
+            $this->jsonError('Could not create ZIP archive.', 500);
+            return;
+        }
+        foreach ($results as $r) {
+            $zip->addFile($r['out_path'], $r['out_name']);
+        }
+        $zip->close();
+        foreach ($results as $r) { @unlink($r['out_path']); }
+
+        $token = $this->storeDownloadToken($zipPath, 'watermarked_images.zip', 'application/zip');
+        $this->logToolJob('img_watermark', array_column($results, 'src_name'), 'watermarked_images.zip', 0, array_sum(array_column($results, 'new_size')));
+
+        $this->cleanOutputBuffers();
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success'  => true,
+            'token'    => $token,
+            'filename' => 'watermarked_images.zip',
+            'count'    => count($results),
+            'errors'   => $errors,
+        ]);
+        } catch (\Throwable $e) {
+            Logger::error('submitWatermarkImage: ' . $e->getMessage());
+            $this->cleanOutputBuffers();
+            $this->jsonError('Server error: ' . $e->getMessage(), 500);
+        }
+    }
+
+    // ================================================================== //
+    //  Meme Generator                                                     //
+    // ================================================================== //
+
+    public function showMemeGenerator(): void
+    {
+        $limits = $this->imgLimits();
+        $this->render('img-meme', [
+            'title'       => 'Meme Generator',
+            'user'        => Auth::user(),
+            'hasGd'       => $this->svc->hasGd(),
+            'maxFiles'    => $limits['max_files'],
+            'maxSizeMb'   => $limits['max_size_mb'],
+            'allowedExts' => $limits['allowed_exts'],
+        ]);
+    }
+
+    public function submitMemeGenerator(): void
+    {
+        ob_start();
+        try {
+        if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
+            $this->jsonError('Invalid request token', 403);
+            return;
+        }
+        $userId = Auth::id();
+        if (!$userId) {
+            $this->jsonError('Authentication required', 401);
+            return;
+        }
+
+        $limits   = $this->imgLimits();
+        $rawFiles = $_FILES['images'] ?? null;
+        if (!$rawFiles || empty($rawFiles['name'])) {
+            $this->jsonError('No files uploaded', 400);
+            return;
+        }
+
+        $fileList = $this->normaliseFiles($rawFiles);
+        if (count($fileList) > $limits['max_files']) {
+            $this->jsonError('Maximum ' . $limits['max_files'] . ' images at once.', 400);
+            return;
+        }
+
+        $validColors = ['white', 'black', 'yellow'];
+        $opts = [
+            'top_text'    => substr((string) ($_POST['top_text']    ?? ''), 0, 200),
+            'bottom_text' => substr((string) ($_POST['bottom_text'] ?? ''), 0, 200),
+            'font_size'   => max(12, min(120, (int) ($_POST['font_size'] ?? 48))),
+            'text_color'  => in_array($_POST['text_color'] ?? '', $validColors, true)
+                                ? $_POST['text_color'] : 'white',
+            'stroke_color'=> 'black',
+            'quality'     => max(1, min(100, (int) ($_POST['quality'] ?? 92))),
+        ];
+
+        $tmpDir = BASE_PATH . '/storage/uploads/convertx/' . $userId . '/pdftools';
+        if (!is_dir($tmpDir)) {
+            mkdir($tmpDir, 0755, true);
+        }
+
+        $results = [];
+        $errors  = [];
+
+        foreach ($fileList as $f) {
+            if ($f['error'] !== UPLOAD_ERR_OK) {
+                $errors[] = $f['name'] . ': upload error';
+                continue;
+            }
+            if ($f['size'] > $limits['max_size_bytes']) {
+                $errors[] = $f['name'] . ': file too large (max ' . $limits['max_size_mb'] . ' MB)';
+                continue;
+            }
+            $ext = strtolower(pathinfo($f['name'], PATHINFO_EXTENSION));
+            if (!in_array($ext, $limits['allowed_exts'], true)) {
+                $errors[] = $f['name'] . ': unsupported format';
+                continue;
+            }
+
+            $srcPath = $tmpDir . '/' . uniqid('meme_src_', true) . '.' . $ext;
+            if (!move_uploaded_file($f['tmp_name'], $srcPath)) {
+                $errors[] = $f['name'] . ': could not save file';
+                continue;
+            }
+
+            $outExt  = ($ext === 'jpeg') ? 'jpg' : $ext;
+            $outName = pathinfo($f['name'], PATHINFO_FILENAME) . '_meme.' . $outExt;
+            $outPath = $tmpDir . '/' . uniqid('meme_out_', true) . '.' . $outExt;
+
+            try {
+                $this->svc->addMemeText($srcPath, $outPath, $opts);
+                $results[] = [
+                    'src_path' => $srcPath,
+                    'src_name' => $f['name'],
+                    'out_path' => $outPath,
+                    'out_name' => $outName,
+                    'new_size' => file_exists($outPath) ? filesize($outPath) : 0,
+                ];
+            } catch (\Throwable $e) {
+                @unlink($srcPath);
+                $errors[] = $f['name'] . ': ' . $e->getMessage();
+            }
+        }
+
+        foreach ($results as $r) {
+            @unlink($r['src_path']);
+        }
+
+        if (empty($results)) {
+            $this->jsonError('No memes could be created. ' . implode('; ', $errors), 400);
+            return;
+        }
+
+        if (count($results) === 1) {
+            $r     = $results[0];
+            $token = $this->storeDownloadToken($r['out_path'], $r['out_name'], 'image/*');
+            $this->cleanOutputBuffers();
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success'  => true,
+                'token'    => $token,
+                'filename' => $r['out_name'],
+                'new_size' => $r['new_size'],
+                'count'    => 1,
+                'errors'   => $errors,
+            ]);
+            return;
+        }
+
+        // Multiple — ZIP
+        if (!class_exists('ZipArchive')) {
+            foreach ($results as $r) { @unlink($r['out_path']); }
+            $this->jsonError('ZIP creation requires the PHP ZipArchive extension.', 501);
+            return;
+        }
+
+        $zipPath = $tmpDir . '/' . uniqid('meme_zip_', true) . '.zip';
+        $zip     = new \ZipArchive();
+        if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
+            foreach ($results as $r) { @unlink($r['out_path']); }
+            $this->jsonError('Could not create ZIP archive.', 500);
+            return;
+        }
+        foreach ($results as $r) {
+            $zip->addFile($r['out_path'], $r['out_name']);
+        }
+        $zip->close();
+        foreach ($results as $r) { @unlink($r['out_path']); }
+
+        $token = $this->storeDownloadToken($zipPath, 'memes.zip', 'application/zip');
+        $this->logToolJob('img_meme', array_column($results, 'src_name'), 'memes.zip', 0, array_sum(array_column($results, 'new_size')));
+        $this->cleanOutputBuffers();
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success'  => true,
+            'token'    => $token,
+            'filename' => 'memes.zip',
+            'count'    => count($results),
+            'errors'   => $errors,
+        ]);
+        } catch (\Throwable $e) {
+            Logger::error('submitMemeGenerator: ' . $e->getMessage());
+            $this->cleanOutputBuffers();
+            $this->jsonError('Server error: ' . $e->getMessage(), 500);
+        }
+    }
+
+    // ================================================================== //
+    //  Rotate Images                                                      //
+    // ================================================================== //
+
+    public function showRotateImages(): void
+    {
+        $limits = $this->imgLimits();
+        $this->render('img-rotate', [
+            'title'       => 'Rotate Images',
+            'user'        => Auth::user(),
+            'hasGd'       => $this->svc->hasGd(),
+            'maxFiles'    => $limits['max_files'],
+            'maxSizeMb'   => $limits['max_size_mb'],
+            'allowedExts' => $limits['allowed_exts'],
+        ]);
+    }
+
+    public function submitRotateImages(): void
+    {
+        ob_start();
+        try {
+        if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
+            $this->jsonError('Invalid request token', 403);
+            return;
+        }
+        $userId = Auth::id();
+        if (!$userId) {
+            $this->jsonError('Authentication required', 401);
+            return;
+        }
+
+        $limits = $this->imgLimits();
+        $files  = $_FILES['images'] ?? null;
+        if (!$files || empty($files['name'])) {
+            $this->jsonError('No files uploaded', 400);
+            return;
+        }
+
+        $fileList = $this->normaliseFiles($files);
+        if (count($fileList) > $limits['max_files']) {
+            $this->jsonError('Maximum ' . $limits['max_files'] . ' images at once.', 400);
+            return;
+        }
+
+        // Normalize degrees to [0, 359] range (handles negative values too)
+        $degrees = (int) ($_POST['degrees'] ?? 90);
+        $degrees = ((($degrees % 360) + 360) % 360);
+        $quality = max(1, min(100, (int) ($_POST['quality'] ?? 90)));
+
+        $tmpDir = BASE_PATH . '/storage/uploads/convertx/' . $userId . '/pdftools';
+        if (!is_dir($tmpDir)) {
+            mkdir($tmpDir, 0755, true);
+        }
+
+        $results = [];
+        $errors  = [];
+
+        foreach ($fileList as $f) {
+            if ($f['error'] !== UPLOAD_ERR_OK || $f['size'] > $limits['max_size_bytes']) {
+                $errors[] = $f['name'] . ': upload error or too large';
+                continue;
+            }
+            $ext = strtolower(pathinfo($f['name'], PATHINFO_EXTENSION));
+            if (!in_array($ext, $limits['allowed_exts'], true)) {
+                $errors[] = $f['name'] . ': unsupported format';
+                continue;
+            }
+
+            $srcPath = $tmpDir . '/' . uniqid('rot_src_', true) . '.' . $ext;
+            if (!move_uploaded_file($f['tmp_name'], $srcPath)) {
+                $errors[] = $f['name'] . ': could not save file';
+                continue;
+            }
+
+            $outExt  = ($ext === 'jpeg') ? 'jpg' : $ext;
+            $outName = pathinfo($f['name'], PATHINFO_FILENAME) . '_rotated.' . $outExt;
+            $outPath = $tmpDir . '/' . uniqid('rot_out_', true) . '.' . $outExt;
+
+            try {
+                $this->svc->rotateImage($srcPath, $outPath, $degrees, $quality);
+                $results[] = [
+                    'src_path' => $srcPath,
+                    'src_name' => $f['name'],
+                    'out_path' => $outPath,
+                    'out_name' => $outName,
+                    'new_size' => file_exists($outPath) ? filesize($outPath) : 0,
+                ];
+            } catch (\Throwable $e) {
+                @unlink($srcPath);
+                $errors[] = $f['name'] . ': ' . $e->getMessage();
+            }
+        }
+
+        foreach ($results as $r) {
+            @unlink($r['src_path']);
+        }
+
+        if (empty($results)) {
+            $this->jsonError('No images could be rotated. ' . implode('; ', $errors), 400);
+            return;
+        }
+
+        if (count($results) === 1) {
+            $r     = $results[0];
+            $token = $this->storeDownloadToken($r['out_path'], $r['out_name'], 'image/*');
+            $this->cleanOutputBuffers();
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success'  => true,
+                'token'    => $token,
+                'filename' => $r['out_name'],
+                'new_size' => $r['new_size'],
+                'count'    => 1,
+                'errors'   => $errors,
+            ]);
+            return;
+        }
+
+        if (!class_exists('ZipArchive')) {
+            foreach ($results as $r) { @unlink($r['out_path']); }
+            $this->jsonError('ZIP creation requires the PHP ZipArchive extension.', 501);
+            return;
+        }
+
+        $zipPath = $tmpDir . '/' . uniqid('rot_zip_', true) . '.zip';
+        $zip     = new \ZipArchive();
+        if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
+            foreach ($results as $r) { @unlink($r['out_path']); }
+            $this->jsonError('Could not create ZIP archive.', 500);
+            return;
+        }
+        foreach ($results as $r) {
+            $zip->addFile($r['out_path'], $r['out_name']);
+        }
+        $zip->close();
+        foreach ($results as $r) { @unlink($r['out_path']); }
+
+        $token = $this->storeDownloadToken($zipPath, 'rotated_images.zip', 'application/zip');
+        $this->logToolJob('img_rotate', array_column($results, 'src_name'), 'rotated_images.zip', 0, array_sum(array_column($results, 'new_size')));
+
+        $this->cleanOutputBuffers();
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success'  => true,
+            'token'    => $token,
+            'filename' => 'rotated_images.zip',
+            'count'    => count($results),
+            'errors'   => $errors,
+        ]);
+        } catch (\Throwable $e) {
+            Logger::error('submitRotateImages: ' . $e->getMessage());
+            $this->cleanOutputBuffers();
+            $this->jsonError('Server error: ' . $e->getMessage(), 500);
+        }
+    }
+
+    // ================================================================== //
+    //  Photo Editor / Upscale / Remove BG (stub pages)                   //
+    // ================================================================== //
+
+    public function showPhotoEditor(): void
+    {
+        $this->render('img-editor', [
+            'title' => 'Photo Editor',
+            'user'  => Auth::user(),
+        ]);
+    }
+
+    public function showUpscaleImage(): void
+    {
+        $this->render('img-upscale', [
+            'title' => 'Upscale Image',
+            'user'  => Auth::user(),
+        ]);
+    }
+
+    public function showRemoveBg(): void
+    {
+        $this->render('img-remove-bg', [
+            'title' => 'Remove Background',
+            'user'  => Auth::user(),
         ]);
     }
 

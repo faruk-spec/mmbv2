@@ -119,6 +119,71 @@ switch ($segments[0]) {
         }
         break;
 
+    case 'img-resize':
+        require_once PROJECT_PATH . '/controllers/PdfToolsController.php';
+        $ctrl = new \Projects\ConvertX\Controllers\PdfToolsController();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $ctrl->submitResizeImages();
+        } else {
+            $ctrl->showResizeImages();
+        }
+        break;
+
+    case 'img-crop':
+        require_once PROJECT_PATH . '/controllers/PdfToolsController.php';
+        $ctrl = new \Projects\ConvertX\Controllers\PdfToolsController();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $ctrl->submitCropImage();
+        } else {
+            $ctrl->showCropImage();
+        }
+        break;
+
+    case 'img-watermark':
+        require_once PROJECT_PATH . '/controllers/PdfToolsController.php';
+        $ctrl = new \Projects\ConvertX\Controllers\PdfToolsController();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $ctrl->submitWatermarkImage();
+        } else {
+            $ctrl->showWatermarkImage();
+        }
+        break;
+
+    case 'img-meme':
+        require_once PROJECT_PATH . '/controllers/PdfToolsController.php';
+        $ctrl = new \Projects\ConvertX\Controllers\PdfToolsController();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $ctrl->submitMemeGenerator();
+        } else {
+            $ctrl->showMemeGenerator();
+        }
+        break;
+
+    case 'img-rotate':
+        require_once PROJECT_PATH . '/controllers/PdfToolsController.php';
+        $ctrl = new \Projects\ConvertX\Controllers\PdfToolsController();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $ctrl->submitRotateImages();
+        } else {
+            $ctrl->showRotateImages();
+        }
+        break;
+
+    case 'img-editor':
+        require_once PROJECT_PATH . '/controllers/PdfToolsController.php';
+        (new \Projects\ConvertX\Controllers\PdfToolsController())->showPhotoEditor();
+        break;
+
+    case 'img-upscale':
+        require_once PROJECT_PATH . '/controllers/PdfToolsController.php';
+        (new \Projects\ConvertX\Controllers\PdfToolsController())->showUpscaleImage();
+        break;
+
+    case 'img-remove-bg':
+        require_once PROJECT_PATH . '/controllers/PdfToolsController.php';
+        (new \Projects\ConvertX\Controllers\PdfToolsController())->showRemoveBg();
+        break;
+
     case 'pdf-tools':
         // Download token endpoint shared by all PDF tools features
         require_once PROJECT_PATH . '/controllers/PdfToolsController.php';

@@ -29,7 +29,7 @@ class ConversionJobModel
     }
 
     /**
-     * Create the convertx_jobs table if it does not exist yet.
+     * Create the convertx_jobs and convertx_tool_jobs tables if they do not exist yet.
      * This lets the app work on first install without running schema.sql manually.
      */
     private function ensureSchema(): void
@@ -66,6 +66,27 @@ class ConversionJobModel
             );
         } catch (\Exception $e) {
             // Table may already exist or DB may be read-only — silently continue
+        }
+        try {
+            $this->db->query(
+                "CREATE TABLE IF NOT EXISTS convertx_tool_jobs (
+                    id               INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id          INT          NOT NULL,
+                    tool_type        VARCHAR(64)  NOT NULL DEFAULT '',
+                    input_count      INT          NOT NULL DEFAULT 1,
+                    input_filenames  TEXT                  DEFAULT NULL,
+                    output_filename  VARCHAR(255)          DEFAULT NULL,
+                    original_size    BIGINT       NOT NULL DEFAULT 0,
+                    output_size      BIGINT       NOT NULL DEFAULT 0,
+                    status           VARCHAR(32)  NOT NULL DEFAULT 'completed',
+                    error_message    TEXT                  DEFAULT NULL,
+                    created_at       DATETIME     NOT NULL,
+                    INDEX idx_tool_user (user_id),
+                    INDEX idx_tool_type (tool_type)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+            );
+        } catch (\Exception $e) {
+            // silently continue
         }
     }
 
@@ -198,6 +219,167 @@ class ConversionJobModel
      * @param string $status  '' = all, or one of the STATUS_* constants
      */
     public function getHistory(int $userId, int $page = 1, int $perPage = 20, string $status = ''): array
+    {
+        $offset = ($page - 1) * $perPage;
+        $where  = 'WHERE user_id = :uid';
+        $bind   = ['uid' => $userId];
+
+        if ($status !== '') {
+            $where        .= ' AND status = :status';
+            $bind['status'] = $status;
+        }
+
+        // ── Conversion jobs ────────────────────────────────────────────────
+        $convRows = $this->db->fetchAll(
+            "SELECT
+                 id,
+                 'conversion'          AS job_source,
+                 input_filename,
+                 input_format,
+                 output_format,
+                 NULL                  AS tool_type,
+                 NULL                  AS input_count,
+                 NULL                  AS input_filenames,
+                 output_filename,
+                 NULL                  AS original_size,
+                 NULL                  AS output_size,
+                 ai_tasks,
+                 status,
+                 error_message,
+                 created_at
+             FROM convertx_jobs
+             {$where}
+             ORDER BY created_at DESC
+             LIMIT :limit OFFSET :offset",
+            array_merge($bind, ['limit' => $perPage, 'offset' => $offset])
+        ) ?: [];
+
+        $convTotal = (int)($this->db->fetch(
+            "SELECT COUNT(*) AS cnt FROM convertx_jobs {$where}",
+            $bind
+        )['cnt'] ?? 0);
+
+        // ── Tool jobs (synchronous PDF/image operations) ───────────────────
+        // Status filter translates: 'completed' maps to 'completed', any other
+        // active filter is incompatible with tool jobs (which are always
+        // completed or failed), so we skip the tool table for pending/processing.
+        $toolRows  = [];
+        $toolTotal = 0;
+        $skipToolStatus = $status !== '' && !in_array($status, [self::STATUS_COMPLETED, self::STATUS_FAILED], true);
+        if (!$skipToolStatus) {
+            $toolWhere = 'WHERE user_id = :uid';
+            $toolBind  = ['uid' => $userId];
+            if ($status !== '') {
+                $toolWhere         .= ' AND status = :status';
+                $toolBind['status'] = $status;
+            }
+            try {
+                $toolRows = $this->db->fetchAll(
+                    "SELECT
+                         id,
+                         'tool'                AS job_source,
+                         input_filenames        AS input_filename,
+                         NULL                  AS input_format,
+                         NULL                  AS output_format,
+                         tool_type,
+                         input_count,
+                         input_filenames,
+                         output_filename,
+                         original_size,
+                         output_size,
+                         NULL                  AS ai_tasks,
+                         status,
+                         error_message,
+                         created_at
+                     FROM convertx_tool_jobs
+                     {$toolWhere}
+                     ORDER BY created_at DESC
+                     LIMIT :limit OFFSET :offset",
+                    array_merge($toolBind, ['limit' => $perPage, 'offset' => $offset])
+                ) ?: [];
+
+                $toolTotal = (int)($this->db->fetch(
+                    "SELECT COUNT(*) AS cnt FROM convertx_tool_jobs {$toolWhere}",
+                    $toolBind
+                )['cnt'] ?? 0);
+            } catch (\Exception $_) {
+                // Table may not exist yet on older installs
+            }
+        }
+
+        // ── Merge and re-sort by created_at, paginate ──────────────────────
+        $merged = array_merge($convRows, $toolRows);
+        usort($merged, static function (array $a, array $b): int {
+            return strcmp($b['created_at'] ?? '', $a['created_at'] ?? '');
+        });
+        // Slice to the requested page (simple merge pagination)
+        $merged = array_slice($merged, 0, $perPage);
+
+        return [
+            'jobs'     => $merged,
+            'total'    => $convTotal + $toolTotal,
+            'page'     => $page,
+            'per_page' => $perPage,
+        ];
+    }
+
+    /**
+     * Record a completed (synchronous) image/PDF tool operation.
+     *
+     * @param int    $userId
+     * @param string $toolType        e.g. 'img_compress', 'pdf_merge', 'img_crop'
+     * @param int    $inputCount      number of input files
+     * @param array  $inputFilenames  original filenames
+     * @param string $outputFilename  final download filename
+     * @param int    $originalSize    total bytes before processing
+     * @param int    $outputSize      total bytes after processing
+     * @param string $status          'completed' or 'failed'
+     * @param string $errorMessage    non-empty only when failed
+     * @return int|false  Inserted row ID or false
+     */
+    public function createToolJob(
+        int    $userId,
+        string $toolType,
+        int    $inputCount,
+        array  $inputFilenames,
+        string $outputFilename,
+        int    $originalSize = 0,
+        int    $outputSize   = 0,
+        string $status       = 'completed',
+        string $errorMessage = ''
+    ) {
+        try {
+            $this->db->query(
+                "INSERT INTO convertx_tool_jobs
+                     (user_id, tool_type, input_count, input_filenames,
+                      output_filename, original_size, output_size,
+                      status, error_message, created_at)
+                 VALUES
+                     (:uid, :tool, :cnt, :names,
+                      :outname, :origsz, :outsz,
+                      :status, :errmsg, NOW())",
+                [
+                    'uid'     => $userId,
+                    'tool'    => $toolType,
+                    'cnt'     => $inputCount,
+                    'names'   => implode(', ', array_slice($inputFilenames, 0, 5))
+                                . (count($inputFilenames) > 5 ? ' …' : ''),
+                    'outname' => $outputFilename,
+                    'origsz'  => $originalSize,
+                    'outsz'   => $outputSize,
+                    'status'  => in_array($status, ['completed','failed'], true) ? $status : 'completed',
+                    'errmsg'  => $errorMessage,
+                ]
+            );
+            $stmt = $this->db->query('SELECT LAST_INSERT_ID() AS lid');
+            return (int)($stmt->fetch(\PDO::FETCH_ASSOC)['lid'] ?? 0) ?: false;
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+
+    // Keep the original simple query for callers that only need conversion jobs
+    public function getConversionHistory(int $userId, int $page = 1, int $perPage = 20, string $status = ''): array
     {
         $offset = ($page - 1) * $perPage;
         $where  = 'WHERE user_id = :uid';

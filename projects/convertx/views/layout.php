@@ -1155,7 +1155,7 @@ include BASE_PATH . '/views/layouts/navbar.php';
         </div>
 
         <div class="sidebar-section">
-            <div class="sidebar-title">PDF &amp; Image Tools</div>
+            <div class="sidebar-title">PDF Tools</div>
             <nav class="sidebar-nav">
                 <a href="/projects/convertx/pdf-merge"
                    class="<?= ($currentView === 'pdf-merge') ? 'active' : '' ?>">
@@ -1169,9 +1169,49 @@ include BASE_PATH . '/views/layouts/navbar.php';
                    class="<?= ($currentView === 'pdf-compress') ? 'active' : '' ?>">
                     <i class="fa-solid fa-file-zipper"></i> Compress PDF
                 </a>
+            </nav>
+        </div>
+
+        <div class="sidebar-section">
+            <div class="sidebar-title">Image Tools</div>
+            <nav class="sidebar-nav">
                 <a href="/projects/convertx/img-compress"
                    class="<?= ($currentView === 'img-compress') ? 'active' : '' ?>">
                     <i class="fa-solid fa-image"></i> Compress Images
+                </a>
+                <a href="/projects/convertx/img-resize"
+                   class="<?= ($currentView === 'img-resize') ? 'active' : '' ?>">
+                    <i class="fa-solid fa-expand"></i> Resize Images
+                </a>
+                <a href="/projects/convertx/img-crop"
+                   class="<?= ($currentView === 'img-crop') ? 'active' : '' ?>">
+                    <i class="fa-solid fa-crop-simple"></i> Crop Image
+                </a>
+                <a href="/projects/convertx/img-watermark"
+                   class="<?= ($currentView === 'img-watermark') ? 'active' : '' ?>">
+                    <i class="fa-solid fa-stamp"></i> Watermark Image
+                </a>
+                <a href="/projects/convertx/img-rotate"
+                   class="<?= ($currentView === 'img-rotate') ? 'active' : '' ?>">
+                    <i class="fa-solid fa-rotate-right"></i> Rotate Images
+                </a>
+                <a href="/projects/convertx/img-meme"
+                   class="<?= ($currentView === 'img-meme') ? 'active' : '' ?>">
+                    <i class="fa-solid fa-face-laugh-wink"></i> Meme Generator
+                </a>
+                <a href="/projects/convertx/img-editor"
+                   class="<?= ($currentView === 'img-editor') ? 'active' : '' ?>">
+                    <i class="fa-solid fa-pen-to-square"></i> Photo Editor
+                </a>
+                <a href="/projects/convertx/img-upscale"
+                   class="<?= ($currentView === 'img-upscale') ? 'active' : '' ?>">
+                    <i class="fa-solid fa-arrow-up-right-dots"></i> Upscale Image
+                    <span style="font-size:.62rem;font-weight:700;background:var(--cx-primary);color:#fff;padding:.1rem .35rem;border-radius:.25rem;margin-left:auto;">NEW</span>
+                </a>
+                <a href="/projects/convertx/img-remove-bg"
+                   class="<?= ($currentView === 'img-remove-bg') ? 'active' : '' ?>">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Remove Background
+                    <span style="font-size:.62rem;font-weight:700;background:var(--cx-primary);color:#fff;padding:.1rem .35rem;border-radius:.25rem;margin-left:auto;">NEW</span>
                 </a>
             </nav>
         </div>

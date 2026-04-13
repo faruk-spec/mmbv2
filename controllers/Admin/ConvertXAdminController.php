@@ -940,4 +940,199 @@ class ConvertXAdminController extends BaseController
             return [];
         }
     }
+
+    // ------------------------------------------------------------------ //
+    //  Image Tools Settings                                                //
+    // ------------------------------------------------------------------ //
+
+    public function imageToolsSettings(): void
+    {
+        $this->requirePermission('convertx.settings');
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $this->updateImageToolsSettings();
+            return;
+        }
+
+        $rows = [];
+        try {
+            $rows = $this->db->fetchAll('SELECT setting_key, setting_value FROM convertx_image_tools_settings');
+        } catch (\Exception $e) {
+            // Table may not exist yet
+        }
+
+        $settings = [];
+        foreach ($rows as $row) {
+            $settings[$row['setting_key']] = $row['setting_value'];
+        }
+
+        $defaults = [
+            'upscale_api_key'       => '',
+            'upscale_api_provider'  => '',
+            'removebg_api_key'      => '',
+            'removebg_api_provider' => 'iloveapi',
+            'max_files'             => '20',
+            'max_file_size_mb'      => '50',
+            'allowed_image_formats' => 'jpg,jpeg,png,gif,webp,bmp',
+        ];
+        foreach ($defaults as $k => $v) {
+            if (!array_key_exists($k, $settings)) {
+                $settings[$k] = $v;
+            }
+        }
+
+        $this->view('admin/projects/convertx/image-tools-settings', [
+            'title'    => 'Image Tools Settings',
+            'settings' => $settings,
+        ]);
+    }
+
+    public function updateImageToolsSettings(): void
+    {
+        $this->requirePermission('convertx.settings');
+
+        if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
+            $this->redirect('/admin/projects/convertx/image-tools-settings');
+            return;
+        }
+
+        $keys = [
+            'upscale_api_key', 'upscale_api_provider',
+            'removebg_api_key', 'removebg_api_provider',
+            'max_files', 'max_file_size_mb', 'allowed_image_formats',
+        ];
+        foreach ($keys as $k) {
+            $raw = trim((string) ($_POST[$k] ?? ''));
+            // Sanitize numeric fields
+            if ($k === 'max_files') {
+                $v = (string) max(1, min(100, (int) $raw ?: 20));
+            } elseif ($k === 'max_file_size_mb') {
+                $v = (string) max(1, min(500, (int) $raw ?: 50));
+            } elseif ($k === 'allowed_image_formats') {
+                // Allow only safe extension characters
+                $exts = array_filter(array_map('trim', explode(',', strtolower($raw))));
+                $exts = array_filter($exts, fn($e) => preg_match('/^[a-z0-9]{1,10}$/', $e));
+                $v    = implode(',', $exts) ?: 'jpg,jpeg,png,gif,webp,bmp';
+            } else {
+                $v = $raw;
+            }
+            try {
+                $this->db->query(
+                    'INSERT INTO convertx_image_tools_settings (setting_key, setting_value, updated_at)
+                     VALUES (:k, :v, NOW())
+                     ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = NOW()',
+                    ['k' => $k, 'v' => $v]
+                );
+            } catch (\Exception $e) {
+                Logger::error('ImageToolsSettings update failed for key ' . $k . ': ' . $e->getMessage());
+            }
+        }
+
+        try {
+            ActivityLogger::logSettingsUpdated(Auth::id(), 'convertx', [], ['image_tools_settings' => 'updated']);
+        } catch (\Throwable $_) {}
+
+        $_SESSION['_flash']['success'] = 'Image Tools settings saved.';
+        $this->redirect('/admin/projects/convertx/image-tools-settings');
+    }
+
+    // ------------------------------------------------------------------ //
+    //  Upload Limits (all ConvertX tools)                                  //
+    // ------------------------------------------------------------------ //
+
+    public function uploadLimits(): void
+    {
+        $this->requirePermission('convertx.settings');
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $this->updateUploadLimits();
+            return;
+        }
+
+        $rows = [];
+        try {
+            $this->db->query(
+                "CREATE TABLE IF NOT EXISTS convertx_image_tools_settings (
+                    setting_key   VARCHAR(80)  NOT NULL PRIMARY KEY,
+                    setting_value TEXT         NOT NULL DEFAULT '',
+                    updated_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+            );
+            $rows = $this->db->fetchAll('SELECT setting_key, setting_value FROM convertx_image_tools_settings');
+        } catch (\Exception $e) {
+            // silently continue
+        }
+
+        $settings = [];
+        foreach ($rows as $row) {
+            $settings[$row['setting_key']] = $row['setting_value'];
+        }
+
+        $defaults = [
+            // Image tool limits
+            'max_files'             => '20',
+            'max_file_size_mb'      => '50',
+            'allowed_image_formats' => 'jpg,jpeg,png,gif,webp,bmp',
+            // PDF tool limits
+            'max_pdf_files'         => '20',
+            'max_pdf_size_mb'       => '200',
+            // Conversion limits
+            'max_conversion_file_size_mb' => '200',
+        ];
+        foreach ($defaults as $k => $v) {
+            if (!array_key_exists($k, $settings)) {
+                $settings[$k] = $v;
+            }
+        }
+
+        $this->view('admin/projects/convertx/upload-limits', [
+            'title'    => 'Upload Limits',
+            'settings' => $settings,
+        ]);
+    }
+
+    public function updateUploadLimits(): void
+    {
+        $this->requirePermission('convertx.settings');
+
+        if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
+            $this->redirect('/admin/projects/convertx/upload-limits');
+            return;
+        }
+
+        $sanitize = [
+            'max_files'                   => fn($v) => (string) max(1, min(200, (int) $v ?: 20)),
+            'max_file_size_mb'            => fn($v) => (string) max(1, min(2000, (int) $v ?: 50)),
+            'allowed_image_formats'       => function ($v) {
+                $exts = array_filter(array_map('trim', explode(',', strtolower((string) $v))));
+                $exts = array_filter($exts, fn($e) => preg_match('/^[a-z0-9]{1,10}$/', $e));
+                return implode(',', $exts) ?: 'jpg,jpeg,png,gif,webp,bmp';
+            },
+            'max_pdf_files'               => fn($v) => (string) max(1, min(100, (int) $v ?: 20)),
+            'max_pdf_size_mb'             => fn($v) => (string) max(1, min(2000, (int) $v ?: 200)),
+            'max_conversion_file_size_mb' => fn($v) => (string) max(1, min(2000, (int) $v ?: 200)),
+        ];
+
+        foreach ($sanitize as $k => $fn) {
+            $raw = trim((string) ($_POST[$k] ?? ''));
+            $v   = $fn($raw);
+            try {
+                $this->db->query(
+                    'INSERT INTO convertx_image_tools_settings (setting_key, setting_value, updated_at)
+                     VALUES (:k, :v, NOW())
+                     ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = NOW()',
+                    ['k' => $k, 'v' => $v]
+                );
+            } catch (\Exception $e) {
+                Logger::error('UploadLimits update failed for key ' . $k . ': ' . $e->getMessage());
+            }
+        }
+
+        try {
+            ActivityLogger::logSettingsUpdated(Auth::id(), 'convertx', [], ['upload_limits' => 'updated']);
+        } catch (\Throwable $_) {}
+
+        $_SESSION['_flash']['success'] = 'Upload limits saved successfully.';
+        $this->redirect('/admin/projects/convertx/upload-limits');
+    }
 }

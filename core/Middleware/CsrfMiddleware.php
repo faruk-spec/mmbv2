@@ -28,6 +28,7 @@ class CsrfMiddleware
         }
 
         $token = $_POST['_csrf_token']
+            ?? $_POST['_token']
             ?? $_SERVER['HTTP_X_CSRF_TOKEN']
             ?? '';
 

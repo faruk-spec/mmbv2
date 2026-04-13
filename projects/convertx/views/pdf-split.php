@@ -156,7 +156,7 @@ $hasGs       = $hasGs ?? false;
         if (pr) fd.append('page_range', pr);
 
         try {
-            var res  = await fetch('/projects/convertx/pdf-split', { method:'POST', body:fd });
+            var res  = await fetch('/projects/convertx/pdf-split', { method:'POST', body:fd, headers:{'Accept':'application/json'} });
             var data = await res.json();
             resultCard.style.display = '';
             resultCard.scrollIntoView({ behavior:'smooth', block:'nearest' });

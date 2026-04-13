@@ -1,6 +1,7 @@
 <?php
 /**
  * ConvertX – History View
+ * Shows both format conversion jobs and synchronous tool jobs (compress, crop, etc.)
  */
 $currentView  = 'history';
 $jobs         = $result['jobs']     ?? [];
@@ -17,6 +18,19 @@ $statusLabels = [
     'completed'  => 'Completed',
     'failed'     => 'Failed',
     'cancelled'  => 'Cancelled',
+];
+
+// Human-readable labels for tool types
+$toolLabels = [
+    'pdf_merge'    => ['icon' => 'fa-object-group',    'label' => 'PDF Merge'],
+    'pdf_split'    => ['icon' => 'fa-cut',             'label' => 'PDF Split'],
+    'pdf_compress' => ['icon' => 'fa-file-zipper',     'label' => 'PDF Compress'],
+    'img_compress' => ['icon' => 'fa-image',           'label' => 'Image Compress'],
+    'img_resize'   => ['icon' => 'fa-expand-arrows-alt','label' => 'Image Resize'],
+    'img_crop'     => ['icon' => 'fa-crop-simple',     'label' => 'Image Crop'],
+    'img_watermark'=> ['icon' => 'fa-stamp',           'label' => 'Watermark'],
+    'img_meme'     => ['icon' => 'fa-face-laugh',      'label' => 'Meme Generator'],
+    'img_rotate'   => ['icon' => 'fa-rotate-right',    'label' => 'Image Rotate'],
 ];
 ?>
 
@@ -61,36 +75,67 @@ $statusLabels = [
                 <thead>
                     <tr>
                         <th class="cx-history-hide-sm">#</th>
-                        <th>File</th>
-                        <th>Conversion</th>
-                        <th class="cx-history-hide-sm">AI Tasks</th>
+                        <th>File(s)</th>
+                        <th>Operation</th>
+                        <th class="cx-history-hide-sm">Size</th>
                         <th>Status</th>
-                        <th class="cx-history-hide-sm">Created</th>
+                        <th class="cx-history-hide-sm">Date</th>
                         <th style="text-align:right;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($jobs as $job): ?>
+                    <?php foreach ($jobs as $job):
+                        $isToolJob = ($job['job_source'] ?? '') === 'tool';
+                        $toolType  = $job['tool_type'] ?? '';
+                        $toolInfo  = $toolLabels[$toolType] ?? ['icon' => 'fa-wrench', 'label' => ucwords(str_replace('_', ' ', $toolType))];
+                    ?>
                     <tr>
                         <td class="cx-history-hide-sm" style="color:var(--text-secondary);"><?= (int)$job['id'] ?></td>
                         <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-primary);">
-                            <?= htmlspecialchars($job['input_filename'] ?? '') ?>
+                            <?php if ($isToolJob): ?>
+                                <?= htmlspecialchars($job['input_filenames'] ?? '—') ?>
+                            <?php else: ?>
+                                <?= htmlspecialchars($job['input_filename'] ?? '') ?>
+                            <?php endif; ?>
                         </td>
                         <td>
-                            <span style="color:var(--text-secondary);font-size:.8rem;"><?= htmlspecialchars(strtoupper($job['input_format'] ?? '')) ?></span>
-                            <i class="fa-solid fa-arrow-right" style="font-size:.6rem;margin:0 .3rem;color:var(--text-secondary);"></i>
-                            <span style="color:var(--cx-accent);font-weight:600;font-size:.8rem;"><?= htmlspecialchars(strtoupper($job['output_format'] ?? '')) ?></span>
+                            <?php if ($isToolJob): ?>
+                                <span style="display:inline-flex;align-items:center;gap:.35rem;font-size:.82rem;font-weight:600;color:var(--cx-primary);">
+                                    <i class="fa-solid <?= htmlspecialchars($toolInfo['icon']) ?>" style="font-size:.75rem;"></i>
+                                    <?= htmlspecialchars($toolInfo['label']) ?>
+                                </span>
+                                <?php if (!empty($job['input_count']) && $job['input_count'] > 1): ?>
+                                    <span style="font-size:.7rem;color:var(--text-muted);margin-left:.35rem;"><?= (int)$job['input_count'] ?> files</span>
+                                <?php endif; ?>
+                            <?php else: ?>
+                                <span style="color:var(--text-secondary);font-size:.8rem;"><?= htmlspecialchars(strtoupper($job['input_format'] ?? '')) ?></span>
+                                <i class="fa-solid fa-arrow-right" style="font-size:.6rem;margin:0 .3rem;color:var(--text-secondary);"></i>
+                                <span style="color:var(--cx-accent);font-weight:600;font-size:.8rem;"><?= htmlspecialchars(strtoupper($job['output_format'] ?? '')) ?></span>
+                            <?php endif; ?>
                         </td>
-                        <td class="cx-history-hide-sm">
-                            <?php
-                            $tasks = json_decode($job['ai_tasks'] ?? '[]', true);
-                            foreach ((array)$tasks as $task) {
-                                $lbl = explode(':', $task)[0];
-                                echo '<span style="font-size:.7rem;background:rgba(99,102,241,.15);color:var(--cx-primary);padding:.15rem .45rem;border-radius:4px;margin-right:.2rem;display:inline-block;">'
-                                   . htmlspecialchars($lbl) . '</span>';
-                            }
-                            if (empty($tasks)) echo '<span style="color:var(--text-muted);font-size:.75rem;">—</span>';
-                            ?>
+                        <td class="cx-history-hide-sm" style="font-size:.75rem;color:var(--text-muted);">
+                            <?php if ($isToolJob):
+                                $origSz = (int)($job['original_size'] ?? 0);
+                                $outSz  = (int)($job['output_size'] ?? 0);
+                                $fmtSz  = fn(int $b): string => $b >= 1048576
+                                    ? number_format($b / 1048576, 1) . ' MB'
+                                    : ($b > 0 ? number_format($b / 1024, 1) . ' KB' : '—');
+                                if ($origSz > 0 && $outSz > 0):
+                                    echo htmlspecialchars($fmtSz($origSz) . ' → ' . $fmtSz($outSz));
+                                elseif ($outSz > 0):
+                                    echo htmlspecialchars($fmtSz($outSz));
+                                else:
+                                    echo '—';
+                                endif;
+                            else:
+                                $tasks = json_decode($job['ai_tasks'] ?? '[]', true);
+                                foreach ((array)$tasks as $task) {
+                                    $lbl = explode(':', $task)[0];
+                                    echo '<span style="font-size:.7rem;background:rgba(99,102,241,.15);color:var(--cx-primary);padding:.15rem .45rem;border-radius:4px;margin-right:.2rem;display:inline-block;">'
+                                       . htmlspecialchars($lbl) . '</span>';
+                                }
+                                if (empty($tasks)) echo '<span style="color:var(--text-muted);">—</span>';
+                            endif; ?>
                         </td>
                         <td>
                             <span class="badge badge-<?= htmlspecialchars($job['status']) ?>"><?= htmlspecialchars(ucfirst($job['status'])) ?></span>
@@ -103,21 +148,47 @@ $statusLabels = [
                         </td>
                         <td class="cx-history-hide-sm" style="color:var(--text-secondary);font-size:.78rem;"><?= htmlspecialchars(substr($job['created_at'] ?? '', 0, 16)) ?></td>
                         <td style="text-align:right;white-space:nowrap;">
-                            <?php if ($job['status'] === 'completed'): ?>
-                                <a href="/projects/convertx/job/<?= (int)$job['id'] ?>/download"
-                                   class="btn btn-success btn-sm" title="Download converted file">
-                                    <i class="fa-solid fa-download"></i>
-                                </a>
-                            <?php elseif ($job['status'] === 'pending'): ?>
-                                <button onclick="cancelJob(<?= (int)$job['id'] ?>)"
-                                        class="btn btn-danger btn-sm" title="Cancel job">
-                                    <i class="fa-solid fa-xmark"></i>
-                                </button>
-                            <?php elseif (in_array($job['status'], ['failed', 'cancelled'], true)): ?>
-                                <a href="/projects/convertx/convert"
-                                   class="btn btn-secondary btn-sm" title="Try converting again">
-                                    <i class="fa-solid fa-rotate"></i>
-                                </a>
+                            <?php if ($isToolJob): ?>
+                                <?php if ($job['status'] === 'completed'): ?>
+                                    <span class="badge badge-completed" style="font-size:.7rem;">Done</span>
+                                <?php elseif ($job['status'] === 'failed'): ?>
+                                    <?php
+                                    // Map tool type to its tool URL for retry
+                                    $retryUrls = [
+                                        'pdf_merge' => '/projects/convertx/pdf-merge',
+                                        'pdf_split' => '/projects/convertx/pdf-split',
+                                        'pdf_compress' => '/projects/convertx/pdf-compress',
+                                        'img_compress' => '/projects/convertx/img-compress',
+                                        'img_resize'   => '/projects/convertx/img-resize',
+                                        'img_crop'     => '/projects/convertx/img-crop',
+                                        'img_watermark'=> '/projects/convertx/img-watermark',
+                                        'img_meme'     => '/projects/convertx/img-meme',
+                                        'img_rotate'   => '/projects/convertx/img-rotate',
+                                    ];
+                                    $retryUrl = $retryUrls[$toolType] ?? '/projects/convertx/dashboard';
+                                    ?>
+                                    <a href="<?= htmlspecialchars($retryUrl) ?>"
+                                       class="btn btn-secondary btn-sm" title="Try again">
+                                        <i class="fa-solid fa-rotate"></i>
+                                    </a>
+                                <?php endif; ?>
+                            <?php else: ?>
+                                <?php if ($job['status'] === 'completed'): ?>
+                                    <a href="/projects/convertx/job/<?= (int)$job['id'] ?>/download"
+                                       class="btn btn-success btn-sm" title="Download converted file">
+                                        <i class="fa-solid fa-download"></i>
+                                    </a>
+                                <?php elseif ($job['status'] === 'pending'): ?>
+                                    <button onclick="cancelJob(<?= (int)$job['id'] ?>)"
+                                            class="btn btn-danger btn-sm" title="Cancel job">
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>
+                                <?php elseif (in_array($job['status'], ['failed', 'cancelled'], true)): ?>
+                                    <a href="/projects/convertx/convert"
+                                       class="btn btn-secondary btn-sm" title="Try converting again">
+                                        <i class="fa-solid fa-rotate"></i>
+                                    </a>
+                                <?php endif; ?>
                             <?php endif; ?>
                         </td>
                     </tr>
@@ -196,7 +267,7 @@ async function cancelJob(jobId) {
     var csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     var res  = await fetch('/projects/convertx/job/' + jobId + '/cancel', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json' },
         body: '_token=' + encodeURIComponent(csrfToken)
     });
     var data = await res.json();
