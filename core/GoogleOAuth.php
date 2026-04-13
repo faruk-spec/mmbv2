@@ -325,6 +325,7 @@ class GoogleOAuth
                 'password' => Security::hashPassword(bin2hex(random_bytes(16))), // Random password
                 'google_id' => $oauthData['provider_user_id'],
                 'oauth_only' => 1, // Mark as OAuth-only user (no manual password set)
+                'user_unique_id' => \Core\Auth::generateUuidV4(),
                 'email_verified_at' => $oauthData['email_verified'] ? date('Y-m-d H:i:s') : null,
                 'status' => 'active',
                 'role' => 'user',

@@ -23,6 +23,14 @@ class TwoFactorController extends BaseController
     public function setup(): void
     {
         $user = Auth::user();
+
+        // Block Google-only users from setting up 2FA until they have a password
+        if (!empty($user['oauth_only']) && $user['oauth_only'] == 1) {
+            $this->flash('error', 'You must set a password before enabling Two-Factor Authentication. Please set your password in Security Settings first.');
+            $this->redirect('/security');
+            return;
+        }
+
         $twoFactorEnabled = !empty($user['two_factor_secret']) && $user['two_factor_enabled'];
         
         $secret = null;
@@ -143,35 +151,67 @@ class TwoFactorController extends BaseController
             $this->redirect('/security');
             return;
         }
-        
-        $password = $this->input('password');
+
         $user = Auth::user();
-        
-        if (!Security::verifyPassword($password, $user['password'])) {
-            $this->flash('error', 'Incorrect password.');
-            $this->redirect('/security');
-            return;
+        $verified = false;
+
+        if (!empty($user['oauth_only']) && $user['oauth_only'] == 1) {
+            // Google-only users have no password; they must use a backup code
+            $backupCode = trim($this->input('backup_code') ?? '');
+            if ($backupCode === '') {
+                $this->flash('error', 'Google sign-in users must use a backup code to disable 2FA. Enter one of your saved backup codes below, or set a password in Security Settings first.');
+                $this->redirect('/2fa/setup');
+                return;
+            }
+
+            $db = Database::getInstance();
+            $backupCodes = json_decode($user['two_factor_backup_codes'] ?? '[]', true);
+            foreach ($backupCodes as $index => $hashedCode) {
+                if (password_verify($backupCode, $hashedCode)) {
+                    // Consume the used backup code
+                    unset($backupCodes[$index]);
+                    $db->update('users', [
+                        'two_factor_backup_codes' => json_encode(array_values($backupCodes))
+                    ], 'id = ?', [Auth::id()]);
+                    $verified = true;
+                    break;
+                }
+            }
+
+            if (!$verified) {
+                $this->flash('error', 'Invalid backup code. Please check your backup codes and try again.');
+                $this->redirect('/2fa/setup');
+                return;
+            }
+        } else {
+            $password = $this->input('password');
+            if (!Security::verifyPassword($password, $user['password'])) {
+                $this->flash('error', 'Incorrect password.');
+                $this->redirect('/security');
+                return;
+            }
+            $verified = true;
         }
-        
+
         try {
             $db = Database::getInstance();
-            
+
             $db->update('users', [
                 'two_factor_secret' => null,
                 'two_factor_enabled' => 0,
                 'two_factor_backup_codes' => null,
                 'updated_at' => date('Y-m-d H:i:s')
             ], 'id = ?', [Auth::id()]);
-            
+
             Logger::activity(Auth::id(), '2fa_disabled');
-            
+
             $this->flash('success', 'Two-factor authentication has been disabled.');
-            
+
         } catch (\Exception $e) {
             Logger::error('2FA disable error: ' . $e->getMessage());
             $this->flash('error', 'Failed to disable 2FA.');
         }
-        
+
         $this->redirect('/security');
     }
     

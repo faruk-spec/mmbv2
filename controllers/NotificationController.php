@@ -130,4 +130,46 @@ class NotificationController extends BaseController
 
         $this->json(['success' => true, 'unread_count' => 0]);
     }
+
+    /**
+     * GET /api/ws/token
+     * Returns a short-lived token the JS WebSocket client can use to authenticate.
+     * Tokens are stored in storage/ws_tokens.json with a 1-hour expiry.
+     */
+    public function wsToken(): void
+    {
+        $userId    = Auth::id();
+        // 24 random bytes (192 bits of entropy) is well above the NIST SP 800-107 minimum
+        // for a short-lived (1-hour) authentication token; 48 hex characters are returned.
+        $token     = bin2hex(random_bytes(24));
+        $tokenFile = dirname(__DIR__) . '/storage/ws_tokens.json';
+
+        $fh = fopen($tokenFile, 'c+');
+        if (!$fh) {
+            $this->json(['success' => false, 'message' => 'Could not open token store.'], 500);
+            return;
+        }
+
+        flock($fh, LOCK_EX);
+
+        $contents = stream_get_contents($fh);
+        $tokens   = json_decode($contents ?: '[]', true) ?? [];
+
+        // Remove expired tokens
+        $now    = time();
+        $tokens = array_values(array_filter($tokens, static fn($t) => ($t['expires'] ?? 0) > $now));
+
+        // Add the new token
+        $tokens[] = ['token' => $token, 'user_id' => $userId, 'expires' => $now + 3600];
+
+        rewind($fh);
+        ftruncate($fh, 0);
+        fwrite($fh, json_encode($tokens));
+        fflush($fh);
+        flock($fh, LOCK_UN);
+        fclose($fh);
+
+        $this->json(['success' => true, 'token' => $token]);
+    }
 }
+

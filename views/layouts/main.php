@@ -49,6 +49,9 @@ try {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="MyMultiBranch - Multi-Project Platform">
     <meta name="csrf-token" content="<?= Security::generateCsrfToken() ?>">
+    <?php if (Auth::check()): ?>
+    <meta name="user-id" content="<?= htmlspecialchars($_SESSION['user_unique_id'] ?? (string) Auth::id(), ENT_QUOTES) ?>">
+    <?php endif; ?>
     <title><?= View::e($title ?? 'MyMultiBranch') ?> - <?= APP_NAME ?></title>
     
     <!-- Fonts -->
@@ -2180,6 +2183,78 @@ try {
             }, true);
         });
     });
+})();
+</script>
+
+<!-- SSE real-time notifications -->
+<script>
+(function () {
+    // Only run when the user is logged in
+    if (!document.querySelector('meta[name="user-id"]')) return;
+    if (typeof EventSource === 'undefined') return;
+
+    var lastId = 0;
+
+    function showNotifToast(notif) {
+        if (!notif || !notif.message) return;
+        var toast = document.createElement('div');
+        toast.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:9999;' +
+            'background:var(--bg-secondary,#1a1a2e);border:1px solid var(--border-color,#333);' +
+            'border-radius:10px;padding:14px 18px;max-width:320px;' +
+            'box-shadow:0 4px 20px rgba(0,0,0,0.35);font-family:inherit;';
+
+        var titleEl = document.createElement('div');
+        titleEl.style.cssText = 'font-weight:600;color:var(--text-primary,#eee);font-size:.9rem;margin-bottom:4px;';
+        titleEl.textContent = 'New Notification';
+
+        var msgEl = document.createElement('div');
+        msgEl.style.cssText = 'color:var(--text-secondary,#aaa);font-size:.85rem;';
+        msgEl.textContent = notif.message;
+
+        toast.appendChild(titleEl);
+        toast.appendChild(msgEl);
+        document.body.appendChild(toast);
+        setTimeout(function () { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 5000);
+    }
+
+    // Exponential back-off state for SSE reconnection attempts
+    var sseRetryDelay = 3000;   // start at 3s
+    var sseMaxDelay   = 60000;  // cap at 60s
+
+    function connectSSE() {
+        var url = '/notifications/stream' + (lastId ? '?last_id=' + lastId : '');
+        var es  = new EventSource(url);
+
+        es.onmessage = function (e) {
+            // Successful message resets the back-off
+            sseRetryDelay = 3000;
+            try {
+                var data = JSON.parse(e.data);
+                if (data.type === 'notification') {
+                    // Update unread badge on the notification bell
+                    var badge = document.getElementById('notifCount');
+                    if (badge && data.unread_count > 0) {
+                        badge.textContent = data.unread_count;
+                        badge.style.display = 'inline';
+                    }
+                    if (data.notification && data.notification.id) {
+                        lastId = data.notification.id;
+                    }
+                    showNotifToast(data.notification);
+                }
+            } catch (err) { /* malformed event — ignore */ }
+        };
+
+        es.onerror = function () {
+            es.close();
+            // Exponential back-off: double the delay up to sseMaxDelay
+            setTimeout(connectSSE, sseRetryDelay);
+            sseRetryDelay = Math.min(sseRetryDelay * 2, sseMaxDelay);
+        };
+    }
+
+    // Small delay so the page settles before opening the SSE connection
+    setTimeout(connectSSE, 1500);
 })();
 </script>
 </body>

@@ -62,6 +62,10 @@ $router->post('/api/notifications/mark-read', 'NotificationController@markRead',
 $router->post('/api/notifications/mark-all-read', 'NotificationController@markAllRead', ['auth']);
 $router->get('/notifications', 'NotificationController@viewAll', ['auth']);
 
+// Real-time notification stream (SSE) and WebSocket token
+$router->get('/notifications/stream', 'NotificationStreamController@stream', ['auth']);
+$router->get('/api/ws/token', 'NotificationController@wsToken', ['auth']);
+
 // Session alert polling — checked every ~30 s by logged-in browsers
 $router->get('/api/session-alerts', function() {
     if (!\Core\Auth::check()) {

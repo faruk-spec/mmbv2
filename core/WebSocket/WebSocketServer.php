@@ -431,16 +431,33 @@ class WebSocketServer
      */
     private function validateToken($token)
     {
-        // Implement your own token validation
-        // This is a placeholder that should be replaced with real validation
-        
-        // For example, you could:
-        // 1. Decode JWT token
-        // 2. Check session in database
-        // 3. Verify API key
-        
-        // For now, return a fake user ID for testing
-        return substr($token, 0, 8);
+        // Read tokens from the shared file written by the web application
+        $tokenFile = __DIR__ . '/../../storage/ws_tokens.json';
+        if (!file_exists($tokenFile)) {
+            return null;
+        }
+
+        $fh = fopen($tokenFile, 'r');
+        if (!$fh) {
+            return null;
+        }
+
+        flock($fh, LOCK_SH);
+        $contents = stream_get_contents($fh);
+        flock($fh, LOCK_UN);
+        fclose($fh);
+
+        $tokens = json_decode($contents ?: '[]', true) ?? [];
+        $now    = time();
+
+        foreach ($tokens as $entry) {
+            if (isset($entry['token']) && $entry['token'] === $token
+                && isset($entry['expires']) && $entry['expires'] > $now) {
+                return (int) $entry['user_id'];
+            }
+        }
+
+        return null;
     }
     
     /**

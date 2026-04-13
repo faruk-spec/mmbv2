@@ -171,6 +171,7 @@ class Auth
             $data['created_at'] = date('Y-m-d H:i:s');
             $data['status'] = 'active';
             $data['role'] = 'user';
+            $data['user_unique_id'] = self::generateUuidV4();
             
             // Generate verification token
             $verificationToken = null;
@@ -538,7 +539,32 @@ class Auth
         session_regenerate_id(true);
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['user_role'] = $user['role'];
+        $_SESSION['user_unique_id'] = $user['user_unique_id'] ?? null;
         $_SESSION['_created'] = time();
+    }
+
+    /**
+     * Generate a Version 4 (random) UUID string using cryptographically secure random integers.
+     *
+     * The returned string is in the standard 8-4-4-4-12 hexadecimal format, e.g.:
+     *   "550e8400-e29b-41d4-a716-446655440000"
+     *
+     * Version and variant bits are set in accordance with RFC 4122 §4.4:
+     *   - Bits 12-15 of time_hi_and_version are set to 0100 (version 4)
+     *   - Bits 6-7 of clock_seq_hi_and_reserved are set to 10 (variant 1)
+     *
+     * @return string UUID v4 string (36 characters including hyphens)
+     */
+    public static function generateUuidV4(): string
+    {
+        return sprintf(
+            '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+            random_int(0, 0xffff), random_int(0, 0xffff),
+            random_int(0, 0xffff),
+            random_int(0, 0x0fff) | 0x4000,   // version 4
+            random_int(0, 0x3fff) | 0x8000,   // variant 1
+            random_int(0, 0xffff), random_int(0, 0xffff), random_int(0, 0xffff)
+        );
     }
     
     /**
