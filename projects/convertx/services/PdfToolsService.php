@@ -285,6 +285,13 @@ class PdfToolsService
             throw new \RuntimeException('Image compression failed: could not write output file.');
         }
 
+        // If the re-encoded output is larger than the original (can happen when
+        // GD re-encodes a well-optimised JPEG at a high quality setting), fall
+        // back to copying the original so we never inflate the file.
+        if (($outputExt ?: $inputExt) === $inputExt && filesize($outputPath) > filesize($inputPath)) {
+            copy($inputPath, $outputPath);
+        }
+
         return true;
     }
 
@@ -437,6 +444,7 @@ class PdfToolsService
         $opacity = max(0, min(100, (int) ($opts['opacity'] ?? 50)));
         $quality = max(1, min(100, (int) ($opts['quality'] ?? 90)));
         $outExt  = strtolower(pathinfo($outputPath, PATHINFO_EXTENSION)) ?: $fmt;
+        $rotation = (int) ($opts['rotation'] ?? 0);
 
         $wmImagePath = $opts['watermark_image_path'] ?? '';
 
@@ -446,10 +454,7 @@ class PdfToolsService
             if ($wmIm !== null) {
                 $wmW   = imagesx($wmIm);
                 $wmH   = imagesy($wmIm);
-                [$dstX, $dstY] = $this->calcWatermarkPos(
-                    $opts['position'] ?? 'bottomright',
-                    $imgW, $imgH, $wmW, $wmH
-                );
+                [$dstX, $dstY] = $this->resolveWatermarkPos($opts, $imgW, $imgH, $wmW, $wmH);
                 imagecopymerge($im, $wmIm, $dstX, $dstY, 0, 0, $wmW, $wmH, $opacity);
                 imagedestroy($wmIm);
             }
@@ -465,19 +470,17 @@ class PdfToolsService
             // Try TTF first
             $fontPath = $this->findFont();
             if ($fontPath && function_exists('imagettftext')) {
-                $bbox   = imagettfbbox($fontSize, 0, $fontPath, $text);
-                $textW  = abs($bbox[2] - $bbox[0]);
-                $textH  = abs($bbox[5] - $bbox[1]);
-                [$dstX, $dstY] = $this->calcWatermarkPos(
-                    $opts['position'] ?? 'bottomright',
-                    $imgW, $imgH, $textW, $textH
-                );
+                // Get bounding box with rotation angle
+                $bbox  = imagettfbbox($fontSize, $rotation, $fontPath, $text);
+                $textW = abs($bbox[2] - $bbox[0]);
+                $textH = abs($bbox[5] - $bbox[1]);
+                [$dstX, $dstY] = $this->resolveWatermarkPos($opts, $imgW, $imgH, $textW, $textH);
 
                 // Merge onto temp canvas for opacity support
                 $overlay = imagecreatetruecolor($imgW, $imgH);
                 imagecopy($overlay, $im, 0, 0, 0, 0, $imgW, $imgH);
                 $col = imagecolorallocate($overlay, (int)$r, (int)$g, (int)$b);
-                imagettftext($overlay, $fontSize, 0, $dstX, $dstY + $textH, $col, $fontPath, $text);
+                imagettftext($overlay, $fontSize, $rotation, $dstX, $dstY + $textH, $col, $fontPath, $text);
                 imagecopymerge($im, $overlay, 0, 0, 0, 0, $imgW, $imgH, $opacity);
                 imagedestroy($overlay);
             } else {
@@ -486,10 +489,7 @@ class PdfToolsService
                 $charH  = 15;
                 $textW  = strlen($text) * $charW;
                 $textH  = $charH;
-                [$dstX, $dstY] = $this->calcWatermarkPos(
-                    $opts['position'] ?? 'bottomright',
-                    $imgW, $imgH, $textW, $textH
-                );
+                [$dstX, $dstY] = $this->resolveWatermarkPos($opts, $imgW, $imgH, $textW, $textH);
                 $col = imagecolorallocate($im, (int)$r, (int)$g, (int)$b);
                 imagestring($im, 5, $dstX, $dstY, $text, $col);
             }
@@ -505,6 +505,22 @@ class PdfToolsService
         return true;
     }
 
+    /**
+     * Resolve watermark position supporting both named positions and custom X/Y percentages.
+     */
+    private function resolveWatermarkPos(array $opts, int $imgW, int $imgH, int $wmW, int $wmH): array
+    {
+        $position = $opts['position'] ?? 'bottomright';
+        if ($position === 'custom') {
+            $xPct = max(0, min(100, (float) ($opts['custom_x_pct'] ?? 90)));
+            $yPct = max(0, min(100, (float) ($opts['custom_y_pct'] ?? 90)));
+            $x    = (int) round(($imgW - $wmW) * $xPct / 100);
+            $y    = (int) round(($imgH - $wmH) * $yPct / 100);
+            return [max(0, $x), max(0, $y)];
+        }
+        return $this->calcWatermarkPos($position, $imgW, $imgH, $wmW, $wmH);
+    }
+
     // ------------------------------------------------------------------ //
     //  Rotate Image                                                        //
     // ------------------------------------------------------------------ //
@@ -512,7 +528,7 @@ class PdfToolsService
     /**
      * Rotate an image by the specified degrees (clockwise).
      */
-    public function rotateImage(string $inputPath, string $outputPath, int $degrees): bool
+    public function rotateImage(string $inputPath, string $outputPath, int $degrees, int $quality = 90): bool
     {
         if (!$this->hasGd()) {
             throw new \RuntimeException('Image rotate requires the PHP GD extension.');
@@ -523,7 +539,8 @@ class PdfToolsService
             throw new \RuntimeException('Could not open image.');
         }
 
-        $outExt = strtolower(pathinfo($outputPath, PATHINFO_EXTENSION)) ?: $fmt;
+        $outExt  = strtolower(pathinfo($outputPath, PATHINFO_EXTENSION)) ?: $fmt;
+        $quality = max(1, min(100, $quality));
 
         // imagerotate rotates counter-clockwise, so negate for clockwise
         $rotated    = imagerotate($im, -$degrees, 0);
@@ -533,7 +550,7 @@ class PdfToolsService
             throw new \RuntimeException('imagerotate() failed.');
         }
 
-        $ok = $this->saveImage($rotated, $outputPath, $outExt, 90);
+        $ok = $this->saveImage($rotated, $outputPath, $outExt, $quality);
         imagedestroy($rotated);
 
         if (!$ok || !file_exists($outputPath) || filesize($outputPath) === 0) {
@@ -610,7 +627,7 @@ class PdfToolsService
             }
         }
 
-        $ok = $this->saveImage($im, $outputPath, $outExt, 92);
+        $ok = $this->saveImage($im, $outputPath, $outExt, max(1, min(100, (int)($opts['quality'] ?? 92))));
         imagedestroy($im);
 
         if (!$ok || !file_exists($outputPath) || filesize($outputPath) === 0) {

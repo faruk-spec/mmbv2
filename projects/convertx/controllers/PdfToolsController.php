@@ -117,10 +117,14 @@ class PdfToolsController
 
     public function showCompressImages(): void
     {
+        $limits = $this->imgLimits();
         $this->render('img-compress', [
-            'title'    => 'Compress Images',
-            'user'     => Auth::user(),
-            'hasGd'    => $this->svc->hasGd(),
+            'title'       => 'Compress Images',
+            'user'        => Auth::user(),
+            'hasGd'       => $this->svc->hasGd(),
+            'maxFiles'    => $limits['max_files'],
+            'maxSizeMb'   => $limits['max_size_mb'],
+            'allowedExts' => $limits['allowed_exts'],
         ]);
     }
 
@@ -461,9 +465,10 @@ class PdfToolsController
             return;
         }
 
+        $limits   = $this->imgLimits();
         $fileList = $this->normaliseFiles($files);
-        if (count($fileList) > self::MAX_COMPRESS_FILES) {
-            $this->jsonError('Maximum ' . self::MAX_COMPRESS_FILES . ' images at once.', 400);
+        if (count($fileList) > $limits['max_files']) {
+            $this->jsonError('Maximum ' . $limits['max_files'] . ' images at once.', 400);
             return;
         }
 
@@ -480,7 +485,7 @@ class PdfToolsController
             mkdir($tmpDir, 0755, true);
         }
 
-        $imageExts  = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'];
+        $imageExts  = $limits['allowed_exts'];
         $results    = [];
         $errors     = [];
 
@@ -489,13 +494,13 @@ class PdfToolsController
                 $errors[] = $f['name'] . ': upload error';
                 continue;
             }
-            if ($f['size'] > self::MAX_IMAGE_SIZE_BYTES) {
-                $errors[] = $f['name'] . ': file too large (max 50 MB)';
+            if ($f['size'] > $limits['max_size_bytes']) {
+                $errors[] = $f['name'] . ': file too large (max ' . $limits['max_size_mb'] . ' MB)';
                 continue;
             }
             $ext = strtolower(pathinfo($f['name'], PATHINFO_EXTENSION));
             if (!in_array($ext, $imageExts, true)) {
-                $errors[] = $f['name'] . ': unsupported format (use JPG, PNG, GIF, WebP, BMP)';
+                $errors[] = $f['name'] . ': unsupported format';
                 continue;
             }
 
@@ -843,6 +848,7 @@ class PdfToolsController
             'y'           => max(0, (int) ($_POST['y']           ?? 0)),
             'crop_width'  => max(1, (int) ($_POST['crop_width']  ?? 100)),
             'crop_height' => max(1, (int) ($_POST['crop_height'] ?? 100)),
+            'quality'     => max(1, min(100, (int) ($_POST['quality'] ?? 90))),
         ];
 
         $tmpDir = BASE_PATH . '/storage/uploads/convertx/' . $userId . '/pdftools';
@@ -1018,11 +1024,15 @@ class PdfToolsController
             'text'                => (string) ($_POST['text']       ?? 'Watermark'),
             'font_size'           => max(8, min(72, (int) ($_POST['font_size'] ?? 24))),
             'opacity'             => max(0, min(100, (int) ($_POST['opacity']  ?? 50))),
-            'position'            => in_array($_POST['position'] ?? '', ['center','topleft','topright','bottomleft','bottomright'], true)
+            'position'            => in_array($_POST['position'] ?? '', ['center','topleft','topright','bottomleft','bottomright','custom'], true)
                                         ? $_POST['position'] : 'bottomright',
             'color_hex'           => preg_match('/^#?[0-9a-fA-F]{6}$/', $_POST['color_hex'] ?? '')
                                         ? ltrim($_POST['color_hex'], '#') : 'ffffff',
             'watermark_image_path'=> $wmImagePath,
+            'quality'             => max(1, min(100, (int) ($_POST['quality'] ?? 90))),
+            'rotation'            => (int) ($_POST['rotation'] ?? 0),
+            'custom_x_pct'        => max(0, min(100, (float) ($_POST['custom_x_pct'] ?? 90))),
+            'custom_y_pct'        => max(0, min(100, (float) ($_POST['custom_y_pct'] ?? 90))),
         ];
 
         $results = [];
@@ -1180,6 +1190,7 @@ class PdfToolsController
             'text_color'  => in_array($_POST['text_color'] ?? '', $validColors, true)
                                 ? $_POST['text_color'] : 'white',
             'stroke_color'=> 'black',
+            'quality'     => max(1, min(100, (int) ($_POST['quality'] ?? 92))),
         ];
 
         $tmpDir = BASE_PATH . '/storage/uploads/convertx/' . $userId . '/pdftools';
@@ -1338,6 +1349,7 @@ class PdfToolsController
         // Normalize degrees to [0, 359] range (handles negative values too)
         $degrees = (int) ($_POST['degrees'] ?? 90);
         $degrees = ((($degrees % 360) + 360) % 360);
+        $quality = max(1, min(100, (int) ($_POST['quality'] ?? 90)));
 
         $tmpDir = BASE_PATH . '/storage/uploads/convertx/' . $userId . '/pdftools';
         if (!is_dir($tmpDir)) {
@@ -1369,7 +1381,7 @@ class PdfToolsController
             $outPath = $tmpDir . '/' . uniqid('rot_out_', true) . '.' . $outExt;
 
             try {
-                $this->svc->rotateImage($srcPath, $outPath, $degrees);
+                $this->svc->rotateImage($srcPath, $outPath, $degrees, $quality);
                 $results[] = [
                     'src_path' => $srcPath,
                     'out_path' => $outPath,

@@ -1,6 +1,7 @@
 <?php
 /**
  * ConvertX – Rotate Images View
+ * Features: live CSS-rotated preview, quality slider
  */
 $currentView  = 'img-rotate';
 $csrfToken    = \Core\Security::generateCsrfToken();
@@ -14,7 +15,7 @@ $acceptAttr   = implode(',', array_map(fn($e) => '.'.$e, $allowedExts));
 
 <div class="page-header">
     <h1><i class="fa-solid fa-rotate-right" style="color:var(--cx-primary);"></i> Rotate Images</h1>
-    <p>Rotate images by 90°, 180°, 270° or any custom angle — upload up to <?= (int)$maxFiles ?> images at once</p>
+    <p>Rotate images by 90°, 180°, 270° or any custom angle — live preview — upload up to <?= (int)$maxFiles ?> images at once</p>
 </div>
 
 <?php if (!$hasGd): ?>
@@ -30,7 +31,7 @@ $acceptAttr   = implode(',', array_map(fn($e) => '.'.$e, $allowedExts));
 
 <div class="cx-batch-grid">
 
-    <!-- Left: file picker -->
+    <!-- Left: file picker + live preview -->
     <div class="card">
         <div class="card-header"><i class="fa-solid fa-images"></i> Select Images</div>
 
@@ -53,6 +54,19 @@ $acceptAttr   = implode(',', array_map(fn($e) => '.'.$e, $allowedExts));
                 <div id="fileList" style="margin-top:.75rem;display:flex;flex-direction:column;gap:.35rem;"></div>
             </div>
         </form>
+
+        <!-- Live preview -->
+        <div id="previewSection" style="display:none;margin-top:.75rem;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;">
+                <span style="font-size:.82rem;font-weight:600;color:var(--text-secondary);">
+                    <i class="fa-solid fa-eye" style="color:var(--cx-primary);"></i> Live Preview
+                </span>
+                <span style="font-size:.72rem;color:var(--text-muted);">First image only</span>
+            </div>
+            <div id="previewOuter" style="background:#111;border-radius:.5rem;padding:1rem;display:flex;align-items:center;justify-content:center;min-height:140px;overflow:hidden;">
+                <img id="previewImg" style="max-width:100%;max-height:240px;object-fit:contain;transition:transform .25s ease;" alt="Preview">
+            </div>
+        </div>
     </div>
 
     <!-- Right: settings -->
@@ -62,7 +76,7 @@ $acceptAttr   = implode(',', array_map(fn($e) => '.'.$e, $allowedExts));
         <div class="form-group">
             <label class="form-label"><i class="fa-solid fa-rotate-right" style="color:var(--cx-primary);"></i> Rotation Angle</label>
             <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;margin-bottom:.75rem;">
-                <button type="button" class="btn-angle btn-primary" data-deg="90" style="padding:.55rem;font-size:.8rem;border-radius:.45rem;background:var(--cx-primary);color:#fff;border:none;cursor:pointer;">
+                <button type="button" class="btn-angle active-angle" data-deg="90" style="padding:.55rem;font-size:.8rem;border-radius:.45rem;background:var(--cx-primary);color:#fff;border:none;cursor:pointer;">
                     <i class="fa-solid fa-rotate-right"></i> 90° CW
                 </button>
                 <button type="button" class="btn-angle" data-deg="180" style="padding:.55rem;font-size:.8rem;border-radius:.45rem;background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border-color);cursor:pointer;">
@@ -79,7 +93,7 @@ $acceptAttr   = implode(',', array_map(fn($e) => '.'.$e, $allowedExts));
 
         <!-- Custom angle input (hidden by default) -->
         <div id="customAngleWrap" style="display:none;" class="form-group">
-            <label class="form-label" for="customDeg">Custom Degrees (clockwise)</label>
+            <label class="form-label" for="customDeg">Custom Angle (0–359°, clockwise)</label>
             <input type="number" id="customDeg" class="form-control" min="0" max="359" value="45" placeholder="0–359">
         </div>
 
@@ -89,6 +103,21 @@ $acceptAttr   = implode(',', array_map(fn($e) => '.'.$e, $allowedExts));
             <i class="fa-solid fa-circle-info" style="color:var(--cx-primary);"></i>
             Selected: <strong id="angleDisplay">90° clockwise</strong>
         </p>
+
+        <!-- Quality slider -->
+        <div class="form-group">
+            <label class="form-label" for="rotateQuality">
+                <i class="fa-solid fa-star-half-stroke" style="color:var(--cx-primary);"></i>
+                Output Quality: <strong id="rotateQualityVal">90</strong>%
+            </label>
+            <input type="range" name="quality" id="rotateQuality" form="rotateForm"
+                   min="10" max="100" value="90" step="2"
+                   style="width:100%;accent-color:var(--cx-primary);"
+                   oninput="document.getElementById('rotateQualityVal').textContent=this.value">
+            <div style="display:flex;justify-content:space-between;font-size:.7rem;color:var(--text-muted);margin-top:.2rem;">
+                <span>Smaller file</span><span>Higher quality</span>
+            </div>
+        </div>
 
         <button type="submit" form="rotateForm" class="btn btn-primary" id="submitBtn"
                 style="width:100%;justify-content:center;padding:.825rem;"
@@ -124,65 +153,85 @@ $acceptAttr   = implode(',', array_map(fn($e) => '.'.$e, $allowedExts));
     var MAX_MB    = <?= (int)$maxSizeMb ?>;
     var ALLOWED   = <?= json_encode(array_values($allowedExts)) ?>;
 
-    var zone       = document.getElementById('uploadZone');
-    var input      = document.getElementById('fileInput');
-    var listEl     = document.getElementById('fileList');
-    var submitBtn  = document.getElementById('submitBtn');
-    var resultCard = document.getElementById('resultCard');
-    var resultBody = document.getElementById('resultBody');
-    var selectedFiles = [];
-    var currentDeg = 90;
-    var isCustom   = false;
+    var zone           = document.getElementById('uploadZone');
+    var input          = document.getElementById('fileInput');
+    var listEl         = document.getElementById('fileList');
+    var submitBtn      = document.getElementById('submitBtn');
+    var resultCard     = document.getElementById('resultCard');
+    var resultBody     = document.getElementById('resultBody');
+    var previewSection = document.getElementById('previewSection');
+    var previewImg     = document.getElementById('previewImg');
+    var selectedFiles  = [];
+    var currentDeg     = 90;
+    var isCustom       = false;
 
-    // Angle buttons
+    // ── Angle buttons ─────────────────────────────────────────────────────
     document.querySelectorAll('.btn-angle').forEach(function (btn) {
         btn.addEventListener('click', function () {
             document.querySelectorAll('.btn-angle').forEach(function (b) {
                 b.style.background = 'var(--bg-secondary)';
                 b.style.color      = 'var(--text-primary)';
                 b.style.border     = '1px solid var(--border-color)';
+                b.classList.remove('active-angle');
             });
             this.style.background = 'var(--cx-primary)';
             this.style.color      = '#fff';
             this.style.border     = 'none';
+            this.classList.add('active-angle');
 
-            var deg = parseInt(this.dataset.deg);
+            var deg  = parseInt(this.dataset.deg);
             isCustom = (deg === 0);
             document.getElementById('customAngleWrap').style.display = isCustom ? '' : 'none';
 
             if (!isCustom) {
                 currentDeg = deg;
                 document.getElementById('degreesHidden').value = deg;
-                var labels = {90:'90° clockwise', 180:'180°', 270:'90° counter-clockwise'};
-                document.getElementById('angleDisplay').textContent = labels[deg] || deg+'°';
+                var labels = { 90:'90° clockwise', 180:'180°', 270:'90° counter-clockwise' };
+                document.getElementById('angleDisplay').textContent = labels[deg] || deg + '°';
             } else {
                 updateCustom();
             }
+            applyPreview();
         });
     });
 
-    document.getElementById('customDeg').addEventListener('input', updateCustom);
+    document.getElementById('customDeg').addEventListener('input', function () { updateCustom(); applyPreview(); });
+
     function updateCustom() {
-        currentDeg = Math.abs(parseInt(document.getElementById('customDeg').value)||0) % 360;
+        currentDeg = Math.abs(parseInt(document.getElementById('customDeg').value) || 0) % 360;
         document.getElementById('degreesHidden').value = currentDeg;
         document.getElementById('angleDisplay').textContent = currentDeg + '° clockwise';
     }
 
+    // ── Preview ───────────────────────────────────────────────────────────
+    function applyPreview() {
+        if (!previewImg.src) return;
+        previewImg.style.transform = 'rotate(' + currentDeg + 'deg)';
+    }
+
+    // ── File handling ─────────────────────────────────────────────────────
     zone.addEventListener('click', function (e) { if (!e.target.closest('.cx-file-item')) input.click(); });
     zone.addEventListener('dragover', function (e) { e.preventDefault(); zone.classList.add('drag-over'); });
     zone.addEventListener('dragleave', function () { zone.classList.remove('drag-over'); });
     zone.addEventListener('drop', function (e) { e.preventDefault(); zone.classList.remove('drag-over'); addFiles(Array.from(e.dataTransfer.files)); });
-    input.addEventListener('change', function () { addFiles(Array.from(input.files)); input.value=''; });
+    input.addEventListener('change', function () { addFiles(Array.from(input.files)); input.value = ''; });
 
     function addFiles(files) {
         files.forEach(function (f) {
             var ext = f.name.split('.').pop().toLowerCase();
             if (ALLOWED.indexOf(ext) === -1) return;
             if (f.size > MAX_MB * 1024 * 1024) { alert(f.name + ': too large (max ' + MAX_MB + ' MB)'); return; }
-            var dup = selectedFiles.some(function (sf) { return sf.name===f.name && sf.size===f.size; });
+            var dup = selectedFiles.some(function (sf) { return sf.name === f.name && sf.size === f.size; });
             if (!dup && selectedFiles.length < MAX_FILES) selectedFiles.push(f);
         });
         renderList();
+        if (selectedFiles.length > 0) loadPreview(selectedFiles[0]);
+    }
+
+    function loadPreview(f) {
+        var url = URL.createObjectURL(f);
+        previewImg.onload = function () { previewSection.style.display = ''; applyPreview(); };
+        previewImg.src = url;
     }
 
     function renderList() {
@@ -190,26 +239,29 @@ $acceptAttr   = implode(',', array_map(fn($e) => '.'.$e, $allowedExts));
         if (!selectedFiles.length) { zone.classList.remove('has-file'); return; }
         zone.classList.add('has-file');
         selectedFiles.forEach(function (f, i) {
-            var size = f.size>=1048576?(f.size/1048576).toFixed(1)+' MB':(f.size/1024).toFixed(1)+' KB';
+            var size = f.size >= 1048576 ? (f.size / 1048576).toFixed(1) + ' MB' : (f.size / 1024).toFixed(1) + ' KB';
             var item = document.createElement('div');
             item.className = 'cx-file-item';
             item.innerHTML = '<i class="fa-solid fa-file-image" style="color:var(--cx-primary);flex-shrink:0;font-size:.8rem;"></i>'
-                           + '<span class="cx-file-name">'+esc(f.name)+'</span>'
-                           + '<span class="cx-file-size">'+size+'</span>'
-                           + '<button type="button" class="cx-file-remove" data-idx="'+i+'"><i class="fa-solid fa-xmark"></i></button>';
+                           + '<span class="cx-file-name">' + esc(f.name) + '</span>'
+                           + '<span class="cx-file-size">' + size + '</span>'
+                           + '<button type="button" class="cx-file-remove" data-idx="' + i + '"><i class="fa-solid fa-xmark"></i></button>';
             item.querySelector('.cx-file-remove').addEventListener('click', function () {
-                selectedFiles.splice(parseInt(this.dataset.idx),1); renderList();
+                selectedFiles.splice(parseInt(this.dataset.idx), 1); renderList();
+                if (!selectedFiles.length) { previewSection.style.display = 'none'; previewImg.src = ''; }
+                else loadPreview(selectedFiles[0]);
             });
             listEl.appendChild(item);
         });
         var cnt = document.createElement('div');
         cnt.style.cssText = 'font-size:.78rem;color:var(--text-secondary);margin-top:.25rem;';
-        cnt.innerHTML = '<i class="fa-solid fa-check-circle" style="color:var(--cx-success);"></i> '+selectedFiles.length+' image(s) selected';
+        cnt.innerHTML = '<i class="fa-solid fa-check-circle" style="color:var(--cx-success);"></i> ' + selectedFiles.length + ' image(s) selected';
         listEl.appendChild(cnt);
     }
 
     function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
+    // ── Form submit ───────────────────────────────────────────────────────
     document.getElementById('rotateForm').addEventListener('submit', async function (e) {
         e.preventDefault();
         if (!selectedFiles.length) { alert('Please select at least one image.'); return; }
@@ -217,8 +269,9 @@ $acceptAttr   = implode(',', array_map(fn($e) => '.'.$e, $allowedExts));
         submitBtn.innerHTML = '<i class="fa-solid fa-spinner" style="animation:cx-spin 1s linear infinite;"></i> Rotating…';
 
         var fd = new FormData();
-        fd.append('_token', document.querySelector('[name="_token"]').value);
+        fd.append('_token',  document.querySelector('[name="_token"]').value);
         fd.append('degrees', document.getElementById('degreesHidden').value);
+        fd.append('quality', document.getElementById('rotateQuality').value);
         selectedFiles.forEach(function (f) { fd.append('images[]', f); });
 
         try {
@@ -231,19 +284,19 @@ $acceptAttr   = implode(',', array_map(fn($e) => '.'.$e, $allowedExts));
                 var html = '';
                 if (data.count && data.count > 1) {
                     html += '<p style="font-size:.8rem;color:var(--text-secondary);margin-bottom:.75rem;">'
-                          + '<i class="fa-solid fa-circle-info"></i> '+data.count+' images rotated — downloading as ZIP</p>';
+                          + '<i class="fa-solid fa-circle-info"></i> ' + data.count + ' images rotated — downloading as ZIP</p>';
                 }
                 if (data.errors && data.errors.length) {
                     html += '<p style="color:var(--cx-warning);font-size:.8rem;margin-bottom:.75rem;">'
-                          + '<i class="fa-solid fa-triangle-exclamation"></i> Skipped: '+data.errors.map(esc).join(', ')+'</p>';
+                          + '<i class="fa-solid fa-triangle-exclamation"></i> Skipped: ' + data.errors.map(esc).join(', ') + '</p>';
                 }
-                html += '<a href="/projects/convertx/pdf-tools/download/'+data.token+'" class="btn btn-success">'
-                      + '<i class="fa-solid fa-download"></i> Download '+esc(data.filename)+'</a>';
+                html += '<a href="/projects/convertx/pdf-tools/download/' + data.token + '" class="btn btn-success">'
+                      + '<i class="fa-solid fa-download"></i> Download ' + esc(data.filename) + '</a>';
                 resultBody.innerHTML = html;
             } else {
-                resultBody.innerHTML = '<p style="color:var(--cx-danger);"><i class="fa-solid fa-circle-xmark"></i> '+esc(data.error||'Rotation failed')+'</p>';
+                resultBody.innerHTML = '<p style="color:var(--cx-danger);"><i class="fa-solid fa-circle-xmark"></i> ' + esc(data.error || 'Rotation failed') + '</p>';
             }
-        } catch (err) { alert('Network error: '+err.message); }
+        } catch (err) { alert('Network error: ' + err.message); }
 
         submitBtn.disabled = false;
         submitBtn.innerHTML = '<i class="fa-solid fa-rotate-right"></i> Rotate Images';
