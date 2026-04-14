@@ -8,6 +8,7 @@
 // Admin dashboard
 $router->get('/admin', 'Admin\\DashboardController@index', ['auth', 'admin']);
 $router->get('/admin/dashboard', 'Admin\\DashboardController@index', ['auth', 'admin']);
+$router->get('/admin/api/live-stats', 'Admin\\DashboardController@liveStats', ['auth', 'admin']);
 
 // Pages CMS
 $router->get('/admin/pages', 'Admin\\PagesController@index', ['auth', 'admin']);
@@ -385,3 +386,7 @@ $router->get('/admin/projects/notex/notes', 'Admin\\NoteXAdminController@notes',
 $router->post('/admin/projects/notex/notes/delete', 'Admin\\NoteXAdminController@deleteNote', ['auth', 'admin']);
 $router->get('/admin/projects/notex/users', 'Admin\\NoteXAdminController@users', ['auth', 'admin']);
 $router->get('/admin/projects/notex/settings', 'Admin\\NoteXAdminController@settings', ['auth', 'admin']);
+
+// Network Inspector (super_admin + debug mode only)
+$router->get("/admin/network-inspector", "Admin\\\\NetworkInspectorController@index", ["auth", "admin"]);
+$router->post("/admin/network-inspector/clear", "Admin\\\\NetworkInspectorController@clear", ["auth", "admin"]);

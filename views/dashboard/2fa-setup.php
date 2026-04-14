@@ -2,6 +2,16 @@
 <?php View::extend('main'); ?>
 
 <?php View::section('content'); ?>
+<?php
+// Detect if the current user is an oauth_only (Google-only) user
+try {
+    $db = \Core\Database::getInstance();
+    $currentUser2fa = $db->fetch("SELECT oauth_only FROM users WHERE id = ?", [\Core\Auth::id()]);
+    $isOauthOnly2fa = $currentUser2fa && !empty($currentUser2fa['oauth_only']);
+} catch (\Exception $e) {
+    $isOauthOnly2fa = false;
+}
+?>
 <div style="max-width: 500px; margin: 40px auto;">
     <div class="card">
         <h1 style="text-align: center; margin-bottom: 30px;">Two-Factor Authentication</h1>
@@ -30,10 +40,22 @@
                 <form method="POST" action="/2fa/disable">
                     <?= \Core\Security::csrfField() ?>
                     
-                    <div class="form-group">
-                        <label class="form-label">Enter your password to disable 2FA</label>
-                        <input type="password" name="password" class="form-input" required>
-                    </div>
+                    <?php if ($isOauthOnly2fa): ?>
+                        <div style="background: rgba(255,193,7,.1); border: 1px solid rgba(255,193,7,.35); border-radius: 8px; padding: 12px 14px; margin-bottom: 16px; font-size: .875rem; color: rgba(255,193,7,1); text-align: left;">
+                            Since you sign in with Google and haven't set a password, enter one of your saved backup codes to disable 2FA.
+                            You can also <a href="/security" style="color: var(--cyan);">set a password</a> first, then use it instead.
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Backup code</label>
+                            <input type="text" name="backup_code" class="form-input" required
+                                   placeholder="xxxxxxxx" style="font-family: monospace; letter-spacing: 2px;">
+                        </div>
+                    <?php else: ?>
+                        <div class="form-group">
+                            <label class="form-label">Enter your password to disable 2FA</label>
+                            <input type="password" name="password" class="form-input" required>
+                        </div>
+                    <?php endif; ?>
                     
                     <button type="submit" class="btn btn-danger" style="width: 100%;">Disable 2FA</button>
                 </form>

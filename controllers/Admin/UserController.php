@@ -13,6 +13,7 @@ use Core\Security;
 use Core\Auth;
 use Core\Logger;
 use Core\ActivityLogger;
+use Core\Notification;
 
 class UserController extends BaseController
 {
@@ -140,7 +141,8 @@ class UserController extends BaseController
                 ['name' => Security::sanitize($this->input('name')), 'email' => $this->input('email'), 'role' => $this->input('role')],
                 Security::sanitize($this->input('name'))
             );
-            
+            try { Notification::send($userId, 'account_created', 'Your account has been created by an administrator. Welcome!', []); } catch (\Exception $e) {}
+
             $this->flash('success', 'User created successfully.');
             $this->redirect('/admin/users');
             
@@ -375,7 +377,8 @@ class UserController extends BaseController
             
             Logger::activity(Auth::id(), 'user_deleted', ['user_id' => $userId]);
             ActivityLogger::logDelete(Auth::id(), 'users', 'user', $userId, [], $targetName ?? '');
-            
+            try { Notification::send(Auth::id(), 'admin_user_deleted', 'User "' . ($targetName ?? 'Unknown') . '" (ID: ' . $userId . ') was deleted.', ['deleted_user_id' => $userId]); } catch (\Exception $e) {}
+
             $this->flash('success', 'User deleted successfully.');
             
         } catch (\Exception $e) {
@@ -425,8 +428,10 @@ class UserController extends BaseController
 
                 if ($newStatus === 'active') {
                     ActivityLogger::logEnable(Auth::id(), 'users', 'user', $userId, $user['name']);
+                    try { Notification::send($userId, 'account_enabled', 'Your account has been enabled by an administrator.', []); } catch (\Exception $e) {}
                 } else {
                     ActivityLogger::logDisable(Auth::id(), 'users', 'user', $userId, $user['name']);
+                    try { Notification::send($userId, 'account_disabled', 'Your account has been disabled by an administrator. Contact support if you have questions.', []); } catch (\Exception $e) {}
                 }
                 
                 $this->flash('success', 'User status updated.');

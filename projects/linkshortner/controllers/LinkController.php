@@ -107,6 +107,7 @@ class LinkController
         );
 
         $_SESSION['success'] = 'Short link created! Code: ' . $code;
+        try { \Core\Notification::send($user['id'], 'linkshortner_link_created', 'Short link created (code: ' . $code . ') in Link Shortener.', ['project' => 'linkshortner', 'code' => $code]); } catch (\Exception $e) {}
         header('Location: /projects/linkshortner/links');
         exit;
     }
@@ -165,6 +166,7 @@ class LinkController
         );
 
         $_SESSION['success'] = 'Link updated successfully.';
+        try { \Core\Notification::send($user['id'], 'linkshortner_link_updated', 'Short link #' . $id . ' updated in Link Shortener.', ['project' => 'linkshortner', 'link_id' => $id]); } catch (\Exception $e) {}
         header('Location: /projects/linkshortner/links');
         exit;
     }
@@ -182,6 +184,7 @@ class LinkController
         $db->query("DELETE FROM linkshortner_links WHERE id = ? AND user_id = ?", [$id, $user['id']]);
 
         $_SESSION['success'] = 'Link deleted.';
+        try { \Core\Notification::send($user['id'], 'linkshortner_link_deleted', 'Short link #' . $id . ' deleted in Link Shortener.', ['project' => 'linkshortner', 'link_id' => $id]); } catch (\Exception $e) {}
         header('Location: /projects/linkshortner/links');
         exit;
     }

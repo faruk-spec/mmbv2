@@ -14,6 +14,7 @@ use Core\Auth;
 use Core\Database;
 use Core\Logger;
 use Core\Security;
+use Core\Notification;
 
 class PlatformPlansController extends BaseController
 {
@@ -270,6 +271,7 @@ class PlatformPlansController extends BaseController
                 'plan_name' => $plan['name'] ?? '',
                 'target_user_id' => $userId,
             ]);
+            try { Notification::send($userId, 'plan_assigned', 'The "' . ($plan['name'] ?? 'plan') . '" plan has been assigned to your account by an administrator.', ['plan_id' => $planId, 'plan_name' => $plan['name'] ?? '']); } catch (\Exception $e) {}
 
             $this->json(['success' => true, 'message' => 'Plan assigned successfully.']);
         } catch (\Exception $e) {
@@ -315,6 +317,8 @@ class PlatformPlansController extends BaseController
                 'user_id' => $sub['user_id'],
                 'plan_id' => $sub['plan_id'],
             ]);
+            $revokedPlan = $this->db->fetch("SELECT name FROM platform_plans WHERE id = ?", [$sub['plan_id']]);
+            try { Notification::send($sub['user_id'], 'plan_revoked', 'Your "' . ($revokedPlan['name'] ?? 'plan') . '" subscription has been cancelled by an administrator. Contact support if you have questions.', ['plan_id' => $sub['plan_id']]); } catch (\Exception $e) {}
 
             $this->json(['success' => true, 'message' => 'Plan revoked.']);
         } catch (\Exception $e) {

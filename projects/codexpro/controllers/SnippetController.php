@@ -60,6 +60,7 @@ class SnippetController
         
         if ($snippetId) {
             try { ActivityLogger::logCreate($user['id'], 'codexpro', 'snippet', $snippetId, ['title' => $title, 'language' => $language]); } catch (\Throwable $_) {}
+            try { \Core\Notification::send($user['id'], 'codexpro_snippet_created', 'Snippet "' . $title . '" created in CodeXPro.', ['project' => 'codexpro', 'snippet_id' => $snippetId]); } catch (\Exception $e) {}
             echo json_encode(['success' => true, 'snippet_id' => $snippetId]);
         } else {
             echo json_encode(['success' => false, 'error' => 'Failed to create snippet']);
@@ -204,6 +205,7 @@ class SnippetController
             
             if ($deleted !== false && $deleted > 0) {
                 try { ActivityLogger::logDelete($user['id'], 'codexpro', 'snippet', $id, ['id' => $id]); } catch (\Throwable $_) {}
+                try { \Core\Notification::send($user['id'], 'codexpro_snippet_deleted', 'Snippet #' . $id . ' deleted in CodeXPro.', ['project' => 'codexpro', 'snippet_id' => $id]); } catch (\Exception $e) {}
                 echo json_encode(['success' => true, 'message' => 'Snippet deleted successfully']);
             } else {
                 echo json_encode(['success' => false, 'error' => 'Failed to delete snippet']);

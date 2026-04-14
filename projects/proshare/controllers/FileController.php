@@ -98,7 +98,8 @@ class FileController
                 'size' => $file['size']
             ]);
             try { ActivityLogger::logCreate(Auth::id(), 'proshare', 'file', null, ['filename' => $file['name'] ?? null]); } catch (\Throwable $_) {}
-            
+            try { \Core\Notification::send(Auth::id(), 'proshare_file_uploaded', 'File "' . ($file['name'] ?? '') . '" uploaded in ProShare.', ['project' => 'proshare']); } catch (\Exception $e) {}
+
             Helpers::flash('success', 'File uploaded successfully!');
             $_SESSION['last_upload'] = $fileInfo;
         } else {
@@ -216,6 +217,7 @@ class FileController
             // Update status in database
             $db->update('files', ['status' => 'deleted'], 'id = ?', [$file['id']]);
             try { ActivityLogger::logDelete($user['id'], 'proshare', 'file', $file['id'], ['filename' => $file['original_name'] ?? null]); } catch (\Throwable $_) {}
+            try { \Core\Notification::send($user['id'], 'proshare_file_deleted', 'File "' . ($file['original_name'] ?? '') . '" deleted in ProShare.', ['project' => 'proshare', 'file_id' => $file['id']]); } catch (\Exception $e) {}
             
             // Try to log the deletion (don't fail if logging fails)
             try {

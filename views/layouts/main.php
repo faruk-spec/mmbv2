@@ -49,6 +49,9 @@ try {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="MyMultiBranch - Multi-Project Platform">
     <meta name="csrf-token" content="<?= Security::generateCsrfToken() ?>">
+    <?php if (Auth::check()): ?>
+    <meta name="user-id" content="<?= htmlspecialchars($_SESSION['user_unique_id'] ?? (string) Auth::id(), ENT_QUOTES) ?>">
+    <?php endif; ?>
     <title><?= View::e($title ?? 'MyMultiBranch') ?> - <?= APP_NAME ?></title>
     
     <!-- Fonts -->
@@ -2182,5 +2185,93 @@ try {
     });
 })();
 </script>
+
+<!-- SSE real-time notifications (user layout) -->
+<script>
+(function () {
+    // Only run for logged-in users
+    if (!document.querySelector('meta[name="user-id"]')) return;
+    if (typeof EventSource === 'undefined') return;
+
+    var lastId = 0;
+    var sseRetryDelay = 5000;  // start at 5 s after an error
+    var sseMaxDelay   = 60000; // cap at 60 s
+    var es;
+
+    function showNotifToast(notif) {
+        if (!notif || !notif.message) return;
+        var toast = document.createElement('div');
+        toast.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:9999;' +
+            'background:var(--bg-secondary,#1a1a2e);border:1px solid var(--border-color,#333);' +
+            'border-radius:10px;padding:14px 18px;max-width:320px;' +
+            'box-shadow:0 4px 20px rgba(0,0,0,0.35);font-family:inherit;' +
+            'animation:sseSlideIn .3s ease;';
+
+        var titleEl = document.createElement('div');
+        titleEl.style.cssText = 'font-weight:600;color:var(--text-primary,#eee);font-size:.9rem;margin-bottom:4px;display:flex;align-items:center;gap:6px;';
+        titleEl.innerHTML = '<span style="width:8px;height:8px;border-radius:50%;background:var(--cyan,#00f0ff);flex-shrink:0;display:inline-block;"></span>New Notification';
+
+        var msgEl = document.createElement('div');
+        msgEl.style.cssText = 'color:var(--text-secondary,#aaa);font-size:.85rem;';
+        msgEl.textContent = notif.message;
+
+        toast.appendChild(titleEl);
+        toast.appendChild(msgEl);
+        document.body.appendChild(toast);
+        setTimeout(function () { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 6000);
+    }
+
+    function updateBadge(count) {
+        // The notification bell badge is in navbar.php with id="notifBadge"
+        var badge = document.getElementById('notifBadge');
+        if (!badge) return;
+        badge.textContent = Math.min(count, 99);
+        if (count > 0) {
+            badge.style.display = 'flex';
+            badge.classList.add('has-unread');
+        } else {
+            badge.style.display = 'none';
+            badge.classList.remove('has-unread');
+        }
+    }
+
+    function connectSSE() {
+        if (es) { try { es.close(); } catch(e) {} }
+        var url = '/notifications/stream' + (lastId ? '?last_id=' + lastId : '');
+        es = new EventSource(url);
+
+        es.onmessage = function (e) {
+            sseRetryDelay = 5000; // reset back-off on success
+            try {
+                var data = JSON.parse(e.data);
+                if (data.type === 'notification') {
+                    updateBadge(data.unread_count || 0);
+                    if (data.notification && data.notification.id) {
+                        lastId = data.notification.id;
+                        showNotifToast(data.notification);
+                    }
+                }
+            } catch (err) { /* ignore malformed event */ }
+        };
+
+        // EventSource auto-reconnects using the server's retry: value.
+        // onerror only fires on hard errors (e.g. 401, network down).
+        es.onerror = function () {
+            es.close();
+            setTimeout(connectSSE, sseRetryDelay);
+            sseRetryDelay = Math.min(sseRetryDelay * 2, sseMaxDelay);
+        };
+    }
+
+    // Small delay so the page settles; then start polling
+    setTimeout(connectSSE, 2000);
+
+    // Also re-connect when the tab becomes visible again after being hidden
+    document.addEventListener('visibilitychange', function () {
+        if (!document.hidden) connectSSE();
+    });
+})();
+</script>
+<style>@keyframes sseSlideIn{from{transform:translateY(10px);opacity:0}to{transform:translateY(0);opacity:1}}</style>
 </body>
 </html>

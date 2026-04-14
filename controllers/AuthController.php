@@ -14,6 +14,7 @@ use Core\Helpers;
 use Core\View;
 use Core\TrafficTracker;
 use Core\Logger;
+use Core\Notification;
 
 class AuthController extends BaseController
 {
@@ -87,6 +88,7 @@ class AuthController extends BaseController
                 'method' => 'email_password',
                 'remember' => $remember
             ]);
+            try { Notification::send($user['id'], 'user_login', 'You logged in successfully.', ['method' => 'email_password', 'ip' => Security::getClientIp()]); } catch (\Exception $e) {}
             
             // Generate SSO token
             $ssoToken = SSO::generateToken($user['id']);
@@ -155,6 +157,7 @@ class AuthController extends BaseController
                 'name' => Security::sanitize($this->input('name')),
                 'email' => $this->input('email')
             ]);
+            try { Notification::send($userId, 'user_registered', 'Welcome! Your account has been created.', ['email' => $this->input('email')]); } catch (\Exception $e) {}
             
             $this->flash('success', 'Registration successful! Please login.');
             $this->redirect('/login');
@@ -252,6 +255,7 @@ class AuthController extends BaseController
                 Logger::activity($resetRecord['user_id'], 'password_reset', [
                     'method' => 'email_link'
                 ]);
+                try { Notification::send($resetRecord['user_id'], 'password_reset', 'Your password was reset successfully.', ['method' => 'email_link', 'ip' => Security::getClientIp()]); } catch (\Exception $e) {}
             }
             
             $this->flash('success', 'Password has been reset. Please login.');

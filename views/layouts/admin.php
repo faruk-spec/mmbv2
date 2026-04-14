@@ -2486,6 +2486,78 @@
     })();
     </script>
 
+    <!-- Admin SSE real-time notification updates -->
+    <script>
+    (function () {
+        if (typeof EventSource === 'undefined') return;
+
+        var lastId = 0;
+        var sseRetryDelay = 5000;
+        var sseMaxDelay   = 60000;
+        var es;
+
+        function showAdminToast(notif) {
+            if (!notif || !notif.message) return;
+            var toast = document.createElement('div');
+            toast.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:9999;' +
+                'background:var(--bg-card,#1a1a2e);border:1px solid var(--border-color,#333);' +
+                'border-radius:10px;padding:14px 18px;max-width:320px;' +
+                'box-shadow:0 4px 24px rgba(0,0,0,0.4);font-family:inherit;' +
+                'animation:adminSseSlideIn .3s ease;';
+            var titleEl = document.createElement('div');
+            titleEl.style.cssText = 'font-weight:600;color:var(--text-primary,#eee);font-size:.875rem;margin-bottom:4px;display:flex;align-items:center;gap:6px;';
+            titleEl.innerHTML = '<span style="width:8px;height:8px;border-radius:50%;background:var(--cyan,#00f0ff);flex-shrink:0;display:inline-block;"></span>New Notification';
+            var msgEl = document.createElement('div');
+            msgEl.style.cssText = 'color:var(--text-secondary,#aaa);font-size:.825rem;';
+            msgEl.textContent = notif.message;
+            toast.appendChild(titleEl);
+            toast.appendChild(msgEl);
+            document.body.appendChild(toast);
+            setTimeout(function () { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 6000);
+        }
+
+        function updateAdminBadge(count) {
+            var badge = document.getElementById('adminNotifBadge');
+            if (!badge) return;
+            badge.textContent = Math.min(count, 99);
+            badge.style.display = count > 0 ? 'flex' : 'none';
+        }
+
+        function connectAdminSSE() {
+            if (es) { try { es.close(); } catch(e) {} }
+            var url = '/notifications/stream' + (lastId ? '?last_id=' + lastId : '');
+            es = new EventSource(url);
+
+            es.onmessage = function (e) {
+                sseRetryDelay = 5000;
+                try {
+                    var data = JSON.parse(e.data);
+                    if (data.type === 'notification') {
+                        updateAdminBadge(data.unread_count || 0);
+                        if (data.notification && data.notification.id) {
+                            lastId = data.notification.id;
+                            showAdminToast(data.notification);
+                        }
+                    }
+                } catch (err) {}
+            };
+
+            es.onerror = function () {
+                es.close();
+                setTimeout(connectAdminSSE, sseRetryDelay);
+                sseRetryDelay = Math.min(sseRetryDelay * 2, sseMaxDelay);
+            };
+        }
+
+        setTimeout(connectAdminSSE, 2000);
+
+        document.addEventListener('visibilitychange', function () {
+            if (!document.hidden) connectAdminSSE();
+        });
+    })();
+    </script>
+    <style>@keyframes adminSseSlideIn{from{transform:translateY(10px);opacity:0}to{transform:translateY(0);opacity:1}}</style>
+
     <!-- ── Admin Logout Confirmation Modal ─────────────────────────────────── -->
     <div id="logoutModal" style="display:none;position:fixed;inset:0;z-index:99999;align-items:center;justify-content:center;">
         <div id="logoutBackdrop" onclick="closeLogoutModal()"

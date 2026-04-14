@@ -171,6 +171,7 @@ class Auth
             $data['created_at'] = date('Y-m-d H:i:s');
             $data['status'] = 'active';
             $data['role'] = 'user';
+            $data['user_unique_id'] = self::generateUuidV4();
             
             // Generate verification token
             $verificationToken = null;
@@ -538,7 +539,41 @@ class Auth
         session_regenerate_id(true);
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['user_role'] = $user['role'];
+        $_SESSION['user_unique_id'] = $user['user_unique_id'] ?? null;
         $_SESSION['_created'] = time();
+    }
+
+    /**
+     * Generate a Version 4 (random) UUID string.
+     *
+     * The returned string is in the standard 8-4-4-4-12 hexadecimal format, e.g.:
+     *   "550e8400-e29b-41d4-a716-446655440000"
+     *
+     * Version and variant bits are set in accordance with RFC 4122 §4.4:
+     *   - Bits 12-15 of time_hi_and_version are set to 0100 (version 4)
+     *   - Bits 6-7 of clock_seq_hi_and_reserved are set to 10 (variant 1)
+     *
+     * Uses a single random_bytes(16) call for efficiency (one OS call).
+     *
+     * @return string UUID v4 string (36 characters including hyphens)
+     */
+    public static function generateUuidV4(): string
+    {
+        $bytes = random_bytes(16);
+
+        // Set version bits (4) in byte 6
+        $bytes[6] = chr((ord($bytes[6]) & 0x0f) | 0x40);
+        // Set variant bits (RFC 4122) in byte 8
+        $bytes[8] = chr((ord($bytes[8]) & 0x3f) | 0x80);
+
+        return sprintf(
+            '%08s-%04s-%04s-%04s-%12s',
+            bin2hex(substr($bytes, 0, 4)),
+            bin2hex(substr($bytes, 4, 2)),
+            bin2hex(substr($bytes, 6, 2)),
+            bin2hex(substr($bytes, 8, 2)),
+            bin2hex(substr($bytes, 10, 6))
+        );
     }
     
     /**
