@@ -53,7 +53,7 @@ class MailAccessController extends BaseController
                  FROM users u
                  ORDER BY has_mail_perm DESC, u.name ASC"
             );
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $users = [];
         }
 
@@ -61,7 +61,7 @@ class MailAccessController extends BaseController
             $providers = $db->fetchAll(
                 "SELECT id, name, from_name, from_email, provider_type, is_active FROM mail_provider_configs ORDER BY is_active DESC, id ASC"
             );
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $providers = [];
         }
 
@@ -79,7 +79,12 @@ class MailAccessController extends BaseController
     public function editForm(string $userId): void
     {
         $db   = Database::getInstance();
-        $user = $db->fetch("SELECT id, name, email, role FROM users WHERE id = ?", [(int)$userId]);
+        $user = null;
+        try {
+            $user = $db->fetch("SELECT id, name, email, role FROM users WHERE id = ?", [(int)$userId]);
+        } catch (\Throwable $e) {
+            Logger::error('MailAccessController::editForm users fetch: ' . $e->getMessage());
+        }
 
         if (!$user) {
             $this->flash('error', 'User not found.');
@@ -93,7 +98,7 @@ class MailAccessController extends BaseController
                 "SELECT id FROM admin_user_permissions WHERE user_id = ? AND permission_key = 'mail'",
                 [(int)$userId]
             );
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Logger::error('MailAccessController::editForm admin_user_permissions: ' . $e->getMessage());
         }
 
@@ -105,7 +110,7 @@ class MailAccessController extends BaseController
                 ),
                 'provider_config_id'
             );
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $assignedProviderIds = [];
         }
 
@@ -113,7 +118,7 @@ class MailAccessController extends BaseController
             $providers = $db->fetchAll(
                 "SELECT id, name, from_name, from_email, provider_type, is_active FROM mail_provider_configs ORDER BY is_active DESC, id ASC"
             );
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $providers = [];
         }
 
@@ -158,7 +163,7 @@ class MailAccessController extends BaseController
                 "SELECT id FROM admin_user_permissions WHERE user_id = ? AND permission_key = 'mail'",
                 [$uid]
             );
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Logger::error('MailAccessController::save perm check: ' . $e->getMessage());
         }
 
@@ -172,7 +177,7 @@ class MailAccessController extends BaseController
             } elseif (!$grantAccess && $hasPerm) {
                 $db->delete('admin_user_permissions', 'user_id = ? AND permission_key = ?', [$uid, 'mail']);
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Logger::error('MailAccessController::save perm update: ' . $e->getMessage());
         }
 
@@ -194,12 +199,12 @@ class MailAccessController extends BaseController
                             'provider_config_id' => $pid,
                             'granted_by'         => Auth::id(),
                         ]);
-                    } catch (\Exception $e) {
+                    } catch (\Throwable $e) {
                         // duplicate — skip
                     }
                 }
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Logger::error('MailAccessController::save providers: ' . $e->getMessage());
         }
 
@@ -230,12 +235,12 @@ class MailAccessController extends BaseController
 
         try {
             $db->delete('admin_user_permissions', 'user_id = ? AND permission_key = ?', [$uid, 'mail']);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Logger::error('MailAccessController::revoke perm: ' . $e->getMessage());
         }
         try {
             $db->delete('mail_user_providers', 'user_id = ?', [$uid]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Logger::error('MailAccessController::revoke providers: ' . $e->getMessage());
         }
 

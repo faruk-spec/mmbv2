@@ -900,9 +900,9 @@ class MailService
             $raw = imap_fetchbody($conn, $msgNum, (string)($part ?: 1));
             return self::decodeImapBody($raw, $struct->parts[$part - 1] ?? $struct);
         }
-        // fallback
+        // fallback: single-part message — still decode using the top-level struct encoding
         $raw = imap_body($conn, $msgNum);
-        return $raw ?: '';
+        return self::decodeImapBody($raw ?: '', $struct);
     }
 
     private static function findImapPart($struct, string $mimeType, int $partNum = 0): ?int
