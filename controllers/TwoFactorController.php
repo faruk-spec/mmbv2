@@ -14,6 +14,7 @@ use Core\Database;
 use Core\Security;
 use Core\Logger;
 use Core\TOTP;
+use Core\Notification;
 
 class TwoFactorController extends BaseController
 {
@@ -109,7 +110,8 @@ class TwoFactorController extends BaseController
             $_SESSION['2fa_backup_codes'] = $backupCodes;
             
             Logger::activity(Auth::id(), '2fa_enabled');
-            
+            try { Notification::send(Auth::id(), '2fa_enabled', 'Two-factor authentication has been enabled on your account.', []); } catch (\Exception $e) {}
+
             $this->flash('success', 'Two-factor authentication enabled successfully!');
             $this->redirect('/2fa/backup-codes');
             
@@ -204,6 +206,7 @@ class TwoFactorController extends BaseController
             ], 'id = ?', [Auth::id()]);
 
             Logger::activity(Auth::id(), '2fa_disabled');
+            try { Notification::send(Auth::id(), '2fa_disabled', 'Two-factor authentication has been disabled on your account.', ['ip' => Security::getClientIp()]); } catch (\Exception $e) {}
 
             $this->flash('success', 'Two-factor authentication has been disabled.');
 

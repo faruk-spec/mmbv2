@@ -13,6 +13,7 @@ use Core\Security;
 use Core\Helpers;
 use Core\Logger;
 use Core\Timezone;
+use Core\Notification;
 
 class DashboardController extends BaseController
 {
@@ -123,7 +124,8 @@ class DashboardController extends BaseController
             $db->update('user_profiles', $profileData, 'user_id = ?', [Auth::id()]);
             
             Logger::activity(Auth::id(), 'profile_updated');
-            
+            try { Notification::send(Auth::id(), 'profile_updated', 'Your profile was updated successfully.', []); } catch (\Exception $e) {}
+
             $this->flash('success', 'Profile updated successfully.');
             
         } catch (\Exception $e) {
@@ -206,7 +208,8 @@ class DashboardController extends BaseController
             ], 'id = ?', [Auth::id()]);
             
             Logger::activity(Auth::id(), 'password_set', ['method' => 'oauth_to_standard']);
-            
+            try { Notification::send(Auth::id(), 'password_set', 'A password was set on your account.', ['method' => 'oauth_to_standard']); } catch (\Exception $e) {}
+
             $this->flash('success', 'Password set successfully! You can now use traditional login and unlink your Google account if desired.');
             
         } catch (\Exception $e) {
@@ -261,7 +264,8 @@ class DashboardController extends BaseController
             $db->delete('user_remember_tokens', 'user_id = ?', [Auth::id()]);
             
             Logger::activity(Auth::id(), 'password_changed');
-            
+            try { Notification::send(Auth::id(), 'password_changed', 'Your password was changed. If you did not do this, contact support immediately.', ['ip' => Security::getClientIp()]); } catch (\Exception $e) {}
+
             $this->flash('success', 'Password updated successfully.');
             
         } catch (\Exception $e) {

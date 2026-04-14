@@ -14,6 +14,7 @@ use Core\Security;
 use Core\SessionManager;
 use Core\Logger;
 use Core\Database;
+use Core\Notification;
 
 class GoogleOAuthController extends BaseController
 {
@@ -115,6 +116,7 @@ class GoogleOAuthController extends BaseController
                 'method' => 'google_oauth',
                 'email' => $oauthData['email']
             ]);
+            try { Notification::send($userId, 'user_login', 'You signed in with Google.', ['method' => 'google_oauth', 'ip' => Security::getClientIp()]); } catch (\Exception $e) {}
             
             // Get return URL
             $returnUrl = $_SESSION['oauth_return_url'] ?? '/dashboard';
@@ -180,6 +182,7 @@ class GoogleOAuthController extends BaseController
         }
         
         if (GoogleOAuth::revokeConnection($userId)) {
+            try { Notification::send($userId, 'google_unlinked', 'Your Google account has been unlinked.', []); } catch (\Exception $e) {}
             $this->flash('success', 'Google account unlinked successfully.');
         } else {
             $this->flash('error', 'Failed to unlink Google account. Please ensure you have a password set.');

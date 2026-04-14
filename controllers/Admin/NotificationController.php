@@ -158,28 +158,29 @@ class NotificationController extends BaseController
     {
         $this->requirePermission('notifications');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            $this->jsonResponse(['success' => false, 'message' => 'Invalid request method']);
+            $this->json(['success' => false, 'message' => 'Invalid request method']);
             return;
         }
-        
-        $days = $_POST['days'] ?? 30;
+
+        $days = max(1, (int) ($_POST['days'] ?? 30));
         $db = Database::getInstance();
-        
+
         try {
-            $deleted = $db->execute(
-                "DELETE FROM notifications 
-                 WHERE is_read = 1 
+            $stmt = $db->query(
+                "DELETE FROM notifications
+                 WHERE is_read = 1
                  AND created_at < DATE_SUB(NOW(), INTERVAL ? DAY)",
                 [$days]
             );
-            
-            $this->jsonResponse([
+            $deleted = $stmt->rowCount();
+
+            $this->json([
                 'success' => true,
-                'message' => "Deleted $deleted old notifications",
+                'message' => "Deleted {$deleted} old notification" . ($deleted !== 1 ? 's' : ''),
                 'deleted' => $deleted
             ]);
         } catch (\Exception $e) {
-            $this->jsonResponse(['success' => false, 'message' => $e->getMessage()]);
+            $this->json(['success' => false, 'message' => $e->getMessage()]);
         }
     }
 }
