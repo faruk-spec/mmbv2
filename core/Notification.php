@@ -236,18 +236,28 @@ class Notification
     /**
      * Mark notification as read
      * 
+    /**
      * @param int $notificationId Notification ID
+     * @param int|null $userId    If provided, only marks as read if the notification belongs to this user.
      * @return bool Success status
      */
-    public static function markAsRead(int $notificationId): bool
+    public static function markAsRead(int $notificationId, ?int $userId = null): bool
     {
         try {
             $db = Database::getInstance();
-            $db->update('notifications', [
-                'is_read' => 1,
-                'read_at' => date('Y-m-d H:i:s')
-            ], 'id = ?', [$notificationId]);
-            
+
+            if ($userId !== null) {
+                $db->update('notifications', [
+                    'is_read' => 1,
+                    'read_at' => date('Y-m-d H:i:s')
+                ], 'id = ? AND user_id = ?', [$notificationId, $userId]);
+            } else {
+                $db->update('notifications', [
+                    'is_read' => 1,
+                    'read_at' => date('Y-m-d H:i:s')
+                ], 'id = ?', [$notificationId]);
+            }
+
             return true;
         } catch (\Exception $e) {
             Logger::error("Failed to mark notification as read: " . $e->getMessage());

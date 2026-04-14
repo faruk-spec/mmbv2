@@ -106,7 +106,7 @@ class NotificationController extends BaseController
         $id     = (int) ($_POST['id'] ?? 0);
 
         if ($id) {
-            Notification::markAsRead($id);
+            Notification::markAsRead($id, $userId);
         }
 
         $this->json([

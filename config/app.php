@@ -21,7 +21,7 @@ if (getenv('APP_URL')) {
     define('APP_URL', $protocol . '://' . $host);
 }
 
-define('APP_DEBUG', true);
+define('APP_DEBUG', filter_var(getenv('APP_DEBUG') ?: false, FILTER_VALIDATE_BOOLEAN));
 
 // Security keys - IMPORTANT: These are default values for development only!
 // In production, these MUST be replaced with randomly generated unique keys.

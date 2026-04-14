@@ -181,7 +181,7 @@ class Mailer
             "Reply-To: {$from['address']}",
             "MIME-Version: 1.0",
             "Content-Type: text/html; charset=UTF-8",
-            "X-Mailer: PHP/" . phpversion()
+            "X-Mailer: PHP Mailer"
         ];
         
         $result = mail($to, $subject, $body, implode("\r\n", $headers));
