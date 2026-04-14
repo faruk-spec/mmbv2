@@ -87,10 +87,15 @@ class MailAccessController extends BaseController
             return;
         }
 
-        $hasMailPerm = (bool)$db->fetch(
-            "SELECT id FROM admin_user_permissions WHERE user_id = ? AND permission_key = 'mail'",
-            [(int)$userId]
-        );
+        $hasMailPerm = false;
+        try {
+            $hasMailPerm = (bool)$db->fetch(
+                "SELECT id FROM admin_user_permissions WHERE user_id = ? AND permission_key = 'mail'",
+                [(int)$userId]
+            );
+        } catch (\Exception $e) {
+            Logger::error('MailAccessController::editForm admin_user_permissions: ' . $e->getMessage());
+        }
 
         try {
             $assignedProviderIds = array_column(
@@ -147,42 +152,55 @@ class MailAccessController extends BaseController
         $providerIds  = array_map('intval', (array)($_POST['provider_ids'] ?? []));
 
         // 1. Grant or revoke the 'mail' permission
-        $hasPerm = (bool)$db->fetch(
-            "SELECT id FROM admin_user_permissions WHERE user_id = ? AND permission_key = 'mail'",
-            [$uid]
-        );
+        $hasPerm = false;
+        try {
+            $hasPerm = (bool)$db->fetch(
+                "SELECT id FROM admin_user_permissions WHERE user_id = ? AND permission_key = 'mail'",
+                [$uid]
+            );
+        } catch (\Exception $e) {
+            Logger::error('MailAccessController::save perm check: ' . $e->getMessage());
+        }
 
-        if ($grantAccess && !$hasPerm) {
-            $db->insert('admin_user_permissions', [
-                'user_id'        => $uid,
-                'permission_key' => 'mail',
-                'granted_by'     => Auth::id(),
-            ]);
-        } elseif (!$grantAccess && $hasPerm) {
-            $db->delete('admin_user_permissions', 'user_id = ? AND permission_key = ?', [$uid, 'mail']);
+        try {
+            if ($grantAccess && !$hasPerm) {
+                $db->insert('admin_user_permissions', [
+                    'user_id'        => $uid,
+                    'permission_key' => 'mail',
+                    'granted_by'     => Auth::id(),
+                ]);
+            } elseif (!$grantAccess && $hasPerm) {
+                $db->delete('admin_user_permissions', 'user_id = ? AND permission_key = ?', [$uid, 'mail']);
+            }
+        } catch (\Exception $e) {
+            Logger::error('MailAccessController::save perm update: ' . $e->getMessage());
         }
 
         // 2. Sync provider assignments — delete all and re-insert selected
-        $db->delete('mail_user_providers', 'user_id = ?', [$uid]);
+        try {
+            $db->delete('mail_user_providers', 'user_id = ?', [$uid]);
 
-        // Get valid provider IDs from DB to prevent injection
-        $allProviderIds = array_column(
-            $db->fetchAll("SELECT id FROM mail_provider_configs") ?: [],
-            'id'
-        );
+            // Get valid provider IDs from DB to prevent injection
+            $allProviderIds = array_column(
+                $db->fetchAll("SELECT id FROM mail_provider_configs") ?: [],
+                'id'
+            );
 
-        foreach ($providerIds as $pid) {
-            if (in_array($pid, $allProviderIds, true)) {
-                try {
-                    $db->insert('mail_user_providers', [
-                        'user_id'            => $uid,
-                        'provider_config_id' => $pid,
-                        'granted_by'         => Auth::id(),
-                    ]);
-                } catch (\Exception $e) {
-                    // duplicate — skip
+            foreach ($providerIds as $pid) {
+                if (in_array($pid, $allProviderIds, true)) {
+                    try {
+                        $db->insert('mail_user_providers', [
+                            'user_id'            => $uid,
+                            'provider_config_id' => $pid,
+                            'granted_by'         => Auth::id(),
+                        ]);
+                    } catch (\Exception $e) {
+                        // duplicate — skip
+                    }
                 }
             }
+        } catch (\Exception $e) {
+            Logger::error('MailAccessController::save providers: ' . $e->getMessage());
         }
 
         Logger::activity(Auth::id(), 'mail_access_updated', [
@@ -210,8 +228,16 @@ class MailAccessController extends BaseController
         $db  = Database::getInstance();
         $uid = (int)$userId;
 
-        $db->delete('admin_user_permissions', 'user_id = ? AND permission_key = ?', [$uid, 'mail']);
-        $db->delete('mail_user_providers', 'user_id = ?', [$uid]);
+        try {
+            $db->delete('admin_user_permissions', 'user_id = ? AND permission_key = ?', [$uid, 'mail']);
+        } catch (\Exception $e) {
+            Logger::error('MailAccessController::revoke perm: ' . $e->getMessage());
+        }
+        try {
+            $db->delete('mail_user_providers', 'user_id = ?', [$uid]);
+        } catch (\Exception $e) {
+            Logger::error('MailAccessController::revoke providers: ' . $e->getMessage());
+        }
 
         $this->flash('success', 'Mail access revoked.');
         $this->redirect('/admin/mail/access');
