@@ -308,6 +308,11 @@ $router->get('/admin/mail/templates/edit', 'Admin\\MailConfigController@editTemp
 $router->post('/admin/mail/templates/update', 'Admin\\MailConfigController@updateTemplate', ['auth', 'admin']);
 $router->post('/admin/mail/templates/toggle', 'Admin\\MailConfigController@toggleTemplate', ['auth', 'admin']);
 $router->get('/admin/mail/logs', 'Admin\\MailConfigController@logs', ['auth', 'admin']);
+// Mail user access management
+$router->get('/admin/mail/access', 'Admin\\MailAccessController@index', ['auth', 'admin']);
+$router->get('/admin/mail/access/{id}/edit', 'Admin\\MailAccessController@editForm', ['auth', 'admin']);
+$router->post('/admin/mail/access/{id}/save', 'Admin\\MailAccessController@save', ['auth', 'admin']);
+$router->post('/admin/mail/access/{id}/revoke', 'Admin\\MailAccessController@revoke', ['auth', 'admin']);
 
 // Notification Management routes
 $router->get('/admin/notifications/all', 'Admin\\NotificationController@allNotifications', ['auth', 'admin']);

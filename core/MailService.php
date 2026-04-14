@@ -165,14 +165,14 @@ class MailService
                     $options
                 );
 
-                self::logSend($options['user_id'] ?? null, $recipient, $subject, $options['template_slug'] ?? null, $provider['id'] ?? null, $result ? 'sent' : 'failed');
+                self::logSend($options['user_id'] ?? null, $recipient, $subject, $options['template_slug'] ?? null, $provider['id'] ?? null, $result ? 'sent' : 'failed', null, $body, $options['cc'] ?? null, $options['bcc'] ?? null);
 
                 if (!$result) {
                     $allOk = false;
                 }
             } catch (\Exception $e) {
                 Logger::error('MailService SMTP error: ' . $e->getMessage());
-                self::logSend($options['user_id'] ?? null, $recipient, $subject, $options['template_slug'] ?? null, $provider['id'] ?? null, 'failed', $e->getMessage());
+                self::logSend($options['user_id'] ?? null, $recipient, $subject, $options['template_slug'] ?? null, $provider['id'] ?? null, 'failed', $e->getMessage(), null, $options['cc'] ?? null, $options['bcc'] ?? null);
                 $allOk = false;
             }
         }
@@ -334,10 +334,58 @@ class MailService
     // ------------------------------------------------------------------
 
     /**
+     * Get providers assigned to a user via mail_user_providers.
+     * Falls back to the active global provider when no assignments exist.
+     *
+     * @return array<int, array<string,mixed>>
+     */
+    public static function getUserProviders(int $userId): array
+    {
+        try {
+            $db = Database::getInstance();
+            $rows = $db->fetchAll(
+                "SELECT mpc.* FROM mail_user_providers mup
+                 JOIN mail_provider_configs mpc ON mpc.id = mup.provider_config_id
+                 WHERE mup.user_id = ?
+                 ORDER BY mpc.is_active DESC, mpc.id ASC",
+                [$userId]
+            );
+            if ($rows) {
+                foreach ($rows as &$r) {
+                    $r['smtp_password'] = self::decryptPassword($r['smtp_password'] ?? '');
+                    $r['imap_password'] = self::decryptPassword($r['imap_password'] ?? '');
+                }
+                unset($r);
+                return $rows;
+            }
+        } catch (\Exception $e) {
+            // fall through to default
+        }
+        $active = self::getActiveProvider();
+        return $active ? [$active] : [];
+    }
+
+    /**
+     * Sync all assigned IMAP inboxes for a user.
+     * Returns total number of new messages synced.
+     */
+    public static function syncInboxForUser(int $userId, int $fetchLimit = 50): int
+    {
+        $providers = self::getUserProviders($userId);
+        $total = 0;
+        foreach ($providers as $provider) {
+            if (!empty($provider['imap_host']) && !empty($provider['is_imap_enabled'])) {
+                $total += self::syncInbox($userId, $provider, $fetchLimit);
+            }
+        }
+        return $total;
+    }
+
+    /**
      * Sync inbox for a user. Requires PHP imap extension.
      *
      * @param int   $userId        User ID whose inbox to sync
-     * @param array $imapOverride  Optional IMAP credentials override
+     * @param array $imapOverride  Optional IMAP credentials override (uses active provider if empty)
      * @param int   $fetchLimit    Max messages to fetch per sync
      * @return int  Number of new messages synced
      */
@@ -834,7 +882,7 @@ HTML;
     // Audit log
     // ------------------------------------------------------------------
 
-    private static function logSend(?int $userId, string $recipient, ?string $subject, ?string $template, ?int $providerId, string $status, ?string $error = null): void
+    private static function logSend(?int $userId, string $recipient, ?string $subject, ?string $template, ?int $providerId, string $status, ?string $error = null, ?string $bodyHtml = null, ?string $cc = null, ?string $bcc = null): void
     {
         try {
             $db = Database::getInstance();
@@ -846,6 +894,9 @@ HTML;
                 'provider_config_id' => $providerId,
                 'status'             => $status,
                 'error_message'      => $error,
+                'body_html'          => $bodyHtml,
+                'cc_email'           => $cc,
+                'bcc_email'          => $bcc,
             ]);
         } catch (\Exception $e) {
             // Non-critical – don't throw

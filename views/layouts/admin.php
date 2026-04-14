@@ -2040,6 +2040,10 @@
                                 <i class="fas fa-cogs"></i>
                                 <span>Mail Config</span>
                             </a>
+                            <a href="/admin/mail/access" class="menu-link <?= ($_SERVER['REQUEST_URI'] ?? '') === '/admin/mail/access' || strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/mail/access/') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-users-cog"></i>
+                                <span>Mail User Access</span>
+                            </a>
                             <a href="/admin/mail/templates" class="menu-link <?= ($_SERVER['REQUEST_URI'] ?? '') === '/admin/mail/templates' ? 'active' : '' ?>">
                                 <i class="fas fa-file-alt"></i>
                                 <span>Notification Templates</span>

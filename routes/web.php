@@ -58,6 +58,8 @@ $router->get('/mail', 'MailController@inbox', ['auth']);
 $router->get('/mail/compose', 'MailController@compose', ['auth']);
 $router->post('/mail/compose', 'MailController@send', ['auth']);
 $router->get('/mail/sent', 'MailController@sent', ['auth']);
+$router->get('/mail/sent/view/{id}', 'MailController@viewSent', ['auth']);
+$router->post('/mail/sent/reply', 'MailController@replySent', ['auth']);
 $router->get('/mail/search', 'MailController@search', ['auth']);
 $router->get('/mail/settings', 'MailController@settings', ['auth']);
 $router->post('/mail/settings', 'MailController@saveSettings', ['auth']);

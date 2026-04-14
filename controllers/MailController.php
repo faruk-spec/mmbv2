@@ -292,6 +292,61 @@ class MailController extends BaseController
     }
 
     // ------------------------------------------------------------------
+    // View a sent message
+    // ------------------------------------------------------------------
+
+    public function viewSent(string $id = '0'): void
+    {
+        $id     = (int)$id;
+        $db     = Database::getInstance();
+        $userId = Auth::id();
+
+        $msg = $db->fetch(
+            "SELECT * FROM mail_send_log WHERE id = ? AND user_id = ? LIMIT 1",
+            [$id, $userId]
+        );
+
+        if (!$msg) {
+            $this->redirect('/mail/sent');
+            return;
+        }
+
+        $this->view('mail/sent-view', compact('msg'));
+    }
+
+    // ------------------------------------------------------------------
+    // Reply to a sent message
+    // ------------------------------------------------------------------
+
+    public function replySent(): void
+    {
+        if (!$this->validateCsrf()) {
+            Helpers::flash('error', 'Invalid request.');
+            $this->redirect('/mail/sent');
+            return;
+        }
+
+        $origId     = (int)$this->input('orig_id', 0);
+        $to         = trim($this->input('to', ''));
+        $subject    = trim($this->input('subject', ''));
+        $body       = $this->input('body', '');
+        $providerId = (int)$this->input('provider_id', 0);
+
+        if (!filter_var($to, FILTER_VALIDATE_EMAIL)) {
+            Helpers::flash('error', 'Invalid recipient email.');
+            $this->redirect('/mail/sent/view/' . $origId);
+            return;
+        }
+
+        $opts = ['user_id' => Auth::id()];
+        if ($providerId > 0) { $opts['provider_id'] = $providerId; }
+
+        MailService::sendNow($to, $subject, $body, $opts);
+        Helpers::flash('success', 'Reply sent.');
+        $this->redirect('/mail/sent');
+    }
+
+    // ------------------------------------------------------------------
     // Reply
     // ------------------------------------------------------------------
 
@@ -421,7 +476,7 @@ class MailController extends BaseController
             return;
         }
 
-        $synced = MailService::syncInbox(Auth::id(), [], 50);
+        $synced = MailService::syncInboxForUser(Auth::id(), 50);
         $this->json(['success' => true, 'synced' => $synced]);
     }
 }

@@ -216,7 +216,7 @@ function mailSyncInbox() {
     btn.querySelector('i').classList.add('fa-spin');
     fetch('/mail/sync', {
         method: 'POST',
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        headers: {'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json'},
         body: '_csrf_token=' + encodeURIComponent(mailCsrfToken)
     }).then(r => r.json()).then(d => {
         btn.querySelector('i').classList.remove('fa-spin');
@@ -231,7 +231,7 @@ function mailPostAction(url, params, callback) {
         .join('&');
     fetch(url, {
         method: 'POST',
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        headers: {'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json'},
         body
     }).then(r => r.json()).then(callback).catch(e => console.error(e));
 }

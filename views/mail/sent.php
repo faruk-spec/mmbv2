@@ -30,7 +30,7 @@
         </thead>
         <tbody>
             <?php foreach ($messages as $msg): ?>
-            <tr>
+            <tr style="cursor:pointer;" onclick="window.location='/mail/sent/view/<?= (int)$msg['id'] ?>'">
                 <td style="font-size:13px;"><?= htmlspecialchars($msg['to_email'], ENT_QUOTES, 'UTF-8') ?></td>
                 <td style="font-size:13px;color:#e2e8f0;"><?= htmlspecialchars(mb_substr($msg['subject'] ?? '(no subject)', 0, 80), ENT_QUOTES, 'UTF-8') ?></td>
                 <td style="font-size:12px;color:#64748b;"><?= $msg['provider_config_id'] ? '#' . (int)$msg['provider_config_id'] : '—' ?></td>
