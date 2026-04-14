@@ -36,12 +36,14 @@ class MailConfigController extends BaseController
         $providers = $db->fetchAll("SELECT * FROM mail_provider_configs ORDER BY is_active DESC, id ASC");
         $queueStats = $this->getQueueStats($db);
         $logCount   = $db->fetch("SELECT COUNT(*) AS c FROM mail_send_log")['c'] ?? 0;
+        $hasActive  = !empty(array_filter($providers, fn($p) => (bool)$p['is_active']));
 
         $this->view('admin/mail/config', [
             'title'      => 'Mail Configuration',
             'providers'  => $providers,
             'stats'      => $queueStats,
             'logCount'   => $logCount,
+            'hasActive'  => $hasActive,
         ]);
     }
 
@@ -95,12 +97,20 @@ class MailConfigController extends BaseController
 
         $data = $this->buildProviderData();
         $db   = Database::getInstance();
+
+        // Auto-activate if this is the first / only provider
+        $hasActive = (bool)($db->fetch("SELECT id FROM mail_provider_configs WHERE is_active = 1 LIMIT 1") ?? false);
+        if (!$hasActive) {
+            $data['is_active'] = 1;
+        }
+
         $db->insert('mail_provider_configs', $data);
 
         Logger::activity(Auth::id(), 'mail_provider_created', ['name' => $data['name']]);
         MailService::clearProviderCache();
 
-        $this->flash('success', 'Mail provider added successfully.');
+        $msg = $data['is_active'] ? 'Mail provider added and activated.' : 'Mail provider added successfully.';
+        $this->flash('success', $msg);
         $this->redirect('/admin/mail/config');
     }
 

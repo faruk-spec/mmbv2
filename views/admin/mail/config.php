@@ -19,6 +19,16 @@
 <div class="alert alert-error"><?= View::e(Helpers::getFlash('error')) ?></div>
 <?php endif; ?>
 
+<?php if (!empty($providers) && empty($hasActive)): ?>
+<div style="background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.4);border-radius:10px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:14px;">
+    <i class="fas fa-exclamation-triangle" style="color:#f59e0b;font-size:20px;flex-shrink:0;"></i>
+    <div>
+        <strong style="color:#f59e0b;">No active mail provider</strong>
+        <p style="margin:4px 0 0;font-size:13px;color:#94a3b8;">You have configured provider(s) but none is active. Emails cannot be sent until you click <strong>Activate</strong> on a provider below.</p>
+    </div>
+</div>
+<?php endif; ?>
+
 <!-- Stats row -->
 <div class="grid grid-4" style="margin-bottom:24px;">
     <div class="stat-card">
