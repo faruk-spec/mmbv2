@@ -684,8 +684,18 @@ class Auth
                 'created_at' => date('Y-m-d H:i:s')
             ]);
             
-            // Send password reset email
-            Mailer::sendPasswordResetEmail($email, $user['name'], $token);
+            // Send password reset email (via MailService with DB template, fallback to Mailer)
+            try {
+                $sent = MailService::sendNotification($email, 'password_reset', [
+                    'name'      => $user['name'],
+                    'reset_url' => APP_URL . '/reset-password/' . $token,
+                ]);
+                if (!$sent) {
+                    Mailer::sendPasswordResetEmail($email, $user['name'], $token);
+                }
+            } catch (\Exception $me) {
+                Mailer::sendPasswordResetEmail($email, $user['name'], $token);
+            }
             
             Logger::info("Password reset requested for {$email}");
             

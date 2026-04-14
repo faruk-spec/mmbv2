@@ -291,6 +291,23 @@ $router->get('/admin/email/templates/view', 'Admin\\EmailController@viewTemplate
 $router->post('/admin/email/queue/process', 'Admin\\EmailController@processQueue', ['auth', 'admin']);
 $router->post('/admin/email/queue/delete-failed', 'Admin\\EmailController@deleteFailed', ['auth', 'admin']);
 
+// Mail Provider Configuration routes
+$router->get('/admin/mail/config', 'Admin\\MailConfigController@index', ['auth', 'admin']);
+$router->get('/admin/mail/config/create', 'Admin\\MailConfigController@create', ['auth', 'admin']);
+$router->get('/admin/mail/config/edit', 'Admin\\MailConfigController@edit', ['auth', 'admin']);
+$router->post('/admin/mail/config/store', 'Admin\\MailConfigController@store', ['auth', 'admin']);
+$router->post('/admin/mail/config/update', 'Admin\\MailConfigController@update', ['auth', 'admin']);
+$router->post('/admin/mail/config/activate', 'Admin\\MailConfigController@activate', ['auth', 'admin']);
+$router->post('/admin/mail/config/delete', 'Admin\\MailConfigController@delete', ['auth', 'admin']);
+$router->post('/admin/mail/config/test-smtp', 'Admin\\MailConfigController@testSmtp', ['auth', 'admin']);
+$router->post('/admin/mail/config/test-imap', 'Admin\\MailConfigController@testImap', ['auth', 'admin']);
+$router->post('/admin/mail/config/process-queue', 'Admin\\MailConfigController@processQueue', ['auth', 'admin']);
+$router->get('/admin/mail/templates', 'Admin\\MailConfigController@templates', ['auth', 'admin']);
+$router->get('/admin/mail/templates/edit', 'Admin\\MailConfigController@editTemplate', ['auth', 'admin']);
+$router->post('/admin/mail/templates/update', 'Admin\\MailConfigController@updateTemplate', ['auth', 'admin']);
+$router->post('/admin/mail/templates/toggle', 'Admin\\MailConfigController@toggleTemplate', ['auth', 'admin']);
+$router->get('/admin/mail/logs', 'Admin\\MailConfigController@logs', ['auth', 'admin']);
+
 // Notification Management routes
 $router->get('/admin/notifications/all', 'Admin\\NotificationController@allNotifications', ['auth', 'admin']);
 $router->get('/admin/notifications/preferences', 'Admin\\NotificationController@preferences', ['auth', 'admin']);

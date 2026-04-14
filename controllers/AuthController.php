@@ -15,6 +15,7 @@ use Core\View;
 use Core\TrafficTracker;
 use Core\Logger;
 use Core\Notification;
+use Core\MailService;
 
 class AuthController extends BaseController
 {
@@ -158,6 +159,16 @@ class AuthController extends BaseController
                 'email' => $this->input('email')
             ]);
             try { Notification::send($userId, 'user_registered', 'Welcome! Your account has been created.', ['email' => $this->input('email')]); } catch (\Exception $e) {}
+            
+            // Send welcome notification email
+            try {
+                MailService::sendNotification($this->input('email'), 'welcome', [
+                    'name'      => Security::sanitize($this->input('name')),
+                    'login_url' => APP_URL . '/login',
+                ]);
+            } catch (\Exception $e) {
+                Logger::error('Welcome email failed: ' . $e->getMessage());
+            }
             
             $this->flash('success', 'Registration successful! Please login.');
             $this->redirect('/login');
