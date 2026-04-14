@@ -1,40 +1,42 @@
 <?php
 /**
- * Mail Subdomain Entry Point
+ * Mail Subdomain Bootstrap (Future Use)
  *
- * Deploy this entire /subdomain/mail/ directory to mail.yourdomain.in.
- * It reuses the main platform's core library, database, and session.
+ * Currently the mail system is served at the main domain under /mail.
+ * When you are ready to point mail.yourdomain.in to its own server:
+ *   1. Copy this entire subdomain/mail/ directory to the subdomain web root.
+ *   2. Set BASE_PATH_OVERRIDE below (or environment variable MAIN_APP_PATH)
+ *      to the absolute path of the main platform installation.
+ *   3. Ensure the subdomain shares the same database and session cookie domain.
  *
- * Directory structure (relative to this file):
- *   index.php          ← this file (router + bootstrap)
- *   controllers/
- *     InboxController.php
- *   views/
- *     layout.php
- *     inbox.php
- *     view.php
- *     compose.php
- *     settings.php
- *
- * Apache / Nginx: point DocumentRoot (or Alias) to this directory.
- * All requests should be routed to index.php (see .htaccess below).
+ * Until then, this file simply redirects to the main domain's /mail path.
  */
 
-// ---------------------------------------------------------------
-// Bootstrap – locate the main platform root
-// ---------------------------------------------------------------
-$mainRoot = dirname(__DIR__, 2); // two levels up from subdomain/mail/
+// ── Redirect to main domain /mail while subdomain is not yet active ──────────
+// Remove this block once the subdomain DNS and web root are configured.
+$mainUrl = getenv('APP_URL') ?: 'https://yourdomain.in';
+$mainUrl = rtrim($mainUrl, '/');
+
+$uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+// Strip leading /mail prefix if the subdomain still receives those paths
+$subPath = preg_replace('#^/mail#', '', $uri ?: '/') ?: '/';
+// Reconstruct the target URL on the main domain
+$qs       = !empty($_SERVER['QUERY_STRING']) ? '?' . $_SERVER['QUERY_STRING'] : '';
+$redirect = $mainUrl . '/mail' . ($subPath === '/' ? '' : $subPath) . $qs;
+
+header('Location: ' . $redirect, true, 302);
+exit;
+
+// ── Standalone mode (uncomment when subdomain is ready) ──────────────────────
+/*
+$mainRoot = getenv('MAIN_APP_PATH') ?: dirname(__DIR__, 2);
 if (!defined('BASE_PATH')) {
     define('BASE_PATH', $mainRoot);
 }
 
-// Load core autoloader & app config
 require_once BASE_PATH . '/core/Autoloader.php';
 require_once BASE_PATH . '/config/app.php';
 
-// ---------------------------------------------------------------
-// Session (reuse platform session)
-// ---------------------------------------------------------------
 if (session_status() === PHP_SESSION_NONE) {
     ini_set('session.cookie_httponly', '1');
     ini_set('session.cookie_secure', isset($_SERVER['HTTPS']) ? '1' : '0');
@@ -44,69 +46,15 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 use Core\Auth;
-use Core\Security;
 
-// ---------------------------------------------------------------
-// Auth guard – redirect to main platform login
-// ---------------------------------------------------------------
 if (!Auth::check()) {
     $returnUrl = rtrim(APP_URL, '/') . '/login?redirect=' . urlencode($_SERVER['REQUEST_URI'] ?? '/');
     header('Location: ' . $returnUrl);
     exit;
 }
 
-// ---------------------------------------------------------------
-// Minimal router
-// ---------------------------------------------------------------
-$uri    = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
-$uri    = '/' . ltrim($uri, '/');
-$method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
-
-// Strip base path prefix if deployed under a sub-path
-// e.g. if served from /mail/* instead of root
-$uriClean = preg_replace('#^/mail#', '', $uri) ?: '/';
-
-require_once __DIR__ . '/controllers/InboxController.php';
-$ctrl = new \Mail\InboxController();
-
-// Route table
-if ($uriClean === '/' || $uriClean === '/inbox') {
-    if ($method === 'POST') {
-        $ctrl->syncAndRedirect();
-    } else {
-        $ctrl->inbox();
-    }
-} elseif (preg_match('#^/view/(\d+)$#', $uriClean, $m)) {
-    $ctrl->view((int)$m[1]);
-} elseif ($uriClean === '/compose') {
-    if ($method === 'POST') {
-        $ctrl->send();
-    } else {
-        $ctrl->compose();
-    }
-} elseif ($uriClean === '/reply' && $method === 'POST') {
-    $ctrl->reply();
-} elseif ($uriClean === '/forward' && $method === 'POST') {
-    $ctrl->forward();
-} elseif ($uriClean === '/mark-read' && $method === 'POST') {
-    $ctrl->markRead();
-} elseif ($uriClean === '/delete' && $method === 'POST') {
-    $ctrl->delete();
-} elseif ($uriClean === '/archive' && $method === 'POST') {
-    $ctrl->archive();
-} elseif ($uriClean === '/star' && $method === 'POST') {
-    $ctrl->star();
-} elseif ($uriClean === '/search') {
-    $ctrl->search();
-} elseif ($uriClean === '/settings') {
-    if ($method === 'POST') {
-        $ctrl->saveSettings();
-    } else {
-        $ctrl->settings();
-    }
-} elseif ($uriClean === '/sync' && $method === 'POST') {
-    $ctrl->syncAjax();
-} else {
-    http_response_code(404);
-    echo '<h1>404 – Page not found</h1>';
-}
+// Route: re-use the main platform's bootstrap and dispatch via the same router.
+// All /mail/* routes are already defined in routes/web.php; run them via index.php.
+$_SERVER['REQUEST_URI'] = '/mail' . (preg_replace('#^/mail#', '', parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH)) ?: '/');
+require_once BASE_PATH . '/index.php';
+*/
