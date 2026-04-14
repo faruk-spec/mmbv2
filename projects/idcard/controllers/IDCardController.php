@@ -181,6 +181,7 @@ class IDCardController
         ]);
 
         Logger::activity($userId, 'idcard_generated', ['card_id' => $cardId, 'template' => $templateKey]);
+        try { \Core\Notification::send($userId, 'idcard_created', 'ID Card generated in IDCard (template: ' . $templateKey . ').', ['project' => 'idcard', 'card_id' => $cardId]); } catch (\Exception $e) {}
 
         if ($this->isAjax()) {
             echo json_encode(['success' => true, 'card_id' => $cardId, 'redirect' => '/projects/idcard/view/' . $cardId]);
@@ -318,6 +319,7 @@ class IDCardController
 
         if ($id && $this->model->delete($id, $userId)) {
             Logger::activity($userId, 'idcard_deleted', ['card_id' => $id]);
+            try { \Core\Notification::send($userId, 'idcard_deleted', 'ID Card #' . $id . ' deleted.', ['project' => 'idcard', 'card_id' => $id]); } catch (\Exception $e) {}
             if ($this->isAjax()) {
                 echo json_encode(['success' => true]);
                 exit;

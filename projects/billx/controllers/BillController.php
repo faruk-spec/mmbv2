@@ -234,6 +234,7 @@ class BillController
         if ($id) {
             Logger::activity($userId, 'billx_bill_created', ['bill_id' => $id, 'type' => $billType]);
             try { ActivityLogger::logCreate($userId, 'billx', 'bill', $id, ['bill_type' => $billType, 'bill_number' => $billNumber]); } catch (\Throwable $_) {}
+            try { \Core\Notification::send($userId, 'billx_bill_created', 'Bill #' . $billNumber . ' generated in BillX.', ['project' => 'billx', 'bill_id' => $id]); } catch (\Exception $e) {}
             if ($saveAction === 'save') {
                 header('Location: /projects/billx/history?saved=1');
             } elseif ($saveAction === 'download') {
@@ -359,6 +360,7 @@ class BillController
         if ($id && $this->model->delete($id, $userId)) {
             Logger::activity($userId, 'billx_bill_deleted', ['bill_id' => $id]);
             try { ActivityLogger::logDelete($userId, 'billx', 'bill', $id); } catch (\Throwable $_) {}
+            try { \Core\Notification::send($userId, 'billx_bill_deleted', 'Bill #' . $id . ' deleted in BillX.', ['project' => 'billx', 'bill_id' => $id]); } catch (\Exception $e) {}
             header('Location: /projects/billx/history?deleted=1');
         } else {
             header('Location: /projects/billx/history?error=1');

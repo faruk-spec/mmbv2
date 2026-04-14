@@ -52,6 +52,7 @@ class FolderController
         $db->query("INSERT INTO notex_folders (user_id, name, color) VALUES (?, ?, ?)", [$user['id'], $name, $color]);
 
         $_SESSION['success'] = "Folder '{$name}' created.";
+        try { \Core\Notification::send(\Core\Auth::id(), 'notex_folder_created', 'Folder "' . $name . '" created in NoteX.', ['project' => 'notex']); } catch (\Exception $e) {}
         header('Location: /projects/notex/folders');
         exit;
     }
@@ -103,6 +104,7 @@ class FolderController
         $db->query("DELETE FROM notex_folders WHERE id = ? AND user_id = ?", [$id, $user['id']]);
 
         $_SESSION['success'] = 'Folder deleted.';
+        try { \Core\Notification::send(\Core\Auth::id(), 'notex_folder_deleted', 'A folder was deleted in NoteX.', ['project' => 'notex']); } catch (\Exception $e) {}
         header('Location: /projects/notex/folders');
         exit;
     }

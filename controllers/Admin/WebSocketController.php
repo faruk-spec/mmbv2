@@ -116,27 +116,27 @@ class WebSocketController extends BaseController
     {
         $this->requirePermission('websocket.settings');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            $this->jsonResponse(['success' => false, 'message' => 'Invalid request method']);
+            $this->json(['success' => false, 'message' => 'Invalid request method']);
             return;
         }
-        
+
         $db = Database::getInstance();
-        
+
         try {
             foreach ($_POST as $key => $value) {
                 if (strpos($key, 'websocket_') === 0) {
-                    $db->execute(
-                        "UPDATE system_settings 
-                         SET setting_value = ? 
-                         WHERE setting_key = ?",
-                        [json_encode($value), $key]
+                    $db->query(
+                        "INSERT INTO system_settings (setting_key, setting_value)
+                         VALUES (?, ?)
+                         ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
+                        [$key, json_encode($value)]
                     );
                 }
             }
-            
-            $this->jsonResponse(['success' => true, 'message' => 'Settings updated successfully']);
+
+            $this->json(['success' => true, 'message' => 'Settings updated successfully']);
         } catch (\Exception $e) {
-            $this->jsonResponse(['success' => false, 'message' => $e->getMessage()]);
+            $this->json(['success' => false, 'message' => $e->getMessage()]);
         }
     }
 }

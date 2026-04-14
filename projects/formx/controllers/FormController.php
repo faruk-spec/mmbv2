@@ -254,6 +254,7 @@ class FormController
         ]);
 
         $this->flash('success', 'Form created successfully!');
+        try { \Core\Notification::send($this->userId(), 'formx_form_created', 'Form "' . $title . '" created in FormX.', ['project' => 'formx', 'form_id' => $newId]); } catch (\Exception $e) {}
         $this->redirect('/projects/formx/' . $newId . '/edit');
     }
 
@@ -391,6 +392,7 @@ class FormController
         ]);
 
         $this->flash('success', 'Form saved!');
+        try { \Core\Notification::send($this->userId(), 'formx_form_updated', 'Form "' . $title . '" updated in FormX.', ['project' => 'formx', 'form_id' => $id]); } catch (\Exception $e) {}
         $this->redirect('/projects/formx/' . $id . '/edit');
     }
 
@@ -418,6 +420,7 @@ class FormController
         ]);
 
         $this->flash('success', 'Form deleted.');
+        try { \Core\Notification::send($this->userId(), 'formx_form_deleted', 'Form "' . $form['title'] . '" deleted in FormX.', ['project' => 'formx', 'form_id' => $id]); } catch (\Exception $e) {}
         $this->redirect('/projects/formx/forms');
     }
 

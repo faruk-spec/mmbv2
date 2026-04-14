@@ -58,6 +58,7 @@ class ProjectController
         
         if ($projectId) {
             try { ActivityLogger::logCreate($user['id'], 'codexpro', 'project', $projectId, ['name' => $name, 'language' => $language]); } catch (\Throwable $_) {}
+            try { \Core\Notification::send($user['id'], 'codexpro_project_created', 'Project "' . $name . '" created in CodeXPro.', ['project' => 'codexpro', 'project_id' => $projectId]); } catch (\Exception $e) {}
             echo json_encode(['success' => true, 'project_id' => $projectId]);
         } else {
             echo json_encode(['success' => false, 'error' => 'Failed to create project']);
@@ -143,6 +144,7 @@ class ProjectController
             
             if ($deleted !== false && $deleted > 0) {
                 try { ActivityLogger::logDelete($user['id'], 'codexpro', 'project', $id, ['id' => $id]); } catch (\Throwable $_) {}
+                try { \Core\Notification::send($user['id'], 'codexpro_project_deleted', 'Project deleted in CodeXPro.', ['project' => 'codexpro', 'project_id' => $id]); } catch (\Exception $e) {}
                 echo json_encode(['success' => true, 'message' => 'Project deleted successfully']);
             } else {
                 echo json_encode(['success' => false, 'error' => 'Failed to delete project']);

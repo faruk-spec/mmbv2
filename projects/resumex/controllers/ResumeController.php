@@ -77,6 +77,7 @@ class ResumeController
         $id = $this->resumeModel->create($userId, $title, $template, $colorOverride);
 
         if ($id) {
+            try { \Core\Notification::send($userId, 'resumex_resume_created', 'Resume "' . $title . '" created in ResumeX.', ['project' => 'resumex', 'resume_id' => $id]); } catch (\Exception $e) {}
             header("Location: /projects/resumex/edit/{$id}?new=1");
         } else {
             header("Location: /projects/resumex/create?error=1");
@@ -231,6 +232,7 @@ class ResumeController
 
         if ($id) {
             $this->resumeModel->delete($id, $userId);
+            try { \Core\Notification::send($userId, 'resumex_resume_deleted', 'Resume deleted in ResumeX.', ['project' => 'resumex', 'resume_id' => $id]); } catch (\Exception $e) {}
         }
 
         header('Content-Type: application/json');

@@ -782,6 +782,7 @@ class QRController
             if ($this->qrModel->delete($id, $userId)) {
                 Logger::activity($userId, 'qr_deleted', ['qr_id' => $id]);
                 try { ActivityLogger::logDelete($userId, 'qr', 'qr_code', $id); } catch (\Throwable $_) {}
+                try { \Core\Notification::send($userId, 'qr_deleted', 'QR code #' . $id . ' deleted.', ['project' => 'qr', 'qr_id' => $id]); } catch (\Exception $e) {}
                 Helpers::flash('success', 'QR code deleted successfully.');
             } else {
                 Helpers::flash('error', 'Failed to delete QR code.');

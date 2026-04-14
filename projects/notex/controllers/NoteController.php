@@ -108,6 +108,7 @@ class NoteController
         }
 
         $_SESSION['success'] = 'Note created.';
+        try { \Core\Notification::send($user['id'], 'notex_note_created', 'Note "' . $title . '" created in NoteX.', ['project' => 'notex', 'note_id' => $noteId]); } catch (\Exception $e) {}
         header("Location: /projects/notex/notes/{$noteId}/edit");
         exit;
     }
@@ -205,6 +206,7 @@ class NoteController
         }
 
         $_SESSION['success'] = 'Note saved.';
+        try { \Core\Notification::send($user['id'], 'notex_note_updated', 'Note "' . $title . '" updated in NoteX.', ['project' => 'notex', 'note_id' => $id]); } catch (\Exception $e) {}
         header("Location: /projects/notex/notes/{$id}/edit");
         exit;
     }
@@ -222,6 +224,7 @@ class NoteController
         $db->query("UPDATE notex_notes SET status = 'trashed', updated_at = NOW() WHERE id = ? AND user_id = ?", [$id, $user['id']]);
 
         $_SESSION['success'] = 'Note moved to trash.';
+        try { \Core\Notification::send($user['id'], 'notex_note_deleted', 'A note was moved to trash in NoteX.', ['project' => 'notex', 'note_id' => $id]); } catch (\Exception $e) {}
         header('Location: /projects/notex/notes');
         exit;
     }
