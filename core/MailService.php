@@ -26,7 +26,7 @@ class MailService
     /**
      * Ensure all mail-related schema additions exist.
      * Safe to call multiple times — guarded by a per-request flag.
-     * Creates/alters tables using IF NOT EXISTS / column-existence checks.
+     * Creates tables with IF NOT EXISTS and adds columns via INFORMATION_SCHEMA checks.
      */
     public static function ensureSchema(): void
     {
@@ -38,7 +38,36 @@ class MailService
         try {
             $db = Database::getInstance();
 
-            // 1. mail_user_providers
+            // 1. mail_provider_configs — master table; everything depends on it
+            $db->query(
+                "CREATE TABLE IF NOT EXISTS `mail_provider_configs` (
+                  `id`               INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                  `name`             VARCHAR(100) NOT NULL DEFAULT '',
+                  `provider_type`    ENUM('smtp','zoho','gmail','outlook','custom') NOT NULL DEFAULT 'smtp',
+                  `smtp_host`        VARCHAR(255) DEFAULT NULL,
+                  `smtp_port`        INT DEFAULT 587,
+                  `smtp_username`    VARCHAR(255) DEFAULT NULL,
+                  `smtp_password`    TEXT DEFAULT NULL,
+                  `smtp_encryption`  ENUM('tls','ssl','none') DEFAULT 'tls',
+                  `imap_host`        VARCHAR(255) DEFAULT NULL,
+                  `imap_port`        INT DEFAULT 993,
+                  `imap_username`    VARCHAR(255) DEFAULT NULL,
+                  `imap_password`    TEXT DEFAULT NULL,
+                  `imap_encryption`  ENUM('ssl','tls','none') DEFAULT 'ssl',
+                  `from_name`        VARCHAR(100) DEFAULT NULL,
+                  `from_email`       VARCHAR(255) DEFAULT NULL,
+                  `reply_to`         VARCHAR(255) DEFAULT NULL,
+                  `is_active`        TINYINT(1) NOT NULL DEFAULT 0,
+                  `is_imap_enabled`  TINYINT(1) NOT NULL DEFAULT 1,
+                  `created_at`       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  `updated_at`       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                  PRIMARY KEY (`id`),
+                  KEY `is_active` (`is_active`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+                []
+            );
+
+            // 2. mail_user_providers — maps users to specific SMTP/IMAP accounts
             $db->query(
                 "CREATE TABLE IF NOT EXISTS `mail_user_providers` (
                   `id`                 INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -54,14 +83,69 @@ class MailService
                 []
             );
 
-            // 2. mail_send_log extra columns (body, cc, bcc, in_reply_to)
-            // Check which columns exist and add missing ones
+            // 3. mail_send_log — outbound mail audit trail
+            $db->query(
+                "CREATE TABLE IF NOT EXISTS `mail_send_log` (
+                  `id`                 INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                  `user_id`            INT UNSIGNED DEFAULT NULL,
+                  `recipient`          VARCHAR(255) NOT NULL,
+                  `subject`            VARCHAR(255) DEFAULT NULL,
+                  `body_html`          LONGTEXT DEFAULT NULL,
+                  `cc_email`           VARCHAR(1000) DEFAULT NULL,
+                  `bcc_email`          VARCHAR(1000) DEFAULT NULL,
+                  `in_reply_to_id`     INT UNSIGNED DEFAULT NULL COMMENT 'Self-ref: sent-mail thread',
+                  `reply_to_inbox_id`  INT UNSIGNED DEFAULT NULL COMMENT 'FK to mail_synced_messages.id',
+                  `template_slug`      VARCHAR(100) DEFAULT NULL,
+                  `provider_config_id` INT UNSIGNED DEFAULT NULL,
+                  `status`             ENUM('sent','failed') NOT NULL DEFAULT 'sent',
+                  `error_message`      TEXT DEFAULT NULL,
+                  `sent_at`            TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  PRIMARY KEY (`id`),
+                  KEY `user_id` (`user_id`),
+                  KEY `sent_at` (`sent_at`),
+                  KEY `reply_to_inbox_id` (`reply_to_inbox_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+                []
+            );
+
+            // 4. mail_synced_messages — IMAP inbox cache
+            $db->query(
+                "CREATE TABLE IF NOT EXISTS `mail_synced_messages` (
+                  `id`                 INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                  `user_id`            INT UNSIGNED NOT NULL,
+                  `provider_config_id` INT UNSIGNED DEFAULT NULL,
+                  `uid`                VARCHAR(100) NOT NULL,
+                  `folder`             VARCHAR(100) NOT NULL DEFAULT 'INBOX',
+                  `message_id`         VARCHAR(500) DEFAULT NULL,
+                  `subject`            VARCHAR(1000) DEFAULT NULL,
+                  `from_name`          VARCHAR(255) DEFAULT NULL,
+                  `from_email`         VARCHAR(255) DEFAULT NULL,
+                  `to_email`           TEXT DEFAULT NULL,
+                  `cc_email`           TEXT DEFAULT NULL,
+                  `date_sent`          DATETIME DEFAULT NULL,
+                  `body_html`          LONGTEXT DEFAULT NULL,
+                  `body_text`          LONGTEXT DEFAULT NULL,
+                  `is_read`            TINYINT(1) NOT NULL DEFAULT 0,
+                  `is_starred`         TINYINT(1) NOT NULL DEFAULT 0,
+                  `is_archived`        TINYINT(1) NOT NULL DEFAULT 0,
+                  `is_deleted`         TINYINT(1) NOT NULL DEFAULT 0,
+                  `raw_headers`        TEXT DEFAULT NULL,
+                  `synced_at`          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  PRIMARY KEY (`id`),
+                  UNIQUE KEY `uid_folder_user` (`uid`,`folder`,`user_id`),
+                  KEY `user_id` (`user_id`,`is_deleted`,`is_archived`),
+                  KEY `date_sent` (`date_sent`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+                []
+            );
+
+            // 5. Add any columns to mail_send_log that may be missing (production schema may be old)
             $cols = $db->fetchAll(
                 "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
                  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'mail_send_log'",
                 []
             );
-            $existing = array_map(fn($r) => $r['COLUMN_NAME'] ?? $r['column_name'], $cols);
+            $existing = array_map(fn($r) => strtolower($r['COLUMN_NAME'] ?? $r['column_name'] ?? ''), $cols);
 
             if (!in_array('body_html', $existing, true)) {
                 $db->query("ALTER TABLE `mail_send_log` ADD COLUMN `body_html` LONGTEXT NULL DEFAULT NULL AFTER `subject`", []);
@@ -75,17 +159,8 @@ class MailService
             if (!in_array('in_reply_to_id', $existing, true)) {
                 $db->query("ALTER TABLE `mail_send_log` ADD COLUMN `in_reply_to_id` INT UNSIGNED NULL DEFAULT NULL AFTER `bcc_email`", []);
             }
-
-            // 3. mail_synced_messages — in_reply_to_id for inbox reply trail
-            $cols2 = $db->fetchAll(
-                "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
-                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'mail_synced_messages'",
-                []
-            );
-            $existing2 = array_map(fn($r) => $r['COLUMN_NAME'] ?? $r['column_name'], $cols2);
-
-            if (!in_array('in_reply_to_id', $existing2, true)) {
-                $db->query("ALTER TABLE `mail_synced_messages` ADD COLUMN `in_reply_to_id` INT UNSIGNED NULL DEFAULT NULL AFTER `body_text`", []);
+            if (!in_array('reply_to_inbox_id', $existing, true)) {
+                $db->query("ALTER TABLE `mail_send_log` ADD COLUMN `reply_to_inbox_id` INT UNSIGNED NULL DEFAULT NULL AFTER `in_reply_to_id`", []);
             }
         } catch (\Exception $e) {
             Logger::error('MailService::ensureSchema failed: ' . $e->getMessage());
@@ -241,14 +316,14 @@ class MailService
                     $options
                 );
 
-                self::logSend($options['user_id'] ?? null, $recipient, $subject, $options['template_slug'] ?? null, $provider['id'] ?? null, $result ? 'sent' : 'failed', null, $body, $options['cc'] ?? null, $options['bcc'] ?? null, $options['in_reply_to_id'] ?? null);
+                self::logSend($options['user_id'] ?? null, $recipient, $subject, $options['template_slug'] ?? null, $provider['id'] ?? null, $result ? 'sent' : 'failed', null, $body, $options['cc'] ?? null, $options['bcc'] ?? null, $options['in_reply_to_id'] ?? null, $options['reply_to_inbox_id'] ?? null);
 
                 if (!$result) {
                     $allOk = false;
                 }
             } catch (\Exception $e) {
                 Logger::error('MailService SMTP error: ' . $e->getMessage());
-                self::logSend($options['user_id'] ?? null, $recipient, $subject, $options['template_slug'] ?? null, $provider['id'] ?? null, 'failed', $e->getMessage(), null, $options['cc'] ?? null, $options['bcc'] ?? null, $options['in_reply_to_id'] ?? null);
+                self::logSend($options['user_id'] ?? null, $recipient, $subject, $options['template_slug'] ?? null, $provider['id'] ?? null, 'failed', $e->getMessage(), null, $options['cc'] ?? null, $options['bcc'] ?? null, $options['in_reply_to_id'] ?? null, $options['reply_to_inbox_id'] ?? null);
                 $allOk = false;
             }
         }
@@ -958,24 +1033,24 @@ HTML;
     // Audit log
     // ------------------------------------------------------------------
 
-    private static function logSend(?int $userId, string $recipient, ?string $subject, ?string $template, ?int $providerId, string $status, ?string $error = null, ?string $bodyHtml = null, ?string $cc = null, ?string $bcc = null, ?int $inReplyToId = null): int
+    private static function logSend(?int $userId, string $recipient, ?string $subject, ?string $template, ?int $providerId, string $status, ?string $error = null, ?string $bodyHtml = null, ?string $cc = null, ?string $bcc = null, ?int $inReplyToId = null, ?int $replyToInboxId = null): int
     {
         try {
             $db = Database::getInstance();
             $db->insert('mail_send_log', [
-                'user_id'            => $userId,
-                'recipient'          => $recipient,
-                'subject'            => $subject,
-                'template_slug'      => $template,
-                'provider_config_id' => $providerId,
-                'status'             => $status,
-                'error_message'      => $error,
-                'body_html'          => $bodyHtml,
-                'cc_email'           => $cc,
-                'bcc_email'          => $bcc,
-                'in_reply_to_id'     => $inReplyToId,
+                'user_id'             => $userId,
+                'recipient'           => $recipient,
+                'subject'             => $subject,
+                'template_slug'       => $template,
+                'provider_config_id'  => $providerId,
+                'status'              => $status,
+                'error_message'       => $error,
+                'body_html'           => $bodyHtml,
+                'cc_email'            => $cc,
+                'bcc_email'           => $bcc,
+                'in_reply_to_id'      => $inReplyToId,
+                'reply_to_inbox_id'   => $replyToInboxId,
             ]);
-            // Return the inserted ID so callers can chain replies
             return (int)$db->fetch("SELECT LAST_INSERT_ID() AS id", [])['id'];
         } catch (\Exception $e) {
             // Non-critical – don't throw

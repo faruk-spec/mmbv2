@@ -116,7 +116,21 @@ class MailController extends BaseController
             $msg['is_read'] = 1;
         }
 
-        $this->view('mail/view', compact('msg'));
+        // Load sent replies that reference this inbox message
+        $sentReplies = [];
+        try {
+            $sentReplies = $db->fetchAll(
+                "SELECT id, recipient, subject, body_html, body_text, sent_at, status
+                 FROM mail_send_log
+                 WHERE reply_to_inbox_id = ? AND user_id = ?
+                 ORDER BY sent_at ASC",
+                [$id, $userId]
+            );
+        } catch (\Exception $e) {
+            // reply_to_inbox_id column may not exist yet
+        }
+
+        $this->view('mail/view', compact('msg', 'sentReplies'));
     }
 
     // ------------------------------------------------------------------
@@ -402,7 +416,12 @@ class MailController extends BaseController
             return;
         }
 
-        MailService::sendNow($to, $subject, $body, ['user_id' => Auth::id()]);
+        $opts = [
+            'user_id'           => Auth::id(),
+            'reply_to_inbox_id' => $origId > 0 ? $origId : null,
+        ];
+
+        MailService::sendNow($to, $subject, $body, $opts);
         Helpers::flash('success', 'Reply sent.');
         $this->redirect('/mail/view/' . $origId);
     }

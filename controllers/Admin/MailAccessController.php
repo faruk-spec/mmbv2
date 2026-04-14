@@ -41,21 +41,29 @@ class MailAccessController extends BaseController
     {
         $db = Database::getInstance();
 
-        $users = $db->fetchAll(
-            "SELECT u.id, u.name, u.email, u.role, u.status,
-                    (SELECT COUNT(*) FROM admin_user_permissions p
-                     WHERE p.user_id = u.id AND p.permission_key = 'mail') AS has_mail_perm,
-                    (SELECT GROUP_CONCAT(mpc.from_email ORDER BY mpc.id SEPARATOR ', ')
-                     FROM mail_user_providers mup
-                     JOIN mail_provider_configs mpc ON mpc.id = mup.provider_config_id
-                     WHERE mup.user_id = u.id) AS assigned_providers
-             FROM users u
-             ORDER BY has_mail_perm DESC, u.name ASC"
-        );
+        try {
+            $users = $db->fetchAll(
+                "SELECT u.id, u.name, u.email, u.role, u.status,
+                        (SELECT COUNT(*) FROM admin_user_permissions p
+                         WHERE p.user_id = u.id AND p.permission_key = 'mail') AS has_mail_perm,
+                        (SELECT GROUP_CONCAT(mpc.from_email ORDER BY mpc.id SEPARATOR ', ')
+                         FROM mail_user_providers mup
+                         JOIN mail_provider_configs mpc ON mpc.id = mup.provider_config_id
+                         WHERE mup.user_id = u.id) AS assigned_providers
+                 FROM users u
+                 ORDER BY has_mail_perm DESC, u.name ASC"
+            );
+        } catch (\Exception $e) {
+            $users = [];
+        }
 
-        $providers = $db->fetchAll(
-            "SELECT id, name, from_name, from_email, provider_type, is_active FROM mail_provider_configs ORDER BY is_active DESC, id ASC"
-        );
+        try {
+            $providers = $db->fetchAll(
+                "SELECT id, name, from_name, from_email, provider_type, is_active FROM mail_provider_configs ORDER BY is_active DESC, id ASC"
+            );
+        } catch (\Exception $e) {
+            $providers = [];
+        }
 
         $this->view('admin/mail/access', [
             'title'     => 'Mail User Access',
@@ -84,17 +92,25 @@ class MailAccessController extends BaseController
             [(int)$userId]
         );
 
-        $assignedProviderIds = array_column(
-            $db->fetchAll(
-                "SELECT provider_config_id FROM mail_user_providers WHERE user_id = ?",
-                [(int)$userId]
-            ),
-            'provider_config_id'
-        );
+        try {
+            $assignedProviderIds = array_column(
+                $db->fetchAll(
+                    "SELECT provider_config_id FROM mail_user_providers WHERE user_id = ?",
+                    [(int)$userId]
+                ),
+                'provider_config_id'
+            );
+        } catch (\Exception $e) {
+            $assignedProviderIds = [];
+        }
 
-        $providers = $db->fetchAll(
-            "SELECT id, name, from_name, from_email, provider_type, is_active FROM mail_provider_configs ORDER BY is_active DESC, id ASC"
-        );
+        try {
+            $providers = $db->fetchAll(
+                "SELECT id, name, from_name, from_email, provider_type, is_active FROM mail_provider_configs ORDER BY is_active DESC, id ASC"
+            );
+        } catch (\Exception $e) {
+            $providers = [];
+        }
 
         $this->view('admin/mail/access-edit', [
             'title'               => 'Mail Access — ' . $user['name'],
