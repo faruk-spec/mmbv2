@@ -139,24 +139,24 @@ class EmailController extends BaseController
     {
         $this->requirePermission('email.queue');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            $this->jsonResponse(['success' => false, 'message' => 'Invalid request method']);
+            $this->json(['success' => false, 'message' => 'Invalid request method']);
             return;
         }
-        
+
         $limit = $_POST['limit'] ?? 50;
-        
+
         try {
             $processed = Email::processQueue($limit);
-            $this->jsonResponse([
+            $this->json([
                 'success' => true,
                 'message' => "Processed $processed emails",
                 'processed' => $processed
             ]);
         } catch (\Exception $e) {
-            $this->jsonResponse(['success' => false, 'message' => $e->getMessage()]);
+            $this->json(['success' => false, 'message' => $e->getMessage()]);
         }
     }
-    
+
     /**
      * Delete Failed Emails (AJAX)
      */
@@ -164,24 +164,23 @@ class EmailController extends BaseController
     {
         $this->requirePermission('email.queue');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            $this->jsonResponse(['success' => false, 'message' => 'Invalid request method']);
+            $this->json(['success' => false, 'message' => 'Invalid request method']);
             return;
         }
-        
+
         $db = Database::getInstance();
-        
+
         try {
-            $deleted = $db->execute(
-                "DELETE FROM email_queue WHERE status = 'failed'"
-            );
-            
-            $this->jsonResponse([
+            $stmt = $db->query("DELETE FROM email_queue WHERE status = 'failed'");
+            $deleted = $stmt->rowCount();
+
+            $this->json([
                 'success' => true,
-                'message' => "Deleted failed emails",
+                'message' => "Deleted {$deleted} failed email" . ($deleted !== 1 ? 's' : ''),
                 'deleted' => $deleted
             ]);
         } catch (\Exception $e) {
-            $this->jsonResponse(['success' => false, 'message' => $e->getMessage()]);
+            $this->json(['success' => false, 'message' => $e->getMessage()]);
         }
     }
 }

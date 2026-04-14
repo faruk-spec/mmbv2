@@ -112,34 +112,35 @@ class ApiController extends BaseController
     }
     
     /**
+         /**
      * Generate new API key (AJAX)
      */
     public function generateKey(): void
     {
         $this->requirePermission('api.keys');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            $this->jsonResponse(['success' => false, 'message' => 'Invalid request method']);
+            $this->json(['success' => false, 'message' => 'Invalid request method']);
             return;
         }
-        
+
         $userId = $_POST['user_id'] ?? null;
         $name = $_POST['name'] ?? 'API Key';
         $permissions = $_POST['permissions'] ?? ['*'];
         $expiresAt = $_POST['expires_at'] ?? null;
-        
+
         if (!$userId) {
-            $this->jsonResponse(['success' => false, 'message' => 'User ID is required']);
+            $this->json(['success' => false, 'message' => 'User ID is required']);
             return;
         }
-        
+
         try {
             $keyData = ApiAuth::generateKey($userId, $name, $permissions, $expiresAt);
-            $this->jsonResponse(['success' => true, 'data' => $keyData]);
+            $this->json(['success' => true, 'data' => $keyData]);
         } catch (\Exception $e) {
-            $this->jsonResponse(['success' => false, 'message' => $e->getMessage()]);
+            $this->json(['success' => false, 'message' => $e->getMessage()]);
         }
     }
-    
+
     /**
      * Revoke API key (AJAX)
      */
@@ -147,22 +148,22 @@ class ApiController extends BaseController
     {
         $this->requirePermission('api.keys');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            $this->jsonResponse(['success' => false, 'message' => 'Invalid request method']);
+            $this->json(['success' => false, 'message' => 'Invalid request method']);
             return;
         }
-        
+
         $keyId = $_POST['key_id'] ?? null;
-        
+
         if (!$keyId) {
-            $this->jsonResponse(['success' => false, 'message' => 'Key ID is required']);
+            $this->json(['success' => false, 'message' => 'Key ID is required']);
             return;
         }
-        
+
         try {
             ApiAuth::revokeKey($keyId);
-            $this->jsonResponse(['success' => true, 'message' => 'API key revoked successfully']);
+            $this->json(['success' => true, 'message' => 'API key revoked successfully']);
         } catch (\Exception $e) {
-            $this->jsonResponse(['success' => false, 'message' => $e->getMessage()]);
+            $this->json(['success' => false, 'message' => $e->getMessage()]);
         }
     }
 }

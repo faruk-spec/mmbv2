@@ -15,6 +15,7 @@ use Core\Database;
 use Core\Logger;
 use Core\Security;
 use Core\Helpers;
+use Core\Notification;
 
 class PlansController extends BaseController
 {
@@ -161,6 +162,7 @@ class PlansController extends BaseController
                     [$userId, $plan['id']]
                 );
                 Logger::activity($userId, 'subscription_auto_activated', ['plan_id' => $plan['id']]);
+                try { Notification::send($userId, 'plan_subscribed', 'You have been subscribed to the "' . $plan['name'] . '" plan.', ['plan_id' => $plan['id'], 'plan_name' => $plan['name']]); } catch (\Exception $e) {}
                 $this->flash('success', 'You have been subscribed to "' . $plan['name'] . '" successfully!');
             } catch (\Exception $e) {
                 Logger::error('PlansController::processSubscribe auto-assign — ' . $e->getMessage());
@@ -171,6 +173,7 @@ class PlansController extends BaseController
         }
 
         // Paid plan — request stored in logs, redirect back with confirmation
+        try { Notification::send($userId, 'plan_request_submitted', 'Your subscription request for the "' . $plan['name'] . '" plan has been submitted. An admin will activate it shortly.', ['plan_id' => $plan['id'], 'plan_name' => $plan['name']]); } catch (\Exception $e) {}
         $this->flash('success', 'Your subscription request for "' . $plan['name'] . '" has been submitted. An admin will activate it for you shortly.');
         $this->redirect('/plans');
     }

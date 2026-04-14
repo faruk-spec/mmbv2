@@ -131,23 +131,23 @@ class NotificationController extends BaseController
     {
         $this->requirePermission('notifications.preferences');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            $this->jsonResponse(['success' => false, 'message' => 'Invalid request method']);
+            $this->json(['success' => false, 'message' => 'Invalid request method']);
             return;
         }
-        
+
         $userId = $_POST['user_id'] ?? Auth::id();
         $type = $_POST['type'] ?? 'test';
         $message = $_POST['message'] ?? 'This is a test notification';
         $channels = $_POST['channels'] ?? ['database'];
-        
+
         try {
             Notification::send($userId, $type, $message, [], $channels);
-            $this->jsonResponse([
+            $this->json([
                 'success' => true,
                 'message' => 'Test notification sent successfully'
             ]);
         } catch (\Exception $e) {
-            $this->jsonResponse(['success' => false, 'message' => $e->getMessage()]);
+            $this->json(['success' => false, 'message' => $e->getMessage()]);
         }
     }
     
