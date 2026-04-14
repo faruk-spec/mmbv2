@@ -22,6 +22,7 @@ use Core\Auth;
 use Core\Database;
 use Core\Security;
 use Core\Logger;
+use Core\MailService;
 
 class MailAccessController extends BaseController
 {
@@ -29,6 +30,7 @@ class MailAccessController extends BaseController
     {
         $this->requireAuth();
         $this->requireAdmin();
+        MailService::ensureSchema();
     }
 
     // ------------------------------------------------------------------

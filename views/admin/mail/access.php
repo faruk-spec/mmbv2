@@ -18,7 +18,7 @@
 <?php endif; ?>
 
 <div class="card">
-    <table class="data-table">
+    <table class="table">
         <thead>
             <tr>
                 <th>User</th>
@@ -36,14 +36,18 @@
                     <div style="font-weight:500;"><?= View::e($u['name']) ?></div>
                 </td>
                 <td style="font-size:13px;color:var(--text-secondary);"><?= View::e($u['email']) ?></td>
-                <td><span class="badge badge-<?= $u['role'] === 'admin' || $u['role'] === 'super_admin' ? 'success' : 'default' ?>"><?= View::e($u['role']) ?></span></td>
+                <td>
+                    <span style="display:inline-flex;align-items:center;gap:4px;font-size:12px;padding:3px 8px;border-radius:4px;background:rgba(255,255,255,.07);color:#94a3b8;">
+                        <?= View::e($u['role']) ?>
+                    </span>
+                </td>
                 <td>
                     <?php if ($u['role'] === 'admin' || $u['role'] === 'super_admin'): ?>
-                    <span class="badge badge-success"><i class="fas fa-check"></i> Admin (always)</span>
+                    <span class="badge-success" style="font-size:12px;padding:3px 8px;border-radius:4px;background:rgba(16,185,129,.15);color:#6ee7b7;"><i class="fas fa-check"></i> Admin (always)</span>
                     <?php elseif ($u['has_mail_perm']): ?>
-                    <span class="badge badge-success"><i class="fas fa-check"></i> Granted</span>
+                    <span style="font-size:12px;padding:3px 8px;border-radius:4px;background:rgba(16,185,129,.15);color:#6ee7b7;"><i class="fas fa-check"></i> Granted</span>
                     <?php else: ?>
-                    <span class="badge badge-default"><i class="fas fa-times"></i> No access</span>
+                    <span style="font-size:12px;padding:3px 8px;border-radius:4px;background:rgba(255,255,255,.07);color:#94a3b8;"><i class="fas fa-times"></i> No access</span>
                     <?php endif; ?>
                 </td>
                 <td style="font-size:12px;color:var(--text-secondary);">

@@ -16,6 +16,82 @@ class MailService
     /** Cached active provider config */
     private static ?array $provider = null;
 
+    /** Flag set once per request to avoid repeated DDL checks */
+    private static bool $schemaChecked = false;
+
+    // ------------------------------------------------------------------
+    // Schema auto-migration
+    // ------------------------------------------------------------------
+
+    /**
+     * Ensure all mail-related schema additions exist.
+     * Safe to call multiple times — guarded by a per-request flag.
+     * Creates/alters tables using IF NOT EXISTS / column-existence checks.
+     */
+    public static function ensureSchema(): void
+    {
+        if (self::$schemaChecked) {
+            return;
+        }
+        self::$schemaChecked = true;
+
+        try {
+            $db = Database::getInstance();
+
+            // 1. mail_user_providers
+            $db->query(
+                "CREATE TABLE IF NOT EXISTS `mail_user_providers` (
+                  `id`                 INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                  `user_id`            INT UNSIGNED NOT NULL,
+                  `provider_config_id` INT UNSIGNED NOT NULL,
+                  `granted_by`         INT UNSIGNED NULL DEFAULT NULL,
+                  `created_at`         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  PRIMARY KEY (`id`),
+                  UNIQUE KEY `uq_user_provider` (`user_id`, `provider_config_id`),
+                  KEY `user_id` (`user_id`),
+                  KEY `provider_config_id` (`provider_config_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+                []
+            );
+
+            // 2. mail_send_log extra columns (body, cc, bcc, in_reply_to)
+            // Check which columns exist and add missing ones
+            $cols = $db->fetchAll(
+                "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'mail_send_log'",
+                []
+            );
+            $existing = array_map(fn($r) => $r['COLUMN_NAME'] ?? $r['column_name'], $cols);
+
+            if (!in_array('body_html', $existing, true)) {
+                $db->query("ALTER TABLE `mail_send_log` ADD COLUMN `body_html` LONGTEXT NULL DEFAULT NULL AFTER `subject`", []);
+            }
+            if (!in_array('cc_email', $existing, true)) {
+                $db->query("ALTER TABLE `mail_send_log` ADD COLUMN `cc_email` VARCHAR(1000) NULL DEFAULT NULL AFTER `body_html`", []);
+            }
+            if (!in_array('bcc_email', $existing, true)) {
+                $db->query("ALTER TABLE `mail_send_log` ADD COLUMN `bcc_email` VARCHAR(1000) NULL DEFAULT NULL AFTER `cc_email`", []);
+            }
+            if (!in_array('in_reply_to_id', $existing, true)) {
+                $db->query("ALTER TABLE `mail_send_log` ADD COLUMN `in_reply_to_id` INT UNSIGNED NULL DEFAULT NULL AFTER `bcc_email`", []);
+            }
+
+            // 3. mail_synced_messages — in_reply_to_id for inbox reply trail
+            $cols2 = $db->fetchAll(
+                "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'mail_synced_messages'",
+                []
+            );
+            $existing2 = array_map(fn($r) => $r['COLUMN_NAME'] ?? $r['column_name'], $cols2);
+
+            if (!in_array('in_reply_to_id', $existing2, true)) {
+                $db->query("ALTER TABLE `mail_synced_messages` ADD COLUMN `in_reply_to_id` INT UNSIGNED NULL DEFAULT NULL AFTER `body_text`", []);
+            }
+        } catch (\Exception $e) {
+            Logger::error('MailService::ensureSchema failed: ' . $e->getMessage());
+        }
+    }
+
     // ------------------------------------------------------------------
     // Config loading
     // ------------------------------------------------------------------
@@ -165,14 +241,14 @@ class MailService
                     $options
                 );
 
-                self::logSend($options['user_id'] ?? null, $recipient, $subject, $options['template_slug'] ?? null, $provider['id'] ?? null, $result ? 'sent' : 'failed', null, $body, $options['cc'] ?? null, $options['bcc'] ?? null);
+                self::logSend($options['user_id'] ?? null, $recipient, $subject, $options['template_slug'] ?? null, $provider['id'] ?? null, $result ? 'sent' : 'failed', null, $body, $options['cc'] ?? null, $options['bcc'] ?? null, $options['in_reply_to_id'] ?? null);
 
                 if (!$result) {
                     $allOk = false;
                 }
             } catch (\Exception $e) {
                 Logger::error('MailService SMTP error: ' . $e->getMessage());
-                self::logSend($options['user_id'] ?? null, $recipient, $subject, $options['template_slug'] ?? null, $provider['id'] ?? null, 'failed', $e->getMessage(), null, $options['cc'] ?? null, $options['bcc'] ?? null);
+                self::logSend($options['user_id'] ?? null, $recipient, $subject, $options['template_slug'] ?? null, $provider['id'] ?? null, 'failed', $e->getMessage(), null, $options['cc'] ?? null, $options['bcc'] ?? null, $options['in_reply_to_id'] ?? null);
                 $allOk = false;
             }
         }
@@ -882,7 +958,7 @@ HTML;
     // Audit log
     // ------------------------------------------------------------------
 
-    private static function logSend(?int $userId, string $recipient, ?string $subject, ?string $template, ?int $providerId, string $status, ?string $error = null, ?string $bodyHtml = null, ?string $cc = null, ?string $bcc = null): void
+    private static function logSend(?int $userId, string $recipient, ?string $subject, ?string $template, ?int $providerId, string $status, ?string $error = null, ?string $bodyHtml = null, ?string $cc = null, ?string $bcc = null, ?int $inReplyToId = null): int
     {
         try {
             $db = Database::getInstance();
@@ -897,9 +973,13 @@ HTML;
                 'body_html'          => $bodyHtml,
                 'cc_email'           => $cc,
                 'bcc_email'          => $bcc,
+                'in_reply_to_id'     => $inReplyToId,
             ]);
+            // Return the inserted ID so callers can chain replies
+            return (int)$db->fetch("SELECT LAST_INSERT_ID() AS id", [])['id'];
         } catch (\Exception $e) {
             // Non-critical – don't throw
+            return 0;
         }
     }
 }

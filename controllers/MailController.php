@@ -40,6 +40,8 @@ class MailController extends BaseController
             }
             exit;
         }
+
+        MailService::ensureSchema();
     }
 
     // ------------------------------------------------------------------
@@ -311,7 +313,37 @@ class MailController extends BaseController
             return;
         }
 
-        $this->view('mail/sent-view', compact('msg'));
+        // Build reply thread: walk up to root, then load all replies in that thread
+        $rootId = $msg['in_reply_to_id'] ?? null;
+        $thread = [];
+        try {
+            if ($rootId) {
+                // Load the original message if we are a reply
+                $root = $db->fetch(
+                    "SELECT id, recipient, subject, body_html, body_text, sent_at, status FROM mail_send_log WHERE id = ? AND user_id = ? LIMIT 1",
+                    [$rootId, $userId]
+                );
+                if ($root) {
+                    $thread[] = $root;
+                }
+            }
+            // Load all replies to this message (replies sent by this user referencing current id)
+            $replies = $db->fetchAll(
+                "SELECT id, recipient, subject, body_html, body_text, sent_at, status FROM mail_send_log
+                 WHERE in_reply_to_id = ? AND user_id = ?
+                 ORDER BY sent_at ASC",
+                [$id, $userId]
+            );
+            foreach ($replies as $r) {
+                if ((int)$r['id'] !== $id) {
+                    $thread[] = $r;
+                }
+            }
+        } catch (\Exception $e) {
+            // in_reply_to_id column may not exist yet — thread just stays empty
+        }
+
+        $this->view('mail/sent-view', compact('msg', 'thread'));
     }
 
     // ------------------------------------------------------------------
@@ -340,10 +372,11 @@ class MailController extends BaseController
 
         $opts = ['user_id' => Auth::id()];
         if ($providerId > 0) { $opts['provider_id'] = $providerId; }
+        if ($origId > 0) { $opts['in_reply_to_id'] = $origId; }
 
         MailService::sendNow($to, $subject, $body, $opts);
         Helpers::flash('success', 'Reply sent.');
-        $this->redirect('/mail/sent');
+        $this->redirect('/mail/sent/view/' . $origId);
     }
 
     // ------------------------------------------------------------------
@@ -476,7 +509,17 @@ class MailController extends BaseController
             return;
         }
 
-        $synced = MailService::syncInboxForUser(Auth::id(), 50);
-        $this->json(['success' => true, 'synced' => $synced]);
+        $userId    = Auth::id();
+        $providers = MailService::getUserProviders($userId);
+        $imapCount = count(array_filter($providers, fn($p) => !empty($p['imap_host']) && !empty($p['is_imap_enabled'])));
+        $synced    = MailService::syncInboxForUser($userId, 50);
+
+        $message = $synced > 0
+            ? "$synced new message(s) synced."
+            : ($imapCount === 0
+                ? 'No IMAP account configured. Ask your admin to assign one under Admin → Mail User Access.'
+                : 'Inbox is up to date.');
+
+        $this->json(['success' => true, 'synced' => $synced, 'message' => $message]);
     }
 }

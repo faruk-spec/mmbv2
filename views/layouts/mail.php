@@ -220,7 +220,14 @@ function mailSyncInbox() {
         body: '_csrf_token=' + encodeURIComponent(mailCsrfToken)
     }).then(r => r.json()).then(d => {
         btn.querySelector('i').classList.remove('fa-spin');
-        if (d.synced > 0) location.reload();
+        if (d.synced > 0) {
+            location.reload();
+        } else {
+            // Briefly flash the sync button green to show it ran
+            btn.style.background = 'rgba(16,185,129,.2)';
+            btn.title = d.message || 'Inbox is up to date';
+            setTimeout(() => { btn.style.background = ''; btn.title = 'Sync inbox'; }, 3000);
+        }
     }).catch(() => btn.querySelector('i').classList.remove('fa-spin'));
 }
 
