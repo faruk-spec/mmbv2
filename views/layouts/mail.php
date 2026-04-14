@@ -15,19 +15,8 @@ html,body{height:100%;font-family:'Inter',sans-serif;font-size:14px;background:#
 a{color:inherit;text-decoration:none}
 button{cursor:pointer;font-family:inherit}
 
-/* ─── Platform Header Strip ─── */
-.platform-strip{height:40px;background:#07070f;border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;padding:0 16px;gap:12px;flex-shrink:0;z-index:200;position:relative;}
-.platform-strip .ps-logo{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#a5b4fc;}
-.platform-strip .ps-logo .ps-icon{width:22px;height:22px;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;}
-.platform-strip .ps-sep{width:1px;height:18px;background:rgba(255,255,255,.1);}
-.platform-strip .ps-link{display:flex;align-items:center;gap:5px;font-size:12px;color:#64748b;padding:3px 8px;border-radius:5px;transition:.15s;}
-.platform-strip .ps-link:hover{background:rgba(255,255,255,.06);color:#e2e8f0;}
-.platform-strip .ps-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
-.platform-strip .ps-user{display:flex;align-items:center;gap:6px;font-size:12px;color:#64748b;}
-.platform-strip .ps-avatar{width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;}
-
 /* ─── Layout ─── */
-.mail-wrapper{display:flex;flex-direction:column;height:calc(100vh - 40px);}
+.mail-wrapper{display:flex;flex-direction:column;height:100vh;}
 .mail-app{display:flex;flex:1;overflow:hidden}
 .mail-sidebar{width:220px;min-width:220px;background:#0a0a12;border-right:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;overflow-y:auto}
 .mail-main{flex:1;display:flex;flex-direction:column;overflow:hidden}
@@ -130,8 +119,7 @@ textarea.form-input{resize:vertical;min-height:200px}
 
 /* ─── Responsive ─── */
 @media(max-width:768px){
-    .platform-strip .ps-link span{display:none;}
-    .mail-sidebar{width:0;min-width:0;position:fixed;z-index:100;transition:.3s;overflow:hidden;top:40px;bottom:0}
+    .mail-sidebar{width:0;min-width:0;position:fixed;z-index:100;transition:.3s;overflow:hidden;top:0;bottom:0}
     .mail-sidebar.open{width:220px;min-width:220px}
     .mail-main{width:100%}
 }
@@ -142,8 +130,6 @@ textarea.form-input{resize:vertical;min-height:200px}
 $_curUri   = $_SERVER['REQUEST_URI'] ?? '/mail';
 $_folder   = $_GET['folder'] ?? 'inbox';
 $_mailUser = \Core\Auth::user() ?? [];
-$_appName  = defined('APP_NAME') ? APP_NAME : 'Platform';
-$_appUrl   = defined('APP_URL')  ? APP_URL  : '';
 
 // Pre-compute counts for sidebar badges
 $_inboxUnread  = 0;
@@ -165,32 +151,6 @@ $_isSent     = strpos($_curUri, '/mail/sent') !== false;
 $_isCompose  = strpos($_curUri, '/mail/compose') !== false;
 $_isInbox    = !$_isSearch && !$_isSettings && !$_isView && !$_isCompose && !$_isSent;
 ?>
-
-<!-- Platform navigation strip -->
-<div class="platform-strip">
-    <div class="ps-logo">
-        <div class="ps-icon"><i class="fas fa-layer-group"></i></div>
-        <?= htmlspecialchars($_appName, ENT_QUOTES, 'UTF-8') ?>
-    </div>
-    <div class="ps-sep"></div>
-    <a href="<?= htmlspecialchars($_appUrl, ENT_QUOTES, 'UTF-8') ?>/dashboard" class="ps-link">
-        <i class="fas fa-arrow-left"></i> <span>Dashboard</span>
-    </a>
-    <a href="<?= htmlspecialchars($_appUrl, ENT_QUOTES, 'UTF-8') ?>/dashboard/notifications" class="ps-link">
-        <i class="fas fa-bell"></i>
-    </a>
-    <?php if (\Core\Auth::isAdmin()): ?>
-    <a href="<?= htmlspecialchars($_appUrl, ENT_QUOTES, 'UTF-8') ?>/admin/mail/config" class="ps-link">
-        <i class="fas fa-cog"></i> <span>Admin Mail</span>
-    </a>
-    <?php endif; ?>
-    <div class="ps-right">
-        <div class="ps-user">
-            <div class="ps-avatar"><?= strtoupper(substr($_mailUser['name'] ?? 'U', 0, 1)) ?></div>
-            <span><?= htmlspecialchars($_mailUser['name'] ?? '', ENT_QUOTES, 'UTF-8') ?></span>
-        </div>
-    </div>
-</div>
 
 <div class="mail-wrapper">
 <div class="mail-app">
