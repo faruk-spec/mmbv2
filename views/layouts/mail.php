@@ -139,6 +139,9 @@ $_appUrl   = defined('APP_URL')  ? APP_URL  : '';
                 } catch (\Exception $e) {}
                 ?>
             </a>
+            <a href="/mail/sent" class="mail-nav-item <?= (strpos($_curUri, '/mail/sent') !== false) ? 'active' : '' ?>">
+                <i class="fas fa-paper-plane"></i> Sent
+            </a>
             <a href="/mail?folder=starred" class="mail-nav-item <?= ($_isInbox && $_folder === 'starred') ? 'active' : '' ?>">
                 <i class="fas fa-star"></i> Starred
             </a>

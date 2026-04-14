@@ -80,6 +80,40 @@ class MailService
         self::$provider = null;
     }
 
+    /**
+     * Load a specific provider by its ID (decrypting passwords).
+     */
+    public static function getProviderById(int $id): ?array
+    {
+        try {
+            $db  = Database::getInstance();
+            $row = $db->fetch("SELECT * FROM mail_provider_configs WHERE id = ? LIMIT 1", [$id]);
+            if ($row) {
+                $row['smtp_password'] = self::decryptPassword($row['smtp_password']);
+                $row['imap_password'] = self::decryptPassword($row['imap_password']);
+                return $row;
+            }
+        } catch (\Exception $e) {
+            // fall through
+        }
+        return null;
+    }
+
+    /**
+     * Return all configured providers (IDs, names, from_email) for UI dropdowns.
+     */
+    public static function getAllProviders(): array
+    {
+        try {
+            $db = Database::getInstance();
+            return $db->fetchAll(
+                "SELECT id, name, from_name, from_email, provider_type, is_active FROM mail_provider_configs ORDER BY is_active DESC, id ASC"
+            ) ?: [];
+        } catch (\Exception $e) {
+            return [];
+        }
+    }
+
     // ------------------------------------------------------------------
     // SMTP sending
     // ------------------------------------------------------------------
@@ -87,19 +121,26 @@ class MailService
     /**
      * Send an email immediately.
      *
-     * @param string $to     Recipient address
+     * @param string $to      Recipient address (or comma-separated list)
      * @param string $subject
-     * @param string $body   HTML body
-     * @param array  $options  cc, bcc, reply_to, from_name, from_email
+     * @param string $body    HTML body
+     * @param array  $options cc, bcc, reply_to, from_name, from_email, provider_id
      */
     public static function sendNow(string $to, string $subject, string $body, array $options = []): bool
     {
-        if (!filter_var($to, FILTER_VALIDATE_EMAIL)) {
-            Logger::error("MailService: invalid recipient: $to");
+        // Normalise multi-recipient To: send to each address separately
+        $recipients = array_filter(array_map('trim', explode(',', $to)), fn($e) => filter_var($e, FILTER_VALIDATE_EMAIL));
+        if (empty($recipients)) {
+            Logger::error("MailService: no valid recipient in: $to");
             return false;
         }
 
-        $provider = self::getActiveProvider();
+        // Load provider: specific one if provider_id given, else active
+        if (!empty($options['provider_id'])) {
+            $provider = self::getProviderById((int)$options['provider_id']);
+        } else {
+            $provider = self::getActiveProvider();
+        }
         if (!$provider || empty($provider['smtp_host'])) {
             Logger::error('MailService: no active SMTP provider configured');
             return false;
@@ -109,26 +150,33 @@ class MailService
         $fromEmail = $options['from_email'] ?? $provider['from_email'] ?? '';
         $replyTo   = $options['reply_to']   ?? $provider['reply_to']   ?? $fromEmail;
 
-        try {
-            $result = self::smtpSend(
-                $provider,
-                $to,
-                $subject,
-                $body,
-                $fromName,
-                $fromEmail,
-                $replyTo,
-                $options
-            );
+        // Send to each recipient; return true only if all succeeded
+        $allOk = true;
+        foreach ($recipients as $recipient) {
+            try {
+                $result = self::smtpSend(
+                    $provider,
+                    $recipient,
+                    $subject,
+                    $body,
+                    $fromName,
+                    $fromEmail,
+                    $replyTo,
+                    $options
+                );
 
-            self::logSend($options['user_id'] ?? null, $to, $subject, $options['template_slug'] ?? null, $provider['id'] ?? null, $result ? 'sent' : 'failed');
+                self::logSend($options['user_id'] ?? null, $recipient, $subject, $options['template_slug'] ?? null, $provider['id'] ?? null, $result ? 'sent' : 'failed');
 
-            return $result;
-        } catch (\Exception $e) {
-            Logger::error('MailService SMTP error: ' . $e->getMessage());
-            self::logSend($options['user_id'] ?? null, $to, $subject, $options['template_slug'] ?? null, $provider['id'] ?? null, 'failed', $e->getMessage());
-            return false;
+                if (!$result) {
+                    $allOk = false;
+                }
+            } catch (\Exception $e) {
+                Logger::error('MailService SMTP error: ' . $e->getMessage());
+                self::logSend($options['user_id'] ?? null, $recipient, $subject, $options['template_slug'] ?? null, $provider['id'] ?? null, 'failed', $e->getMessage());
+                $allOk = false;
+            }
         }
+        return $allOk;
     }
 
     /**

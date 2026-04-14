@@ -17,6 +17,7 @@
             <td style="padding:8px 0;color:#64748b;width:160px;">Provider Type</td>
             <td style="padding:8px 0;"><strong><?= htmlspecialchars(strtoupper($provider['provider_type'] ?? 'SMTP'), ENT_QUOTES, 'UTF-8') ?></strong></td>
         </tr>
+        <?php if (\Core\Auth::isAdmin()): ?>
         <tr>
             <td style="padding:8px 0;color:#64748b;">SMTP Host</td>
             <td style="padding:8px 0;"><code><?= htmlspecialchars($provider['smtp_host'] ?? '—', ENT_QUOTES, 'UTF-8') ?></code></td>
@@ -25,11 +26,17 @@
             <td style="padding:8px 0;color:#64748b;">From Email</td>
             <td style="padding:8px 0;"><?= htmlspecialchars($provider['from_email'] ?? '—', ENT_QUOTES, 'UTF-8') ?></td>
         </tr>
+        <?php else: ?>
+        <tr>
+            <td style="padding:8px 0;color:#64748b;">Status</td>
+            <td style="padding:8px 0;"><span style="color:#6ee7b7;"><i class="fas fa-check-circle"></i> Configured</span></td>
+        </tr>
+        <?php endif; ?>
         <tr>
             <td style="padding:8px 0;color:#64748b;">IMAP Sync</td>
             <td style="padding:8px 0;">
                 <?php if ($provider['is_imap_enabled']): ?>
-                    <span style="color:#6ee7b7;"><i class="fas fa-check-circle"></i> Enabled (<?= htmlspecialchars($provider['imap_host'] ?? '', ENT_QUOTES, 'UTF-8') ?>)</span>
+                    <span style="color:#6ee7b7;"><i class="fas fa-check-circle"></i> Enabled<?= \Core\Auth::isAdmin() ? ' (' . htmlspecialchars($provider['imap_host'] ?? '', ENT_QUOTES, 'UTF-8') . ')' : '' ?></span>
                 <?php else: ?>
                     <span style="color:#64748b;"><i class="fas fa-times-circle"></i> Disabled</span>
                 <?php endif; ?>

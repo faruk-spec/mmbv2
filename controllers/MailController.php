@@ -6,7 +6,10 @@
  * Routes: GET/POST /mail, /mail/view/{id}, /mail/compose,
  *         /mail/reply, /mail/forward, /mail/search,
  *         /mail/settings, /mail/sync, /mail/mark-read,
- *         /mail/delete, /mail/archive, /mail/star
+ *         /mail/delete, /mail/archive, /mail/star,
+ *         /mail/sent, /mail/suggest-recipients
+ *
+ * Access: admin role OR explicit 'mail' permission in admin_user_permissions.
  *
  * @package MMB\Controllers
  */
@@ -25,6 +28,18 @@ class MailController extends BaseController
     public function __construct()
     {
         $this->requireAuth();
+
+        // /mail is only accessible to admins or users explicitly granted the 'mail' permission
+        if (!\Core\Auth::isAdmin() && !\Core\Auth::hasPermission('mail')) {
+            $isXhr = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) || (($_SERVER['HTTP_ACCEPT'] ?? '') === 'application/json');
+            if ($isXhr) {
+                $this->json(['success' => false, 'message' => 'Access denied.'], 403);
+            } else {
+                \Core\Helpers::flash('error', 'You do not have permission to access the mail module.');
+                $this->redirect('/dashboard');
+            }
+            exit;
+        }
     }
 
     // ------------------------------------------------------------------
@@ -108,7 +123,65 @@ class MailController extends BaseController
 
     public function compose(): void
     {
-        $this->view('mail/compose', []);
+        $providers = MailService::getAllProviders();
+        $this->view('mail/compose', compact('providers'));
+    }
+
+    // ------------------------------------------------------------------
+    // Sent history
+    // ------------------------------------------------------------------
+
+    public function sent(): void
+    {
+        $db      = Database::getInstance();
+        $userId  = Auth::id();
+        $page    = max(1, (int)($_GET['page'] ?? 1));
+        $perPage = 30;
+        $offset  = ($page - 1) * $perPage;
+
+        $messages = $db->fetchAll(
+            "SELECT id, recipient AS to_email, subject, provider_config_id, status, error_message, sent_at
+             FROM mail_send_log
+             WHERE user_id = ?
+             ORDER BY sent_at DESC
+             LIMIT ? OFFSET ?",
+            [$userId, $perPage, $offset]
+        );
+
+        $total = (int)($db->fetch(
+            "SELECT COUNT(*) AS c FROM mail_send_log WHERE user_id = ?",
+            [$userId]
+        )['c'] ?? 0);
+
+        $this->view('mail/sent', compact('messages', 'total', 'page', 'perPage'));
+    }
+
+    // ------------------------------------------------------------------
+    // Recipient autocomplete (AJAX)
+    // ------------------------------------------------------------------
+
+    public function suggestRecipients(): void
+    {
+        $q      = trim($_GET['q'] ?? '');
+        $userId = Auth::id();
+        $db     = Database::getInstance();
+
+        if (strlen($q) < 2) {
+            $this->json([]);
+            return;
+        }
+
+        $like    = '%' . $q . '%';
+        $results = $db->fetchAll(
+            "SELECT recipient FROM mail_send_log
+             WHERE user_id = ? AND recipient LIKE ? AND status = 'sent'
+             GROUP BY recipient
+             ORDER BY MAX(sent_at) DESC
+             LIMIT 10",
+            [$userId, $like]
+        );
+
+        $this->json(array_column($results, 'recipient'));
     }
 
     // ------------------------------------------------------------------
@@ -178,35 +251,44 @@ class MailController extends BaseController
             return;
         }
 
-        $to      = trim($this->input('to', ''));
-        $subject = trim($this->input('subject', ''));
-        $body    = $this->input('body', '');
-        $cc      = trim($this->input('cc', ''));
-        $bcc     = trim($this->input('bcc', ''));
-        $user    = Auth::user();
+        $toRaw      = trim($this->input('to', ''));
+        $subject    = trim($this->input('subject', ''));
+        $body       = $this->input('body', '');
+        $cc         = trim($this->input('cc', ''));
+        $bcc        = trim($this->input('bcc', ''));
+        $providerId = (int)$this->input('provider_id', 0);
+        $user       = Auth::user();
 
-        if (!filter_var($to, FILTER_VALIDATE_EMAIL) || empty($subject)) {
+        if (empty($toRaw) || empty($subject)) {
             Helpers::flash('error', 'Recipient email and subject are required.');
             $this->redirect('/mail/compose');
             return;
         }
 
-        $opts = [
-            'user_id'    => Auth::id(),
-            'from_name'  => $user['name'] ?? '',
-            'from_email' => $user['email'] ?? '',
-        ];
-        if ($cc !== '')  { $opts['cc']  = $cc; }
-        if ($bcc !== '') { $opts['bcc'] = $bcc; }
+        // Validate all To addresses
+        $toList = array_filter(array_map('trim', explode(',', $toRaw)), fn($e) => filter_var($e, FILTER_VALIDATE_EMAIL));
+        if (empty($toList)) {
+            Helpers::flash('error', 'Please enter at least one valid recipient email address.');
+            $this->redirect('/mail/compose');
+            return;
+        }
 
-        $sent = MailService::sendNow($to, $subject, $body, $opts);
+        $opts = ['user_id' => Auth::id()];
+        if ($cc !== '')           { $opts['cc']  = $cc; }
+        if ($bcc !== '')          { $opts['bcc'] = $bcc; }
+        if ($providerId > 0)      { $opts['provider_id'] = $providerId; }
+
+        // Join multiple recipients as comma-separated for sendNow
+        $toStr = implode(',', $toList);
+        $sent  = MailService::sendNow($toStr, $subject, $body, $opts);
 
         if ($sent) {
-            Helpers::flash('success', "Email sent to $to.");
+            $count = count($toList);
+            Helpers::flash('success', $count > 1 ? "Email sent to $count recipients." : "Email sent to {$toList[array_key_first($toList)]}.");
         } else {
             Helpers::flash('error', 'Failed to send email. Check mail configuration in admin panel.');
         }
-        $this->redirect('/mail');
+        $this->redirect('/mail/sent');
     }
 
     // ------------------------------------------------------------------

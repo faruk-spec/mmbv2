@@ -679,9 +679,10 @@ class Auth
             
             // Create new reset
             $db->insert('password_resets', [
-                'email' => $email,
-                'token' => hash('sha256', $token),
-                'created_at' => date('Y-m-d H:i:s')
+                'email'      => $email,
+                'token'      => hash('sha256', $token),
+                'created_at' => date('Y-m-d H:i:s'),
+                'visited_at' => null,
             ]);
             
             // Send password reset email immediately (not queued — user needs the link now)
@@ -717,7 +718,7 @@ class Auth
             $hashedToken = hash('sha256', $token);
             
             $reset = $db->fetch(
-                "SELECT * FROM password_resets WHERE token = ? AND created_at > DATE_SUB(NOW(), INTERVAL 1 HOUR)",
+                "SELECT * FROM password_resets WHERE token = ? AND created_at > DATE_SUB(NOW(), INTERVAL 5 MINUTE)",
                 [$hashedToken]
             );
             

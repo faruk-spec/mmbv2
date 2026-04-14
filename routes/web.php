@@ -53,12 +53,15 @@ $router->post('/settings', 'DashboardController@updateSettings', ['auth']);
 
 // ── Mail (Webmail inbox) ──────────────────────────────────────────────────────
 // Accessible at /mail (and later can point mail.domain.in subdomain here)
+// Access is restricted to admin + users with 'mail' permission (enforced in MailController::__construct)
 $router->get('/mail', 'MailController@inbox', ['auth']);
 $router->get('/mail/compose', 'MailController@compose', ['auth']);
 $router->post('/mail/compose', 'MailController@send', ['auth']);
+$router->get('/mail/sent', 'MailController@sent', ['auth']);
 $router->get('/mail/search', 'MailController@search', ['auth']);
 $router->get('/mail/settings', 'MailController@settings', ['auth']);
 $router->post('/mail/settings', 'MailController@saveSettings', ['auth']);
+$router->get('/mail/suggest-recipients', 'MailController@suggestRecipients', ['auth']);
 $router->get('/mail/view/{id}', 'MailController@viewMessage', ['auth']);
 $router->post('/mail/reply', 'MailController@reply', ['auth']);
 $router->post('/mail/forward', 'MailController@forward', ['auth']);
