@@ -28,46 +28,53 @@ class EmailController extends BaseController
     {
         $this->requirePermission('email.queue');
         $db = Database::getInstance();
-        
-        $status = isset($_GET['status']) ? $_GET['status'] : 'all';
-        $page = isset($_GET['page']) ? $_GET['page'] : 1;
+
+        $status  = $_GET['status'] ?? 'all';
+        $page    = max(1, (int)($_GET['page'] ?? 1));
         $perPage = 50;
-        $offset = ($page - 1) * $perPage;
-        
-        $where = '';
+        $offset  = ($page - 1) * $perPage;
+
+        $where  = '';
         $params = [];
-        
+
         if ($status !== 'all') {
-            $where = "WHERE status = ?";
+            $where    = "WHERE status = ?";
             $params[] = $status;
         }
-        
-        // Get queued emails
-        $emails = $db->fetchAll(
-            "SELECT * FROM email_queue 
-             $where 
-             ORDER BY created_at DESC 
-             LIMIT ? OFFSET ?",
-            array_merge($params, [$perPage, $offset])
-        );
-        
-        $total = $db->fetch(
-            "SELECT COUNT(*) as count FROM email_queue $where",
-            $params
-        )['count'];
-        
-        // Get queue statistics
+
+        $emails = [];
+        $total  = 0;
+
+        try {
+            $emails = $db->fetchAll(
+                "SELECT * FROM email_queue
+                 $where
+                 ORDER BY created_at DESC
+                 LIMIT ? OFFSET ?",
+                array_merge($params, [$perPage, $offset])
+            );
+
+            $total = (int)($db->fetch(
+                "SELECT COUNT(*) AS count FROM email_queue $where",
+                $params
+            )['count'] ?? 0);
+        } catch (\Throwable $e) {
+            // email_queue table may not exist yet — show empty list
+            \Core\Logger::warning('EmailController::queue DB error: ' . $e->getMessage());
+        }
+
+        // Queue statistics come from the Cache-based queue (Email class)
         $stats = Email::getQueueStats();
-        
+
         $this->view('admin/email/queue', [
-            'title' => 'Email Queue',
-            'emails' => $emails,
-            'stats' => $stats,
-            'page' => $page,
-            'perPage' => $perPage,
-            'total' => $total,
-            'totalPages' => ceil($total / $perPage),
-            'status' => $status
+            'title'      => 'Email Queue',
+            'emails'     => $emails,
+            'stats'      => $stats,
+            'page'       => $page,
+            'perPage'    => $perPage,
+            'total'      => $total,
+            'totalPages' => $total > 0 ? (int)ceil($total / $perPage) : 1,
+            'status'     => $status,
         ]);
     }
     

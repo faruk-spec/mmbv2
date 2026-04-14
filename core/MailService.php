@@ -162,7 +162,7 @@ class MailService
             if (!in_array('reply_to_inbox_id', $existing, true)) {
                 $db->query("ALTER TABLE `mail_send_log` ADD COLUMN `reply_to_inbox_id` INT UNSIGNED NULL DEFAULT NULL AFTER `in_reply_to_id`", []);
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Logger::error('MailService::ensureSchema failed: ' . $e->getMessage());
         }
     }
@@ -193,7 +193,7 @@ class MailService
                 self::$provider = $row;
                 return self::$provider;
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             // DB not available, fall through to file config
         }
 
@@ -244,7 +244,7 @@ class MailService
                 $row['imap_password'] = self::decryptPassword($row['imap_password']);
                 return $row;
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             // fall through
         }
         return null;
@@ -260,7 +260,7 @@ class MailService
             return $db->fetchAll(
                 "SELECT id, name, from_name, from_email, provider_type, is_active FROM mail_provider_configs ORDER BY is_active DESC, id ASC"
             ) ?: [];
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return [];
         }
     }
@@ -321,7 +321,7 @@ class MailService
                 if (!$result) {
                     $allOk = false;
                 }
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 Logger::error('MailService SMTP error: ' . $e->getMessage());
                 self::logSend($options['user_id'] ?? null, $recipient, $subject, $options['template_slug'] ?? null, $provider['id'] ?? null, 'failed', $e->getMessage(), null, $options['cc'] ?? null, $options['bcc'] ?? null, $options['in_reply_to_id'] ?? null, $options['reply_to_inbox_id'] ?? null);
                 $allOk = false;
@@ -354,7 +354,7 @@ class MailService
                 'max_attempts' => 3,
             ]);
             return true;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Logger::error('MailService queue error: ' . $e->getMessage());
             return false;
         }
@@ -403,7 +403,7 @@ class MailService
                 }
             }
             return $sent;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Logger::error('MailService processQueue error: ' . $e->getMessage());
             return 0;
         }
@@ -429,7 +429,7 @@ class MailService
                 "SELECT * FROM mail_notification_templates WHERE slug = ? AND is_enabled = 1 LIMIT 1",
                 [$slug]
             );
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $template = null;
         }
 
@@ -509,7 +509,7 @@ class MailService
                 unset($r);
                 return $rows;
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             // fall through to default
         }
         $active = self::getActiveProvider();
@@ -615,7 +615,7 @@ class MailService
                     'raw_headers'        => mb_substr($header, 0, 65535),
                 ]);
                 $synced++;
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 // duplicate or insert error – skip
             }
         }
@@ -710,7 +710,7 @@ class MailService
             fwrite($socket, "QUIT\r\n");
             fclose($socket);
             return ['success' => true, 'message' => 'Connected: ' . trim($greeting)];
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return ['success' => false, 'message' => $e->getMessage()];
         }
     }
@@ -755,7 +755,7 @@ class MailService
                     ? "Test email sent to $to successfully."
                     : "SMTP send failed. Check credentials and try the SMTP test first.",
             ];
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             self::logSend(null, $to, $subject, 'test', $provider['id'] ?? null, 'failed', $e->getMessage());
             return ['success' => false, 'message' => 'SMTP error: ' . $e->getMessage()];
         }
@@ -1024,7 +1024,7 @@ HTML;
             $enc = substr($data, 16);
             $dec = openssl_decrypt($enc, 'AES-256-CBC', $key, 0, $iv);
             return $dec !== false ? $dec : $encrypted;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return $encrypted;
         }
     }
@@ -1052,7 +1052,7 @@ HTML;
                 'reply_to_inbox_id'   => $replyToInboxId,
             ]);
             return (int)$db->fetch("SELECT LAST_INSERT_ID() AS id", [])['id'];
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             // Non-critical – don't throw
             return 0;
         }

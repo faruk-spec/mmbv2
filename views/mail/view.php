@@ -203,13 +203,18 @@ function toggleThread(header) {
 }
 function mailArchiveView(id) {
     mailPostAction('/mail/archive', {id, state: 1}, d => {
-        if (d.success) window.location.href = '/mail';
+        if (d.success) {
+            mailToast('Archived — returning to inbox…', {icon:'fa-archive',color:'#6ee7b7',duration:1500});
+            setTimeout(() => window.location.href = '/mail', 1200);
+        }
     });
 }
 function mailDeleteView(id) {
-    if (!confirm('Delete this message?')) return;
     mailPostAction('/mail/delete', {id}, d => {
-        if (d.success) window.location.href = '/mail';
+        if (d.success) {
+            mailToast('Moved to Trash — returning to inbox…', {icon:'fa-trash',color:'#fca5a5',duration:1500});
+            setTimeout(() => window.location.href = '/mail', 1200);
+        }
     });
 }
 </script>

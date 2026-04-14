@@ -57,19 +57,22 @@ class MailController extends BaseController
         $offset  = ($page - 1) * $perPage;
         $folder  = $_GET['folder'] ?? 'inbox';
 
-        $where  = "user_id = ? AND is_deleted = 0";
+        $where  = "user_id = ?";
         $params = [$userId];
 
-        if ($folder === 'starred') {
-            $where .= ' AND is_starred = 1';
+        if ($folder === 'trash') {
+            $where .= ' AND is_deleted = 1';
+        } elseif ($folder === 'starred') {
+            $where .= ' AND is_deleted = 0 AND is_starred = 1';
         } elseif ($folder === 'archived') {
-            $where .= ' AND is_archived = 1';
+            $where .= ' AND is_deleted = 0 AND is_archived = 1';
         } else {
-            $where .= ' AND is_archived = 0';
+            $where .= ' AND is_deleted = 0 AND is_archived = 0';
         }
 
         $messages = $db->fetchAll(
-            "SELECT id, subject, from_name, from_email, date_sent, is_read, is_starred, is_archived
+            "SELECT id, subject, from_name, from_email, date_sent, is_read, is_starred, is_archived,
+                    LEFT(body_text, 120) AS body_text
              FROM mail_synced_messages
              WHERE $where
              ORDER BY date_sent DESC

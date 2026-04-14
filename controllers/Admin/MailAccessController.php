@@ -144,7 +144,12 @@ class MailAccessController extends BaseController
         }
 
         $db   = Database::getInstance();
-        $user = $db->fetch("SELECT id, name FROM users WHERE id = ?", [(int)$userId]);
+        $user = null;
+        try {
+            $user = $db->fetch("SELECT id, name FROM users WHERE id = ?", [(int)$userId]);
+        } catch (\Throwable $e) {
+            \Core\Logger::error('MailAccessController::save users fetch: ' . $e->getMessage());
+        }
 
         if (!$user) {
             $this->flash('error', 'User not found.');

@@ -3,9 +3,14 @@
 <?php View::extend('mail'); ?>
 <?php View::section('content'); ?>
 
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
     <div>
-        <h2 style="margin:0;font-size:18px;font-weight:600;text-transform:capitalize;"><?= htmlspecialchars($folder === 'inbox' ? 'Inbox' : ucfirst($folder ?? 'Inbox'), ENT_QUOTES, 'UTF-8') ?></h2>
+        <h2 style="margin:0;font-size:18px;font-weight:600;text-transform:capitalize;">
+            <?php
+            $folderLabels = ['inbox'=>'Inbox','starred'=>'Starred','archived'=>'Archived','trash'=>'Trash'];
+            echo htmlspecialchars($folderLabels[$folder ?? 'inbox'] ?? ucfirst($folder ?? 'Inbox'), ENT_QUOTES, 'UTF-8');
+            ?>
+        </h2>
         <p class="text-muted" style="font-size:12px;margin-top:2px;"><?= (int)($total ?? 0) ?> message<?= (int)($total ?? 0) === 1 ? '' : 's' ?></p>
     </div>
     <div style="display:flex;gap:8px;align-items:center;">
@@ -21,28 +26,35 @@
 
 <?php if (empty($messages)): ?>
 <div class="mail-card" style="text-align:center;padding:60px 20px;">
-    <i class="fas fa-inbox" style="font-size:48px;color:#334155;margin-bottom:16px;"></i>
+    <?php
+    $folderIcons = ['inbox'=>'fa-inbox','starred'=>'fa-star','archived'=>'fa-archive','trash'=>'fa-trash'];
+    $fi = $folderIcons[$folder ?? 'inbox'] ?? 'fa-inbox';
+    ?>
+    <i class="fas <?= $fi ?>" style="font-size:48px;color:#334155;margin-bottom:16px;"></i>
     <p style="color:#64748b;font-size:15px;">
-        <?= isset($searchQuery) ? 'No results found for "' . htmlspecialchars($searchQuery, ENT_QUOTES, 'UTF-8') . '"' : 'Your ' . htmlspecialchars($folder ?? 'inbox', ENT_QUOTES, 'UTF-8') . ' is empty.' ?>
+        <?= isset($searchQuery) ? 'No results found for "' . htmlspecialchars($searchQuery, ENT_QUOTES, 'UTF-8') . '"'
+                                 : 'Your ' . htmlspecialchars($folderLabels[$folder ?? 'inbox'] ?? ucfirst($folder ?? 'inbox'), ENT_QUOTES, 'UTF-8') . ' is empty.' ?>
     </p>
-    <?php if (empty($searchQuery)): ?>
-    <p style="color:#475569;font-size:13px;margin-top:8px;">Click <i class="fas fa-sync-alt"></i> in the top-bar to sync new messages from your provider.</p>
+    <?php if (empty($searchQuery) && ($folder ?? 'inbox') === 'inbox'): ?>
+    <p style="color:#475569;font-size:13px;margin-top:8px;">
+        Click <i class="fas fa-sync-alt"></i> in the top-bar to sync new messages from your provider.
+    </p>
     <?php endif; ?>
 </div>
 <?php else: ?>
 <div class="mail-card" style="padding:0;overflow:hidden;">
-    <table class="mail-table">
+    <table class="mail-table" id="mailInboxTable">
         <thead>
             <tr>
-                <th style="width:20px;"></th>
-                <th>From</th>
-                <th>Subject</th>
-                <th style="width:140px;">Date</th>
-                <th style="width:110px;">Actions</th>
+                <th style="width:22px;"></th>
+                <th style="width:220px;">From</th>
+                <th>Subject &amp; Preview</th>
+                <th style="width:120px;">Date</th>
+                <th style="width:120px;text-align:right;">Actions</th>
             </tr>
         </thead>
         <tbody>
-            <?php foreach ($messages as $msg): ?>
+            <?php foreach ($messages as $idx => $msg): ?>
             <tr class="<?= $msg['is_read'] ? '' : 'unread' ?>" id="mail-row-<?= (int)$msg['id'] ?>">
                 <td>
                     <button class="star-btn <?= $msg['is_starred'] ? 'starred' : '' ?>"
@@ -60,27 +72,48 @@
                     </a>
                 </td>
                 <td>
-                    <a href="/mail/view/<?= (int)$msg['id'] ?>"
-                       style="color:<?= $msg['is_read'] ? '#94a3b8' : '#e2e8f0' ?>;font-weight:<?= $msg['is_read'] ? '400' : '500' ?>;">
-                        <?= htmlspecialchars(mb_substr($msg['subject'] ?? '(no subject)', 0, 80), ENT_QUOTES, 'UTF-8') ?>
+                    <a href="/mail/view/<?= (int)$msg['id'] ?>" style="display:block;">
+                        <span style="color:<?= $msg['is_read'] ? '#94a3b8' : '#e2e8f0' ?>;font-weight:<?= $msg['is_read'] ? '400' : '500' ?>;">
+                            <?= htmlspecialchars(mb_substr($msg['subject'] ?? '(no subject)', 0, 70), ENT_QUOTES, 'UTF-8') ?>
+                        </span>
+                        <?php
+                        $preview = mb_substr(strip_tags($msg['body_text'] ?? $msg['body_html'] ?? ''), 0, 90);
+                        if ($preview):
+                        ?>
+                        <span style="font-size:12px;color:#475569;margin-left:6px;">
+                            – <?= htmlspecialchars($preview, ENT_QUOTES, 'UTF-8') ?>
+                        </span>
+                        <?php endif; ?>
                     </a>
                 </td>
                 <td class="text-muted" style="font-size:12px;white-space:nowrap;">
                     <?= $msg['date_sent'] ? date('M j, g:i a', strtotime($msg['date_sent'])) : '—' ?>
                 </td>
                 <td>
-                    <div style="display:flex;gap:4px;">
-                        <button class="btn btn-sm btn-secondary"
+                    <div class="mail-row-actions" style="justify-content:flex-end;">
+                        <button class="btn-icon"
                                 onclick="mailToggleRead(<?= (int)$msg['id'] ?>, <?= $msg['is_read'] ? 0 : 1 ?>, this)"
                                 title="<?= $msg['is_read'] ? 'Mark unread' : 'Mark read' ?>">
                             <i class="fas fa-<?= $msg['is_read'] ? 'envelope' : 'envelope-open' ?>"></i>
                         </button>
-                        <button class="btn btn-sm btn-secondary" onclick="mailArchiveMsg(<?= (int)$msg['id'] ?>)" title="Archive">
+                        <?php if (($folder ?? 'inbox') === 'trash'): ?>
+                        <button class="btn-icon" onclick="mailRestoreMsg(<?= (int)$msg['id'] ?>)" title="Restore from trash"
+                                style="color:#6ee7b7;">
+                            <i class="fas fa-undo"></i>
+                        </button>
+                        <button class="btn-icon" onclick="mailDeletePermanent(<?= (int)$msg['id'] ?>)" title="Delete permanently"
+                                style="color:#fca5a5;">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                        <?php else: ?>
+                        <button class="btn-icon" onclick="mailArchiveMsg(<?= (int)$msg['id'] ?>)" title="Archive (e)">
                             <i class="fas fa-archive"></i>
                         </button>
-                        <button class="btn btn-sm btn-danger" onclick="mailDeleteMsg(<?= (int)$msg['id'] ?>)" title="Delete">
+                        <button class="btn-icon" onclick="mailDeleteMsg(<?= (int)$msg['id'] ?>)" title="Delete (#)"
+                                style="color:#fca5a5;">
                             <i class="fas fa-trash"></i>
                         </button>
+                        <?php endif; ?>
                     </div>
                 </td>
             </tr>
@@ -107,7 +140,10 @@ if ($_totalPages > 1):
 function mailToggleStar(id, btn) {
     const isStarred = btn.classList.contains('starred');
     mailPostAction('/mail/star', {id, state: isStarred ? 0 : 1}, d => {
-        if (d.success) btn.classList.toggle('starred');
+        if (d.success) {
+            btn.classList.toggle('starred');
+            mailToast(isStarred ? 'Unstarred' : 'Starred', {icon: isStarred ? 'fa-star' : 'fa-star', color:'#f59e0b', duration:1800});
+        }
     });
 }
 
@@ -130,14 +166,46 @@ function mailToggleRead(id, newState, btn) {
 
 function mailArchiveMsg(id) {
     mailPostAction('/mail/archive', {id, state: 1}, d => {
-        if (d.success) document.getElementById('mail-row-' + id).remove();
+        if (d.success) {
+            const row = document.getElementById('mail-row-' + id);
+            row.style.opacity = '0'; row.style.transition = 'opacity .25s';
+            setTimeout(() => row.remove(), 250);
+            mailToast('Archived', {icon:'fa-archive', color:'#6ee7b7', duration:2500});
+        }
     });
 }
 
 function mailDeleteMsg(id) {
-    if (!confirm('Move this message to trash?')) return;
     mailPostAction('/mail/delete', {id}, d => {
-        if (d.success) document.getElementById('mail-row-' + id).remove();
+        if (d.success) {
+            const row = document.getElementById('mail-row-' + id);
+            row.style.opacity = '0'; row.style.transition = 'opacity .25s';
+            setTimeout(() => row.remove(), 250);
+            mailToast('Moved to Trash', {icon:'fa-trash', color:'#fca5a5', duration:2500});
+        }
+    });
+}
+
+function mailRestoreMsg(id) {
+    mailPostAction('/mail/archive', {id, state: 0}, d => {
+        if (d.success) {
+            const row = document.getElementById('mail-row-' + id);
+            row.style.opacity = '0'; row.style.transition = 'opacity .25s';
+            setTimeout(() => row.remove(), 250);
+            mailToast('Restored to Inbox', {icon:'fa-undo', color:'#6ee7b7', duration:2500});
+        }
+    });
+}
+
+function mailDeletePermanent(id) {
+    if (!confirm('Permanently delete this message? This cannot be undone.')) return;
+    mailPostAction('/mail/delete', {id, permanent: 1}, d => {
+        if (d.success) {
+            const row = document.getElementById('mail-row-' + id);
+            row.style.opacity = '0'; row.style.transition = 'opacity .25s';
+            setTimeout(() => row.remove(), 250);
+            mailToast('Deleted permanently', {icon:'fa-trash-alt', color:'#fca5a5', duration:2500});
+        }
     });
 }
 </script>
