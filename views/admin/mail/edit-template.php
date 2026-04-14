@@ -56,7 +56,7 @@
                 </button>
             </div>
         </div>
-        <textarea name="body" id="bodyField" class="form-input" rows="18" style="font-family:monospace;font-size:13px;resize:vertical;"><?= htmlspecialchars($template['body']) ?></textarea>
+        <textarea name="body" id="bodyField" class="form-input" rows="18" style="font-family:monospace;font-size:13px;resize:vertical;"><?= htmlspecialchars($template['body'], ENT_QUOTES, 'UTF-8') ?></textarea>
         <div id="previewPanel" style="display:none;margin-top:12px;border:1px solid var(--border-color);border-radius:8px;overflow:hidden;">
             <div style="padding:8px 12px;background:var(--bg-secondary);font-size:12px;color:var(--text-secondary);">Preview (variables shown as-is)</div>
             <iframe id="previewFrame" style="width:100%;height:400px;border:none;background:#fff;"></iframe>

@@ -318,8 +318,10 @@ class InboxController
 
     private function redirect(string $path): void
     {
-        // Determine base URL of this subdomain app
-        $base = rtrim($_SERVER['SCRIPT_NAME'] ?? '', '/index.php');
+        // Determine base URL of this subdomain app (strip /index.php if present)
+        $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
+        $base = str_replace('/index.php', '', $scriptName);
+        $base = rtrim($base, '/');
         header('Location: ' . $base . $path);
         exit;
     }

@@ -68,7 +68,7 @@ function doSync() {
     }).then(r => r.json()).then(d => {
         icon.classList.remove('fa-spin');
         result.textContent = d.synced > 0
-            ? '✓ Synced ' + d.synced + ' new message(s)'
+            ? `✓ Synced ${d.synced} new message(s)`
             : '✓ No new messages';
         result.style.color = '#6ee7b7';
     }).catch(() => {

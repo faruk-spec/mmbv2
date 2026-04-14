@@ -2,7 +2,7 @@
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
     <div>
         <h2 style="margin:0;font-size:18px;font-weight:600;text-transform:capitalize;"><?= htmlspecialchars($folder === 'inbox' ? 'Inbox' : ucfirst($folder ?? 'Inbox')) ?></h2>
-        <p class="text-muted" style="font-size:12px;margin-top:2px;"><?= (int)($total ?? 0) ?> message<?= $total == 1 ? '' : 's' ?></p>
+        <p class="text-muted" style="font-size:12px;margin-top:2px;"><?= (int)($total ?? 0) ?> message<?= (int)($total ?? 0) === 1 ? '' : 's' ?></p>
     </div>
     <div style="display:flex;gap:8px;">
         <?php if (!empty($searchQuery ?? null)): ?>
@@ -50,14 +50,14 @@
                 <td>
                     <a href="/view/<?= $msg['id'] ?>" style="display:block;">
                         <span style="font-weight:<?= $msg['is_read'] ? '400' : '600' ?>;color:<?= $msg['is_read'] ? '#94a3b8' : '#e2e8f0' ?>;">
-                            <?= htmlspecialchars($msg['from_name'] ?: $msg['from_email'] ?: '(unknown)', ENT_QUOTES) ?>
+                            <?= htmlspecialchars($msg['from_name'] ?: $msg['from_email'] ?: '(unknown)', ENT_QUOTES, 'UTF-8') ?>
                         </span>
-                        <span style="font-size:11px;color:#475569;"><?= htmlspecialchars($msg['from_email'] ?? '', ENT_QUOTES) ?></span>
+                        <span style="font-size:11px;color:#475569;"><?= htmlspecialchars($msg['from_email'] ?? '', ENT_QUOTES, 'UTF-8') ?></span>
                     </a>
                 </td>
                 <td>
                     <a href="/view/<?= $msg['id'] ?>" style="color:<?= $msg['is_read'] ? '#94a3b8' : '#e2e8f0' ?>;font-weight:<?= $msg['is_read'] ? '400' : '500' ?>;">
-                        <?= htmlspecialchars(mb_substr($msg['subject'] ?? '(no subject)', 0, 80), ENT_QUOTES) ?>
+                        <?= htmlspecialchars(mb_substr($msg['subject'] ?? '(no subject)', 0, 80), ENT_QUOTES, 'UTF-8') ?>
                     </a>
                 </td>
                 <td class="text-muted" style="font-size:12px;white-space:nowrap;">

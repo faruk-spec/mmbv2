@@ -204,8 +204,8 @@ function syncInbox() {
 }
 
 function postAction(url, params, callback) {
-    const body = '_csrf_token=' + encodeURIComponent(csrfToken) +
-        Object.entries(params).map(([k,v]) => '&' + k + '=' + encodeURIComponent(v)).join('');
+    const allParams = Object.assign({_csrf_token: csrfToken}, params);
+    const body = Object.entries(allParams).map(([k,v]) => encodeURIComponent(k) + '=' + encodeURIComponent(v)).join('&');
     fetch(url, {
         method: 'POST',
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},

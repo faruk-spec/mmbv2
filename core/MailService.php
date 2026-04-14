@@ -549,8 +549,8 @@ class MailService
             return null;
         }
         foreach ($struct->parts as $i => $part) {
-            $ct = strtolower(($part->type ?? 0) . '/' . strtolower($part->subtype ?? ''));
-            if ($ct === $mimeType || (int)$part->type === 0 && strtolower($part->subtype ?? '') === explode('/', $mimeType)[1]) {
+            $ct = strtolower(($part->type ?? 0) . '/' . ($part->subtype ?? ''));
+            if ($ct === $mimeType || ((int)$part->type === 0 && strtolower($part->subtype ?? '') === explode('/', $mimeType)[1])) {
                 return $i + 1;
             }
         }
