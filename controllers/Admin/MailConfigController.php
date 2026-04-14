@@ -223,6 +223,27 @@ class MailConfigController extends BaseController
         $this->json($result);
     }
 
+    /**
+     * Send a real test email to a given address using the active provider.
+     */
+    public function sendTestEmail(): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->json(['success' => false, 'message' => 'Invalid request.']);
+            return;
+        }
+
+        $to = trim($this->input('to', ''));
+        if (!filter_var($to, FILTER_VALIDATE_EMAIL)) {
+            $this->json(['success' => false, 'message' => 'Please enter a valid recipient email address.']);
+            return;
+        }
+
+        $result = MailService::sendTestEmail($to);
+        Logger::activity(Auth::id(), 'mail_test_sent', ['to' => $to, 'success' => $result['success']]);
+        $this->json($result);
+    }
+
     // ------------------------------------------------------------------
     // Notification templates
     // ------------------------------------------------------------------

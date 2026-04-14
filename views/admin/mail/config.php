@@ -66,6 +66,31 @@
         <a href="/admin/email/queue" class="btn btn-secondary">
             <i class="fas fa-inbox"></i> Email Queue
         </a>
+        <button class="btn btn-primary" onclick="openTestMailModal()">
+            <i class="fas fa-paper-plane"></i> Send Test Email
+        </button>
+    </div>
+</div>
+
+<!-- Send Test Email modal -->
+<div id="testMailModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;align-items:center;justify-content:center;" onclick="if(event.target===this)closeTestMailModal()">
+    <div style="background:#111117;border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:28px;width:100%;max-width:440px;box-shadow:0 20px 60px rgba(0,0,0,.5);" onclick="event.stopPropagation()">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+            <h3 style="margin:0;font-size:16px;"><i class="fas fa-paper-plane" style="color:#667eea;margin-right:8px;"></i> Send Test Email</h3>
+            <button onclick="closeTestMailModal()" style="background:none;border:none;color:#64748b;font-size:18px;cursor:pointer;">✕</button>
+        </div>
+        <p style="font-size:13px;color:#94a3b8;margin:0 0 16px;">Sends a real test email through the <strong>active provider</strong> to verify the full SMTP flow (auth + delivery).</p>
+        <div style="margin-bottom:16px;">
+            <label style="display:block;margin-bottom:6px;font-size:12px;font-weight:500;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;">Recipient Email</label>
+            <input type="email" id="testMailTo" class="form-input" placeholder="you@example.com" style="width:100%;">
+        </div>
+        <div id="testMailResult" style="margin-bottom:16px;font-size:13px;display:none;padding:10px 14px;border-radius:8px;"></div>
+        <div style="display:flex;gap:10px;">
+            <button id="btnSendTest" class="btn btn-primary" onclick="sendTestMail()" style="flex:1;">
+                <i class="fas fa-paper-plane"></i> Send
+            </button>
+            <button class="btn btn-secondary" onclick="closeTestMailModal()">Cancel</button>
+        </div>
     </div>
 </div>
 
@@ -178,6 +203,63 @@ function processQueue() {
         btn.innerHTML = '<i class="fas fa-play"></i> Process Queue Now';
     });
 }
+
+function openTestMailModal() {
+    const modal = document.getElementById('testMailModal');
+    modal.style.display = 'flex';
+    document.getElementById('testMailTo').focus();
+    document.getElementById('testMailResult').style.display = 'none';
+}
+
+function closeTestMailModal() {
+    document.getElementById('testMailModal').style.display = 'none';
+}
+
+function sendTestMail() {
+    const to  = document.getElementById('testMailTo').value.trim();
+    const btn = document.getElementById('btnSendTest');
+    const res = document.getElementById('testMailResult');
+
+    if (!to) { document.getElementById('testMailTo').focus(); return; }
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending…';
+    res.style.display = 'none';
+
+    fetch('/admin/mail/config/send-test', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRF-Token': csrfToken},
+        body: '_csrf_token=' + encodeURIComponent(csrfToken) + '&to=' + encodeURIComponent(to)
+    }).then(r => r.json()).then(d => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send';
+        res.style.display = 'block';
+        if (d.success) {
+            res.style.background = 'rgba(16,185,129,.15)';
+            res.style.border = '1px solid rgba(16,185,129,.3)';
+            res.style.color = '#6ee7b7';
+            res.innerHTML = '<i class="fas fa-check-circle"></i> ' + d.message;
+        } else {
+            res.style.background = 'rgba(239,68,68,.15)';
+            res.style.border = '1px solid rgba(239,68,68,.3)';
+            res.style.color = '#fca5a5';
+            res.innerHTML = '<i class="fas fa-times-circle"></i> ' + d.message;
+        }
+    }).catch(e => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send';
+        res.style.display = 'block';
+        res.style.background = 'rgba(239,68,68,.15)';
+        res.style.border = '1px solid rgba(239,68,68,.3)';
+        res.style.color = '#fca5a5';
+        res.innerHTML = '<i class="fas fa-times-circle"></i> Network error.';
+    });
+}
+
+// Close modal on Escape key
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeTestMailModal();
+});
 </script>
 
 <?php View::endSection(); ?>

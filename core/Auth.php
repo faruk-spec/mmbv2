@@ -684,12 +684,12 @@ class Auth
                 'created_at' => date('Y-m-d H:i:s')
             ]);
             
-            // Send password reset email (via MailService with DB template, fallback to Mailer)
+            // Send password reset email immediately (not queued — user needs the link now)
             try {
                 $sent = MailService::sendNotification($email, 'password_reset', [
                     'name'      => $user['name'],
                     'reset_url' => APP_URL . '/reset-password/' . $token,
-                ]);
+                ], false); // false = bypass queue, send synchronously
                 if (!$sent) {
                     Mailer::sendPasswordResetEmail($email, $user['name'], $token);
                 }

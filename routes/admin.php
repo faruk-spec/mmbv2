@@ -301,6 +301,7 @@ $router->post('/admin/mail/config/activate', 'Admin\\MailConfigController@activa
 $router->post('/admin/mail/config/delete', 'Admin\\MailConfigController@delete', ['auth', 'admin']);
 $router->post('/admin/mail/config/test-smtp', 'Admin\\MailConfigController@testSmtp', ['auth', 'admin']);
 $router->post('/admin/mail/config/test-imap', 'Admin\\MailConfigController@testImap', ['auth', 'admin']);
+$router->post('/admin/mail/config/send-test', 'Admin\\MailConfigController@sendTestEmail', ['auth', 'admin']);
 $router->post('/admin/mail/config/process-queue', 'Admin\\MailConfigController@processQueue', ['auth', 'admin']);
 $router->get('/admin/mail/templates', 'Admin\\MailConfigController@templates', ['auth', 'admin']);
 $router->get('/admin/mail/templates/edit', 'Admin\\MailConfigController@editTemplate', ['auth', 'admin']);

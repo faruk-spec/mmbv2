@@ -382,25 +382,135 @@ class MailService
     // ------------------------------------------------------------------
 
     /**
-     * Test SMTP connectivity with given credentials.
+     * Test SMTP connectivity AND authentication with given credentials.
      *
      * @return array ['success' => bool, 'message' => string]
      */
     public static function testSmtp(array $cfg): array
     {
+        $host = $cfg['smtp_host'] ?? '';
+        $port = (int)($cfg['smtp_port'] ?? 587);
+        $enc  = strtolower($cfg['smtp_encryption'] ?? 'tls');
+        $user = $cfg['smtp_username'] ?? '';
+        $pass = $cfg['smtp_password'] ?? '';
+
+        if (empty($host)) {
+            return ['success' => false, 'message' => 'SMTP host is empty.'];
+        }
+
         try {
-            $host = ($cfg['smtp_encryption'] === 'ssl' ? 'ssl://' : '') . $cfg['smtp_host'];
-            $port = (int)($cfg['smtp_port'] ?? 587);
-            $socket = @fsockopen($host, $port, $errno, $errstr, 10);
+            $remote = ($enc === 'ssl' ? 'ssl://' : '') . $host;
+            $socket = @fsockopen($remote, $port, $errno, $errstr, 10);
             if (!$socket) {
-                return ['success' => false, 'message' => "Cannot connect: $errstr ($errno)"];
+                return ['success' => false, 'message' => "Cannot connect to $host:$port – $errstr ($errno)"];
             }
-            $greeting = fgets($socket, 512);
+
+            stream_set_timeout($socket, 10);
+            $greeting = self::smtpRead($socket);
+
+            // EHLO
+            fwrite($socket, "EHLO " . gethostname() . "\r\n");
+            $ehloResp = self::smtpRead($socket);
+
+            // STARTTLS
+            if ($enc === 'tls') {
+                fwrite($socket, "STARTTLS\r\n");
+                $tlsResp = self::smtpRead($socket);
+                $tlsCode = (int)substr(ltrim($tlsResp), 0, 3);
+                if ($tlsCode !== 220) {
+                    fclose($socket);
+                    return ['success' => false, 'message' => "STARTTLS rejected: " . trim($tlsResp)];
+                }
+                if (!stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT)) {
+                    fclose($socket);
+                    return ['success' => false, 'message' => 'TLS handshake failed. Check port/encryption setting.'];
+                }
+                fwrite($socket, "EHLO " . gethostname() . "\r\n");
+                $ehloResp = self::smtpRead($socket);
+            }
+
+            // AUTH LOGIN (if credentials provided)
+            if ($user !== '') {
+                fwrite($socket, "AUTH LOGIN\r\n");
+                $authResp = self::smtpRead($socket);
+                $authCode = (int)substr(ltrim($authResp), 0, 3);
+                if ($authCode !== 334) {
+                    fclose($socket);
+                    return ['success' => false, 'message' => "AUTH LOGIN not accepted: " . trim($authResp)];
+                }
+
+                fwrite($socket, base64_encode($user) . "\r\n");
+                $userResp = self::smtpRead($socket);
+                $userCode = (int)substr(ltrim($userResp), 0, 3);
+                if ($userCode !== 334) {
+                    fclose($socket);
+                    return ['success' => false, 'message' => "Username rejected: " . trim($userResp)];
+                }
+
+                fwrite($socket, base64_encode($pass) . "\r\n");
+                $passResp = self::smtpRead($socket);
+                $passCode = (int)substr(ltrim($passResp), 0, 3);
+                if ($passCode !== 235) {
+                    fclose($socket);
+                    return ['success' => false, 'message' => "Authentication failed: " . trim($passResp)];
+                }
+
+                fwrite($socket, "QUIT\r\n");
+                fclose($socket);
+                return ['success' => true, 'message' => "Connected and authenticated as $user ✓"];
+            }
+
             fwrite($socket, "QUIT\r\n");
             fclose($socket);
             return ['success' => true, 'message' => 'Connected: ' . trim($greeting)];
         } catch (\Exception $e) {
             return ['success' => false, 'message' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Send a test email using the active provider (or a given provider config).
+     *
+     * @param string     $to               Recipient address for the test email
+     * @param array|null $providerOverride  If provided, use these credentials instead of the active DB provider
+     * @return array ['success' => bool, 'message' => string]
+     */
+    public static function sendTestEmail(string $to, ?array $providerOverride = null): array
+    {
+        if (!filter_var($to, FILTER_VALIDATE_EMAIL)) {
+            return ['success' => false, 'message' => 'Invalid recipient email address.'];
+        }
+
+        $provider = $providerOverride ?? self::getActiveProvider();
+        if (!$provider || empty($provider['smtp_host'])) {
+            return ['success' => false, 'message' => 'No active SMTP provider configured. Set one up and activate it first.'];
+        }
+
+        $appName   = defined('APP_NAME') ? APP_NAME : 'Platform';
+        $fromName  = $provider['from_name']  ?? $appName;
+        $fromEmail = $provider['from_email'] ?? '';
+        $replyTo   = $provider['reply_to']   ?? $fromEmail;
+        $subject   = "Test Email – $appName Mail Config";
+        $body      = self::wrapBody(
+            '<p>Hi,</p>'
+            . '<p>This is a <strong>test email</strong> from your <strong>' . htmlspecialchars($appName, ENT_QUOTES, 'UTF-8') . '</strong> mail configuration.</p>'
+            . '<p>If you received this, your SMTP settings are working correctly! ✅</p>'
+            . '<p style="font-size:12px;color:#aaa;">Sent at ' . date('Y-m-d H:i:s') . ' (server time)</p>',
+            ['app_name' => $fromName]
+        );
+
+        try {
+            $result = self::smtpSend($provider, $to, $subject, $body, $fromName, $fromEmail, $replyTo);
+            self::logSend(null, $to, $subject, 'test', $provider['id'] ?? null, $result ? 'sent' : 'failed');
+            return [
+                'success' => $result,
+                'message' => $result
+                    ? "Test email sent to $to successfully."
+                    : "SMTP send failed. Check credentials and try the SMTP test first.",
+            ];
+        } catch (\Exception $e) {
+            self::logSend(null, $to, $subject, 'test', $provider['id'] ?? null, 'failed', $e->getMessage());
+            return ['success' => false, 'message' => 'SMTP error: ' . $e->getMessage()];
         }
     }
 
@@ -511,7 +621,12 @@ class MailService
     private static function smtpCmd($socket, string $cmd): string
     {
         fwrite($socket, $cmd . "\r\n");
-        return self::smtpRead($socket);
+        $response = self::smtpRead($socket);
+        $code = (int)substr(ltrim($response), 0, 3);
+        if ($code >= 400) {
+            throw new \RuntimeException('SMTP error: ' . trim($response));
+        }
+        return $response;
     }
 
     private static function smtpRead($socket): string
