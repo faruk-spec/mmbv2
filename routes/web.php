@@ -272,7 +272,7 @@ $router->post('/forms/{slug}', 'FormXPublicController@submit');
 
 // ── Short URL routes — hide /projects/ prefix from users ──────────────────────
 // These mirror the /projects/{project}/... routes but without the /projects/ segment.
-$knownProjects = ['qr','proshare','formx','codexpro','convertx','idcard','linkshortner','notex','resumex','billx','whatsapp','devzone'];
+$knownProjects = ['qr','proshare','formx','codexpro','convertx','idcard','linkshortner','notex','resumex','billx','whatsapp','devzone','helpdeskpro'];
 
 foreach ($knownProjects as $_proj) {
     $router->get('/' . $_proj, function() use ($_proj) {

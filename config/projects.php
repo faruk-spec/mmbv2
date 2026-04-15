@@ -120,4 +120,14 @@ return [
         'database' => 'mmb_notex',
         'url' => '/projects/notex'
     ],
+
+    'helpdeskpro' => [
+        'name' => 'Helpdesk Pro',
+        'description' => 'Omnichannel helpdesk with ticketing, AI live chat, and human agent handoff',
+        'icon' => 'headset',
+        'color' => '#3b82f6',
+        'enabled' => true,
+        'database' => 'mmb_helpdeskpro',
+        'url' => '/projects/helpdeskpro'
+    ],
 ];
