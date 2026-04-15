@@ -272,7 +272,7 @@ class DashboardController extends BaseController
                     'name' => $pwUser['name'] ?? '',
                     'ip'   => Security::getClientIp(),
                     'time' => date('Y-m-d H:i:s'),
-                ]);
+                ], false);
             } catch (\Throwable $e) {
                 Logger::error('Password changed email failed: ' . $e->getMessage());
             }

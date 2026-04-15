@@ -143,7 +143,27 @@ class MailController extends BaseController
     public function compose(): void
     {
         $providers = MailService::getAllProviders();
-        $this->view('mail/compose', compact('providers'));
+        $composeTemplates = [];
+        try {
+            $db = Database::getInstance();
+            $rows = $db->fetchAll(
+                "SELECT slug, name, subject, body
+                 FROM mail_notification_templates
+                 WHERE is_enabled = 1
+                 ORDER BY name ASC"
+            );
+            foreach ($rows as $row) {
+                $composeTemplates[] = [
+                    'name' => $row['name'] ?: $row['slug'],
+                    'subject' => $row['subject'] ?? '',
+                    'body' => $row['body'] ?? '',
+                ];
+            }
+        } catch (\Throwable $e) {
+            // optional templates
+        }
+
+        $this->view('mail/compose', compact('providers', 'composeTemplates'));
     }
 
     // ------------------------------------------------------------------

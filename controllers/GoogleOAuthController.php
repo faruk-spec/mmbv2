@@ -128,7 +128,7 @@ class GoogleOAuthController extends BaseController
                     MailService::sendNotification($user['email'], 'welcome', [
                         'name'      => $user['name'],
                         'login_url' => (defined('APP_URL') ? APP_URL : '') . '/dashboard',
-                    ]);
+                    ], false);
                 } catch (\Throwable $e) {
                     Logger::error('Google SSO welcome email failed: ' . $e->getMessage());
                 }
@@ -138,7 +138,7 @@ class GoogleOAuthController extends BaseController
                         'name' => $user['name'],
                         'ip'   => Security::getClientIp(),
                         'time' => date('Y-m-d H:i:s'),
-                    ]);
+                    ], false);
                 } catch (\Throwable $e) {
                     Logger::error('Google SSO login alert email failed: ' . $e->getMessage());
                 }

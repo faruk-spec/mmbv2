@@ -147,7 +147,7 @@ class Auth
                     'name' => $user['name'],
                     'ip'   => $ip,
                     'time' => date('Y-m-d H:i:s'),
-                ]);
+                ], false);
             } catch (\Throwable $e) {
                 Logger::error('Login alert email failed: ' . $e->getMessage());
             }
@@ -205,7 +205,7 @@ class Auth
                     MailService::sendNotification($email, 'email_verification', [
                         'name'       => $name,
                         'verify_url' => (defined('APP_URL') ? APP_URL : '') . '/verify-email/' . $verificationToken,
-                    ]);
+                    ], false);
                 } catch (\Throwable $e) {
                     Logger::error('Verification email failed: ' . $e->getMessage());
                 }
@@ -214,7 +214,7 @@ class Auth
                     MailService::sendNotification($email, 'welcome', [
                         'name'      => $name,
                         'login_url' => (defined('APP_URL') ? APP_URL : '') . '/login',
-                    ]);
+                    ], false);
                 } catch (\Throwable $e) {
                     Logger::error('Welcome email failed: ' . $e->getMessage());
                 }

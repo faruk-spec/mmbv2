@@ -52,10 +52,14 @@
             <thead>
                 <tr>
                     <th>User</th>
+                    <th>Email</th>
+                    <th>Verified</th>
+                    <th>Auth Mode</th>
                     <th>Role</th>
                     <th>Status</th>
                     <th>Created</th>
                     <th>Last Login</th>
+                    <th>Last IP</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -69,9 +73,22 @@
                                 </div>
                                 <div>
                                     <div style="font-weight: 500;"><?= View::e($u['name']) ?></div>
-                                    <div style="font-size: 12px; color: var(--text-secondary);"><?= View::e($u['email']) ?></div>
+                                    <div style="font-size: 12px; color: var(--text-secondary);">ID: <?= (int) $u['id'] ?></div>
                                 </div>
                             </div>
+                        </td>
+                        <td><?= View::e($u['email']) ?></td>
+                        <td>
+                            <?php if (!empty($u['email_verified_at'])): ?>
+                                <span class="badge badge-success">Verified</span>
+                            <?php else: ?>
+                                <span class="badge badge-warning">Pending</span>
+                            <?php endif; ?>
+                        </td>
+                        <td>
+                            <span class="badge <?= !empty($u['oauth_only']) ? 'badge-info' : 'badge-secondary' ?>">
+                                <?= !empty($u['oauth_only']) ? 'Google SSO' : 'Password' ?>
+                            </span>
                         </td>
                         <td>
                             <?php foreach (array_filter(array_map('trim', explode(',', $u['role']))) as $r): ?>
@@ -85,6 +102,7 @@
                         </td>
                         <td><?= Helpers::formatDate($u['created_at']) ?></td>
                         <td><?= $u['last_login_at'] ? Helpers::timeAgo($u['last_login_at']) : 'Never' ?></td>
+                        <td style="font-family:monospace;font-size:12px;"><?= View::e($u['last_login_ip'] ?? '-') ?></td>
                         <td>
                             <div style="display: flex; gap: 8px;">
                                 <a href="/admin/users/<?= $u['id'] ?>/edit" class="btn btn-sm btn-secondary">Edit</a>

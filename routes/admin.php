@@ -288,6 +288,8 @@ $router->post('/admin/analytics/export', 'Admin\\AnalyticsController@export', ['
 $router->get('/admin/email/queue', 'Admin\\EmailController@queue', ['auth', 'admin']);
 $router->get('/admin/email/templates', 'Admin\\EmailController@templates', ['auth', 'admin']);
 $router->get('/admin/email/templates/view', 'Admin\\EmailController@viewTemplate', ['auth', 'admin']);
+$router->get('/admin/email/templates/edit', 'Admin\\EmailController@editTemplate', ['auth', 'admin']);
+$router->post('/admin/email/templates/update', 'Admin\\EmailController@updateTemplate', ['auth', 'admin']);
 $router->post('/admin/email/queue/process', 'Admin\\EmailController@processQueue', ['auth', 'admin']);
 $router->post('/admin/email/queue/delete-failed', 'Admin\\EmailController@deleteFailed', ['auth', 'admin']);
 
