@@ -154,13 +154,13 @@ class MailController extends BaseController
             );
             foreach ($rows as $row) {
                 $composeTemplates[] = [
-                    'name' => $row['name'] ?: $row['slug'],
+                    'name' => $row['name'] ?? $row['slug'],
                     'subject' => $row['subject'] ?? '',
                     'body' => $row['body'] ?? '',
                 ];
             }
         } catch (\Throwable $e) {
-            // optional templates
+            Logger::debug('Failed to load compose templates: ' . $e->getMessage());
         }
 
         $this->view('mail/compose', compact('providers', 'composeTemplates'));

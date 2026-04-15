@@ -2475,7 +2475,11 @@
         // Live search for sidebar options
         const adminNavSearchInput = document.getElementById('adminNavSearchInput');
         const adminNavSearchResults = document.getElementById('adminNavSearchResults');
+        const ADMIN_NAV_SEARCH_MAX_RESULTS = 10;
+        const ADMIN_NAV_SEARCH_DEBOUNCE_MS = 120;
         if (adminNavSearchInput && adminNavSearchResults) {
+            const searchWrap = adminNavSearchInput.closest('.admin-nav-search');
+            let adminNavSearchTimer = null;
             const navLinks = Array.from(document.querySelectorAll('#sidebar .menu-link'))
                 .map(link => ({
                     href: link.getAttribute('href') || '#',
@@ -2484,33 +2488,37 @@
                 .filter(item => item.href !== '#' && item.label.length > 0);
 
             adminNavSearchInput.addEventListener('input', function() {
-                const q = this.value.trim().toLowerCase();
-                adminNavSearchResults.innerHTML = '';
-                if (!q) {
-                    adminNavSearchResults.style.display = 'none';
-                    return;
-                }
+                clearTimeout(adminNavSearchTimer);
+                const currentInput = this;
+                adminNavSearchTimer = setTimeout(function() {
+                    const q = currentInput.value.trim().toLowerCase();
+                    adminNavSearchResults.innerHTML = '';
+                    if (!q) {
+                        adminNavSearchResults.style.display = 'none';
+                        return;
+                    }
 
-                const matched = navLinks.filter(item => item.label.toLowerCase().includes(q)).slice(0, 10);
-                if (!matched.length) {
-                    const empty = document.createElement('div');
-                    empty.className = 'admin-nav-search-item';
-                    empty.textContent = 'No matching menu items';
-                    adminNavSearchResults.appendChild(empty);
-                } else {
-                    matched.forEach(item => {
-                        const a = document.createElement('a');
-                        a.className = 'admin-nav-search-item';
-                        a.href = item.href;
-                        a.textContent = item.label;
-                        adminNavSearchResults.appendChild(a);
-                    });
-                }
-                adminNavSearchResults.style.display = 'block';
+                    const matched = navLinks.filter(item => item.label.toLowerCase().includes(q)).slice(0, ADMIN_NAV_SEARCH_MAX_RESULTS);
+                    if (!matched.length) {
+                        const empty = document.createElement('div');
+                        empty.className = 'admin-nav-search-item';
+                        empty.textContent = 'No matching menu items';
+                        adminNavSearchResults.appendChild(empty);
+                    } else {
+                        matched.forEach(item => {
+                            const a = document.createElement('a');
+                            a.className = 'admin-nav-search-item';
+                            a.href = item.href;
+                            a.textContent = item.label;
+                            adminNavSearchResults.appendChild(a);
+                        });
+                    }
+                    adminNavSearchResults.style.display = 'block';
+                }, ADMIN_NAV_SEARCH_DEBOUNCE_MS);
             });
 
             document.addEventListener('click', function(e) {
-                if (!adminNavSearchInput.closest('.admin-nav-search').contains(e.target)) {
+                if (!searchWrap || !searchWrap.contains(e.target)) {
                     adminNavSearchResults.style.display = 'none';
                 }
             });

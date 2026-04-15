@@ -185,8 +185,13 @@ class EmailController extends BaseController
             return;
         }
 
-        $written = @file_put_contents($templatePath, $content);
+        $written = file_put_contents($templatePath, $content);
         if ($written === false) {
+            $lastError = error_get_last();
+            \Core\Logger::error('Failed to write email template file', [
+                'template' => $templateName,
+                'error' => $lastError['message'] ?? 'unknown'
+            ]);
             $this->flash('error', 'Failed to save template.');
             $this->redirect('/admin/email/templates/edit?template=' . urlencode($templateName));
             return;
@@ -200,16 +205,23 @@ class EmailController extends BaseController
     private function getSafeTemplatePath(string $templateName): ?string
     {
         if (!preg_match('/^[a-zA-Z0-9\-_]+$/', $templateName)) {
+            \Core\Logger::warning('Email template name validation failed', ['template' => $templateName]);
             return null;
         }
 
         $templateDir = realpath(__DIR__ . '/../../views/emails');
         if ($templateDir === false) {
+            \Core\Logger::warning('Email template directory does not exist');
             return null;
         }
 
         $templatePath = realpath($templateDir . '/' . $templateName . '.php');
-        if ($templatePath === false || strpos($templatePath, $templateDir . DIRECTORY_SEPARATOR) !== 0) {
+        if ($templatePath === false) {
+            \Core\Logger::warning('Email template path not found', ['template' => $templateName]);
+            return null;
+        }
+        if (!str_starts_with($templatePath, $templateDir . DIRECTORY_SEPARATOR)) {
+            \Core\Logger::warning('Email template path traversal blocked', ['template' => $templateName]);
             return null;
         }
 
