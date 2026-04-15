@@ -51,6 +51,28 @@ $router->get('/activity', 'DashboardController@activity', ['auth']);
 $router->get('/settings', 'DashboardController@settings', ['auth']);
 $router->post('/settings', 'DashboardController@updateSettings', ['auth']);
 
+// ── Mail (Webmail inbox) ──────────────────────────────────────────────────────
+// Accessible at /mail (and later can point mail.domain.in subdomain here)
+// Access is restricted to admin + users with 'mail' permission (enforced in MailController::__construct)
+$router->get('/mail', 'MailController@inbox', ['auth']);
+$router->get('/mail/compose', 'MailController@compose', ['auth']);
+$router->post('/mail/compose', 'MailController@send', ['auth']);
+$router->get('/mail/sent', 'MailController@sent', ['auth']);
+$router->get('/mail/sent/view/{id}', 'MailController@viewSent', ['auth']);
+$router->post('/mail/sent/reply', 'MailController@replySent', ['auth']);
+$router->get('/mail/search', 'MailController@search', ['auth']);
+$router->get('/mail/settings', 'MailController@settings', ['auth']);
+$router->post('/mail/settings', 'MailController@saveSettings', ['auth']);
+$router->get('/mail/suggest-recipients', 'MailController@suggestRecipients', ['auth']);
+$router->get('/mail/view/{id}', 'MailController@viewMessage', ['auth']);
+$router->post('/mail/reply', 'MailController@reply', ['auth']);
+$router->post('/mail/forward', 'MailController@forward', ['auth']);
+$router->post('/mail/mark-read', 'MailController@markRead', ['auth']);
+$router->post('/mail/delete', 'MailController@delete', ['auth']);
+$router->post('/mail/archive', 'MailController@archive', ['auth']);
+$router->post('/mail/star', 'MailController@star', ['auth']);
+$router->post('/mail/sync', 'MailController@sync', ['auth']);
+
 // Plans & Subscriptions
 $router->get('/plans', 'PlansController@index', ['auth']);
 $router->get('/plans/subscribe/{slug}', 'PlansController@subscribe', ['auth']);

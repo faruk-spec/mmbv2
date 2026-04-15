@@ -2035,6 +2035,24 @@
                             <i class="fas fa-chevron-down arrow"></i>
                         </div>
                         <div class="menu-dropdown-content">
+                            <?php if (\Core\Auth::isAdmin()): ?>
+                            <a href="/admin/mail/config" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/mail/') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-cogs"></i>
+                                <span>Mail Config</span>
+                            </a>
+                            <a href="/admin/mail/access" class="menu-link <?= ($_SERVER['REQUEST_URI'] ?? '') === '/admin/mail/access' || strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/mail/access/') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-users-cog"></i>
+                                <span>Mail User Access</span>
+                            </a>
+                            <a href="/admin/mail/templates" class="menu-link <?= ($_SERVER['REQUEST_URI'] ?? '') === '/admin/mail/templates' ? 'active' : '' ?>">
+                                <i class="fas fa-file-alt"></i>
+                                <span>Notification Templates</span>
+                            </a>
+                            <a href="/admin/mail/logs" class="menu-link <?= ($_SERVER['REQUEST_URI'] ?? '') === '/admin/mail/logs' ? 'active' : '' ?>">
+                                <i class="fas fa-list-alt"></i>
+                                <span>Send Log</span>
+                            </a>
+                            <?php endif; ?>
                             <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('email.queue')): ?>
                             <a href="/admin/email/queue" class="menu-link">
                                 <i class="fas fa-inbox"></i>
@@ -2044,7 +2062,7 @@
                             <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('email.templates')): ?>
                             <a href="/admin/email/templates" class="menu-link">
                                 <i class="fas fa-file-code"></i>
-                                <span>Templates</span>
+                                <span>File Templates</span>
                             </a>
                             <?php endif; ?>
                             <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('notifications')): ?>

@@ -140,7 +140,18 @@ class Auth
                 'last_login_at' => date('Y-m-d H:i:s'),
                 'last_login_ip' => $ip
             ], 'id = ?', [$user['id']]);
-            
+
+            // Send login alert email
+            try {
+                MailService::sendNotification($user['email'], 'login_alert', [
+                    'name' => $user['name'],
+                    'ip'   => $ip,
+                    'time' => date('Y-m-d H:i:s'),
+                ]);
+            } catch (\Throwable $e) {
+                Logger::error('Login alert email failed: ' . $e->getMessage());
+            }
+
             return true;
             
         } catch (\Exception $e) {
@@ -188,12 +199,25 @@ class Auth
                 'created_at' => date('Y-m-d H:i:s')
             ]);
             
-            // Send verification email if required
+            // Send verification or welcome email via MailService
             if ($verificationToken) {
-                Mailer::sendVerificationEmail($email, $name, $verificationToken);
+                try {
+                    MailService::sendNotification($email, 'email_verification', [
+                        'name'       => $name,
+                        'verify_url' => (defined('APP_URL') ? APP_URL : '') . '/verify-email/' . $verificationToken,
+                    ]);
+                } catch (\Throwable $e) {
+                    Logger::error('Verification email failed: ' . $e->getMessage());
+                }
             } else {
-                // Send welcome email
-                Mailer::sendWelcomeEmail($email, $name);
+                try {
+                    MailService::sendNotification($email, 'welcome', [
+                        'name'      => $name,
+                        'login_url' => (defined('APP_URL') ? APP_URL : '') . '/login',
+                    ]);
+                } catch (\Throwable $e) {
+                    Logger::error('Welcome email failed: ' . $e->getMessage());
+                }
             }
             
             // Log activity
@@ -679,13 +703,24 @@ class Auth
             
             // Create new reset
             $db->insert('password_resets', [
-                'email' => $email,
-                'token' => hash('sha256', $token),
-                'created_at' => date('Y-m-d H:i:s')
+                'email'      => $email,
+                'token'      => hash('sha256', $token),
+                'created_at' => date('Y-m-d H:i:s'),
+                'visited_at' => null,
             ]);
             
-            // Send password reset email
-            Mailer::sendPasswordResetEmail($email, $user['name'], $token);
+            // Send password reset email immediately (not queued — user needs the link now)
+            try {
+                $sent = MailService::sendNotification($email, 'password_reset', [
+                    'name'      => $user['name'],
+                    'reset_url' => APP_URL . '/reset-password/' . $token,
+                ], false); // false = bypass queue, send synchronously
+                if (!$sent) {
+                    Mailer::sendPasswordResetEmail($email, $user['name'], $token);
+                }
+            } catch (\Exception $me) {
+                Mailer::sendPasswordResetEmail($email, $user['name'], $token);
+            }
             
             Logger::info("Password reset requested for {$email}");
             
@@ -707,7 +742,7 @@ class Auth
             $hashedToken = hash('sha256', $token);
             
             $reset = $db->fetch(
-                "SELECT * FROM password_resets WHERE token = ? AND created_at > DATE_SUB(NOW(), INTERVAL 1 HOUR)",
+                "SELECT * FROM password_resets WHERE token = ? AND created_at > DATE_SUB(NOW(), INTERVAL 5 MINUTE)",
                 [$hashedToken]
             );
             

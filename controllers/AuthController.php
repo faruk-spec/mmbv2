@@ -218,6 +218,31 @@ class AuthController extends BaseController
      */
     public function showResetPassword(string $token): void
     {
+        $db          = \Core\Database::getInstance();
+        $hashedToken = hash('sha256', $token);
+
+        // Check token exists and is within 5-minute window
+        $reset = $db->fetch(
+            "SELECT * FROM password_resets WHERE token = ? AND created_at > DATE_SUB(NOW(), INTERVAL 5 MINUTE)",
+            [$hashedToken]
+        );
+
+        if (!$reset) {
+            $this->flash('error', 'This password reset link has expired or is invalid. Please request a new one.');
+            $this->redirect('/forgot-password');
+            return;
+        }
+
+        // Reject if already visited (one-time link)
+        if (!empty($reset['visited_at'])) {
+            $this->flash('error', 'This reset link has already been used. Please request a new one.');
+            $this->redirect('/forgot-password');
+            return;
+        }
+
+        // Mark as visited so it cannot be reopened
+        $db->update('password_resets', ['visited_at' => date('Y-m-d H:i:s')], 'token = ?', [$hashedToken]);
+
         $this->view('auth/reset-password', [
             'title' => 'Reset Password',
             'token' => $token
