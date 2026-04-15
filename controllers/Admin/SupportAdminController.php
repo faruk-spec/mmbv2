@@ -250,6 +250,90 @@ class SupportAdminController extends BaseController
     }
 
     // -------------------------------------------------------------------------
+    // POST /admin/support/live-chats/{id}/reply
+    // -------------------------------------------------------------------------
+
+    public function replyLiveChat(int $id): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid security token.');
+            $this->redirect('/admin/support/live-chats/' . $id);
+            return;
+        }
+
+        $chat = $this->model->getChatById($id);
+        if (!$chat) {
+            $this->flash('error', 'Chat session not found.');
+            $this->redirect('/admin/support/live-chats');
+            return;
+        }
+
+        if ($chat['status'] !== 'active') {
+            $this->flash('error', 'This chat session is already closed.');
+            $this->redirect('/admin/support/live-chats/' . $id);
+            return;
+        }
+
+        $message = trim($_POST['message'] ?? '');
+        if ($message === '') {
+            $this->flash('error', 'Reply message cannot be empty.');
+            $this->redirect('/admin/support/live-chats/' . $id);
+            return;
+        }
+
+        $this->model->addLiveMessage($id, 'agent', Auth::id(), $message);
+        $this->model->assignChatAgent($id, Auth::id());
+
+        // Notify the user if they are logged in
+        if (!empty($chat['user_id'])) {
+            Notification::send(
+                (int) $chat['user_id'],
+                'live_chat_reply',
+                'An agent replied to your live chat session.',
+                ['chat_id' => $id, 'url' => '#']
+            );
+        }
+
+        $this->flash('success', 'Message sent.');
+        $this->redirect('/admin/support/live-chats/' . $id);
+    }
+
+    // -------------------------------------------------------------------------
+    // POST /admin/support/live-chats/{id}/close
+    // -------------------------------------------------------------------------
+
+    public function closeLiveChat(int $id): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid security token.');
+            $this->redirect('/admin/support/live-chats/' . $id);
+            return;
+        }
+
+        $chat = $this->model->getChatById($id);
+        if (!$chat) {
+            $this->flash('error', 'Chat session not found.');
+            $this->redirect('/admin/support/live-chats');
+            return;
+        }
+
+        // Idempotent — closing an already-closed chat is fine
+        $this->model->closeChat($id);
+
+        if (!empty($chat['user_id'])) {
+            Notification::send(
+                (int) $chat['user_id'],
+                'live_chat_closed',
+                'Your live chat session has been closed by an agent.',
+                ['chat_id' => $id]
+            );
+        }
+
+        $this->flash('success', 'Chat session closed.');
+        $this->redirect('/admin/support/live-chats');
+    }
+
+    // -------------------------------------------------------------------------
     // GET /admin/support/templates
     // -------------------------------------------------------------------------
 

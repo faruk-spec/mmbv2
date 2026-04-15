@@ -1428,10 +1428,10 @@ try {
                             </a>
                         </div>
                         
-                        <!-- Help Section (Admin Only) -->
-                        <?php if (in_array(Auth::user()['role'] ?? '', ['admin', 'super_admin'])): ?>
+                        <!-- Help & Support -->
+                        <?php if (\Core\Auth::check()): ?>
                         <div class="nav-section" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-color);">
-                            <a href="/help" class="nav-item" style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.85rem;" onmouseover="this.style.background='rgba(0,240,255,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
+                            <a href="/support" class="nav-item" style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.85rem;" onmouseover="this.style.background='rgba(0,240,255,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <circle cx="12" cy="12" r="10"></circle>
                                     <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
@@ -1634,9 +1634,9 @@ try {
                             </svg>
                             Need Help?
                         </h3>
-                        <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 10px; line-height: 1.4;">Get assistance with your account or projects.</p>
-                        <a href="/help" style="display: inline-block; padding: 6px 12px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; text-decoration: none; color: var(--text-primary); font-size: 0.75rem; font-weight: 600; transition: all 0.3s;">
-                            View Documentation
+                        <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 10px; line-height: 1.4;">Raise a ticket or view your support requests.</p>
+                        <a href="/support" style="display: inline-block; padding: 6px 12px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; text-decoration: none; color: var(--text-primary); font-size: 0.75rem; font-weight: 600; transition: all 0.3s;">
+                            My Support Tickets
                         </a>
                     </div>
                 </aside>
@@ -2258,14 +2258,22 @@ try {
 })();
 </script>
 <style>@keyframes sseSlideIn{from{transform:translateY(10px);opacity:0}to{transform:translateY(0);opacity:1}}</style>
+<style>
+#support-chat-widget { position:fixed; bottom:24px; right:24px; z-index:10000; }
+#support-chat-panel  { display:none; position:absolute; bottom:70px; right:0; width:340px; background:var(--bg-card,#0f0f18); border:1px solid var(--border-color,rgba(255,255,255,.1)); border-radius:16px; box-shadow:0 8px 32px rgba(0,0,0,.5); overflow:hidden; flex-direction:column; }
+@media (max-width:480px) {
+    #support-chat-widget { bottom:16px; right:12px; }
+    #support-chat-panel  { position:fixed; bottom:80px; right:8px; left:8px; width:auto; border-radius:14px; }
+}
+</style>
 <!-- Support Live Chat Widget -->
-<div id="support-chat-widget" style="position:fixed;bottom:24px;right:24px;z-index:9998;">
+<div id="support-chat-widget">
     <!-- Chat bubble button -->
-    <button id="support-chat-btn" onclick="toggleSupportChat()" style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#00f0ff,#ff2ec4);border:none;cursor:pointer;box-shadow:0 4px 20px rgba(0,240,255,0.4);display:flex;align-items:center;justify-content:center;font-size:22px;color:white;transition:transform .2s;" title="Live Support">
+    <button id="support-chat-btn" onclick="toggleSupportChat()" style="width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#00f0ff,#ff2ec4);border:none;cursor:pointer;box-shadow:0 4px 20px rgba(0,240,255,0.4);display:flex;align-items:center;justify-content:center;font-size:22px;color:white;transition:transform .2s;" title="Live Support">
         <i class="fas fa-headset"></i>
     </button>
     <!-- Chat panel -->
-    <div id="support-chat-panel" style="display:none;position:absolute;bottom:70px;right:0;width:340px;background:var(--bg-card,#0f0f18);border:1px solid var(--border-color,rgba(255,255,255,.1));border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.5);overflow:hidden;flex-direction:column;">
+    <div id="support-chat-panel">
         <!-- Header -->
         <div style="background:linear-gradient(135deg,#00f0ff22,#ff2ec422);padding:14px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color,rgba(255,255,255,.08));">
             <div style="display:flex;align-items:center;gap:8px;font-weight:600;color:var(--text-primary,#e8eefc);font-size:.95rem;">
