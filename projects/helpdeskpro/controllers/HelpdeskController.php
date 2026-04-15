@@ -34,6 +34,7 @@ class HelpdeskController
             'stats' => $this->model->getDashboardStats($userId, $isAgent),
             'tickets' => $this->model->getTickets($userId, $isAgent, 8),
             'liveSessions' => $isAgent ? $this->model->getAgentLiveSessions(6) : [],
+            'agentPerformance' => $isAgent ? $this->model->getAgentPerformance() : [],
         ]);
     }
 

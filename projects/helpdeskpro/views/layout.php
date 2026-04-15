@@ -29,11 +29,12 @@ $uri = $_SERVER['REQUEST_URI'] ?? '';
         }
         * { box-sizing:border-box; }
         body { margin:0; font-family:Inter,system-ui,-apple-system,sans-serif; background:var(--bg-primary); color:var(--text-primary); }
-        .sidebar { position:fixed; top:var(--nav-h); left:0; width:var(--sidebar-w); height:calc(100vh - var(--nav-h)); background:var(--bg-card); border-right:1px solid var(--border); padding:.75rem; }
+        .sidebar { position:fixed; top:var(--nav-h); left:0; width:var(--sidebar-w); height:calc(100vh - var(--nav-h)); background:var(--bg-card); border-right:1px solid var(--border); padding:.75rem; overflow-y:auto; }
         .logo { display:flex; align-items:center; gap:.5rem; padding:.75rem; color:var(--text-primary); text-decoration:none; font-weight:700; }
         .logo i { color:var(--hp-accent); }
         .nav a { display:flex; gap:.5rem; align-items:center; padding:.55rem .7rem; border-radius:.5rem; color:var(--text-secondary); text-decoration:none; font-size:.9rem; }
         .nav a:hover,.nav a.active { background:rgba(59,130,246,.12); color:var(--hp-primary); }
+        .nav-group-label { font-size:.68rem; color:var(--text-secondary); text-transform:uppercase; padding:.4rem .7rem .2rem; letter-spacing:.05em; }
         .main { margin-top:var(--nav-h); margin-left:var(--sidebar-w); padding:1.3rem; min-height:calc(100vh - var(--nav-h)); }
         .card { background:var(--bg-card); border:1px solid var(--border); border-radius:.8rem; padding:1rem; margin-bottom:1rem; }
         .grid { display:grid; gap:1rem; }
@@ -66,10 +67,19 @@ $uri = $_SERVER['REQUEST_URI'] ?? '';
     <a class="logo" href="/projects/helpdeskpro"><i class="fas fa-headset"></i> Helpdesk Pro</a>
     <nav class="nav">
         <a href="/projects/helpdeskpro" class="<?= (rtrim(parse_url($uri, PHP_URL_PATH), '/') === '/projects/helpdeskpro' || strpos($uri, '/projects/helpdeskpro/dashboard') !== false) ? 'active' : '' ?>"><i class="fas fa-gauge-high"></i> Dashboard</a>
-        <a href="/projects/helpdeskpro/tickets" class="<?= strpos($uri, '/projects/helpdeskpro/tickets') !== false ? 'active' : '' ?>"><i class="fas fa-ticket"></i> Tickets</a>
         <a href="/projects/helpdeskpro/live-support" class="<?= strpos($uri, '/projects/helpdeskpro/live-support') !== false && strpos($uri, '/agent/live-support') === false ? 'active' : '' ?>"><i class="fas fa-comments"></i> Live Support</a>
+        <a href="/projects/helpdeskpro/tickets" class="<?= strpos($uri, '/projects/helpdeskpro/tickets') !== false ? 'active' : '' ?>"><i class="fas fa-ticket"></i> Tickets</a>
+        <a href="/projects/helpdeskpro/customers" class="<?= strpos($uri, '/projects/helpdeskpro/customers') !== false ? 'active' : '' ?>"><i class="fas fa-users"></i> Customers</a>
         <?php if (\Core\Auth::hasRole('admin') || \Core\Auth::hasRole('super_admin') || \Core\Auth::hasRole('support')): ?>
         <a href="/projects/helpdeskpro/agent/live-support" class="<?= strpos($uri, '/projects/helpdeskpro/agent/live-support') !== false ? 'active' : '' ?>"><i class="fas fa-user-tie"></i> Agent Console</a>
+        <div style="margin:.4rem 0 .1rem;border-top:1px solid var(--border);"></div>
+        <div class="nav-group-label">Admin</div>
+        <a href="/projects/helpdeskpro/templates" class="<?= strpos($uri, '/projects/helpdeskpro/templates') !== false ? 'active' : '' ?>"><i class="fas fa-folder-tree"></i> Templates</a>
+        <a href="/projects/helpdeskpro/agents" class="<?= strpos($uri, '/projects/helpdeskpro/agents') !== false ? 'active' : '' ?>"><i class="fas fa-user-group"></i> Agents &amp; Roles</a>
+        <a href="/projects/helpdeskpro/analytics" class="<?= strpos($uri, '/projects/helpdeskpro/analytics') !== false ? 'active' : '' ?>"><i class="fas fa-chart-bar"></i> Analytics</a>
+        <a href="/projects/helpdeskpro/workflows" class="<?= strpos($uri, '/projects/helpdeskpro/workflows') !== false ? 'active' : '' ?>"><i class="fas fa-diagram-project"></i> Workflows</a>
+        <a href="/projects/helpdeskpro/integrations" class="<?= strpos($uri, '/projects/helpdeskpro/integrations') !== false ? 'active' : '' ?>"><i class="fas fa-plug"></i> Integrations</a>
+        <a href="/projects/helpdeskpro/settings" class="<?= strpos($uri, '/projects/helpdeskpro/settings') !== false ? 'active' : '' ?>"><i class="fas fa-gear"></i> Settings</a>
         <?php endif; ?>
     </nav>
 </aside>
