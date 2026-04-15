@@ -59,15 +59,10 @@ class Auth
                 return null;
             }
             
-            // Check email verification if required
-            if (defined('REQUIRE_EMAIL_VERIFICATION') && REQUIRE_EMAIL_VERIFICATION) {
-                if (!$user['email_verified_at']) {
-                    self::logLogin($user['id'], $email, 'email_password', 'failed', 'Email not verified');
-                    return null;
-                }
-            }
+            // Return user even when email is unverified — callers are responsible
+            // for redirecting unverified users to the OTP page.
             
-            // Clear rate limit on successful authentication
+            // Clear rate limit on successful credential check
             Security::clearRateLimit("login_{$ip}");
             
             return $user;
@@ -144,9 +139,10 @@ class Auth
             // Send login alert email
             try {
                 MailService::sendNotification($user['email'], 'login_alert', [
-                    'name' => $user['name'],
-                    'ip'   => $ip,
-                    'time' => date('Y-m-d H:i:s'),
+                    'name'       => $user['name'],
+                    'ip_address' => $ip,
+                    'login_time' => date('Y-m-d H:i:s'),
+                    'reset_url'  => (defined('APP_URL') ? APP_URL : '') . '/forgot-password',
                 ], false);
             } catch (\Throwable $e) {
                 Logger::error('Login alert email failed: ' . $e->getMessage());
@@ -183,13 +179,15 @@ class Auth
             $data['status'] = 'active';
             $data['role'] = 'user';
             $data['user_unique_id'] = self::generateUuidV4();
-            
-            // Generate verification token
-            $verificationToken = null;
-            if (defined('REQUIRE_EMAIL_VERIFICATION') && REQUIRE_EMAIL_VERIFICATION) {
-                $verificationToken = Security::generateToken();
-                $data['email_verification_token'] = $verificationToken;
+
+            // Always generate a 6-digit OTP for email verification
+            try {
+                $otp = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+            } catch (\Random\RandomException $e) {
+                Logger::error('OTP generation failed: ' . $e->getMessage());
+                return false;
             }
+            $data['email_verification_token'] = $otp;
             
             $userId = $db->insert('users', $data);
             
@@ -199,25 +197,15 @@ class Auth
                 'created_at' => date('Y-m-d H:i:s')
             ]);
             
-            // Send verification or welcome email via MailService
-            if ($verificationToken) {
-                try {
-                    MailService::sendNotification($email, 'email_verification', [
-                        'name'       => $name,
-                        'verify_url' => (defined('APP_URL') ? APP_URL : '') . '/verify-email/' . $verificationToken,
-                    ], false);
-                } catch (\Throwable $e) {
-                    Logger::error('Verification email failed: ' . $e->getMessage());
-                }
-            } else {
-                try {
-                    MailService::sendNotification($email, 'welcome', [
-                        'name'      => $name,
-                        'login_url' => (defined('APP_URL') ? APP_URL : '') . '/login',
-                    ], false);
-                } catch (\Throwable $e) {
-                    Logger::error('Welcome email failed: ' . $e->getMessage());
-                }
+            // Send OTP verification email
+            try {
+                MailService::sendNotification($email, 'email_verification', [
+                    'name'       => $name,
+                    'verify_url' => (defined('APP_URL') ? APP_URL : '') . '/verify-otp',
+                    'otp'        => $otp,
+                ], false);
+            } catch (\Throwable $e) {
+                Logger::error('Verification OTP email failed: ' . $e->getMessage());
             }
             
             // Log activity
@@ -784,7 +772,7 @@ class Auth
         try {
             $db = Database::getInstance();
             $user = $db->fetch(
-                "SELECT id FROM users WHERE email_verification_token = ?",
+                "SELECT id, name, email FROM users WHERE email_verification_token = ?",
                 [$token]
             );
             
@@ -798,11 +786,63 @@ class Auth
             ], 'id = ?', [$user['id']]);
             
             Logger::activity($user['id'], 'email_verified');
+
+            // Send welcome email now that verification is confirmed
+            try {
+                MailService::sendNotification($user['email'], 'welcome', [
+                    'name'      => $user['name'],
+                    'login_url' => (defined('APP_URL') ? APP_URL : '') . '/dashboard',
+                ], false);
+            } catch (\Throwable $e) {
+                Logger::error('Welcome email after verification failed: ' . $e->getMessage());
+            }
             
             return true;
             
         } catch (\Exception $e) {
             Logger::error('Email verification error: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Verify a 6-digit OTP for email verification.
+     * Returns the user's ID on success so the caller can auto-login.
+     */
+    public static function verifyEmailOtp(int $userId, string $otp): int|false
+    {
+        try {
+            $db = Database::getInstance();
+            $user = $db->fetch(
+                "SELECT id, name, email FROM users WHERE id = ? AND email_verification_token = ?",
+                [$userId, $otp]
+            );
+
+            if (!$user) {
+                return false;
+            }
+
+            $db->update('users', [
+                'email_verified_at' => date('Y-m-d H:i:s'),
+                'email_verification_token' => null
+            ], 'id = ?', [$user['id']]);
+
+            Logger::activity($user['id'], 'email_verified');
+
+            // Send welcome email now that verification is confirmed
+            try {
+                MailService::sendNotification($user['email'], 'welcome', [
+                    'name'      => $user['name'],
+                    'login_url' => (defined('APP_URL') ? APP_URL : '') . '/dashboard',
+                ], false);
+            } catch (\Throwable $e) {
+                Logger::error('Welcome email after OTP verification failed: ' . $e->getMessage());
+            }
+
+            return (int)$user['id'];
+
+        } catch (\Exception $e) {
+            Logger::error('OTP verification error: ' . $e->getMessage());
             return false;
         }
     }

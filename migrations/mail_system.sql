@@ -111,11 +111,8 @@ INSERT IGNORE INTO `mail_notification_templates` (`slug`, `name`, `subject`, `bo
 '["name","app_name","login_url"]', 1),
 
 ('email_verification', 'Email Verification', 'Verify your email address',
-'<h2>Hi {{name}},</h2>
-<p>Please verify your email address by clicking the button below:</p>
-<p><a href="{{verify_url}}" style="background:#667eea;color:white;padding:12px 24px;text-decoration:none;border-radius:6px;display:inline-block;">Verify Email</a></p>
-<p>This link will expire in 24 hours. If you did not create an account, please ignore this email.</p>',
-'["name","verify_url","app_name"]', 1),
+'<h2>Hi {{name}},</h2><p>Thanks for registering! Please confirm your email address by entering the verification code below:</p><div style="text-align:center;margin:24px 0;"><span style="display:inline-block;font-size:36px;font-weight:700;letter-spacing:10px;background:#f4f7fb;border:2px dashed #667eea;border-radius:10px;padding:16px 32px;color:#333;">{{otp}}</span></div><p>This code expires in 24 hours. If you did not create an account, please ignore this email.</p>',
+'["name","otp","verify_url","app_name"]', 1),
 
 ('password_reset', 'Password Reset', 'Reset your password',
 '<h2>Hi {{name}},</h2>
@@ -132,7 +129,7 @@ INSERT IGNORE INTO `mail_notification_templates` (`slug`, `name`, `subject`, `bo
 <tr><td style="padding:8px;border:1px solid #ddd;"><strong>Time</strong></td><td style="padding:8px;border:1px solid #ddd;">{{login_time}}</td></tr>
 </table>
 <p>If this was not you, please <a href="{{reset_url}}">reset your password</a> immediately.</p>',
-'["name","ip_address","login_time","reset_url","app_name"]', 0),
+'["name","ip_address","login_time","reset_url","app_name"]', 1),
 
 ('password_changed', 'Password Changed', 'Your password was changed',
 '<h2>Hi {{name}},</h2>

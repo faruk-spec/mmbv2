@@ -135,9 +135,10 @@ class GoogleOAuthController extends BaseController
             } else {
                 try {
                     MailService::sendNotification($user['email'], 'login_alert', [
-                        'name' => $user['name'],
-                        'ip'   => Security::getClientIp(),
-                        'time' => date('Y-m-d H:i:s'),
+                        'name'       => $user['name'],
+                        'ip_address' => Security::getClientIp(),
+                        'login_time' => date('Y-m-d H:i:s'),
+                        'reset_url'  => (defined('APP_URL') ? APP_URL : '') . '/forgot-password',
                     ], false);
                 } catch (\Throwable $e) {
                     Logger::error('Google SSO login alert email failed: ' . $e->getMessage());

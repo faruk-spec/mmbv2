@@ -66,6 +66,15 @@ class AuthController extends BaseController
         $user = Auth::attemptCredentials($email, $password);
         
         if ($user) {
+            // Block login if email is not yet verified — redirect to OTP page
+            if (empty($user['email_verified_at'])) {
+                $_SESSION['pending_otp_user_id'] = $user['id'];
+                $_SESSION['pending_otp_email']   = $user['email'];
+                $this->flash('info', 'Your email is not yet verified. Please enter the verification code sent to your email.');
+                $this->redirect('/verify-otp');
+                return;
+            }
+
             // Check if 2FA is enabled
             if (!empty($user['two_factor_secret']) && $user['two_factor_enabled']) {
                 // Store user ID in session for 2FA verification
@@ -158,13 +167,115 @@ class AuthController extends BaseController
                 'email' => $this->input('email')
             ]);
             try { Notification::send($userId, 'user_registered', 'Welcome! Your account has been created.', ['email' => $this->input('email')]); } catch (\Exception $e) {}
-            
-            $this->flash('success', 'Registration successful! Please login.');
-            $this->redirect('/login');
+
+            // Store pending OTP data in session and redirect to OTP verification page
+            $_SESSION['pending_otp_user_id'] = $userId;
+            $_SESSION['pending_otp_email']   = $this->input('email');
+
+            $this->flash('info', 'We sent a 6-digit verification code to your email. Please enter it below.');
+            $this->redirect('/verify-otp');
         } else {
             $this->flash('error', 'Registration failed. Email may already exist.');
             $this->redirect('/register');
         }
+    }
+
+    /**
+     * Show OTP verification form
+     */
+    public function showVerifyOtp(): void
+    {
+        if (Auth::check()) {
+            $this->redirect('/dashboard');
+            return;
+        }
+
+        if (empty($_SESSION['pending_otp_user_id'])) {
+            $this->flash('error', 'No pending verification. Please register first.');
+            $this->redirect('/register');
+            return;
+        }
+
+        $this->view('auth/verify-otp', [
+            'title' => 'Verify Email',
+            'email' => $_SESSION['pending_otp_email'] ?? '',
+        ]);
+    }
+
+    /**
+     * Process OTP verification
+     */
+    public function verifyOtp(): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request. Please try again.');
+            $this->redirect('/verify-otp');
+            return;
+        }
+
+        $pendingUserId = (int)($_SESSION['pending_otp_user_id'] ?? 0);
+        if (!$pendingUserId) {
+            $this->flash('error', 'Session expired. Please register again.');
+            $this->redirect('/register');
+            return;
+        }
+
+        $otp = trim($this->input('otp'));
+
+        $verifiedUserId = Auth::verifyEmailOtp($pendingUserId, $otp);
+
+        if ($verifiedUserId) {
+            // Clear OTP session data
+            unset($_SESSION['pending_otp_user_id'], $_SESSION['pending_otp_email']);
+
+            // Auto-login the user
+            Auth::loginUser($verifiedUserId, false);
+
+            $this->flash('success', 'Email verified! Welcome aboard.');
+            $this->redirect('/dashboard');
+        } else {
+            $this->flash('error', 'Invalid or expired verification code. Please try again.');
+            $this->redirect('/verify-otp');
+        }
+    }
+
+    /**
+     * Resend OTP
+     */
+    public function resendOtp(): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request.');
+            $this->redirect('/verify-otp');
+            return;
+        }
+
+        $pendingUserId = (int)($_SESSION['pending_otp_user_id'] ?? 0);
+        if (!$pendingUserId) {
+            $this->flash('error', 'Session expired. Please register again.');
+            $this->redirect('/register');
+            return;
+        }
+
+        try {
+            $db = \Core\Database::getInstance();
+            $user = $db->fetch("SELECT id, name, email FROM users WHERE id = ?", [$pendingUserId]);
+            if ($user) {
+                $newOtp = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+                $db->update('users', ['email_verification_token' => $newOtp], 'id = ?', [$pendingUserId]);
+                \Core\MailService::sendNotification($user['email'], 'email_verification', [
+                    'name'       => $user['name'],
+                    'verify_url' => (defined('APP_URL') ? APP_URL : '') . '/verify-otp',
+                    'otp'        => $newOtp,
+                ], false);
+                $this->flash('success', 'A new verification code has been sent to your email.');
+            }
+        } catch (\Throwable $e) {
+            Logger::error('Resend OTP failed: ' . $e->getMessage());
+            $this->flash('error', 'Could not resend code. Please try again.');
+        }
+
+        $this->redirect('/verify-otp');
     }
     
     /**

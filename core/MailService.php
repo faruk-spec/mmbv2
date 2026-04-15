@@ -162,6 +162,53 @@ class MailService
             if (!in_array('reply_to_inbox_id', $existing, true)) {
                 $db->query("ALTER TABLE `mail_send_log` ADD COLUMN `reply_to_inbox_id` INT UNSIGNED NULL DEFAULT NULL AFTER `in_reply_to_id`", []);
             }
+
+            // 6. Update email_verification template to use OTP code format (idempotent)
+            $verTpl = $db->fetch(
+                "SELECT id, variables FROM mail_notification_templates WHERE slug = 'email_verification' LIMIT 1",
+                []
+            );
+            if ($verTpl && strpos($verTpl['variables'] ?? '', '"otp"') === false) {
+                $db->query(
+                    "UPDATE mail_notification_templates SET
+                        subject   = 'Verify your email address — {{app_name}}',
+                        body      = '<h2>Hi {{name}},</h2><p>Thanks for registering! Please confirm your email address by entering the verification code below:</p><div style=\"text-align:center;margin:24px 0;\"><span style=\"display:inline-block;font-size:36px;font-weight:700;letter-spacing:10px;background:#f4f7fb;border:2px dashed #667eea;border-radius:10px;padding:16px 32px;color:#333;\">{{otp}}</span></div><p>This code expires in 24 hours. If you did not create an account, please ignore this email.</p>',
+                        variables = '[\"name\",\"otp\",\"verify_url\",\"app_name\"]'
+                     WHERE slug = 'email_verification'",
+                    []
+                );
+            }
+
+            // 7. Enable login_alert and fix its variable names (idempotent)
+            $loginTpl = $db->fetch(
+                "SELECT id, variables FROM mail_notification_templates WHERE slug = 'login_alert' LIMIT 1",
+                []
+            );
+            if ($loginTpl && strpos($loginTpl['variables'] ?? '', '"ip_address"') === false) {
+                $db->query(
+                    "UPDATE mail_notification_templates SET
+                        body      = '<h2>Hi {{name}},</h2><p>A new login was detected on your account.</p><table style=\"border-collapse:collapse;width:100%;margin:16px 0;\"><tr><td style=\"padding:8px;border:1px solid #ddd;\"><strong>IP Address</strong></td><td style=\"padding:8px;border:1px solid #ddd;\">{{ip_address}}</td></tr><tr><td style=\"padding:8px;border:1px solid #ddd;\"><strong>Time</strong></td><td style=\"padding:8px;border:1px solid #ddd;\">{{login_time}}</td></tr></table><p>If this was not you, please <a href=\"{{reset_url}}\">reset your password</a> immediately.</p>',
+                        variables = '[\"name\",\"ip_address\",\"login_time\",\"reset_url\",\"app_name\"]',
+                        is_enabled = 1
+                     WHERE slug = 'login_alert'",
+                    []
+                );
+            }
+
+            // 8. Fix password_changed variable names (idempotent)
+            $pwTpl = $db->fetch(
+                "SELECT id, variables FROM mail_notification_templates WHERE slug = 'password_changed' LIMIT 1",
+                []
+            );
+            if ($pwTpl && strpos($pwTpl['variables'] ?? '', '"changed_at"') === false) {
+                $db->query(
+                    "UPDATE mail_notification_templates SET
+                        body      = '<h2>Hi {{name}},</h2><p>Your password was successfully changed on {{changed_at}}.</p><p>If you did not make this change, please <a href=\"{{reset_url}}\">reset your password</a> immediately and contact support.</p>',
+                        variables = '[\"name\",\"changed_at\",\"reset_url\",\"app_name\"]'
+                     WHERE slug = 'password_changed'",
+                    []
+                );
+            }
         } catch (\Throwable $e) {
             Logger::error('MailService::ensureSchema failed: ' . $e->getMessage());
         }
