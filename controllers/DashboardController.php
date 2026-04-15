@@ -14,6 +14,7 @@ use Core\Helpers;
 use Core\Logger;
 use Core\Timezone;
 use Core\Notification;
+use Core\MailService;
 
 class DashboardController extends BaseController
 {
@@ -265,6 +266,16 @@ class DashboardController extends BaseController
             
             Logger::activity(Auth::id(), 'password_changed');
             try { Notification::send(Auth::id(), 'password_changed', 'Your password was changed. If you did not do this, contact support immediately.', ['ip' => Security::getClientIp()]); } catch (\Exception $e) {}
+            try {
+                $pwUser = Auth::user();
+                MailService::sendNotification($pwUser['email'] ?? '', 'password_changed', [
+                    'name' => $pwUser['name'] ?? '',
+                    'ip'   => Security::getClientIp(),
+                    'time' => date('Y-m-d H:i:s'),
+                ]);
+            } catch (\Throwable $e) {
+                Logger::error('Password changed email failed: ' . $e->getMessage());
+            }
 
             $this->flash('success', 'Password updated successfully.');
             

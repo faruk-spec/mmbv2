@@ -458,6 +458,8 @@ class MailService
             'welcome'            => 'emails/welcome',
             'email_verification' => 'emails/verify',
             'password_reset'     => 'emails/password-reset',
+            'login_alert'        => 'emails/login-alert',
+            'password_changed'   => 'emails/password-changed',
         ];
 
         $viewFile = BASE_PATH . '/views/' . ($viewMap[$slug] ?? 'emails/' . $slug) . '.php';

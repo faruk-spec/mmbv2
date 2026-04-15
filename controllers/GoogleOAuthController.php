@@ -15,6 +15,7 @@ use Core\SessionManager;
 use Core\Logger;
 use Core\Database;
 use Core\Notification;
+use Core\MailService;
 
 class GoogleOAuthController extends BaseController
 {
@@ -92,6 +93,9 @@ class GoogleOAuthController extends BaseController
                 $this->redirect('/login');
                 return;
             }
+
+            // Detect new user (last_login_at not yet set means first login)
+            $isNewUser = empty($user['last_login_at']);
             
             // Set user session
             session_regenerate_id(true);
@@ -117,6 +121,28 @@ class GoogleOAuthController extends BaseController
                 'email' => $oauthData['email']
             ]);
             try { Notification::send($userId, 'user_login', 'You signed in with Google.', ['method' => 'google_oauth', 'ip' => Security::getClientIp()]); } catch (\Exception $e) {}
+
+            // Send welcome email for new users, login alert for returning users
+            if ($isNewUser) {
+                try {
+                    MailService::sendNotification($user['email'], 'welcome', [
+                        'name'      => $user['name'],
+                        'login_url' => (defined('APP_URL') ? APP_URL : '') . '/dashboard',
+                    ]);
+                } catch (\Throwable $e) {
+                    Logger::error('Google SSO welcome email failed: ' . $e->getMessage());
+                }
+            } else {
+                try {
+                    MailService::sendNotification($user['email'], 'login_alert', [
+                        'name' => $user['name'],
+                        'ip'   => Security::getClientIp(),
+                        'time' => date('Y-m-d H:i:s'),
+                    ]);
+                } catch (\Throwable $e) {
+                    Logger::error('Google SSO login alert email failed: ' . $e->getMessage());
+                }
+            }
             
             // Get return URL
             $returnUrl = $_SESSION['oauth_return_url'] ?? '/dashboard';
