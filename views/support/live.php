@@ -4,13 +4,16 @@
  */
 use Core\View;
 View::extend('main');
-View::section('content');
 ?>
 
-<div style="max-width:1200px;margin:0 auto;padding:28px 20px;">
-    <div style="display:flex;gap:24px;align-items:flex-start;">
-        <?php include __DIR__ . '/_sidebar.php'; ?>
-        <div style="flex:1;min-width:0;max-width:700px;">
+<?php View::section('styles'); ?>
+<style>.dashboard-main-content { padding: 0 !important; }</style>
+<?php View::endSection(); ?>
+
+<?php View::section('content'); ?>
+<div style="display:flex;min-height:calc(100vh - 64px);align-items:stretch;">
+    <?php include __DIR__ . '/_sidebar.php'; ?>
+    <div style="flex:1;padding:24px 28px;min-width:0;max-width:760px;">
             <div style="margin-bottom:22px;">
                 <h1 style="font-size:1.4rem;font-weight:700;color:var(--text-primary,#e8eefc);margin:0 0 4px;display:flex;align-items:center;gap:10px;">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ff2ec4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
@@ -61,9 +64,8 @@ View::section('content');
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:7px;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                 For non-urgent issues, please <a href="/support/create" style="color:#a78bfa;">create a ticket</a> for a faster, tracked response.
             </div>
-        </div>
-    </div>
-</div>
+        </div><!-- /main content -->
+</div><!-- /support flex wrapper -->
 
 <style>@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}</style>
 

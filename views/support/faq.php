@@ -4,13 +4,16 @@
  */
 use Core\View;
 View::extend('main');
-View::section('content');
 ?>
 
-<div style="max-width:1200px;margin:0 auto;padding:28px 20px;">
-    <div style="display:flex;gap:24px;align-items:flex-start;">
-        <?php include __DIR__ . '/_sidebar.php'; ?>
-        <div style="flex:1;min-width:0;">
+<?php View::section('styles'); ?>
+<style>.dashboard-main-content { padding: 0 !important; }</style>
+<?php View::endSection(); ?>
+
+<?php View::section('content'); ?>
+<div style="display:flex;min-height:calc(100vh - 64px);align-items:stretch;">
+    <?php include __DIR__ . '/_sidebar.php'; ?>
+    <div style="flex:1;padding:24px 28px;min-width:0;">
             <div style="margin-bottom:22px;">
                 <h1 style="font-size:1.4rem;font-weight:700;color:var(--text-primary,#e8eefc);margin:0 0 4px;display:flex;align-items:center;gap:10px;">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00f0ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
@@ -59,9 +62,8 @@ View::section('content');
                     </a>
                 </div>
             </div>
-        </div>
-    </div>
-</div>
+        </div><!-- /main content -->
+</div><!-- /support flex wrapper -->
 
 <script>
 function toggleFaq(i) {

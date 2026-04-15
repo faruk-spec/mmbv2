@@ -14,14 +14,56 @@ class Mailer
     private static ?array $config = null;
     
     /**
-     * Get mail configuration
+     * Get mail configuration.
+     * First checks the admin-configured mail_provider_configs DB table for an active provider.
+     * Falls back to config/mail.php if no active DB provider is found.
      */
     private static function getConfig(): array
     {
         if (self::$config === null) {
-            self::$config = require BASE_PATH . '/config/mail.php';
+            self::$config = self::loadConfig();
         }
         return self::$config;
+    }
+
+    private static function loadConfig(): array
+    {
+        // Try to load from DB-stored active provider (configured via Admin → Mail Config)
+        try {
+            $db  = Database::getInstance();
+            $row = $db->fetch(
+                "SELECT * FROM mail_provider_configs WHERE is_active = 1 LIMIT 1"
+            );
+            if ($row && !empty($row['smtp_host'])) {
+                return [
+                    'driver' => 'smtp',
+                    'smtp'   => [
+                        'host'       => $row['smtp_host'],
+                        'port'       => (int)($row['smtp_port'] ?? 587),
+                        'encryption' => $row['smtp_encryption'] ?? 'tls',
+                        'username'   => $row['smtp_username'] ?? '',
+                        'password'   => $row['smtp_password'] ?? '',
+                    ],
+                    'from' => [
+                        'address' => $row['from_email'] ?? ($row['smtp_username'] ?? ''),
+                        'name'    => $row['from_name'] ?? 'Support',
+                    ],
+                ];
+            }
+        } catch (\Exception $e) {
+            // DB not ready or table doesn't exist; fall through to file config
+            Logger::warning('Mailer: could not load DB mail config — ' . $e->getMessage());
+        }
+        // Fall back to static file config
+        return require BASE_PATH . '/config/mail.php';
+    }
+
+    /**
+     * Reset cached config (useful after admin saves new mail settings)
+     */
+    public static function resetConfig(): void
+    {
+        self::$config = null;
     }
     
     /**

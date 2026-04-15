@@ -120,6 +120,26 @@ class SupportModel
         } catch (\Exception $e) {
             // Table may already exist or DB user lacks DDL privilege; non-fatal
         }
+
+        // Add fields_schema column to support_template_items if it was created without it
+        try {
+            $this->db->query(
+                "ALTER TABLE `support_template_items` ADD COLUMN IF NOT EXISTS `fields_schema` TEXT NULL COMMENT 'JSON array of field definitions'"
+            );
+        } catch (\Exception $e) {
+            // Some MySQL versions don't support ADD COLUMN IF NOT EXISTS — try with exists check
+            try {
+                $col = $this->db->fetch(
+                    "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+                     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'support_template_items' AND COLUMN_NAME = 'fields_schema'"
+                );
+                if (!$col) {
+                    $this->db->query("ALTER TABLE `support_template_items` ADD COLUMN `fields_schema` TEXT NULL");
+                }
+            } catch (\Exception $e2) {
+                // Non-fatal
+            }
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -437,6 +457,21 @@ class SupportModel
         return $this->db->fetch("SELECT * FROM support_live_chats WHERE id = ?", [$id]);
     }
 
+    public function getLiveChats(string $status = ''): array
+    {
+        $where  = $status ? 'WHERE c.status = ?' : 'WHERE 1=1';
+        $params = $status ? [$status] : [];
+        return $this->db->fetchAll(
+            "SELECT c.*, u.name AS user_name, a.name AS agent_name
+             FROM support_live_chats c
+             LEFT JOIN users u ON u.id = c.user_id
+             LEFT JOIN users a ON a.id = c.assigned_agent_id
+             {$where}
+             ORDER BY c.created_at DESC",
+            $params
+        ) ?: [];
+    }
+
     public function getChatById(int $id): ?array
     {
         $row = $this->db->fetch(
@@ -576,11 +611,15 @@ class SupportModel
 
     public function isAgent(int $userId): bool
     {
-        $row = $this->db->fetch(
-            "SELECT id FROM support_agents WHERE user_id = ? AND is_active = 1",
-            [$userId]
-        );
-        return $row !== null && $row !== false;
+        try {
+            $row = $this->db->fetch(
+                "SELECT id FROM support_agents WHERE user_id = ? AND is_active = 1",
+                [$userId]
+            );
+            return $row !== null && $row !== false;
+        } catch (\Exception $e) {
+            return false;
+        }
     }
 
     public function addAgent(int $userId, int $assignedBy, string $notes = ''): void

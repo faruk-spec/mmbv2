@@ -4,13 +4,16 @@
  */
 use Core\View;
 View::extend('main');
-View::section('content');
 ?>
 
-<div style="max-width:1200px;margin:0 auto;padding:28px 20px;">
-    <div style="display:flex;gap:24px;align-items:flex-start;">
-        <?php include __DIR__ . '/_sidebar.php'; ?>
-        <div style="flex:1;min-width:0;">
+<?php View::section('styles'); ?>
+<style>.dashboard-main-content { padding: 0 !important; }</style>
+<?php View::endSection(); ?>
+
+<?php View::section('content'); ?>
+<div style="display:flex;min-height:calc(100vh - 64px);align-items:stretch;">
+    <?php include __DIR__ . '/_sidebar.php'; ?>
+    <div style="flex:1;padding:24px 28px;min-width:0;">
             <div style="margin-bottom:22px;">
                 <h1 style="font-size:1.4rem;font-weight:700;color:var(--text-primary,#e8eefc);margin:0 0 4px;display:flex;align-items:center;gap:10px;">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ff9f43" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
@@ -52,8 +55,7 @@ View::section('content');
                     View FAQ Instead
                 </a>
             </div>
-        </div>
-    </div>
-</div>
+        </div><!-- /main content -->
+</div><!-- /support flex wrapper -->
 
 <?php View::endSection(); ?>

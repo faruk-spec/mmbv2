@@ -105,6 +105,11 @@ $router->get('/support/live', 'SupportController@liveSupport', ['auth']);
 $router->get('/support/help', 'SupportController@help', ['auth']);
 $router->get('/support/announcements', 'SupportController@announcements', ['auth']);
 
+// Admin portal within support portal
+$router->get('/support/admin/tickets', 'SupportController@adminTickets', ['auth']);
+$router->get('/support/admin/live', 'SupportController@adminLive', ['auth']);
+$router->get('/support/admin/reports', 'SupportController@adminReports', ['auth']);
+
 // Live Chat (no auth — works for guests too)
 $router->post('/support/live/start', 'SupportLiveChatController@start');
 $router->post('/support/live/send', 'SupportLiveChatController@send');

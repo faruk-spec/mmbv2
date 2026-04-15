@@ -5,7 +5,6 @@
 use Core\View;
 
 View::extend('main');
-View::section('content');
 
 // Build a map: item_id => fields_schema JSON for JS
 $itemsSchemaMap = [];
@@ -20,19 +19,23 @@ foreach ($items as $item) {
 $itemsSchemaJson = json_encode($itemsSchemaMap, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
 ?>
 
-<div style="max-width:1200px;margin:0 auto;padding:28px 20px;">
-    <div style="display:flex;gap:24px;align-items:flex-start;">
+<?php View::section('styles'); ?>
+<style>.dashboard-main-content { padding: 0 !important; }</style>
+<?php View::endSection(); ?>
 
-        <!-- Sidebar -->
-        <?php include __DIR__ . '/_sidebar.php'; ?>
+<?php View::section('content'); ?>
+<div style="display:flex;min-height:calc(100vh - 64px);align-items:stretch;">
 
-        <!-- Main content -->
-        <div style="flex:1;min-width:0;max-width:700px;">
+    <!-- Sidebar -->
+    <?php include __DIR__ . '/_sidebar.php'; ?>
+
+    <!-- Main content -->
+    <div style="flex:1;padding:24px 28px;min-width:0;max-width:760px;">
 
             <!-- Flash messages -->
-            <?php if (!empty($_SESSION['flash_error'])): ?>
+            <?php if (!empty($_SESSION['_flash']['error'])): ?>
             <div style="background:rgba(255,107,107,.08);border:1px solid rgba(255,107,107,.2);color:#ff6b6b;padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:.88rem;">
-                <?= htmlspecialchars($_SESSION['flash_error']) ?><?php unset($_SESSION['flash_error']); ?>
+                <?= htmlspecialchars($_SESSION['_flash']['error']) ?><?php unset($_SESSION['_flash']['error']); ?>
             </div>
             <?php endif; ?>
 
@@ -137,8 +140,7 @@ $itemsSchemaJson = json_encode($itemsSchemaMap, JSON_HEX_TAG | JSON_HEX_APOS | J
                 </form>
             </div>
         </div><!-- /main content -->
-    </div>
-</div>
+</div><!-- /support flex wrapper -->
 
 <script>
 var ITEMS_SCHEMA = <?= $itemsSchemaJson ?>;

@@ -273,8 +273,88 @@ class SupportController extends BaseController
     }
 
     // -------------------------------------------------------------------------
+    // Admin Portal views within support portal
+    // GET /support/admin/tickets[?status=...]
+    // -------------------------------------------------------------------------
+
+    public function adminTickets(): void
+    {
+        $this->requireSupportAdmin();
+
+        $filters = [];
+        $status  = $_GET['status'] ?? '';
+        if ($status !== '') {
+            $filters['status'] = $status;
+        }
+
+        $tickets = $this->model->getAllTickets($filters);
+        $stats   = $this->model->getTicketStats();
+
+        $currentPage = match($status) {
+            'open'        => 'admin_open',
+            'in_progress' => 'admin_inprogress',
+            'resolved'    => 'admin_resolved',
+            'closed'      => 'admin_closed',
+            default       => 'admin_tickets',
+        };
+
+        $this->view('support/admin/tickets', [
+            'title'          => 'All Requests',
+            'tickets'        => $tickets,
+            'stats'          => $stats,
+            'statusFilter'   => $status,
+            'currentPage'    => $currentPage,
+            'isSupportAdmin' => true,
+        ]);
+    }
+
+    // -------------------------------------------------------------------------
+    // GET /support/admin/live
+    // -------------------------------------------------------------------------
+
+    public function adminLive(): void
+    {
+        $this->requireSupportAdmin();
+
+        $chats = $this->model->getLiveChats();
+
+        $this->view('support/admin/live', [
+            'title'          => 'Live Chats',
+            'chats'          => $chats,
+            'currentPage'    => 'admin_live',
+            'isSupportAdmin' => true,
+        ]);
+    }
+
+    // -------------------------------------------------------------------------
+    // GET /support/admin/reports
+    // -------------------------------------------------------------------------
+
+    public function adminReports(): void
+    {
+        $this->requireSupportAdmin();
+
+        $stats = $this->model->getTicketStats();
+
+        $this->view('support/admin/reports', [
+            'title'          => 'Reports',
+            'stats'          => $stats,
+            'currentPage'    => 'admin_reports',
+            'isSupportAdmin' => true,
+        ]);
+    }
+
+    // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
+
+    private function requireSupportAdmin(): void
+    {
+        if (!$this->isSupportAdmin()) {
+            $this->flash('error', 'Access denied.');
+            $this->redirect('/support');
+        }
+    }
 
     private function isSupportAdmin(): bool
     {
