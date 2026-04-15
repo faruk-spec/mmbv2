@@ -123,22 +123,15 @@ class SupportModel
 
         // Add fields_schema column to support_template_items if it was created without it
         try {
-            $this->db->query(
-                "ALTER TABLE `support_template_items` ADD COLUMN IF NOT EXISTS `fields_schema` TEXT NULL COMMENT 'JSON array of field definitions'"
+            $col = $this->db->fetch(
+                "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'support_template_items' AND COLUMN_NAME = 'fields_schema'"
             );
-        } catch (\Exception $e) {
-            // Some MySQL versions don't support ADD COLUMN IF NOT EXISTS — try with exists check
-            try {
-                $col = $this->db->fetch(
-                    "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
-                     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'support_template_items' AND COLUMN_NAME = 'fields_schema'"
-                );
-                if (!$col) {
-                    $this->db->query("ALTER TABLE `support_template_items` ADD COLUMN `fields_schema` TEXT NULL");
-                }
-            } catch (\Exception $e2) {
-                // Non-fatal
+            if (!$col) {
+                $this->db->query("ALTER TABLE `support_template_items` ADD COLUMN `fields_schema` TEXT NULL COMMENT 'JSON array of field definitions'");
             }
+        } catch (\Exception $e) {
+            // Non-fatal: table may not exist yet (will be created with column above)
         }
     }
 

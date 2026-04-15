@@ -39,8 +39,6 @@ if (!function_exists('stFormatTicketId')) {
         return sprintf('%07d', $id);
     }
 }
-
-View::extend('main');
 ?>
 
 <?php View::section('styles'); ?>
