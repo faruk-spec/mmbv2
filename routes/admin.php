@@ -432,3 +432,5 @@ $router->post('/admin/support/templates/category/{id}/delete', 'Admin\\SupportAd
 $router->post('/admin/support/templates/item/create', 'Admin\\SupportAdminController@createItem', ['auth', 'admin']);
 $router->post('/admin/support/templates/item/{id}/delete', 'Admin\\SupportAdminController@deleteItem', ['auth', 'admin']);
 $router->get('/admin/support/users', 'Admin\\SupportAdminController@userAccess', ['auth', 'admin']);
+$router->post('/admin/support/agents/add', 'Admin\\SupportAdminController@addAgent', ['auth', 'admin']);
+$router->post('/admin/support/agents/{id}/remove', 'Admin\\SupportAdminController@removeAgent', ['auth', 'admin']);

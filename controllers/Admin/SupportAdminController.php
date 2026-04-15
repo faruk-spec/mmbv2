@@ -432,12 +432,59 @@ class SupportAdminController extends BaseController
 
     public function userAccess(): void
     {
-        $users = $this->model->getSupportUsers();
+        $users  = $this->model->getSupportUsers();
+        $agents = $this->model->getAllAgents();
+        $allUsers = $this->model->getAllUsersForAgentAssign();
 
         $this->view('admin/support/users', [
-            'title' => 'Support Users',
-            'users' => $users,
+            'title'    => 'Support Users & Agents',
+            'users'    => $users,
+            'agents'   => $agents,
+            'allUsers' => $allUsers,
         ]);
+    }
+
+    // -------------------------------------------------------------------------
+    // POST /admin/support/agents/add
+    // -------------------------------------------------------------------------
+
+    public function addAgent(): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid security token.');
+            $this->redirect('/admin/support/users');
+            return;
+        }
+
+        $userId = (int) ($_POST['user_id'] ?? 0);
+        $notes  = trim($_POST['notes'] ?? '');
+
+        if ($userId <= 0) {
+            $this->flash('error', 'Please select a user.');
+            $this->redirect('/admin/support/users');
+            return;
+        }
+
+        $this->model->addAgent($userId, Auth::id(), $notes);
+        $this->flash('success', 'Agent added successfully.');
+        $this->redirect('/admin/support/users');
+    }
+
+    // -------------------------------------------------------------------------
+    // POST /admin/support/agents/{id}/remove
+    // -------------------------------------------------------------------------
+
+    public function removeAgent(int $id): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid security token.');
+            $this->redirect('/admin/support/users');
+            return;
+        }
+
+        $this->model->removeAgent($id);
+        $this->flash('success', 'Agent removed.');
+        $this->redirect('/admin/support/users');
     }
 
     // -------------------------------------------------------------------------

@@ -105,6 +105,16 @@ class SupportModel
             `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             INDEX `idx_slm_chat` (`chat_id`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        $this->db->query("CREATE TABLE IF NOT EXISTS `support_agents` (
+            `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            `user_id` INT UNSIGNED NOT NULL UNIQUE,
+            `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+            `assigned_by` INT UNSIGNED NULL,
+            `notes` TEXT NULL,
+            `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX `idx_sa_user` (`user_id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
     }
 
     // -------------------------------------------------------------------------
@@ -502,6 +512,68 @@ class SupportModel
              WHERE st.id IS NOT NULL OR slc.id IS NOT NULL
              GROUP BY u.id, u.name, u.email
              ORDER BY last_activity DESC"
+        ) ?: [];
+    }
+
+    // -------------------------------------------------------------------------
+    // Agent management methods
+    // -------------------------------------------------------------------------
+
+    public function getAllAgents(): array
+    {
+        return $this->db->fetchAll(
+            "SELECT sa.*, u.name, u.email, u.role,
+                    ab.name AS assigned_by_name
+             FROM support_agents sa
+             JOIN users u ON u.id = sa.user_id
+             LEFT JOIN users ab ON ab.id = sa.assigned_by
+             ORDER BY sa.created_at DESC"
+        ) ?: [];
+    }
+
+    public function isAgent(int $userId): bool
+    {
+        $row = $this->db->fetch(
+            "SELECT id FROM support_agents WHERE user_id = ? AND is_active = 1",
+            [$userId]
+        );
+        return $row !== null && $row !== false;
+    }
+
+    public function addAgent(int $userId, int $assignedBy, string $notes = ''): void
+    {
+        // Upsert: if already exists (maybe inactive) update, otherwise insert
+        $existing = $this->db->fetch("SELECT id FROM support_agents WHERE user_id = ?", [$userId]);
+        if ($existing) {
+            $this->db->update('support_agents', [
+                'is_active'   => 1,
+                'assigned_by' => $assignedBy,
+                'notes'       => $notes,
+            ], ['user_id' => $userId]);
+        } else {
+            $this->db->insert('support_agents', [
+                'user_id'     => $userId,
+                'is_active'   => 1,
+                'assigned_by' => $assignedBy,
+                'notes'       => $notes,
+            ]);
+        }
+    }
+
+    public function removeAgent(int $userId): void
+    {
+        $this->db->update('support_agents', ['is_active' => 0], ['user_id' => $userId]);
+    }
+
+    public function getAllUsersForAgentAssign(): array
+    {
+        // Returns all non-admin users who could be made agents (plus current agents)
+        return $this->db->fetchAll(
+            "SELECT u.id, u.name, u.email, u.role,
+                    IF(sa.is_active = 1, 1, 0) AS is_agent
+             FROM users u
+             LEFT JOIN support_agents sa ON sa.user_id = u.id AND sa.is_active = 1
+             ORDER BY u.name ASC"
         ) ?: [];
     }
 }
