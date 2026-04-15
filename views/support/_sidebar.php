@@ -11,9 +11,9 @@ $isAdmin = $isSupportAdmin ?? false;
 if (!function_exists('supportNavItem')) {
     function supportNavItem(string $href, string $icon, string $label, bool $active, string $badge = ''): string {
         $bg     = $active ? 'background:linear-gradient(135deg,rgba(0,240,255,.12),rgba(255,46,196,.08));border-color:rgba(0,240,255,.25);' : '';
-        $color  = $active ? 'color:#00f0ff;' : 'color:var(--text-secondary,#8892a6);';
+        $color  = $active ? 'color:var(--cyan);' : 'color:var(--text-secondary);';
         $weight = $active ? 'font-weight:600;' : 'font-weight:400;';
-        $badgeHtml = $badge ? "<span style=\"margin-left:auto;padding:1px 7px;border-radius:10px;font-size:.68rem;font-weight:700;background:rgba(255,46,196,.2);color:#ff2ec4;\">{$badge}</span>" : '';
+        $badgeHtml = $badge ? "<span style=\"margin-left:auto;padding:1px 7px;border-radius:10px;font-size:.68rem;font-weight:700;background:rgba(255,46,196,.2);color:var(--magenta);\">{$badge}</span>" : '';
         return "<a href=\"{$href}\" style=\"display:flex;align-items:center;gap:10px;padding:9px 14px;border-radius:8px;text-decoration:none;font-size:.855rem;transition:all .15s;border:1px solid transparent;{$bg}{$color}{$weight}\"><i class=\"fas fa-{$icon}\" style=\"width:16px;text-align:center;\"></i><span>{$label}</span>{$badgeHtml}</a>";
     }
 }
@@ -23,17 +23,17 @@ if (!function_exists('supportNavSection')) {
     }
 }
 ?>
-<aside style="width:240px;min-width:240px;background:var(--bg-primary,#08080f);border-right:1px solid var(--border-color,rgba(255,255,255,.07));display:flex;flex-direction:column;min-height:calc(100vh - 64px);position:sticky;top:64px;height:calc(100vh - 64px);overflow-y:auto;z-index:10;">
+<aside style="width:240px;min-width:240px;background:var(--bg-primary,#08080f);border-right:1px solid var(--border-color);display:flex;flex-direction:column;min-height:calc(100vh - 64px);position:sticky;top:64px;height:calc(100vh - 64px);overflow-y:auto;z-index:10;">
 
     <!-- Brand header -->
     <div style="padding:18px 16px 14px;border-bottom:1px solid var(--border-color,rgba(255,255,255,.06));">
         <div style="display:flex;align-items:center;gap:10px;">
-            <div style="width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#00f0ff,#ff2ec4);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <div style="width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--cyan),var(--magenta));display:flex;align-items:center;justify-content:center;flex-shrink:0;">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
             </div>
             <div>
-                <div style="font-weight:700;font-size:.9rem;color:var(--text-primary,#e8eefc);">Support</div>
-                <div style="font-size:.7rem;color:var(--text-secondary,#8892a6);"><?= $isAdmin ? 'Agent Portal' : 'Help Center' ?></div>
+                <div style="font-weight:700;font-size:.9rem;color:var(--text-primary);">Support</div>
+                <div style="font-size:.7rem;color:var(--text-secondary);"><?= $isAdmin ? 'Agent Portal' : 'Help Center' ?></div>
             </div>
         </div>
     </div>
@@ -79,8 +79,8 @@ if (!function_exists('supportNavSection')) {
     <!-- Status indicator -->
     <div style="padding:10px 14px 14px;border-top:1px solid var(--border-color,rgba(255,255,255,.06));">
         <div style="display:flex;align-items:center;gap:8px;">
-            <div style="width:7px;height:7px;border-radius:50%;background:#00ff88;box-shadow:0 0 6px #00ff88;animation:sbPulse 2s infinite;"></div>
-            <span style="font-size:.72rem;color:var(--text-secondary,#8892a6);">Support is online</span>
+            <div style="width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:sbPulse 2s infinite;"></div>
+            <span style="font-size:.72rem;color:var(--text-secondary);">Support is online</span>
         </div>
     </div>
 </aside>

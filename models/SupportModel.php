@@ -273,6 +273,11 @@ class SupportModel
         $this->db->update('support_tickets', $data, 'id = ?', [$id]);
     }
 
+    public function updateTicketPriority(int $id, string $priority): void
+    {
+        $this->db->update('support_tickets', ['priority' => $priority], 'id = ?', [$id]);
+    }
+
     public function getTicketStats(): array
     {
         $rows = $this->db->fetchAll(

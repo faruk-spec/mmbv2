@@ -109,6 +109,10 @@ $router->get('/support/announcements', 'SupportController@announcements', ['auth
 $router->get('/support/admin/tickets', 'SupportController@adminTickets', ['auth']);
 $router->get('/support/admin/live', 'SupportController@adminLive', ['auth']);
 $router->get('/support/admin/reports', 'SupportController@adminReports', ['auth']);
+$router->get('/support/admin/ticket/{id}', 'SupportController@adminViewTicket', ['auth']);
+$router->post('/support/admin/ticket/{id}/reply', 'SupportController@adminReplyTicket', ['auth']);
+$router->post('/support/admin/ticket/{id}/status', 'SupportController@adminUpdateTicketStatus', ['auth']);
+$router->post('/support/admin/ticket/{id}/priority', 'SupportController@adminUpdateTicketPriority', ['auth']);
 
 // Live Chat (no auth — works for guests too)
 $router->post('/support/live/start', 'SupportLiveChatController@start');

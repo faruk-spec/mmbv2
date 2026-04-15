@@ -345,6 +345,190 @@ class SupportController extends BaseController
     }
 
     // -------------------------------------------------------------------------
+    // GET /support/admin/ticket/{id}
+    // -------------------------------------------------------------------------
+
+    public function adminViewTicket(int $id): void
+    {
+        $this->requireSupportAdmin();
+
+        $ticket = $this->model->getTicketById($id);
+        if (!$ticket) {
+            http_response_code(404);
+            parent::view('errors/404', ['title' => 'Ticket Not Found']);
+            return;
+        }
+
+        $messages = $this->model->getTicketMessages($id, true); // include internal notes
+
+        $this->view('support/admin/ticket_view', [
+            'title'          => 'Manage Ticket #' . sprintf('%07d', $id),
+            'ticket'         => $ticket,
+            'messages'       => $messages,
+            'currentPage'    => 'admin_tickets',
+            'isSupportAdmin' => true,
+        ]);
+    }
+
+    // -------------------------------------------------------------------------
+    // POST /support/admin/ticket/{id}/reply
+    // -------------------------------------------------------------------------
+
+    public function adminReplyTicket(int $id): void
+    {
+        $this->requireSupportAdmin();
+        $this->validateCsrf();
+
+        $ticket = $this->model->getTicketById($id);
+        if (!$ticket) {
+            $this->flash('error', 'Ticket not found.');
+            $this->redirect('/support/admin/tickets');
+            return;
+        }
+        if ($ticket['status'] === 'closed') {
+            $this->flash('error', 'This ticket is closed.');
+            $this->redirect('/support/admin/ticket/' . $id);
+            return;
+        }
+
+        $message    = trim($_POST['message'] ?? '');
+        $isInternal = !empty($_POST['is_internal']);
+
+        if ($message === '') {
+            $this->flash('error', 'Reply message cannot be empty.');
+            $this->redirect('/support/admin/ticket/' . $id);
+            return;
+        }
+
+        $this->model->addTicketMessage($id, 'agent', Auth::id(), $message, $isInternal);
+
+        if (!$isInternal && !empty($ticket['user_email'])) {
+            $ticketUrl = $this->baseUrl() . '/support/view/' . $id;
+            $emailVars = [
+                'ticketId'     => $id,
+                'subject'      => $ticket['subject'],
+                'userName'     => $ticket['user_name'],
+                'replyMessage' => $message,
+                'ticketUrl'    => $ticketUrl,
+                'status'       => $ticket['status'],
+            ];
+            $emailBody = $this->renderEmail('support-ticket-reply', $emailVars);
+            if ($emailBody !== null) {
+                try {
+                    Mailer::send(
+                        $ticket['user_email'],
+                        "Update on your Support Ticket #" . sprintf('%07d', $id),
+                        $emailBody
+                    );
+                } catch (\Throwable $e) {
+                    // Mail failure is non-fatal
+                }
+            }
+
+            Notification::send(
+                (int) $ticket['user_id'],
+                'support_ticket_reply',
+                "An agent replied to your ticket #" . sprintf('%07d', $id) . ': ' . $ticket['subject'],
+                ['ticket_id' => $id, 'url' => '/support/view/' . $id]
+            );
+        }
+
+        $this->flash('success', $isInternal ? 'Internal note added.' : 'Reply sent successfully.');
+        $this->redirect('/support/admin/ticket/' . $id);
+    }
+
+    // -------------------------------------------------------------------------
+    // POST /support/admin/ticket/{id}/status
+    // -------------------------------------------------------------------------
+
+    public function adminUpdateTicketStatus(int $id): void
+    {
+        $this->requireSupportAdmin();
+        $this->validateCsrf();
+
+        $ticket = $this->model->getTicketById($id);
+        if (!$ticket) {
+            $this->flash('error', 'Ticket not found.');
+            $this->redirect('/support/admin/tickets');
+            return;
+        }
+
+        $validStatuses = ['open', 'in_progress', 'waiting_customer', 'resolved', 'closed'];
+        $status        = $_POST['status'] ?? '';
+        if (!in_array($status, $validStatuses, true)) {
+            $this->flash('error', 'Invalid status.');
+            $this->redirect('/support/admin/ticket/' . $id);
+            return;
+        }
+
+        $this->model->updateTicketStatus($id, $status, Auth::id());
+
+        if (($status === 'closed' || $status === 'resolved') && !empty($ticket['user_email'])) {
+            $ticketUrl  = $this->baseUrl() . '/support/view/' . $id;
+            $resolution = trim($_POST['resolution'] ?? ($status === 'resolved' ? 'Your issue has been resolved.' : 'Your ticket has been closed.'));
+            $emailVars  = [
+                'ticketId'   => $id,
+                'subject'    => $ticket['subject'],
+                'userName'   => $ticket['user_name'],
+                'ticketUrl'  => $ticketUrl,
+                'resolution' => $resolution,
+            ];
+            $emailBody = $this->renderEmail('support-ticket-closed', $emailVars);
+            if ($emailBody !== null) {
+                try {
+                    Mailer::send(
+                        $ticket['user_email'],
+                        "Support Ticket #" . sprintf('%07d', $id) . ' ' . ucfirst($status),
+                        $emailBody
+                    );
+                } catch (\Throwable $e) {
+                    // Non-fatal
+                }
+            }
+
+            Notification::send(
+                (int) $ticket['user_id'],
+                'support_ticket_' . $status,
+                "Your support ticket #" . sprintf('%07d', $id) . " has been {$status}.",
+                ['ticket_id' => $id, 'url' => '/support/view/' . $id]
+            );
+        }
+
+        $this->flash('success', "Status updated to '" . ucfirst(str_replace('_', ' ', $status)) . "'.");
+        $this->redirect('/support/admin/ticket/' . $id);
+    }
+
+    // -------------------------------------------------------------------------
+    // POST /support/admin/ticket/{id}/priority
+    // -------------------------------------------------------------------------
+
+    public function adminUpdateTicketPriority(int $id): void
+    {
+        $this->requireSupportAdmin();
+        $this->validateCsrf();
+
+        $ticket = $this->model->getTicketById($id);
+        if (!$ticket) {
+            $this->flash('error', 'Ticket not found.');
+            $this->redirect('/support/admin/tickets');
+            return;
+        }
+
+        $valid    = ['low', 'medium', 'high', 'urgent'];
+        $priority = $_POST['priority'] ?? '';
+        if (!in_array($priority, $valid, true)) {
+            $this->flash('error', 'Invalid priority.');
+            $this->redirect('/support/admin/ticket/' . $id);
+            return;
+        }
+
+        $this->model->updateTicketPriority($id, $priority);
+
+        $this->flash('success', "Priority updated to '" . ucfirst($priority) . "'.");
+        $this->redirect('/support/admin/ticket/' . $id);
+    }
+
+    // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
 

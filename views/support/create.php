@@ -34,37 +34,37 @@ $itemsSchemaJson = json_encode($itemsSchemaMap, JSON_HEX_TAG | JSON_HEX_APOS | J
 
             <!-- Flash messages -->
             <?php if (!empty($_SESSION['_flash']['error'])): ?>
-            <div style="background:rgba(255,107,107,.08);border:1px solid rgba(255,107,107,.2);color:#ff6b6b;padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:.88rem;">
+            <div style="background:rgba(255,107,107,.08);border:1px solid rgba(255,107,107,.2);color:var(--red);padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:.88rem;">
                 <?= htmlspecialchars($_SESSION['_flash']['error']) ?><?php unset($_SESSION['_flash']['error']); ?>
             </div>
             <?php endif; ?>
 
             <!-- Header -->
             <div style="margin-bottom:22px;">
-                <a href="/support" style="color:var(--text-secondary,#8892a6);text-decoration:none;font-size:.83rem;display:inline-flex;align-items:center;gap:6px;margin-bottom:12px;">
+                <a href="/support" style="color:var(--text-secondary);text-decoration:none;font-size:.83rem;display:inline-flex;align-items:center;gap:6px;margin-bottom:12px;">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
                     Back to My Tickets
                 </a>
-                <h1 style="font-size:1.4rem;font-weight:700;color:var(--text-primary,#e8eefc);margin:0 0 4px;display:flex;align-items:center;gap:10px;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00f0ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                <h1 style="font-size:1.4rem;font-weight:700;color:var(--text-primary);margin:0 0 4px;display:flex;align-items:center;gap:10px;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="color:var(--cyan)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
                     Create Support Ticket
                 </h1>
-                <p style="color:var(--text-secondary,#8892a6);margin:0;font-size:.85rem;">Describe your issue and our team will get back to you.</p>
+                <p style="color:var(--text-secondary);margin:0;font-size:.85rem;">Describe your issue and our team will get back to you.</p>
             </div>
 
-            <div style="background:var(--bg-card,#0f0f18);border:1px solid var(--border-color,rgba(255,255,255,.08));border-radius:14px;padding:26px;">
+            <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:14px;padding:26px;">
                 <form method="POST" action="/support/create" autocomplete="off" id="createTicketForm">
                     <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
 
                     <!-- Template selector -->
                     <?php if (!empty($items)): ?>
                     <div style="margin-bottom:20px;">
-                        <label style="display:block;font-weight:600;color:var(--text-primary,#e8eefc);font-size:.87rem;margin-bottom:7px;">
-                            Issue Template <span style="color:var(--text-secondary,#8892a6);font-weight:400;">(optional)</span>
+                        <label style="display:block;font-weight:600;color:var(--text-primary);font-size:.87rem;margin-bottom:7px;">
+                            Issue Template <span style="color:var(--text-secondary);font-weight:400;">(optional)</span>
                         </label>
                         <div style="position:relative;">
                             <select name="template_item_id" id="template_item_id" onchange="applyTemplate(this)"
-                                style="width:100%;padding:10px 14px;border:1px solid var(--border-color,rgba(255,255,255,.1));border-radius:8px;background:var(--bg-secondary,#0c0c12);color:var(--text-primary,#e8eefc);font-size:.9rem;outline:none;appearance:none;padding-right:36px;">
+                                style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);font-size:.9rem;outline:none;appearance:none;padding-right:36px;">
                                 <option value="">— Select a template (optional) —</option>
                                 <?php
                                 $grouped = [];
@@ -85,55 +85,55 @@ $itemsSchemaJson = json_encode($itemsSchemaMap, JSON_HEX_TAG | JSON_HEX_APOS | J
                                 </optgroup>
                                 <?php endforeach; ?>
                             </select>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary,#8892a6)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);pointer-events:none;"><polyline points="6 9 12 15 18 9"/></svg>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);pointer-events:none;"><polyline points="6 9 12 15 18 9"/></svg>
                         </div>
                     </div>
                     <?php endif; ?>
 
                     <!-- Subject -->
                     <div style="margin-bottom:20px;">
-                        <label for="subject" style="display:block;font-weight:600;color:var(--text-primary,#e8eefc);font-size:.87rem;margin-bottom:7px;">
-                            Subject <span style="color:#ff6b6b;">*</span>
+                        <label for="subject" style="display:block;font-weight:600;color:var(--text-primary);font-size:.87rem;margin-bottom:7px;">
+                            Subject <span style="color:var(--red);">*</span>
                         </label>
                         <input type="text" id="subject" name="subject" required maxlength="255"
                             value="<?= htmlspecialchars($_POST['subject'] ?? '') ?>"
                             placeholder="Brief description of your issue"
-                            style="width:100%;padding:10px 14px;border:1px solid var(--border-color,rgba(255,255,255,.1));border-radius:8px;background:var(--bg-secondary,#0c0c12);color:var(--text-primary,#e8eefc);font-size:.9rem;outline:none;box-sizing:border-box;">
+                            style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);font-size:.9rem;outline:none;box-sizing:border-box;">
                     </div>
 
                     <!-- Description -->
                     <div style="margin-bottom:20px;">
-                        <label for="description" style="display:block;font-weight:600;color:var(--text-primary,#e8eefc);font-size:.87rem;margin-bottom:7px;">
-                            Description <span style="color:#ff6b6b;">*</span>
+                        <label for="description" style="display:block;font-weight:600;color:var(--text-primary);font-size:.87rem;margin-bottom:7px;">
+                            Description <span style="color:var(--red);">*</span>
                         </label>
                         <textarea id="description" name="description" required rows="6" maxlength="5000"
                             placeholder="Describe your issue in detail. Include error messages, steps to reproduce, etc."
-                            style="width:100%;padding:10px 14px;border:1px solid var(--border-color,rgba(255,255,255,.1));border-radius:8px;background:var(--bg-secondary,#0c0c12);color:var(--text-primary,#e8eefc);font-size:.9rem;outline:none;resize:vertical;box-sizing:border-box;"><?= htmlspecialchars($_POST['description'] ?? '') ?></textarea>
-                        <div style="text-align:right;font-size:.72rem;color:var(--text-secondary,#8892a6);margin-top:4px;">Max 5000 characters</div>
+                            style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);font-size:.9rem;outline:none;resize:vertical;box-sizing:border-box;"><?= htmlspecialchars($_POST['description'] ?? '') ?></textarea>
+                        <div style="text-align:right;font-size:.72rem;color:var(--text-secondary);margin-top:4px;">Max 5000 characters</div>
                     </div>
 
                     <!-- Priority -->
                     <div style="margin-bottom:20px;">
-                        <label for="priority" style="display:block;font-weight:600;color:var(--text-primary,#e8eefc);font-size:.87rem;margin-bottom:7px;">Priority</label>
+                        <label for="priority" style="display:block;font-weight:600;color:var(--text-primary);font-size:.87rem;margin-bottom:7px;">Priority</label>
                         <div style="position:relative;">
                             <select id="priority" name="priority"
-                                style="width:100%;padding:10px 14px;border:1px solid var(--border-color,rgba(255,255,255,.1));border-radius:8px;background:var(--bg-secondary,#0c0c12);color:var(--text-primary,#e8eefc);font-size:.9rem;outline:none;appearance:none;padding-right:36px;">
+                                style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);font-size:.9rem;outline:none;appearance:none;padding-right:36px;">
                                 <?php foreach ($priorities as $p): ?>
                                 <option value="<?= $p ?>" <?= (($_POST['priority'] ?? 'medium') === $p) ? 'selected' : '' ?>><?= ucfirst($p) ?></option>
                                 <?php endforeach; ?>
                             </select>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary,#8892a6)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);pointer-events:none;"><polyline points="6 9 12 15 18 9"/></svg>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);pointer-events:none;"><polyline points="6 9 12 15 18 9"/></svg>
                         </div>
                     </div>
 
                     <!-- Custom fields (rendered dynamically by JS) -->
-                    <div id="custom-fields-container" style="display:none;border-top:1px solid var(--border-color,rgba(255,255,255,.07));padding-top:18px;margin-bottom:20px;">
-                        <div style="font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-secondary,#8892a6);margin-bottom:14px;">Additional Details</div>
+                    <div id="custom-fields-container" style="display:none;border-top:1px solid var(--border-color);padding-top:18px;margin-bottom:20px;">
+                        <div style="font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-secondary);margin-bottom:14px;">Additional Details</div>
                         <div id="custom-fields-inner"></div>
                     </div>
 
                     <button type="submit"
-                        style="width:100%;padding:12px;background:linear-gradient(135deg,#00f0ff,#ff2ec4);border:none;border-radius:8px;color:white;font-weight:700;font-size:.95rem;cursor:pointer;letter-spacing:.02em;">
+                        style="width:100%;padding:12px;background:linear-gradient(135deg,var(--cyan),var(--magenta));border:none;border-radius:8px;color:white;font-weight:700;font-size:.95rem;cursor:pointer;letter-spacing:.02em;">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:7px;"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                         Submit Ticket
                     </button>
@@ -185,11 +185,11 @@ function renderCustomFields(schema) {
         wrapper.style.marginBottom = '16px';
         var labelEl = document.createElement('label');
         labelEl.setAttribute('for', name);
-        labelEl.style.cssText = 'display:block;font-weight:600;color:var(--text-primary,#e8eefc);font-size:.87rem;margin-bottom:7px;';
-        labelEl.innerHTML = escHtml(label) + (field.required ? ' <span style="color:#ff6b6b">*</span>' : '');
+        labelEl.style.cssText = 'display:block;font-weight:600;color:var(--text-primary);font-size:.87rem;margin-bottom:7px;';
+        labelEl.innerHTML = escHtml(label) + (field.required ? ' <span style="color:var(--red)">*</span>' : '');
         wrapper.appendChild(labelEl);
         var fieldEl;
-        var inputStyle = 'width:100%;padding:10px 14px;border:1px solid var(--border-color,rgba(255,255,255,.1));border-radius:8px;background:var(--bg-secondary,#0c0c12);color:var(--text-primary,#e8eefc);font-size:.9rem;outline:none;box-sizing:border-box;';
+        var inputStyle = 'width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);font-size:.9rem;outline:none;box-sizing:border-box;';
         if (field.type === 'textarea') {
             fieldEl = document.createElement('textarea');
             fieldEl.rows = 3;
@@ -209,10 +209,10 @@ function renderCustomFields(schema) {
             });
         } else if (field.type === 'checkbox') {
             var checkWrap = document.createElement('label');
-            checkWrap.style.cssText = 'display:flex;align-items:center;gap:9px;cursor:pointer;color:var(--text-primary,#e8eefc);font-size:.9rem;';
+            checkWrap.style.cssText = 'display:flex;align-items:center;gap:9px;cursor:pointer;color:var(--text-primary);font-size:.9rem;';
             fieldEl = document.createElement('input');
             fieldEl.type = 'checkbox';
-            fieldEl.style.accentColor = '#00f0ff';
+            fieldEl.style.accentColor = 'var(--cyan)';
             fieldEl.style.width = '16px';
             fieldEl.style.height = '16px';
             checkWrap.appendChild(fieldEl);
