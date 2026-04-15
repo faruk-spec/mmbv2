@@ -93,6 +93,19 @@ $router->get('/notifications', 'NotificationController@viewAll', ['auth']);
 $router->get('/notifications/stream', 'NotificationStreamController@stream', ['auth']);
 $router->get('/api/ws/token', 'NotificationController@wsToken', ['auth']);
 
+// Support Tickets (logged-in users)
+$router->get('/support', 'SupportController@index', ['auth']);
+$router->get('/support/create', 'SupportController@createForm', ['auth']);
+$router->post('/support/create', 'SupportController@store', ['auth']);
+$router->get('/support/view/{id}', 'SupportController@view', ['auth']);
+$router->post('/support/view/{id}/reply', 'SupportController@reply', ['auth']);
+
+// Live Chat (no auth — works for guests too)
+$router->post('/support/live/start', 'SupportLiveChatController@start');
+$router->post('/support/live/send', 'SupportLiveChatController@send');
+$router->get('/support/live/messages', 'SupportLiveChatController@poll');
+$router->post('/support/live/close', 'SupportLiveChatController@close');
+
 // Session alert polling — checked every ~30 s by logged-in browsers
 $router->get('/api/session-alerts', function() {
     if (!\Core\Auth::check()) {
@@ -272,7 +285,7 @@ $router->post('/forms/{slug}', 'FormXPublicController@submit');
 
 // ── Short URL routes — hide /projects/ prefix from users ──────────────────────
 // These mirror the /projects/{project}/... routes but without the /projects/ segment.
-$knownProjects = ['qr','proshare','formx','codexpro','convertx','idcard','linkshortner','notex','resumex','billx','whatsapp','devzone','helpdeskpro'];
+$knownProjects = ['qr','proshare','formx','codexpro','convertx','idcard','linkshortner','notex','resumex','billx','whatsapp','devzone'];
 
 foreach ($knownProjects as $_proj) {
     $router->get('/' . $_proj, function() use ($_proj) {

@@ -1081,6 +1081,44 @@
 
 
 
+                <!-- Support System -->
+                <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('support')): ?>
+                <div class="menu-section">
+                    <div class="menu-section-title">Customer Support</div>
+                    <div class="menu-item menu-dropdown <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/support') === 0 ? 'open' : '' ?>">
+                        <div class="menu-dropdown-toggle <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/support') === 0 ? 'active' : '' ?>">
+                            <div class="left">
+                                <i class="fas fa-headset"></i>
+                                <span>Support</span>
+                            </div>
+                            <i class="fas fa-chevron-down arrow"></i>
+                        </div>
+                        <div class="menu-dropdown-content">
+                            <a href="/admin/support" class="menu-link <?= ($_SERVER['REQUEST_URI'] ?? '') === '/admin/support' ? 'active' : '' ?>">
+                                <i class="fas fa-gauge-high"></i>
+                                <span>Overview</span>
+                            </a>
+                            <a href="/admin/support/tickets" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/support/tickets') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-ticket"></i>
+                                <span>Support Tickets</span>
+                            </a>
+                            <a href="/admin/support/live-chats" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/support/live-chats') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-comments"></i>
+                                <span>Live Chats</span>
+                            </a>
+                            <a href="/admin/support/templates" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/support/templates') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-folder-tree"></i>
+                                <span>Templates</span>
+                            </a>
+                            <a href="/admin/support/users" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/support/users') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-users"></i>
+                                <span>User Access</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <?php endif; ?>
+
                 <!-- Platform Plans (Universal Multi-App) -->
                 <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('platform_plans')): ?>
                 <div class="menu-section">
