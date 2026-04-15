@@ -321,6 +321,20 @@ class SupportModel
         ) ?: [];
     }
 
+    /**
+     * Same as getTemplateItems() but also returns fields_schema for JS rendering.
+     */
+    public function getTemplateItemsWithSchema(): array
+    {
+        return $this->db->fetchAll(
+            "SELECT i.id, i.name, i.description, i.default_priority, i.fields_schema, c.name AS category_name
+             FROM support_template_items i
+             LEFT JOIN support_template_categories c ON c.id = i.category_id
+             WHERE i.is_active = 1
+             ORDER BY i.sort_order ASC, i.name ASC"
+        ) ?: [];
+    }
+
     public function getTemplateItemById(int $id): ?array
     {
         $row = $this->db->fetch(

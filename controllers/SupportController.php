@@ -34,9 +34,11 @@ class SupportController extends BaseController
         $stats   = $this->model->getTicketStatsByUser($userId);
 
         $this->view('support/tickets', [
-            'title'   => 'My Support Tickets',
-            'tickets' => $tickets,
-            'stats'   => $stats,
+            'title'          => 'My Support Tickets',
+            'tickets'        => $tickets,
+            'stats'          => $stats,
+            'currentPage'    => 'tickets',
+            'isSupportAdmin' => $this->isSupportAdmin(),
         ]);
     }
 
@@ -47,13 +49,15 @@ class SupportController extends BaseController
     public function createForm(): void
     {
         $categories = $this->model->getTemplateCategories();
-        $items      = $this->model->getTemplateItems();
+        $items      = $this->model->getTemplateItemsWithSchema();
 
         $this->view('support/create', [
-            'title'      => 'Create Support Ticket',
-            'categories' => $categories,
-            'items'      => $items,
-            'priorities' => ['low', 'medium', 'high', 'urgent'],
+            'title'          => 'Create Support Ticket',
+            'categories'     => $categories,
+            'items'          => $items,
+            'priorities'     => ['low', 'medium', 'high', 'urgent'],
+            'currentPage'    => 'create',
+            'isSupportAdmin' => $this->isSupportAdmin(),
         ]);
     }
 
@@ -86,26 +90,56 @@ class SupportController extends BaseController
             $priority = 'medium';
         }
 
+        // Collect custom field values and append to description
+        $customFieldsData = [];
+        if ($templateItemId) {
+            $templateItem = $this->model->getTemplateItemById($templateItemId);
+            if ($templateItem && !empty($templateItem['fields_schema'])) {
+                $schema = json_decode($templateItem['fields_schema'], true) ?: [];
+                foreach ($schema as $field) {
+                    $fieldName = $field['name'] ?? '';
+                    if ($fieldName === '') continue;
+                    $value = trim($_POST['custom_' . $fieldName] ?? '');
+                    if ($value !== '') {
+                        $customFieldsData[$fieldName] = [
+                            'label' => $field['label'] ?? $fieldName,
+                            'value' => $value,
+                        ];
+                    }
+                }
+            }
+        }
+
+        // Append custom fields to description
+        if (!empty($customFieldsData)) {
+            $description .= "\n\n--- Additional Details ---";
+            foreach ($customFieldsData as $fd) {
+                $description .= "\n" . $fd['label'] . ': ' . $fd['value'];
+            }
+        }
+
         $userId   = Auth::id();
         $ticketId = $this->model->createTicket($userId, $templateItemId, $subject, $description, $priority);
         $this->model->addTicketMessage($ticketId, 'user', $userId, $description);
 
         // Email the user
         $user      = Auth::user();
-        $ticketUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https' : 'http')
-                   . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost')
-                   . '/support/view/' . $ticketId;
+        $ticketUrl = $this->baseUrl() . '/support/view/' . $ticketId;
 
         $emailVars = [
-            'ticketId'  => $ticketId,
-            'subject'   => $subject,
-            'userName'  => $user['name'] ?? 'User',
-            'ticketUrl' => $ticketUrl,
+            'ticketId'    => $ticketId,
+            'subject'     => $subject,
+            'userName'    => $user['name'] ?? 'User',
+            'ticketUrl'   => $ticketUrl,
             'description' => $description,
         ];
         $emailBody = $this->renderEmail('support-ticket-created', $emailVars);
         if ($emailBody !== null && !empty($user['email'])) {
-            Mailer::send($user['email'], "Support Ticket #{$ticketId} Created: {$subject}", $emailBody);
+            try {
+                Mailer::send($user['email'], "Support Ticket #{$ticketId} Created: {$subject}", $emailBody);
+            } catch (\Throwable $e) {
+                // Mail failure is non-fatal
+            }
         }
 
         // Notify all admins
@@ -137,9 +171,11 @@ class SupportController extends BaseController
         $messages = $this->model->getTicketMessages($id, false);
 
         parent::view('support/view', [
-            'title'    => "Ticket #{$id}: " . htmlspecialchars($ticket['subject']),
-            'ticket'   => $ticket,
-            'messages' => $messages,
+            'title'          => "Ticket #{$id}: " . htmlspecialchars($ticket['subject']),
+            'ticket'         => $ticket,
+            'messages'       => $messages,
+            'currentPage'    => 'tickets',
+            'isSupportAdmin' => $this->isSupportAdmin(),
         ]);
     }
 
@@ -185,8 +221,74 @@ class SupportController extends BaseController
     }
 
     // -------------------------------------------------------------------------
+    // GET /support/faq
+    // -------------------------------------------------------------------------
+
+    public function faq(): void
+    {
+        $this->view('support/faq', [
+            'title'          => 'Frequently Asked Questions',
+            'currentPage'    => 'faq',
+            'isSupportAdmin' => $this->isSupportAdmin(),
+        ]);
+    }
+
+    // -------------------------------------------------------------------------
+    // GET /support/live
+    // -------------------------------------------------------------------------
+
+    public function liveSupport(): void
+    {
+        $this->view('support/live', [
+            'title'          => 'Live Support',
+            'currentPage'    => 'live',
+            'isSupportAdmin' => $this->isSupportAdmin(),
+        ]);
+    }
+
+    // -------------------------------------------------------------------------
+    // GET /support/help
+    // -------------------------------------------------------------------------
+
+    public function help(): void
+    {
+        $this->view('support/help', [
+            'title'          => 'Help & Resources',
+            'currentPage'    => 'help',
+            'isSupportAdmin' => $this->isSupportAdmin(),
+        ]);
+    }
+
+    // -------------------------------------------------------------------------
+    // GET /support/announcements
+    // -------------------------------------------------------------------------
+
+    public function announcements(): void
+    {
+        $this->view('support/announcements', [
+            'title'          => 'Announcements',
+            'currentPage'    => 'announcements',
+            'isSupportAdmin' => $this->isSupportAdmin(),
+        ]);
+    }
+
+    // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
+
+    private function isSupportAdmin(): bool
+    {
+        if (Auth::isAdmin()) {
+            return true;
+        }
+        return $this->model->isAgent(Auth::id());
+    }
+
+    private function baseUrl(): string
+    {
+        $scheme = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        return $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
+    }
 
     private function notifyAdmins(string $type, string $message, array $data = []): void
     {

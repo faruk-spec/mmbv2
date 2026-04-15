@@ -105,8 +105,16 @@ $priorityColor = match($ticket['priority']) {
                 </form>
             </div>
             <?php else: ?>
-            <div style="background:rgba(136,146,166,.08);border:1px solid rgba(136,146,166,.2);border-radius:10px;padding:14px;text-align:center;color:var(--text-secondary,#8892a6);font-size:.88rem;">
+            <div style="background:rgba(136,146,166,.08);border:1px solid rgba(136,146,166,.2);border-radius:10px;padding:16px;text-align:center;color:var(--text-secondary,#8892a6);font-size:.88rem;">
                 <i class="fas fa-lock" style="margin-right:6px;"></i>This ticket is closed.
+                <div style="margin-top:12px;">
+                    <form method="POST" action="/admin/support/tickets/<?= (int)$ticket['id'] ?>/reopen" style="display:inline;">
+                        <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+                        <button type="submit" style="padding:8px 20px;background:rgba(0,255,136,.15);border:1px solid rgba(0,255,136,.3);border-radius:7px;color:#00ff88;font-weight:600;font-size:.85rem;cursor:pointer;">
+                            <i class="fas fa-redo" style="margin-right:6px;"></i>Force Reopen Ticket
+                        </button>
+                    </form>
+                </div>
             </div>
             <?php endif; ?>
         </div>

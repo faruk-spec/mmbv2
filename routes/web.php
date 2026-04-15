@@ -100,6 +100,10 @@ $router->get('/support/create', 'SupportController@createForm', ['auth']);
 $router->post('/support/create', 'SupportController@store', ['auth']);
 $router->get('/support/view/{id}', 'SupportController@show', ['auth']);
 $router->post('/support/view/{id}/reply', 'SupportController@reply', ['auth']);
+$router->get('/support/faq', 'SupportController@faq', ['auth']);
+$router->get('/support/live', 'SupportController@liveSupport', ['auth']);
+$router->get('/support/help', 'SupportController@help', ['auth']);
+$router->get('/support/announcements', 'SupportController@announcements', ['auth']);
 
 // Live Chat (no auth — works for guests too)
 $router->post('/support/live/start', 'SupportLiveChatController@start');

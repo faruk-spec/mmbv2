@@ -134,11 +134,15 @@ class SupportAdminController extends BaseController
             ];
             $emailBody = $this->renderEmail('support-ticket-reply', $emailVars);
             if ($emailBody !== null && !empty($ticket['user_email'])) {
-                Mailer::send(
-                    $ticket['user_email'],
-                    "Update on your Support Ticket #{$id}",
-                    $emailBody
-                );
+                try {
+                    Mailer::send(
+                        $ticket['user_email'],
+                        "Update on your Support Ticket #{$id}",
+                        $emailBody
+                    );
+                } catch (\Throwable $e) {
+                    // Mail failure is non-fatal
+                }
             }
 
             // In-app notification
@@ -194,11 +198,15 @@ class SupportAdminController extends BaseController
             ];
             $emailBody = $this->renderEmail('support-ticket-closed', $emailVars);
             if ($emailBody !== null && !empty($ticket['user_email'])) {
-                Mailer::send(
-                    $ticket['user_email'],
-                    "Support Ticket #{$id} Closed",
-                    $emailBody
-                );
+                try {
+                    Mailer::send(
+                        $ticket['user_email'],
+                        "Support Ticket #{$id} Closed",
+                        $emailBody
+                    );
+                } catch (\Throwable $e) {
+                    // Mail failure is non-fatal
+                }
             }
 
             Notification::send(
@@ -210,6 +218,34 @@ class SupportAdminController extends BaseController
         }
 
         $this->flash('success', "Ticket status updated to '{$status}'.");
+        $this->redirect('/admin/support/tickets/' . $id);
+    }
+
+    // -------------------------------------------------------------------------
+    // POST /admin/support/tickets/{id}/reopen
+    // -------------------------------------------------------------------------
+
+    public function reopenTicket(int $id): void
+    {
+        $this->validateCsrf();
+
+        $ticket = $this->model->getTicketById($id);
+        if (!$ticket) {
+            $this->flash('error', 'Ticket not found.');
+            $this->redirect('/admin/support/tickets');
+            return;
+        }
+
+        $this->model->updateTicketStatus($id, 'open', Auth::id());
+
+        Notification::send(
+            (int) $ticket['user_id'],
+            'support_ticket_reopened',
+            "Your support ticket #{$id} has been reopened.",
+            ['ticket_id' => $id, 'url' => '/support/view/' . $id]
+        );
+
+        $this->flash('success', "Ticket #{$id} has been reopened.");
         $this->redirect('/admin/support/tickets/' . $id);
     }
 

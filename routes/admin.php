@@ -422,6 +422,7 @@ $router->get('/admin/support/tickets', 'Admin\\SupportAdminController@tickets', 
 $router->get('/admin/support/tickets/{id}', 'Admin\\SupportAdminController@viewTicket', ['auth', 'admin']);
 $router->post('/admin/support/tickets/{id}/reply', 'Admin\\SupportAdminController@replyTicket', ['auth', 'admin']);
 $router->post('/admin/support/tickets/{id}/status', 'Admin\\SupportAdminController@updateTicketStatus', ['auth', 'admin']);
+$router->post('/admin/support/tickets/{id}/reopen', 'Admin\\SupportAdminController@reopenTicket', ['auth', 'admin']);
 $router->get('/admin/support/live-chats', 'Admin\\SupportAdminController@liveChats', ['auth', 'admin']);
 $router->get('/admin/support/live-chats/{id}', 'Admin\\SupportAdminController@viewLiveChat', ['auth', 'admin']);
 $router->post('/admin/support/live-chats/{id}/reply', 'Admin\\SupportAdminController@replyLiveChat', ['auth', 'admin']);
