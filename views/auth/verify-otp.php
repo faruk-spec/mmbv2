@@ -42,7 +42,7 @@
                     style="font-size:1.4rem;letter-spacing:6px;text-align:center;padding:14px;"
                 >
                 <small style="color:var(--text-secondary);display:block;margin-top:6px;">
-                    Check your inbox and spam folder. The code may expire — use Resend if needed.
+                    Check your inbox and spam folder. The code expires in <strong>5 minutes</strong> — use Resend if needed.
                 </small>
             </div>
             <button type="submit" class="btn btn-primary" style="width:100%;">

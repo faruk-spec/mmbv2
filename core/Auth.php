@@ -157,6 +157,17 @@ class Auth
     }
     
     /**
+     * Generate a 6-digit OTP token with embedded 5-minute expiry.
+     * Format: "{padded_6_digit_code}_{unix_timestamp}"
+     * Returns ['otp' => '123456', 'token' => '123456_1713180300'] or throws on failure.
+     */
+    public static function generateOtp(): array
+    {
+        $otp = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        return ['otp' => $otp, 'token' => $otp . '_' . (time() + 300)];
+    }
+
+    /**
      * Register new user
      */
     public static function register(array $data): int|false
@@ -180,14 +191,14 @@ class Auth
             $data['role'] = 'user';
             $data['user_unique_id'] = self::generateUuidV4();
 
-            // Always generate a 6-digit OTP for email verification
+            // Always generate a 6-digit OTP for email verification (expires in 5 minutes)
             try {
-                $otp = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+                ['otp' => $otp, 'token' => $otpToken] = self::generateOtp();
             } catch (\Random\RandomException $e) {
                 Logger::error('OTP generation failed: ' . $e->getMessage());
                 return false;
             }
-            $data['email_verification_token'] = $otp;
+            $data['email_verification_token'] = $otpToken;
             
             $userId = $db->insert('users', $data);
             
@@ -814,12 +825,21 @@ class Auth
         try {
             $db = Database::getInstance();
             $user = $db->fetch(
-                "SELECT id, name, email FROM users WHERE id = ? AND email_verification_token = ?",
-                [$userId, $otp]
+                "SELECT id, name, email, email_verification_token FROM users WHERE id = ? AND email_verification_token IS NOT NULL",
+                [$userId]
             );
 
-            if (!$user) {
+            if (!$user || empty($user['email_verification_token'])) {
                 return false;
+            }
+
+            // Token format: "{otp}_{unix_expiry}"
+            $parts = explode('_', $user['email_verification_token'], 2);
+            if (count($parts) !== 2 || $parts[0] !== $otp) {
+                return false; // wrong OTP
+            }
+            if (time() > (int)$parts[1]) {
+                return false; // expired
             }
 
             $db->update('users', [

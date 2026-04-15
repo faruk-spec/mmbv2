@@ -118,6 +118,9 @@ textarea.form-input{resize:vertical;min-height:200px}
 .kbd-row .kbd-desc{font-size:13px;color:#94a3b8;}
 
 /* ─── Responsive ─── */
+/* Desktop: sidebar always visible; collapsed when .collapsed is toggled */
+.mail-sidebar.collapsed{width:0!important;min-width:0!important;overflow:hidden!important;}
+
 @media(max-width:768px){
     .mail-sidebar{width:0;min-width:0;position:fixed;z-index:100;transition:.3s;overflow:hidden;top:0;bottom:0}
     .mail-sidebar.open{width:220px;min-width:220px}
@@ -241,7 +244,7 @@ $_isInbox    = !$_isSearch && !$_isSettings && !$_isView && !$_isCompose && !$_i
     <!-- Main area -->
     <div class="mail-main">
         <div class="mail-topbar">
-            <button class="btn-icon" onclick="document.getElementById('mailSidebar').classList.toggle('open')" title="Toggle sidebar (m)">
+            <button class="btn-icon" onclick="mailToggleSidebar()" title="Toggle sidebar (m)">
                 <i class="fas fa-bars"></i>
             </button>
             <div class="topbar-search">
@@ -354,6 +357,19 @@ function mailToast(msg, opts = {}) {
     return t;
 }
 
+/* ── Sidebar toggle ── */
+function mailToggleSidebar() {
+    const sb = document.getElementById('mailSidebar');
+    if (!sb) return;
+    if (window.innerWidth <= 768) {
+        // Mobile: toggle open class (sidebar is fixed off-screen by default)
+        sb.classList.toggle('open');
+    } else {
+        // Desktop: toggle collapsed class
+        sb.classList.toggle('collapsed');
+    }
+}
+
 /* ── Sync ── */
 function mailSyncInbox() {
     const btn = document.getElementById('mailSyncBtn');
@@ -426,7 +442,7 @@ document.addEventListener('keydown', function(e) {
     if (key === 'u') { mailSyncInbox(); return; }
 
     /* Toggle sidebar */
-    if (key === 'm') { document.getElementById('mailSidebar').classList.toggle('open'); return; }
+    if (key === 'm') { mailToggleSidebar(); return; }
 
     /* Keyboard shortcuts help */
     if (key === '?') { document.getElementById('kbdModal').classList.add('open'); return; }

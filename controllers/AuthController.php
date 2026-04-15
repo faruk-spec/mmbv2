@@ -261,8 +261,8 @@ class AuthController extends BaseController
             $db = \Core\Database::getInstance();
             $user = $db->fetch("SELECT id, name, email FROM users WHERE id = ?", [$pendingUserId]);
             if ($user) {
-                $newOtp = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-                $db->update('users', ['email_verification_token' => $newOtp], 'id = ?', [$pendingUserId]);
+                ['otp' => $newOtp, 'token' => $newOtpToken] = \Core\Auth::generateOtp();
+                $db->update('users', ['email_verification_token' => $newOtpToken], 'id = ?', [$pendingUserId]);
                 \Core\MailService::sendNotification($user['email'], 'email_verification', [
                     'name'       => $user['name'],
                     'verify_url' => (defined('APP_URL') ? APP_URL : '') . '/verify-otp',

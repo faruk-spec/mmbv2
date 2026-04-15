@@ -21,9 +21,9 @@
     <div class="card" style="margin-bottom:20px;">
         <h3 style="margin:0 0 16px;font-size:15px;">Mail Access Permission</h3>
 
-        <?php if (in_array($targetUser['role'], ['admin', 'super_admin'], true)): ?>
+        <?php if ($targetUser['role'] === 'super_admin'): ?>
         <div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:8px;padding:12px 16px;font-size:13px;color:#6ee7b7;">
-            <i class="fas fa-check-circle"></i> This user is an <strong><?= View::e($targetUser['role']) ?></strong> — they always have full mail access.
+            <i class="fas fa-check-circle"></i> This user is a <strong>Super Admin</strong> — they always have full mail access.
         </div>
         <?php else: ?>
         <label style="display:flex;align-items:center;gap:12px;cursor:pointer;padding:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:8px;">

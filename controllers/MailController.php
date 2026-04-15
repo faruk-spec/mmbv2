@@ -29,8 +29,10 @@ class MailController extends BaseController
     {
         $this->requireAuth();
 
-        // /mail is only accessible to admins or users explicitly granted the 'mail' permission
-        if (!\Core\Auth::isAdmin() && !\Core\Auth::hasPermission('mail')) {
+        // /mail is only accessible to super_admin (always) or users/admins explicitly granted the 'mail' permission
+        $currentRole = \Core\Auth::user()['role'] ?? '';
+        $hasMailAccess = ($currentRole === 'super_admin') || $this->hasExplicitMailPermission(\Core\Auth::id());
+        if (!$hasMailAccess) {
             $isXhr = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) || (($_SERVER['HTTP_ACCEPT'] ?? '') === 'application/json');
             if ($isXhr) {
                 $this->json(['success' => false, 'message' => 'Access denied.'], 403);
@@ -56,6 +58,16 @@ class MailController extends BaseController
         $perPage = 30;
         $offset  = ($page - 1) * $perPage;
         $folder  = $_GET['folder'] ?? 'inbox';
+
+        // Auto-sync once per session on first visit to /mail
+        if (!isset($_SESSION['mail_auto_synced'])) {
+            $_SESSION['mail_auto_synced'] = true;
+            try {
+                MailService::syncInboxForUser($userId, 50);
+            } catch (\Throwable $e) {
+                Logger::error('Mail auto-sync failed: ' . $e->getMessage());
+            }
+        }
 
         $where  = "user_id = ?";
         $params = [$userId];
@@ -563,5 +575,24 @@ class MailController extends BaseController
                 : 'Inbox is up to date.');
 
         $this->json(['success' => true, 'synced' => $synced, 'message' => $message]);
+    }
+
+    /**
+     * Check if a user has been explicitly granted the 'mail' permission in the DB.
+     * This does NOT auto-grant based on role (unlike Auth::hasPermission).
+     */
+    private function hasExplicitMailPermission(int $userId): bool
+    {
+        try {
+            $db  = Database::getInstance();
+            $row = $db->fetch(
+                "SELECT id FROM admin_user_permissions WHERE user_id = ? AND permission_key = 'mail' LIMIT 1",
+                [$userId]
+            );
+            return !empty($row);
+        } catch (\Throwable $e) {
+            Logger::error('hasExplicitMailPermission: ' . $e->getMessage());
+            return false;
+        }
     }
 }

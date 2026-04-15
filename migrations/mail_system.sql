@@ -111,7 +111,7 @@ INSERT IGNORE INTO `mail_notification_templates` (`slug`, `name`, `subject`, `bo
 '["name","app_name","login_url"]', 1),
 
 ('email_verification', 'Email Verification', 'Verify your email address',
-'<h2>Hi {{name}},</h2><p>Thanks for registering! Please confirm your email address by entering the verification code below:</p><div style="text-align:center;margin:24px 0;"><span style="display:inline-block;font-size:36px;font-weight:700;letter-spacing:10px;background:#f4f7fb;border:2px dashed #667eea;border-radius:10px;padding:16px 32px;color:#333;">{{otp}}</span></div><p>This code expires in 24 hours. If you did not create an account, please ignore this email.</p>',
+'<h2>Hi {{name}},</h2><p>Thanks for registering! Please confirm your email address by entering the verification code below:</p><div style="text-align:center;margin:24px 0;"><span style="display:inline-block;font-size:36px;font-weight:700;letter-spacing:10px;background:#f4f7fb;border:2px dashed #667eea;border-radius:10px;padding:16px 32px;color:#333;">{{otp}}</span></div><p>This code expires in 5 minutes. If you did not create an account, please ignore this email.</p>',
 '["name","otp","verify_url","app_name"]', 1),
 
 ('password_reset', 'Password Reset', 'Reset your password',
