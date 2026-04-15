@@ -46,7 +46,8 @@
 
             <form method="post" action="/projects/helpdeskpro/agent/live-support/reply/<?= (int) $activeSession['id'] ?>">
                 <input type="hidden" name="_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                <textarea name="message" required maxlength="3000" placeholder="Send a human support reply..."></textarea>
+                <label for="agent_reply_message" style="display:block;margin-bottom:.35rem;font-size:.82rem;color:var(--text-secondary);">Agent Reply</label>
+                <textarea id="agent_reply_message" name="message" required maxlength="3000" placeholder="Send a human support reply..."></textarea>
                 <button type="submit" class="btn btn-primary" style="margin-top:.65rem;"><i class="fas fa-paper-plane"></i> Send Reply</button>
             </form>
         <?php endif; ?>

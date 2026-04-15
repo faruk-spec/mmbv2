@@ -17,4 +17,5 @@ return [
     ],
     'ticket_priorities' => ['low', 'medium', 'high', 'urgent'],
     'ticket_statuses' => ['open', 'in_progress', 'waiting_customer', 'resolved', 'closed'],
+    'human_handoff_keywords' => ['human', 'agent', 'person', 'representative', 'real'],
 ];

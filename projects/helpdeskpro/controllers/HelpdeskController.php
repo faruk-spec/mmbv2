@@ -265,14 +265,18 @@ class HelpdeskController
         $this->model->addLiveMessage($sessionId, 'customer', (int) Auth::id(), $safeMessage, false);
 
         $agents = $this->model->getSupportAgents();
-        $requestedHuman = preg_match('/human|agent|person|representative|real/i', $safeMessage) === 1;
+        $keywords = $this->config['human_handoff_keywords'] ?? ['human', 'agent', 'person', 'representative', 'real'];
+        $escapedKeywords = array_map(static fn($k) => preg_quote((string) $k, '~'), $keywords);
+        $pattern = '~\b(' . implode('|', $escapedKeywords) . ')\b~i';
+        $requestedHuman = preg_match($pattern, $safeMessage) === 1;
 
         if ((int) ($session['assigned_agent_id'] ?? 0) === 0 && $requestedHuman && !empty($agents)) {
-            $agentId = (int) $agents[0]['id'];
+            $selectedAgent = $this->pickAgentForHandoff($agents);
+            $agentId = (int) $selectedAgent['id'];
             $this->model->assignLiveSessionToAgent($sessionId, $agentId);
             $this->model->addLiveMessage($sessionId, 'ai', null, "Got it — I'm connecting a human support specialist now. Please stay online.", true);
 
-            $agentEmail = trim((string) ($agents[0]['email'] ?? ''));
+            $agentEmail = trim((string) ($selectedAgent['email'] ?? ''));
             if ($agentEmail !== '') {
                 $agentUrl = $this->projectUrl('/agent/live-support?sid=' . $sessionId);
                 $this->sendSafeEmail(
@@ -426,6 +430,26 @@ class HelpdeskController
         } catch (\Throwable $e) {
             // Avoid user-facing failure on email transport issues.
         }
+    }
+
+    private function pickAgentForHandoff(array $agents): array
+    {
+        $selected = $agents[0];
+        $bestLoad = PHP_INT_MAX;
+
+        foreach ($agents as $agent) {
+            $agentId = (int) ($agent['id'] ?? 0);
+            if ($agentId <= 0) {
+                continue;
+            }
+            $load = $this->model->getAgentActiveWorkload($agentId);
+            if ($load < $bestLoad) {
+                $bestLoad = $load;
+                $selected = $agent;
+            }
+        }
+
+        return $selected;
     }
 
     private function isAgent(): bool

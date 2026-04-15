@@ -313,11 +313,36 @@ class HelpdeskModel
 
     public function getSupportAgents(): array
     {
-        return $this->db->fetchAll(
-            "SELECT id, name, email, role FROM users
-             WHERE role LIKE ? OR role LIKE ?
-             ORDER BY id ASC",
-            ['%admin%', '%support%']
+        $users = $this->db->fetchAll(
+            "SELECT id, name, email, role
+             FROM users
+             WHERE role IS NOT NULL AND role <> ''
+             ORDER BY id ASC"
         ) ?: [];
+
+        $agents = [];
+        foreach ($users as $user) {
+            $roles = array_values(array_filter(array_map('trim', explode(',', (string) ($user['role'] ?? '')))));
+            if (in_array('admin', $roles, true) || in_array('super_admin', $roles, true) || in_array('support', $roles, true)) {
+                $agents[] = $user;
+            }
+        }
+
+        return $agents;
+    }
+
+    public function getAgentActiveWorkload(int $agentId): int
+    {
+        $ticketLoad = (int) ($this->db->fetchColumn(
+            "SELECT COUNT(*) FROM helpdesk_tickets WHERE assigned_agent_id = ? AND status IN ('open','in_progress','waiting_customer')",
+            [$agentId]
+        ) ?? 0);
+
+        $liveLoad = (int) ($this->db->fetchColumn(
+            "SELECT COUNT(*) FROM helpdesk_live_sessions WHERE assigned_agent_id = ? AND status IN ('open','waiting_agent')",
+            [$agentId]
+        ) ?? 0);
+
+        return $ticketLoad + $liveLoad;
     }
 }

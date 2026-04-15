@@ -39,7 +39,8 @@
     <form method="post" action="/projects/helpdeskpro/tickets/reply/<?= (int) $ticket['id'] ?>" class="card">
         <input type="hidden" name="_token" value="<?= htmlspecialchars($csrfToken) ?>">
         <h3 style="margin:.2rem 0 .7rem;font-size:.95rem;">Add Reply</h3>
-        <textarea name="message" maxlength="5000" required placeholder="Write your response..."></textarea>
+        <label for="ticket_reply_message" style="display:block;margin-bottom:.35rem;font-size:.82rem;color:var(--text-secondary);">Reply Message</label>
+        <textarea id="ticket_reply_message" name="message" maxlength="5000" required placeholder="Write your response..."></textarea>
         <?php if (!empty($isAgent)): ?>
             <label style="display:flex;align-items:center;gap:.45rem;margin-top:.55rem;font-size:.8rem;color:var(--text-secondary);">
                 <input type="checkbox" name="is_internal" value="1" style="width:auto;"> Add as internal note

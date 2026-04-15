@@ -39,7 +39,8 @@
 
 <form method="post" action="/projects/helpdeskpro/live-support/send" class="card">
     <input type="hidden" name="_token" value="<?= htmlspecialchars($csrfToken) ?>">
-    <textarea name="message" required maxlength="3000" placeholder="Type your message... (ask for 'human agent' anytime)"></textarea>
+    <label for="live_customer_message" style="display:block;margin-bottom:.35rem;font-size:.82rem;color:var(--text-secondary);">Message</label>
+    <textarea id="live_customer_message" name="message" required maxlength="3000" placeholder="Type your message... (ask for 'human agent' anytime)"></textarea>
     <button type="submit" class="btn btn-primary" style="margin-top:.7rem;"><i class="fas fa-paper-plane"></i> Send</button>
 </form>
 <?php endif; ?>

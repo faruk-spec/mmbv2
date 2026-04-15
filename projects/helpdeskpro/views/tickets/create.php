@@ -20,8 +20,8 @@
     </div>
 
     <div style="margin-bottom:1rem;">
-        <label style="display:block;margin-bottom:.35rem;font-size:.82rem;color:var(--text-secondary);">Description</label>
-        <textarea name="description" required maxlength="5000" placeholder="Include steps to reproduce, expected result, actual result, and any IDs/screenshots."></textarea>
+        <label for="ticket_description" style="display:block;margin-bottom:.35rem;font-size:.82rem;color:var(--text-secondary);">Description</label>
+        <textarea id="ticket_description" name="description" required maxlength="5000" placeholder="Include steps to reproduce, expected result, actual result, and any IDs/screenshots."></textarea>
     </div>
 
     <div style="display:flex;gap:.6rem;flex-wrap:wrap;">
