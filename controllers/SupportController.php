@@ -29,8 +29,9 @@ class SupportController extends BaseController
 
     public function index(): void
     {
-        $tickets = $this->model->getTicketsByUser(Auth::id());
-        $stats   = $this->model->getTicketStats();
+        $userId  = Auth::id();
+        $tickets = $this->model->getTicketsByUser($userId);
+        $stats   = $this->model->getTicketStatsByUser($userId);
 
         $this->view('support/tickets', [
             'title'   => 'My Support Tickets',

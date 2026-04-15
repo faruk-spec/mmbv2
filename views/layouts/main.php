@@ -1735,12 +1735,13 @@ try {
                         opacity: 1;
                     }
                     
-                    /* Show FAB toggle button */
+                    /* Show FAB toggle button — placed on the LEFT to avoid overlapping the chat widget */
                     .mobile-sidebar-toggle {
                         display: flex !important;
                         position: fixed;
                         bottom: 20px;
-                        right: 20px;
+                        left: 20px;
+                        right: auto;
                         width: 56px;
                         height: 56px;
                         background: linear-gradient(135deg, var(--cyan), var(--magenta));
@@ -2422,6 +2423,12 @@ try {
             container.appendChild(div);
         });
         container.scrollTop = container.scrollHeight;
+    }
+
+    // Hide chat widget entirely on project sub-pages
+    if (window.location.pathname.indexOf('/projects/') === 0) {
+        var widget = document.getElementById('support-chat-widget');
+        if (widget) widget.style.display = 'none';
     }
 })();
 </script>

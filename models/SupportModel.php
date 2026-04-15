@@ -106,15 +106,20 @@ class SupportModel
             INDEX `idx_slm_chat` (`chat_id`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
-        $this->db->query("CREATE TABLE IF NOT EXISTS `support_agents` (
-            `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-            `user_id` INT UNSIGNED NOT NULL UNIQUE,
-            `is_active` TINYINT(1) NOT NULL DEFAULT 1,
-            `assigned_by` INT UNSIGNED NULL,
-            `notes` TEXT NULL,
-            `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            INDEX `idx_sa_user` (`user_id`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+        try {
+            $this->db->query("CREATE TABLE IF NOT EXISTS `support_agents` (
+                `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                `user_id` INT UNSIGNED NOT NULL,
+                `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+                `assigned_by` INT UNSIGNED NULL,
+                `notes` TEXT NULL,
+                `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE KEY `uq_sa_user` (`user_id`),
+                INDEX `idx_sa_user` (`user_id`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+        } catch (\Exception $e) {
+            // Table may already exist or DB user lacks DDL privilege; non-fatal
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -240,7 +245,7 @@ class SupportModel
         }
         $statusUpdate['last_reply_at'] = date('Y-m-d H:i:s');
 
-        $this->db->update('support_tickets', $statusUpdate, ['id' => $ticketId]);
+        $this->db->update('support_tickets', $statusUpdate, 'id = ?', [$ticketId]);
     }
 
     public function updateTicketStatus(int $id, string $status, ?int $agentId = null): void
@@ -252,13 +257,28 @@ class SupportModel
         if ($agentId !== null) {
             $data['assigned_to'] = $agentId;
         }
-        $this->db->update('support_tickets', $data, ['id' => $id]);
+        $this->db->update('support_tickets', $data, 'id = ?', [$id]);
     }
 
     public function getTicketStats(): array
     {
         $rows = $this->db->fetchAll(
             "SELECT status, COUNT(*) AS cnt FROM support_tickets GROUP BY status"
+        ) ?: [];
+
+        $stats = ['open' => 0, 'in_progress' => 0, 'waiting_customer' => 0, 'resolved' => 0, 'closed' => 0, 'total' => 0];
+        foreach ($rows as $row) {
+            $stats[$row['status']] = (int) $row['cnt'];
+            $stats['total'] += (int) $row['cnt'];
+        }
+        return $stats;
+    }
+
+    public function getTicketStatsByUser(int $userId): array
+    {
+        $rows = $this->db->fetchAll(
+            "SELECT status, COUNT(*) AS cnt FROM support_tickets WHERE user_id = ? GROUP BY status",
+            [$userId]
         ) ?: [];
 
         $stats = ['open' => 0, 'in_progress' => 0, 'waiting_customer' => 0, 'resolved' => 0, 'closed' => 0, 'total' => 0];
@@ -329,12 +349,12 @@ class SupportModel
             'name'        => $name,
             'description' => $description,
             'icon'        => $icon,
-        ], ['id' => $id]);
+        ], 'id = ?', [$id]);
     }
 
     public function deleteTemplateCategory(int $id): void
     {
-        $this->db->delete('support_template_categories', ['id' => $id]);
+        $this->db->delete('support_template_categories', 'id = ?', [$id]);
     }
 
     public function createTemplateItem(
@@ -366,12 +386,12 @@ class SupportModel
             'description'      => $description,
             'default_priority' => $defaultPriority,
             'fields_schema'    => $fieldsSchema,
-        ], ['id' => $id]);
+        ], 'id = ?', [$id]);
     }
 
     public function deleteTemplateItem(int $id): void
     {
-        $this->db->delete('support_template_items', ['id' => $id]);
+        $this->db->delete('support_template_items', 'id = ?', [$id]);
     }
 
     // -------------------------------------------------------------------------
@@ -483,12 +503,12 @@ class SupportModel
         $this->db->update('support_live_chats', [
             'status'    => 'closed',
             'closed_at' => date('Y-m-d H:i:s'),
-        ], ['id' => $chatId]);
+        ], 'id = ?', [$chatId]);
     }
 
     public function assignChatAgent(int $chatId, int $agentId): void
     {
-        $this->db->update('support_live_chats', ['assigned_agent_id' => $agentId], ['id' => $chatId]);
+        $this->db->update('support_live_chats', ['assigned_agent_id' => $agentId], 'id = ?', [$chatId]);
     }
 
     // -------------------------------------------------------------------------
@@ -549,7 +569,7 @@ class SupportModel
                 'is_active'   => 1,
                 'assigned_by' => $assignedBy,
                 'notes'       => $notes,
-            ], ['user_id' => $userId]);
+            ], 'user_id = ?', [$userId]);
         } else {
             $this->db->insert('support_agents', [
                 'user_id'     => $userId,
@@ -562,7 +582,7 @@ class SupportModel
 
     public function removeAgent(int $userId): void
     {
-        $this->db->update('support_agents', ['is_active' => 0], ['user_id' => $userId]);
+        $this->db->update('support_agents', ['is_active' => 0], 'user_id = ?', [$userId]);
     }
 
     public function getAllUsersForAgentAssign(): array
