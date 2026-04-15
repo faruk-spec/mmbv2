@@ -10,8 +10,7 @@ namespace Controllers\Admin;
 use Controllers\BaseController;
 use Core\Database;
 use Core\Auth;
-use Core\Email;
-use Core\Notification;
+use Core\Logger;
 
 class EmailController extends BaseController
 {
@@ -63,8 +62,16 @@ class EmailController extends BaseController
             \Core\Logger::warning('EmailController::queue DB error: ' . $e->getMessage());
         }
 
-        // Queue statistics come from the Cache-based queue (Email class)
-        $stats = Email::getQueueStats();
+        // Queue statistics from the DB
+        $stats = ['pending' => 0, 'sent' => 0, 'failed' => 0];
+        try {
+            $statRows = $db->fetchAll("SELECT status, COUNT(*) AS c FROM email_queue GROUP BY status");
+            foreach ($statRows as $r) {
+                $stats[$r['status']] = (int)$r['c'];
+            }
+        } catch (\Throwable $e) {
+            // email_queue may not exist; keep zeroes
+        }
 
         $this->view('admin/email/queue', [
             'title'      => 'Email Queue',
@@ -138,6 +145,95 @@ class EmailController extends BaseController
             'content' => $content
         ]);
     }
+
+    public function editTemplate(): void
+    {
+        $this->requirePermission('email.templates');
+        $templateName = $_GET['template'] ?? '';
+
+        if (!$templateName) {
+            header('Location: /admin/email/templates');
+            exit;
+        }
+
+        $templatePath = $this->getSafeTemplatePath($templateName);
+        if (!$templatePath || !file_exists($templatePath)) {
+            $_SESSION['error'] = 'Template not found';
+            header('Location: /admin/email/templates');
+            exit;
+        }
+
+        $content = file_get_contents($templatePath);
+
+        $this->view('admin/email/view-template', [
+            'title' => 'Edit Email Template: ' . $templateName,
+            'templateName' => $templateName,
+            'content' => $content,
+            'isEditable' => true
+        ]);
+    }
+
+    public function updateTemplate(): void
+    {
+        $this->requirePermission('email.templates');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request.');
+            $this->redirect('/admin/email/templates');
+            return;
+        }
+
+        $templateName = $_POST['template'] ?? '';
+        $content = $_POST['content'] ?? '';
+        $templatePath = $this->getSafeTemplatePath($templateName);
+
+        if (!$templatePath || !file_exists($templatePath)) {
+            $this->flash('error', 'Template not found.');
+            $this->redirect('/admin/email/templates');
+            return;
+        }
+
+        $written = file_put_contents($templatePath, $content);
+        if ($written === false) {
+            $lastError = error_get_last();
+            \Core\Logger::error('Failed to write email template file', [
+                'template' => $templateName,
+                'error' => $lastError['message'] ?? 'unknown'
+            ]);
+            $this->flash('error', 'Failed to save template.');
+            $this->redirect('/admin/email/templates/edit?template=' . urlencode($templateName));
+            return;
+        }
+
+        \Core\Logger::activity(Auth::id(), 'email_template_file_updated', ['template' => $templateName]);
+        $this->flash('success', 'Template updated successfully.');
+        $this->redirect('/admin/email/templates/edit?template=' . urlencode($templateName));
+    }
+
+    private function getSafeTemplatePath(string $templateName): ?string
+    {
+        if (!preg_match('/^[a-zA-Z0-9\-_]+$/', $templateName)) {
+            \Core\Logger::warning('Email template name validation failed', ['template' => $templateName]);
+            return null;
+        }
+
+        $templateDir = realpath(__DIR__ . '/../../views/emails');
+        if ($templateDir === false) {
+            \Core\Logger::warning('Email template directory does not exist');
+            return null;
+        }
+
+        $templatePath = realpath($templateDir . '/' . $templateName . '.php');
+        if ($templatePath === false) {
+            \Core\Logger::warning('Email template path not found', ['template' => $templateName]);
+            return null;
+        }
+        if (!str_starts_with($templatePath, $templateDir . DIRECTORY_SEPARATOR)) {
+            \Core\Logger::warning('Email template path traversal blocked', ['template' => $templateName]);
+            return null;
+        }
+
+        return $templatePath;
+    }
     
     /**
      * Process Email Queue (AJAX)
@@ -150,18 +246,38 @@ class EmailController extends BaseController
             return;
         }
 
-        $limit = $_POST['limit'] ?? 50;
+        $limit = (int)($_POST['limit'] ?? 50);
 
+        // Note: this endpoint marks pending emails as 'processing' so that external
+        // queue workers or cron jobs can pick them up.  The actual SMTP sending is
+        // performed by MailService::sendNow() called from those workers, not here.
+        $processed = 0;
         try {
-            $processed = Email::processQueue($limit);
-            $this->json([
-                'success' => true,
-                'message' => "Processed $processed emails",
-                'processed' => $processed
-            ]);
-        } catch (\Exception $e) {
-            $this->json(['success' => false, 'message' => $e->getMessage()]);
+            $db = Database::getInstance();
+            $rows = $db->fetchAll(
+                "SELECT id FROM email_queue WHERE status = 'pending' ORDER BY created_at ASC LIMIT ?",
+                [$limit]
+            );
+            foreach ($rows as $row) {
+                try {
+                    $db->query(
+                        "UPDATE email_queue SET status = 'processing', attempts = attempts + 1 WHERE id = ?",
+                        [(int)$row['id']]
+                    );
+                    $processed++;
+                } catch (\Throwable $innerE) {
+                    // skip individual row errors
+                }
+            }
+        } catch (\Throwable $e) {
+            $this->json(['success' => false, 'message' => 'Queue unavailable: ' . $e->getMessage()]);
+            return;
         }
+        $this->json([
+            'success' => true,
+            'message' => "Processed $processed emails",
+            'processed' => $processed,
+        ]);
     }
 
     /**

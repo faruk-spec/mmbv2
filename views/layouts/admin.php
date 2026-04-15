@@ -353,6 +353,60 @@
             gap: 20px;
         }
         
+        .admin-nav-search {
+            position: relative;
+            min-width: 280px;
+            max-width: 460px;
+            flex: 1;
+        }
+        
+        .admin-nav-search input {
+            width: 100%;
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-card);
+            color: var(--text-primary);
+            outline: none;
+        }
+        
+        .admin-nav-search input:focus {
+            border-color: var(--cyan);
+        }
+        
+        .admin-nav-search-results {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: calc(100% + 6px);
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            box-shadow: 0 12px 34px rgba(0, 0, 0, 0.35);
+            max-height: 320px;
+            overflow-y: auto;
+            z-index: 1200;
+            display: none;
+        }
+        
+        .admin-nav-search-item {
+            display: block;
+            padding: 10px 12px;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border-color);
+            font-size: 13px;
+            text-decoration: none;
+        }
+        
+        .admin-nav-search-item:last-child {
+            border-bottom: none;
+        }
+        
+        .admin-nav-search-item:hover {
+            background: var(--hover-bg);
+            color: var(--cyan);
+        }
+        
         .mobile-menu-btn {
             display: none;
             background: none;
@@ -834,6 +888,10 @@
             }
             
             .topbar-title p {
+                display: none;
+            }
+            
+            .admin-nav-search {
                 display: none;
             }
             
@@ -2223,6 +2281,10 @@
                             <p><?= $subtitle ?></p>
                         <?php endif; ?>
                     </div>
+                    <div class="admin-nav-search">
+                        <input type="text" id="adminNavSearchInput" placeholder="Search admin menu...">
+                        <div class="admin-nav-search-results" id="adminNavSearchResults"></div>
+                    </div>
                 </div>
                 <div class="topbar-right">
                     <!-- Theme Toggle Button -->
@@ -2409,6 +2471,58 @@
                 link.classList.add('active');
             }
         });
+
+        // Live search for sidebar options
+        const adminNavSearchInput = document.getElementById('adminNavSearchInput');
+        const adminNavSearchResults = document.getElementById('adminNavSearchResults');
+        const ADMIN_NAV_SEARCH_MAX_RESULTS = 10;
+        const ADMIN_NAV_SEARCH_DEBOUNCE_MS = 120;
+        if (adminNavSearchInput && adminNavSearchResults) {
+            const searchWrap = adminNavSearchInput.closest('.admin-nav-search');
+            let adminNavSearchTimer = null;
+            const navLinks = Array.from(document.querySelectorAll('#sidebar .menu-link'))
+                .map(link => ({
+                    href: link.getAttribute('href') || '#',
+                    label: (link.textContent || '').replace(/\s+/g, ' ').trim()
+                }))
+                .filter(item => item.href !== '#' && item.label.length > 0);
+
+            adminNavSearchInput.addEventListener('input', function() {
+                clearTimeout(adminNavSearchTimer);
+                const currentInput = this;
+                adminNavSearchTimer = setTimeout(function() {
+                    const q = currentInput.value.trim().toLowerCase();
+                    adminNavSearchResults.innerHTML = '';
+                    if (!q) {
+                        adminNavSearchResults.style.display = 'none';
+                        return;
+                    }
+
+                    const matched = navLinks.filter(item => item.label.toLowerCase().includes(q)).slice(0, ADMIN_NAV_SEARCH_MAX_RESULTS);
+                    if (!matched.length) {
+                        const empty = document.createElement('div');
+                        empty.className = 'admin-nav-search-item';
+                        empty.textContent = 'No matching menu items';
+                        adminNavSearchResults.appendChild(empty);
+                    } else {
+                        matched.forEach(item => {
+                            const a = document.createElement('a');
+                            a.className = 'admin-nav-search-item';
+                            a.href = item.href;
+                            a.textContent = item.label;
+                            adminNavSearchResults.appendChild(a);
+                        });
+                    }
+                    adminNavSearchResults.style.display = 'block';
+                }, ADMIN_NAV_SEARCH_DEBOUNCE_MS);
+            });
+
+            document.addEventListener('click', function(e) {
+                if (!searchWrap || !searchWrap.contains(e.target)) {
+                    adminNavSearchResults.style.display = 'none';
+                }
+            });
+        }
     </script>
     <script>
     // Admin Notification Bell

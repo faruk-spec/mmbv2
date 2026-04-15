@@ -288,6 +288,8 @@ $router->post('/admin/analytics/export', 'Admin\\AnalyticsController@export', ['
 $router->get('/admin/email/queue', 'Admin\\EmailController@queue', ['auth', 'admin']);
 $router->get('/admin/email/templates', 'Admin\\EmailController@templates', ['auth', 'admin']);
 $router->get('/admin/email/templates/view', 'Admin\\EmailController@viewTemplate', ['auth', 'admin']);
+$router->get('/admin/email/templates/edit', 'Admin\\EmailController@editTemplate', ['auth', 'admin']);
+$router->post('/admin/email/templates/update', 'Admin\\EmailController@updateTemplate', ['auth', 'admin']);
 $router->post('/admin/email/queue/process', 'Admin\\EmailController@processQueue', ['auth', 'admin']);
 $router->post('/admin/email/queue/delete-failed', 'Admin\\EmailController@deleteFailed', ['auth', 'admin']);
 
@@ -310,9 +312,9 @@ $router->post('/admin/mail/templates/toggle', 'Admin\\MailConfigController@toggl
 $router->get('/admin/mail/logs', 'Admin\\MailConfigController@logs', ['auth', 'admin']);
 // Mail user access management
 $router->get('/admin/mail/access', 'Admin\\MailAccessController@index', ['auth', 'admin']);
-$router->get('/admin/mail/access/{id}/edit', 'Admin\\MailAccessController@editForm', ['auth', 'admin']);
-$router->post('/admin/mail/access/{id}/save', 'Admin\\MailAccessController@save', ['auth', 'admin']);
-$router->post('/admin/mail/access/{id}/revoke', 'Admin\\MailAccessController@revoke', ['auth', 'admin']);
+$router->get('/admin/mail/access/{userId}/edit', 'Admin\\MailAccessController@editForm', ['auth', 'admin']);
+$router->post('/admin/mail/access/{userId}/save', 'Admin\\MailAccessController@save', ['auth', 'admin']);
+$router->post('/admin/mail/access/{userId}/revoke', 'Admin\\MailAccessController@revoke', ['auth', 'admin']);
 
 // Notification Management routes
 $router->get('/admin/notifications/all', 'Admin\\NotificationController@allNotifications', ['auth', 'admin']);

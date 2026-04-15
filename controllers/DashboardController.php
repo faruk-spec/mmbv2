@@ -269,10 +269,10 @@ class DashboardController extends BaseController
             try {
                 $pwUser = Auth::user();
                 MailService::sendNotification($pwUser['email'] ?? '', 'password_changed', [
-                    'name' => $pwUser['name'] ?? '',
-                    'ip'   => Security::getClientIp(),
-                    'time' => date('Y-m-d H:i:s'),
-                ]);
+                    'name'      => $pwUser['name'] ?? '',
+                    'changed_at' => date('Y-m-d H:i:s'),
+                    'reset_url' => (defined('APP_URL') ? APP_URL : '') . '/forgot-password',
+                ], false);
             } catch (\Throwable $e) {
                 Logger::error('Password changed email failed: ' . $e->getMessage());
             }

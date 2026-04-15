@@ -118,11 +118,36 @@ textarea.form-input{resize:vertical;min-height:200px}
 .kbd-row .kbd-desc{font-size:13px;color:#94a3b8;}
 
 /* ─── Responsive ─── */
+/* Desktop: sidebar always visible; collapsed when .collapsed is toggled */
+.mail-sidebar.collapsed{width:0!important;min-width:0!important;overflow:hidden!important;}
+
 @media(max-width:768px){
     .mail-sidebar{width:0;min-width:0;position:fixed;z-index:100;transition:.3s;overflow:hidden;top:0;bottom:0}
     .mail-sidebar.open{width:220px;min-width:220px}
     .mail-main{width:100%}
 }
+
+/* ─── Light Theme ─── */
+html[data-theme="light"] body{background:#f4f7fb;color:#1e293b}
+html[data-theme="light"] .mail-sidebar,
+html[data-theme="light"] .mail-topbar{background:#ffffff;border-color:#dbe3ef}
+html[data-theme="light"] .mail-main{background:#f4f7fb}
+html[data-theme="light"] .mail-content{background:#f4f7fb}
+html[data-theme="light"] .mail-card{background:#ffffff;border-color:#dbe3ef}
+html[data-theme="light"] .mail-nav-item{color:#475569}
+html[data-theme="light"] .mail-nav-item:hover{background:#eef2f8;color:#1e293b}
+html[data-theme="light"] .mail-nav-item.active{background:#e8f0ff;color:#2952cc}
+html[data-theme="light"] .sidebar-logo .logo-text,
+html[data-theme="light"] .user-info .u-name{color:#1e293b}
+html[data-theme="light"] .u-email,.text-muted{color:#64748b}
+html[data-theme="light"] .mail-search-input,
+html[data-theme="light"] .form-input{background:#ffffff;border-color:#dbe3ef;color:#1e293b}
+html[data-theme="light"] .btn-secondary{background:#eef2f8;color:#334155;border-color:#dbe3ef}
+html[data-theme="light"] .btn-icon{background:#eef2f8;color:#334155}
+html[data-theme="light"] .mail-table th{color:#64748b;border-color:#dbe3ef}
+html[data-theme="light"] .mail-table td{border-color:#e8edf5}
+html[data-theme="light"] .mail-table tr:hover td{background:#f8fafc}
+html[data-theme="light"] .topbar-kbd-hint{color:#64748b;background:#f1f5f9;border-color:#dbe3ef}
 </style>
 </head>
 <body>
@@ -219,7 +244,7 @@ $_isInbox    = !$_isSearch && !$_isSettings && !$_isView && !$_isCompose && !$_i
     <!-- Main area -->
     <div class="mail-main">
         <div class="mail-topbar">
-            <button class="btn-icon" onclick="document.getElementById('mailSidebar').classList.toggle('open')" title="Toggle sidebar (m)">
+            <button class="btn-icon" onclick="mailToggleSidebar()" title="Toggle sidebar (m)">
                 <i class="fas fa-bars"></i>
             </button>
             <div class="topbar-search">
@@ -232,8 +257,14 @@ $_isInbox    = !$_isSearch && !$_isSettings && !$_isView && !$_isCompose && !$_i
                 </form>
             </div>
             <div class="topbar-actions">
+                <a class="btn-icon" href="<?= \Core\Auth::isAdmin() ? '/admin' : '/dashboard' ?>" title="Go to <?= \Core\Auth::isAdmin() ? 'Admin' : 'Dashboard' ?>">
+                    <i class="fas fa-compass"></i>
+                </a>
                 <button class="btn-icon" id="mailSyncBtn" onclick="mailSyncInbox()" title="Sync inbox (u)">
                     <i class="fas fa-sync-alt"></i>
+                </button>
+                <button class="btn-icon" id="mailThemeToggle" title="Toggle theme">
+                    <i class="fas fa-moon"></i>
                 </button>
                 <button class="btn-icon topbar-kbd-hint" onclick="document.getElementById('kbdModal').classList.add('open')" title="Keyboard shortcuts">
                     ?
@@ -291,6 +322,25 @@ $_isInbox    = !$_isSearch && !$_isSettings && !$_isView && !$_isCompose && !$_i
 <script>
 const mailCsrfToken = document.querySelector('meta[name="csrf-token"]').content;
 
+/* ── Theme ── */
+(function () {
+    const html = document.documentElement;
+    const themeBtn = document.getElementById('mailThemeToggle');
+    const icon = themeBtn ? themeBtn.querySelector('i') : null;
+    const saved = localStorage.getItem('mailTheme') || 'dark';
+    html.setAttribute('data-theme', saved);
+    if (icon) icon.className = saved === 'light' ? 'fas fa-sun' : 'fas fa-moon';
+
+    if (themeBtn) {
+        themeBtn.addEventListener('click', function () {
+            const next = (html.getAttribute('data-theme') || 'dark') === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', next);
+            localStorage.setItem('mailTheme', next);
+            if (icon) icon.className = next === 'light' ? 'fas fa-sun' : 'fas fa-moon';
+        });
+    }
+})();
+
 /* ── Toast ── */
 function mailToast(msg, opts = {}) {
     const area = document.getElementById('mailToastArea');
@@ -305,6 +355,19 @@ function mailToast(msg, opts = {}) {
     area.appendChild(t);
     setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity .4s'; setTimeout(()=>t.remove(),400); }, opts.duration || 4000);
     return t;
+}
+
+/* ── Sidebar toggle ── */
+function mailToggleSidebar() {
+    const sb = document.getElementById('mailSidebar');
+    if (!sb) return;
+    if (window.innerWidth <= 768) {
+        // Mobile: toggle open class (sidebar is fixed off-screen by default)
+        sb.classList.toggle('open');
+    } else {
+        // Desktop: toggle collapsed class
+        sb.classList.toggle('collapsed');
+    }
 }
 
 /* ── Sync ── */
@@ -379,7 +442,7 @@ document.addEventListener('keydown', function(e) {
     if (key === 'u') { mailSyncInbox(); return; }
 
     /* Toggle sidebar */
-    if (key === 'm') { document.getElementById('mailSidebar').classList.toggle('open'); return; }
+    if (key === 'm') { mailToggleSidebar(); return; }
 
     /* Keyboard shortcuts help */
     if (key === '?') { document.getElementById('kbdModal').classList.add('open'); return; }

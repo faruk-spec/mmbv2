@@ -32,6 +32,11 @@ $router->post('/reset-password', 'AuthController@resetPassword');
 // Email verification
 $router->get('/verify-email/{token}', 'AuthController@verifyEmail');
 
+// OTP email verification (new registration flow)
+$router->get('/verify-otp', 'AuthController@showVerifyOtp');
+$router->post('/verify-otp', 'AuthController@verifyOtp');
+$router->post('/verify-otp/resend', 'AuthController@resendOtp');
+
 // Google OAuth routes
 $router->get('/auth/google', 'GoogleOAuthController@redirectToGoogle');
 $router->get('/auth/google/callback', 'GoogleOAuthController@callback');

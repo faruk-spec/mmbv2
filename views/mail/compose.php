@@ -1,18 +1,14 @@
 <?php
-// Pre-designed mail templates
-$_mailTemplates = [
-    ['name' => 'Blank', 'subject' => '', 'body' => ''],
-    ['name' => 'Professional Letter', 'subject' => 'Important Update',
-     'body' => '<p>Dear {Name},</p><p>I hope this email finds you well. I wanted to reach out regarding…</p><p>Please let me know if you have any questions or concerns. I look forward to your response.</p><p>Best regards,<br>{Your Name}<br>{Your Title}</p>'],
-    ['name' => 'Newsletter', 'subject' => 'Our Latest Updates',
-     'body' => '<table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;font-family:Arial,sans-serif;"><tr><td style="background:#667eea;padding:32px;text-align:center;"><h1 style="color:#fff;margin:0;font-size:24px;">Newsletter</h1></td></tr><tr><td style="padding:32px;background:#ffffff;"><h2 style="color:#333;font-size:18px;">Hello {Name},</h2><p style="color:#555;line-height:1.6;">Here are the latest updates from us…</p><p style="text-align:center;margin-top:28px;"><a href="#" style="background:#667eea;color:#fff;padding:12px 28px;text-decoration:none;border-radius:6px;font-weight:600;">Read More</a></p></td></tr><tr><td style="padding:16px;background:#f9f9f9;text-align:center;font-size:12px;color:#999;">You received this email because you subscribed to our newsletter. <a href="#" style="color:#667eea;">Unsubscribe</a></td></tr></table>'],
-    ['name' => 'Meeting Invitation', 'subject' => 'Meeting Invitation: {Topic}',
-     'body' => '<p>Hi {Name},</p><p>You are invited to a meeting:</p><table style="border-collapse:collapse;width:100%;max-width:500px;margin:16px 0;"><tr><td style="padding:10px;border:1px solid #ddd;font-weight:600;background:#f5f5f5;width:140px;">Topic</td><td style="padding:10px;border:1px solid #ddd;">{Topic}</td></tr><tr><td style="padding:10px;border:1px solid #ddd;font-weight:600;background:#f5f5f5;">Date &amp; Time</td><td style="padding:10px;border:1px solid #ddd;">{DateTime}</td></tr><tr><td style="padding:10px;border:1px solid #ddd;font-weight:600;background:#f5f5f5;">Location</td><td style="padding:10px;border:1px solid #ddd;">{Location}</td></tr></table><p>Please confirm your attendance by replying to this email.</p><p>Best regards,<br>{Your Name}</p>'],
-    ['name' => 'Follow-Up', 'subject' => 'Following up on our conversation',
-     'body' => '<p>Hi {Name},</p><p>I wanted to follow up on our previous conversation regarding {Topic}.</p><p>Could you please let me know the status? I would appreciate an update at your earliest convenience.</p><p>Thank you for your time.</p><p>Best regards,<br>{Your Name}</p>'],
-    ['name' => 'Invoice / Payment', 'subject' => 'Invoice #{InvoiceNo} – Payment Due',
-     'body' => '<p>Dear {Name},</p><p>Please find below your invoice for <strong>{Amount}</strong>, due on <strong>{DueDate}</strong>.</p><table style="width:100%;border-collapse:collapse;margin:20px 0;"><tr style="background:#f5f5f5;"><th style="padding:10px;border:1px solid #ddd;text-align:left;">Description</th><th style="padding:10px;border:1px solid #ddd;text-align:right;">Amount</th></tr><tr><td style="padding:10px;border:1px solid #ddd;">{ServiceDescription}</td><td style="padding:10px;border:1px solid #ddd;text-align:right;">{Amount}</td></tr></table><p>Questions? Reply to this email.</p>'],
-];
+$_mailTemplates = [['name' => 'Blank', 'subject' => '', 'body' => '']];
+if (!empty($composeTemplates) && is_array($composeTemplates)) {
+    foreach ($composeTemplates as $tpl) {
+        $_mailTemplates[] = [
+            'name' => $tpl['name'] ?? 'Template',
+            'subject' => $tpl['subject'] ?? '',
+            'body' => $tpl['body'] ?? '',
+        ];
+    }
+}
 ?>
 <?php use Core\View; use Core\Security; ?>
 <?php $pageTitle = 'Compose'; ?>
@@ -88,6 +84,11 @@ $_mailTemplates = [
                 <option value="<?= $i ?>"><?= htmlspecialchars($tpl['name'], ENT_QUOTES, 'UTF-8') ?></option>
                 <?php endforeach; ?>
             </select>
+            <?php if (\Core\Auth::isAdmin()): ?>
+                <div style="margin-top:6px;font-size:12px;color:#94a3b8;">
+                    Manage templates from <a href="/admin/mail/templates" style="color:#a5b4fc;">Admin → Mail Templates</a>.
+                </div>
+            <?php endif; ?>
         </div>
 
         <div class="form-group">

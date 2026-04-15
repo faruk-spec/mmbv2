@@ -1692,32 +1692,6 @@ try {
                 
                 @media (max-width: 1024px) {
                     .full-dashboard-layout {
-                        grid-template-columns: 60px 1fr !important;
-                    }
-                    
-                    .left-sidebar {
-                        width: 60px !important;
-                    }
-                    
-                    .left-sidebar .nav-text,
-                    .left-sidebar .sidebar-title,
-                    .left-sidebar .group-chevron {
-                        display: none !important;
-                    }
-                    
-                    .dashboard-sidebar {
-                        display: none !important;
-                    }
-                    
-                    /* Ensure main content doesn't overflow */
-                    .dashboard-main-content {
-                        max-width: 100%;
-                        overflow-x: hidden;
-                    }
-                }
-                
-                @media (max-width: 768px) {
-                    .full-dashboard-layout {
                         grid-template-columns: 1fr !important;
                     }
                     
@@ -1732,15 +1706,14 @@ try {
                         box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5);
                     }
                     
-                    .left-sidebar.mobile-open {
-                        left: 0 !important;
+                    .left-sidebar .nav-text,
+                    .left-sidebar .sidebar-title,
+                    .left-sidebar .group-chevron {
+                        display: block !important;
                     }
                     
-                    /* Show text when mobile sidebar is open */
-                    .left-sidebar.mobile-open .nav-text,
-                    .left-sidebar.mobile-open .sidebar-title,
-                    .left-sidebar.mobile-open .group-chevron {
-                        display: block !important;
+                    .left-sidebar.mobile-open {
+                        left: 0 !important;
                     }
                     
                     /* Backdrop overlay */
@@ -1762,7 +1735,7 @@ try {
                         opacity: 1;
                     }
                     
-                    /* Hamburger button */
+                    /* Show FAB toggle button */
                     .mobile-sidebar-toggle {
                         display: flex !important;
                         position: fixed;
@@ -1790,7 +1763,19 @@ try {
                         color: var(--bg-primary);
                     }
                     
-                    /* Mobile-specific adjustments */
+                    .dashboard-sidebar {
+                        display: none !important;
+                    }
+                    
+                    /* Ensure main content doesn't overflow */
+                    .dashboard-main-content {
+                        max-width: 100%;
+                        overflow-x: hidden;
+                    }
+                }
+                
+                @media (max-width: 768px) {
+                    /* Mobile-specific adjustments (smaller padding, etc.) */
                     .dashboard-main-content {
                         padding: 12px !important;
                         max-width: 100vw;
