@@ -506,6 +506,14 @@ class SupportModel
         ], 'id = ?', [$chatId]);
     }
 
+    public function reopenChat(int $chatId): void
+    {
+        $this->db->update('support_live_chats', [
+            'status'    => 'active',
+            'closed_at' => null,
+        ], 'id = ?', [$chatId]);
+    }
+
     public function assignChatAgent(int $chatId, int $agentId): void
     {
         $this->db->update('support_live_chats', ['assigned_agent_id' => $agentId], 'id = ?', [$chatId]);
@@ -547,6 +555,7 @@ class SupportModel
              FROM support_agents sa
              JOIN users u ON u.id = sa.user_id
              LEFT JOIN users ab ON ab.id = sa.assigned_by
+             WHERE sa.is_active = 1
              ORDER BY sa.created_at DESC"
         ) ?: [];
     }

@@ -334,6 +334,40 @@ class SupportAdminController extends BaseController
     }
 
     // -------------------------------------------------------------------------
+    // POST /admin/support/live-chats/{id}/reopen
+    // -------------------------------------------------------------------------
+
+    public function reopenLiveChat(int $id): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid security token.');
+            $this->redirect('/admin/support/live-chats/' . $id);
+            return;
+        }
+
+        $chat = $this->model->getChatById($id);
+        if (!$chat) {
+            $this->flash('error', 'Chat session not found.');
+            $this->redirect('/admin/support/live-chats');
+            return;
+        }
+
+        $this->model->reopenChat($id);
+
+        if (!empty($chat['user_id'])) {
+            Notification::send(
+                (int) $chat['user_id'],
+                'live_chat_reopened',
+                'Your live chat session has been reopened by an agent.',
+                ['chat_id' => $id]
+            );
+        }
+
+        $this->flash('success', 'Chat session reopened.');
+        $this->redirect('/admin/support/live-chats/' . $id);
+    }
+
+    // -------------------------------------------------------------------------
     // GET /admin/support/templates
     // -------------------------------------------------------------------------
 

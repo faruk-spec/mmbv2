@@ -60,9 +60,19 @@ View::section('content');
                             <?= date('M j, Y H:i', strtotime($chat['created_at'])) ?>
                         </td>
                         <td style="padding:12px 14px;">
-                            <a href="/admin/support/live-chats/<?= (int)$chat['id'] ?>" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;background:rgba(255,46,196,.1);color:#ff2ec4;border-radius:6px;text-decoration:none;font-size:.78rem;font-weight:500;">
-                                <i class="fas fa-eye"></i> View
-                            </a>
+                            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                                <a href="/admin/support/live-chats/<?= (int)$chat['id'] ?>" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;background:rgba(255,46,196,.1);color:#ff2ec4;border-radius:6px;text-decoration:none;font-size:.78rem;font-weight:500;">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                                <?php if (!$isActive): ?>
+                                <form method="POST" action="/admin/support/live-chats/<?= (int)$chat['id'] ?>/reopen" style="display:inline;">
+                                    <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+                                    <button type="submit" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;background:rgba(0,255,136,.1);color:#00ff88;border:1px solid rgba(0,255,136,.2);border-radius:6px;font-size:.78rem;font-weight:500;cursor:pointer;">
+                                        <i class="fas fa-redo"></i> Reopen
+                                    </button>
+                                </form>
+                                <?php endif; ?>
+                            </div>
                         </td>
                     </tr>
                     <?php endforeach; ?>

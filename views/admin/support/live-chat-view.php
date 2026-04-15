@@ -40,6 +40,13 @@ $isActive = ($chat['status'] === 'active');
                     <i class="fas fa-times" style="margin-right:4px;"></i>Close Chat
                 </button>
             </form>
+            <?php else: ?>
+            <form method="POST" action="/admin/support/live-chats/<?= (int)$chat['id'] ?>/reopen" style="display:inline;">
+                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+                <button type="submit" style="padding:6px 14px;background:rgba(0,255,136,.15);border:1px solid rgba(0,255,136,.3);border-radius:7px;color:#00ff88;font-size:.8rem;font-weight:600;cursor:pointer;">
+                    <i class="fas fa-redo" style="margin-right:4px;"></i>Force Reopen
+                </button>
+            </form>
             <?php endif; ?>
         </div>
     </div>

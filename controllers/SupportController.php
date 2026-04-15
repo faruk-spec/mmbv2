@@ -124,19 +124,19 @@ class SupportController extends BaseController
     // GET /support/view/{id}
     // -------------------------------------------------------------------------
 
-    public function view(int $id): void
+    public function show(int $id): void
     {
         $ticket = $this->model->getTicketById($id);
 
         if (!$ticket || (int) $ticket['user_id'] !== Auth::id()) {
             http_response_code(403);
-            $this->view('errors/403', ['title' => 'Forbidden']);
+            parent::view('errors/403', ['title' => 'Forbidden']);
             return;
         }
 
         $messages = $this->model->getTicketMessages($id, false);
 
-        $this->view('support/view', [
+        parent::view('support/view', [
             'title'    => "Ticket #{$id}: " . htmlspecialchars($ticket['subject']),
             'ticket'   => $ticket,
             'messages' => $messages,
@@ -154,7 +154,7 @@ class SupportController extends BaseController
         $ticket = $this->model->getTicketById($id);
         if (!$ticket || (int) $ticket['user_id'] !== Auth::id()) {
             http_response_code(403);
-            $this->view('errors/403', ['title' => 'Forbidden']);
+            parent::view('errors/403', ['title' => 'Forbidden']);
             return;
         }
 

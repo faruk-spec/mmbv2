@@ -426,6 +426,7 @@ $router->get('/admin/support/live-chats', 'Admin\\SupportAdminController@liveCha
 $router->get('/admin/support/live-chats/{id}', 'Admin\\SupportAdminController@viewLiveChat', ['auth', 'admin']);
 $router->post('/admin/support/live-chats/{id}/reply', 'Admin\\SupportAdminController@replyLiveChat', ['auth', 'admin']);
 $router->post('/admin/support/live-chats/{id}/close', 'Admin\\SupportAdminController@closeLiveChat', ['auth', 'admin']);
+$router->post('/admin/support/live-chats/{id}/reopen', 'Admin\\SupportAdminController@reopenLiveChat', ['auth', 'admin']);
 $router->get('/admin/support/templates', 'Admin\\SupportAdminController@templates', ['auth', 'admin']);
 $router->post('/admin/support/templates/category/create', 'Admin\\SupportAdminController@createCategory', ['auth', 'admin']);
 $router->post('/admin/support/templates/category/{id}/delete', 'Admin\\SupportAdminController@deleteCategory', ['auth', 'admin']);
