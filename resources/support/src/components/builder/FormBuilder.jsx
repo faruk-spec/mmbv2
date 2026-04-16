@@ -72,6 +72,12 @@ export default function FormBuilder({ initialSchema, onSave, saving }) {
     : null;
 
   return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
     <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
       <style>{BUILDER_STYLES}</style>
 
@@ -112,49 +118,28 @@ export default function FormBuilder({ initialSchema, onSave, saving }) {
         </div>
 
         {activeTab === 'build' && (
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragStart={handleDragStart}
-            onDragEnd={handleDragEnd}
+          <SortableContext
+            items={(schema.sections ?? []).map(s => s.id)}
+            strategy={verticalListSortingStrategy}
           >
-            <SortableContext
-              items={(schema.sections ?? []).map(s => s.id)}
-              strategy={verticalListSortingStrategy}
-            >
-              {(schema.sections ?? []).length === 0 && (
-                <div className="bldr-empty-canvas">
-                  No sections yet. Click "Add Section" to start.
-                </div>
-              )}
-              {(schema.sections ?? []).map(section => (
-                <SectionBlock
-                  key={section.id}
-                  section={section}
-                  onUpdateSection={updateSection}
-                  onRemoveSection={removeSection}
-                  onRemoveField={removeField}
-                  onAddField={addField}
-                  selectedFieldId={selectedFieldId}
-                  onSelectField={setSelectedFieldId}
-                />
-              ))}
-            </SortableContext>
-
-            <DragOverlay>
-              {activeField && (
-                <div className="bldr-field-card drag-overlay">
-                  <i className={`fas fa-grip-vertical`}></i>
-                  <span>{activeField.label || activeField.name}</span>
-                </div>
-              )}
-              {activeSection && (
-                <div className="bldr-section drag-overlay">
-                  <strong>{activeSection.title}</strong>
-                </div>
-              )}
-            </DragOverlay>
-          </DndContext>
+            {(schema.sections ?? []).length === 0 && (
+              <div className="bldr-empty-canvas">
+                No sections yet. Click "Add Section" to start.
+              </div>
+            )}
+            {(schema.sections ?? []).map(section => (
+              <SectionBlock
+                key={section.id}
+                section={section}
+                onUpdateSection={updateSection}
+                onRemoveSection={removeSection}
+                onRemoveField={removeField}
+                onAddField={addField}
+                selectedFieldId={selectedFieldId}
+                onSelectField={setSelectedFieldId}
+              />
+            ))}
+          </SortableContext>
         )}
 
         {activeTab === 'logic' && (
@@ -205,6 +190,28 @@ export default function FormBuilder({ initialSchema, onSave, saving }) {
         />
       </div>
     </div>
+
+    {/* DragOverlay must be inside DndContext but outside the tab conditional */}
+    <DragOverlay>
+      {activeField && (
+        <div className="bldr-field-card drag-overlay">
+          <i className="fas fa-grip-vertical"></i>
+          <span>{activeField.label || activeField.name}</span>
+        </div>
+      )}
+      {!activeField && activeSection && (
+        <div className="bldr-section drag-overlay">
+          <strong>{activeSection.title}</strong>
+        </div>
+      )}
+      {!activeField && !activeSection && activeId && activeId.startsWith('palette__') && (
+        <div className="bldr-palette-item drag-overlay">
+          <i className="fas fa-plus"></i>
+          <span>{activeId.replace('palette__', '')}</span>
+        </div>
+      )}
+    </DragOverlay>
+    </DndContext>
   );
 }
 
