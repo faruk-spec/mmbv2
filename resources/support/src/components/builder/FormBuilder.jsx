@@ -20,10 +20,12 @@ export default function FormBuilder({ initialSchema, onSave, saving }) {
     addField, updateField, removeField,
     moveField, moveSections,
     updateConditionalLogic,
+    updateUiSettings,
   } = useBuilderState(initialSchema);
 
   const [activeId,   setActiveId]   = useState(null);
-  const [activeTab,  setActiveTab]  = useState('build'); // 'build' | 'logic' | 'preview'
+  const [activeTab,  setActiveTab]  = useState('build'); // 'build' | 'logic' | 'customize' | 'preview'
+  const ui = schema?.ui ?? {};
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -97,14 +99,14 @@ export default function FormBuilder({ initialSchema, onSave, saving }) {
       <div style={{ flex: 1, minWidth: 0 }}>
         {/* Tabs */}
         <div className="bldr-tabs">
-          {['build', 'logic', 'preview'].map(tab => (
+          {['build', 'logic', 'customize', 'preview'].map(tab => (
             <button
               key={tab}
               type="button"
               className={`bldr-tab${activeTab === tab ? ' active' : ''}`}
               onClick={() => setActiveTab(tab)}
             >
-              {tab === 'build' ? '🔨 Build' : tab === 'logic' ? '⚡ Conditions' : '👁 Preview'}
+              {tab === 'build' ? '🔨 Build' : tab === 'logic' ? '⚡ Conditions' : tab === 'customize' ? '🎨 Customize' : '👁 Preview'}
             </button>
           ))}
           <button
@@ -150,17 +152,28 @@ export default function FormBuilder({ initialSchema, onSave, saving }) {
           />
         )}
 
+        {activeTab === 'customize' && (
+          <FormCustomizationPanel ui={ui} onChange={updateUiSettings} />
+        )}
+
         {activeTab === 'preview' && (
           <div className="bldr-preview">
+            <div style={{ marginBottom: 14 }}>
+              <h3 style={{ color: 'var(--text-primary,#e8eefc)', margin: '0 0 4px' }}>{ui.form_title || 'Create Support Ticket'}</h3>
+              <p style={{ color: 'var(--text-secondary,#8892a6)', margin: 0, fontSize: '.82rem' }}>{ui.form_subtitle || 'Form subtitle'}</p>
+            </div>
             <p style={{ color: 'var(--text-secondary,#8892a6)', fontSize: '.82rem', marginBottom: 12 }}>
               This is a read-only preview of how the form will look to users.
             </p>
             {(schema.sections ?? []).map(section => (
-              <div key={section.id} style={{ marginBottom: 20, border: '1px solid var(--border-color,rgba(255,255,255,.08))', borderRadius: 10, overflow: 'hidden' }}>
-                <div style={{ padding: '10px 14px', background: 'var(--bg-card,rgba(255,255,255,.03))', fontWeight: 600, color: 'var(--text-primary,#e8eefc)', fontSize: '.88rem' }}>{section.title}</div>
+              <div key={section.id} style={{ marginBottom: 20, border: ui.section_style === 'minimal' ? 'none' : '1px solid var(--border-color,rgba(255,255,255,.08))', borderRadius: 10, overflow: 'hidden', background: ui.section_style === 'minimal' ? 'transparent' : undefined }}>
+                <div style={{ padding: '10px 14px', background: ui.section_style === 'minimal' ? 'transparent' : 'var(--bg-card,rgba(255,255,255,.03))', fontWeight: 600, color: 'var(--text-primary,#e8eefc)', fontSize: '.88rem' }}>{section.title}</div>
+                {section.description && (
+                  <div style={{ padding: '0 14px 8px', color: 'var(--text-secondary,#8892a6)', fontSize: '.78rem' }}>{section.description}</div>
+                )}
                 <div style={{ padding: 14 }}>
                   {(section.fields ?? []).map(f => (
-                    <div key={f.id} style={{ marginBottom: 12 }}>
+                    <div key={f.id} style={{ marginBottom: 12, maxWidth: f.width === 'half' ? '50%' : f.width === 'third' ? '33%' : '100%' }}>
                       <div style={{ fontSize: '.75rem', fontWeight: 600, color: 'var(--text-secondary,#8892a6)', marginBottom: 4 }}>
                         {f.label ?? f.name}
                         {f.required && <span style={{ color: 'var(--red,#f87171)' }}> *</span>}
@@ -171,12 +184,15 @@ export default function FormBuilder({ initialSchema, onSave, saving }) {
                       </div>
                     </div>
                   ))}
-                  {(section.fields ?? []).length === 0 && (
-                    <span style={{ color: 'var(--text-secondary,#8892a6)', fontSize: '.8rem' }}>Empty section</span>
-                  )}
+                    {(section.fields ?? []).length === 0 && (
+                      <span style={{ color: 'var(--text-secondary,#8892a6)', fontSize: '.8rem' }}>Empty section</span>
+                    )}
                 </div>
               </div>
             ))}
+            <button type="button" className="bldr-save-btn" style={{ marginLeft: 0, background: ui.accent_color || 'var(--cyan,#00f0ff)' }}>
+              {ui.submit_label || 'Submit Ticket'}
+            </button>
           </div>
         )}
       </div>
@@ -212,6 +228,55 @@ export default function FormBuilder({ initialSchema, onSave, saving }) {
       )}
     </DragOverlay>
     </DndContext>
+  );
+}
+
+function FormCustomizationPanel({ ui = {}, onChange }) {
+  const set = (key, value) => onChange({ [key]: value });
+
+  return (
+    <div className="bldr-customize">
+      <div className="bldr-custom-grid">
+        <div className="bldr-editor-row">
+          <label className="bldr-editor-label">Form Title</label>
+          <input className="bldr-ei" value={ui.form_title ?? ''} onChange={(e) => set('form_title', e.target.value)} />
+        </div>
+        <div className="bldr-editor-row">
+          <label className="bldr-editor-label">Submit Button Label</label>
+          <input className="bldr-ei" value={ui.submit_label ?? ''} onChange={(e) => set('submit_label', e.target.value)} />
+        </div>
+        <div className="bldr-editor-row" style={{ gridColumn: '1 / -1' }}>
+          <label className="bldr-editor-label">Form Subtitle</label>
+          <input className="bldr-ei" value={ui.form_subtitle ?? ''} onChange={(e) => set('form_subtitle', e.target.value)} />
+        </div>
+        <div className="bldr-editor-row">
+          <label className="bldr-editor-label">Success Title</label>
+          <input className="bldr-ei" value={ui.success_title ?? ''} onChange={(e) => set('success_title', e.target.value)} />
+        </div>
+        <div className="bldr-editor-row">
+          <label className="bldr-editor-label">Success Message</label>
+          <input className="bldr-ei" value={ui.success_message ?? ''} onChange={(e) => set('success_message', e.target.value)} />
+        </div>
+        <div className="bldr-editor-row">
+          <label className="bldr-editor-label">Accent Color</label>
+          <input className="bldr-ei" type="color" value={ui.accent_color ?? '#00f0ff'} onChange={(e) => set('accent_color', e.target.value)} />
+        </div>
+        <div className="bldr-editor-row">
+          <label className="bldr-editor-label">Section Style</label>
+          <select className="bldr-ei" value={ui.section_style ?? 'card'} onChange={(e) => set('section_style', e.target.value)}>
+            <option value="card">Card</option>
+            <option value="minimal">Minimal</option>
+          </select>
+        </div>
+        <div className="bldr-editor-row">
+          <label className="bldr-editor-label">Compact Mode</label>
+          <label className="bldr-toggle">
+            <input type="checkbox" checked={!!ui.compact_mode} onChange={(e) => set('compact_mode', e.target.checked)} />
+            <span className="bldr-toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -301,4 +366,7 @@ const BUILDER_STYLES = `
 
 /* Preview */
 .bldr-preview { }
+.bldr-customize { border: 1px solid var(--border-color,rgba(255,255,255,.08)); border-radius: 12px; padding: 14px; background: var(--bg-card,rgba(255,255,255,.02)); }
+.bldr-custom-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+@media (max-width: 900px) { .bldr-custom-grid { grid-template-columns: 1fr; } }
 `;

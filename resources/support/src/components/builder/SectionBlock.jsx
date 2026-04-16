@@ -58,6 +58,15 @@ export default function SectionBlock({
         </button>
       </div>
 
+      <div style={{ padding: '8px 10px', borderBottom: '1px solid var(--border-color,rgba(255,255,255,.06))' }}>
+        <input
+          className="bldr-ei"
+          value={section.description ?? ''}
+          onChange={e => onUpdateSection(section.id, { description: e.target.value })}
+          placeholder="Optional section description"
+        />
+      </div>
+
       <div className="bldr-section-fields">
         <SortableContext items={(section.fields ?? []).map(f => f.id)} strategy={verticalListSortingStrategy}>
           {(section.fields ?? []).length === 0 && (

@@ -61,6 +61,18 @@ export default function FieldEditor({ field, onUpdate, onClose }) {
           <input className="bldr-ei" value={field.help_text ?? ''} onChange={e => update('help_text', e.target.value)} placeholder="Optional hint..." />
         </EditorRow>
 
+        <EditorRow label="Default Value">
+          <input className="bldr-ei" value={field.default_value ?? ''} onChange={e => update('default_value', e.target.value)} placeholder="Optional initial value..." />
+        </EditorRow>
+
+        <EditorRow label="Width">
+          <select className="bldr-ei" value={field.width ?? 'full'} onChange={e => update('width', e.target.value)}>
+            <option value="full">Full Width</option>
+            <option value="half">Half Width</option>
+            <option value="third">Third Width</option>
+          </select>
+        </EditorRow>
+
         <EditorRow label="Required">
           <label className="bldr-toggle">
             <input type="checkbox" checked={!!field.required} onChange={e => update('required', e.target.checked)} />

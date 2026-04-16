@@ -79,11 +79,15 @@ class SupportAdminController extends BaseController
         }
 
         $messages = $this->model->getTicketMessages($id, true);
+        $activities = $this->model->getTicketActivities($id);
+        $firstAgentReplyAt = $this->model->getFirstAgentReplyAt($id);
 
         $this->view('admin/support/ticket-view', [
-            'title'    => "Ticket #{$id}: " . htmlspecialchars($ticket['subject']),
-            'ticket'   => $ticket,
-            'messages' => $messages,
+            'title'             => "Ticket #{$id}: " . htmlspecialchars($ticket['subject']),
+            'ticket'            => $ticket,
+            'messages'          => $messages,
+            'activities'        => $activities,
+            'firstAgentReplyAt' => $firstAgentReplyAt,
         ]);
     }
 

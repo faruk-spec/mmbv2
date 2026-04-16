@@ -21,9 +21,11 @@ const RENDERERS = {
 
 export default function FieldWrapper({ field, value, onChange, error }) {
   const Renderer = RENDERERS[field.type] ?? TextField;
+  const width = field.width ?? 'full';
+  const flexBasis = width === 'half' ? 'calc(50% - 8px)' : width === 'third' ? 'calc(33.333% - 8px)' : '100%';
 
   return (
-    <div className={`sp-field-wrap${error ? ' sp-field-error' : ''}`}>
+    <div className={`sp-field-wrap${error ? ' sp-field-error' : ''}`} style={{ flex: `1 1 ${flexBasis}`, minWidth: width === 'full' ? '100%' : '220px' }}>
       <label className="sp-label" htmlFor={`field_${field.name}`}>
         {field.label ?? field.name}
         {field.required && <span className="sp-required" aria-hidden="true"> *</span>}
