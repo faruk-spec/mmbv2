@@ -436,6 +436,8 @@ $router->post('/admin/support/templates/item/{id}/delete', 'Admin\\SupportAdminC
 $router->get('/admin/support/users', 'Admin\\SupportAdminController@userAccess', ['auth', 'admin']);
 $router->post('/admin/support/agents/add', 'Admin\\SupportAdminController@addAgent', ['auth', 'admin']);
 $router->post('/admin/support/agents/{id}/remove', 'Admin\\SupportAdminController@removeAgent', ['auth', 'admin']);
+$router->get('/admin/support/settings', 'Admin\\SupportAdminController@supportSettings', ['auth', 'admin']);
+$router->post('/admin/support/settings', 'Admin\\SupportAdminController@saveSupportSettings', ['auth', 'admin']);
 
 // ── Dynamic Ticket Template Builder ──────────────────────────────────────────
 // Groups

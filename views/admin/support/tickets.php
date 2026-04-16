@@ -8,103 +8,162 @@ View::extend('admin');
 View::section('content');
 ?>
 
-<div style="padding:28px;">
-    <!-- Header -->
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
-        <div>
-            <h1 style="font-size:1.5rem;font-weight:700;color:var(--text-primary,#e8eefc);margin:0 0 4px;">
-                <i class="fas fa-ticket" style="color:#00f0ff;margin-right:10px;"></i>Support Tickets
-            </h1>
-            <p style="color:var(--text-secondary,#8892a6);margin:0;font-size:.85rem;">
-                <?= (int)($stats['open']??0) ?> open &bull; <?= (int)($stats['total']??0) ?> total
-            </p>
-        </div>
-    </div>
+<style>
+.stl-page  { padding: 28px 32px; }
+.stl-hdr   { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+.stl-title { font-size: 1.45rem; font-weight: 700; color: var(--text-primary,#e8eefc); margin: 0 0 3px; display: flex; align-items: center; gap: 10px; }
+.stl-title i { color: var(--cyan,#00f0ff); }
+.stl-sub   { color: var(--text-secondary,#8892a6); margin: 0; font-size: .83rem; }
 
-    <!-- Filter bar -->
-    <form method="GET" action="/admin/support/tickets" style="background:var(--bg-card,#0f0f18);border:1px solid var(--border-color,rgba(255,255,255,.08));border-radius:12px;padding:16px 20px;margin-bottom:20px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
-        <select name="status" style="padding:8px 12px;border:1px solid var(--border-color,rgba(255,255,255,.1));border-radius:6px;background:var(--bg-secondary,#0c0c12);color:var(--text-primary,#e8eefc);font-size:.85rem;">
-            <option value="">All Statuses</option>
-            <?php foreach (['open','in_progress','waiting_customer','resolved','closed'] as $s): ?>
-            <option value="<?= $s ?>" <?= ($filters['status']==$s)?'selected':'' ?>><?= ucwords(str_replace('_',' ',$s)) ?></option>
-            <?php endforeach; ?>
-        </select>
-        <select name="priority" style="padding:8px 12px;border:1px solid var(--border-color,rgba(255,255,255,.1));border-radius:6px;background:var(--bg-secondary,#0c0c12);color:var(--text-primary,#e8eefc);font-size:.85rem;">
-            <option value="">All Priorities</option>
-            <?php foreach (['low','medium','high','urgent'] as $p): ?>
-            <option value="<?= $p ?>" <?= ($filters['priority']==$p)?'selected':'' ?>><?= ucfirst($p) ?></option>
-            <?php endforeach; ?>
-        </select>
-        <button type="submit" style="padding:8px 18px;background:linear-gradient(135deg,#00f0ff,#ff2ec4);border:none;border-radius:6px;color:white;font-weight:600;font-size:.85rem;cursor:pointer;">
-            <i class="fas fa-filter" style="margin-right:6px;"></i>Filter
-        </button>
-        <?php if (!empty(array_filter($filters))): ?>
-        <a href="/admin/support/tickets" style="padding:8px 14px;border:1px solid var(--border-color,rgba(255,255,255,.1));border-radius:6px;color:var(--text-secondary,#8892a6);text-decoration:none;font-size:.85rem;">
-            <i class="fas fa-times" style="margin-right:4px;"></i>Clear
-        </a>
-        <?php endif; ?>
-    </form>
+.stl-filter {
+  background: var(--bg-card,#0f0f18);
+  border: 1px solid var(--border-color,rgba(255,255,255,.08));
+  border-radius: 12px; padding: 14px 18px;
+  margin-bottom: 18px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+}
+.stl-filter-sel {
+  padding: 7px 11px; border: 1px solid var(--border-color,rgba(255,255,255,.1));
+  border-radius: 7px; background: var(--bg-secondary,#0c0c12);
+  color: var(--text-primary,#e8eefc); font-size: .83rem; outline: none;
+}
+.stl-filter-sel:focus { border-color: var(--cyan,#00f0ff); }
+.stl-filter-btn {
+  padding: 7px 18px; background: var(--cyan,#00f0ff); border: none;
+  border-radius: 7px; color: #05050e; font-weight: 700; font-size: .83rem; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.stl-filter-clear {
+  padding: 7px 12px; border: 1px solid var(--border-color,rgba(255,255,255,.1));
+  border-radius: 7px; color: var(--text-secondary,#8892a6);
+  text-decoration: none; font-size: .83rem; display: inline-flex; align-items: center; gap: 5px;
+}
+.stl-filter-clear:hover { border-color: rgba(255,255,255,.22); color: var(--text-primary,#e8eefc); }
 
-    <!-- Tickets table -->
-    <div style="background:var(--bg-card,#0f0f18);border:1px solid var(--border-color,rgba(255,255,255,.08));border-radius:12px;overflow:hidden;">
-        <?php if (empty($tickets)): ?>
-        <div style="padding:60px;text-align:center;color:var(--text-secondary,#8892a6);">
-            <i class="fas fa-ticket" style="font-size:2rem;opacity:.3;display:block;margin-bottom:12px;"></i>
-            No tickets found.
-        </div>
-        <?php else: ?>
-        <div style="overflow-x:auto;">
-            <table style="width:100%;border-collapse:collapse;">
-                <thead>
-                    <tr style="border-bottom:1px solid var(--border-color,rgba(255,255,255,.08));">
-                        <?php foreach (['#','User','Subject','Status','Priority','Created','Actions'] as $h): ?>
-                        <th style="padding:12px 14px;text-align:left;color:var(--text-secondary,#8892a6);font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;"><?= $h ?></th>
-                        <?php endforeach; ?>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($tickets as $ticket):
-                        $sc = ['open'=>'#00f0ff','in_progress'=>'#ff9f43','waiting_customer'=>'#a78bfa','resolved'=>'#00ff88','closed'=>'#8892a6'];
-                        $pc = ['urgent'=>'#ff6b6b','high'=>'#ff9f43','medium'=>'#00f0ff','low'=>'#8892a6'];
-                        $sColor = $sc[$ticket['status']] ?? '#8892a6';
-                        $pColor = $pc[$ticket['priority']] ?? '#8892a6';
-                    ?>
-                    <tr style="border-bottom:1px solid var(--border-color,rgba(255,255,255,.04));transition:background .15s;" onmouseover="this.style.background='rgba(255,255,255,.02)'" onmouseout="this.style.background=''">
-                        <td style="padding:12px 14px;color:var(--text-secondary,#8892a6);font-size:.82rem;">#<?= (int)$ticket['id'] ?></td>
-                        <td style="padding:12px 14px;color:var(--text-primary,#e8eefc);font-size:.85rem;"><?= htmlspecialchars($ticket['user_name'] ?? '—') ?></td>
-                        <td style="padding:12px 14px;">
-                            <a href="/admin/support/tickets/<?= (int)$ticket['id'] ?>" style="color:var(--text-primary,#e8eefc);text-decoration:none;font-size:.88rem;font-weight:500;">
-                                <?= htmlspecialchars($ticket['subject']) ?>
-                            </a>
-                        </td>
-                        <td style="padding:12px 14px;">
-                            <span style="padding:3px 10px;border-radius:20px;font-size:.73rem;font-weight:600;background:<?= $sColor ?>1a;color:<?= $sColor ?>">
-                                <?= ucwords(str_replace('_',' ',$ticket['status'])) ?>
-                            </span>
-                        </td>
-                        <td style="padding:12px 14px;">
-                            <span style="padding:3px 10px;border-radius:20px;font-size:.73rem;font-weight:600;background:<?= $pColor ?>1a;color:<?= $pColor ?>">
-                                <?= ucfirst($ticket['priority']) ?>
-                            </span>
-                        </td>
-                        <td style="padding:12px 14px;color:var(--text-secondary,#8892a6);font-size:.8rem;"><?= date('M j, Y', strtotime($ticket['created_at'])) ?></td>
-                        <td style="padding:12px 14px;">
-                            <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                                <a href="/admin/support/tickets/<?= (int)$ticket['id'] ?>" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;background:rgba(0,240,255,.1);color:#00f0ff;border-radius:6px;text-decoration:none;font-size:.78rem;font-weight:500;">
-                                    <i class="fas fa-eye"></i> View
-                                </a>
-                                <a href="/admin/support/tickets/<?= (int)$ticket['id'] ?>" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;background:rgba(167,139,250,.1);color:#a78bfa;border-radius:6px;text-decoration:none;font-size:.78rem;font-weight:500;">
-                                    <i class="fas fa-pen-to-square"></i> Manage
-                                </a>
-                            </div>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
-        <?php endif; ?>
+.stl-table-wrap {
+  background: var(--bg-card,#0f0f18);
+  border: 1px solid var(--border-color,rgba(255,255,255,.08));
+  border-radius: 12px; overflow: hidden;
+}
+.stl-empty { padding: 64px 40px; text-align: center; color: var(--text-secondary,#8892a6); }
+.stl-empty i { font-size: 2rem; opacity: .25; display: block; margin-bottom: 12px; }
+.stl-empty p { margin: 0; font-size: .88rem; }
+.stl-table { width: 100%; border-collapse: collapse; }
+.stl-table thead th {
+  padding: 11px 16px; text-align: left;
+  color: var(--text-secondary,#8892a6); font-size: .72rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .06em;
+  border-bottom: 1px solid var(--border-color,rgba(255,255,255,.08));
+  white-space: nowrap;
+}
+.stl-table tbody tr {
+  border-bottom: 1px solid var(--border-color,rgba(255,255,255,.04));
+  transition: background .12s;
+}
+.stl-table tbody tr:last-child { border-bottom: none; }
+.stl-table tbody tr:hover { background: rgba(255,255,255,.02); }
+.stl-table td { padding: 12px 16px; vertical-align: middle; }
+.stl-id  { font-size: .8rem; color: var(--text-secondary,#8892a6); font-weight: 500; }
+.stl-user-name { font-size: .86rem; color: var(--text-primary,#e8eefc); font-weight: 500; }
+.stl-subject {
+  color: var(--text-primary,#e8eefc); text-decoration: none;
+  font-size: .88rem; font-weight: 500;
+}
+.stl-subject:hover { color: var(--cyan,#00f0ff); }
+.stl-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 20px; font-size: .72rem; font-weight: 700; white-space: nowrap;
+}
+.stl-date { font-size: .79rem; color: var(--text-secondary,#8892a6); white-space: nowrap; }
+.stl-actions { display: flex; gap: 6px; }
+.stl-act-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 12px; border-radius: 6px; text-decoration: none;
+  font-size: .76rem; font-weight: 600; border: none; cursor: pointer;
+}
+</style>
+
+<div class="stl-page">
+  <div class="stl-hdr">
+    <div>
+      <h1 class="stl-title"><i class="fas fa-ticket"></i> Tickets</h1>
+      <p class="stl-sub"><?= (int)($stats['open']??0) ?> open &bull; <?= (int)($stats['total']??0) ?> total</p>
     </div>
+  </div>
+
+  <form method="GET" action="/admin/support/tickets" class="stl-filter">
+    <select name="status" class="stl-filter-sel">
+      <option value="">All Statuses</option>
+      <?php foreach (['open','in_progress','waiting_customer','resolved','closed'] as $s): ?>
+      <option value="<?= $s ?>" <?= ($filters['status']==$s)?'selected':'' ?>><?= ucwords(str_replace('_',' ',$s)) ?></option>
+      <?php endforeach; ?>
+    </select>
+    <select name="priority" class="stl-filter-sel">
+      <option value="">All Priorities</option>
+      <?php foreach (['low','medium','high','urgent'] as $p): ?>
+      <option value="<?= $p ?>" <?= ($filters['priority']==$p)?'selected':'' ?>><?= ucfirst($p) ?></option>
+      <?php endforeach; ?>
+    </select>
+    <button type="submit" class="stl-filter-btn"><i class="fas fa-filter"></i> Filter</button>
+    <?php if (!empty(array_filter($filters))): ?>
+    <a href="/admin/support/tickets" class="stl-filter-clear"><i class="fas fa-xmark"></i> Clear</a>
+    <?php endif; ?>
+  </form>
+
+  <div class="stl-table-wrap">
+    <?php if (empty($tickets)): ?>
+    <div class="stl-empty">
+      <i class="fas fa-ticket"></i>
+      <p>No tickets found.</p>
+    </div>
+    <?php else: ?>
+    <div style="overflow-x:auto;">
+      <table class="stl-table">
+        <thead>
+          <tr>
+            <th>ID</th><th>Requester</th><th>Subject</th>
+            <th>Status</th><th>Priority</th><th>Created</th><th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <?php foreach ($tickets as $ticket):
+            $sc = ['open'=>'#2563eb','in_progress'=>'#d97706','waiting_customer'=>'#7c3aed','resolved'=>'#16a34a','closed'=>'#64748b'];
+            $pc = ['urgent'=>'#dc2626','high'=>'#ea580c','medium'=>'#2563eb','low'=>'#64748b'];
+            $sColor = $sc[$ticket['status']] ?? '#64748b';
+            $pColor = $pc[$ticket['priority']] ?? '#64748b';
+          ?>
+          <tr>
+            <td><span class="stl-id">#<?= str_pad((string)(int)$ticket['id'],5,'0',STR_PAD_LEFT) ?></span></td>
+            <td><span class="stl-user-name"><?= htmlspecialchars($ticket['user_name'] ?? '—') ?></span></td>
+            <td>
+              <a href="/admin/support/tickets/<?= (int)$ticket['id'] ?>" class="stl-subject">
+                <?= htmlspecialchars($ticket['subject']) ?>
+              </a>
+            </td>
+            <td>
+              <span class="stl-badge" style="background:<?= $sColor ?>1a;color:<?= $sColor ?>;">
+                <?= ucwords(str_replace('_',' ',$ticket['status'])) ?>
+              </span>
+            </td>
+            <td>
+              <span class="stl-badge" style="background:<?= $pColor ?>1a;color:<?= $pColor ?>;">
+                <?= ucfirst($ticket['priority']) ?>
+              </span>
+            </td>
+            <td><span class="stl-date"><?= date('M j, Y', strtotime($ticket['created_at'])) ?></span></td>
+            <td>
+              <div class="stl-actions">
+                <a href="/admin/support/tickets/<?= (int)$ticket['id'] ?>" class="stl-act-btn" style="background:rgba(37,99,235,.1);color:#60a5fa;">
+                  <i class="fas fa-eye"></i> View
+                </a>
+              </div>
+            </td>
+          </tr>
+          <?php endforeach; ?>
+        </tbody>
+      </table>
+    </div>
+    <?php endif; ?>
+  </div>
 </div>
 
 <?php View::endSection(); ?>

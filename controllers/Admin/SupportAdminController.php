@@ -79,11 +79,15 @@ class SupportAdminController extends BaseController
         }
 
         $messages = $this->model->getTicketMessages($id, true);
+        $activities = $this->model->getTicketActivities($id);
+        $firstAgentReplyAt = $this->model->getFirstAgentReplyAt($id);
 
         $this->view('admin/support/ticket-view', [
-            'title'    => "Ticket #{$id}: " . htmlspecialchars($ticket['subject']),
-            'ticket'   => $ticket,
-            'messages' => $messages,
+            'title'             => "Ticket #{$id}: " . htmlspecialchars($ticket['subject']),
+            'ticket'            => $ticket,
+            'messages'          => $messages,
+            'activities'        => $activities,
+            'firstAgentReplyAt' => $firstAgentReplyAt,
         ]);
     }
 
@@ -569,6 +573,104 @@ class SupportAdminController extends BaseController
         $this->model->removeAgent($id);
         $this->flash('success', 'Agent removed.');
         $this->redirect('/admin/support/users');
+    }
+
+    // -------------------------------------------------------------------------
+    // GET /admin/support/settings
+    // -------------------------------------------------------------------------
+
+    public function supportSettings(): void
+    {
+        $db   = Database::getInstance();
+        $keys = [
+            'ticket_id_start',
+            'live_support_title',
+            'live_support_tagline',
+            'live_support_response_time',
+            'live_support_hours',
+            'live_support_extra_note',
+        ];
+        $settings = [];
+        foreach ($keys as $key) {
+            $row = $db->fetch("SELECT value FROM settings WHERE `key` = ?", [$key]);
+            $settings[$key] = $row ? $row['value'] : '';
+        }
+
+        // Current AUTO_INCREMENT for support_tickets
+        $aiRow = $db->fetch(
+            "SELECT AUTO_INCREMENT FROM information_schema.TABLES
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'support_tickets'"
+        );
+        $currentAutoIncrement = $aiRow ? (int) $aiRow['AUTO_INCREMENT'] : 1;
+
+        $this->view('admin/support/settings', [
+            'title'                => 'Support Settings',
+            'settings'             => $settings,
+            'currentAutoIncrement' => $currentAutoIncrement,
+        ]);
+    }
+
+    // -------------------------------------------------------------------------
+    // POST /admin/support/settings
+    // -------------------------------------------------------------------------
+
+    public function saveSupportSettings(): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid security token.');
+            $this->redirect('/admin/support/settings');
+            return;
+        }
+
+        $db = Database::getInstance();
+
+        $textKeys = [
+            'live_support_title',
+            'live_support_tagline',
+            'live_support_response_time',
+            'live_support_hours',
+            'live_support_extra_note',
+        ];
+        foreach ($textKeys as $key) {
+            $value   = trim($_POST[$key] ?? '');
+            $existing = $db->fetch("SELECT id FROM settings WHERE `key` = ?", [$key]);
+            if ($existing) {
+                $db->update('settings', ['value' => $value], '`key` = ?', [$key]);
+            } else {
+                $db->insert('settings', ['key' => $key, 'value' => $value]);
+            }
+        }
+
+        // Ticket ID start (AUTO_INCREMENT)
+        $startRaw = (int) ($_POST['ticket_id_start'] ?? 0);
+        if ($startRaw >= 1) {
+            // Ensure it's at least higher than any existing ticket ID
+            $maxRow    = $db->fetch("SELECT MAX(id) AS max_id FROM support_tickets");
+            $maxDynRow = $db->fetch("SELECT MAX(id) AS max_id FROM support_dyn_tickets");
+            $maxId     = max((int) ($maxRow['max_id'] ?? 0), (int) ($maxDynRow['max_id'] ?? 0));
+
+            if ($startRaw <= $maxId) {
+                $this->flash('error', "Ticket start number must be greater than the current maximum ticket ID ({$maxId}). No change applied.");
+                $this->redirect('/admin/support/settings');
+                return;
+            }
+
+            // Persist the configured value
+            $existing = $db->fetch("SELECT id FROM settings WHERE `key` = 'ticket_id_start'");
+            if ($existing) {
+                $db->update('settings', ['value' => (string) $startRaw], '`key` = ?', ['ticket_id_start']);
+            } else {
+                $db->insert('settings', ['key' => 'ticket_id_start', 'value' => (string) $startRaw]);
+            }
+
+            // Apply AUTO_INCREMENT — $startRaw is cast to int; safe to interpolate directly
+            // (MySQL does not support parameterized AUTO_INCREMENT values)
+            $db->query("ALTER TABLE support_tickets AUTO_INCREMENT = {$startRaw}");
+            $db->query("ALTER TABLE support_dyn_tickets AUTO_INCREMENT = {$startRaw}");
+        }
+
+        $this->flash('success', 'Support settings saved successfully.');
+        $this->redirect('/admin/support/settings');
     }
 
     // -------------------------------------------------------------------------

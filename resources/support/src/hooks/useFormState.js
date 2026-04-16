@@ -46,14 +46,26 @@ function buildDefaults(schema) {
     for (const field of section.fields ?? []) {
       const name = field.name ?? '';
       if (!name) continue;
+      const configuredDefault = field.default_value;
       switch (field.type) {
-        case 'checkbox': defaults[name] = false; break;
-        case 'number':   defaults[name] = ''; break;
-        default:         defaults[name] = '';
+        case 'checkbox':
+          defaults[name] = parseBooleanDefault(configuredDefault);
+          break;
+        case 'number':
+          defaults[name] = configuredDefault ?? '';
+          break;
+        default:
+          defaults[name] = configuredDefault ?? '';
       }
     }
   }
   return defaults;
+}
+
+function parseBooleanDefault(value) {
+  if (typeof value === 'boolean') return value;
+  if (typeof value !== 'string') return false;
+  return ['true', '1', 'yes', 'on'].includes(value.trim().toLowerCase());
 }
 
 function validateField(field, value) {

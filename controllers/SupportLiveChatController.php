@@ -37,7 +37,12 @@ class SupportLiveChatController
         }
 
         if (Auth::check()) {
-            $sessionKey = 'user_' . Auth::id();
+            // Use session-stored key so each browser tab/session can start a fresh chat
+            // without hitting the UNIQUE constraint on session_key from a previous closed chat.
+            if (!isset($_SESSION['support_live_key'])) {
+                $_SESSION['support_live_key'] = 'user_' . Auth::id() . '_' . bin2hex(random_bytes(8));
+            }
+            $sessionKey = $_SESSION['support_live_key'];
             $userId     = Auth::id();
             $guestName  = '';
             $guestEmail = '';

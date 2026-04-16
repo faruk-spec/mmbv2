@@ -34,7 +34,9 @@ namespace Controllers\Api;
 use Controllers\BaseController;
 use Core\Auth;
 use Core\Helpers;
+use Core\Mailer;
 use Core\TemplateValidator;
+use Models\SupportModel;
 use Models\SupportTemplateModel;
 use Core\Notification;
 use Core\Database;
@@ -42,11 +44,13 @@ use Core\Database;
 class SupportApiController extends BaseController
 {
     private SupportTemplateModel $model;
+    private SupportModel $supportModel;
 
     public function __construct()
     {
         header('Content-Type: application/json; charset=utf-8');
-        $this->model = new SupportTemplateModel();
+        $this->model        = new SupportTemplateModel();
+        $this->supportModel = new SupportModel();
     }
 
     // =========================================================================
@@ -155,8 +159,11 @@ class SupportApiController extends BaseController
         $groupId    = $category ? (int) $category['group_id'] : 0;
         $categoryId = (int) $tpl['category_id'];
 
-        // Create the ticket first (to get ID)
-        $ticketId = $this->model->createTicket([
+        // Build human-readable description for the canonical ticket
+        $textSummary = $this->buildTextSummary($schema, $data);
+
+        // Create in support_dyn_tickets (structured data, versioned template)
+        $dynTicketId = $this->model->createTicket([
             'user_id'        => Auth::id(),
             'template_id'    => $templateId,
             'group_id'       => $groupId,
@@ -167,16 +174,34 @@ class SupportApiController extends BaseController
         ]);
 
         // Process file fields
-        $this->processFileUploads($ticketId, $schema, $data);
+        $this->processFileUploads($dynTicketId, $schema, $data);
 
-        // Initial message = serialised form data (human-readable)
-        $textSummary = $this->buildTextSummary($schema, $data);
-        $this->model->addTicketMessage($ticketId, 'user', Auth::id(), $textSummary);
+        // Mirror into support_tickets so it appears in all existing ticket views
+        $ticketId = $this->supportModel->createTicket(Auth::id(), null, $subject, $textSummary, $priority);
+        $this->supportModel->addTicketMessage($ticketId, 'user', Auth::id(), $textSummary);
+
+        // Also record message in dyn system
+        $this->model->addTicketMessage($dynTicketId, 'user', Auth::id(), $textSummary);
+
+        // Send creation email to user
+        $user      = Auth::user();
+        $ticketUrl = $this->baseUrl() . '/support/view/' . $ticketId;
+        $emailVars = [
+            'ticketId'    => $ticketId,
+            'subject'     => $subject,
+            'userName'    => $user['name'] ?? 'User',
+            'ticketUrl'   => $ticketUrl,
+            'description' => $textSummary,
+        ];
+        $emailBody = $this->renderEmail('support-ticket-created', $emailVars);
+        if ($emailBody !== null && !empty($user['email'])) {
+            Mailer::send($user['email'], "Support Ticket #" . $this->formatTicketId($ticketId) . " Created: {$subject}", $emailBody);
+        }
 
         // Notify admins
         $this->notifyAdmins(
             'support_ticket',
-            "New support ticket #{$ticketId}: {$subject}",
+            "New support ticket #" . $this->formatTicketId($ticketId) . ": {$subject}",
             ['ticket_id' => $ticketId, 'url' => '/admin/support/tickets/' . $ticketId]
         );
 
@@ -462,5 +487,28 @@ class SupportApiController extends BaseController
             }
         }
         return implode("\n", $lines);
+    }
+
+    private function formatTicketId(int $id): string
+    {
+        return sprintf('%07d', $id);
+    }
+
+    private function baseUrl(): string
+    {
+        $scheme = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        return $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
+    }
+
+    private function renderEmail(string $template, array $vars): ?string
+    {
+        $file = BASE_PATH . '/views/emails/' . $template . '.php';
+        if (!file_exists($file)) {
+            return null;
+        }
+        ob_start();
+        extract($vars, EXTR_SKIP);
+        include $file;
+        return ob_get_clean() ?: null;
     }
 }

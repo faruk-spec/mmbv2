@@ -232,12 +232,53 @@ class SupportController extends BaseController
 
         $this->model->addTicketMessage($id, 'user', Auth::id(), $message);
 
-        $adminUrl = '/admin/support/tickets/' . $id;
+        $ticketIdFormatted = sprintf('%07d', $id);
+        $adminUrl          = '/admin/support/tickets/' . $id;
         $this->notifyAdmins(
             'support_ticket_reply',
-            "New reply on ticket #{$id}: " . $ticket['subject'],
+            "New reply on ticket #{$ticketIdFormatted}: " . $ticket['subject'],
             ['ticket_id' => $id, 'url' => $adminUrl]
         );
+
+        // Email the assigned agent (or all admins if no agent assigned) about the user reply
+        if (!empty($ticket['assigned_to'])) {
+            $agentRow = \Core\Database::getInstance()->fetch(
+                "SELECT email, name FROM users WHERE id = ?",
+                [(int) $ticket['assigned_to']]
+            );
+        } else {
+            $agentRow = null;
+        }
+        $ticketUrl  = $this->baseUrl() . '/admin/support/tickets/' . $id;
+        $emailVars  = [
+            'ticketId'     => $id,
+            'subject'      => $ticket['subject'],
+            'userName'     => $ticket['user_name'] ?? Auth::user()['name'] ?? 'User',
+            'replyMessage' => $message,
+            'ticketUrl'    => $ticketUrl,
+            'status'       => $ticket['status'],
+        ];
+        $emailBody = $this->renderEmail('support-ticket-reply', $emailVars);
+        if ($emailBody !== null) {
+            if ($agentRow && !empty($agentRow['email'])) {
+                Mailer::send(
+                    $agentRow['email'],
+                    "User replied to Support Ticket #{$ticketIdFormatted}",
+                    $emailBody
+                );
+            } else {
+                // Notify first admin found
+                $db         = \Core\Database::getInstance();
+                $firstAdmin = $db->fetch("SELECT email FROM users WHERE role LIKE '%admin%' LIMIT 1");
+                if ($firstAdmin && !empty($firstAdmin['email'])) {
+                    Mailer::send(
+                        $firstAdmin['email'],
+                        "User replied to Support Ticket #{$ticketIdFormatted}",
+                        $emailBody
+                    );
+                }
+            }
+        }
 
         $this->flash('success', 'Your reply has been submitted.');
         $this->redirect('/support/view/' . $id);
@@ -262,10 +303,19 @@ class SupportController extends BaseController
 
     public function liveSupport(): void
     {
+        $db       = \Core\Database::getInstance();
+        $keys     = ['live_support_title', 'live_support_tagline', 'live_support_response_time', 'live_support_hours', 'live_support_extra_note'];
+        $settings = [];
+        foreach ($keys as $key) {
+            $row = $db->fetch("SELECT value FROM settings WHERE `key` = ?", [$key]);
+            $settings[$key] = $row ? $row['value'] : '';
+        }
+
         $this->view('support/live', [
-            'title'          => 'Live Support',
+            'title'          => $settings['live_support_title'] ?: 'Live Support',
             'currentPage'    => 'live',
             'isSupportAdmin' => $this->isSupportAdmin(),
+            'liveSettings'   => $settings,
         ]);
     }
 

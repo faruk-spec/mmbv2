@@ -30,6 +30,7 @@ export default function TicketCreateWizard() {
   const [submitting,       setSubmitting]        = useState(false);
   const [error,            setError]             = useState(null);
   const [ticketId,         setTicketId]          = useState(null);
+  const ui = schema?.ui ?? {};
 
   // Fetch groups on mount
   useEffect(() => {
@@ -116,7 +117,8 @@ export default function TicketCreateWizard() {
 
       {/* Header */}
       <div className="sp-wizard-header">
-        <h2 className="sp-wizard-title">Create Support Ticket</h2>
+        <h2 className="sp-wizard-title">{ui.form_title || 'Create Support Ticket'}</h2>
+        {(ui.form_subtitle || '').trim() !== '' && <p className="sp-wizard-subtitle">{ui.form_subtitle}</p>}
         {step !== 'done' && (
           <div className="sp-progress">
             {['Select Department', 'Select Issue Type', 'Fill Form', 'Done'].map((label, i) => (
@@ -200,8 +202,11 @@ export default function TicketCreateWizard() {
         {step === 'done' && (
           <div className="sp-done">
             <div className="sp-done-icon">✓</div>
-            <h3>Ticket Submitted!</h3>
-            <p>Your ticket <strong>#{ticketId}</strong> has been created. Our team will get back to you shortly.</p>
+            <h3>{ui.success_title || 'Ticket Submitted!'}</h3>
+            <p>
+              {ui.success_message || 'Your ticket has been created. Our team will get back to you shortly.'}
+              {ticketId && <> <strong>#{ticketId}</strong>.</>}
+            </p>
             <div className="sp-done-actions">
               <a href="/support" className="sp-btn-submit" style={{ textDecoration: 'none', display: 'inline-block' }}>
                 View My Tickets
@@ -230,7 +235,7 @@ const STYLES = `
 .sp-wizard { max-width: 760px; font-family: inherit; }
 .sp-wizard-header { margin-bottom: 24px; }
 .sp-wizard-title { font-size: 1.4rem; font-weight: 700; color: var(--text-primary,#e8eefc); margin: 0 0 16px; }
-.sp-wizard-subtitle { font-size: 1rem; font-weight: 600; color: var(--text-primary,#e8eefc); margin: 0 0 14px; }
+.sp-wizard-subtitle { font-size: .88rem; font-weight: 500; color: var(--text-secondary,#8892a6); margin: 0 0 14px; }
 
 .sp-progress { display: flex; align-items: center; gap: 0; flex-wrap: wrap; gap: 4px; }
 .sp-progress-step { display: flex; align-items: center; gap: 6px; }
@@ -243,6 +248,7 @@ const STYLES = `
 
 .sp-alert-error { background: color-mix(in srgb,var(--red,#ef4444) 8%,transparent); border: 1px solid color-mix(in srgb,var(--red,#ef4444) 20%,transparent); color: var(--red,#f87171); padding: 10px 14px; border-radius: 8px; font-size: .85rem; margin-bottom: 14px; }
 .sp-wizard-body { }
+.sp-form-grid { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; }
 
 /* Cards */
 .sp-card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
@@ -293,6 +299,10 @@ const STYLES = `
 .sp-section-title { margin: 0; font-size: .9rem; font-weight: 600; color: var(--text-primary,#e8eefc); }
 .sp-section-toggle { color: var(--text-secondary,#8892a6); font-size: .75rem; }
 .sp-section-body { padding: 16px; }
+.sp-section.sp-section-minimal { border: none; margin-bottom: 16px; }
+.sp-section.sp-section-minimal .sp-section-head { padding: 0 0 8px; background: transparent; border-bottom: 1px solid var(--border-color,rgba(255,255,255,.08)); }
+.sp-section.sp-section-minimal .sp-section-body { padding: 12px 0 0; }
+.sp-section.sp-section-compact .sp-section-body { padding: 10px; }
 
 /* Submit */
 .sp-btn-submit { padding: 10px 24px; background: var(--cyan,#00f0ff); color: var(--bg-primary,#0a0a14); border: none; border-radius: 8px; font-size: .9rem; font-weight: 700; cursor: pointer; }

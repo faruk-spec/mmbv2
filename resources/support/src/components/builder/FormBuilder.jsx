@@ -20,10 +20,13 @@ export default function FormBuilder({ initialSchema, onSave, saving }) {
     addField, updateField, removeField,
     moveField, moveSections,
     updateConditionalLogic,
+    updateUiSettings,
   } = useBuilderState(initialSchema);
 
   const [activeId,   setActiveId]   = useState(null);
-  const [activeTab,  setActiveTab]  = useState('build'); // 'build' | 'logic' | 'preview'
+  const [activeTab,  setActiveTab]  = useState('build'); // 'build' | 'logic' | 'customize' | 'preview'
+  const ui = schema?.ui ?? {};
+  const previewSectionStyle = getPreviewSectionStyle(ui.section_style);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -97,14 +100,14 @@ export default function FormBuilder({ initialSchema, onSave, saving }) {
       <div style={{ flex: 1, minWidth: 0 }}>
         {/* Tabs */}
         <div className="bldr-tabs">
-          {['build', 'logic', 'preview'].map(tab => (
+          {['build', 'logic', 'customize', 'preview'].map(tab => (
             <button
               key={tab}
               type="button"
               className={`bldr-tab${activeTab === tab ? ' active' : ''}`}
               onClick={() => setActiveTab(tab)}
             >
-              {tab === 'build' ? '🔨 Build' : tab === 'logic' ? '⚡ Conditions' : '👁 Preview'}
+              {tab === 'build' ? '🔨 Build' : tab === 'logic' ? '⚡ Conditions' : tab === 'customize' ? '🎨 Customize' : '👁 Preview'}
             </button>
           ))}
           <button
@@ -150,34 +153,12 @@ export default function FormBuilder({ initialSchema, onSave, saving }) {
           />
         )}
 
+        {activeTab === 'customize' && (
+          <FormCustomizationPanel ui={ui} onChange={updateUiSettings} />
+        )}
+
         {activeTab === 'preview' && (
-          <div className="bldr-preview">
-            <p style={{ color: 'var(--text-secondary,#8892a6)', fontSize: '.82rem', marginBottom: 12 }}>
-              This is a read-only preview of how the form will look to users.
-            </p>
-            {(schema.sections ?? []).map(section => (
-              <div key={section.id} style={{ marginBottom: 20, border: '1px solid var(--border-color,rgba(255,255,255,.08))', borderRadius: 10, overflow: 'hidden' }}>
-                <div style={{ padding: '10px 14px', background: 'var(--bg-card,rgba(255,255,255,.03))', fontWeight: 600, color: 'var(--text-primary,#e8eefc)', fontSize: '.88rem' }}>{section.title}</div>
-                <div style={{ padding: 14 }}>
-                  {(section.fields ?? []).map(f => (
-                    <div key={f.id} style={{ marginBottom: 12 }}>
-                      <div style={{ fontSize: '.75rem', fontWeight: 600, color: 'var(--text-secondary,#8892a6)', marginBottom: 4 }}>
-                        {f.label ?? f.name}
-                        {f.required && <span style={{ color: 'var(--red,#f87171)' }}> *</span>}
-                      </div>
-                      <div style={{ background: 'var(--bg-secondary,rgba(255,255,255,.04))', border: '1px solid var(--border-color,rgba(255,255,255,.1))', borderRadius: 7, padding: '7px 10px', color: 'var(--text-secondary,#8892a6)', fontSize: '.82rem' }}>
-                        {f.type} field
-                        {f.placeholder ? ` — "${f.placeholder}"` : ''}
-                      </div>
-                    </div>
-                  ))}
-                  {(section.fields ?? []).length === 0 && (
-                    <span style={{ color: 'var(--text-secondary,#8892a6)', fontSize: '.8rem' }}>Empty section</span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
+          <FormPreview schema={schema} ui={ui} />
         )}
       </div>
 
@@ -212,6 +193,247 @@ export default function FormBuilder({ initialSchema, onSave, saving }) {
       )}
     </DragOverlay>
     </DndContext>
+  );
+}
+
+function getPreviewSectionStyle(sectionStyle) {
+  const minimal = sectionStyle === 'minimal';
+  return {
+    marginBottom: 20,
+    border: minimal ? 'none' : '1px solid var(--border-color,rgba(255,255,255,.08))',
+    borderRadius: 10,
+    overflow: 'hidden',
+    background: minimal ? 'transparent' : undefined,
+  };
+}
+
+/* ── Edit-Incident style form preview (Image 2 reference) ─── */
+function FormPreview({ schema = {}, ui = {} }) {
+  const accentColor = ui.accent_color || 'var(--cyan,#00f0ff)';
+  const sections    = schema.sections ?? [];
+
+  return (
+    <div className="fp-root">
+      {/* Header bar */}
+      <div className="fp-header">
+        <div className="fp-header-left">
+          <button type="button" className="fp-back-btn">
+            <i className="fas fa-arrow-left"></i>
+          </button>
+          <span className="fp-header-title">{ui.form_title || 'Create Support Ticket'}</span>
+        </div>
+        <div className="fp-header-right">
+          <span className="fp-template-label">Select Template</span>
+          <div className="fp-template-sel">
+            <span className="fp-template-icon" style={{ background: accentColor }}><i className="fas fa-bolt"></i></span>
+            <span className="fp-template-name">{schema.sections?.[0]?.title || 'Default'}</span>
+            <i className="fas fa-chevron-down fp-template-chev"></i>
+          </div>
+        </div>
+      </div>
+
+      <div className="fp-divider"></div>
+
+      {/* Body */}
+      <div className="fp-body">
+        {sections.length === 0 && (
+          <div className="fp-empty">No sections yet — add sections in the Build tab.</div>
+        )}
+
+        {sections.map((section, si) => {
+          const fields = section.fields ?? [];
+          // Group fields into rows based on width
+          const rows = [];
+          let i = 0;
+          while (i < fields.length) {
+            const f = fields[i];
+            const w = f.width ?? 'full';
+            if (w === 'full') {
+              rows.push([f]);
+              i++;
+            } else if (w === 'half') {
+              const next = fields[i + 1];
+              if (next && (next.width === 'half' || next.width === 'third')) {
+                rows.push([f, next]);
+                i += 2;
+              } else {
+                rows.push([f]);
+                i++;
+              }
+            } else if (w === 'third') {
+              const pair = fields.slice(i, i + 3).filter(x => x.width === 'third');
+              rows.push(pair.length >= 2 ? fields.slice(i, i + Math.min(pair.length, 3)) : [f]);
+              i += (pair.length >= 2 ? Math.min(pair.length, 3) : 1);
+            } else {
+              rows.push([f]);
+              i++;
+            }
+          }
+
+          return (
+            <div key={section.id} className="fp-section">
+              {/* Section header */}
+              <div className="fp-section-header">
+                <span className="fp-section-title">{section.title || `Section ${si + 1}`}</span>
+                {section.description && (
+                  <span className="fp-section-desc">{section.description}</span>
+                )}
+              </div>
+              <div className="fp-section-divider"></div>
+
+              {/* Fields in rows */}
+              {rows.map((row, ri) => (
+                <div key={ri} className="fp-row">
+                  {row.map(f => {
+                    const colClass = f.width === 'third' ? 'fp-col-third' : f.width === 'half' ? 'fp-col-half' : 'fp-col-full';
+                    return (
+                      <div key={f.id} className={`fp-field-col ${colClass}`}>
+                        <label className="fp-label">
+                          {f.required && <span className="fp-required">*</span>}
+                          {f.label ?? f.name}
+                        </label>
+                        <PreviewFieldInput field={f} accentColor={accentColor} />
+                        {f.help_text && (
+                          <div className="fp-help">{f.help_text}</div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+
+              {fields.length === 0 && (
+                <div className="fp-empty-section">No fields in this section</div>
+              )}
+            </div>
+          );
+        })}
+
+        {/* Submit button */}
+        {sections.length > 0 && (
+          <div className="fp-footer">
+            <button type="button" className="fp-submit-btn" style={{ background: accentColor }}>
+              {ui.submit_label || 'Submit Ticket'}
+            </button>
+            <button type="button" className="fp-cancel-btn">Cancel</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PreviewFieldInput({ field, accentColor }) {
+  const t = field.type;
+  if (t === 'textarea') {
+    return (
+      <textarea
+        className="fp-input fp-textarea"
+        readOnly
+        placeholder={field.placeholder || ''}
+        defaultValue={field.default_value || ''}
+        rows={3}
+      />
+    );
+  }
+  if (t === 'select') {
+    const opts = field.options ?? [];
+    return (
+      <div className="fp-select-wrap">
+        <select className="fp-input" disabled>
+          {opts.length === 0 && <option>{field.placeholder || '-- Select --'}</option>}
+          {opts.map((o, i) => (
+            <option key={i}>{typeof o === 'string' ? o : o.label}</option>
+          ))}
+        </select>
+        <i className="fas fa-chevron-down fp-sel-arrow"></i>
+      </div>
+    );
+  }
+  if (t === 'checkbox') {
+    return (
+      <label className="fp-checkbox-wrap">
+        <input type="checkbox" readOnly checked={false} style={{ accentColor }} />
+        <span>{field.label ?? field.name}</span>
+      </label>
+    );
+  }
+  if (t === 'radio') {
+    const opts = field.options ?? ['Option 1', 'Option 2'];
+    return (
+      <div className="fp-radio-group">
+        {opts.map((o, i) => (
+          <label key={i} className="fp-radio-label">
+            <input type="radio" readOnly name={`prev_${field.id}`} style={{ accentColor }} />
+            <span>{typeof o === 'string' ? o : o.label}</span>
+          </label>
+        ))}
+      </div>
+    );
+  }
+  if (t === 'date') {
+    return <input type="date" className="fp-input" readOnly defaultValue={field.default_value || ''} />;
+  }
+  if (t === 'number') {
+    return <input type="number" className="fp-input" readOnly placeholder={field.placeholder || ''} defaultValue={field.default_value || ''} />;
+  }
+  if (t === 'file') {
+    return (
+      <div className="fp-file-btn">
+        <i className="fas fa-upload"></i> Choose File
+      </div>
+    );
+  }
+  // default: text
+  return <input type="text" className="fp-input" readOnly placeholder={field.placeholder || ''} defaultValue={field.default_value || ''} />;
+}
+
+function FormCustomizationPanel({ ui = {}, onChange }) {
+  const set = (key, value) => onChange({ [key]: value });
+
+  return (
+    <div className="bldr-customize">
+      <div className="bldr-custom-grid">
+        <div className="bldr-editor-row">
+          <label className="bldr-editor-label">Form Title</label>
+          <input className="bldr-ei" value={ui.form_title ?? ''} onChange={(e) => set('form_title', e.target.value)} />
+        </div>
+        <div className="bldr-editor-row">
+          <label className="bldr-editor-label">Submit Button Label</label>
+          <input className="bldr-ei" value={ui.submit_label ?? ''} onChange={(e) => set('submit_label', e.target.value)} />
+        </div>
+        <div className="bldr-editor-row" style={{ gridColumn: '1 / -1' }}>
+          <label className="bldr-editor-label">Form Subtitle</label>
+          <input className="bldr-ei" value={ui.form_subtitle ?? ''} onChange={(e) => set('form_subtitle', e.target.value)} />
+        </div>
+        <div className="bldr-editor-row">
+          <label className="bldr-editor-label">Success Title</label>
+          <input className="bldr-ei" value={ui.success_title ?? ''} onChange={(e) => set('success_title', e.target.value)} />
+        </div>
+        <div className="bldr-editor-row">
+          <label className="bldr-editor-label">Success Message</label>
+          <input className="bldr-ei" value={ui.success_message ?? ''} onChange={(e) => set('success_message', e.target.value)} />
+        </div>
+        <div className="bldr-editor-row">
+          <label className="bldr-editor-label">Accent Color</label>
+          <input className="bldr-ei" type="color" value={ui.accent_color ?? '#00f0ff'} onChange={(e) => set('accent_color', e.target.value)} />
+        </div>
+        <div className="bldr-editor-row">
+          <label className="bldr-editor-label">Section Style</label>
+          <select className="bldr-ei" value={ui.section_style ?? 'card'} onChange={(e) => set('section_style', e.target.value)}>
+            <option value="card">Card</option>
+            <option value="minimal">Minimal</option>
+          </select>
+        </div>
+        <div className="bldr-editor-row">
+          <label className="bldr-editor-label">Compact Mode</label>
+          <label className="bldr-toggle">
+            <input type="checkbox" checked={!!ui.compact_mode} onChange={(e) => set('compact_mode', e.target.checked)} />
+            <span className="bldr-toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -301,4 +523,49 @@ const BUILDER_STYLES = `
 
 /* Preview */
 .bldr-preview { }
+.bldr-customize { border: 1px solid var(--border-color,rgba(255,255,255,.08)); border-radius: 12px; padding: 14px; background: var(--bg-card,rgba(255,255,255,.02)); }
+.bldr-custom-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+@media (max-width: 900px) { .bldr-custom-grid { grid-template-columns: 1fr; } }
+
+/* ── FormPreview — Edit-Incident style (Image 2) ─────────── */
+.fp-root { border: 1px solid var(--border-color,rgba(255,255,255,.09)); border-radius: 12px; overflow: hidden; background: var(--bg-card,#0f0f18); }
+.fp-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 18px; background: var(--bg-secondary,rgba(255,255,255,.03)); }
+.fp-header-left { display: flex; align-items: center; gap: 10px; }
+.fp-back-btn { width: 28px; height: 28px; border: 1px solid var(--border-color,rgba(255,255,255,.12)); border-radius: 6px; background: transparent; color: var(--text-secondary,#8892a6); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: .75rem; }
+.fp-header-title { font-size: 1rem; font-weight: 700; color: var(--text-primary,#e8eefc); }
+.fp-header-right { display: flex; align-items: center; gap: 8px; }
+.fp-template-label { font-size: .76rem; color: var(--text-secondary,#8892a6); }
+.fp-template-sel { display: flex; align-items: center; gap: 7px; border: 1px solid var(--border-color,rgba(255,255,255,.12)); border-radius: 7px; padding: 5px 12px; background: var(--bg-secondary,rgba(255,255,255,.03)); cursor: default; }
+.fp-template-icon { width: 20px; height: 20px; border-radius: 5px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: .7rem; }
+.fp-template-name { font-size: .8rem; color: var(--text-primary,#e8eefc); font-weight: 500; }
+.fp-template-chev { font-size: .65rem; color: var(--text-secondary,#8892a6); }
+.fp-divider { height: 1px; background: var(--border-color,rgba(255,255,255,.08)); }
+.fp-body { padding: 18px 20px; }
+.fp-empty { padding: 30px; text-align: center; color: var(--text-secondary,#8892a6); font-size: .83rem; }
+.fp-section { margin-bottom: 24px; }
+.fp-section-header { margin-bottom: 4px; }
+.fp-section-title { font-size: .9rem; font-weight: 700; color: var(--text-primary,#e8eefc); }
+.fp-section-desc { display: block; font-size: .76rem; color: var(--text-secondary,#8892a6); margin-top: 2px; }
+.fp-section-divider { height: 1px; background: var(--border-color,rgba(255,255,255,.07)); margin: 8px 0 14px; }
+.fp-row { display: flex; gap: 14px; margin-bottom: 12px; flex-wrap: wrap; }
+.fp-col-full  { flex: 1 1 100%; min-width: 0; }
+.fp-col-half  { flex: 1 1 calc(50% - 8px); min-width: 180px; }
+.fp-col-third { flex: 1 1 calc(33% - 10px); min-width: 140px; }
+.fp-field-col { display: flex; flex-direction: column; gap: 4px; }
+.fp-label { font-size: .77rem; font-weight: 600; color: var(--text-secondary,#8892a6); }
+.fp-required { color: var(--red,#f87171); margin-right: 3px; }
+.fp-input { width: 100%; padding: 7px 10px; border: 1px solid var(--border-color,rgba(255,255,255,.12)); border-radius: 6px; background: var(--bg-secondary,rgba(255,255,255,.04)); color: var(--text-primary,#e8eefc); font-size: .83rem; outline: none; box-sizing: border-box; font-family: inherit; }
+.fp-textarea { resize: none; min-height: 80px; }
+.fp-select-wrap { position: relative; }
+.fp-select-wrap select { -webkit-appearance: none; appearance: none; width: 100%; padding: 7px 30px 7px 10px; border: 1px solid var(--border-color,rgba(255,255,255,.12)); border-radius: 6px; background: var(--bg-secondary,rgba(255,255,255,.04)); color: var(--text-primary,#e8eefc); font-size: .83rem; cursor: default; }
+.fp-sel-arrow { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: .68rem; color: var(--text-secondary,#8892a6); pointer-events: none; }
+.fp-radio-group { display: flex; gap: 14px; flex-wrap: wrap; }
+.fp-radio-label { display: flex; align-items: center; gap: 5px; font-size: .81rem; color: var(--text-primary,#e8eefc); cursor: default; }
+.fp-checkbox-wrap { display: flex; align-items: center; gap: 6px; font-size: .81rem; color: var(--text-primary,#e8eefc); cursor: default; }
+.fp-file-btn { padding: 7px 14px; border: 1px solid var(--border-color,rgba(255,255,255,.12)); border-radius: 6px; color: var(--text-secondary,#8892a6); font-size: .8rem; display: inline-flex; align-items: center; gap: 6px; background: var(--bg-secondary,rgba(255,255,255,.04)); cursor: default; }
+.fp-help { font-size: .72rem; color: var(--text-secondary,#8892a6); margin-top: 2px; }
+.fp-empty-section { font-size: .78rem; color: var(--text-secondary,#8892a6); padding: 4px 0; }
+.fp-footer { display: flex; align-items: center; gap: 10px; padding-top: 8px; border-top: 1px solid var(--border-color,rgba(255,255,255,.07)); margin-top: 10px; }
+.fp-submit-btn { padding: 9px 24px; color: var(--bg-primary,#0a0a14); border: none; border-radius: 7px; font-size: .85rem; font-weight: 700; cursor: default; }
+.fp-cancel-btn { padding: 9px 18px; border: 1px solid var(--border-color,rgba(255,255,255,.12)); border-radius: 7px; font-size: .85rem; background: transparent; color: var(--text-secondary,#8892a6); cursor: default; }
 `;

@@ -1,6 +1,8 @@
 import { useState, useCallback } from 'react';
 import { arrayMove } from '@dnd-kit/sortable';
 
+const VALID_FIELD_WIDTHS = ['full', 'half', 'third'];
+
 function uid() {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
@@ -16,6 +18,8 @@ function defaultField(type) {
     name:     type + '_' + Math.floor(Math.random() * 9999),
     label:    type.charAt(0).toUpperCase() + type.slice(1) + ' Field',
     required: false,
+    width:    'full',
+    default_value: '',
     validation: {},
   };
   if (['select', 'radio', 'checkbox'].includes(type)) {
@@ -28,7 +32,46 @@ function defaultField(type) {
 }
 
 function defaultSection() {
-  return { id: uid(), title: 'New Section', collapsible: false, fields: [] };
+  return { id: uid(), title: 'New Section', description: '', collapsible: false, fields: [] };
+}
+
+function defaultUiSettings() {
+  return {
+    form_title: 'Create Support Ticket',
+    form_subtitle: 'Provide complete details so the support team can help quickly.',
+    submit_label: 'Submit Ticket',
+    success_title: 'Ticket Submitted!',
+    success_message: 'Your ticket has been created. Our team will get back to you shortly.',
+    accent_color: '#00f0ff',
+    section_style: 'card',
+    compact_mode: false,
+  };
+}
+
+function normalizeField(field = {}) {
+  return {
+    ...defaultField(field.type ?? 'text'),
+    ...field,
+    width: VALID_FIELD_WIDTHS.includes(field.width) ? field.width : 'full',
+  };
+}
+
+function normalizeSchema(initial = null) {
+  const base = initial ?? {};
+  const sections = Array.isArray(base.sections) && base.sections.length > 0
+    ? base.sections.map((section) => ({
+        ...defaultSection(),
+        ...section,
+        fields: Array.isArray(section?.fields) ? section.fields.map(normalizeField) : [],
+      }))
+    : [defaultSection()];
+
+  return {
+    ...base,
+    sections,
+    conditional_logic: Array.isArray(base.conditional_logic) ? base.conditional_logic : [],
+    ui: { ...defaultUiSettings(), ...(base.ui ?? {}) },
+  };
 }
 
 /**
@@ -36,10 +79,7 @@ function defaultSection() {
  * @param {object|null} initial – existing schema (or null for new)
  */
 export function useBuilderState(initial = null) {
-  const [schema, setSchema] = useState(() => initial ?? {
-    sections: [defaultSection()],
-    conditional_logic: [],
-  });
+  const [schema, setSchema] = useState(() => normalizeSchema(initial));
   const [selectedFieldId, setSelectedFieldId] = useState(null);
 
   // ── Section operations ──────────────────────────────────────────────────────
@@ -169,6 +209,16 @@ export function useBuilderState(initial = null) {
     setSchema(prev => ({ ...prev, conditional_logic: rules }));
   }, []);
 
+  const updateUiSettings = useCallback((patch) => {
+    setSchema(prev => ({
+      ...prev,
+      ui: {
+        ...(prev.ui ?? defaultUiSettings()),
+        ...patch,
+      },
+    }));
+  }, []);
+
   return {
     schema, setSchema,
     selectedFieldId, setSelectedFieldId,
@@ -176,6 +226,7 @@ export function useBuilderState(initial = null) {
     addField, updateField, removeField,
     moveField, moveSections,
     updateConditionalLogic,
+    updateUiSettings,
   };
 }
 

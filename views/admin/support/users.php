@@ -8,202 +8,240 @@ View::extend('admin');
 View::section('content');
 ?>
 
-<div style="padding:28px;">
-    <?php if (!empty($_SESSION['flash_success'])): ?>
-    <div style="background:rgba(0,255,136,.1);border:1px solid rgba(0,255,136,.25);color:#00ff88;padding:12px 16px;border-radius:8px;margin-bottom:20px;font-size:.88rem;">
-        <?= htmlspecialchars($_SESSION['flash_success']) ?>
-        <?php unset($_SESSION['flash_success']); ?>
-    </div>
-    <?php endif; ?>
-    <?php if (!empty($_SESSION['flash_error'])): ?>
-    <div style="background:rgba(255,107,107,.1);border:1px solid rgba(255,107,107,.25);color:#ff6b6b;padding:12px 16px;border-radius:8px;margin-bottom:20px;font-size:.88rem;">
-        <?= htmlspecialchars($_SESSION['flash_error']) ?>
-        <?php unset($_SESSION['flash_error']); ?>
-    </div>
-    <?php endif; ?>
+<style>
+.sua-page  { padding: 28px 32px; }
 
-    <!-- ── AGENT MANAGEMENT ─────────────────────────────────────────────── -->
-    <div style="margin-bottom:36px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
-            <div>
-                <h1 style="font-size:1.4rem;font-weight:700;color:var(--text-primary,#e8eefc);margin:0 0 4px;">
-                    <i class="fas fa-user-shield" style="color:#ff9f43;margin-right:10px;"></i>Support Agents
-                </h1>
-                <p style="color:var(--text-secondary,#8892a6);margin:0;font-size:.83rem;">Agents can view and reply to live chats and support tickets.</p>
-            </div>
-            <!-- Add Agent trigger -->
-            <button onclick="document.getElementById('addAgentModal').style.display='flex'"
-                style="display:inline-flex;align-items:center;gap:8px;padding:9px 18px;background:linear-gradient(135deg,#ff9f43,#ff2ec4);border:none;border-radius:8px;color:white;font-weight:600;font-size:.85rem;cursor:pointer;">
-                <i class="fas fa-plus"></i> Add Agent
-            </button>
-        </div>
+/* Flash messages */
+.sua-flash { padding: 11px 16px; border-radius: 8px; margin-bottom: 20px; font-size: .86rem; }
+.sua-flash.ok  { background: rgba(22,163,74,.1);  border: 1px solid rgba(22,163,74,.25);  color: #4ade80; }
+.sua-flash.err { background: rgba(220,38,38,.1);  border: 1px solid rgba(220,38,38,.25);  color: #f87171; }
 
-        <div style="background:var(--bg-card,#0f0f18);border:1px solid var(--border-color,rgba(255,255,255,.08));border-radius:12px;overflow:hidden;">
-            <?php if (empty($agents)): ?>
-            <div style="padding:48px;text-align:center;color:var(--text-secondary,#8892a6);">
-                <i class="fas fa-user-shield" style="font-size:2rem;opacity:.3;display:block;margin-bottom:12px;"></i>
-                No support agents yet. Add one above.
-            </div>
-            <?php else: ?>
-            <div style="overflow-x:auto;">
-                <table style="width:100%;border-collapse:collapse;">
-                    <thead>
-                        <tr style="border-bottom:1px solid var(--border-color,rgba(255,255,255,.08));">
-                            <?php foreach (['Agent','Email','Role','Notes','Assigned By','Since','Actions'] as $h): ?>
-                            <th style="padding:11px 14px;text-align:left;color:var(--text-secondary,#8892a6);font-size:.73rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;"><?= $h ?></th>
-                            <?php endforeach; ?>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($agents as $agent): ?>
-                        <tr style="border-bottom:1px solid var(--border-color,rgba(255,255,255,.04));transition:background .15s;"
-                            onmouseover="this.style.background='rgba(255,255,255,.02)'" onmouseout="this.style.background=''">
-                            <td style="padding:12px 14px;">
-                                <div style="display:flex;align-items:center;gap:8px;">
-                                    <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#ff9f43,#ff2ec4);display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;color:white;flex-shrink:0;">
-                                        <?= strtoupper(substr($agent['name'], 0, 1)) ?>
-                                    </div>
-                                    <div style="font-weight:600;color:var(--text-primary,#e8eefc);font-size:.88rem;"><?= htmlspecialchars($agent['name']) ?></div>
-                                </div>
-                            </td>
-                            <td style="padding:12px 14px;color:var(--text-secondary,#8892a6);font-size:.83rem;"><?= htmlspecialchars($agent['email']) ?></td>
-                            <td style="padding:12px 14px;">
-                                <span style="display:inline-block;padding:2px 9px;border-radius:20px;font-size:.73rem;font-weight:600;background:rgba(0,240,255,.1);color:#00f0ff;">
-                                    <?= htmlspecialchars($agent['role']) ?>
-                                </span>
-                            </td>
-                            <td style="padding:12px 14px;color:var(--text-secondary,#8892a6);font-size:.8rem;max-width:180px;">
-                                <?= htmlspecialchars($agent['notes'] ?: '—') ?>
-                            </td>
-                            <td style="padding:12px 14px;color:var(--text-secondary,#8892a6);font-size:.8rem;">
-                                <?= htmlspecialchars($agent['assigned_by_name'] ?? '—') ?>
-                            </td>
-                            <td style="padding:12px 14px;color:var(--text-secondary,#8892a6);font-size:.8rem;">
-                                <?= date('M j, Y', strtotime($agent['created_at'])) ?>
-                            </td>
-                            <td style="padding:12px 14px;">
-                                <form method="POST" action="/admin/support/agents/<?= (int)$agent['user_id'] ?>/remove"
-                                      onsubmit="return confirm('Remove this agent?')">
-                                    <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
-                                    <button type="submit" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;background:rgba(255,107,107,.1);border:1px solid rgba(255,107,107,.2);color:#ff6b6b;border-radius:6px;font-size:.78rem;font-weight:500;cursor:pointer;">
-                                        <i class="fas fa-user-minus"></i> Remove
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-            <?php endif; ?>
-        </div>
-    </div>
+/* Section header */
+.sua-sec-hdr { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 18px; }
+.sua-sec-title { font-size: 1.25rem; font-weight: 700; color: var(--text-primary,#e8eefc); margin: 0 0 3px; display: flex; align-items: center; gap: 9px; }
+.sua-sec-title i { font-size: 1rem; }
+.sua-sec-sub   { color: var(--text-secondary,#8892a6); margin: 0; font-size: .8rem; }
 
-    <!-- ── SUPPORT USERS ────────────────────────────────────────────────── -->
+/* Add Agent button */
+.sua-add-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 8px 18px; background: var(--cyan,#00f0ff); border: none;
+  border-radius: 8px; color: #05050e; font-weight: 700; font-size: .83rem; cursor: pointer;
+}
+.sua-add-btn:hover { opacity: .9; }
+
+/* Card / table wrapper */
+.sua-card { background: var(--bg-card,#0f0f18); border: 1px solid var(--border-color,rgba(255,255,255,.08)); border-radius: 12px; overflow: hidden; margin-bottom: 36px; }
+.sua-empty { padding: 56px 40px; text-align: center; color: var(--text-secondary,#8892a6); }
+.sua-empty i { font-size: 2rem; opacity: .25; display: block; margin-bottom: 12px; }
+.sua-empty p { margin: 0; font-size: .88rem; }
+
+/* Table */
+.sua-table { width: 100%; border-collapse: collapse; }
+.sua-table thead th {
+  padding: 11px 16px; text-align: left;
+  color: var(--text-secondary,#8892a6); font-size: .72rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .06em;
+  border-bottom: 1px solid var(--border-color,rgba(255,255,255,.08)); white-space: nowrap;
+}
+.sua-table tbody tr { border-bottom: 1px solid var(--border-color,rgba(255,255,255,.04)); transition: background .12s; }
+.sua-table tbody tr:last-child { border-bottom: none; }
+.sua-table tbody tr:hover { background: rgba(255,255,255,.02); }
+.sua-table td { padding: 11px 16px; vertical-align: middle; }
+
+/* Agent avatar */
+.sua-avatar {
+  width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+  background: linear-gradient(135deg,#d97706,#7c3aed);
+  display: flex; align-items: center; justify-content: center;
+  font-size: .78rem; font-weight: 800; color: #fff;
+}
+.sua-agent-cell { display: flex; align-items: center; gap: 10px; }
+.sua-agent-name { font-size: .88rem; font-weight: 600; color: var(--text-primary,#e8eefc); }
+.sua-cell-text  { font-size: .84rem; color: var(--text-secondary,#8892a6); }
+.sua-cell-muted { font-size: .8rem; color: var(--text-secondary,#8892a6); max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sua-badge { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 20px; font-size: .72rem; font-weight: 700; background: rgba(0,240,255,.1); color: var(--cyan,#00f0ff); }
+.sua-badge-pink { background: rgba(219,39,119,.1); color: #f472b6; }
+.sua-date  { font-size: .79rem; color: var(--text-secondary,#8892a6); white-space: nowrap; }
+.sua-rm-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 12px; background: rgba(220,38,38,.08); border: 1px solid rgba(220,38,38,.18);
+  color: #f87171; border-radius: 6px; font-size: .76rem; font-weight: 600; cursor: pointer;
+}
+.sua-view-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 12px; background: rgba(37,99,235,.1); color: #60a5fa;
+  border-radius: 6px; text-decoration: none; font-size: .76rem; font-weight: 600;
+}
+
+/* Modal */
+.sua-modal-overlay {
+  display: none; position: fixed; inset: 0; z-index: 99999;
+  align-items: center; justify-content: center;
+  background: rgba(0,0,0,.6); backdrop-filter: blur(4px);
+}
+.sua-modal-overlay.open { display: flex; }
+.sua-modal {
+  background: var(--bg-card,#0f0f18);
+  border: 1px solid var(--border-color,rgba(255,255,255,.1));
+  border-radius: 14px; padding: 26px 28px; width: 100%; max-width: 440px; margin: 16px;
+}
+.sua-modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px; }
+.sua-modal-title { margin: 0; font-size: 1rem; font-weight: 700; color: var(--text-primary,#e8eefc); }
+.sua-modal-close { background: none; border: none; color: var(--text-secondary,#8892a6); cursor: pointer; font-size: 1.1rem; padding: 2px; }
+.sua-modal-close:hover { color: #f87171; }
+.sua-form-label { display: block; font-size: .79rem; font-weight: 600; color: var(--text-secondary,#8892a6); margin-bottom: 5px; }
+.sua-form-ctrl {
+  width: 100%; padding: 9px 12px; margin-bottom: 16px;
+  border: 1px solid var(--border-color,rgba(255,255,255,.1));
+  border-radius: 8px; background: var(--bg-secondary,#0c0c12);
+  color: var(--text-primary,#e8eefc); font-size: .86rem; outline: none; box-sizing: border-box;
+}
+.sua-form-ctrl:focus { border-color: var(--cyan,#00f0ff); }
+.sua-modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 4px; }
+.sua-modal-cancel {
+  padding: 8px 18px; background: var(--bg-secondary,#0c0c12);
+  border: 1px solid var(--border-color,rgba(255,255,255,.1));
+  border-radius: 8px; color: var(--text-secondary,#8892a6); font-size: .86rem; cursor: pointer;
+}
+.sua-modal-submit {
+  padding: 8px 22px; background: var(--cyan,#00f0ff); border: none;
+  border-radius: 8px; color: #05050e; font-weight: 700; font-size: .86rem; cursor: pointer;
+}
+</style>
+
+<div class="sua-page">
+
+  <?php if (!empty($_SESSION['flash_success'])): ?>
+  <div class="sua-flash ok"><?= htmlspecialchars($_SESSION['flash_success']) ?><?php unset($_SESSION['flash_success']); ?></div>
+  <?php endif; ?>
+  <?php if (!empty($_SESSION['flash_error'])): ?>
+  <div class="sua-flash err"><?= htmlspecialchars($_SESSION['flash_error']) ?><?php unset($_SESSION['flash_error']); ?></div>
+  <?php endif; ?>
+
+  <!-- Agents -->
+  <div class="sua-sec-hdr">
     <div>
-        <div style="margin-bottom:16px;">
-            <h2 style="font-size:1.2rem;font-weight:700;color:var(--text-primary,#e8eefc);margin:0 0 4px;">
-                <i class="fas fa-users" style="color:#00f0ff;margin-right:8px;"></i>Support Users
-            </h2>
-            <p style="color:var(--text-secondary,#8892a6);margin:0;font-size:.83rem;">Users who have submitted tickets or initiated live chats.</p>
-        </div>
-
-        <div style="background:var(--bg-card,#0f0f18);border:1px solid var(--border-color,rgba(255,255,255,.08));border-radius:12px;overflow:hidden;">
-            <?php if (empty($users)): ?>
-            <div style="padding:60px;text-align:center;color:var(--text-secondary,#8892a6);">
-                <i class="fas fa-users" style="font-size:2rem;opacity:.3;display:block;margin-bottom:12px;"></i>
-                No support users yet.
-            </div>
-            <?php else: ?>
-            <div style="overflow-x:auto;">
-                <table style="width:100%;border-collapse:collapse;">
-                    <thead>
-                        <tr style="border-bottom:1px solid var(--border-color,rgba(255,255,255,.08));">
-                            <?php foreach (['User','Email','Tickets','Chats','Last Activity','Actions'] as $h): ?>
-                            <th style="padding:12px 14px;text-align:left;color:var(--text-secondary,#8892a6);font-size:.73rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;"><?= $h ?></th>
-                            <?php endforeach; ?>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($users as $user): ?>
-                        <tr style="border-bottom:1px solid var(--border-color,rgba(255,255,255,.04));transition:background .15s;"
-                            onmouseover="this.style.background='rgba(255,255,255,.02)'" onmouseout="this.style.background=''">
-                            <td style="padding:12px 14px;">
-                                <div style="font-weight:600;color:var(--text-primary,#e8eefc);font-size:.88rem;"><?= htmlspecialchars($user['name']) ?></div>
-                            </td>
-                            <td style="padding:12px 14px;color:var(--text-secondary,#8892a6);font-size:.83rem;"><?= htmlspecialchars($user['email']) ?></td>
-                            <td style="padding:12px 14px;text-align:center;">
-                                <span style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:.78rem;font-weight:600;background:rgba(0,240,255,.1);color:#00f0ff;">
-                                    <?= (int)$user['ticket_count'] ?>
-                                </span>
-                            </td>
-                            <td style="padding:12px 14px;text-align:center;">
-                                <span style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:.78rem;font-weight:600;background:rgba(255,46,196,.1);color:#ff2ec4;">
-                                    <?= (int)$user['chat_count'] ?>
-                                </span>
-                            </td>
-                            <td style="padding:12px 14px;color:var(--text-secondary,#8892a6);font-size:.8rem;">
-                                <?php
-                                $la = $user['last_activity'];
-                                echo $la && $la !== '1970-01-01' ? date('M j, Y', strtotime($la)) : '—';
-                                ?>
-                            </td>
-                            <td style="padding:12px 14px;">
-                                <a href="/admin/support/tickets?user_id=<?= (int)$user['id'] ?>"
-                                   style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;background:rgba(0,240,255,.1);color:#00f0ff;border-radius:6px;text-decoration:none;font-size:.78rem;font-weight:500;">
-                                    <i class="fas fa-ticket"></i> Tickets
-                                </a>
-                            </td>
-                        </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-            <?php endif; ?>
-        </div>
+      <h2 class="sua-sec-title"><i class="fas fa-user-shield" style="color:#d97706;"></i> Support Agents</h2>
+      <p class="sua-sec-sub">Agents can view and reply to live chats and support tickets.</p>
     </div>
+    <button class="sua-add-btn" onclick="document.getElementById('suaModal').classList.add('open')">
+      <i class="fas fa-plus"></i> Add Agent
+    </button>
+  </div>
+
+  <div class="sua-card">
+    <?php if (empty($agents)): ?>
+    <div class="sua-empty">
+      <i class="fas fa-user-shield"></i>
+      <p>No support agents yet. Add one above.</p>
+    </div>
+    <?php else: ?>
+    <div style="overflow-x:auto;">
+      <table class="sua-table">
+        <thead>
+          <tr><th>Agent</th><th>Email</th><th>Role</th><th>Notes</th><th>Added By</th><th>Since</th><th></th></tr>
+        </thead>
+        <tbody>
+          <?php foreach ($agents as $agent): ?>
+          <tr>
+            <td>
+              <div class="sua-agent-cell">
+                <div class="sua-avatar"><?= strtoupper(substr($agent['name'],0,1)) ?></div>
+                <span class="sua-agent-name"><?= htmlspecialchars($agent['name']) ?></span>
+              </div>
+            </td>
+            <td><span class="sua-cell-text"><?= htmlspecialchars($agent['email']) ?></span></td>
+            <td><span class="sua-badge"><?= htmlspecialchars($agent['role']) ?></span></td>
+            <td><span class="sua-cell-muted" title="<?= htmlspecialchars($agent['notes'] ?: '') ?>"><?= htmlspecialchars($agent['notes'] ?: '—') ?></span></td>
+            <td><span class="sua-cell-text"><?= htmlspecialchars($agent['assigned_by_name'] ?? '—') ?></span></td>
+            <td><span class="sua-date"><?= date('M j, Y', strtotime($agent['created_at'])) ?></span></td>
+            <td>
+              <form method="POST" action="/admin/support/agents/<?= (int)$agent['user_id'] ?>/remove"
+                    onsubmit="return confirm('Remove this agent?')">
+                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+                <button type="submit" class="sua-rm-btn"><i class="fas fa-user-minus"></i> Remove</button>
+              </form>
+            </td>
+          </tr>
+          <?php endforeach; ?>
+        </tbody>
+      </table>
+    </div>
+    <?php endif; ?>
+  </div>
+
+  <!-- Support Users -->
+  <div class="sua-sec-hdr">
+    <div>
+      <h2 class="sua-sec-title"><i class="fas fa-users" style="color:var(--cyan,#00f0ff);"></i> Support Users</h2>
+      <p class="sua-sec-sub">Users who have submitted tickets or initiated live chats.</p>
+    </div>
+  </div>
+
+  <div class="sua-card" style="margin-bottom:0;">
+    <?php if (empty($users)): ?>
+    <div class="sua-empty">
+      <i class="fas fa-users"></i>
+      <p>No support users yet.</p>
+    </div>
+    <?php else: ?>
+    <div style="overflow-x:auto;">
+      <table class="sua-table">
+        <thead>
+          <tr><th>User</th><th>Email</th><th>Tickets</th><th>Chats</th><th>Last Activity</th><th></th></tr>
+        </thead>
+        <tbody>
+          <?php foreach ($users as $user): ?>
+          <tr>
+            <td><span class="sua-agent-name"><?= htmlspecialchars($user['name']) ?></span></td>
+            <td><span class="sua-cell-text"><?= htmlspecialchars($user['email']) ?></span></td>
+            <td><span class="sua-badge"><?= (int)$user['ticket_count'] ?></span></td>
+            <td><span class="sua-badge sua-badge-pink"><?= (int)$user['chat_count'] ?></span></td>
+            <td>
+              <span class="sua-date">
+                <?php $la = $user['last_activity']; echo ($la && $la !== '1970-01-01') ? date('M j, Y', strtotime($la)) : '—'; ?>
+              </span>
+            </td>
+            <td>
+              <a href="/admin/support/tickets?user_id=<?= (int)$user['id'] ?>" class="sua-view-btn">
+                <i class="fas fa-ticket"></i> Tickets
+              </a>
+            </td>
+          </tr>
+          <?php endforeach; ?>
+        </tbody>
+      </table>
+    </div>
+    <?php endif; ?>
+  </div>
+
 </div>
 
 <!-- Add Agent Modal -->
-<div id="addAgentModal" style="display:none;position:fixed;inset:0;z-index:99999;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);"
-     onclick="if(event.target===this)this.style.display='none'">
-    <div style="background:var(--bg-card,#0f0f18);border:1px solid var(--border-color,rgba(255,255,255,.1));border-radius:16px;padding:28px;width:100%;max-width:460px;margin:16px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-            <h3 style="margin:0;font-size:1.05rem;font-weight:700;color:var(--text-primary,#e8eefc);">
-                <i class="fas fa-user-shield" style="color:#ff9f43;margin-right:8px;"></i>Add Support Agent
-            </h3>
-            <button onclick="document.getElementById('addAgentModal').style.display='none'"
-                style="background:none;border:none;color:var(--text-secondary,#8892a6);cursor:pointer;font-size:18px;"><i class="fas fa-times"></i></button>
-        </div>
-        <form method="POST" action="/admin/support/agents/add">
-            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
-            <div style="margin-bottom:16px;">
-                <label style="display:block;font-size:.82rem;font-weight:600;color:var(--text-secondary,#8892a6);margin-bottom:6px;">Select User *</label>
-                <select name="user_id" required
-                    style="width:100%;padding:10px 12px;border:1px solid var(--border-color,rgba(255,255,255,.1));border-radius:8px;background:var(--bg-secondary,#0c0c12);color:var(--text-primary,#e8eefc);font-size:.88rem;">
-                    <option value="">— choose a user —</option>
-                    <?php foreach ($allUsers as $u):
-                        if ($u['is_agent']) continue; // skip already agents
-                    ?>
-                    <option value="<?= (int)$u['id'] ?>"><?= htmlspecialchars($u['name']) ?> (<?= htmlspecialchars($u['email']) ?>)</option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <div style="margin-bottom:20px;">
-                <label style="display:block;font-size:.82rem;font-weight:600;color:var(--text-secondary,#8892a6);margin-bottom:6px;">Notes (optional)</label>
-                <textarea name="notes" rows="2" placeholder="e.g. Handles billing queries, available Mon-Fri"
-                    style="width:100%;padding:10px 12px;border:1px solid var(--border-color,rgba(255,255,255,.1));border-radius:8px;background:var(--bg-secondary,#0c0c12);color:var(--text-primary,#e8eefc);font-size:.88rem;resize:vertical;box-sizing:border-box;"></textarea>
-            </div>
-            <div style="display:flex;gap:10px;justify-content:flex-end;">
-                <button type="button" onclick="document.getElementById('addAgentModal').style.display='none'"
-                    style="padding:9px 20px;background:var(--bg-secondary,#0c0c12);border:1px solid var(--border-color,rgba(255,255,255,.1));border-radius:8px;color:var(--text-secondary,#8892a6);font-size:.88rem;cursor:pointer;">Cancel</button>
-                <button type="submit"
-                    style="padding:9px 20px;background:linear-gradient(135deg,#ff9f43,#ff2ec4);border:none;border-radius:8px;color:white;font-weight:600;font-size:.88rem;cursor:pointer;">
-                    <i class="fas fa-user-plus" style="margin-right:5px;"></i>Add Agent
-                </button>
-            </div>
-        </form>
+<div id="suaModal" class="sua-modal-overlay" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="sua-modal">
+    <div class="sua-modal-head">
+      <h3 class="sua-modal-title"><i class="fas fa-user-shield" style="color:#d97706;margin-right:8px;"></i>Add Support Agent</h3>
+      <button class="sua-modal-close" onclick="document.getElementById('suaModal').classList.remove('open')"><i class="fas fa-times"></i></button>
     </div>
+    <form method="POST" action="/admin/support/agents/add">
+      <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+      <label class="sua-form-label">Select User <span style="color:#f87171;">*</span></label>
+      <select name="user_id" required class="sua-form-ctrl">
+        <option value="">— choose a user —</option>
+        <?php foreach ($allUsers as $u): if ($u['is_agent']) continue; ?>
+        <option value="<?= (int)$u['id'] ?>"><?= htmlspecialchars($u['name']) ?> (<?= htmlspecialchars($u['email']) ?>)</option>
+        <?php endforeach; ?>
+      </select>
+      <label class="sua-form-label">Notes <span style="font-weight:400;opacity:.7;">(optional)</span></label>
+      <textarea name="notes" rows="2" placeholder="e.g. Handles billing queries" class="sua-form-ctrl" style="resize:vertical;"></textarea>
+      <div class="sua-modal-actions">
+        <button type="button" class="sua-modal-cancel" onclick="document.getElementById('suaModal').classList.remove('open')">Cancel</button>
+        <button type="submit" class="sua-modal-submit"><i class="fas fa-user-plus" style="margin-right:5px;"></i>Add Agent</button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <?php View::endSection(); ?>
