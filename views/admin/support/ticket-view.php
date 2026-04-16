@@ -26,7 +26,7 @@ $priorityColor = match($ticket['priority']) {
     default  => '#64748b',
 };
 
-$formattedTicketId = '#' . str_pad((string) ((int) $ticket['id']), 6, '0', STR_PAD_LEFT);
+$formattedTicketId = '#' . str_pad((string) ((int) $ticket['id']), 5, '0', STR_PAD_LEFT);
 $createdAt         = !empty($ticket['created_at']) ? strtotime($ticket['created_at']) : null;
 $updatedAt         = !empty($ticket['updated_at']) ? strtotime($ticket['updated_at']) : null;
 $firstReplyTs      = !empty($firstAgentReplyAt ?? null) ? strtotime($firstAgentReplyAt) : null;
@@ -924,7 +924,11 @@ document.querySelectorAll('.tv-comp-tab').forEach(function(btn) {
 function tvToggle(head) {
     head.classList.toggle('collapsed');
     var body = head.nextElementSibling;
-    if (body) body.style.display = head.classList.contains('collapsed') ? 'none' : '';
+    if (body) {
+        var collapsed = head.classList.contains('collapsed');
+        body.style.display = collapsed ? 'none' : '';
+        head.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+    }
 }
 </script>
 
