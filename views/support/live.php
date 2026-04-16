@@ -4,6 +4,13 @@
  */
 use Core\View;
 View::extend('main');
+
+$ls = $liveSettings ?? [];
+$pageTitle     = $ls['live_support_title']         ?: 'Live Support';
+$tagline       = $ls['live_support_tagline']       ?: 'Chat live with our support team for immediate assistance.';
+$responseTime  = $ls['live_support_response_time'] ?: 'Usually under 5 minutes during business hours.';
+$hours         = $ls['live_support_hours']         ?: 'Mon–Fri: 9AM–6PM (UTC). Weekends limited.';
+$extraNote     = $ls['live_support_extra_note']    ?: 'For non-urgent issues, please <a href="/support/new" style="color:var(--purple);">create a ticket</a> for a faster, tracked response.';
 ?>
 
 <?php View::section('styles'); ?>
@@ -22,9 +29,9 @@ View::extend('main');
             <div style="margin-bottom:22px;">
                 <h1 style="font-size:1.4rem;font-weight:700;color:var(--text-primary);margin:0 0 4px;display:flex;align-items:center;gap:10px;">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="color:var(--magenta)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
-                    Live Support
+                    <?= htmlspecialchars($pageTitle) ?>
                 </h1>
-                <p style="color:var(--text-secondary);margin:0;font-size:.85rem;">Chat live with our support team for immediate assistance.</p>
+                <p style="color:var(--text-secondary);margin:0;font-size:.85rem;"><?= htmlspecialchars($tagline) ?></p>
             </div>
 
             <!-- Status card -->
@@ -54,20 +61,20 @@ View::extend('main');
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="color:var(--cyan)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:6px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                         Response Time
                     </div>
-                    <p style="color:var(--text-secondary);font-size:.82rem;margin:0;line-height:1.55;">Usually under 5 minutes during business hours.</p>
+                    <p style="color:var(--text-secondary);font-size:.82rem;margin:0;line-height:1.55;"><?= htmlspecialchars($responseTime) ?></p>
                 </div>
                 <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:10px;padding:16px;">
                     <div style="font-weight:600;color:var(--text-primary);font-size:.88rem;margin-bottom:6px;">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="color:var(--orange)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:6px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                         Business Hours
                     </div>
-                    <p style="color:var(--text-secondary);font-size:.82rem;margin:0;line-height:1.55;">Mon–Fri: 9AM–6PM (UTC). Weekends limited.</p>
+                    <p style="color:var(--text-secondary);font-size:.82rem;margin:0;line-height:1.55;"><?= htmlspecialchars($hours) ?></p>
                 </div>
             </div>
 
             <div style="margin-top:16px;padding:14px 16px;background:color-mix(in srgb,var(--purple) 7%,transparent);border:1px solid color-mix(in srgb,var(--purple) 18%,transparent);border-radius:10px;font-size:.84rem;color:var(--text-secondary);">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="color:var(--purple)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:7px;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                For non-urgent issues, please <a href="/support/new" style="color:var(--purple);">create a ticket</a> for a faster, tracked response.
+                <?= $extraNote ?>
             </div>
         </div><!-- /main content -->
 </div><!-- /sp-layout -->
@@ -75,3 +82,4 @@ View::extend('main');
 <style>@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}</style>
 
 <?php View::endSection(); ?>
+

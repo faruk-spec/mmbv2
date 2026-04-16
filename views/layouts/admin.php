@@ -1138,6 +1138,10 @@
                                 <i class="fas fa-users"></i>
                                 <span>User Access</span>
                             </a>
+                            <a href="/admin/support/settings" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/support/settings') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-sliders"></i>
+                                <span>Settings</span>
+                            </a>
                         </div>
                     </div>
                 </div>
