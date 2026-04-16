@@ -1126,9 +1126,13 @@
                                 <i class="fas fa-comments"></i>
                                 <span>Live Chats</span>
                             </a>
-                            <a href="/admin/support/templates" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/support/templates') === 0 ? 'active' : '' ?>">
+                            <a href="/admin/support/groups" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/support/groups') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-layer-group"></i>
+                                <span>Template Groups</span>
+                            </a>
+                            <a href="/admin/support/templates" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/support/templates') === 0 && strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/support/groups') !== 0 ? 'active' : '' ?>">
                                 <i class="fas fa-folder-tree"></i>
-                                <span>Templates</span>
+                                <span>Legacy Templates</span>
                             </a>
                             <a href="/admin/support/users" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/support/users') === 0 ? 'active' : '' ?>">
                                 <i class="fas fa-users"></i>
