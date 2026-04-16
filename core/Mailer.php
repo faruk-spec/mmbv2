@@ -35,6 +35,8 @@ class Mailer
                 "SELECT * FROM mail_provider_configs WHERE is_active = 1 LIMIT 1"
             );
             if ($row && !empty($row['smtp_host'])) {
+                // Passwords are stored encrypted by MailConfigController; decrypt before use.
+                $smtpPassword = MailService::decryptPassword($row['smtp_password'] ?? '');
                 return [
                     'driver' => 'smtp',
                     'smtp'   => [
@@ -42,7 +44,7 @@ class Mailer
                         'port'       => (int)($row['smtp_port'] ?? 587),
                         'encryption' => $row['smtp_encryption'] ?? 'tls',
                         'username'   => $row['smtp_username'] ?? '',
-                        'password'   => $row['smtp_password'] ?? '',
+                        'password'   => $smtpPassword,
                     ],
                     'from' => [
                         'address' => $row['from_email'] ?? ($row['smtp_username'] ?? ''),

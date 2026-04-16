@@ -162,11 +162,7 @@ class SupportController extends BaseController
         ];
         $emailBody = $this->renderEmail('support-ticket-created', $emailVars);
         if ($emailBody !== null && !empty($user['email'])) {
-            try {
-                Mailer::send($user['email'], "Support Ticket #{$ticketId} Created: {$subject}", $emailBody);
-            } catch (\Throwable $e) {
-                // Mail failure is non-fatal
-            }
+            Mailer::send($user['email'], "Support Ticket #{$ticketId} Created: {$subject}", $emailBody);
         }
 
         // Notify all admins
@@ -524,14 +520,13 @@ class SupportController extends BaseController
             ];
             $emailBody = $this->renderEmail('support-ticket-reply', $emailVars);
             if ($emailBody !== null) {
-                try {
-                    Mailer::send(
-                        $ticket['user_email'],
-                        "Update on your Support Ticket #" . sprintf('%07d', $id),
-                        $emailBody
-                    );
-                } catch (\Throwable $e) {
-                    // Mail failure is non-fatal
+                $sent = Mailer::send(
+                    $ticket['user_email'],
+                    "Update on your Support Ticket #" . sprintf('%07d', $id),
+                    $emailBody
+                );
+                if (!$sent) {
+                    $this->flash('warning', 'Reply saved but email notification could not be sent.');
                 }
             }
 
@@ -588,32 +583,46 @@ class SupportController extends BaseController
 
         if (!empty($ticket['user_email'])) {
             $ticketUrl  = $this->baseUrl() . '/support/view/' . $id;
-            $resolution = trim($_POST['resolution'] ?? $reason);
-            $emailVars  = [
-                'ticketId'   => $id,
-                'subject'    => $ticket['subject'],
-                'userName'   => $ticket['user_name'],
-                'ticketUrl'  => $ticketUrl,
-                'resolution' => $resolution,
-            ];
-            $emailBody = $this->renderEmail('support-ticket-closed', $emailVars);
+            $safeReason = mb_substr(trim(strip_tags($reason)), 0, 500);
+
+            if ($status === 'closed' || $status === 'resolved') {
+                $emailVars = [
+                    'ticketId'   => $id,
+                    'subject'    => $ticket['subject'],
+                    'userName'   => $ticket['user_name'],
+                    'ticketUrl'  => $ticketUrl,
+                    'resolution' => $safeReason !== '' ? $safeReason : 'Your issue has been resolved.',
+                ];
+                $emailTemplate = 'support-ticket-closed';
+            } else {
+                $emailVars = [
+                    'ticketId'  => $id,
+                    'subject'   => $ticket['subject'],
+                    'userName'  => $ticket['user_name'],
+                    'ticketUrl' => $ticketUrl,
+                    'status'    => $status,
+                    'note'      => $safeReason,
+                ];
+                $emailTemplate = 'support-ticket-status-update';
+            }
+
+            $emailBody = $this->renderEmail($emailTemplate, $emailVars);
             if ($emailBody !== null) {
-                try {
-                    Mailer::send(
-                        $ticket['user_email'],
-                        "Support Ticket #" . sprintf('%07d', $id) . ' ' . ucfirst($status),
-                        $emailBody
-                    );
-                } catch (\Throwable $e) {
-                    // Non-fatal
+                $statusLabel = ucwords(str_replace('_', ' ', $status));
+                $sent = Mailer::send(
+                    $ticket['user_email'],
+                    "Support Ticket #" . sprintf('%07d', $id) . " — Status: {$statusLabel}",
+                    $emailBody
+                );
+                if (!$sent) {
+                    $this->flash('warning', 'Status updated but email notification could not be sent.');
                 }
             }
 
-            $safeReason = mb_substr(trim(strip_tags($reason)), 0, 200);
             Notification::send(
                 (int) $ticket['user_id'],
                 'support_ticket_' . $status,
-                "Your support ticket #" . sprintf('%07d', $id) . " has been {$status}. Reason: {$safeReason}",
+                "Your support ticket #" . sprintf('%07d', $id) . " has been updated to: " . ucwords(str_replace('_', ' ', $status)) . ($safeReason !== '' ? ". Note: {$safeReason}" : ''),
                 ['ticket_id' => $id, 'url' => '/support/view/' . $id]
             );
         }
