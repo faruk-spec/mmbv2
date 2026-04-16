@@ -428,6 +428,7 @@ class SupportAdminController extends BaseController
         $this->validateCsrf();
 
         $name        = trim($_POST['name'] ?? '');
+        $department  = trim($_POST['department'] ?? '');
         $description = trim($_POST['description'] ?? '');
         $icon        = trim($_POST['icon'] ?? 'folder');
 
@@ -437,7 +438,7 @@ class SupportAdminController extends BaseController
             return;
         }
 
-        $this->model->createTemplateCategory($name, $description, $icon);
+        $this->model->createTemplateCategory($name, $description, $icon, $department);
         $this->flash('success', 'Template category created.');
         $this->redirect('/admin/support/templates');
     }

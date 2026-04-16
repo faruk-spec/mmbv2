@@ -90,7 +90,12 @@ View::section('content');
                     <div class="cat-item">
                         <div class="cat-item-left">
                             <i class="fas fa-<?= htmlspecialchars($cat['icon']) ?>"></i>
-                            <span class="cat-item-name"><?= htmlspecialchars($cat['name']) ?></span>
+                            <span class="cat-item-name">
+                                <?= htmlspecialchars($cat['name']) ?>
+                                <?php if (!empty($cat['department'])): ?>
+                                    <span style="font-size:.72rem;color:var(--text-secondary);font-weight:400;">(<?= htmlspecialchars($cat['department']) ?>)</span>
+                                <?php endif; ?>
+                            </span>
                         </div>
                         <form method="POST" action="/admin/support/templates/category/<?= (int)$cat['id'] ?>/delete" onsubmit="return confirm('Delete this category and all its items?')" style="margin:0;">
                             <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
@@ -107,6 +112,8 @@ View::section('content');
                         <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
                         <label>Category Name</label>
                         <input type="text" name="name" required placeholder="e.g. Billing" class="tpl-input">
+                        <label>Department <span style="font-weight:400;color:var(--text-secondary);">(optional)</span></label>
+                        <input type="text" name="department" placeholder="e.g. Technical Support" class="tpl-input">
                         <label>Icon <span style="font-weight:400;color:var(--text-secondary);">(Font Awesome name, e.g. credit-card)</span></label>
                         <input type="text" name="icon" value="folder" placeholder="folder" class="tpl-input">
                         <label>Description <span style="font-weight:400;">(optional)</span></label>
@@ -261,7 +268,7 @@ View::section('content');
         cf.forEach(function (f, i) {
             var row = document.createElement('div');
             row.className = 'cf-row';
-            var typeOpts = ['text','textarea','dropdown','checkbox'].map(function (t) {
+            var typeOpts = ['text','textarea','dropdown','checkbox','email','number','date','attachment'].map(function (t) {
                 return '<option value="'+t+'"'+(f.type===t?' selected':'')+'>'+t+'</option>';
             }).join('');
             var top = '<div class="cf-row-top">';

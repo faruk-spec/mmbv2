@@ -109,10 +109,12 @@ $router->get('/support/announcements', 'SupportController@announcements', ['auth
 $router->get('/support/admin/tickets', 'SupportController@adminTickets', ['auth']);
 $router->get('/support/admin/live', 'SupportController@adminLive', ['auth']);
 $router->get('/support/admin/reports', 'SupportController@adminReports', ['auth']);
+$router->get('/support/admin/reports/export', 'SupportController@adminExportReportsCsv', ['auth']);
 $router->get('/support/admin/ticket/{id}', 'SupportController@adminViewTicket', ['auth']);
 $router->post('/support/admin/ticket/{id}/reply', 'SupportController@adminReplyTicket', ['auth']);
 $router->post('/support/admin/ticket/{id}/status', 'SupportController@adminUpdateTicketStatus', ['auth']);
 $router->post('/support/admin/ticket/{id}/priority', 'SupportController@adminUpdateTicketPriority', ['auth']);
+$router->post('/support/admin/ticket/{id}/assign', 'SupportController@adminAssignTicketAgent', ['auth']);
 
 // Live Chat (no auth — works for guests too)
 $router->post('/support/live/start', 'SupportLiveChatController@start');
@@ -145,6 +147,38 @@ $router->get('/api/session-alerts', function() {
         }
     } catch (\Exception $e) { /* non-fatal */ }
     \Core\Helpers::json(['alert' => null]);
+}, ['auth']);
+
+// Serve support attachments (restricted file types)
+$router->get('/support-attachments/{file}', function($file) {
+    if (!\Core\Auth::check()) {
+        http_response_code(403);
+        exit('Forbidden');
+    }
+    $safeFile = basename($file);
+    if ($safeFile !== $file) {
+        http_response_code(403);
+        exit('Forbidden');
+    }
+    $allowedExtensions = ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'txt', 'zip', 'doc', 'docx', 'xlsx', 'csv'];
+    $ext = strtolower(pathinfo($safeFile, PATHINFO_EXTENSION));
+    if (!in_array($ext, $allowedExtensions, true)) {
+        http_response_code(403);
+        exit('Forbidden');
+    }
+    $fullPath = BASE_PATH . '/storage/uploads/support_attachments/' . $safeFile;
+    $real = realpath($fullPath);
+    $base = realpath(BASE_PATH . '/storage/uploads/support_attachments');
+    if (!$real || !$base || strpos($real, $base) !== 0 || !is_file($real)) {
+        http_response_code(404);
+        exit('File not found');
+    }
+    $mime = mime_content_type($real) ?: 'application/octet-stream';
+    header('Content-Type: ' . $mime);
+    header('Content-Length: ' . filesize($real));
+    header('Content-Disposition: inline; filename="' . basename($real) . '"');
+    readfile($real);
+    exit;
 }, ['auth']);
 
 // 2FA routes

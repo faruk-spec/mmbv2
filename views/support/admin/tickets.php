@@ -63,6 +63,31 @@ if (!function_exists('satPriorityBadge')) {
             <?php endforeach; ?>
         </div>
 
+        <form method="GET" action="/support/admin/tickets" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;margin-bottom:14px;">
+            <input type="text" name="q" value="<?= htmlspecialchars($searchQuery ?? '') ?>" placeholder="Search subject/user..." style="padding:8px 10px;border:1px solid var(--border-color);border-radius:7px;background:var(--bg-secondary);color:var(--text-primary);">
+            <select name="status" style="padding:8px 10px;border:1px solid var(--border-color);border-radius:7px;background:var(--bg-secondary);color:var(--text-primary);">
+                <option value="">All Status</option>
+                <?php foreach (['open'=>'Open','in_progress'=>'In Progress','waiting_customer'=>'Waiting','resolved'=>'Resolved','closed'=>'Closed'] as $v => $l): ?>
+                <option value="<?= $v ?>"<?= ($statusFilter ?? '') === $v ? ' selected' : '' ?>><?= $l ?></option>
+                <?php endforeach; ?>
+            </select>
+            <select name="priority" style="padding:8px 10px;border:1px solid var(--border-color);border-radius:7px;background:var(--bg-secondary);color:var(--text-primary);">
+                <option value="">All Priority</option>
+                <?php foreach (['low','medium','high','urgent'] as $v): ?>
+                <option value="<?= $v ?>"<?= ($priorityFilter ?? '') === $v ? ' selected' : '' ?>><?= ucfirst($v) ?></option>
+                <?php endforeach; ?>
+            </select>
+            <select name="assigned_to" style="padding:8px 10px;border:1px solid var(--border-color);border-radius:7px;background:var(--bg-secondary);color:var(--text-primary);">
+                <option value="">All Agents</option>
+                <?php foreach (($agents ?? []) as $agent): ?>
+                <option value="<?= (int) $agent['id'] ?>"<?= (string) ($assignedFilter ?? '') === (string) $agent['id'] ? ' selected' : '' ?>>
+                    <?= htmlspecialchars($agent['name']) ?>
+                </option>
+                <?php endforeach; ?>
+            </select>
+            <button type="submit" class="sp-btn sp-btn-primary sp-btn-sm">Apply</button>
+        </form>
+
         <!-- Status filter tabs -->
         <div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;">
             <?php foreach ([
@@ -100,18 +125,30 @@ if (!function_exists('satPriorityBadge')) {
                         <tr class="sp-tr" style="border-bottom:1px solid var(--border-color);">
                             <td style="padding:12px 14px;font-family:monospace;font-size:.8rem;color:var(--text-secondary);">#<?= sprintf('%07d', (int)$t['id']) ?></td>
                             <td style="padding:12px 14px;">
-                                <a href="/support/view/<?= (int)$t['id'] ?>" style="color:var(--text-primary);text-decoration:none;font-weight:500;font-size:.88rem;">
+                                <a href="/support/admin/ticket/<?= (int)$t['id'] ?>" style="color:var(--text-primary);text-decoration:none;font-weight:500;font-size:.88rem;">
                                     <?= htmlspecialchars($t['subject']) ?>
                                 </a>
                             </td>
                             <td style="padding:12px 14px;font-size:.83rem;color:var(--text-secondary);"><?= htmlspecialchars($t['user_name'] ?? '—') ?></td>
                             <td style="padding:12px 14px;"><?= satStatusBadge($t['status']) ?></td>
                             <td style="padding:12px 14px;"><?= satPriorityBadge($t['priority']) ?></td>
-                            <td style="padding:12px 14px;font-size:.83rem;color:var(--text-secondary);"><?= htmlspecialchars($t['agent_name'] ?? '—') ?></td>
+                            <td style="padding:12px 14px;font-size:.83rem;color:var(--text-secondary);">
+                                <form method="POST" action="/support/admin/ticket/<?= (int)$t['id'] ?>/assign" style="display:flex;gap:6px;align-items:center;">
+                                    <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+                                    <select name="assigned_to" style="min-width:130px;padding:5px 7px;border:1px solid var(--border-color);border-radius:6px;background:var(--bg-secondary);color:var(--text-primary);font-size:.78rem;">
+                                        <option value="">Assign...</option>
+                                        <?php foreach (($agents ?? []) as $agent): ?>
+                                        <option value="<?= (int) $agent['id'] ?>"<?= (int)($t['assigned_to'] ?? 0) === (int)$agent['id'] ? ' selected' : '' ?>>
+                                            <?= htmlspecialchars($agent['name']) ?>
+                                        </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <button type="submit" class="sp-btn sp-btn-sm sp-btn-outline" style="padding:5px 8px;">Save</button>
+                                </form>
+                            </td>
                             <td style="padding:12px 14px;font-size:.78rem;color:var(--text-secondary);"><?= date('M j, Y', strtotime($t['created_at'])) ?></td>
                             <td style="padding:12px 14px;">
                                 <div style="display:flex;gap:6px;">
-                                    <a href="/support/view/<?= (int)$t['id'] ?>" class="sp-action-view">View</a>
                                     <a href="/support/admin/ticket/<?= (int)$t['id'] ?>" class="sp-action-manage">Manage</a>
                                 </div>
                             </td>
