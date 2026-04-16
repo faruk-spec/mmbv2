@@ -96,8 +96,19 @@ $router->get('/api/ws/token', 'NotificationController@wsToken', ['auth']);
 // Support Tickets (logged-in users)
 $router->get('/support', 'SupportController@index', ['auth']);
 $router->get('/help', 'SupportController@index', ['auth']); // alias for /help sidebar link
-$router->get('/support/create', 'SupportController@createForm', ['auth']);
+$router->get('/support/create', function() { header('Location: /support/new', true, 301); exit; }, ['auth']);
 $router->post('/support/create', 'SupportController@store', ['auth']);
+// Dynamic wizard (new template-driven flow)
+$router->get('/support/new', function() {
+    \Core\View::render('support/create-wizard', [
+        'title'          => 'Create Support Ticket',
+        'currentPage'    => 'create',
+        'isSupportAdmin' => false,
+        'user'           => \Core\Auth::user(),
+        'isLoggedIn'     => true,
+        'csrf_token'     => \Core\Security::generateCsrfToken(),
+    ]);
+}, ['auth']);
 $router->get('/support/view/{id}', 'SupportController@show', ['auth']);
 $router->post('/support/view/{id}/reply', 'SupportController@reply', ['auth']);
 $router->get('/support/faq', 'SupportController@faq', ['auth']);
@@ -109,16 +120,38 @@ $router->get('/support/announcements', 'SupportController@announcements', ['auth
 $router->get('/support/admin/tickets', 'SupportController@adminTickets', ['auth']);
 $router->get('/support/admin/live', 'SupportController@adminLive', ['auth']);
 $router->get('/support/admin/reports', 'SupportController@adminReports', ['auth']);
+$router->get('/support/admin/reports/export', 'SupportController@adminExportReportsCsv', ['auth']);
 $router->get('/support/admin/ticket/{id}', 'SupportController@adminViewTicket', ['auth']);
 $router->post('/support/admin/ticket/{id}/reply', 'SupportController@adminReplyTicket', ['auth']);
 $router->post('/support/admin/ticket/{id}/status', 'SupportController@adminUpdateTicketStatus', ['auth']);
 $router->post('/support/admin/ticket/{id}/priority', 'SupportController@adminUpdateTicketPriority', ['auth']);
+$router->post('/support/admin/ticket/{id}/assign', 'SupportController@adminAssignTicketAgent', ['auth']);
 
 // Live Chat (no auth — works for guests too)
 $router->post('/support/live/start', 'SupportLiveChatController@start');
 $router->post('/support/live/send', 'SupportLiveChatController@send');
 $router->get('/support/live/messages', 'SupportLiveChatController@poll');
 $router->post('/support/live/close', 'SupportLiveChatController@close');
+
+// Support API — dynamic ticket wizard
+$router->get('/api/support/groups',     'Api\\SupportApiController@getGroups',    ['auth']);
+$router->get('/api/support/categories', 'Api\\SupportApiController@getCategories', ['auth']);
+$router->get('/api/support/template',   'Api\\SupportApiController@getTemplate',   ['auth']);
+$router->post('/api/support/tickets',   'Api\\SupportApiController@submitTicket',  ['auth']);
+
+// Support Admin API — template builder
+$router->get('/api/admin/support/groups',                          'Api\\SupportApiController@adminGetGroups',           ['auth', 'admin']);
+$router->post('/api/admin/support/groups',                         'Api\\SupportApiController@adminCreateGroup',         ['auth', 'admin']);
+$router->put('/api/admin/support/groups/{id}',                     'Api\\SupportApiController@adminUpdateGroup',         ['auth', 'admin']);
+$router->delete('/api/admin/support/groups/{id}',                  'Api\\SupportApiController@adminDeleteGroup',         ['auth', 'admin']);
+$router->get('/api/admin/support/categories',                      'Api\\SupportApiController@adminGetCategories',       ['auth', 'admin']);
+$router->post('/api/admin/support/categories',                     'Api\\SupportApiController@adminCreateCategory',      ['auth', 'admin']);
+$router->put('/api/admin/support/categories/{id}',                 'Api\\SupportApiController@adminUpdateCategory',      ['auth', 'admin']);
+$router->delete('/api/admin/support/categories/{id}',              'Api\\SupportApiController@adminDeleteCategory',      ['auth', 'admin']);
+$router->get('/api/admin/support/template/{id}/history',           'Api\\SupportApiController@adminGetTemplateHistory',  ['auth', 'admin']);
+$router->get('/api/admin/support/template/version/{id}',           'Api\\SupportApiController@adminGetTemplateVersion',  ['auth', 'admin']);
+$router->get('/api/admin/support/template/{id}',                   'Api\\SupportApiController@adminGetTemplate',         ['auth', 'admin']);
+$router->post('/api/admin/support/template/{id}',                  'Api\\SupportApiController@adminSaveTemplate',        ['auth', 'admin']);
 
 // Session alert polling — checked every ~30 s by logged-in browsers
 $router->get('/api/session-alerts', function() {
@@ -145,6 +178,39 @@ $router->get('/api/session-alerts', function() {
         }
     } catch (\Exception $e) { /* non-fatal */ }
     \Core\Helpers::json(['alert' => null]);
+}, ['auth']);
+
+// Serve support attachments (restricted file types)
+$router->get('/support-attachments/{file}', function($file) {
+    if (!\Core\Auth::check()) {
+        http_response_code(403);
+        exit('Forbidden');
+    }
+    $requestedFile = (string) $file;
+    $decodedFile = rawurldecode($requestedFile);
+    if (preg_match('/[\/\\\\]|\.\./', $decodedFile)) {
+        http_response_code(403);
+        exit('Forbidden');
+    }
+    $allowedExtensions = ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'txt', 'zip', 'doc', 'docx', 'xlsx', 'csv'];
+    $ext = strtolower(pathinfo($requestedFile, PATHINFO_EXTENSION));
+    if (!in_array($ext, $allowedExtensions, true)) {
+        http_response_code(403);
+        exit('Forbidden');
+    }
+    $fullPath = BASE_PATH . '/storage/uploads/support_attachments/' . $requestedFile;
+    $real = realpath($fullPath);
+    $base = realpath(BASE_PATH . '/storage/uploads/support_attachments');
+    if (!$real || !$base || strpos($real, $base) !== 0 || !is_file($real)) {
+        http_response_code(404);
+        exit('File not found');
+    }
+    $mime = mime_content_type($real) ?: 'application/octet-stream';
+    header('Content-Type: ' . $mime);
+    header('Content-Length: ' . filesize($real));
+    header('Content-Disposition: inline; filename="' . basename($real) . '"');
+    readfile($real);
+    exit;
 }, ['auth']);
 
 // 2FA routes

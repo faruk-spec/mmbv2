@@ -137,6 +137,27 @@ $priorityClass = match($ticket['priority']) {
                     <?php endif; ?>
                 </div>
 
+                <div class="sp-card" style="padding:18px;margin-bottom:16px;">
+                    <h3 class="sp-section-heading" style="margin:0 0 10px;">Ticket History</h3>
+                    <?php if (empty($activities ?? [])): ?>
+                        <div style="color:var(--text-secondary);font-size:.84rem;">No history events yet.</div>
+                    <?php else: ?>
+                        <div style="display:flex;flex-direction:column;gap:8px;">
+                            <?php foreach (($activities ?? []) as $activity): ?>
+                                <div style="padding:10px 12px;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-secondary);">
+                                    <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;">
+                                        <div style="font-size:.84rem;color:var(--text-primary);"><?= htmlspecialchars($activity['description'] ?? '') ?></div>
+                                        <div style="font-size:.72rem;color:var(--text-secondary);white-space:nowrap;"><?= !empty($activity['created_at']) ? date('M j, Y H:i', strtotime($activity['created_at'])) : '' ?></div>
+                                    </div>
+                                    <div style="font-size:.72rem;color:var(--text-secondary);margin-top:3px;">
+                                        by <?= htmlspecialchars($activity['actor_name'] ?? 'System') ?>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+
                 <!-- Reply form -->
                 <?php if (!$isClosed): ?>
                 <div class="sp-card" style="padding:20px;">
@@ -186,6 +207,10 @@ $priorityClass = match($ticket['priority']) {
                             <option value="<?= $sv ?>"<?= $ticket['status']===$sv?' selected':'' ?>><?= $sl ?></option>
                             <?php endforeach; ?>
                         </select>
+                        <label for="status_reason" style="display:block;font-size:.78rem;color:var(--text-secondary);margin-bottom:6px;">Reason / Description</label>
+                        <textarea id="status_reason" name="status_reason" rows="2" maxlength="1000" required
+                            placeholder="Reason / description for this status change..."
+                            class="sp-textarea" style="margin-bottom:8px;"></textarea>
                         <div id="sp-resolution-wrap" style="display:<?= in_array($ticket['status'],['closed','resolved'])?'block':'none' ?>;margin-bottom:8px;">
                             <textarea name="resolution" rows="3" maxlength="1000"
                                 placeholder="Brief resolution summary for the customer..."
@@ -216,6 +241,22 @@ $priorityClass = match($ticket['priority']) {
                     </form>
                 </div>
 
+                <div class="sp-card" style="padding:18px;">
+                    <div class="sp-section-heading" style="margin-bottom:12px;">Assign / Change Agent</div>
+                    <form method="POST" action="/support/admin/ticket/<?= (int)$ticket['id'] ?>/assign">
+                        <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+                        <select name="assigned_to" class="sp-select" style="width:100%;margin-bottom:8px;" required>
+                            <option value="">Select agent</option>
+                            <?php foreach (($agents ?? []) as $agent): ?>
+                            <option value="<?= (int) $agent['id'] ?>"<?= (int)($ticket['assigned_to'] ?? 0) === (int)$agent['id'] ? ' selected' : '' ?>>
+                                <?= htmlspecialchars($agent['name']) ?>
+                            </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <button type="submit" class="sp-btn sp-btn-primary sp-btn-sm" style="width:100%;justify-content:center;">Update Assignment</button>
+                    </form>
+                </div>
+
                 <!-- Ticket Info -->
                 <div class="sp-card" style="padding:18px;">
                     <div class="sp-section-heading" style="margin-bottom:12px;display:flex;align-items:center;gap:7px;">
@@ -242,6 +283,7 @@ $priorityClass = match($ticket['priority']) {
                 <form method="POST" action="/support/admin/ticket/<?= (int)$ticket['id'] ?>/status">
                     <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
                     <input type="hidden" name="status" value="open">
+                    <input type="hidden" name="status_reason" value="Ticket reopened by support agent.">
                     <button type="submit" class="sp-btn sp-btn-outline" style="width:100%;justify-content:center;">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
                         Reopen Ticket

@@ -53,7 +53,7 @@ $itemsSchemaJson = json_encode($itemsSchemaMap, JSON_HEX_TAG | JSON_HEX_APOS | J
             </div>
 
             <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:14px;padding:26px;">
-                <form method="POST" action="/support/create" autocomplete="off" id="createTicketForm">
+                <form method="POST" action="/support/create" autocomplete="off" id="createTicketForm" enctype="multipart/form-data">
                     <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
 
                     <!-- Template selector -->
@@ -69,7 +69,11 @@ $itemsSchemaJson = json_encode($itemsSchemaMap, JSON_HEX_TAG | JSON_HEX_APOS | J
                                 <?php
                                 $grouped = [];
                                 foreach ($items as $item) {
-                                    $grouped[$item['category_name'] ?? 'General'][] = $item;
+                                    $catLabel = $item['category_name'] ?? 'General';
+                                    if (!empty($item['department'])) {
+                                        $catLabel = $item['department'] . ' / ' . $catLabel;
+                                    }
+                                    $grouped[$catLabel][] = $item;
                                 }
                                 foreach ($grouped as $catName => $catItems):
                                 ?>
@@ -207,6 +211,25 @@ function renderCustomFields(schema) {
                 o.textContent = opt;
                 fieldEl.appendChild(o);
             });
+        } else if (field.type === 'attachment') {
+            fieldEl = document.createElement('input');
+            fieldEl.type = 'file';
+            fieldEl.accept = '.pdf,.png,.jpg,.jpeg,.gif,.webp,.txt,.zip,.doc,.docx,.xlsx,.csv';
+            fieldEl.style.cssText = inputStyle;
+        } else if (field.type === 'email') {
+            fieldEl = document.createElement('input');
+            fieldEl.type = 'email';
+            fieldEl.placeholder = field.placeholder || '';
+            fieldEl.style.cssText = inputStyle;
+        } else if (field.type === 'number') {
+            fieldEl = document.createElement('input');
+            fieldEl.type = 'number';
+            fieldEl.placeholder = field.placeholder || '';
+            fieldEl.style.cssText = inputStyle;
+        } else if (field.type === 'date') {
+            fieldEl = document.createElement('input');
+            fieldEl.type = 'date';
+            fieldEl.style.cssText = inputStyle;
         } else if (field.type === 'checkbox') {
             var checkWrap = document.createElement('label');
             checkWrap.style.cssText = 'display:flex;align-items:center;gap:9px;cursor:pointer;color:var(--text-primary);font-size:.9rem;';
@@ -242,4 +265,3 @@ function escHtml(s) {
 </script>
 
 <?php View::endSection(); ?>
-

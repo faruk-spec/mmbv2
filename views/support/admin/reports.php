@@ -1,7 +1,4 @@
 <?php
-/**
- * Support Admin — Reports (within support portal)
- */
 use Core\View;
 View::extend('main');
 ?>
@@ -15,53 +12,99 @@ View::extend('main');
     <?php include dirname(__DIR__) . '/_sidebar.php'; ?>
     <div style="flex:1;padding:24px 28px;min-width:0;overflow:auto;">
 
-        <h1 style="font-size:1.35rem;font-weight:700;color:var(--text-primary);margin:0 0 22px;display:flex;align-items:center;gap:10px;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="color:var(--cyan)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-            Reports & Analytics
-        </h1>
+        <h1 style="font-size:1.35rem;font-weight:700;color:var(--text-primary);margin:0 0 18px;">Reports & KPI Dashboard</h1>
 
-        <!-- Stats grid -->
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:26px;">
+        <form method="GET" action="/support/admin/reports" style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:18px;">
+            <input type="text" name="q" value="<?= htmlspecialchars($filters['q'] ?? '') ?>" placeholder="Search subject/user..." class="sp-input" style="padding:9px 10px;border:1px solid var(--border-color);border-radius:7px;background:var(--bg-secondary);color:var(--text-primary);">
+            <select name="status" style="padding:9px 10px;border:1px solid var(--border-color);border-radius:7px;background:var(--bg-secondary);color:var(--text-primary);">
+                <option value="">All Status</option>
+                <?php foreach (['open'=>'Open','in_progress'=>'In Progress','waiting_customer'=>'Waiting','resolved'=>'Resolved','closed'=>'Closed'] as $key => $lbl): ?>
+                    <option value="<?= $key ?>"<?= ($filters['status'] ?? '') === $key ? ' selected' : '' ?>><?= $lbl ?></option>
+                <?php endforeach; ?>
+            </select>
+            <select name="priority" style="padding:9px 10px;border:1px solid var(--border-color);border-radius:7px;background:var(--bg-secondary);color:var(--text-primary);">
+                <option value="">All Priority</option>
+                <?php foreach (['low','medium','high','urgent'] as $key): ?>
+                    <option value="<?= $key ?>"<?= ($filters['priority'] ?? '') === $key ? ' selected' : '' ?>><?= ucfirst($key) ?></option>
+                <?php endforeach; ?>
+            </select>
+            <select name="assigned_to" style="padding:9px 10px;border:1px solid var(--border-color);border-radius:7px;background:var(--bg-secondary);color:var(--text-primary);">
+                <option value="">All Agents</option>
+                <?php foreach (($agents ?? []) as $agent): ?>
+                    <option value="<?= (int) $agent['id'] ?>"<?= (int) ($filters['assigned_to'] ?? 0) === (int) $agent['id'] ? ' selected' : '' ?>>
+                        <?= htmlspecialchars($agent['name']) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+            <input type="date" name="from_date" value="<?= htmlspecialchars($filters['from_date'] ?? '') ?>" style="padding:9px 10px;border:1px solid var(--border-color);border-radius:7px;background:var(--bg-secondary);color:var(--text-primary);">
+            <input type="date" name="to_date" value="<?= htmlspecialchars($filters['to_date'] ?? '') ?>" style="padding:9px 10px;border:1px solid var(--border-color);border-radius:7px;background:var(--bg-secondary);color:var(--text-primary);">
+            <button type="submit" class="sp-btn sp-btn-primary sp-btn-sm">Apply Filters</button>
+            <a href="/support/admin/reports/export?<?= http_build_query($filters ?? []) ?>" class="sp-btn sp-btn-outline sp-btn-sm" style="text-decoration:none;text-align:center;">Export CSV</a>
+        </form>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:18px;">
             <?php foreach ([
-                ['open','#00f0ff','Open Tickets'],
-                ['in_progress','#ff9f43','In Progress'],
-                ['waiting_customer','#a78bfa','Awaiting Reply'],
-                ['resolved','#00ff88','Resolved'],
-                ['closed','#8892a6','Closed'],
-                ['total','#e8eefc','Total Tickets'],
-            ] as [$k,$c,$l]): ?>
-            <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:10px;padding:18px 20px;position:relative;overflow:hidden;">
-                <div style="position:absolute;top:0;left:0;right:0;height:3px;background:<?= $c ?>;opacity:.4;"></div>
-                <div style="font-size:2rem;font-weight:700;color:<?= $c ?>;"><?= (int)($stats[$k] ?? 0) ?></div>
-                <div style="color:var(--text-secondary);font-size:.8rem;margin-top:4px;"><?= $l ?></div>
-            </div>
+                ['open', 'Open', '#00f0ff'],
+                ['in_progress', 'In Progress', '#ff9f43'],
+                ['waiting_customer', 'Waiting', '#a78bfa'],
+                ['resolved', 'Resolved', '#00ff88'],
+                ['closed', 'Closed', '#8892a6'],
+                ['total', 'Total', '#e8eefc'],
+            ] as [$k, $l, $c]): ?>
+                <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:10px;padding:12px 14px;">
+                    <div style="font-size:1.2rem;font-weight:700;color:<?= $c ?>;"><?= (int) ($stats[$k] ?? 0) ?></div>
+                    <div style="font-size:.76rem;color:var(--text-secondary);"><?= $l ?></div>
+                </div>
             <?php endforeach; ?>
         </div>
 
-        <!-- Resolution rate -->
-        <?php
-        $total    = (int)($stats['total'] ?? 0);
-        $resolved = (int)($stats['resolved'] ?? 0) + (int)($stats['closed'] ?? 0);
-        $rate     = $total > 0 ? round(($resolved / $total) * 100) : 0;
-        ?>
-        <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:22px 24px;margin-bottom:20px;">
-            <div style="font-weight:600;color:var(--text-primary);font-size:.95rem;margin-bottom:14px;display:flex;align-items:center;gap:8px;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="color:var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                Resolution Rate
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:18px;">
+            <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:10px;padding:14px;">
+                <div style="font-size:1.25rem;font-weight:700;color:#00ff88;"><?= (float) ($kpi['resolution_rate'] ?? 0) ?>%</div>
+                <div style="font-size:.77rem;color:var(--text-secondary);">Resolution Rate</div>
             </div>
-            <div style="display:flex;align-items:center;gap:16px;">
-                <div style="flex:1;background:rgba(255,255,255,.06);border-radius:8px;height:10px;overflow:hidden;">
-                    <div style="height:100%;width:<?= $rate ?>%;background:linear-gradient(90deg,#00f0ff,#00ff88);border-radius:8px;transition:width .5s;"></div>
-                </div>
-                <div style="font-size:1.5rem;font-weight:700;color:var(--green);min-width:60px;text-align:right;"><?= $rate ?>%</div>
+            <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:10px;padding:14px;">
+                <div style="font-size:1.25rem;font-weight:700;color:#ff9f43;"><?= (float) ($kpi['first_response_24h'] ?? 0) ?>%</div>
+                <div style="font-size:.77rem;color:var(--text-secondary);">Reply within 24h</div>
             </div>
-            <div style="color:var(--text-secondary);font-size:.8rem;margin-top:8px;"><?= $resolved ?> of <?= $total ?> tickets resolved or closed</div>
+            <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:10px;padding:14px;">
+                <div style="font-size:1.25rem;font-weight:700;color:#a78bfa;"><?= (int) ($kpi['active_workload'] ?? 0) ?></div>
+                <div style="font-size:.77rem;color:var(--text-secondary);">Active Workload</div>
+            </div>
+            <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:10px;padding:14px;">
+                <div style="font-size:1.25rem;font-weight:700;color:#ff6b6b;"><?= (int) ($kpi['unassigned_count'] ?? 0) ?></div>
+                <div style="font-size:.77rem;color:var(--text-secondary);">Unassigned Tickets</div>
+            </div>
         </div>
 
-        <div style="padding:20px 24px;background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;color:var(--text-secondary);font-size:.85rem;text-align:center;">
-            Advanced analytics (response times, SLA tracking, agent performance) — coming soon.
+        <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;overflow:auto;">
+            <table style="width:100%;border-collapse:collapse;">
+                <thead>
+                    <tr style="border-bottom:1px solid var(--border-color);">
+                        <th style="padding:10px 12px;text-align:left;font-size:.72rem;color:var(--text-secondary);">Ticket ID &amp; Subject</th>
+                        <th style="padding:10px 12px;text-align:left;font-size:.72rem;color:var(--text-secondary);">Customer</th>
+                        <th style="padding:10px 12px;text-align:left;font-size:.72rem;color:var(--text-secondary);">Status</th>
+                        <th style="padding:10px 12px;text-align:left;font-size:.72rem;color:var(--text-secondary);">Priority</th>
+                        <th style="padding:10px 12px;text-align:left;font-size:.72rem;color:var(--text-secondary);">Assigned</th>
+                        <th style="padding:10px 12px;text-align:left;font-size:.72rem;color:var(--text-secondary);">Updated</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (empty($tickets)): ?>
+                        <tr><td colspan="6" style="padding:28px;text-align:center;color:var(--text-secondary);">No tickets for selected filters.</td></tr>
+                    <?php else: foreach ($tickets as $ticket): ?>
+                        <tr style="border-bottom:1px solid var(--border-color);">
+                            <td style="padding:10px 12px;"><a href="/support/admin/ticket/<?= (int) $ticket['id'] ?>" style="color:var(--text-primary);text-decoration:none;">#<?= sprintf('%07d', (int) $ticket['id']) ?> · <?= htmlspecialchars($ticket['subject']) ?></a></td>
+                            <td style="padding:10px 12px;color:var(--text-secondary);"><?= htmlspecialchars($ticket['user_name'] ?? '—') ?></td>
+                            <td style="padding:10px 12px;color:var(--text-secondary);"><?= htmlspecialchars(ucwords(str_replace('_', ' ', $ticket['status'] ?? ''))) ?></td>
+                            <td style="padding:10px 12px;color:var(--text-secondary);"><?= htmlspecialchars(ucfirst($ticket['priority'] ?? '')) ?></td>
+                            <td style="padding:10px 12px;color:var(--text-secondary);"><?= htmlspecialchars($ticket['agent_name'] ?? 'Unassigned') ?></td>
+                            <td style="padding:10px 12px;color:var(--text-secondary);font-size:.78rem;"><?= !empty($ticket['updated_at']) ? date('M j, Y H:i', strtotime($ticket['updated_at'])) : '—' ?></td>
+                        </tr>
+                    <?php endforeach; endif; ?>
+                </tbody>
+            </table>
         </div>
-    </div><!-- /main content -->
-</div><!-- /support flex wrapper -->
-
+    </div>
+</div>
 <?php View::endSection(); ?>

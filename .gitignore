@@ -22,6 +22,9 @@ Thumbs.db
 # Dependencies (if using Composer)
 /vendor/
 
+# Node — exclude modules but commit compiled bundles
+resources/support/node_modules/
+
 # Backup view files (never commit)
 *-backup*.php
 *-backup-*.php

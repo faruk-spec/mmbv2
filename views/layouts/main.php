@@ -1431,13 +1431,20 @@ try {
                         <!-- Help & Support -->
                         <?php if (\Core\Auth::check()): ?>
                         <div class="nav-section" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-color);">
+                            <a href="/support/help" class="nav-item" style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.85rem;" onmouseover="this.style.background='rgba(0,240,255,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z"></path>
+                                    <path d="m9 12 2 2 4-4"></path>
+                                </svg>
+                                <span class="nav-text">My Tickets</span>
+                            </a>
                             <a href="/support" class="nav-item" style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.85rem;" onmouseover="this.style.background='rgba(0,240,255,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <circle cx="12" cy="12" r="10"></circle>
                                     <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
                                     <line x1="12" y1="17" x2="12.01" y2="17"></line>
                                 </svg>
-                                <span class="nav-text">Help & Support</span>
+                                <span class="nav-text">Help Center</span>
                             </a>
                         </div>
                         <?php endif; ?>
@@ -2417,7 +2424,7 @@ try {
             var div = document.createElement('div');
             var isUser = (m.sender_type === 'user' || m.sender_type === 'guest');
             div.style.cssText = 'max-width:80%;padding:8px 12px;border-radius:12px;font-size:.82rem;line-height:1.5;word-break:break-word;' +
-                (isUser ? 'align-self:flex-end;background:linear-gradient(135deg,rgba(0,240,255,.2),rgba(255,46,196,.15));margin-left:auto;' : 'align-self:flex-start;background:rgba(255,255,255,.06);');
+                (isUser ? 'align-self:flex-end;background:linear-gradient(135deg,rgba(0,240,255,.25),rgba(255,46,196,.2));margin-left:auto;' : 'align-self:flex-start;background:var(--bg-secondary,rgba(255,255,255,.06));border:1px solid var(--border-color,rgba(255,255,255,.08));');
             div.style.color = 'var(--text-primary,#e8eefc)';
             div.textContent = m.message;
             container.appendChild(div);

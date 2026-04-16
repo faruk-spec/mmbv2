@@ -99,7 +99,34 @@ class SupportController extends BaseController
                 foreach ($schema as $field) {
                     $fieldName = $field['name'] ?? '';
                     if ($fieldName === '') continue;
-                    $value = trim($_POST['custom_' . $fieldName] ?? '');
+                    $fieldType = $field['type'] ?? 'text';
+                    $value = '';
+                    if ($fieldType === 'checkbox') {
+                        $value = !empty($_POST['custom_' . $fieldName]) ? 'Yes' : 'No';
+                    } elseif ($fieldType === 'attachment') {
+                        $fileKey = 'custom_' . $fieldName;
+                        if (!empty($_FILES[$fileKey]) && (int) ($_FILES[$fileKey]['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK) {
+                            $allowed = ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'txt', 'zip', 'doc', 'docx', 'xlsx', 'csv'];
+                            $ext = strtolower(pathinfo($_FILES[$fileKey]['name'], PATHINFO_EXTENSION));
+                            if (in_array($ext, $allowed, true)) {
+                                $baseDir = BASE_PATH . '/storage/uploads/support_attachments';
+                                if (!is_dir($baseDir)) {
+                                    @mkdir($baseDir, 0755, true);
+                                }
+                                try {
+                                    $safeName = 'att_' . bin2hex(random_bytes(16)) . '.' . $ext;
+                                } catch (\Throwable $e) {
+                                    continue;
+                                }
+                                $target = rtrim($baseDir, '/') . '/' . $safeName;
+                                if (@move_uploaded_file($_FILES[$fileKey]['tmp_name'], $target)) {
+                                    $value = '/support-attachments/' . $safeName;
+                                }
+                            }
+                        }
+                    } else {
+                        $value = trim($_POST['custom_' . $fieldName] ?? '');
+                    }
                     if ($value !== '') {
                         $customFieldsData[$fieldName] = [
                             'label' => $field['label'] ?? $fieldName,
@@ -135,11 +162,7 @@ class SupportController extends BaseController
         ];
         $emailBody = $this->renderEmail('support-ticket-created', $emailVars);
         if ($emailBody !== null && !empty($user['email'])) {
-            try {
-                Mailer::send($user['email'], "Support Ticket #{$ticketId} Created: {$subject}", $emailBody);
-            } catch (\Throwable $e) {
-                // Mail failure is non-fatal
-            }
+            Mailer::send($user['email'], "Support Ticket #{$ticketId} Created: {$subject}", $emailBody);
         }
 
         // Notify all admins
@@ -283,12 +306,25 @@ class SupportController extends BaseController
 
         $filters = [];
         $status  = $_GET['status'] ?? '';
+        $priority = $_GET['priority'] ?? '';
+        $assignedTo = (int) ($_GET['assigned_to'] ?? 0);
+        $query = trim($_GET['q'] ?? '');
         if ($status !== '') {
             $filters['status'] = $status;
+        }
+        if ($priority !== '') {
+            $filters['priority'] = $priority;
+        }
+        if ($assignedTo > 0) {
+            $filters['assigned_to'] = $assignedTo;
+        }
+        if ($query !== '') {
+            $filters['query'] = $query;
         }
 
         $tickets = $this->model->getAllTickets($filters);
         $stats   = $this->model->getTicketStats();
+        $agents  = $this->model->getAssignableAgents();
 
         $currentPage = match($status) {
             'open'        => 'admin_open',
@@ -302,7 +338,11 @@ class SupportController extends BaseController
             'title'          => 'All Requests',
             'tickets'        => $tickets,
             'stats'          => $stats,
+            'agents'         => $agents,
             'statusFilter'   => $status,
+            'priorityFilter' => $priority,
+            'assignedFilter' => $assignedTo > 0 ? $assignedTo : '',
+            'searchQuery'    => $query,
             'currentPage'    => $currentPage,
             'isSupportAdmin' => true,
         ]);
@@ -334,14 +374,76 @@ class SupportController extends BaseController
     {
         $this->requireSupportAdmin();
 
+        $filters = [
+            'status'      => $_GET['status'] ?? '',
+            'priority'    => $_GET['priority'] ?? '',
+            'assigned_to' => (int) ($_GET['assigned_to'] ?? 0),
+            'from_date'   => $_GET['from_date'] ?? '',
+            'to_date'     => $_GET['to_date'] ?? '',
+            'query'       => trim($_GET['q'] ?? ''),
+        ];
+        $filters = array_filter($filters, static fn ($v) => ($v !== '' && $v !== null && $v !== 0));
+
+        $tickets = $this->model->getAllTickets($filters);
         $stats = $this->model->getTicketStats();
+        $agents = $this->model->getAssignableAgents();
+        $kpi = $this->buildKpi($tickets, $stats);
 
         $this->view('support/admin/reports', [
             'title'          => 'Reports',
+            'tickets'        => $tickets,
             'stats'          => $stats,
+            'agents'         => $agents,
+            'kpi'            => $kpi,
+            'filters'        => [
+                'status' => $_GET['status'] ?? '',
+                'priority' => $_GET['priority'] ?? '',
+                'assigned_to' => (string) ($_GET['assigned_to'] ?? ''),
+                'from_date' => $_GET['from_date'] ?? '',
+                'to_date' => $_GET['to_date'] ?? '',
+                'q' => trim($_GET['q'] ?? ''),
+            ],
             'currentPage'    => 'admin_reports',
             'isSupportAdmin' => true,
         ]);
+    }
+
+    public function adminExportReportsCsv(): void
+    {
+        $this->requireSupportAdmin();
+
+        $filters = [
+            'status'      => $_GET['status'] ?? '',
+            'priority'    => $_GET['priority'] ?? '',
+            'assigned_to' => (int) ($_GET['assigned_to'] ?? 0),
+            'from_date'   => $_GET['from_date'] ?? '',
+            'to_date'     => $_GET['to_date'] ?? '',
+            'query'       => trim($_GET['q'] ?? ''),
+        ];
+        $filters = array_filter($filters, static fn ($v) => ($v !== '' && $v !== null && $v !== 0));
+        $tickets = $this->model->getAllTickets($filters);
+
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="support-tickets-' . date('Ymd-His') . '.csv"');
+        $out = fopen('php://output', 'w');
+        fputcsv($out, ['Ticket ID', 'Subject', 'Customer', 'Customer Email', 'Status', 'Priority', 'Assigned Agent', 'Created At', 'Updated At', 'Last Reply At', 'Closed At']);
+        foreach ($tickets as $ticket) {
+            fputcsv($out, [
+                '#' . sprintf('%07d', (int) ($ticket['id'] ?? 0)),
+                $ticket['subject'] ?? '',
+                $ticket['user_name'] ?? '',
+                $ticket['user_email'] ?? '',
+                $ticket['status'] ?? '',
+                $ticket['priority'] ?? '',
+                $ticket['agent_name'] ?? '',
+                $ticket['created_at'] ?? '',
+                $ticket['updated_at'] ?? '',
+                $ticket['last_reply_at'] ?? '',
+                $ticket['closed_at'] ?? '',
+            ]);
+        }
+        fclose($out);
+        exit;
     }
 
     // -------------------------------------------------------------------------
@@ -360,11 +462,15 @@ class SupportController extends BaseController
         }
 
         $messages = $this->model->getTicketMessages($id, true); // include internal notes
+        $activities = $this->model->getTicketActivities($id);
+        $agents = $this->model->getAssignableAgents();
 
         $this->view('support/admin/ticket_view', [
             'title'          => 'Manage Ticket #' . sprintf('%07d', $id),
             'ticket'         => $ticket,
             'messages'       => $messages,
+            'activities'     => $activities,
+            'agents'         => $agents,
             'currentPage'    => 'admin_tickets',
             'isSupportAdmin' => true,
         ]);
@@ -414,14 +520,13 @@ class SupportController extends BaseController
             ];
             $emailBody = $this->renderEmail('support-ticket-reply', $emailVars);
             if ($emailBody !== null) {
-                try {
-                    Mailer::send(
-                        $ticket['user_email'],
-                        "Update on your Support Ticket #" . sprintf('%07d', $id),
-                        $emailBody
-                    );
-                } catch (\Throwable $e) {
-                    // Mail failure is non-fatal
+                $sent = Mailer::send(
+                    $ticket['user_email'],
+                    "Update on your Support Ticket #" . sprintf('%07d', $id),
+                    $emailBody
+                );
+                if (!$sent) {
+                    $this->flash('warning', 'Reply saved but email notification could not be sent.');
                 }
             }
 
@@ -455,47 +560,116 @@ class SupportController extends BaseController
 
         $validStatuses = ['open', 'in_progress', 'waiting_customer', 'resolved', 'closed'];
         $status        = $_POST['status'] ?? '';
+        $reason        = trim($_POST['status_reason'] ?? '');
         if (!in_array($status, $validStatuses, true)) {
             $this->flash('error', 'Invalid status.');
             $this->redirect('/support/admin/ticket/' . $id);
             return;
         }
+        if ($reason === '') {
+            $this->flash('error', 'Status change reason is required.');
+            $this->redirect('/support/admin/ticket/' . $id);
+            return;
+        }
 
         $this->model->updateTicketStatus($id, $status, Auth::id());
+        $this->model->addTicketActivity(
+            $id,
+            'status_note',
+            Auth::id(),
+            'Status note: ' . $reason,
+            ['status' => $status]
+        );
 
-        if (($status === 'closed' || $status === 'resolved') && !empty($ticket['user_email'])) {
+        if (!empty($ticket['user_email'])) {
             $ticketUrl  = $this->baseUrl() . '/support/view/' . $id;
-            $resolution = trim($_POST['resolution'] ?? ($status === 'resolved' ? 'Your issue has been resolved.' : 'Your ticket has been closed.'));
-            $emailVars  = [
-                'ticketId'   => $id,
-                'subject'    => $ticket['subject'],
-                'userName'   => $ticket['user_name'],
-                'ticketUrl'  => $ticketUrl,
-                'resolution' => $resolution,
-            ];
-            $emailBody = $this->renderEmail('support-ticket-closed', $emailVars);
+            $safeReason = mb_substr(trim(strip_tags($reason)), 0, 500);
+
+            if ($status === 'closed' || $status === 'resolved') {
+                $emailVars = [
+                    'ticketId'   => $id,
+                    'subject'    => $ticket['subject'],
+                    'userName'   => $ticket['user_name'],
+                    'ticketUrl'  => $ticketUrl,
+                    'resolution' => $safeReason !== '' ? $safeReason : 'Your issue has been resolved.',
+                ];
+                $emailTemplate = 'support-ticket-closed';
+            } else {
+                $emailVars = [
+                    'ticketId'  => $id,
+                    'subject'   => $ticket['subject'],
+                    'userName'  => $ticket['user_name'],
+                    'ticketUrl' => $ticketUrl,
+                    'status'    => $status,
+                    'note'      => $safeReason,
+                ];
+                $emailTemplate = 'support-ticket-status-update';
+            }
+
+            $emailBody = $this->renderEmail($emailTemplate, $emailVars);
             if ($emailBody !== null) {
-                try {
-                    Mailer::send(
-                        $ticket['user_email'],
-                        "Support Ticket #" . sprintf('%07d', $id) . ' ' . ucfirst($status),
-                        $emailBody
-                    );
-                } catch (\Throwable $e) {
-                    // Non-fatal
+                $statusLabel = ucwords(str_replace('_', ' ', $status));
+                $sent = Mailer::send(
+                    $ticket['user_email'],
+                    "Support Ticket #" . sprintf('%07d', $id) . " — Status: {$statusLabel}",
+                    $emailBody
+                );
+                if (!$sent) {
+                    $this->flash('warning', 'Status updated but email notification could not be sent.');
                 }
             }
 
             Notification::send(
                 (int) $ticket['user_id'],
                 'support_ticket_' . $status,
-                "Your support ticket #" . sprintf('%07d', $id) . " has been {$status}.",
+                "Your support ticket #" . sprintf('%07d', $id) . " has been updated to: " . ucwords(str_replace('_', ' ', $status)) . ($safeReason !== '' ? ". Note: {$safeReason}" : ''),
                 ['ticket_id' => $id, 'url' => '/support/view/' . $id]
             );
         }
 
         $this->flash('success', "Status updated to '" . ucfirst(str_replace('_', ' ', $status)) . "'.");
         $this->redirect('/support/admin/ticket/' . $id);
+    }
+
+    public function adminAssignTicketAgent(int $id): void
+    {
+        $this->requireSupportAdmin();
+        $this->validateCsrf();
+
+        $ticket = $this->model->getTicketById($id);
+        $backUrl = '/support/admin/ticket/' . $id;
+        if (!empty($_SERVER['HTTP_REFERER'])) {
+            $refererPath = parse_url($_SERVER['HTTP_REFERER'], PHP_URL_PATH);
+            if (is_string($refererPath) && str_starts_with($refererPath, '/support/admin/')) {
+                $backUrl = $refererPath;
+            }
+        }
+
+        if (!$ticket) {
+            $this->flash('error', 'Ticket not found.');
+            $this->redirect('/support/admin/tickets');
+            return;
+        }
+
+        $agentId = (int) ($_POST['assigned_to'] ?? 0);
+        $agents = $this->model->getAssignableAgents();
+        $validIds = array_map(static fn ($a) => (int) ($a['id'] ?? 0), $agents);
+
+        if ($agentId <= 0 || !in_array($agentId, $validIds, true)) {
+            $this->flash('error', 'Please select a valid support agent.');
+            $this->redirect($backUrl);
+            return;
+        }
+
+        $this->model->assignTicketAgent($id, $agentId, Auth::id());
+        Notification::send(
+            (int) $ticket['user_id'],
+            'support_ticket_assigned',
+            "Your ticket #" . sprintf('%07d', $id) . ' has been assigned to a support agent.',
+            ['ticket_id' => $id, 'url' => '/support/view/' . $id]
+        );
+        $this->flash('success', 'Ticket assignment updated.');
+        $this->redirect($backUrl);
     }
 
     // -------------------------------------------------------------------------
@@ -573,5 +747,36 @@ class SupportController extends BaseController
         extract($vars, EXTR_SKIP);
         include $file;
         return ob_get_clean() ?: null;
+    }
+
+    private function buildKpi(array $tickets, array $stats): array
+    {
+        $total = (int) ($stats['total'] ?? 0);
+        $resolved = (int) ($stats['resolved'] ?? 0) + (int) ($stats['closed'] ?? 0);
+        $resolutionRate = $total > 0 ? round(($resolved / $total) * 100, 1) : 0.0;
+        $unassigned = 0;
+        $repliedWithin24h = 0;
+        $firstReplyMap = $this->model->getFirstAgentReplyMap(array_map(static fn ($t) => (int) ($t['id'] ?? 0), $tickets));
+        foreach ($tickets as $ticket) {
+            if (empty($ticket['assigned_to'])) {
+                $unassigned++;
+            }
+            $firstAgentReplyAt = $firstReplyMap[(int) ($ticket['id'] ?? 0)] ?? null;
+            if (!empty($firstAgentReplyAt) && !empty($ticket['created_at'])) {
+                $first = strtotime($ticket['created_at']);
+                $reply = strtotime($firstAgentReplyAt);
+                if ($first && $reply && ($reply - $first) <= 86400) {
+                    $repliedWithin24h++;
+                }
+            }
+        }
+        $responseRate24h = $total > 0 ? round(($repliedWithin24h / $total) * 100, 1) : 0.0;
+
+        return [
+            'resolution_rate' => $resolutionRate,
+            'unassigned_count' => $unassigned,
+            'first_response_24h' => $responseRate24h,
+            'active_workload' => (int) ($stats['open'] ?? 0) + (int) ($stats['in_progress'] ?? 0) + (int) ($stats['waiting_customer'] ?? 0),
+        ];
     }
 }

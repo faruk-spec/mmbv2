@@ -25,7 +25,7 @@ View::extend('main');
             <div style="display:flex;flex-direction:column;gap:10px;">
                 <?php
                 $faqs = [
-                    ['q'=>'How do I create a support ticket?','a'=>'Go to <a href="/support/create" style="color:var(--cyan);">Create Ticket</a> in the sidebar, fill in the subject and description, choose a priority, and click Submit.'],
+                    ['q'=>'How do I create a support ticket?','a'=>'Go to <a href="/support/new" style="color:var(--cyan);">Create Ticket</a> in the sidebar, fill in the subject and description, choose a priority, and click Submit.'],
                     ['q'=>'How long does it take to get a response?','a'=>'Our team typically responds within 24 hours on business days. Urgent tickets are prioritized and handled faster.'],
                     ['q'=>'Can I reply to a ticket after submitting?','a'=>'Yes. Open the ticket from <a href="/support" style="color:var(--cyan);">My Tickets</a> and use the reply form at the bottom of the conversation thread.'],
                     ['q'=>'What does "Waiting on Customer" status mean?','a'=>'It means our agent has responded and is waiting for more information from you. Please check the ticket and reply.'],
@@ -52,7 +52,7 @@ View::extend('main');
                 <div style="font-weight:600;color:var(--text-primary);margin-bottom:8px;">Still have questions?</div>
                 <p style="color:var(--text-secondary);font-size:.87rem;margin:0 0 14px;">Our support team is happy to help.</p>
                 <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-                    <a href="/support/create" style="display:inline-flex;align-items:center;gap:7px;padding:9px 18px;background:linear-gradient(135deg,var(--cyan),var(--magenta));border-radius:7px;color:white;font-weight:600;text-decoration:none;font-size:.875rem;">
+                    <a href="/support/new" style="display:inline-flex;align-items:center;gap:7px;padding:9px 18px;background:linear-gradient(135deg,var(--cyan),var(--magenta));border-radius:7px;color:white;font-weight:600;text-decoration:none;font-size:.875rem;">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                         Open a Ticket
                     </a>

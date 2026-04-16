@@ -436,3 +436,17 @@ $router->post('/admin/support/templates/item/{id}/delete', 'Admin\\SupportAdminC
 $router->get('/admin/support/users', 'Admin\\SupportAdminController@userAccess', ['auth', 'admin']);
 $router->post('/admin/support/agents/add', 'Admin\\SupportAdminController@addAgent', ['auth', 'admin']);
 $router->post('/admin/support/agents/{id}/remove', 'Admin\\SupportAdminController@removeAgent', ['auth', 'admin']);
+
+// ── Dynamic Ticket Template Builder ──────────────────────────────────────────
+// Groups
+$router->get('/admin/support/groups',          'Admin\\SupportTemplateAdminController@groups',       ['auth', 'admin']);
+$router->post('/admin/support/groups/create',  'Admin\\SupportTemplateAdminController@createGroup',  ['auth', 'admin']);
+$router->post('/admin/support/groups/{id}/update', 'Admin\\SupportTemplateAdminController@updateGroup', ['auth', 'admin']);
+$router->post('/admin/support/groups/{id}/delete', 'Admin\\SupportTemplateAdminController@deleteGroup', ['auth', 'admin']);
+// Categories (under a group)
+$router->get('/admin/support/groups/{group_id}/categories',        'Admin\\SupportTemplateAdminController@categories',      ['auth', 'admin']);
+$router->post('/admin/support/groups/{group_id}/categories/create','Admin\\SupportTemplateAdminController@createCategory',  ['auth', 'admin']);
+$router->post('/admin/support/categories/{id}/update',             'Admin\\SupportTemplateAdminController@updateCategory',  ['auth', 'admin']);
+$router->post('/admin/support/categories/{id}/delete',             'Admin\\SupportTemplateAdminController@deleteCategory',  ['auth', 'admin']);
+// Form Builder (drag-and-drop)
+$router->get('/admin/support/builder/{category_id}',               'Admin\\SupportTemplateAdminController@builder',         ['auth', 'admin']);

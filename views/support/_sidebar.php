@@ -56,7 +56,8 @@ if (!function_exists('supportNavSection')) {
         <?= supportNavItem('/support/faq', 'circle-question', 'FAQ', $page === 'faq') ?>
 
         <?= supportNavSection('Management') ?>
-        <?= supportNavItem('/admin/support/templates', 'folder-tree', 'Templates', $page === 'admin_templates') ?>
+        <?= supportNavItem('/admin/support/templates', 'folder-tree', 'Legacy Templates', $page === 'admin_templates') ?>
+        <?= supportNavItem('/admin/support/groups', 'layer-group', 'Template Groups', $page === 'admin_groups') ?>
         <?= supportNavItem('/admin/support/users', 'user-shield', 'Agents & Users', $page === 'admin_users') ?>
 
         <?= supportNavSection('Reports') ?>
@@ -65,7 +66,7 @@ if (!function_exists('supportNavSection')) {
     <?php else: ?>
         <?= supportNavSection('My Support') ?>
         <?= supportNavItem('/support', 'gauge', 'Dashboard', $page === 'tickets' || $page === 'dashboard') ?>
-        <?= supportNavItem('/support/create', 'plus-circle', 'Create Ticket', $page === 'create') ?>
+        <?= supportNavItem('/support/new', 'plus-circle', 'Create Ticket', $page === 'create' || $page === 'create_wizard') ?>
 
         <?= supportNavSection('Resources') ?>
         <?= supportNavItem('/support/faq', 'circle-question', 'FAQ', $page === 'faq') ?>
