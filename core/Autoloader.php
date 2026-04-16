@@ -14,6 +14,7 @@ spl_autoload_register(function ($class) {
         'Core\\' => 'core/',
         'Controllers\\' => 'controllers/',
         'Projects\\' => 'projects/',
+        'Models\\' => 'models/',
     ];
     
     // Check each namespace mapping

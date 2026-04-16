@@ -14,14 +14,56 @@ class Mailer
     private static ?array $config = null;
     
     /**
-     * Get mail configuration
+     * Get mail configuration.
+     * First checks the admin-configured mail_provider_configs DB table for an active provider.
+     * Falls back to config/mail.php if no active DB provider is found.
      */
     private static function getConfig(): array
     {
         if (self::$config === null) {
-            self::$config = require BASE_PATH . '/config/mail.php';
+            self::$config = self::loadConfig();
         }
         return self::$config;
+    }
+
+    private static function loadConfig(): array
+    {
+        // Try to load from DB-stored active provider (configured via Admin → Mail Config)
+        try {
+            $db  = Database::getInstance();
+            $row = $db->fetch(
+                "SELECT * FROM mail_provider_configs WHERE is_active = 1 LIMIT 1"
+            );
+            if ($row && !empty($row['smtp_host'])) {
+                return [
+                    'driver' => 'smtp',
+                    'smtp'   => [
+                        'host'       => $row['smtp_host'],
+                        'port'       => (int)($row['smtp_port'] ?? 587),
+                        'encryption' => $row['smtp_encryption'] ?? 'tls',
+                        'username'   => $row['smtp_username'] ?? '',
+                        'password'   => $row['smtp_password'] ?? '',
+                    ],
+                    'from' => [
+                        'address' => $row['from_email'] ?? ($row['smtp_username'] ?? ''),
+                        'name'    => $row['from_name'] ?? 'Support',
+                    ],
+                ];
+            }
+        } catch (\Exception $e) {
+            // DB not ready or table doesn't exist; fall through to file config
+            Logger::warning('Mailer: could not load DB mail config — ' . $e->getMessage());
+        }
+        // Fall back to static file config
+        return require BASE_PATH . '/config/mail.php';
+    }
+
+    /**
+     * Reset cached config (useful after admin saves new mail settings)
+     */
+    public static function resetConfig(): void
+    {
+        self::$config = null;
     }
     
     /**
@@ -48,99 +90,154 @@ class Mailer
     private static function sendViaSMTP(string $to, string $subject, string $body, array $options = []): bool
     {
         $config = self::getConfig();
-        $smtp = $config['smtp'];
-        $from = $options['from'] ?? $config['from'];
-        
+        $smtp   = $config['smtp'];
+        $from   = $options['from'] ?? $config['from'];
+
+        $enc  = strtolower($smtp['encryption'] ?? 'tls');
+        $host = $smtp['host'];
+        $port = (int)($smtp['port'] ?? 587);
+
         try {
-            // Create socket connection
-            $socket = fsockopen(
-                ($smtp['encryption'] === 'ssl' ? 'ssl://' : '') . $smtp['host'],
-                $smtp['port'],
-                $errno,
-                $errstr,
-                30
+            // ── Connect ────────────────────────────────────────────────
+            $transport = ($enc === 'ssl') ? "ssl://{$host}" : "tcp://{$host}";
+            $errno = 0; $errstr = '';
+            $socket = stream_socket_client(
+                "{$transport}:{$port}",
+                $errno, $errstr, 30,
+                STREAM_CLIENT_CONNECT
             );
-            
+
             if (!$socket) {
-                Logger::error("SMTP connection failed: $errstr ($errno)");
+                Logger::error("SMTP connect failed to {$host}:{$port} — {$errstr} ({$errno})");
                 return false;
             }
-            
-            // Read server greeting
-            self::smtpRead($socket);
-            
-            // Send EHLO
-            self::smtpCommand($socket, "EHLO " . gethostname());
-            
-            // Start TLS if required
-            if ($smtp['encryption'] === 'tls') {
-                self::smtpCommand($socket, "STARTTLS");
-                stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
-                self::smtpCommand($socket, "EHLO " . gethostname());
+
+            stream_set_timeout($socket, 30);
+
+            // ── Helpers ────────────────────────────────────────────────
+            $read = function () use ($socket): string {
+                $resp = '';
+                while (($line = fgets($socket, 1024)) !== false) {
+                    $resp .= $line;
+                    if (strlen($line) >= 4 && $line[3] === ' ') {
+                        break; // last line of (multi-line) response
+                    }
+                }
+                return $resp;
+            };
+
+            $cmd = function (string $command) use ($socket, $read): string {
+                fwrite($socket, $command . "\r\n");
+                return $read();
+            };
+
+            $code = fn(string $r): int => (int)substr(trim($r), 0, 3);
+
+            // ── Greeting ───────────────────────────────────────────────
+            $resp = $read();
+            if ($code($resp) !== 220) {
+                Logger::error("SMTP bad greeting: " . trim($resp));
+                fclose($socket);
+                return false;
             }
-            
-            // Authenticate
+
+            // ── EHLO ───────────────────────────────────────────────────
+            $resp = $cmd('EHLO ' . (gethostname() ?: 'localhost'));
+            if ($code($resp) !== 250) {
+                $resp = $cmd('HELO ' . (gethostname() ?: 'localhost'));
+            }
+
+            // ── STARTTLS ───────────────────────────────────────────────
+            if ($enc === 'tls') {
+                $resp = $cmd('STARTTLS');
+                if ($code($resp) !== 220) {
+                    Logger::error("SMTP STARTTLS failed: " . trim($resp));
+                    fclose($socket);
+                    return false;
+                }
+                if (!stream_socket_enable_crypto($socket, true,
+                        STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT | STREAM_CRYPTO_METHOD_TLSv1_1_CLIENT | STREAM_CRYPTO_METHOD_TLS_CLIENT)) {
+                    Logger::error('SMTP TLS handshake failed');
+                    fclose($socket);
+                    return false;
+                }
+                // Re-issue EHLO after STARTTLS
+                $cmd('EHLO ' . (gethostname() ?: 'localhost'));
+            }
+
+            // ── Auth ───────────────────────────────────────────────────
             if (!empty($smtp['username'])) {
-                self::smtpCommand($socket, "AUTH LOGIN");
-                self::smtpCommand($socket, base64_encode($smtp['username']));
-                self::smtpCommand($socket, base64_encode($smtp['password']));
+                $resp = $cmd('AUTH LOGIN');
+                if ($code($resp) !== 334) {
+                    Logger::error('SMTP AUTH LOGIN rejected: ' . trim($resp));
+                    fclose($socket);
+                    return false;
+                }
+                $resp = $cmd(base64_encode($smtp['username']));
+                if ($code($resp) !== 334) {
+                    Logger::error('SMTP auth username rejected: ' . trim($resp));
+                    fclose($socket);
+                    return false;
+                }
+                $resp = $cmd(base64_encode($smtp['password'] ?? ''));
+                if ($code($resp) !== 235) {
+                    Logger::error('SMTP auth password rejected: ' . trim($resp));
+                    fclose($socket);
+                    return false;
+                }
             }
-            
-            // Set sender and recipient
-            self::smtpCommand($socket, "MAIL FROM:<{$from['address']}>");
-            self::smtpCommand($socket, "RCPT TO:<$to>");
-            
-            // Send data
-            self::smtpCommand($socket, "DATA");
-            
-            // Build message
-            $headers = [
-                "From: {$from['name']} <{$from['address']}>",
-                "To: $to",
-                "Subject: $subject",
+
+            // ── Envelope ───────────────────────────────────────────────
+            $resp = $cmd("MAIL FROM:<{$from['address']}>");
+            if ($code($resp) !== 250) {
+                Logger::error('SMTP MAIL FROM rejected: ' . trim($resp));
+                fclose($socket); return false;
+            }
+            $resp = $cmd("RCPT TO:<{$to}>");
+            if ($code($resp) !== 250 && $code($resp) !== 251) {
+                Logger::error('SMTP RCPT TO rejected: ' . trim($resp));
+                fclose($socket); return false;
+            }
+
+            // ── DATA ───────────────────────────────────────────────────
+            $resp = $cmd('DATA');
+            if ($code($resp) !== 354) {
+                Logger::error('SMTP DATA rejected: ' . trim($resp));
+                fclose($socket); return false;
+            }
+
+            $msgId = sprintf('<%s@%s>', md5(uniqid('', true)), (gethostname() ?: 'localhost'));
+            $hdrs  = implode("\r\n", [
+                "Message-ID: {$msgId}",
+                "From: =?UTF-8?B?" . base64_encode($from['name']) . "?= <{$from['address']}>",
+                "To: {$to}",
+                "Subject: =?UTF-8?B?" . base64_encode($subject) . "?=",
                 "MIME-Version: 1.0",
                 "Content-Type: text/html; charset=UTF-8",
-                "Date: " . date('r')
-            ];
-            
-            $message = implode("\r\n", $headers) . "\r\n\r\n" . $body . "\r\n.";
-            self::smtpCommand($socket, $message);
-            
-            // Quit
-            self::smtpCommand($socket, "QUIT");
+                "Content-Transfer-Encoding: base64",
+                "Date: " . date('r'),
+                "X-Mailer: MMB Mailer/1.0",
+            ]);
+            $encodedBody = chunk_split(base64_encode($body));
+            $dataPayload = $hdrs . "\r\n\r\n" . $encodedBody . "\r\n.";
+
+            $resp = $cmd($dataPayload);
+            if ($code($resp) !== 250) {
+                Logger::error('SMTP message rejected: ' . trim($resp));
+                fclose($socket); return false;
+            }
+
+            // ── Quit ───────────────────────────────────────────────────
+            fwrite($socket, "QUIT\r\n");
             fclose($socket);
-            
-            Logger::info("Email sent to $to: $subject");
+
+            Logger::info("Email sent via SMTP to {$to}: {$subject}");
             return true;
-            
-        } catch (\Exception $e) {
-            Logger::error("SMTP error: " . $e->getMessage());
+
+        } catch (\Throwable $e) {
+            Logger::error('SMTP exception: ' . $e->getMessage());
             return false;
         }
-    }
-    
-    /**
-     * Send SMTP command
-     */
-    private static function smtpCommand($socket, string $command): string
-    {
-        fwrite($socket, $command . "\r\n");
-        return self::smtpRead($socket);
-    }
-    
-    /**
-     * Read SMTP response
-     */
-    private static function smtpRead($socket): string
-    {
-        $response = '';
-        while ($line = fgets($socket, 515)) {
-            $response .= $line;
-            if (substr($line, 3, 1) === ' ') {
-                break;
-            }
-        }
-        return $response;
     }
     
     /**

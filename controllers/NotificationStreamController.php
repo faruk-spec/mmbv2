@@ -51,7 +51,7 @@ class NotificationStreamController extends BaseController
         try {
             $db   = Database::getInstance();
             $rows = $db->fetchAll(
-                "SELECT * FROM notifications WHERE user_id = ? AND id > ? ORDER BY id ASC LIMIT 10",
+                "SELECT * FROM notifications WHERE user_id = ? AND id > ? AND is_read = 0 ORDER BY id ASC LIMIT 10",
                 [$userId, $lastId]
             );
 

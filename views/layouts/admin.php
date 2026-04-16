@@ -390,8 +390,10 @@
         }
         
         .admin-nav-search-item {
-            display: block;
-            padding: 10px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 14px;
             color: var(--text-primary);
             border-bottom: 1px solid var(--border-color);
             font-size: 13px;
@@ -405,6 +407,24 @@
         .admin-nav-search-item:hover {
             background: var(--hover-bg);
             color: var(--cyan);
+        }
+
+        .admin-nav-search-item .search-section-badge {
+            font-size: 10px;
+            font-weight: 600;
+            padding: 1px 6px;
+            border-radius: 4px;
+            background: color-mix(in srgb, var(--cyan) 12%, transparent);
+            color: var(--cyan);
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .admin-nav-search-item .search-item-label {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         
         .mobile-menu-btn {
@@ -1080,6 +1100,44 @@
                 <?php endif; ?>
 
 
+
+                <!-- Support System -->
+                <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('support')): ?>
+                <div class="menu-section">
+                    <div class="menu-section-title">Customer Support</div>
+                    <div class="menu-item menu-dropdown <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/support') === 0 ? 'open' : '' ?>">
+                        <div class="menu-dropdown-toggle <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/support') === 0 ? 'active' : '' ?>">
+                            <div class="left">
+                                <i class="fas fa-headset"></i>
+                                <span>Support</span>
+                            </div>
+                            <i class="fas fa-chevron-down arrow"></i>
+                        </div>
+                        <div class="menu-dropdown-content">
+                            <a href="/admin/support" class="menu-link <?= ($_SERVER['REQUEST_URI'] ?? '') === '/admin/support' ? 'active' : '' ?>">
+                                <i class="fas fa-gauge-high"></i>
+                                <span>Overview</span>
+                            </a>
+                            <a href="/admin/support/tickets" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/support/tickets') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-ticket"></i>
+                                <span>Support Tickets</span>
+                            </a>
+                            <a href="/admin/support/live-chats" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/support/live-chats') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-comments"></i>
+                                <span>Live Chats</span>
+                            </a>
+                            <a href="/admin/support/templates" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/support/templates') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-folder-tree"></i>
+                                <span>Templates</span>
+                            </a>
+                            <a href="/admin/support/users" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/support/users') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-users"></i>
+                                <span>User Access</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <?php endif; ?>
 
                 <!-- Platform Plans (Universal Multi-App) -->
                 <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('platform_plans')): ?>
@@ -2475,17 +2533,41 @@
         // Live search for sidebar options
         const adminNavSearchInput = document.getElementById('adminNavSearchInput');
         const adminNavSearchResults = document.getElementById('adminNavSearchResults');
-        const ADMIN_NAV_SEARCH_MAX_RESULTS = 10;
+        const ADMIN_NAV_SEARCH_MAX_RESULTS = 12;
         const ADMIN_NAV_SEARCH_DEBOUNCE_MS = 120;
         if (adminNavSearchInput && adminNavSearchResults) {
             const searchWrap = adminNavSearchInput.closest('.admin-nav-search');
             let adminNavSearchTimer = null;
-            const navLinks = Array.from(document.querySelectorAll('#sidebar .menu-link'))
-                .map(link => ({
-                    href: link.getAttribute('href') || '#',
-                    label: (link.textContent || '').replace(/\s+/g, ' ').trim()
-                }))
-                .filter(item => item.href !== '#' && item.label.length > 0);
+
+            // Build enriched link list: each entry gets a section label from its closest
+            // .menu-section-title or .menu-dropdown-toggle parent.
+            const navLinks = [];
+            document.querySelectorAll('#sidebar .menu-link').forEach(link => {
+                const href  = link.getAttribute('href') || '#';
+                const label = (link.textContent || '').replace(/\s+/g, ' ').trim();
+                if (href === '#' || !label) return;
+
+                // Walk up to find a dropdown toggle or section title
+                let section = '';
+                let el = link.parentElement;
+                while (el && el.id !== 'sidebar') {
+                    // Inside a menu-dropdown-content → get the toggle span text
+                    if (el.classList.contains('menu-dropdown-content')) {
+                        const toggle = el.previousElementSibling;
+                        if (toggle && toggle.classList.contains('menu-dropdown-toggle')) {
+                            const span = toggle.querySelector('.left span');
+                            if (span) { section = span.textContent.trim(); break; }
+                        }
+                    }
+                    // Inside a menu-section → get the section title
+                    if (el.classList.contains('menu-section')) {
+                        const title = el.querySelector(':scope > .menu-section-title');
+                        if (title) { section = title.textContent.trim(); break; }
+                    }
+                    el = el.parentElement;
+                }
+                navLinks.push({ href, label, section });
+            });
 
             adminNavSearchInput.addEventListener('input', function() {
                 clearTimeout(adminNavSearchTimer);
@@ -2498,18 +2580,28 @@
                         return;
                     }
 
-                    const matched = navLinks.filter(item => item.label.toLowerCase().includes(q)).slice(0, ADMIN_NAV_SEARCH_MAX_RESULTS);
+                    const matched = navLinks.filter(item =>
+                        item.label.toLowerCase().includes(q) ||
+                        item.section.toLowerCase().includes(q)
+                    ).slice(0, ADMIN_NAV_SEARCH_MAX_RESULTS);
+
                     if (!matched.length) {
                         const empty = document.createElement('div');
                         empty.className = 'admin-nav-search-item';
-                        empty.textContent = 'No matching menu items';
+                        empty.innerHTML = '<span class="search-item-label" style="color:var(--text-secondary)">No matching menu items</span>';
                         adminNavSearchResults.appendChild(empty);
                     } else {
                         matched.forEach(item => {
                             const a = document.createElement('a');
                             a.className = 'admin-nav-search-item';
                             a.href = item.href;
-                            a.textContent = item.label;
+                            if (item.section) {
+                                a.innerHTML =
+                                    '<span class="search-section-badge">' + escHtml(item.section) + '</span>' +
+                                    '<span class="search-item-label">' + escHtml(item.label) + '</span>';
+                            } else {
+                                a.innerHTML = '<span class="search-item-label">' + escHtml(item.label) + '</span>';
+                            }
                             adminNavSearchResults.appendChild(a);
                         });
                     }
@@ -2522,6 +2614,10 @@
                     adminNavSearchResults.style.display = 'none';
                 }
             });
+
+            function escHtml(s) {
+                return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+            }
         }
     </script>
     <script>

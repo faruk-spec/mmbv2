@@ -1428,10 +1428,10 @@ try {
                             </a>
                         </div>
                         
-                        <!-- Help Section (Admin Only) -->
-                        <?php if (in_array(Auth::user()['role'] ?? '', ['admin', 'super_admin'])): ?>
+                        <!-- Help & Support -->
+                        <?php if (\Core\Auth::check()): ?>
                         <div class="nav-section" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-color);">
-                            <a href="/help" class="nav-item" style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.85rem;" onmouseover="this.style.background='rgba(0,240,255,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
+                            <a href="/support" class="nav-item" style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.85rem;" onmouseover="this.style.background='rgba(0,240,255,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <circle cx="12" cy="12" r="10"></circle>
                                     <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
@@ -1634,9 +1634,9 @@ try {
                             </svg>
                             Need Help?
                         </h3>
-                        <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 10px; line-height: 1.4;">Get assistance with your account or projects.</p>
-                        <a href="/help" style="display: inline-block; padding: 6px 12px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; text-decoration: none; color: var(--text-primary); font-size: 0.75rem; font-weight: 600; transition: all 0.3s;">
-                            View Documentation
+                        <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 10px; line-height: 1.4;">Raise a ticket or view your support requests.</p>
+                        <a href="/support" style="display: inline-block; padding: 6px 12px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; text-decoration: none; color: var(--text-primary); font-size: 0.75rem; font-weight: 600; transition: all 0.3s;">
+                            My Support Tickets
                         </a>
                     </div>
                 </aside>
@@ -1735,12 +1735,13 @@ try {
                         opacity: 1;
                     }
                     
-                    /* Show FAB toggle button */
+                    /* Show FAB toggle button — placed on the LEFT to avoid overlapping the chat widget */
                     .mobile-sidebar-toggle {
                         display: flex !important;
                         position: fixed;
                         bottom: 20px;
-                        right: 20px;
+                        left: 20px;
+                        right: auto;
                         width: 56px;
                         height: 56px;
                         background: linear-gradient(135deg, var(--cyan), var(--magenta));
@@ -2258,5 +2259,178 @@ try {
 })();
 </script>
 <style>@keyframes sseSlideIn{from{transform:translateY(10px);opacity:0}to{transform:translateY(0);opacity:1}}</style>
+<style>
+#support-chat-widget { position:fixed; bottom:24px; right:24px; z-index:10000; }
+#support-chat-panel  { display:none; position:absolute; bottom:70px; right:0; width:340px; background:var(--bg-card,#0f0f18); border:1px solid var(--border-color,rgba(255,255,255,.1)); border-radius:16px; box-shadow:0 8px 32px rgba(0,0,0,.5); overflow:hidden; flex-direction:column; }
+@media (max-width:480px) {
+    #support-chat-widget { bottom:16px; right:12px; }
+    #support-chat-panel  { position:fixed; bottom:80px; right:8px; left:8px; width:auto; border-radius:14px; }
+}
+</style>
+<!-- Support Live Chat Widget -->
+<div id="support-chat-widget">
+    <!-- Chat bubble button -->
+    <button id="support-chat-btn" onclick="toggleSupportChat()" style="width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#00f0ff,#ff2ec4);border:none;cursor:pointer;box-shadow:0 4px 20px rgba(0,240,255,0.4);display:flex;align-items:center;justify-content:center;font-size:22px;color:white;transition:transform .2s;" title="Live Support">
+        <i class="fas fa-headset"></i>
+    </button>
+    <!-- Chat panel -->
+    <div id="support-chat-panel">
+        <!-- Header -->
+        <div style="background:linear-gradient(135deg,#00f0ff22,#ff2ec422);padding:14px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color,rgba(255,255,255,.08));">
+            <div style="display:flex;align-items:center;gap:8px;font-weight:600;color:var(--text-primary,#e8eefc);font-size:.95rem;">
+                <i class="fas fa-headset" style="color:#00f0ff;"></i> Live Support
+            </div>
+            <button onclick="toggleSupportChat()" style="background:none;border:none;color:var(--text-secondary,#8892a6);cursor:pointer;font-size:16px;"><i class="fas fa-times"></i></button>
+        </div>
+        <!-- Start form (shown when no active chat) -->
+        <div id="chat-start-form" style="padding:20px;">
+            <p style="color:var(--text-secondary,#8892a6);font-size:.85rem;margin-bottom:16px;">Chat with our support team or AI assistant.</p>
+            <?php if (!\Core\Auth::check()): ?>
+            <input type="text" id="chat-guest-name" placeholder="Your name" style="width:100%;padding:10px;border:1px solid var(--border-color,rgba(255,255,255,.1));border-radius:8px;background:var(--bg-secondary,#0c0c12);color:var(--text-primary,#e8eefc);margin-bottom:10px;font-size:.85rem;box-sizing:border-box;">
+            <input type="email" id="chat-guest-email" placeholder="Your email" style="width:100%;padding:10px;border:1px solid var(--border-color,rgba(255,255,255,.1));border-radius:8px;background:var(--bg-secondary,#0c0c12);color:var(--text-primary,#e8eefc);margin-bottom:10px;font-size:.85rem;box-sizing:border-box;">
+            <?php endif; ?>
+            <button onclick="startSupportChat()" style="width:100%;padding:10px;background:linear-gradient(135deg,#00f0ff,#ff2ec4);border:none;border-radius:8px;color:white;font-weight:600;cursor:pointer;font-size:.9rem;">Start Chat</button>
+        </div>
+        <!-- Messages area -->
+        <div id="chat-messages-area" style="display:none;flex-direction:column;height:300px;">
+            <div id="chat-messages" style="flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;height:240px;"></div>
+            <!-- Message input -->
+            <div style="padding:10px;border-top:1px solid var(--border-color,rgba(255,255,255,.08));display:flex;gap:8px;">
+                <input type="text" id="chat-input" placeholder="Type a message..." style="flex:1;padding:8px 12px;border:1px solid var(--border-color,rgba(255,255,255,.1));border-radius:20px;background:var(--bg-secondary,#0c0c12);color:var(--text-primary,#e8eefc);font-size:.85rem;" onkeydown="if(event.key==='Enter')sendChatMessage()">
+                <button onclick="sendChatMessage()" style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#00f0ff,#ff2ec4);border:none;cursor:pointer;color:white;font-size:14px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-paper-plane"></i></button>
+            </div>
+            <!-- Close chat button -->
+            <div style="padding:6px 10px;border-top:1px solid var(--border-color,rgba(255,255,255,.08));text-align:center;">
+                <button onclick="closeSupportChat()" style="background:none;border:none;color:#ff6b6b;font-size:.78rem;cursor:pointer;">End this chat session</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+(function(){
+    var chatKey = null;
+    var chatActive = false;
+    var pollTimer = null;
+    var lastMsgId = 0;
+
+    window.toggleSupportChat = function() {
+        var panel = document.getElementById('support-chat-panel');
+        if (panel.style.display === 'none' || !panel.style.display) {
+            panel.style.display = 'flex';
+            panel.style.flexDirection = 'column';
+            // Check for existing session
+            var stored = sessionStorage.getItem('support_chat_key');
+            if (stored) { chatKey = stored; resumeChat(); }
+        } else {
+            panel.style.display = 'none';
+        }
+    };
+
+    window.startSupportChat = function() {
+        var name = (document.getElementById('chat-guest-name') || {value:''}).value.trim();
+        var email = (document.getElementById('chat-guest-email') || {value:''}).value.trim();
+        var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+        var csrf = csrfMeta ? csrfMeta.getAttribute('content') : '';
+        fetch('/support/live/start', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: '_csrf_token=' + encodeURIComponent(csrf) + '&guest_name=' + encodeURIComponent(name) + '&guest_email=' + encodeURIComponent(email)
+        }).then(function(r){return r.json();}).then(function(d){
+            if (d.success) {
+                chatKey = d.session_key;
+                sessionStorage.setItem('support_chat_key', chatKey);
+                showChatMessages();
+                if (d.messages) renderMessages(d.messages);
+                startPolling();
+            }
+        }).catch(function(){});
+    };
+
+    function resumeChat() {
+        fetch('/support/live/messages?session_key=' + encodeURIComponent(chatKey))
+        .then(function(r){return r.json();}).then(function(d){
+            if (d.status === 'closed') { chatKey = null; sessionStorage.removeItem('support_chat_key'); return; }
+            showChatMessages();
+            renderMessages(d.messages || []);
+            startPolling();
+        }).catch(function(){});
+    }
+
+    function showChatMessages() {
+        document.getElementById('chat-start-form').style.display = 'none';
+        document.getElementById('chat-messages-area').style.display = 'flex';
+        document.getElementById('chat-messages-area').style.flexDirection = 'column';
+        chatActive = true;
+    }
+
+    window.sendChatMessage = function() {
+        var input = document.getElementById('chat-input');
+        var msg = input.value.trim();
+        if (!msg || !chatKey) return;
+        input.value = '';
+        var csrf = (document.querySelector('meta[name="csrf-token"]') || {getAttribute:function(){return '';}}).getAttribute('content');
+        fetch('/support/live/send', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: '_csrf_token=' + encodeURIComponent(csrf) + '&session_key=' + encodeURIComponent(chatKey) + '&message=' + encodeURIComponent(msg)
+        }).then(function(r){return r.json();}).then(function(d){
+            if (d.success) pollMessages();
+        }).catch(function(){});
+    };
+
+    window.closeSupportChat = function() {
+        if (!chatKey) return;
+        var csrf = (document.querySelector('meta[name="csrf-token"]') || {getAttribute:function(){return '';}}).getAttribute('content');
+        fetch('/support/live/close', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: '_csrf_token=' + encodeURIComponent(csrf) + '&session_key=' + encodeURIComponent(chatKey)
+        }).then(function(){
+            chatKey = null; chatActive = false;
+            sessionStorage.removeItem('support_chat_key');
+            clearInterval(pollTimer);
+            document.getElementById('chat-start-form').style.display = 'block';
+            document.getElementById('chat-messages-area').style.display = 'none';
+            document.getElementById('chat-messages').innerHTML = '';
+        });
+    };
+
+    function startPolling() {
+        if (pollTimer) clearInterval(pollTimer);
+        pollTimer = setInterval(pollMessages, 4000);
+    }
+
+    function pollMessages() {
+        if (!chatKey) return;
+        fetch('/support/live/messages?session_key=' + encodeURIComponent(chatKey) + '&after=' + lastMsgId)
+        .then(function(r){return r.json();}).then(function(d){
+            if (d.status === 'closed') { chatActive = false; clearInterval(pollTimer); return; }
+            if (d.messages && d.messages.length) renderMessages(d.messages);
+        }).catch(function(){});
+    }
+
+    function renderMessages(msgs) {
+        var container = document.getElementById('chat-messages');
+        msgs.forEach(function(m) {
+            if (m.id && m.id <= lastMsgId) return;
+            if (m.id) lastMsgId = Math.max(lastMsgId, m.id);
+            var div = document.createElement('div');
+            var isUser = (m.sender_type === 'user' || m.sender_type === 'guest');
+            div.style.cssText = 'max-width:80%;padding:8px 12px;border-radius:12px;font-size:.82rem;line-height:1.5;word-break:break-word;' +
+                (isUser ? 'align-self:flex-end;background:linear-gradient(135deg,rgba(0,240,255,.2),rgba(255,46,196,.15));margin-left:auto;' : 'align-self:flex-start;background:rgba(255,255,255,.06);');
+            div.style.color = 'var(--text-primary,#e8eefc)';
+            div.textContent = m.message;
+            container.appendChild(div);
+        });
+        container.scrollTop = container.scrollHeight;
+    }
+
+    // Hide chat widget entirely on project sub-pages
+    if (window.location.pathname.indexOf('/projects/') === 0) {
+        var widget = document.getElementById('support-chat-widget');
+        if (widget) widget.style.display = 'none';
+    }
+})();
+</script>
 </body>
 </html>

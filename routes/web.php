@@ -93,6 +93,33 @@ $router->get('/notifications', 'NotificationController@viewAll', ['auth']);
 $router->get('/notifications/stream', 'NotificationStreamController@stream', ['auth']);
 $router->get('/api/ws/token', 'NotificationController@wsToken', ['auth']);
 
+// Support Tickets (logged-in users)
+$router->get('/support', 'SupportController@index', ['auth']);
+$router->get('/help', 'SupportController@index', ['auth']); // alias for /help sidebar link
+$router->get('/support/create', 'SupportController@createForm', ['auth']);
+$router->post('/support/create', 'SupportController@store', ['auth']);
+$router->get('/support/view/{id}', 'SupportController@show', ['auth']);
+$router->post('/support/view/{id}/reply', 'SupportController@reply', ['auth']);
+$router->get('/support/faq', 'SupportController@faq', ['auth']);
+$router->get('/support/live', 'SupportController@liveSupport', ['auth']);
+$router->get('/support/help', 'SupportController@help', ['auth']);
+$router->get('/support/announcements', 'SupportController@announcements', ['auth']);
+
+// Admin portal within support portal
+$router->get('/support/admin/tickets', 'SupportController@adminTickets', ['auth']);
+$router->get('/support/admin/live', 'SupportController@adminLive', ['auth']);
+$router->get('/support/admin/reports', 'SupportController@adminReports', ['auth']);
+$router->get('/support/admin/ticket/{id}', 'SupportController@adminViewTicket', ['auth']);
+$router->post('/support/admin/ticket/{id}/reply', 'SupportController@adminReplyTicket', ['auth']);
+$router->post('/support/admin/ticket/{id}/status', 'SupportController@adminUpdateTicketStatus', ['auth']);
+$router->post('/support/admin/ticket/{id}/priority', 'SupportController@adminUpdateTicketPriority', ['auth']);
+
+// Live Chat (no auth — works for guests too)
+$router->post('/support/live/start', 'SupportLiveChatController@start');
+$router->post('/support/live/send', 'SupportLiveChatController@send');
+$router->get('/support/live/messages', 'SupportLiveChatController@poll');
+$router->post('/support/live/close', 'SupportLiveChatController@close');
+
 // Session alert polling — checked every ~30 s by logged-in browsers
 $router->get('/api/session-alerts', function() {
     if (!\Core\Auth::check()) {

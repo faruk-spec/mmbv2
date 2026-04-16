@@ -415,3 +415,24 @@ $router->get('/admin/projects/notex/settings', 'Admin\\NoteXAdminController@sett
 // Network Inspector (super_admin + debug mode only)
 $router->get("/admin/network-inspector", "Admin\\\\NetworkInspectorController@index", ["auth", "admin"]);
 $router->post("/admin/network-inspector/clear", "Admin\\\\NetworkInspectorController@clear", ["auth", "admin"]);
+
+// Support Admin
+$router->get('/admin/support', 'Admin\\SupportAdminController@index', ['auth', 'admin']);
+$router->get('/admin/support/tickets', 'Admin\\SupportAdminController@tickets', ['auth', 'admin']);
+$router->get('/admin/support/tickets/{id}', 'Admin\\SupportAdminController@viewTicket', ['auth', 'admin']);
+$router->post('/admin/support/tickets/{id}/reply', 'Admin\\SupportAdminController@replyTicket', ['auth', 'admin']);
+$router->post('/admin/support/tickets/{id}/status', 'Admin\\SupportAdminController@updateTicketStatus', ['auth', 'admin']);
+$router->post('/admin/support/tickets/{id}/reopen', 'Admin\\SupportAdminController@reopenTicket', ['auth', 'admin']);
+$router->get('/admin/support/live-chats', 'Admin\\SupportAdminController@liveChats', ['auth', 'admin']);
+$router->get('/admin/support/live-chats/{id}', 'Admin\\SupportAdminController@viewLiveChat', ['auth', 'admin']);
+$router->post('/admin/support/live-chats/{id}/reply', 'Admin\\SupportAdminController@replyLiveChat', ['auth', 'admin']);
+$router->post('/admin/support/live-chats/{id}/close', 'Admin\\SupportAdminController@closeLiveChat', ['auth', 'admin']);
+$router->post('/admin/support/live-chats/{id}/reopen', 'Admin\\SupportAdminController@reopenLiveChat', ['auth', 'admin']);
+$router->get('/admin/support/templates', 'Admin\\SupportAdminController@templates', ['auth', 'admin']);
+$router->post('/admin/support/templates/category/create', 'Admin\\SupportAdminController@createCategory', ['auth', 'admin']);
+$router->post('/admin/support/templates/category/{id}/delete', 'Admin\\SupportAdminController@deleteCategory', ['auth', 'admin']);
+$router->post('/admin/support/templates/item/create', 'Admin\\SupportAdminController@createItem', ['auth', 'admin']);
+$router->post('/admin/support/templates/item/{id}/delete', 'Admin\\SupportAdminController@deleteItem', ['auth', 'admin']);
+$router->get('/admin/support/users', 'Admin\\SupportAdminController@userAccess', ['auth', 'admin']);
+$router->post('/admin/support/agents/add', 'Admin\\SupportAdminController@addAgent', ['auth', 'admin']);
+$router->post('/admin/support/agents/{id}/remove', 'Admin\\SupportAdminController@removeAgent', ['auth', 'admin']);
