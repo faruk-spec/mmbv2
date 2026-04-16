@@ -155,11 +155,12 @@ $router->get('/support-attachments/{file}', function($file) {
         http_response_code(403);
         exit('Forbidden');
     }
-    if (preg_match('/[\/\\\\]|%2e|%2f|%5c|\.\./i', (string) $file)) {
+    $safeFile = (string) $file;
+    $decodedFile = rawurldecode($safeFile);
+    if (preg_match('/[\/\\\\]|\.\./', $decodedFile)) {
         http_response_code(403);
         exit('Forbidden');
     }
-    $safeFile = (string) $file;
     $allowedExtensions = ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'txt', 'zip', 'doc', 'docx', 'xlsx', 'csv'];
     $ext = strtolower(pathinfo($safeFile, PATHINFO_EXTENSION));
     if (!in_array($ext, $allowedExtensions, true)) {

@@ -81,7 +81,7 @@ View::extend('main');
             <table style="width:100%;border-collapse:collapse;">
                 <thead>
                     <tr style="border-bottom:1px solid var(--border-color);">
-                        <th style="padding:10px 12px;text-align:left;font-size:.72rem;color:var(--text-secondary);">Ticket</th>
+                        <th style="padding:10px 12px;text-align:left;font-size:.72rem;color:var(--text-secondary);">Ticket ID &amp; Subject</th>
                         <th style="padding:10px 12px;text-align:left;font-size:.72rem;color:var(--text-secondary);">Customer</th>
                         <th style="padding:10px 12px;text-align:left;font-size:.72rem;color:var(--text-secondary);">Status</th>
                         <th style="padding:10px 12px;text-align:left;font-size:.72rem;color:var(--text-secondary);">Priority</th>

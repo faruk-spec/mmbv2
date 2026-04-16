@@ -113,7 +113,11 @@ class SupportController extends BaseController
                                 if (!is_dir($baseDir)) {
                                     @mkdir($baseDir, 0755, true);
                                 }
-                                $safeName = uniqid('att_', true) . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '', $_FILES[$fileKey]['name']);
+                                try {
+                                    $safeName = 'att_' . bin2hex(random_bytes(16)) . '.' . $ext;
+                                } catch (\Throwable $e) {
+                                    $safeName = 'att_' . uniqid('', true) . '.' . $ext;
+                                }
                                 $target = rtrim($baseDir, '/') . '/' . $safeName;
                                 if (@move_uploaded_file($_FILES[$fileKey]['tmp_name'], $target)) {
                                     $value = '/support-attachments/' . $safeName;
