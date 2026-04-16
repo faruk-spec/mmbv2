@@ -84,7 +84,7 @@ if (!function_exists('stFormatTicketId')) {
                     </h1>
                     <p style="color:var(--text-secondary,#8892a6);margin:0;font-size:.84rem;">Track and manage your support requests</p>
                 </div>
-                <a href="/support/create" class="sp-btn sp-btn-primary">
+                <a href="/support/new" class="sp-btn sp-btn-primary">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     New Ticket
                 </a>
@@ -114,7 +114,7 @@ if (!function_exists('stFormatTicketId')) {
                 <div style="padding:60px 20px;text-align:center;color:var(--text-secondary);">
                     <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:.25;display:block;margin:0 auto 14px;"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z"/></svg>
                     <p style="margin:0 0 16px;font-size:.95rem;">You have no support tickets yet.</p>
-                    <a href="/support/create" class="sp-btn sp-btn-primary">
+                    <a href="/support/new" class="sp-btn sp-btn-primary">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                         Create Your First Ticket
                     </a>

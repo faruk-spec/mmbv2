@@ -96,7 +96,7 @@ $router->get('/api/ws/token', 'NotificationController@wsToken', ['auth']);
 // Support Tickets (logged-in users)
 $router->get('/support', 'SupportController@index', ['auth']);
 $router->get('/help', 'SupportController@index', ['auth']); // alias for /help sidebar link
-$router->get('/support/create', 'SupportController@createForm', ['auth']);
+$router->get('/support/create', function() { header('Location: /support/new', true, 301); exit; }, ['auth']);
 $router->post('/support/create', 'SupportController@store', ['auth']);
 // Dynamic wizard (new template-driven flow)
 $router->get('/support/new', function() {

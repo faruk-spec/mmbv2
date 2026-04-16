@@ -62,7 +62,7 @@ View::extend('main');
 
             <div style="margin-top:16px;padding:14px 16px;background:color-mix(in srgb,var(--purple) 7%,transparent);border:1px solid color-mix(in srgb,var(--purple) 18%,transparent);border-radius:10px;font-size:.84rem;color:var(--text-secondary);">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="color:var(--purple)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:7px;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                For non-urgent issues, please <a href="/support/create" style="color:var(--purple);">create a ticket</a> for a faster, tracked response.
+                For non-urgent issues, please <a href="/support/new" style="color:var(--purple);">create a ticket</a> for a faster, tracked response.
             </div>
         </div><!-- /main content -->
 </div><!-- /support flex wrapper -->
