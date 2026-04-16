@@ -2292,6 +2292,7 @@ try {
         <!-- Start form (shown when no active chat) -->
         <div id="chat-start-form" style="padding:20px;">
             <p style="color:var(--text-secondary,#8892a6);font-size:.85rem;margin-bottom:16px;">Chat with our support team or AI assistant.</p>
+            <div id="chat-start-error" style="display:none;padding:8px 10px;border-radius:8px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.28);color:#f87171;font-size:.8rem;margin-bottom:10px;"></div>
             <?php if (!\Core\Auth::check()): ?>
             <input type="text" id="chat-guest-name" placeholder="Your name" style="width:100%;padding:10px;border:1px solid var(--border-color,rgba(255,255,255,.1));border-radius:8px;background:var(--bg-secondary,#0c0c12);color:var(--text-primary,#e8eefc);margin-bottom:10px;font-size:.85rem;box-sizing:border-box;">
             <input type="email" id="chat-guest-email" placeholder="Your email" style="width:100%;padding:10px;border:1px solid var(--border-color,rgba(255,255,255,.1));border-radius:8px;background:var(--bg-secondary,#0c0c12);color:var(--text-primary,#e8eefc);margin-bottom:10px;font-size:.85rem;box-sizing:border-box;">
@@ -2336,6 +2337,8 @@ try {
     window.startSupportChat = function() {
         var name = (document.getElementById('chat-guest-name') || {value:''}).value.trim();
         var email = (document.getElementById('chat-guest-email') || {value:''}).value.trim();
+        var errorBox = document.getElementById('chat-start-error');
+        if (errorBox) { errorBox.style.display = 'none'; errorBox.textContent = ''; }
         var csrfMeta = document.querySelector('meta[name="csrf-token"]');
         var csrf = csrfMeta ? csrfMeta.getAttribute('content') : '';
         fetch('/support/live/start', {
@@ -2349,8 +2352,16 @@ try {
                 showChatMessages();
                 if (d.messages) renderMessages(d.messages);
                 startPolling();
+            } else if (errorBox) {
+                errorBox.textContent = d.error || 'Unable to start chat right now.';
+                errorBox.style.display = 'block';
             }
-        }).catch(function(){});
+        }).catch(function(){
+            if (errorBox) {
+                errorBox.textContent = 'Unable to start chat right now. Please try again.';
+                errorBox.style.display = 'block';
+            }
+        });
     };
 
     function resumeChat() {

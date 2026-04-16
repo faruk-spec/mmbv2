@@ -241,7 +241,18 @@ class App
             'line' => $e->getLine(),
             'trace' => $e->getTraceAsString()
         ]);
-        
+
+        // Always return JSON for API requests so the browser never receives HTML
+        $uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/';
+        if (strpos($uri, '/api/') === 0) {
+            if (!headers_sent()) {
+                http_response_code(500);
+                header('Content-Type: application/json; charset=utf-8');
+            }
+            echo json_encode(['ok' => false, 'error' => 'Server error. Please try again.']);
+            return;
+        }
+
         if (defined('APP_DEBUG') && APP_DEBUG) {
             echo '<h1>Error</h1>';
             echo '<p>' . htmlspecialchars($e->getMessage()) . '</p>';

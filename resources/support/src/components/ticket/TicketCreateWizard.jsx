@@ -42,28 +42,36 @@ export default function TicketCreateWizard() {
   const handleSelectGroup = async (group) => {
     setSelectedGroup(group);
     setError(null);
-    const res  = await fetch(`${apiBase}/categories?group_id=${group.id}`);
-    const json = await res.json();
-    if (json.ok) {
-      setCategories(json.data ?? []);
-      setStep('category');
-    } else {
-      setError('Failed to load categories.');
+    try {
+      const res  = await fetch(`${apiBase}/categories?group_id=${group.id}`);
+      const json = await res.json();
+      if (json.ok) {
+        setCategories(json.data ?? []);
+        setStep('category');
+      } else {
+        setError(json.error ?? 'Failed to load categories.');
+      }
+    } catch (e) {
+      setError('Failed to load categories. Please try again.');
     }
   };
 
   const handleSelectCategory = async (cat) => {
     setSelectedCategory(cat);
     setError(null);
-    const res  = await fetch(`${apiBase}/template?category_id=${cat.id}`);
-    const json = await res.json();
-    if (json.ok) {
-      setSchema(json.data.schema);
-      setTemplateId(json.data.template_id);
-      setPriority(json.data.schema?.default_priority ?? 'medium');
-      setStep('form');
-    } else {
-      setError(json.error ?? 'No form template available for this category.');
+    try {
+      const res  = await fetch(`${apiBase}/template?category_id=${cat.id}`);
+      const json = await res.json();
+      if (json.ok) {
+        setSchema(json.data.schema);
+        setTemplateId(json.data.template_id);
+        setPriority(json.data.schema?.default_priority ?? 'medium');
+        setStep('form');
+      } else {
+        setError(json.error ?? 'No form template available for this category.');
+      }
+    } catch (e) {
+      setError('Failed to load template. Please try again.');
     }
   };
 

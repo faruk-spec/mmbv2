@@ -153,7 +153,11 @@ class Router
         $regex = '#^' . $regex . '$#';
         
         if (preg_match($regex, $uri, $matches)) {
-            return array_filter($matches, 'is_string', ARRAY_FILTER_USE_KEY);
+            // Return positional values only — PHP 8 would otherwise treat string keys
+            // as named arguments, causing an "Unknown named parameter" Error when the
+            // capture group name (e.g. "category_id") differs from the method's
+            // parameter name (e.g. "$categoryId").
+            return array_values(array_filter($matches, 'is_string', ARRAY_FILTER_USE_KEY));
         }
         
         return false;

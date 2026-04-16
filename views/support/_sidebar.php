@@ -23,7 +23,7 @@ if (!function_exists('supportNavSection')) {
     }
 }
 ?>
-<aside style="width:240px;min-width:240px;background:var(--bg-primary,#08080f);border-right:1px solid var(--border-color);display:flex;flex-direction:column;min-height:calc(100vh - 64px);position:sticky;top:64px;height:calc(100vh - 64px);overflow-y:auto;z-index:10;">
+<aside class="sp-sidebar">
 
     <!-- Brand header -->
     <div style="padding:18px 16px 14px;border-bottom:1px solid var(--border-color,rgba(255,255,255,.06));">
@@ -35,6 +35,10 @@ if (!function_exists('supportNavSection')) {
                 <div style="font-weight:700;font-size:.9rem;color:var(--text-primary);">Support</div>
                 <div style="font-size:.7rem;color:var(--text-secondary);"><?= $isAdmin ? 'Agent Portal' : 'Help Center' ?></div>
             </div>
+            <!-- Close button (mobile only) -->
+            <button onclick="spCloseMenu()" class="sp-sidebar-close" aria-label="Close menu">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
         </div>
     </div>
 
@@ -85,4 +89,32 @@ if (!function_exists('supportNavSection')) {
         </div>
     </div>
 </aside>
-<style>@keyframes sbPulse{0%,100%{opacity:1}50%{opacity:.4}}</style>
+
+<!-- Overlay for mobile sidebar -->
+<div class="sp-sidebar-overlay" id="spOverlay" onclick="spCloseMenu()"></div>
+
+<style>
+@keyframes sbPulse{0%,100%{opacity:1}50%{opacity:.4}}
+.sp-sidebar-close {
+    display: none;
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 4px;
+}
+@media (max-width: 768px) { .sp-sidebar-close { display: block; } }
+</style>
+<script>
+function spOpenMenu() {
+    document.querySelector('.sp-sidebar').classList.add('sp-open');
+    document.getElementById('spOverlay').classList.add('sp-open');
+    document.body.style.overflow = 'hidden';
+}
+function spCloseMenu() {
+    document.querySelector('.sp-sidebar').classList.remove('sp-open');
+    document.getElementById('spOverlay').classList.remove('sp-open');
+    document.body.style.overflow = '';
+}
+</script>

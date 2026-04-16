@@ -53,10 +53,16 @@ $priorityClass = match($ticket['priority']) {
 <?php View::endSection(); ?>
 
 <?php View::section('content'); ?>
-<div style="display:flex;min-height:calc(100vh - 64px);align-items:stretch;">
+<div class="sp-layout">
     <?php include dirname(__DIR__) . '/_sidebar.php'; ?>
 
-    <div style="flex:1;padding:24px 28px;min-width:0;overflow:auto;">
+    <div class="sp-main">
+
+        <!-- Mobile menu button -->
+        <button class="sp-menu-btn" onclick="spOpenMenu()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            Menu
+        </button>
 
         <!-- Flash messages -->
         <?php if (!empty($_SESSION['_flash']['success'])): ?>
@@ -294,7 +300,7 @@ $priorityClass = match($ticket['priority']) {
             </div><!-- /management panel -->
         </div><!-- /grid -->
     </div><!-- /main content -->
-</div><!-- /support flex wrapper -->
+</div><!-- /sp-layout -->
 
 <style>
 @media (max-width: 860px) {

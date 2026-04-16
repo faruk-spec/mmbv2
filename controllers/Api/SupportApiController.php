@@ -307,23 +307,27 @@ class SupportApiController extends BaseController
     {
         if (!$this->checkAdmin()) return;
 
-        $cat = $this->model->getCategoryById($categoryId);
-        if (!$cat) {
-            $this->jsonError('Category not found.', 404);
-            return;
+        try {
+            $cat = $this->model->getCategoryById($categoryId);
+            if (!$cat) {
+                $this->jsonError('Category not found.', 404);
+                return;
+            }
+
+            $body   = $this->jsonBody();
+            $schema = $body['schema'] ?? $body;
+
+            if (empty($schema['sections'])) {
+                $this->jsonError('Schema must contain at least one section.', 422);
+                return;
+            }
+
+            $id  = $this->model->saveTemplate($categoryId, $schema, Auth::id());
+            $tpl = $this->model->getTemplateById($id);
+            $this->jsonOk(['template_id' => $id, 'version' => (int) (($tpl ?? [])['version'] ?? 1)], 201);
+        } catch (\Throwable $e) {
+            $this->jsonError('Failed to save template. Please try again.', 500);
         }
-
-        $body   = $this->jsonBody();
-        $schema = $body['schema'] ?? $body;
-
-        if (empty($schema['sections'])) {
-            $this->jsonError('Schema must contain at least one section.', 422);
-            return;
-        }
-
-        $id  = $this->model->saveTemplate($categoryId, $schema, Auth::id());
-        $tpl = $this->model->getTemplateById($id);
-        $this->jsonOk(['template_id' => $id, 'version' => (int) ($tpl['version'] ?? 1)], 201);
     }
 
     /** GET /api/admin/support/template/{category_id}/history */

@@ -162,4 +162,96 @@
 [data-theme="light"] .sp-msg-user { border-color: rgba(3,105,161,.2); }
 [data-theme="light"] .sp-textarea { background: #fff; }
 [data-theme="light"] .sp-select { background: #fff; }
+
+/* ── Responsive layout ───────────────────────────────────────────────── */
+.sp-layout {
+    display: flex;
+    min-height: calc(100vh - 64px);
+    align-items: stretch;
+}
+.sp-sidebar {
+    width: 240px;
+    min-width: 240px;
+    background: var(--bg-primary, #08080f);
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100vh - 64px);
+    position: sticky;
+    top: 64px;
+    height: calc(100vh - 64px);
+    overflow-y: auto;
+    z-index: 10;
+    transition: transform .25s ease;
+    flex-shrink: 0;
+}
+.sp-main {
+    flex: 1;
+    padding: 24px 28px;
+    min-width: 0;
+    overflow: auto;
+}
+.sp-sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, .55);
+    z-index: 98;
+    cursor: pointer;
+}
+.sp-menu-btn {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: .82rem;
+    margin-bottom: 16px;
+    width: fit-content;
+    transition: color .15s, border-color .15s;
+}
+.sp-live-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+@media (max-width: 768px) {
+    .sp-sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        transform: translateX(-100%);
+        z-index: 99;
+        min-height: 100vh;
+    }
+    .sp-sidebar.sp-open {
+        transform: translateX(0);
+    }
+    .sp-sidebar-overlay.sp-open {
+        display: block;
+    }
+    .sp-main {
+        padding: 16px;
+        width: 100%;
+        overflow-x: auto;
+        overflow-y: visible;
+    }
+    .sp-menu-btn {
+        display: inline-flex;
+        position: sticky;
+        top: 0;
+        left: 0;
+        z-index: 9;
+        background: var(--bg-card);
+    }
+    .sp-live-grid {
+        grid-template-columns: 1fr;
+    }
+}
 </style>

@@ -180,7 +180,7 @@ class SupportTemplateModel
 
     public function getCategoriesByGroup(int $groupId, bool $activeOnly = false): array
     {
-        $where  = $activeOnly ? 'AND is_active = 1' : '';
+        $where  = $activeOnly ? 'AND c.is_active = 1' : '';
         return $this->db->fetchAll(
             "SELECT c.*, g.name AS group_name FROM support_dyn_categories c
              LEFT JOIN support_template_groups g ON g.id = c.group_id

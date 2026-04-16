@@ -37,7 +37,10 @@ View::section('content');
 .stg-input:focus { border-color: var(--cyan); }
 .stg-divider { font-size: .75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .06em; margin: 18px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--border-color); }
 .stg-btn-full { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 18px; background: var(--cyan); color: #fff; border: none; border-radius: 7px; font-size: .85rem; font-weight: 600; cursor: pointer; width: 100%; margin-top: 12px; }
-.stg-cat-chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 20px; font-size: .72rem; background: rgba(14,165,233,.1); color: #0ea5e9; border: 1px solid rgba(14,165,233,.2); margin: 2px; }
+.stg-btn-edit    { background: rgba(167,139,250,.1); color: #a78bfa; border: 1px solid rgba(167,139,250,.25); }
+.stg-btn-edit:hover { background: rgba(167,139,250,.2); }
+.stg-edit-panel { display: none; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px 16px; margin-top: 8px; }
+.stg-edit-panel.open { display: block; }
 .stg-cat-chip a { color: inherit; text-decoration: none; }
 .stg-cat-chip a:hover { text-decoration: underline; }
 .badge-active { display: inline-block; width: 7px; height: 7px; border-radius: 50%; }
@@ -68,7 +71,7 @@ View::section('content');
                             $catCount = 0;
                             foreach ($categories as $c) { if ((int)$c['group_id'] === (int)$g['id']) $catCount++; }
                         ?>
-                        <div class="stg-group-item">
+                        <div class="stg-group-item" id="stg-group-wrap-<?= (int)$g['id'] ?>">
                             <div class="stg-group-icon" style="background:<?= htmlspecialchars($g['color']) ?>22;color:<?= htmlspecialchars($g['color']) ?>;">
                                 <i class="fas fa-<?= htmlspecialchars($g['icon']) ?>"></i>
                             </div>
@@ -96,6 +99,9 @@ View::section('content');
                                 </div>
                             </div>
                             <div class="stg-group-actions">
+                                <button type="button" class="stg-btn-sm stg-btn-edit" onclick="stgToggleEdit(<?= (int)$g['id'] ?>)" title="Edit group">
+                                    <i class="fas fa-pencil"></i>
+                                </button>
                                 <a href="/admin/support/groups/<?= (int)$g['id'] ?>/categories" class="stg-btn-sm stg-btn-primary" title="Manage categories">
                                     <i class="fas fa-tags"></i>
                                 </a>
@@ -104,6 +110,43 @@ View::section('content');
                                     <button type="submit" class="stg-btn-sm stg-btn-danger" title="Delete"><i class="fas fa-trash"></i></button>
                                 </form>
                             </div>
+                        </div>
+                        <!-- Inline edit panel -->
+                        <div class="stg-edit-panel" id="stg-edit-<?= (int)$g['id'] ?>">
+                            <form method="POST" action="/admin/support/groups/<?= (int)$g['id'] ?>/update" class="stg-form">
+                                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                                    <div>
+                                        <label>Group Name</label>
+                                        <input type="text" name="name" value="<?= htmlspecialchars($g['name']) ?>" required class="stg-input">
+                                    </div>
+                                    <div>
+                                        <label>Description</label>
+                                        <input type="text" name="description" value="<?= htmlspecialchars($g['description'] ?? '') ?>" class="stg-input">
+                                    </div>
+                                    <div>
+                                        <label>Icon</label>
+                                        <input type="text" name="icon" value="<?= htmlspecialchars($g['icon']) ?>" class="stg-input">
+                                    </div>
+                                    <div>
+                                        <label>Color</label>
+                                        <input type="color" name="color" value="<?= htmlspecialchars($g['color']) ?>" class="stg-input" style="height:38px;padding:4px 6px;">
+                                    </div>
+                                    <div>
+                                        <label>Sort Order</label>
+                                        <input type="number" name="sort_order" value="<?= (int)$g['sort_order'] ?>" min="0" class="stg-input">
+                                    </div>
+                                    <div style="display:flex;align-items:flex-end;padding-bottom:2px;">
+                                        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+                                            <input type="checkbox" name="is_active" value="1" <?= $g['is_active'] ? 'checked' : '' ?>> Active
+                                        </label>
+                                    </div>
+                                </div>
+                                <div style="display:flex;gap:8px;margin-top:12px;">
+                                    <button type="submit" class="stg-btn-sm stg-btn-primary"><i class="fas fa-check"></i> Save</button>
+                                    <button type="button" class="stg-btn-sm stg-btn-danger" onclick="stgToggleEdit(<?= (int)$g['id'] ?>)"><i class="fas fa-xmark"></i> Cancel</button>
+                                </div>
+                            </form>
                         </div>
                         <?php endforeach; ?>
                     <?php endif; ?>
@@ -144,5 +187,12 @@ View::section('content');
 
     </div>
 </div>
+
+<script>
+function stgToggleEdit(id) {
+    var panel = document.getElementById('stg-edit-' + id);
+    if (panel) panel.classList.toggle('open');
+}
+</script>
 
 <?php View::endSection(); ?>
