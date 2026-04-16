@@ -663,7 +663,8 @@ class SupportAdminController extends BaseController
                 $db->insert('settings', ['key' => 'ticket_id_start', 'value' => (string) $startRaw]);
             }
 
-            // Apply AUTO_INCREMENT to both ticket tables
+            // Apply AUTO_INCREMENT — $startRaw is cast to int; safe to interpolate directly
+            // (MySQL does not support parameterized AUTO_INCREMENT values)
             $db->query("ALTER TABLE support_tickets AUTO_INCREMENT = {$startRaw}");
             $db->query("ALTER TABLE support_dyn_tickets AUTO_INCREMENT = {$startRaw}");
         }

@@ -10,7 +10,14 @@ $pageTitle     = $ls['live_support_title']         ?: 'Live Support';
 $tagline       = $ls['live_support_tagline']       ?: 'Chat live with our support team for immediate assistance.';
 $responseTime  = $ls['live_support_response_time'] ?: 'Usually under 5 minutes during business hours.';
 $hours         = $ls['live_support_hours']         ?: 'Mon–Fri: 9AM–6PM (UTC). Weekends limited.';
-$extraNote     = $ls['live_support_extra_note']    ?: 'For non-urgent issues, please <a href="/support/new" style="color:var(--purple);">create a ticket</a> for a faster, tracked response.';
+// $extraNote is rendered as raw HTML to allow the default anchor link.
+// Admin-supplied content is plain text (no HTML). If the DB value is empty,
+// the hardcoded default (safe, no user input) is used.
+if (!empty($ls['live_support_extra_note'])) {
+    $extraNote = htmlspecialchars($ls['live_support_extra_note']);
+} else {
+    $extraNote = 'For non-urgent issues, please <a href="/support/new" style="color:var(--purple);">create a ticket</a> for a faster, tracked response.';
+}
 ?>
 
 <?php View::section('styles'); ?>

@@ -195,13 +195,13 @@ class SupportApiController extends BaseController
         ];
         $emailBody = $this->renderEmail('support-ticket-created', $emailVars);
         if ($emailBody !== null && !empty($user['email'])) {
-            Mailer::send($user['email'], "Support Ticket #" . sprintf('%07d', $ticketId) . " Created: {$subject}", $emailBody);
+            Mailer::send($user['email'], "Support Ticket #" . $this->formatTicketId($ticketId) . " Created: {$subject}", $emailBody);
         }
 
         // Notify admins
         $this->notifyAdmins(
             'support_ticket',
-            "New support ticket #" . sprintf('%07d', $ticketId) . ": {$subject}",
+            "New support ticket #" . $this->formatTicketId($ticketId) . ": {$subject}",
             ['ticket_id' => $ticketId, 'url' => '/admin/support/tickets/' . $ticketId]
         );
 
@@ -487,6 +487,11 @@ class SupportApiController extends BaseController
             }
         }
         return implode("\n", $lines);
+    }
+
+    private function formatTicketId(int $id): string
+    {
+        return sprintf('%07d', $id);
     }
 
     private function baseUrl(): string
