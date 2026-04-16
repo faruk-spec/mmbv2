@@ -7,7 +7,7 @@ use Core\Auth;
 
 View::extend('main');
 
-$isClosed    = in_array($ticket['status'], ['closed', 'resolved']);
+$isClosed    = ($ticket['status'] === 'closed');
 $statusClass = match($ticket['status']) {
     'open'             => 'sp-badge-open',
     'in_progress'      => 'sp-badge-prog',

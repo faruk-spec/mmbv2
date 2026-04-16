@@ -89,9 +89,14 @@ View::section('content');
                         </td>
                         <td style="padding:12px 14px;color:var(--text-secondary,#8892a6);font-size:.8rem;"><?= date('M j, Y', strtotime($ticket['created_at'])) ?></td>
                         <td style="padding:12px 14px;">
-                            <a href="/admin/support/tickets/<?= (int)$ticket['id'] ?>" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;background:rgba(0,240,255,.1);color:#00f0ff;border-radius:6px;text-decoration:none;font-size:.78rem;font-weight:500;">
-                                <i class="fas fa-eye"></i> View
-                            </a>
+                            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                                <a href="/admin/support/tickets/<?= (int)$ticket['id'] ?>" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;background:rgba(0,240,255,.1);color:#00f0ff;border-radius:6px;text-decoration:none;font-size:.78rem;font-weight:500;">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                                <a href="/admin/support/tickets/<?= (int)$ticket['id'] ?>" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;background:rgba(167,139,250,.1);color:#a78bfa;border-radius:6px;text-decoration:none;font-size:.78rem;font-weight:500;">
+                                    <i class="fas fa-pen-to-square"></i> Manage
+                                </a>
+                            </div>
                         </td>
                     </tr>
                     <?php endforeach; ?>

@@ -9,7 +9,6 @@ View::section('content');
 
 $isClosed    = ($ticket['status'] === 'closed');
 $statusColor = match($ticket['status']) {
-    'open'             => '#00f0ff',
     'in_progress'      => '#ff9f43',
     'waiting_customer' => '#a78bfa',
     'resolved'         => '#00ff88',
