@@ -51,6 +51,7 @@ if (!empty($ticket['submitted_data']) && is_string($ticket['submitted_data'])) {
         $submittedData = $parsed;
     }
 }
+$lifecycleLabel = $ticket['lifecycle_name'] ?? (!empty($ticket['closed_at']) ? 'Completed' : 'Active Workflow');
 ?>
 
 <style>
@@ -244,7 +245,7 @@ if (!empty($ticket['submitted_data']) && is_string($ticket['submitted_data'])) {
         <h3 style="margin:0 0 14px;font-size:1rem;color:#e8eefc;">Properties</h3>
         <div class="adm-prop"><div class="k">Request ID</div><div class="v"><?= htmlspecialchars($formattedTicketId) ?></div></div>
         <div class="adm-prop"><div class="k">Status</div><div class="v" style="color:<?= $statusColor ?>;"><?= ucwords(str_replace('_', ' ', $ticket['status'])) ?></div></div>
-        <div class="adm-prop"><div class="k">Lifecycle</div><div class="v">Default RLC</div></div>
+        <div class="adm-prop"><div class="k">Lifecycle</div><div class="v"><?= htmlspecialchars($lifecycleLabel) ?></div></div>
         <div class="adm-prop"><div class="k">Technician</div><div class="v"><?= htmlspecialchars($ticket['agent_name'] ?? 'Not Assigned') ?></div></div>
         <div class="adm-prop"><div class="k">Group & Site</div><div class="v"><?= htmlspecialchars(($ticket['group_name'] ?? 'Support') . ' / ' . ($ticket['category_name'] ?? 'General')) ?></div></div>
         <div class="adm-prop"><div class="k">Conversations</div><div class="v"><?= (int)$totalMessages ?></div></div>

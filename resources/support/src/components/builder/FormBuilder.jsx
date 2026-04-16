@@ -26,6 +26,7 @@ export default function FormBuilder({ initialSchema, onSave, saving }) {
   const [activeId,   setActiveId]   = useState(null);
   const [activeTab,  setActiveTab]  = useState('build'); // 'build' | 'logic' | 'customize' | 'preview'
   const ui = schema?.ui ?? {};
+  const previewSectionStyle = getPreviewSectionStyle(ui.section_style);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -166,7 +167,7 @@ export default function FormBuilder({ initialSchema, onSave, saving }) {
               This is a read-only preview of how the form will look to users.
             </p>
             {(schema.sections ?? []).map(section => (
-              <div key={section.id} style={{ marginBottom: 20, border: ui.section_style === 'minimal' ? 'none' : '1px solid var(--border-color,rgba(255,255,255,.08))', borderRadius: 10, overflow: 'hidden', background: ui.section_style === 'minimal' ? 'transparent' : undefined }}>
+              <div key={section.id} style={previewSectionStyle}>
                 <div style={{ padding: '10px 14px', background: ui.section_style === 'minimal' ? 'transparent' : 'var(--bg-card,rgba(255,255,255,.03))', fontWeight: 600, color: 'var(--text-primary,#e8eefc)', fontSize: '.88rem' }}>{section.title}</div>
                 {section.description && (
                   <div style={{ padding: '0 14px 8px', color: 'var(--text-secondary,#8892a6)', fontSize: '.78rem' }}>{section.description}</div>
@@ -229,6 +230,17 @@ export default function FormBuilder({ initialSchema, onSave, saving }) {
     </DragOverlay>
     </DndContext>
   );
+}
+
+function getPreviewSectionStyle(sectionStyle) {
+  const minimal = sectionStyle === 'minimal';
+  return {
+    marginBottom: 20,
+    border: minimal ? 'none' : '1px solid var(--border-color,rgba(255,255,255,.08))',
+    borderRadius: 10,
+    overflow: 'hidden',
+    background: minimal ? 'transparent' : undefined,
+  };
 }
 
 function FormCustomizationPanel({ ui = {}, onChange }) {
