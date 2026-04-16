@@ -7,13 +7,18 @@ View::extend('main');
 ?>
 
 <?php View::section('styles'); ?>
-<style>.dashboard-main-content { padding: 0 !important; }</style>
+<?php include __DIR__ . '/_styles.php'; ?>
 <?php View::endSection(); ?>
 
 <?php View::section('content'); ?>
-<div style="display:flex;min-height:calc(100vh - 64px);align-items:stretch;">
+<div class="sp-layout">
     <?php include __DIR__ . '/_sidebar.php'; ?>
-    <div style="flex:1;padding:24px 28px;min-width:0;max-width:760px;">
+    <div class="sp-main" style="max-width:760px;">
+            <!-- Mobile menu button -->
+            <button class="sp-menu-btn" onclick="spOpenMenu()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                Menu
+            </button>
             <div style="margin-bottom:22px;">
                 <h1 style="font-size:1.4rem;font-weight:700;color:var(--text-primary);margin:0 0 4px;display:flex;align-items:center;gap:10px;">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="color:var(--magenta)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
@@ -43,7 +48,7 @@ View::extend('main');
             </div>
 
             <!-- Info cards -->
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div class="sp-live-grid">
                 <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:10px;padding:16px;">
                     <div style="font-weight:600;color:var(--text-primary);font-size:.88rem;margin-bottom:6px;">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="color:var(--cyan)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:6px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
@@ -65,7 +70,7 @@ View::extend('main');
                 For non-urgent issues, please <a href="/support/new" style="color:var(--purple);">create a ticket</a> for a faster, tracked response.
             </div>
         </div><!-- /main content -->
-</div><!-- /support flex wrapper -->
+</div><!-- /sp-layout -->
 
 <style>@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}</style>
 
