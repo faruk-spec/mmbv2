@@ -1,6 +1,8 @@
 import { useState, useCallback } from 'react';
 import { arrayMove } from '@dnd-kit/sortable';
 
+const VALID_FIELD_WIDTHS = ['full', 'half', 'third'];
+
 function uid() {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
@@ -50,7 +52,7 @@ function normalizeField(field = {}) {
   return {
     ...defaultField(field.type ?? 'text'),
     ...field,
-    width: ['full', 'half', 'third'].includes(field.width) ? field.width : 'full',
+    width: VALID_FIELD_WIDTHS.includes(field.width) ? field.width : 'full',
   };
 }
 

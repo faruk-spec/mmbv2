@@ -49,7 +49,7 @@ function buildDefaults(schema) {
       const configuredDefault = field.default_value;
       switch (field.type) {
         case 'checkbox':
-          defaults[name] = typeof configuredDefault === 'boolean' ? configuredDefault : configuredDefault === 'true';
+          defaults[name] = parseBooleanDefault(configuredDefault);
           break;
         case 'number':
           defaults[name] = configuredDefault ?? '';
@@ -60,6 +60,12 @@ function buildDefaults(schema) {
     }
   }
   return defaults;
+}
+
+function parseBooleanDefault(value) {
+  if (typeof value === 'boolean') return value;
+  if (typeof value !== 'string') return false;
+  return ['true', '1', 'yes', 'on'].includes(value.trim().toLowerCase());
 }
 
 function validateField(field, value) {

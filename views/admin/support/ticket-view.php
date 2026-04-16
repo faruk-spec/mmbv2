@@ -24,7 +24,7 @@ $priorityColor = match($ticket['priority']) {
     default  => '#64748b',
 };
 
-$ticketIdLabel   = '#' . str_pad((string) ((int) $ticket['id']), 6, '0', STR_PAD_LEFT);
+$formattedTicketId = '#' . str_pad((string) ((int) $ticket['id']), 6, '0', STR_PAD_LEFT);
 $createdAt       = !empty($ticket['created_at']) ? strtotime($ticket['created_at']) : null;
 $updatedAt       = !empty($ticket['updated_at']) ? strtotime($ticket['updated_at']) : null;
 $firstReplyTs    = !empty($firstAgentReplyAt ?? null) ? strtotime($firstAgentReplyAt) : null;
@@ -129,7 +129,7 @@ if (!empty($ticket['submitted_data']) && is_string($ticket['submitted_data'])) {
         </div>
 
         <div class="adm-header">
-            <h1 class="adm-title"><?= htmlspecialchars($ticketIdLabel) ?> <?= htmlspecialchars($ticket['subject']) ?></h1>
+            <h1 class="adm-title"><?= htmlspecialchars($formattedTicketId) ?> <?= htmlspecialchars($ticket['subject']) ?></h1>
             <div class="adm-meta">
                 <span>Requested by <strong><?= htmlspecialchars($ticket['user_name'] ?? 'Unknown') ?></strong></span>
                 <span><?= !empty($ticket['created_at']) ? date('M j, Y h:i A', strtotime($ticket['created_at'])) : '—' ?></span>
@@ -242,7 +242,7 @@ if (!empty($ticket['submitted_data']) && is_string($ticket['submitted_data'])) {
 
     <aside class="adm-ticket-side adm-side">
         <h3 style="margin:0 0 14px;font-size:1rem;color:#e8eefc;">Properties</h3>
-        <div class="adm-prop"><div class="k">Request ID</div><div class="v"><?= htmlspecialchars($ticketIdLabel) ?></div></div>
+        <div class="adm-prop"><div class="k">Request ID</div><div class="v"><?= htmlspecialchars($formattedTicketId) ?></div></div>
         <div class="adm-prop"><div class="k">Status</div><div class="v" style="color:<?= $statusColor ?>;"><?= ucwords(str_replace('_', ' ', $ticket['status'])) ?></div></div>
         <div class="adm-prop"><div class="k">Lifecycle</div><div class="v">Default RLC</div></div>
         <div class="adm-prop"><div class="k">Technician</div><div class="v"><?= htmlspecialchars($ticket['agent_name'] ?? 'Not Assigned') ?></div></div>
