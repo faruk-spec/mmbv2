@@ -116,7 +116,7 @@ class SupportController extends BaseController
                                 try {
                                     $safeName = 'att_' . bin2hex(random_bytes(16)) . '.' . $ext;
                                 } catch (\Throwable $e) {
-                                    $safeName = 'att_' . uniqid('', true) . '.' . $ext;
+                                    continue;
                                 }
                                 $target = rtrim($baseDir, '/') . '/' . $safeName;
                                 if (@move_uploaded_file($_FILES[$fileKey]['tmp_name'], $target)) {
@@ -609,10 +609,11 @@ class SupportController extends BaseController
                 }
             }
 
+            $safeReason = mb_substr(trim(strip_tags($reason)), 0, 200);
             Notification::send(
                 (int) $ticket['user_id'],
                 'support_ticket_' . $status,
-                "Your support ticket #" . sprintf('%07d', $id) . " has been {$status}. Reason: {$reason}",
+                "Your support ticket #" . sprintf('%07d', $id) . " has been {$status}. Reason: {$safeReason}",
                 ['ticket_id' => $id, 'url' => '/support/view/' . $id]
             );
         }

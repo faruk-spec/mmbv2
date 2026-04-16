@@ -155,19 +155,19 @@ $router->get('/support-attachments/{file}', function($file) {
         http_response_code(403);
         exit('Forbidden');
     }
-    $safeFile = (string) $file;
-    $decodedFile = rawurldecode($safeFile);
+    $requestedFile = (string) $file;
+    $decodedFile = rawurldecode($requestedFile);
     if (preg_match('/[\/\\\\]|\.\./', $decodedFile)) {
         http_response_code(403);
         exit('Forbidden');
     }
     $allowedExtensions = ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'txt', 'zip', 'doc', 'docx', 'xlsx', 'csv'];
-    $ext = strtolower(pathinfo($safeFile, PATHINFO_EXTENSION));
+    $ext = strtolower(pathinfo($requestedFile, PATHINFO_EXTENSION));
     if (!in_array($ext, $allowedExtensions, true)) {
         http_response_code(403);
         exit('Forbidden');
     }
-    $fullPath = BASE_PATH . '/storage/uploads/support_attachments/' . $safeFile;
+    $fullPath = BASE_PATH . '/storage/uploads/support_attachments/' . $requestedFile;
     $real = realpath($fullPath);
     $base = realpath(BASE_PATH . '/storage/uploads/support_attachments');
     if (!$real || !$base || strpos($real, $base) !== 0 || !is_file($real)) {

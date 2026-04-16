@@ -207,7 +207,8 @@ $priorityClass = match($ticket['priority']) {
                             <option value="<?= $sv ?>"<?= $ticket['status']===$sv?' selected':'' ?>><?= $sl ?></option>
                             <?php endforeach; ?>
                         </select>
-                        <textarea name="status_reason" rows="2" maxlength="1000" required
+                        <label for="status_reason" style="display:block;font-size:.78rem;color:var(--text-secondary);margin-bottom:6px;">Reason / Description</label>
+                        <textarea id="status_reason" name="status_reason" rows="2" maxlength="1000" required
                             placeholder="Reason / description for this status change..."
                             class="sp-textarea" style="margin-bottom:8px;"></textarea>
                         <div id="sp-resolution-wrap" style="display:<?= in_array($ticket['status'],['closed','resolved'])?'block':'none' ?>;margin-bottom:8px;">
