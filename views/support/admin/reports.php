@@ -31,7 +31,7 @@ View::extend('main');
             <select name="assigned_to" style="padding:9px 10px;border:1px solid var(--border-color);border-radius:7px;background:var(--bg-secondary);color:var(--text-primary);">
                 <option value="">All Agents</option>
                 <?php foreach (($agents ?? []) as $agent): ?>
-                    <option value="<?= (int) $agent['id'] ?>"<?= ($filters['assigned_to'] ?? '') === (string) $agent['id'] ? ' selected' : '' ?>>
+                    <option value="<?= (int) $agent['id'] ?>"<?= (int) ($filters['assigned_to'] ?? 0) === (int) $agent['id'] ? ' selected' : '' ?>>
                         <?= htmlspecialchars($agent['name']) ?>
                     </option>
                 <?php endforeach; ?>

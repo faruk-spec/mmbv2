@@ -382,10 +382,7 @@ class SupportController extends BaseController
             'to_date'     => $_GET['to_date'] ?? '',
             'query'       => trim($_GET['q'] ?? ''),
         ];
-        if ($filters['assigned_to'] <= 0) {
-            unset($filters['assigned_to']);
-        }
-        $filters = array_filter($filters, static fn ($v) => $v !== '' && $v !== null);
+        $filters = array_filter($filters, static fn ($v) => ($v !== '' && $v !== null && $v !== 0));
 
         $tickets = $this->model->getAllTickets($filters);
         $stats = $this->model->getTicketStats();
@@ -423,10 +420,7 @@ class SupportController extends BaseController
             'to_date'     => $_GET['to_date'] ?? '',
             'query'       => trim($_GET['q'] ?? ''),
         ];
-        if ($filters['assigned_to'] <= 0) {
-            unset($filters['assigned_to']);
-        }
-        $filters = array_filter($filters, static fn ($v) => $v !== '' && $v !== null);
+        $filters = array_filter($filters, static fn ($v) => ($v !== '' && $v !== null && $v !== 0));
         $tickets = $this->model->getAllTickets($filters);
 
         header('Content-Type: text/csv; charset=utf-8');
@@ -748,11 +742,12 @@ class SupportController extends BaseController
         $resolutionRate = $total > 0 ? round(($resolved / $total) * 100, 1) : 0.0;
         $unassigned = 0;
         $repliedWithin24h = 0;
+        $firstReplyMap = $this->model->getFirstAgentReplyMap(array_map(static fn ($t) => (int) ($t['id'] ?? 0), $tickets));
         foreach ($tickets as $ticket) {
             if (empty($ticket['assigned_to'])) {
                 $unassigned++;
             }
-            $firstAgentReplyAt = $this->model->getFirstAgentReplyAt((int) ($ticket['id'] ?? 0));
+            $firstAgentReplyAt = $firstReplyMap[(int) ($ticket['id'] ?? 0)] ?? null;
             if (!empty($firstAgentReplyAt) && !empty($ticket['created_at'])) {
                 $first = strtotime($ticket['created_at']);
                 $reply = strtotime($firstAgentReplyAt);

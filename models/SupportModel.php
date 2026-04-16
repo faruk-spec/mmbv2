@@ -740,7 +740,7 @@ class SupportModel
         $new = $this->getTicketById($ticketId);
         $oldName = $old['agent_name'] ?? 'Unassigned';
         $newName = $new['agent_name'] ?? 'Unassigned';
-        if (($old['assigned_to'] ?? null) != $agentId) {
+        if ((int) ($old['assigned_to'] ?? 0) !== $agentId) {
             $this->addTicketActivity(
                 $ticketId,
                 'agent_assigned',
@@ -787,5 +787,26 @@ class SupportModel
              WHERE ticket_id = ? AND sender_type = 'agent' AND is_internal = 0",
             [$ticketId]
         ) ?: null;
+    }
+
+    public function getFirstAgentReplyMap(array $ticketIds): array
+    {
+        $ticketIds = array_values(array_filter(array_map('intval', $ticketIds), static fn ($id) => $id > 0));
+        if (empty($ticketIds)) {
+            return [];
+        }
+        $placeholders = implode(',', array_fill(0, count($ticketIds), '?'));
+        $rows = $this->db->fetchAll(
+            "SELECT ticket_id, MIN(created_at) AS first_reply_at
+             FROM support_ticket_messages
+             WHERE sender_type = 'agent' AND is_internal = 0 AND ticket_id IN ({$placeholders})
+             GROUP BY ticket_id",
+            $ticketIds
+        ) ?: [];
+        $map = [];
+        foreach ($rows as $row) {
+            $map[(int) $row['ticket_id']] = $row['first_reply_at'];
+        }
+        return $map;
     }
 }
