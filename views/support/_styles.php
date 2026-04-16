@@ -239,9 +239,16 @@
     .sp-main {
         padding: 16px;
         width: 100%;
+        overflow-x: auto;
+        overflow-y: visible;
     }
     .sp-menu-btn {
         display: inline-flex;
+        position: sticky;
+        top: 0;
+        left: 0;
+        z-index: 9;
+        background: var(--bg-card);
     }
     .sp-live-grid {
         grid-template-columns: 1fr;

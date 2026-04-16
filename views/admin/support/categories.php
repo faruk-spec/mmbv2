@@ -32,8 +32,10 @@ View::section('content');
 .stc-input { width: 100%; padding: 8px 11px; border: 1px solid var(--border-color); border-radius: 7px; background: var(--bg-card); color: var(--text-primary); font-size: .85rem; outline: none; box-sizing: border-box; }
 .stc-input:focus { border-color: var(--cyan); }
 .stc-btn-full { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 18px; background: var(--cyan); color: #fff; border: none; border-radius: 7px; font-size: .85rem; font-weight: 600; cursor: pointer; width: 100%; margin-top: 12px; }
-.stc-back { display: inline-flex; align-items: center; gap: 6px; color: var(--text-secondary); text-decoration: none; font-size: .83rem; margin-bottom: 16px; }
-.stc-back:hover { color: var(--cyan); }
+.stc-btn-edit     { background: rgba(167,139,250,.1); color: #a78bfa; border: 1px solid rgba(167,139,250,.25); }
+.stc-btn-edit:hover { background: rgba(167,139,250,.2); }
+.stc-edit-panel { display: none; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px 16px; margin-top: 8px; }
+.stc-edit-panel.open { display: block; }
 </style>
 
 <div class="stc-page">
@@ -62,7 +64,7 @@ View::section('content');
                         <p style="color:var(--text-secondary);font-size:.85rem;text-align:center;padding:20px 0;">No categories yet. Add one →</p>
                     <?php else: ?>
                         <?php foreach ($categories as $cat): ?>
-                        <div class="stc-cat-item">
+                        <div class="stc-cat-item" id="stc-cat-wrap-<?= (int)$cat['id'] ?>">
                             <div class="stc-cat-icon"><i class="fas fa-<?= htmlspecialchars($cat['icon']) ?>"></i></div>
                             <div class="stc-cat-info">
                                 <div class="stc-cat-name"><?= htmlspecialchars($cat['name']) ?></div>
@@ -76,6 +78,9 @@ View::section('content');
                                 </div>
                             </div>
                             <div class="stc-cat-actions">
+                                <button type="button" class="stc-btn-sm stc-btn-edit" onclick="stcToggleEdit(<?= (int)$cat['id'] ?>)" title="Edit category">
+                                    <i class="fas fa-pencil"></i>
+                                </button>
                                 <a href="/admin/support/builder/<?= (int)$cat['id'] ?>" class="stc-btn-sm stc-btn-builder" title="Open Form Builder">
                                     <i class="fas fa-wand-magic-sparkles"></i> Builder
                                 </a>
@@ -84,6 +89,39 @@ View::section('content');
                                     <button type="submit" class="stc-btn-sm stc-btn-danger" title="Delete"><i class="fas fa-trash"></i></button>
                                 </form>
                             </div>
+                        </div>
+                        <!-- Inline edit panel -->
+                        <div class="stc-edit-panel" id="stc-edit-<?= (int)$cat['id'] ?>">
+                            <form method="POST" action="/admin/support/categories/<?= (int)$cat['id'] ?>/update" class="stc-form">
+                                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                                    <div>
+                                        <label>Category Name</label>
+                                        <input type="text" name="name" value="<?= htmlspecialchars($cat['name']) ?>" required class="stc-input">
+                                    </div>
+                                    <div>
+                                        <label>Description</label>
+                                        <input type="text" name="description" value="<?= htmlspecialchars($cat['description'] ?? '') ?>" class="stc-input">
+                                    </div>
+                                    <div>
+                                        <label>Icon</label>
+                                        <input type="text" name="icon" value="<?= htmlspecialchars($cat['icon']) ?>" class="stc-input">
+                                    </div>
+                                    <div>
+                                        <label>Sort Order</label>
+                                        <input type="number" name="sort_order" value="<?= (int)$cat['sort_order'] ?>" min="0" class="stc-input">
+                                    </div>
+                                    <div style="display:flex;align-items:flex-end;padding-bottom:2px;">
+                                        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+                                            <input type="checkbox" name="is_active" value="1" <?= $cat['is_active'] ? 'checked' : '' ?>> Active
+                                        </label>
+                                    </div>
+                                </div>
+                                <div style="display:flex;gap:8px;margin-top:12px;">
+                                    <button type="submit" class="stc-btn-sm stc-btn-builder"><i class="fas fa-check"></i> Save</button>
+                                    <button type="button" class="stc-btn-sm stc-btn-danger" onclick="stcToggleEdit(<?= (int)$cat['id'] ?>)"><i class="fas fa-xmark"></i> Cancel</button>
+                                </div>
+                            </form>
                         </div>
                         <?php endforeach; ?>
                     <?php endif; ?>
@@ -116,5 +154,12 @@ View::section('content');
 
     </div>
 </div>
+
+<script>
+function stcToggleEdit(id) {
+    var panel = document.getElementById('stc-edit-' + id);
+    if (panel) panel.classList.toggle('open');
+}
+</script>
 
 <?php View::endSection(); ?>
