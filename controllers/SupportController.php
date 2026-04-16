@@ -752,9 +752,10 @@ class SupportController extends BaseController
             if (empty($ticket['assigned_to'])) {
                 $unassigned++;
             }
-            if (!empty($ticket['last_reply_at']) && !empty($ticket['created_at'])) {
+            $firstAgentReplyAt = $this->model->getFirstAgentReplyAt((int) ($ticket['id'] ?? 0));
+            if (!empty($firstAgentReplyAt) && !empty($ticket['created_at'])) {
                 $first = strtotime($ticket['created_at']);
-                $reply = strtotime($ticket['last_reply_at']);
+                $reply = strtotime($firstAgentReplyAt);
                 if ($first && $reply && ($reply - $first) <= 86400) {
                     $repliedWithin24h++;
                 }

@@ -104,7 +104,7 @@ class SupportModel
             `sender_id` INT UNSIGNED NULL,
             `message` TEXT NOT NULL,
             `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-             INDEX `idx_slm_chat` (`chat_id`)
+            INDEX `idx_slm_chat` (`chat_id`)
          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
         $this->db->query("CREATE TABLE IF NOT EXISTS `support_ticket_activities` (
@@ -777,5 +777,15 @@ class SupportModel
              ORDER BY a.created_at DESC, a.id DESC",
             [$ticketId]
         ) ?: [];
+    }
+
+    public function getFirstAgentReplyAt(int $ticketId): ?string
+    {
+        return $this->db->fetchColumn(
+            "SELECT MIN(created_at)
+             FROM support_ticket_messages
+             WHERE ticket_id = ? AND sender_type = 'agent' AND is_internal = 0",
+            [$ticketId]
+        ) ?: null;
     }
 }
