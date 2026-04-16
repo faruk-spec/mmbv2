@@ -133,6 +133,26 @@ $router->post('/support/live/send', 'SupportLiveChatController@send');
 $router->get('/support/live/messages', 'SupportLiveChatController@poll');
 $router->post('/support/live/close', 'SupportLiveChatController@close');
 
+// Support API — dynamic ticket wizard
+$router->get('/api/support/groups',     'Api\\SupportApiController@getGroups',    ['auth']);
+$router->get('/api/support/categories', 'Api\\SupportApiController@getCategories', ['auth']);
+$router->get('/api/support/template',   'Api\\SupportApiController@getTemplate',   ['auth']);
+$router->post('/api/support/tickets',   'Api\\SupportApiController@submitTicket',  ['auth']);
+
+// Support Admin API — template builder
+$router->get('/api/admin/support/groups',                          'Api\\SupportApiController@adminGetGroups',           ['auth', 'admin']);
+$router->post('/api/admin/support/groups',                         'Api\\SupportApiController@adminCreateGroup',         ['auth', 'admin']);
+$router->put('/api/admin/support/groups/{id}',                     'Api\\SupportApiController@adminUpdateGroup',         ['auth', 'admin']);
+$router->delete('/api/admin/support/groups/{id}',                  'Api\\SupportApiController@adminDeleteGroup',         ['auth', 'admin']);
+$router->get('/api/admin/support/categories',                      'Api\\SupportApiController@adminGetCategories',       ['auth', 'admin']);
+$router->post('/api/admin/support/categories',                     'Api\\SupportApiController@adminCreateCategory',      ['auth', 'admin']);
+$router->put('/api/admin/support/categories/{id}',                 'Api\\SupportApiController@adminUpdateCategory',      ['auth', 'admin']);
+$router->delete('/api/admin/support/categories/{id}',              'Api\\SupportApiController@adminDeleteCategory',      ['auth', 'admin']);
+$router->get('/api/admin/support/template/{id}/history',           'Api\\SupportApiController@adminGetTemplateHistory',  ['auth', 'admin']);
+$router->get('/api/admin/support/template/version/{id}',           'Api\\SupportApiController@adminGetTemplateVersion',  ['auth', 'admin']);
+$router->get('/api/admin/support/template/{id}',                   'Api\\SupportApiController@adminGetTemplate',         ['auth', 'admin']);
+$router->post('/api/admin/support/template/{id}',                  'Api\\SupportApiController@adminSaveTemplate',        ['auth', 'admin']);
+
 // Session alert polling — checked every ~30 s by logged-in browsers
 $router->get('/api/session-alerts', function() {
     if (!\Core\Auth::check()) {

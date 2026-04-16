@@ -321,8 +321,9 @@ class SupportApiController extends BaseController
             return;
         }
 
-        $id = $this->model->saveTemplate($categoryId, $schema, Auth::id());
-        $this->jsonOk(['template_id' => $id, 'version' => $schema['version'] ?? 1], 201);
+        $id  = $this->model->saveTemplate($categoryId, $schema, Auth::id());
+        $tpl = $this->model->getTemplateById($id);
+        $this->jsonOk(['template_id' => $id, 'version' => (int) ($tpl['version'] ?? 1)], 201);
     }
 
     /** GET /api/admin/support/template/{category_id}/history */
