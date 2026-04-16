@@ -1,8 +1,13 @@
 import { useState, useCallback } from 'react';
 import { arrayMove } from '@dnd-kit/sortable';
 
-let _uid = 1;
-function uid() { return `id_${Date.now()}_${_uid++}`; }
+function uid() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  // Fallback for environments without crypto.randomUUID
+  return 'id_' + Date.now() + '_' + Math.random().toString(36).slice(2, 11);
+}
 
 function defaultField(type) {
   const base = {
