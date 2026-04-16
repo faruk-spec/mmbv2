@@ -4,7 +4,7 @@ export default function FieldEditor({ field, onUpdate, onClose }) {
   if (!field) {
     return (
       <div className="bldr-editor-empty">
-        <i className="fas fa-mouse-pointer" style={{ fontSize: '1.6rem', color: '#4b5563', display: 'block', marginBottom: 8 }}></i>
+        <i className="fas fa-mouse-pointer" style={{ fontSize: '1.6rem', color: 'var(--text-secondary,#8892a6)', display: 'block', marginBottom: 8 }}></i>
         Select a field to edit its properties
       </div>
     );

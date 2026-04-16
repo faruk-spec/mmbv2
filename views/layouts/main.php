@@ -2424,7 +2424,7 @@ try {
             var div = document.createElement('div');
             var isUser = (m.sender_type === 'user' || m.sender_type === 'guest');
             div.style.cssText = 'max-width:80%;padding:8px 12px;border-radius:12px;font-size:.82rem;line-height:1.5;word-break:break-word;' +
-                (isUser ? 'align-self:flex-end;background:linear-gradient(135deg,rgba(0,240,255,.2),rgba(255,46,196,.15));margin-left:auto;' : 'align-self:flex-start;background:rgba(255,255,255,.06);');
+                (isUser ? 'align-self:flex-end;background:linear-gradient(135deg,rgba(0,240,255,.25),rgba(255,46,196,.2));margin-left:auto;' : 'align-self:flex-start;background:var(--bg-secondary,rgba(255,255,255,.06));border:1px solid var(--border-color,rgba(255,255,255,.08));');
             div.style.color = 'var(--text-primary,#e8eefc)';
             div.textContent = m.message;
             container.appendChild(div);

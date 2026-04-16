@@ -1,7 +1,6 @@
 import React from 'react';
 import { useSortable }  from '@dnd-kit/sortable';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { useDroppable } from '@dnd-kit/core';
 import { CSS }          from '@dnd-kit/utilities';
 import FieldCard        from './FieldCard.jsx';
 
@@ -15,11 +14,9 @@ export default function SectionBlock({
   onSelectField,
 }) {
   const {
-    attributes, listeners, setNodeRef: setSortRef,
-    transform, transition, isDragging,
+    attributes, listeners, setNodeRef,
+    transform, transition, isDragging, isOver,
   } = useSortable({ id: section.id, data: { type: 'section' } });
-
-  const { setNodeRef: setDropRef, isOver } = useDroppable({ id: section.id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -27,14 +24,9 @@ export default function SectionBlock({
     opacity: isDragging ? 0.4 : 1,
   };
 
-  function setRef(el) {
-    setSortRef(el);
-    setDropRef(el);
-  }
-
   return (
     <div
-      ref={setRef}
+      ref={setNodeRef}
       style={style}
       className={`bldr-section${isOver ? ' drop-over' : ''}`}
     >
