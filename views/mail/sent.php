@@ -13,7 +13,7 @@
 
 <?php if (empty($messages)): ?>
 <div class="mail-card" style="text-align:center;padding:60px 20px;">
-    <i class="fas fa-paper-plane" style="font-size:48px;color:#334155;margin-bottom:16px;"></i>
+    <i class="fas fa-paper-plane" style="font-size:48px;color:var(--text-tertiary);margin-bottom:16px;"></i>
     <p style="color:#64748b;font-size:15px;">No emails sent yet.</p>
 </div>
 <?php else: ?>

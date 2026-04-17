@@ -92,6 +92,8 @@ class ThemeController extends BaseController
                 'cyan', 'magenta', 'green', 'orange', 'purple', 'red',
                 'bg_primary_dark', 'bg_secondary_dark', 'bg_card_dark',
                 'bg_primary_light', 'bg_secondary_light', 'bg_card_light',
+                'text_primary_dark', 'text_secondary_dark', 'text_tertiary_dark',
+                'text_primary_light', 'text_secondary_light', 'text_tertiary_light',
                 'radius_level', 'shadow_intensity',
             ];
 

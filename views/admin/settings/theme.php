@@ -289,6 +289,85 @@
         </div>
     </div>
 
+    <!-- Text Color Overrides -->
+    <div class="card" style="margin-bottom: 24px;">
+        <div class="card-header" style="margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border-color);">
+            <h3 class="card-title" style="font-size: 1rem; font-weight: 600;"><i class="fas fa-font" style="margin-right: 8px; color: var(--cyan);"></i>Text Color Customization</h3>
+        </div>
+
+        <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 20px;">
+            Customize text colors for dark and light modes. Leave empty to use theme defaults. This is useful if text is hard to read on your chosen background colors.
+        </p>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+            <!-- Dark text colors -->
+            <div>
+                <h4 style="font-size: 13px; font-weight: 600; margin-bottom: 12px; color: var(--text-primary);"><i class="fas fa-moon" style="margin-right: 6px;"></i>Dark Mode Text</h4>
+                <?php
+                $darkTextFields = [
+                    'text_primary_dark'   => ['label' => 'Primary Text',    'default' => '#fafafa'],
+                    'text_secondary_dark' => ['label' => 'Secondary Text',  'default' => '#a1a1aa'],
+                    'text_tertiary_dark'  => ['label' => 'Tertiary / Muted','default' => '#71717a'],
+                ];
+                foreach ($darkTextFields as $key => $field):
+                    $currentVal = $customOverrides[$key] ?? '';
+                ?>
+                <div style="margin-bottom: 12px;">
+                    <label style="display: block; font-size: 12px; font-weight: 500; color: var(--text-secondary); margin-bottom: 4px;"><?= $field['label'] ?></label>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <input type="color" value="<?= htmlspecialchars($currentVal ?: $field['default']) ?>"
+                               style="width: 32px; height: 32px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); cursor: pointer; padding: 2px; background: var(--bg-secondary);"
+                               data-default="<?= $field['default'] ?>" class="color-override" data-target="override_<?= $key ?>">
+                        <input type="text" name="override_<?= $key ?>" value="<?= htmlspecialchars($currentVal) ?>"
+                               placeholder="<?= $field['default'] ?>"
+                               style="flex: 1; padding: 6px 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary); font-size: 12px; font-family: monospace;"
+                               class="color-text-input" data-for="override_<?= $key ?>">
+                    </div>
+                </div>
+                <?php endforeach; ?>
+                <!-- Dark mode preview swatch -->
+                <div style="margin-top: 8px; padding: 12px; background: #09090b; border: 1px solid rgba(255,255,255,0.08); border-radius: var(--radius-md);">
+                    <div class="pv-dark-text-primary" style="font-size: 13px; font-weight: 600; color: #fafafa; margin-bottom: 4px;">Primary text preview</div>
+                    <div class="pv-dark-text-secondary" style="font-size: 12px; color: #a1a1aa; margin-bottom: 2px;">Secondary text preview</div>
+                    <div class="pv-dark-text-tertiary" style="font-size: 11px; color: #71717a;">Tertiary / muted text preview</div>
+                </div>
+            </div>
+
+            <!-- Light text colors -->
+            <div>
+                <h4 style="font-size: 13px; font-weight: 600; margin-bottom: 12px; color: var(--text-primary);"><i class="fas fa-sun" style="margin-right: 6px;"></i>Light Mode Text</h4>
+                <?php
+                $lightTextFields = [
+                    'text_primary_light'   => ['label' => 'Primary Text',    'default' => '#18181b'],
+                    'text_secondary_light' => ['label' => 'Secondary Text',  'default' => '#52525b'],
+                    'text_tertiary_light'  => ['label' => 'Tertiary / Muted','default' => '#a1a1aa'],
+                ];
+                foreach ($lightTextFields as $key => $field):
+                    $currentVal = $customOverrides[$key] ?? '';
+                ?>
+                <div style="margin-bottom: 12px;">
+                    <label style="display: block; font-size: 12px; font-weight: 500; color: var(--text-secondary); margin-bottom: 4px;"><?= $field['label'] ?></label>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <input type="color" value="<?= htmlspecialchars($currentVal ?: $field['default']) ?>"
+                               style="width: 32px; height: 32px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); cursor: pointer; padding: 2px; background: var(--bg-secondary);"
+                               data-default="<?= $field['default'] ?>" class="color-override" data-target="override_<?= $key ?>">
+                        <input type="text" name="override_<?= $key ?>" value="<?= htmlspecialchars($currentVal) ?>"
+                               placeholder="<?= $field['default'] ?>"
+                               style="flex: 1; padding: 6px 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary); font-size: 12px; font-family: monospace;"
+                               class="color-text-input" data-for="override_<?= $key ?>">
+                    </div>
+                </div>
+                <?php endforeach; ?>
+                <!-- Light mode preview swatch -->
+                <div style="margin-top: 8px; padding: 12px; background: #fafafa; border: 1px solid rgba(0,0,0,0.08); border-radius: var(--radius-md);">
+                    <div class="pv-light-text-primary" style="font-size: 13px; font-weight: 600; color: #18181b; margin-bottom: 4px;">Primary text preview</div>
+                    <div class="pv-light-text-secondary" style="font-size: 12px; color: #52525b; margin-bottom: 2px;">Secondary text preview</div>
+                    <div class="pv-light-text-tertiary" style="font-size: 11px; color: #a1a1aa;">Tertiary / muted text preview</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Shape & Style -->
     <div class="card" style="margin-bottom: 24px;">
         <div class="card-header" style="margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border-color);">
@@ -531,6 +610,11 @@ function updatePreview() {
     const bgSecondary = getOv('bg_secondary_' + bgKey, tokens.bgSecondary);
     const bgCard      = getOv('bg_card_' + bgKey, tokens.bgCard);
 
+    // Text color overrides
+    const textPrimary   = getOv('text_primary_' + bgKey, tokens.textPrimary);
+    const textSecondary = getOv('text_secondary_' + bgKey, tokens.textSecondary);
+    const textTertiary  = getOv('text_tertiary_' + bgKey, selectedMode === 'light' ? '#a1a1aa' : '#71717a');
+
     // Radius & shadow
     const radiusLevel = document.querySelector('[name="override_radius_level"]:checked')?.value || '';
     const shadowLevel = document.querySelector('[name="override_shadow_intensity"]:checked')?.value || '';
@@ -551,8 +635,9 @@ function updatePreview() {
     previewEl.style.setProperty('--p-orange', orange);
     previewEl.style.setProperty('--p-red', red);
     previewEl.style.setProperty('--p-purple', purple);
-    previewEl.style.setProperty('--p-text-primary', tokens.textPrimary);
-    previewEl.style.setProperty('--p-text-secondary', tokens.textSecondary);
+    previewEl.style.setProperty('--p-text-primary', textPrimary);
+    previewEl.style.setProperty('--p-text-secondary', textSecondary);
+    previewEl.style.setProperty('--p-text-tertiary', textTertiary);
     previewEl.style.setProperty('--p-border', tokens.border);
     previewEl.style.setProperty('--p-radius', rad.lg);
     previewEl.style.setProperty('--p-card-shadow', shd.card);
@@ -562,7 +647,7 @@ function updatePreview() {
         el.style.background = cyan; el.style.color = '#fff';
     });
     previewEl.querySelectorAll('.pv-btn-secondary').forEach(el => {
-        el.style.background = bgCard; el.style.color = tokens.textPrimary; el.style.borderColor = tokens.border;
+        el.style.background = bgCard; el.style.color = textPrimary; el.style.borderColor = tokens.border;
     });
     previewEl.querySelectorAll('.pv-btn-danger').forEach(el => {
         el.style.background = red + '1a'; el.style.color = red; el.style.borderColor = red + '40';
@@ -572,10 +657,10 @@ function updatePreview() {
         el.style.borderRadius = rad.lg; el.style.boxShadow = shd.card;
     });
     previewEl.querySelectorAll('.pv-card-title').forEach(el => {
-        el.style.color = tokens.textPrimary;
+        el.style.color = textPrimary;
     });
     previewEl.querySelectorAll('.pv-card-text').forEach(el => {
-        el.style.color = tokens.textSecondary;
+        el.style.color = textSecondary;
     });
     previewEl.querySelectorAll('.pv-badge-success').forEach(el => {
         el.style.background = green + '1f'; el.style.color = green;
@@ -595,6 +680,26 @@ function updatePreview() {
     const themeName = selectedTheme.charAt(0).toUpperCase() + selectedTheme.slice(1);
     const headerEl = previewEl.querySelector('.pv-header-label');
     if (headerEl) headerEl.textContent = themeName + ' – ' + modeLabel + ' Mode';
+
+    // Update text color preview swatches
+    document.querySelectorAll('.pv-dark-text-primary').forEach(el => {
+        el.style.color = getOv('text_primary_dark', themeTokens[selectedTheme]?.dark?.textPrimary || '#fafafa');
+    });
+    document.querySelectorAll('.pv-dark-text-secondary').forEach(el => {
+        el.style.color = getOv('text_secondary_dark', themeTokens[selectedTheme]?.dark?.textSecondary || '#a1a1aa');
+    });
+    document.querySelectorAll('.pv-dark-text-tertiary').forEach(el => {
+        el.style.color = getOv('text_tertiary_dark', '#71717a');
+    });
+    document.querySelectorAll('.pv-light-text-primary').forEach(el => {
+        el.style.color = getOv('text_primary_light', themeTokens[selectedTheme]?.light?.textPrimary || '#18181b');
+    });
+    document.querySelectorAll('.pv-light-text-secondary').forEach(el => {
+        el.style.color = getOv('text_secondary_light', themeTokens[selectedTheme]?.light?.textSecondary || '#52525b');
+    });
+    document.querySelectorAll('.pv-light-text-tertiary').forEach(el => {
+        el.style.color = getOv('text_tertiary_light', '#a1a1aa');
+    });
 }
 
 // Run initial preview update

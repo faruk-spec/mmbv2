@@ -52,19 +52,25 @@ try {
 
     if (!empty($cssOverrides)) {
         $themeOverridesCSS = 'html[data-ui-theme] { ' . implode('; ', $cssOverrides) . '; }';
-        // BG overrides for dark mode
+        // BG + text overrides for dark mode
         $darkBg = [];
         if (!empty($ov['bg_primary_dark']))   $darkBg[] = '--bg-primary: ' . $san($ov['bg_primary_dark']);
         if (!empty($ov['bg_secondary_dark'])) $darkBg[] = '--bg-secondary: ' . $san($ov['bg_secondary_dark']);
         if (!empty($ov['bg_card_dark']))      $darkBg[] = '--bg-card: ' . $san($ov['bg_card_dark']);
+        if (!empty($ov['text_primary_dark']))   $darkBg[] = '--text-primary: ' . $san($ov['text_primary_dark']);
+        if (!empty($ov['text_secondary_dark'])) $darkBg[] = '--text-secondary: ' . $san($ov['text_secondary_dark']);
+        if (!empty($ov['text_tertiary_dark']))  $darkBg[] = '--text-tertiary: ' . $san($ov['text_tertiary_dark']);
         if (!empty($darkBg)) {
             $themeOverridesCSS .= ' html[data-ui-theme]:not([data-theme="light"]) { ' . implode('; ', $darkBg) . '; }';
         }
-        // BG overrides for light mode
+        // BG + text overrides for light mode
         $lightBg = [];
         if (!empty($ov['bg_primary_light']))   $lightBg[] = '--bg-primary: ' . $san($ov['bg_primary_light']);
         if (!empty($ov['bg_secondary_light'])) $lightBg[] = '--bg-secondary: ' . $san($ov['bg_secondary_light']);
         if (!empty($ov['bg_card_light']))      $lightBg[] = '--bg-card: ' . $san($ov['bg_card_light']);
+        if (!empty($ov['text_primary_light']))   $lightBg[] = '--text-primary: ' . $san($ov['text_primary_light']);
+        if (!empty($ov['text_secondary_light'])) $lightBg[] = '--text-secondary: ' . $san($ov['text_secondary_light']);
+        if (!empty($ov['text_tertiary_light']))  $lightBg[] = '--text-tertiary: ' . $san($ov['text_tertiary_light']);
         if (!empty($lightBg)) {
             $themeOverridesCSS .= ' html[data-ui-theme][data-theme="light"] { ' . implode('; ', $lightBg) . '; }';
         }

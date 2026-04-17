@@ -717,6 +717,42 @@ body::before {
     color: #ffffff !important;
 }
 
+/* Fix inline-styled hardcoded dark text that becomes invisible in dark mode */
+:root:not([data-theme="light"]) [style*="color:#1f2937"],
+:root:not([data-theme="light"]) [style*="color: #1f2937"],
+:root:not([data-theme="light"]) [style*="color:#334155"],
+:root:not([data-theme="light"]) [style*="color: #334155"],
+:root:not([data-theme="light"]) [style*="color:#374151"],
+:root:not([data-theme="light"]) [style*="color: #374151"],
+:root:not([data-theme="light"]) [style*="color:#475569"],
+:root:not([data-theme="light"]) [style*="color: #475569"],
+:root:not([data-theme="light"]) [style*="color:#1e293b"],
+:root:not([data-theme="light"]) [style*="color: #1e293b"],
+:root:not([data-theme="light"]) [style*="color:#0f172a"],
+:root:not([data-theme="light"]) [style*="color: #0f172a"],
+:root:not([data-theme="light"]) [style*="color:#1a1a1a"],
+:root:not([data-theme="light"]) [style*="color: #1a1a1a"],
+:root:not([data-theme="light"]) [style*="color:#111827"],
+:root:not([data-theme="light"]) [style*="color: #111827"],
+:root:not([data-theme="light"]) [style*="color:#0a2540"],
+:root:not([data-theme="light"]) [style*="color: #0a2540"],
+:root:not([data-theme="light"]) [style*="color:black"],
+:root:not([data-theme="light"]) [style*="color: black"] {
+    color: var(--text-primary) !important;
+}
+
+/* Fix inline-styled hardcoded dark-gray secondary text */
+:root:not([data-theme="light"]) [style*="color:#64748b"],
+:root:not([data-theme="light"]) [style*="color: #64748b"],
+:root:not([data-theme="light"]) [style*="color:#6b7280"],
+:root:not([data-theme="light"]) [style*="color: #6b7280"],
+:root:not([data-theme="light"]) [style*="color:#71717a"],
+:root:not([data-theme="light"]) [style*="color: #71717a"],
+:root:not([data-theme="light"]) [style*="color:#9ca3af"],
+:root:not([data-theme="light"]) [style*="color: #9ca3af"] {
+    color: var(--text-secondary) !important;
+}
+
 /* AdminLTE dark mode overrides — fix text colours that default to dark */
 :root:not([data-theme="light"]) .content-wrapper,
 :root:not([data-theme="light"]) .main-content,

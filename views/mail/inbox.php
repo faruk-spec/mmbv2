@@ -30,7 +30,7 @@
     $folderIcons = ['inbox'=>'fa-inbox','starred'=>'fa-star','archived'=>'fa-archive','trash'=>'fa-trash'];
     $fi = $folderIcons[$folder ?? 'inbox'] ?? 'fa-inbox';
     ?>
-    <i class="fas <?= $fi ?>" style="font-size:48px;color:#334155;margin-bottom:16px;"></i>
+    <i class="fas <?= $fi ?>" style="font-size:48px;color:var(--text-tertiary);margin-bottom:16px;"></i>
     <p style="color:#64748b;font-size:15px;">
         <?= isset($searchQuery) ? 'No results found for "' . htmlspecialchars($searchQuery, ENT_QUOTES, 'UTF-8') . '"'
                                  : 'Your ' . htmlspecialchars($folderLabels[$folder ?? 'inbox'] ?? ucfirst($folder ?? 'inbox'), ENT_QUOTES, 'UTF-8') . ' is empty.' ?>
