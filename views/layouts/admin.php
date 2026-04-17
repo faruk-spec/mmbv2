@@ -1172,6 +1172,21 @@ try {
 })();
 </script>
 <?php } } catch (\Exception $_alEx3) { /* non-fatal */ } ?>
+<?php
+// ── Skeleton screen ───────────────────────────────────────────────────────
+try {
+    if (!isset($_adminLoaderSkDone)) {
+        $_adminSkRow = \Core\Database::getInstance()->fetch(
+            "SELECT value FROM settings WHERE `key` = 'skeleton_enabled'"
+        );
+        if ($_adminSkRow && $_adminSkRow['value'] === '1') {
+            $skeletonType = 'admin';
+            include BASE_PATH . '/views/partials/skeleton-screen.php';
+        }
+        $_adminLoaderSkDone = true;
+    }
+} catch (\Exception $_skEx) { /* non-fatal */ }
+?>
     <div class="admin-container">
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">

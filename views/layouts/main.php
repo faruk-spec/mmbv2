@@ -1355,9 +1355,11 @@ if (($_loaderSettings['action_loader_enabled'] ?? '0') === '1'):
 </script>
 <?php endif; // end action loader ?>
 <?php
-// ── Skeleton bootstrap: expose setting to JS ────────────────────────────
+// ── Skeleton screen (main layout) ────────────────────────────────────────
 if (($_loaderSettings['skeleton_enabled'] ?? '0') === '1') {
     echo '<script>window.mmbSkeletonEnabled = true;</script>';
+    $skeletonType = 'main';
+    include BASE_PATH . '/views/partials/skeleton-screen.php';
 }
 ?>
     <?php if (!empty($_SESSION['_concurrent_session_warning'])): ?>
