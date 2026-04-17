@@ -22,7 +22,7 @@
     <div>
         <div class="card" style="position: sticky; top: 20px;">
             <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
-                <div style="width: 48px; height: 48px; background: var(--cyan); background: linear-gradient(135deg, var(--cyan) 0%, #6366f1 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);">
+                <div style="width: 48px; height: 48px; background: var(--cyan); border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);">
                     <i class="fas fa-info-circle" style="font-size: 24px; color: #fff;"></i>
                 </div>
                 <h3 style="margin: 0; font-size: 20px;">Current Status</h3>

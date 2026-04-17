@@ -12,7 +12,7 @@
                 <table role="presentation" style="max-width: 600px; margin: 0 auto; background: #18181b; border-radius: 16px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
                     <!-- Header -->
                     <tr>
-                        <td style="padding: 40px 40px 20px; text-align: center; background: linear-gradient(135deg, rgba(59,130,246,0.1), rgba(139,92,246,0.1));">
+                        <td style="padding: 40px 40px 20px; text-align: center; background: rgba(59,130,246,0.06);">
                             <h1 style="margin: 0; color: #3b82f6; font-size: 28px; font-weight: 600;">
                                 <?= APP_NAME ?>
                             </h1>
@@ -36,7 +36,7 @@
                             
                             <div style="text-align: center; margin: 30px 0;">
                                 <a href="<?= htmlspecialchars($verify_url) ?>" 
-                                   style="display: inline-block; padding: 16px 40px; background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: #ffffff; text-decoration: none; font-weight: 600; font-size: 16px; border-radius: 8px;">
+                                   style="display: inline-block; padding: 16px 40px; background: #3b82f6; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 16px; border-radius: 8px;">
                                     Verify Email Address
                                 </a>
                             </div>

@@ -12,7 +12,7 @@
                 <table role="presentation" style="max-width: 600px; margin: 0 auto; background: #18181b; border-radius: 16px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
                     <!-- Header -->
                     <tr>
-                        <td style="padding: 40px 40px 20px; text-align: center; background: linear-gradient(135deg, rgba(34,197,94,0.1), rgba(59,130,246,0.1));">
+                        <td style="padding: 40px 40px 20px; text-align: center; background: rgba(59,130,246,0.06);">
                             <h1 style="margin: 0; color: #22c55e; font-size: 28px; font-weight: 600;">
                                 Welcome to <?= APP_NAME ?>! 🎉
                             </h1>
@@ -59,7 +59,7 @@
                             
                             <div style="text-align: center; margin: 30px 0;">
                                 <a href="<?= htmlspecialchars($login_url) ?>" 
-                                   style="display: inline-block; padding: 16px 40px; background: linear-gradient(135deg, #22c55e, #3b82f6); color: #ffffff; text-decoration: none; font-weight: 600; font-size: 16px; border-radius: 8px;">
+                                   style="display: inline-block; padding: 16px 40px; background: #3b82f6; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 16px; border-radius: 8px;">
                                     Go to Dashboard
                                 </a>
                             </div>

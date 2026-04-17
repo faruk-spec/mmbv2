@@ -12,8 +12,8 @@
                 <table role="presentation" style="max-width:600px;margin:0 auto;background:#18181b;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,0.1);">
                     <!-- Header -->
                     <tr>
-                        <td style="padding:36px 40px 20px;text-align:center;background:linear-gradient(135deg,rgba(34,197,94,0.08),rgba(59,130,246,0.08));">
-                            <div style="display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#22c55e,#3b82f6);margin-bottom:14px;">
+                        <td style="padding:36px 40px 20px;text-align:center;background:rgba(59,130,246,0.06);">
+                            <div style="display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:50%;background:#3b82f6;margin-bottom:14px;">
                                 <span style="font-size:22px;">✅</span>
                             </div>
                             <h1 style="margin:0;color:#22c55e;font-size:22px;font-weight:700;">
@@ -68,7 +68,7 @@
                             <table role="presentation" style="width:100%;border-collapse:collapse;">
                                 <tr>
                                     <td style="text-align:center;">
-                                        <a href="<?= htmlspecialchars($ticketUrl ?? '#') ?>" style="display:inline-block;padding:14px 32px;background:linear-gradient(135deg,#22c55e,#3b82f6);border-radius:8px;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;">
+                                        <a href="<?= htmlspecialchars($ticketUrl ?? '#') ?>" style="display:inline-block;padding:14px 32px;background:#3b82f6;border-radius:8px;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;">
                                             View Closed Ticket
                                         </a>
                                     </td>
