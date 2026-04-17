@@ -20,7 +20,7 @@ VALUES
 '<!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background-color:#06060a;font-family:''Segoe UI'',Tahoma,Geneva,Verdana,sans-serif;">
+<body style="margin:0;padding:0;background-color:#06060a;font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif;">
   <table role="presentation" style="width:100%;border-collapse:collapse;">
     <tr><td style="padding:40px 20px;">
       <table role="presentation" style="max-width:600px;margin:0 auto;background:linear-gradient(135deg,#0c0c12 0%,#0f0f18 100%);border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,0.1);">
@@ -67,7 +67,7 @@ VALUES
 '<!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background-color:#06060a;font-family:''Segoe UI'',Tahoma,Geneva,Verdana,sans-serif;">
+<body style="margin:0;padding:0;background-color:#06060a;font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif;">
   <table role="presentation" style="width:100%;border-collapse:collapse;">
     <tr><td style="padding:40px 20px;">
       <table role="presentation" style="max-width:600px;margin:0 auto;background:linear-gradient(135deg,#0c0c12 0%,#0f0f18 100%);border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,0.1);">
@@ -105,7 +105,7 @@ VALUES
 '<!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background-color:#06060a;font-family:''Segoe UI'',Tahoma,Geneva,Verdana,sans-serif;">
+<body style="margin:0;padding:0;background-color:#06060a;font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif;">
   <table role="presentation" style="width:100%;border-collapse:collapse;">
     <tr><td style="padding:40px 20px;">
       <table role="presentation" style="max-width:600px;margin:0 auto;background:linear-gradient(135deg,#0c0c12 0%,#0f0f18 100%);border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,0.1);">
@@ -146,7 +146,7 @@ VALUES
 '<!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background-color:#06060a;font-family:''Segoe UI'',Tahoma,Geneva,Verdana,sans-serif;">
+<body style="margin:0;padding:0;background-color:#06060a;font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif;">
   <table role="presentation" style="width:100%;border-collapse:collapse;">
     <tr><td style="padding:40px 20px;">
       <table role="presentation" style="max-width:600px;margin:0 auto;background:linear-gradient(135deg,#0c0c12 0%,#0f0f18 100%);border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,0.1);">
