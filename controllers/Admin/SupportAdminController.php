@@ -10,7 +10,6 @@ namespace Controllers\Admin;
 use Controllers\BaseController;
 use Core\Auth;
 use Core\Database;
-use Core\Mailer;
 use Core\Notification;
 use Models\SupportModel;
 
@@ -128,31 +127,20 @@ class SupportAdminController extends BaseController
                        . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost')
                        . '/support/view/' . $id;
 
-            $emailVars = [
+            $this->sendSupportEmail($ticket['user_email'] ?? '', 'support-ticket-reply', [
                 'ticketId'     => $id,
                 'subject'      => $ticket['subject'],
                 'userName'     => $ticket['user_name'],
                 'replyMessage' => $message,
                 'ticketUrl'    => $ticketUrl,
                 'status'       => $ticket['status'],
-            ];
-            $emailBody = $this->renderEmail('support-ticket-reply', $emailVars);
-            if ($emailBody !== null && !empty($ticket['user_email'])) {
-                $sent = Mailer::send(
-                    $ticket['user_email'],
-                    "Update on your Support Ticket #{$id}",
-                    $emailBody
-                );
-                if (!$sent) {
-                    $this->flash('warning', 'Reply saved but email notification could not be sent.');
-                }
-            }
+            ], "Update on your Support Ticket #" . sprintf('%07d', $id));
 
             // In-app notification
             Notification::send(
                 (int) $ticket['user_id'],
                 'support_ticket_reply',
-                "An agent replied to your ticket #{$id}: " . $ticket['subject'],
+                "An agent replied to your ticket #" . sprintf('%07d', $id) . ": " . $ticket['subject'],
                 ['ticket_id' => $id, 'url' => '/support/view/' . $id]
             );
         }
@@ -186,44 +174,34 @@ class SupportAdminController extends BaseController
 
         $this->model->updateTicketStatus($id, $status, Auth::id());
 
+        // Add a visible system message to the chat thread
+        $resolution  = mb_substr(trim(strip_tags($_POST['resolution'] ?? '')), 0, 500);
+        $statusLabel = ucwords(str_replace('_', ' ', $status));
+        $sysMsg = "Status changed to {$statusLabel}." . ($resolution !== '' ? "\n\nNote: {$resolution}" : '');
+        $this->model->addSystemMessage($id, $sysMsg);
+
         if (!empty($ticket['user_email'])) {
             $ticketUrl  = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https' : 'http')
                         . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost')
                         . '/support/view/' . $id;
-            $resolution = mb_substr(trim(strip_tags($_POST['resolution'] ?? '')), 0, 500);
 
             if ($status === 'closed' || $status === 'resolved') {
-                $emailVars = [
+                $this->sendSupportEmail($ticket['user_email'], 'support-ticket-closed', [
                     'ticketId'   => $id,
                     'subject'    => $ticket['subject'],
                     'userName'   => $ticket['user_name'],
                     'ticketUrl'  => $ticketUrl,
                     'resolution' => $resolution !== '' ? $resolution : 'Your issue has been resolved.',
-                ];
-                $emailTemplate = 'support-ticket-closed';
+                ], "Support Ticket #" . sprintf('%07d', $id) . " — Status: {$statusLabel}");
             } else {
-                $emailVars = [
+                $this->sendSupportEmail($ticket['user_email'], 'support-ticket-status-update', [
                     'ticketId'  => $id,
                     'subject'   => $ticket['subject'],
                     'userName'  => $ticket['user_name'],
                     'ticketUrl' => $ticketUrl,
                     'status'    => $status,
                     'note'      => $resolution,
-                ];
-                $emailTemplate = 'support-ticket-status-update';
-            }
-
-            $emailBody = $this->renderEmail($emailTemplate, $emailVars);
-            if ($emailBody !== null) {
-                $statusLabel = ucwords(str_replace('_', ' ', $status));
-                $sent = Mailer::send(
-                    $ticket['user_email'],
-                    "Support Ticket #" . sprintf('%07d', $id) . " — Status: {$statusLabel}",
-                    $emailBody
-                );
-                if (!$sent) {
-                    $this->flash('warning', 'Status updated but email notification could not be sent.');
-                }
+                ], "Support Ticket #" . sprintf('%07d', $id) . " — Status: {$statusLabel}");
             }
 
             Notification::send(
@@ -632,7 +610,7 @@ class SupportAdminController extends BaseController
             'live_support_extra_note',
         ];
         foreach ($textKeys as $key) {
-            $value   = trim($_POST[$key] ?? '');
+            $value    = trim($_POST[$key] ?? '');
             $existing = $db->fetch("SELECT id FROM settings WHERE `key` = ?", [$key]);
             if ($existing) {
                 $db->update('settings', ['value' => $value], '`key` = ?', [$key]);
@@ -645,9 +623,16 @@ class SupportAdminController extends BaseController
         $startRaw = (int) ($_POST['ticket_id_start'] ?? 0);
         if ($startRaw >= 1) {
             // Ensure it's at least higher than any existing ticket ID
-            $maxRow    = $db->fetch("SELECT MAX(id) AS max_id FROM support_tickets");
-            $maxDynRow = $db->fetch("SELECT MAX(id) AS max_id FROM support_dyn_tickets");
-            $maxId     = max((int) ($maxRow['max_id'] ?? 0), (int) ($maxDynRow['max_id'] ?? 0));
+            $maxRow = $db->fetch("SELECT MAX(id) AS max_id FROM support_tickets");
+            $maxId  = (int) ($maxRow['max_id'] ?? 0);
+
+            // Also check support_dyn_tickets if it exists
+            try {
+                $maxDynRow = $db->fetch("SELECT MAX(id) AS max_id FROM support_dyn_tickets");
+                $maxId     = max($maxId, (int) ($maxDynRow['max_id'] ?? 0));
+            } catch (\Throwable $e) {
+                // Table may not exist yet — ignore
+            }
 
             if ($startRaw <= $maxId) {
                 $this->flash('error', "Ticket start number must be greater than the current maximum ticket ID ({$maxId}). No change applied.");
@@ -676,16 +661,4 @@ class SupportAdminController extends BaseController
     // -------------------------------------------------------------------------
     // Private helpers
     // -------------------------------------------------------------------------
-
-    private function renderEmail(string $template, array $vars): ?string
-    {
-        $file = BASE_PATH . '/views/emails/' . $template . '.php';
-        if (!file_exists($file)) {
-            return null;
-        }
-        ob_start();
-        extract($vars, EXTR_SKIP);
-        include $file;
-        return ob_get_clean() ?: null;
-    }
 }

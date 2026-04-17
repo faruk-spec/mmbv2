@@ -96,10 +96,10 @@ $router->get('/api/ws/token', 'NotificationController@wsToken', ['auth']);
 // Support Tickets (logged-in users)
 $router->get('/support', 'SupportController@index', ['auth']);
 $router->get('/help', 'SupportController@index', ['auth']); // alias for /help sidebar link
-$router->get('/support/create', function() { header('Location: /support/new', true, 301); exit; }, ['auth']);
+$router->get('/support/create', 'SupportController@createForm', ['auth']);
 $router->post('/support/create', 'SupportController@store', ['auth']);
-// Dynamic wizard (new template-driven flow)
-$router->get('/support/new', function() {
+// New wizard (React / API-driven ticket creation)
+$router->get('/support/new', function () {
     \Core\View::render('support/create-wizard', [
         'title'          => 'Create Support Ticket',
         'currentPage'    => 'create',
@@ -126,6 +126,8 @@ $router->post('/support/admin/ticket/{id}/reply', 'SupportController@adminReplyT
 $router->post('/support/admin/ticket/{id}/status', 'SupportController@adminUpdateTicketStatus', ['auth']);
 $router->post('/support/admin/ticket/{id}/priority', 'SupportController@adminUpdateTicketPriority', ['auth']);
 $router->post('/support/admin/ticket/{id}/assign', 'SupportController@adminAssignTicketAgent', ['auth']);
+$router->post('/support/admin/ticket/{id}/pickup', 'SupportController@adminPickUpTicket', ['auth']);
+$router->post('/support/admin/ticket/{id}/edit', 'SupportController@adminEditTicket', ['auth']);
 
 // Live Chat (no auth — works for guests too)
 $router->post('/support/live/start', 'SupportLiveChatController@start');

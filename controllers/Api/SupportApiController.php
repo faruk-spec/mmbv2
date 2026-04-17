@@ -34,7 +34,6 @@ namespace Controllers\Api;
 use Controllers\BaseController;
 use Core\Auth;
 use Core\Helpers;
-use Core\Mailer;
 use Core\TemplateValidator;
 use Models\SupportModel;
 use Models\SupportTemplateModel;
@@ -186,17 +185,13 @@ class SupportApiController extends BaseController
         // Send creation email to user
         $user      = Auth::user();
         $ticketUrl = $this->baseUrl() . '/support/view/' . $ticketId;
-        $emailVars = [
+        $this->sendSupportEmail($user['email'] ?? '', 'support-ticket-created', [
             'ticketId'    => $ticketId,
             'subject'     => $subject,
             'userName'    => $user['name'] ?? 'User',
             'ticketUrl'   => $ticketUrl,
             'description' => $textSummary,
-        ];
-        $emailBody = $this->renderEmail('support-ticket-created', $emailVars);
-        if ($emailBody !== null && !empty($user['email'])) {
-            Mailer::send($user['email'], "Support Ticket #" . $this->formatTicketId($ticketId) . " Created: {$subject}", $emailBody);
-        }
+        ], "Support Ticket #" . $this->formatTicketId($ticketId) . " Created: {$subject}");
 
         // Notify admins
         $this->notifyAdmins(
@@ -498,17 +493,5 @@ class SupportApiController extends BaseController
     {
         $scheme = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
         return $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
-    }
-
-    private function renderEmail(string $template, array $vars): ?string
-    {
-        $file = BASE_PATH . '/views/emails/' . $template . '.php';
-        if (!file_exists($file)) {
-            return null;
-        }
-        ob_start();
-        extract($vars, EXTR_SKIP);
-        include $file;
-        return ob_get_clean() ?: null;
     }
 }

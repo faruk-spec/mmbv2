@@ -3,88 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Update on your Support Ticket #<?= (int)$ticketId ?></title>
+    <title>New Reply on Ticket #<?= (int)$ticketId ?></title>
 </head>
-<body style="margin:0;padding:0;background-color:#06060a;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
-    <table role="presentation" style="width:100%;border-collapse:collapse;">
-        <tr>
-            <td style="padding:40px 20px;">
-                <table role="presentation" style="max-width:600px;margin:0 auto;background:linear-gradient(135deg,#0c0c12 0%,#0f0f18 100%);border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,0.1);">
-                    <!-- Header -->
-                    <tr>
-                        <td style="padding:36px 40px 20px;text-align:center;background:linear-gradient(135deg,rgba(255,159,67,0.08),rgba(255,107,107,0.08));">
-                            <div style="display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#ff9f43,#ff6b6b);margin-bottom:14px;">
-                                <span style="font-size:22px;">💬</span>
-                            </div>
-                            <h1 style="margin:0;color:#ff9f43;font-size:22px;font-weight:700;">
-                                Update on Ticket #<?= (int)$ticketId ?>
-                            </h1>
-                        </td>
-                    </tr>
+<body style="margin:0;padding:0;background:#f0f4f8;font-family:'Segoe UI',Arial,sans-serif;">
+<table role="presentation" style="width:100%;border-collapse:collapse;">
+<tr><td style="padding:32px 16px;">
+<table role="presentation" style="max-width:600px;margin:0 auto;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.10);">
 
-                    <!-- Content -->
-                    <tr>
-                        <td style="padding:36px 40px;">
-                            <h2 style="margin:0 0 16px;color:#e8eefc;font-size:20px;font-weight:600;">
-                                Hello, <?= htmlspecialchars($userName ?? 'User') ?>!
-                            </h2>
+    <!-- Header -->
+    <tr><td style="background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);padding:36px 40px 28px;text-align:center;">
+        <div style="display:inline-block;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#f59e0b,#ef4444);text-align:center;line-height:52px;font-size:24px;margin-bottom:14px;">💬</div>
+        <h1 style="margin:0;color:#fff;font-size:22px;font-weight:700;letter-spacing:-.3px;">New Reply on Ticket #<?= (int)$ticketId ?></h1>
+        <p style="margin:8px 0 0;color:rgba(255,255,255,.65);font-size:13px;">Support</p>
+    </td></tr>
 
-                            <p style="margin:0 0 18px;color:#8892a6;font-size:15px;line-height:1.7;">
-                                Our support team has replied to your ticket.
-                            </p>
+    <!-- Body -->
+    <tr><td style="background:#fff;padding:32px 40px;">
+        <p style="margin:0 0 6px;color:#374151;font-size:16px;font-weight:600;">Hi <?= htmlspecialchars($userName ?? 'User') ?>,</p>
+        <p style="margin:0 0 20px;color:#6b7280;font-size:14px;line-height:1.7;">A support agent has replied to your ticket. See the message below.</p>
 
-                            <!-- Ticket info -->
-                            <table role="presentation" style="width:100%;border-collapse:collapse;margin-bottom:20px;">
-                                <tr>
-                                    <td style="padding:14px 16px;background:rgba(255,159,67,0.06);border:1px solid rgba(255,159,67,0.15);border-radius:8px;">
-                                        <div style="color:#8892a6;font-size:12px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Subject</div>
-                                        <div style="color:#e8eefc;font-size:14px;font-weight:500;"><?= htmlspecialchars($subject ?? '') ?></div>
-                                    </td>
-                                </tr>
-                            </table>
+        <!-- Subject -->
+        <div style="margin-bottom:16px;">
+            <div style="color:#9ca3af;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;">Subject</div>
+            <div style="color:#1f2937;font-size:14px;font-weight:600;padding:10px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;"><?= htmlspecialchars($subject ?? '') ?></div>
+        </div>
 
-                            <!-- Reply -->
-                            <p style="margin:0 0 8px;color:#8892a6;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Agent Reply</p>
-                            <table role="presentation" style="width:100%;border-collapse:collapse;margin-bottom:20px;">
-                                <tr>
-                                    <td style="padding:18px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-left:3px solid #ff9f43;border-radius:0 8px 8px 0;color:#c4cad8;font-size:14px;line-height:1.7;">
-                                        <?= nl2br(htmlspecialchars($replyMessage ?? '')) ?>
-                                    </td>
-                                </tr>
-                            </table>
+        <!-- Reply -->
+        <div style="margin-bottom:24px;">
+            <div style="color:#9ca3af;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;">Agent Reply</div>
+            <div style="padding:16px 18px;background:#fffbeb;border:1px solid #fde68a;border-left:4px solid #f59e0b;border-radius:0 8px 8px 0;color:#374151;font-size:14px;line-height:1.7;">
+                <?= nl2br(htmlspecialchars($replyMessage ?? '')) ?>
+            </div>
+        </div>
 
-                            <!-- Status -->
-                            <?php if (!empty($status)): ?>
-                            <p style="margin:0 0 20px;color:#8892a6;font-size:14px;">
-                                Current status: <strong style="color:#ff9f43;"><?= htmlspecialchars(ucwords(str_replace('_',' ',$status))) ?></strong>
-                            </p>
-                            <?php endif; ?>
+        <?php if (!empty($status)): ?>
+        <p style="margin:0 0 20px;color:#6b7280;font-size:14px;">
+            Current status: <strong style="color:#f59e0b;"><?= htmlspecialchars(ucwords(str_replace('_', ' ', $status))) ?></strong>
+        </p>
+        <?php endif; ?>
 
-                            <!-- CTA button -->
-                            <table role="presentation" style="width:100%;border-collapse:collapse;">
-                                <tr>
-                                    <td style="text-align:center;">
-                                        <a href="<?= htmlspecialchars($ticketUrl ?? '#') ?>" style="display:inline-block;padding:14px 32px;background:linear-gradient(135deg,#ff9f43,#ff6b6b);border-radius:8px;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;">
-                                            View &amp; Reply
-                                        </a>
-                                    </td>
-                                </tr>
-                            </table>
-                        </td>
-                    </tr>
+        <!-- CTA -->
+        <table role="presentation" style="width:100%;border-collapse:collapse;">
+        <tr><td style="text-align:center;padding:4px 0 8px;">
+            <a href="<?= htmlspecialchars($ticketUrl ?? '#') ?>" style="display:inline-block;padding:13px 36px;background:linear-gradient(135deg,#f59e0b,#ef4444);border-radius:8px;color:#fff;font-size:15px;font-weight:700;text-decoration:none;">View &amp; Reply</a>
+        </td></tr>
+        </table>
+    </td></tr>
 
-                    <!-- Footer -->
-                    <tr>
-                        <td style="padding:20px 40px;text-align:center;border-top:1px solid rgba(255,255,255,0.06);">
-                            <p style="margin:0;color:#5c6478;font-size:12px;line-height:1.6;">
-                                You are receiving this because you have an open support ticket.<br>
-                                Log in to reply or close this ticket.
-                            </p>
-                        </td>
-                    </tr>
-                </table>
-            </td>
-        </tr>
-    </table>
+    <!-- Footer -->
+    <tr><td style="background:#f8fafc;padding:18px 40px;text-align:center;border-top:1px solid #e2e8f0;">
+        <p style="margin:0;color:#9ca3af;font-size:12px;line-height:1.6;">You received this because there is an update on your support ticket.<br>Log in to view the full thread and reply.</p>
+    </td></tr>
+
+</table>
+</td></tr>
+</table>
 </body>
 </html>
