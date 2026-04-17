@@ -604,6 +604,12 @@ class SupportController extends BaseController
             ['status' => $status]
         );
 
+        // Add a visible system message to the chat thread so the reason is
+        // visible in context for both the user and agents.
+        $statusLabel = ucwords(str_replace('_', ' ', $status));
+        $sysMsg = "Status changed to {$statusLabel}." . ($reason !== '' ? "\n\nNote: {$reason}" : '');
+        $this->model->addSystemMessage($id, $sysMsg);
+
         if (!empty($ticket['user_email'])) {
             $ticketUrl  = $this->baseUrl() . '/support/view/' . $id;
             $safeReason = mb_substr(trim(strip_tags($reason)), 0, 500);

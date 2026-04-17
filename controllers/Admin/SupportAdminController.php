@@ -174,12 +174,16 @@ class SupportAdminController extends BaseController
 
         $this->model->updateTicketStatus($id, $status, Auth::id());
 
+        // Add a visible system message to the chat thread
+        $resolution  = mb_substr(trim(strip_tags($_POST['resolution'] ?? '')), 0, 500);
+        $statusLabel = ucwords(str_replace('_', ' ', $status));
+        $sysMsg = "Status changed to {$statusLabel}." . ($resolution !== '' ? "\n\nNote: {$resolution}" : '');
+        $this->model->addSystemMessage($id, $sysMsg);
+
         if (!empty($ticket['user_email'])) {
             $ticketUrl  = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https' : 'http')
                         . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost')
                         . '/support/view/' . $id;
-            $resolution  = mb_substr(trim(strip_tags($_POST['resolution'] ?? '')), 0, 500);
-            $statusLabel = ucwords(str_replace('_', ' ', $status));
 
             if ($status === 'closed' || $status === 'resolved') {
                 $this->sendSupportEmail($ticket['user_email'], 'support-ticket-closed', [

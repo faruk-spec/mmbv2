@@ -100,8 +100,21 @@ $priorityClass = match($ticket['priority']) {
         <!-- Messages thread -->
         <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:18px;">
             <?php foreach ($messages as $msg):
-                $isUserMsg = ($msg['sender_type'] === 'user');
+                $isUserMsg   = ($msg['sender_type'] === 'user');
+                $isSystemMsg = ($msg['sender_type'] === 'system');
             ?>
+            <?php if ($isSystemMsg): ?>
+            <div style="display:flex;justify-content:center;">
+                <div style="max-width:88%;background:color-mix(in srgb,var(--cyan) 7%,transparent);border:1px solid color-mix(in srgb,var(--cyan) 20%,transparent);border-radius:10px;padding:12px 16px;">
+                    <div style="display:flex;align-items:center;gap:7px;margin-bottom:6px;">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--cyan);flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        <span style="font-weight:700;font-size:.75rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.05em;">System Update</span>
+                        <span style="color:var(--text-secondary);font-size:.72rem;"><?= date('M j, Y H:i', strtotime($msg['created_at'])) ?></span>
+                    </div>
+                    <div style="color:var(--text-primary);font-size:.87rem;line-height:1.65;white-space:pre-wrap;"><?= htmlspecialchars($msg['message']) ?></div>
+                </div>
+            </div>
+            <?php else: ?>
             <div style="display:flex;<?= $isUserMsg ? 'justify-content:flex-end;' : 'justify-content:flex-start;' ?>">
                 <div class="<?= $isUserMsg ? 'sp-msg-user' : 'sp-msg-agent' ?>" style="max-width:82%;border-radius:12px;padding:14px 16px;">
                     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
@@ -115,6 +128,7 @@ $priorityClass = match($ticket['priority']) {
                     <div style="color:var(--text-primary);font-size:.88rem;line-height:1.65;white-space:pre-wrap;"><?= htmlspecialchars($msg['message']) ?></div>
                 </div>
             </div>
+            <?php endif; ?>
             <?php endforeach; ?>
             <?php if (empty($messages)): ?>
             <div style="text-align:center;padding:40px 20px;color:var(--text-secondary);font-size:.88rem;">No messages yet.</div>

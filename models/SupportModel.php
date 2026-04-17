@@ -49,7 +49,7 @@ class SupportModel
         $this->db->query("CREATE TABLE IF NOT EXISTS `support_ticket_messages` (
             `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
             `ticket_id` INT UNSIGNED NOT NULL,
-            `sender_type` ENUM('user','agent') NOT NULL,
+            `sender_type` ENUM('user','agent','system') NOT NULL,
             `sender_id` INT UNSIGNED NOT NULL,
             `message` TEXT NOT NULL,
             `is_internal` TINYINT(1) NOT NULL DEFAULT 0,
@@ -158,6 +158,21 @@ class SupportModel
             }
         } catch (\Exception $e) {
             // Non-fatal
+        }
+
+        // Ensure 'system' is included in sender_type ENUM (added for status-change system messages)
+        try {
+            $enumRow = $this->db->fetch(
+                "SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'support_ticket_messages' AND COLUMN_NAME = 'sender_type'"
+            );
+            if ($enumRow && strpos($enumRow['COLUMN_TYPE'] ?? $enumRow['column_type'] ?? '', 'system') === false) {
+                $this->db->query(
+                    "ALTER TABLE `support_ticket_messages` MODIFY COLUMN `sender_type` ENUM('user','agent','system') NOT NULL"
+                );
+            }
+        } catch (\Exception $e) {
+            // Non-fatal: column will accept 'system' once migrated
         }
     }
 
@@ -312,6 +327,25 @@ class SupportModel
 
         $this->db->update('support_tickets', $statusUpdate, 'id = ?', [$ticketId]);
     }
+
+    /**
+     * Add a system-generated message to the ticket chat thread (visible to both
+     * user and agent). Does NOT auto-change the ticket status, so it is safe to
+     * call alongside updateTicketStatus().
+     * Typical use: surfacing status-change reasons in the conversation.
+     */
+    public function addSystemMessage(int $ticketId, string $message): void
+    {
+        $this->db->insert('support_ticket_messages', [
+            'ticket_id'   => $ticketId,
+            'sender_type' => 'system',
+            'sender_id'   => 0,
+            'message'     => $message,
+            'is_internal' => 0,
+        ]);
+        $this->db->update('support_tickets', ['last_reply_at' => date('Y-m-d H:i:s')], 'id = ?', [$ticketId]);
+    }
+
 
     public function updateTicketStatus(int $id, string $status, ?int $agentId = null): void
     {

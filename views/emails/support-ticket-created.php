@@ -5,86 +5,63 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Support Ticket #<?= (int)$ticketId ?> Created</title>
 </head>
-<body style="margin:0;padding:0;background-color:#06060a;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
-    <table role="presentation" style="width:100%;border-collapse:collapse;">
-        <tr>
-            <td style="padding:40px 20px;">
-                <table role="presentation" style="max-width:600px;margin:0 auto;background:linear-gradient(135deg,#0c0c12 0%,#0f0f18 100%);border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,0.1);">
-                    <!-- Header -->
-                    <tr>
-                        <td style="padding:36px 40px 20px;text-align:center;background:linear-gradient(135deg,rgba(0,240,255,0.08),rgba(255,46,196,0.08));">
-                            <div style="display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#00f0ff,#ff2ec4);margin-bottom:14px;">
-                                <span style="font-size:22px;">🎫</span>
-                            </div>
-                            <h1 style="margin:0;color:#00f0ff;font-size:22px;font-weight:700;">
-                                Support Ticket #<?= (int)$ticketId ?> Created
-                            </h1>
-                        </td>
-                    </tr>
+<body style="margin:0;padding:0;background:#f0f4f8;font-family:'Segoe UI',Arial,sans-serif;">
+<table role="presentation" style="width:100%;border-collapse:collapse;">
+<tr><td style="padding:32px 16px;">
+<table role="presentation" style="max-width:600px;margin:0 auto;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.10);">
 
-                    <!-- Content -->
-                    <tr>
-                        <td style="padding:36px 40px;">
-                            <h2 style="margin:0 0 16px;color:#e8eefc;font-size:20px;font-weight:600;">
-                                Hello, <?= htmlspecialchars($userName ?? 'User') ?>!
-                            </h2>
+    <!-- Header -->
+    <tr><td style="background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);padding:36px 40px 28px;text-align:center;">
+        <div style="display:inline-block;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#00c6ff,#a855f7);text-align:center;line-height:52px;font-size:24px;margin-bottom:14px;">🎫</div>
+        <h1 style="margin:0;color:#fff;font-size:22px;font-weight:700;letter-spacing:-.3px;">Ticket #<?= (int)$ticketId ?> Created</h1>
+        <p style="margin:8px 0 0;color:rgba(255,255,255,.65);font-size:13px;">Support</p>
+    </td></tr>
 
-                            <p style="margin:0 0 18px;color:#8892a6;font-size:15px;line-height:1.7;">
-                                Your support ticket has been received. Our team will review it and get back to you as soon as possible.
-                            </p>
+    <!-- Body -->
+    <tr><td style="background:#fff;padding:32px 40px;">
+        <p style="margin:0 0 6px;color:#374151;font-size:16px;font-weight:600;">Hi <?= htmlspecialchars($userName ?? 'User') ?>,</p>
+        <p style="margin:0 0 24px;color:#6b7280;font-size:14px;line-height:1.7;">Your support ticket has been received. Our team will review it and get back to you shortly.</p>
 
-                            <!-- Ticket details box -->
-                            <table role="presentation" style="width:100%;border-collapse:collapse;margin-bottom:26px;">
-                                <tr>
-                                    <td style="padding:20px;background:rgba(0,240,255,0.06);border:1px solid rgba(0,240,255,0.15);border-radius:10px;">
-                                        <div style="margin-bottom:10px;">
-                                            <span style="color:#8892a6;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Ticket ID</span>
-                                            <div style="color:#00f0ff;font-size:16px;font-weight:700;margin-top:2px;">#<?= (int)$ticketId ?></div>
-                                        </div>
-                                        <div>
-                                            <span style="color:#8892a6;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Subject</span>
-                                            <div style="color:#e8eefc;font-size:15px;font-weight:500;margin-top:2px;"><?= htmlspecialchars($subject ?? '') ?></div>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </table>
+        <!-- Ticket details -->
+        <table role="presentation" style="width:100%;border-collapse:collapse;border-radius:8px;overflow:hidden;margin-bottom:24px;">
+        <tr><td style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:20px;">
+            <table style="width:100%;border-collapse:collapse;">
+            <tr><td style="padding:0 0 12px;border-bottom:1px solid #e2e8f0;">
+                <div style="color:#9ca3af;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px;">Ticket ID</div>
+                <div style="color:#00c6ff;font-size:20px;font-weight:800;">#<?= (int)$ticketId ?></div>
+            </td></tr>
+            <tr><td style="padding:12px 0 0;">
+                <div style="color:#9ca3af;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px;">Subject</div>
+                <div style="color:#1f2937;font-size:14px;font-weight:600;"><?= htmlspecialchars($subject ?? '') ?></div>
+            </td></tr>
+            </table>
+        </td></tr>
+        </table>
 
-                            <?php if (!empty($description)): ?>
-                            <p style="margin:0 0 8px;color:#8892a6;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Your Message</p>
-                            <table role="presentation" style="width:100%;border-collapse:collapse;margin-bottom:26px;">
-                                <tr>
-                                    <td style="padding:16px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:8px;color:#c4cad8;font-size:14px;line-height:1.6;">
-                                        <?= nl2br(htmlspecialchars(substr($description, 0, 500))) ?><?= strlen($description ?? '') > 500 ? '...' : '' ?>
-                                    </td>
-                                </tr>
-                            </table>
-                            <?php endif; ?>
+        <?php if (!empty($description)): ?>
+        <div style="margin-bottom:24px;">
+            <div style="color:#9ca3af;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;">Your Message</div>
+            <div style="padding:14px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;color:#374151;font-size:14px;line-height:1.7;">
+                <?= nl2br(htmlspecialchars(substr($description, 0, 500))) ?><?= strlen($description ?? '') > 500 ? '…' : '' ?>
+            </div>
+        </div>
+        <?php endif; ?>
 
-                            <!-- CTA button -->
-                            <table role="presentation" style="width:100%;border-collapse:collapse;">
-                                <tr>
-                                    <td style="text-align:center;">
-                                        <a href="<?= htmlspecialchars($ticketUrl ?? '#') ?>" style="display:inline-block;padding:14px 32px;background:linear-gradient(135deg,#00f0ff,#ff2ec4);border-radius:8px;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;letter-spacing:.02em;">
-                                            View Your Ticket
-                                        </a>
-                                    </td>
-                                </tr>
-                            </table>
-                        </td>
-                    </tr>
+        <!-- CTA -->
+        <table role="presentation" style="width:100%;border-collapse:collapse;">
+        <tr><td style="text-align:center;padding:4px 0 8px;">
+            <a href="<?= htmlspecialchars($ticketUrl ?? '#') ?>" style="display:inline-block;padding:13px 36px;background:linear-gradient(135deg,#00c6ff,#a855f7);border-radius:8px;color:#fff;font-size:15px;font-weight:700;text-decoration:none;letter-spacing:.02em;">View Your Ticket</a>
+        </td></tr>
+        </table>
+    </td></tr>
 
-                    <!-- Footer -->
-                    <tr>
-                        <td style="padding:20px 40px;text-align:center;border-top:1px solid rgba(255,255,255,0.06);">
-                            <p style="margin:0;color:#5c6478;font-size:12px;line-height:1.6;">
-                                You are receiving this because you submitted a support ticket.<br>
-                                If you did not submit this ticket, please contact us immediately.
-                            </p>
-                        </td>
-                    </tr>
-                </table>
-            </td>
-        </tr>
-    </table>
+    <!-- Footer -->
+    <tr><td style="background:#f8fafc;padding:18px 40px;text-align:center;border-top:1px solid #e2e8f0;">
+        <p style="margin:0;color:#9ca3af;font-size:12px;line-height:1.6;">You received this email because you opened a support ticket.<br>If this wasn't you, please ignore this message.</p>
+    </td></tr>
+
+</table>
+</td></tr>
+</table>
 </body>
 </html>

@@ -11,85 +11,32 @@
     </div>
 
     <?php
-    // Friendly labels and descriptions for known templates
-    $templateMeta = [
-        'support-ticket-created' => [
-            'label'    => 'Support — Ticket Created',
-            'desc'     => 'Sent to the user when they raise a new support ticket.',
-            'category' => 'support',
-        ],
-        'support-ticket-reply'   => [
-            'label'    => 'Support — Agent Reply',
-            'desc'     => 'Sent to the user when a support agent replies to their ticket.',
-            'category' => 'support',
-        ],
-        'support-ticket-closed'  => [
-            'label'    => 'Support — Ticket Closed',
-            'desc'     => 'Sent to the user when their support ticket is marked as closed.',
-            'category' => 'support',
-        ],
-    ];
+    // Support ticket templates are managed in /admin/mail/templates — exclude them here.
+    $supportSlugs = ['support-ticket-created','support-ticket-reply','support-ticket-closed','support-ticket-status-update'];
 
-    // Group by category
-    $grouped = ['support' => [], 'other' => []];
-    foreach ($templates as $tpl) {
-        $meta = $templateMeta[$tpl['name']] ?? null;
-        $tpl['label']    = $meta['label']    ?? ucwords(str_replace(['-', '_'], ' ', $tpl['name']));
-        $tpl['desc']     = $meta['desc']     ?? '';
-        $tpl['category'] = $meta['category'] ?? 'other';
-        $grouped[$tpl['category']][] = $tpl;
-    }
+    // Friendly labels for remaining (system) templates
+    $templateMeta = [
+        'welcome'          => ['label' => 'Welcome Email',        'desc' => 'Sent to new users upon registration.'],
+        'verify'           => ['label' => 'Email Verification',   'desc' => 'Sent to verify a user\'s email address.'],
+        'password-reset'   => ['label' => 'Password Reset',       'desc' => 'Sent when a user requests a password reset.'],
+        'password-changed' => ['label' => 'Password Changed',     'desc' => 'Sent after a user successfully changes their password.'],
+        'login-alert'      => ['label' => 'Login Alert',          'desc' => 'Sent when a new login is detected on an account.'],
+        'file-downloaded'  => ['label' => 'File Downloaded',      'desc' => 'Sent after a file download is completed.'],
+        'ocr-completed'    => ['label' => 'OCR Completed',        'desc' => 'Sent when an OCR processing job finishes.'],
+    ];
     ?>
 
-    <?php if (!empty($grouped['support'])): ?>
-    <!-- Support Auto-Reply Templates -->
-    <div style="margin-bottom:32px;">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-            <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;background:rgba(255,159,67,.12);color:#ff9f43;border-radius:20px;font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;">
-                <i class="fas fa-headset"></i> Customer Support
-            </span>
-            <span style="font-size:.82rem;color:var(--text-secondary,#8892a6);">Auto-reply emails for support tickets</span>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;">
-            <?php foreach ($grouped['support'] as $tpl): ?>
-            <div style="background:var(--bg-card,#0f0f18);border:1px solid rgba(255,159,67,.2);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:14px;">
-                <div>
-                    <div style="font-weight:600;color:var(--text-primary,#e8eefc);font-size:.92rem;margin-bottom:4px;">
-                        <i class="fas fa-envelope" style="color:#ff9f43;margin-right:7px;"></i><?= htmlspecialchars($tpl['label']) ?>
-                    </div>
-                    <?php if ($tpl['desc']): ?>
-                    <div style="font-size:.8rem;color:var(--text-secondary,#8892a6);line-height:1.45;"><?= htmlspecialchars($tpl['desc']) ?></div>
-                    <?php endif; ?>
-                </div>
-                <div style="display:flex;align-items:center;justify-content:space-between;">
-                    <span style="font-size:.75rem;color:var(--text-secondary,#8892a6);">
-                        Modified: <?= date('M j, Y H:i', $tpl['modified']) ?>
-                    </span>
-                    <div style="display:flex;gap:8px;">
-                        <a href="/admin/email/templates/view?template=<?= urlencode($tpl['name']) ?>"
-                           style="display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:rgba(0,240,255,.1);color:#00f0ff;border-radius:6px;text-decoration:none;font-size:.78rem;font-weight:500;">
-                            <i class="fas fa-eye"></i> View
-                        </a>
-                        <a href="/admin/email/templates/edit?template=<?= urlencode($tpl['name']) ?>"
-                           style="display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:linear-gradient(135deg,rgba(255,159,67,.2),rgba(255,46,196,.15));color:#ff9f43;border-radius:6px;text-decoration:none;font-size:.78rem;font-weight:600;">
-                            <i class="fas fa-edit"></i> Edit
-                        </a>
-                    </div>
-                </div>
-            </div>
-            <?php endforeach; ?>
-        </div>
-    </div>
-    <?php endif; ?>
-
-    <!-- All Other Templates -->
-    <?php if (!empty($grouped['other'])): ?>
+    <!-- System Templates -->
     <div>
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
             <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;background:rgba(0,240,255,.1);color:#00f0ff;border-radius:20px;font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;">
                 <i class="fas fa-envelope"></i> System
             </span>
-            <span style="font-size:.82rem;color:var(--text-secondary,#8892a6);">Other notification emails</span>
+            <span style="font-size:.82rem;color:var(--text-secondary,#8892a6);">PHP-file email templates</span>
+            <span style="font-size:.78rem;color:var(--text-secondary,#8892a6);margin-left:4px;">
+                — Support ticket templates are managed via
+                <a href="/admin/mail/templates" style="color:#00f0ff;text-decoration:none;">Notification Templates</a>
+            </span>
         </div>
         <div style="background:var(--bg-card,#0f0f18);border:1px solid var(--border-color,rgba(255,255,255,.08));border-radius:12px;overflow:hidden;">
             <table style="width:100%;border-collapse:collapse;">
@@ -102,11 +49,18 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($grouped['other'] as $tpl): ?>
+                    <?php $hasRows = false; foreach ($templates as $tpl):
+                        if (in_array($tpl['name'], $supportSlugs, true)) continue;
+                        $hasRows = true;
+                        $meta = $templateMeta[$tpl['name']] ?? null;
+                        $label = $meta['label'] ?? ucwords(str_replace(['-', '_'], ' ', $tpl['name']));
+                        $desc  = $meta['desc']  ?? '';
+                    ?>
                     <tr style="border-bottom:1px solid var(--border-color,rgba(255,255,255,.04));transition:background .15s;" onmouseover="this.style.background='rgba(255,255,255,.02)'" onmouseout="this.style.background=''">
                         <td style="padding:12px 16px;">
-                            <div style="font-weight:600;color:var(--text-primary,#e8eefc);font-size:.88rem;"><?= htmlspecialchars($tpl['label']) ?></div>
-                            <div style="font-size:.75rem;color:var(--text-secondary,#8892a6);font-family:monospace;margin-top:2px;"><?= htmlspecialchars($tpl['name']) ?>.php</div>
+                            <div style="font-weight:600;color:var(--text-primary,#e8eefc);font-size:.88rem;"><?= htmlspecialchars($label) ?></div>
+                            <?php if ($desc): ?><div style="font-size:.75rem;color:var(--text-secondary,#8892a6);margin-top:1px;"><?= htmlspecialchars($desc) ?></div><?php endif; ?>
+                            <div style="font-size:.73rem;color:var(--text-secondary,#8892a6);font-family:monospace;margin-top:2px;opacity:.7;"><?= htmlspecialchars($tpl['name']) ?>.php</div>
                         </td>
                         <td style="padding:12px 16px;color:var(--text-secondary,#8892a6);font-size:.83rem;"><?= number_format($tpl['size']) ?> B</td>
                         <td style="padding:12px 16px;color:var(--text-secondary,#8892a6);font-size:.83rem;"><?= date('M j, Y H:i', $tpl['modified']) ?></td>
@@ -124,17 +78,12 @@
                         </td>
                     </tr>
                     <?php endforeach; ?>
+                    <?php if (!$hasRows): ?>
+                    <tr><td colspan="4" style="padding:40px;text-align:center;color:var(--text-secondary,#8892a6);font-size:.88rem;">No system email templates found.</td></tr>
+                    <?php endif; ?>
                 </tbody>
             </table>
         </div>
     </div>
-    <?php endif; ?>
-
-    <?php if (empty($templates)): ?>
-    <div style="padding:60px;text-align:center;color:var(--text-secondary,#8892a6);">
-        <i class="fas fa-envelope-open" style="font-size:2.5rem;opacity:.3;display:block;margin-bottom:14px;"></i>
-        No email templates found.
-    </div>
-    <?php endif; ?>
 </div>
 <?php View::endSection(); ?>

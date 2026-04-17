@@ -36,6 +36,7 @@ $responseMinutes   = ($createdAt && $firstReplyTs && $firstReplyTs >= $createdAt
 $totalMessages   = count($messages ?? []);
 $customerReplies = $agentReplies = $internalNotes = 0;
 foreach ($messages ?? [] as $msg) {
+    if (($msg['sender_type'] ?? '') === 'system')       continue; // skip system updates
     if (!empty($msg['is_internal']))                    $internalNotes++;
     elseif (($msg['sender_type'] ?? '') === 'agent')    $agentReplies++;
     else                                                $customerReplies++;
@@ -596,6 +597,7 @@ $csrfToken         = $csrf_token ?? '';
           </div>
         <?php else: ?>
           <?php foreach ($messages ?? [] as $msg):
+            $isSystem   = (($msg['sender_type'] ?? '') === 'system');
             $isAgent    = (($msg['sender_type'] ?? '') === 'agent');
             $isInternal = !empty($msg['is_internal']);
             $senderName = $msg['sender_name'] ?? ($isAgent ? 'Agent' : $requesterName);
@@ -603,6 +605,18 @@ $csrfToken         = $csrf_token ?? '';
             $msgClass   = $isAgent ? ' agent-msg' : '';
             if ($isInternal) $msgClass = ' internal-msg';
           ?>
+          <?php if ($isSystem): ?>
+          <div class="tv-message" style="background:color-mix(in srgb,#00c6ff 6%,transparent);border:1px dashed color-mix(in srgb,#00c6ff 25%,transparent);border-radius:10px;">
+            <div class="tv-msg-head">
+              <div class="tv-avatar" style="background:linear-gradient(135deg,#00c6ff,#3b82f6);font-size:.7rem;">ℹ</div>
+              <span class="tv-msg-sender" style="color:#00c6ff;">System Update</span>
+              <span class="tv-msg-time">
+                <?= !empty($msg['created_at']) ? '· ' . date('M j, Y h:i A', strtotime($msg['created_at'])) : '' ?>
+              </span>
+            </div>
+            <div class="tv-msg-body" style="white-space:pre-wrap;"><?= htmlspecialchars($msg['message'] ?? '') ?></div>
+          </div>
+          <?php else: ?>
           <div class="tv-message<?= $msgClass ?>">
             <div class="tv-msg-head">
               <div class="tv-avatar <?= $isAgent ? 'agent' : 'customer' ?>"><?= htmlspecialchars($initials) ?></div>
@@ -622,6 +636,7 @@ $csrfToken         = $csrf_token ?? '';
               <button class="tv-msg-dismiss" title="Dismiss"><i class="fas fa-xmark"></i></button>
             </div>
           </div>
+          <?php endif; ?>
           <?php endforeach; ?>
         <?php endif; ?>
 
