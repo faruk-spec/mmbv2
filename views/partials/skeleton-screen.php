@@ -64,6 +64,9 @@ if ($_skType === 'admin') {
 } else {
     if (_skMatch($_skUri, ['/login', '/register', '/forgot-password', '/reset-password', '/verify-otp', '/2fa-verify', '/verify-email'])) {
         $_skContent = 'auth';
+    } elseif ($_skUri === '/' || $_skUri === '/home') {
+        // No skeleton on the home/landing page
+        $_skContent = 'none';
     } elseif (_skMatch($_skUri, ['/dashboard'])) {
         $_skContent = 'grid';
     } elseif (_skMatch($_skUri, ['/profile', '/security', '/settings', '/2fa'])) {
@@ -75,6 +78,7 @@ if ($_skType === 'admin') {
     }
 }
 ?>
+<?php if (($_skContent ?? '') === 'none') return; ?>
 <?php /* ──────────────────────────────────────────────────────────────────────
    SKELETON OVERLAY
    z-index 500000 so it sits above real page content until JS removes it.
