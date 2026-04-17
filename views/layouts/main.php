@@ -13,19 +13,20 @@ try {
 
     // Build CSS overrides from admin customization
     $ov = $themeConfig['overrides'] ?? [];
+    $san = '\\Controllers\\Admin\\ThemeController::sanitizeCssValue';
     $cssOverrides = [];
-    if (!empty($ov['cyan']))    $cssOverrides[] = '--cyan: ' . $ov['cyan'];
-    if (!empty($ov['magenta'])) $cssOverrides[] = '--magenta: ' . $ov['magenta'];
-    if (!empty($ov['green']))   $cssOverrides[] = '--green: ' . $ov['green'];
-    if (!empty($ov['orange']))  $cssOverrides[] = '--orange: ' . $ov['orange'];
-    if (!empty($ov['red']))     $cssOverrides[] = '--red: ' . $ov['red'];
-    if (!empty($ov['purple']))  $cssOverrides[] = '--purple: ' . $ov['purple'];
-    if (!empty($ov['bg_primary_dark']))   $cssOverrides[] = '--bg-primary-dark-override: ' . $ov['bg_primary_dark'];
-    if (!empty($ov['bg_secondary_dark'])) $cssOverrides[] = '--bg-secondary-dark-override: ' . $ov['bg_secondary_dark'];
-    if (!empty($ov['bg_card_dark']))      $cssOverrides[] = '--bg-card-dark-override: ' . $ov['bg_card_dark'];
-    if (!empty($ov['bg_primary_light']))   $cssOverrides[] = '--bg-primary-light-override: ' . $ov['bg_primary_light'];
-    if (!empty($ov['bg_secondary_light'])) $cssOverrides[] = '--bg-secondary-light-override: ' . $ov['bg_secondary_light'];
-    if (!empty($ov['bg_card_light']))      $cssOverrides[] = '--bg-card-light-override: ' . $ov['bg_card_light'];
+    if (!empty($ov['cyan']))    $cssOverrides[] = '--cyan: ' . $san($ov['cyan']);
+    if (!empty($ov['magenta'])) $cssOverrides[] = '--magenta: ' . $san($ov['magenta']);
+    if (!empty($ov['green']))   $cssOverrides[] = '--green: ' . $san($ov['green']);
+    if (!empty($ov['orange']))  $cssOverrides[] = '--orange: ' . $san($ov['orange']);
+    if (!empty($ov['red']))     $cssOverrides[] = '--red: ' . $san($ov['red']);
+    if (!empty($ov['purple']))  $cssOverrides[] = '--purple: ' . $san($ov['purple']);
+    if (!empty($ov['bg_primary_dark']))   $cssOverrides[] = '--bg-primary-dark-override: ' . $san($ov['bg_primary_dark']);
+    if (!empty($ov['bg_secondary_dark'])) $cssOverrides[] = '--bg-secondary-dark-override: ' . $san($ov['bg_secondary_dark']);
+    if (!empty($ov['bg_card_dark']))      $cssOverrides[] = '--bg-card-dark-override: ' . $san($ov['bg_card_dark']);
+    if (!empty($ov['bg_primary_light']))   $cssOverrides[] = '--bg-primary-light-override: ' . $san($ov['bg_primary_light']);
+    if (!empty($ov['bg_secondary_light'])) $cssOverrides[] = '--bg-secondary-light-override: ' . $san($ov['bg_secondary_light']);
+    if (!empty($ov['bg_card_light']))      $cssOverrides[] = '--bg-card-light-override: ' . $san($ov['bg_card_light']);
     // Radius
     $radiusMap = ['sharp' => '4px', 'medium' => '8px', 'rounded' => '14px'];
     if (!empty($ov['radius_level']) && isset($radiusMap[$ov['radius_level']])) {
@@ -53,17 +54,17 @@ try {
         $themeOverridesCSS = ':root { ' . implode('; ', $cssOverrides) . '; }';
         // BG overrides for dark mode
         $darkBg = [];
-        if (!empty($ov['bg_primary_dark']))   $darkBg[] = '--bg-primary: ' . $ov['bg_primary_dark'];
-        if (!empty($ov['bg_secondary_dark'])) $darkBg[] = '--bg-secondary: ' . $ov['bg_secondary_dark'];
-        if (!empty($ov['bg_card_dark']))      $darkBg[] = '--bg-card: ' . $ov['bg_card_dark'];
+        if (!empty($ov['bg_primary_dark']))   $darkBg[] = '--bg-primary: ' . $san($ov['bg_primary_dark']);
+        if (!empty($ov['bg_secondary_dark'])) $darkBg[] = '--bg-secondary: ' . $san($ov['bg_secondary_dark']);
+        if (!empty($ov['bg_card_dark']))      $darkBg[] = '--bg-card: ' . $san($ov['bg_card_dark']);
         if (!empty($darkBg)) {
             $themeOverridesCSS .= ' :root:not([data-theme="light"]) { ' . implode('; ', $darkBg) . '; }';
         }
         // BG overrides for light mode
         $lightBg = [];
-        if (!empty($ov['bg_primary_light']))   $lightBg[] = '--bg-primary: ' . $ov['bg_primary_light'];
-        if (!empty($ov['bg_secondary_light'])) $lightBg[] = '--bg-secondary: ' . $ov['bg_secondary_light'];
-        if (!empty($ov['bg_card_light']))      $lightBg[] = '--bg-card: ' . $ov['bg_card_light'];
+        if (!empty($ov['bg_primary_light']))   $lightBg[] = '--bg-primary: ' . $san($ov['bg_primary_light']);
+        if (!empty($ov['bg_secondary_light'])) $lightBg[] = '--bg-secondary: ' . $san($ov['bg_secondary_light']);
+        if (!empty($ov['bg_card_light']))      $lightBg[] = '--bg-card: ' . $san($ov['bg_card_light']);
         if (!empty($lightBg)) {
             $themeOverridesCSS .= ' [data-theme="light"] { ' . implode('; ', $lightBg) . '; }';
         }
@@ -130,7 +131,7 @@ try {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Universal Theme System -->
-    <link rel="stylesheet" href="/css/universal-theme.css?v=<?= filemtime(BASE_PATH . '/public/css/universal-theme.css') ?>">
+    <link rel="stylesheet" href="/css/universal-theme.css?v=<?= @filemtime(BASE_PATH . '/public/css/universal-theme.css') ?: time() ?>">
     <?php if (!empty($themeOverridesCSS)): ?>
     <style id="theme-admin-overrides"><?= $themeOverridesCSS ?></style>
     <?php endif; ?>

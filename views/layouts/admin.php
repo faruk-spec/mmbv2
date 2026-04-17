@@ -6,13 +6,14 @@ $_adminUiTheme = $_adminThemeConfig['theme'] ?? 'default';
 $_adminDefaultMode = $_adminThemeConfig['mode'] ?? 'dark';
 $_adminThemeOverrides = '';
 $ov = $_adminThemeConfig['overrides'] ?? [];
+$san = '\\Controllers\\Admin\\ThemeController::sanitizeCssValue';
 $cssOv = [];
-if (!empty($ov['cyan']))    $cssOv[] = '--cyan: ' . $ov['cyan'];
-if (!empty($ov['magenta'])) $cssOv[] = '--magenta: ' . $ov['magenta'];
-if (!empty($ov['green']))   $cssOv[] = '--green: ' . $ov['green'];
-if (!empty($ov['orange']))  $cssOv[] = '--orange: ' . $ov['orange'];
-if (!empty($ov['red']))     $cssOv[] = '--red: ' . $ov['red'];
-if (!empty($ov['purple']))  $cssOv[] = '--purple: ' . $ov['purple'];
+if (!empty($ov['cyan']))    $cssOv[] = '--cyan: ' . $san($ov['cyan']);
+if (!empty($ov['magenta'])) $cssOv[] = '--magenta: ' . $san($ov['magenta']);
+if (!empty($ov['green']))   $cssOv[] = '--green: ' . $san($ov['green']);
+if (!empty($ov['orange']))  $cssOv[] = '--orange: ' . $san($ov['orange']);
+if (!empty($ov['red']))     $cssOv[] = '--red: ' . $san($ov['red']);
+if (!empty($ov['purple']))  $cssOv[] = '--purple: ' . $san($ov['purple']);
 $radiusMap = ['sharp' => '4px', 'medium' => '8px', 'rounded' => '14px'];
 if (!empty($ov['radius_level']) && isset($radiusMap[$ov['radius_level']])) {
     $r = $radiusMap[$ov['radius_level']];
@@ -36,16 +37,16 @@ if (!empty($ov['shadow_intensity']) && isset($shadowMap[$ov['shadow_intensity']]
 if (!empty($cssOv)) {
     $_adminThemeOverrides = ':root { ' . implode('; ', $cssOv) . '; }';
     $darkBg = [];
-    if (!empty($ov['bg_primary_dark']))   $darkBg[] = '--bg-primary: ' . $ov['bg_primary_dark'];
-    if (!empty($ov['bg_secondary_dark'])) $darkBg[] = '--bg-secondary: ' . $ov['bg_secondary_dark'];
-    if (!empty($ov['bg_card_dark']))      $darkBg[] = '--bg-card: ' . $ov['bg_card_dark'];
+    if (!empty($ov['bg_primary_dark']))   $darkBg[] = '--bg-primary: ' . $san($ov['bg_primary_dark']);
+    if (!empty($ov['bg_secondary_dark'])) $darkBg[] = '--bg-secondary: ' . $san($ov['bg_secondary_dark']);
+    if (!empty($ov['bg_card_dark']))      $darkBg[] = '--bg-card: ' . $san($ov['bg_card_dark']);
     if (!empty($darkBg)) {
         $_adminThemeOverrides .= ' :root:not([data-theme="light"]) { ' . implode('; ', $darkBg) . '; }';
     }
     $lightBg = [];
-    if (!empty($ov['bg_primary_light']))   $lightBg[] = '--bg-primary: ' . $ov['bg_primary_light'];
-    if (!empty($ov['bg_secondary_light'])) $lightBg[] = '--bg-secondary: ' . $ov['bg_secondary_light'];
-    if (!empty($ov['bg_card_light']))      $lightBg[] = '--bg-card: ' . $ov['bg_card_light'];
+    if (!empty($ov['bg_primary_light']))   $lightBg[] = '--bg-primary: ' . $san($ov['bg_primary_light']);
+    if (!empty($ov['bg_secondary_light'])) $lightBg[] = '--bg-secondary: ' . $san($ov['bg_secondary_light']);
+    if (!empty($ov['bg_card_light']))      $lightBg[] = '--bg-card: ' . $san($ov['bg_card_light']);
     if (!empty($lightBg)) {
         $_adminThemeOverrides .= ' [data-theme="light"] { ' . implode('; ', $lightBg) . '; }';
     }
@@ -76,7 +77,7 @@ if (!empty($cssOv)) {
     <link rel="stylesheet" href="/css/admin-responsive.css?v=<?= time() ?>">
     
     <!-- Universal Theme System -->
-    <link rel="stylesheet" href="/css/universal-theme.css?v=<?= filemtime(BASE_PATH . '/public/css/universal-theme.css') ?>">
+    <link rel="stylesheet" href="/css/universal-theme.css?v=<?= @filemtime(BASE_PATH . '/public/css/universal-theme.css') ?: time() ?>">
     <?php if (!empty($_adminThemeOverrides)): ?>
     <style id="theme-admin-overrides"><?= $_adminThemeOverrides ?></style>
     <?php endif; ?>

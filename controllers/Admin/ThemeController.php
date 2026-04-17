@@ -80,6 +80,8 @@ class ThemeController extends BaseController
                 $defaultMode = 'dark';
             }
 
+            $db->beginTransaction();
+
             // Save settings
             $this->setSetting($db, 'active_theme', $activeTheme);
             $this->setSetting($db, 'default_mode', $defaultMode);
@@ -102,6 +104,8 @@ class ThemeController extends BaseController
 
             $this->setSetting($db, 'custom_overrides', !empty($overrides) ? json_encode($overrides) : null);
 
+            $db->commit();
+
             // Also update the navbar_settings default_theme to keep in sync
             try {
                 $db->query(
@@ -120,6 +124,7 @@ class ThemeController extends BaseController
 
             $this->flash('success', 'Theme settings updated successfully.');
         } catch (\Exception $e) {
+            try { $db->rollback(); } catch (\Exception $re) { /* already rolled back */ }
             Logger::error('Theme update error: ' . $e->getMessage());
             $this->flash('error', 'Failed to update theme settings.');
         }
@@ -231,5 +236,24 @@ class ThemeController extends BaseController
         } catch (\Exception $e) {
             return $defaults;
         }
+    }
+
+    /**
+     * Sanitize a CSS value to prevent injection.
+     * Only allows hex colors, named CSS values, and px/rem/em units.
+     */
+    public static function sanitizeCssValue(string $value): string
+    {
+        // Strip any characters that could break out of CSS value context
+        $value = trim($value);
+        // Allow hex colors, rgb/rgba, hsl/hsla, named colors, numbers with units
+        $value = preg_replace('/[^a-zA-Z0-9#.,()%\s\-]/', '', $value);
+        // Prevent any CSS injection via expressions, urls, etc.
+        $lower = strtolower($value);
+        if (strpos($lower, 'expression') !== false || strpos($lower, 'url') !== false ||
+            strpos($lower, 'import') !== false || strpos($lower, 'javascript') !== false) {
+            return '';
+        }
+        return $value;
     }
 }
