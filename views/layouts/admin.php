@@ -1071,12 +1071,187 @@
         .alert-warning {
             border-left: 3px solid var(--orange);
         }
+        /* ===== Preloader ===== */
+        #mmb-preloader {
+            position: fixed;
+            inset: 0;
+            z-index: 999999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity .4s ease, visibility .4s ease;
+        }
+        #mmb-preloader.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        @keyframes waveChar  { 0%{transform:translateY(0)} 100%{transform:translateY(-10px)} }
+        @keyframes pulseText { 0%,100%{opacity:1} 50%{opacity:.3} }
+        @keyframes spinIcon  { to{transform:rotate(360deg)} }
+        @keyframes bounceText{ 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+
+        /* ===== Skeleton ===== */
+        .skeleton {
+            background: linear-gradient(90deg, rgba(255,255,255,.06) 25%, rgba(255,255,255,.12) 50%, rgba(255,255,255,.06) 75%);
+            background-size: 200% 100%;
+            animation: skeletonShimmer 2.0s infinite;
+            border-radius: 6px;
+        }
+        @keyframes skeletonShimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+        .skeleton-line  { height: 14px; margin-bottom: 8px; border-radius: 4px; }
+        .skeleton-block { border-radius: 8px; }
+
+        /* ===== Action loader spinner ===== */
+        .mmb-btn-loading { pointer-events:none; opacity:.75; }
+        .mmb-btn-loading::after {
+            content:'';
+            display:inline-block;
+            width:14px; height:14px;
+            margin-left:8px;
+            border:2px solid rgba(255,255,255,.35);
+            border-top-color:#fff;
+            border-radius:50%;
+            animation:spinIcon .7s linear infinite;
+            vertical-align:middle;
+        }
     </style>
     
     <?php View::yield('styles'); ?>
     <?php include __DIR__ . '/../partials/universal-theme-override.php'; ?>
 </head>
 <body>
+<?php
+// ── Admin action loader ───────────────────────────────────────────────────
+// Note: The full-page preloader is intentionally omitted from admin pages.
+// Only the action-loader spinner (for button clicks) is injected here.
+try {
+    $_adminLoaderRows = \Core\Database::getInstance()->fetchAll(
+        "SELECT `key`, `value` FROM settings WHERE `key` IN ('action_loader_enabled','action_loader_blur','action_loader_image')"
+    );
+    $_als = [];
+    foreach ($_adminLoaderRows as $_alr) { $_als[$_alr['key']] = $_alr['value']; }
+    if (($_als['action_loader_enabled'] ?? '0') === '1') {
+        $_alBlur = max(0, min(20, (int)($_als['action_loader_blur'] ?? 8)));
+        $_alImg  = htmlspecialchars($_als['action_loader_image'] ?? '', ENT_QUOTES);
+        ?>
+<div id="mmb-page-spinner" style="position:fixed;inset:0;z-index:888888;display:flex;align-items:center;justify-content:center;
+     opacity:0;visibility:hidden;transition:opacity .25s,visibility .25s;
+     backdrop-filter:blur(<?= $_alBlur ?>px);-webkit-backdrop-filter:blur(<?= $_alBlur ?>px);
+     background:rgba(0,0,0,<?= $_alBlur > 0 ? '0.5' : '0.7' ?>);">
+    <?php if (!empty($_alImg)): ?>
+        <img src="<?= $_alImg ?>" alt="Loading" style="max-width:70px;max-height:70px;object-fit:contain;animation:spinIcon 1.2s linear infinite;">
+    <?php else: ?>
+        <svg width="52" height="52" viewBox="0 0 54 54" xmlns="http://www.w3.org/2000/svg" style="animation:spinIcon .8s linear infinite;filter:drop-shadow(0 0 8px rgba(124,58,237,.7));">
+            <defs><linearGradient id="adminSpinGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#7C3AED"/><stop offset="100%" stop-color="#00F5FF"/></linearGradient></defs>
+            <circle cx="27" cy="27" r="22" fill="none" stroke="url(#adminSpinGrad)" stroke-width="4" stroke-dasharray="110 30" stroke-linecap="round"/>
+        </svg>
+    <?php endif; ?>
+</div>
+<script>
+(function(){
+    var sp = document.getElementById('mmb-page-spinner');
+    if (!sp) return;
+    document.addEventListener('click', function(e) {
+        var a = e.target.closest('a[href]');
+        if (a) {
+            var href = a.getAttribute('href');
+            if (!href || href.startsWith('#') || href.startsWith('mailto:') ||
+                href.startsWith('javascript:') || a.target === '_blank' ||
+                a.getAttribute('data-no-loader') !== null) return;
+            sp.style.opacity = '1'; sp.style.visibility = 'visible';
+        }
+        var btn = e.target.closest('button[type="submit"],input[type="submit"]');
+        if (btn && !btn.disabled && !btn.form?.getAttribute('data-no-loader')) {
+            if (btn.form && !btn.form.checkValidity()) return;
+            btn.classList.add('mmb-btn-loading');
+            sp.style.opacity = '1'; sp.style.visibility = 'visible';
+        }
+    });
+    window.addEventListener('pageshow', function(){ sp.style.opacity = '0'; sp.style.visibility = 'hidden'; });
+    window.addEventListener('load',     function(){ sp.style.opacity = '0'; sp.style.visibility = 'hidden'; });
+})();
+</script>
+<?php } } catch (\Exception $_alEx3) { /* non-fatal */ } ?>
+<?php
+// ── Skeleton screen ───────────────────────────────────────────────────────
+$_adminSkEnabled = false;
+try {
+    if (!isset($_adminLoaderSkDone)) {
+        $_adminSkRow = \Core\Database::getInstance()->fetch(
+            "SELECT value FROM settings WHERE `key` = 'skeleton_enabled'"
+        );
+        if ($_adminSkRow && $_adminSkRow['value'] === '1') {
+            $_adminSkEnabled = true;
+            $skeletonType = 'admin';
+            include BASE_PATH . '/views/partials/skeleton-screen.php';
+        }
+        $_adminLoaderSkDone = true;
+    }
+} catch (\Exception $_skEx) { /* non-fatal */ }
+?>
+<script>
+// ── mmbSkeleton inline utility ────────────────────────────────────────────
+// Always defined; show/hide are no-ops when skeleton_enabled is false.
+window.mmbSkeletonEnabled = <?= $_adminSkEnabled ? 'true' : 'false' ?>;
+window.mmbSkeleton = (function(){
+    function _on(){ return !!window.mmbSkeletonEnabled; }
+    function _html(v){
+        var s='';
+        if(v==='chart'){
+            var bars=[45,70,55,90,60,80,100,65,75,50,85,70].map(function(h){
+                return '<div class="skeleton" style="flex:1;height:'+h+'%;border-radius:4px 4px 0 0;min-height:4px;"></div>';
+            }).join('');
+            return '<div style="padding:16px;height:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:10px;">'
+                +'<div class="skeleton" style="height:13px;width:40%;border-radius:4px;"></div>'
+                +'<div style="flex:1;display:flex;align-items:flex-end;gap:5px;">'+bars+'</div></div>';
+        }
+        if(v==='stats'){
+            for(var j=0;j<4;j++) s+='<div style="background:var(--bg-secondary,#0c0c12);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:18px 16px;">'
+                +'<div class="skeleton" style="height:11px;width:55%;border-radius:4px;margin-bottom:12px;"></div>'
+                +'<div class="skeleton" style="height:28px;width:70%;border-radius:6px;margin-bottom:6px;"></div>'
+                +'<div class="skeleton" style="height:10px;width:40%;border-radius:4px;"></div></div>';
+            return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;">'+s+'</div>';
+        }
+        /* table (default) */
+        for(var i=0;i<6;i++){
+            s+='<div style="display:flex;align-items:center;gap:12px;padding:11px 16px;border-bottom:1px solid rgba(255,255,255,.04);">'
+                +'<div class="skeleton" style="width:28px;height:28px;border-radius:50%;flex-shrink:0;"></div>'
+                +[80,120,90,70,60].map(function(w){return '<div class="skeleton" style="height:12px;width:'+w+'px;border-radius:4px;"></div>';}).join('')
+                +'</div>';
+        }
+        return s;
+    }
+    function _show(el,v){
+        if(!_on()) return;
+        if(typeof el==='string') el=document.querySelector(el);
+        if(!el) return;
+        if(getComputedStyle(el).position==='static') el.style.position='relative';
+        var old=el.querySelector('.mmb-sk-inline'); if(old) old.remove();
+        var ov=document.createElement('div');
+        ov.className='mmb-sk-inline'; ov.setAttribute('aria-hidden','true');
+        ov.style.cssText='position:absolute;inset:0;z-index:20;overflow:hidden;background:var(--bg-card,#0c0c12);border-radius:inherit;';
+        ov.innerHTML=_html(v||'table');
+        el.appendChild(ov);
+    }
+    function _hide(el){
+        if(typeof el==='string') el=document.querySelector(el);
+        if(!el) return;
+        var ov=el.querySelector('.mmb-sk-inline'); if(!ov) return;
+        ov.style.transition='opacity .2s ease'; ov.style.opacity='0';
+        setTimeout(function(){ if(ov.parentNode) ov.parentNode.removeChild(ov); },230);
+    }
+    return {
+        show:_show, hide:_hide,
+        wrap:function(el,v,fn){
+            _show(el,v);
+            var p=fn();
+            if(p&&typeof p.then==='function') return p.then(function(r){_hide(el);return r;},function(e){_hide(el);throw e;});
+            _hide(el); return p;
+        }
+    };
+})();
+</script>
     <div class="admin-container">
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
@@ -2328,6 +2503,16 @@
                             <a href="/admin/settings#timezone" class="menu-link">
                                 <i class="fas fa-globe"></i>
                                 <span>Timezone</span>
+                            </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('settings')): ?>
+                            <a href="/admin/settings/preloader" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/settings/preloader') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-circle-notch"></i>
+                                <span>Preloader</span>
+                            </a>
+                            <a href="/admin/settings/captcha" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/settings/captcha') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-robot"></i>
+                                <span>Captcha</span>
                             </a>
                             <?php endif; ?>
                         </div>

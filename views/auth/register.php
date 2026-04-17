@@ -68,6 +68,34 @@
                        class="form-input" placeholder="Repeat password" required minlength="8">
             </div>
             
+            <?php
+            try {
+                $_captchaDb2 = \Core\Database::getInstance();
+                $_captchaRegRow = $_captchaDb2->fetch("SELECT value FROM settings WHERE `key` = 'captcha_on_register'");
+                $_showRegCaptcha = \Core\Captcha::isEnabled() && $_captchaRegRow && $_captchaRegRow['value'] === '1';
+            } catch (\Exception $e) { $_showRegCaptcha = false; }
+            ?>
+            <?php if (!empty($_showRegCaptcha)): ?>
+            <?php \Core\Captcha::generate(); ?>
+            <div class="form-group">
+                <label class="form-label">Security Check</label>
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+                    <img src="/captcha" id="regCaptchaImg" alt="CAPTCHA"
+                         style="border-radius:6px;border:1px solid var(--border-color);cursor:pointer;"
+                         title="Click to refresh" onclick="this.src='/captcha?t='+Date.now()">
+                    <button type="button" onclick="document.getElementById('regCaptchaImg').src='/captcha?t='+Date.now()"
+                            style="background:none;border:none;color:var(--cyan);cursor:pointer;font-size:13px;padding:0;">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+                <input type="text" name="captcha_answer" class="form-input"
+                       placeholder="Enter the answer" autocomplete="off" required>
+                <?php if (View::hasError('captcha_answer')): ?>
+                    <div class="form-error"><?= View::error('captcha_answer') ?></div>
+                <?php endif; ?>
+            </div>
+            <?php endif; ?>
+            
             <button type="submit" class="btn btn-primary" style="width: 100%;">Create Account</button>
         </form>
         

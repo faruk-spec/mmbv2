@@ -57,6 +57,23 @@ class AuthController extends BaseController
             $this->redirect('/login');
             return;
         }
+
+        // Validate captcha when enabled for login
+        try {
+            $captchaDb = \Core\Database::getInstance();
+            $captchaRow = $captchaDb->fetch("SELECT value FROM settings WHERE `key` = 'captcha_on_login'");
+            if (\Core\Captcha::isEnabled() && $captchaRow && $captchaRow['value'] === '1') {
+                $answer = $this->input('captcha_answer', '');
+                if (!\Core\Captcha::verify($answer)) {
+                    View::setError('captcha_answer', 'Incorrect security answer. Please try again.');
+                    $this->flash('error', 'Incorrect security answer. Please try again.');
+                    $this->redirect('/login');
+                    return;
+                }
+            }
+        } catch (\Exception $e) {
+            // non-fatal: skip captcha check if DB unavailable
+        }
         
         $email = $this->input('email');
         $password = $this->input('password');
@@ -149,6 +166,23 @@ class AuthController extends BaseController
         if (!empty($errors)) {
             $this->redirect('/register');
             return;
+        }
+
+        // Validate captcha when enabled for registration
+        try {
+            $captchaDb2 = \Core\Database::getInstance();
+            $captchaRegRow = $captchaDb2->fetch("SELECT value FROM settings WHERE `key` = 'captcha_on_register'");
+            if (\Core\Captcha::isEnabled() && $captchaRegRow && $captchaRegRow['value'] === '1') {
+                $answer = $this->input('captcha_answer', '');
+                if (!\Core\Captcha::verify($answer)) {
+                    View::setError('captcha_answer', 'Incorrect security answer. Please try again.');
+                    $this->flash('error', 'Incorrect security answer. Please try again.');
+                    $this->redirect('/register');
+                    return;
+                }
+            }
+        } catch (\Exception $e) {
+            // non-fatal: skip captcha check if DB unavailable
         }
         
         $userId = Auth::register([

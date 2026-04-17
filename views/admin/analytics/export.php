@@ -563,12 +563,16 @@ class AnalyticsDashboard {
         const dateTo = document.getElementById('dateTo').value;
         const timeframe = document.getElementById('timeframe').value;
         
+        const grid = document.querySelector('.dashboard-grid');
+        window.mmbSkeleton.show(grid, 'chart');
         try {
             const response = await fetch(`/admin/analytics/export?ajax=1&action=stats&date_from=${dateFrom}&date_to=${dateTo}&timeframe=${timeframe}`);
             const data = await response.json();
             this.updateDashboard(data);
         } catch (error) {
             console.error('Error loading analytics data:', error);
+        } finally {
+            window.mmbSkeleton.hide(grid);
         }
     }
     
