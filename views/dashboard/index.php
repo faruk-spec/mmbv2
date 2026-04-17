@@ -27,7 +27,19 @@
         <?php if (empty($projects)): ?>
             <p style="color: var(--text-secondary); text-align: center; padding: 32px 16px; font-size: 0.875rem;">No applications available</p>
         <?php else: ?>
-            <div class="applications-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 16px;">
+            <!-- Skeleton placeholders — shown instantly, hidden after a brief paint -->
+            <div id="appGridSkeleton" class="applications-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 16px;">
+                <?php for ($si = 0; $si < min(count($projects), 8); $si++): ?>
+                <div style="display:flex;flex-direction:column;align-items:center;background:var(--bg-secondary);border-radius:12px;border:1px solid var(--border-color);padding:20px 12px 16px;min-height:155px;">
+                    <div class="skeleton skeleton-block" style="width:60px;height:60px;border-radius:14px;margin-bottom:12px;"></div>
+                    <div class="skeleton skeleton-line" style="width:70%;height:12px;margin-bottom:6px;"></div>
+                    <div class="skeleton skeleton-line" style="width:55%;height:10px;margin-bottom:4px;"></div>
+                    <div class="skeleton skeleton-line" style="width:40%;height:10px;"></div>
+                </div>
+                <?php endfor; ?>
+            </div>
+            <!-- Real grid — hidden until skeleton is removed -->
+            <div id="appGridReal" class="applications-grid" style="display: none; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 16px;">
                 <?php foreach ($projects as $key => $project): 
                     $cardColor = htmlspecialchars($project['color'] ?? '#00f0ff');
                     if (!preg_match('/^#[0-9A-Fa-f]{6}$/', $cardColor)) { $cardColor = '#00f0ff'; }
@@ -45,6 +57,31 @@
                     </a>
                 <?php endforeach; ?>
             </div>
+            <script>
+            (function(){
+                var sk = document.getElementById('appGridSkeleton');
+                var rg = document.getElementById('appGridReal');
+                if (!sk || !rg) return;
+                // Only show skeleton if the setting is enabled
+                if (!window.mmbSkeletonEnabled) {
+                    sk.remove();
+                    rg.style.display = 'grid';
+                    return;
+                }
+                // Show skeleton, then swap in real content after a tick (content is already rendered by PHP)
+                setTimeout(function() {
+                    sk.style.opacity = '0';
+                    sk.style.transition = 'opacity .3s';
+                    setTimeout(function() {
+                        sk.remove();
+                        rg.style.display = 'grid';
+                        rg.style.opacity = '0';
+                        rg.style.transition = 'opacity .4s';
+                        setTimeout(function() { rg.style.opacity = '1'; }, 20);
+                    }, 300);
+                }, 400);
+            })();
+            </script>
         <?php endif; ?>
     </div>
 </div>

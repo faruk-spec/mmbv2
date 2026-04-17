@@ -13,7 +13,7 @@ use Core\Security;
 
 class PreloaderController extends BaseController
 {
-    private const UPLOAD_DIR = '/public/uploads/preloader/';
+    private const UPLOAD_DIR = '/storage/uploads/preloader/';
 
     public function __construct()
     {
@@ -31,15 +31,17 @@ class PreloaderController extends BaseController
 
         $keys = [
             'preloader_enabled',
-            'preloader_type',         // 'text' | 'image'
+            'preloader_type',          // 'text' | 'image'
             'preloader_text',
             'preloader_text_color',
             'preloader_bg_color',
-            'preloader_animation',    // 'wave' | 'pulse' | 'spin' | 'bounce'
-            'preloader_speed',        // milliseconds, e.g. 800
+            'preloader_animation',     // 'wave' | 'pulse' | 'spin' | 'bounce'
+            'preloader_speed',         // milliseconds
             'preloader_image_path',
             'skeleton_enabled',
             'action_loader_enabled',
+            'action_loader_blur',      // backdrop blur px (0-20)
+            'action_loader_image',     // custom spinner image path
         ];
 
         $settings = [];
@@ -51,10 +53,11 @@ class PreloaderController extends BaseController
         // Defaults
         $settings['preloader_type']      = $settings['preloader_type']      ?? 'text';
         $settings['preloader_text']      = $settings['preloader_text']      ?? 'Loading…';
-        $settings['preloader_text_color']= $settings['preloader_text_color']?? '#00f0ff';
+        $settings['preloader_text_color']= $settings['preloader_text_color']?? '#7C3AED';
         $settings['preloader_bg_color']  = $settings['preloader_bg_color']  ?? '#06060a';
-        $settings['preloader_animation'] = $settings['preloader_animation'] ?? 'wave';
+        $settings['preloader_animation'] = $settings['preloader_animation'] ?? 'reveal';
         $settings['preloader_speed']     = $settings['preloader_speed']     ?? '800';
+        $settings['action_loader_blur']  = $settings['action_loader_blur']  ?? '8';
 
         $this->view('admin/settings/preloader', [
             'title'    => 'Preloader Settings',
@@ -77,24 +80,37 @@ class PreloaderController extends BaseController
         $db = Database::getInstance();
 
         $fields = [
-            'preloader_enabled'     => $this->input('preloader_enabled')      ? '1' : '0',
+            'preloader_enabled'     => $this->input('preloader_enabled')    ? '1' : '0',
             'preloader_type'        => in_array($this->input('preloader_type'), ['text', 'image']) ? $this->input('preloader_type') : 'text',
             'preloader_text'        => Security::sanitize($this->input('preloader_text', 'Loading…')),
-            'preloader_text_color'  => $this->validateHexColor($this->input('preloader_text_color'), '#00f0ff'),
+            'preloader_text_color'  => $this->validateHexColor($this->input('preloader_text_color'), '#7C3AED'),
             'preloader_bg_color'    => $this->validateHexColor($this->input('preloader_bg_color'),   '#06060a'),
-            'preloader_animation'   => in_array($this->input('preloader_animation'), ['wave', 'pulse', 'spin', 'bounce']) ? $this->input('preloader_animation') : 'wave',
+            'preloader_animation'   => in_array($this->input('preloader_animation'), ['reveal', 'wave', 'pulse', 'spin', 'bounce']) ? $this->input('preloader_animation') : 'reveal',
             'preloader_speed'       => max(200, min(3000, (int)$this->input('preloader_speed', 800))),
-            'skeleton_enabled'      => $this->input('skeleton_enabled')        ? '1' : '0',
-            'action_loader_enabled' => $this->input('action_loader_enabled')   ? '1' : '0',
+            'skeleton_enabled'      => $this->input('skeleton_enabled')      ? '1' : '0',
+            'action_loader_enabled' => $this->input('action_loader_enabled') ? '1' : '0',
+            'action_loader_blur'    => max(0, min(20, (int)$this->input('action_loader_blur', 8))),
         ];
 
-        // Handle optional image upload
+        // Handle optional home-page preloader image upload
         if (!empty($_FILES['preloader_image']['name'])) {
             $uploaded = $this->handleUpload($_FILES['preloader_image']);
             if ($uploaded) {
                 $fields['preloader_image_path'] = $uploaded;
             } else {
-                $this->flash('error', 'Image upload failed. Allowed types: png, gif, svg, webp, jpg.');
+                $this->flash('error', 'Preloader image upload failed. Allowed types: png, gif, svg, webp, jpg.');
+                $this->redirect('/admin/settings/preloader');
+                return;
+            }
+        }
+
+        // Handle optional action-spinner image upload
+        if (!empty($_FILES['action_loader_image']['name'])) {
+            $uploaded = $this->handleUpload($_FILES['action_loader_image']);
+            if ($uploaded) {
+                $fields['action_loader_image'] = $uploaded;
+            } else {
+                $this->flash('error', 'Spinner image upload failed. Allowed types: png, gif, svg, webp.');
                 $this->redirect('/admin/settings/preloader');
                 return;
             }
@@ -160,7 +176,7 @@ class PreloaderController extends BaseController
             return false;
         }
 
-        return '/public/uploads/preloader/' . $filename;
+        return '/uploads/preloader/' . $filename;
     }
 
     /**

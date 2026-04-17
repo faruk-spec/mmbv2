@@ -1122,69 +1122,56 @@
 </head>
 <body>
 <?php
-// ── Admin preloader injection ─────────────────────────────────────────────
+// ── Admin action loader ───────────────────────────────────────────────────
+// Note: The full-page preloader is intentionally omitted from admin pages.
+// Only the action-loader spinner (for button clicks) is injected here.
 try {
-    $_apDb = \Core\Database::getInstance();
-    // Fetch all preloader settings in a single query
-    $_apRows = $_apDb->fetchAll(
-        "SELECT `key`, `value` FROM settings WHERE `key` IN (
-            'preloader_enabled','preloader_type','preloader_text','preloader_text_color',
-            'preloader_bg_color','preloader_animation','preloader_speed','preloader_image_path'
-        )"
+    $_adminLoaderRows = \Core\Database::getInstance()->fetchAll(
+        "SELECT `key`, `value` FROM settings WHERE `key` IN ('action_loader_enabled','action_loader_blur','action_loader_image')"
     );
-    $_aps = [];
-    foreach ($_apRows as $_apr) { $_aps[$_apr['key']] = $_apr['value']; }
-    if (($_aps['preloader_enabled'] ?? '0') === '1') {
-        $_apType  = in_array($_aps['preloader_type'] ?? '', ['text','image']) ? $_aps['preloader_type'] : 'text';
-        $_apText  = htmlspecialchars($_aps['preloader_text'] ?? 'Loading…', ENT_QUOTES);
-        $_apColor = htmlspecialchars($_aps['preloader_text_color'] ?? '#00f0ff', ENT_QUOTES);
-        $_apBg    = htmlspecialchars($_aps['preloader_bg_color'] ?? '#06060a', ENT_QUOTES);
-        $_apAnim  = in_array($_aps['preloader_animation'] ?? '', ['wave','pulse','spin','bounce']) ? $_aps['preloader_animation'] : 'wave';
-        $_apSpeed = max(200, min(3000, (int)($_aps['preloader_speed'] ?? 800)));
-        $_apImg   = $_aps['preloader_image_path'] ?? '';
+    $_als = [];
+    foreach ($_adminLoaderRows as $_alr) { $_als[$_alr['key']] = $_alr['value']; }
+    if (($_als['action_loader_enabled'] ?? '0') === '1') {
+        $_alBlur = max(0, min(20, (int)($_als['action_loader_blur'] ?? 8)));
+        $_alImg  = htmlspecialchars($_als['action_loader_image'] ?? '', ENT_QUOTES);
         ?>
-<div id="mmb-preloader" style="background:<?= $_apBg ?>;">
-    <?php if ($_apType === 'image' && !empty($_apImg)): ?>
-        <img src="<?= htmlspecialchars($_apImg, ENT_QUOTES) ?>" alt="Loading" style="max-width:180px;max-height:180px;">
-    <?php elseif ($_apAnim === 'wave'): ?>
-        <div style="font-family:'Poppins',sans-serif;font-size:1.4rem;font-weight:700;letter-spacing:4px;">
-            <?php foreach (str_split($_apText) as $i => $c): ?><span style="display:inline-block;color:<?= $_apColor ?>;animation:waveChar <?= $_apSpeed ?>ms ease-in-out <?= $i * 80 ?>ms infinite alternate;"><?= $c === ' ' ? '&nbsp;' : htmlspecialchars($c, ENT_QUOTES) ?></span><?php endforeach; ?>
-        </div>
-    <?php elseif ($_apAnim === 'spin'): ?>
-        <div style="display:flex;flex-direction:column;align-items:center;gap:16px;color:<?= $_apColor ?>;">
-            <svg width="48" height="48" viewBox="0 0 48 48" style="animation:spinIcon <?= $_apSpeed ?>ms linear infinite;">
-                <circle cx="24" cy="24" r="18" fill="none" stroke="<?= $_apColor ?>" stroke-width="4" stroke-dasharray="90 22"/>
-            </svg>
-            <span style="font-family:'Poppins',sans-serif;"><?= $_apText ?></span>
-        </div>
+<div id="mmb-page-spinner" style="position:fixed;inset:0;z-index:888888;display:flex;align-items:center;justify-content:center;
+     opacity:0;visibility:hidden;transition:opacity .25s,visibility .25s;
+     backdrop-filter:blur(<?= $_alBlur ?>px);-webkit-backdrop-filter:blur(<?= $_alBlur ?>px);
+     background:rgba(0,0,0,<?= $_alBlur > 0 ? '0.5' : '0.7' ?>);">
+    <?php if (!empty($_alImg)): ?>
+        <img src="<?= $_alImg ?>" alt="Loading" style="max-width:70px;max-height:70px;object-fit:contain;animation:spinIcon 1.2s linear infinite;">
     <?php else: ?>
-        <div style="font-family:'Poppins',sans-serif;font-size:1.4rem;font-weight:700;letter-spacing:4px;color:<?= $_apColor ?>;animation:<?= $_apAnim === 'pulse' ? 'pulseText' : 'bounceText' ?> <?= $_apSpeed ?>ms ease-in-out infinite;">
-            <?= $_apText ?>
-        </div>
+        <svg width="52" height="52" viewBox="0 0 54 54" xmlns="http://www.w3.org/2000/svg" style="animation:spinIcon .8s linear infinite;filter:drop-shadow(0 0 8px rgba(124,58,237,.7));">
+            <defs><linearGradient id="adminSpinGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#7C3AED"/><stop offset="100%" stop-color="#00F5FF"/></linearGradient></defs>
+            <circle cx="27" cy="27" r="22" fill="none" stroke="url(#adminSpinGrad)" stroke-width="4" stroke-dasharray="110 30" stroke-linecap="round"/>
+        </svg>
     <?php endif; ?>
 </div>
 <script>
 (function(){
-    window.addEventListener('load', function(){
-        var pl = document.getElementById('mmb-preloader');
-        if (pl) { setTimeout(function(){ pl.classList.add('hidden'); }, 200); setTimeout(function(){ pl.remove(); }, 700); }
+    var sp = document.getElementById('mmb-page-spinner');
+    if (!sp) return;
+    document.addEventListener('click', function(e) {
+        var a = e.target.closest('a[href]');
+        if (a) {
+            var href = a.getAttribute('href');
+            if (!href || href.startsWith('#') || href.startsWith('mailto:') ||
+                href.startsWith('javascript:') || a.target === '_blank' ||
+                a.getAttribute('data-no-loader') !== null) return;
+            sp.style.opacity = '1'; sp.style.visibility = 'visible';
+        }
+        var btn = e.target.closest('button[type="submit"],input[type="submit"]');
+        if (btn && !btn.disabled) {
+            btn.classList.add('mmb-btn-loading');
+            sp.style.opacity = '1'; sp.style.visibility = 'visible';
+        }
     });
-    setTimeout(function(){ var pl=document.getElementById('mmb-preloader'); if(pl){pl.classList.add('hidden');setTimeout(function(){pl.remove();},700);} }, 5000);
+    window.addEventListener('pageshow', function(){ sp.style.opacity = '0'; sp.style.visibility = 'hidden'; });
+    window.addEventListener('load',     function(){ sp.style.opacity = '0'; sp.style.visibility = 'hidden'; });
 })();
 </script>
-<?php
-    }
-} catch (\Exception $_apEx) { /* non-fatal */ }
-
-// ── Action loader bootstrap ───────────────────────────────────────────────
-try {
-    $_alDb = \Core\Database::getInstance();
-    $_alRow = $_alDb->fetch("SELECT value FROM settings WHERE `key` = 'action_loader_enabled'");
-    if ($_alRow && $_alRow['value'] === '1') {
-        echo '<script>(function(){document.addEventListener("click",function(e){var b=e.target.closest("button[type=submit],input[type=submit],.btn-action-loader");if(b&&!b.disabled)b.classList.add("mmb-btn-loading");});})();</script>';
-    }
-} catch (\Exception $_alEx2) { /* non-fatal */ }
-?>
+<?php } } catch (\Exception $_alEx3) { /* non-fatal */ } ?>
     <div class="admin-container">
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
