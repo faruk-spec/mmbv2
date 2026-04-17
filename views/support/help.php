@@ -31,12 +31,12 @@ View::extend('main');
             <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:24px;">
                 <?php
                 $topics = [
-                    ['icon'=>'rocket',       'color'=>'#00f0ff', 'title'=>'Getting Started',     'desc'=>'Set up your account and learn the basics.'],
+                    ['icon'=>'rocket',       'color'=>'#3b82f6', 'title'=>'Getting Started',     'desc'=>'Set up your account and learn the basics.'],
                     ['icon'=>'ticket',       'color'=>'#ff9f43', 'title'=>'Ticket Management',   'desc'=>'Creating, replying, and managing support tickets.'],
                     ['icon'=>'user-shield',  'color'=>'#a78bfa', 'title'=>'Account & Security',  'desc'=>'Passwords, two-factor auth, and billing.'],
-                    ['icon'=>'puzzle-piece', 'color'=>'#ff2ec4', 'title'=>'Integrations',        'desc'=>'Connect your apps and configure workflows.'],
-                    ['icon'=>'chart-bar',    'color'=>'#00ff88', 'title'=>'Analytics',           'desc'=>'Understand your usage and performance stats.'],
-                    ['icon'=>'gear',         'color'=>'#ff6b6b', 'title'=>'Settings',            'desc'=>'Platform configuration and preferences.'],
+                    ['icon'=>'puzzle-piece', 'color'=>'#8b5cf6', 'title'=>'Integrations',        'desc'=>'Connect your apps and configure workflows.'],
+                    ['icon'=>'chart-bar',    'color'=>'#22c55e', 'title'=>'Analytics',           'desc'=>'Understand your usage and performance stats.'],
+                    ['icon'=>'gear',         'color'=>'#ef4444', 'title'=>'Settings',            'desc'=>'Platform configuration and preferences.'],
                 ];
                 foreach ($topics as $t):
                 ?>

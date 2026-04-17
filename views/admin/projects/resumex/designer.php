@@ -62,7 +62,7 @@ $isEdit = $templateId > 0 && $template !== null;
 .rxd-sidebar-tab.active {
     color: var(--cyan);
     border-bottom-color: var(--cyan);
-    background: rgba(0,240,255,.04);
+    background: rgba(59,130,246,.04);
 }
 .rxd-sidebar-panel { display: none; flex: 1; overflow-y: auto; padding: 12px; }
 .rxd-sidebar-panel.active { display: block; }
@@ -94,7 +94,7 @@ $isEdit = $templateId > 0 && $template !== null;
     user-select: none;
 }
 .rxd-field-chip:active { cursor: grabbing; }
-.rxd-field-chip:hover { border-color: rgba(0,240,255,.5); background: rgba(0,240,255,.06); }
+.rxd-field-chip:hover { border-color: rgba(59,130,246,.5); background: rgba(59,130,246,.06); }
 .rxd-field-chip i { color: var(--cyan); width: 14px; text-align: center; }
 
 /* Style panel */
@@ -122,7 +122,7 @@ $isEdit = $templateId > 0 && $template !== null;
     padding: 5px 8px;
     font-size: .82rem;
 }
-.rxd-style-input:focus { outline: none; border-color: rgba(0,240,255,.4); }
+.rxd-style-input:focus { outline: none; border-color: rgba(59,130,246,.4); }
 .rxd-style-row-inline { display: flex; gap: 6px; }
 .rxd-style-row-inline .rxd-style-row { flex: 1; margin-bottom: 0; }
 .rxd-del-btn {
@@ -171,7 +171,7 @@ $isEdit = $templateId > 0 && $template !== null;
     transition: border-color .15s, background .15s;
     white-space: nowrap;
 }
-.rxd-toolbar-btn:hover { border-color: rgba(0,240,255,.4); background: rgba(0,240,255,.06); }
+.rxd-toolbar-btn:hover { border-color: rgba(59,130,246,.4); background: rgba(59,130,246,.06); }
 .rxd-toolbar-btn.primary { background: var(--cyan); color: #06060a; border-color: var(--cyan); font-weight: 700; }
 .rxd-toolbar-btn.primary:hover { filter: brightness(1.1); }
 .rxd-toolbar-btn.danger { border-color: rgba(239,68,68,.4); color: #f87171; }
@@ -199,7 +199,7 @@ $isEdit = $templateId > 0 && $template !== null;
     transform-origin: top center;
     font-family: Inter, sans-serif;
 }
-#rxdCanvas.drag-over { outline: 2px dashed rgba(0,240,255,.6); }
+#rxdCanvas.drag-over { outline: 2px dashed rgba(59,130,246,.6); }
 
 /* Blocks on canvas */
 .rxd-block {
@@ -210,7 +210,7 @@ $isEdit = $templateId > 0 && $template !== null;
     outline: 1px solid transparent;
     transition: outline-color .1s;
 }
-.rxd-block:hover { outline-color: rgba(0,240,255,.35); }
+.rxd-block:hover { outline-color: rgba(59,130,246,.35); }
 .rxd-block.selected { outline: 2px solid var(--cyan) !important; }
 /* Resize handles */
 .rxd-resize-handle {
@@ -643,7 +643,7 @@ window.rxdZoom = function(delta, absolute) {
 window.rxdToggleGrid = function() {
     showGrid = !showGrid;
     canvas.classList.toggle('show-grid', showGrid);
-    document.getElementById('rxdGridBtn').style.borderColor = showGrid ? 'rgba(0,240,255,.5)' : '';
+    document.getElementById('rxdGridBtn').style.borderColor = showGrid ? 'rgba(59,130,246,.5)' : '';
     document.getElementById('rxdGridBtn').style.color       = showGrid ? 'var(--cyan)' : '';
 };
 

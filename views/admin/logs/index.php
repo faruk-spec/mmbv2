@@ -59,7 +59,7 @@
 <!-- Stats row -->
 <div class="ld-grid-4">
     <div class="ld-stat">
-        <div class="ld-stat-icon" style="background:rgba(0,240,255,0.12);">
+        <div class="ld-stat-icon" style="background:rgba(59,130,246,0.12);">
             <i class="fas fa-list-alt" style="color:var(--cyan);font-size:18px;"></i>
         </div>
         <div>
@@ -100,7 +100,7 @@
 <div class="ld-section-title">Browse Logs</div>
 <div class="ld-nav-grid">
     <a href="/admin/logs/activity" class="ld-nav-card">
-        <div class="ld-nav-icon" style="background:rgba(0,240,255,0.12);">
+        <div class="ld-nav-icon" style="background:rgba(59,130,246,0.12);">
             <i class="fas fa-history" style="color:var(--cyan);font-size:20px;"></i>
         </div>
         <div>
@@ -120,8 +120,8 @@
         <span class="ld-nav-arrow">›</span>
     </a>
     <a href="/admin/logs/system" class="ld-nav-card">
-        <div class="ld-nav-icon" style="background:rgba(255,46,196,0.12);">
-            <i class="fas fa-file-alt" style="color:var(--magenta, #ff2ec4);font-size:20px;"></i>
+        <div class="ld-nav-icon" style="background:rgba(139,92,246,0.12);">
+            <i class="fas fa-file-alt" style="color:var(--magenta, #8b5cf6);font-size:20px;"></i>
         </div>
         <div>
             <div class="ld-nav-title">System Logs</div>
@@ -179,7 +179,7 @@
                 <p style="color:var(--text-secondary);font-size:12px;">No data yet.</p>
             <?php else:
                 $maxCnt = max(array_column($moduleBreakdown, 'cnt') ?: [1]);
-                $modColors = ['whatsapp'=>'#25d366','qr'=>'var(--cyan)','proshare'=>'var(--magenta, #ff2ec4)','billx'=>'#f39c12','codexpro'=>'#9b59b6','convertx'=>'#3498db','auth'=>'#2ecc71','devzone'=>'#ff2ec4','core'=>'var(--text-secondary)'];
+                $modColors = ['whatsapp'=>'#25d366','qr'=>'var(--cyan)','proshare'=>'var(--magenta, #8b5cf6)','billx'=>'#f39c12','codexpro'=>'#9b59b6','convertx'=>'#3498db','auth'=>'#2ecc71','devzone'=>'#8b5cf6','core'=>'var(--text-secondary)'];
                 foreach ($moduleBreakdown as $m):
                     $color = $modColors[strtolower($m['module'])] ?? 'var(--cyan)';
                     $pct = round(($m['cnt'] / $maxCnt) * 100);

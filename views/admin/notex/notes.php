@@ -28,15 +28,15 @@
                     </td>
                     <td style="padding:12px 16px;color:var(--text-secondary);">UID <?= $note['user_id'] ?></td>
                     <td style="padding:12px 16px;">
-                        <?php if ($note['status'] === 'active'): ?><span style="background:rgba(0,255,136,0.15);color:#00ff88;padding:3px 10px;border-radius:20px;font-size:11px;">Active</span>
-                        <?php else: ?><span style="background:rgba(255,107,107,0.15);color:#ff6b6b;padding:3px 10px;border-radius:20px;font-size:11px;"><?= ucfirst($note['status']) ?></span><?php endif; ?>
+                        <?php if ($note['status'] === 'active'): ?><span style="background:rgba(34,197,94,0.15);color:#22c55e;padding:3px 10px;border-radius:20px;font-size:11px;">Active</span>
+                        <?php else: ?><span style="background:rgba(239,68,68,0.15);color:#ef4444;padding:3px 10px;border-radius:20px;font-size:11px;"><?= ucfirst($note['status']) ?></span><?php endif; ?>
                     </td>
                     <td style="padding:12px 16px;color:var(--text-secondary);font-size:12px;"><?= date('M d, Y', strtotime($note['created_at'])) ?></td>
                     <td style="padding:12px 16px;">
                         <form method="POST" action="/admin/projects/notex/notes/delete" onsubmit="return confirm('Permanently delete this note?');" style="display:inline;">
                             <input type="hidden" name="_token" value="<?= Security::generateCsrfToken() ?>">
                             <input type="hidden" name="id" value="<?= $note['id'] ?>">
-                            <button type="submit" style="background:rgba(255,107,107,0.15);color:#ff6b6b;border:1px solid #ff6b6b;padding:5px 10px;border-radius:6px;cursor:pointer;font-family:inherit;font-size:12px;">
+                            <button type="submit" style="background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid #ef4444;padding:5px 10px;border-radius:6px;cursor:pointer;font-family:inherit;font-size:12px;">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </form>

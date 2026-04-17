@@ -28,7 +28,7 @@ table td {
 }
 
 table tr:hover {
-    background: rgba(0, 240, 255, 0.05);
+    background: rgba(59, 130, 246, 0.05);
 }
 
 .btn-view {
@@ -64,7 +64,7 @@ table tr:hover {
 }
 
 .page-link:hover {
-    background: rgba(0, 240, 255, 0.1);
+    background: rgba(59, 130, 246, 0.1);
     border-color: var(--cyan);
 }
 

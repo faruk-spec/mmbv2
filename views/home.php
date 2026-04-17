@@ -544,7 +544,7 @@ if ($showStats):
             <?php
             $badgeStyles = [
                 'free'       => 'background:rgba(34,197,94,0.15);color:#22c55e;border:1px solid rgba(34,197,94,0.35);',
-                'freemium'   => 'background:rgba(255,170,0,0.28);color:#ffaa00;border:1px solid rgba(255,170,0,0.55);',
+                'freemium'   => 'background:rgba(245,158,11,0.28);color:#f59e0b;border:1px solid rgba(245,158,11,0.55);',
                 'enterprise' => 'background:rgba(153,69,255,0.28);color:#bb88ff;border:1px solid rgba(153,69,255,0.55);',
             ];
             $badgeStyle = $badgeStyles[$projectTier] ?? $badgeStyles['free'];
@@ -876,7 +876,7 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
         
         <div class="animate-fade-in" style="text-align: center; padding: 16px; animation-delay: 0.3s;">
-            <div style="width: 45px; height: 45px; background: rgba(255, 170, 0, 0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;">
+            <div style="width: 45px; height: 45px; background: rgba(245, 158, 11, 0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2">
                     <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
                     <path d="M13.73 21a2 2 0 0 1-3.46 0"/>

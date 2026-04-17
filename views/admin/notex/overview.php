@@ -15,8 +15,8 @@
         $statItems = [
             ['label' => 'Total Notes',   'value' => $stats['total_notes'],   'color' => '#ffd700', 'icon' => 'sticky-note'],
             ['label' => 'Total Users',   'value' => $stats['total_users'],   'color' => '#00d4ff', 'icon' => 'users'],
-            ['label' => 'Total Folders', 'value' => $stats['total_folders'], 'color' => '#00ff88', 'icon' => 'folder'],
-            ['label' => 'Notes Today',   'value' => $stats['notes_today'],   'color' => '#ff2ec4', 'icon' => 'calendar-day'],
+            ['label' => 'Total Folders', 'value' => $stats['total_folders'], 'color' => '#22c55e', 'icon' => 'folder'],
+            ['label' => 'Notes Today',   'value' => $stats['notes_today'],   'color' => '#8b5cf6', 'icon' => 'calendar-day'],
         ];
         foreach ($statItems as $s): ?>
         <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:20px;">
@@ -51,8 +51,8 @@
                     </td>
                     <td style="padding:12px 16px;color:var(--text-secondary);">UID <?= $note['user_id'] ?></td>
                     <td style="padding:12px 16px;">
-                        <?php if ($note['status'] === 'active'): ?><span style="background:rgba(0,255,136,0.15);color:#00ff88;padding:3px 10px;border-radius:20px;font-size:11px;">Active</span>
-                        <?php else: ?><span style="background:rgba(255,107,107,0.15);color:#ff6b6b;padding:3px 10px;border-radius:20px;font-size:11px;"><?= ucfirst($note['status']) ?></span><?php endif; ?>
+                        <?php if ($note['status'] === 'active'): ?><span style="background:rgba(34,197,94,0.15);color:#22c55e;padding:3px 10px;border-radius:20px;font-size:11px;">Active</span>
+                        <?php else: ?><span style="background:rgba(239,68,68,0.15);color:#ef4444;padding:3px 10px;border-radius:20px;font-size:11px;"><?= ucfirst($note['status']) ?></span><?php endif; ?>
                     </td>
                     <td style="padding:12px 16px;color:var(--text-secondary);font-size:12px;"><?= date('M d, Y', strtotime($note['created_at'])) ?></td>
                 </tr>

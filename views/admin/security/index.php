@@ -189,8 +189,8 @@
             </div>
             <div style="display: flex; flex-direction: column; gap: 15px;">
                 <a href="/admin/security/blocked-ips" class="action-card">
-                    <div class="action-icon" style="background: rgba(255, 107, 107, 0.1);">
-                        <i class="fa fa-ban" style="color: #ff6b6b;"></i>
+                    <div class="action-icon" style="background: rgba(239, 68, 68, 0.1);">
+                        <i class="fa fa-ban" style="color: #ef4444;"></i>
                     </div>
                     <div>
                         <div class="action-title">Blocked IPs</div>
@@ -199,8 +199,8 @@
                 </a>
                 
                 <a href="/admin/security/failed-logins" class="action-card">
-                    <div class="action-icon" style="background: rgba(255, 170, 0, 0.1);">
-                        <i class="fa fa-exclamation-triangle" style="color: #ffaa00;"></i>
+                    <div class="action-icon" style="background: rgba(245, 158, 11, 0.1);">
+                        <i class="fa fa-exclamation-triangle" style="color: #f59e0b;"></i>
                     </div>
                     <div>
                         <div class="action-title">Failed Logins</div>
@@ -325,7 +325,7 @@
 }
 
 .stat-card.gradient-red {
-    --gradient-start: #ff6b6b;
+    --gradient-start: #ef4444;
     --gradient-end: #ee5a6f;
 }
 
@@ -441,7 +441,7 @@
 
 .badge-orange {
     background: #ffe5e5;
-    color: #ff6b6b;
+    color: #ef4444;
 }
 
 .chart-container {
@@ -462,7 +462,7 @@
     padding: 12px;
     background: #fff3cd;
     border-radius: 8px;
-    border-left: 4px solid #ffaa00;
+    border-left: 4px solid #f59e0b;
 }
 
 .ip-info {
@@ -748,8 +748,8 @@ new Chart(failedLoginCtx, {
         datasets: [{
             label: 'Failed Attempts',
             data: <?= json_encode(array_map(function($item) { return $item['count']; }, $failedLoginTrend)) ?>,
-            backgroundColor: 'rgba(255, 107, 107, 0.5)',
-            borderColor: '#ff6b6b',
+            backgroundColor: 'rgba(239, 68, 68, 0.5)',
+            borderColor: '#ef4444',
             borderWidth: 2
         }]
     },

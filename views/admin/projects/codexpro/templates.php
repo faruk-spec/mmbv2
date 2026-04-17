@@ -28,7 +28,7 @@ table td {
 }
 
 table tr:hover {
-    background: rgba(0, 240, 255, 0.05);
+    background: rgba(59, 130, 246, 0.05);
 }
 
 .badge {
@@ -36,7 +36,7 @@ table tr:hover {
     border-radius: 6px;
     font-size: 12px;
     font-weight: 500;
-    background: rgba(0, 240, 255, 0.2);
+    background: rgba(59, 130, 246, 0.2);
     color: var(--cyan);
 }
 
@@ -73,7 +73,7 @@ table tr:hover {
 }
 
 .page-link:hover {
-    background: rgba(0, 240, 255, 0.1);
+    background: rgba(59, 130, 246, 0.1);
     border-color: var(--cyan);
 }
 

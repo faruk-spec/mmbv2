@@ -293,7 +293,7 @@
     </div>
 
     <?php if (Helpers::hasFlash('success')): ?>
-        <div class="alert alert-success" style="background: rgba(0, 255, 136, 0.1); border: 1px solid var(--green); color: var(--green); padding: 14px 18px; border-radius: 8px; margin-bottom: 24px;">
+        <div class="alert alert-success" style="background: rgba(34, 197, 94, 0.1); border: 1px solid var(--green); color: var(--green); padding: 14px 18px; border-radius: 8px; margin-bottom: 24px;">
             <i class="fas fa-check-circle"></i> <?= View::e(Helpers::getFlash('success')) ?>
         </div>
     <?php endif; ?>

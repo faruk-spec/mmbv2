@@ -62,7 +62,7 @@ table td {
     color: var(--text-primary);
 }
 table tr:hover {
-    background: rgba(0, 240, 255, 0.05);
+    background: rgba(59, 130, 246, 0.05);
 }
 .btn-sm {
     padding: 6px 12px;
@@ -180,7 +180,7 @@ table tr:hover {
                     label: 'Projects Created',
                     data: <?= json_encode($trend_data ?? [0, 0, 0, 0, 0, 0, 0]) ?>,
                     borderColor: getComputedStyle(document.documentElement).getPropertyValue('--green'),
-                    backgroundColor: 'rgba(0, 255, 136, 0.1)',
+                    backgroundColor: 'rgba(34, 197, 94, 0.1)',
                     tension: 0.4
                 }]
             },

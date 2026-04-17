@@ -67,7 +67,7 @@
                         </span>
                     </td>
                     <td style="padding:10px 12px;text-align:center;font-weight:600;"><?= (int)$job['total_rows'] ?></td>
-                    <td style="padding:10px 12px;text-align:center;font-weight:700;color:#00ff88;"><?= (int)$job['completed'] ?></td>
+                    <td style="padding:10px 12px;text-align:center;font-weight:700;color:#22c55e;"><?= (int)$job['completed'] ?></td>
                     <td style="padding:10px 12px;text-align:center;font-weight:<?= $job['failed'] > 0 ? '700' : '400' ?>;
                                color:<?= $job['failed'] > 0 ? '#ef4444' : 'var(--text-secondary)' ?>;">
                         <?= (int)$job['failed'] ?>
@@ -75,7 +75,7 @@
                     <td style="padding:10px 12px;">
                         <?php
                         $statusColors = [
-                            'done'       => ['bg'=>'rgba(0,255,136,0.12)', 'color'=>'#00ff88'],
+                            'done'       => ['bg'=>'rgba(34,197,94,0.12)', 'color'=>'#22c55e'],
                             'error'      => ['bg'=>'rgba(239,68,68,0.12)', 'color'=>'#ef4444'],
                             'processing' => ['bg'=>'rgba(245,158,11,0.12)', 'color'=>'#f59e0b'],
                             'pending'    => ['bg'=>'rgba(99,102,241,0.12)', 'color'=>'#6366f1'],

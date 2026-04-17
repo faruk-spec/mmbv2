@@ -34,7 +34,7 @@
         
         <div style="display: flex; flex-direction: column; gap: 15px;">
             <a href="/admin/security/blocked-ips" style="display: flex; align-items: center; gap: 15px; padding: 15px; background: var(--bg-secondary); border-radius: 8px; color: var(--text-primary);">
-                <div style="width: 40px; height: 40px; background: rgba(255, 107, 107, 0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                <div style="width: 40px; height: 40px; background: rgba(239, 68, 68, 0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2">
                         <circle cx="12" cy="12" r="10"/>
                         <path d="M4.93 4.93l14.14 14.14"/>
@@ -47,7 +47,7 @@
             </a>
             
             <a href="/admin/security/failed-logins" style="display: flex; align-items: center; gap: 15px; padding: 15px; background: var(--bg-secondary); border-radius: 8px; color: var(--text-primary);">
-                <div style="width: 40px; height: 40px; background: rgba(255, 170, 0, 0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                <div style="width: 40px; height: 40px; background: rgba(245, 158, 11, 0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2">
                         <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                     </svg>

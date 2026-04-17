@@ -74,7 +74,7 @@
         
         .plan-type.enterprise {
             background: rgba(153, 69, 255, 0.2);
-            color: #9945ff;
+            color: #8b5cf6;
         }
         
         .status-badge {

@@ -4,7 +4,7 @@
 <?php View::section('content'); ?>
 
 <?php if (Helpers::hasFlash('error')): ?>
-<div style="background:rgba(255,107,107,.1);border:1px solid var(--red);color:var(--red);padding:12px 16px;border-radius:8px;margin-bottom:20px;">
+<div style="background:rgba(239,68,68,.1);border:1px solid var(--red);color:var(--red);padding:12px 16px;border-radius:8px;margin-bottom:20px;">
     <i class="fas fa-exclamation-circle"></i> <?= View::e(Helpers::getFlash('error')) ?>
 </div>
 <?php endif; ?>
@@ -60,9 +60,9 @@
         <div style="display:flex;flex-direction:column;gap:6px;">
             <label style="font-size:.875rem;font-weight:600;color:var(--text-secondary);">Accent Colour</label>
             <div style="display:flex;align-items:center;gap:10px;">
-                <input type="color" name="color" value="<?= View::e($plan['color'] ?? '#9945ff') ?>"
+                <input type="color" name="color" value="<?= View::e($plan['color'] ?? '#8b5cf6') ?>"
                        style="width:44px;height:38px;padding:2px;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-secondary);cursor:pointer;">
-                <input type="text" id="colorHex" value="<?= View::e($plan['color'] ?? '#9945ff') ?>"
+                <input type="text" id="colorHex" value="<?= View::e($plan['color'] ?? '#8b5cf6') ?>"
                        style="flex:1;padding:10px 14px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;color:var(--text-primary);font-size:.875rem;" readonly>
             </div>
         </div>
@@ -115,16 +115,16 @@
         <label style="font-size:.875rem;font-weight:700;color:var(--text-secondary);display:block;margin-bottom:12px;">Per-App Feature Configuration</label>
         <?php
         $appFeatureDefs = [
-            'qr' => ['title'=>'QR Generator','color'=>'#9945ff',
+            'qr' => ['title'=>'QR Generator','color'=>'#8b5cf6',
                 'numbers'=>['max_static_qr'=>['label'=>'Max Static QR','placeholder'=>'-1 = unlimited'],'max_dynamic_qr'=>['label'=>'Max Dynamic QR','placeholder'=>'-1 = unlimited'],'max_scans_per_month'=>['label'=>'Max Scans/Month','placeholder'=>'-1 = unlimited']],
                 'booleans'=>['dynamic_qr'=>'Dynamic QR Codes','analytics'=>'Analytics','password_protection'=>'Password Protection','expiry_date'=>'Expiry Date','bulk_generation'=>'Bulk Generation','ai_design'=>'AI Design','api_access'=>'API Access','white_label'=>'White-label','custom_colors'=>'Custom Colors & Logos','campaigns'=>'Campaigns','team_roles'=>'Team Roles','export_pdf'=>'Export PDF/SVG']],
             'whatsapp' => ['title'=>'WhatsApp API','color'=>'#25D366',
                 'numbers'=>['max_sessions'=>['label'=>'Max Sessions','placeholder'=>'-1 = unlimited'],'max_messages_per_day'=>['label'=>'Max Messages/Day','placeholder'=>'-1 = unlimited'],'max_contacts'=>['label'=>'Max Contacts','placeholder'=>'-1 = unlimited']],
                 'booleans'=>['bulk_messaging'=>'Bulk Messaging','auto_reply'=>'Auto Reply','media_messages'=>'Media Messages','api_access'=>'API Access','webhooks'=>'Webhooks','analytics'=>'Analytics','multi_device'=>'Multi-Device']],
-            'proshare' => ['title'=>'ProShare','color'=>'#ffaa00',
+            'proshare' => ['title'=>'ProShare','color'=>'#f59e0b',
                 'numbers'=>['max_files'=>['label'=>'Max Files','placeholder'=>'-1 = unlimited'],'max_file_size_mb'=>['label'=>'Max File Size (MB)','placeholder'=>'e.g. 50'],'max_storage_mb'=>['label'=>'Max Storage (MB)','placeholder'=>'-1 = unlimited']],
                 'booleans'=>['password_protected'=>'Password Protected','expiry_links'=>'Expiry Links','analytics'=>'Analytics','custom_domain'=>'Custom Domain','api_access'=>'API Access']],
-            'codexpro' => ['title'=>'CodeXPro','color'=>'#00f0ff',
+            'codexpro' => ['title'=>'CodeXPro','color'=>'#3b82f6',
                 'numbers'=>['max_projects'=>['label'=>'Max Projects','placeholder'=>'-1 = unlimited'],'max_executions_day'=>['label'=>'Max Executions/Day','placeholder'=>'-1 = unlimited']],
                 'booleans'=>['ai_completion'=>'AI Completion','private_snippets'=>'Private Snippets','team_sharing'=>'Team Sharing','api_access'=>'API Access']],
         ];
@@ -211,7 +211,7 @@ function showAppTab(panelId, btn) {
     document.querySelectorAll('.app-feat-tab').forEach(b => { b.style.background='var(--bg-secondary)'; b.style.color='var(--text-secondary)'; b.style.borderColor='var(--border-color)'; });
     const panel = document.getElementById(panelId);
     if (panel) panel.style.display='block';
-    if (btn) { btn.style.background='rgba(0,240,255,.12)'; btn.style.color='var(--cyan)'; btn.style.borderColor='var(--cyan)'; }
+    if (btn) { btn.style.background='rgba(59,130,246,.12)'; btn.style.color='var(--cyan)'; btn.style.borderColor='var(--cyan)'; }
 }
 </script>
 

@@ -14,13 +14,13 @@ $productUpdates = $userProfile['product_updates'] ?? 1;
 $savedTheme = $userProfile['theme_preference'] ?? 'dark';
 ?>
 <?php if (Helpers::hasFlash('success')): ?>
-    <div class="alert alert-success" style="margin-bottom: 12px; padding: 10px; background: rgba(0, 255, 136, 0.1); border: 1px solid var(--green); border-radius: 6px; color: var(--green); font-size: 0.8rem;">
+    <div class="alert alert-success" style="margin-bottom: 12px; padding: 10px; background: rgba(34, 197, 94, 0.1); border: 1px solid var(--green); border-radius: 6px; color: var(--green); font-size: 0.8rem;">
         ✓ <?= View::e(Helpers::getFlash('success')) ?>
     </div>
 <?php endif; ?>
 
 <?php if (Helpers::hasFlash('error')): ?>
-    <div class="alert alert-error" style="margin-bottom: 12px; padding: 10px; background: rgba(255, 107, 107, 0.1); border: 1px solid var(--red); border-radius: 6px; color: var(--red); font-size: 0.8rem;">
+    <div class="alert alert-error" style="margin-bottom: 12px; padding: 10px; background: rgba(239, 68, 68, 0.1); border: 1px solid var(--red); border-radius: 6px; color: var(--red); font-size: 0.8rem;">
         ✗ <?= View::e(Helpers::getFlash('error')) ?>
     </div>
 <?php endif; ?>
@@ -28,7 +28,7 @@ $savedTheme = $userProfile['theme_preference'] ?? 'dark';
 <div class="grid grid-2" style="gap: 16px;">
     <!-- Theme Preferences -->
     <div class="card" style="border-radius: 10px; overflow: hidden; border: 1px solid var(--border-color);">
-        <div class="card-header" style="background: linear-gradient(135deg, rgba(0, 240, 255, 0.1) 0%, rgba(255, 46, 196, 0.1) 100%); border-bottom: 1px solid var(--border-color); padding: 12px;">
+        <div class="card-header" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%); border-bottom: 1px solid var(--border-color); padding: 12px;">
             <h3 class="card-title" style="font-size: 0.9rem; display: flex; align-items: center; gap: 6px; margin: 0; font-weight: 600;">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="13.5" cy="6.5" r=".5"/>
@@ -78,7 +78,7 @@ $savedTheme = $userProfile['theme_preference'] ?? 'dark';
                     <input type="hidden" name="theme" id="themeInput" value="">
                 </div>
                 
-                <button type="submit" class="btn btn-primary" style="padding: 8px 16px; background: linear-gradient(135deg, var(--cyan), var(--magenta)); border: none; border-radius: 6px; color: #06060a; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 0.85rem; width: 100%;">
+                <button type="submit" class="btn btn-primary" style="padding: 8px 16px; background: var(--cyan); border: none; border-radius: 6px; color: #06060a; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 0.85rem; width: 100%;">
                     Save Theme
                 </button>
             </form>
@@ -87,7 +87,7 @@ $savedTheme = $userProfile['theme_preference'] ?? 'dark';
     
     <!-- Notification Preferences -->
     <div class="card" style="border-radius: 10px; overflow: hidden; border: 1px solid var(--border-color);">
-        <div class="card-header" style="background: linear-gradient(135deg, rgba(153, 69, 255, 0.1) 0%, rgba(255, 46, 196, 0.1) 100%); border-bottom: 1px solid var(--border-color); padding: 12px;">
+        <div class="card-header" style="background: linear-gradient(135deg, rgba(153, 69, 255, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%); border-bottom: 1px solid var(--border-color); padding: 12px;">
             <h3 class="card-title" style="font-size: 0.9rem; display: flex; align-items: center; gap: 6px; margin: 0; font-weight: 600;">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
@@ -139,7 +139,7 @@ $savedTheme = $userProfile['theme_preference'] ?? 'dark';
                     </label>
                 </div>
                 
-                <button type="submit" class="btn btn-primary" style="padding: 8px 16px; background: linear-gradient(135deg, var(--cyan), var(--magenta)); border: none; border-radius: 6px; color: #06060a; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 0.85rem; width: 100%;">
+                <button type="submit" class="btn btn-primary" style="padding: 8px 16px; background: var(--cyan); border: none; border-radius: 6px; color: #06060a; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 0.85rem; width: 100%;">
                     Save Preferences
                 </button>
             </form>
@@ -151,7 +151,7 @@ $savedTheme = $userProfile['theme_preference'] ?? 'dark';
 <div class="grid grid-2" style="gap: 16px; margin-top: 16px;">
     <!-- Display Preferences -->
     <div class="card" style="border-radius: 10px; overflow: hidden; border: 1px solid var(--border-color);">
-        <div class="card-header" style="background: linear-gradient(135deg, rgba(0, 255, 136, 0.1) 0%, rgba(0, 240, 255, 0.1) 100%); border-bottom: 1px solid var(--border-color); padding: 12px;">
+        <div class="card-header" style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%); border-bottom: 1px solid var(--border-color); padding: 12px;">
             <h3 class="card-title" style="font-size: 0.9rem; display: flex; align-items: center; gap: 6px; margin: 0; font-weight: 600;">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
@@ -190,7 +190,7 @@ $savedTheme = $userProfile['theme_preference'] ?? 'dark';
                     </select>
                 </div>
                 
-                <button type="submit" class="btn btn-primary" style="padding: 8px 16px; background: linear-gradient(135deg, var(--cyan), var(--magenta)); border: none; border-radius: 6px; color: #06060a; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 0.85rem; width: 100%;">
+                <button type="submit" class="btn btn-primary" style="padding: 8px 16px; background: var(--cyan); border: none; border-radius: 6px; color: #06060a; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 0.85rem; width: 100%;">
                     Save Settings
                 </button>
             </form>
@@ -199,7 +199,7 @@ $savedTheme = $userProfile['theme_preference'] ?? 'dark';
     
     <!-- Project Settings -->
     <div class="card" style="border-radius: 10px; overflow: hidden; border: 1px solid var(--border-color);">
-        <div class="card-header" style="background: linear-gradient(135deg, rgba(255, 170, 0, 0.1) 0%, rgba(255, 46, 196, 0.1) 100%); border-bottom: 1px solid var(--border-color); padding: 12px;">
+        <div class="card-header" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%); border-bottom: 1px solid var(--border-color); padding: 12px;">
             <h3 class="card-title" style="font-size: 0.9rem; display: flex; align-items: center; gap: 6px; margin: 0; font-weight: 600;">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
@@ -231,7 +231,7 @@ $savedTheme = $userProfile['theme_preference'] ?? 'dark';
                     </select>
                 </div>
                 
-                <button type="submit" class="btn btn-primary" style="padding: 8px 16px; background: linear-gradient(135deg, var(--cyan), var(--magenta)); border: none; border-radius: 6px; color: #06060a; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 0.85rem; width: 100%;">
+                <button type="submit" class="btn btn-primary" style="padding: 8px 16px; background: var(--cyan); border: none; border-radius: 6px; color: #06060a; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 0.85rem; width: 100%;">
                     Save Settings
                 </button>
             </form>
@@ -251,7 +251,7 @@ $savedTheme = $userProfile['theme_preference'] ?? 'dark';
     
     .theme-option.active {
         border-color: var(--cyan);
-        background: rgba(0, 240, 255, 0.05);
+        background: rgba(59, 130, 246, 0.05);
     }
     
     .theme-option.active::after {
@@ -273,17 +273,17 @@ $savedTheme = $userProfile['theme_preference'] ?? 'dark';
     .form-input:focus, select:focus {
         outline: none;
         border-color: var(--cyan);
-        box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.1);
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
     }
     
     .btn-primary:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 15px rgba(0, 240, 255, 0.4);
+        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
     }
     
     label:has(input[type="checkbox"]):hover {
         border-color: var(--cyan);
-        background: rgba(0, 240, 255, 0.03);
+        background: rgba(59, 130, 246, 0.03);
     }
     
     @media (max-width: 768px) {
@@ -323,7 +323,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <!-- ── Timezone Card ──────────────────────────────────────────────────────── -->
 <div style="margin-top:16px;">
     <div class="card" style="border-radius:10px;border:1px solid var(--border-color);overflow:hidden;">
-        <div class="card-header" style="background:linear-gradient(135deg,rgba(0,255,136,.1),rgba(0,240,255,.1));border-bottom:1px solid var(--border-color);padding:12px;">
+        <div class="card-header" style="background:linear-gradient(135deg,rgba(34,197,94,.1),rgba(59,130,246,.1));border-bottom:1px solid var(--border-color);padding:12px;">
             <h3 class="card-title" style="font-size:.9rem;display:flex;align-items:center;gap:6px;margin:0;font-weight:600;">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="10"/>
@@ -351,7 +351,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </select>
                 <p style="font-size:.75rem;color:var(--text-secondary);margin-bottom:12px;">
                     Dates and times throughout the QR dashboard will be shown in your selected timezone.
-                    The system timezone is <code style="background:rgba(0,240,255,.1);padding:1px 5px;border-radius:3px;"><?= htmlspecialchars(\Core\Timezone::getSystemTz(), ENT_QUOTES, 'UTF-8') ?></code>.
+                    The system timezone is <code style="background:rgba(59,130,246,.1);padding:1px 5px;border-radius:3px;"><?= htmlspecialchars(\Core\Timezone::getSystemTz(), ENT_QUOTES, 'UTF-8') ?></code>.
                 </p>
                 <button type="submit" style="width:100%;padding:9px;background:linear-gradient(135deg,var(--green),var(--cyan));border:none;border-radius:7px;color:#000;font-weight:700;font-size:.85rem;cursor:pointer;">
                     Save Timezone

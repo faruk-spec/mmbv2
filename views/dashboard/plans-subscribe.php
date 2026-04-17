@@ -8,7 +8,7 @@
 <?php endif; ?>
 
 <?php
-$planColor = View::e($plan['color'] ?? '#9945ff');
+$planColor = View::e($plan['color'] ?? '#8b5cf6');
 $planApps  = $plan['included_apps'] ?? [];
 $isFree    = (float)($plan['price'] ?? 0) === 0.0;
 ?>
@@ -55,7 +55,7 @@ $isFree    = (float)($plan['price'] ?? 0) === 0.0;
 
     <?php if ($existing): ?>
     <!-- Already subscribed -->
-    <div style="background:rgba(0,255,136,.08);border:1px solid var(--green);border-radius:10px;padding:20px;text-align:center;">
+    <div style="background:rgba(34,197,94,.08);border:1px solid var(--green);border-radius:10px;padding:20px;text-align:center;">
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" style="margin-bottom:10px;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
         <div style="font-weight:700;font-size:1rem;color:var(--green);margin-bottom:6px;">You're already subscribed!</div>
         <div style="font-size:.85rem;color:var(--text-secondary);">Active since <?= date('M j, Y', strtotime($existing['started_at'])) ?></div>

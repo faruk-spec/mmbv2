@@ -177,7 +177,7 @@ $createdAt = $bill['created_at'] ? date('d M Y H:i', strtotime($bill['created_at
 <!-- Delete Modal -->
 <div id="adminDeleteModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;align-items:center;justify-content:center;">
     <div class="card" style="max-width:400px;width:90%;padding:24px;">
-        <h3 style="margin-bottom:12px;"><i class="fas fa-exclamation-triangle" style="color:#ff6b6b;"></i> Confirm Delete</h3>
+        <h3 style="margin-bottom:12px;"><i class="fas fa-exclamation-triangle" style="color:#ef4444;"></i> Confirm Delete</h3>
         <p style="color:var(--text-secondary);margin-bottom:20px;">
             Permanently delete bill <strong>#<?= View::e($bill['bill_number']) ?></strong>? This cannot be undone.
         </p>

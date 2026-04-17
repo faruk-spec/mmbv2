@@ -42,8 +42,8 @@ if (!empty($ls['live_support_extra_note'])) {
             </div>
 
             <!-- Status card -->
-            <div style="background:linear-gradient(135deg,rgba(0,240,255,.07),rgba(255,46,196,.05));border:1px solid rgba(0,240,255,.18);border-radius:14px;padding:28px;text-align:center;margin-bottom:20px;">
-                <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--magenta));display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+            <div style="background:linear-gradient(135deg,rgba(59,130,246,.07),rgba(139,92,246,.05));border:1px solid rgba(59,130,246,.18);border-radius:14px;padding:28px;text-align:center;margin-bottom:20px;">
+                <div style="width:56px;height:56px;border-radius:50%;background:var(--cyan);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
                     <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
                 </div>
                 <div style="display:flex;align-items:center;justify-content:center;gap:7px;margin-bottom:10px;">
@@ -55,7 +55,7 @@ if (!empty($ls['live_support_extra_note'])) {
                     Our live chat widget is available at the bottom-right corner of every page.<br>
                     Click the <strong style="color:var(--magenta);">headset icon</strong> to start chatting instantly.
                 </p>
-                <button onclick="if(window.toggleSupportChat)toggleSupportChat();" style="display:inline-flex;align-items:center;gap:9px;padding:12px 28px;background:linear-gradient(135deg,var(--cyan),var(--magenta));border:none;border-radius:8px;color:white;font-weight:700;font-size:.95rem;cursor:pointer;">
+                <button onclick="if(window.toggleSupportChat)toggleSupportChat();" style="display:inline-flex;align-items:center;gap:9px;padding:12px 28px;background:var(--cyan);border:none;border-radius:8px;color:white;font-weight:700;font-size:.95rem;cursor:pointer;">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
                     Open Live Chat
                 </button>

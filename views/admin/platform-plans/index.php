@@ -5,12 +5,12 @@
 
 <!-- Flash messages -->
 <?php if (Helpers::hasFlash('success')): ?>
-<div style="background:rgba(0,255,136,.1);border:1px solid var(--green);color:var(--green);padding:12px 16px;border-radius:8px;margin-bottom:20px;">
+<div style="background:rgba(34,197,94,.1);border:1px solid var(--green);color:var(--green);padding:12px 16px;border-radius:8px;margin-bottom:20px;">
     <i class="fas fa-check-circle"></i> <?= View::e(Helpers::getFlash('success')) ?>
 </div>
 <?php endif; ?>
 <?php if (Helpers::hasFlash('error')): ?>
-<div style="background:rgba(255,107,107,.1);border:1px solid var(--red);color:var(--red);padding:12px 16px;border-radius:8px;margin-bottom:20px;">
+<div style="background:rgba(239,68,68,.1);border:1px solid var(--red);color:var(--red);padding:12px 16px;border-radius:8px;margin-bottom:20px;">
     <i class="fas fa-exclamation-circle"></i> <?= View::e(Helpers::getFlash('error')) ?>
 </div>
 <?php endif; ?>
@@ -68,7 +68,7 @@
         <tr style="border-bottom:1px solid var(--border-color);transition:background .2s;" onmouseover="this.style.background='rgba(255,255,255,.02)'" onmouseout="this.style.background='transparent'">
             <td style="padding:14px 16px;">
                 <div style="display:flex;align-items:center;gap:10px;">
-                    <div style="width:10px;height:10px;border-radius:50%;background:<?= View::e($plan['color'] ?? '#9945ff') ?>;flex-shrink:0;"></div>
+                    <div style="width:10px;height:10px;border-radius:50%;background:<?= View::e($plan['color'] ?? '#8b5cf6') ?>;flex-shrink:0;"></div>
                     <div>
                         <div style="font-weight:600;"><?= View::e($plan['name']) ?></div>
                         <div style="font-size:.75rem;color:var(--text-secondary);"><?= View::e($plan['slug']) ?></div>
@@ -88,7 +88,7 @@
                 <?php foreach ($apps as $appKey):
                     $appName = $appNames[$appKey] ?? ucfirst($appKey);
                 ?>
-                <span style="padding:2px 8px;background:rgba(0,240,255,.1);color:var(--cyan);border-radius:12px;font-size:.72rem;font-weight:600;"><?= View::e($appName) ?></span>
+                <span style="padding:2px 8px;background:rgba(59,130,246,.1);color:var(--cyan);border-radius:12px;font-size:.72rem;font-weight:600;"><?= View::e($appName) ?></span>
                 <?php endforeach; ?>
                 <?php if (empty($apps)): ?><span style="color:var(--text-secondary);font-size:.8rem;">None</span><?php endif; ?>
                 </div>
@@ -98,9 +98,9 @@
             </td>
             <td style="padding:14px 16px;">
                 <?php if ($plan['status'] === 'active'): ?>
-                <span style="padding:3px 10px;background:rgba(0,255,136,.1);color:var(--green);border-radius:12px;font-size:.75rem;font-weight:600;">Active</span>
+                <span style="padding:3px 10px;background:rgba(34,197,94,.1);color:var(--green);border-radius:12px;font-size:.75rem;font-weight:600;">Active</span>
                 <?php else: ?>
-                <span style="padding:3px 10px;background:rgba(255,107,107,.1);color:var(--red);border-radius:12px;font-size:.75rem;font-weight:600;">Inactive</span>
+                <span style="padding:3px 10px;background:rgba(239,68,68,.1);color:var(--red);border-radius:12px;font-size:.75rem;font-weight:600;">Inactive</span>
                 <?php endif; ?>
             </td>
             <td style="padding:14px 16px;text-align:center;">
@@ -110,7 +110,7 @@
                     </a>
                     <form method="POST" action="/admin/platform-plans/<?= (int)$plan['id'] ?>/delete" style="margin:0;" onsubmit="return confirm('Delete plan <?= addslashes(View::e($plan['name'])) ?>?')">
                         <input type="hidden" name="_csrf_token" value="<?= \Core\Security::generateCsrfToken() ?>">
-                        <button type="submit" style="padding:6px 12px;background:rgba(255,107,107,.1);border:1px solid var(--red);border-radius:6px;font-size:.8rem;color:var(--red);cursor:pointer;" onmouseover="this.style.background='rgba(255,107,107,.25)'" onmouseout="this.style.background='rgba(255,107,107,.1)'">
+                        <button type="submit" style="padding:6px 12px;background:rgba(239,68,68,.1);border:1px solid var(--red);border-radius:6px;font-size:.8rem;color:var(--red);cursor:pointer;" onmouseover="this.style.background='rgba(239,68,68,.25)'" onmouseout="this.style.background='rgba(239,68,68,.1)'">
                             <i class="fas fa-trash"></i> Delete
                         </button>
                     </form>

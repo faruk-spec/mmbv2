@@ -24,10 +24,10 @@
     font-size:10px; padding:2px 7px; border-radius:20px; font-weight:600;
     text-transform:uppercase; letter-spacing:.4px; flex-shrink:0; align-self:flex-start;
 }
-.type-info    { background:rgba(0,240,255,.1);  color:var(--cyan); }
-.type-success { background:rgba(0,255,136,.1);  color:var(--green); }
-.type-warning { background:rgba(255,170,0,.1);  color:var(--orange); }
-.type-error   { background:rgba(255,107,107,.1);color:var(--red); }
+.type-info    { background:rgba(59,130,246,.1);  color:var(--cyan); }
+.type-success { background:rgba(34,197,94,.1);  color:var(--green); }
+.type-warning { background:rgba(245,158,11,.1);  color:var(--orange); }
+.type-error   { background:rgba(239,68,68,.1);color:var(--red); }
 .notif-page-empty { text-align:center; padding:60px 20px; color:var(--text-secondary); }
 .notif-page-empty i { font-size:3rem; margin-bottom:16px; display:block; opacity:.4; }
 </style>

@@ -24,7 +24,7 @@ View::section('content');
 .stc-card-body { padding: 16px 18px; }
 .stc-count { padding: 2px 8px; border-radius: 20px; font-size: .72rem; background: var(--bg-secondary); color: var(--text-secondary); border: 1px solid var(--border-color); }
 .stc-cat-item { display: flex; align-items: center; gap: 11px; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 9px; margin-bottom: 8px; background: var(--bg-secondary); }
-.stc-cat-icon { width: 34px; height: 34px; border-radius: 8px; background: rgba(0,240,255,.1); color: var(--cyan); display: flex; align-items: center; justify-content: center; font-size: .88rem; flex-shrink: 0; }
+.stc-cat-icon { width: 34px; height: 34px; border-radius: 8px; background: rgba(59,130,246,.1); color: var(--cyan); display: flex; align-items: center; justify-content: center; font-size: .88rem; flex-shrink: 0; }
 .stc-cat-info { flex: 1; min-width: 0; }
 .stc-cat-name { font-size: .87rem; font-weight: 600; color: var(--text-primary); }
 .stc-cat-desc { font-size: .73rem; color: var(--text-secondary); margin-top: 2px; }

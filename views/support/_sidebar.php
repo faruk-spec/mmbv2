@@ -10,10 +10,10 @@ $isAdmin = $isSupportAdmin ?? false;
 // Helper: nav item HTML
 if (!function_exists('supportNavItem')) {
     function supportNavItem(string $href, string $icon, string $label, bool $active, string $badge = ''): string {
-        $bg     = $active ? 'background:linear-gradient(135deg,rgba(0,240,255,.12),rgba(255,46,196,.08));border-color:rgba(0,240,255,.25);' : '';
+        $bg     = $active ? 'background:linear-gradient(135deg,rgba(59,130,246,.12),rgba(139,92,246,.08));border-color:rgba(59,130,246,.25);' : '';
         $color  = $active ? 'color:var(--cyan);' : 'color:var(--text-secondary);';
         $weight = $active ? 'font-weight:600;' : 'font-weight:400;';
-        $badgeHtml = $badge ? "<span style=\"margin-left:auto;padding:1px 7px;border-radius:10px;font-size:.68rem;font-weight:700;background:rgba(255,46,196,.2);color:var(--magenta);\">{$badge}</span>" : '';
+        $badgeHtml = $badge ? "<span style=\"margin-left:auto;padding:1px 7px;border-radius:10px;font-size:.68rem;font-weight:700;background:rgba(139,92,246,.2);color:var(--magenta);\">{$badge}</span>" : '';
         return "<a href=\"{$href}\" style=\"display:flex;align-items:center;gap:10px;padding:9px 14px;border-radius:8px;text-decoration:none;font-size:.855rem;transition:all .15s;border:1px solid transparent;{$bg}{$color}{$weight}\"><i class=\"fas fa-{$icon}\" style=\"width:16px;text-align:center;\"></i><span>{$label}</span>{$badgeHtml}</a>";
     }
 }
@@ -28,7 +28,7 @@ if (!function_exists('supportNavSection')) {
     <!-- Brand header -->
     <div style="padding:18px 16px 14px;border-bottom:1px solid var(--border-color,rgba(255,255,255,.06));">
         <div style="display:flex;align-items:center;gap:10px;">
-            <div style="width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--cyan),var(--magenta));display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <div style="width:34px;height:34px;border-radius:9px;background:var(--cyan);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
             </div>
             <div>

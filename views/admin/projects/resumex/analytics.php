@@ -92,9 +92,9 @@
 .rx-user-name { font-weight: 600; color: var(--text-primary); }
 .rx-user-email { color: var(--text-secondary); font-size: 0.78rem; }
 .rx-user-badge {
-    background: rgba(0,240,255,0.1);
+    background: rgba(59,130,246,0.1);
     color: var(--cyan);
-    border: 1px solid rgba(0,240,255,0.25);
+    border: 1px solid rgba(59,130,246,0.25);
     border-radius: 20px;
     padding: 2px 10px;
     font-size: 0.75rem;
@@ -137,7 +137,7 @@
 }
 .rx-chart-bar {
     width: 100%;
-    background: linear-gradient(to top, var(--cyan), rgba(0,240,255,0.3));
+    background: linear-gradient(to top, var(--cyan), rgba(59,130,246,0.3));
     border-radius: 3px 3px 0 0;
     min-height: 2px;
     transition: opacity 0.2s;
@@ -222,7 +222,7 @@
                     <div class="lbl">This Month</div>
                 </div>
             </div>
-            <div style="margin-top:16px;padding:12px;background:rgba(0,240,255,0.05);border:1px solid rgba(0,240,255,0.15);border-radius:8px;">
+            <div style="margin-top:16px;padding:12px;background:rgba(59,130,246,0.05);border:1px solid rgba(59,130,246,0.15);border-radius:8px;">
                 <p style="color:var(--text-secondary);font-size:0.82rem;margin:0;">
                     <i class="fas fa-info-circle" style="color:var(--cyan);margin-right:4px;"></i>
                     AI usage counts are based on activity log entries tagged with the <code>resumex</code> module.

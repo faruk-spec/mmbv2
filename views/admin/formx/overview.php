@@ -28,7 +28,7 @@ for ($i = 7; $i >= 0; $i--) {
 $weeklyMax = max(1, max($weeklyCounts));
 
 // Device donut
-$colors = ['#00f0ff', '#9945ff', '#ffaa00', '#ff6b6b', '#00ff88'];
+$colors = ['#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#22c55e'];
 $totalDev = array_sum(array_column($devices, 'cnt'));
 $circ = 2 * M_PI * 15.91549;
 
@@ -47,8 +47,8 @@ $trendPct = $lastMonthCount > 0 ? round(abs($thisMonth - $lastMonthCount) / $las
     .fx-chart-head{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-secondary);margin:0 0 16px;display:flex;align-items:center;gap:8px;}
     .bar-chart{display:flex;align-items:flex-end;gap:3px;height:110px;}
     .bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0;}
-    .bar{width:100%;background:rgba(0,240,255,.25);border-radius:3px 3px 0 0;transition:background .15s;}
-    .bar:hover{background:rgba(0,240,255,.65);}
+    .bar{width:100%;background:rgba(59,130,246,.25);border-radius:3px 3px 0 0;transition:background .15s;}
+    .bar:hover{background:rgba(59,130,246,.65);}
     .bar-lbl{font-size:.58rem;color:var(--text-secondary);writing-mode:vertical-rl;transform:rotate(180deg);white-space:nowrap;overflow:hidden;max-height:38px;}
     .donut-wrap{display:flex;align-items:center;gap:22px;flex-wrap:wrap;}
     .donut-legend{display:flex;flex-direction:column;gap:7px;}
@@ -83,15 +83,15 @@ $trendPct = $lastMonthCount > 0 ? round(abs($thisMonth - $lastMonthCount) / $las
 
 <!-- Stats -->
 <div class="fx-ov-stats">
-    <div class="fx-ov-stat" style="border-color:rgba(0,240,255,.2);">
-        <div class="fx-ov-stat-icon" style="background:rgba(0,240,255,.1);color:var(--cyan);"><i class="fas fa-wpforms"></i></div>
+    <div class="fx-ov-stat" style="border-color:rgba(59,130,246,.2);">
+        <div class="fx-ov-stat-icon" style="background:rgba(59,130,246,.1);color:var(--cyan);"><i class="fas fa-wpforms"></i></div>
         <div>
             <div class="fx-ov-stat-val" style="color:var(--cyan);"><?= number_format($totalForms) ?></div>
             <div class="fx-ov-stat-lbl">Total Forms</div>
         </div>
     </div>
-    <div class="fx-ov-stat" style="border-color:rgba(0,255,136,.2);">
-        <div class="fx-ov-stat-icon" style="background:rgba(0,255,136,.1);color:var(--green);"><i class="fas fa-toggle-on"></i></div>
+    <div class="fx-ov-stat" style="border-color:rgba(34,197,94,.2);">
+        <div class="fx-ov-stat-icon" style="background:rgba(34,197,94,.1);color:var(--green);"><i class="fas fa-toggle-on"></i></div>
         <div>
             <div class="fx-ov-stat-val" style="color:var(--green);"><?= number_format($activeForms) ?></div>
             <div class="fx-ov-stat-lbl">Active Forms</div>
@@ -104,8 +104,8 @@ $trendPct = $lastMonthCount > 0 ? round(abs($thisMonth - $lastMonthCount) / $las
             <div class="fx-ov-stat-lbl">Total Submissions</div>
         </div>
     </div>
-    <div class="fx-ov-stat" style="border-color:rgba(255,170,0,.2);">
-        <div class="fx-ov-stat-icon" style="background:rgba(255,170,0,.1);color:var(--orange);"><i class="fas fa-calendar-alt"></i></div>
+    <div class="fx-ov-stat" style="border-color:rgba(245,158,11,.2);">
+        <div class="fx-ov-stat-icon" style="background:rgba(245,158,11,.1);color:var(--orange);"><i class="fas fa-calendar-alt"></i></div>
         <div>
             <div class="fx-ov-stat-val" style="color:var(--orange);">
                 <?= number_format($thisMonth) ?>
@@ -129,7 +129,7 @@ $trendPct = $lastMonthCount > 0 ? round(abs($thisMonth - $lastMonthCount) / $las
     <div class="bar-chart">
         <?php foreach ($dailyCounts as $i => $cnt): ?>
         <div class="bar-wrap" title="<?= $dailyLabels[$i] ?>: <?= $cnt ?>">
-            <div class="bar" style="height:<?= round($cnt / $dailyMax * 100) ?>%;<?= $cnt > 0 ? 'background:rgba(0,240,255,.5);' : '' ?>"></div>
+            <div class="bar" style="height:<?= round($cnt / $dailyMax * 100) ?>%;<?= $cnt > 0 ? 'background:rgba(59,130,246,.5);' : '' ?>"></div>
             <?php if ($i % 5 === 0): ?><div class="bar-lbl"><?= htmlspecialchars($dailyLabels[$i]) ?></div><?php else: ?><div class="bar-lbl" style="opacity:0;"><?= htmlspecialchars($dailyLabels[$i]) ?></div><?php endif; ?>
         </div>
         <?php endforeach; ?>

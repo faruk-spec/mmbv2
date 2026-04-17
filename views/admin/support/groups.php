@@ -28,10 +28,10 @@ View::section('content');
 .stg-group-desc { font-size: .74rem; color: var(--text-secondary); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .stg-group-actions { display: flex; gap: 5px; flex-shrink: 0; }
 .stg-btn-sm { padding: 5px 11px; border-radius: 6px; font-size: .74rem; font-weight: 600; cursor: pointer; border: none; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; }
-.stg-btn-primary { background: rgba(0,240,255,.1); color: var(--cyan); border: 1px solid rgba(0,240,255,.22); }
+.stg-btn-primary { background: rgba(59,130,246,.1); color: var(--cyan); border: 1px solid rgba(59,130,246,.22); }
 .stg-btn-danger  { background: rgba(220,38,38,.08); color: #f87171; border: 1px solid rgba(220,38,38,.18); }
 .stg-btn-edit    { background: rgba(124,58,237,.1); color: #c4b5fd; border: 1px solid rgba(124,58,237,.22); }
-.stg-btn-primary:hover { background: rgba(0,240,255,.18); }
+.stg-btn-primary:hover { background: rgba(59,130,246,.18); }
 .stg-btn-danger:hover  { background: rgba(220,38,38,.15); }
 .stg-btn-edit:hover    { background: rgba(124,58,237,.18); }
 .stg-form label { display: block; font-size: .77rem; font-weight: 600; color: var(--text-secondary); margin: 10px 0 4px; }
@@ -156,7 +156,7 @@ View::section('content');
               </div>
               <div>
                 <label>Color</label>
-                <input type="color" name="color" value="#00f0ff" class="stg-input" style="height:37px;padding:3px 5px;">
+                <input type="color" name="color" value="#3b82f6" class="stg-input" style="height:37px;padding:3px 5px;">
               </div>
             </div>
             <label>Sort Order</label>

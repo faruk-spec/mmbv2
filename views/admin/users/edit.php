@@ -14,8 +14,8 @@
     background: var(--bg-secondary);
     user-select: none;
 }
-.role-chip:hover { border-color: var(--cyan); background: rgba(0,240,255,.04); }
-.role-chip.checked { border-color: var(--cyan); background: rgba(0,240,255,.07); }
+.role-chip:hover { border-color: var(--cyan); background: rgba(59,130,246,.04); }
+.role-chip.checked { border-color: var(--cyan); background: rgba(59,130,246,.07); }
 .role-chip input[type=checkbox] { display: none; }
 .role-chip-dot {
     width: 16px; height: 16px; border-radius: 4px;
@@ -36,10 +36,10 @@
 }
 .role-chip-badge {
     font-size: 10px; padding: 2px 6px; border-radius: 10px;
-    background: rgba(153,69,255,.15); color: var(--purple, #9945ff);
+    background: rgba(153,69,255,.15); color: var(--purple, #8b5cf6);
     margin-left: auto; white-space: nowrap;
 }
-.role-chip-badge.system { background: rgba(0,240,255,.12); color: var(--cyan); }
+.role-chip-badge.system { background: rgba(59,130,246,.12); color: var(--cyan); }
 </style>
 <?php View::endSection(); ?>
 

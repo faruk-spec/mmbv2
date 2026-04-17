@@ -70,13 +70,13 @@
 }
 
 .status-failed {
-    background: rgba(255, 107, 107, 0.2);
-    color: #ff6b6b;
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
 }
 
 .status-pending {
-    background: rgba(255, 170, 0, 0.2);
-    color: #ffaa00;
+    background: rgba(245, 158, 11, 0.2);
+    color: #f59e0b;
 }
 
 .status-delivered {

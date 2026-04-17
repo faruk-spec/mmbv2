@@ -101,7 +101,7 @@
 }
 
 .btn-danger {
-    background: #ff6b6b;
+    background: #ef4444;
     color: white;
 }
 
@@ -221,7 +221,7 @@
     <!-- Documentation Link -->
     <div style="text-align: center; padding: 24px;">
         <p style="color: var(--text-secondary); margin-bottom: 16px;">Need help with the API?</p>
-        <a href="/projects/whatsapp/api-docs" style="background: #9945ff; color: white; padding: 12px 32px; border-radius: 8px; font-weight: 600; text-decoration: none; display: inline-block;">
+        <a href="/projects/whatsapp/api-docs" style="background: #8b5cf6; color: white; padding: 12px 32px; border-radius: 8px; font-weight: 600; text-decoration: none; display: inline-block;">
             <i class="fas fa-book" style="margin-right: 6px;"></i>
             View API Documentation
         </a>

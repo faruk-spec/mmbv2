@@ -112,8 +112,8 @@ if (!empty($ticket['submitted_data']) && is_string($ticket['submitted_data'])) {
 .ptv-head-meta { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 .ptv-priority-badge { padding:3px 9px; border-radius:5px; font-size:.69rem; font-weight:700; }
 .ptv-requested-by   { font-size:.77rem; color:var(--text-secondary,#8892a6); }
-.ptv-requested-by strong { color:var(--cyan,#00f0ff); }
-.ptv-requested-by a { color:var(--cyan,#00f0ff); text-decoration:none; }
+.ptv-requested-by strong { color:var(--cyan,#3b82f6); }
+.ptv-requested-by a { color:var(--cyan,#3b82f6); text-decoration:none; }
 .ptv-requested-by a:hover { text-decoration:underline; }
 
 /* Status / Transitions block */
@@ -252,7 +252,7 @@ if (!empty($ticket['submitted_data']) && is_string($ticket['submitted_data'])) {
 .ptv-prop-key { color:var(--text-secondary); min-width:78px; flex-shrink:0; }
 .ptv-prop-val { color:var(--text-primary); font-weight:500; text-align:right; flex:1; }
 .ptv-req-card { display:flex; align-items:center; gap:9px; padding:4px 0 8px; }
-.ptv-req-avatar { width:34px; height:34px; border-radius:50%; flex-shrink:0; background:rgba(0,240,255,.15); display:flex; align-items:center; justify-content:center; font-size:.88rem; font-weight:700; color:var(--cyan,#00f0ff); }
+.ptv-req-avatar { width:34px; height:34px; border-radius:50%; flex-shrink:0; background:rgba(59,130,246,.15); display:flex; align-items:center; justify-content:center; font-size:.88rem; font-weight:700; color:var(--cyan,#3b82f6); }
 .ptv-req-name  { font-size:.84rem; font-weight:700; color:var(--text-primary); }
 .ptv-req-email { font-size:.72rem; color:var(--text-secondary); margin-top:2px; }
 

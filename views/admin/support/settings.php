@@ -12,19 +12,19 @@ View::section('content');
 
   <div style="margin-bottom:28px;">
     <h1 style="font-size:1.4rem;font-weight:700;color:var(--text-primary,#e8eefc);margin:0 0 4px;display:flex;align-items:center;gap:10px;">
-      <i class="fas fa-sliders" style="color:var(--cyan,#00f0ff);"></i> Support Settings
+      <i class="fas fa-sliders" style="color:var(--cyan,#3b82f6);"></i> Support Settings
     </h1>
     <p style="color:var(--text-secondary,#8892a6);margin:0;font-size:.85rem;">Configure ticket numbering and live support page content.</p>
   </div>
 
   <?php if (!empty($_SESSION['_flash']['success'])): ?>
-  <div style="background:rgba(0,255,136,.08);border:1px solid rgba(0,255,136,.2);color:#00ff88;padding:12px 16px;border-radius:8px;margin-bottom:18px;font-size:.88rem;">
+  <div style="background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);color:#22c55e;padding:12px 16px;border-radius:8px;margin-bottom:18px;font-size:.88rem;">
     <?= htmlspecialchars($_SESSION['_flash']['success']) ?>
     <?php unset($_SESSION['_flash']['success']); ?>
   </div>
   <?php endif; ?>
   <?php if (!empty($_SESSION['_flash']['error'])): ?>
-  <div style="background:rgba(255,107,107,.08);border:1px solid rgba(255,107,107,.2);color:#ff6b6b;padding:12px 16px;border-radius:8px;margin-bottom:18px;font-size:.88rem;">
+  <div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:#ef4444;padding:12px 16px;border-radius:8px;margin-bottom:18px;font-size:.88rem;">
     <?= htmlspecialchars($_SESSION['_flash']['error']) ?>
     <?php unset($_SESSION['_flash']['error']); ?>
   </div>
@@ -36,7 +36,7 @@ View::section('content');
     <!-- ── Ticket Numbering ────────────────────────────────────────────────── -->
     <div style="background:var(--bg-card,#0f0f18);border:1px solid var(--border-color,rgba(255,255,255,.08));border-radius:12px;padding:22px 24px;margin-bottom:24px;">
       <h2 style="font-size:1rem;font-weight:600;color:var(--text-primary,#e8eefc);margin:0 0 6px;display:flex;align-items:center;gap:8px;">
-        <i class="fas fa-hashtag" style="color:var(--magenta,#ff2ec4);font-size:.9rem;"></i> Ticket Numbering
+        <i class="fas fa-hashtag" style="color:var(--magenta,#8b5cf6);font-size:.9rem;"></i> Ticket Numbering
       </h2>
       <p style="color:var(--text-secondary,#8892a6);font-size:.82rem;margin:0 0 18px;">
         Set the starting ticket number. Ticket IDs are always displayed as 7-digit numbers (e.g. <code style="background:rgba(255,255,255,.06);padding:1px 5px;border-radius:4px;">#<?= str_pad($settings['ticket_id_start'] ?: '1234567', 7, '0', STR_PAD_LEFT) ?></code>).
@@ -56,8 +56,8 @@ View::section('content');
     <!-- ── Live Support Page Content ──────────────────────────────────────── -->
     <div style="background:var(--bg-card,#0f0f18);border:1px solid var(--border-color,rgba(255,255,255,.08));border-radius:12px;padding:22px 24px;margin-bottom:24px;">
       <h2 style="font-size:1rem;font-weight:600;color:var(--text-primary,#e8eefc);margin:0 0 6px;display:flex;align-items:center;gap:8px;">
-        <i class="fas fa-headset" style="color:var(--cyan,#00f0ff);font-size:.9rem;"></i> Live Support Page Content
-        <a href="/support/live" target="_blank" style="font-size:.75rem;font-weight:400;color:var(--cyan,#00f0ff);text-decoration:none;margin-left:auto;opacity:.7;">
+        <i class="fas fa-headset" style="color:var(--cyan,#3b82f6);font-size:.9rem;"></i> Live Support Page Content
+        <a href="/support/live" target="_blank" style="font-size:.75rem;font-weight:400;color:var(--cyan,#3b82f6);text-decoration:none;margin-left:auto;opacity:.7;">
           <i class="fas fa-arrow-up-right-from-square"></i> Preview page
         </a>
       </h2>
@@ -93,18 +93,18 @@ View::section('content');
     </div>
 
     <!-- ── Mail Templates link ──────────────────────────────────────────────── -->
-    <div style="background:rgba(0,240,255,.04);border:1px solid rgba(0,240,255,.12);border-radius:10px;padding:14px 18px;margin-bottom:24px;display:flex;align-items:center;gap:12px;">
-      <i class="fas fa-envelope" style="color:var(--cyan,#00f0ff);font-size:1rem;"></i>
+    <div style="background:rgba(59,130,246,.04);border:1px solid rgba(59,130,246,.12);border-radius:10px;padding:14px 18px;margin-bottom:24px;display:flex;align-items:center;gap:12px;">
+      <i class="fas fa-envelope" style="color:var(--cyan,#3b82f6);font-size:1rem;"></i>
       <div>
         <div style="font-weight:600;color:var(--text-primary,#e8eefc);font-size:.88rem;margin-bottom:2px;">Support Email Templates</div>
         <div style="color:var(--text-secondary,#8892a6);font-size:.8rem;">Edit the HTML templates used for ticket creation, replies, status changes, and closures.</div>
       </div>
-      <a href="/admin/mail/templates" style="margin-left:auto;padding:7px 16px;background:rgba(0,240,255,.12);color:var(--cyan,#00f0ff);border:1px solid rgba(0,240,255,.25);border-radius:7px;text-decoration:none;font-size:.82rem;font-weight:600;white-space:nowrap;">
+      <a href="/admin/mail/templates" style="margin-left:auto;padding:7px 16px;background:rgba(59,130,246,.12);color:var(--cyan,#3b82f6);border:1px solid rgba(59,130,246,.25);border-radius:7px;text-decoration:none;font-size:.82rem;font-weight:600;white-space:nowrap;">
         <i class="fas fa-arrow-right"></i> Go to Templates
       </a>
     </div>
 
-    <button type="submit" style="padding:10px 26px;background:linear-gradient(135deg,var(--cyan,#00f0ff),var(--magenta,#ff2ec4));border:none;border-radius:8px;color:white;font-weight:700;font-size:.92rem;cursor:pointer;">
+    <button type="submit" style="padding:10px 26px;background:linear-gradient(135deg,var(--cyan,#3b82f6),var(--magenta,#8b5cf6));border:none;border-radius:8px;color:white;font-weight:700;font-size:.92rem;cursor:pointer;">
       <i class="fas fa-save"></i> Save Settings
     </button>
   </form>

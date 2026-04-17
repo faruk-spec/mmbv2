@@ -5,7 +5,7 @@
 <div style="padding:28px;">
     <div style="margin-bottom:24px;">
         <h1 style="font-size:1.5rem;font-weight:700;color:var(--text-primary,#e8eefc);margin:0 0 4px;">
-            <i class="fas fa-envelope-open-text" style="color:#00f0ff;margin-right:10px;"></i>Email Templates
+            <i class="fas fa-envelope-open-text" style="color:#3b82f6;margin-right:10px;"></i>Email Templates
         </h1>
         <p style="color:var(--text-secondary,#8892a6);margin:0;font-size:.85rem;">Edit the HTML email templates sent automatically by the system.</p>
     </div>
@@ -29,13 +29,13 @@
     <!-- System Templates -->
     <div>
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-            <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;background:rgba(0,240,255,.1);color:#00f0ff;border-radius:20px;font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;">
+            <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;background:rgba(59,130,246,.1);color:#3b82f6;border-radius:20px;font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;">
                 <i class="fas fa-envelope"></i> System
             </span>
             <span style="font-size:.82rem;color:var(--text-secondary,#8892a6);">PHP-file email templates</span>
             <span style="font-size:.78rem;color:var(--text-secondary,#8892a6);margin-left:4px;">
                 — Support ticket templates are managed via
-                <a href="/admin/mail/templates" style="color:#00f0ff;text-decoration:none;">Notification Templates</a>
+                <a href="/admin/mail/templates" style="color:#3b82f6;text-decoration:none;">Notification Templates</a>
             </span>
         </div>
         <div style="background:var(--bg-card,#0f0f18);border:1px solid var(--border-color,rgba(255,255,255,.08));border-radius:12px;overflow:hidden;">
@@ -67,7 +67,7 @@
                         <td style="padding:12px 16px;">
                             <div style="display:flex;gap:8px;">
                                 <a href="/admin/email/templates/view?template=<?= urlencode($tpl['name']) ?>"
-                                   style="display:inline-flex;align-items:center;gap:5px;padding:5px 11px;background:rgba(0,240,255,.1);color:#00f0ff;border-radius:6px;text-decoration:none;font-size:.78rem;font-weight:500;">
+                                   style="display:inline-flex;align-items:center;gap:5px;padding:5px 11px;background:rgba(59,130,246,.1);color:#3b82f6;border-radius:6px;text-decoration:none;font-size:.78rem;font-weight:500;">
                                     <i class="fas fa-eye"></i> View
                                 </a>
                                 <a href="/admin/email/templates/edit?template=<?= urlencode($tpl['name']) ?>"

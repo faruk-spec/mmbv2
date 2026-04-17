@@ -37,12 +37,12 @@
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:32px;">
 
     <!-- Option A: Full Resume Template (complete renderer) -->
-    <div class="card" style="border:2px solid rgba(0,240,255,0.25);">
-        <div class="card-header" style="background:rgba(0,240,255,0.05);">
+    <div class="card" style="border:2px solid rgba(59,130,246,0.25);">
+        <div class="card-header" style="background:rgba(59,130,246,0.05);">
             <h3 class="card-title">
                 <i class="fas fa-file-code" style="color:var(--cyan);"></i>
                 Upload Full Resume Template
-                <span style="font-size:0.7rem;background:rgba(0,240,255,0.15);color:var(--cyan);border:1px solid rgba(0,240,255,0.3);border-radius:4px;padding:1px 7px;margin-left:6px;vertical-align:middle;">Recommended</span>
+                <span style="font-size:0.7rem;background:rgba(59,130,246,0.15);color:var(--cyan);border:1px solid rgba(59,130,246,0.3);border-radius:4px;padding:1px 7px;margin-left:6px;vertical-align:middle;">Recommended</span>
             </h3>
         </div>
         <div style="padding:20px;">
@@ -102,12 +102,12 @@
                             <span style="font-size:0.72rem;font-weight:400;color:var(--text-secondary);"> (for thumbnail dot)</span>
                         </label>
                         <div style="display:flex;gap:8px;align-items:center;">
-                            <input type="color" value="#00f0ff" id="fullPriPick"
+                            <input type="color" value="#3b82f6" id="fullPriPick"
                                    oninput="document.getElementById('tpl_pri').value=this.value"
                                    style="width:34px;height:34px;border:none;background:none;cursor:pointer;padding:0;">
-                            <input class="form-input" type="text" name="tpl_pri" id="tpl_pri" value="#00f0ff"
+                            <input class="form-input" type="text" name="tpl_pri" id="tpl_pri" value="#3b82f6"
                                    pattern="#[0-9a-fA-F]{3}(?:[0-9a-fA-F]{3})?"
-                                   placeholder="#00f0ff"
+                                   placeholder="#3b82f6"
                                    oninput="document.getElementById('fullPriPick').value=this.value"
                                    style="flex:1;">
                         </div>
@@ -222,7 +222,7 @@
                     </td>
                     <td><code style="font-size:0.8rem;color:var(--cyan);"><?= htmlspecialchars($t['key']) ?></code></td>
                     <td>
-                        <span style="display:inline-block;padding:2px 10px;border-radius:999px;font-size:0.75rem;font-weight:600;background:rgba(0,240,255,0.1);color:var(--cyan);border:1px solid rgba(0,240,255,0.25);">
+                        <span style="display:inline-block;padding:2px 10px;border-radius:999px;font-size:0.75rem;font-weight:600;background:rgba(59,130,246,0.1);color:var(--cyan);border:1px solid rgba(59,130,246,0.25);">
                             <?= htmlspecialchars($t['category']) ?>
                         </span>
                     </td>
@@ -233,7 +233,7 @@
                             <i class="fas fa-file-code"></i> Full
                         </span>
                         <?php elseif ($type === 'designer'): ?>
-                        <span style="display:inline-block;padding:2px 10px;border-radius:999px;font-size:0.72rem;font-weight:600;background:rgba(0,240,255,0.08);color:var(--cyan);border:1px solid rgba(0,240,255,0.25);">
+                        <span style="display:inline-block;padding:2px 10px;border-radius:999px;font-size:0.72rem;font-weight:600;background:rgba(59,130,246,0.08);color:var(--cyan);border:1px solid rgba(59,130,246,0.25);">
                             <i class="fas fa-magic"></i> Designer
                         </span>
                         <?php else: ?>

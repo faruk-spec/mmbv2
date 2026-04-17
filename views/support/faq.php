@@ -53,11 +53,11 @@ View::extend('main');
                 <?php endforeach; ?>
             </div>
 
-            <div style="margin-top:24px;background:linear-gradient(135deg,rgba(0,240,255,.06),rgba(255,46,196,.04));border:1px solid rgba(0,240,255,.15);border-radius:12px;padding:20px;text-align:center;">
+            <div style="margin-top:24px;background:linear-gradient(135deg,rgba(59,130,246,.06),rgba(139,92,246,.04));border:1px solid rgba(59,130,246,.15);border-radius:12px;padding:20px;text-align:center;">
                 <div style="font-weight:600;color:var(--text-primary);margin-bottom:8px;">Still have questions?</div>
                 <p style="color:var(--text-secondary);font-size:.87rem;margin:0 0 14px;">Our support team is happy to help.</p>
                 <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-                    <a href="/support/new" style="display:inline-flex;align-items:center;gap:7px;padding:9px 18px;background:linear-gradient(135deg,var(--cyan),var(--magenta));border-radius:7px;color:white;font-weight:600;text-decoration:none;font-size:.875rem;">
+                    <a href="/support/new" style="display:inline-flex;align-items:center;gap:7px;padding:9px 18px;background:var(--cyan);border-radius:7px;color:white;font-weight:600;text-decoration:none;font-size:.875rem;">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                         Open a Ticket
                     </a>

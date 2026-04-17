@@ -15,7 +15,7 @@
         <form method="POST" action="/admin/network-inspector/clear"
               onsubmit="return confirm('Clear all log entries?');">
             <?= \Core\Security::csrfField() ?>
-            <button type="submit" style="padding:8px 18px;background:rgba(255,107,107,.15);border:1px solid rgba(255,107,107,.4);border-radius:8px;color:#ff6b6b;cursor:pointer;font-size:.875rem;">
+            <button type="submit" style="padding:8px 18px;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);border-radius:8px;color:#ef4444;cursor:pointer;font-size:.875rem;">
                 Clear Log
             </button>
         </form>
@@ -23,12 +23,12 @@
     </div>
 
     <?php if (Helpers::hasFlash('success')): ?>
-        <div style="background:rgba(0,255,136,.1);border:1px solid var(--green);border-radius:8px;padding:12px 14px;margin-bottom:16px;color:var(--green);font-size:.875rem;">
+        <div style="background:rgba(34,197,94,.1);border:1px solid var(--green);border-radius:8px;padding:12px 14px;margin-bottom:16px;color:var(--green);font-size:.875rem;">
             <?= View::e(Helpers::getFlash('success')) ?>
         </div>
     <?php endif; ?>
     <?php if (Helpers::hasFlash('error')): ?>
-        <div style="background:rgba(255,107,107,.1);border:1px solid rgba(255,107,107,.4);border-radius:8px;padding:12px 14px;margin-bottom:16px;color:#ff6b6b;font-size:.875rem;">
+        <div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.4);border-radius:8px;padding:12px 14px;margin-bottom:16px;color:#ef4444;font-size:.875rem;">
             <?= View::e(Helpers::getFlash('error')) ?>
         </div>
     <?php endif; ?>
@@ -61,8 +61,8 @@
                     foreach ($entries as $entry): ?>
                     <?php
                         $status = (int) ($entry['status'] ?? 0);
-                        $statusColor = $status >= 500 ? '#ff6b6b' : ($status >= 400 ? '#ffc107' : ($status >= 300 ? '#00b4d8' : '#00ff88'));
-                        $methodColors = ['GET' => '#00f0ff', 'POST' => '#a855f7', 'PUT' => '#f97316', 'PATCH' => '#f59e0b', 'DELETE' => '#ef4444'];
+                        $statusColor = $status >= 500 ? '#ef4444' : ($status >= 400 ? '#ffc107' : ($status >= 300 ? '#00b4d8' : '#22c55e'));
+                        $methodColors = ['GET' => '#3b82f6', 'POST' => '#a855f7', 'PUT' => '#f97316', 'PATCH' => '#f59e0b', 'DELETE' => '#ef4444'];
                         $methodColor = $methodColors[$entry['method'] ?? ''] ?? 'var(--text-secondary)';
 
                         // Support both new entries (message) and legacy entries (response_body)

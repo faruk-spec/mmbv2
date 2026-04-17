@@ -5,9 +5,9 @@
 <style>
 .conn-row { display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.05); }
 .conn-row:last-child { border-bottom:none; }
-.conn-avatar { width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--magenta));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;flex-shrink:0; }
+.conn-avatar { width:36px;height:36px;border-radius:50%;background:var(--cyan);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;flex-shrink:0; }
 .conn-badge { display:inline-block;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:600; }
-.conn-badge.sse  { background:rgba(0,240,255,.12);color:var(--cyan);border:1px solid rgba(0,240,255,.25); }
+.conn-badge.sse  { background:rgba(59,130,246,.12);color:var(--cyan);border:1px solid rgba(59,130,246,.25); }
 .conn-badge.user { background:rgba(168,85,247,.12);color:#a855f7;border:1px solid rgba(168,85,247,.25); }
 .conn-badge.admin{ background:rgba(255,193,7,.12);color:#ffc107;border:1px solid rgba(255,193,7,.25); }
 </style>

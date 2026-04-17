@@ -102,7 +102,7 @@
                             </div>
                         </div>
                         <?php if (!empty($log['module'])): ?>
-                            <span style="font-size:10px;background:rgba(0,240,255,0.1);color:var(--cyan);padding:1px 6px;border-radius:8px;white-space:nowrap;"><?= View::e($log['module']) ?></span>
+                            <span style="font-size:10px;background:rgba(59,130,246,0.1);color:var(--cyan);padding:1px 6px;border-radius:8px;white-space:nowrap;"><?= View::e($log['module']) ?></span>
                         <?php endif; ?>
                     </div>
                 <?php endforeach; ?>
@@ -262,7 +262,7 @@
                                 </td>
                                 <td>
                                     <?php if (!empty($log['module'])): ?>
-                                        <span style="font-size:11px;background:rgba(0,240,255,0.1);color:var(--cyan);padding:2px 8px;border-radius:10px;"><?= View::e($log['module']) ?></span>
+                                        <span style="font-size:11px;background:rgba(59,130,246,0.1);color:var(--cyan);padding:2px 8px;border-radius:10px;"><?= View::e($log['module']) ?></span>
                                     <?php else: ?><small style="color:var(--text-secondary);">—</small><?php endif; ?>
                                 </td>
                                 <td><span style="font-size:11px;font-weight:600;color:<?= $statusColor ?>;"><?= View::e(ucfirst($log['status']??'success')) ?></span></td>
@@ -384,7 +384,7 @@ const topActions  = <?= json_encode(array_map(fn($r)=>['action'=>$r['action'],'c
 const moduleData  = <?= json_encode(array_map(fn($r)=>['module'=>$r['module'],'cnt'=>(int)$r['cnt']], $moduleDistrib ?? [])) ?>;
 const statusData  = <?= json_encode(array_map(fn($r)=>['status'=>$r['status'],'cnt'=>(int)$r['cnt']], $statusDistrib ?? [])) ?>;
 
-const PALETTE = ['#00f0ff','#00c853','#ff9800','#e74c3c','#9c27b0','#2196F3','#ff5722','#4caf50'];
+const PALETTE = ['#3b82f6','#00c853','#ff9800','#e74c3c','#9c27b0','#2196F3','#ff5722','#4caf50'];
 const gridColor = 'rgba(255,255,255,0.06)';
 const baseOpts  = { responsive: true, plugins: { legend: { labels: { color: '#aaa', boxWidth: 12 } } } };
 
@@ -396,11 +396,11 @@ new Chart(document.getElementById('trendChart'), {
         datasets: [{
             label: 'Events',
             data: trendData.map(d => d.count),
-            borderColor: '#00f0ff',
-            backgroundColor: 'rgba(0,240,255,0.08)',
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59,130,246,0.08)',
             fill: true,
             tension: 0.35,
-            pointBackgroundColor: '#00f0ff',
+            pointBackgroundColor: '#3b82f6',
         }]
     },
     options: {

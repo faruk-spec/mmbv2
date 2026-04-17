@@ -58,7 +58,7 @@
 }
 
 .btn-disconnect {
-    background: #ff6b6b;
+    background: #ef4444;
     color: white;
 }
 
@@ -184,10 +184,10 @@
         </h2>
         
         <!-- Integration Note (will be shown/hidden based on QR type) -->
-        <div id="qrIntegrationNote" style="background: rgba(255, 170, 0, 0.1); border: 1px solid #ffaa00; border-radius: 8px; padding: 12px; margin-bottom: 16px; display: none;">
+        <div id="qrIntegrationNote" style="background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; border-radius: 8px; padding: 12px; margin-bottom: 16px; display: none;">
             <div style="display: flex; align-items: start; gap: 10px;">
-                <i class="fas fa-info-circle" style="color: #ffaa00; margin-top: 2px;"></i>
-                <div style="flex: 1; font-size: 0.85rem; color: #ffaa00; line-height: 1.6;">
+                <i class="fas fa-info-circle" style="color: #f59e0b; margin-top: 2px;"></i>
+                <div style="flex: 1; font-size: 0.85rem; color: #f59e0b; line-height: 1.6;">
                     <strong>Note:</strong> WhatsApp Web.js bridge server is not responding. Please ensure the bridge server is running. See <code>WHATSAPP_PRODUCTION_GUIDE.md</code> for setup instructions.
                 </div>
             </div>
@@ -276,12 +276,12 @@
 <!-- Confirmation Modal -->
 <div id="confirmModal" class="qr-modal" style="display: none;">
     <div class="qr-modal-content" style="max-width: 450px;">
-        <h2 style="margin-bottom: 16px; color: #ff6b6b;" id="confirmTitle">Confirm Action</h2>
+        <h2 style="margin-bottom: 16px; color: #ef4444;" id="confirmTitle">Confirm Action</h2>
         <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 0.9rem;" id="confirmMessage">
             Are you sure?
         </p>
         <div style="display: flex; gap: 12px;">
-            <button onclick="confirmAction()" style="flex: 1; padding: 12px; background: #ff6b6b; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+            <button onclick="confirmAction()" style="flex: 1; padding: 12px; background: #ef4444; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
                 <i class="fas fa-check" style="margin-right: 6px;"></i>
                 Confirm
             </button>
@@ -337,8 +337,8 @@ function showToast(message, type = 'info') {
     
     const colors = {
         success: '#25D366',
-        error: '#ff6b6b',
-        warning: '#ffaa00',
+        error: '#ef4444',
+        warning: '#f59e0b',
         info: '#0088cc'
     };
     
@@ -515,8 +515,8 @@ function loadQRCode(sessionId) {
             updateQRStatus('Error loading QR code', 'error');
             showToast('Error: ' + error.message, 'error');
             document.getElementById('qrCodeContainer').innerHTML = `
-                <div style="width: 256px; height: 256px; margin: 0 auto; background: rgba(255, 107, 107, 0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center; border: 2px solid #ff6b6b;">
-                    <div style="text-align: center; color: #ff6b6b; padding: 20px;">
+                <div style="width: 256px; height: 256px; margin: 0 auto; background: rgba(239, 68, 68, 0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center; border: 2px solid #ef4444;">
+                    <div style="text-align: center; color: #ef4444; padding: 20px;">
                         <i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 16px;"></i>
                         <div style="font-weight: 600;">Failed to load</div>
                         <div style="font-size: 0.85rem; margin-top: 8px;">${error.message}</div>
@@ -582,8 +582,8 @@ function updateQRStatus(text, type) {
         loading: 'rgba(0, 136, 204, 0.2); color: #0088cc',
         ready: 'rgba(37, 211, 102, 0.2); color: #25D366',
         success: 'rgba(37, 211, 102, 0.3); color: #25D366',
-        warning: 'rgba(255, 170, 0, 0.2); color: #ffaa00',
-        error: 'rgba(255, 107, 107, 0.2); color: #ff6b6b'
+        warning: 'rgba(245, 158, 11, 0.2); color: #f59e0b',
+        error: 'rgba(239, 68, 68, 0.2); color: #ef4444'
     };
     
     badge.style.background = colors[type] || colors.loading;

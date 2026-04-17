@@ -48,7 +48,7 @@
         /* Alerts */
         .al{padding:11px 14px;border-radius:9px;margin-bottom:16px;font-size:.875rem;display:flex;align-items:flex-start;gap:9px;}
         .al-ok{background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.25);color:var(--green);}
-        .al-err{background:rgba(255,107,107,.08);border:1px solid rgba(255,107,107,.25);color:var(--red);}
+        .al-err{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);color:var(--red);}
         /* Draft banner */
         .draft-banner{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 13px;background:rgba(153,69,255,.09);border:1px solid rgba(153,69,255,.25);border-radius:9px;font-size:.82rem;color:var(--purple);margin-bottom:14px;}
         /* Password gate */
@@ -57,7 +57,7 @@
         .pgw h2{font-size:1.1rem;font-weight:700;margin-bottom:6px;}
         .pgw p{color:var(--muted);font-size:.875rem;margin-bottom:18px;}
         /* Expiry banner */
-        .exp-banner{background:rgba(255,170,0,.08);border:1px solid rgba(255,170,0,.25);border-radius:10px;padding:12px 16px;margin-bottom:18px;font-size:.85rem;color:var(--orange);display:flex;align-items:center;gap:9px;}
+        .exp-banner{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:10px;padding:12px 16px;margin-bottom:18px;font-size:.85rem;color:var(--orange);display:flex;align-items:center;gap:9px;}
         /* Expired state */
         .exp-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:36px 24px;text-align:center;}
         .exp-card .ico{font-size:2.5rem;margin-bottom:14px;opacity:.7;}
@@ -80,8 +80,8 @@
         .unav-card h2{font-size:1.25rem;font-weight:700;margin-bottom:8px;}
         .unav-card p{color:var(--muted);font-size:.9rem;line-height:1.6;max-width:380px;margin:0 auto;}
         .unav-card .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:14px;}
-        .badge-draft{background:rgba(255,170,0,.12);border:1px solid rgba(255,170,0,.3);color:var(--orange);}
-        .badge-inactive{background:rgba(255,107,107,.1);border:1px solid rgba(255,107,107,.25);color:var(--red);}
+        .badge-draft{background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:var(--orange);}
+        .badge-inactive{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);color:var(--red);}
         .unav-promo{margin-top:24px;padding-top:20px;border-top:1px solid var(--border);}
         .unav-promo p{font-size:.82rem;color:var(--muted);margin-bottom:10px;}
         .btn-promo{display:inline-flex;align-items:center;gap:7px;padding:9px 20px;background:linear-gradient(135deg,var(--cyan),var(--purple));border:none;border-radius:9px;color:#fff;font-size:.875rem;font-weight:700;cursor:pointer;text-decoration:none;transition:opacity .2s,transform .1s;}

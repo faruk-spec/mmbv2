@@ -10,7 +10,7 @@ return [
         'name' => 'CodeXPro',
         'description' => 'Advanced code editor and IDE platform',
         'icon' => 'code',
-        'color' => '#00f0ff',
+        'color' => '#3b82f6',
         'enabled' => true,
         'database' => 'mmb_codexpro',
         'url' => '/projects/codexpro'
@@ -20,7 +20,7 @@ return [
         'name'        => 'DevZone',
         'description' => 'Developer collaboration and project management',
         'icon'        => 'terminal',
-        'color'       => '#ff2ec4',
+        'color'       => '#8b5cf6',
         'enabled'     => true,
         'url'         => '/projects/devzone',
     ],
@@ -39,7 +39,7 @@ return [
         'name' => 'QR Generator',
         'description' => 'QR code generation and management',
         'icon' => 'grid',
-        'color' => '#9945ff',
+        'color' => '#8b5cf6',
         'enabled' => true,
         'database' => 'mmb_qr',
         'url' => '/projects/qr'
@@ -95,7 +95,7 @@ return [
         'name' => 'FormX',
         'description' => 'Drag-and-drop form builder with analytics and submission management',
         'icon' => 'wpforms',
-        'color' => '#00f0ff',
+        'color' => '#3b82f6',
         'enabled' => true,
         'database' => 'mmb_formx',
         'url' => '/projects/formx'

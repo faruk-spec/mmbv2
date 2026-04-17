@@ -45,8 +45,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 {
                     label: 'Uploads',
                     data: <?= json_encode(array_column($trafficData, 'uploads')) ?>,
-                    borderColor: '#00ff88',
-                    backgroundColor: 'rgba(0, 255, 136, 0.1)',
+                    borderColor: '#22c55e',
+                    backgroundColor: 'rgba(34, 197, 94, 0.1)',
                     tension: 0.4,
                     fill: true
                 },

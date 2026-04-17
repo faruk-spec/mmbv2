@@ -126,7 +126,7 @@ $csrfToken         = $csrf_token ?? '';
 .tv-type-badge { padding: 3px 10px; border-radius: 5px; font-size: .71rem; font-weight: 700; background: rgba(124,58,237,.18); color: #c4b5fd; border: 1px solid rgba(124,58,237,.3); }
 .tv-priority-badge { padding: 3px 10px; border-radius: 5px; font-size: .71rem; font-weight: 700; }
 .tv-requested-by { font-size: .78rem; color: var(--text-secondary,#8892a6); }
-.tv-requested-by strong { color: var(--cyan,#00f0ff); font-weight: 600; }
+.tv-requested-by strong { color: var(--cyan,#3b82f6); font-weight: 600; }
 .tv-head-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; flex-shrink: 0; }
 .tv-reply-btn {
   display: inline-flex; align-items: center; gap: 6px;
@@ -347,7 +347,7 @@ $csrfToken         = $csrf_token ?? '';
 .tv-prop-row:last-child { border-bottom: none; }
 .tv-prop-key { color: var(--text-secondary,#8892a6); min-width: 90px; flex-shrink: 0; }
 .tv-prop-val { color: var(--text-primary,#e8eefc); font-weight: 500; text-align: right; flex: 1; }
-.tv-prop-action { color: var(--cyan,#00f0ff); font-size: .76rem; font-weight: 500; cursor: pointer; text-decoration: none; }
+.tv-prop-action { color: var(--cyan,#3b82f6); font-size: .76rem; font-weight: 500; cursor: pointer; text-decoration: none; }
 .tv-prop-action:hover { text-decoration: underline; }
 .tv-notcfg-badge { padding: 2px 7px; border-radius: 4px; font-size: .7rem; background: rgba(100,116,139,.12); color: var(--text-secondary,#8892a6); }
 
@@ -364,18 +364,18 @@ $csrfToken         = $csrf_token ?? '';
   border-radius: 5px; font-size: .74rem; background: transparent;
   color: var(--text-primary,#e8eefc); cursor: pointer;
 }
-.tv-assoc-btn:hover { border-color: var(--cyan,#00f0ff); color: var(--cyan,#00f0ff); }
+.tv-assoc-btn:hover { border-color: var(--cyan,#3b82f6); color: var(--cyan,#3b82f6); }
 
 /* Requester card */
 .tv-requester-card { display: flex; align-items: center; gap: 10px; padding: 4px 0 10px; }
 .tv-req-avatar {
   width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
-  background: rgba(0,240,255,.15); display: flex; align-items: center;
-  justify-content: center; font-size: .95rem; font-weight: 700; color: var(--cyan,#00f0ff);
+  background: rgba(59,130,246,.15); display: flex; align-items: center;
+  justify-content: center; font-size: .95rem; font-weight: 700; color: var(--cyan,#3b82f6);
 }
 .tv-req-name { font-size: .88rem; font-weight: 700; color: var(--text-primary,#e8eefc); }
 .tv-req-email { font-size: .74rem; color: var(--text-secondary,#8892a6); margin-top: 2px; }
-.tv-req-link { font-size: .74rem; color: var(--cyan,#00f0ff); cursor: pointer; display: flex; align-items: center; gap: 3px; margin-top: 3px; text-decoration: none; }
+.tv-req-link { font-size: .74rem; color: var(--cyan,#3b82f6); cursor: pointer; display: flex; align-items: center; gap: 3px; margin-top: 3px; text-decoration: none; }
 
 /* Requester action cards */
 .tv-req-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
@@ -385,7 +385,7 @@ $csrfToken         = $csrf_token ?? '';
   background: var(--bg-secondary,rgba(255,255,255,.03));
   transition: border-color .15s, background .15s;
 }
-.tv-req-act-card:hover { border-color: rgba(0,240,255,.35); background: rgba(0,240,255,.06); }
+.tv-req-act-card:hover { border-color: rgba(59,130,246,.35); background: rgba(59,130,246,.06); }
 .tv-req-act-card i { display: block; font-size: .95rem; color: var(--text-secondary,#8892a6); margin-bottom: 5px; }
 .tv-req-act-card span { font-size: .7rem; color: var(--text-secondary,#8892a6); font-weight: 500; }
 

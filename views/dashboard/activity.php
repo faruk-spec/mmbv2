@@ -3,7 +3,7 @@
 
 <?php View::section('content'); ?>
 <div class="card" style="border-radius: 10px; overflow: hidden; border: 1px solid var(--border-color);">
-    <div class="card-header" style="background: linear-gradient(135deg, rgba(0, 240, 255, 0.1) 0%, rgba(255, 46, 196, 0.1) 100%); border-bottom: 1px solid var(--border-color); padding: 12px;">
+    <div class="card-header" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%); border-bottom: 1px solid var(--border-color); padding: 12px;">
         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
             <h3 class="card-title" style="font-size: 1rem; font-weight: 700; display: flex; align-items: center; gap: 10px; margin: 0;">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
@@ -74,23 +74,23 @@
                             // Determine icon and color based on action
                             $actionType = strtolower($log['action']);
                             $iconColor = 'var(--cyan)';
-                            $bgColor = 'rgba(0, 240, 255, 0.1)';
+                            $bgColor = 'rgba(59, 130, 246, 0.1)';
                             
                             if (strpos($actionType, 'login') !== false) {
                                 $iconColor = 'var(--green)';
-                                $bgColor = 'rgba(0, 255, 136, 0.1)';
+                                $bgColor = 'rgba(34, 197, 94, 0.1)';
                             } elseif (strpos($actionType, 'logout') !== false) {
                                 $iconColor = 'var(--orange)';
-                                $bgColor = 'rgba(255, 170, 0, 0.1)';
+                                $bgColor = 'rgba(245, 158, 11, 0.1)';
                             } elseif (strpos($actionType, 'password') !== false || strpos($actionType, 'security') !== false) {
                                 $iconColor = 'var(--magenta)';
-                                $bgColor = 'rgba(255, 46, 196, 0.1)';
+                                $bgColor = 'rgba(139, 92, 246, 0.1)';
                             } elseif (strpos($actionType, 'profile') !== false || strpos($actionType, 'update') !== false) {
                                 $iconColor = 'var(--purple)';
                                 $bgColor = 'rgba(153, 69, 255, 0.1)';
                             } elseif (strpos($actionType, 'failed') !== false || strpos($actionType, 'error') !== false) {
                                 $iconColor = 'var(--red)';
-                                $bgColor = 'rgba(255, 107, 107, 0.1)';
+                                $bgColor = 'rgba(239, 68, 68, 0.1)';
                             }
                         ?>
                             <tr style="border-bottom: 1px solid var(--border-color); transition: background 0.3s ease;">
@@ -158,12 +158,12 @@
 
 <style>
     table tbody tr:hover {
-        background: rgba(0, 240, 255, 0.03);
+        background: rgba(59, 130, 246, 0.03);
     }
     
     .btn-sm:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 15px rgba(0, 240, 255, 0.3);
+        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
         border-color: var(--cyan);
         color: var(--cyan);
     }

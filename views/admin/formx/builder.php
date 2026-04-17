@@ -4,12 +4,12 @@
 <?php View::section('content'); ?>
 
 <?php if (Helpers::hasFlash('success')): ?>
-<div style="background:rgba(0,255,136,.1);border:1px solid var(--green);color:var(--green);padding:12px 16px;border-radius:8px;margin-bottom:20px;">
+<div style="background:rgba(34,197,94,.1);border:1px solid var(--green);color:var(--green);padding:12px 16px;border-radius:8px;margin-bottom:20px;">
     <i class="fas fa-check-circle"></i> <?= View::e(Helpers::getFlash('success')) ?>
 </div>
 <?php endif; ?>
 <?php if (Helpers::hasFlash('error')): ?>
-<div style="background:rgba(255,107,107,.1);border:1px solid var(--red);color:var(--red);padding:12px 16px;border-radius:8px;margin-bottom:20px;">
+<div style="background:rgba(239,68,68,.1);border:1px solid var(--red);color:var(--red);padding:12px 16px;border-radius:8px;margin-bottom:20px;">
     <i class="fas fa-exclamation-circle"></i> <?= View::e(Helpers::getFlash('error')) ?>
 </div>
 <?php endif; ?>
@@ -242,7 +242,7 @@
     user-select: none;
 }
 .canvas-field:hover { border-color: var(--cyan); }
-.canvas-field.selected { border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(0,240,255,.15); }
+.canvas-field.selected { border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(59,130,246,.15); }
 .canvas-field .field-drag-handle {
     position: absolute;
     left: 8px;
@@ -283,12 +283,12 @@
     font-size: .72rem;
     padding: 2px 6px;
     border-radius: 4px;
-    background: rgba(255,107,107,.15);
+    background: rgba(239,68,68,.15);
     color: var(--red);
     margin-left: 4px;
     vertical-align: middle;
 }
-#formCanvas.drag-over { border-color: var(--cyan); background: rgba(0,240,255,.03); }
+#formCanvas.drag-over { border-color: var(--cyan); background: rgba(59,130,246,.03); }
 </style>
 
 <script>

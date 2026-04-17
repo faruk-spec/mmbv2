@@ -22,7 +22,7 @@
     <strong style="font-size:13px;">Available variables:</strong>
     <?php $vars = json_decode($template['variables'] ?? '[]', true) ?? []; ?>
     <?php foreach ($vars as $v): ?>
-    <code onclick="insertVar('{{<?= View::e($v) ?>}}')" style="cursor:pointer;margin:0 4px;font-size:12px;background:rgba(0,240,255,.1);padding:2px 6px;border-radius:4px;">{{<?= View::e($v) ?>}}</code>
+    <code onclick="insertVar('{{<?= View::e($v) ?>}}')" style="cursor:pointer;margin:0 4px;font-size:12px;background:rgba(59,130,246,.1);padding:2px 6px;border-radius:4px;">{{<?= View::e($v) ?>}}</code>
     <?php endforeach; ?>
     <span style="font-size:12px;color:var(--text-secondary);margin-left:8px;">Click a variable to insert at cursor</span>
 </div>

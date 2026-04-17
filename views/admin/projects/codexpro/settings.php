@@ -52,7 +52,7 @@
 }
 
 .btn-save, .btn-primary {
-    background: linear-gradient(135deg, var(--cyan), var(--magenta));
+    background: var(--cyan);
     color: white;
     padding: 10px 20px;
     border: none;
@@ -72,13 +72,13 @@
 }
 
 .alert-success {
-    background: rgba(0, 255, 136, 0.1);
+    background: rgba(34, 197, 94, 0.1);
     color: var(--green);
     border: 1px solid var(--green);
 }
 
 .alert-danger {
-    background: rgba(255, 107, 107, 0.1);
+    background: rgba(239, 68, 68, 0.1);
     color: var(--red);
     border: 1px solid var(--red);
 }
@@ -99,7 +99,7 @@
         <form method="POST" action="/admin/projects/codexpro/settings" class="settings-form">
             <input type="hidden" name="_csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
 
-            <h2 style="color: #00ff88; margin-top: 0;">Project Limits</h2>
+            <h2 style="color: #22c55e; margin-top: 0;">Project Limits</h2>
 
             <div class="form-group">
                 <label for="max_project_size">Max Project Size (MB)</label>
@@ -115,7 +115,7 @@
                 <small>Maximum number of projects a user can create</small>
             </div>
 
-            <h2 style="color: #00ff88; margin-top: 30px;">Editor Settings</h2>
+            <h2 style="color: #22c55e; margin-top: 30px;">Editor Settings</h2>
 
             <div class="form-group">
                 <label for="auto_save_interval">Auto-save Interval (seconds)</label>
@@ -133,7 +133,7 @@
                 </select>
             </div>
 
-            <h2 style="color: #00ff88; margin-top: 30px;">Feature Toggles</h2>
+            <h2 style="color: #22c55e; margin-top: 30px;">Feature Toggles</h2>
 
             <div class="form-group toggle-group">
                 <label class="toggle-switch">

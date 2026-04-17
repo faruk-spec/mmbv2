@@ -25,7 +25,7 @@ View::section('content');
 /* Add Agent button */
 .sua-add-btn {
   display: inline-flex; align-items: center; gap: 7px;
-  padding: 8px 18px; background: var(--cyan,#00f0ff); border: none;
+  padding: 8px 18px; background: var(--cyan,#3b82f6); border: none;
   border-radius: 8px; color: #05050e; font-weight: 700; font-size: .83rem; cursor: pointer;
 }
 .sua-add-btn:hover { opacity: .9; }
@@ -60,7 +60,7 @@ View::section('content');
 .sua-agent-name { font-size: .88rem; font-weight: 600; color: var(--text-primary,#e8eefc); }
 .sua-cell-text  { font-size: .84rem; color: var(--text-secondary,#8892a6); }
 .sua-cell-muted { font-size: .8rem; color: var(--text-secondary,#8892a6); max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sua-badge { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 20px; font-size: .72rem; font-weight: 700; background: rgba(0,240,255,.1); color: var(--cyan,#00f0ff); }
+.sua-badge { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 20px; font-size: .72rem; font-weight: 700; background: rgba(59,130,246,.1); color: var(--cyan,#3b82f6); }
 .sua-badge-pink { background: rgba(219,39,119,.1); color: #f472b6; }
 .sua-date  { font-size: .79rem; color: var(--text-secondary,#8892a6); white-space: nowrap; }
 .sua-rm-btn {
@@ -97,7 +97,7 @@ View::section('content');
   border-radius: 8px; background: var(--bg-secondary,#0c0c12);
   color: var(--text-primary,#e8eefc); font-size: .86rem; outline: none; box-sizing: border-box;
 }
-.sua-form-ctrl:focus { border-color: var(--cyan,#00f0ff); }
+.sua-form-ctrl:focus { border-color: var(--cyan,#3b82f6); }
 .sua-modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 4px; }
 .sua-modal-cancel {
   padding: 8px 18px; background: var(--bg-secondary,#0c0c12);
@@ -105,7 +105,7 @@ View::section('content');
   border-radius: 8px; color: var(--text-secondary,#8892a6); font-size: .86rem; cursor: pointer;
 }
 .sua-modal-submit {
-  padding: 8px 22px; background: var(--cyan,#00f0ff); border: none;
+  padding: 8px 22px; background: var(--cyan,#3b82f6); border: none;
   border-radius: 8px; color: #05050e; font-weight: 700; font-size: .86rem; cursor: pointer;
 }
 </style>
@@ -174,7 +174,7 @@ View::section('content');
   <!-- Support Users -->
   <div class="sua-sec-hdr">
     <div>
-      <h2 class="sua-sec-title"><i class="fas fa-users" style="color:var(--cyan,#00f0ff);"></i> Support Users</h2>
+      <h2 class="sua-sec-title"><i class="fas fa-users" style="color:var(--cyan,#3b82f6);"></i> Support Users</h2>
       <p class="sua-sec-sub">Users who have submitted tickets or initiated live chats.</p>
     </div>
   </div>
