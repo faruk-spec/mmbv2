@@ -198,7 +198,7 @@ abstract class BaseController
         // Build snake_case placeholder map from camelCase vars
         $placeholders = [];
         foreach ($vars as $key => $value) {
-            $snake = strtolower(preg_replace('/([A-Z])/', '_$1', $key));
+            $snake = ltrim(strtolower(preg_replace('/([A-Z])/', '_$1', $key)), '_');
             $placeholders[$snake]  = (string) $value;
             $placeholders[$key]    = (string) $value; // keep original key too
         }
@@ -256,7 +256,7 @@ abstract class BaseController
         if ($emailResult === null) {
             return; // disabled or template not found
         }
-        $subject = $emailResult['subject'] ?? $fallbackSubject;
+        $subject = $emailResult['subject'] ?: $fallbackSubject;
         \Core\MailService::sendNow($to, $subject, $emailResult['body'], ['template_slug' => $slug]);
     }
 }

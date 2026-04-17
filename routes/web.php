@@ -100,10 +100,6 @@ $router->get('/support/create', 'SupportController@createForm', ['auth']);
 $router->post('/support/create', 'SupportController@store', ['auth']);
 // New wizard (React / API-driven ticket creation)
 $router->get('/support/new', function () {
-    if (!\Core\Auth::check()) {
-        \Core\Helpers::redirect('/login?return=/support/new');
-        exit;
-    }
     \Core\View::render('support/create-wizard', [
         'title'          => 'Create Support Ticket',
         'currentPage'    => 'create',
