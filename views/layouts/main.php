@@ -2,29 +2,96 @@
 <?php
 // Set theme: prefer user's own preference, fall back to global navbar_settings
 $defaultTheme = 'dark';
+$activeUiTheme = 'default';
+$themeOverridesCSS = '';
 try {
     $db = \Core\Database::getInstance();
+    // Load multi-theme settings
+    $themeConfig = \Controllers\Admin\ThemeController::loadThemeForLayout();
+    $activeUiTheme = $themeConfig['theme'] ?? 'default';
+    $defaultTheme = $themeConfig['mode'] ?? 'dark';
+
+    // Build CSS overrides from admin customization
+    $ov = $themeConfig['overrides'] ?? [];
+    $cssOverrides = [];
+    if (!empty($ov['cyan']))    $cssOverrides[] = '--cyan: ' . $ov['cyan'];
+    if (!empty($ov['magenta'])) $cssOverrides[] = '--magenta: ' . $ov['magenta'];
+    if (!empty($ov['green']))   $cssOverrides[] = '--green: ' . $ov['green'];
+    if (!empty($ov['orange']))  $cssOverrides[] = '--orange: ' . $ov['orange'];
+    if (!empty($ov['red']))     $cssOverrides[] = '--red: ' . $ov['red'];
+    if (!empty($ov['purple']))  $cssOverrides[] = '--purple: ' . $ov['purple'];
+    if (!empty($ov['bg_primary_dark']))   $cssOverrides[] = '--bg-primary-dark-override: ' . $ov['bg_primary_dark'];
+    if (!empty($ov['bg_secondary_dark'])) $cssOverrides[] = '--bg-secondary-dark-override: ' . $ov['bg_secondary_dark'];
+    if (!empty($ov['bg_card_dark']))      $cssOverrides[] = '--bg-card-dark-override: ' . $ov['bg_card_dark'];
+    if (!empty($ov['bg_primary_light']))   $cssOverrides[] = '--bg-primary-light-override: ' . $ov['bg_primary_light'];
+    if (!empty($ov['bg_secondary_light'])) $cssOverrides[] = '--bg-secondary-light-override: ' . $ov['bg_secondary_light'];
+    if (!empty($ov['bg_card_light']))      $cssOverrides[] = '--bg-card-light-override: ' . $ov['bg_card_light'];
+    // Radius
+    $radiusMap = ['sharp' => '4px', 'medium' => '8px', 'rounded' => '14px'];
+    if (!empty($ov['radius_level']) && isset($radiusMap[$ov['radius_level']])) {
+        $r = $radiusMap[$ov['radius_level']];
+        $cssOverrides[] = '--radius-sm: ' . max(2, intval($r) - 4) . 'px';
+        $cssOverrides[] = '--radius-md: ' . $r;
+        $cssOverrides[] = '--radius-lg: ' . (intval($r) + 4) . 'px';
+    }
+    // Shadow
+    $shadowMap = [
+        'none'   => ['0 0 0 transparent', '0 0 0 transparent', '0 0 0 transparent', 'none'],
+        'subtle' => ['0 1px 2px rgba(0,0,0,0.04)', '0 2px 6px rgba(0,0,0,0.06)', '0 4px 12px rgba(0,0,0,0.08)', '0 1px 2px rgba(0,0,0,0.04)'],
+        'normal' => ['0 1px 3px rgba(0,0,0,0.06)', '0 4px 12px rgba(0,0,0,0.08)', '0 8px 24px rgba(0,0,0,0.12)', '0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)'],
+        'strong' => ['0 2px 4px rgba(0,0,0,0.08)', '0 6px 18px rgba(0,0,0,0.14)', '0 12px 36px rgba(0,0,0,0.20)', '0 2px 6px rgba(0,0,0,0.10), 0 1px 3px rgba(0,0,0,0.06)'],
+    ];
+    if (!empty($ov['shadow_intensity']) && isset($shadowMap[$ov['shadow_intensity']])) {
+        $s = $shadowMap[$ov['shadow_intensity']];
+        $cssOverrides[] = '--shadow-sm: ' . $s[0];
+        $cssOverrides[] = '--shadow-md: ' . $s[1];
+        $cssOverrides[] = '--shadow-lg: ' . $s[2];
+        $cssOverrides[] = '--card-shadow: ' . $s[3];
+    }
+
+    if (!empty($cssOverrides)) {
+        $themeOverridesCSS = ':root { ' . implode('; ', $cssOverrides) . '; }';
+        // BG overrides for dark mode
+        $darkBg = [];
+        if (!empty($ov['bg_primary_dark']))   $darkBg[] = '--bg-primary: ' . $ov['bg_primary_dark'];
+        if (!empty($ov['bg_secondary_dark'])) $darkBg[] = '--bg-secondary: ' . $ov['bg_secondary_dark'];
+        if (!empty($ov['bg_card_dark']))      $darkBg[] = '--bg-card: ' . $ov['bg_card_dark'];
+        if (!empty($darkBg)) {
+            $themeOverridesCSS .= ' :root:not([data-theme="light"]) { ' . implode('; ', $darkBg) . '; }';
+        }
+        // BG overrides for light mode
+        $lightBg = [];
+        if (!empty($ov['bg_primary_light']))   $lightBg[] = '--bg-primary: ' . $ov['bg_primary_light'];
+        if (!empty($ov['bg_secondary_light'])) $lightBg[] = '--bg-secondary: ' . $ov['bg_secondary_light'];
+        if (!empty($ov['bg_card_light']))      $lightBg[] = '--bg-card: ' . $ov['bg_card_light'];
+        if (!empty($lightBg)) {
+            $themeOverridesCSS .= ' [data-theme="light"] { ' . implode('; ', $lightBg) . '; }';
+        }
+    }
+
+    // User preference overrides global
     if (\Core\Auth::check()) {
-        $userTheme = $db->fetch(
-            "SELECT theme_preference FROM user_profiles WHERE user_id = ?",
-            [\Core\Auth::id()]
-        );
+        try {
+            $userTheme = $db->fetch(
+                "SELECT theme_preference, ui_theme FROM user_profiles WHERE user_id = ?",
+                [\Core\Auth::id()]
+            );
+        } catch (\Exception $e) {
+            // ui_theme column may not exist yet; fall back to just theme_preference
+            $userTheme = $db->fetch(
+                "SELECT theme_preference FROM user_profiles WHERE user_id = ?",
+                [\Core\Auth::id()]
+            );
+        }
         if ($userTheme && !empty($userTheme['theme_preference'])) {
             $defaultTheme = $userTheme['theme_preference'];
-        } else {
-            $navbarSettings = $db->fetch("SELECT default_theme FROM navbar_settings WHERE id = 1");
-            if ($navbarSettings && !empty($navbarSettings['default_theme'])) {
-                $defaultTheme = $navbarSettings['default_theme'];
-            }
         }
-    } else {
-        $navbarSettings = $db->fetch("SELECT default_theme FROM navbar_settings WHERE id = 1");
-        if ($navbarSettings && !empty($navbarSettings['default_theme'])) {
-            $defaultTheme = $navbarSettings['default_theme'];
+        if ($userTheme && !empty($userTheme['ui_theme'] ?? '')) {
+            $activeUiTheme = $userTheme['ui_theme'];
         }
     }
 } catch (\Exception $e) {
-    // Use default if query fails
+    // Use defaults if query fails
 }
 // Apply user display settings (date format etc.)
 try {
@@ -43,7 +110,7 @@ try {
 }
 ?>
 <!DOCTYPE html>
-<html lang="en" data-theme="<?= htmlspecialchars($defaultTheme) ?>">
+<html lang="en" data-theme="<?= htmlspecialchars($defaultTheme) ?>" data-ui-theme="<?= htmlspecialchars($activeUiTheme) ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -61,6 +128,12 @@ try {
     
     <!-- Icons - No external dependencies needed, using inline SVG -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Universal Theme System -->
+    <link rel="stylesheet" href="/css/universal-theme.css?v=<?= filemtime(BASE_PATH . '/public/css/universal-theme.css') ?>">
+    <?php if (!empty($themeOverridesCSS)): ?>
+    <style id="theme-admin-overrides"><?= $themeOverridesCSS ?></style>
+    <?php endif; ?>
     
     <style>
         :root {
@@ -110,9 +183,10 @@ try {
             --border-color: rgba(0, 0, 0, 0.08);
             --border-hover: rgba(0, 0, 0, 0.16);
             --shadow-glow: none;
-            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
             --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
             --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+            --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
             --hover-bg: rgba(0, 0, 0, 0.03);
             --active-bg: rgba(37, 99, 235, 0.08);
             --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);

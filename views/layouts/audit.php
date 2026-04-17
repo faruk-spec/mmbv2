@@ -1,6 +1,15 @@
 <?php use Core\View; use Core\Security; use Core\Auth; ?>
+<?php
+$_auditUiTheme = 'default';
+$_auditDefaultMode = 'dark';
+try {
+    $themeConfig = \Controllers\Admin\ThemeController::loadThemeForLayout();
+    $_auditUiTheme = $themeConfig['theme'] ?? 'default';
+    $_auditDefaultMode = $themeConfig['mode'] ?? 'dark';
+} catch (\Exception $e) {}
+?>
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="<?= htmlspecialchars($_auditDefaultMode) ?>" data-ui-theme="<?= htmlspecialchars($_auditUiTheme) ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">

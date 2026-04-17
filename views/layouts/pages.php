@@ -1,16 +1,15 @@
 <?php use Core\View; use Core\Security; ?>
 <?php
 $defaultTheme = 'dark';
+$activeUiTheme = 'default';
 try {
-    $db = \Core\Database::getInstance();
-    $navbarSettings = $db->fetch("SELECT default_theme FROM navbar_settings WHERE id = 1");
-    if ($navbarSettings && !empty($navbarSettings['default_theme'])) {
-        $defaultTheme = $navbarSettings['default_theme'];
-    }
+    $themeConfig = \Controllers\Admin\ThemeController::loadThemeForLayout();
+    $activeUiTheme = $themeConfig['theme'] ?? 'default';
+    $defaultTheme = $themeConfig['mode'] ?? 'dark';
 } catch (\Exception $e) {}
 ?>
 <!DOCTYPE html>
-<html lang="en" data-theme="<?= htmlspecialchars($defaultTheme) ?>">
+<html lang="en" data-theme="<?= htmlspecialchars($defaultTheme) ?>" data-ui-theme="<?= htmlspecialchars($activeUiTheme) ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -23,7 +22,7 @@ try {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root { --bg-primary:#06060a;--bg-secondary:#0c0c12;--bg-card:#0f0f18;--cyan:#3b82f6;--magenta:#8b5cf6;--green:#22c55e;--orange:#f59e0b;--purple:#8b5cf6;--red:#ef4444;--text-primary:#e8eefc;--text-secondary:#8892a6;--border-color:rgba(255,255,255,0.1);--shadow:0 4px 20px rgba(0,0,0,0.3);--transition:all 0.3s ease; }
-        [data-theme="light"]{--bg-primary:#f0f4ff;--bg-secondary:#ffffff;--bg-card:#ffffff;--cyan:#0369a1;--magenta:#c026d3;--green:#059669;--orange:#d97706;--purple:#7c3aed;--red:#dc2626;--text-primary:#1a1a1a;--text-secondary:#555555;--border-color:rgba(0,0,0,0.1);--shadow:0 4px 20px rgba(0,0,0,0.12);}
+        [data-theme="light"]{--bg-primary:#f0f4ff;--bg-secondary:#ffffff;--bg-card:#ffffff;--cyan:#0369a1;--magenta:#c026d3;--green:#059669;--orange:#d97706;--purple:#7c3aed;--red:#dc2626;--text-primary:#1a1a1a;--text-secondary:#555555;--border-color:rgba(0,0,0,0.1);--shadow:0 4px 20px rgba(0,0,0,0.12);--card-shadow:0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);}
         *{margin:0;padding:0;box-sizing:border-box;}
         body{font-family:'Poppins',sans-serif;background:var(--bg-primary);color:var(--text-primary);min-height:100vh;line-height:1.6;font-size:14px;overflow-x:hidden;}
         a{color:var(--cyan);text-decoration:none;transition:var(--transition);}

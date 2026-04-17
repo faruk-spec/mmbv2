@@ -1,7 +1,59 @@
 <?php use Core\View; use Core\Security; ?>
-<!-- Admin Layout Version: 2.0 - Updated <?= date('Y-m-d H:i:s') ?> -->
+<?php
+// Load theme settings for admin layout
+$_adminThemeConfig = \Controllers\Admin\ThemeController::loadThemeForLayout();
+$_adminUiTheme = $_adminThemeConfig['theme'] ?? 'default';
+$_adminDefaultMode = $_adminThemeConfig['mode'] ?? 'dark';
+$_adminThemeOverrides = '';
+$ov = $_adminThemeConfig['overrides'] ?? [];
+$cssOv = [];
+if (!empty($ov['cyan']))    $cssOv[] = '--cyan: ' . $ov['cyan'];
+if (!empty($ov['magenta'])) $cssOv[] = '--magenta: ' . $ov['magenta'];
+if (!empty($ov['green']))   $cssOv[] = '--green: ' . $ov['green'];
+if (!empty($ov['orange']))  $cssOv[] = '--orange: ' . $ov['orange'];
+if (!empty($ov['red']))     $cssOv[] = '--red: ' . $ov['red'];
+if (!empty($ov['purple']))  $cssOv[] = '--purple: ' . $ov['purple'];
+$radiusMap = ['sharp' => '4px', 'medium' => '8px', 'rounded' => '14px'];
+if (!empty($ov['radius_level']) && isset($radiusMap[$ov['radius_level']])) {
+    $r = $radiusMap[$ov['radius_level']];
+    $cssOv[] = '--radius-sm: ' . max(2, intval($r) - 4) . 'px';
+    $cssOv[] = '--radius-md: ' . $r;
+    $cssOv[] = '--radius-lg: ' . (intval($r) + 4) . 'px';
+}
+$shadowMap = [
+    'none'   => ['0 0 0 transparent', '0 0 0 transparent', '0 0 0 transparent', 'none'],
+    'subtle' => ['0 1px 2px rgba(0,0,0,0.04)', '0 2px 6px rgba(0,0,0,0.06)', '0 4px 12px rgba(0,0,0,0.08)', '0 1px 2px rgba(0,0,0,0.04)'],
+    'normal' => ['0 1px 3px rgba(0,0,0,0.06)', '0 4px 12px rgba(0,0,0,0.08)', '0 8px 24px rgba(0,0,0,0.12)', '0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)'],
+    'strong' => ['0 2px 4px rgba(0,0,0,0.08)', '0 6px 18px rgba(0,0,0,0.14)', '0 12px 36px rgba(0,0,0,0.20)', '0 2px 6px rgba(0,0,0,0.10), 0 1px 3px rgba(0,0,0,0.06)'],
+];
+if (!empty($ov['shadow_intensity']) && isset($shadowMap[$ov['shadow_intensity']])) {
+    $s = $shadowMap[$ov['shadow_intensity']];
+    $cssOv[] = '--shadow-sm: ' . $s[0];
+    $cssOv[] = '--shadow-md: ' . $s[1];
+    $cssOv[] = '--shadow-lg: ' . $s[2];
+    $cssOv[] = '--card-shadow: ' . $s[3];
+}
+if (!empty($cssOv)) {
+    $_adminThemeOverrides = ':root { ' . implode('; ', $cssOv) . '; }';
+    $darkBg = [];
+    if (!empty($ov['bg_primary_dark']))   $darkBg[] = '--bg-primary: ' . $ov['bg_primary_dark'];
+    if (!empty($ov['bg_secondary_dark'])) $darkBg[] = '--bg-secondary: ' . $ov['bg_secondary_dark'];
+    if (!empty($ov['bg_card_dark']))      $darkBg[] = '--bg-card: ' . $ov['bg_card_dark'];
+    if (!empty($darkBg)) {
+        $_adminThemeOverrides .= ' :root:not([data-theme="light"]) { ' . implode('; ', $darkBg) . '; }';
+    }
+    $lightBg = [];
+    if (!empty($ov['bg_primary_light']))   $lightBg[] = '--bg-primary: ' . $ov['bg_primary_light'];
+    if (!empty($ov['bg_secondary_light'])) $lightBg[] = '--bg-secondary: ' . $ov['bg_secondary_light'];
+    if (!empty($ov['bg_card_light']))      $lightBg[] = '--bg-card: ' . $ov['bg_card_light'];
+    if (!empty($lightBg)) {
+        $_adminThemeOverrides .= ' [data-theme="light"] { ' . implode('; ', $lightBg) . '; }';
+    }
+}
+?>
+<!-- Admin Layout Version: 2.1 - Multi-Theme System -->
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="<?= htmlspecialchars($_adminDefaultMode) ?>" data-ui-theme="<?= htmlspecialchars($_adminUiTheme) ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -22,6 +74,12 @@
     
     <!-- Admin Panel Responsive CSS - Optimized for all devices -->
     <link rel="stylesheet" href="/css/admin-responsive.css?v=<?= time() ?>">
+    
+    <!-- Universal Theme System -->
+    <link rel="stylesheet" href="/css/universal-theme.css?v=<?= filemtime(BASE_PATH . '/public/css/universal-theme.css') ?>">
+    <?php if (!empty($_adminThemeOverrides)): ?>
+    <style id="theme-admin-overrides"><?= $_adminThemeOverrides ?></style>
+    <?php endif; ?>
     
     <style>
         /* Dark Theme (Default) */
@@ -79,9 +137,10 @@
             --border-color: rgba(0, 0, 0, 0.08);
             --border-hover: rgba(0, 0, 0, 0.16);
             --shadow-glow: none;
-            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
             --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
             --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+            --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
             --transition: all 0.2s ease;
             --sidebar-width: 260px;
             --bg-gradient-start: rgba(37, 99, 235, 0.04);
@@ -595,10 +654,11 @@
         .card {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
-            border-radius: 12px;
+            border-radius: var(--radius-lg, 12px);
             padding: 24px;
             margin-bottom: 20px;
             transition: var(--transition);
+            box-shadow: var(--card-shadow, none);
         }
         
         .card:hover {
@@ -2241,6 +2301,12 @@
                                 <span>Navbar</span>
                             </a>
                             <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('settings')): ?>
+                            <a href="/admin/settings/theme" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/settings/theme') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-palette"></i>
+                                <span>Universal Theme</span>
+                            </a>
+                            <?php endif; ?>
                             <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('settings.maintenance')): ?>
                             <a href="/admin/settings/maintenance" class="menu-link">
                                 <i class="fas fa-tools"></i>
@@ -2392,12 +2458,20 @@
         const themeIcon = document.getElementById('themeIcon');
         const html = document.documentElement;
         
-        // Load saved theme or default to dark
-        const savedTheme = localStorage.getItem('adminTheme') || 'dark';
+        // Load saved mode or use admin-configured default
+        const adminDefaultMode = '<?= htmlspecialchars($_adminDefaultMode) ?>';
+        const savedTheme = localStorage.getItem('adminTheme') || adminDefaultMode;
         html.setAttribute('data-theme', savedTheme);
+        
+        // Load saved UI theme or use admin-configured default
+        const adminDefaultUiTheme = '<?= htmlspecialchars($_adminUiTheme) ?>';
+        const savedUiTheme = localStorage.getItem('uiTheme') || adminDefaultUiTheme;
+        html.setAttribute('data-ui-theme', savedUiTheme);
+        
         updateThemeIcon(savedTheme);
         
         function updateThemeIcon(theme) {
+            if (!themeIcon) return;
             if (theme === 'dark') {
                 themeIcon.className = 'fas fa-moon';
                 themeToggle.setAttribute('title', 'Switch to light mode');
@@ -2407,14 +2481,16 @@
             }
         }
         
-        themeToggle.addEventListener('click', () => {
-            const currentTheme = html.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            
-            html.setAttribute('data-theme', newTheme);
-            localStorage.setItem('adminTheme', newTheme);
-            updateThemeIcon(newTheme);
-        });
+        if (themeToggle) {
+            themeToggle.addEventListener('click', () => {
+                const currentTheme = html.getAttribute('data-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                
+                html.setAttribute('data-theme', newTheme);
+                localStorage.setItem('adminTheme', newTheme);
+                updateThemeIcon(newTheme);
+            });
+        }
         
         // Profile Dropdown Toggle
         const userMenu = document.getElementById('userMenu');

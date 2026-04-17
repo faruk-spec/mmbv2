@@ -438,19 +438,21 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
 <script>
 // Universal Navbar JavaScript
 (function() {
-    // Debug: Log navbar load
-    console.log('Universal navbar loaded');
-    
     // Theme Toggle
     const themeToggle = document.getElementById('themeToggle');
     const themeIcon = document.getElementById('themeIcon');
     const themeText = document.getElementById('themeText');
     const html = document.documentElement;
     
-    // Load saved theme or use default from settings
+    // Load saved mode or use default from settings
     const defaultTheme = '<?= $navbarSettings['default_theme'] ?? 'dark' ?>';
     const savedTheme = localStorage.getItem('theme') || defaultTheme;
     html.setAttribute('data-theme', savedTheme);
+    
+    // Load saved UI theme
+    const savedUiTheme = localStorage.getItem('uiTheme') || html.getAttribute('data-ui-theme') || 'default';
+    html.setAttribute('data-ui-theme', savedUiTheme);
+    
     updateThemeUI(savedTheme);
     updateNavbarColors(savedTheme);
     
