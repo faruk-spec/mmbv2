@@ -26,7 +26,7 @@ $priorityColor = match($ticket['priority']) {
     default  => '#64748b',
 };
 
-$formattedTicketId = '#' . str_pad((string) ((int) $ticket['id']), 5, '0', STR_PAD_LEFT);
+$formattedTicketId = '#' . sprintf('%07d', (int) $ticket['id']);
 $createdAt         = !empty($ticket['created_at']) ? strtotime($ticket['created_at']) : null;
 $updatedAt         = !empty($ticket['updated_at']) ? strtotime($ticket['updated_at']) : null;
 $firstReplyTs      = !empty($firstAgentReplyAt ?? null) ? strtotime($firstAgentReplyAt) : null;

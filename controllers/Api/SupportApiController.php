@@ -193,9 +193,10 @@ class SupportApiController extends BaseController
             'ticketUrl'   => $ticketUrl,
             'description' => $textSummary,
         ];
-        $emailBody = $this->renderEmail('support-ticket-created', $emailVars);
-        if ($emailBody !== null && !empty($user['email'])) {
-            Mailer::send($user['email'], "Support Ticket #" . $this->formatTicketId($ticketId) . " Created: {$subject}", $emailBody);
+        $emailResult = $this->renderSupportEmail('support-ticket-created', $emailVars);
+        if ($emailResult !== null && !empty($user['email'])) {
+            $emailSubject = $emailResult['subject'] ?? ("Support Ticket #" . $this->formatTicketId($ticketId) . " Created: {$subject}");
+            Mailer::send($user['email'], $emailSubject, $emailResult['body']);
         }
 
         // Notify admins
@@ -498,17 +499,5 @@ class SupportApiController extends BaseController
     {
         $scheme = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
         return $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
-    }
-
-    private function renderEmail(string $template, array $vars): ?string
-    {
-        $file = BASE_PATH . '/views/emails/' . $template . '.php';
-        if (!file_exists($file)) {
-            return null;
-        }
-        ob_start();
-        extract($vars, EXTR_SKIP);
-        include $file;
-        return ob_get_clean() ?: null;
     }
 }

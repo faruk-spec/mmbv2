@@ -181,4 +181,56 @@ abstract class BaseController
             exit;
         }
     }
+
+    /**
+     * Render a support email template.
+     *
+     * Checks the mail_notification_templates DB table first (so admins can edit
+     * templates via /admin/mail/templates). Falls back to views/emails/{slug}.php
+     * if no active DB template is found.
+     *
+     * Returns ['subject' => string|null, 'body' => string] or null on failure.
+     * subject is null when the PHP-file fallback is used (caller keeps its own subject).
+     */
+    protected function renderSupportEmail(string $slug, array $vars): ?array
+    {
+        // Build snake_case placeholder map from camelCase vars
+        $placeholders = [];
+        foreach ($vars as $key => $value) {
+            $snake = strtolower(preg_replace('/([A-Z])/', '_$1', $key));
+            $placeholders[$snake]  = (string) $value;
+            $placeholders[$key]    = (string) $value; // keep original key too
+        }
+
+        // Try DB template first
+        try {
+            $db  = \Core\Database::getInstance();
+            $tpl = $db->fetch(
+                "SELECT subject, body FROM mail_notification_templates WHERE slug = ? AND is_enabled = 1 LIMIT 1",
+                [$slug]
+            );
+            if ($tpl && !empty($tpl['body'])) {
+                $subject = $tpl['subject'] ?? '';
+                $body    = $tpl['body'];
+                foreach ($placeholders as $k => $v) {
+                    $body    = str_replace('{{' . $k . '}}', $v, $body);
+                    $subject = str_replace('{{' . $k . '}}', $v, $subject);
+                }
+                return ['subject' => $subject ?: null, 'body' => $body];
+            }
+        } catch (\Throwable $e) {
+            // DB unavailable or table not created yet — fall through
+        }
+
+        // Fall back to PHP file template
+        $file = defined('BASE_PATH') ? BASE_PATH . '/views/emails/' . $slug . '.php' : null;
+        if ($file === null || !file_exists($file)) {
+            return null;
+        }
+        ob_start();
+        extract($vars, EXTR_SKIP);
+        include $file;
+        $body = ob_get_clean() ?: null;
+        return $body !== null ? ['subject' => null, 'body' => $body] : null;
+    }
 }

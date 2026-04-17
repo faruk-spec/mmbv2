@@ -132,7 +132,7 @@ View::section('content');
             $pColor = $pc[$ticket['priority']] ?? '#64748b';
           ?>
           <tr>
-            <td><span class="stl-id">#<?= str_pad((string)(int)$ticket['id'],5,'0',STR_PAD_LEFT) ?></span></td>
+            <td><span class="stl-id">#<?= sprintf('%07d', (int)$ticket['id']) ?></span></td>
             <td><span class="stl-user-name"><?= htmlspecialchars($ticket['user_name'] ?? '—') ?></span></td>
             <td>
               <a href="/admin/support/tickets/<?= (int)$ticket['id'] ?>" class="stl-subject">
