@@ -149,6 +149,7 @@ html[data-theme="light"] .mail-table td{border-color:#e8edf5}
 html[data-theme="light"] .mail-table tr:hover td{background:#f8fafc}
 html[data-theme="light"] .topbar-kbd-hint{color:#64748b;background:#f1f5f9;border-color:#dbe3ef}
 </style>
+<?php include __DIR__ . '/../partials/universal-theme-override.php'; ?>
 </head>
 <body>
 <?php

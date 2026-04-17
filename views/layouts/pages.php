@@ -35,6 +35,7 @@ try {
         .page-navbar .brand{font-size:1.2rem;font-weight:600;color:var(--text-primary);}
         .page-footer{background:var(--bg-secondary);border-top:1px solid var(--border-color);padding:30px 0;text-align:center;color:var(--text-secondary);margin-top:auto;}
     </style>
+    <?php include __DIR__ . '/../partials/universal-theme-override.php'; ?>
 </head>
 <body>
 
