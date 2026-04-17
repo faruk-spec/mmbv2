@@ -124,7 +124,7 @@
         <?php if ($proj === 'codexpro'): ?>
         <div style="padding: 20px; <?= $index < $colCount - 1 ? 'border-right: 1px solid var(--border-color);' : '' ?>">
             <div style="display:flex;align-items:center;gap:12px;margin-bottom:15px;">
-                <div style="width:45px;height:45px;background:linear-gradient(135deg,var(--cyan),var(--purple));border-radius:10px;display:flex;align-items:center;justify-content:center;">
+                <div style="width:45px;height:45px;background:var(--cyan);border-radius:10px;display:flex;align-items:center;justify-content:center;">
                     <i class="fas fa-code" style="font-size:20px;"></i>
                 </div>
                 <div>
@@ -178,8 +178,8 @@
         <?php if ($proj === 'formx'): ?>
         <div style="padding: 20px;">
             <div style="display:flex;align-items:center;gap:12px;margin-bottom:15px;">
-                <div style="width:45px;height:45px;background:linear-gradient(135deg,var(--cyan),var(--purple));border-radius:10px;display:flex;align-items:center;justify-content:center;">
-                    <i class="fas fa-wpforms" style="font-size:20px;color:#06060a;"></i>
+                <div style="width:45px;height:45px;background:var(--cyan);border-radius:10px;display:flex;align-items:center;justify-content:center;">
+                    <i class="fas fa-wpforms" style="font-size:20px;color:#ffffff;"></i>
                 </div>
                 <div>
                     <h4 style="font-size:1.1rem;margin-bottom:3px;">FormX</h4>

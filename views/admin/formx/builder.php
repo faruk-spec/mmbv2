@@ -170,7 +170,7 @@
                         <button type="button" onclick="clearCanvas()" style="padding:6px 12px;background:transparent;border:1px solid var(--red);border-radius:6px;color:var(--red);cursor:pointer;font-size:.8rem;">
                             <i class="fas fa-trash"></i> Clear
                         </button>
-                        <button type="submit" style="padding:6px 16px;background:linear-gradient(135deg,var(--cyan),var(--purple));border:none;border-radius:6px;color:#fff;cursor:pointer;font-size:.85rem;font-weight:600;">
+                        <button type="submit" style="padding:6px 16px;background:var(--cyan);border:none;border-radius:6px;color:#fff;cursor:pointer;font-size:.85rem;font-weight:600;">
                             <i class="fas fa-save"></i> Save Form
                         </button>
                     </div>

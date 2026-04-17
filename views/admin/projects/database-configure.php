@@ -185,7 +185,7 @@
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, var(--cyan), var(--purple));
+    background: var(--cyan);
     color: white;
 }
 

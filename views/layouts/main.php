@@ -1956,7 +1956,7 @@ try {
         <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:16px;padding:20px 22px;box-shadow:0 12px 48px rgba(0,0,0,0.45);transform:translateY(20px);opacity:0;transition:transform 0.4s cubic-bezier(.34,1.56,.64,1),opacity 0.3s ease;max-width:340px;width:calc(100% - 40px);position:relative;" id="loggedOutCard">
             <button onclick="closeLoggedOutPopup()" style="position:absolute;top:12px;right:14px;background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:1.1rem;line-height:1;" aria-label="Close">&times;</button>
             <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
-                <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,var(--cyan),var(--purple));display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <div style="width:40px;height:40px;border-radius:10px;background:var(--cyan);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#06060a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 </div>
                 <div>
@@ -1966,7 +1966,7 @@ try {
             </div>
             <p style="font-size:0.82rem;color:var(--text-secondary);margin:0 0 14px;line-height:1.5;">Sign back in to pick up right where you left off — your work is safe and waiting for you.</p>
             <div style="display:flex;gap:8px;">
-                <a href="/login" style="flex:1;padding:9px 14px;border-radius:8px;background:linear-gradient(135deg,var(--cyan),var(--purple));color:#06060a;font-size:0.85rem;font-weight:700;text-decoration:none;text-align:center;">Sign In</a>
+                <a href="/login" style="flex:1;padding:9px 14px;border-radius:8px;background:var(--cyan);color:#ffffff;font-size:0.85rem;font-weight:700;text-decoration:none;text-align:center;">Sign In</a>
                 <a href="/register" style="flex:1;padding:9px 14px;border-radius:8px;border:1px solid var(--border-color);background:transparent;color:var(--text-primary);font-size:0.85rem;font-weight:600;text-decoration:none;text-align:center;">Register</a>
             </div>
         </div>
@@ -2028,8 +2028,8 @@ try {
         <div id="twoFaCard" style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:18px;padding:28px 26px 24px;box-shadow:0 16px 56px rgba(0,0,0,0.55);max-width:360px;width:calc(100% - 40px);position:relative;transform:translateY(24px);opacity:0;transition:transform 0.4s cubic-bezier(.34,1.56,.64,1),opacity 0.3s ease;">
             <button onclick="closeTwoFaPopup()" style="position:absolute;top:12px;right:14px;background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:1.2rem;line-height:1;" aria-label="Close">&times;</button>
             <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-                <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--purple));display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                    <i class="fas fa-shield-alt" style="color:#06060a;font-size:1.1rem;"></i>
+                <div style="width:42px;height:42px;border-radius:50%;background:var(--cyan);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <i class="fas fa-shield-alt" style="color:#ffffff;font-size:1.1rem;"></i>
                 </div>
                 <div>
                     <div style="font-weight:700;font-size:1rem;color:var(--text-primary);">
@@ -2046,7 +2046,7 @@ try {
                 <?php endif; ?>
             </p>
             <div style="display:flex;gap:8px;flex-direction:column;">
-                <a href="/2fa/setup" style="display:block;padding:10px 14px;border-radius:9px;background:linear-gradient(135deg,var(--cyan),var(--purple));color:#06060a;font-size:0.9rem;font-weight:700;text-decoration:none;text-align:center;">
+                <a href="/2fa/setup" style="display:block;padding:10px 14px;border-radius:9px;background:var(--cyan);color:#ffffff;font-size:0.9rem;font-weight:700;text-decoration:none;text-align:center;">
                     <i class="fas fa-qrcode" style="margin-right:6px;"></i>Set up 2FA now
                 </a>
                 <button onclick="closeTwoFaPopup()" style="padding:9px 14px;border-radius:9px;border:1px solid var(--border-color);background:transparent;color:var(--text-secondary);font-size:0.85rem;font-weight:500;cursor:pointer;width:100%;">

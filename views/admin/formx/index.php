@@ -22,7 +22,7 @@
         </h1>
         <p style="color:var(--text-secondary);font-size:.875rem;">Create and manage forms with the drag-and-drop builder.</p>
     </div>
-    <a href="/admin/formx/create" class="btn btn-primary" style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:8px;text-decoration:none;background:linear-gradient(135deg,var(--cyan),var(--purple));color:#fff;font-weight:600;font-size:.875rem;">
+    <a href="/admin/formx/create" class="btn btn-primary" style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:8px;text-decoration:none;background:var(--cyan);color:#fff;font-weight:600;font-size:.875rem;">
         <i class="fas fa-plus"></i> New Form
     </a>
 </div>

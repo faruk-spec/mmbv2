@@ -10,7 +10,7 @@
     margin-bottom: 30px;
 }
 .stat-card {
-    background: linear-gradient(135deg, var(--cyan), var(--purple));
+    background: var(--cyan);
     padding: 25px;
     border-radius: 12px;
     color: white;
