@@ -209,12 +209,10 @@ class ThemeController extends BaseController
      */
     private function setSetting(Database $db, string $key, ?string $value): void
     {
-        $existing = $db->fetch("SELECT id FROM theme_settings WHERE setting_key = ?", [$key]);
-        if ($existing) {
-            $db->query("UPDATE theme_settings SET setting_value = ? WHERE setting_key = ?", [$value, $key]);
-        } else {
-            $db->query("INSERT INTO theme_settings (setting_key, setting_value) VALUES (?, ?)", [$key, $value]);
-        }
+        $db->query(
+            "INSERT INTO theme_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
+            [$key, $value]
+        );
     }
 
     /**
