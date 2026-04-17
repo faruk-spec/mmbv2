@@ -491,7 +491,7 @@ try {
         }
         
         .user-menu-item.danger:hover {
-            background: rgba(255, 107, 107, 0.1);
+            background: rgba(239, 68, 68, 0.08);
         }
         
         /* Responsive Navbar */
@@ -1021,7 +1021,7 @@ try {
 <body>
     <?php if (!empty($_SESSION['_concurrent_session_warning'])): ?>
     <?php $sessionCount = (int)$_SESSION['_concurrent_session_warning']; unset($_SESSION['_concurrent_session_warning']); ?>
-    <div id="concurrent-session-banner" style="position:fixed;top:0;left:0;right:0;z-index:99999;background:linear-gradient(135deg,#ff6b6b,#ffaa00);color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 20px rgba(0,0,0,0.4);font-family:'Poppins',sans-serif;font-size:14px;">
+    <div id="concurrent-session-banner" style="position:fixed;top:0;left:0;right:0;z-index:99999;background:#ef4444;color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 20px rgba(0,0,0,0.4);font-family:'Poppins',sans-serif;font-size:14px;">
         <div style="display:flex;align-items:center;gap:10px;">
             <i class="fas fa-exclamation-triangle"></i>
             <span>You are already signed in on <strong><?= $sessionCount ?> other device<?= $sessionCount > 1 ? 's' : '' ?></strong>. Want to revoke those sessions?</span>
@@ -1062,7 +1062,7 @@ try {
     ?>
     <?php if (!empty($_SESSION['_show_new_login_alert'])): ?>
     <?php $nlAlert = $_SESSION['_show_new_login_alert']; unset($_SESSION['_show_new_login_alert']); ?>
-    <div id="new-login-alert-banner" style="position:fixed;top:<?= !empty($_SESSION['_concurrent_session_warning']) ? '56px' : '0' ?>;left:0;right:0;z-index:99998;background:linear-gradient(135deg,#9945ff,#0099cc);color:#fff;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 20px rgba(0,0,0,0.4);font-family:'Poppins',sans-serif;font-size:14px;">
+    <div id="new-login-alert-banner" style="position:fixed;top:<?= !empty($_SESSION['_concurrent_session_warning']) ? '56px' : '0' ?>;left:0;right:0;z-index:99998;background:var(--cyan, #3b82f6);color:#fff;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 20px rgba(0,0,0,0.4);font-family:'Poppins',sans-serif;font-size:14px;">
         <div style="display:flex;align-items:center;gap:10px;">
             <i class="fas fa-sign-in-alt"></i>
             <span>⚠️ New login detected on your account from IP <strong><?= htmlspecialchars($nlAlert['ip'] ?? 'unknown', ENT_QUOTES) ?></strong>. Not you? <a href="/security" style="color:#fff;text-decoration:underline;">Review sessions</a></span>
@@ -1079,7 +1079,7 @@ try {
             if (existing) return; // already visible
             var banner = document.createElement('div');
             banner.id = 'new-login-alert-banner';
-            banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99998;background:linear-gradient(135deg,#9945ff,#0099cc);color:#fff;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 20px rgba(0,0,0,0.4);font-family:\'Poppins\',sans-serif;font-size:14px;';
+            banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99998;background:var(--cyan, #3b82f6);color:#fff;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 20px rgba(0,0,0,0.4);font-family:\'Poppins\',sans-serif;font-size:14px;';
             banner.innerHTML = '<div style="display:flex;align-items:center;gap:10px;"><i class="fas fa-sign-in-alt"></i><span>⚠️ New login detected on your account from IP <strong>' + (ip || 'unknown') + '</strong>. Not you? <a href="/security" style="color:#fff;text-decoration:underline;">Review sessions</a></span></div>'
                 + '<button onclick="this.parentElement.style.display=\'none\'" style="background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.4);color:#fff;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:13px;font-family:inherit;">✕</button>';
             document.body.insertBefore(banner, document.body.firstChild);
@@ -1133,7 +1133,7 @@ try {
                     <nav style="padding: 12px 0;">
                         <!-- Dashboard Section -->
                         <div class="nav-section" style="margin-bottom: 8px;">
-                            <a href="/dashboard" class="nav-item" style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.85rem;" onmouseover="this.style.background='rgba(0,240,255,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
+                            <a href="/dashboard" class="nav-item" style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.85rem;" onmouseover="this.style.background='rgba(59,130,246,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <rect x="3" y="3" width="7" height="7"></rect>
                                     <rect x="14" y="3" width="7" height="7"></rect>
@@ -1159,7 +1159,7 @@ try {
                             <?php if (in_array(Auth::user()['role'] ?? '', ['admin', 'super_admin'])): ?>
                             <div class="nav-text">
                                 <div style="font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 3px;">Role</div>
-                                <div style="display: inline-block; font-size: 0.7rem; padding: 3px 8px; background: rgba(0, 240, 255, 0.1); color: var(--cyan); border-radius: 4px; font-weight: 600; text-transform: capitalize;"><?= htmlspecialchars(Auth::user()['role'] ?? 'User') ?></div>
+                                <div style="display: inline-block; font-size: 0.7rem; padding: 3px 8px; background: rgba(59, 130, 246, 0.08); color: var(--cyan); border-radius: 4px; font-weight: 600; text-transform: capitalize;"><?= htmlspecialchars(Auth::user()['role'] ?? 'User') ?></div>
                             </div>
                             <?php endif; ?>
                         </div>
@@ -1180,35 +1180,35 @@ try {
                                     </svg>
                                 </div>
                                 <div class="nav-group-content" style="max-height: 0; overflow: hidden; transition: max-height 0.3s ease;">
-                                    <a href="/profile" class="nav-sub-item" style="display: flex; align-items: center; gap: 12px; padding: 8px 16px 8px 44px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.8rem;" onmouseover="this.style.background='rgba(0,240,255,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
+                                    <a href="/profile" class="nav-sub-item" style="display: flex; align-items: center; gap: 12px; padding: 8px 16px 8px 44px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.8rem;" onmouseover="this.style.background='rgba(59,130,246,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                                             <circle cx="12" cy="7" r="4"></circle>
                                         </svg>
                                         <span class="nav-text">Profile</span>
                                     </a>
-                                    <a href="/security" class="nav-sub-item" style="display: flex; align-items: center; gap: 12px; padding: 8px 16px 8px 44px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.8rem;" onmouseover="this.style.background='rgba(0,240,255,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
+                                    <a href="/security" class="nav-sub-item" style="display: flex; align-items: center; gap: 12px; padding: 8px 16px 8px 44px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.8rem;" onmouseover="this.style.background='rgba(59,130,246,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                                             <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                                         </svg>
                                         <span class="nav-text">Security Settings</span>
                                     </a>
-                                    <a href="/settings" class="nav-sub-item" style="display: flex; align-items: center; gap: 12px; padding: 8px 16px 8px 44px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.8rem;" onmouseover="this.style.background='rgba(0,240,255,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
+                                    <a href="/settings" class="nav-sub-item" style="display: flex; align-items: center; gap: 12px; padding: 8px 16px 8px 44px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.8rem;" onmouseover="this.style.background='rgba(59,130,246,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                             <circle cx="12" cy="12" r="3"></circle>
                                             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                                         </svg>
                                         <span class="nav-text">Settings</span>
                                     </a>
-                                    <a href="/2fa/setup" class="nav-sub-item" style="display: flex; align-items: center; gap: 12px; padding: 8px 16px 8px 44px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.8rem;" onmouseover="this.style.background='rgba(0,240,255,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
+                                    <a href="/2fa/setup" class="nav-sub-item" style="display: flex; align-items: center; gap: 12px; padding: 8px 16px 8px 44px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.8rem;" onmouseover="this.style.background='rgba(59,130,246,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
                                             <path d="M9 12l2 2 4-4"></path>
                                         </svg>
                                         <span class="nav-text">Two-Factor Authentication</span>
                                     </a>
-                                    <a href="/activity" class="nav-sub-item" style="display: flex; align-items: center; gap: 12px; padding: 8px 16px 8px 44px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.8rem;" onmouseover="this.style.background='rgba(0,240,255,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
+                                    <a href="/activity" class="nav-sub-item" style="display: flex; align-items: center; gap: 12px; padding: 8px 16px 8px 44px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.8rem;" onmouseover="this.style.background='rgba(59,130,246,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                             <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
                                         </svg>
@@ -1235,7 +1235,7 @@ try {
                                     $sidebarProjects[] = [
                                         'project_key' => $_k,
                                         'name'        => $_c['name'] ?? $_k,
-                                        'color'       => $_c['color'] ?? '#00f0ff',
+                                        'color'       => $_c['color'] ?? '#3b82f6',
                                         'url'         => $_c['url']  ?? '/projects/' . $_k,
                                         'logo_url'    => '',
                                         'icon'        => $_c['icon'] ?? '',
@@ -1275,7 +1275,7 @@ try {
                         ];
                         ?>
                         <div class="nav-section" style="margin-bottom: 8px;">
-                            <a href="/dashboard" class="nav-item" style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.85rem;" onmouseover="this.style.background='rgba(0,240,255,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
+                            <a href="/dashboard" class="nav-item" style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.85rem;" onmouseover="this.style.background='rgba(59,130,246,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                                 </svg>
@@ -1285,7 +1285,7 @@ try {
                             <!-- One collapsible group per enabled application -->
                             <?php foreach ($sidebarProjects as $_sp):
                                 $_key   = $_sp['project_key'] ?? '';
-                                $_color = htmlspecialchars($_sp['color'] ?? '#00f0ff');
+                                $_color = htmlspecialchars($_sp['color'] ?? '#3b82f6');
                                 $_svgIcon = $_iconMap[$_key] ?? '<rect x="3" y="3" width="18" height="18" rx="2"/>';
                                 $_userSubs = $_userRoutes[$_key] ?? [];
                                 $_baseUrl  = rtrim($_sp['url'] ?? '/projects/' . $_key, '/');
@@ -1309,7 +1309,7 @@ try {
                                         foreach ($_userSubs as $_label => $_sub):
                                             $_href = $_baseUrl . $_sub;
                                     ?>
-                                    <a href="<?= htmlspecialchars($_href) ?>" class="nav-sub-item" style="display: flex; align-items: center; gap: 10px; padding: 7px 16px 7px 44px; color: var(--text-secondary); text-decoration: none; transition: all 0.3s; font-size: 0.8rem;" onmouseover="this.style.background='rgba(0,240,255,0.08)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-secondary)'">
+                                    <a href="<?= htmlspecialchars($_href) ?>" class="nav-sub-item" style="display: flex; align-items: center; gap: 10px; padding: 7px 16px 7px 44px; color: var(--text-secondary); text-decoration: none; transition: all 0.3s; font-size: 0.8rem;" onmouseover="this.style.background='rgba(59,130,246,0.08)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-secondary)'">
                                         <?php if ($_label === 'Dashboard' || $_label === 'Overview'): ?>
                                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                                         <?php elseif (stripos($_label, 'file') !== false || stripos($_label, 'upload') !== false): ?>
@@ -1329,7 +1329,7 @@ try {
                                     </a>
                                     <?php endforeach;
                                     else: ?>
-                                    <a href="<?= htmlspecialchars($_baseUrl) ?>" class="nav-sub-item" style="display: flex; align-items: center; gap: 10px; padding: 7px 16px 7px 44px; color: var(--text-secondary); text-decoration: none; transition: all 0.3s; font-size: 0.8rem;" onmouseover="this.style.background='rgba(0,240,255,0.08)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-secondary)'">
+                                    <a href="<?= htmlspecialchars($_baseUrl) ?>" class="nav-sub-item" style="display: flex; align-items: center; gap: 10px; padding: 7px 16px 7px 44px; color: var(--text-secondary); text-decoration: none; transition: all 0.3s; font-size: 0.8rem;" onmouseover="this.style.background='rgba(59,130,246,0.08)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-secondary)'">
                                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                                         <span class="nav-text">Dashboard</span>
                                     </a>
@@ -1341,7 +1341,7 @@ try {
                         
                         <!-- Settings Section -->
                         <div class="nav-section" style="margin-bottom: 8px;">
-                            <a href="/settings" class="nav-item" style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.85rem;" onmouseover="this.style.background='rgba(0,240,255,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
+                            <a href="/settings" class="nav-item" style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.85rem;" onmouseover="this.style.background='rgba(59,130,246,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <circle cx="12" cy="12" r="3"></circle>
                                     <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
@@ -1364,14 +1364,14 @@ try {
                         <!-- Help & Support -->
                         <?php if (\Core\Auth::check()): ?>
                         <div class="nav-section" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-color);">
-                            <a href="/support/help" class="nav-item" style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.85rem;" onmouseover="this.style.background='rgba(0,240,255,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
+                            <a href="/support/help" class="nav-item" style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.85rem;" onmouseover="this.style.background='rgba(59,130,246,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z"></path>
                                     <path d="m9 12 2 2 4-4"></path>
                                 </svg>
                                 <span class="nav-text">My Tickets</span>
                             </a>
-                            <a href="/support" class="nav-item" style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.85rem;" onmouseover="this.style.background='rgba(0,240,255,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
+                            <a href="/support" class="nav-item" style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.85rem;" onmouseover="this.style.background='rgba(59,130,246,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <circle cx="12" cy="12" r="10"></circle>
                                     <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
@@ -1565,7 +1565,7 @@ try {
                     </div>
                     
                     <!-- Help & Support Card -->
-                    <div class="sidebar-card" style="background: linear-gradient(135deg, rgba(0, 240, 255, 0.1) 0%, rgba(255, 46, 196, 0.1) 100%); border: 1px solid var(--border-color); border-radius: 10px; padding: 16px;">
+                    <div class="sidebar-card" style="background: var(--bg-elevated, var(--bg-secondary)); border: 1px solid var(--border-color); border-radius: 10px; padding: 16px;">
                         <h3 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2">
                                 <circle cx="12" cy="12" r="10"></circle>
@@ -1596,7 +1596,7 @@ try {
             
             <style>
                 .sidebar-card a:hover {
-                    background: rgba(0, 240, 255, 0.1);
+                    background: rgba(59, 130, 246, 0.08);
                     border-color: var(--cyan);
                     transform: translateX(2px);
                 }
@@ -1684,20 +1684,20 @@ try {
                         right: auto;
                         width: 56px;
                         height: 56px;
-                        background: linear-gradient(135deg, var(--cyan), var(--magenta));
+                        background: var(--cyan);
                         border: none;
                         border-radius: 50%;
                         align-items: center;
                         justify-content: center;
                         cursor: pointer;
-                        box-shadow: 0 4px 20px rgba(0, 240, 255, 0.4);
+                        box-shadow: 0 4px 20px rgba(59, 130, 246, 0.25);
                         z-index: 9999;
                         transition: all 0.3s ease;
                     }
                     
                     .mobile-sidebar-toggle:hover {
                         transform: scale(1.1);
-                        box-shadow: 0 6px 25px rgba(0, 240, 255, 0.6);
+                        box-shadow: 0 6px 25px rgba(59, 130, 246, 0.35);
                     }
                     
                     .mobile-sidebar-toggle svg {
@@ -1799,7 +1799,7 @@ try {
                             const href = link.getAttribute('href');
                             if (href && (currentPath === href || currentPath.startsWith(href + '/'))) {
                                 link.style.color = 'var(--cyan)';
-                                link.style.background = 'rgba(0,240,255,0.08)';
+                                link.style.background = 'rgba(59,130,246,0.08)';
                                 hasActiveLink = true;
                             }
                         });
@@ -2091,13 +2091,13 @@ try {
                 if (!existing) {
                     var errEl = document.createElement('div');
                     errEl.className = 'client-form-error';
-                    errEl.style.cssText = 'color:#ff6b6b;font-size:12px;margin-top:4px;';
+                    errEl.style.cssText = 'color:#ef4444;font-size:12px;margin-top:4px;';
                     errEl.textContent = msg;
                     field.parentElement.appendChild(errEl);
                 } else {
                     existing.textContent = msg;
                 }
-                field.style.borderColor = '#ff6b6b';
+                field.style.borderColor = '#ef4444';
             }, true);
             form.addEventListener('input', function(e) {
                 var field = e.target;
@@ -2135,7 +2135,7 @@ try {
 
         var titleEl = document.createElement('div');
         titleEl.style.cssText = 'font-weight:600;color:var(--text-primary,#eee);font-size:.9rem;margin-bottom:4px;display:flex;align-items:center;gap:6px;';
-        titleEl.innerHTML = '<span style="width:8px;height:8px;border-radius:50%;background:var(--cyan,#00f0ff);flex-shrink:0;display:inline-block;"></span>New Notification';
+        titleEl.innerHTML = '<span style="width:8px;height:8px;border-radius:50%;background:var(--cyan,#3b82f6);flex-shrink:0;display:inline-block;"></span>New Notification';
 
         var msgEl = document.createElement('div');
         msgEl.style.cssText = 'color:var(--text-secondary,#aaa);font-size:.85rem;';
@@ -2210,15 +2210,15 @@ try {
 <!-- Support Live Chat Widget -->
 <div id="support-chat-widget">
     <!-- Chat bubble button -->
-    <button id="support-chat-btn" onclick="toggleSupportChat()" style="width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#00f0ff,#ff2ec4);border:none;cursor:pointer;box-shadow:0 4px 20px rgba(0,240,255,0.4);display:flex;align-items:center;justify-content:center;font-size:22px;color:white;transition:transform .2s;" title="Live Support">
+    <button id="support-chat-btn" onclick="toggleSupportChat()" style="width:54px;height:54px;border-radius:50%;background:var(--cyan);border:none;cursor:pointer;box-shadow:0 4px 20px rgba(59,130,246,0.4);display:flex;align-items:center;justify-content:center;font-size:22px;color:white;transition:transform .2s;" title="Live Support">
         <i class="fas fa-headset"></i>
     </button>
     <!-- Chat panel -->
     <div id="support-chat-panel">
         <!-- Header -->
-        <div style="background:linear-gradient(135deg,#00f0ff22,#ff2ec422);padding:14px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color,rgba(255,255,255,.08));">
+        <div style="background:linear-gradient(135deg,#3b82f608,#8b5cf608);padding:14px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color,rgba(255,255,255,.08));">
             <div style="display:flex;align-items:center;gap:8px;font-weight:600;color:var(--text-primary,#e8eefc);font-size:.95rem;">
-                <i class="fas fa-headset" style="color:#00f0ff;"></i> Live Support
+                <i class="fas fa-headset" style="color:#3b82f6;"></i> Live Support
             </div>
             <button onclick="toggleSupportChat()" style="background:none;border:none;color:var(--text-secondary,#8892a6);cursor:pointer;font-size:16px;"><i class="fas fa-times"></i></button>
         </div>
@@ -2230,7 +2230,7 @@ try {
             <input type="text" id="chat-guest-name" placeholder="Your name" style="width:100%;padding:10px;border:1px solid var(--border-color,rgba(255,255,255,.1));border-radius:8px;background:var(--bg-secondary,#0c0c12);color:var(--text-primary,#e8eefc);margin-bottom:10px;font-size:.85rem;box-sizing:border-box;">
             <input type="email" id="chat-guest-email" placeholder="Your email" style="width:100%;padding:10px;border:1px solid var(--border-color,rgba(255,255,255,.1));border-radius:8px;background:var(--bg-secondary,#0c0c12);color:var(--text-primary,#e8eefc);margin-bottom:10px;font-size:.85rem;box-sizing:border-box;">
             <?php endif; ?>
-            <button onclick="startSupportChat()" style="width:100%;padding:10px;background:linear-gradient(135deg,#00f0ff,#ff2ec4);border:none;border-radius:8px;color:white;font-weight:600;cursor:pointer;font-size:.9rem;">Start Chat</button>
+            <button onclick="startSupportChat()" style="width:100%;padding:10px;background:var(--cyan);border:none;border-radius:8px;color:white;font-weight:600;cursor:pointer;font-size:.9rem;">Start Chat</button>
         </div>
         <!-- Messages area -->
         <div id="chat-messages-area" style="display:none;flex-direction:column;height:300px;">
@@ -2238,11 +2238,11 @@ try {
             <!-- Message input -->
             <div style="padding:10px;border-top:1px solid var(--border-color,rgba(255,255,255,.08));display:flex;gap:8px;">
                 <input type="text" id="chat-input" placeholder="Type a message..." style="flex:1;padding:8px 12px;border:1px solid var(--border-color,rgba(255,255,255,.1));border-radius:20px;background:var(--bg-secondary,#0c0c12);color:var(--text-primary,#e8eefc);font-size:.85rem;" onkeydown="if(event.key==='Enter')sendChatMessage()">
-                <button onclick="sendChatMessage()" style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#00f0ff,#ff2ec4);border:none;cursor:pointer;color:white;font-size:14px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-paper-plane"></i></button>
+                <button onclick="sendChatMessage()" style="width:36px;height:36px;border-radius:50%;background:var(--cyan);border:none;cursor:pointer;color:white;font-size:14px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-paper-plane"></i></button>
             </div>
             <!-- Close chat button -->
             <div style="padding:6px 10px;border-top:1px solid var(--border-color,rgba(255,255,255,.08));text-align:center;">
-                <button onclick="closeSupportChat()" style="background:none;border:none;color:#ff6b6b;font-size:.78rem;cursor:pointer;">End this chat session</button>
+                <button onclick="closeSupportChat()" style="background:none;border:none;color:#ef4444;font-size:.78rem;cursor:pointer;">End this chat session</button>
             </div>
         </div>
     </div>
@@ -2368,7 +2368,7 @@ try {
             var div = document.createElement('div');
             var isUser = (m.sender_type === 'user' || m.sender_type === 'guest');
             div.style.cssText = 'max-width:80%;padding:8px 12px;border-radius:12px;font-size:.82rem;line-height:1.5;word-break:break-word;' +
-                (isUser ? 'align-self:flex-end;background:linear-gradient(135deg,rgba(0,240,255,.25),rgba(255,46,196,.2));margin-left:auto;' : 'align-self:flex-start;background:var(--bg-secondary,rgba(255,255,255,.06));border:1px solid var(--border-color,rgba(255,255,255,.08));');
+                (isUser ? 'align-self:flex-end;background:rgba(59,130,246,0.15);margin-left:auto;' : 'align-self:flex-start;background:var(--bg-secondary,rgba(255,255,255,.06));border:1px solid var(--border-color,rgba(255,255,255,.08));');
             div.style.color = 'var(--text-primary,#e8eefc)';
             div.textContent = m.message;
             container.appendChild(div);

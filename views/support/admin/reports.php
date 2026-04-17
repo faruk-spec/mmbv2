@@ -50,10 +50,10 @@ View::extend('main');
 
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:18px;">
             <?php foreach ([
-                ['open', 'Open', '#00f0ff'],
+                ['open', 'Open', '#3b82f6'],
                 ['in_progress', 'In Progress', '#ff9f43'],
                 ['waiting_customer', 'Waiting', '#a78bfa'],
-                ['resolved', 'Resolved', '#00ff88'],
+                ['resolved', 'Resolved', '#22c55e'],
                 ['closed', 'Closed', '#8892a6'],
                 ['total', 'Total', '#e8eefc'],
             ] as [$k, $l, $c]): ?>
@@ -66,7 +66,7 @@ View::extend('main');
 
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:18px;">
             <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:10px;padding:14px;">
-                <div style="font-size:1.25rem;font-weight:700;color:#00ff88;"><?= (float) ($kpi['resolution_rate'] ?? 0) ?>%</div>
+                <div style="font-size:1.25rem;font-weight:700;color:#22c55e;"><?= (float) ($kpi['resolution_rate'] ?? 0) ?>%</div>
                 <div style="font-size:.77rem;color:var(--text-secondary);">Resolution Rate</div>
             </div>
             <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:10px;padding:14px;">
@@ -78,7 +78,7 @@ View::extend('main');
                 <div style="font-size:.77rem;color:var(--text-secondary);">Active Workload</div>
             </div>
             <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:10px;padding:14px;">
-                <div style="font-size:1.25rem;font-weight:700;color:#ff6b6b;"><?= (int) ($kpi['unassigned_count'] ?? 0) ?></div>
+                <div style="font-size:1.25rem;font-weight:700;color:#ef4444;"><?= (int) ($kpi['unassigned_count'] ?? 0) ?></div>
                 <div style="font-size:.77rem;color:var(--text-secondary);">Unassigned Tickets</div>
             </div>
         </div>

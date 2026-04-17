@@ -15,31 +15,31 @@
     <style>
     /* ── CSS Variables ─────────────────────────────────────────── */
     :root[data-theme="dark"] {
-        --bg:            #06060a;
-        --bg-s:          #0c0c12;
-        --bg-card:       #0f0f18;
-        --cyan:          #00f0ff;
-        --magenta:       #ff2ec4;
-        --green:         #00ff88;
-        --orange:        #ffaa00;
-        --red:           #ff6b6b;
-        --text:          #e8eefc;
-        --text-m:        #8892a6;
-        --border:        rgba(255,255,255,.09);
+        --bg:            #09090b;
+        --bg-s:          #111113;
+        --bg-card:       #18181b;
+        --cyan:          #3b82f6;
+        --magenta:       #8b5cf6;
+        --green:         #22c55e;
+        --orange:        #f59e0b;
+        --red:           #ef4444;
+        --text:          #fafafa;
+        --text-m:        #a1a1aa;
+        --border:        rgba(255,255,255,.08);
         --topbar-h:      52px;
     }
     :root[data-theme="light"] {
-        --bg:            #f0f4ff;
+        --bg:            #fafafa;
         --bg-s:          #ffffff;
         --bg-card:       #ffffff;
-        --cyan:          #0099cc;
-        --magenta:       #cc0066;
-        --green:         #00aa55;
-        --orange:        #ff8800;
-        --red:           #dc3545;
-        --text:          #212529;
-        --text-m:        #6c757d;
-        --border:        rgba(0,0,0,.1);
+        --cyan:          #2563eb;
+        --magenta:       #7c3aed;
+        --green:         #16a34a;
+        --orange:        #d97706;
+        --red:           #dc2626;
+        --text:          #18181b;
+        --text-m:        #52525b;
+        --border:        rgba(0,0,0,.08);
         --topbar-h:      52px;
     }
 
@@ -79,9 +79,9 @@
     .ae-topbar-brand .logo-dot {
         width: 28px; height: 28px;
         border-radius: 8px;
-        background: linear-gradient(135deg, var(--cyan), var(--magenta));
+        background: var(--cyan);
         display: flex; align-items: center; justify-content: center;
-        font-size: 13px; font-weight: 700; color: #000;
+        font-size: 13px; font-weight: 700; color: #fff;
     }
     .ae-topbar-sep  { width: 1px; height: 22px; background: var(--border); flex-shrink: 0; }
     .ae-topbar-title { font-size: 13px; font-weight: 600; color: var(--text-m); white-space: nowrap; flex-shrink: 0; }
@@ -167,7 +167,7 @@
         <?php $user = Auth::user(); ?>
         <?php if ($user): ?>
         <div style="display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:8px;background:var(--bg-s);font-size:12px;color:var(--text-m);">
-            <div style="width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--magenta));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#000;">
+            <div style="width:24px;height:24px;border-radius:50%;background:var(--cyan);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;">
                 <?= strtoupper(substr($user['name'] ?? 'A', 0, 1)) ?>
             </div>
             <?= View::e($user['name'] ?? 'Admin') ?>

@@ -2317,13 +2317,13 @@
                         <div id="adminNotifPanel" style="display:none;position:absolute;top:calc(100% + 8px);right:0;width:320px;background:var(--bg-card);border:1px solid var(--border-color);border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,0.4);z-index:9999;">
                             <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border-color);">
                                 <strong style="font-size:14px;">Notifications</strong>
-                                <button id="adminMarkAll" style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--cyan,#00f0ff);font-family:inherit;padding:0;">Mark all read</button>
+                                <button id="adminMarkAll" style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--cyan,#3b82f6);font-family:inherit;padding:0;">Mark all read</button>
                             </div>
                             <div id="adminNotifList" style="max-height:340px;overflow-y:auto;">
                                 <div style="padding:20px;text-align:center;color:var(--text-secondary);font-size:13px;">Loading…</div>
                             </div>
                             <div style="padding:10px 16px;border-top:1px solid var(--border-color);text-align:center;">
-                                <a href="/admin/notifications/all" style="font-size:12px;color:var(--cyan,#00f0ff);">View all</a>
+                                <a href="/admin/notifications/all" style="font-size:12px;color:var(--cyan,#3b82f6);">View all</a>
                             </div>
                         </div>
                     </div>
@@ -2602,8 +2602,8 @@
                     }
                     updateBadge(data.unread_count);
                     list.innerHTML = data.notifications.map(n => `
-                        <div class="admin-notif-item" data-id="${n.id}" style="display:flex;gap:10px;align-items:flex-start;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.05);cursor:pointer;${n.is_read===1?'':'background:rgba(0,240,255,0.04)'}">
-                            <div style="width:8px;height:8px;border-radius:50%;background:${n.is_read===1?'transparent':'var(--cyan,#00f0ff)'};flex-shrink:0;margin-top:5px;"></div>
+                        <div class="admin-notif-item" data-id="${n.id}" style="display:flex;gap:10px;align-items:flex-start;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.05);cursor:pointer;${n.is_read===1?'':'background:rgba(59,130,246,0.04)'}">
+                            <div style="width:8px;height:8px;border-radius:50%;background:${n.is_read===1?'transparent':'var(--cyan,#3b82f6)'};flex-shrink:0;margin-top:5px;"></div>
                             <div style="flex:1;min-width:0;">
                                 <div style="font-size:13px;line-height:1.4;">${n.message}</div>
                                 <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">${timeAgo(n.created_at)}</div>
@@ -2678,7 +2678,7 @@
                 'animation:adminSseSlideIn .3s ease;';
             var titleEl = document.createElement('div');
             titleEl.style.cssText = 'font-weight:600;color:var(--text-primary,#eee);font-size:.875rem;margin-bottom:4px;display:flex;align-items:center;gap:6px;';
-            titleEl.innerHTML = '<span style="width:8px;height:8px;border-radius:50%;background:var(--cyan,#00f0ff);flex-shrink:0;display:inline-block;"></span>New Notification';
+            titleEl.innerHTML = '<span style="width:8px;height:8px;border-radius:50%;background:var(--cyan,#3b82f6);flex-shrink:0;display:inline-block;"></span>New Notification';
             var msgEl = document.createElement('div');
             msgEl.style.cssText = 'color:var(--text-secondary,#aaa);font-size:.825rem;';
             msgEl.textContent = notif.message;
@@ -2737,7 +2737,7 @@
         <div id="logoutCard"
              style="position:relative;z-index:1;background:var(--bg-card);border:1px solid var(--border-color);border-radius:20px;padding:40px 36px 32px;max-width:400px;width:calc(100% - 40px);text-align:center;transform:translateY(24px) scale(0.96);opacity:0;transition:transform 0.35s cubic-bezier(.34,1.56,.64,1),opacity 0.3s ease;box-shadow:0 24px 80px rgba(0,0,0,0.5);">
             <div style="width:64px;height:64px;border-radius:50%;background:rgba(255,107,107,0.12);border:1px solid rgba(255,107,107,0.3);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
-                <i class="fas fa-sign-out-alt" style="font-size:1.5rem;color:#ff6b6b;"></i>
+                <i class="fas fa-sign-out-alt" style="font-size:1.5rem;color:#ef4444;"></i>
             </div>
             <h3 style="font-size:1.25rem;font-weight:700;color:var(--text-primary);margin:0 0 8px;">Sign Out?</h3>
             <p style="font-size:0.9rem;color:var(--text-secondary);margin:0 0 28px;line-height:1.55;">You're about to sign out of the admin panel. Any unsaved changes will be lost.</p>
@@ -2747,7 +2747,7 @@
                     Cancel
                 </button>
                 <a href="/logout"
-                   style="flex:1;max-width:140px;padding:11px 20px;border-radius:10px;border:none;background:linear-gradient(135deg,#ff6b6b,#ff2ec4);color:#fff;font-size:0.9rem;font-weight:600;cursor:pointer;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px;">
+                   style="flex:1;max-width:140px;padding:11px 20px;border-radius:10px;border:none;background:#ef4444;color:#fff;font-size:0.9rem;font-weight:600;cursor:pointer;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px;">
                     <i class="fas fa-sign-out-alt"></i> Sign Out
                 </a>
             </div>

@@ -32,7 +32,7 @@ View::extend('main');
             $announcements = [
                 [
                     'type'    => 'update',
-                    'color'   => '#00f0ff',
+                    'color'   => '#3b82f6',
                     'icon'    => 'sparkles',
                     'title'   => 'Support Portal Launched',
                     'date'    => 'April 2025',

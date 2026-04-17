@@ -3,135 +3,97 @@
 
 <?php View::section('styles'); ?>
 <style>
-    /* ===== FUTURISTIC HOMEPAGE DESIGN SYSTEM ===== */
+    /* ===== PROFESSIONAL HOMEPAGE DESIGN SYSTEM ===== */
 
-    /* Dark mode: futuristic background base */
-    [data-theme="dark"] body,
-    html:not([data-theme="light"]) body {
-        background: #0b0f19 !important;
-    }
-
-    /* Gradient text: purple → cyan */
+    /* Gradient text: clean blue accent */
     .hp-grad-text {
-        background: linear-gradient(135deg, #7C3AED, #00F5FF);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
+        color: var(--cyan);
+        font-weight: 600;
     }
 
-    /* Hero h1 gradient override */
+    /* Hero h1 styling */
     .hero h1 {
-        background: linear-gradient(135deg, #7C3AED, #00F5FF) !important;
-        -webkit-background-clip: text !important;
-        -webkit-text-fill-color: transparent !important;
-        background-clip: text !important;
+        color: var(--text-primary) !important;
+        -webkit-text-fill-color: unset !important;
     }
 
-    /* Stat value gradient override */
+    /* Stat value styling */
     .stat-value {
         font-size: 2.5rem;
         font-weight: 700;
-        background: linear-gradient(135deg, #7C3AED, #00F5FF) !important;
-        -webkit-background-clip: text !important;
-        -webkit-text-fill-color: transparent !important;
-        background-clip: text !important;
+        color: var(--text-primary) !important;
+        -webkit-text-fill-color: unset !important;
         margin-bottom: 8px;
-        animation: fadeIn 1s ease-out;
     }
 
-    /* Glassmorphism cards - dark mode */
+    /* Clean card design — dark mode */
     [data-theme="dark"] .card,
     html:not([data-theme="light"]) .card {
-        --card-inner-bg: rgba(11, 15, 25, 0.92);
-        background: rgba(11, 15, 25, 0.6) !important;
-        backdrop-filter: blur(14px) !important;
-        -webkit-backdrop-filter: blur(14px) !important;
-        border: 1px solid rgba(124, 58, 237, 0.2) !important;
-        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(124, 58, 237, 0.1) !important;
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-color) !important;
+        box-shadow: var(--shadow-sm) !important;
     }
 
-    /* Glassmorphism cards - light mode */
+    /* Clean card design — light mode */
     [data-theme="light"] .card {
-        background: rgba(255, 255, 255, 0.7) !important;
-        backdrop-filter: blur(12px) !important;
-        -webkit-backdrop-filter: blur(12px) !important;
-        border: 1px solid rgba(124, 58, 237, 0.15) !important;
-        box-shadow: 0 4px 20px rgba(124, 58, 237, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-color) !important;
+        box-shadow: var(--shadow-sm) !important;
     }
 
-    /* Smooth card hover transitions with neon accent */
+    /* Subtle card hover */
     .card {
-        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                    box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                    border-color 0.3s ease !important;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
     }
 
     .card:hover {
-        transform: translateY(-5px) !important;
-        border-color: rgba(0, 245, 255, 0.35) !important;
-        box-shadow: 0 12px 36px rgba(124, 58, 237, 0.25), 0 0 0 1px rgba(0, 245, 255, 0.1) !important;
+        border-color: var(--border-hover) !important;
+        box-shadow: var(--shadow-md) !important;
+        transform: none !important;
     }
 
     .stat-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 12px 36px rgba(124, 58, 237, 0.25) !important;
+        box-shadow: var(--shadow-md) !important;
+        transform: none;
     }
 
-    /* Hero banner neon glow */
+    /* Hero banner */
     .hero-banner {
         max-width: 100%;
         height: auto;
         border-radius: 12px;
-        box-shadow: 0 0 40px rgba(124, 58, 237, 0.3) !important;
+        box-shadow: var(--shadow-md) !important;
         margin-bottom: 30px;
-        animation: fadeIn 0.8s ease-out;
     }
 
-    /* Timeline badge with neon pulse */
+    /* Timeline badge */
     .timeline-badge {
         position: absolute;
         left: 0;
-        width: 50px;
-        height: 50px;
-        background: linear-gradient(135deg, #7C3AED, #00F5FF) !important;
+        width: 44px;
+        height: 44px;
+        background: var(--cyan) !important;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-weight: 700;
+        font-weight: 600;
         color: white;
         font-size: 13px;
-        animation: hp-pulse 2.5s ease-in-out infinite;
     }
 
-    /* Subtle pulse animation */
-    @keyframes hp-pulse {
-        0%, 100% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.5); }
-        50% { box-shadow: 0 0 0 10px rgba(124, 58, 237, 0); }
-    }
-
-    /* Primary button: purple → cyan gradient */
+    /* Primary button: solid blue */
     .btn-primary {
-        background: linear-gradient(135deg, #7C3AED, #00F5FF) !important;
-        box-shadow: 0 4px 15px rgba(124, 58, 237, 0.35) !important;
+        background: var(--cyan) !important;
+        box-shadow: none !important;
         color: #fff !important;
     }
 
     .btn-primary:hover {
-        box-shadow: 0 6px 25px rgba(124, 58, 237, 0.55) !important;
-        transform: translateY(-2px) !important;
+        opacity: 0.9 !important;
+        box-shadow: var(--shadow-sm) !important;
+        transform: none !important;
         -webkit-text-fill-color: #fff !important;
-    }
-
-    /* Animate fade in */
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(20px); }
-        to   { opacity: 1; transform: translateY(0); }
-    }
-
-    .animate-fade-in {
-        animation: fadeIn 0.6s ease-out forwards;
-        opacity: 0;
     }
 
     /* Timeline item */
@@ -141,29 +103,13 @@
         margin-bottom: 30px;
     }
 
-    /* Mouse glow layer */
+    /* Remove mouse glow and particles for clean design */
     #hp-mouse-glow {
-        position: fixed;
-        width: 480px;
-        height: 480px;
-        border-radius: 50%;
-        background: radial-gradient(circle, rgba(124, 58, 237, 0.18) 0%, rgba(0, 245, 255, 0.06) 40%, transparent 70%);
-        pointer-events: none;
-        transform: translate(-50%, -50%);
-        z-index: 0;
-        opacity: 0;
-        transition: opacity 0.4s ease;
+        display: none !important;
     }
 
-    /* Particles canvas */
     #hp-particles {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-        z-index: 0;
+        display: none !important;
     }
 
     /* Keep content above background layers */
@@ -176,45 +122,33 @@
 
     /* Light mode card text stays readable */
     [data-theme="light"] .card {
-        color: #1a1a1a !important;
+        color: var(--text-primary) !important;
     }
 
-    /* Light mode — home page specific fixes */
+    /* Light mode fixes */
     [data-theme="light"] .hero h1 {
-        background: linear-gradient(135deg, #7C3AED, #0369a1) !important;
-        -webkit-background-clip: text !important;
-        -webkit-text-fill-color: transparent !important;
-        background-clip: text !important;
-    }
-
-    [data-theme="light"] .hp-grad-text {
-        background: linear-gradient(135deg, #7C3AED, #0369a1);
+        color: var(--text-primary) !important;
     }
 
     [data-theme="light"] .stat-value {
-        background: linear-gradient(135deg, #7C3AED, #0369a1) !important;
+        color: var(--text-primary) !important;
     }
 
     [data-theme="light"] .btn-primary {
-        background: linear-gradient(135deg, #7C3AED, #0369a1) !important;
-        box-shadow: 0 4px 15px rgba(124, 58, 237, 0.30) !important;
+        background: var(--cyan) !important;
     }
 
     [data-theme="light"] .timeline-badge {
-        background: linear-gradient(135deg, #7C3AED, #0369a1) !important;
+        background: var(--cyan) !important;
     }
 
     [data-theme="light"] .project-card:hover {
-        box-shadow: 0 8px 28px rgba(124, 58, 237, 0.18) !important;
-    }
-
-    [data-theme="light"] #hp-mouse-glow {
-        background: radial-gradient(circle, rgba(124, 58, 237, 0.10) 0%, rgba(3, 105, 161, 0.04) 40%, transparent 70%);
+        box-shadow: var(--shadow-md) !important;
     }
 
     [data-theme="light"] .card:hover {
-        border-color: rgba(124, 58, 237, 0.30) !important;
-        box-shadow: 0 12px 36px rgba(124, 58, 237, 0.18), 0 0 0 1px rgba(124, 58, 237, 0.08) !important;
+        border-color: var(--border-hover) !important;
+        box-shadow: var(--shadow-md) !important;
     }
 
     @media (max-width: 768px) {
@@ -286,7 +220,7 @@ $featuresSubheading = $sections['features']['subheading'] ?? 'Powerful capabilit
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center;">
         <!-- Left side: Text content -->
         <div style="text-align: left;">
-            <h1 style="font-size: 2.5rem; margin-bottom: 16px; background: linear-gradient(135deg, var(--cyan), var(--magenta)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1.2;">
+            <h1 style="font-size: 2.5rem; margin-bottom: 16px; color: var(--text-primary); line-height: 1.2; font-weight: 700; letter-spacing: -0.02em;">
                 <?= htmlspecialchars($heroTitle) ?>
             </h1>
             <?php if ($heroSubtitle && $heroSubtitle !== $heroTitle): ?>
@@ -329,7 +263,7 @@ $featuresSubheading = $sections['features']['subheading'] ?? 'Powerful capabilit
             </div>
             <?php else: ?>
                 <!-- Placeholder if no slides -->
-                <div style="width: 100%; aspect-ratio: 16/10; background: linear-gradient(135deg, rgba(0, 240, 255, 0.1), rgba(255, 46, 196, 0.1)); border-radius: 12px; display: flex; align-items: center; justify-content: center; border: 2px dashed var(--border-color);">
+                <div style="width: 100%; aspect-ratio: 16/10; background: var(--bg-card); border-radius: 12px; display: flex; align-items: center; justify-content: center; border: 2px dashed var(--border-color);">
                     <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.5">
                         <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
                         <circle cx="8.5" cy="8.5" r="1.5"></circle>
@@ -432,7 +366,7 @@ $featuresSubheading = $sections['features']['subheading'] ?? 'Powerful capabilit
 
 <div class="grid grid-3" style="margin-top: 40px; max-width: 1400px; margin-left: auto; margin-right: auto;">
     <div class="card animate-fade-in" style="animation-delay: 0.1s;">
-        <div style="width: 45px; height: 45px; background: rgba(0, 240, 255, 0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+        <div style="width: 45px; height: 45px; background: rgba(59, 130, 246, 0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
             </svg>
@@ -444,7 +378,7 @@ $featuresSubheading = $sections['features']['subheading'] ?? 'Powerful capabilit
     </div>
     
     <div class="card animate-fade-in" style="animation-delay: 0.2s;">
-        <div style="width: 45px; height: 45px; background: rgba(255, 46, 196, 0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+        <div style="width: 45px; height: 45px; background: rgba(139, 92, 246, 0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--magenta)" stroke-width="2">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
                 <circle cx="9" cy="7" r="4"/>
@@ -459,7 +393,7 @@ $featuresSubheading = $sections['features']['subheading'] ?? 'Powerful capabilit
     </div>
     
     <div class="card animate-fade-in" style="animation-delay: 0.3s;">
-        <div style="width: 45px; height: 45px; background: rgba(0, 255, 136, 0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+        <div style="width: 45px; height: 45px; background: rgba(34, 197, 94, 0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2">
                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
                 <line x1="3" y1="9" x2="21" y2="9"/>
@@ -570,7 +504,7 @@ if ($showStats):
         foreach ($projects as $key => $project): 
             // Handle both database and config array formats
             $projectName = $project['name'] ?? '';
-            $projectColor = $project['color'] ?? '#00f0ff';
+            $projectColor = $project['color'] ?? '#3b82f6';
             $projectUrl = $project['url'] ?? '';
             $projectTier = $project['tier'] ?? 'free';
             $showFeaturesText = $project['show_features_text'] ?? 'Show Features';
@@ -609,7 +543,7 @@ if ($showStats):
             <!-- Tier badge – absolute top-right -->
             <?php
             $badgeStyles = [
-                'free'       => 'background:rgba(0,255,136,0.28);color:#00ff88;border:1px solid rgba(0,255,136,0.55);',
+                'free'       => 'background:rgba(34,197,94,0.15);color:#22c55e;border:1px solid rgba(34,197,94,0.35);',
                 'freemium'   => 'background:rgba(255,170,0,0.28);color:#ffaa00;border:1px solid rgba(255,170,0,0.55);',
                 'enterprise' => 'background:rgba(153,69,255,0.28);color:#bb88ff;border:1px solid rgba(153,69,255,0.55);',
             ];
@@ -680,7 +614,7 @@ if ($showStats):
 }
 
 .filter-btn:hover {
-    box-shadow: 0 4px 12px rgba(0, 240, 255, 0.25);
+    box-shadow: var(--shadow-md);
 }
 
 .filter-btn.active {
@@ -899,7 +833,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-<div style="margin-top: 60px; padding: 40px 20px; background: rgba(0, 240, 255, 0.02); border-radius: 16px; max-width: 1500px; margin-left: auto; margin-right: auto;">
+<div style="margin-top: 60px; padding: 40px 20px; background: rgba(59, 130, 246, 0.02); border-radius: 16px; max-width: 1500px; margin-left: auto; margin-right: auto;">
     <div style="text-align: center; margin-bottom: 30px;">
         <h2 style="margin-bottom: 12px; font-size: 1.75rem;"><?= htmlspecialchars($featuresHeading) ?></h2>
         <p style="color: var(--text-secondary); font-size: 0.95rem;"><?= htmlspecialchars($featuresSubheading) ?></p>
@@ -907,7 +841,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     <div class="grid grid-4" style="padding: 0 10px;">
         <div class="animate-fade-in" style="text-align: center; padding: 16px; animation-delay: 0s;">
-            <div style="width: 45px; height: 45px; background: rgba(0, 240, 255, 0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;">
+            <div style="width: 45px; height: 45px; background: rgba(59, 130, 246, 0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
                     <polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
                 </svg>
@@ -917,7 +851,7 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
         
         <div class="animate-fade-in" style="text-align: center; padding: 16px; animation-delay: 0.1s;">
-            <div style="width: 45px; height: 45px; background: rgba(255, 46, 196, 0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;">
+            <div style="width: 45px; height: 45px; background: rgba(139, 92, 246, 0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--magenta)" stroke-width="2">
                     <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
                     <polyline points="16 6 12 2 8 6"/>
@@ -929,7 +863,7 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
         
         <div class="animate-fade-in" style="text-align: center; padding: 16px; animation-delay: 0.2s;">
-            <div style="width: 45px; height: 45px; background: rgba(0, 255, 136, 0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;">
+            <div style="width: 45px; height: 45px; background: rgba(34, 197, 94, 0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2">
                     <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
                     <path d="M1.42 9a16 16 0 0 1 21.16 0"/>
@@ -966,7 +900,7 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
         
         <div class="animate-fade-in" style="text-align: center; padding: 16px; animation-delay: 0.5s;">
-            <div style="width: 45px; height: 45px; background: rgba(0, 240, 255, 0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;">
+            <div style="width: 45px; height: 45px; background: rgba(59, 130, 246, 0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
                     <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
                     <polyline points="7.5 4.21 12 6.81 16.5 4.21"/>
@@ -981,7 +915,7 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
         
         <div class="animate-fade-in" style="text-align: center; padding: 16px; animation-delay: 0.6s;">
-            <div style="width: 45px; height: 45px; background: rgba(255, 46, 196, 0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;">
+            <div style="width: 45px; height: 45px; background: rgba(139, 92, 246, 0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--magenta)" stroke-width="2">
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                     <polyline points="14 2 14 8 20 8"/>
@@ -995,7 +929,7 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
         
         <div class="animate-fade-in" style="text-align: center; padding: 16px; animation-delay: 0.7s;">
-            <div style="width: 45px; height: 45px; background: rgba(0, 255, 136, 0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;">
+            <div style="width: 45px; height: 45px; background: rgba(34, 197, 94, 0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2">
                     <circle cx="18" cy="5" r="3"/>
                     <circle cx="6" cy="12" r="3"/>
@@ -1025,14 +959,14 @@ $timelineItems = $db->fetchAll("SELECT * FROM home_timeline WHERE is_active = 1 
     
     <div style="max-width: 900px; margin: 0 auto; position: relative; padding: 0 40px;">
         <!-- Timeline Line -->
-        <div style="position: absolute; left: 50%; transform: translateX(-50%); top: 0; bottom: 0; width: 2px; background: linear-gradient(180deg, var(--cyan), var(--magenta), var(--green), var(--orange)); opacity: 0.3;"></div>
+        <div style="position: absolute; left: 50%; transform: translateX(-50%); top: 0; bottom: 0; width: 2px; background: var(--border-color);"></div>
         
         <?php 
         $isLeft = true;
         foreach ($timelineItems as $index => $item): 
-            $itemColor = $item['color'] ?? '#00f0ff';
+            $itemColor = $item['color'] ?? '#3b82f6';
             if (!preg_match('/^#[0-9A-Fa-f]{6}$/', $itemColor)) {
-                $itemColor = '#00f0ff';
+                $itemColor = '#3b82f6';
             }
             $side = $isLeft ? 'left' : 'right';
             $isLeft = !$isLeft;

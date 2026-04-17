@@ -3,7 +3,7 @@
 
 <?php View::section('content'); ?>
 <?php if (Helpers::hasFlash('success')): ?>
-    <div class="alert alert-success" style="margin-bottom: 24px; padding: 16px; background: rgba(0, 255, 136, 0.1); border: 1px solid var(--green); border-radius: 8px; color: var(--green);">
+    <div class="alert alert-success" style="margin-bottom: 24px; padding: 16px; background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.25); border-radius: 8px; color: var(--green);">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
             <polyline points="22 4 12 14.01 9 11.01"></polyline>
@@ -14,7 +14,7 @@
 
 <!-- Applications Grid -->
 <div class="card" style="border-radius: 12px; overflow: hidden; margin-bottom: 24px;">
-    <div class="card-header" style="background: linear-gradient(135deg, rgba(0, 240, 255, 0.1) 0%, rgba(255, 46, 196, 0.1) 100%); border-bottom: 1px solid var(--border-color); padding: 16px;">
+    <div class="card-header" style="background: var(--bg-elevated, var(--bg-secondary)); border-bottom: 1px solid var(--border-color); padding: 16px;">
         <h3 class="card-title" style="font-size: 0.95rem; display: flex; align-items: center; gap: 8px; font-weight: 600;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
                 <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
@@ -29,8 +29,8 @@
         <?php else: ?>
             <div class="applications-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 16px;">
                 <?php foreach ($projects as $key => $project): 
-                    $cardColor = htmlspecialchars($project['color'] ?? '#00f0ff');
-                    if (!preg_match('/^#[0-9A-Fa-f]{6}$/', $cardColor)) { $cardColor = '#00f0ff'; }
+                    $cardColor = htmlspecialchars($project['color'] ?? '#3b82f6');
+                    if (!preg_match('/^#[0-9A-Fa-f]{6}$/', $cardColor)) { $cardColor = '#3b82f6'; }
                 ?>
                     <a href="<?= htmlspecialchars($project['url'] ?? '/projects/' . $key) ?>" class="application-card" style="display: flex; flex-direction: column; align-items: center; justify-content: flex-start; background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border-color); padding: 20px 12px 16px; transition: all 0.3s ease; text-align: center; text-decoration: none; color: inherit; min-height: 155px;">
                         <div style="width: 60px; height: 60px; min-width: 60px; min-height: 60px; background: <?= $cardColor ?>20; border-radius: 14px; border: 2px solid <?= $cardColor ?>40; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; overflow: hidden; flex-shrink: 0;">
@@ -52,9 +52,9 @@
 <style>
     .application-card:hover {
         background: var(--bg-card) !important;
-        border-color: var(--cyan) !important;
-        transform: translateY(-5px);
-        box-shadow: 0 8px 30px rgba(0, 240, 255, 0.2);
+        border-color: var(--border-hover) !important;
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
         text-decoration: none;
         color: inherit;
     }
@@ -67,7 +67,7 @@
         background: var(--bg-secondary);
         border: 1px solid var(--border-color);
         border-radius: 10px;
-        transition: all 0.3s ease;
+        transition: all 0.2s ease;
         cursor: pointer;
         text-decoration: none;
         color: var(--text-primary);
@@ -75,9 +75,9 @@
     
     .quick-action-btn:hover {
         background: var(--bg-card);
-        border-color: var(--cyan);
-        transform: translateY(-2px);
-        box-shadow: 0 4px 15px rgba(0, 240, 255, 0.2);
+        border-color: var(--border-hover);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-sm);
     }
     
     /* Collapsible section styles */

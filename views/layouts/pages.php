@@ -22,7 +22,7 @@ try {
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root { --bg-primary:#06060a;--bg-secondary:#0c0c12;--bg-card:#0f0f18;--cyan:#00f0ff;--magenta:#ff2ec4;--green:#00ff88;--orange:#ffaa00;--purple:#9945ff;--red:#ff6b6b;--text-primary:#e8eefc;--text-secondary:#8892a6;--border-color:rgba(255,255,255,0.1);--shadow:0 4px 20px rgba(0,0,0,0.3);--transition:all 0.3s ease; }
+        :root { --bg-primary:#06060a;--bg-secondary:#0c0c12;--bg-card:#0f0f18;--cyan:#3b82f6;--magenta:#8b5cf6;--green:#22c55e;--orange:#f59e0b;--purple:#8b5cf6;--red:#ef4444;--text-primary:#e8eefc;--text-secondary:#8892a6;--border-color:rgba(255,255,255,0.1);--shadow:0 4px 20px rgba(0,0,0,0.3);--transition:all 0.3s ease; }
         [data-theme="light"]{--bg-primary:#f0f4ff;--bg-secondary:#ffffff;--bg-card:#ffffff;--cyan:#0369a1;--magenta:#c026d3;--green:#059669;--orange:#d97706;--purple:#7c3aed;--red:#dc2626;--text-primary:#1a1a1a;--text-secondary:#555555;--border-color:rgba(0,0,0,0.1);--shadow:0 4px 20px rgba(0,0,0,0.12);}
         *{margin:0;padding:0;box-sizing:border-box;}
         body{font-family:'Poppins',sans-serif;background:var(--bg-primary);color:var(--text-primary);min-height:100vh;line-height:1.6;font-size:14px;overflow-x:hidden;}
