@@ -584,18 +584,18 @@ const shadowMap = {
     strong: { sm: '0 2px 4px rgba(0,0,0,0.08)', md: '0 6px 18px rgba(0,0,0,0.14)', lg: '0 12px 36px rgba(0,0,0,0.20)', card: '0 2px 6px rgba(0,0,0,0.10), 0 1px 3px rgba(0,0,0,0.06)' }
 };
 
+// Helper: get color override value (text inputs take precedence, fallback to theme default)
+function getOv(key, fallback) {
+    const textEl = document.querySelector(`.color-text-input[data-for="override_${key}"]`);
+    return (textEl && textEl.value && /^#[0-9A-Fa-f]{6}$/.test(textEl.value)) ? textEl.value : fallback;
+}
+
 function updatePreview() {
     if (!previewEl) return;
     // Gather current form state
     const selectedTheme = document.querySelector('[name="active_theme"]:checked')?.value || 'default';
     const selectedMode = document.querySelector('[name="default_mode"]:checked')?.value || 'dark';
     const tokens = themeTokens[selectedTheme]?.[selectedMode] || themeTokens.default.dark;
-
-    // Get override colors (text inputs take precedence, use theme default if empty)
-    const getOv = (key, fallback) => {
-        const textEl = document.querySelector(`.color-text-input[data-for="override_${key}"]`);
-        return (textEl && textEl.value && /^#[0-9A-Fa-f]{6}$/.test(textEl.value)) ? textEl.value : fallback;
-    };
 
     const cyan    = getOv('cyan', tokens.cyan);
     const magenta = getOv('magenta', tokens.magenta);
