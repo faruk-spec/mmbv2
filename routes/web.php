@@ -23,6 +23,9 @@ $router->post('/register', 'AuthController@register');
 $router->get('/logout', 'AuthController@logout');
 $router->post('/logout', 'AuthController@logout');
 
+// Captcha image (public, no auth required)
+$router->get('/captcha', 'CaptchaController@image');
+
 // Password reset
 $router->get('/forgot-password', 'AuthController@showForgotPassword');
 $router->post('/forgot-password', 'AuthController@forgotPassword');

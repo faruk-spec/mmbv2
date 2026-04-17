@@ -51,6 +51,9 @@ class App
      */
     public function run(): void
     {
+        // Add security headers to every response
+        $this->sendSecurityHeaders();
+
         try {
             // Get request method
             $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
@@ -72,6 +75,39 @@ class App
         } catch (\Exception $e) {
             Logger::error('Application error: ' . $e->getMessage());
             $this->handleError($e);
+        }
+    }
+
+    /**
+     * Send standard security headers on every response.
+     * These prevent MIME-type sniffing, clickjacking, and information leakage.
+     */
+    protected function sendSecurityHeaders(): void
+    {
+        if (headers_sent()) {
+            return;
+        }
+
+        // Prevent MIME-type sniffing
+        header('X-Content-Type-Options: nosniff');
+
+        // Prevent clickjacking
+        header('X-Frame-Options: SAMEORIGIN');
+
+        // Basic XSS protection for older browsers
+        header('X-XSS-Protection: 1; mode=block');
+
+        // Referrer policy — don't leak full URL to third parties
+        header('Referrer-Policy: strict-origin-when-cross-origin');
+
+        // Remove server fingerprinting headers
+        header_remove('X-Powered-By');
+        header_remove('Server');
+
+        // In production, suppress detailed PHP error output in responses
+        if (!defined('APP_DEBUG') || !APP_DEBUG) {
+            @ini_set('display_errors', '0');
+            @ini_set('display_startup_errors', '0');
         }
     }
     

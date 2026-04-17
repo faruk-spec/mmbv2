@@ -239,6 +239,14 @@ $router->get('/admin/settings/theme', 'Admin\\ThemeController@index', ['auth', '
 $router->post('/admin/settings/theme', 'Admin\\ThemeController@update', ['auth', 'admin']);
 $router->get('/admin/api/theme', 'Admin\\ThemeController@getThemeApi', ['auth', 'admin']);
 
+// Preloader & Skeleton Settings
+$router->get('/admin/settings/preloader', 'Admin\\PreloaderController@index', ['auth', 'admin']);
+$router->post('/admin/settings/preloader', 'Admin\\PreloaderController@update', ['auth', 'admin']);
+
+// Captcha Settings
+$router->get('/admin/settings/captcha', 'Admin\\CaptchaAdminController@index', ['auth', 'admin']);
+$router->post('/admin/settings/captcha', 'Admin\\CaptchaAdminController@update', ['auth', 'admin']);
+
 // ── Tools ─────────────────────────────────────────────────────────────────────
 $router->get('/admin/tools/scanner', 'Admin\\ToolsController@scanner', ['auth', 'admin']);
 $router->post('/admin/tools/scanner', 'Admin\\ToolsController@scanUrl', ['auth', 'admin']);

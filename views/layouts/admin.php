@@ -1071,12 +1071,112 @@
         .alert-warning {
             border-left: 3px solid var(--orange);
         }
+        /* ===== Preloader ===== */
+        #mmb-preloader {
+            position: fixed;
+            inset: 0;
+            z-index: 999999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity .4s ease, visibility .4s ease;
+        }
+        #mmb-preloader.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        @keyframes waveChar  { 0%{transform:translateY(0)} 100%{transform:translateY(-10px)} }
+        @keyframes pulseText { 0%,100%{opacity:1} 50%{opacity:.3} }
+        @keyframes spinIcon  { to{transform:rotate(360deg)} }
+        @keyframes bounceText{ 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+
+        /* ===== Skeleton ===== */
+        .skeleton {
+            background: linear-gradient(90deg, rgba(255,255,255,.06) 25%, rgba(255,255,255,.12) 50%, rgba(255,255,255,.06) 75%);
+            background-size: 200% 100%;
+            animation: skeletonShimmer 1.4s infinite;
+            border-radius: 6px;
+        }
+        @keyframes skeletonShimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+        .skeleton-line  { height: 14px; margin-bottom: 8px; border-radius: 4px; }
+        .skeleton-block { border-radius: 8px; }
+
+        /* ===== Action loader spinner ===== */
+        .mmb-btn-loading { pointer-events:none; opacity:.75; }
+        .mmb-btn-loading::after {
+            content:'';
+            display:inline-block;
+            width:14px; height:14px;
+            margin-left:8px;
+            border:2px solid rgba(255,255,255,.35);
+            border-top-color:#fff;
+            border-radius:50%;
+            animation:spinIcon .7s linear infinite;
+            vertical-align:middle;
+        }
     </style>
     
     <?php View::yield('styles'); ?>
     <?php include __DIR__ . '/../partials/universal-theme-override.php'; ?>
 </head>
 <body>
+<?php
+// ── Admin preloader injection ─────────────────────────────────────────────
+try {
+    $_apDb = \Core\Database::getInstance();
+    $_apEnabled = $_apDb->fetch("SELECT value FROM settings WHERE `key` = 'preloader_enabled'");
+    if ($_apEnabled && $_apEnabled['value'] === '1') {
+        $_apType    = ($_apDb->fetch("SELECT value FROM settings WHERE `key` = 'preloader_type'")['value'] ?? 'text');
+        $_apText    = htmlspecialchars($_apDb->fetch("SELECT value FROM settings WHERE `key` = 'preloader_text'")['value'] ?? 'Loading…', ENT_QUOTES);
+        $_apColor   = htmlspecialchars($_apDb->fetch("SELECT value FROM settings WHERE `key` = 'preloader_text_color'")['value'] ?? '#00f0ff', ENT_QUOTES);
+        $_apBg      = htmlspecialchars($_apDb->fetch("SELECT value FROM settings WHERE `key` = 'preloader_bg_color'")['value'] ?? '#06060a', ENT_QUOTES);
+        $_apAnim    = $_apDb->fetch("SELECT value FROM settings WHERE `key` = 'preloader_animation'")['value'] ?? 'wave';
+        $_apSpeed   = (int)($_apDb->fetch("SELECT value FROM settings WHERE `key` = 'preloader_speed'")['value'] ?? 800);
+        $_apImg     = $_apDb->fetch("SELECT value FROM settings WHERE `key` = 'preloader_image_path'")['value'] ?? '';
+        ?>
+<div id="mmb-preloader" style="background:<?= $_apBg ?>;">
+    <?php if ($_apType === 'image' && !empty($_apImg)): ?>
+        <img src="<?= htmlspecialchars($_apImg, ENT_QUOTES) ?>" alt="Loading" style="max-width:180px;max-height:180px;">
+    <?php elseif ($_apAnim === 'wave'): ?>
+        <div style="font-family:'Poppins',sans-serif;font-size:1.4rem;font-weight:700;letter-spacing:4px;">
+            <?php foreach (str_split($_apText) as $i => $c): ?><span style="display:inline-block;color:<?= $_apColor ?>;animation:waveChar <?= $_apSpeed ?>ms ease-in-out <?= $i * 80 ?>ms infinite alternate;"><?= $c === ' ' ? '&nbsp;' : htmlspecialchars($c, ENT_QUOTES) ?></span><?php endforeach; ?>
+        </div>
+    <?php elseif ($_apAnim === 'spin'): ?>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:16px;color:<?= $_apColor ?>;">
+            <svg width="48" height="48" viewBox="0 0 48 48" style="animation:spinIcon <?= $_apSpeed ?>ms linear infinite;">
+                <circle cx="24" cy="24" r="18" fill="none" stroke="<?= $_apColor ?>" stroke-width="4" stroke-dasharray="90 22"/>
+            </svg>
+            <span style="font-family:'Poppins',sans-serif;"><?= $_apText ?></span>
+        </div>
+    <?php else: ?>
+        <div style="font-family:'Poppins',sans-serif;font-size:1.4rem;font-weight:700;letter-spacing:4px;color:<?= $_apColor ?>;animation:<?= $_apAnim === 'pulse' ? 'pulseText' : 'bounceText' ?> <?= $_apSpeed ?>ms ease-in-out infinite;">
+            <?= $_apText ?>
+        </div>
+    <?php endif; ?>
+</div>
+<script>
+(function(){
+    window.addEventListener('load', function(){
+        var pl = document.getElementById('mmb-preloader');
+        if (pl) { setTimeout(function(){ pl.classList.add('hidden'); }, 200); setTimeout(function(){ pl.remove(); }, 700); }
+    });
+    setTimeout(function(){ var pl=document.getElementById('mmb-preloader'); if(pl){pl.classList.add('hidden');setTimeout(function(){pl.remove();},700);} }, 5000);
+})();
+</script>
+<?php
+    }
+} catch (\Exception $_apEx) { /* non-fatal */ }
+
+// ── Action loader bootstrap ───────────────────────────────────────────────
+try {
+    $_alDb = \Core\Database::getInstance();
+    $_alRow = $_alDb->fetch("SELECT value FROM settings WHERE `key` = 'action_loader_enabled'");
+    if ($_alRow && $_alRow['value'] === '1') {
+        echo '<script>(function(){document.addEventListener("click",function(e){var b=e.target.closest("button[type=submit],input[type=submit],.btn-action-loader");if(b&&!b.disabled)b.classList.add("mmb-btn-loading");});})();</script>';
+    }
+} catch (\Exception $_alEx2) { /* non-fatal */ }
+?>
     <div class="admin-container">
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
@@ -2328,6 +2428,16 @@
                             <a href="/admin/settings#timezone" class="menu-link">
                                 <i class="fas fa-globe"></i>
                                 <span>Timezone</span>
+                            </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('settings')): ?>
+                            <a href="/admin/settings/preloader" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/settings/preloader') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-circle-notch"></i>
+                                <span>Preloader</span>
+                            </a>
+                            <a href="/admin/settings/captcha" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/settings/captcha') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-robot"></i>
+                                <span>Captcha</span>
                             </a>
                             <?php endif; ?>
                         </div>

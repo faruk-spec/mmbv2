@@ -1081,12 +1081,169 @@ try {
             padding: 20px;
             min-width: 0;
         }
+        /* ===== Preloader ===== */
+        #mmb-preloader {
+            position: fixed;
+            inset: 0;
+            z-index: 999999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity .4s ease, visibility .4s ease;
+        }
+        #mmb-preloader.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        /* Wave animation */
+        @keyframes waveChar {
+            0%   { transform: translateY(0); }
+            100% { transform: translateY(-10px); }
+        }
+        /* Pulse animation */
+        @keyframes pulseText {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: .3; }
+        }
+        /* Spin animation */
+        @keyframes spinIcon {
+            to { transform: rotate(360deg); }
+        }
+        /* Bounce animation */
+        @keyframes bounceText {
+            0%, 100% { transform: translateY(0); }
+            50%       { transform: translateY(-8px); }
+        }
+
+        /* ===== Skeleton ===== */
+        .skeleton {
+            background: linear-gradient(90deg,
+                rgba(255,255,255,.06) 25%,
+                rgba(255,255,255,.12) 50%,
+                rgba(255,255,255,.06) 75%);
+            background-size: 200% 100%;
+            animation: skeletonShimmer 1.4s infinite;
+            border-radius: 6px;
+        }
+        [data-theme="light"] .skeleton {
+            background: linear-gradient(90deg,
+                rgba(0,0,0,.06) 25%,
+                rgba(0,0,0,.12) 50%,
+                rgba(0,0,0,.06) 75%);
+            background-size: 200% 100%;
+        }
+        @keyframes skeletonShimmer {
+            0%   { background-position:  200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        .skeleton-line  { height: 14px; margin-bottom: 8px; border-radius: 4px; }
+        .skeleton-block { border-radius: 8px; }
+
+        /* ===== Action loader spinner ===== */
+        .mmb-btn-loading {
+            pointer-events: none;
+            opacity: .75;
+            position: relative;
+        }
+        .mmb-btn-loading::after {
+            content: '';
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            margin-left: 8px;
+            border: 2px solid rgba(255,255,255,.35);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spinIcon .7s linear infinite;
+            vertical-align: middle;
+        }
     </style>
     
     <?php View::yield('styles'); ?>
     <?php include __DIR__ . '/../partials/universal-theme-override.php'; ?>
 </head>
 <body>
+<?php
+// ── Preloader injection ───────────────────────────────────────────────────
+try {
+    $_preloaderDb = \Core\Database::getInstance();
+    $_preloaderEnabled = $_preloaderDb->fetch("SELECT value FROM settings WHERE `key` = 'preloader_enabled'");
+    if ($_preloaderEnabled && $_preloaderEnabled['value'] === '1') {
+        $_pType     = ($_preloaderDb->fetch("SELECT value FROM settings WHERE `key` = 'preloader_type'")['value'] ?? 'text');
+        $_pText     = htmlspecialchars($_preloaderDb->fetch("SELECT value FROM settings WHERE `key` = 'preloader_text'")['value'] ?? 'Loading…', ENT_QUOTES);
+        $_pColor    = htmlspecialchars($_preloaderDb->fetch("SELECT value FROM settings WHERE `key` = 'preloader_text_color'")['value'] ?? '#00f0ff', ENT_QUOTES);
+        $_pBg       = htmlspecialchars($_preloaderDb->fetch("SELECT value FROM settings WHERE `key` = 'preloader_bg_color'")['value'] ?? '#06060a', ENT_QUOTES);
+        $_pAnim     = $_preloaderDb->fetch("SELECT value FROM settings WHERE `key` = 'preloader_animation'")['value'] ?? 'wave';
+        $_pSpeed    = (int)($_preloaderDb->fetch("SELECT value FROM settings WHERE `key` = 'preloader_speed'")['value'] ?? 800);
+        $_pImgPath  = $_preloaderDb->fetch("SELECT value FROM settings WHERE `key` = 'preloader_image_path'")['value'] ?? '';
+        ?>
+<div id="mmb-preloader" style="background:<?= $_pBg ?>;">
+    <?php if ($_pType === 'image' && !empty($_pImgPath)): ?>
+        <img src="<?= htmlspecialchars($_pImgPath, ENT_QUOTES) ?>" alt="Loading" style="max-width:180px;max-height:180px;">
+    <?php elseif ($_pAnim === 'wave'): ?>
+        <div class="mmb-preloader-text" style="font-family:'Poppins',sans-serif;font-size:1.6rem;font-weight:700;letter-spacing:4px;">
+            <?php foreach (str_split($_pText) as $i => $char): ?>
+            <span style="display:inline-block;color:<?= $_pColor ?>;animation:waveChar <?= $_pSpeed ?>ms ease-in-out <?= $i * 80 ?>ms infinite alternate;">
+                <?= $char === ' ' ? '&nbsp;' : htmlspecialchars($char, ENT_QUOTES) ?>
+            </span>
+            <?php endforeach; ?>
+        </div>
+    <?php elseif ($_pAnim === 'pulse'): ?>
+        <div style="font-family:'Poppins',sans-serif;font-size:1.6rem;font-weight:700;letter-spacing:4px;color:<?= $_pColor ?>;animation:pulseText <?= $_pSpeed ?>ms ease-in-out infinite;">
+            <?= $_pText ?>
+        </div>
+    <?php elseif ($_pAnim === 'spin'): ?>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:16px;color:<?= $_pColor ?>;">
+            <svg width="52" height="52" viewBox="0 0 52 52" style="animation:spinIcon <?= $_pSpeed ?>ms linear infinite;">
+                <circle cx="26" cy="26" r="20" fill="none" stroke="<?= $_pColor ?>" stroke-width="4" stroke-dasharray="100 26"/>
+            </svg>
+            <span style="font-family:'Poppins',sans-serif;font-size:1rem;"><?= $_pText ?></span>
+        </div>
+    <?php else: /* bounce */ ?>
+        <div style="font-family:'Poppins',sans-serif;font-size:1.6rem;font-weight:700;letter-spacing:4px;color:<?= $_pColor ?>;animation:bounceText <?= $_pSpeed ?>ms ease infinite;">
+            <?= $_pText ?>
+        </div>
+    <?php endif; ?>
+</div>
+<script>
+(function(){
+    window.addEventListener('load', function(){
+        var pl = document.getElementById('mmb-preloader');
+        if (pl) {
+            setTimeout(function(){ pl.classList.add('hidden'); }, 200);
+            setTimeout(function(){ pl.remove(); }, 700);
+        }
+    });
+    // Fallback: remove after 5 s even if load event never fires
+    setTimeout(function(){
+        var pl = document.getElementById('mmb-preloader');
+        if (pl) { pl.classList.add('hidden'); setTimeout(function(){ pl.remove(); }, 700); }
+    }, 5000);
+})();
+</script>
+<?php
+    }
+} catch (\Exception $_preloaderEx) { /* non-fatal */ }
+
+// ── Action loader & skeleton bootstrap ───────────────────────────────────
+try {
+    $_actionLoaderDb = \Core\Database::getInstance();
+    $_actionLoaderEnabled = $_actionLoaderDb->fetch("SELECT value FROM settings WHERE `key` = 'action_loader_enabled'");
+    if ($_actionLoaderEnabled && $_actionLoaderEnabled['value'] === '1') {
+        echo '<script>
+(function(){
+    document.addEventListener("click", function(e){
+        var btn = e.target.closest("button[type=submit], input[type=submit], .btn-action-loader");
+        if (btn && !btn.disabled) {
+            btn.classList.add("mmb-btn-loading");
+        }
+    });
+})();
+</script>';
+    }
+} catch (\Exception $_alEx) { /* non-fatal */ }
+?>
     <?php if (!empty($_SESSION['_concurrent_session_warning'])): ?>
     <?php $sessionCount = (int)$_SESSION['_concurrent_session_warning']; unset($_SESSION['_concurrent_session_warning']); ?>
     <div id="concurrent-session-banner" style="position:fixed;top:0;left:0;right:0;z-index:99999;background:linear-gradient(135deg,#ff6b6b,#ffaa00);color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 20px rgba(0,0,0,0.4);font-family:'Poppins',sans-serif;font-size:14px;">

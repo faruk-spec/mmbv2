@@ -34,7 +34,18 @@ require_once BASE_PATH . '/config/app.php';
 
 // Debug mode: show request info
 // NOTE: Using reflection here for debugging purposes only. In production, APP_DEBUG should be false.
+// Additional guard: also requires a valid admin session to prevent information disclosure.
 if (defined('APP_DEBUG') && APP_DEBUG && isset($_GET['_debug'])) {
+    // Require an active session with super_admin role before showing debug output
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    $isDebugAuthorized = !empty($_SESSION['user_id']) && !empty($_SESSION['user_role']) && $_SESSION['user_role'] === 'super_admin';
+    if (!$isDebugAuthorized) {
+        http_response_code(403);
+        echo '<p>Access denied. Debug mode requires super_admin session.</p>';
+        exit;
+    }
     header('Content-Type: text/html; charset=UTF-8');
     
     // Load router to see registered routes - use fully qualified names
