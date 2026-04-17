@@ -1,5 +1,14 @@
 <!DOCTYPE html>
-<html lang="en">
+<?php
+$_mailUiTheme = 'default';
+$_mailDefaultMode = 'dark';
+try {
+    $_mthConfig = \Controllers\Admin\ThemeController::loadThemeForLayout();
+    $_mailUiTheme = $_mthConfig['theme'] ?? 'default';
+    $_mailDefaultMode = $_mthConfig['mode'] ?? 'dark';
+} catch (\Exception $e) {}
+?>
+<html lang="en" data-ui-theme="<?= htmlspecialchars($_mailUiTheme) ?>">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
