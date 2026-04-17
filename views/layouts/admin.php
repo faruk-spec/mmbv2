@@ -1125,15 +1125,23 @@
 // ── Admin preloader injection ─────────────────────────────────────────────
 try {
     $_apDb = \Core\Database::getInstance();
-    $_apEnabled = $_apDb->fetch("SELECT value FROM settings WHERE `key` = 'preloader_enabled'");
-    if ($_apEnabled && $_apEnabled['value'] === '1') {
-        $_apType    = ($_apDb->fetch("SELECT value FROM settings WHERE `key` = 'preloader_type'")['value'] ?? 'text');
-        $_apText    = htmlspecialchars($_apDb->fetch("SELECT value FROM settings WHERE `key` = 'preloader_text'")['value'] ?? 'Loading…', ENT_QUOTES);
-        $_apColor   = htmlspecialchars($_apDb->fetch("SELECT value FROM settings WHERE `key` = 'preloader_text_color'")['value'] ?? '#00f0ff', ENT_QUOTES);
-        $_apBg      = htmlspecialchars($_apDb->fetch("SELECT value FROM settings WHERE `key` = 'preloader_bg_color'")['value'] ?? '#06060a', ENT_QUOTES);
-        $_apAnim    = $_apDb->fetch("SELECT value FROM settings WHERE `key` = 'preloader_animation'")['value'] ?? 'wave';
-        $_apSpeed   = (int)($_apDb->fetch("SELECT value FROM settings WHERE `key` = 'preloader_speed'")['value'] ?? 800);
-        $_apImg     = $_apDb->fetch("SELECT value FROM settings WHERE `key` = 'preloader_image_path'")['value'] ?? '';
+    // Fetch all preloader settings in a single query
+    $_apRows = $_apDb->fetchAll(
+        "SELECT `key`, `value` FROM settings WHERE `key` IN (
+            'preloader_enabled','preloader_type','preloader_text','preloader_text_color',
+            'preloader_bg_color','preloader_animation','preloader_speed','preloader_image_path'
+        )"
+    );
+    $_aps = [];
+    foreach ($_apRows as $_apr) { $_aps[$_apr['key']] = $_apr['value']; }
+    if (($_aps['preloader_enabled'] ?? '0') === '1') {
+        $_apType  = in_array($_aps['preloader_type'] ?? '', ['text','image']) ? $_aps['preloader_type'] : 'text';
+        $_apText  = htmlspecialchars($_aps['preloader_text'] ?? 'Loading…', ENT_QUOTES);
+        $_apColor = htmlspecialchars($_aps['preloader_text_color'] ?? '#00f0ff', ENT_QUOTES);
+        $_apBg    = htmlspecialchars($_aps['preloader_bg_color'] ?? '#06060a', ENT_QUOTES);
+        $_apAnim  = in_array($_aps['preloader_animation'] ?? '', ['wave','pulse','spin','bounce']) ? $_aps['preloader_animation'] : 'wave';
+        $_apSpeed = max(200, min(3000, (int)($_aps['preloader_speed'] ?? 800)));
+        $_apImg   = $_aps['preloader_image_path'] ?? '';
         ?>
 <div id="mmb-preloader" style="background:<?= $_apBg ?>;">
     <?php if ($_apType === 'image' && !empty($_apImg)): ?>

@@ -1168,15 +1168,23 @@ try {
 // ── Preloader injection ───────────────────────────────────────────────────
 try {
     $_preloaderDb = \Core\Database::getInstance();
-    $_preloaderEnabled = $_preloaderDb->fetch("SELECT value FROM settings WHERE `key` = 'preloader_enabled'");
-    if ($_preloaderEnabled && $_preloaderEnabled['value'] === '1') {
-        $_pType     = ($_preloaderDb->fetch("SELECT value FROM settings WHERE `key` = 'preloader_type'")['value'] ?? 'text');
-        $_pText     = htmlspecialchars($_preloaderDb->fetch("SELECT value FROM settings WHERE `key` = 'preloader_text'")['value'] ?? 'Loading…', ENT_QUOTES);
-        $_pColor    = htmlspecialchars($_preloaderDb->fetch("SELECT value FROM settings WHERE `key` = 'preloader_text_color'")['value'] ?? '#00f0ff', ENT_QUOTES);
-        $_pBg       = htmlspecialchars($_preloaderDb->fetch("SELECT value FROM settings WHERE `key` = 'preloader_bg_color'")['value'] ?? '#06060a', ENT_QUOTES);
-        $_pAnim     = $_preloaderDb->fetch("SELECT value FROM settings WHERE `key` = 'preloader_animation'")['value'] ?? 'wave';
-        $_pSpeed    = (int)($_preloaderDb->fetch("SELECT value FROM settings WHERE `key` = 'preloader_speed'")['value'] ?? 800);
-        $_pImgPath  = $_preloaderDb->fetch("SELECT value FROM settings WHERE `key` = 'preloader_image_path'")['value'] ?? '';
+    // Fetch all preloader settings in a single query
+    $_preloaderRows = $_preloaderDb->fetchAll(
+        "SELECT `key`, `value` FROM settings WHERE `key` IN (
+            'preloader_enabled','preloader_type','preloader_text','preloader_text_color',
+            'preloader_bg_color','preloader_animation','preloader_speed','preloader_image_path'
+        )"
+    );
+    $_ps = [];
+    foreach ($_preloaderRows as $_pr) { $_ps[$_pr['key']] = $_pr['value']; }
+    if (($_ps['preloader_enabled'] ?? '0') === '1') {
+        $_pType    = in_array($_ps['preloader_type'] ?? '', ['text','image']) ? $_ps['preloader_type'] : 'text';
+        $_pText    = htmlspecialchars($_ps['preloader_text'] ?? 'Loading…', ENT_QUOTES);
+        $_pColor   = htmlspecialchars($_ps['preloader_text_color'] ?? '#00f0ff', ENT_QUOTES);
+        $_pBg      = htmlspecialchars($_ps['preloader_bg_color'] ?? '#06060a', ENT_QUOTES);
+        $_pAnim    = in_array($_ps['preloader_animation'] ?? '', ['wave','pulse','spin','bounce']) ? $_ps['preloader_animation'] : 'wave';
+        $_pSpeed   = max(200, min(3000, (int)($_ps['preloader_speed'] ?? 800)));
+        $_pImgPath = $_ps['preloader_image_path'] ?? '';
         ?>
 <div id="mmb-preloader" style="background:<?= $_pBg ?>;">
     <?php if ($_pType === 'image' && !empty($_pImgPath)): ?>
@@ -1228,9 +1236,10 @@ try {
 
 // ── Action loader & skeleton bootstrap ───────────────────────────────────
 try {
-    $_actionLoaderDb = \Core\Database::getInstance();
-    $_actionLoaderEnabled = $_actionLoaderDb->fetch("SELECT value FROM settings WHERE `key` = 'action_loader_enabled'");
-    if ($_actionLoaderEnabled && $_actionLoaderEnabled['value'] === '1') {
+    // Reuse the same DB singleton; fetch action_loader_enabled in a single call
+    $_alDb2 = \Core\Database::getInstance();
+    $_alRow2 = $_alDb2->fetch("SELECT value FROM settings WHERE `key` = 'action_loader_enabled'");
+    if ($_alRow2 && $_alRow2['value'] === '1') {
         echo '<script>
 (function(){
     document.addEventListener("click", function(e){
