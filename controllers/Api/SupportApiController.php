@@ -34,7 +34,6 @@ namespace Controllers\Api;
 use Controllers\BaseController;
 use Core\Auth;
 use Core\Helpers;
-use Core\Mailer;
 use Core\TemplateValidator;
 use Models\SupportModel;
 use Models\SupportTemplateModel;
@@ -186,18 +185,13 @@ class SupportApiController extends BaseController
         // Send creation email to user
         $user      = Auth::user();
         $ticketUrl = $this->baseUrl() . '/support/view/' . $ticketId;
-        $emailVars = [
+        $this->sendSupportEmail($user['email'] ?? '', 'support-ticket-created', [
             'ticketId'    => $ticketId,
             'subject'     => $subject,
             'userName'    => $user['name'] ?? 'User',
             'ticketUrl'   => $ticketUrl,
             'description' => $textSummary,
-        ];
-        $emailResult = $this->renderSupportEmail('support-ticket-created', $emailVars);
-        if ($emailResult !== null && !empty($user['email'])) {
-            $emailSubject = $emailResult['subject'] ?? ("Support Ticket #" . $this->formatTicketId($ticketId) . " Created: {$subject}");
-            Mailer::send($user['email'], $emailSubject, $emailResult['body']);
-        }
+        ], "Support Ticket #" . $this->formatTicketId($ticketId) . " Created: {$subject}");
 
         // Notify admins
         $this->notifyAdmins(

@@ -98,7 +98,21 @@ $router->get('/support', 'SupportController@index', ['auth']);
 $router->get('/help', 'SupportController@index', ['auth']); // alias for /help sidebar link
 $router->get('/support/create', 'SupportController@createForm', ['auth']);
 $router->post('/support/create', 'SupportController@store', ['auth']);
-$router->get('/support/new', 'SupportController@createForm', ['auth']);
+// New wizard (React / API-driven ticket creation)
+$router->get('/support/new', function () {
+    if (!\Core\Auth::check()) {
+        \Core\Helpers::redirect('/login?return=/support/new');
+        exit;
+    }
+    \Core\View::render('support/create-wizard', [
+        'title'          => 'Create Support Ticket',
+        'currentPage'    => 'create',
+        'isSupportAdmin' => false,
+        'user'           => \Core\Auth::user(),
+        'isLoggedIn'     => true,
+        'csrf_token'     => \Core\Security::generateCsrfToken(),
+    ]);
+}, ['auth']);
 $router->get('/support/view/{id}', 'SupportController@show', ['auth']);
 $router->post('/support/view/{id}/reply', 'SupportController@reply', ['auth']);
 $router->get('/support/faq', 'SupportController@faq', ['auth']);

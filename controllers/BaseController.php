@@ -186,10 +186,11 @@ abstract class BaseController
      * Render a support email template.
      *
      * Checks the mail_notification_templates DB table first (so admins can edit
-     * templates via /admin/mail/templates). Falls back to views/emails/{slug}.php
-     * if no active DB template is found.
+     * templates via /admin/mail/templates). If the template exists in DB but is
+     * disabled (is_enabled=0), returns null so no email is sent.
+     * Falls back to views/emails/{slug}.php if no DB template row exists at all.
      *
-     * Returns ['subject' => string|null, 'body' => string] or null on failure.
+     * Returns ['subject' => string|null, 'body' => string] or null on failure / disabled.
      * subject is null when the PHP-file fallback is used (caller keeps its own subject).
      */
     protected function renderSupportEmail(string $slug, array $vars): ?array
@@ -205,11 +206,16 @@ abstract class BaseController
         // Try DB template first
         try {
             $db  = \Core\Database::getInstance();
+            // Fetch without is_enabled filter so we can respect disabled flag
             $tpl = $db->fetch(
-                "SELECT subject, body FROM mail_notification_templates WHERE slug = ? AND is_enabled = 1 LIMIT 1",
+                "SELECT subject, body, is_enabled FROM mail_notification_templates WHERE slug = ? LIMIT 1",
                 [$slug]
             );
-            if ($tpl && !empty($tpl['body'])) {
+            if ($tpl !== null) {
+                // Template exists in DB — if disabled, don't send
+                if (!(bool)$tpl['is_enabled']) {
+                    return null;
+                }
                 $subject = $tpl['subject'] ?? '';
                 $body    = $tpl['body'];
                 foreach ($placeholders as $k => $v) {
@@ -219,10 +225,10 @@ abstract class BaseController
                 return ['subject' => $subject ?: null, 'body' => $body];
             }
         } catch (\Throwable $e) {
-            // DB unavailable or table not created yet — fall through
+            // DB unavailable or table not created yet — fall through to PHP file
         }
 
-        // Fall back to PHP file template
+        // Fall back to PHP file template (only when no DB row exists)
         $file = defined('BASE_PATH') ? BASE_PATH . '/views/emails/' . $slug . '.php' : null;
         if ($file === null || !file_exists($file)) {
             return null;
@@ -232,5 +238,25 @@ abstract class BaseController
         include $file;
         $body = ob_get_clean() ?: null;
         return $body !== null ? ['subject' => null, 'body' => $body] : null;
+    }
+
+    /**
+     * Send a support ticket email using MailService::sendNow() (the same SMTP
+     * path used by login alerts and other system notifications).
+     *
+     * Renders via renderSupportEmail() (DB template → PHP file fallback),
+     * then dispatches through the active SMTP provider.
+     */
+    protected function sendSupportEmail(string $to, string $slug, array $vars, string $fallbackSubject): void
+    {
+        if (empty($to) || !filter_var($to, FILTER_VALIDATE_EMAIL)) {
+            return;
+        }
+        $emailResult = $this->renderSupportEmail($slug, $vars);
+        if ($emailResult === null) {
+            return; // disabled or template not found
+        }
+        $subject = $emailResult['subject'] ?? $fallbackSubject;
+        \Core\MailService::sendNow($to, $subject, $emailResult['body'], ['template_slug' => $slug]);
     }
 }

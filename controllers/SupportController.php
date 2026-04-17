@@ -9,7 +9,6 @@ namespace Controllers;
 
 use Core\Auth;
 use Core\Database;
-use Core\Mailer;
 use Core\Notification;
 use Models\SupportModel;
 
@@ -153,18 +152,13 @@ class SupportController extends BaseController
         $user      = Auth::user();
         $ticketUrl = $this->baseUrl() . '/support/view/' . $ticketId;
 
-        $emailVars = [
+        $this->sendSupportEmail($user['email'] ?? '', 'support-ticket-created', [
             'ticketId'    => $ticketId,
             'subject'     => $subject,
             'userName'    => $user['name'] ?? 'User',
             'ticketUrl'   => $ticketUrl,
             'description' => $description,
-        ];
-        $emailResult = $this->renderSupportEmail('support-ticket-created', $emailVars);
-        if ($emailResult !== null && !empty($user['email'])) {
-            $emailSubject = $emailResult['subject'] ?? ("Support Ticket #" . sprintf('%07d', $ticketId) . " Created: {$subject}");
-            Mailer::send($user['email'], $emailSubject, $emailResult['body']);
-        }
+        ], "Support Ticket #" . sprintf('%07d', $ticketId) . " Created: {$subject}");
 
         // Notify all admins
         $adminUrl = '/admin/support/tickets/' . $ticketId;
@@ -251,6 +245,7 @@ class SupportController extends BaseController
             $agentRow = null;
         }
         $ticketUrl  = $this->baseUrl() . '/admin/support/tickets/' . $id;
+        $emailSubject = "User replied to Support Ticket #{$ticketIdFormatted}";
         $emailVars  = [
             'ticketId'     => $id,
             'subject'      => $ticket['subject'],
@@ -259,18 +254,13 @@ class SupportController extends BaseController
             'ticketUrl'    => $ticketUrl,
             'status'       => $ticket['status'],
         ];
-        $emailResult = $this->renderSupportEmail('support-ticket-reply', $emailVars);
-        if ($emailResult !== null) {
-            $emailSubject = $emailResult['subject'] ?? ("User replied to Support Ticket #{$ticketIdFormatted}");
-            if ($agentRow && !empty($agentRow['email'])) {
-                Mailer::send($agentRow['email'], $emailSubject, $emailResult['body']);
-            } else {
-                // Notify first admin found
-                $db         = \Core\Database::getInstance();
-                $firstAdmin = $db->fetch("SELECT email FROM users WHERE role LIKE '%admin%' LIMIT 1");
-                if ($firstAdmin && !empty($firstAdmin['email'])) {
-                    Mailer::send($firstAdmin['email'], $emailSubject, $emailResult['body']);
-                }
+        if ($agentRow && !empty($agentRow['email'])) {
+            $this->sendSupportEmail($agentRow['email'], 'support-ticket-reply', $emailVars, $emailSubject);
+        } else {
+            $db         = \Core\Database::getInstance();
+            $firstAdmin = $db->fetch("SELECT email FROM users WHERE role LIKE '%admin%' LIMIT 1");
+            if ($firstAdmin && !empty($firstAdmin['email'])) {
+                $this->sendSupportEmail($firstAdmin['email'], 'support-ticket-reply', $emailVars, $emailSubject);
             }
         }
 
@@ -554,22 +544,14 @@ class SupportController extends BaseController
 
         if (!$isInternal && !empty($ticket['user_email'])) {
             $ticketUrl = $this->baseUrl() . '/support/view/' . $id;
-            $emailVars = [
+            $this->sendSupportEmail($ticket['user_email'], 'support-ticket-reply', [
                 'ticketId'     => $id,
                 'subject'      => $ticket['subject'],
                 'userName'     => $ticket['user_name'],
                 'replyMessage' => $message,
                 'ticketUrl'    => $ticketUrl,
                 'status'       => $ticket['status'],
-            ];
-            $emailResult = $this->renderSupportEmail('support-ticket-reply', $emailVars);
-            if ($emailResult !== null) {
-                $emailSubject = $emailResult['subject'] ?? ("Update on your Support Ticket #" . sprintf('%07d', $id));
-                $sent = Mailer::send($ticket['user_email'], $emailSubject, $emailResult['body']);
-                if (!$sent) {
-                    $this->flash('warning', 'Reply saved but email notification could not be sent.');
-                }
-            }
+            ], "Update on your Support Ticket #" . sprintf('%07d', $id));
 
             Notification::send(
                 (int) $ticket['user_id'],
@@ -625,37 +607,25 @@ class SupportController extends BaseController
         if (!empty($ticket['user_email'])) {
             $ticketUrl  = $this->baseUrl() . '/support/view/' . $id;
             $safeReason = mb_substr(trim(strip_tags($reason)), 0, 500);
+            $statusLabel = ucwords(str_replace('_', ' ', $status));
 
             if ($status === 'closed' || $status === 'resolved') {
-                $emailVars = [
+                $this->sendSupportEmail($ticket['user_email'], 'support-ticket-closed', [
                     'ticketId'   => $id,
                     'subject'    => $ticket['subject'],
                     'userName'   => $ticket['user_name'],
                     'ticketUrl'  => $ticketUrl,
                     'resolution' => $safeReason !== '' ? $safeReason : 'Your issue has been resolved.',
-                ];
-                $emailTemplate = 'support-ticket-closed';
+                ], "Support Ticket #" . sprintf('%07d', $id) . " — Status: {$statusLabel}");
             } else {
-                $emailVars = [
+                $this->sendSupportEmail($ticket['user_email'], 'support-ticket-status-update', [
                     'ticketId'  => $id,
                     'subject'   => $ticket['subject'],
                     'userName'  => $ticket['user_name'],
                     'ticketUrl' => $ticketUrl,
                     'status'    => $status,
                     'note'      => $safeReason,
-                ];
-                $emailTemplate = 'support-ticket-status-update';
-            }
-
-            $emailResult = $this->renderSupportEmail($emailTemplate, $emailVars);
-            if ($emailResult !== null) {
-                $statusLabel  = ucwords(str_replace('_', ' ', $status));
-                $defaultSubj  = "Support Ticket #" . sprintf('%07d', $id) . " — Status: {$statusLabel}";
-                $emailSubject = $emailResult['subject'] ?? $defaultSubj;
-                $sent = Mailer::send($ticket['user_email'], $emailSubject, $emailResult['body']);
-                if (!$sent) {
-                    $this->flash('warning', 'Status updated but email notification could not be sent.');
-                }
+                ], "Support Ticket #" . sprintf('%07d', $id) . " — Status: {$statusLabel}");
             }
 
             Notification::send(

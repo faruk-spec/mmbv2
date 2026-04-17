@@ -470,18 +470,27 @@ class MailService
      */
     public static function sendNotification(string $to, string $slug, array $vars = [], bool $queued = true): bool
     {
+        $template = null;
         try {
             $db = Database::getInstance();
+            // Fetch the template regardless of is_enabled so we can respect the flag correctly.
+            // If the template exists in DB but is disabled, we must NOT fall through to the
+            // file-based fallback — that would bypass the admin's disable action.
             $template = $db->fetch(
-                "SELECT * FROM mail_notification_templates WHERE slug = ? AND is_enabled = 1 LIMIT 1",
+                "SELECT * FROM mail_notification_templates WHERE slug = ? LIMIT 1",
                 [$slug]
             );
         } catch (\Throwable $e) {
             $template = null;
         }
 
-        // Fallback to view-file templates if no DB template
-        if (!$template) {
+        if ($template !== null) {
+            // Template is managed in DB — respect its is_enabled flag.
+            if (!(bool)$template['is_enabled']) {
+                return false; // Admin explicitly disabled this notification
+            }
+        } else {
+            // Template not in DB at all — fall back to view-file templates.
             return self::sendFromViewTemplate($to, $slug, $vars, $queued);
         }
 
