@@ -64,88 +64,73 @@ try {
     
     <style>
         :root {
-            --bg-primary: #06060a;
-            --bg-secondary: #0c0c12;
-            --bg-card: #0f0f18;
-            --card-inner-bg: #0f0f18;
-            --cyan: #00f0ff;
-            --magenta: #ff2ec4;
-            --green: #00ff88;
-            --orange: #ffaa00;
-            --purple: #9945ff;
-            --red: #ff6b6b;
-            --text-primary: #e8eefc;
-            --text-secondary: #8892a6;
-            --border-color: rgba(255, 255, 255, 0.1);
-            --shadow-glow: 0 0 20px rgba(0, 240, 255, 0.2);
-            --transition: all 0.3s ease;
-            --hover-bg: rgba(0, 240, 255, 0.1);
-            --shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            --bg-primary: #09090b;
+            --bg-secondary: #111113;
+            --bg-card: #18181b;
+            --bg-elevated: #1f1f23;
+            --card-inner-bg: #18181b;
+            --cyan: #3b82f6;
+            --magenta: #8b5cf6;
+            --green: #22c55e;
+            --orange: #f59e0b;
+            --purple: #8b5cf6;
+            --red: #ef4444;
+            --text-primary: #fafafa;
+            --text-secondary: #a1a1aa;
+            --text-tertiary: #71717a;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --border-hover: rgba(255, 255, 255, 0.16);
+            --shadow-glow: none;
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+            --transition: all 0.2s ease;
+            --hover-bg: rgba(255, 255, 255, 0.04);
+            --active-bg: rgba(59, 130, 246, 0.1);
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            --focus-ring: 0 0 0 2px var(--bg-primary), 0 0 0 4px var(--cyan);
         }
         
         /* Light Theme */
         [data-theme="light"] {
-            --bg-primary: #f0f4ff;
+            --bg-primary: #fafafa;
             --bg-secondary: #ffffff;
             --bg-card: #ffffff;
-            --card-inner-bg: rgba(255, 255, 255, 0.90);
-            --cyan: #0369a1;
-            --magenta: #c026d3;
-            --green: #059669;
+            --bg-elevated: #f4f4f5;
+            --card-inner-bg: #ffffff;
+            --cyan: #2563eb;
+            --magenta: #7c3aed;
+            --green: #16a34a;
             --orange: #d97706;
             --purple: #7c3aed;
             --red: #dc2626;
-            --text-primary: #1a1a1a;
-            --text-secondary: #555555;
-            --border-color: rgba(0, 0, 0, 0.1);
-            --shadow-glow: 0 0 20px rgba(124, 58, 237, 0.12);
-            --hover-bg: rgba(124, 58, 237, 0.08);
-            --shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+            --text-primary: #18181b;
+            --text-secondary: #52525b;
+            --text-tertiary: #a1a1aa;
+            --border-color: rgba(0, 0, 0, 0.08);
+            --border-hover: rgba(0, 0, 0, 0.16);
+            --shadow-glow: none;
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+            --hover-bg: rgba(0, 0, 0, 0.03);
+            --active-bg: rgba(37, 99, 235, 0.08);
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --focus-ring: 0 0 0 2px var(--bg-primary), 0 0 0 4px var(--cyan);
         }
 
-        /* Animated light-mode background */
+        /* Light-mode background */
         [data-theme="light"] body {
-            background: #f0f4ff;
+            background: var(--bg-primary);
         }
 
         [data-theme="light"] body::before {
-            content: '';
-            position: fixed;
-            inset: 0;
-            pointer-events: none;
-            z-index: -1;
-            animation: lightBgFlow 16s ease-in-out infinite alternate;
+            background: none !important;
+            animation: none !important;
         }
 
         [data-theme="light"] body::after {
             display: none;
-        }
-
-        @keyframes lightBgFlow {
-            0% {
-                background:
-                    radial-gradient(ellipse at 10% 10%, rgba(124, 58, 237, 0.14) 0%, transparent 50%),
-                    radial-gradient(ellipse at 90% 90%, rgba(0, 153, 204, 0.12) 0%, transparent 50%),
-                    radial-gradient(ellipse at 60% 50%, rgba(0, 245, 255, 0.06) 0%, transparent 40%);
-            }
-            33% {
-                background:
-                    radial-gradient(ellipse at 85% 15%, rgba(124, 58, 237, 0.12) 0%, transparent 50%),
-                    radial-gradient(ellipse at 15% 85%, rgba(0, 153, 204, 0.14) 0%, transparent 50%),
-                    radial-gradient(ellipse at 40% 20%, rgba(0, 245, 255, 0.07) 0%, transparent 40%);
-            }
-            66% {
-                background:
-                    radial-gradient(ellipse at 50% 90%, rgba(0, 153, 204, 0.10) 0%, transparent 50%),
-                    radial-gradient(ellipse at 60% 10%, rgba(124, 58, 237, 0.14) 0%, transparent 50%),
-                    radial-gradient(ellipse at 20% 50%, rgba(0, 245, 255, 0.06) 0%, transparent 40%);
-            }
-            100% {
-                background:
-                    radial-gradient(ellipse at 10% 10%, rgba(124, 58, 237, 0.14) 0%, transparent 50%),
-                    radial-gradient(ellipse at 90% 90%, rgba(0, 153, 204, 0.12) 0%, transparent 50%),
-                    radial-gradient(ellipse at 60% 50%, rgba(0, 245, 255, 0.06) 0%, transparent 40%);
-            }
         }
         
         * {
@@ -159,7 +144,7 @@ try {
         }
         
         body {
-            font-family: 'Poppins', sans-serif;
+            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             background: var(--bg-primary);
             color: var(--text-primary);
             min-height: 100vh;
@@ -167,15 +152,17 @@ try {
             font-size: 14px;
             overflow-x: hidden;
             position: relative;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
         
-        h1 { font-size: 2rem; }
-        h2 { font-size: 1.5rem; }
-        h3 { font-size: 1.25rem; }
-        h4 { font-size: 1.1rem; }
-        p { font-size: 14px; }
+        h1 { font-size: 1.875rem; font-weight: 600; letter-spacing: -0.02em; }
+        h2 { font-size: 1.5rem; font-weight: 600; letter-spacing: -0.015em; }
+        h3 { font-size: 1.25rem; font-weight: 600; }
+        h4 { font-size: 1.1rem; font-weight: 500; }
+        p { font-size: 14px; color: var(--text-secondary); }
         
-        /* Background Effects */
+        /* Background — subtle, static */
         body::before {
             content: '';
             position: fixed;
@@ -184,8 +171,8 @@ try {
             width: 100%;
             height: 100%;
             background: 
-                radial-gradient(ellipse at 20% 0%, rgba(0, 240, 255, 0.1) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 100%, rgba(255, 46, 196, 0.1) 0%, transparent 50%);
+                radial-gradient(ellipse at 20% 0%, rgba(59, 130, 246, 0.04) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 100%, rgba(139, 92, 246, 0.04) 0%, transparent 50%);
             pointer-events: none;
             z-index: -1;
         }
@@ -216,8 +203,7 @@ try {
         
         /* Header */
         .header {
-            background: rgba(12, 12, 18, 0.95);
-            backdrop-filter: blur(20px);
+            background: var(--bg-secondary);
             border-bottom: 1px solid var(--border-color);
             position: sticky;
             top: 0;
@@ -235,10 +221,7 @@ try {
         .logo {
             font-size: 1.3rem;
             font-weight: 700;
-            background: linear-gradient(135deg, var(--cyan), var(--magenta));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: var(--text-primary);
             display: flex;
             align-items: center;
         }
@@ -275,7 +258,7 @@ try {
         .nav a.active,
         .nav-link:hover {
             color: var(--text-primary);
-            background: rgba(0, 240, 255, 0.1);
+            background: var(--hover-bg);
         }
         
         /* Dropdown Menu */
@@ -321,7 +304,7 @@ try {
         }
         
         .dropdown-item:hover {
-            background: rgba(0, 240, 255, 0.1);
+            background: var(--hover-bg);
             color: var(--cyan);
         }
         
@@ -357,8 +340,8 @@ try {
         }
         
         .theme-toggle:hover {
-            background: rgba(0, 240, 255, 0.1);
-            border-color: var(--cyan);
+            background: var(--hover-bg);
+            border-color: var(--border-hover);
         }
         
         .mobile-menu-btn {
@@ -427,13 +410,13 @@ try {
             width: 32px;
             height: 32px;
             border-radius: 50%;
-            background: linear-gradient(135deg, var(--cyan), var(--magenta));
+            background: var(--cyan);
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 600;
             font-size: 14px;
-            color: var(--bg-primary);
+            color: #ffffff;
         }
         
         .user-menu-dropdown {
@@ -462,7 +445,7 @@ try {
         .user-menu-header {
             padding: 16px;
             border-bottom: 1px solid var(--border-color);
-            background: linear-gradient(135deg, rgba(0, 240, 255, 0.05), rgba(255, 46, 196, 0.05));
+            background: var(--bg-elevated, var(--bg-secondary));
         }
         
         .user-menu-name {
@@ -527,15 +510,14 @@ try {
                 right: -100%;
                 width: 280px;
                 height: 100vh;
-                background: rgba(12, 12, 18, 0.98);
-                backdrop-filter: blur(20px);
+                background: var(--bg-secondary);
                 flex-direction: column;
                 align-items: flex-start;
                 padding: 80px 30px 30px 30px;
                 gap: 20px;
                 border-left: 1px solid var(--border-color);
                 transition: right 0.3s ease;
-                box-shadow: -5px 0 20px rgba(0, 0, 0, 0.5);
+                box-shadow: var(--shadow-lg);
                 z-index: 150;
                 overflow-y: auto;
                 visibility: hidden;
@@ -589,8 +571,9 @@ try {
         .btn {
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 6px;
-            padding: 10px 20px;
+            padding: 9px 16px;
             border: none;
             border-radius: 6px;
             font-family: inherit;
@@ -601,14 +584,14 @@ try {
         }
         
         .btn-primary {
-            background: linear-gradient(135deg, var(--cyan), var(--magenta));
-            color: var(--bg-primary);
+            background: var(--cyan);
+            color: #ffffff;
             text-align: center;
         }
         
         .btn-primary:hover {
-            box-shadow: var(--shadow-glow);
-            transform: translateY(-2px);
+            opacity: 0.9;
+            box-shadow: var(--shadow-sm);
         }
         
         .btn-secondary {
@@ -618,19 +601,19 @@ try {
         }
         
         .btn-secondary:hover {
-            border-color: var(--cyan);
-            box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+            background: var(--hover-bg);
+            border-color: var(--border-hover);
         }
         
         .btn-danger {
-            background: rgba(255, 107, 107, 0.2);
+            background: rgba(239, 68, 68, 0.1);
             color: var(--red);
-            border: 1px solid var(--red);
+            border: 1px solid rgba(239, 68, 68, 0.25);
         }
         
         .btn-danger:hover {
             background: var(--red);
-            color: var(--bg-primary);
+            color: #ffffff;
         }
         
         .btn-sm {
@@ -642,73 +625,21 @@ try {
         .card {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
-            border-radius: 10px;
-            padding: 20px;
+            border-radius: 12px;
+            padding: 24px;
             transition: var(--transition);
-            /* Required by rotating border animation */
             position: relative;
-            overflow: hidden;
         }
         
         .card:hover {
-            border-color: rgba(0, 240, 255, 0.3);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border-color: var(--border-hover);
+            box-shadow: var(--shadow-md);
         }
 
-        /* === Professional rotating border-light animation === */
-        @keyframes card-border-spin {
-            from { transform: translate(-50%, -50%) rotate(0deg); }
-            to   { transform: translate(-50%, -50%) rotate(360deg); }
-        }
-
-        /* Rotating spotlight sweep — visible only at the card edge */
-        .card::before {
-            content: '';
-            position: absolute;
-            width: 180%;
-            height: 180%;
-            top: 50%;
-            left: 50%;
-            background: conic-gradient(
-                from 0deg,
-                transparent 0deg 100deg,
-                rgba(124, 58, 237, 0.55) 100deg 160deg,
-                rgba(0, 245, 255, 0.45) 160deg 210deg,
-                rgba(255, 46, 196, 0.35) 210deg 250deg,
-                transparent 250deg 360deg
-            );
-            animation: card-border-spin 8s linear infinite;
-            z-index: 0;
-            pointer-events: none;
-        }
-
-        /* Inner fill — hides the centre so only the 1 px border edge glows */
+        /* Clean card design — no rotating borders */
+        .card::before,
         .card::after {
-            content: '';
-            position: absolute;
-            inset: 1px;
-            border-radius: 9px;
-            background: var(--card-inner-bg);
-            z-index: 1;
-            pointer-events: none;
-        }
-
-        /* Raise all direct children above the animated border layers */
-        .card > * {
-            position: relative;
-            z-index: 2;
-        }
-
-        /* Light-mode: softer, accessible palette for the sweep */
-        [data-theme="light"] .card::before {
-            background: conic-gradient(
-                from 0deg,
-                transparent 0deg 100deg,
-                rgba(124, 58, 237, 0.35) 100deg 160deg,
-                rgba(3, 105, 161, 0.30) 160deg 210deg,
-                rgba(255, 46, 196, 0.20) 210deg 250deg,
-                transparent 250deg 360deg
-            );
+            content: none;
         }
         
         .card-header {
@@ -752,7 +683,7 @@ try {
         .form-input:focus {
             outline: none;
             border-color: var(--cyan);
-            box-shadow: 0 0 0 3px rgba(0, 240, 255, 0.1);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
         }
         
         .form-input::placeholder {
@@ -788,20 +719,20 @@ try {
         }
         
         .alert-success {
-            background: rgba(0, 255, 136, 0.1);
-            border-color: var(--green);
+            background: rgba(34, 197, 94, 0.08);
+            border-color: rgba(34, 197, 94, 0.25);
             color: var(--green);
         }
         
         .alert-error {
-            background: rgba(255, 107, 107, 0.1);
-            border-color: var(--red);
+            background: rgba(239, 68, 68, 0.08);
+            border-color: rgba(239, 68, 68, 0.25);
             color: var(--red);
         }
         
         .alert-warning {
-            background: rgba(255, 170, 0, 0.1);
-            border-color: var(--orange);
+            background: rgba(245, 158, 11, 0.08);
+            border-color: rgba(245, 158, 11, 0.25);
             color: var(--orange);
         }
         
@@ -841,22 +772,22 @@ try {
         }
         
         .badge-success {
-            background: rgba(0, 255, 136, 0.15);
+            background: rgba(34, 197, 94, 0.12);
             color: var(--green);
         }
         
         .badge-danger {
-            background: rgba(255, 107, 107, 0.15);
+            background: rgba(239, 68, 68, 0.12);
             color: var(--red);
         }
         
         .badge-warning {
-            background: rgba(255, 170, 0, 0.15);
+            background: rgba(245, 158, 11, 0.12);
             color: var(--orange);
         }
         
         .badge-info {
-            background: rgba(0, 240, 255, 0.15);
+            background: rgba(59, 130, 246, 0.12);
             color: var(--cyan);
         }
         
@@ -964,24 +895,26 @@ try {
         /* Scroll to top */
         .scroll-top {
             position: fixed;
-            bottom: 30px;
-            right: 30px;
-            width: 45px;
-            height: 45px;
-            background: linear-gradient(135deg, var(--cyan), var(--magenta));
-            border: none;
-            border-radius: 50%;
+            bottom: 24px;
+            right: 24px;
+            width: 40px;
+            height: 40px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
             cursor: pointer;
             display: none;
             align-items: center;
             justify-content: center;
             transition: var(--transition);
             z-index: 99;
+            color: var(--text-secondary);
         }
         
         .scroll-top:hover {
-            transform: translateY(-3px);
-            box-shadow: var(--shadow-glow);
+            background: var(--hover-bg);
+            border-color: var(--border-hover);
+            color: var(--text-primary);
         }
         
         .scroll-top.visible {
@@ -990,60 +923,60 @@ try {
         
         /* ===== Light Mode Component Overrides ===== */
         [data-theme="light"] .header {
-            background: rgba(255, 255, 255, 0.95);
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            background: var(--bg-secondary);
+            box-shadow: var(--shadow-sm);
         }
 
         [data-theme="light"] .nav a:hover,
         [data-theme="light"] .nav a.active,
         [data-theme="light"] .nav-link:hover {
-            background: rgba(124, 58, 237, 0.08);
-            color: var(--purple);
+            background: var(--hover-bg);
+            color: var(--cyan);
         }
 
         [data-theme="light"] .theme-toggle:hover {
-            background: rgba(124, 58, 237, 0.08);
-            border-color: var(--purple);
+            background: var(--hover-bg);
+            border-color: var(--border-hover);
         }
 
         [data-theme="light"] .dropdown-item:hover {
-            background: rgba(124, 58, 237, 0.08);
-            color: var(--purple);
+            background: var(--hover-bg);
+            color: var(--cyan);
         }
 
         [data-theme="light"] .user-menu-trigger:hover {
-            border-color: var(--purple);
+            border-color: var(--border-hover);
         }
 
         [data-theme="light"] .user-menu-item:hover {
-            background: rgba(124, 58, 237, 0.06);
-            color: var(--purple);
+            background: var(--hover-bg);
+            color: var(--cyan);
         }
 
         [data-theme="light"] .user-menu-dropdown {
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+            box-shadow: var(--shadow-lg);
         }
 
         [data-theme="light"] .table tr:hover td {
-            background: rgba(0, 0, 0, 0.03);
+            background: var(--hover-bg);
         }
 
         [data-theme="light"] .form-input:focus {
-            box-shadow: 0 0 0 3px rgba(3, 105, 161, 0.15);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
         }
 
         [data-theme="light"] .badge-info {
-            background: rgba(3, 105, 161, 0.10);
+            background: rgba(37, 99, 235, 0.10);
         }
 
         [data-theme="light"] .btn-secondary:hover {
-            box-shadow: 0 0 15px rgba(124, 58, 237, 0.15);
+            border-color: var(--border-hover);
         }
 
         @media (max-width: 768px) {
             [data-theme="light"] .nav {
-                background: rgba(255, 255, 255, 0.98);
-                box-shadow: -5px 0 20px rgba(0, 0, 0, 0.12);
+                background: var(--bg-secondary);
+                box-shadow: var(--shadow-lg);
             }
         }
 
