@@ -717,6 +717,82 @@ class SupportController extends BaseController
     }
 
     // -------------------------------------------------------------------------
+    // POST /support/admin/ticket/{id}/pickup
+    // Assigns the ticket to the current agent and moves it to in_progress.
+    // -------------------------------------------------------------------------
+
+    public function adminPickUpTicket(int $id): void
+    {
+        $this->requireSupportAdmin();
+        $this->validateCsrf();
+
+        $ticket = $this->model->getTicketById($id);
+        if (!$ticket) {
+            $this->flash('error', 'Ticket not found.');
+            $this->redirect('/support/admin/tickets');
+            return;
+        }
+
+        $currentUserId = Auth::id();
+        $isAgent       = $this->model->isAgent($currentUserId) || Auth::isAdmin();
+
+        if (!$isAgent) {
+            $this->flash('error', 'Only agents can pick up tickets.');
+            $this->redirect('/support/admin/ticket/' . $id);
+            return;
+        }
+
+        $agentUser = Auth::user();
+        $agentName = htmlspecialchars($agentUser['name'] ?? 'Agent', ENT_QUOTES, 'UTF-8');
+
+        // Assign to current user
+        $this->model->assignTicketAgent($id, $currentUserId, $currentUserId);
+
+        // Move to in_progress only if currently open or waiting
+        if (in_array($ticket['status'], ['open', 'waiting_customer'], true)) {
+            $this->model->updateTicketStatus($id, 'in_progress', $currentUserId);
+        }
+
+        $this->model->addSystemMessage($id, "Ticket picked up by {$agentName} and set to In Progress.");
+
+        $this->flash('success', 'Ticket picked up — assigned to you.');
+        $this->redirect('/support/admin/ticket/' . $id);
+    }
+
+    // -------------------------------------------------------------------------
+    // POST /support/admin/ticket/{id}/edit
+    // Allows an agent/admin to edit the ticket subject, description, priority.
+    // -------------------------------------------------------------------------
+
+    public function adminEditTicket(int $id): void
+    {
+        $this->requireSupportAdmin();
+        $this->validateCsrf();
+
+        $ticket = $this->model->getTicketById($id);
+        if (!$ticket) {
+            $this->flash('error', 'Ticket not found.');
+            $this->redirect('/support/admin/tickets');
+            return;
+        }
+
+        $subject     = mb_substr(trim($_POST['subject'] ?? ''), 0, 255);
+        $description = trim($_POST['description'] ?? '');
+        $priority    = $_POST['priority'] ?? 'medium';
+
+        if ($subject === '') {
+            $this->flash('error', 'Subject is required.');
+            $this->redirect('/support/admin/ticket/' . $id);
+            return;
+        }
+
+        $this->model->updateTicketDetails($id, $subject, $description, $priority, Auth::id());
+
+        $this->flash('success', 'Ticket details updated.');
+        $this->redirect('/support/admin/ticket/' . $id);
+    }
+
+    // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
 

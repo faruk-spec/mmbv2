@@ -289,13 +289,27 @@ class SupportModel
         $internalClause = $includeInternal ? '' : 'AND m.is_internal = 0';
 
         return $this->db->fetchAll(
-            "SELECT m.*, u.name AS sender_name
+            "SELECT m.*, u.name AS sender_name, u.email AS sender_email
              FROM support_ticket_messages m
              LEFT JOIN users u ON u.id = m.sender_id
              WHERE m.ticket_id = ? {$internalClause}
              ORDER BY m.created_at ASC",
             [$ticketId]
         ) ?: [];
+    }
+
+    public function updateTicketDetails(int $id, string $subject, string $description, string $priority, int $actorId): void
+    {
+        $valid = ['low', 'medium', 'high', 'urgent'];
+        if (!in_array($priority, $valid, true)) {
+            $priority = 'medium';
+        }
+        $this->db->update('support_tickets', [
+            'subject'     => $subject,
+            'description' => $description,
+            'priority'    => $priority,
+        ], 'id = ?', [$id]);
+        $this->addTicketActivity($id, 'ticket_edited', $actorId, 'Ticket details updated.');
     }
 
     public function addTicketMessage(
