@@ -31,7 +31,7 @@ function _skMatch(string $uri, array $prefixes): bool {
 }
 
 if ($_skType === 'admin') {
-    if (_skMatch($_skUri, ['/admin/dashboard', '/admin'])) {
+    if ($_skUri === '/admin' || $_skUri === '/admin/' || _skMatch($_skUri, ['/admin/dashboard'])) {
         $_skContent = 'stats';
     } elseif (_skMatch($_skUri, [
         '/admin/users', '/admin/roles', '/admin/audit', '/admin/logs',
@@ -62,7 +62,9 @@ if ($_skType === 'admin') {
         $_skContent = 'table'; // sensible default for admin
     }
 } else {
-    if (_skMatch($_skUri, ['/dashboard'])) {
+    if (_skMatch($_skUri, ['/login', '/register', '/forgot-password', '/reset-password', '/verify-otp', '/2fa-verify', '/verify-email'])) {
+        $_skContent = 'auth';
+    } elseif (_skMatch($_skUri, ['/dashboard'])) {
         $_skContent = 'grid';
     } elseif (_skMatch($_skUri, ['/profile', '/security', '/settings', '/2fa'])) {
         $_skContent = 'form';
@@ -167,21 +169,27 @@ if ($_skType === 'admin') {
     var sk = document.getElementById('mmb-skeleton-screen');
     if (!sk) return;
 
+    var _start = Date.now();
+    var _minMs = 350; // minimum visible time so it never flashes
+
     function hideSkeleton() {
-        sk.style.transition = 'opacity .25s ease';
-        sk.style.opacity = '0';
-        setTimeout(function(){ if (sk.parentNode) sk.parentNode.removeChild(sk); }, 280);
+        var elapsed = Date.now() - _start;
+        var delay   = Math.max(0, _minMs - elapsed);
+        setTimeout(function() {
+            sk.style.transition = 'opacity .3s ease';
+            sk.style.opacity = '0';
+            setTimeout(function(){ if (sk.parentNode) sk.parentNode.removeChild(sk); }, 320);
+        }, delay);
     }
 
     // Hide as soon as DOM is ready (content is server-rendered so it's already there)
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', hideSkeleton);
     } else {
-        // DOMContentLoaded already fired (possible for cached pages / bfcache)
         hideSkeleton();
     }
 
-    // Absolute safety-net: remove after 3 s even if DOMContentLoaded never fires
-    setTimeout(hideSkeleton, 3000);
+    // Absolute safety-net: remove after 4 s even if DOMContentLoaded never fires
+    setTimeout(hideSkeleton, 4000);
 })();
 </script>

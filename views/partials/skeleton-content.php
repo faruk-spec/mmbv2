@@ -163,6 +163,44 @@ $_sc = $_skContent ?? 'table';
     </div>
 </div>
 
+<?php elseif ($_sc === 'auth'): ?>
+<!-- ── Auth page (login / register / forgot-password) ── -->
+<div style="max-width:420px;margin:60px auto 0;">
+    <div style="background:var(--bg-secondary,#0c0c12);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:36px 32px;">
+        <!-- Title -->
+        <div class="skeleton" style="height:26px;width:140px;border-radius:8px;margin:0 auto 28px;"></div>
+
+        <!-- Field 1 (Email) -->
+        <div style="margin-bottom:18px;">
+            <div class="skeleton" style="height:12px;width:80px;border-radius:4px;margin-bottom:8px;"></div>
+            <div class="skeleton" style="height:44px;border-radius:8px;"></div>
+        </div>
+
+        <!-- Field 2 (Password) -->
+        <div style="margin-bottom:22px;">
+            <div class="skeleton" style="height:12px;width:90px;border-radius:4px;margin-bottom:8px;"></div>
+            <div class="skeleton" style="height:44px;border-radius:8px;"></div>
+        </div>
+
+        <!-- Remember + Forgot row -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+                <div class="skeleton" style="width:16px;height:16px;border-radius:3px;"></div>
+                <div class="skeleton" style="height:11px;width:80px;border-radius:4px;"></div>
+            </div>
+            <div class="skeleton" style="height:11px;width:100px;border-radius:4px;"></div>
+        </div>
+
+        <!-- Submit button -->
+        <div class="skeleton" style="height:46px;border-radius:10px;"></div>
+
+        <!-- Footer link -->
+        <div style="margin-top:20px;text-align:center;">
+            <div class="skeleton" style="height:12px;width:200px;border-radius:4px;margin:0 auto;"></div>
+        </div>
+    </div>
+</div>
+
 <?php else: /* grid */ ?>
 <!-- ── App / module grid ── -->
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">

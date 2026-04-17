@@ -1095,7 +1095,7 @@
         .skeleton {
             background: linear-gradient(90deg, rgba(255,255,255,.06) 25%, rgba(255,255,255,.12) 50%, rgba(255,255,255,.06) 75%);
             background-size: 200% 100%;
-            animation: skeletonShimmer 1.4s infinite;
+            animation: skeletonShimmer 2.0s infinite;
             border-radius: 6px;
         }
         @keyframes skeletonShimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
@@ -1162,7 +1162,8 @@ try {
             sp.style.opacity = '1'; sp.style.visibility = 'visible';
         }
         var btn = e.target.closest('button[type="submit"],input[type="submit"]');
-        if (btn && !btn.disabled) {
+        if (btn && !btn.disabled && !btn.form?.getAttribute('data-no-loader')) {
+            if (btn.form && !btn.form.checkValidity()) return;
             btn.classList.add('mmb-btn-loading');
             sp.style.opacity = '1'; sp.style.visibility = 'visible';
         }
@@ -1174,12 +1175,14 @@ try {
 <?php } } catch (\Exception $_alEx3) { /* non-fatal */ } ?>
 <?php
 // ── Skeleton screen ───────────────────────────────────────────────────────
+$_adminSkEnabled = false;
 try {
     if (!isset($_adminLoaderSkDone)) {
         $_adminSkRow = \Core\Database::getInstance()->fetch(
             "SELECT value FROM settings WHERE `key` = 'skeleton_enabled'"
         );
         if ($_adminSkRow && $_adminSkRow['value'] === '1') {
+            $_adminSkEnabled = true;
             $skeletonType = 'admin';
             include BASE_PATH . '/views/partials/skeleton-screen.php';
         }
@@ -1187,6 +1190,68 @@ try {
     }
 } catch (\Exception $_skEx) { /* non-fatal */ }
 ?>
+<script>
+// ── mmbSkeleton inline utility ────────────────────────────────────────────
+// Always defined; show/hide are no-ops when skeleton_enabled is false.
+window.mmbSkeletonEnabled = <?= $_adminSkEnabled ? 'true' : 'false' ?>;
+window.mmbSkeleton = (function(){
+    function _on(){ return !!window.mmbSkeletonEnabled; }
+    function _html(v){
+        var s='';
+        if(v==='chart'){
+            var bars=[45,70,55,90,60,80,100,65,75,50,85,70].map(function(h){
+                return '<div class="skeleton" style="flex:1;height:'+h+'%;border-radius:4px 4px 0 0;min-height:4px;"></div>';
+            }).join('');
+            return '<div style="padding:16px;height:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:10px;">'
+                +'<div class="skeleton" style="height:13px;width:40%;border-radius:4px;"></div>'
+                +'<div style="flex:1;display:flex;align-items:flex-end;gap:5px;">'+bars+'</div></div>';
+        }
+        if(v==='stats'){
+            for(var j=0;j<4;j++) s+='<div style="background:var(--bg-secondary,#0c0c12);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:18px 16px;">'
+                +'<div class="skeleton" style="height:11px;width:55%;border-radius:4px;margin-bottom:12px;"></div>'
+                +'<div class="skeleton" style="height:28px;width:70%;border-radius:6px;margin-bottom:6px;"></div>'
+                +'<div class="skeleton" style="height:10px;width:40%;border-radius:4px;"></div></div>';
+            return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;">'+s+'</div>';
+        }
+        /* table (default) */
+        for(var i=0;i<6;i++){
+            s+='<div style="display:flex;align-items:center;gap:12px;padding:11px 16px;border-bottom:1px solid rgba(255,255,255,.04);">'
+                +'<div class="skeleton" style="width:28px;height:28px;border-radius:50%;flex-shrink:0;"></div>'
+                +[80,120,90,70,60].map(function(w){return '<div class="skeleton" style="height:12px;width:'+w+'px;border-radius:4px;"></div>';}).join('')
+                +'</div>';
+        }
+        return s;
+    }
+    function _show(el,v){
+        if(!_on()) return;
+        if(typeof el==='string') el=document.querySelector(el);
+        if(!el) return;
+        if(getComputedStyle(el).position==='static') el.style.position='relative';
+        var old=el.querySelector('.mmb-sk-inline'); if(old) old.remove();
+        var ov=document.createElement('div');
+        ov.className='mmb-sk-inline'; ov.setAttribute('aria-hidden','true');
+        ov.style.cssText='position:absolute;inset:0;z-index:20;overflow:hidden;background:var(--bg-card,#0c0c12);border-radius:inherit;';
+        ov.innerHTML=_html(v||'table');
+        el.appendChild(ov);
+    }
+    function _hide(el){
+        if(typeof el==='string') el=document.querySelector(el);
+        if(!el) return;
+        var ov=el.querySelector('.mmb-sk-inline'); if(!ov) return;
+        ov.style.transition='opacity .2s ease'; ov.style.opacity='0';
+        setTimeout(function(){ if(ov.parentNode) ov.parentNode.removeChild(ov); },230);
+    }
+    return {
+        show:_show, hide:_hide,
+        wrap:function(el,v,fn){
+            _show(el,v);
+            var p=fn();
+            if(p&&typeof p.then==='function') return p.then(function(r){_hide(el);return r;},function(e){_hide(el);throw e;});
+            _hide(el); return p;
+        }
+    };
+})();
+</script>
     <div class="admin-container">
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">

@@ -552,6 +552,8 @@ async function runQuery() {
     lastSpec=spec;
     const btn=document.getElementById('runBtn');
     btn.textContent='\u23F3 Running\u2026'; btn.disabled=true;
+    const ra=document.getElementById('resultsArea');
+    window.mmbSkeleton.show(ra,'table');
     try {
         const res=await fetch('/admin/audit/query',{
             method:'POST',
@@ -562,7 +564,7 @@ async function runQuery() {
         if(!res.ok||data.error)showError(data.error||'HTTP '+res.status);
         else showResults(data);
     } catch(e){showError('Network error: '+e.message);}
-    finally{btn.textContent='\u25B6 Run Query'; btn.disabled=false;}
+    finally{btn.textContent='\u25B6 Run Query'; btn.disabled=false; window.mmbSkeleton.hide(ra);}
 }
 
 async function runRawSql() {
@@ -570,6 +572,8 @@ async function runRawSql() {
     if(!sql){showError('Please enter a SQL query.');return;}
     const btn=document.getElementById('sqlRunBtn');
     btn.textContent='\u23F3 Executing\u2026'; btn.disabled=true;
+    const ra=document.getElementById('resultsArea');
+    window.mmbSkeleton.show(ra,'table');
     try {
         const res=await fetch('/admin/audit/sql',{
             method:'POST',
@@ -580,7 +584,7 @@ async function runRawSql() {
         if(!res.ok||data.error)showError(data.error||'HTTP '+res.status);
         else{lastSqlRows=data.data;showResults(data);}
     } catch(e){showError('Network error: '+e.message);}
-    finally{btn.textContent='\u25B6 Execute SQL'; btn.disabled=false;}
+    finally{btn.textContent='\u25B6 Execute SQL'; btn.disabled=false; window.mmbSkeleton.hide(ra);}
 }
 
 function exportSqlResult(fmt) {
