@@ -6,7 +6,7 @@
 <style>
 .act-tab-bar{display:flex;gap:6px;margin-bottom:20px;border-bottom:1px solid var(--border-color);padding-bottom:12px;}
 .act-tab{padding:7px 18px;border:1px solid var(--border-color);border-radius:8px;cursor:pointer;font-size:13px;background:transparent;color:var(--text-secondary);transition:.15s;}
-.act-tab.active{background:var(--cyan);color:#000;font-weight:600;border-color:var(--cyan);}
+.act-tab.active{background:var(--cyan);color:#fff;font-weight:600;border-color:var(--cyan);}
 .tab-panel{display:none;}
 .tab-panel.active{display:block;}
 .chart-card{background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:20px;}

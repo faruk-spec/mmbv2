@@ -78,7 +78,7 @@ $savedTheme = $userProfile['theme_preference'] ?? 'dark';
                     <input type="hidden" name="theme" id="themeInput" value="">
                 </div>
                 
-                <button type="submit" class="btn btn-primary" style="padding: 8px 16px; background: var(--cyan); border: none; border-radius: 6px; color: #06060a; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 0.85rem; width: 100%;">
+                <button type="submit" class="btn btn-primary" style="padding: 8px 16px; background: var(--cyan); border: none; border-radius: 6px; color: #fff; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 0.85rem; width: 100%;">
                     Save Theme
                 </button>
             </form>
@@ -139,7 +139,7 @@ $savedTheme = $userProfile['theme_preference'] ?? 'dark';
                     </label>
                 </div>
                 
-                <button type="submit" class="btn btn-primary" style="padding: 8px 16px; background: var(--cyan); border: none; border-radius: 6px; color: #06060a; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 0.85rem; width: 100%;">
+                <button type="submit" class="btn btn-primary" style="padding: 8px 16px; background: var(--cyan); border: none; border-radius: 6px; color: #fff; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 0.85rem; width: 100%;">
                     Save Preferences
                 </button>
             </form>
@@ -190,7 +190,7 @@ $savedTheme = $userProfile['theme_preference'] ?? 'dark';
                     </select>
                 </div>
                 
-                <button type="submit" class="btn btn-primary" style="padding: 8px 16px; background: var(--cyan); border: none; border-radius: 6px; color: #06060a; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 0.85rem; width: 100%;">
+                <button type="submit" class="btn btn-primary" style="padding: 8px 16px; background: var(--cyan); border: none; border-radius: 6px; color: #fff; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 0.85rem; width: 100%;">
                     Save Settings
                 </button>
             </form>
@@ -231,7 +231,7 @@ $savedTheme = $userProfile['theme_preference'] ?? 'dark';
                     </select>
                 </div>
                 
-                <button type="submit" class="btn btn-primary" style="padding: 8px 16px; background: var(--cyan); border: none; border-radius: 6px; color: #06060a; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 0.85rem; width: 100%;">
+                <button type="submit" class="btn btn-primary" style="padding: 8px 16px; background: var(--cyan); border: none; border-radius: 6px; color: #fff; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 0.85rem; width: 100%;">
                     Save Settings
                 </button>
             </form>
@@ -267,7 +267,7 @@ $savedTheme = $userProfile['theme_preference'] ?? 'dark';
         align-items: center;
         justify-content: center;
         font-size: 10px;
-        color: #06060a;
+        color: #fff;
     }
     
     .form-input:focus, select:focus {
@@ -353,7 +353,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     Dates and times throughout the QR dashboard will be shown in your selected timezone.
                     The system timezone is <code style="background:rgba(59,130,246,.1);padding:1px 5px;border-radius:3px;"><?= htmlspecialchars(\Core\Timezone::getSystemTz(), ENT_QUOTES, 'UTF-8') ?></code>.
                 </p>
-                <button type="submit" style="width:100%;padding:9px;background:linear-gradient(135deg,var(--green),var(--cyan));border:none;border-radius:7px;color:#000;font-weight:700;font-size:.85rem;cursor:pointer;">
+                <button type="submit" style="width:100%;padding:9px;background:linear-gradient(135deg,var(--green),var(--cyan));border:none;border-radius:7px;color:#fff;font-weight:700;font-size:.85rem;cursor:pointer;">
                     Save Timezone
                 </button>
             </form>

@@ -80,7 +80,7 @@
                                class="form-input" style="width: 100%; padding: 12px 16px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 10px; color: var(--text-primary); font-size: 0.95rem;" required>
                     </div>
                     
-                    <button type="submit" class="btn btn-primary" style="padding: 12px 32px; background: var(--cyan); border: none; border-radius: 10px; color: #06060a; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 0.875rem;">
+                    <button type="submit" class="btn btn-primary" style="padding: 12px 32px; background: var(--cyan); border: none; border-radius: 10px; color: #fff; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 0.875rem;">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
                             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
                         </svg>
@@ -132,7 +132,7 @@
                                class="form-input" style="width: 100%; padding: 12px 16px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 10px; color: var(--text-primary); font-size: 0.95rem;" required>
                     </div>
                     
-                    <button type="submit" class="btn btn-primary" style="padding: 12px 32px; background: var(--cyan); border: none; border-radius: 10px; color: #06060a; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 0.875rem;">
+                    <button type="submit" class="btn btn-primary" style="padding: 12px 32px; background: var(--cyan); border: none; border-radius: 10px; color: #fff; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 0.875rem;">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
                             <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
                             <polyline points="17 21 17 13 7 13 7 21"></polyline>
@@ -194,7 +194,7 @@
                     </div>
                 </div>
                 
-                <a href="/2fa/setup" class="btn btn-primary" style="width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; background: var(--cyan); border: none; border-radius: 10px; color: #06060a; font-weight: 600; text-decoration: none; transition: all 0.3s ease;">
+                <a href="/2fa/setup" class="btn btn-primary" style="width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; background: var(--cyan); border: none; border-radius: 10px; color: #fff; font-weight: 600; text-decoration: none; transition: all 0.3s ease;">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M12 5v14M5 12h14"></path>
                     </svg>

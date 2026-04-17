@@ -527,7 +527,7 @@ document.addEventListener('click', function(e) {
                         <span style="font-size: 1.2rem; margin-right: 10px;"><?= $config['icon'] ?></span>
                         <strong style="font-size: 1.1rem;"><?= $config['label'] ?></strong>
                         <?php if ($section['is_active'] ?? 1): ?>
-                            <span class="badge" style="margin-left: 10px; background: #22c55e; color: #000; padding: 3px 8px; border-radius: 5px; font-size: 0.7rem;">Active</span>
+                            <span class="badge" style="margin-left: 10px; background: #22c55e; color: #fff; padding: 3px 8px; border-radius: 5px; font-size: 0.7rem;">Active</span>
                         <?php else: ?>
                             <span class="badge" style="margin-left: 10px; background: #666; color: #fff; padding: 3px 8px; border-radius: 5px; font-size: 0.7rem;">Inactive</span>
                         <?php endif; ?>

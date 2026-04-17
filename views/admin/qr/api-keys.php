@@ -67,12 +67,12 @@ use Core\Security;
             <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:5px;color:var(--cyan);">⚡ Generated Key — copy now, shown only once</label>
             <div style="display:flex;gap:8px;align-items:center;">
                 <code id="newKeyVal" style="flex:1;background:rgba(0,0,0,.4);padding:8px 12px;border-radius:6px;font-size:.8rem;word-break:break-all;border:1px solid rgba(59,130,246,.3);color:var(--green);"></code>
-                <button onclick="copyGenKey()" style="padding:7px 14px;background:var(--cyan);color:#000;border:none;border-radius:6px;font-weight:700;font-size:.78rem;cursor:pointer;white-space:nowrap;">Copy</button>
+                <button onclick="copyGenKey()" style="padding:7px 14px;background:var(--cyan);color:#fff;border:none;border-radius:6px;font-weight:700;font-size:.78rem;cursor:pointer;white-space:nowrap;">Copy</button>
             </div>
         </div>
         <div style="display:flex;gap:10px;justify-content:flex-end;">
             <button onclick="closeGenModal()" style="padding:9px 18px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:7px;color:var(--text-secondary);font-size:.83rem;cursor:pointer;">Cancel</button>
-            <button onclick="submitGenKey()" style="padding:9px 18px;background:var(--cyan);border:none;border-radius:7px;color:#000;font-weight:700;font-size:.83rem;cursor:pointer;">Generate Key</button>
+            <button onclick="submitGenKey()" style="padding:9px 18px;background:var(--cyan);border:none;border-radius:7px;color:#fff;font-weight:700;font-size:.83rem;cursor:pointer;">Generate Key</button>
         </div>
     </div>
 </div>
@@ -85,7 +85,7 @@ use Core\Security;
             <input type="text" id="searchKeys" placeholder="Search name / email…"
                 oninput="filterKeys(this.value)"
                 style="padding:7px 12px;border-radius:7px;border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-size:.82rem;width:200px;">
-            <button onclick="openGenModal()" style="padding:7px 14px;background:var(--cyan);border:none;border-radius:7px;color:#000;font-weight:700;font-size:.82rem;cursor:pointer;white-space:nowrap;">
+            <button onclick="openGenModal()" style="padding:7px 14px;background:var(--cyan);border:none;border-radius:7px;color:#fff;font-weight:700;font-size:.82rem;cursor:pointer;white-space:nowrap;">
                 <i class="fas fa-plus"></i> Generate for User
             </button>
         </div>

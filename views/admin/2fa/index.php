@@ -57,7 +57,7 @@
             </select>
         </div>
         
-        <button type="submit" class="btn btn-primary" style="padding: 10px 24px; background: var(--cyan); border: none; border-radius: 8px; color: #06060a; font-weight: 600; cursor: pointer;">
+        <button type="submit" class="btn btn-primary" style="padding: 10px 24px; background: var(--cyan); border: none; border-radius: 8px; color: #fff; font-weight: 600; cursor: pointer;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 6px;">
                 <circle cx="11" cy="11" r="8"></circle>
                 <path d="m21 21-4.35-4.35"></path>

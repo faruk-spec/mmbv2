@@ -48,7 +48,7 @@
                 style="border-bottom:1px solid var(--border-color);transition:.1s;">
                 <td style="padding:10px 14px;">
                     <div style="display:flex;align-items:center;gap:10px;">
-                        <div style="width:32px;height:32px;border-radius:50%;background:var(--cyan);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#000;flex-shrink:0;">
+                        <div style="width:32px;height:32px;border-radius:50%;background:var(--cyan);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;">
                             <?= strtoupper(substr($u['name'], 0, 1)) ?>
                         </div>
                         <span style="font-weight:500;"><?= View::e($u['name']) ?></span>

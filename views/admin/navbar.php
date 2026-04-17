@@ -583,7 +583,7 @@
                                                             <?php endforeach; ?>
                                                         <?php endif; ?>
                                                     </div>
-                                                    <button type="button" onclick="addSubDropdownItem(this)" style="padding:5px 10px;background:var(--warning,#f59e0b);color:#000;border:none;border-radius:6px;cursor:pointer;font-size:12px;margin-top:4px;">
+                                                    <button type="button" onclick="addSubDropdownItem(this)" style="padding:5px 10px;background:var(--warning,#f59e0b);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;margin-top:4px;">
                                                         <i class="fas fa-plus"></i> Add Sub-item
                                                     </button>
                                                 </div>
@@ -814,7 +814,7 @@ function addDropdownItem(button) {
         <div class="sub-items-container" style="display:none; margin-top:10px; padding-left:18px; border-left:3px solid var(--warning,#f59e0b);">
             <p style="color:var(--text-secondary);font-size:12px;margin-bottom:8px;font-weight:600;">Sub-menu Items <small style="font-weight:400;">(Title + URL required)</small></p>
             <div class="sub-items-list"></div>
-            <button type="button" onclick="addSubDropdownItem(this)" style="padding:5px 10px;background:var(--warning,#f59e0b);color:#000;border:none;border-radius:6px;cursor:pointer;font-size:12px;margin-top:4px;">
+            <button type="button" onclick="addSubDropdownItem(this)" style="padding:5px 10px;background:var(--warning,#f59e0b);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;margin-top:4px;">
                 <i class="fas fa-plus"></i> Add Sub-item
             </button>
         </div>

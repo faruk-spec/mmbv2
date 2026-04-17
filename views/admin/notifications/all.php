@@ -45,7 +45,7 @@
     color: var(--text-secondary);
 }
 .pagination a:hover { background: rgba(255,255,255,.06); color: var(--text-primary); }
-.pagination .active { background: var(--cyan); color: #000; border-color: var(--cyan); font-weight: 700; }
+.pagination .active { background: var(--cyan); color: #fff; border-color: var(--cyan); font-weight: 700; }
 </style>
 <?php View::endSection(); ?>
 

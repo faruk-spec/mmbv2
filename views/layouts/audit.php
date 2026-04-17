@@ -118,7 +118,7 @@ try {
         font-family: inherit;
     }
     .ae-topbar-btn:hover { border-color: var(--cyan); color: var(--cyan); }
-    .ae-topbar-btn.primary { background: var(--cyan); color: #000; border-color: var(--cyan); font-weight: 700; }
+    .ae-topbar-btn.primary { background: var(--cyan); color: #fff; border-color: var(--cyan); font-weight: 700; }
     .ae-topbar-btn.primary:hover { opacity: .85; }
 
     /* ── Page body (below topbar) ───────────────────────────────── */

@@ -212,7 +212,7 @@
                     <!-- dynamically injected by JS -->
                 </div>
                 <div style="margin-top:16px;display:flex;gap:8px;">
-                    <button type="button" onclick="saveFieldEdits()" style="flex:1;padding:8px;background:var(--cyan);color:#000;border:none;border-radius:6px;cursor:pointer;font-size:.85rem;font-weight:600;">
+                    <button type="button" onclick="saveFieldEdits()" style="flex:1;padding:8px;background:var(--cyan);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:.85rem;font-weight:600;">
                         <i class="fas fa-check"></i> Apply
                     </button>
                     <button type="button" onclick="deleteSelectedField()" style="padding:8px 12px;background:transparent;border:1px solid var(--red);border-radius:6px;color:var(--red);cursor:pointer;font-size:.85rem;">

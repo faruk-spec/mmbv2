@@ -45,7 +45,7 @@
             </select>
         </div>
         <div style="display:flex;gap:8px;">
-            <button type="submit" style="padding:8px 16px;background:var(--cyan);color:#000;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:.875rem;">
+            <button type="submit" style="padding:8px 16px;background:var(--cyan);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:.875rem;">
                 <i class="fas fa-search"></i> Filter
             </button>
             <a href="/admin/formx" style="padding:8px 16px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;color:var(--text-secondary);text-decoration:none;font-size:.875rem;">Reset</a>
@@ -59,7 +59,7 @@
     <div style="text-align:center;padding:60px 20px;color:var(--text-secondary);">
         <i class="fas fa-wpforms" style="font-size:3rem;margin-bottom:16px;opacity:.3;"></i>
         <p style="font-size:1rem;">No forms yet.</p>
-        <a href="/admin/formx/create" style="margin-top:12px;display:inline-block;padding:8px 20px;background:var(--cyan);color:#000;border-radius:8px;text-decoration:none;font-weight:600;">Create your first form</a>
+        <a href="/admin/formx/create" style="margin-top:12px;display:inline-block;padding:8px 20px;background:var(--cyan);color:#fff;border-radius:8px;text-decoration:none;font-weight:600;">Create your first form</a>
     </div>
     <?php else: ?>
     <div style="overflow-x:auto;">

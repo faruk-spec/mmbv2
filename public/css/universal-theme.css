@@ -362,12 +362,13 @@ body::before {
 
 .btn-primary {
     background: var(--cyan);
-    color: #ffffff;
+    color: #ffffff !important;
 }
 
 .btn-primary:hover {
     opacity: 0.9;
     box-shadow: var(--shadow-sm);
+    color: #ffffff !important;
 }
 
 .btn-secondary {
@@ -679,4 +680,302 @@ body::before {
         padding: 8px 14px;
         font-size: 12px;
     }
+}
+
+/* ═══════════════════════════════════════════════════
+   DARK MODE — Text Visibility Fixes
+   Fix hardcoded dark text that becomes invisible
+   ═══════════════════════════════════════════════════ */
+
+/* Ensure all headings, labels, and text use theme variables in dark mode */
+:root:not([data-theme="light"]) h1,
+:root:not([data-theme="light"]) h2,
+:root:not([data-theme="light"]) h3,
+:root:not([data-theme="light"]) h4,
+:root:not([data-theme="light"]) h5,
+:root:not([data-theme="light"]) h6 {
+    color: var(--text-primary);
+}
+
+:root:not([data-theme="light"]) label,
+:root:not([data-theme="light"]) .form-label {
+    color: var(--text-secondary);
+}
+
+:root:not([data-theme="light"]) p,
+:root:not([data-theme="light"]) span,
+:root:not([data-theme="light"]) div {
+    color: inherit;
+}
+
+/* Fix black text on accent-colored buttons — universal override */
+:root:not([data-theme="light"]) [style*="background: var(--cyan)"],
+:root:not([data-theme="light"]) [style*="background:var(--cyan)"],
+:root:not([data-theme="light"]) [style*="background: var(--green)"],
+:root:not([data-theme="light"]) [style*="background:var(--green)"],
+:root:not([data-theme="light"]) [style*="background:linear-gradient"] {
+    color: #ffffff !important;
+}
+
+/* AdminLTE dark mode overrides — fix text colours that default to dark */
+:root:not([data-theme="light"]) .content-wrapper,
+:root:not([data-theme="light"]) .main-content,
+:root:not([data-theme="light"]) .content {
+    color: var(--text-primary);
+}
+
+:root:not([data-theme="light"]) .info-box-text,
+:root:not([data-theme="light"]) .info-box-number {
+    color: var(--text-primary) !important;
+}
+
+:root:not([data-theme="light"]) .small-box .inner h3,
+:root:not([data-theme="light"]) .small-box .inner p {
+    color: var(--text-primary) !important;
+}
+
+:root:not([data-theme="light"]) .card-title {
+    color: var(--text-primary) !important;
+}
+
+:root:not([data-theme="light"]) .card-body,
+:root:not([data-theme="light"]) .card-footer {
+    color: var(--text-primary);
+}
+
+:root:not([data-theme="light"]) .text-muted {
+    color: var(--text-secondary) !important;
+}
+
+:root:not([data-theme="light"]) .text-bold,
+:root:not([data-theme="light"]) .text-dark {
+    color: var(--text-primary) !important;
+}
+
+:root:not([data-theme="light"]) .breadcrumb-item,
+:root:not([data-theme="light"]) .breadcrumb-item.active {
+    color: var(--text-secondary);
+}
+
+/* AdminLTE form controls in dark mode */
+:root:not([data-theme="light"]) .form-control,
+:root:not([data-theme="light"]) .custom-select,
+:root:not([data-theme="light"]) .input-group-text {
+    color: var(--text-primary);
+    background-color: var(--bg-secondary);
+    border-color: var(--border-color);
+}
+
+/* AdminLTE table dark mode */
+:root:not([data-theme="light"]) .table td,
+:root:not([data-theme="light"]) .table th {
+    color: var(--text-primary);
+}
+
+/* AdminLTE dropdown */
+:root:not([data-theme="light"]) .dropdown-item {
+    color: var(--text-primary);
+}
+
+:root:not([data-theme="light"]) .dropdown-menu {
+    background-color: var(--bg-card);
+    border-color: var(--border-color);
+}
+
+/* AdminLTE modal */
+:root:not([data-theme="light"]) .modal-content {
+    background-color: var(--bg-card);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+}
+
+:root:not([data-theme="light"]) .modal-header {
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+:root:not([data-theme="light"]) .modal-footer {
+    border-color: var(--border-color);
+}
+
+:root:not([data-theme="light"]) .modal-title {
+    color: var(--text-primary);
+}
+
+:root:not([data-theme="light"]) .close {
+    color: var(--text-secondary);
+    text-shadow: none;
+}
+
+/* AdminLTE nav tabs in dark mode */
+:root:not([data-theme="light"]) .nav-tabs .nav-link {
+    color: var(--text-secondary);
+}
+
+:root:not([data-theme="light"]) .nav-tabs .nav-link.active {
+    color: var(--text-primary);
+    background-color: var(--bg-card);
+    border-color: var(--border-color);
+}
+
+/* AdminLTE pagination */
+:root:not([data-theme="light"]) .page-item .page-link {
+    color: var(--text-primary);
+    background-color: var(--bg-card);
+    border-color: var(--border-color);
+}
+
+:root:not([data-theme="light"]) .page-item.active .page-link {
+    background-color: var(--cyan);
+    border-color: var(--cyan);
+    color: #fff !important;
+}
+
+/* AdminLTE list-group */
+:root:not([data-theme="light"]) .list-group-item {
+    background-color: var(--bg-card);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+/* Ensure select, input elements have proper text colors */
+:root:not([data-theme="light"]) select,
+:root:not([data-theme="light"]) input,
+:root:not([data-theme="light"]) textarea {
+    color: var(--text-primary);
+}
+
+/* Fix optgroup labels visibility */
+:root:not([data-theme="light"]) optgroup {
+    color: var(--text-primary);
+    background-color: var(--bg-secondary);
+}
+
+:root:not([data-theme="light"]) option {
+    color: var(--text-primary);
+    background-color: var(--bg-secondary);
+}
+
+/* ═══════════════════════════════════════════════════
+   LIGHT MODE — Enhanced Card Design
+   Add borders, pop shadows, polish
+   ═══════════════════════════════════════════════════ */
+
+[data-theme="light"] .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .card:hover {
+    border-color: var(--border-hover);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+/* Light mode — AdminLTE small-box and info-box cards */
+[data-theme="light"] .small-box {
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .info-box {
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+/* Light mode — modal cards */
+[data-theme="light"] .modal-content {
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* Light mode — dropdown menus */
+[data-theme="light"] .dropdown-menu {
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+/* Light mode — form inputs subtle shadow */
+[data-theme="light"] .form-input,
+[data-theme="light"] .form-control,
+[data-theme="light"] select {
+    border: 1px solid var(--border-color);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .form-input:focus,
+[data-theme="light"] .form-control:focus {
+    border-color: var(--cyan);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12), 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+/* Light mode — table cards */
+[data-theme="light"] .table {
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+[data-theme="light"] .table th {
+    background: var(--bg-elevated, var(--bg-secondary));
+    border-bottom: 2px solid var(--border-color);
+}
+
+/* Light mode — alert improvements */
+[data-theme="light"] .alert {
+    border: 1px solid;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+/* Light mode — badge improvements */
+[data-theme="light"] .badge {
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+/* Light mode — sidebar border shadow */
+[data-theme="light"] .sidebar {
+    border-right: 1px solid var(--border-color);
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.04);
+}
+
+/* Light mode — topbar shadow */
+[data-theme="light"] .topbar,
+[data-theme="light"] .header {
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+/* Light mode — button outlines more visible */
+[data-theme="light"] .btn-secondary {
+    border: 1px solid var(--border-color);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .btn-secondary:hover {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+/* Light mode — scroll-to-top button */
+[data-theme="light"] .scroll-top {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Light mode — application cards (dashboard) */
+[data-theme="light"] .application-card,
+[data-theme="light"] [class*="stat-card"],
+[data-theme="light"] .quick-action-btn {
+    border: 1px solid var(--border-color);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .application-card:hover,
+[data-theme="light"] [class*="stat-card"]:hover,
+[data-theme="light"] .quick-action-btn:hover {
+    border-color: var(--border-hover);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }

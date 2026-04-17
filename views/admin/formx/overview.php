@@ -75,7 +75,7 @@ $trendPct = $lastMonthCount > 0 ? round(abs($thisMonth - $lastMonthCount) / $las
         <a href="/admin/formx" class="btn btn-secondary" style="padding:8px 16px;border-radius:8px;font-size:.85rem;text-decoration:none;background:var(--bg-secondary);border:1px solid var(--border-color);color:var(--text-primary);">
             <i class="fas fa-list"></i> All Forms
         </a>
-        <a href="/admin/formx/create" class="btn btn-primary" style="padding:8px 16px;border-radius:8px;font-size:.85rem;text-decoration:none;background:var(--cyan);color:#000;font-weight:600;">
+        <a href="/admin/formx/create" class="btn btn-primary" style="padding:8px 16px;border-radius:8px;font-size:.85rem;text-decoration:none;background:var(--cyan);color:#fff;font-weight:600;">
             <i class="fas fa-plus"></i> New Form
         </a>
     </div>

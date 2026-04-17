@@ -29,7 +29,7 @@ View::section('content');
 .stl-filter-sel:focus { border-color: var(--cyan,#3b82f6); }
 .stl-filter-btn {
   padding: 7px 18px; background: var(--cyan,#3b82f6); border: none;
-  border-radius: 7px; color: #05050e; font-weight: 700; font-size: .83rem; cursor: pointer;
+  border-radius: 7px; color: #fff; font-weight: 700; font-size: .83rem; cursor: pointer;
   display: inline-flex; align-items: center; gap: 6px;
 }
 .stl-filter-clear {

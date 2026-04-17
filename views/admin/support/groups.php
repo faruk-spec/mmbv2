@@ -38,7 +38,7 @@ View::section('content');
 .stg-form label:first-child { margin-top: 0; }
 .stg-input { width: 100%; padding: 8px 10px; border: 1px solid var(--border-color); border-radius: 7px; background: var(--bg-secondary); color: var(--text-primary); font-size: .84rem; outline: none; box-sizing: border-box; }
 .stg-input:focus { border-color: var(--cyan); }
-.stg-btn-full { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 18px; background: var(--cyan); color: #05050e; border: none; border-radius: 7px; font-size: .85rem; font-weight: 700; cursor: pointer; width: 100%; margin-top: 12px; }
+.stg-btn-full { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 18px; background: var(--cyan); color: #fff; border: none; border-radius: 7px; font-size: .85rem; font-weight: 700; cursor: pointer; width: 100%; margin-top: 12px; }
 .stg-btn-full:hover { opacity: .9; }
 .stg-edit-panel { display: none; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 9px; padding: 14px 15px; margin-top: 6px; margin-bottom: 8px; }
 .stg-edit-panel.open { display: block; }

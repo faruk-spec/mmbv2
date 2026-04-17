@@ -40,7 +40,7 @@ View::section('content');
 .stc-form label:first-child { margin-top: 0; }
 .stc-input { width: 100%; padding: 8px 10px; border: 1px solid var(--border-color); border-radius: 7px; background: var(--bg-secondary); color: var(--text-primary); font-size: .84rem; outline: none; box-sizing: border-box; }
 .stc-input:focus { border-color: var(--cyan); }
-.stc-btn-full { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 18px; background: var(--cyan); color: #05050e; border: none; border-radius: 7px; font-size: .85rem; font-weight: 700; cursor: pointer; width: 100%; margin-top: 12px; }
+.stc-btn-full { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 18px; background: var(--cyan); color: #fff; border: none; border-radius: 7px; font-size: .85rem; font-weight: 700; cursor: pointer; width: 100%; margin-top: 12px; }
 .stc-btn-full:hover { opacity: .9; }
 .stc-edit-panel { display: none; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 9px; padding: 13px 14px; margin-top: 6px; margin-bottom: 8px; }
 .stc-edit-panel.open { display: block; }

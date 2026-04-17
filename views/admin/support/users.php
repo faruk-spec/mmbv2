@@ -26,7 +26,7 @@ View::section('content');
 .sua-add-btn {
   display: inline-flex; align-items: center; gap: 7px;
   padding: 8px 18px; background: var(--cyan,#3b82f6); border: none;
-  border-radius: 8px; color: #05050e; font-weight: 700; font-size: .83rem; cursor: pointer;
+  border-radius: 8px; color: #fff; font-weight: 700; font-size: .83rem; cursor: pointer;
 }
 .sua-add-btn:hover { opacity: .9; }
 
@@ -106,7 +106,7 @@ View::section('content');
 }
 .sua-modal-submit {
   padding: 8px 22px; background: var(--cyan,#3b82f6); border: none;
-  border-radius: 8px; color: #05050e; font-weight: 700; font-size: .86rem; cursor: pointer;
+  border-radius: 8px; color: #fff; font-weight: 700; font-size: .86rem; cursor: pointer;
 }
 </style>
 

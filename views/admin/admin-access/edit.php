@@ -42,7 +42,7 @@ foreach ($permissions as $key => $perm) {
 <!-- User card -->
 <div class="card" style="margin-bottom:20px;">
     <div style="display:flex;align-items:center;gap:16px;padding:4px 0;">
-        <div style="width:46px;height:46px;border-radius:50%;background:var(--cyan);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;color:#000;flex-shrink:0;">
+        <div style="width:46px;height:46px;border-radius:50%;background:var(--cyan);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;color:#fff;flex-shrink:0;">
             <?= strtoupper(substr($targetUser['name'], 0, 1)) ?>
         </div>
         <div>

@@ -172,7 +172,7 @@ $isEdit = $templateId > 0 && $template !== null;
     white-space: nowrap;
 }
 .rxd-toolbar-btn:hover { border-color: rgba(59,130,246,.4); background: rgba(59,130,246,.06); }
-.rxd-toolbar-btn.primary { background: var(--cyan); color: #06060a; border-color: var(--cyan); font-weight: 700; }
+.rxd-toolbar-btn.primary { background: var(--cyan); color: #fff; border-color: var(--cyan); font-weight: 700; }
 .rxd-toolbar-btn.primary:hover { filter: brightness(1.1); }
 .rxd-toolbar-btn.danger { border-color: rgba(239,68,68,.4); color: #f87171; }
 .rxd-toolbar-btn.danger:hover { background: rgba(239,68,68,.1); }
