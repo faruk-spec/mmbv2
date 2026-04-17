@@ -51,14 +51,14 @@ try {
     }
 
     if (!empty($cssOverrides)) {
-        $themeOverridesCSS = ':root { ' . implode('; ', $cssOverrides) . '; }';
+        $themeOverridesCSS = 'html[data-ui-theme] { ' . implode('; ', $cssOverrides) . '; }';
         // BG overrides for dark mode
         $darkBg = [];
         if (!empty($ov['bg_primary_dark']))   $darkBg[] = '--bg-primary: ' . $san($ov['bg_primary_dark']);
         if (!empty($ov['bg_secondary_dark'])) $darkBg[] = '--bg-secondary: ' . $san($ov['bg_secondary_dark']);
         if (!empty($ov['bg_card_dark']))      $darkBg[] = '--bg-card: ' . $san($ov['bg_card_dark']);
         if (!empty($darkBg)) {
-            $themeOverridesCSS .= ' :root:not([data-theme="light"]) { ' . implode('; ', $darkBg) . '; }';
+            $themeOverridesCSS .= ' html[data-ui-theme]:not([data-theme="light"]) { ' . implode('; ', $darkBg) . '; }';
         }
         // BG overrides for light mode
         $lightBg = [];
@@ -66,7 +66,7 @@ try {
         if (!empty($ov['bg_secondary_light'])) $lightBg[] = '--bg-secondary: ' . $san($ov['bg_secondary_light']);
         if (!empty($ov['bg_card_light']))      $lightBg[] = '--bg-card: ' . $san($ov['bg_card_light']);
         if (!empty($lightBg)) {
-            $themeOverridesCSS .= ' [data-theme="light"] { ' . implode('; ', $lightBg) . '; }';
+            $themeOverridesCSS .= ' html[data-ui-theme][data-theme="light"] { ' . implode('; ', $lightBg) . '; }';
         }
     }
 
@@ -132,66 +132,16 @@ try {
     
     <!-- Universal Theme System -->
     <link rel="stylesheet" href="/css/universal-theme.css?v=<?= @filemtime(BASE_PATH . '/public/css/universal-theme.css') ?: time() ?>">
-    <?php if (!empty($themeOverridesCSS)): ?>
-    <style id="theme-admin-overrides"><?= $themeOverridesCSS ?></style>
-    <?php endif; ?>
     
     <style>
         :root {
-            --bg-primary: #09090b;
-            --bg-secondary: #111113;
-            --bg-card: #18181b;
-            --bg-elevated: #1f1f23;
-            --card-inner-bg: #18181b;
-            --cyan: #3b82f6;
-            --magenta: #8b5cf6;
-            --green: #22c55e;
-            --orange: #f59e0b;
-            --purple: #8b5cf6;
-            --red: #ef4444;
-            --text-primary: #fafafa;
-            --text-secondary: #a1a1aa;
-            --text-tertiary: #71717a;
-            --border-color: rgba(255, 255, 255, 0.08);
-            --border-hover: rgba(255, 255, 255, 0.16);
-            --shadow-glow: none;
-            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
-            --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
-            --transition: all 0.2s ease;
-            --hover-bg: rgba(255, 255, 255, 0.04);
-            --active-bg: rgba(59, 130, 246, 0.1);
+            /* Layout-specific variables not managed by universal-theme.css */
             --shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-            --focus-ring: 0 0 0 2px var(--bg-primary), 0 0 0 4px var(--cyan);
         }
         
-        /* Light Theme */
+        /* Light Theme - layout-specific overrides */
         [data-theme="light"] {
-            --bg-primary: #fafafa;
-            --bg-secondary: #ffffff;
-            --bg-card: #ffffff;
-            --bg-elevated: #f4f4f5;
-            --card-inner-bg: #ffffff;
-            --cyan: #2563eb;
-            --magenta: #7c3aed;
-            --green: #16a34a;
-            --orange: #d97706;
-            --purple: #7c3aed;
-            --red: #dc2626;
-            --text-primary: #18181b;
-            --text-secondary: #52525b;
-            --text-tertiary: #a1a1aa;
-            --border-color: rgba(0, 0, 0, 0.08);
-            --border-hover: rgba(0, 0, 0, 0.16);
-            --shadow-glow: none;
-            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
-            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
-            --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
-            --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
-            --hover-bg: rgba(0, 0, 0, 0.03);
-            --active-bg: rgba(37, 99, 235, 0.08);
             --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-            --focus-ring: 0 0 0 2px var(--bg-primary), 0 0 0 4px var(--cyan);
         }
 
         /* Light-mode background */
@@ -1090,6 +1040,9 @@ try {
             min-width: 0;
         }
     </style>
+    <?php if (!empty($themeOverridesCSS)): ?>
+    <style id="theme-admin-overrides"><?= $themeOverridesCSS ?></style>
+    <?php endif; ?>
     
     <?php View::yield('styles'); ?>
 </head>

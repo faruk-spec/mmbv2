@@ -35,20 +35,20 @@ if (!empty($ov['shadow_intensity']) && isset($shadowMap[$ov['shadow_intensity']]
     $cssOv[] = '--card-shadow: ' . $s[3];
 }
 if (!empty($cssOv)) {
-    $_adminThemeOverrides = ':root { ' . implode('; ', $cssOv) . '; }';
+    $_adminThemeOverrides = 'html[data-ui-theme] { ' . implode('; ', $cssOv) . '; }';
     $darkBg = [];
     if (!empty($ov['bg_primary_dark']))   $darkBg[] = '--bg-primary: ' . $san($ov['bg_primary_dark']);
     if (!empty($ov['bg_secondary_dark'])) $darkBg[] = '--bg-secondary: ' . $san($ov['bg_secondary_dark']);
     if (!empty($ov['bg_card_dark']))      $darkBg[] = '--bg-card: ' . $san($ov['bg_card_dark']);
     if (!empty($darkBg)) {
-        $_adminThemeOverrides .= ' :root:not([data-theme="light"]) { ' . implode('; ', $darkBg) . '; }';
+        $_adminThemeOverrides .= ' html[data-ui-theme]:not([data-theme="light"]) { ' . implode('; ', $darkBg) . '; }';
     }
     $lightBg = [];
     if (!empty($ov['bg_primary_light']))   $lightBg[] = '--bg-primary: ' . $san($ov['bg_primary_light']);
     if (!empty($ov['bg_secondary_light'])) $lightBg[] = '--bg-secondary: ' . $san($ov['bg_secondary_light']);
     if (!empty($ov['bg_card_light']))      $lightBg[] = '--bg-card: ' . $san($ov['bg_card_light']);
     if (!empty($lightBg)) {
-        $_adminThemeOverrides .= ' [data-theme="light"] { ' . implode('; ', $lightBg) . '; }';
+        $_adminThemeOverrides .= ' html[data-ui-theme][data-theme="light"] { ' . implode('; ', $lightBg) . '; }';
     }
 }
 ?>
@@ -78,80 +78,30 @@ if (!empty($cssOv)) {
     
     <!-- Universal Theme System -->
     <link rel="stylesheet" href="/css/universal-theme.css?v=<?= @filemtime(BASE_PATH . '/public/css/universal-theme.css') ?: time() ?>">
-    <?php if (!empty($_adminThemeOverrides)): ?>
-    <style id="theme-admin-overrides"><?= $_adminThemeOverrides ?></style>
-    <?php endif; ?>
     
     <style>
-        /* Dark Theme (Default) */
+        /* Dark Theme — admin-only extras (theme variables come from universal-theme.css) */
         :root[data-theme="dark"] {
-            --bg-primary: #09090b;
-            --bg-secondary: #111113;
-            --bg-card: #18181b;
-            --bg-elevated: #1f1f23;
-            --cyan: #3b82f6;
-            --magenta: #8b5cf6;
-            --green: #22c55e;
-            --orange: #f59e0b;
-            --purple: #8b5cf6;
-            --red: #ef4444;
-            --text-primary: #fafafa;
-            --text-secondary: #a1a1aa;
-            --text-tertiary: #71717a;
-            --border-color: rgba(255, 255, 255, 0.08);
-            --border-hover: rgba(255, 255, 255, 0.16);
-            --shadow-glow: none;
-            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
-            --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
-            --transition: all 0.2s ease;
             --sidebar-width: 260px;
             --bg-gradient-start: rgba(59, 130, 246, 0.04);
             --bg-gradient-end: rgba(139, 92, 246, 0.04);
             --overlay-bg: rgba(0, 0, 0, 0.5);
             --dropdown-bg: rgba(0, 0, 0, 0.15);
             --shadow: rgba(0, 0, 0, 0.4);
-            --hover-bg: rgba(255, 255, 255, 0.04);
-            --active-bg: rgba(59, 130, 246, 0.1);
-            --focus-ring: 0 0 0 2px var(--bg-primary), 0 0 0 4px var(--cyan);
             --badge-success-bg: rgba(34, 197, 94, 0.12);
             --badge-danger-bg: rgba(239, 68, 68, 0.12);
             --badge-info-bg: rgba(59, 130, 246, 0.12);
             --badge-warning-bg: rgba(245, 158, 11, 0.12);
         }
         
-        /* Light Theme */
+        /* Light Theme — admin-only extras */
         :root[data-theme="light"] {
-            --bg-primary: #fafafa;
-            --bg-secondary: #ffffff;
-            --bg-card: #ffffff;
-            --bg-elevated: #f4f4f5;
-            --cyan: #2563eb;
-            --magenta: #7c3aed;
-            --green: #16a34a;
-            --orange: #d97706;
-            --purple: #7c3aed;
-            --red: #dc2626;
-            --text-primary: #18181b;
-            --text-secondary: #52525b;
-            --text-tertiary: #a1a1aa;
-            --border-color: rgba(0, 0, 0, 0.08);
-            --border-hover: rgba(0, 0, 0, 0.16);
-            --shadow-glow: none;
-            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
-            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
-            --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
-            --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
-            --transition: all 0.2s ease;
             --sidebar-width: 260px;
             --bg-gradient-start: rgba(37, 99, 235, 0.04);
             --bg-gradient-end: rgba(124, 58, 237, 0.04);
             --overlay-bg: rgba(0, 0, 0, 0.3);
             --dropdown-bg: rgba(0, 0, 0, 0.03);
             --shadow: rgba(0, 0, 0, 0.08);
-            --hover-bg: rgba(0, 0, 0, 0.03);
-            --active-bg: rgba(37, 99, 235, 0.08);
-            --focus-ring: 0 0 0 2px var(--bg-primary), 0 0 0 4px var(--cyan);
             --badge-success-bg: rgba(22, 163, 74, 0.10);
             --badge-danger-bg: rgba(220, 38, 38, 0.10);
             --badge-info-bg: rgba(37, 99, 235, 0.10);
@@ -1069,6 +1019,9 @@ if (!empty($cssOv)) {
             border-left: 3px solid var(--orange);
         }
     </style>
+    <?php if (!empty($_adminThemeOverrides)): ?>
+    <style id="theme-admin-overrides"><?= $_adminThemeOverrides ?></style>
+    <?php endif; ?>
     
     <?php View::yield('styles'); ?>
 </head>

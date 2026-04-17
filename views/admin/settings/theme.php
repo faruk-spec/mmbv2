@@ -39,45 +39,91 @@
                     'name'  => 'Default',
                     'desc'  => 'Vercel-inspired clean developer aesthetic',
                     'icon'  => 'fas fa-code',
-                    'dark'  => ['#09090b', '#18181b', '#3b82f6'],
-                    'light' => ['#fafafa', '#ffffff', '#2563eb'],
+                    'dark'  => ['#09090b', '#18181b', '#3b82f6', '#fafafa', '#a1a1aa', 'rgba(255,255,255,0.08)'],
+                    'light' => ['#fafafa', '#ffffff', '#2563eb', '#18181b', '#52525b', 'rgba(0,0,0,0.08)'],
+                    'radius' => '8px',
                 ],
                 'soft' => [
                     'name'  => 'Soft',
                     'desc'  => 'Notion-inspired warm neutral design',
                     'icon'  => 'fas fa-feather-alt',
-                    'dark'  => ['#1a1a1a', '#2a2a2a', '#6b9fff'],
-                    'light' => ['#f7f6f3', '#ffffff', '#2f7aeb'],
+                    'dark'  => ['#1a1a1a', '#2a2a2a', '#6b9fff', '#ececec', '#999999', 'rgba(255,255,255,0.06)'],
+                    'light' => ['#f7f6f3', '#ffffff', '#2f7aeb', '#37352f', '#787774', 'rgba(55,53,47,0.09)'],
+                    'radius' => '10px',
                 ],
                 'corporate' => [
                     'name'  => 'Corporate',
                     'desc'  => 'Stripe-inspired sharp enterprise look',
                     'icon'  => 'fas fa-briefcase',
-                    'dark'  => ['#0a0e1a', '#1f2937', '#635bff'],
-                    'light' => ['#f6f9fc', '#ffffff', '#635bff'],
+                    'dark'  => ['#0a0e1a', '#1f2937', '#635bff', '#f9fafb', '#9ca3af', 'rgba(255,255,255,0.06)'],
+                    'light' => ['#f6f9fc', '#ffffff', '#635bff', '#0a2540', '#425466', 'rgba(10,37,64,0.08)'],
+                    'radius' => '6px',
                 ],
                 'neon' => [
                     'name'  => 'Neon',
                     'desc'  => 'Linear-inspired vibrant developer theme',
                     'icon'  => 'fas fa-bolt',
-                    'dark'  => ['#08070b', '#19172a', '#6c63ff'],
-                    'light' => ['#faf8ff', '#ffffff', '#5b52e5'],
+                    'dark'  => ['#08070b', '#19172a', '#6c63ff', '#f5f3ff', '#a5a0c8', 'rgba(168,85,247,0.10)'],
+                    'light' => ['#faf8ff', '#ffffff', '#5b52e5', '#1e1b4b', '#4c4678', 'rgba(91,82,229,0.10)'],
+                    'radius' => '10px',
                 ],
             ];
             foreach ($themes as $key => $theme):
                 $isActive = ($activeTheme ?? 'default') === $key;
+                // dark: [bgPage, bgCard, accent, textPrimary, textSecondary, border]
+                $d = $theme['dark'];
+                $l = $theme['light'];
+                $rad = $theme['radius'];
             ?>
             <label class="theme-card <?= $isActive ? 'active' : '' ?>" style="cursor: pointer; display: block; padding: 0; border: 2px solid <?= $isActive ? 'var(--cyan)' : 'var(--border-color)' ?>; border-radius: var(--radius-lg); overflow: hidden; transition: all 0.2s ease; background: var(--bg-card);">
                 <input type="radio" name="active_theme" value="<?= $key ?>" <?= $isActive ? 'checked' : '' ?> style="display: none;" onchange="selectTheme(this)">
 
-                <!-- Color preview bar -->
-                <div style="display: flex; height: 48px;">
-                    <div style="flex: 1; background: <?= $theme['dark'][0] ?>;"></div>
-                    <div style="flex: 1; background: <?= $theme['dark'][1] ?>;"></div>
-                    <div style="flex: 0.6; background: <?= $theme['dark'][2] ?>;"></div>
-                    <div style="flex: 1; background: <?= $theme['light'][0] ?>;"></div>
-                    <div style="flex: 1; background: <?= $theme['light'][1] ?>;"></div>
-                    <div style="flex: 0.6; background: <?= $theme['light'][2] ?>;"></div>
+                <!-- Mini UI Preview -->
+                <div style="display: flex; height: 110px; overflow: hidden;">
+                    <!-- Dark preview -->
+                    <div style="flex: 1; background: <?= $d[0] ?>; padding: 8px; display: flex; flex-direction: column; gap: 5px; border-right: 1px solid <?= $d[5] ?>;">
+                        <div style="font-size: 7px; font-weight: 600; color: <?= $d[3] ?>; margin-bottom: 2px;">Dark</div>
+                        <!-- Mini card -->
+                        <div style="background: <?= $d[1] ?>; border: 1px solid <?= $d[5] ?>; border-radius: <?= $rad ?>; padding: 6px; flex: 1;">
+                            <div style="width: 60%; height: 4px; background: <?= $d[3] ?>; border-radius: 2px; margin-bottom: 4px; opacity: 0.9;"></div>
+                            <div style="width: 80%; height: 3px; background: <?= $d[4] ?>; border-radius: 2px; margin-bottom: 6px; opacity: 0.5;"></div>
+                            <div style="display: flex; gap: 4px;">
+                                <div style="height: 12px; padding: 0 6px; background: <?= $d[2] ?>; border-radius: 3px; display: flex; align-items: center;">
+                                    <span style="font-size: 5px; color: #fff; font-weight: 600;">Button</span>
+                                </div>
+                                <div style="height: 12px; padding: 0 6px; background: <?= $d[1] ?>; border: 1px solid <?= $d[5] ?>; border-radius: 3px; display: flex; align-items: center;">
+                                    <span style="font-size: 5px; color: <?= $d[4] ?>;">Sec</span>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Mini badges -->
+                        <div style="display: flex; gap: 3px;">
+                            <span style="font-size: 5px; background: rgba(34,197,94,0.15); color: #22c55e; padding: 1px 4px; border-radius: 6px;">OK</span>
+                            <span style="font-size: 5px; background: rgba(239,68,68,0.15); color: #ef4444; padding: 1px 4px; border-radius: 6px;">Err</span>
+                            <span style="font-size: 5px; background: <?= $d[2] ?>22; color: <?= $d[2] ?>; padding: 1px 4px; border-radius: 6px;">Info</span>
+                        </div>
+                    </div>
+                    <!-- Light preview -->
+                    <div style="flex: 1; background: <?= $l[0] ?>; padding: 8px; display: flex; flex-direction: column; gap: 5px;">
+                        <div style="font-size: 7px; font-weight: 600; color: <?= $l[3] ?>; margin-bottom: 2px;">Light</div>
+                        <div style="background: <?= $l[1] ?>; border: 1px solid <?= $l[5] ?>; border-radius: <?= $rad ?>; padding: 6px; flex: 1; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
+                            <div style="width: 60%; height: 4px; background: <?= $l[3] ?>; border-radius: 2px; margin-bottom: 4px; opacity: 0.9;"></div>
+                            <div style="width: 80%; height: 3px; background: <?= $l[4] ?>; border-radius: 2px; margin-bottom: 6px; opacity: 0.5;"></div>
+                            <div style="display: flex; gap: 4px;">
+                                <div style="height: 12px; padding: 0 6px; background: <?= $l[2] ?>; border-radius: 3px; display: flex; align-items: center;">
+                                    <span style="font-size: 5px; color: #fff; font-weight: 600;">Button</span>
+                                </div>
+                                <div style="height: 12px; padding: 0 6px; background: <?= $l[1] ?>; border: 1px solid <?= $l[5] ?>; border-radius: 3px; display: flex; align-items: center;">
+                                    <span style="font-size: 5px; color: <?= $l[4] ?>;">Sec</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 3px;">
+                            <span style="font-size: 5px; background: rgba(34,197,94,0.12); color: #16a34a; padding: 1px 4px; border-radius: 6px;">OK</span>
+                            <span style="font-size: 5px; background: rgba(239,68,68,0.12); color: #dc2626; padding: 1px 4px; border-radius: 6px;">Err</span>
+                            <span style="font-size: 5px; background: <?= $l[2] ?>15; color: <?= $l[2] ?>; padding: 1px 4px; border-radius: 6px;">Info</span>
+                        </div>
+                    </div>
                 </div>
 
                 <div style="padding: 16px;">
@@ -160,11 +206,12 @@
             <div>
                 <label style="display: block; font-size: 12px; font-weight: 500; color: var(--text-secondary); margin-bottom: 6px;"><?= $field['label'] ?></label>
                 <div style="display: flex; align-items: center; gap: 8px;">
-                    <input type="color" name="override_<?= $key ?>" value="<?= htmlspecialchars($currentVal ?: $field['default']) ?>"
+                    <input type="color" value="<?= htmlspecialchars($currentVal ?: $field['default']) ?>"
                            style="width: 36px; height: 36px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); cursor: pointer; padding: 2px; background: var(--bg-secondary);"
                            data-default="<?= $field['default'] ?>"
-                           class="color-override">
-                    <input type="text" value="<?= htmlspecialchars($currentVal) ?>"
+                           class="color-override"
+                           data-target="override_<?= $key ?>">
+                    <input type="text" name="override_<?= $key ?>" value="<?= htmlspecialchars($currentVal) ?>"
                            placeholder="<?= $field['default'] ?>"
                            style="flex: 1; padding: 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary); font-size: 12px; font-family: monospace;"
                            class="color-text-input"
@@ -201,10 +248,10 @@
                 <div style="margin-bottom: 12px;">
                     <label style="display: block; font-size: 12px; font-weight: 500; color: var(--text-secondary); margin-bottom: 4px;"><?= $field['label'] ?></label>
                     <div style="display: flex; align-items: center; gap: 8px;">
-                        <input type="color" name="override_<?= $key ?>" value="<?= htmlspecialchars($currentVal ?: $field['default']) ?>"
+                        <input type="color" value="<?= htmlspecialchars($currentVal ?: $field['default']) ?>"
                                style="width: 32px; height: 32px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); cursor: pointer; padding: 2px; background: var(--bg-secondary);"
-                               data-default="<?= $field['default'] ?>" class="color-override">
-                        <input type="text" value="<?= htmlspecialchars($currentVal) ?>"
+                               data-default="<?= $field['default'] ?>" class="color-override" data-target="override_<?= $key ?>">
+                        <input type="text" name="override_<?= $key ?>" value="<?= htmlspecialchars($currentVal) ?>"
                                placeholder="<?= $field['default'] ?>"
                                style="flex: 1; padding: 6px 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary); font-size: 12px; font-family: monospace;"
                                class="color-text-input" data-for="override_<?= $key ?>">
@@ -228,10 +275,10 @@
                 <div style="margin-bottom: 12px;">
                     <label style="display: block; font-size: 12px; font-weight: 500; color: var(--text-secondary); margin-bottom: 4px;"><?= $field['label'] ?></label>
                     <div style="display: flex; align-items: center; gap: 8px;">
-                        <input type="color" name="override_<?= $key ?>" value="<?= htmlspecialchars($currentVal ?: $field['default']) ?>"
+                        <input type="color" value="<?= htmlspecialchars($currentVal ?: $field['default']) ?>"
                                style="width: 32px; height: 32px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); cursor: pointer; padding: 2px; background: var(--bg-secondary);"
-                               data-default="<?= $field['default'] ?>" class="color-override">
-                        <input type="text" value="<?= htmlspecialchars($currentVal) ?>"
+                               data-default="<?= $field['default'] ?>" class="color-override" data-target="override_<?= $key ?>">
+                        <input type="text" name="override_<?= $key ?>" value="<?= htmlspecialchars($currentVal) ?>"
                                placeholder="<?= $field['default'] ?>"
                                style="flex: 1; padding: 6px 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary); font-size: 12px; font-family: monospace;"
                                class="color-text-input" data-for="override_<?= $key ?>">
@@ -302,30 +349,35 @@
     <div class="card" style="margin-bottom: 24px;">
         <div class="card-header" style="margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border-color);">
             <h3 class="card-title" style="font-size: 1rem; font-weight: 600;"><i class="fas fa-eye" style="margin-right: 8px; color: var(--cyan);"></i>Live Preview</h3>
+            <span class="pv-header-label" style="font-size: 12px; color: var(--text-secondary);"></span>
         </div>
 
-        <div id="themePreview" style="padding: 24px; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: var(--bg-secondary);">
+        <div id="themePreview" style="padding: 24px; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: var(--bg-secondary); transition: background 0.3s ease;">
             <div style="display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 16px;">
-                <button type="button" class="btn btn-primary" style="pointer-events: none;">Primary Button</button>
-                <button type="button" class="btn btn-secondary" style="pointer-events: none;">Secondary</button>
-                <button type="button" class="btn btn-danger" style="pointer-events: none;">Danger</button>
+                <button type="button" class="btn btn-primary pv-btn-primary" style="pointer-events: none;">Primary Button</button>
+                <button type="button" class="btn btn-secondary pv-btn-secondary" style="pointer-events: none; border: 1px solid var(--border-color);">Secondary</button>
+                <button type="button" class="btn pv-btn-danger" style="pointer-events: none; border: 1px solid;">Danger</button>
                 <button type="button" class="btn" style="pointer-events: none; opacity: 0.5;">Disabled</button>
             </div>
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px;">
-                <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 16px; box-shadow: var(--card-shadow, none);">
-                    <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">Sample Card</div>
-                    <div style="font-size: 12px; color: var(--text-secondary);">Card content</div>
+                <div class="pv-card" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 16px; box-shadow: var(--card-shadow, none); transition: all 0.3s ease;">
+                    <div class="pv-card-title" style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">Sample Card</div>
+                    <div class="pv-card-text" style="font-size: 12px; color: var(--text-secondary);">Card content preview</div>
                 </div>
-                <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 16px; box-shadow: var(--card-shadow, none);">
-                    <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">Another Card</div>
-                    <div style="font-size: 12px; color: var(--text-secondary);">More content</div>
+                <div class="pv-card" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 16px; box-shadow: var(--card-shadow, none); transition: all 0.3s ease;">
+                    <div class="pv-card-title" style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">Another Card</div>
+                    <div class="pv-card-text" style="font-size: 12px; color: var(--text-secondary);">More content here</div>
+                </div>
+                <div class="pv-card" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 16px; box-shadow: var(--card-shadow, none); transition: all 0.3s ease;">
+                    <div class="pv-card-title" style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">Third Card</div>
+                    <div class="pv-card-text" style="font-size: 12px; color: var(--text-secondary);">Additional item</div>
                 </div>
             </div>
             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                <span class="badge badge-success">Success</span>
-                <span class="badge badge-danger">Danger</span>
-                <span class="badge badge-warning">Warning</span>
-                <span class="badge badge-info">Info</span>
+                <span class="badge pv-badge-success" style="display:inline-flex;align-items:center;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:500;">Success</span>
+                <span class="badge pv-badge-danger" style="display:inline-flex;align-items:center;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:500;">Danger</span>
+                <span class="badge pv-badge-warning" style="display:inline-flex;align-items:center;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:500;">Warning</span>
+                <span class="badge pv-badge-info" style="display:inline-flex;align-items:center;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:500;">Info</span>
             </div>
         </div>
     </div>
@@ -373,12 +425,14 @@ function selectTheme(radio) {
     const card = radio.closest('.theme-card');
     card.style.borderColor = 'var(--cyan)';
     card.classList.add('active');
+    updatePreview();
 }
 
 function selectMode(radio) {
     document.querySelectorAll('[name="default_mode"]').forEach(r => {
         r.closest('label').style.borderColor = r.checked ? 'var(--cyan)' : 'var(--border-color)';
     });
+    updatePreview();
 }
 
 function resetColors() {
@@ -389,25 +443,162 @@ function resetColors() {
     document.querySelectorAll('.color-text-input').forEach(input => {
         input.value = '';
     });
+    updatePreview();
 }
 
 // Sync color picker ↔ text input
 document.querySelectorAll('.color-override').forEach(picker => {
     picker.addEventListener('input', function() {
-        const textInput = this.closest('div').parentElement.querySelector('.color-text-input');
+        const targetName = this.dataset.target;
+        const textInput = document.querySelector(`input[name="${targetName}"]`);
         if (textInput) textInput.value = this.value;
+        updatePreview();
     });
 });
 
 document.querySelectorAll('.color-text-input').forEach(textInput => {
     textInput.addEventListener('input', function() {
-        const name = this.dataset.for;
-        const picker = document.querySelector(`[name="${name}"]`);
+        const targetName = this.getAttribute('name');
+        const picker = document.querySelector(`.color-override[data-target="${targetName}"]`);
         if (picker && /^#[0-9A-Fa-f]{6}$/.test(this.value)) {
             picker.value = this.value;
         }
+        updatePreview();
     });
 });
+
+// Radius and shadow radio buttons
+document.querySelectorAll('[name="override_radius_level"], [name="override_shadow_intensity"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        updatePreview();
+    });
+});
+
+/* ─── Live Preview Engine ─── */
+const previewEl = document.getElementById('themePreview');
+
+// Theme definitions for preview
+const themeTokens = {
+    default: {
+        dark:  { bgPrimary: '#09090b', bgSecondary: '#111113', bgCard: '#18181b', cyan: '#3b82f6', magenta: '#8b5cf6', green: '#22c55e', orange: '#f59e0b', red: '#ef4444', purple: '#8b5cf6', textPrimary: '#fafafa', textSecondary: '#a1a1aa', border: 'rgba(255,255,255,0.08)', cardShadow: 'none', radius: '8px' },
+        light: { bgPrimary: '#fafafa', bgSecondary: '#ffffff', bgCard: '#ffffff', cyan: '#2563eb', magenta: '#7c3aed', green: '#16a34a', orange: '#d97706', red: '#dc2626', purple: '#7c3aed', textPrimary: '#18181b', textSecondary: '#52525b', border: 'rgba(0,0,0,0.08)', cardShadow: '0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06)', radius: '8px' }
+    },
+    soft: {
+        dark:  { bgPrimary: '#1a1a1a', bgSecondary: '#222222', bgCard: '#2a2a2a', cyan: '#6b9fff', magenta: '#b197fc', green: '#69db7c', orange: '#ffd43b', red: '#ff6b6b', purple: '#b197fc', textPrimary: '#ececec', textSecondary: '#999999', border: 'rgba(255,255,255,0.06)', cardShadow: 'none', radius: '10px' },
+        light: { bgPrimary: '#f7f6f3', bgSecondary: '#ffffff', bgCard: '#ffffff', cyan: '#2f7aeb', magenta: '#7048c6', green: '#2b9348', orange: '#cc8a00', red: '#cc3333', purple: '#7048c6', textPrimary: '#37352f', textSecondary: '#787774', border: 'rgba(55,53,47,0.09)', cardShadow: '0 1px 3px rgba(55,53,47,0.06), 0 0 0 1px rgba(55,53,47,0.04)', radius: '10px' }
+    },
+    corporate: {
+        dark:  { bgPrimary: '#0a0e1a', bgSecondary: '#111827', bgCard: '#1f2937', cyan: '#635bff', magenta: '#a78bfa', green: '#10b981', orange: '#f97316', red: '#ef4444', purple: '#a78bfa', textPrimary: '#f9fafb', textSecondary: '#9ca3af', border: 'rgba(255,255,255,0.06)', cardShadow: 'none', radius: '6px' },
+        light: { bgPrimary: '#f6f9fc', bgSecondary: '#ffffff', bgCard: '#ffffff', cyan: '#635bff', magenta: '#7c3aed', green: '#0ea170', orange: '#d97706', red: '#dc2626', purple: '#7c3aed', textPrimary: '#0a2540', textSecondary: '#425466', border: 'rgba(10,37,64,0.08)', cardShadow: '0 1px 3px rgba(10,37,64,0.06), 0 0 0 1px rgba(10,37,64,0.04)', radius: '6px' }
+    },
+    neon: {
+        dark:  { bgPrimary: '#08070b', bgSecondary: '#110f1a', bgCard: '#19172a', cyan: '#6c63ff', magenta: '#e879f9', green: '#34d399', orange: '#fbbf24', red: '#f43f5e', purple: '#a855f7', textPrimary: '#f5f3ff', textSecondary: '#a5a0c8', border: 'rgba(168,85,247,0.10)', cardShadow: 'none', radius: '10px' },
+        light: { bgPrimary: '#faf8ff', bgSecondary: '#ffffff', bgCard: '#ffffff', cyan: '#5b52e5', magenta: '#c026d3', green: '#16a34a', orange: '#d97706', red: '#e11d48', purple: '#9333ea', textPrimary: '#1e1b4b', textSecondary: '#4c4678', border: 'rgba(91,82,229,0.10)', cardShadow: '0 1px 3px rgba(91,82,229,0.06), 0 0 0 1px rgba(91,82,229,0.04)', radius: '10px' }
+    }
+};
+
+const radiusMap = { sharp: { sm: '4px', md: '6px', lg: '8px' }, medium: { sm: '6px', md: '8px', lg: '12px' }, rounded: { sm: '8px', md: '10px', lg: '16px' } };
+const shadowMap = {
+    none:   { sm: 'none', md: 'none', lg: 'none', card: 'none' },
+    subtle: { sm: '0 1px 2px rgba(0,0,0,0.04)', md: '0 2px 6px rgba(0,0,0,0.06)', lg: '0 4px 12px rgba(0,0,0,0.08)', card: '0 1px 2px rgba(0,0,0,0.04)' },
+    normal: { sm: '0 1px 3px rgba(0,0,0,0.06)', md: '0 4px 12px rgba(0,0,0,0.08)', lg: '0 8px 24px rgba(0,0,0,0.12)', card: '0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)' },
+    strong: { sm: '0 2px 4px rgba(0,0,0,0.08)', md: '0 6px 18px rgba(0,0,0,0.14)', lg: '0 12px 36px rgba(0,0,0,0.20)', card: '0 2px 6px rgba(0,0,0,0.10), 0 1px 3px rgba(0,0,0,0.06)' }
+};
+
+function updatePreview() {
+    if (!previewEl) return;
+    // Gather current form state
+    const selectedTheme = document.querySelector('[name="active_theme"]:checked')?.value || 'default';
+    const selectedMode = document.querySelector('[name="default_mode"]:checked')?.value || 'dark';
+    const tokens = themeTokens[selectedTheme]?.[selectedMode] || themeTokens.default.dark;
+
+    // Get override colors (text inputs take precedence, use theme default if empty)
+    const getOv = (key, fallback) => {
+        const textEl = document.querySelector(`.color-text-input[data-for="override_${key}"]`);
+        return (textEl && textEl.value && /^#[0-9A-Fa-f]{6}$/.test(textEl.value)) ? textEl.value : fallback;
+    };
+
+    const cyan    = getOv('cyan', tokens.cyan);
+    const magenta = getOv('magenta', tokens.magenta);
+    const green   = getOv('green', tokens.green);
+    const orange  = getOv('orange', tokens.orange);
+    const red     = getOv('red', tokens.red);
+    const purple  = getOv('purple', tokens.purple);
+
+    // BG overrides
+    const bgKey = selectedMode === 'light' ? 'light' : 'dark';
+    const bgPrimary   = getOv('bg_primary_' + bgKey, tokens.bgPrimary);
+    const bgSecondary = getOv('bg_secondary_' + bgKey, tokens.bgSecondary);
+    const bgCard      = getOv('bg_card_' + bgKey, tokens.bgCard);
+
+    // Radius & shadow
+    const radiusLevel = document.querySelector('[name="override_radius_level"]:checked')?.value || '';
+    const shadowLevel = document.querySelector('[name="override_shadow_intensity"]:checked')?.value || '';
+    const rad = radiusMap[radiusLevel] || { sm: tokens.radius, md: tokens.radius, lg: (parseInt(tokens.radius) + 4) + 'px' };
+    const shd = shadowMap[shadowLevel] || { sm: 'none', md: 'none', lg: 'none', card: tokens.cardShadow };
+
+    // Apply to preview container
+    previewEl.style.background = bgSecondary;
+    previewEl.style.borderColor = tokens.border;
+
+    // Update CSS custom properties on preview
+    previewEl.style.setProperty('--p-bg-primary', bgPrimary);
+    previewEl.style.setProperty('--p-bg-secondary', bgSecondary);
+    previewEl.style.setProperty('--p-bg-card', bgCard);
+    previewEl.style.setProperty('--p-cyan', cyan);
+    previewEl.style.setProperty('--p-magenta', magenta);
+    previewEl.style.setProperty('--p-green', green);
+    previewEl.style.setProperty('--p-orange', orange);
+    previewEl.style.setProperty('--p-red', red);
+    previewEl.style.setProperty('--p-purple', purple);
+    previewEl.style.setProperty('--p-text-primary', tokens.textPrimary);
+    previewEl.style.setProperty('--p-text-secondary', tokens.textSecondary);
+    previewEl.style.setProperty('--p-border', tokens.border);
+    previewEl.style.setProperty('--p-radius', rad.lg);
+    previewEl.style.setProperty('--p-card-shadow', shd.card);
+
+    // Update inline elements in preview
+    previewEl.querySelectorAll('.pv-btn-primary').forEach(el => {
+        el.style.background = cyan; el.style.color = '#fff';
+    });
+    previewEl.querySelectorAll('.pv-btn-secondary').forEach(el => {
+        el.style.background = bgCard; el.style.color = tokens.textPrimary; el.style.borderColor = tokens.border;
+    });
+    previewEl.querySelectorAll('.pv-btn-danger').forEach(el => {
+        el.style.background = red + '1a'; el.style.color = red; el.style.borderColor = red + '40';
+    });
+    previewEl.querySelectorAll('.pv-card').forEach(el => {
+        el.style.background = bgCard; el.style.borderColor = tokens.border;
+        el.style.borderRadius = rad.lg; el.style.boxShadow = shd.card;
+    });
+    previewEl.querySelectorAll('.pv-card-title').forEach(el => {
+        el.style.color = tokens.textPrimary;
+    });
+    previewEl.querySelectorAll('.pv-card-text').forEach(el => {
+        el.style.color = tokens.textSecondary;
+    });
+    previewEl.querySelectorAll('.pv-badge-success').forEach(el => {
+        el.style.background = green + '1f'; el.style.color = green;
+    });
+    previewEl.querySelectorAll('.pv-badge-danger').forEach(el => {
+        el.style.background = red + '1f'; el.style.color = red;
+    });
+    previewEl.querySelectorAll('.pv-badge-warning').forEach(el => {
+        el.style.background = orange + '1f'; el.style.color = orange;
+    });
+    previewEl.querySelectorAll('.pv-badge-info').forEach(el => {
+        el.style.background = cyan + '1f'; el.style.color = cyan;
+    });
+
+    // Update the preview header text
+    const modeLabel = selectedMode === 'light' ? 'Light' : 'Dark';
+    const themeName = selectedTheme.charAt(0).toUpperCase() + selectedTheme.slice(1);
+    const headerEl = previewEl.querySelector('.pv-header-label');
+    if (headerEl) headerEl.textContent = themeName + ' – ' + modeLabel + ' Mode';
+}
+
+// Run initial preview update
+document.addEventListener('DOMContentLoaded', updatePreview);
 </script>
 
 <?php View::endSection(); ?>
