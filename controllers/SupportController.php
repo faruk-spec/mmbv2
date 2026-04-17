@@ -613,7 +613,6 @@ class SupportController extends BaseController
         if (!empty($ticket['user_email'])) {
             $ticketUrl  = $this->baseUrl() . '/support/view/' . $id;
             $safeReason = mb_substr(trim(strip_tags($reason)), 0, 500);
-            $statusLabel = ucwords(str_replace('_', ' ', $status));
 
             if ($status === 'closed' || $status === 'resolved') {
                 $this->sendSupportEmail($ticket['user_email'], 'support-ticket-closed', [

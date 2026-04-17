@@ -42,7 +42,7 @@
         <div style="margin-bottom:24px;">
             <div style="color:#9ca3af;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;">Your Message</div>
             <div style="padding:14px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;color:#374151;font-size:14px;line-height:1.7;">
-                <?= nl2br(htmlspecialchars(substr($description, 0, 500))) ?><?= strlen($description ?? '') > 500 ? '…' : '' ?>
+                <?= nl2br(htmlspecialchars(substr($description ?? '', 0, 500))) ?><?= strlen($description ?? '') > 500 ? '…' : '' ?>
             </div>
         </div>
         <?php endif; ?>
