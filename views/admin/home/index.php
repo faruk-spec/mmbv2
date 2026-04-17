@@ -194,7 +194,7 @@
             $safeColor = View::e($project['color']);
             // Validate hex color format, use default if invalid
             if (!preg_match('/^#[0-9A-Fa-f]{6}$/', $safeColor)) {
-                $safeColor = '#3b82f6';
+                $safeColor = '#00f0ff';
             }
         ?>
         <div class="card" style="background: rgba(<?= hexdec(substr($safeColor, 1, 2)) ?>, <?= hexdec(substr($safeColor, 3, 2)) ?>, <?= hexdec(substr($safeColor, 5, 2)) ?>, 0.05); border-color: <?= $safeColor ?>30;">
@@ -512,9 +512,9 @@ document.addEventListener('click', function(e) {
     
     <?php 
     $sectionConfigs = [
-        'stats' => ['label' => 'Statistics Section', 'icon' => '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>', 'color' => '#3b82f6'],
-        'timeline' => ['label' => 'Timeline Section', 'icon' => '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path></svg>', 'color' => '#8b5cf6'],
-        'features' => ['label' => 'Features Section', 'icon' => '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>', 'color' => '#22c55e']
+        'stats' => ['label' => 'Statistics Section', 'icon' => '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>', 'color' => '#00f0ff'],
+        'timeline' => ['label' => 'Timeline Section', 'icon' => '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path></svg>', 'color' => '#ff2ec4'],
+        'features' => ['label' => 'Features Section', 'icon' => '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>', 'color' => '#00ff88']
     ];
     
     foreach ($sectionConfigs as $key => $config): 
@@ -527,7 +527,7 @@ document.addEventListener('click', function(e) {
                         <span style="font-size: 1.2rem; margin-right: 10px;"><?= $config['icon'] ?></span>
                         <strong style="font-size: 1.1rem;"><?= $config['label'] ?></strong>
                         <?php if ($section['is_active'] ?? 1): ?>
-                            <span class="badge" style="margin-left: 10px; background: #22c55e; color: #fff; padding: 3px 8px; border-radius: 5px; font-size: 0.7rem;">Active</span>
+                            <span class="badge" style="margin-left: 10px; background: #00ff88; color: #000; padding: 3px 8px; border-radius: 5px; font-size: 0.7rem;">Active</span>
                         <?php else: ?>
                             <span class="badge" style="margin-left: 10px; background: #666; color: #fff; padding: 3px 8px; border-radius: 5px; font-size: 0.7rem;">Inactive</span>
                         <?php endif; ?>
@@ -595,7 +595,7 @@ document.addEventListener('click', function(e) {
                 
                 <div class="form-group">
                     <label class="form-label">Color</label>
-                    <input type="color" name="color" id="stat_color" class="form-input" value="#3b82f6">
+                    <input type="color" name="color" id="stat_color" class="form-input" value="#00f0ff">
                 </div>
             </div>
             
@@ -661,7 +661,7 @@ document.addEventListener('click', function(e) {
             <div class="grid grid-3">
                 <div class="form-group">
                     <label class="form-label">Color</label>
-                    <input type="color" name="color" id="timeline_color" class="form-input" value="#3b82f6">
+                    <input type="color" name="color" id="timeline_color" class="form-input" value="#00f0ff">
                 </div>
                 
                 <div class="form-group">

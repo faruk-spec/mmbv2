@@ -105,13 +105,13 @@
 }
 
 .status-disconnected {
-    background: rgba(239, 68, 68, 0.2);
-    color: #ef4444;
+    background: rgba(255, 107, 107, 0.2);
+    color: #ff6b6b;
 }
 
 .status-initializing {
-    background: rgba(245, 158, 11, 0.2);
-    color: #f59e0b;
+    background: rgba(255, 170, 0, 0.2);
+    color: #ffaa00;
 }
 </style>
 
@@ -171,14 +171,14 @@
             </svg>
             View Messages
         </a>
-        <a href="/admin/whatsapp/users" style="background: #8b5cf6; color: white; padding: 12px 24px; border-radius: 8px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+        <a href="/admin/whatsapp/users" style="background: #9945ff; color: white; padding: 12px 24px; border-radius: 8px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
                 <circle cx="9" cy="7" r="4"/>
             </svg>
             Manage Users
         </a>
-        <a href="/admin/whatsapp/api-logs" style="background: #ef4444; color: white; padding: 12px 24px; border-radius: 8px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+        <a href="/admin/whatsapp/api-logs" style="background: #ff6b6b; color: white; padding: 12px 24px; border-radius: 8px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                 <polyline points="14 2 14 8 20 8"/>

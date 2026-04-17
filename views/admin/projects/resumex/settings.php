@@ -96,10 +96,10 @@
     margin-bottom: 20px;
     font-size: .9rem;
 }
-.alert-success { background: rgba(34,197,94,.1); color: var(--green, #22c55e); border: 1px solid var(--green, #22c55e); }
-.alert-danger  { background: rgba(239,68,68,.1); color: var(--red, #ef4444); border: 1px solid var(--red, #ef4444); }
+.alert-success { background: rgba(0,255,136,.1); color: var(--green, #00ff88); border: 1px solid var(--green, #00ff88); }
+.alert-danger  { background: rgba(255,107,107,.1); color: var(--red, #ff6b6b); border: 1px solid var(--red, #ff6b6b); }
 .btn-save {
-    background: var(--cyan);
+    background: linear-gradient(135deg, var(--cyan), var(--magenta));
     color: #fff;
     border: none;
     border-radius: 8px;
@@ -125,8 +125,8 @@
     padding: 0;
 }
 .token-toggle:hover { color: var(--cyan); }
-.badge-ai-on  { display:inline-block; padding:3px 10px; border-radius:20px; font-size:.75rem; font-weight:600; background:rgba(59,130,246,.15); color:var(--cyan); border:1px solid var(--cyan); }
-.badge-ai-off { display:inline-block; padding:3px 10px; border-radius:20px; font-size:.75rem; font-weight:600; background:rgba(239,68,68,.12); color:var(--red,#ef4444); border:1px solid var(--red,#ef4444); }
+.badge-ai-on  { display:inline-block; padding:3px 10px; border-radius:20px; font-size:.75rem; font-weight:600; background:rgba(0,240,255,.15); color:var(--cyan); border:1px solid var(--cyan); }
+.badge-ai-off { display:inline-block; padding:3px 10px; border-radius:20px; font-size:.75rem; font-weight:600; background:rgba(255,107,107,.12); color:var(--red,#ff6b6b); border:1px solid var(--red,#ff6b6b); }
 </style>
 <?php View::endSection(); ?>
 
@@ -222,7 +222,7 @@
     </div>
 
     <!-- Info box -->
-    <div class="settings-card" style="background:rgba(59,130,246,.04);border-color:rgba(59,130,246,.2);">
+    <div class="settings-card" style="background:rgba(0,240,255,.04);border-color:rgba(0,240,255,.2);">
         <h3><i class="fas fa-info-circle" style="margin-right:8px;"></i>How it works</h3>
         <ul style="color:var(--text-secondary);font-size:.875rem;line-height:1.8;margin:0;padding-left:20px;">
             <li>When AI is enabled and a valid API key is provided, the resume builder sends the job title and experience level to OpenAI to generate a tailored summary, skills list, and bullet points.</li>

@@ -2,103 +2,29 @@
 <?php
 // Set theme: prefer user's own preference, fall back to global navbar_settings
 $defaultTheme = 'dark';
-$activeUiTheme = 'default';
-$themeOverridesCSS = '';
 try {
     $db = \Core\Database::getInstance();
-    // Load multi-theme settings
-    $themeConfig = \Controllers\Admin\ThemeController::loadThemeForLayout();
-    $activeUiTheme = $themeConfig['theme'] ?? 'default';
-    $defaultTheme = $themeConfig['mode'] ?? 'dark';
-
-    // Build CSS overrides from admin customization
-    $ov = $themeConfig['overrides'] ?? [];
-    $san = '\\Controllers\\Admin\\ThemeController::sanitizeCssValue';
-    $cssOverrides = [];
-    if (!empty($ov['cyan']))    $cssOverrides[] = '--cyan: ' . $san($ov['cyan']);
-    if (!empty($ov['magenta'])) $cssOverrides[] = '--magenta: ' . $san($ov['magenta']);
-    if (!empty($ov['green']))   $cssOverrides[] = '--green: ' . $san($ov['green']);
-    if (!empty($ov['orange']))  $cssOverrides[] = '--orange: ' . $san($ov['orange']);
-    if (!empty($ov['red']))     $cssOverrides[] = '--red: ' . $san($ov['red']);
-    if (!empty($ov['purple']))  $cssOverrides[] = '--purple: ' . $san($ov['purple']);
-    if (!empty($ov['bg_primary_dark']))   $cssOverrides[] = '--bg-primary-dark-override: ' . $san($ov['bg_primary_dark']);
-    if (!empty($ov['bg_secondary_dark'])) $cssOverrides[] = '--bg-secondary-dark-override: ' . $san($ov['bg_secondary_dark']);
-    if (!empty($ov['bg_card_dark']))      $cssOverrides[] = '--bg-card-dark-override: ' . $san($ov['bg_card_dark']);
-    if (!empty($ov['bg_primary_light']))   $cssOverrides[] = '--bg-primary-light-override: ' . $san($ov['bg_primary_light']);
-    if (!empty($ov['bg_secondary_light'])) $cssOverrides[] = '--bg-secondary-light-override: ' . $san($ov['bg_secondary_light']);
-    if (!empty($ov['bg_card_light']))      $cssOverrides[] = '--bg-card-light-override: ' . $san($ov['bg_card_light']);
-    // Radius
-    $radiusMap = ['sharp' => '4px', 'medium' => '8px', 'rounded' => '14px'];
-    if (!empty($ov['radius_level']) && isset($radiusMap[$ov['radius_level']])) {
-        $r = $radiusMap[$ov['radius_level']];
-        $cssOverrides[] = '--radius-sm: ' . max(2, intval($r) - 4) . 'px';
-        $cssOverrides[] = '--radius-md: ' . $r;
-        $cssOverrides[] = '--radius-lg: ' . (intval($r) + 4) . 'px';
-    }
-    // Shadow
-    $shadowMap = [
-        'none'   => ['0 0 0 transparent', '0 0 0 transparent', '0 0 0 transparent', 'none'],
-        'subtle' => ['0 1px 2px rgba(0,0,0,0.04)', '0 2px 6px rgba(0,0,0,0.06)', '0 4px 12px rgba(0,0,0,0.08)', '0 1px 2px rgba(0,0,0,0.04)'],
-        'normal' => ['0 1px 3px rgba(0,0,0,0.06)', '0 4px 12px rgba(0,0,0,0.08)', '0 8px 24px rgba(0,0,0,0.12)', '0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)'],
-        'strong' => ['0 2px 4px rgba(0,0,0,0.08)', '0 6px 18px rgba(0,0,0,0.14)', '0 12px 36px rgba(0,0,0,0.20)', '0 2px 6px rgba(0,0,0,0.10), 0 1px 3px rgba(0,0,0,0.06)'],
-    ];
-    if (!empty($ov['shadow_intensity']) && isset($shadowMap[$ov['shadow_intensity']])) {
-        $s = $shadowMap[$ov['shadow_intensity']];
-        $cssOverrides[] = '--shadow-sm: ' . $s[0];
-        $cssOverrides[] = '--shadow-md: ' . $s[1];
-        $cssOverrides[] = '--shadow-lg: ' . $s[2];
-        $cssOverrides[] = '--card-shadow: ' . $s[3];
-    }
-
-    if (!empty($cssOverrides)) {
-        $themeOverridesCSS = 'html[data-ui-theme] { ' . implode('; ', $cssOverrides) . '; }';
-        // BG + text overrides for dark mode
-        $darkBg = [];
-        if (!empty($ov['bg_primary_dark']))   $darkBg[] = '--bg-primary: ' . $san($ov['bg_primary_dark']);
-        if (!empty($ov['bg_secondary_dark'])) $darkBg[] = '--bg-secondary: ' . $san($ov['bg_secondary_dark']);
-        if (!empty($ov['bg_card_dark']))      $darkBg[] = '--bg-card: ' . $san($ov['bg_card_dark']);
-        if (!empty($ov['text_primary_dark']))   $darkBg[] = '--text-primary: ' . $san($ov['text_primary_dark']);
-        if (!empty($ov['text_secondary_dark'])) $darkBg[] = '--text-secondary: ' . $san($ov['text_secondary_dark']);
-        if (!empty($ov['text_tertiary_dark']))  $darkBg[] = '--text-tertiary: ' . $san($ov['text_tertiary_dark']);
-        if (!empty($darkBg)) {
-            $themeOverridesCSS .= ' html[data-ui-theme]:not([data-theme="light"]) { ' . implode('; ', $darkBg) . '; }';
-        }
-        // BG + text overrides for light mode
-        $lightBg = [];
-        if (!empty($ov['bg_primary_light']))   $lightBg[] = '--bg-primary: ' . $san($ov['bg_primary_light']);
-        if (!empty($ov['bg_secondary_light'])) $lightBg[] = '--bg-secondary: ' . $san($ov['bg_secondary_light']);
-        if (!empty($ov['bg_card_light']))      $lightBg[] = '--bg-card: ' . $san($ov['bg_card_light']);
-        if (!empty($ov['text_primary_light']))   $lightBg[] = '--text-primary: ' . $san($ov['text_primary_light']);
-        if (!empty($ov['text_secondary_light'])) $lightBg[] = '--text-secondary: ' . $san($ov['text_secondary_light']);
-        if (!empty($ov['text_tertiary_light']))  $lightBg[] = '--text-tertiary: ' . $san($ov['text_tertiary_light']);
-        if (!empty($lightBg)) {
-            $themeOverridesCSS .= ' html[data-ui-theme][data-theme="light"] { ' . implode('; ', $lightBg) . '; }';
-        }
-    }
-
-    // User preference overrides global
     if (\Core\Auth::check()) {
-        try {
-            $userTheme = $db->fetch(
-                "SELECT theme_preference, ui_theme FROM user_profiles WHERE user_id = ?",
-                [\Core\Auth::id()]
-            );
-        } catch (\Exception $e) {
-            // ui_theme column may not exist yet; fall back to just theme_preference
-            $userTheme = $db->fetch(
-                "SELECT theme_preference FROM user_profiles WHERE user_id = ?",
-                [\Core\Auth::id()]
-            );
-        }
+        $userTheme = $db->fetch(
+            "SELECT theme_preference FROM user_profiles WHERE user_id = ?",
+            [\Core\Auth::id()]
+        );
         if ($userTheme && !empty($userTheme['theme_preference'])) {
             $defaultTheme = $userTheme['theme_preference'];
+        } else {
+            $navbarSettings = $db->fetch("SELECT default_theme FROM navbar_settings WHERE id = 1");
+            if ($navbarSettings && !empty($navbarSettings['default_theme'])) {
+                $defaultTheme = $navbarSettings['default_theme'];
+            }
         }
-        if ($userTheme && !empty($userTheme['ui_theme'] ?? '')) {
-            $activeUiTheme = $userTheme['ui_theme'];
+    } else {
+        $navbarSettings = $db->fetch("SELECT default_theme FROM navbar_settings WHERE id = 1");
+        if ($navbarSettings && !empty($navbarSettings['default_theme'])) {
+            $defaultTheme = $navbarSettings['default_theme'];
         }
     }
 } catch (\Exception $e) {
-    // Use defaults if query fails
+    // Use default if query fails
 }
 // Apply user display settings (date format etc.)
 try {
@@ -117,7 +43,7 @@ try {
 }
 ?>
 <!DOCTYPE html>
-<html lang="en" data-theme="<?= htmlspecialchars($defaultTheme) ?>" data-ui-theme="<?= htmlspecialchars($activeUiTheme) ?>">
+<html lang="en" data-theme="<?= htmlspecialchars($defaultTheme) ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -136,32 +62,90 @@ try {
     <!-- Icons - No external dependencies needed, using inline SVG -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Universal Theme System -->
-    <link rel="stylesheet" href="/css/universal-theme.css?v=<?= @filemtime(BASE_PATH . '/public/css/universal-theme.css') ?: time() ?>">
-    
     <style>
         :root {
-            /* Layout-specific variables not managed by universal-theme.css */
-            --shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            --bg-primary: #06060a;
+            --bg-secondary: #0c0c12;
+            --bg-card: #0f0f18;
+            --card-inner-bg: #0f0f18;
+            --cyan: #00f0ff;
+            --magenta: #ff2ec4;
+            --green: #00ff88;
+            --orange: #ffaa00;
+            --purple: #9945ff;
+            --red: #ff6b6b;
+            --text-primary: #e8eefc;
+            --text-secondary: #8892a6;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --shadow-glow: 0 0 20px rgba(0, 240, 255, 0.2);
+            --transition: all 0.3s ease;
+            --hover-bg: rgba(0, 240, 255, 0.1);
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
         }
         
-        /* Light Theme - layout-specific overrides */
+        /* Light Theme */
         [data-theme="light"] {
-            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --bg-primary: #f0f4ff;
+            --bg-secondary: #ffffff;
+            --bg-card: #ffffff;
+            --card-inner-bg: rgba(255, 255, 255, 0.90);
+            --cyan: #0369a1;
+            --magenta: #c026d3;
+            --green: #059669;
+            --orange: #d97706;
+            --purple: #7c3aed;
+            --red: #dc2626;
+            --text-primary: #1a1a1a;
+            --text-secondary: #555555;
+            --border-color: rgba(0, 0, 0, 0.1);
+            --shadow-glow: 0 0 20px rgba(124, 58, 237, 0.12);
+            --hover-bg: rgba(124, 58, 237, 0.08);
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
         }
 
-        /* Light-mode background */
+        /* Animated light-mode background */
         [data-theme="light"] body {
-            background: var(--bg-primary);
+            background: #f0f4ff;
         }
 
         [data-theme="light"] body::before {
-            background: none !important;
-            animation: none !important;
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: -1;
+            animation: lightBgFlow 16s ease-in-out infinite alternate;
         }
 
         [data-theme="light"] body::after {
             display: none;
+        }
+
+        @keyframes lightBgFlow {
+            0% {
+                background:
+                    radial-gradient(ellipse at 10% 10%, rgba(124, 58, 237, 0.14) 0%, transparent 50%),
+                    radial-gradient(ellipse at 90% 90%, rgba(0, 153, 204, 0.12) 0%, transparent 50%),
+                    radial-gradient(ellipse at 60% 50%, rgba(0, 245, 255, 0.06) 0%, transparent 40%);
+            }
+            33% {
+                background:
+                    radial-gradient(ellipse at 85% 15%, rgba(124, 58, 237, 0.12) 0%, transparent 50%),
+                    radial-gradient(ellipse at 15% 85%, rgba(0, 153, 204, 0.14) 0%, transparent 50%),
+                    radial-gradient(ellipse at 40% 20%, rgba(0, 245, 255, 0.07) 0%, transparent 40%);
+            }
+            66% {
+                background:
+                    radial-gradient(ellipse at 50% 90%, rgba(0, 153, 204, 0.10) 0%, transparent 50%),
+                    radial-gradient(ellipse at 60% 10%, rgba(124, 58, 237, 0.14) 0%, transparent 50%),
+                    radial-gradient(ellipse at 20% 50%, rgba(0, 245, 255, 0.06) 0%, transparent 40%);
+            }
+            100% {
+                background:
+                    radial-gradient(ellipse at 10% 10%, rgba(124, 58, 237, 0.14) 0%, transparent 50%),
+                    radial-gradient(ellipse at 90% 90%, rgba(0, 153, 204, 0.12) 0%, transparent 50%),
+                    radial-gradient(ellipse at 60% 50%, rgba(0, 245, 255, 0.06) 0%, transparent 40%);
+            }
         }
         
         * {
@@ -175,7 +159,7 @@ try {
         }
         
         body {
-            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-family: 'Poppins', sans-serif;
             background: var(--bg-primary);
             color: var(--text-primary);
             min-height: 100vh;
@@ -183,17 +167,15 @@ try {
             font-size: 14px;
             overflow-x: hidden;
             position: relative;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
         }
         
-        h1 { font-size: 1.875rem; font-weight: 600; letter-spacing: -0.02em; }
-        h2 { font-size: 1.5rem; font-weight: 600; letter-spacing: -0.015em; }
-        h3 { font-size: 1.25rem; font-weight: 600; }
-        h4 { font-size: 1.1rem; font-weight: 500; }
-        p { font-size: 14px; color: var(--text-secondary); }
+        h1 { font-size: 2rem; }
+        h2 { font-size: 1.5rem; }
+        h3 { font-size: 1.25rem; }
+        h4 { font-size: 1.1rem; }
+        p { font-size: 14px; }
         
-        /* Background — subtle, static */
+        /* Background Effects */
         body::before {
             content: '';
             position: fixed;
@@ -202,8 +184,8 @@ try {
             width: 100%;
             height: 100%;
             background: 
-                radial-gradient(ellipse at 20% 0%, rgba(59, 130, 246, 0.04) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 100%, rgba(139, 92, 246, 0.04) 0%, transparent 50%);
+                radial-gradient(ellipse at 20% 0%, rgba(0, 240, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 100%, rgba(255, 46, 196, 0.1) 0%, transparent 50%);
             pointer-events: none;
             z-index: -1;
         }
@@ -234,7 +216,8 @@ try {
         
         /* Header */
         .header {
-            background: var(--bg-secondary);
+            background: rgba(12, 12, 18, 0.95);
+            backdrop-filter: blur(20px);
             border-bottom: 1px solid var(--border-color);
             position: sticky;
             top: 0;
@@ -252,7 +235,10 @@ try {
         .logo {
             font-size: 1.3rem;
             font-weight: 700;
-            color: var(--text-primary);
+            background: linear-gradient(135deg, var(--cyan), var(--magenta));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
             display: flex;
             align-items: center;
         }
@@ -289,7 +275,7 @@ try {
         .nav a.active,
         .nav-link:hover {
             color: var(--text-primary);
-            background: var(--hover-bg);
+            background: rgba(0, 240, 255, 0.1);
         }
         
         /* Dropdown Menu */
@@ -335,7 +321,7 @@ try {
         }
         
         .dropdown-item:hover {
-            background: var(--hover-bg);
+            background: rgba(0, 240, 255, 0.1);
             color: var(--cyan);
         }
         
@@ -371,8 +357,8 @@ try {
         }
         
         .theme-toggle:hover {
-            background: var(--hover-bg);
-            border-color: var(--border-hover);
+            background: rgba(0, 240, 255, 0.1);
+            border-color: var(--cyan);
         }
         
         .mobile-menu-btn {
@@ -441,13 +427,13 @@ try {
             width: 32px;
             height: 32px;
             border-radius: 50%;
-            background: var(--cyan);
+            background: linear-gradient(135deg, var(--cyan), var(--magenta));
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 600;
             font-size: 14px;
-            color: #ffffff;
+            color: var(--bg-primary);
         }
         
         .user-menu-dropdown {
@@ -476,7 +462,7 @@ try {
         .user-menu-header {
             padding: 16px;
             border-bottom: 1px solid var(--border-color);
-            background: var(--bg-elevated, var(--bg-secondary));
+            background: linear-gradient(135deg, rgba(0, 240, 255, 0.05), rgba(255, 46, 196, 0.05));
         }
         
         .user-menu-name {
@@ -522,7 +508,7 @@ try {
         }
         
         .user-menu-item.danger:hover {
-            background: rgba(239, 68, 68, 0.08);
+            background: rgba(255, 107, 107, 0.1);
         }
         
         /* Responsive Navbar */
@@ -541,14 +527,15 @@ try {
                 right: -100%;
                 width: 280px;
                 height: 100vh;
-                background: var(--bg-secondary);
+                background: rgba(12, 12, 18, 0.98);
+                backdrop-filter: blur(20px);
                 flex-direction: column;
                 align-items: flex-start;
                 padding: 80px 30px 30px 30px;
                 gap: 20px;
                 border-left: 1px solid var(--border-color);
                 transition: right 0.3s ease;
-                box-shadow: var(--shadow-lg);
+                box-shadow: -5px 0 20px rgba(0, 0, 0, 0.5);
                 z-index: 150;
                 overflow-y: auto;
                 visibility: hidden;
@@ -602,9 +589,8 @@ try {
         .btn {
             display: inline-flex;
             align-items: center;
-            justify-content: center;
             gap: 6px;
-            padding: 9px 16px;
+            padding: 10px 20px;
             border: none;
             border-radius: 6px;
             font-family: inherit;
@@ -615,14 +601,14 @@ try {
         }
         
         .btn-primary {
-            background: var(--cyan);
-            color: #ffffff;
+            background: linear-gradient(135deg, var(--cyan), var(--magenta));
+            color: var(--bg-primary);
             text-align: center;
         }
         
         .btn-primary:hover {
-            opacity: 0.9;
-            box-shadow: var(--shadow-sm);
+            box-shadow: var(--shadow-glow);
+            transform: translateY(-2px);
         }
         
         .btn-secondary {
@@ -632,19 +618,19 @@ try {
         }
         
         .btn-secondary:hover {
-            background: var(--hover-bg);
-            border-color: var(--border-hover);
+            border-color: var(--cyan);
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
         }
         
         .btn-danger {
-            background: rgba(239, 68, 68, 0.1);
+            background: rgba(255, 107, 107, 0.2);
             color: var(--red);
-            border: 1px solid rgba(239, 68, 68, 0.25);
+            border: 1px solid var(--red);
         }
         
         .btn-danger:hover {
             background: var(--red);
-            color: #ffffff;
+            color: var(--bg-primary);
         }
         
         .btn-sm {
@@ -656,21 +642,73 @@ try {
         .card {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 24px;
+            border-radius: 10px;
+            padding: 20px;
             transition: var(--transition);
+            /* Required by rotating border animation */
             position: relative;
+            overflow: hidden;
         }
         
         .card:hover {
-            border-color: var(--border-hover);
-            box-shadow: var(--shadow-md);
+            border-color: rgba(0, 240, 255, 0.3);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
         }
 
-        /* Clean card design — no rotating borders */
-        .card::before,
+        /* === Professional rotating border-light animation === */
+        @keyframes card-border-spin {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to   { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        /* Rotating spotlight sweep — visible only at the card edge */
+        .card::before {
+            content: '';
+            position: absolute;
+            width: 180%;
+            height: 180%;
+            top: 50%;
+            left: 50%;
+            background: conic-gradient(
+                from 0deg,
+                transparent 0deg 100deg,
+                rgba(124, 58, 237, 0.55) 100deg 160deg,
+                rgba(0, 245, 255, 0.45) 160deg 210deg,
+                rgba(255, 46, 196, 0.35) 210deg 250deg,
+                transparent 250deg 360deg
+            );
+            animation: card-border-spin 8s linear infinite;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* Inner fill — hides the centre so only the 1 px border edge glows */
         .card::after {
-            content: none;
+            content: '';
+            position: absolute;
+            inset: 1px;
+            border-radius: 9px;
+            background: var(--card-inner-bg);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* Raise all direct children above the animated border layers */
+        .card > * {
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Light-mode: softer, accessible palette for the sweep */
+        [data-theme="light"] .card::before {
+            background: conic-gradient(
+                from 0deg,
+                transparent 0deg 100deg,
+                rgba(124, 58, 237, 0.35) 100deg 160deg,
+                rgba(3, 105, 161, 0.30) 160deg 210deg,
+                rgba(255, 46, 196, 0.20) 210deg 250deg,
+                transparent 250deg 360deg
+            );
         }
         
         .card-header {
@@ -714,7 +752,7 @@ try {
         .form-input:focus {
             outline: none;
             border-color: var(--cyan);
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+            box-shadow: 0 0 0 3px rgba(0, 240, 255, 0.1);
         }
         
         .form-input::placeholder {
@@ -750,20 +788,20 @@ try {
         }
         
         .alert-success {
-            background: rgba(34, 197, 94, 0.08);
-            border-color: rgba(34, 197, 94, 0.25);
+            background: rgba(0, 255, 136, 0.1);
+            border-color: var(--green);
             color: var(--green);
         }
         
         .alert-error {
-            background: rgba(239, 68, 68, 0.08);
-            border-color: rgba(239, 68, 68, 0.25);
+            background: rgba(255, 107, 107, 0.1);
+            border-color: var(--red);
             color: var(--red);
         }
         
         .alert-warning {
-            background: rgba(245, 158, 11, 0.08);
-            border-color: rgba(245, 158, 11, 0.25);
+            background: rgba(255, 170, 0, 0.1);
+            border-color: var(--orange);
             color: var(--orange);
         }
         
@@ -803,22 +841,22 @@ try {
         }
         
         .badge-success {
-            background: rgba(34, 197, 94, 0.12);
+            background: rgba(0, 255, 136, 0.15);
             color: var(--green);
         }
         
         .badge-danger {
-            background: rgba(239, 68, 68, 0.12);
+            background: rgba(255, 107, 107, 0.15);
             color: var(--red);
         }
         
         .badge-warning {
-            background: rgba(245, 158, 11, 0.12);
+            background: rgba(255, 170, 0, 0.15);
             color: var(--orange);
         }
         
         .badge-info {
-            background: rgba(59, 130, 246, 0.12);
+            background: rgba(0, 240, 255, 0.15);
             color: var(--cyan);
         }
         
@@ -926,26 +964,24 @@ try {
         /* Scroll to top */
         .scroll-top {
             position: fixed;
-            bottom: 24px;
-            right: 24px;
-            width: 40px;
-            height: 40px;
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
+            bottom: 30px;
+            right: 30px;
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, var(--cyan), var(--magenta));
+            border: none;
+            border-radius: 50%;
             cursor: pointer;
             display: none;
             align-items: center;
             justify-content: center;
             transition: var(--transition);
             z-index: 99;
-            color: var(--text-secondary);
         }
         
         .scroll-top:hover {
-            background: var(--hover-bg);
-            border-color: var(--border-hover);
-            color: var(--text-primary);
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-glow);
         }
         
         .scroll-top.visible {
@@ -954,60 +990,60 @@ try {
         
         /* ===== Light Mode Component Overrides ===== */
         [data-theme="light"] .header {
-            background: var(--bg-secondary);
-            box-shadow: var(--shadow-sm);
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
         }
 
         [data-theme="light"] .nav a:hover,
         [data-theme="light"] .nav a.active,
         [data-theme="light"] .nav-link:hover {
-            background: var(--hover-bg);
-            color: var(--cyan);
+            background: rgba(124, 58, 237, 0.08);
+            color: var(--purple);
         }
 
         [data-theme="light"] .theme-toggle:hover {
-            background: var(--hover-bg);
-            border-color: var(--border-hover);
+            background: rgba(124, 58, 237, 0.08);
+            border-color: var(--purple);
         }
 
         [data-theme="light"] .dropdown-item:hover {
-            background: var(--hover-bg);
-            color: var(--cyan);
+            background: rgba(124, 58, 237, 0.08);
+            color: var(--purple);
         }
 
         [data-theme="light"] .user-menu-trigger:hover {
-            border-color: var(--border-hover);
+            border-color: var(--purple);
         }
 
         [data-theme="light"] .user-menu-item:hover {
-            background: var(--hover-bg);
-            color: var(--cyan);
+            background: rgba(124, 58, 237, 0.06);
+            color: var(--purple);
         }
 
         [data-theme="light"] .user-menu-dropdown {
-            box-shadow: var(--shadow-lg);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
         }
 
         [data-theme="light"] .table tr:hover td {
-            background: var(--hover-bg);
+            background: rgba(0, 0, 0, 0.03);
         }
 
         [data-theme="light"] .form-input:focus {
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+            box-shadow: 0 0 0 3px rgba(3, 105, 161, 0.15);
         }
 
         [data-theme="light"] .badge-info {
-            background: rgba(37, 99, 235, 0.10);
+            background: rgba(3, 105, 161, 0.10);
         }
 
         [data-theme="light"] .btn-secondary:hover {
-            border-color: var(--border-hover);
+            box-shadow: 0 0 15px rgba(124, 58, 237, 0.15);
         }
 
         @media (max-width: 768px) {
             [data-theme="light"] .nav {
-                background: var(--bg-secondary);
-                box-shadow: var(--shadow-lg);
+                background: rgba(255, 255, 255, 0.98);
+                box-shadow: -5px 0 20px rgba(0, 0, 0, 0.12);
             }
         }
 
@@ -1046,16 +1082,13 @@ try {
             min-width: 0;
         }
     </style>
-    <?php if (!empty($themeOverridesCSS)): ?>
-    <style id="theme-admin-overrides"><?= $themeOverridesCSS ?></style>
-    <?php endif; ?>
     
     <?php View::yield('styles'); ?>
 </head>
 <body>
     <?php if (!empty($_SESSION['_concurrent_session_warning'])): ?>
     <?php $sessionCount = (int)$_SESSION['_concurrent_session_warning']; unset($_SESSION['_concurrent_session_warning']); ?>
-    <div id="concurrent-session-banner" style="position:fixed;top:0;left:0;right:0;z-index:99999;background:#ef4444;color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 20px rgba(0,0,0,0.4);font-family:'Poppins',sans-serif;font-size:14px;">
+    <div id="concurrent-session-banner" style="position:fixed;top:0;left:0;right:0;z-index:99999;background:linear-gradient(135deg,#ff6b6b,#ffaa00);color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 20px rgba(0,0,0,0.4);font-family:'Poppins',sans-serif;font-size:14px;">
         <div style="display:flex;align-items:center;gap:10px;">
             <i class="fas fa-exclamation-triangle"></i>
             <span>You are already signed in on <strong><?= $sessionCount ?> other device<?= $sessionCount > 1 ? 's' : '' ?></strong>. Want to revoke those sessions?</span>
@@ -1096,7 +1129,7 @@ try {
     ?>
     <?php if (!empty($_SESSION['_show_new_login_alert'])): ?>
     <?php $nlAlert = $_SESSION['_show_new_login_alert']; unset($_SESSION['_show_new_login_alert']); ?>
-    <div id="new-login-alert-banner" style="position:fixed;top:<?= !empty($_SESSION['_concurrent_session_warning']) ? '56px' : '0' ?>;left:0;right:0;z-index:99998;background:var(--cyan, #3b82f6);color:#fff;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 20px rgba(0,0,0,0.4);font-family:'Poppins',sans-serif;font-size:14px;">
+    <div id="new-login-alert-banner" style="position:fixed;top:<?= !empty($_SESSION['_concurrent_session_warning']) ? '56px' : '0' ?>;left:0;right:0;z-index:99998;background:linear-gradient(135deg,#9945ff,#0099cc);color:#fff;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 20px rgba(0,0,0,0.4);font-family:'Poppins',sans-serif;font-size:14px;">
         <div style="display:flex;align-items:center;gap:10px;">
             <i class="fas fa-sign-in-alt"></i>
             <span>⚠️ New login detected on your account from IP <strong><?= htmlspecialchars($nlAlert['ip'] ?? 'unknown', ENT_QUOTES) ?></strong>. Not you? <a href="/security" style="color:#fff;text-decoration:underline;">Review sessions</a></span>
@@ -1113,7 +1146,7 @@ try {
             if (existing) return; // already visible
             var banner = document.createElement('div');
             banner.id = 'new-login-alert-banner';
-            banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99998;background:var(--cyan, #3b82f6);color:#fff;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 20px rgba(0,0,0,0.4);font-family:\'Poppins\',sans-serif;font-size:14px;';
+            banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99998;background:linear-gradient(135deg,#9945ff,#0099cc);color:#fff;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 20px rgba(0,0,0,0.4);font-family:\'Poppins\',sans-serif;font-size:14px;';
             banner.innerHTML = '<div style="display:flex;align-items:center;gap:10px;"><i class="fas fa-sign-in-alt"></i><span>⚠️ New login detected on your account from IP <strong>' + (ip || 'unknown') + '</strong>. Not you? <a href="/security" style="color:#fff;text-decoration:underline;">Review sessions</a></span></div>'
                 + '<button onclick="this.parentElement.style.display=\'none\'" style="background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.4);color:#fff;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:13px;font-family:inherit;">✕</button>';
             document.body.insertBefore(banner, document.body.firstChild);
@@ -1167,7 +1200,7 @@ try {
                     <nav style="padding: 12px 0;">
                         <!-- Dashboard Section -->
                         <div class="nav-section" style="margin-bottom: 8px;">
-                            <a href="/dashboard" class="nav-item" style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.85rem;" onmouseover="this.style.background='rgba(59,130,246,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
+                            <a href="/dashboard" class="nav-item" style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.85rem;" onmouseover="this.style.background='rgba(0,240,255,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <rect x="3" y="3" width="7" height="7"></rect>
                                     <rect x="14" y="3" width="7" height="7"></rect>
@@ -1193,7 +1226,7 @@ try {
                             <?php if (in_array(Auth::user()['role'] ?? '', ['admin', 'super_admin'])): ?>
                             <div class="nav-text">
                                 <div style="font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 3px;">Role</div>
-                                <div style="display: inline-block; font-size: 0.7rem; padding: 3px 8px; background: rgba(59, 130, 246, 0.08); color: var(--cyan); border-radius: 4px; font-weight: 600; text-transform: capitalize;"><?= htmlspecialchars(Auth::user()['role'] ?? 'User') ?></div>
+                                <div style="display: inline-block; font-size: 0.7rem; padding: 3px 8px; background: rgba(0, 240, 255, 0.1); color: var(--cyan); border-radius: 4px; font-weight: 600; text-transform: capitalize;"><?= htmlspecialchars(Auth::user()['role'] ?? 'User') ?></div>
                             </div>
                             <?php endif; ?>
                         </div>
@@ -1214,35 +1247,35 @@ try {
                                     </svg>
                                 </div>
                                 <div class="nav-group-content" style="max-height: 0; overflow: hidden; transition: max-height 0.3s ease;">
-                                    <a href="/profile" class="nav-sub-item" style="display: flex; align-items: center; gap: 12px; padding: 8px 16px 8px 44px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.8rem;" onmouseover="this.style.background='rgba(59,130,246,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
+                                    <a href="/profile" class="nav-sub-item" style="display: flex; align-items: center; gap: 12px; padding: 8px 16px 8px 44px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.8rem;" onmouseover="this.style.background='rgba(0,240,255,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                                             <circle cx="12" cy="7" r="4"></circle>
                                         </svg>
                                         <span class="nav-text">Profile</span>
                                     </a>
-                                    <a href="/security" class="nav-sub-item" style="display: flex; align-items: center; gap: 12px; padding: 8px 16px 8px 44px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.8rem;" onmouseover="this.style.background='rgba(59,130,246,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
+                                    <a href="/security" class="nav-sub-item" style="display: flex; align-items: center; gap: 12px; padding: 8px 16px 8px 44px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.8rem;" onmouseover="this.style.background='rgba(0,240,255,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                                             <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                                         </svg>
                                         <span class="nav-text">Security Settings</span>
                                     </a>
-                                    <a href="/settings" class="nav-sub-item" style="display: flex; align-items: center; gap: 12px; padding: 8px 16px 8px 44px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.8rem;" onmouseover="this.style.background='rgba(59,130,246,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
+                                    <a href="/settings" class="nav-sub-item" style="display: flex; align-items: center; gap: 12px; padding: 8px 16px 8px 44px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.8rem;" onmouseover="this.style.background='rgba(0,240,255,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                             <circle cx="12" cy="12" r="3"></circle>
                                             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                                         </svg>
                                         <span class="nav-text">Settings</span>
                                     </a>
-                                    <a href="/2fa/setup" class="nav-sub-item" style="display: flex; align-items: center; gap: 12px; padding: 8px 16px 8px 44px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.8rem;" onmouseover="this.style.background='rgba(59,130,246,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
+                                    <a href="/2fa/setup" class="nav-sub-item" style="display: flex; align-items: center; gap: 12px; padding: 8px 16px 8px 44px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.8rem;" onmouseover="this.style.background='rgba(0,240,255,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
                                             <path d="M9 12l2 2 4-4"></path>
                                         </svg>
                                         <span class="nav-text">Two-Factor Authentication</span>
                                     </a>
-                                    <a href="/activity" class="nav-sub-item" style="display: flex; align-items: center; gap: 12px; padding: 8px 16px 8px 44px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.8rem;" onmouseover="this.style.background='rgba(59,130,246,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
+                                    <a href="/activity" class="nav-sub-item" style="display: flex; align-items: center; gap: 12px; padding: 8px 16px 8px 44px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.8rem;" onmouseover="this.style.background='rgba(0,240,255,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                             <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
                                         </svg>
@@ -1269,7 +1302,7 @@ try {
                                     $sidebarProjects[] = [
                                         'project_key' => $_k,
                                         'name'        => $_c['name'] ?? $_k,
-                                        'color'       => $_c['color'] ?? '#3b82f6',
+                                        'color'       => $_c['color'] ?? '#00f0ff',
                                         'url'         => $_c['url']  ?? '/projects/' . $_k,
                                         'logo_url'    => '',
                                         'icon'        => $_c['icon'] ?? '',
@@ -1309,7 +1342,7 @@ try {
                         ];
                         ?>
                         <div class="nav-section" style="margin-bottom: 8px;">
-                            <a href="/dashboard" class="nav-item" style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.85rem;" onmouseover="this.style.background='rgba(59,130,246,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
+                            <a href="/dashboard" class="nav-item" style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.85rem;" onmouseover="this.style.background='rgba(0,240,255,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                                 </svg>
@@ -1319,7 +1352,7 @@ try {
                             <!-- One collapsible group per enabled application -->
                             <?php foreach ($sidebarProjects as $_sp):
                                 $_key   = $_sp['project_key'] ?? '';
-                                $_color = htmlspecialchars($_sp['color'] ?? '#3b82f6');
+                                $_color = htmlspecialchars($_sp['color'] ?? '#00f0ff');
                                 $_svgIcon = $_iconMap[$_key] ?? '<rect x="3" y="3" width="18" height="18" rx="2"/>';
                                 $_userSubs = $_userRoutes[$_key] ?? [];
                                 $_baseUrl  = rtrim($_sp['url'] ?? '/projects/' . $_key, '/');
@@ -1343,7 +1376,7 @@ try {
                                         foreach ($_userSubs as $_label => $_sub):
                                             $_href = $_baseUrl . $_sub;
                                     ?>
-                                    <a href="<?= htmlspecialchars($_href) ?>" class="nav-sub-item" style="display: flex; align-items: center; gap: 10px; padding: 7px 16px 7px 44px; color: var(--text-secondary); text-decoration: none; transition: all 0.3s; font-size: 0.8rem;" onmouseover="this.style.background='rgba(59,130,246,0.08)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-secondary)'">
+                                    <a href="<?= htmlspecialchars($_href) ?>" class="nav-sub-item" style="display: flex; align-items: center; gap: 10px; padding: 7px 16px 7px 44px; color: var(--text-secondary); text-decoration: none; transition: all 0.3s; font-size: 0.8rem;" onmouseover="this.style.background='rgba(0,240,255,0.08)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-secondary)'">
                                         <?php if ($_label === 'Dashboard' || $_label === 'Overview'): ?>
                                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                                         <?php elseif (stripos($_label, 'file') !== false || stripos($_label, 'upload') !== false): ?>
@@ -1363,7 +1396,7 @@ try {
                                     </a>
                                     <?php endforeach;
                                     else: ?>
-                                    <a href="<?= htmlspecialchars($_baseUrl) ?>" class="nav-sub-item" style="display: flex; align-items: center; gap: 10px; padding: 7px 16px 7px 44px; color: var(--text-secondary); text-decoration: none; transition: all 0.3s; font-size: 0.8rem;" onmouseover="this.style.background='rgba(59,130,246,0.08)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-secondary)'">
+                                    <a href="<?= htmlspecialchars($_baseUrl) ?>" class="nav-sub-item" style="display: flex; align-items: center; gap: 10px; padding: 7px 16px 7px 44px; color: var(--text-secondary); text-decoration: none; transition: all 0.3s; font-size: 0.8rem;" onmouseover="this.style.background='rgba(0,240,255,0.08)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-secondary)'">
                                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                                         <span class="nav-text">Dashboard</span>
                                     </a>
@@ -1375,7 +1408,7 @@ try {
                         
                         <!-- Settings Section -->
                         <div class="nav-section" style="margin-bottom: 8px;">
-                            <a href="/settings" class="nav-item" style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.85rem;" onmouseover="this.style.background='rgba(59,130,246,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
+                            <a href="/settings" class="nav-item" style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.85rem;" onmouseover="this.style.background='rgba(0,240,255,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <circle cx="12" cy="12" r="3"></circle>
                                     <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
@@ -1398,14 +1431,14 @@ try {
                         <!-- Help & Support -->
                         <?php if (\Core\Auth::check()): ?>
                         <div class="nav-section" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-color);">
-                            <a href="/support/help" class="nav-item" style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.85rem;" onmouseover="this.style.background='rgba(59,130,246,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
+                            <a href="/support/help" class="nav-item" style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.85rem;" onmouseover="this.style.background='rgba(0,240,255,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z"></path>
                                     <path d="m9 12 2 2 4-4"></path>
                                 </svg>
                                 <span class="nav-text">My Tickets</span>
                             </a>
-                            <a href="/support" class="nav-item" style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.85rem;" onmouseover="this.style.background='rgba(59,130,246,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
+                            <a href="/support" class="nav-item" style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; color: var(--text-primary); text-decoration: none; transition: all 0.3s; font-size: 0.85rem;" onmouseover="this.style.background='rgba(0,240,255,0.1)'; this.style.color='var(--cyan)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-primary)'">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <circle cx="12" cy="12" r="10"></circle>
                                     <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
@@ -1599,7 +1632,7 @@ try {
                     </div>
                     
                     <!-- Help & Support Card -->
-                    <div class="sidebar-card" style="background: var(--bg-elevated, var(--bg-secondary)); border: 1px solid var(--border-color); border-radius: 10px; padding: 16px;">
+                    <div class="sidebar-card" style="background: linear-gradient(135deg, rgba(0, 240, 255, 0.1) 0%, rgba(255, 46, 196, 0.1) 100%); border: 1px solid var(--border-color); border-radius: 10px; padding: 16px;">
                         <h3 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2">
                                 <circle cx="12" cy="12" r="10"></circle>
@@ -1630,7 +1663,7 @@ try {
             
             <style>
                 .sidebar-card a:hover {
-                    background: rgba(59, 130, 246, 0.08);
+                    background: rgba(0, 240, 255, 0.1);
                     border-color: var(--cyan);
                     transform: translateX(2px);
                 }
@@ -1718,20 +1751,20 @@ try {
                         right: auto;
                         width: 56px;
                         height: 56px;
-                        background: var(--cyan);
+                        background: linear-gradient(135deg, var(--cyan), var(--magenta));
                         border: none;
                         border-radius: 50%;
                         align-items: center;
                         justify-content: center;
                         cursor: pointer;
-                        box-shadow: 0 4px 20px rgba(59, 130, 246, 0.25);
+                        box-shadow: 0 4px 20px rgba(0, 240, 255, 0.4);
                         z-index: 9999;
                         transition: all 0.3s ease;
                     }
                     
                     .mobile-sidebar-toggle:hover {
                         transform: scale(1.1);
-                        box-shadow: 0 6px 25px rgba(59, 130, 246, 0.35);
+                        box-shadow: 0 6px 25px rgba(0, 240, 255, 0.6);
                     }
                     
                     .mobile-sidebar-toggle svg {
@@ -1833,7 +1866,7 @@ try {
                             const href = link.getAttribute('href');
                             if (href && (currentPath === href || currentPath.startsWith(href + '/'))) {
                                 link.style.color = 'var(--cyan)';
-                                link.style.background = 'rgba(59,130,246,0.08)';
+                                link.style.background = 'rgba(0,240,255,0.08)';
                                 hasActiveLink = true;
                             }
                         });
@@ -1990,7 +2023,7 @@ try {
         <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:16px;padding:20px 22px;box-shadow:0 12px 48px rgba(0,0,0,0.45);transform:translateY(20px);opacity:0;transition:transform 0.4s cubic-bezier(.34,1.56,.64,1),opacity 0.3s ease;max-width:340px;width:calc(100% - 40px);position:relative;" id="loggedOutCard">
             <button onclick="closeLoggedOutPopup()" style="position:absolute;top:12px;right:14px;background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:1.1rem;line-height:1;" aria-label="Close">&times;</button>
             <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
-                <div style="width:40px;height:40px;border-radius:10px;background:var(--cyan);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,var(--cyan),var(--purple));display:flex;align-items:center;justify-content:center;flex-shrink:0;">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#06060a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 </div>
                 <div>
@@ -2000,7 +2033,7 @@ try {
             </div>
             <p style="font-size:0.82rem;color:var(--text-secondary);margin:0 0 14px;line-height:1.5;">Sign back in to pick up right where you left off — your work is safe and waiting for you.</p>
             <div style="display:flex;gap:8px;">
-                <a href="/login" style="flex:1;padding:9px 14px;border-radius:8px;background:var(--cyan);color:#ffffff;font-size:0.85rem;font-weight:700;text-decoration:none;text-align:center;">Sign In</a>
+                <a href="/login" style="flex:1;padding:9px 14px;border-radius:8px;background:linear-gradient(135deg,var(--cyan),var(--purple));color:#06060a;font-size:0.85rem;font-weight:700;text-decoration:none;text-align:center;">Sign In</a>
                 <a href="/register" style="flex:1;padding:9px 14px;border-radius:8px;border:1px solid var(--border-color);background:transparent;color:var(--text-primary);font-size:0.85rem;font-weight:600;text-decoration:none;text-align:center;">Register</a>
             </div>
         </div>
@@ -2062,8 +2095,8 @@ try {
         <div id="twoFaCard" style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:18px;padding:28px 26px 24px;box-shadow:0 16px 56px rgba(0,0,0,0.55);max-width:360px;width:calc(100% - 40px);position:relative;transform:translateY(24px);opacity:0;transition:transform 0.4s cubic-bezier(.34,1.56,.64,1),opacity 0.3s ease;">
             <button onclick="closeTwoFaPopup()" style="position:absolute;top:12px;right:14px;background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:1.2rem;line-height:1;" aria-label="Close">&times;</button>
             <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-                <div style="width:42px;height:42px;border-radius:50%;background:var(--cyan);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                    <i class="fas fa-shield-alt" style="color:#ffffff;font-size:1.1rem;"></i>
+                <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--purple));display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <i class="fas fa-shield-alt" style="color:#06060a;font-size:1.1rem;"></i>
                 </div>
                 <div>
                     <div style="font-weight:700;font-size:1rem;color:var(--text-primary);">
@@ -2080,7 +2113,7 @@ try {
                 <?php endif; ?>
             </p>
             <div style="display:flex;gap:8px;flex-direction:column;">
-                <a href="/2fa/setup" style="display:block;padding:10px 14px;border-radius:9px;background:var(--cyan);color:#ffffff;font-size:0.9rem;font-weight:700;text-decoration:none;text-align:center;">
+                <a href="/2fa/setup" style="display:block;padding:10px 14px;border-radius:9px;background:linear-gradient(135deg,var(--cyan),var(--purple));color:#06060a;font-size:0.9rem;font-weight:700;text-decoration:none;text-align:center;">
                     <i class="fas fa-qrcode" style="margin-right:6px;"></i>Set up 2FA now
                 </a>
                 <button onclick="closeTwoFaPopup()" style="padding:9px 14px;border-radius:9px;border:1px solid var(--border-color);background:transparent;color:var(--text-secondary);font-size:0.85rem;font-weight:500;cursor:pointer;width:100%;">
@@ -2125,13 +2158,13 @@ try {
                 if (!existing) {
                     var errEl = document.createElement('div');
                     errEl.className = 'client-form-error';
-                    errEl.style.cssText = 'color:#ef4444;font-size:12px;margin-top:4px;';
+                    errEl.style.cssText = 'color:#ff6b6b;font-size:12px;margin-top:4px;';
                     errEl.textContent = msg;
                     field.parentElement.appendChild(errEl);
                 } else {
                     existing.textContent = msg;
                 }
-                field.style.borderColor = '#ef4444';
+                field.style.borderColor = '#ff6b6b';
             }, true);
             form.addEventListener('input', function(e) {
                 var field = e.target;
@@ -2169,7 +2202,7 @@ try {
 
         var titleEl = document.createElement('div');
         titleEl.style.cssText = 'font-weight:600;color:var(--text-primary,#eee);font-size:.9rem;margin-bottom:4px;display:flex;align-items:center;gap:6px;';
-        titleEl.innerHTML = '<span style="width:8px;height:8px;border-radius:50%;background:var(--cyan,#3b82f6);flex-shrink:0;display:inline-block;"></span>New Notification';
+        titleEl.innerHTML = '<span style="width:8px;height:8px;border-radius:50%;background:var(--cyan,#00f0ff);flex-shrink:0;display:inline-block;"></span>New Notification';
 
         var msgEl = document.createElement('div');
         msgEl.style.cssText = 'color:var(--text-secondary,#aaa);font-size:.85rem;';
@@ -2244,15 +2277,15 @@ try {
 <!-- Support Live Chat Widget -->
 <div id="support-chat-widget">
     <!-- Chat bubble button -->
-    <button id="support-chat-btn" onclick="toggleSupportChat()" style="width:54px;height:54px;border-radius:50%;background:var(--cyan);border:none;cursor:pointer;box-shadow:0 4px 20px rgba(59,130,246,0.4);display:flex;align-items:center;justify-content:center;font-size:22px;color:white;transition:transform .2s;" title="Live Support">
+    <button id="support-chat-btn" onclick="toggleSupportChat()" style="width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#00f0ff,#ff2ec4);border:none;cursor:pointer;box-shadow:0 4px 20px rgba(0,240,255,0.4);display:flex;align-items:center;justify-content:center;font-size:22px;color:white;transition:transform .2s;" title="Live Support">
         <i class="fas fa-headset"></i>
     </button>
     <!-- Chat panel -->
     <div id="support-chat-panel">
         <!-- Header -->
-        <div style="background:linear-gradient(135deg,#3b82f608,#8b5cf608);padding:14px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color,rgba(255,255,255,.08));">
+        <div style="background:linear-gradient(135deg,#00f0ff22,#ff2ec422);padding:14px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color,rgba(255,255,255,.08));">
             <div style="display:flex;align-items:center;gap:8px;font-weight:600;color:var(--text-primary,#e8eefc);font-size:.95rem;">
-                <i class="fas fa-headset" style="color:#3b82f6;"></i> Live Support
+                <i class="fas fa-headset" style="color:#00f0ff;"></i> Live Support
             </div>
             <button onclick="toggleSupportChat()" style="background:none;border:none;color:var(--text-secondary,#8892a6);cursor:pointer;font-size:16px;"><i class="fas fa-times"></i></button>
         </div>
@@ -2264,7 +2297,7 @@ try {
             <input type="text" id="chat-guest-name" placeholder="Your name" style="width:100%;padding:10px;border:1px solid var(--border-color,rgba(255,255,255,.1));border-radius:8px;background:var(--bg-secondary,#0c0c12);color:var(--text-primary,#e8eefc);margin-bottom:10px;font-size:.85rem;box-sizing:border-box;">
             <input type="email" id="chat-guest-email" placeholder="Your email" style="width:100%;padding:10px;border:1px solid var(--border-color,rgba(255,255,255,.1));border-radius:8px;background:var(--bg-secondary,#0c0c12);color:var(--text-primary,#e8eefc);margin-bottom:10px;font-size:.85rem;box-sizing:border-box;">
             <?php endif; ?>
-            <button onclick="startSupportChat()" style="width:100%;padding:10px;background:var(--cyan);border:none;border-radius:8px;color:white;font-weight:600;cursor:pointer;font-size:.9rem;">Start Chat</button>
+            <button onclick="startSupportChat()" style="width:100%;padding:10px;background:linear-gradient(135deg,#00f0ff,#ff2ec4);border:none;border-radius:8px;color:white;font-weight:600;cursor:pointer;font-size:.9rem;">Start Chat</button>
         </div>
         <!-- Messages area -->
         <div id="chat-messages-area" style="display:none;flex-direction:column;height:300px;">
@@ -2272,11 +2305,11 @@ try {
             <!-- Message input -->
             <div style="padding:10px;border-top:1px solid var(--border-color,rgba(255,255,255,.08));display:flex;gap:8px;">
                 <input type="text" id="chat-input" placeholder="Type a message..." style="flex:1;padding:8px 12px;border:1px solid var(--border-color,rgba(255,255,255,.1));border-radius:20px;background:var(--bg-secondary,#0c0c12);color:var(--text-primary,#e8eefc);font-size:.85rem;" onkeydown="if(event.key==='Enter')sendChatMessage()">
-                <button onclick="sendChatMessage()" style="width:36px;height:36px;border-radius:50%;background:var(--cyan);border:none;cursor:pointer;color:white;font-size:14px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-paper-plane"></i></button>
+                <button onclick="sendChatMessage()" style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#00f0ff,#ff2ec4);border:none;cursor:pointer;color:white;font-size:14px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-paper-plane"></i></button>
             </div>
             <!-- Close chat button -->
             <div style="padding:6px 10px;border-top:1px solid var(--border-color,rgba(255,255,255,.08));text-align:center;">
-                <button onclick="closeSupportChat()" style="background:none;border:none;color:#ef4444;font-size:.78rem;cursor:pointer;">End this chat session</button>
+                <button onclick="closeSupportChat()" style="background:none;border:none;color:#ff6b6b;font-size:.78rem;cursor:pointer;">End this chat session</button>
             </div>
         </div>
     </div>
@@ -2402,7 +2435,7 @@ try {
             var div = document.createElement('div');
             var isUser = (m.sender_type === 'user' || m.sender_type === 'guest');
             div.style.cssText = 'max-width:80%;padding:8px 12px;border-radius:12px;font-size:.82rem;line-height:1.5;word-break:break-word;' +
-                (isUser ? 'align-self:flex-end;background:rgba(59,130,246,0.15);margin-left:auto;' : 'align-self:flex-start;background:var(--bg-secondary,rgba(255,255,255,.06));border:1px solid var(--border-color,rgba(255,255,255,.08));');
+                (isUser ? 'align-self:flex-end;background:linear-gradient(135deg,rgba(0,240,255,.25),rgba(255,46,196,.2));margin-left:auto;' : 'align-self:flex-start;background:var(--bg-secondary,rgba(255,255,255,.06));border:1px solid var(--border-color,rgba(255,255,255,.08));');
             div.style.color = 'var(--text-primary,#e8eefc)';
             div.textContent = m.message;
             container.appendChild(div);

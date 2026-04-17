@@ -19,7 +19,7 @@ $isActive = ($chat['status'] === 'active');
     <div style="background:var(--bg-card,#0f0f18);border:1px solid var(--border-color,rgba(255,255,255,.08));border-radius:14px;padding:20px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
         <div>
             <h1 style="font-size:1.2rem;font-weight:700;color:var(--text-primary,#e8eefc);margin:0 0 6px;">
-                <i class="fas fa-comments" style="color:#8b5cf6;margin-right:8px;"></i>Chat #<?= (int)$chat['id'] ?>
+                <i class="fas fa-comments" style="color:#ff2ec4;margin-right:8px;"></i>Chat #<?= (int)$chat['id'] ?>
             </h1>
             <div style="font-size:.85rem;color:var(--text-secondary,#8892a6);">
                 <?php
@@ -30,20 +30,20 @@ $isActive = ($chat['status'] === 'active');
             </div>
         </div>
         <div style="display:flex;align-items:center;gap:10px;">
-            <span style="padding:4px 12px;border-radius:20px;font-size:.78rem;font-weight:600;background:<?= $isActive ? '#22c55e1a' : '#8892a61a' ?>;color:<?= $isActive ? '#22c55e' : '#8892a6' ?>">
+            <span style="padding:4px 12px;border-radius:20px;font-size:.78rem;font-weight:600;background:<?= $isActive ? '#00ff881a' : '#8892a61a' ?>;color:<?= $isActive ? '#00ff88' : '#8892a6' ?>">
                 <?= ucfirst($chat['status']) ?>
             </span>
             <?php if ($isActive): ?>
             <form method="POST" action="/admin/support/live-chats/<?= (int)$chat['id'] ?>/close" style="display:inline;">
                 <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
-                <button type="submit" style="padding:6px 14px;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);border-radius:7px;color:#ef4444;font-size:.8rem;font-weight:600;cursor:pointer;">
+                <button type="submit" style="padding:6px 14px;background:rgba(255,107,107,.15);border:1px solid rgba(255,107,107,.3);border-radius:7px;color:#ff6b6b;font-size:.8rem;font-weight:600;cursor:pointer;">
                     <i class="fas fa-times" style="margin-right:4px;"></i>Close Chat
                 </button>
             </form>
             <?php else: ?>
             <form method="POST" action="/admin/support/live-chats/<?= (int)$chat['id'] ?>/reopen" style="display:inline;">
                 <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
-                <button type="submit" style="padding:6px 14px;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);border-radius:7px;color:#22c55e;font-size:.8rem;font-weight:600;cursor:pointer;">
+                <button type="submit" style="padding:6px 14px;background:rgba(0,255,136,.15);border:1px solid rgba(0,255,136,.3);border-radius:7px;color:#00ff88;font-size:.8rem;font-weight:600;cursor:pointer;">
                     <i class="fas fa-redo" style="margin-right:4px;"></i>Force Reopen
                 </button>
             </form>
@@ -56,7 +56,7 @@ $isActive = ($chat['status'] === 'active');
         <?php foreach ($messages as $msg):
             $isAgent = ($msg['sender_type'] === 'agent');
             $isAI    = ($msg['sender_type'] === 'ai');
-            $sColor  = $isAgent ? '#ff9f43' : ($isAI ? '#a78bfa' : '#3b82f6');
+            $sColor  = $isAgent ? '#ff9f43' : ($isAI ? '#a78bfa' : '#00f0ff');
             $sLabel  = $isAgent ? ($msg['sender_name'] ?? 'Agent') : ($isAI ? 'AI Assistant' : ($msg['sender_name'] ?? 'User'));
         ?>
         <div style="background:rgba(255,255,255,.03);border:1px solid var(--border-color,rgba(255,255,255,.06));border-radius:10px;padding:12px 14px;">
@@ -83,7 +83,7 @@ $isActive = ($chat['status'] === 'active');
             <div style="display:flex;gap:10px;align-items:flex-end;">
                 <textarea name="message" required rows="2" placeholder="Type a message..."
                     style="flex:1;padding:10px 12px;border:1px solid var(--border-color,rgba(255,255,255,.1));border-radius:8px;background:var(--bg-secondary,#0c0c12);color:var(--text-primary,#e8eefc);font-size:.88rem;outline:none;resize:vertical;"></textarea>
-                <button type="submit" style="padding:10px 18px;background:linear-gradient(135deg,#ff9f43,#8b5cf6);border:none;border-radius:8px;color:white;font-weight:600;font-size:.85rem;cursor:pointer;white-space:nowrap;">
+                <button type="submit" style="padding:10px 18px;background:linear-gradient(135deg,#ff9f43,#ff2ec4);border:none;border-radius:8px;color:white;font-weight:600;font-size:.85rem;cursor:pointer;white-space:nowrap;">
                     <i class="fas fa-paper-plane" style="margin-right:5px;"></i>Send
                 </button>
             </div>

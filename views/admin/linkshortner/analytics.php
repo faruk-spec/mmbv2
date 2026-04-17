@@ -28,7 +28,7 @@
 
         <!-- Country Stats -->
         <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:20px;">
-            <h3 style="font-size:1rem;font-weight:600;margin-bottom:16px;"><i class="fas fa-globe" style="color:#f59e0b;margin-right:8px;"></i> Top Countries</h3>
+            <h3 style="font-size:1rem;font-weight:600;margin-bottom:16px;"><i class="fas fa-globe" style="color:#ffaa00;margin-right:8px;"></i> Top Countries</h3>
             <?php if (!empty($countryStats)): ?>
             <div style="overflow-x:auto;">
                 <table style="width:100%;border-collapse:collapse;font-size:14px;">
@@ -50,7 +50,7 @@
     <!-- Daily clicks chart -->
     <?php if (!empty($dailyClicks)): ?>
     <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:20px;">
-        <h3 style="font-size:1rem;font-weight:600;margin-bottom:16px;"><i class="fas fa-chart-line" style="color:#22c55e;margin-right:8px;"></i> Daily Clicks – Last 30 Days</h3>
+        <h3 style="font-size:1rem;font-weight:600;margin-bottom:16px;"><i class="fas fa-chart-line" style="color:#00ff88;margin-right:8px;"></i> Daily Clicks – Last 30 Days</h3>
         <div style="display:flex;align-items:flex-end;gap:3px;height:100px;">
         <?php $maxC = max(array_column($dailyClicks, 'cnt') ?: [1]); ?>
         <?php foreach ($dailyClicks as $row): ?>

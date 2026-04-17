@@ -67,14 +67,14 @@ if (!function_exists('stFormatTicketId')) {
 
             <!-- Flash messages -->
             <?php if (!empty($_SESSION['_flash']['success'])): ?>
-            <div style="background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);color:#22c55e;padding:12px 16px;border-radius:8px;margin-bottom:18px;font-size:.88rem;display:flex;align-items:center;gap:8px;">
+            <div style="background:rgba(0,255,136,.08);border:1px solid rgba(0,255,136,.2);color:#00ff88;padding:12px 16px;border-radius:8px;margin-bottom:18px;font-size:.88rem;display:flex;align-items:center;gap:8px;">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                 <?= htmlspecialchars($_SESSION['_flash']['success']) ?>
                 <?php unset($_SESSION['_flash']['success']); ?>
             </div>
             <?php endif; ?>
             <?php if (!empty($_SESSION['_flash']['error'])): ?>
-            <div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:#ef4444;padding:12px 16px;border-radius:8px;margin-bottom:18px;font-size:.88rem;display:flex;align-items:center;gap:8px;">
+            <div style="background:rgba(255,107,107,.08);border:1px solid rgba(255,107,107,.2);color:#ff6b6b;padding:12px 16px;border-radius:8px;margin-bottom:18px;font-size:.88rem;display:flex;align-items:center;gap:8px;">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                 <?= htmlspecialchars($_SESSION['_flash']['error']) ?>
                 <?php unset($_SESSION['_flash']['error']); ?>

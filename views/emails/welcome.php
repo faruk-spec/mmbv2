@@ -5,15 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Welcome to <?= APP_NAME ?></title>
 </head>
-<body style="margin: 0; padding: 0; background-color: #09090b; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+<body style="margin: 0; padding: 0; background-color: #06060a; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
     <table role="presentation" style="width: 100%; border-collapse: collapse;">
         <tr>
             <td style="padding: 40px 20px;">
-                <table role="presentation" style="max-width: 600px; margin: 0 auto; background: #18181b; border-radius: 16px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
+                <table role="presentation" style="max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #0c0c12 0%, #0f0f18 100%); border-radius: 16px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
                     <!-- Header -->
                     <tr>
-                        <td style="padding: 40px 40px 20px; text-align: center; background: rgba(59,130,246,0.06);">
-                            <h1 style="margin: 0; color: #22c55e; font-size: 28px; font-weight: 600;">
+                        <td style="padding: 40px 40px 20px; text-align: center; background: linear-gradient(135deg, rgba(0,255,136,0.1), rgba(0,240,255,0.1));">
+                            <h1 style="margin: 0; color: #00ff88; font-size: 28px; font-weight: 600;">
                                 Welcome to <?= APP_NAME ?>! 🎉
                             </h1>
                         </td>
@@ -36,22 +36,22 @@
                             
                             <table role="presentation" style="width: 100%; margin-bottom: 30px;">
                                 <tr>
-                                    <td style="padding: 15px; background: rgba(59,130,246,0.1); border-radius: 8px; margin-bottom: 10px;">
-                                        <strong style="color: #3b82f6;">QR Generator</strong>
+                                    <td style="padding: 15px; background: rgba(0,240,255,0.1); border-radius: 8px; margin-bottom: 10px;">
+                                        <strong style="color: #00f0ff;">QR Generator</strong>
                                         <p style="margin: 5px 0 0; color: #8892a6; font-size: 14px;">Create custom QR codes instantly</p>
                                     </td>
                                 </tr>
                                 <tr><td style="height: 10px;"></td></tr>
                                 <tr>
-                                    <td style="padding: 15px; background: rgba(139,92,246,0.1); border-radius: 8px;">
-                                        <strong style="color: #8b5cf6;">File Sharing</strong>
+                                    <td style="padding: 15px; background: rgba(255,46,196,0.1); border-radius: 8px;">
+                                        <strong style="color: #ff2ec4;">File Sharing</strong>
                                         <p style="margin: 5px 0 0; color: #8892a6; font-size: 14px;">Secure file sharing platform</p>
                                     </td>
                                 </tr>
                                 <tr><td style="height: 10px;"></td></tr>
                                 <tr>
-                                    <td style="padding: 15px; background: rgba(34,197,94,0.1); border-radius: 8px;">
-                                        <strong style="color: #22c55e;">And More...</strong>
+                                    <td style="padding: 15px; background: rgba(0,255,136,0.1); border-radius: 8px;">
+                                        <strong style="color: #00ff88;">And More...</strong>
                                         <p style="margin: 5px 0 0; color: #8892a6; font-size: 14px;">Explore all our tools in your dashboard</p>
                                     </td>
                                 </tr>
@@ -59,7 +59,7 @@
                             
                             <div style="text-align: center; margin: 30px 0;">
                                 <a href="<?= htmlspecialchars($login_url) ?>" 
-                                   style="display: inline-block; padding: 16px 40px; background: #3b82f6; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 16px; border-radius: 8px;">
+                                   style="display: inline-block; padding: 16px 40px; background: linear-gradient(135deg, #00ff88, #00f0ff); color: #06060a; text-decoration: none; font-weight: 600; font-size: 16px; border-radius: 8px;">
                                     Go to Dashboard
                                 </a>
                             </div>

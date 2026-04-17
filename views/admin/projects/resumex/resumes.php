@@ -63,7 +63,7 @@
     <div style="display:flex;gap:6px;padding:16px;flex-wrap:wrap;">
         <?php for ($p = 1; $p <= $pages; $p++): ?>
             <a href="?page=<?= $p ?><?= $search !== '' ? '&search=' . urlencode($search) : '' ?>"
-               style="padding:6px 12px;border-radius:6px;font-size:0.8rem;border:1px solid var(--border-color);color:<?= $p === $page ? 'var(--cyan)' : 'var(--text-secondary)' ?>;background:<?= $p === $page ? 'rgba(59,130,246,0.1)' : 'transparent' ?>;text-decoration:none;">
+               style="padding:6px 12px;border-radius:6px;font-size:0.8rem;border:1px solid var(--border-color);color:<?= $p === $page ? 'var(--cyan)' : 'var(--text-secondary)' ?>;background:<?= $p === $page ? 'rgba(0,240,255,0.1)' : 'transparent' ?>;text-decoration:none;">
                 <?= $p ?>
             </a>
         <?php endfor; ?>

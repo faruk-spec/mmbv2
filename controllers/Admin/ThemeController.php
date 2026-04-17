@@ -42,10 +42,11 @@ class ThemeController extends BaseController
         }
 
         $this->view('admin/settings/theme', [
-            'title'           => 'Universal Theme',
-            'activeTheme'     => $settings['active_theme'] ?? 'default',
-            'defaultMode'     => $settings['default_mode'] ?? 'dark',
-            'customOverrides' => $customOverrides,
+            'title'              => 'Universal Theme',
+            'useUniversalTheme'  => ($settings['use_universal_theme'] ?? 'no') === 'yes',
+            'activeTheme'        => $settings['active_theme'] ?? 'default',
+            'defaultMode'        => $settings['default_mode'] ?? 'dark',
+            'customOverrides'    => $customOverrides,
         ], 'admin');
     }
 
@@ -66,8 +67,14 @@ class ThemeController extends BaseController
         $this->ensureTable($db);
 
         try {
+            $useUniversalTheme = $this->input('use_universal_theme', 'no');
             $activeTheme = $this->input('active_theme', 'default');
             $defaultMode = $this->input('default_mode', 'dark');
+
+            // Validate toggle
+            if (!in_array($useUniversalTheme, ['yes', 'no'])) {
+                $useUniversalTheme = 'no';
+            }
 
             // Validate theme name
             $allowedThemes = ['default', 'soft', 'corporate', 'neon'];
@@ -83,6 +90,7 @@ class ThemeController extends BaseController
             $db->beginTransaction();
 
             // Save settings
+            $this->setSetting($db, 'use_universal_theme', $useUniversalTheme);
             $this->setSetting($db, 'active_theme', $activeTheme);
             $this->setSetting($db, 'default_mode', $defaultMode);
 
@@ -149,6 +157,7 @@ class ThemeController extends BaseController
         }
 
         $this->json([
+            'enabled'         => ($settings['use_universal_theme'] ?? 'no') === 'yes',
             'theme'           => $settings['active_theme'] ?? 'default',
             'mode'            => $settings['default_mode'] ?? 'dark',
             'customOverrides' => $customOverrides,
@@ -174,6 +183,7 @@ class ThemeController extends BaseController
             ");
             $db->query("
                 INSERT IGNORE INTO `theme_settings` (`setting_key`, `setting_value`) VALUES
+                    ('use_universal_theme', 'no'),
                     ('active_theme', 'default'),
                     ('default_mode', 'dark'),
                     ('custom_overrides', NULL)
@@ -209,11 +219,12 @@ class ThemeController extends BaseController
 
     /**
      * Static helper: load theme settings for layouts
-     * Returns [ 'theme' => string, 'mode' => string, 'overrides' => array ]
+     * Returns [ 'enabled' => bool, 'theme' => string, 'mode' => string, 'overrides' => array ]
+     * When use_universal_theme is 'no', returns enabled=false so layouts skip applying overrides.
      */
     public static function loadThemeForLayout(): array
     {
-        $defaults = ['theme' => 'default', 'mode' => 'dark', 'overrides' => []];
+        $defaults = ['enabled' => false, 'theme' => 'default', 'mode' => 'dark', 'overrides' => []];
         try {
             $db = Database::getInstance();
             // Check if table exists
@@ -226,13 +237,18 @@ class ThemeController extends BaseController
             foreach ($rows as $row) {
                 $map[$row['setting_key']] = $row['setting_value'];
             }
+
+            // Check if universal theme is enabled
+            $enabled = ($map['use_universal_theme'] ?? 'no') === 'yes';
+
             $overrides = [];
             if (!empty($map['custom_overrides'])) {
                 $overrides = json_decode($map['custom_overrides'], true) ?: [];
             }
             return [
-                'theme'    => $map['active_theme'] ?? 'default',
-                'mode'     => $map['default_mode'] ?? 'dark',
+                'enabled'   => $enabled,
+                'theme'     => $map['active_theme'] ?? 'default',
+                'mode'      => $map['default_mode'] ?? 'dark',
                 'overrides' => $overrides,
             ];
         } catch (\Exception $e) {

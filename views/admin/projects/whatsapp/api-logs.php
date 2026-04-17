@@ -75,13 +75,13 @@
 }
 
 .status-4xx {
-    background: rgba(245, 158, 11, 0.2);
-    color: #f59e0b;
+    background: rgba(255, 170, 0, 0.2);
+    color: #ffaa00;
 }
 
 .status-5xx {
-    background: rgba(239, 68, 68, 0.2);
-    color: #ef4444;
+    background: rgba(255, 107, 107, 0.2);
+    color: #ff6b6b;
 }
 
 .method-badge {
@@ -103,13 +103,13 @@
 }
 
 .method-put {
-    background: rgba(245, 158, 11, 0.2);
-    color: #f59e0b;
+    background: rgba(255, 170, 0, 0.2);
+    color: #ffaa00;
 }
 
 .method-delete {
-    background: rgba(239, 68, 68, 0.2);
-    color: #ef4444;
+    background: rgba(255, 107, 107, 0.2);
+    color: #ff6b6b;
 }
 
 .pagination {
@@ -160,11 +160,11 @@
 }
 
 .response-time-medium {
-    color: #f59e0b;
+    color: #ffaa00;
 }
 
 .response-time-slow {
-    color: #ef4444;
+    color: #ff6b6b;
 }
 </style>
 
@@ -175,7 +175,7 @@
             <a href="/admin/whatsapp" style="color: var(--text-secondary); text-decoration: none; font-size: 0.875rem;">← Back to Overview</a>
         </div>
         <h1 style="font-size: 2rem; margin-bottom: 8px; display: flex; align-items: center; gap: 12px;">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ff6b6b" stroke-width="2">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                 <polyline points="14 2 14 8 20 8"/>
                 <line x1="16" y1="13" x2="8" y2="13"/>

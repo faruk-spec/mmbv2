@@ -3,7 +3,7 @@
 
 <?php View::section('content'); ?>
 <div style="text-align: center; padding: 80px 0;">
-    <div style="font-size: 8rem; font-weight: 700; background: var(--cyan); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+    <div style="font-size: 8rem; font-weight: 700; background: linear-gradient(135deg, var(--cyan), var(--magenta)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
         404
     </div>
     <h1 style="margin-bottom: 20px;">Page Not Found</h1>

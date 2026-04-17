@@ -30,7 +30,7 @@ use Core\Security;
     foreach ($stats as [$label, $val, $icon, $color]):
     ?>
     <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:10px;padding:16px;display:flex;align-items:center;gap:14px;">
-        <div style="width:40px;height:40px;border-radius:8px;background:rgba(59,130,246,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <div style="width:40px;height:40px;border-radius:8px;background:rgba(0,240,255,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
             <i class="fas <?= $icon ?>" style="color:<?= $color ?>;font-size:1.1rem;"></i>
         </div>
         <div>
@@ -48,7 +48,7 @@ use Core\Security;
         <h3 style="margin:0 0 16px;font-size:1rem;font-weight:700;display:flex;align-items:center;gap:8px;">
             <i class="fas fa-key" style="color:var(--cyan);"></i> Generate API Key for User
         </h3>
-        <div id="genKeyResult" style="display:none;margin-bottom:14px;padding:10px 14px;border-radius:8px;background:rgba(34,197,94,.08);border:1px solid var(--green);font-size:.82rem;color:var(--green);">
+        <div id="genKeyResult" style="display:none;margin-bottom:14px;padding:10px 14px;border-radius:8px;background:rgba(0,255,136,.08);border:1px solid var(--green);font-size:.82rem;color:var(--green);">
         </div>
         <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:5px;color:var(--text-secondary);">Select User</label>
         <input type="text" id="userSearch" placeholder="Search by name or email…" oninput="searchUsers(this.value)"
@@ -66,13 +66,13 @@ use Core\Security;
         <div id="newGeneratedKey" style="display:none;margin-bottom:14px;">
             <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:5px;color:var(--cyan);">⚡ Generated Key — copy now, shown only once</label>
             <div style="display:flex;gap:8px;align-items:center;">
-                <code id="newKeyVal" style="flex:1;background:rgba(0,0,0,.4);padding:8px 12px;border-radius:6px;font-size:.8rem;word-break:break-all;border:1px solid rgba(59,130,246,.3);color:var(--green);"></code>
-                <button onclick="copyGenKey()" style="padding:7px 14px;background:var(--cyan);color:#fff;border:none;border-radius:6px;font-weight:700;font-size:.78rem;cursor:pointer;white-space:nowrap;">Copy</button>
+                <code id="newKeyVal" style="flex:1;background:rgba(0,0,0,.4);padding:8px 12px;border-radius:6px;font-size:.8rem;word-break:break-all;border:1px solid rgba(0,240,255,.3);color:var(--green);"></code>
+                <button onclick="copyGenKey()" style="padding:7px 14px;background:var(--cyan);color:#000;border:none;border-radius:6px;font-weight:700;font-size:.78rem;cursor:pointer;white-space:nowrap;">Copy</button>
             </div>
         </div>
         <div style="display:flex;gap:10px;justify-content:flex-end;">
             <button onclick="closeGenModal()" style="padding:9px 18px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:7px;color:var(--text-secondary);font-size:.83rem;cursor:pointer;">Cancel</button>
-            <button onclick="submitGenKey()" style="padding:9px 18px;background:var(--cyan);border:none;border-radius:7px;color:#fff;font-weight:700;font-size:.83rem;cursor:pointer;">Generate Key</button>
+            <button onclick="submitGenKey()" style="padding:9px 18px;background:linear-gradient(135deg,var(--cyan),var(--purple));border:none;border-radius:7px;color:#000;font-weight:700;font-size:.83rem;cursor:pointer;">Generate Key</button>
         </div>
     </div>
 </div>
@@ -85,7 +85,7 @@ use Core\Security;
             <input type="text" id="searchKeys" placeholder="Search name / email…"
                 oninput="filterKeys(this.value)"
                 style="padding:7px 12px;border-radius:7px;border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-size:.82rem;width:200px;">
-            <button onclick="openGenModal()" style="padding:7px 14px;background:var(--cyan);border:none;border-radius:7px;color:#fff;font-weight:700;font-size:.82rem;cursor:pointer;white-space:nowrap;">
+            <button onclick="openGenModal()" style="padding:7px 14px;background:linear-gradient(135deg,var(--cyan),var(--purple));border:none;border-radius:7px;color:#000;font-weight:700;font-size:.82rem;cursor:pointer;white-space:nowrap;">
                 <i class="fas fa-plus"></i> Generate for User
             </button>
         </div>
@@ -125,7 +125,7 @@ use Core\Security;
                             <?= substr(View::e($k['api_key']), 0, 12) ?>••••••
                         </code>
                         <button onclick="copyMaskedKey('<?= htmlspecialchars(substr($k['api_key'], 0, 12), ENT_QUOTES) ?>••••••')"
-                            title="Copy masked key" style="padding:3px 7px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.25);color:var(--cyan);border-radius:5px;font-size:.72rem;cursor:pointer;white-space:nowrap;">
+                            title="Copy masked key" style="padding:3px 7px;background:rgba(0,240,255,.08);border:1px solid rgba(0,240,255,.25);color:var(--cyan);border-radius:5px;font-size:.72rem;cursor:pointer;white-space:nowrap;">
                             <i class="fas fa-copy"></i>
                         </button>
                         </div>
@@ -140,15 +140,15 @@ use Core\Security;
                     <td style="padding:10px 14px;">
                         <span style="font-size:.75rem;padding:3px 8px;border-radius:12px;
                             <?= $k['is_active']
-                                ? 'background:rgba(34,197,94,.1);color:var(--green);border:1px solid var(--green);'
-                                : 'background:rgba(239,68,68,.1);color:var(--red);border:1px solid var(--red);' ?>">
+                                ? 'background:rgba(0,255,136,.1);color:var(--green);border:1px solid var(--green);'
+                                : 'background:rgba(255,107,107,.1);color:var(--red);border:1px solid var(--red);' ?>">
                             <?= $k['is_active'] ? 'Active' : 'Revoked' ?>
                         </span>
                     </td>
                     <td style="padding:10px 14px;">
                         <?php if ($k['is_active']): ?>
                         <button onclick="revokeKey(<?= $k['id'] ?>, this)"
-                            style="padding:5px 12px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.4);color:var(--red);border-radius:6px;font-size:.78rem;cursor:pointer;">
+                            style="padding:5px 12px;background:rgba(255,107,107,.1);border:1px solid rgba(255,107,107,.4);color:var(--red);border-radius:6px;font-size:.78rem;cursor:pointer;">
                             Revoke
                         </button>
                         <?php else: ?>
@@ -263,8 +263,8 @@ function showToast(msg, type) {
     t.textContent = msg;
     t.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:99999;padding:10px 18px;border-radius:8px;font-size:.85rem;font-weight:600;pointer-events:none;'
         + (type === 'success'
-            ? 'background:rgba(34,197,94,.15);border:1px solid var(--green);color:var(--green);'
-            : 'background:rgba(239,68,68,.15);border:1px solid var(--red);color:var(--red);');
+            ? 'background:rgba(0,255,136,.15);border:1px solid var(--green);color:var(--green);'
+            : 'background:rgba(255,107,107,.15);border:1px solid var(--red);color:var(--red);');
     document.body.appendChild(t);
     setTimeout(() => t.remove(), 3500);
 }

@@ -161,14 +161,14 @@
 }
 
 .btn-primary {
-    background: var(--cyan);
+    background: linear-gradient(135deg, var(--cyan), var(--magenta));
     color: white;
 }
 
 .btn-primary:hover {
     opacity: 0.9;
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 240, 255, 0.3);
 }
 
 .btn-secondary {

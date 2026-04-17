@@ -12,7 +12,7 @@ View::section('content');
 .so-page { padding: 28px 32px; }
 .so-page-header { margin-bottom: 28px; }
 .so-page-title { font-size: 1.45rem; font-weight: 700; color: var(--text-primary,#e8eefc); margin: 0 0 4px; display: flex; align-items: center; gap: 10px; }
-.so-page-title i { color: var(--cyan,#3b82f6); font-size: 1.2rem; }
+.so-page-title i { color: var(--cyan,#00f0ff); font-size: 1.2rem; }
 .so-page-sub { color: var(--text-secondary,#8892a6); margin: 0; font-size: .85rem; }
 
 .so-stats { display: grid; grid-template-columns: repeat(6, minmax(0,1fr)); gap: 14px; margin-bottom: 28px; }
@@ -39,8 +39,8 @@ View::section('content');
   border-radius: 12px; padding: 18px;
   text-decoration: none; transition: border-color .2s, background .2s;
 }
-.so-nav-card:hover { border-color: rgba(59,130,246,.3); background: rgba(59,130,246,.03); }
-.so-nav-icon { width: 40px; height: 40px; border-radius: 10px; background: rgba(59,130,246,.1); color: var(--cyan,#3b82f6); display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
+.so-nav-card:hover { border-color: rgba(0,240,255,.3); background: rgba(0,240,255,.03); }
+.so-nav-icon { width: 40px; height: 40px; border-radius: 10px; background: rgba(0,240,255,.1); color: var(--cyan,#00f0ff); display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
 .so-nav-title { font-weight: 600; color: var(--text-primary,#e8eefc); font-size: .92rem; margin-bottom: 2px; }
 .so-nav-desc  { color: var(--text-secondary,#8892a6); font-size: .76rem; }
 </style>

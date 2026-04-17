@@ -1,66 +1,7 @@
 <?php use Core\View; use Core\Security; ?>
-<?php
-// Load theme settings for admin layout
-$_adminThemeConfig = \Controllers\Admin\ThemeController::loadThemeForLayout();
-$_adminUiTheme = $_adminThemeConfig['theme'] ?? 'default';
-$_adminDefaultMode = $_adminThemeConfig['mode'] ?? 'dark';
-$_adminThemeOverrides = '';
-$ov = $_adminThemeConfig['overrides'] ?? [];
-$san = '\\Controllers\\Admin\\ThemeController::sanitizeCssValue';
-$cssOv = [];
-if (!empty($ov['cyan']))    $cssOv[] = '--cyan: ' . $san($ov['cyan']);
-if (!empty($ov['magenta'])) $cssOv[] = '--magenta: ' . $san($ov['magenta']);
-if (!empty($ov['green']))   $cssOv[] = '--green: ' . $san($ov['green']);
-if (!empty($ov['orange']))  $cssOv[] = '--orange: ' . $san($ov['orange']);
-if (!empty($ov['red']))     $cssOv[] = '--red: ' . $san($ov['red']);
-if (!empty($ov['purple']))  $cssOv[] = '--purple: ' . $san($ov['purple']);
-$radiusMap = ['sharp' => '4px', 'medium' => '8px', 'rounded' => '14px'];
-if (!empty($ov['radius_level']) && isset($radiusMap[$ov['radius_level']])) {
-    $r = $radiusMap[$ov['radius_level']];
-    $cssOv[] = '--radius-sm: ' . max(2, intval($r) - 4) . 'px';
-    $cssOv[] = '--radius-md: ' . $r;
-    $cssOv[] = '--radius-lg: ' . (intval($r) + 4) . 'px';
-}
-$shadowMap = [
-    'none'   => ['0 0 0 transparent', '0 0 0 transparent', '0 0 0 transparent', 'none'],
-    'subtle' => ['0 1px 2px rgba(0,0,0,0.04)', '0 2px 6px rgba(0,0,0,0.06)', '0 4px 12px rgba(0,0,0,0.08)', '0 1px 2px rgba(0,0,0,0.04)'],
-    'normal' => ['0 1px 3px rgba(0,0,0,0.06)', '0 4px 12px rgba(0,0,0,0.08)', '0 8px 24px rgba(0,0,0,0.12)', '0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)'],
-    'strong' => ['0 2px 4px rgba(0,0,0,0.08)', '0 6px 18px rgba(0,0,0,0.14)', '0 12px 36px rgba(0,0,0,0.20)', '0 2px 6px rgba(0,0,0,0.10), 0 1px 3px rgba(0,0,0,0.06)'],
-];
-if (!empty($ov['shadow_intensity']) && isset($shadowMap[$ov['shadow_intensity']])) {
-    $s = $shadowMap[$ov['shadow_intensity']];
-    $cssOv[] = '--shadow-sm: ' . $s[0];
-    $cssOv[] = '--shadow-md: ' . $s[1];
-    $cssOv[] = '--shadow-lg: ' . $s[2];
-    $cssOv[] = '--card-shadow: ' . $s[3];
-}
-if (!empty($cssOv)) {
-    $_adminThemeOverrides = 'html[data-ui-theme] { ' . implode('; ', $cssOv) . '; }';
-    $darkBg = [];
-    if (!empty($ov['bg_primary_dark']))   $darkBg[] = '--bg-primary: ' . $san($ov['bg_primary_dark']);
-    if (!empty($ov['bg_secondary_dark'])) $darkBg[] = '--bg-secondary: ' . $san($ov['bg_secondary_dark']);
-    if (!empty($ov['bg_card_dark']))      $darkBg[] = '--bg-card: ' . $san($ov['bg_card_dark']);
-    if (!empty($ov['text_primary_dark']))   $darkBg[] = '--text-primary: ' . $san($ov['text_primary_dark']);
-    if (!empty($ov['text_secondary_dark'])) $darkBg[] = '--text-secondary: ' . $san($ov['text_secondary_dark']);
-    if (!empty($ov['text_tertiary_dark']))  $darkBg[] = '--text-tertiary: ' . $san($ov['text_tertiary_dark']);
-    if (!empty($darkBg)) {
-        $_adminThemeOverrides .= ' html[data-ui-theme]:not([data-theme="light"]) { ' . implode('; ', $darkBg) . '; }';
-    }
-    $lightBg = [];
-    if (!empty($ov['bg_primary_light']))   $lightBg[] = '--bg-primary: ' . $san($ov['bg_primary_light']);
-    if (!empty($ov['bg_secondary_light'])) $lightBg[] = '--bg-secondary: ' . $san($ov['bg_secondary_light']);
-    if (!empty($ov['bg_card_light']))      $lightBg[] = '--bg-card: ' . $san($ov['bg_card_light']);
-    if (!empty($ov['text_primary_light']))   $lightBg[] = '--text-primary: ' . $san($ov['text_primary_light']);
-    if (!empty($ov['text_secondary_light'])) $lightBg[] = '--text-secondary: ' . $san($ov['text_secondary_light']);
-    if (!empty($ov['text_tertiary_light']))  $lightBg[] = '--text-tertiary: ' . $san($ov['text_tertiary_light']);
-    if (!empty($lightBg)) {
-        $_adminThemeOverrides .= ' html[data-ui-theme][data-theme="light"] { ' . implode('; ', $lightBg) . '; }';
-    }
-}
-?>
-<!-- Admin Layout Version: 2.1 - Multi-Theme System -->
+<!-- Admin Layout Version: 2.0 - Updated <?= date('Y-m-d H:i:s') ?> -->
 <!DOCTYPE html>
-<html lang="en" data-theme="<?= htmlspecialchars($_adminDefaultMode) ?>" data-ui-theme="<?= htmlspecialchars($_adminUiTheme) ?>">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -82,46 +23,101 @@ if (!empty($cssOv)) {
     <!-- Admin Panel Responsive CSS - Optimized for all devices -->
     <link rel="stylesheet" href="/css/admin-responsive.css?v=<?= time() ?>">
     
-    <!-- Universal Theme System -->
-    <link rel="stylesheet" href="/css/universal-theme.css?v=<?= @filemtime(BASE_PATH . '/public/css/universal-theme.css') ?: time() ?>">
-    
     <style>
-        /* Dark Theme — admin-only extras (theme variables come from universal-theme.css) */
+        /* Dark Theme (Default) */
         :root[data-theme="dark"] {
-            --sidebar-width: 260px;
-            --bg-gradient-start: rgba(59, 130, 246, 0.04);
-            --bg-gradient-end: rgba(139, 92, 246, 0.04);
+            --bg-primary: #06060a;
+            --bg-secondary: #0c0c12;
+            --bg-card: #0f0f18;
+            --cyan: #00f0ff;
+            --magenta: #ff2ec4;
+            --green: #00ff88;
+            --orange: #ffaa00;
+            --purple: #9945ff;
+            --red: #ff6b6b;
+            --text-primary: #e8eefc;
+            --text-secondary: #8892a6;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --shadow-glow: 0 0 20px rgba(0, 240, 255, 0.2);
+            --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            --sidebar-width: 280px;
+            --bg-gradient-start: rgba(0, 240, 255, 0.1);
+            --bg-gradient-end: rgba(255, 46, 196, 0.1);
             --overlay-bg: rgba(0, 0, 0, 0.5);
-            --dropdown-bg: rgba(0, 0, 0, 0.15);
-            --shadow: rgba(0, 0, 0, 0.4);
-            --badge-success-bg: rgba(34, 197, 94, 0.12);
-            --badge-danger-bg: rgba(239, 68, 68, 0.12);
-            --badge-info-bg: rgba(59, 130, 246, 0.12);
-            --badge-warning-bg: rgba(245, 158, 11, 0.12);
+            --dropdown-bg: rgba(0, 0, 0, 0.2);
+            --shadow: rgba(0, 0, 0, 0.3);
+            --hover-bg: rgba(0, 240, 255, 0.05);
+            --active-bg: rgba(0, 240, 255, 0.1);
+            --badge-success-bg: rgba(0, 255, 136, 0.2);
+            --badge-danger-bg: rgba(255, 107, 107, 0.2);
+            --badge-info-bg: rgba(0, 240, 255, 0.2);
+            --badge-warning-bg: rgba(255, 170, 0, 0.2);
         }
         
-        /* Light Theme — admin-only extras */
+        /* Light Theme */
         :root[data-theme="light"] {
-            --sidebar-width: 260px;
-            --bg-gradient-start: rgba(37, 99, 235, 0.04);
-            --bg-gradient-end: rgba(124, 58, 237, 0.04);
+            --bg-primary: #f0f4ff;
+            --bg-secondary: #ffffff;
+            --bg-card: #ffffff;
+            --cyan: #0099cc;
+            --magenta: #cc0066;
+            --green: #00aa55;
+            --orange: #ff8800;
+            --purple: #7C3AED;
+            --red: #dc3545;
+            --text-primary: #212529;
+            --text-secondary: #6c757d;
+            --border-color: rgba(0, 0, 0, 0.1);
+            --shadow-glow: 0 0 20px rgba(124, 58, 237, 0.12);
+            --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            --sidebar-width: 280px;
+            --bg-gradient-start: rgba(124, 58, 237, 0.08);
+            --bg-gradient-end: rgba(0, 153, 204, 0.08);
             --overlay-bg: rgba(0, 0, 0, 0.3);
-            --dropdown-bg: rgba(0, 0, 0, 0.03);
-            --shadow: rgba(0, 0, 0, 0.08);
-            --badge-success-bg: rgba(22, 163, 74, 0.10);
-            --badge-danger-bg: rgba(220, 38, 38, 0.10);
-            --badge-info-bg: rgba(37, 99, 235, 0.10);
-            --badge-warning-bg: rgba(217, 119, 6, 0.10);
+            --dropdown-bg: rgba(0, 0, 0, 0.05);
+            --shadow: rgba(0, 0, 0, 0.12);
+            --hover-bg: rgba(124, 58, 237, 0.08);
+            --active-bg: rgba(124, 58, 237, 0.12);
+            --badge-success-bg: rgba(0, 170, 85, 0.15);
+            --badge-danger-bg: rgba(220, 53, 69, 0.15);
+            --badge-info-bg: rgba(0, 153, 204, 0.15);
+            --badge-warning-bg: rgba(255, 136, 0, 0.15);
         }
 
-        /* Light-mode background: clean */
+        /* Animated light-mode background */
         [data-theme="light"] body {
-            background: var(--bg-primary);
+            background: #f0f4ff;
         }
 
         [data-theme="light"] body::before {
-            background: none !important;
-            animation: none !important;
+            animation: lightBgFlow 16s ease-in-out infinite alternate !important;
+        }
+
+        @keyframes lightBgFlow {
+            0% {
+                background:
+                    radial-gradient(ellipse at 10% 10%, rgba(124, 58, 237, 0.14) 0%, transparent 50%),
+                    radial-gradient(ellipse at 90% 90%, rgba(0, 153, 204, 0.12) 0%, transparent 50%),
+                    radial-gradient(ellipse at 60% 50%, rgba(0, 245, 255, 0.06) 0%, transparent 40%);
+            }
+            33% {
+                background:
+                    radial-gradient(ellipse at 85% 15%, rgba(124, 58, 237, 0.12) 0%, transparent 50%),
+                    radial-gradient(ellipse at 15% 85%, rgba(0, 153, 204, 0.14) 0%, transparent 50%),
+                    radial-gradient(ellipse at 40% 20%, rgba(0, 245, 255, 0.07) 0%, transparent 40%);
+            }
+            66% {
+                background:
+                    radial-gradient(ellipse at 50% 90%, rgba(0, 153, 204, 0.10) 0%, transparent 50%),
+                    radial-gradient(ellipse at 60% 10%, rgba(124, 58, 237, 0.14) 0%, transparent 50%),
+                    radial-gradient(ellipse at 20% 50%, rgba(0, 245, 255, 0.06) 0%, transparent 40%);
+            }
+            100% {
+                background:
+                    radial-gradient(ellipse at 10% 10%, rgba(124, 58, 237, 0.14) 0%, transparent 50%),
+                    radial-gradient(ellipse at 90% 90%, rgba(0, 153, 204, 0.12) 0%, transparent 50%),
+                    radial-gradient(ellipse at 60% 50%, rgba(0, 245, 255, 0.06) 0%, transparent 40%);
+            }
         }
         
         * {
@@ -131,16 +127,14 @@ if (!empty($cssOv)) {
         }
         
         body {
-            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-family: 'Poppins', sans-serif;
             background: var(--bg-primary);
             color: var(--text-primary);
             min-height: 100vh;
             line-height: 1.6;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
         }
         
-        /* Background — subtle, static */
+        /* Background Effects */
         body::before {
             content: '';
             position: fixed;
@@ -153,6 +147,7 @@ if (!empty($cssOv)) {
                 radial-gradient(ellipse at 80% 100%, var(--bg-gradient-end) 0%, transparent 50%);
             pointer-events: none;
             z-index: -1;
+            transition: var(--transition);
         }
         
         /* Admin Layout */
@@ -165,6 +160,7 @@ if (!empty($cssOv)) {
         .sidebar {
             width: var(--sidebar-width);
             background: var(--bg-secondary);
+            backdrop-filter: blur(20px);
             border-right: 1px solid var(--border-color);
             position: fixed;
             height: 100vh;
@@ -175,16 +171,16 @@ if (!empty($cssOv)) {
         }
         
         .sidebar::-webkit-scrollbar {
-            width: 4px;
+            width: 6px;
         }
         
         .sidebar::-webkit-scrollbar-track {
-            background: transparent;
+            background: var(--bg-secondary);
         }
         
         .sidebar::-webkit-scrollbar-thumb {
-            background: var(--border-color);
-            border-radius: 2px;
+            background: var(--cyan);
+            border-radius: 3px;
         }
         
         .sidebar-header {
@@ -193,9 +189,12 @@ if (!empty($cssOv)) {
         }
         
         .sidebar-logo {
-            font-size: 1.2rem;
+            font-size: 1.4rem;
             font-weight: 700;
-            color: var(--text-primary);
+            background: linear-gradient(135deg, var(--cyan), var(--magenta));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
             display: flex;
             align-items: center;
             gap: 10px;
@@ -337,8 +336,9 @@ if (!empty($cssOv)) {
         /* Top Bar */
         .topbar {
             background: var(--bg-secondary);
+            backdrop-filter: blur(20px);
             border-bottom: 1px solid var(--border-color);
-            padding: 12px 24px;
+            padding: 15px 30px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -493,13 +493,12 @@ if (!empty($cssOv)) {
             width: 32px;
             height: 32px;
             border-radius: 50%;
-            background: var(--cyan);
+            background: linear-gradient(135deg, var(--cyan), var(--magenta));
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 600;
             font-size: 14px;
-            color: #ffffff;
         }
         
         /* Theme Toggle Button */
@@ -611,16 +610,15 @@ if (!empty($cssOv)) {
         .card {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
-            border-radius: var(--radius-lg, 12px);
-            padding: 24px;
+            border-radius: 12px;
+            padding: 25px;
             margin-bottom: 20px;
             transition: var(--transition);
-            box-shadow: var(--card-shadow, none);
         }
         
         .card:hover {
-            border-color: var(--border-hover);
-            box-shadow: var(--shadow-md);
+            border-color: rgba(0, 240, 255, 0.3);
+            box-shadow: 0 4px 20px var(--shadow);
         }
         
         .card-header {
@@ -635,9 +633,8 @@ if (!empty($cssOv)) {
         .btn {
             display: inline-flex;
             align-items: center;
-            justify-content: center;
             gap: 8px;
-            padding: 10px 20px;
+            padding: 12px 24px;
             border: none;
             border-radius: 8px;
             font-family: inherit;
@@ -649,13 +646,13 @@ if (!empty($cssOv)) {
         }
         
         .btn-primary {
-            background: var(--cyan);
-            color: #ffffff;
+            background: linear-gradient(135deg, var(--cyan), var(--magenta));
+            color: white;
         }
         
         .btn-primary:hover {
-            opacity: 0.9;
-            box-shadow: var(--shadow-sm);
+            box-shadow: var(--shadow-glow);
+            transform: translateY(-2px);
         }
         
         .btn-secondary {
@@ -665,19 +662,19 @@ if (!empty($cssOv)) {
         }
         
         .btn-secondary:hover {
-            background: var(--hover-bg);
-            border-color: var(--border-hover);
+            background: var(--bg-secondary);
+            border-color: var(--cyan);
         }
         
         .btn-danger {
-            background: rgba(239, 68, 68, 0.1);
+            background: rgba(255, 107, 107, 0.2);
             color: var(--red);
-            border: 1px solid rgba(239, 68, 68, 0.25);
+            border: 1px solid var(--red);
         }
         
         .btn-danger:hover {
             background: var(--red);
-            color: #ffffff;
+            color: white;
         }
         
         /* Forms */
@@ -707,7 +704,7 @@ if (!empty($cssOv)) {
         .form-input:focus {
             outline: none;
             border-color: var(--cyan);
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+            box-shadow: 0 0 0 3px rgba(0, 240, 255, 0.1);
         }
         
         .form-input::placeholder {
@@ -736,14 +733,14 @@ if (!empty($cssOv)) {
         }
         
         .alert-success {
-            background: rgba(34, 197, 94, 0.08);
-            border: 1px solid rgba(34, 197, 94, 0.25);
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid var(--green);
             color: var(--green);
         }
         
         .alert-error {
-            background: rgba(239, 68, 68, 0.08);
-            border: 1px solid rgba(239, 68, 68, 0.25);
+            background: rgba(255, 107, 107, 0.1);
+            border: 1px solid var(--red);
             color: var(--red);
         }
         
@@ -766,12 +763,17 @@ if (!empty($cssOv)) {
         @keyframes fadeInUp {
             from {
                 opacity: 0;
-                transform: translateY(8px);
+                transform: translateY(20px);
             }
             to {
                 opacity: 1;
                 transform: translateY(0);
             }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
         }
         
         @keyframes slideInLeft {
@@ -785,22 +787,72 @@ if (!empty($cssOv)) {
         
         /* Page Load Animation */
         .content {
-            animation: fadeInUp 0.3s ease;
+            animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* Sidebar Menu Item Stagger */
+        .menu-link {
+            animation: fadeInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .menu-link:nth-child(1) { animation-delay: 0.05s; }
+        .menu-link:nth-child(2) { animation-delay: 0.1s; }
+        .menu-link:nth-child(3) { animation-delay: 0.15s; }
+        .menu-link:nth-child(4) { animation-delay: 0.2s; }
+        .menu-link:nth-child(5) { animation-delay: 0.25s; }
+        .menu-link:nth-child(6) { animation-delay: 0.3s; }
+        .menu-link:nth-child(7) { animation-delay: 0.35s; }
+        .menu-link:nth-child(8) { animation-delay: 0.4s; }
+        
+        /* Enhanced Hover Animations */
+        .menu-link:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px var(--shadow);
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px var(--shadow);
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 240, 255, 0.3);
+        }
+        
+        /* Profile Dropdown Animation */
+        .profile-dropdown {
+            animation: fadeInUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-origin: top right;
         }
         
         /* Mobile Menu Animation */
         .sidebar.active {
-            animation: slideInLeft 0.2s ease-out;
+            animation: slideInLeft 0.3s ease-out;
+        }
+        
+        /* Status Badge Pulse */
+        .badge.active {
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        /* GPU Acceleration */
+        .menu-link, .card, .btn, .profile-dropdown {
+            will-change: transform;
+        }
+        
+        .arrow {
+            will-change: transform;
         }
         
         /* Tablet/iPad Responsive (768px - 1199px) */
         @media (max-width: 1199px) and (min-width: 768px) {
             .sidebar {
-                width: 240px;
+                width: 250px;
             }
             
             .main-content {
-                margin-left: 240px;
+                margin-left: 250px;
             }
             
             .grid-3, .grid-4 {
@@ -808,7 +860,7 @@ if (!empty($cssOv)) {
             }
             
             .topbar {
-                padding: 12px 20px;
+                padding: 15px 20px;
             }
             
             .content {
@@ -937,7 +989,6 @@ if (!empty($cssOv)) {
         
         .info-box-icon {
             background: var(--cyan) !important;
-            color: #ffffff !important;
         }
         
         /* Table overrides */
@@ -948,12 +999,8 @@ if (!empty($cssOv)) {
         
         .table thead th {
             background: var(--bg-secondary) !important;
-            color: var(--text-secondary) !important;
+            color: var(--cyan) !important;
             border-color: var(--border-color) !important;
-            font-weight: 500;
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
         }
         
         .table tbody tr {
@@ -999,7 +1046,7 @@ if (!empty($cssOv)) {
         
         .form-control:focus, .form-select:focus {
             border-color: var(--cyan) !important;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+            box-shadow: 0 0 0 0.2rem rgba(0, 240, 255, 0.25) !important;
         }
         
         /* Alert overrides */
@@ -1025,9 +1072,6 @@ if (!empty($cssOv)) {
             border-left: 3px solid var(--orange);
         }
     </style>
-    <?php if (!empty($_adminThemeOverrides)): ?>
-    <style id="theme-admin-overrides"><?= $_adminThemeOverrides ?></style>
-    <?php endif; ?>
     
     <?php View::yield('styles'); ?>
 </head>
@@ -2261,12 +2305,6 @@ if (!empty($cssOv)) {
                                 <span>Navbar</span>
                             </a>
                             <?php endif; ?>
-                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('settings')): ?>
-                            <a href="/admin/settings/theme" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/settings/theme') === 0 ? 'active' : '' ?>">
-                                <i class="fas fa-palette"></i>
-                                <span>Universal Theme</span>
-                            </a>
-                            <?php endif; ?>
                             <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('settings.maintenance')): ?>
                             <a href="/admin/settings/maintenance" class="menu-link">
                                 <i class="fas fa-tools"></i>
@@ -2343,13 +2381,13 @@ if (!empty($cssOv)) {
                         <div id="adminNotifPanel" style="display:none;position:absolute;top:calc(100% + 8px);right:0;width:320px;background:var(--bg-card);border:1px solid var(--border-color);border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,0.4);z-index:9999;">
                             <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border-color);">
                                 <strong style="font-size:14px;">Notifications</strong>
-                                <button id="adminMarkAll" style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--cyan,#3b82f6);font-family:inherit;padding:0;">Mark all read</button>
+                                <button id="adminMarkAll" style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--cyan,#00f0ff);font-family:inherit;padding:0;">Mark all read</button>
                             </div>
                             <div id="adminNotifList" style="max-height:340px;overflow-y:auto;">
                                 <div style="padding:20px;text-align:center;color:var(--text-secondary);font-size:13px;">Loading…</div>
                             </div>
                             <div style="padding:10px 16px;border-top:1px solid var(--border-color);text-align:center;">
-                                <a href="/admin/notifications/all" style="font-size:12px;color:var(--cyan,#3b82f6);">View all</a>
+                                <a href="/admin/notifications/all" style="font-size:12px;color:var(--cyan,#00f0ff);">View all</a>
                             </div>
                         </div>
                     </div>
@@ -2418,20 +2456,12 @@ if (!empty($cssOv)) {
         const themeIcon = document.getElementById('themeIcon');
         const html = document.documentElement;
         
-        // Load saved mode or use admin-configured default
-        const adminDefaultMode = '<?= htmlspecialchars($_adminDefaultMode) ?>';
-        const savedTheme = localStorage.getItem('adminTheme') || adminDefaultMode;
+        // Load saved theme or default to dark
+        const savedTheme = localStorage.getItem('adminTheme') || 'dark';
         html.setAttribute('data-theme', savedTheme);
-        
-        // Load saved UI theme or use admin-configured default
-        const adminDefaultUiTheme = '<?= htmlspecialchars($_adminUiTheme) ?>';
-        const savedUiTheme = localStorage.getItem('uiTheme') || adminDefaultUiTheme;
-        html.setAttribute('data-ui-theme', savedUiTheme);
-        
         updateThemeIcon(savedTheme);
         
         function updateThemeIcon(theme) {
-            if (!themeIcon) return;
             if (theme === 'dark') {
                 themeIcon.className = 'fas fa-moon';
                 themeToggle.setAttribute('title', 'Switch to light mode');
@@ -2441,16 +2471,14 @@ if (!empty($cssOv)) {
             }
         }
         
-        if (themeToggle) {
-            themeToggle.addEventListener('click', () => {
-                const currentTheme = html.getAttribute('data-theme');
-                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-                
-                html.setAttribute('data-theme', newTheme);
-                localStorage.setItem('adminTheme', newTheme);
-                updateThemeIcon(newTheme);
-            });
-        }
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('adminTheme', newTheme);
+            updateThemeIcon(newTheme);
+        });
         
         // Profile Dropdown Toggle
         const userMenu = document.getElementById('userMenu');
@@ -2638,8 +2666,8 @@ if (!empty($cssOv)) {
                     }
                     updateBadge(data.unread_count);
                     list.innerHTML = data.notifications.map(n => `
-                        <div class="admin-notif-item" data-id="${n.id}" style="display:flex;gap:10px;align-items:flex-start;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.05);cursor:pointer;${n.is_read===1?'':'background:rgba(59,130,246,0.04)'}">
-                            <div style="width:8px;height:8px;border-radius:50%;background:${n.is_read===1?'transparent':'var(--cyan,#3b82f6)'};flex-shrink:0;margin-top:5px;"></div>
+                        <div class="admin-notif-item" data-id="${n.id}" style="display:flex;gap:10px;align-items:flex-start;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.05);cursor:pointer;${n.is_read===1?'':'background:rgba(0,240,255,0.04)'}">
+                            <div style="width:8px;height:8px;border-radius:50%;background:${n.is_read===1?'transparent':'var(--cyan,#00f0ff)'};flex-shrink:0;margin-top:5px;"></div>
                             <div style="flex:1;min-width:0;">
                                 <div style="font-size:13px;line-height:1.4;">${n.message}</div>
                                 <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">${timeAgo(n.created_at)}</div>
@@ -2714,7 +2742,7 @@ if (!empty($cssOv)) {
                 'animation:adminSseSlideIn .3s ease;';
             var titleEl = document.createElement('div');
             titleEl.style.cssText = 'font-weight:600;color:var(--text-primary,#eee);font-size:.875rem;margin-bottom:4px;display:flex;align-items:center;gap:6px;';
-            titleEl.innerHTML = '<span style="width:8px;height:8px;border-radius:50%;background:var(--cyan,#3b82f6);flex-shrink:0;display:inline-block;"></span>New Notification';
+            titleEl.innerHTML = '<span style="width:8px;height:8px;border-radius:50%;background:var(--cyan,#00f0ff);flex-shrink:0;display:inline-block;"></span>New Notification';
             var msgEl = document.createElement('div');
             msgEl.style.cssText = 'color:var(--text-secondary,#aaa);font-size:.825rem;';
             msgEl.textContent = notif.message;
@@ -2772,8 +2800,8 @@ if (!empty($cssOv)) {
              style="position:absolute;inset:0;background:rgba(6,6,10,0.75);backdrop-filter:blur(6px);opacity:0;transition:opacity 0.3s ease;"></div>
         <div id="logoutCard"
              style="position:relative;z-index:1;background:var(--bg-card);border:1px solid var(--border-color);border-radius:20px;padding:40px 36px 32px;max-width:400px;width:calc(100% - 40px);text-align:center;transform:translateY(24px) scale(0.96);opacity:0;transition:transform 0.35s cubic-bezier(.34,1.56,.64,1),opacity 0.3s ease;box-shadow:0 24px 80px rgba(0,0,0,0.5);">
-            <div style="width:64px;height:64px;border-radius:50%;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
-                <i class="fas fa-sign-out-alt" style="font-size:1.5rem;color:#ef4444;"></i>
+            <div style="width:64px;height:64px;border-radius:50%;background:rgba(255,107,107,0.12);border:1px solid rgba(255,107,107,0.3);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
+                <i class="fas fa-sign-out-alt" style="font-size:1.5rem;color:#ff6b6b;"></i>
             </div>
             <h3 style="font-size:1.25rem;font-weight:700;color:var(--text-primary);margin:0 0 8px;">Sign Out?</h3>
             <p style="font-size:0.9rem;color:var(--text-secondary);margin:0 0 28px;line-height:1.55;">You're about to sign out of the admin panel. Any unsaved changes will be lost.</p>
@@ -2783,7 +2811,7 @@ if (!empty($cssOv)) {
                     Cancel
                 </button>
                 <a href="/logout"
-                   style="flex:1;max-width:140px;padding:11px 20px;border-radius:10px;border:none;background:#ef4444;color:#fff;font-size:0.9rem;font-weight:600;cursor:pointer;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px;">
+                   style="flex:1;max-width:140px;padding:11px 20px;border-radius:10px;border:none;background:linear-gradient(135deg,#ff6b6b,#ff2ec4);color:#fff;font-size:0.9rem;font-weight:600;cursor:pointer;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px;">
                     <i class="fas fa-sign-out-alt"></i> Sign Out
                 </a>
             </div>

@@ -142,13 +142,13 @@
 }
 
 .status-disconnected {
-    background: rgba(239, 68, 68, 0.2);
-    color: #ef4444;
+    background: rgba(255, 107, 107, 0.2);
+    color: #ff6b6b;
 }
 
 .status-initializing {
-    background: rgba(245, 158, 11, 0.2);
-    color: #f59e0b;
+    background: rgba(255, 170, 0, 0.2);
+    color: #ffaa00;
 }
 
 .recent-messages {
@@ -256,15 +256,15 @@
                     <i class="fas fa-paper-plane"></i>
                     Send Message
                 </a>
-                <a href="/projects/whatsapp/subscription" class="btn-whatsapp" style="background: #f59e0b;">
+                <a href="/projects/whatsapp/subscription" class="btn-whatsapp" style="background: #ffaa00;">
                     <i class="fas fa-crown"></i>
                     Subscription
                 </a>
-                <a href="/projects/whatsapp/api-docs" class="btn-whatsapp" style="background: #8b5cf6;">
+                <a href="/projects/whatsapp/api-docs" class="btn-whatsapp" style="background: #9945ff;">
                     <i class="fas fa-book"></i>
                     API Docs
                 </a>
-                <a href="/projects/whatsapp/settings" class="btn-whatsapp" style="background: #ef4444;">
+                <a href="/projects/whatsapp/settings" class="btn-whatsapp" style="background: #ff6b6b;">
                     <i class="fas fa-cog"></i>
                     Settings
                 </a>

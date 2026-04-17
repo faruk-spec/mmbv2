@@ -34,7 +34,7 @@
             <div style="flex:1;min-width:0;">
                 <div style="font-weight:600;font-size:.9rem;color:var(--text-primary);display:flex;align-items:center;gap:6px;">
                     <?= htmlspecialchars($room['name']) ?>
-                    <span style="font-size:.7rem;padding:2px 7px;border-radius:10px;background:rgba(59,130,246,.1);color:var(--cyan);border:1px solid rgba(59,130,246,.2);font-weight:600;"><?= $room['type'] ?></span>
+                    <span style="font-size:.7rem;padding:2px 7px;border-radius:10px;background:rgba(0,240,255,.1);color:var(--cyan);border:1px solid rgba(0,240,255,.2);font-weight:600;"><?= $room['type'] ?></span>
                 </div>
                 <div style="font-size:.78rem;color:var(--text-secondary);margin-top:3px;line-height:1.4;"><?= htmlspecialchars($room['desc']) ?></div>
             </div>

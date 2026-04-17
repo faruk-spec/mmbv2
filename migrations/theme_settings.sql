@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS `theme_settings` (
 
 -- Insert default theme settings
 INSERT INTO `theme_settings` (`setting_key`, `setting_value`) VALUES
+    ('use_universal_theme', 'no'),
     ('active_theme', 'default'),
     ('default_mode', 'dark'),
     ('custom_overrides', NULL)

@@ -59,7 +59,7 @@
     }
     .module-card:hover {
         border-color: var(--cyan);
-        box-shadow: 0 0 12px rgba(59,130,246,.15);
+        box-shadow: 0 0 12px rgba(0,240,255,.15);
         transform: translateY(-2px);
         text-decoration: none;
         color: var(--text-primary);
@@ -124,7 +124,7 @@
         <?php if ($proj === 'codexpro'): ?>
         <div style="padding: 20px; <?= $index < $colCount - 1 ? 'border-right: 1px solid var(--border-color);' : '' ?>">
             <div style="display:flex;align-items:center;gap:12px;margin-bottom:15px;">
-                <div style="width:45px;height:45px;background:var(--cyan);border-radius:10px;display:flex;align-items:center;justify-content:center;">
+                <div style="width:45px;height:45px;background:linear-gradient(135deg,var(--cyan),var(--purple));border-radius:10px;display:flex;align-items:center;justify-content:center;">
                     <i class="fas fa-code" style="font-size:20px;"></i>
                 </div>
                 <div>
@@ -178,8 +178,8 @@
         <?php if ($proj === 'formx'): ?>
         <div style="padding: 20px;">
             <div style="display:flex;align-items:center;gap:12px;margin-bottom:15px;">
-                <div style="width:45px;height:45px;background:var(--cyan);border-radius:10px;display:flex;align-items:center;justify-content:center;">
-                    <i class="fas fa-wpforms" style="font-size:20px;color:#ffffff;"></i>
+                <div style="width:45px;height:45px;background:linear-gradient(135deg,var(--cyan),var(--purple));border-radius:10px;display:flex;align-items:center;justify-content:center;">
+                    <i class="fas fa-wpforms" style="font-size:20px;color:#06060a;"></i>
                 </div>
                 <div>
                     <h4 style="font-size:1.1rem;margin-bottom:3px;">FormX</h4>
@@ -338,11 +338,11 @@
 <?php
 // Quick-access module cards — shown for every module the user has access to
 $moduleLinks = [];
-if ($canQr)           $moduleLinks[] = ['label' => 'QR Codes',       'icon' => 'fas fa-qrcode',        'href' => '/admin/qr',                    'color' => '#3b82f6'];
-if ($canConvertX)     $moduleLinks[] = ['label' => 'ConvertX',        'icon' => 'fas fa-file-export',    'href' => '/admin/projects/convertx',     'color' => '#8b5cf6'];
+if ($canQr)           $moduleLinks[] = ['label' => 'QR Codes',       'icon' => 'fas fa-qrcode',        'href' => '/admin/qr',                    'color' => '#00f0ff'];
+if ($canConvertX)     $moduleLinks[] = ['label' => 'ConvertX',        'icon' => 'fas fa-file-export',    'href' => '/admin/projects/convertx',     'color' => '#9945ff'];
 if ($canBillX)        $moduleLinks[] = ['label' => 'BillX',           'icon' => 'fas fa-file-invoice',   'href' => '/admin/projects/billx',        'color' => '#ff8800'];
 if ($canWhatsApp)     $moduleLinks[] = ['label' => 'WhatsApp',        'icon' => 'fab fa-whatsapp',       'href' => '/admin/whatsapp',              'color' => '#25d366'];
-if ($canFormX ?? false) $moduleLinks[] = ['label' => 'FormX',         'icon' => 'fas fa-wpforms',        'href' => '/admin/formx/overview',        'color' => '#3b82f6'];
+if ($canFormX ?? false) $moduleLinks[] = ['label' => 'FormX',         'icon' => 'fas fa-wpforms',        'href' => '/admin/formx/overview',        'color' => '#00f0ff'];
 if ($canSecurity)     $moduleLinks[] = ['label' => 'Security',        'icon' => 'fas fa-shield-alt',     'href' => '/admin/security',              'color' => '#ff4444'];
 if ($canPlatformPlans)$moduleLinks[] = ['label' => 'Platform Plans',  'icon' => 'fas fa-layer-group',    'href' => '/admin/platform-plans',        'color' => '#00bbff'];
 if ($canLogs && !$canUsers) $moduleLinks[] = ['label' => 'Activity Logs', 'icon' => 'fas fa-history',   'href' => '/admin/logs/activity',         'color' => '#ff8800'];
@@ -377,8 +377,8 @@ if ($canProjects && !$canCodexPro && !$canProShare)
         <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:100px;height:100px;border-radius:50%;background:radial-gradient(circle,rgba(153,69,255,.08),transparent 70%);"></div>
     </div>
     <div style="position:relative;z-index:1;">
-        <div style="width:72px;height:72px;margin:0 auto 20px;background:linear-gradient(135deg,rgba(153,69,255,.15),rgba(59,130,246,.1));border:1px solid rgba(153,69,255,.3);border-radius:50%;display:flex;align-items:center;justify-content:center;">
-            <i class="fas fa-shield-alt" style="font-size:28px;color:var(--purple,#8b5cf6);" aria-hidden="true"></i>
+        <div style="width:72px;height:72px;margin:0 auto 20px;background:linear-gradient(135deg,rgba(153,69,255,.15),rgba(0,240,255,.1));border:1px solid rgba(153,69,255,.3);border-radius:50%;display:flex;align-items:center;justify-content:center;">
+            <i class="fas fa-shield-alt" style="font-size:28px;color:var(--purple,#9945ff);" aria-hidden="true"></i>
         </div>
         <h3 style="font-size:1.25rem;font-weight:700;margin-bottom:10px;">Access Pending</h3>
         <p style="color:var(--text-secondary);max-width:420px;margin:0 auto 6px;line-height:1.6;">
@@ -401,7 +401,7 @@ if ($canProjects && !$canCodexPro && !$canProShare)
 <div class="card mb-3" id="liveStatsCard">
     <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
         <h3 class="card-title" style="font-size:1.1rem;display:flex;align-items:center;gap:8px;">
-            <span style="width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block;animation:livePulse 2s ease-in-out infinite;flex-shrink:0;"></span>
+            <span style="width:8px;height:8px;border-radius:50%;background:#00ff88;display:inline-block;animation:livePulse 2s ease-in-out infinite;flex-shrink:0;"></span>
             Live Activity
         </h3>
         <span id="liveStatsTs" style="font-size:.75rem;color:var(--text-secondary);">updating…</span>
@@ -409,15 +409,15 @@ if ($canProjects && !$canCodexPro && !$canProShare)
     <div style="padding:16px 20px;">
         <div class="grid grid-4" style="gap:12px;margin-bottom:16px;">
             <div style="background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:10px;padding:14px 16px;text-align:center;">
-                <div id="lsOnline" style="font-size:1.8rem;font-weight:700;color:var(--cyan,#3b82f6);">—</div>
+                <div id="lsOnline" style="font-size:1.8rem;font-weight:700;color:var(--cyan,#00f0ff);">—</div>
                 <div style="font-size:.75rem;color:var(--text-secondary);margin-top:2px;">Online Now</div>
             </div>
             <div style="background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:10px;padding:14px 16px;text-align:center;">
-                <div id="lsLogins" style="font-size:1.8rem;font-weight:700;color:var(--green,#22c55e);">—</div>
+                <div id="lsLogins" style="font-size:1.8rem;font-weight:700;color:var(--green,#00ff88);">—</div>
                 <div style="font-size:.75rem;color:var(--text-secondary);margin-top:2px;">Logins Today</div>
             </div>
             <div style="background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:10px;padding:14px 16px;text-align:center;">
-                <div id="lsRegs" style="font-size:1.8rem;font-weight:700;color:var(--magenta,#8b5cf6);">—</div>
+                <div id="lsRegs" style="font-size:1.8rem;font-weight:700;color:var(--magenta,#ff2ec4);">—</div>
                 <div style="font-size:.75rem;color:var(--text-secondary);margin-top:2px;">Registrations</div>
             </div>
             <div style="background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:10px;padding:14px 16px;text-align:center;">
@@ -478,7 +478,7 @@ if ($canProjects && !$canCodexPro && !$canProShare)
                 if (activity && d.recent_activity && d.recent_activity.length) {
                     activity.innerHTML = d.recent_activity.map(function (a) {
                         return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.05);">' +
-                            '<span style="width:6px;height:6px;border-radius:50%;background:var(--cyan,#3b82f6);flex-shrink:0;"></span>' +
+                            '<span style="width:6px;height:6px;border-radius:50%;background:var(--cyan,#00f0ff);flex-shrink:0;"></span>' +
                             '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' +
                                 '<strong style="color:var(--text-primary);">' + (a.user || 'Unknown') + '</strong> — ' + actionLabel(a.action) +
                             '</span>' +

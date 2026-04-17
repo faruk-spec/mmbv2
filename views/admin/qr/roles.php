@@ -15,8 +15,8 @@ input:checked + .toggle-slider:before { transform:translateX(22px); }
 .feat-row .feat-label { color:var(--text-primary); }
 .role-feedback { position:fixed; bottom:20px; right:20px; padding:10px 18px; border-radius:8px; font-size:13px; font-weight:600; z-index:9999; opacity:0; transition:opacity .3s; pointer-events:none; }
 .role-feedback.show { opacity:1; }
-.role-feedback.ok  { background:rgba(34,197,94,.15); border:1px solid var(--green); color:var(--green); }
-.role-feedback.err { background:rgba(239,68,68,.15); border:1px solid var(--red); color:var(--red); }
+.role-feedback.ok  { background:rgba(0,255,136,.15); border:1px solid var(--green); color:var(--green); }
+.role-feedback.err { background:rgba(255,107,107,.15); border:1px solid var(--red); color:var(--red); }
 #userFeaturePanel { display:none; }
 .role-table td, .role-table th { text-align:center; vertical-align:middle; }
 .role-table td:first-child, .role-table th:first-child { text-align:left; }
@@ -28,12 +28,12 @@ details summary:hover { color:var(--cyan); }
 <?php View::section('content'); ?>
 
 <?php if (Helpers::hasFlash('success')): ?>
-    <div style="background:rgba(34,197,94,.1);border:1px solid var(--green);color:var(--green);padding:12px 16px;border-radius:8px;margin-bottom:20px;">
+    <div style="background:rgba(0,255,136,.1);border:1px solid var(--green);color:var(--green);padding:12px 16px;border-radius:8px;margin-bottom:20px;">
         <i class="fas fa-check-circle"></i> <?= View::e(Helpers::getFlash('success')) ?>
     </div>
 <?php endif; ?>
 <?php if (Helpers::hasFlash('error')): ?>
-    <div style="background:rgba(239,68,68,.1);border:1px solid var(--red);color:var(--red);padding:12px 16px;border-radius:8px;margin-bottom:20px;">
+    <div style="background:rgba(255,107,107,.1);border:1px solid var(--red);color:var(--red);padding:12px 16px;border-radius:8px;margin-bottom:20px;">
         <i class="fas fa-exclamation-circle"></i> <?= View::e(Helpers::getFlash('error')) ?>
     </div>
 <?php endif; ?>

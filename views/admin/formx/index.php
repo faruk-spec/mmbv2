@@ -4,12 +4,12 @@
 <?php View::section('content'); ?>
 
 <?php if (Helpers::hasFlash('success')): ?>
-<div style="background:rgba(34,197,94,.1);border:1px solid var(--green);color:var(--green);padding:12px 16px;border-radius:8px;margin-bottom:20px;">
+<div style="background:rgba(0,255,136,.1);border:1px solid var(--green);color:var(--green);padding:12px 16px;border-radius:8px;margin-bottom:20px;">
     <i class="fas fa-check-circle"></i> <?= View::e(Helpers::getFlash('success')) ?>
 </div>
 <?php endif; ?>
 <?php if (Helpers::hasFlash('error')): ?>
-<div style="background:rgba(239,68,68,.1);border:1px solid var(--red);color:var(--red);padding:12px 16px;border-radius:8px;margin-bottom:20px;">
+<div style="background:rgba(255,107,107,.1);border:1px solid var(--red);color:var(--red);padding:12px 16px;border-radius:8px;margin-bottom:20px;">
     <i class="fas fa-exclamation-circle"></i> <?= View::e(Helpers::getFlash('error')) ?>
 </div>
 <?php endif; ?>
@@ -22,7 +22,7 @@
         </h1>
         <p style="color:var(--text-secondary);font-size:.875rem;">Create and manage forms with the drag-and-drop builder.</p>
     </div>
-    <a href="/admin/formx/create" class="btn btn-primary" style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:8px;text-decoration:none;background:var(--cyan);color:#fff;font-weight:600;font-size:.875rem;">
+    <a href="/admin/formx/create" class="btn btn-primary" style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:8px;text-decoration:none;background:linear-gradient(135deg,var(--cyan),var(--purple));color:#fff;font-weight:600;font-size:.875rem;">
         <i class="fas fa-plus"></i> New Form
     </a>
 </div>
@@ -45,7 +45,7 @@
             </select>
         </div>
         <div style="display:flex;gap:8px;">
-            <button type="submit" style="padding:8px 16px;background:var(--cyan);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:.875rem;">
+            <button type="submit" style="padding:8px 16px;background:var(--cyan);color:#000;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:.875rem;">
                 <i class="fas fa-search"></i> Filter
             </button>
             <a href="/admin/formx" style="padding:8px 16px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;color:var(--text-secondary);text-decoration:none;font-size:.875rem;">Reset</a>
@@ -59,7 +59,7 @@
     <div style="text-align:center;padding:60px 20px;color:var(--text-secondary);">
         <i class="fas fa-wpforms" style="font-size:3rem;margin-bottom:16px;opacity:.3;"></i>
         <p style="font-size:1rem;">No forms yet.</p>
-        <a href="/admin/formx/create" style="margin-top:12px;display:inline-block;padding:8px 20px;background:var(--cyan);color:#fff;border-radius:8px;text-decoration:none;font-weight:600;">Create your first form</a>
+        <a href="/admin/formx/create" style="margin-top:12px;display:inline-block;padding:8px 20px;background:var(--cyan);color:#000;border-radius:8px;text-decoration:none;font-weight:600;">Create your first form</a>
     </div>
     <?php else: ?>
     <div style="overflow-x:auto;">

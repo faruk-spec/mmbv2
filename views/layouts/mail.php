@@ -1,14 +1,5 @@
 <!DOCTYPE html>
-<?php
-$_mailUiTheme = 'default';
-$_mailDefaultMode = 'dark';
-try {
-    $_mthConfig = \Controllers\Admin\ThemeController::loadThemeForLayout();
-    $_mailUiTheme = $_mthConfig['theme'] ?? 'default';
-    $_mailDefaultMode = $_mthConfig['mode'] ?? 'dark';
-} catch (\Exception $e) {}
-?>
-<html lang="en" data-ui-theme="<?= htmlspecialchars($_mailUiTheme) ?>">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -40,7 +31,7 @@ button{cursor:pointer;font-family:inherit}
 .btn-compose{width:100%;padding:10px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;transition:.2s;cursor:pointer}
 .btn-compose:hover{opacity:.9;transform:translateY(-1px)}
 .sidebar-nav{flex:1;padding:6px 0}
-.sidebar-section{font-size:10px;font-weight:600;color:var(--text-tertiary, #374151);text-transform:uppercase;letter-spacing:.8px;padding:10px 20px 4px;margin-top:4px;}
+.sidebar-section{font-size:10px;font-weight:600;color:#374151;text-transform:uppercase;letter-spacing:.8px;padding:10px 20px 4px;margin-top:4px;}
 .mail-nav-item{display:flex;align-items:center;gap:10px;padding:8px 20px;color:#94a3b8;font-size:13px;transition:.15s;cursor:pointer;border-left:3px solid transparent;text-decoration:none}
 .mail-nav-item:hover{background:rgba(255,255,255,.04);color:#e2e8f0}
 .mail-nav-item.active{background:rgba(102,126,234,.1);color:#667eea;border-left-color:#667eea}
@@ -62,7 +53,7 @@ button{cursor:pointer;font-family:inherit}
 .topbar-actions{display:flex;align-items:center;gap:8px;margin-left:auto}
 .btn-icon{width:34px;height:34px;border:none;background:rgba(255,255,255,.06);border-radius:8px;color:#94a3b8;display:flex;align-items:center;justify-content:center;transition:.15s;font-size:13px;cursor:pointer}
 .btn-icon:hover{background:rgba(255,255,255,.1);color:#e2e8f0}
-.topbar-kbd-hint{font-size:11px;color:var(--text-tertiary, #374151);background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:4px;padding:2px 6px;cursor:default;}
+.topbar-kbd-hint{font-size:11px;color:#374151;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:4px;padding:2px 6px;cursor:default;}
 .topbar-kbd-hint:hover{color:#94a3b8;border-color:rgba(255,255,255,.15);}
 
 /* ─── Alerts ─── */
@@ -309,7 +300,7 @@ $_isInbox    = !$_isSearch && !$_isSettings && !$_isView && !$_isCompose && !$_i
             <h3 style="margin:0;">Keyboard Shortcuts</h3>
             <button class="btn-icon" onclick="document.getElementById('kbdModal').classList.remove('open')"><i class="fas fa-times"></i></button>
         </div>
-        <div class="kbd-section-title" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--text-tertiary, #374151);margin-bottom:8px;">Navigation</div>
+        <div class="kbd-section-title" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:#374151;margin-bottom:8px;">Navigation</div>
         <div class="kbd-row"><span class="kbd-key">c</span><span class="kbd-desc">Compose new email</span></div>
         <div class="kbd-row"><span class="kbd-key">g i</span><span class="kbd-desc">Go to Inbox</span></div>
         <div class="kbd-row"><span class="kbd-key">g s</span><span class="kbd-desc">Go to Sent</span></div>
@@ -317,7 +308,7 @@ $_isInbox    = !$_isSearch && !$_isSettings && !$_isView && !$_isCompose && !$_i
         <div class="kbd-row"><span class="kbd-key">/</span><span class="kbd-desc">Focus search box</span></div>
         <div class="kbd-row"><span class="kbd-key">m</span><span class="kbd-desc">Toggle sidebar</span></div>
         <div class="kbd-row"><span class="kbd-key">u</span><span class="kbd-desc">Sync inbox</span></div>
-        <div class="kbd-section-title" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--text-tertiary, #374151);margin:14px 0 8px;">Email List</div>
+        <div class="kbd-section-title" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:#374151;margin:14px 0 8px;">Email List</div>
         <div class="kbd-row"><span class="kbd-key">j</span><span class="kbd-desc">Select next email</span></div>
         <div class="kbd-row"><span class="kbd-key">k</span><span class="kbd-desc">Select previous email</span></div>
         <div class="kbd-row"><span class="kbd-key">↵</span><span class="kbd-desc">Open selected email</span></div>

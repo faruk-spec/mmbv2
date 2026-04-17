@@ -20,17 +20,17 @@
 </div>
 
 <?php if (isset($_GET['deleted'])): ?>
-<div style="background:rgba(34,197,94,.1);border:1px solid var(--green);color:var(--green);padding:12px 16px;border-radius:8px;margin-bottom:20px;">
+<div style="background:rgba(0,255,136,.1);border:1px solid var(--green);color:var(--green);padding:12px 16px;border-radius:8px;margin-bottom:20px;">
     <i class="fas fa-check-circle"></i> Bill deleted successfully.
 </div>
 <?php endif; ?>
 <?php if (isset($_GET['bulk_deleted'])): ?>
-<div style="background:rgba(34,197,94,.1);border:1px solid var(--green);color:var(--green);padding:12px 16px;border-radius:8px;margin-bottom:20px;">
+<div style="background:rgba(0,255,136,.1);border:1px solid var(--green);color:var(--green);padding:12px 16px;border-radius:8px;margin-bottom:20px;">
     <i class="fas fa-check-circle"></i> <?= (int)$_GET['bulk_deleted'] ?> bill(s) deleted successfully.
 </div>
 <?php endif; ?>
 <?php if (isset($_GET['error'])): ?>
-<div style="background:rgba(239,68,68,.1);border:1px solid #ef4444;color:#ef4444;padding:12px 16px;border-radius:8px;margin-bottom:20px;">
+<div style="background:rgba(255,107,107,.1);border:1px solid #ff6b6b;color:#ff6b6b;padding:12px 16px;border-radius:8px;margin-bottom:20px;">
     <i class="fas fa-exclamation-circle"></i> Error: <?= View::e($_GET['error']) ?>
 </div>
 <?php endif; ?>
@@ -175,7 +175,7 @@
 <!-- Delete single modal -->
 <div id="deleteModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;align-items:center;justify-content:center;">
     <div class="card" style="max-width:400px;width:90%;padding:24px;">
-        <h3 style="margin-bottom:12px;"><i class="fas fa-exclamation-triangle" style="color:#ef4444;"></i> Confirm Delete</h3>
+        <h3 style="margin-bottom:12px;"><i class="fas fa-exclamation-triangle" style="color:#ff6b6b;"></i> Confirm Delete</h3>
         <p style="color:var(--text-secondary);margin-bottom:20px;">Are you sure you want to permanently delete this bill? This cannot be undone.</p>
         <form method="POST" action="/admin/projects/billx/bills/delete" id="deleteForm">
             <?= \Core\Security::csrfField() ?>

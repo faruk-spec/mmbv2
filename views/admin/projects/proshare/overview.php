@@ -10,7 +10,7 @@
     margin-bottom: 30px;
 }
 .stat-card {
-    background: var(--cyan);
+    background: linear-gradient(135deg, var(--cyan), var(--magenta));
     padding: 25px;
     border-radius: 12px;
     color: white;
@@ -62,7 +62,7 @@ table td {
     color: var(--text-primary);
 }
 table tr:hover {
-    background: rgba(59, 130, 246, 0.05);
+    background: rgba(0, 240, 255, 0.05);
 }
 .status-badge {
     padding: 4px 12px;
@@ -71,7 +71,7 @@ table tr:hover {
     font-weight: 600;
 }
 .status-active {
-    background: rgba(34, 197, 94, 0.2);
+    background: rgba(0, 255, 136, 0.2);
     color: var(--green);
 }
 .status-expired {

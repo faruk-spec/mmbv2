@@ -89,7 +89,7 @@
             if (!errEl) {
                 errEl = document.createElement('div');
                 errEl.id = 'pw-mismatch-error';
-                errEl.style.cssText = 'color:#ef4444;font-size:13px;margin-top:6px;';
+                errEl.style.cssText = 'color:#ff6b6b;font-size:13px;margin-top:6px;';
                 pw2.parentNode.insertBefore(errEl, pw2.nextSibling);
             }
             errEl.textContent = 'Passwords do not match. Please try again.';

@@ -254,7 +254,7 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
                                     $_navProjects[] = [
                                         'name'  => $_row['name'],
                                         'url'   => $_row['url'] ?? '/projects/' . $_row['project_key'],
-                                        'color' => $_row['color'] ?? '#3b82f6',
+                                        'color' => $_row['color'] ?? '#00f0ff',
                                     ];
                                 }
                             }
@@ -265,7 +265,7 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
                                     $_navProjects[] = [
                                         'name'  => $_cfg['name'],
                                         'url'   => $_cfg['url'] ?? '/projects/' . $_key,
-                                        'color' => $_cfg['color'] ?? '#3b82f6',
+                                        'color' => $_cfg['color'] ?? '#00f0ff',
                                     ];
                                 }
                             }
@@ -279,7 +279,7 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
                                         $_navProjects[] = [
                                             'name'  => $_cfg['name'],
                                             'url'   => $_cfg['url'] ?? '/projects/' . $_key,
-                                            'color' => $_cfg['color'] ?? '#3b82f6',
+                                            'color' => $_cfg['color'] ?? '#00f0ff',
                                         ];
                                     }
                                 }
@@ -438,21 +438,19 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
 <script>
 // Universal Navbar JavaScript
 (function() {
+    // Debug: Log navbar load
+    console.log('Universal navbar loaded');
+    
     // Theme Toggle
     const themeToggle = document.getElementById('themeToggle');
     const themeIcon = document.getElementById('themeIcon');
     const themeText = document.getElementById('themeText');
     const html = document.documentElement;
     
-    // Load saved mode or use default from settings
+    // Load saved theme or use default from settings
     const defaultTheme = '<?= $navbarSettings['default_theme'] ?? 'dark' ?>';
     const savedTheme = localStorage.getItem('theme') || defaultTheme;
     html.setAttribute('data-theme', savedTheme);
-    
-    // Load saved UI theme
-    const savedUiTheme = localStorage.getItem('uiTheme') || html.getAttribute('data-ui-theme') || 'default';
-    html.setAttribute('data-ui-theme', savedUiTheme);
-    
     updateThemeUI(savedTheme);
     updateNavbarColors(savedTheme);
     
@@ -797,7 +795,7 @@ body {
 .universal-header .logo {
     font-size: 1.3rem;
     font-weight: 700;
-    background: var(--cyan);
+    background: linear-gradient(135deg, var(--cyan), var(--magenta));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -915,8 +913,8 @@ body {
 }
 
 .dropdown-item:hover {
-    background: var(--hover-bg, rgba(59,130,246,0.08));
-    color: var(--cyan, #3b82f6);
+    background: var(--hover-bg, rgba(0,240,255,0.08));
+    color: var(--cyan, #00f0ff);
 }
 
 .dropdown-divider {
@@ -990,8 +988,8 @@ html:not([data-theme="light"]) .universal-header .dropdown-item {
 }
 
 html:not([data-theme="light"]) .universal-header .dropdown-item:hover {
-    background: rgba(59, 130, 246, 0.10) !important;
-    color: #3b82f6 !important;
+    background: rgba(0, 240, 255, 0.10) !important;
+    color: #00f0ff !important;
 }
 
 /* Light mode: ensure contrast on white panel */
@@ -1038,9 +1036,9 @@ html:not([data-theme="light"]) .universal-header .dropdown-item:hover {
     flex-shrink: 0;
 }
 .notif-bell-btn:hover {
-    background: var(--hover-bg, rgba(59,130,246,0.08));
-    color: var(--cyan, #3b82f6);
-    box-shadow: 0 0 0 1px rgba(59,130,246,0.18);
+    background: var(--hover-bg, rgba(0,240,255,0.08));
+    color: var(--cyan, #00f0ff);
+    box-shadow: 0 0 0 1px rgba(0,240,255,0.18);
 }
 .notif-bell-btn .notif-bell-icon {
     transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
@@ -1051,9 +1049,9 @@ html:not([data-theme="light"]) .universal-header .dropdown-item:hover {
 }
 /* Active/open state */
 .notif-bell-wrap.active .notif-bell-btn {
-    background: rgba(59,130,246,0.10);
-    color: var(--cyan, #3b82f6);
-    box-shadow: 0 0 0 1px rgba(59,130,246,0.22);
+    background: rgba(0,240,255,0.10);
+    color: var(--cyan, #00f0ff);
+    box-shadow: 0 0 0 1px rgba(0,240,255,0.22);
 }
 /* Light mode overrides */
 [data-theme="light"] .notif-bell-btn { color: #5a6785; }
@@ -1091,13 +1089,13 @@ html:not([data-theme="light"]) .universal-header .dropdown-item:hover {
     display: flex; align-items: center; gap: 8px;
     font-size: 14px; font-weight: 600; color: var(--text-primary);
 }
-.notif-panel-title svg { color: var(--cyan, #3b82f6); flex-shrink: 0; }
+.notif-panel-title svg { color: var(--cyan, #00f0ff); flex-shrink: 0; }
 .notif-mark-all-btn {
     background: none; border: none; cursor: pointer; font-size: 12px;
-    color: var(--cyan, #3b82f6); font-family: inherit; padding: 3px 8px;
+    color: var(--cyan, #00f0ff); font-family: inherit; padding: 3px 8px;
     border-radius: 4px; transition: background 0.15s;
 }
-.notif-mark-all-btn:hover { background: rgba(59,130,246,0.10); text-decoration: none; }
+.notif-mark-all-btn:hover { background: rgba(0,240,255,0.10); text-decoration: none; }
 [data-theme="light"] .notif-mark-all-btn:hover { background: rgba(0,100,200,0.08); }
 
 .notif-panel-list { max-height: 340px; overflow-y: auto; }
@@ -1108,9 +1106,9 @@ html:not([data-theme="light"]) .universal-header .dropdown-item:hover {
 }
 .notif-item:last-child { border-bottom: none; }
 .notif-item:hover { background: var(--hover-bg, rgba(255,255,255,0.05)); }
-.notif-item.unread { background: rgba(59,130,246,0.05); }
+.notif-item.unread { background: rgba(0,240,255,0.05); }
 .notif-item-dot {
-    width: 8px; height: 8px; border-radius: 50%; background: var(--cyan, #3b82f6);
+    width: 8px; height: 8px; border-radius: 50%; background: var(--cyan, #00f0ff);
     flex-shrink: 0; margin-top: 5px; transition: background 0.2s;
 }
 .notif-item.read .notif-item-dot { background: transparent; border: 1.5px solid var(--border-color); }
@@ -1129,10 +1127,10 @@ html:not([data-theme="light"]) .universal-header .dropdown-item:hover {
 }
 .notif-view-all {
     display: inline-flex; align-items: center; gap: 5px;
-    font-size: 12px; color: var(--cyan, #3b82f6); text-decoration: none;
+    font-size: 12px; color: var(--cyan, #00f0ff); text-decoration: none;
     padding: 4px 10px; border-radius: 5px; transition: background 0.15s;
 }
-.notif-view-all:hover { background: rgba(59,130,246,0.08); text-decoration: none; }
+.notif-view-all:hover { background: rgba(0,240,255,0.08); text-decoration: none; }
 [data-theme="light"] .notif-view-all:hover { background: rgba(0,100,200,0.07); }
 [data-theme="light"] .notif-item.unread { background: rgba(0,120,255,0.05); }
 [data-theme="light"] .notif-panel-header,
@@ -1353,8 +1351,8 @@ html:not([data-theme="light"]) .universal-header .dropdown-item:hover {
     <div id="logoutCard"
          style="position:relative;z-index:1;background:var(--bg-card);border:1px solid var(--border-color);border-radius:20px;padding:40px 36px 32px;max-width:400px;width:calc(100% - 40px);text-align:center;transform:translateY(24px) scale(0.96);opacity:0;transition:transform 0.35s cubic-bezier(.34,1.56,.64,1),opacity 0.3s ease;box-shadow:0 24px 80px rgba(0,0,0,0.5);">
         <!-- Icon -->
-        <div style="width:64px;height:64px;border-radius:50%;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <div style="width:64px;height:64px;border-radius:50%;background:rgba(255,107,107,0.12);border:1px solid rgba(255,107,107,0.3);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ff6b6b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
                 <polyline points="16 17 21 12 16 7"/>
                 <line x1="21" y1="12" x2="9" y2="12"/>
@@ -1368,7 +1366,7 @@ html:not([data-theme="light"]) .universal-header .dropdown-item:hover {
                 Cancel
             </button>
             <a href="/logout" id="logoutConfirmBtn"
-               style="flex:1;max-width:140px;padding:11px 20px;border-radius:10px;border:none;background:#ef4444;color:#fff;font-size:0.9rem;font-weight:600;cursor:pointer;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px;transition:opacity 0.2s;">
+               style="flex:1;max-width:140px;padding:11px 20px;border-radius:10px;border:none;background:linear-gradient(135deg,#ff6b6b,#ff2ec4);color:#fff;font-size:0.9rem;font-weight:600;cursor:pointer;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px;transition:opacity 0.2s;">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                 Sign Out
             </a>

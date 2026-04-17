@@ -24,7 +24,7 @@
 }
 .sp-btn:hover { opacity: .88; }
 .sp-btn-primary {
-    background: var(--cyan);
+    background: linear-gradient(135deg, var(--cyan), var(--magenta));
     color: #fff !important;
 }
 .sp-btn-sm { padding: 5px 12px; font-size: .78rem; border-radius: 6px; }

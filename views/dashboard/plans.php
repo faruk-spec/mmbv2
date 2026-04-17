@@ -21,7 +21,7 @@
     margin-bottom: 10px;
     transition: border-color .2s;
 }
-.app-sub-row:hover { border-color: rgba(59,130,246,.25); }
+.app-sub-row:hover { border-color: rgba(0,240,255,.25); }
 .app-icon {
     width: 44px; height: 44px; border-radius: 10px;
     display: flex; align-items: center; justify-content: center;
@@ -34,8 +34,8 @@
     padding: 4px 12px; border-radius: 20px; font-size: .72rem; font-weight: 600;
     white-space: nowrap; flex-shrink: 0;
 }
-.sub-badge-active  { background: rgba(34,197,94,.15); color: var(--green); }
-.sub-badge-free    { background: rgba(245,158,11,.15);  color: #f59e0b; }
+.sub-badge-active  { background: rgba(0,255,136,.15); color: var(--green); }
+.sub-badge-free    { background: rgba(255,170,0,.15);  color: #ffaa00; }
 .app-actions { display: flex; gap: 8px; flex-shrink: 0; }
 .btn-app { padding: 6px 14px; border-radius: 6px; font-size: .78rem; font-weight: 600; cursor: pointer; text-decoration: none; transition: all .2s; }
 .btn-app-open     { background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-primary); }
@@ -73,7 +73,7 @@
     text-decoration: none; transition: opacity .2s; margin-top: auto;
 }
 .plan-cta:hover { opacity: .88; }
-.plan-cta-active { background: rgba(34,197,94,.1); color: var(--green); cursor: default; }
+.plan-cta-active { background: rgba(0,255,136,.1); color: var(--green); cursor: default; }
 /* Active platform sub cards */
 .active-sub-card {
     background: var(--bg-card);
@@ -185,7 +185,7 @@
         </p>
         <?php foreach ($userPlatformSubs as $sub):
             $apps = json_decode($sub['included_apps'] ?? '[]', true) ?: [];
-            $col  = View::e($sub['color'] ?? '#8b5cf6');
+            $col  = View::e($sub['color'] ?? '#9945ff');
         ?>
         <div class="active-sub-card" style="border-color:<?= $col ?>;">
             <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
@@ -234,7 +234,7 @@
         <?php foreach ($platformPlans as $plan):
             $isActive  = in_array($plan['id'], $activePlatformPlanIds);
             $planApps  = $plan['included_apps'] ?? [];
-            $planColor = $plan['color'] ?? '#8b5cf6';
+            $planColor = $plan['color'] ?? '#9945ff';
         ?>
         <div class="plan-card" style="border-color:<?= $isActive ? $planColor : 'var(--border-color)' ?>;" onmouseover="this.style.borderColor='<?= $planColor ?>'" onmouseout="this.style.borderColor='<?= $isActive ? $planColor : 'var(--border-color)' ?>'">
             <div class="plan-card-header" style="background:linear-gradient(135deg,<?= $planColor ?>22,<?= $planColor ?>08);">

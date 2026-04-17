@@ -52,7 +52,7 @@
 }
 
 .btn-save, .btn-primary {
-    background: var(--cyan);
+    background: linear-gradient(135deg, var(--cyan), var(--magenta));
     color: white;
     padding: 10px 20px;
     border: none;
@@ -72,13 +72,13 @@
 }
 
 .alert-success {
-    background: rgba(34, 197, 94, 0.1);
+    background: rgba(0, 255, 136, 0.1);
     color: var(--green);
     border: 1px solid var(--green);
 }
 
 .alert-danger {
-    background: rgba(239, 68, 68, 0.1);
+    background: rgba(255, 107, 107, 0.1);
     color: var(--red);
     border: 1px solid var(--red);
 }

@@ -77,7 +77,7 @@
             <a href="/admin/projects/resumex/templates" style="font-size:0.8rem;color:var(--cyan);">Manage →</a>
         </div>
         <div style="padding:16px;display:flex;flex-direction:column;gap:12px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.15);border-radius:8px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:rgba(0,240,255,0.06);border:1px solid rgba(0,240,255,0.15);border-radius:8px;">
                 <div>
                     <div style="font-size:1.4rem;font-weight:700;color:var(--cyan);"><?= (int)$builtinCount ?></div>
                     <div style="font-size:0.8rem;color:var(--text-secondary);">Built-in Templates</div>

@@ -9,8 +9,8 @@
 .perm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px;padding:10px 14px;}
 .perm-lbl{display:flex;align-items:flex-start;gap:10px;padding:9px 12px;border-radius:8px;border:1px solid var(--border-color);cursor:pointer;transition:.12s;background:var(--bg-secondary);position:relative;}
 .perm-lbl.is-child{margin-left:22px;border-left:2px solid var(--border-color);}
-.perm-lbl.granted{border-color:var(--cyan);background:rgba(59,130,246,.05);}
-.perm-lbl:hover{border-color:var(--cyan);background:rgba(59,130,246,.04);}
+.perm-lbl.granted{border-color:var(--cyan);background:rgba(0,240,255,.05);}
+.perm-lbl:hover{border-color:var(--cyan);background:rgba(0,240,255,.04);}
 .perm-lbl input[type=checkbox]{margin-top:1px;accent-color:var(--cyan);flex-shrink:0;}
 .perm-lbl .pi{color:var(--cyan);font-size:12px;width:14px;text-align:center;flex-shrink:0;margin-top:1px;}
 .perm-lbl .plabel{font-weight:600;font-size:11.5px;display:block;margin-bottom:2px;}
@@ -68,9 +68,9 @@
             <div style="display: flex; align-items: center; gap: 12px;">
                 <input type="color" id="color" name="color"
                        style="width: 60px; height: 40px; padding: 2px 4px; cursor: pointer; border: 1px solid var(--border); border-radius: 6px; background: transparent;"
-                       value="<?= View::e($role['color'] ?? '#8b5cf6') ?>">
+                       value="<?= View::e($role['color'] ?? '#9945ff') ?>">
                 <input type="text" id="colorHex" class="form-input" style="max-width: 120px;"
-                       value="<?= View::e($role['color'] ?? '#8b5cf6') ?>" maxlength="7"
+                       value="<?= View::e($role['color'] ?? '#9945ff') ?>" maxlength="7"
                        placeholder="#rrggbb"
                        oninput="syncColorPicker(this.value)">
             </div>

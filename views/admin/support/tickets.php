@@ -12,7 +12,7 @@ View::section('content');
 .stl-page  { padding: 28px 32px; }
 .stl-hdr   { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
 .stl-title { font-size: 1.45rem; font-weight: 700; color: var(--text-primary,#e8eefc); margin: 0 0 3px; display: flex; align-items: center; gap: 10px; }
-.stl-title i { color: var(--cyan,#3b82f6); }
+.stl-title i { color: var(--cyan,#00f0ff); }
 .stl-sub   { color: var(--text-secondary,#8892a6); margin: 0; font-size: .83rem; }
 
 .stl-filter {
@@ -26,10 +26,10 @@ View::section('content');
   border-radius: 7px; background: var(--bg-secondary,#0c0c12);
   color: var(--text-primary,#e8eefc); font-size: .83rem; outline: none;
 }
-.stl-filter-sel:focus { border-color: var(--cyan,#3b82f6); }
+.stl-filter-sel:focus { border-color: var(--cyan,#00f0ff); }
 .stl-filter-btn {
-  padding: 7px 18px; background: var(--cyan,#3b82f6); border: none;
-  border-radius: 7px; color: #fff; font-weight: 700; font-size: .83rem; cursor: pointer;
+  padding: 7px 18px; background: var(--cyan,#00f0ff); border: none;
+  border-radius: 7px; color: #05050e; font-weight: 700; font-size: .83rem; cursor: pointer;
   display: inline-flex; align-items: center; gap: 6px;
 }
 .stl-filter-clear {
@@ -68,7 +68,7 @@ View::section('content');
   color: var(--text-primary,#e8eefc); text-decoration: none;
   font-size: .88rem; font-weight: 500;
 }
-.stl-subject:hover { color: var(--cyan,#3b82f6); }
+.stl-subject:hover { color: var(--cyan,#00f0ff); }
 .stl-badge {
   display: inline-flex; align-items: center; gap: 5px;
   padding: 3px 10px; border-radius: 20px; font-size: .72rem; font-weight: 700; white-space: nowrap;

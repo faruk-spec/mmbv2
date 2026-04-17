@@ -126,14 +126,14 @@ document.getElementById('wsSettingsForm').addEventListener('submit', function(e)
             msg.style.color = 'var(--green)';
             msg.innerHTML = '<i class="fas fa-check-circle"></i> Saved successfully';
         } else {
-            msg.style.color = 'var(--red,#ef4444)';
+            msg.style.color = 'var(--red,#ff6b6b)';
             msg.innerHTML = '<i class="fas fa-times-circle"></i> ' + (d.message || 'Error saving');
         }
         setTimeout(() => { msg.style.display = 'none'; }, 3000);
     })
     .catch(() => {
         msg.style.display = 'flex';
-        msg.style.color = 'var(--red,#ef4444)';
+        msg.style.color = 'var(--red,#ff6b6b)';
         msg.innerHTML = '<i class="fas fa-times-circle"></i> Request failed';
         setTimeout(() => { msg.style.display = 'none'; }, 3000);
     })

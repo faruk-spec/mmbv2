@@ -155,7 +155,7 @@
 .form-control:focus {
     outline: none;
     border-color: var(--cyan);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    box-shadow: 0 0 0 3px rgba(0, 240, 255, 0.1);
 }
 
 .form-group small {
@@ -185,13 +185,13 @@
 }
 
 .btn-primary {
-    background: var(--cyan);
+    background: linear-gradient(135deg, var(--cyan), var(--purple));
     color: white;
 }
 
 .btn-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 5px 20px rgba(59, 130, 246, 0.3);
+    box-shadow: 0 5px 20px rgba(0, 240, 255, 0.3);
 }
 
 .btn-secondary {
@@ -224,19 +224,19 @@
 }
 
 .alert.success {
-    background: rgba(34, 197, 94, 0.1);
+    background: rgba(0, 255, 136, 0.1);
     border: 1px solid var(--green);
     color: var(--green);
 }
 
 .alert.error {
-    background: rgba(239, 68, 68, 0.1);
+    background: rgba(255, 107, 107, 0.1);
     border: 1px solid var(--red);
     color: var(--red);
 }
 
 .alert.info {
-    background: rgba(59, 130, 246, 0.1);
+    background: rgba(0, 240, 255, 0.1);
     border: 1px solid var(--cyan);
     color: var(--cyan);
 }

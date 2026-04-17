@@ -85,7 +85,7 @@
                 </a>
                 <form method="POST" action="/admin/formx/<?= $form['id'] ?>/submissions/<?= $submission['id'] ?>/delete" onsubmit="return confirm('Delete this submission?')">
                     <input type="hidden" name="_csrf_token" value="<?= \Core\Security::generateCsrfToken() ?>">
-                    <button type="submit" style="width:100%;padding:8px 12px;background:rgba(239,68,68,.1);border:1px solid var(--red);border-radius:8px;color:var(--red);cursor:pointer;font-size:.875rem;display:flex;align-items:center;gap:8px;">
+                    <button type="submit" style="width:100%;padding:8px 12px;background:rgba(255,107,107,.1);border:1px solid var(--red);border-radius:8px;color:var(--red);cursor:pointer;font-size:.875rem;display:flex;align-items:center;gap:8px;">
                         <i class="fas fa-trash"></i> Delete Submission
                     </button>
                 </form>

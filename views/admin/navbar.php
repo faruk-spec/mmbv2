@@ -293,7 +293,7 @@
     </div>
 
     <?php if (Helpers::hasFlash('success')): ?>
-        <div class="alert alert-success" style="background: rgba(34, 197, 94, 0.1); border: 1px solid var(--green); color: var(--green); padding: 14px 18px; border-radius: 8px; margin-bottom: 24px;">
+        <div class="alert alert-success" style="background: rgba(0, 255, 136, 0.1); border: 1px solid var(--green); color: var(--green); padding: 14px 18px; border-radius: 8px; margin-bottom: 24px;">
             <i class="fas fa-check-circle"></i> <?= View::e(Helpers::getFlash('success')) ?>
         </div>
     <?php endif; ?>
@@ -583,7 +583,7 @@
                                                             <?php endforeach; ?>
                                                         <?php endif; ?>
                                                     </div>
-                                                    <button type="button" onclick="addSubDropdownItem(this)" style="padding:5px 10px;background:var(--warning,#f59e0b);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;margin-top:4px;">
+                                                    <button type="button" onclick="addSubDropdownItem(this)" style="padding:5px 10px;background:var(--warning,#f59e0b);color:#000;border:none;border-radius:6px;cursor:pointer;font-size:12px;margin-top:4px;">
                                                         <i class="fas fa-plus"></i> Add Sub-item
                                                     </button>
                                                 </div>
@@ -814,7 +814,7 @@ function addDropdownItem(button) {
         <div class="sub-items-container" style="display:none; margin-top:10px; padding-left:18px; border-left:3px solid var(--warning,#f59e0b);">
             <p style="color:var(--text-secondary);font-size:12px;margin-bottom:8px;font-weight:600;">Sub-menu Items <small style="font-weight:400;">(Title + URL required)</small></p>
             <div class="sub-items-list"></div>
-            <button type="button" onclick="addSubDropdownItem(this)" style="padding:5px 10px;background:var(--warning,#f59e0b);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;margin-top:4px;">
+            <button type="button" onclick="addSubDropdownItem(this)" style="padding:5px 10px;background:var(--warning,#f59e0b);color:#000;border:none;border-radius:6px;cursor:pointer;font-size:12px;margin-top:4px;">
                 <i class="fas fa-plus"></i> Add Sub-item
             </button>
         </div>

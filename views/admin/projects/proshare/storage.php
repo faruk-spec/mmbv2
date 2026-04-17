@@ -44,8 +44,8 @@ document.addEventListener('DOMContentLoaded', function() {
             datasets: [{
                 label: 'Storage Used (MB)',
                 data: <?= json_encode(array_column($growthTrend, 'size')) ?>,
-                borderColor: '#22c55e',
-                backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                borderColor: '#00ff88',
+                backgroundColor: 'rgba(0, 255, 136, 0.1)',
                 tension: 0.4,
                 fill: true
             }]

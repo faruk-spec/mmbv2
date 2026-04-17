@@ -27,8 +27,8 @@
     display: inline-flex; align-items: center; gap: 6px;
     padding: 4px 12px; border-radius: 20px; font-size: .8rem; font-weight: 600;
 }
-.ws-status-badge.online  { background: rgba(34,197,94,.12); color: #22c55e; border: 1px solid rgba(34,197,94,.3); }
-.ws-status-badge.offline { background: rgba(239,68,68,.12); color: #ef4444; border: 1px solid rgba(239,68,68,.3); }
+.ws-status-badge.online  { background: rgba(0,255,136,.12); color: #00ff88; border: 1px solid rgba(0,255,136,.3); }
+.ws-status-badge.offline { background: rgba(255,107,107,.12); color: #ff6b6b; border: 1px solid rgba(255,107,107,.3); }
 .ws-status-badge .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; animation: wsPulse 2s ease-in-out infinite; }
 @keyframes wsPulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(1.3)} }
 </style>

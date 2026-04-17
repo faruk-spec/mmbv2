@@ -68,7 +68,7 @@
                     <tr>
                         <td>
                             <div style="display: flex; align-items: center; gap: 12px;">
-                                <div style="width: 40px; height: 40px; background: var(--cyan); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600;">
+                                <div style="width: 40px; height: 40px; background: linear-gradient(135deg, var(--cyan), var(--magenta)); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600;">
                                     <?= strtoupper(substr($u['name'], 0, 1)) ?>
                                 </div>
                                 <div>

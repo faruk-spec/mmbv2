@@ -3,7 +3,7 @@
 
 <?php View::section('content'); ?>
 <?php if (Helpers::hasFlash('success')): ?>
-    <div class="alert alert-success" style="margin-bottom: 12px; padding: 16px; background: rgba(34, 197, 94, 0.1); border: 1px solid var(--green); border-radius: 8px; color: var(--green);">
+    <div class="alert alert-success" style="margin-bottom: 12px; padding: 16px; background: rgba(0, 255, 136, 0.1); border: 1px solid var(--green); border-radius: 8px; color: var(--green);">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
             <polyline points="22 4 12 14.01 9 11.01"></polyline>
@@ -13,7 +13,7 @@
 <?php endif; ?>
 
 <?php if (Helpers::hasFlash('error')): ?>
-    <div class="alert alert-error" style="margin-bottom: 12px; padding: 16px; background: rgba(239, 68, 68, 0.1); border: 1px solid var(--red); border-radius: 8px; color: var(--red);">
+    <div class="alert alert-error" style="margin-bottom: 12px; padding: 16px; background: rgba(255, 107, 107, 0.1); border: 1px solid var(--red); border-radius: 8px; color: var(--red);">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
             <circle cx="12" cy="12" r="10"></circle>
             <line x1="15" y1="9" x2="9" y2="15"></line>
@@ -26,7 +26,7 @@
 <div class="grid grid-3" style="gap: 24px;">
     <div style="grid-column: span 2;">
         <div class="card" style="border-radius: 10px; overflow: hidden; border: 1px solid var(--border-color);">
-            <div class="card-header" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%); border-bottom: 1px solid var(--border-color); padding: 12px;">
+            <div class="card-header" style="background: linear-gradient(135deg, rgba(0, 240, 255, 0.1) 0%, rgba(255, 46, 196, 0.1) 100%); border-bottom: 1px solid var(--border-color); padding: 12px;">
                 <h3 class="card-title" style="font-size: 0.9rem; display: flex; align-items: center; gap: 10px; margin: 0;">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -119,7 +119,7 @@
                         <small style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 6px; display: block;">JPG, PNG, GIF up to 2MB</small>
                     </div>
                     
-                    <button type="submit" class="btn btn-primary" style="padding: 12px 32px; background: var(--cyan); border: none; border-radius: 10px; color: #fff; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 0.875rem;">
+                    <button type="submit" class="btn btn-primary" style="padding: 12px 32px; background: linear-gradient(135deg, var(--cyan), var(--magenta)); border: none; border-radius: 10px; color: #06060a; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 0.875rem;">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
                             <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
                             <polyline points="17 21 17 13 7 13 7 21"></polyline>
@@ -137,9 +137,9 @@
             <?php if (!empty($user['avatar'])): ?>
                 <img src="/uploads/avatars/<?= htmlspecialchars($user['avatar']) ?>" 
                      alt="Profile Photo" 
-                     style="width: 120px; height: 120px; border-radius: 50%; margin: 0 auto 20px; display: block; object-fit: cover; box-shadow: 0 8px 30px rgba(59, 130, 246, 0.3); border: 3px solid var(--cyan);">
+                     style="width: 120px; height: 120px; border-radius: 50%; margin: 0 auto 20px; display: block; object-fit: cover; box-shadow: 0 8px 30px rgba(0, 240, 255, 0.3); border: 3px solid var(--cyan);">
             <?php else: ?>
-            <div style="width: 120px; height: 120px; background: var(--cyan); border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: 600; box-shadow: 0 8px 30px rgba(59, 130, 246, 0.3);">
+            <div style="width: 120px; height: 120px; background: linear-gradient(135deg, var(--cyan), var(--magenta)); border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: 600; box-shadow: 0 8px 30px rgba(0, 240, 255, 0.3);">
                 <?= strtoupper(substr($user['name'], 0, 1)) ?>
             </div>
             <?php endif; ?>
@@ -147,7 +147,7 @@
             <h3 style="font-size: 0.9rem; margin-bottom: 6px;"><?= View::e($user['name']) ?></h3>
             <p style="color: var(--text-secondary); margin-bottom: 16px; font-size: 0.95rem;"><?= View::e($user['email']) ?></p>
             
-            <span class="badge badge-success" style="display: inline-block; padding: 6px 16px; background: rgba(34, 197, 94, 0.2); color: var(--green); border: 1px solid var(--green); border-radius: 20px; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;"><?= ucfirst($user['role']) ?></span>
+            <span class="badge badge-success" style="display: inline-block; padding: 6px 16px; background: rgba(0, 255, 136, 0.2); color: var(--green); border: 1px solid var(--green); border-radius: 20px; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;"><?= ucfirst($user['role']) ?></span>
             
             <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border-color);">
                 <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Member Since</div>
@@ -206,16 +206,16 @@
     .form-input:focus {
         outline: none;
         border-color: var(--cyan);
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        box-shadow: 0 0 0 3px rgba(0, 240, 255, 0.1);
     }
     
     .btn-primary:hover {
         transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+        box-shadow: 0 8px 25px rgba(0, 240, 255, 0.4);
     }
     
     .card a:hover {
-        background: rgba(59, 130, 246, 0.05);
+        background: rgba(0, 240, 255, 0.05);
         color: var(--cyan);
     }
     

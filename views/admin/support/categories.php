@@ -24,7 +24,7 @@ View::section('content');
 .stc-card-body { padding: 16px 18px; }
 .stc-count { padding: 2px 8px; border-radius: 20px; font-size: .72rem; background: var(--bg-secondary); color: var(--text-secondary); border: 1px solid var(--border-color); }
 .stc-cat-item { display: flex; align-items: center; gap: 11px; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 9px; margin-bottom: 8px; background: var(--bg-secondary); }
-.stc-cat-icon { width: 34px; height: 34px; border-radius: 8px; background: rgba(59,130,246,.1); color: var(--cyan); display: flex; align-items: center; justify-content: center; font-size: .88rem; flex-shrink: 0; }
+.stc-cat-icon { width: 34px; height: 34px; border-radius: 8px; background: rgba(0,240,255,.1); color: var(--cyan); display: flex; align-items: center; justify-content: center; font-size: .88rem; flex-shrink: 0; }
 .stc-cat-info { flex: 1; min-width: 0; }
 .stc-cat-name { font-size: .87rem; font-weight: 600; color: var(--text-primary); }
 .stc-cat-desc { font-size: .73rem; color: var(--text-secondary); margin-top: 2px; }
@@ -40,7 +40,7 @@ View::section('content');
 .stc-form label:first-child { margin-top: 0; }
 .stc-input { width: 100%; padding: 8px 10px; border: 1px solid var(--border-color); border-radius: 7px; background: var(--bg-secondary); color: var(--text-primary); font-size: .84rem; outline: none; box-sizing: border-box; }
 .stc-input:focus { border-color: var(--cyan); }
-.stc-btn-full { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 18px; background: var(--cyan); color: #fff; border: none; border-radius: 7px; font-size: .85rem; font-weight: 700; cursor: pointer; width: 100%; margin-top: 12px; }
+.stc-btn-full { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 18px; background: var(--cyan); color: #05050e; border: none; border-radius: 7px; font-size: .85rem; font-weight: 700; cursor: pointer; width: 100%; margin-top: 12px; }
 .stc-btn-full:hover { opacity: .9; }
 .stc-edit-panel { display: none; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 9px; padding: 13px 14px; margin-top: 6px; margin-bottom: 8px; }
 .stc-edit-panel.open { display: block; }

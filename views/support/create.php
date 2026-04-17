@@ -40,7 +40,7 @@ $itemsSchemaJson = json_encode($itemsSchemaMap, JSON_HEX_TAG | JSON_HEX_APOS | J
 
             <!-- Flash messages -->
             <?php if (!empty($_SESSION['_flash']['error'])): ?>
-            <div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:var(--red);padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:.88rem;">
+            <div style="background:rgba(255,107,107,.08);border:1px solid rgba(255,107,107,.2);color:var(--red);padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:.88rem;">
                 <?= htmlspecialchars($_SESSION['_flash']['error']) ?><?php unset($_SESSION['_flash']['error']); ?>
             </div>
             <?php endif; ?>
@@ -143,7 +143,7 @@ $itemsSchemaJson = json_encode($itemsSchemaMap, JSON_HEX_TAG | JSON_HEX_APOS | J
                     </div>
 
                     <button type="submit"
-                        style="width:100%;padding:12px;background:var(--cyan);border:none;border-radius:8px;color:white;font-weight:700;font-size:.95rem;cursor:pointer;letter-spacing:.02em;">
+                        style="width:100%;padding:12px;background:linear-gradient(135deg,var(--cyan),var(--magenta));border:none;border-radius:8px;color:white;font-weight:700;font-size:.95rem;cursor:pointer;letter-spacing:.02em;">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:7px;"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                         Submit Ticket
                     </button>

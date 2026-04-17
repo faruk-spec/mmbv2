@@ -70,8 +70,8 @@
 }
 
 .status-inactive {
-    background: rgba(239, 68, 68, 0.2);
-    color: #ef4444;
+    background: rgba(255, 107, 107, 0.2);
+    color: #ff6b6b;
 }
 
 .pagination {
@@ -129,7 +129,7 @@
             <a href="/admin/whatsapp" style="color: var(--text-secondary); text-decoration: none; font-size: 0.875rem;">← Back to Overview</a>
         </div>
         <h1 style="font-size: 2rem; margin-bottom: 8px; display: flex; align-items: center; gap: 12px;">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#9945ff" stroke-width="2">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
                 <circle cx="9" cy="7" r="4"/>
                 <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>

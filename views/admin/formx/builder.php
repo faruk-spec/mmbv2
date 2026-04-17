@@ -4,12 +4,12 @@
 <?php View::section('content'); ?>
 
 <?php if (Helpers::hasFlash('success')): ?>
-<div style="background:rgba(34,197,94,.1);border:1px solid var(--green);color:var(--green);padding:12px 16px;border-radius:8px;margin-bottom:20px;">
+<div style="background:rgba(0,255,136,.1);border:1px solid var(--green);color:var(--green);padding:12px 16px;border-radius:8px;margin-bottom:20px;">
     <i class="fas fa-check-circle"></i> <?= View::e(Helpers::getFlash('success')) ?>
 </div>
 <?php endif; ?>
 <?php if (Helpers::hasFlash('error')): ?>
-<div style="background:rgba(239,68,68,.1);border:1px solid var(--red);color:var(--red);padding:12px 16px;border-radius:8px;margin-bottom:20px;">
+<div style="background:rgba(255,107,107,.1);border:1px solid var(--red);color:var(--red);padding:12px 16px;border-radius:8px;margin-bottom:20px;">
     <i class="fas fa-exclamation-circle"></i> <?= View::e(Helpers::getFlash('error')) ?>
 </div>
 <?php endif; ?>
@@ -170,7 +170,7 @@
                         <button type="button" onclick="clearCanvas()" style="padding:6px 12px;background:transparent;border:1px solid var(--red);border-radius:6px;color:var(--red);cursor:pointer;font-size:.8rem;">
                             <i class="fas fa-trash"></i> Clear
                         </button>
-                        <button type="submit" style="padding:6px 16px;background:var(--cyan);border:none;border-radius:6px;color:#fff;cursor:pointer;font-size:.85rem;font-weight:600;">
+                        <button type="submit" style="padding:6px 16px;background:linear-gradient(135deg,var(--cyan),var(--purple));border:none;border-radius:6px;color:#fff;cursor:pointer;font-size:.85rem;font-weight:600;">
                             <i class="fas fa-save"></i> Save Form
                         </button>
                     </div>
@@ -212,7 +212,7 @@
                     <!-- dynamically injected by JS -->
                 </div>
                 <div style="margin-top:16px;display:flex;gap:8px;">
-                    <button type="button" onclick="saveFieldEdits()" style="flex:1;padding:8px;background:var(--cyan);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:.85rem;font-weight:600;">
+                    <button type="button" onclick="saveFieldEdits()" style="flex:1;padding:8px;background:var(--cyan);color:#000;border:none;border-radius:6px;cursor:pointer;font-size:.85rem;font-weight:600;">
                         <i class="fas fa-check"></i> Apply
                     </button>
                     <button type="button" onclick="deleteSelectedField()" style="padding:8px 12px;background:transparent;border:1px solid var(--red);border-radius:6px;color:var(--red);cursor:pointer;font-size:.85rem;">
@@ -242,7 +242,7 @@
     user-select: none;
 }
 .canvas-field:hover { border-color: var(--cyan); }
-.canvas-field.selected { border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(59,130,246,.15); }
+.canvas-field.selected { border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(0,240,255,.15); }
 .canvas-field .field-drag-handle {
     position: absolute;
     left: 8px;
@@ -283,12 +283,12 @@
     font-size: .72rem;
     padding: 2px 6px;
     border-radius: 4px;
-    background: rgba(239,68,68,.15);
+    background: rgba(255,107,107,.15);
     color: var(--red);
     margin-left: 4px;
     vertical-align: middle;
 }
-#formCanvas.drag-over { border-color: var(--cyan); background: rgba(59,130,246,.03); }
+#formCanvas.drag-over { border-color: var(--cyan); background: rgba(0,240,255,.03); }
 </style>
 
 <script>

@@ -4,12 +4,12 @@
 <?php View::section('content'); ?>
 
 <?php if (Helpers::hasFlash('success')): ?>
-<div style="background:rgba(34,197,94,.1);border:1px solid var(--green);color:var(--green);padding:12px 16px;border-radius:8px;margin-bottom:20px;">
+<div style="background:rgba(0,255,136,.1);border:1px solid var(--green);color:var(--green);padding:12px 16px;border-radius:8px;margin-bottom:20px;">
     <i class="fas fa-check-circle"></i> <?= View::e(Helpers::getFlash('success')) ?>
 </div>
 <?php endif; ?>
 <?php if (Helpers::hasFlash('error')): ?>
-<div style="background:rgba(239,68,68,.1);border:1px solid var(--red);color:var(--red);padding:12px 16px;border-radius:8px;margin-bottom:20px;">
+<div style="background:rgba(255,107,107,.1);border:1px solid var(--red);color:var(--red);padding:12px 16px;border-radius:8px;margin-bottom:20px;">
     <i class="fas fa-exclamation-circle"></i> <?= View::e(Helpers::getFlash('error')) ?>
 </div>
 <?php endif; ?>

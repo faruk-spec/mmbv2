@@ -3,7 +3,7 @@
 
 <?php View::section('content'); ?>
 <?php if (Helpers::hasFlash('success')): ?>
-    <div class="alert alert-success" style="margin-bottom: 12px; padding: 16px; background: rgba(34, 197, 94, 0.1); border: 1px solid var(--green); border-radius: 8px; color: var(--green);">
+    <div class="alert alert-success" style="margin-bottom: 12px; padding: 16px; background: rgba(0, 255, 136, 0.1); border: 1px solid var(--green); border-radius: 8px; color: var(--green);">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
             <polyline points="22 4 12 14.01 9 11.01"></polyline>
@@ -13,7 +13,7 @@
 <?php endif; ?>
 
 <?php if (Helpers::hasFlash('error')): ?>
-    <div class="alert alert-error" style="margin-bottom: 12px; padding: 16px; background: rgba(239, 68, 68, 0.1); border: 1px solid var(--red); border-radius: 8px; color: var(--red);">
+    <div class="alert alert-error" style="margin-bottom: 12px; padding: 16px; background: rgba(255, 107, 107, 0.1); border: 1px solid var(--red); border-radius: 8px; color: var(--red);">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
             <circle cx="12" cy="12" r="10"></circle>
             <line x1="15" y1="9" x2="9" y2="15"></line>
@@ -32,7 +32,7 @@
     ?>
     
     <div class="card" style="border-radius: 10px; overflow: hidden; border: 1px solid var(--border-color);">
-        <div class="card-header" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%); border-bottom: 1px solid var(--border-color); padding: 12px;">
+        <div class="card-header" style="background: linear-gradient(135deg, rgba(0, 240, 255, 0.1) 0%, rgba(255, 46, 196, 0.1) 100%); border-bottom: 1px solid var(--border-color); padding: 12px;">
             <h3 class="card-title" style="font-size: 0.9rem; display: flex; align-items: center; gap: 10px; margin: 0;">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
                     <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
@@ -80,7 +80,7 @@
                                class="form-input" style="width: 100%; padding: 12px 16px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 10px; color: var(--text-primary); font-size: 0.95rem;" required>
                     </div>
                     
-                    <button type="submit" class="btn btn-primary" style="padding: 12px 32px; background: var(--cyan); border: none; border-radius: 10px; color: #fff; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 0.875rem;">
+                    <button type="submit" class="btn btn-primary" style="padding: 12px 32px; background: linear-gradient(135deg, var(--cyan), var(--magenta)); border: none; border-radius: 10px; color: #06060a; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 0.875rem;">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
                             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
                         </svg>
@@ -132,7 +132,7 @@
                                class="form-input" style="width: 100%; padding: 12px 16px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 10px; color: var(--text-primary); font-size: 0.95rem;" required>
                     </div>
                     
-                    <button type="submit" class="btn btn-primary" style="padding: 12px 32px; background: var(--cyan); border: none; border-radius: 10px; color: #fff; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 0.875rem;">
+                    <button type="submit" class="btn btn-primary" style="padding: 12px 32px; background: linear-gradient(135deg, var(--cyan), var(--magenta)); border: none; border-radius: 10px; color: #06060a; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 0.875rem;">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
                             <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
                             <polyline points="17 21 17 13 7 13 7 21"></polyline>
@@ -146,7 +146,7 @@
     </div>
     
     <div class="card" style="border-radius: 10px; overflow: hidden; border: 1px solid var(--border-color);">
-        <div class="card-header" style="background: linear-gradient(135deg, rgba(153, 69, 255, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%); border-bottom: 1px solid var(--border-color); padding: 12px;">
+        <div class="card-header" style="background: linear-gradient(135deg, rgba(153, 69, 255, 0.1) 0%, rgba(255, 46, 196, 0.1) 100%); border-bottom: 1px solid var(--border-color); padding: 12px;">
             <h3 class="card-title" style="font-size: 0.9rem; display: flex; align-items: center; gap: 10px; margin: 0;">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2">
                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
@@ -162,7 +162,7 @@
             ?>
             
             <?php if ($twoFactorEnabled): ?>
-                <div style="display: flex; align-items: center; gap: 15px; padding: 15px; background: rgba(34, 197, 94, 0.1); border: 1px solid var(--green); border-radius: 10px; margin-bottom: 15px;">
+                <div style="display: flex; align-items: center; gap: 15px; padding: 15px; background: rgba(0, 255, 136, 0.1); border: 1px solid var(--green); border-radius: 10px; margin-bottom: 15px;">
                     <div style="flex-shrink: 0;">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2">
                             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
@@ -182,7 +182,7 @@
                     Manage 2FA Settings
                 </a>
             <?php else: ?>
-                <div style="display: flex; align-items: center; gap: 15px; padding: 15px; background: rgba(245, 158, 11, 0.1); border: 1px solid var(--orange); border-radius: 10px; margin-bottom: 15px;">
+                <div style="display: flex; align-items: center; gap: 15px; padding: 15px; background: rgba(255, 170, 0, 0.1); border: 1px solid var(--orange); border-radius: 10px; margin-bottom: 15px;">
                     <div style="flex-shrink: 0;">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2">
                             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
@@ -194,7 +194,7 @@
                     </div>
                 </div>
                 
-                <a href="/2fa/setup" class="btn btn-primary" style="width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; background: var(--cyan); border: none; border-radius: 10px; color: #fff; font-weight: 600; text-decoration: none; transition: all 0.3s ease;">
+                <a href="/2fa/setup" class="btn btn-primary" style="width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; background: linear-gradient(135deg, var(--cyan), var(--magenta)); border: none; border-radius: 10px; color: #06060a; font-weight: 600; text-decoration: none; transition: all 0.3s ease;">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M12 5v14M5 12h14"></path>
                     </svg>
@@ -289,7 +289,7 @@ if (\Core\GoogleOAuth::isEnabled()) {
 <?php endif; ?>
 
 <div class="card mt-3" style="border-radius: 10px; overflow: hidden; border: 1px solid var(--border-color); margin-top: 24px;">
-    <div class="card-header" style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%); border-bottom: 1px solid var(--border-color); padding: 12px;">
+    <div class="card-header" style="background: linear-gradient(135deg, rgba(0, 255, 136, 0.1) 0%, rgba(0, 240, 255, 0.1) 100%); border-bottom: 1px solid var(--border-color); padding: 12px;">
         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
             <h3 class="card-title" style="font-size: 0.9rem; display: flex; align-items: center; gap: 10px; margin: 0;">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2">
@@ -297,7 +297,7 @@ if (\Core\GoogleOAuth::isEnabled()) {
                     <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
                 </svg>
                 Active Sessions
-                <span style="background: rgba(34,197,94,0.15); color: var(--green); border-radius: 12px; padding: 2px 8px; font-size: 0.75rem;"><?= count($sessions) ?></span>
+                <span style="background: rgba(0,255,136,0.15); color: var(--green); border-radius: 12px; padding: 2px 8px; font-size: 0.75rem;"><?= count($sessions) ?></span>
             </h3>
             <div style="display: flex; align-items: center; gap: 8px;">
                 <label style="font-size: 0.8rem; color: var(--text-secondary);">Rows:</label>
@@ -381,7 +381,7 @@ if (\Core\GoogleOAuth::isEnabled()) {
                                     <td style="padding: 10px 12px;">
                                         <?php if (!$isCurrentSession): ?>
                                             <button type="button" onclick="revokeSession(<?= $session['id'] ?>, this)" 
-                                                    style="padding: 5px 10px; background: rgba(239,68,68,0.15); border: 1px solid var(--red); border-radius: 6px; color: var(--red); font-size: 0.75rem; cursor: pointer;">
+                                                    style="padding: 5px 10px; background: rgba(255,107,107,0.15); border: 1px solid var(--red); border-radius: 6px; color: var(--red); font-size: 0.75rem; cursor: pointer;">
                                                 Revoke
                                             </button>
                                         <?php else: ?>
@@ -515,7 +515,7 @@ if (\Core\GoogleOAuth::isEnabled()) {
 
 <!-- Remember Me Devices -->
 <div class="card mt-3" style="border-radius: 10px; overflow: hidden; border: 1px solid var(--border-color); margin-top: 24px;">
-    <div class="card-header" style="background: linear-gradient(135deg, rgba(153, 69, 255, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%); border-bottom: 1px solid var(--border-color); padding: 12px;">
+    <div class="card-header" style="background: linear-gradient(135deg, rgba(153, 69, 255, 0.1) 0%, rgba(255, 46, 196, 0.1) 100%); border-bottom: 1px solid var(--border-color); padding: 12px;">
         <h3 class="card-title" style="font-size: 0.9rem; display: flex; align-items: center; gap: 10px; margin: 0;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2">
                 <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
@@ -578,7 +578,7 @@ if (\Core\GoogleOAuth::isEnabled()) {
                             <tr style="border-bottom: 1px solid var(--border-color); transition: background 0.3s ease;">
                                 <td style="padding: 16px; color: var(--text-primary);">
                                     <div style="display: flex; align-items: center; gap: 10px;">
-                                        <div style="width: 40px; height: 40px; background: rgba(59, 130, 246, 0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                        <div style="width: 40px; height: 40px; background: rgba(0, 240, 255, 0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
                                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
                                                 <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
                                                 <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
@@ -606,16 +606,16 @@ if (\Core\GoogleOAuth::isEnabled()) {
     .form-input:focus {
         outline: none;
         border-color: var(--cyan);
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        box-shadow: 0 0 0 3px rgba(0, 240, 255, 0.1);
     }
     
     .btn-primary:hover, .btn-secondary:hover {
         transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+        box-shadow: 0 8px 25px rgba(0, 240, 255, 0.4);
     }
     
     table tbody tr:hover {
-        background: rgba(59, 130, 246, 0.03);
+        background: rgba(0, 240, 255, 0.03);
     }
     
     @media (max-width: 768px) {

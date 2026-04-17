@@ -15,12 +15,12 @@
 </div>
 
 <?php if (!empty($saved)): ?>
-<div style="background:rgba(34,197,94,.1);border:1px solid var(--green);color:var(--green);padding:12px 16px;border-radius:8px;margin-bottom:20px;">
+<div style="background:rgba(0,255,136,.1);border:1px solid var(--green);color:var(--green);padding:12px 16px;border-radius:8px;margin-bottom:20px;">
     <i class="fas fa-check-circle"></i> Settings saved successfully.
 </div>
 <?php endif; ?>
 <?php if (!empty($error)): ?>
-<div style="background:rgba(239,68,68,.1);border:1px solid #ef4444;color:#ef4444;padding:12px 16px;border-radius:8px;margin-bottom:20px;">
+<div style="background:rgba(255,107,107,.1);border:1px solid #ff6b6b;color:#ff6b6b;padding:12px 16px;border-radius:8px;margin-bottom:20px;">
     <i class="fas fa-exclamation-circle"></i> <?= View::e($error) ?>
 </div>
 <?php endif; ?>

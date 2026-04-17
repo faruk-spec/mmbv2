@@ -20,7 +20,7 @@
                 <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
                     <td style="padding:12px 16px;"><a href="/admin/users/<?= $u['user_id'] ?>" style="color:#00d4ff;">#<?= $u['user_id'] ?></a></td>
                     <td style="padding:12px 16px;font-weight:600;"><?= number_format($u['link_count']) ?></td>
-                    <td style="padding:12px 16px;color:#f59e0b;"><?= number_format($u['total_clicks'] ?? 0) ?></td>
+                    <td style="padding:12px 16px;color:#ffaa00;"><?= number_format($u['total_clicks'] ?? 0) ?></td>
                     <td style="padding:12px 16px;color:var(--text-secondary);font-size:12px;"><?= date('M d, Y', strtotime($u['last_link_at'])) ?></td>
                 </tr>
                 <?php endforeach; ?>

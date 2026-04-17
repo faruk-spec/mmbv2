@@ -11,7 +11,7 @@
     font-weight: 600;
     white-space: nowrap;
 }
-.notif-unread { background: rgba(59,130,246,.12); color: var(--cyan); border: 1px solid rgba(59,130,246,.25); }
+.notif-unread { background: rgba(0,240,255,.12); color: var(--cyan); border: 1px solid rgba(0,240,255,.25); }
 .notif-read   { background: rgba(255,255,255,.05); color: var(--text-secondary); border: 1px solid rgba(255,255,255,.1); }
 .type-badge {
     display: inline-block;
@@ -45,7 +45,7 @@
     color: var(--text-secondary);
 }
 .pagination a:hover { background: rgba(255,255,255,.06); color: var(--text-primary); }
-.pagination .active { background: var(--cyan); color: #fff; border-color: var(--cyan); font-weight: 700; }
+.pagination .active { background: var(--cyan); color: #000; border-color: var(--cyan); font-weight: 700; }
 </style>
 <?php View::endSection(); ?>
 
@@ -245,7 +245,7 @@ function confirmPurge() {
             res.innerHTML = '<i class="fas fa-check-circle"></i> ' + (d.message || 'Done');
             setTimeout(() => location.reload(), 1200);
         } else {
-            res.style.color = 'var(--red, #ef4444)';
+            res.style.color = 'var(--red, #ff6b6b)';
             res.innerHTML = '<i class="fas fa-times-circle"></i> ' + (d.message || 'Error');
             btn.disabled = false;
             btn.innerHTML = '<i class="fas fa-trash-alt"></i> Purge';

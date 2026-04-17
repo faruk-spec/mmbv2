@@ -25,17 +25,17 @@
                     <td style="padding:12px 16px;"><a href="/l/<?= View::e($link['code']) ?>" target="_blank" style="color:#00d4ff;font-weight:600;">/l/<?= View::e($link['code']) ?></a></td>
                     <td style="padding:12px 16px;color:var(--text-secondary);">UID <?= $link['user_id'] ?></td>
                     <td style="padding:12px 16px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><a href="<?= View::e($link['original_url']) ?>" target="_blank" style="color:var(--text-secondary);font-size:12px;"><?= View::e($link['original_url']) ?></a></td>
-                    <td style="padding:12px 16px;color:#f59e0b;font-weight:600;"><?= number_format($link['total_clicks']) ?></td>
+                    <td style="padding:12px 16px;color:#ffaa00;font-weight:600;"><?= number_format($link['total_clicks']) ?></td>
                     <td style="padding:12px 16px;">
-                        <?php if ($link['status'] === 'active'): ?><span style="background:rgba(34,197,94,0.15);color:#22c55e;padding:3px 10px;border-radius:20px;font-size:11px;">Active</span>
-                        <?php else: ?><span style="background:rgba(239,68,68,0.15);color:#ef4444;padding:3px 10px;border-radius:20px;font-size:11px;"><?= ucfirst($link['status']) ?></span><?php endif; ?>
+                        <?php if ($link['status'] === 'active'): ?><span style="background:rgba(0,255,136,0.15);color:#00ff88;padding:3px 10px;border-radius:20px;font-size:11px;">Active</span>
+                        <?php else: ?><span style="background:rgba(255,107,107,0.15);color:#ff6b6b;padding:3px 10px;border-radius:20px;font-size:11px;"><?= ucfirst($link['status']) ?></span><?php endif; ?>
                     </td>
                     <td style="padding:12px 16px;color:var(--text-secondary);font-size:12px;"><?= date('M d, Y', strtotime($link['created_at'])) ?></td>
                     <td style="padding:12px 16px;">
                         <form method="POST" action="/admin/projects/linkshortner/links/delete" onsubmit="return confirm('Delete this link?');" style="display:inline;">
                             <input type="hidden" name="_token" value="<?= Security::generateCsrfToken() ?>">
                             <input type="hidden" name="id" value="<?= $link['id'] ?>">
-                            <button type="submit" style="background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid #ef4444;padding:5px 10px;border-radius:6px;cursor:pointer;font-family:inherit;font-size:12px;">
+                            <button type="submit" style="background:rgba(255,107,107,0.15);color:#ff6b6b;border:1px solid #ff6b6b;padding:5px 10px;border-radius:6px;cursor:pointer;font-family:inherit;font-size:12px;">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </form>

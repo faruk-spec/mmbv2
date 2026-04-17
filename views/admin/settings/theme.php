@@ -26,6 +26,40 @@
 <form method="POST" action="/admin/settings/theme" id="themeForm">
     <?= \Core\Security::csrfField() ?>
 
+    <!-- Use Universal Theme Toggle -->
+    <div class="card" style="margin-bottom: 24px;">
+        <div class="card-header" style="margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color);">
+            <h3 class="card-title" style="font-size: 1rem; font-weight: 600;"><i class="fas fa-toggle-on" style="margin-right: 8px; color: var(--cyan);"></i>Use Universal Theme</h3>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 16px; padding: 16px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px;">
+            <div style="flex: 1;">
+                <p style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">Enable Universal Theme System</p>
+                <p style="font-size: 13px; color: var(--text-secondary); margin: 0;">
+                    When enabled, the theme settings below will be applied across all pages.
+                    When disabled, the platform uses its original default styles.
+                </p>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <?php $isEnabled = !empty($useUniversalTheme); ?>
+                <label style="cursor: pointer; padding: 8px 20px; border: 2px solid <?= $isEnabled ? 'var(--green, #00ff88)' : 'var(--border-color)' ?>; border-radius: 8px; background: <?= $isEnabled ? 'rgba(0,255,136,0.1)' : 'transparent' ?>; color: <?= $isEnabled ? 'var(--green, #00ff88)' : 'var(--text-secondary)' ?>; font-weight: 600; font-size: 14px; transition: all 0.2s;">
+                    <input type="radio" name="use_universal_theme" value="yes" <?= $isEnabled ? 'checked' : '' ?> style="display: none;" onchange="toggleUniversalTheme(this)">
+                    <i class="fas fa-check-circle" style="margin-right: 4px;"></i> Yes
+                </label>
+                <label style="cursor: pointer; padding: 8px 20px; border: 2px solid <?= !$isEnabled ? 'var(--red, #ff6b6b)' : 'var(--border-color)' ?>; border-radius: 8px; background: <?= !$isEnabled ? 'rgba(255,107,107,0.1)' : 'transparent' ?>; color: <?= !$isEnabled ? 'var(--red, #ff6b6b)' : 'var(--text-secondary)' ?>; font-weight: 600; font-size: 14px; transition: all 0.2s;">
+                    <input type="radio" name="use_universal_theme" value="no" <?= !$isEnabled ? 'checked' : '' ?> style="display: none;" onchange="toggleUniversalTheme(this)">
+                    <i class="fas fa-times-circle" style="margin-right: 4px;"></i> No
+                </label>
+            </div>
+        </div>
+        <?php if (!$isEnabled): ?>
+        <div style="margin-top: 12px; padding: 12px 16px; background: rgba(255,170,0,0.1); border: 1px solid rgba(255,170,0,0.3); border-radius: 8px; color: var(--orange, #ffaa00); font-size: 13px;">
+            <i class="fas fa-info-circle" style="margin-right: 6px;"></i>
+            Universal Theme is currently <strong>disabled</strong>. The settings below are saved but not applied. Enable it to apply the theme across your platform.
+        </div>
+        <?php endif; ?>
+    </div>
+
     <!-- Theme Selector -->
     <div class="card" style="margin-bottom: 24px;">
         <div class="card-header" style="margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border-color);">
@@ -494,6 +528,21 @@
 </style>
 
 <script>
+function toggleUniversalTheme(radio) {
+    document.querySelectorAll('[name="use_universal_theme"]').forEach(r => {
+        const lbl = r.closest('label');
+        if (r.value === 'yes') {
+            lbl.style.borderColor = r.checked ? 'var(--green, #00ff88)' : 'var(--border-color)';
+            lbl.style.background = r.checked ? 'rgba(0,255,136,0.1)' : 'transparent';
+            lbl.style.color = r.checked ? 'var(--green, #00ff88)' : 'var(--text-secondary)';
+        } else {
+            lbl.style.borderColor = r.checked ? 'var(--red, #ff6b6b)' : 'var(--border-color)';
+            lbl.style.background = r.checked ? 'rgba(255,107,107,0.1)' : 'transparent';
+            lbl.style.color = r.checked ? 'var(--red, #ff6b6b)' : 'var(--text-secondary)';
+        }
+    });
+}
+
 function selectTheme(radio) {
     document.querySelectorAll('.theme-card').forEach(card => {
         card.style.borderColor = 'var(--border-color)';

@@ -22,7 +22,7 @@
     <div>
         <div class="card" style="position: sticky; top: 20px;">
             <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
-                <div style="width: 48px; height: 48px; background: var(--cyan); border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);">
+                <div style="width: 48px; height: 48px; background: var(--cyan); background: linear-gradient(135deg, var(--cyan) 0%, #6366f1 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0, 240, 255, 0.3);">
                     <i class="fas fa-info-circle" style="font-size: 24px; color: #fff;"></i>
                 </div>
                 <h3 style="margin: 0; font-size: 20px;">Current Status</h3>
@@ -39,11 +39,11 @@
                         </p>
                     </div>
                 <?php else: ?>
-                    <div style="width: 100px; height: 100px; background: var(--badge-success-bg); border-radius: 20px; margin: 0 auto 24px; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 24px rgba(34, 197, 94, 0.2);">
-                        <i class="fas fa-check-circle" style="font-size: 48px; color: #22c55e;"></i>
+                    <div style="width: 100px; height: 100px; background: var(--badge-success-bg); border-radius: 20px; margin: 0 auto 24px; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 24px rgba(0, 255, 136, 0.2);">
+                        <i class="fas fa-check-circle" style="font-size: 48px; color: #00ff88;"></i>
                     </div>
-                    <div style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(34, 197, 94, 0.05) 100%); border-radius: 12px; padding: 16px; margin-bottom: 24px;">
-                        <h2 style="color: #22c55e; margin-bottom: 8px; font-size: 22px;">Site is Live</h2>
+                    <div style="background: linear-gradient(135deg, rgba(0, 255, 136, 0.1) 0%, rgba(0, 255, 136, 0.05) 100%); border-radius: 12px; padding: 16px; margin-bottom: 24px;">
+                        <h2 style="color: #00ff88; margin-bottom: 8px; font-size: 22px;">Site is Live</h2>
                         <p style="color: var(--text-secondary); margin: 0; font-size: 14px; line-height: 1.5;">
                             Site is accessible to all users.
                         </p>
@@ -52,7 +52,7 @@
                 
                 <form method="POST" action="/admin/settings/maintenance">
                     <?= \Core\Security::csrfField() ?>
-                    <button type="submit" class="btn <?= $maintenanceMode ? 'btn-primary' : 'btn-secondary' ?>" style="width: 100%; padding: 14px; font-size: 15px; font-weight: 600; <?= !$maintenanceMode ? 'background: linear-gradient(135deg, #ff8800 0%, #ff6600 100%); border: none; box-shadow: 0 4px 12px rgba(255, 136, 0, 0.3);' : 'box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);' ?>">
+                    <button type="submit" class="btn <?= $maintenanceMode ? 'btn-primary' : 'btn-secondary' ?>" style="width: 100%; padding: 14px; font-size: 15px; font-weight: 600; <?= !$maintenanceMode ? 'background: linear-gradient(135deg, #ff8800 0%, #ff6600 100%); border: none; box-shadow: 0 4px 12px rgba(255, 136, 0, 0.3);' : 'box-shadow: 0 4px 12px rgba(0, 240, 255, 0.3);' ?>">
                         <i class="fas fa-<?= $maintenanceMode ? 'check' : 'pause' ?>"></i>
                         <?= $maintenanceMode ? 'Disable Maintenance' : 'Enable Maintenance' ?>
                     </button>
@@ -60,7 +60,7 @@
             </div>
         </div>
         
-        <div class="card" style="margin-top: 24px; border: 2px solid var(--cyan); background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(99, 102, 241, 0.05) 100%);">
+        <div class="card" style="margin-top: 24px; border: 2px solid var(--cyan); background: linear-gradient(135deg, rgba(0, 240, 255, 0.05) 0%, rgba(99, 102, 241, 0.05) 100%);">
             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
                 <i class="fas fa-shield-alt" style="color: var(--cyan); font-size: 20px;"></i>
                 <h4 style="margin: 0; font-size: 16px;">Admin Bypass</h4>
@@ -277,7 +277,7 @@
                 </div>
                 
                 <div style="display: flex; gap: 12px; margin-top: 24px; padding-top: 24px; border-top: 2px solid var(--bg-secondary);">
-                    <button type="submit" class="btn btn-primary" style="flex: 1; padding: 14px; font-size: 15px; font-weight: 600; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);">
+                    <button type="submit" class="btn btn-primary" style="flex: 1; padding: 14px; font-size: 15px; font-weight: 600; box-shadow: 0 4px 12px rgba(0, 240, 255, 0.3);">
                         <i class="fas fa-save"></i> Save Settings
                     </button>
                     <button type="button" onclick="window.location.reload()" class="btn btn-secondary" style="padding: 14px 24px; font-size: 15px;">
@@ -310,7 +310,7 @@
 
 .tab-btn.active {
     color: var(--cyan);
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(99, 102, 241, 0.1) 100%);
+    background: linear-gradient(135deg, rgba(0, 240, 255, 0.1) 0%, rgba(99, 102, 241, 0.1) 100%);
     box-shadow: inset 0 -3px 0 var(--cyan);
 }
 
@@ -356,7 +356,7 @@ function copyBypassUrl() {
         const btn = event.target.closest('button');
         const originalHTML = btn.innerHTML;
         btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
-        btn.style.background = '#22c55e';
+        btn.style.background = '#00ff88';
         setTimeout(() => {
             btn.innerHTML = originalHTML;
             btn.style.background = '';

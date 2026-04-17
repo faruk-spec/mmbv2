@@ -135,7 +135,7 @@
 }
 
 .required-badge {
-    color: #ef4444;
+    color: #ff6b6b;
     font-size: 0.75rem;
     font-weight: 600;
 }

@@ -48,7 +48,7 @@
                 style="border-bottom:1px solid var(--border-color);transition:.1s;">
                 <td style="padding:10px 14px;">
                     <div style="display:flex;align-items:center;gap:10px;">
-                        <div style="width:32px;height:32px;border-radius:50%;background:var(--cyan);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;">
+                        <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--magenta));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#000;flex-shrink:0;">
                             <?= strtoupper(substr($u['name'], 0, 1)) ?>
                         </div>
                         <span style="font-weight:500;"><?= View::e($u['name']) ?></span>
@@ -57,7 +57,7 @@
                 <td style="padding:10px 14px;color:var(--text-secondary);"><?= View::e($u['email']) ?></td>
                 <td style="padding:10px 14px;">
                     <?php
-                    $roleColors = ['super_admin'=>'#8b5cf6','admin'=>'#3b82f6','project_admin'=>'#f59e0b','user'=>'#8892a6'];
+                    $roleColors = ['super_admin'=>'#ff2ec4','admin'=>'#00f0ff','project_admin'=>'#ffaa00','user'=>'#8892a6'];
                     $roleLabels = ['super_admin'=>'Owner','admin'=>'Admin','project_admin'=>'Manager','user'=>'User'];
                     $rc = $roleColors[$u['role']] ?? '#8892a6';
                     $rl = $roleLabels[$u['role']] ?? $u['role'];
@@ -72,7 +72,7 @@
                 </td>
                 <td style="padding:10px 14px;">
                     <?php if ($u['perm_count'] > 0): ?>
-                        <span style="font-size:11px;padding:2px 8px;border-radius:20px;background:rgba(59,130,246,.1);color:var(--cyan);font-weight:600;">
+                        <span style="font-size:11px;padding:2px 8px;border-radius:20px;background:rgba(0,240,255,.1);color:var(--cyan);font-weight:600;">
                             <?= (int)$u['perm_count'] ?> permission<?= $u['perm_count'] != 1 ? 's' : '' ?>
                         </span>
                     <?php else: ?>
