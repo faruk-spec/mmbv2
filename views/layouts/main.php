@@ -1084,6 +1084,7 @@ try {
     </style>
     
     <?php View::yield('styles'); ?>
+    <?php include __DIR__ . '/../partials/universal-theme-override.php'; ?>
 </head>
 <body>
     <?php if (!empty($_SESSION['_concurrent_session_warning'])): ?>

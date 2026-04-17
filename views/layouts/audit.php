@@ -133,6 +133,7 @@
     a { color: var(--cyan); }
     :focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
     </style>
+    <?php include __DIR__ . '/../partials/universal-theme-override.php'; ?>
 </head>
 <body>
 

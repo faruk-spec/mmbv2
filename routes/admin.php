@@ -234,6 +234,11 @@ $router->post('/admin/settings/security-policy', 'Admin\\SettingsController@upda
 $router->post('/admin/settings/force-logout-all', 'Admin\\SettingsController@forceLogoutAll', ['auth', 'admin']);
 $router->post('/admin/settings/force-logout-user', 'Admin\\SettingsController@forceLogoutUser', ['auth', 'admin']);
 
+// Theme Management
+$router->get('/admin/settings/theme', 'Admin\\ThemeController@index', ['auth', 'admin']);
+$router->post('/admin/settings/theme', 'Admin\\ThemeController@update', ['auth', 'admin']);
+$router->get('/admin/api/theme', 'Admin\\ThemeController@getThemeApi', ['auth', 'admin']);
+
 // ── Tools ─────────────────────────────────────────────────────────────────────
 $router->get('/admin/tools/scanner', 'Admin\\ToolsController@scanner', ['auth', 'admin']);
 $router->post('/admin/tools/scanner', 'Admin\\ToolsController@scanUrl', ['auth', 'admin']);

@@ -1074,6 +1074,7 @@
     </style>
     
     <?php View::yield('styles'); ?>
+    <?php include __DIR__ . '/../partials/universal-theme-override.php'; ?>
 </head>
 <body>
     <div class="admin-container">
@@ -2303,6 +2304,12 @@
                             <a href="/admin/navbar" class="menu-link">
                                 <i class="fas fa-bars"></i>
                                 <span>Navbar</span>
+                            </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('settings')): ?>
+                            <a href="/admin/settings/theme" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/settings/theme') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-palette"></i>
+                                <span>Universal Theme</span>
                             </a>
                             <?php endif; ?>
                             <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('settings.maintenance')): ?>
