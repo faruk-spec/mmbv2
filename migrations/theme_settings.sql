@@ -17,5 +17,7 @@ ON DUPLICATE KEY UPDATE `setting_key` = `setting_key`;
 
 -- Add ui_theme column to user_profiles if it doesn't exist
 -- This stores the user's selected UI theme (default, soft, corporate, neon)
+-- NOTE: ADD COLUMN IF NOT EXISTS requires MySQL 8.0.29+.
+-- For earlier versions, remove "IF NOT EXISTS" or run conditionally.
 ALTER TABLE `user_profiles`
     ADD COLUMN IF NOT EXISTS `ui_theme` VARCHAR(30) DEFAULT NULL AFTER `theme_preference`;

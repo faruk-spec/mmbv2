@@ -240,19 +240,26 @@ class ThemeController extends BaseController
 
     /**
      * Sanitize a CSS value to prevent injection.
-     * Only allows hex colors, named CSS values, and px/rem/em units.
+     * Only allows hex colors, named CSS values, and safe CSS primitives.
      */
     public static function sanitizeCssValue(string $value): string
     {
-        // Strip any characters that could break out of CSS value context
         $value = trim($value);
-        // Allow hex colors, rgb/rgba, hsl/hsla, named colors, numbers with units
+        // Strip any characters that could break out of CSS value context
         $value = preg_replace('/[^a-zA-Z0-9#.,()%\s\-]/', '', $value);
-        // Prevent any CSS injection via expressions, urls, etc.
+        // Prevent CSS injection via dangerous constructs
         $lower = strtolower($value);
-        if (strpos($lower, 'expression') !== false || strpos($lower, 'url') !== false ||
-            strpos($lower, 'import') !== false || strpos($lower, 'javascript') !== false) {
-            return '';
+        $blocked = ['expression', 'url', 'import', 'javascript', 'behavior', 'binding', 'moz-binding'];
+        foreach ($blocked as $keyword) {
+            if (strpos($lower, $keyword) !== false) {
+                return '';
+            }
+        }
+        // Validate hex colors specifically
+        if (strpos($value, '#') === 0) {
+            if (!preg_match('/^#[0-9a-fA-F]{3}(?:[0-9a-fA-F]{3})?$/', $value)) {
+                return '';
+            }
         }
         return $value;
     }

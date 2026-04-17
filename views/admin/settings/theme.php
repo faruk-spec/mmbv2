@@ -85,7 +85,7 @@
                         <i class="<?= $theme['icon'] ?>" style="color: <?= $theme['dark'][2] ?>; font-size: 16px;"></i>
                         <span style="font-weight: 600; font-size: 14px; color: var(--text-primary);"><?= $theme['name'] ?></span>
                         <?php if ($isActive): ?>
-                        <span style="margin-left: auto; font-size: 11px; background: rgba(59,130,246,0.12); color: var(--cyan); padding: 2px 8px; border-radius: 9999px; font-weight: 500;">Active</span>
+                        <span style="margin-left: auto; font-size: 11px; background: color-mix(in srgb, var(--cyan) 12%, transparent); color: var(--cyan); padding: 2px 8px; border-radius: 9999px; font-weight: 500;">Active</span>
                         <?php endif; ?>
                     </div>
                     <p style="font-size: 12px; color: var(--text-secondary); margin: 0; line-height: 1.4;"><?= $theme['desc'] ?></p>
