@@ -3,46 +3,77 @@
 
 <?php View::section('content'); ?>
 
+<style>
+.settings-section { padding: 1.5rem; border-bottom: 1px solid var(--border-color); }
+.settings-section:last-of-type { border-bottom: none; }
+.settings-section h4 { margin: 0 0 1.25rem; color: var(--text-primary); display: flex; align-items: center; gap: 8px; font-size: 0.95rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+.settings-section h4 i { color: var(--ps-primary); }
+.toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+.toggle-row:last-child { border-bottom: none; }
+.toggle-label { display: flex; flex-direction: column; gap: 2px; }
+.toggle-label span { font-size: 0.875rem; color: var(--text-primary); font-weight: 500; }
+.toggle-label small { font-size: 0.75rem; color: var(--text-secondary); }
+.ps-toggle { position: relative; width: 42px; height: 22px; flex-shrink: 0; }
+.ps-toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+.ps-toggle-slider { position: absolute; inset: 0; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 22px; cursor: pointer; transition: background 0.2s; }
+.ps-toggle-slider::before { content: ''; position: absolute; width: 16px; height: 16px; left: 2px; top: 2px; background: var(--text-secondary); border-radius: 50%; transition: transform 0.2s, background 0.2s; }
+.ps-toggle input:checked + .ps-toggle-slider { background: rgba(0,240,255,0.15); border-color: var(--ps-primary); }
+.ps-toggle input:checked + .ps-toggle-slider::before { transform: translateX(20px); background: var(--ps-primary); }
+.settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+@media (max-width: 600px) {
+    .settings-grid { grid-template-columns: 1fr; }
+    .settings-section { padding: 1rem; }
+    .toggle-row { gap: 8px; }
+}
+</style>
+
+<div id="saveToast" style="display:none; position:fixed; top:1.5rem; right:1.5rem; z-index:9999; background:var(--bg-card); border:1px solid var(--border-color); border-radius:10px; padding:12px 20px; display:none; align-items:center; gap:10px; box-shadow:0 4px 20px rgba(0,0,0,0.3); font-size:0.875rem;">
+    <i id="toastIcon" class="fas fa-check-circle" style="color:var(--green);"></i>
+    <span id="toastMsg">Settings saved successfully!</span>
+</div>
+
 <div class="card mb-3">
     <div class="card-header">
-        <h3 class="card-title">
-            <i class="fas fa-cog"></i> Settings
-        </h3>
+        <h3 class="card-title"><i class="fas fa-cog"></i> Account Settings</h3>
     </div>
     
-    <form method="POST" action="/projects/proshare/settings">
-        <input type="hidden" name="csrf_token" value="<?= Security::generateToken() ?>">
+    <form id="settingsForm">
+        <input type="hidden" name="_csrf_token" value="<?= Security::generateToken() ?>">
         
         <!-- Notifications -->
-        <div style="padding: 24px; border-bottom: 1px solid var(--border-color);">
-            <h4 style="margin-bottom: 20px; color: var(--text-primary);">
-                <i class="fas fa-bell"></i> Notifications
-            </h4>
+        <div class="settings-section">
+            <h4><i class="fas fa-bell"></i> Notifications</h4>
             
-            <div class="form-group">
-                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+            <div class="toggle-row">
+                <div class="toggle-label">
+                    <span>Email Notifications</span>
+                    <small>Alerts for downloads and expiry warnings</small>
+                </div>
+                <label class="ps-toggle">
                     <input type="checkbox" name="email_notifications" value="1" <?= ($settings['email_notifications'] ?? 1) ? 'checked' : '' ?>>
-                    <span>Email notifications for downloads and expiry warnings</span>
+                    <span class="ps-toggle-slider"></span>
                 </label>
             </div>
             
-            <div class="form-group">
-                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+            <div class="toggle-row">
+                <div class="toggle-label">
+                    <span>SMS Notifications</span>
+                    <small>Text alerts if SMS is configured</small>
+                </div>
+                <label class="ps-toggle">
                     <input type="checkbox" name="sms_notifications" value="1" <?= ($settings['sms_notifications'] ?? 0) ? 'checked' : '' ?>>
-                    <span>SMS notifications (if configured)</span>
+                    <span class="ps-toggle-slider"></span>
                 </label>
             </div>
         </div>
         
         <!-- Default Upload Settings -->
-        <div style="padding: 24px; border-bottom: 1px solid var(--border-color);">
-            <h4 style="margin-bottom: 20px; color: var(--text-primary);">
-                <i class="fas fa-cloud-upload-alt"></i> Default Upload Settings
-            </h4>
+        <div class="settings-section">
+            <h4><i class="fas fa-cloud-upload-alt"></i> Default Upload Settings</h4>
             
-            <div class="grid grid-2">
-                <div class="form-group">
-                    <label class="form-label">Default Link Expiry</label>
+            <div class="settings-grid" style="margin-bottom: 1rem;">
+                <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label" style="font-size:0.8rem;">Default Link Expiry</label>
                     <select name="default_expiry" class="form-control">
                         <option value="1" <?= ($settings['default_expiry'] ?? 24) == 1 ? 'selected' : '' ?>>1 Hour</option>
                         <option value="6" <?= ($settings['default_expiry'] ?? 24) == 6 ? 'selected' : '' ?>>6 Hours</option>
@@ -52,8 +83,8 @@
                     </select>
                 </div>
                 
-                <div class="form-group">
-                    <label class="form-label">Maximum File Size (MB)</label>
+                <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label" style="font-size:0.8rem;">Maximum File Size</label>
                     <select name="max_file_size" class="form-control">
                         <option value="52428800" <?= ($settings['max_file_size'] ?? 524288000) == 52428800 ? 'selected' : '' ?>>50 MB</option>
                         <option value="104857600" <?= ($settings['max_file_size'] ?? 524288000) == 104857600 ? 'selected' : '' ?>>100 MB</option>
@@ -63,48 +94,60 @@
                 </div>
             </div>
             
-            <div class="form-group">
-                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+            <div class="toggle-row">
+                <div class="toggle-label">
+                    <span>Enable Compression</span>
+                    <small>Automatically compress files to save bandwidth</small>
+                </div>
+                <label class="ps-toggle">
                     <input type="checkbox" name="enable_compression" value="1" <?= ($settings['enable_compression'] ?? 1) ? 'checked' : '' ?>>
-                    <span>Enable compression by default</span>
+                    <span class="ps-toggle-slider"></span>
                 </label>
             </div>
             
-            <div class="form-group">
-                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-                    <input type="checkbox" name="enable_encryption" value="1" <?= ($settings['enable_encryption'] ?? 0) ? 'checked' : '' ?>>
-                    <span>Enable encryption by default</span>
+            <div class="toggle-row">
+                <div class="toggle-label">
+                    <span>Enable Encryption</span>
+                    <small>Encrypt file content at rest (coming soon)</small>
+                </div>
+                <label class="ps-toggle">
+                    <input type="checkbox" name="enable_encryption" value="1" <?= ($settings['enable_encryption'] ?? 0) ? 'checked' : '' ?> disabled>
+                    <span class="ps-toggle-slider" style="opacity:0.5; cursor:not-allowed;"></span>
                 </label>
             </div>
         </div>
         
         <!-- Privacy & Security -->
-        <div style="padding: 24px; border-bottom: 1px solid var(--border-color);">
-            <h4 style="margin-bottom: 20px; color: var(--text-primary);">
-                <i class="fas fa-shield-alt"></i> Privacy & Security
-            </h4>
+        <div class="settings-section">
+            <h4><i class="fas fa-shield-alt"></i> Privacy &amp; Security</h4>
             
-            <div class="form-group">
-                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+            <div class="toggle-row">
+                <div class="toggle-label">
+                    <span>Auto-Delete Expired Files</span>
+                    <small>Automatically delete files past their expiry date</small>
+                </div>
+                <label class="ps-toggle">
                     <input type="checkbox" name="auto_delete" value="1" <?= ($settings['auto_delete'] ?? 0) ? 'checked' : '' ?>>
-                    <span>Automatically delete expired files</span>
+                    <span class="ps-toggle-slider"></span>
                 </label>
             </div>
             
-            <div class="alert alert-info">
+            <div class="alert alert-info" style="margin-top: 1rem; margin-bottom: 0;">
                 <i class="fas fa-info-circle"></i>
-                <strong>Note:</strong> All files are protected with industry-standard security measures including password hashing, integrity verification, and access logging.
+                <strong>Note:</strong> All files are protected with industry-standard security including password hashing, integrity verification, and access logging.
             </div>
         </div>
         
         <!-- Save Button -->
-        <div style="padding: 24px;">
-            <button type="submit" class="btn btn-primary">
-                <i class="fas fa-save"></i> Save Settings
-            </button>
-            <a href="/projects/proshare/dashboard" class="btn btn-secondary">
-                <i class="fas fa-times"></i> Cancel
-            </a>
+        <div class="settings-section" style="border-bottom:none;">
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <button type="submit" id="saveBtn" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save Settings
+                </button>
+                <a href="/projects/proshare/dashboard" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
         </div>
     </form>
 </div>
@@ -112,66 +155,78 @@
 <!-- Account Statistics -->
 <div class="card">
     <div class="card-header">
-        <h3 class="card-title">
-            <i class="fas fa-chart-bar"></i> Account Statistics
-        </h3>
+        <h3 class="card-title"><i class="fas fa-chart-bar"></i> Account Statistics</h3>
     </div>
     
-    <div class="grid grid-4">
-        <div class="stat-card">
-            <div class="stat-value" style="color: var(--cyan);">
-                <?= $stats['total_files'] ?? 0 ?>
+    <div style="padding: 1.25rem;">
+        <div class="ps-grid ps-grid-4" style="gap: 0.75rem;">
+            <div class="stat-card">
+                <div class="stat-value" style="color: var(--cyan); font-size: 1.6rem;"><?= number_format($stats['total_files'] ?? 0) ?></div>
+                <div class="stat-label">Files</div>
             </div>
-            <div class="stat-label">Total Files</div>
-        </div>
-        
-        <div class="stat-card">
-            <div class="stat-value" style="color: var(--magenta);">
-                <?= $stats['total_texts'] ?? 0 ?>
+            <div class="stat-card">
+                <div class="stat-value" style="color: var(--magenta); font-size: 1.6rem;"><?= number_format($stats['total_texts'] ?? 0) ?></div>
+                <div class="stat-label">Text Shares</div>
             </div>
-            <div class="stat-label">Text Shares</div>
-        </div>
-        
-        <div class="stat-card">
-            <div class="stat-value" style="color: var(--green);">
-                <?= $stats['total_downloads'] ?? 0 ?>
+            <div class="stat-card">
+                <div class="stat-value" style="color: var(--green); font-size: 1.6rem;"><?= number_format($stats['total_downloads'] ?? 0) ?></div>
+                <div class="stat-label">Downloads</div>
             </div>
-            <div class="stat-label">Total Downloads</div>
-        </div>
-        
-        <div class="stat-card">
-            <div class="stat-value" style="color: var(--orange);">
-                <?= $stats['storage_used'] ?? '0' ?> MB
+            <div class="stat-card">
+                <div class="stat-value" style="color: var(--orange); font-size: 1.6rem;"><?= number_format($stats['storage_used'] ?? 0, 2) ?></div>
+                <div class="stat-label">MB Used</div>
             </div>
-            <div class="stat-label">Storage Used</div>
         </div>
     </div>
 </div>
 
+<?php View::endSection(); ?>
+
+<?php View::section('scripts'); ?>
 <script>
-document.querySelector('form').addEventListener('submit', function(e) {
+document.getElementById('settingsForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     
-    const formData = new FormData(this);
+    const saveBtn = document.getElementById('saveBtn');
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
     
-    fetch('/projects/proshare/settings', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert(data.message || 'Settings saved successfully!');
-            window.location.reload();
-        } else {
-            alert('Error: ' + (data.error || 'Failed to save settings'));
+    try {
+        const response = await fetch('/projects/proshare/settings', {
+            method: 'POST',
+            headers: { 'Accept': 'application/json' },
+            body: new FormData(this)
+        });
+        
+        const text = await response.text();
+        let data;
+        try { data = JSON.parse(text); } catch (_) {
+            showToast('Unexpected server response — check console.', 'error');
+            return;
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error saving settings');
-    });
+        
+        if (data.success) {
+            showToast(data.message || 'Settings saved successfully!', 'success');
+        } else {
+            showToast('Error: ' + (data.error || 'Failed to save settings'), 'error');
+        }
+    } catch (err) {
+        showToast('Network error — please try again.', 'error');
+    } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Settings';
+    }
 });
-</script>
 
+function showToast(msg, type = 'success') {
+    const toast = document.getElementById('saveToast');
+    const icon  = document.getElementById('toastIcon');
+    const msgEl = document.getElementById('toastMsg');
+    msgEl.textContent = msg;
+    icon.className = type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle';
+    icon.style.color = type === 'success' ? 'var(--green)' : 'var(--ps-danger)';
+    toast.style.display = 'flex';
+    setTimeout(() => { toast.style.display = 'none'; }, 4000);
+}
+</script>
 <?php View::endSection(); ?>

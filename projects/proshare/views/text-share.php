@@ -11,7 +11,7 @@
     </div>
     
     <form id="shareForm">
-        <input type="hidden" name="csrf_token" value="<?= Security::generateToken() ?>">
+        <input type="hidden" name="_csrf_token" value="<?= Security::generateToken() ?>">
         
         <div class="form-group">
             <label class="form-label">
@@ -144,6 +144,7 @@
         try {
             const response = await fetch('/projects/proshare/text/create', {
                 method: 'POST',
+                headers: { 'Accept': 'application/json' },
                 body: fd
             });
             

@@ -38,7 +38,7 @@
     <div id="selectedFilesList" style="margin-bottom: 1.25rem; padding: 0 0.25rem;"></div>
 
     <form id="uploadForm">
-        <input type="hidden" name="csrf_token" value="<?= Security::generateToken() ?>">
+        <input type="hidden" name="_csrf_token" value="<?= Security::generateToken() ?>">
         
         <div class="ps-grid ps-grid-2" style="margin-bottom: 1rem;">
             <div class="form-group">
@@ -215,7 +215,7 @@
             
             const fd = new FormData();
             fd.append('file',          file);
-            fd.append('csrf_token',    formData.get('csrf_token'));
+            fd.append('_csrf_token',   formData.get('_csrf_token'));
             fd.append('expiry',        formData.get('expiry'));
             fd.append('max_downloads', formData.get('max_downloads') || '');
             fd.append('password',      formData.get('password') || '');
@@ -225,6 +225,7 @@
             try {
                 const response = await fetch('/projects/proshare/upload', {
                     method: 'POST',
+                    headers: { 'Accept': 'application/json' },
                     body: fd
                 });
                 

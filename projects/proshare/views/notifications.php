@@ -107,7 +107,8 @@
 
 <?php View::section('scripts'); ?>
 <script>
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content
+        || document.querySelector('input[name="_csrf_token"]')?.value || '';
     
     async function markRead(id, btn) {
         btn.disabled = true;
@@ -116,10 +117,11 @@
         try {
             const fd = new FormData();
             fd.append('notification_id', id);
-            if (csrfToken) fd.append('csrf_token', csrfToken);
+            if (csrfToken) fd.append('_csrf_token', csrfToken);
             
             const response = await fetch('/projects/proshare/notifications/mark-read', {
                 method: 'POST',
+                headers: { 'Accept': 'application/json' },
                 body: fd
             });
             const data = await response.json();
@@ -153,11 +155,12 @@
         
         const fd = new FormData();
         fd.append('mark_all', '1');
-        if (csrfToken) fd.append('csrf_token', csrfToken);
+        if (csrfToken) fd.append('_csrf_token', csrfToken);
         
         try {
             const response = await fetch('/projects/proshare/notifications/mark-read', {
                 method: 'POST',
+                headers: { 'Accept': 'application/json' },
                 body: fd
             });
             const data = await response.json();

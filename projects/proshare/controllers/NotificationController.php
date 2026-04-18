@@ -44,6 +44,7 @@ class NotificationController
         $db = Database::getInstance();
         
         $notificationId = (int)($_POST['notification_id'] ?? 0);
+        $markAll = !empty($_POST['mark_all']);
         
         if ($notificationId) {
             $db->query(
