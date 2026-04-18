@@ -14,6 +14,7 @@ use Core\ActivityLogger;
 use Core\Security;
 use Core\Helpers;
 use Projects\QR\Models\CampaignModel;
+use Projects\QR\Services\QRFeatureService;
 
 class CampaignsController
 {
@@ -38,11 +39,15 @@ class CampaignsController
         
         // Get all campaigns for the user
         $campaigns = $this->model->getByUser($userId);
-        
+
+        $featureService = new QRFeatureService();
+        $canCampaigns   = $featureService->can($userId, 'campaigns');
+
         $this->render('campaigns', [
-            'title' => 'Campaigns',
-            'user' => Auth::user(),
-            'campaigns' => $campaigns
+            'title'        => 'Campaigns',
+            'user'         => Auth::user(),
+            'campaigns'    => $campaigns,
+            'canCampaigns' => $canCampaigns,
         ]);
     }
     

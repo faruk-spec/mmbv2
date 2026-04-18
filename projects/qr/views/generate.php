@@ -1381,8 +1381,16 @@ $canPriority      = (bool) ($userFeatures['priority_support']     ?? false);
     </div>
 </div>
 
-<!-- QR Code Styling Library (Better than QRCode.js) -->
-<script src="https://unpkg.com/qr-code-styling@1.6.0-rc.1/lib/qr-code-styling.js"></script>
+<!-- QR Code Styling Library -->
+<script src="https://cdn.jsdelivr.net/npm/qr-code-styling@1.6.0-rc.1/lib/qr-code-styling.js"></script>
+<script>
+// Fallback: if jsdelivr failed, try unpkg
+if (typeof QRCodeStyling === 'undefined') {
+    var s = document.createElement('script');
+    s.src = 'https://unpkg.com/qr-code-styling@1.6.0-rc.1/lib/qr-code-styling.js';
+    document.head.appendChild(s);
+}
+</script>
 
 <script>
 // Central QR Configuration Object
@@ -1624,12 +1632,16 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
     
-    // Check library loaded
+    // Check library loaded — retry once for fallback CDN
     window.addEventListener('load', function() {
-        if (typeof QRCodeStyling === 'undefined') {
-            console.error('QRCodeStyling library failed to load');
-            showNotification('QR library failed to load. Please refresh the page.', 'error');
-        }
+        if (typeof QRCodeStyling !== 'undefined') return;
+        // Primary CDN may still be in flight — wait briefly then check again
+        setTimeout(function() {
+            if (typeof QRCodeStyling === 'undefined') {
+                console.error('QRCodeStyling library failed to load');
+                showNotification('QR library failed to load. Please refresh the page.', 'error');
+            }
+        }, 2000);
     });
 
 // Logo Option Selector Functions

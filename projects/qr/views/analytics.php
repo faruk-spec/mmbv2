@@ -2,8 +2,13 @@
 /**
  * Analytics Dashboard View
  */
+$canAnalytics = (bool)($userFeatures['analytics'] ?? true);
 ?>
 
+<?php if (!$canAnalytics): ?>
+<div class="feature-gate-wrap">
+    <div class="feature-gate-blur">
+<?php endif; ?>
 <style>
 /* Table responsive container - CRITICAL for horizontal scrolling */
 .table-responsive {
@@ -826,3 +831,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 }
 </style>
+
+<?php if (!$canAnalytics): ?>
+    </div><!-- /.feature-gate-blur -->
+    <div class="feature-gate-badge">
+        <div class="fgb-icon"><i class="fas fa-chart-line"></i></div>
+        <div class="fgb-title">Analytics — Upgrade Required</div>
+        <div class="fgb-desc">Track scans, locations, and device data for all your QR codes. Available on Pro and higher plans.</div>
+        <a href="/projects/qr/plan" class="fgb-btn"><i class="fas fa-crown"></i> View Plans &amp; Upgrade</a>
+    </div>
+</div><!-- /.feature-gate-wrap -->
+<?php endif; ?>
