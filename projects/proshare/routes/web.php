@@ -25,8 +25,8 @@ $router->get('/projects/proshare/download/{shortcode}', 'Projects\ProShare\Contr
 $router->get('/projects/proshare/preview/{shortcode}', 'Projects\ProShare\Controllers\DownloadController@preview');
 $router->post('/projects/proshare/verify-password', 'Projects\ProShare\Controllers\DownloadController@verifyPassword');
 
-// Anonymous download (short URL)
-$router->get('/s/{shortcode}', 'Projects\ProShare\Controllers\DownloadController@download');
+// Anonymous share link — shows preview/info page first (user clicks Download to get the file)
+$router->get('/s/{shortcode}', 'Projects\ProShare\Controllers\DownloadController@preview');
 
 // Text Sharing
 $router->get('/projects/proshare/text', 'Projects\ProShare\Controllers\TextShareController@index');

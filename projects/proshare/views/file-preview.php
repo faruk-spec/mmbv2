@@ -58,14 +58,21 @@
             </div>
         </div>
         
-        <!-- File Preview (for images) -->
-        <?php if (strpos($file['mime_type'], 'image/') === 0): ?>
-        <div style="margin-bottom: 30px; text-align: center; background: rgba(0, 240, 255, 0.05); padding: 20px; border-radius: 10px;">
-            <img src="/projects/proshare/download/<?= $shortcode ?>" 
-                 alt="<?= htmlspecialchars($file['original_name']) ?>" 
-                 style="max-width: 100%; max-height: 600px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0, 240, 255, 0.2);">
+        <!-- File icon preview -->
+        <?php
+        $iconClass = 'fa-file';
+        $iconColor = 'var(--cyan)';
+        if (str_starts_with($file['mime_type'], 'image/')) { $iconClass = 'fa-file-image'; }
+        elseif ($file['mime_type'] === 'application/pdf') { $iconClass = 'fa-file-pdf'; $iconColor = '#e74c3c'; }
+        elseif (str_contains($file['mime_type'], 'zip') || str_contains($file['mime_type'], 'rar')) { $iconClass = 'fa-file-archive'; $iconColor = '#f39c12'; }
+        elseif (str_starts_with($file['mime_type'], 'video/')) { $iconClass = 'fa-file-video'; $iconColor = '#9b59b6'; }
+        elseif (str_starts_with($file['mime_type'], 'audio/')) { $iconClass = 'fa-file-audio'; $iconColor = '#1abc9c'; }
+        elseif (str_contains($file['mime_type'], 'word') || str_contains($file['mime_type'], 'text/')) { $iconClass = 'fa-file-alt'; }
+        elseif (str_contains($file['mime_type'], 'excel') || str_contains($file['mime_type'], 'spreadsheet')) { $iconClass = 'fa-file-excel'; $iconColor = '#27ae60'; }
+        ?>
+        <div style="margin-bottom: 30px; text-align: center; background: rgba(0, 240, 255, 0.05); padding: 30px; border-radius: 10px;">
+            <i class="fas <?= $iconClass ?>" style="font-size: 5rem; color: <?= $iconColor ?>;"></i>
         </div>
-        <?php endif; ?>
         
         <!-- Download Button -->
         <div style="text-align: center; margin-top: 30px;">

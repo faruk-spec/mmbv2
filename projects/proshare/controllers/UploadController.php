@@ -170,7 +170,7 @@ class UploadController
             }
             // else: logged-in user without auto_delete enabled and no form expiry = null (no expiry)
             
-            $selfDestruct = isset($_POST['self_destruct']) ? 1 : 0;
+            $selfDestruct = (!empty($_POST['self_destruct']) && $_POST['self_destruct'] == '1') ? 1 : 0;
             
             $fileId = $db->insert('proshare_files', [
                 'user_id' => $userId,

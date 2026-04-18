@@ -302,7 +302,7 @@ class DownloadController
                         const data = await response.json();
                         
                         if (data.success) {
-                            window.location.href = '/projects/proshare/download/<?= $shortCode ?>';
+                            window.location.href = '/projects/proshare/preview/<?= $shortCode ?>';
                         } else {
                             error.textContent = data.error || 'Incorrect password';
                             error.classList.add('show');
