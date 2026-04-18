@@ -224,7 +224,6 @@ class UploadController
                 
                 echo json_encode([
                     'success' => true,
-                    'file_id' => $fileId,
                     'short_code' => $shortCode,
                     'share_url' => $shareUrl,
                     'share_link' => $shareUrl, // For backward compatibility with frontend
@@ -237,7 +236,7 @@ class UploadController
         } catch (\Exception $e) {
             error_log('Upload error: ' . $e->getMessage());
             try { ActivityLogger::logFailure($userId ?? null, 'file_upload', $e->getMessage()); } catch (\Throwable $_) {}
-            echo json_encode(['success' => false, 'error' => 'Upload failed: ' . $e->getMessage()]);
+            echo json_encode(['success' => false, 'error' => 'Upload failed. Please try again.']);
         }
     }
     

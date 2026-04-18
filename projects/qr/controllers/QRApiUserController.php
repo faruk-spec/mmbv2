@@ -52,12 +52,16 @@ class QRApiUserController
         $newKey = $_SESSION['qr_api_new_key'] ?? null;
         unset($_SESSION['qr_api_new_key']);
 
+        $featureService = new QRFeatureService();
+        $canApiAccess   = $featureService->can($this->userId, 'api_access');
+
         $title   = 'API Access';
         $content_vars = [
-            'keys'    => $keys,
-            'baseUrl' => $baseUrl,
-            'newKey'  => $newKey,
-            'title'   => $title,
+            'keys'         => $keys,
+            'baseUrl'      => $baseUrl,
+            'newKey'       => $newKey,
+            'title'        => $title,
+            'canApiAccess' => $canApiAccess,
         ];
 
         // Buffer the view content then wrap in layout.php (navbar + sidebar).

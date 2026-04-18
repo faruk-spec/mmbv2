@@ -462,12 +462,17 @@ class DownloadController
         
         // Calculate file size in human readable format
         $fileSize = $this->formatBytes($file['size']);
-        
+
+        // Strip sensitive server-side fields before passing to the view
+        $safeFile = array_diff_key($file, array_flip([
+            'path', 'password', 'checksum', 'encryption_key', 'filename',
+        ]));
+
         // Render preview page
         View::render('projects/proshare/file-preview', [
             'title' => 'File Preview',
             'subtitle' => $file['original_name'],
-            'file' => $file,
+            'file' => $safeFile,
             'fileSize' => $fileSize,
             'shortcode' => $shortcode,
         ]);
@@ -514,6 +519,18 @@ class DownloadController
             }
         }
 
+        // Enforce expiry
+        if ($file['expires_at'] && strtotime($file['expires_at']) < time()) {
+            http_response_code(410);
+            return;
+        }
+
+        // Enforce max downloads
+        if ($file['max_downloads'] && $file['downloads'] >= $file['max_downloads']) {
+            http_response_code(410);
+            return;
+        }
+
         if (!file_exists($file['path'])) {
             http_response_code(404);
             return;
@@ -550,7 +567,12 @@ class DownloadController
         header('Content-Type: ' . $file['mime_type']);
         header('Content-Disposition: inline; filename="' . str_replace(['"', '\\'], ['\"', '\\\\'], $safeName) . '"');
         header('Content-Length: ' . strlen($content));
-        header('Cache-Control: private, max-age=3600');
+        // No-store for password-protected files; short private cache otherwise
+        if ($file['password']) {
+            header('Cache-Control: no-store, no-cache, must-revalidate');
+        } else {
+            header('Cache-Control: private, max-age=3600');
+        }
         echo $content;
         exit;
     }

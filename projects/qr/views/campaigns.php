@@ -2,7 +2,7 @@
 /**
  * Campaigns View
  */
-$canCampaigns = $canCampaigns ?? true;
+$canCampaigns = $canCampaigns ?? false;
 ?>
 
 <?php if (!$canCampaigns): ?>

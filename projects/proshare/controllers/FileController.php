@@ -237,7 +237,7 @@ class FileController
             echo json_encode(['success' => false, 'error' => 'Unknown action']);
         } catch (\Exception $e) {
             error_log('File update failed: ' . $e->getMessage());
-            echo json_encode(['success' => false, 'error' => 'Update failed: ' . $e->getMessage()]);
+            echo json_encode(['success' => false, 'error' => 'Update failed. Please try again.']);
         }
     }
 
@@ -300,7 +300,7 @@ class FileController
         } catch (\Exception $e) {
             error_log('File deletion failed: ' . $e->getMessage());
             try { ActivityLogger::logFailure($user['id'] ?? null, 'file_action', $e->getMessage()); } catch (\Throwable $_) {}
-            echo json_encode(['success' => false, 'error' => 'Failed to delete file: ' . $e->getMessage()]);
+            echo json_encode(['success' => false, 'error' => 'Failed to delete file. Please try again.']);
         }
     }
     

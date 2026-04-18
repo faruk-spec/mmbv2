@@ -2,7 +2,7 @@
 /**
  * Analytics Dashboard View
  */
-$canAnalytics = (bool)($userFeatures['analytics'] ?? true);
+$canAnalytics = $canAnalytics ?? false;
 ?>
 
 <?php if (!$canAnalytics): ?>

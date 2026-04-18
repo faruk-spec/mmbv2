@@ -2,7 +2,7 @@
 /**
  * Bulk Generate View
  */
-$canBulk = $canBulk ?? true; // default permissive if not passed
+$canBulk = $canBulk ?? false;
 ?>
 
 <?php if (!$canBulk): ?>

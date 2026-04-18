@@ -67,6 +67,9 @@ class AnalyticsController
         // Calculate pagination
         $totalPages = ceil($totalQRs / $perPage);
         
+        $featureService = new QRFeatureService();
+        $canAnalytics   = $featureService->can($userId, 'analytics');
+
         $this->render('analytics', [
             'title' => 'Analytics',
             'user' => Auth::user(),
@@ -82,8 +85,9 @@ class AnalyticsController
             'startDate' => $startDate,
             'endDate' => $endDate,
             'quickFilter' => $quickFilter,
-            'userFeatures' => (new QRFeatureService())->getFeatures($userId),
-            'canExportData' => (new QRFeatureService())->can($userId, 'export_data'),
+            'userFeatures' => $featureService->getFeatures($userId),
+            'canAnalytics' => $canAnalytics,
+            'canExportData' => $featureService->can($userId, 'export_data'),
         ]);
     }
     

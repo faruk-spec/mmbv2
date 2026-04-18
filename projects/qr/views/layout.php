@@ -115,6 +115,7 @@ header("Expires: 0");
         }
         .feature-gate-wrap .feature-gate-blur {
             filter: blur(6px);
+            opacity: 0.6;
             pointer-events: none;
             user-select: none;
         }

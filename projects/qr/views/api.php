@@ -7,9 +7,15 @@
 use Core\Security;
 use Core\Auth;
 
-$csrfToken  = Security::generateCsrfToken();
+$csrfToken   = Security::generateCsrfToken();
 $currentUser = Auth::user();
+$canApiAccess = $canApiAccess ?? false;
 ?>
+
+<?php if (!$canApiAccess): ?>
+<div class="feature-gate-wrap">
+    <div class="feature-gate-blur">
+<?php endif; ?>
 <style>
 .qr-api-grid { display:grid; grid-template-columns:1fr; gap:20px; align-items:start; }
 @media(min-width:900px){ .qr-api-grid { grid-template-columns:1fr 1fr; } }
@@ -375,5 +381,16 @@ function revokeKey(keyId, btn) {
     });
 }
 </script>
+
+<?php if (!$canApiAccess): ?>
+    </div><!-- /.feature-gate-blur -->
+    <div class="feature-gate-badge">
+        <div class="fgb-icon"><i class="fas fa-key"></i></div>
+        <div class="fgb-title">API Access — Upgrade Required</div>
+        <div class="fgb-desc">Integrate QR generation into your own applications via REST API. Available on Pro and higher plans.</div>
+        <a href="/projects/qr/plan" class="fgb-btn"><i class="fas fa-crown"></i> View Plans &amp; Upgrade</a>
+    </div>
+</div><!-- /.feature-gate-wrap -->
+<?php endif; ?>
 
 <?php if (isset($title)) { /* Suppress unused-variable warning */ } ?>
