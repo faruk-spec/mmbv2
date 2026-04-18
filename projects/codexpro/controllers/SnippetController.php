@@ -147,7 +147,7 @@ class SnippetController
             $tags        = Security::sanitize($_POST['tags'] ?? ($input['tags'] ?? ''));
             $isPublic    = isset($_POST['is_public']) || (!empty($input['is_public'])) ? 1 : 0;
 
-            if ($title === '') {
+            if (trim($title) === '') {
                 echo json_encode(['success' => false, 'error' => 'Title is required']);
                 return;
             }
