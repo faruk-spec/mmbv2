@@ -242,6 +242,8 @@ class FileController
     }
 
     /**
+     * Delete file
+     */
     public function delete(string $shortcode): void
     {
         // Set JSON header at the very beginning
