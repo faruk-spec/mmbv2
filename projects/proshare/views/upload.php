@@ -3,6 +3,16 @@
 
 <?php View::section('content'); ?>
 
+<?php
+// Effective max file size: use admin global setting (passed as $maxSize from controller)
+$effectiveMaxSizeBytes = (int)($maxSize ?? 524288000);
+$effectiveMaxSizeMb    = (int)round($effectiveMaxSizeBytes / 1048576);
+
+// Effective default expiry: user setting → admin global setting → 24h
+$adminDefaultExpiry = (int)($globalSettings['default_expiry_hours'] ?? 24);
+$userDefaultExpiry  = (int)($settings['default_expiry'] ?? $adminDefaultExpiry);
+?>
+
 <!-- Upload Overlay Animation -->
 <div id="psUploadOverlay" style="display:none; position:fixed; inset:0; background:rgba(15,15,35,0.88); z-index:9990; align-items:center; justify-content:center; flex-direction:column; backdrop-filter:blur(4px);">
     <div style="width:80px;height:80px;margin:0 auto 1.25rem;border-radius:50%;background:linear-gradient(135deg,var(--cyan,#00f0ff),var(--ps-secondary,#7c3aed));display:flex;align-items:center;justify-content:center;animation:ps-orb-pulse 1.6s ease-in-out infinite;box-shadow:0 0 40px rgba(0,240,255,0.5);">
@@ -42,7 +52,7 @@
         <h3 class="card-title">
             <i class="fas fa-cloud-upload-alt"></i> Upload Files
         </h3>
-        <span class="text-muted" style="font-size: 0.8rem;">Max 500 MB per file</span>
+        <span class="text-muted" style="font-size: 0.8rem;">Max <?= $effectiveMaxSizeMb ?> MB per file</span>
     </div>
     
     <!-- Upload Zone -->
@@ -52,7 +62,7 @@
             Drag &amp; drop files here or <span style="color: var(--cyan); text-decoration: underline;">browse</span>
         </div>
         <div class="text-muted" style="font-size: 0.85rem;">
-            Supports: Images, PDF, ZIP, Documents, Videos, Audio &mdash; up to 500 MB
+            Supports: Images, PDF, ZIP, Documents, Videos, Audio &mdash; up to <?= $effectiveMaxSizeMb ?> MB
         </div>
         <input type="file" id="fileInput" multiple style="display: none;">
     </div>
@@ -80,12 +90,12 @@
                     <i class="fas fa-clock"></i> Link Expiry
                 </label>
                 <select name="expiry" class="form-control">
-                    <option value="1">1 Hour</option>
-                    <option value="6">6 Hours</option>
-                    <option value="24" selected>24 Hours</option>
-                    <option value="168">7 Days</option>
-                    <option value="720">30 Days</option>
-                    <option value="0">Never</option>
+                    <?php
+                    $expiryOptions = [1 => '1 Hour', 6 => '6 Hours', 24 => '24 Hours', 168 => '7 Days', 720 => '30 Days', 0 => 'Never'];
+                    foreach ($expiryOptions as $val => $label):
+                    ?>
+                    <option value="<?= $val ?>" <?= $userDefaultExpiry == $val ? 'selected' : '' ?>><?= $label ?></option>
+                    <?php endforeach; ?>
                 </select>
             </div>
             

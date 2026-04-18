@@ -36,12 +36,13 @@
                     <i class="fas fa-clock"></i> Link Expiry
                 </label>
                 <select name="expiry" class="form-control">
-                    <option value="1">1 Hour</option>
-                    <option value="6">6 Hours</option>
-                    <option value="24" selected>24 Hours</option>
-                    <option value="168">7 Days</option>
-                    <option value="720">30 Days</option>
-                    <option value="0">Never</option>
+                    <?php
+                    $defaultExp = (int)($defaultExpiry ?? 24);
+                    $expiryOpts = [1 => '1 Hour', 6 => '6 Hours', 24 => '24 Hours', 168 => '7 Days', 720 => '30 Days', 0 => 'Never'];
+                    foreach ($expiryOpts as $val => $label):
+                    ?>
+                    <option value="<?= $val ?>" <?= $defaultExp == $val ? 'selected' : '' ?>><?= $label ?></option>
+                    <?php endforeach; ?>
                 </select>
             </div>
             

@@ -202,6 +202,52 @@
                 </div>
             </div>
 
+            <!-- Notifications Settings -->
+            <div class="settings-section">
+                <h3>Notification Settings</h3>
+                <div class="form-group">
+                    <label class="toggle-label">
+                        <input type="checkbox" name="enable_email_notifications" 
+                               <?= ($settings['enable_email_notifications'] ?? 1) ? 'checked' : '' ?>>
+                        <span class="toggle-switch"></span>
+                        Show Email Notification Option to Users
+                    </label>
+                    <small class="form-text">When disabled, the Email Notifications toggle is hidden from user settings</small>
+                </div>
+                <div class="form-group">
+                    <label class="toggle-label">
+                        <input type="checkbox" name="enable_sms_notifications" 
+                               <?= ($settings['enable_sms_notifications'] ?? 1) ? 'checked' : '' ?>>
+                        <span class="toggle-switch"></span>
+                        Show SMS Notification Option to Users
+                    </label>
+                    <small class="form-text">When disabled, the SMS Notifications toggle is hidden from user settings</small>
+                </div>
+            </div>
+
+            <!-- Auto-Delete Settings -->
+            <div class="settings-section">
+                <h3>Auto-Delete Settings</h3>
+                <div class="form-group">
+                    <label class="toggle-label">
+                        <input type="checkbox" name="default_auto_delete" 
+                               <?= ($settings['default_auto_delete'] ?? 0) ? 'checked' : '' ?>>
+                        <span class="toggle-switch"></span>
+                        Auto-Delete Enabled by Default
+                    </label>
+                    <small class="form-text">If enabled, new users will have Auto-Delete turned on by default</small>
+                </div>
+                <div class="form-group">
+                    <label class="toggle-label">
+                        <input type="checkbox" name="user_can_change_auto_delete" 
+                               <?= ($settings['user_can_change_auto_delete'] ?? 1) ? 'checked' : '' ?>>
+                        <span class="toggle-switch"></span>
+                        Allow Users to Change Auto-Delete
+                    </label>
+                    <small class="form-text">When disabled, users cannot change the Auto-Delete setting — the admin default is enforced</small>
+                </div>
+            </div>
+
             <div class="form-actions">
                 <button type="submit" class="btn btn-primary">Save Settings</button>
                 <a href="/admin/projects/proshare" class="btn btn-secondary">Cancel</a>

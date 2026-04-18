@@ -3,6 +3,30 @@
 
 <?php View::section('content'); ?>
 
+<?php
+// Admin global settings with defaults
+$adminMaxFileSize    = (int)($globalSettings['max_file_size'] ?? 524288000);     // bytes
+$adminMaxFileSizeMb  = (int)round($adminMaxFileSize / 1048576);                  // MB
+$adminDefaultExpiry  = (int)($globalSettings['default_expiry_hours'] ?? 24);
+$showEmail           = (int)($globalSettings['enable_email_notifications'] ?? 1);
+$showSms             = (int)($globalSettings['enable_sms_notifications'] ?? 1);
+$adminAutoDelete     = (int)($globalSettings['default_auto_delete'] ?? 0);
+$userCanChangeAD     = (int)($globalSettings['user_can_change_auto_delete'] ?? 1);
+
+// Determine effective auto_delete (admin-forced if user cannot change)
+$effectiveAutoDelete = $userCanChangeAD ? (int)($settings['auto_delete'] ?? $adminAutoDelete) : $adminAutoDelete;
+
+// Available file size options (only up to admin max)
+$sizeOptions = [
+    50   => '50 MB',
+    100  => '100 MB',
+    200  => '200 MB',
+    500  => '500 MB',
+    1024 => '1 GB',
+];
+$userMaxFileSizeMb   = (int)round((int)($settings['max_file_size'] ?? $adminMaxFileSize) / 1048576);
+?>
+
 <style>
 .settings-section { padding: 1.5rem; border-bottom: 1px solid var(--border-color); }
 .settings-section:last-of-type { border-bottom: none; }
@@ -19,6 +43,7 @@
 .ps-toggle-slider::before { content: ''; position: absolute; width: 16px; height: 16px; left: 2px; top: 2px; background: var(--text-secondary); border-radius: 50%; transition: transform 0.2s, background 0.2s; }
 .ps-toggle input:checked + .ps-toggle-slider { background: rgba(0,240,255,0.15); border-color: var(--ps-primary); }
 .ps-toggle input:checked + .ps-toggle-slider::before { transform: translateX(20px); background: var(--ps-primary); }
+.ps-toggle input:disabled + .ps-toggle-slider { opacity: 0.45; cursor: not-allowed; }
 .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 @media (max-width: 600px) {
     .settings-grid { grid-template-columns: 1fr; }
@@ -41,9 +66,11 @@
         <input type="hidden" name="_csrf_token" value="<?= Security::generateCsrfToken() ?>">
         
         <!-- Notifications -->
+        <?php if ($showEmail || $showSms): ?>
         <div class="settings-section">
             <h4><i class="fas fa-bell"></i> Notifications</h4>
             
+            <?php if ($showEmail): ?>
             <div class="toggle-row">
                 <div class="toggle-label">
                     <span>Email Notifications</span>
@@ -54,7 +81,9 @@
                     <span class="ps-toggle-slider"></span>
                 </label>
             </div>
+            <?php endif; ?>
             
+            <?php if ($showSms): ?>
             <div class="toggle-row">
                 <div class="toggle-label">
                     <span>SMS Notifications</span>
@@ -65,7 +94,9 @@
                     <span class="ps-toggle-slider"></span>
                 </label>
             </div>
+            <?php endif; ?>
         </div>
+        <?php endif; ?>
         
         <!-- Default Upload Settings -->
         <div class="settings-section">
@@ -75,22 +106,36 @@
                 <div class="form-group" style="margin-bottom:0;">
                     <label class="form-label" style="font-size:0.8rem;">Default Link Expiry</label>
                     <select name="default_expiry" class="form-control">
-                        <option value="1" <?= ($settings['default_expiry'] ?? 24) == 1 ? 'selected' : '' ?>>1 Hour</option>
-                        <option value="6" <?= ($settings['default_expiry'] ?? 24) == 6 ? 'selected' : '' ?>>6 Hours</option>
-                        <option value="24" <?= ($settings['default_expiry'] ?? 24) == 24 ? 'selected' : '' ?>>24 Hours</option>
-                        <option value="168" <?= ($settings['default_expiry'] ?? 24) == 168 ? 'selected' : '' ?>>7 Days</option>
-                        <option value="720" <?= ($settings['default_expiry'] ?? 24) == 720 ? 'selected' : '' ?>>30 Days</option>
+                        <?php
+                        $userExpiry = (int)($settings['default_expiry'] ?? $adminDefaultExpiry);
+                        $expiryOptions = [1 => '1 Hour', 6 => '6 Hours', 24 => '24 Hours', 168 => '7 Days', 720 => '30 Days'];
+                        foreach ($expiryOptions as $val => $label):
+                        ?>
+                        <option value="<?= $val ?>" <?= $userExpiry == $val ? 'selected' : '' ?>><?= $label ?></option>
+                        <?php endforeach; ?>
                     </select>
+                    <small style="font-size:0.72rem; color:var(--text-secondary); margin-top:3px; display:block;">
+                        Admin default: <?= $expiryOptions[$adminDefaultExpiry] ?? $adminDefaultExpiry . ' hours' ?>
+                    </small>
                 </div>
                 
                 <div class="form-group" style="margin-bottom:0;">
                     <label class="form-label" style="font-size:0.8rem;">Maximum File Size</label>
                     <select name="max_file_size" class="form-control">
-                        <option value="52428800" <?= ($settings['max_file_size'] ?? 524288000) == 52428800 ? 'selected' : '' ?>>50 MB</option>
-                        <option value="104857600" <?= ($settings['max_file_size'] ?? 524288000) == 104857600 ? 'selected' : '' ?>>100 MB</option>
-                        <option value="209715200" <?= ($settings['max_file_size'] ?? 524288000) == 209715200 ? 'selected' : '' ?>>200 MB</option>
-                        <option value="524288000" <?= ($settings['max_file_size'] ?? 524288000) == 524288000 ? 'selected' : '' ?>>500 MB</option>
+                        <?php foreach ($sizeOptions as $mb => $label):
+                            if ($mb > $adminMaxFileSizeMb) continue; // don't exceed admin limit
+                        ?>
+                        <option value="<?= $mb * 1048576 ?>" <?= $userMaxFileSizeMb == $mb ? 'selected' : '' ?>><?= $label ?></option>
+                        <?php endforeach; ?>
+                        <?php if (!isset($sizeOptions[$adminMaxFileSizeMb]) && $adminMaxFileSizeMb > 0): ?>
+                        <option value="<?= $adminMaxFileSize ?>" <?= $userMaxFileSizeMb == $adminMaxFileSizeMb ? 'selected' : '' ?>>
+                            <?= $adminMaxFileSizeMb ?> MB (admin limit)
+                        </option>
+                        <?php endif; ?>
                     </select>
+                    <small style="font-size:0.72rem; color:var(--text-secondary); margin-top:3px; display:block;">
+                        Max allowed by admin: <?= $adminMaxFileSizeMb ?> MB
+                    </small>
                 </div>
             </div>
             
@@ -126,10 +171,21 @@
                     <span>Auto-Delete Expired Files</span>
                     <small>Automatically delete files past their expiry date</small>
                 </div>
+                <?php if ($userCanChangeAD): ?>
                 <label class="ps-toggle">
-                    <input type="checkbox" name="auto_delete" value="1" <?= ($settings['auto_delete'] ?? 0) ? 'checked' : '' ?>>
+                    <input type="checkbox" name="auto_delete" value="1" <?= $effectiveAutoDelete ? 'checked' : '' ?>>
                     <span class="ps-toggle-slider"></span>
                 </label>
+                <?php else: ?>
+                <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
+                    <label class="ps-toggle">
+                        <input type="checkbox" name="auto_delete" value="1" <?= $effectiveAutoDelete ? 'checked' : '' ?> disabled>
+                        <span class="ps-toggle-slider"></span>
+                    </label>
+                    <small style="font-size:0.72rem; color:var(--ps-danger);">You can't change this feature</small>
+                </div>
+                <input type="hidden" name="auto_delete" value="<?= $effectiveAutoDelete ?>">
+                <?php endif; ?>
             </div>
             
             <div class="alert alert-info" style="margin-top: 1rem; margin-bottom: 0;">
@@ -231,3 +287,4 @@ function showToast(msg, type = 'success') {
 }
 </script>
 <?php View::endSection(); ?>
+

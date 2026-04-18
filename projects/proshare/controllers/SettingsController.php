@@ -32,6 +32,21 @@ class SettingsController
             $db->insert('proshare_user_settings', ['user_id' => $user['id']]);
             $settings = $db->fetch("SELECT * FROM proshare_user_settings WHERE user_id = ?", [$user['id']]);
         }
+
+        // Get global admin settings
+        $globalSettingsRows = $db->fetchAll("SELECT `key`, `value` FROM proshare_settings");
+        $globalSettings = [];
+        foreach ($globalSettingsRows as $row) {
+            $globalSettings[$row['key']] = $row['value'];
+        }
+
+        // Apply admin defaults to user settings on first load (fill nulls with admin defaults)
+        if (empty($settings['default_expiry'])) {
+            $settings['default_expiry'] = (int)($globalSettings['default_expiry_hours'] ?? 24);
+        }
+        if (!isset($settings['auto_delete'])) {
+            $settings['auto_delete'] = (int)($globalSettings['default_auto_delete'] ?? 0);
+        }
         
         // Get statistics
         $stats = [
@@ -45,6 +60,7 @@ class SettingsController
             'title' => 'Settings',
             'subtitle' => 'Manage your preferences and account settings',
             'settings' => $settings,
+            'globalSettings' => $globalSettings,
             'stats' => $stats,
         ]);
     }

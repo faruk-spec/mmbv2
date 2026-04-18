@@ -199,6 +199,10 @@ class ProShareAdminController extends BaseController
         $settings['enable_anonymous_sharing'] = $settings['enable_anonymous_sharing'] ?? $settings['enable_anonymous_upload'] ?? 1;
         $settings['require_email_verification'] = $settings['require_email_verification'] ?? 0;
         $settings['storage_limit_gb'] = $settings['storage_limit_gb'] ?? 5;
+        $settings['enable_email_notifications'] = $settings['enable_email_notifications'] ?? 1;
+        $settings['enable_sms_notifications'] = $settings['enable_sms_notifications'] ?? 1;
+        $settings['default_auto_delete'] = $settings['default_auto_delete'] ?? 0;
+        $settings['user_can_change_auto_delete'] = $settings['user_can_change_auto_delete'] ?? 1;
         
         $this->view('admin/projects/proshare/settings', [
             'title' => 'ProShare Admin - Settings',
@@ -232,6 +236,10 @@ class ProShareAdminController extends BaseController
             'enable_anonymous_sharing' => isset($_POST['enable_anonymous_sharing']) ? '1' : '0',
             'require_email_verification' => isset($_POST['require_email_verification']) ? '1' : '0',
             'storage_limit_gb' => (int)($_POST['storage_limit_gb'] ?? 5),
+            'enable_email_notifications' => isset($_POST['enable_email_notifications']) ? '1' : '0',
+            'enable_sms_notifications' => isset($_POST['enable_sms_notifications']) ? '1' : '0',
+            'default_auto_delete' => isset($_POST['default_auto_delete']) ? '1' : '0',
+            'user_can_change_auto_delete' => isset($_POST['user_can_change_auto_delete']) ? '1' : '0',
         ];
         
         // Update each setting using key-value structure
@@ -1325,14 +1333,14 @@ class ProShareAdminController extends BaseController
         $totalTexts    = $this->projectDb->fetch("SELECT COUNT(*) as c FROM proshare_text_shares")['c'] ?? 0;
         $today         = date('Y-m-d');
         $uploadsToday  = $this->projectDb->fetch("SELECT COUNT(*) as c FROM proshare_files WHERE DATE(created_at) = ?", [$today])['c'] ?? 0;
-        $dlToday       = $this->projectDb->fetch("SELECT COUNT(*) as c FROM proshare_file_downloads WHERE DATE(created_at) = ?", [$today])['c'] ?? 0;
+        $dlToday       = $this->projectDb->fetch("SELECT COUNT(*) as c FROM proshare_file_downloads WHERE DATE(downloaded_at) = ?", [$today])['c'] ?? 0;
 
         // Recent downloads (last 50)
         $recentDownloads = $this->projectDb->fetchAll(
             "SELECT d.*, f.original_name, f.short_code, f.user_id
              FROM proshare_file_downloads d
              LEFT JOIN proshare_files f ON f.id = d.file_id
-             ORDER BY d.created_at DESC
+             ORDER BY d.downloaded_at DESC
              LIMIT 50"
         );
 
@@ -1386,7 +1394,7 @@ class ProShareAdminController extends BaseController
                 [$today, $h]
             )['c'] ?? 0;
             $dl = $this->projectDb->fetch(
-                "SELECT COUNT(*) as c FROM proshare_file_downloads WHERE DATE(created_at) = ? AND HOUR(created_at) = ?",
+                "SELECT COUNT(*) as c FROM proshare_file_downloads WHERE DATE(downloaded_at) = ? AND HOUR(downloaded_at) = ?",
                 [$today, $h]
             )['c'] ?? 0;
             $hourly[] = ['hour' => $hr . ':00', 'uploads' => (int)$up, 'downloads' => (int)$dl];
@@ -1495,7 +1503,7 @@ class ProShareAdminController extends BaseController
             )['count'] ?? 0;
             
             $downloads = $this->projectDb->fetch(
-                "SELECT COUNT(*) as count FROM proshare_file_downloads WHERE DATE(created_at) = ?",
+                "SELECT COUNT(*) as count FROM proshare_file_downloads WHERE DATE(downloaded_at) = ?",
                 [$date]
             )['count'] ?? 0;
             

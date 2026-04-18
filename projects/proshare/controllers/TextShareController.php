@@ -21,11 +21,30 @@ class TextShareController
     public function index(): void
     {
         $user = Auth::check() ? Auth::user() : null;
-        
+        $db = Database::getInstance();
+
+        // Fetch global admin settings
+        $globalSettingsRows = $db->fetchAll("SELECT `key`, `value` FROM proshare_settings");
+        $globalSettings = [];
+        foreach ($globalSettingsRows as $row) {
+            $globalSettings[$row['key']] = $row['value'];
+        }
+
+        // User's saved default expiry (falls back to admin global, then 24h)
+        $userDefaultExpiry = (int)($globalSettings['default_expiry_hours'] ?? 24);
+        if ($user) {
+            $userSettings = $db->fetch("SELECT default_expiry FROM proshare_user_settings WHERE user_id = ?", [$user['id']]);
+            if ($userSettings && !empty($userSettings['default_expiry'])) {
+                $userDefaultExpiry = (int)$userSettings['default_expiry'];
+            }
+        }
+
         View::render('projects/proshare/text-share', [
             'title' => 'Share Text',
             'subtitle' => 'Share text, code, or notes securely',
             'user' => $user,
+            'globalSettings' => $globalSettings,
+            'defaultExpiry' => $userDefaultExpiry,
         ]);
     }
     

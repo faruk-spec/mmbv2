@@ -61,7 +61,7 @@ class UploadController
             'user' => $user,
             'settings' => $settings,
             'globalSettings' => $globalSettings,
-            'maxSize' => self::MAX_FILE_SIZE,
+            'maxSize' => (int)($globalSettings['max_file_size'] ?? self::MAX_FILE_SIZE),
         ]);
     }
     
@@ -82,10 +82,16 @@ class UploadController
             }
             
             $file = $_FILES['file'];
+
+            // Get admin-configured max file size
+            $db = Database::getInstance();
+            $adminMaxSizeRow = $db->fetch("SELECT `value` FROM proshare_settings WHERE `key` = 'max_file_size'");
+            $maxFileSize = $adminMaxSizeRow ? (int)$adminMaxSizeRow['value'] : self::MAX_FILE_SIZE;
             
             // Validate file size
-            if ($file['size'] > self::MAX_FILE_SIZE) {
-                echo json_encode(['success' => false, 'error' => 'File size exceeds limit']);
+            if ($file['size'] > $maxFileSize) {
+                $limitMb = round($maxFileSize / 1048576);
+                echo json_encode(['success' => false, 'error' => "File size exceeds the {$limitMb} MB upload limit"]);
                 return;
             }
             
