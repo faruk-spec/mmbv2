@@ -21,9 +21,9 @@ class DownloadController
     {
         $db = Database::getInstance();
         
-        // Get file info
+        // Get file info — allow inactive so we can return a meaningful message
         $file = $db->fetch(
-            "SELECT * FROM proshare_files WHERE short_code = ? AND status = 'active'",
+            "SELECT * FROM proshare_files WHERE short_code = ? AND status NOT IN ('deleted')",
             [$shortcode]
         );
         
@@ -32,10 +32,16 @@ class DownloadController
             echo "File not found or has expired.";
             return;
         }
+
+        if ($file['status'] === 'inactive') {
+            http_response_code(410);
+            echo "This file has been deactivated by its owner.";
+            return;
+        }
         
         // Check if file has expired
         if ($file['expires_at'] && strtotime($file['expires_at']) < time()) {
-            $db->update('files', ['status' => 'expired'], 'id = ?', [$file['id']]);
+            $db->update('proshare_files', ['status' => 'expired'], 'id = ?', [$file['id']]);
             
             // Create notification for user if logged in
             if ($file['user_id']) {
@@ -54,7 +60,7 @@ class DownloadController
         
         // Check max downloads - BEFORE incrementing the counter
         if ($file['max_downloads'] && $file['downloads'] >= $file['max_downloads']) {
-            $db->update('files', ['status' => 'expired'], 'id = ?', [$file['id']]);
+            $db->update('proshare_files', ['status' => 'expired'], 'id = ?', [$file['id']]);
             
             // Create notification for user if logged in
             if ($file['user_id']) {
@@ -73,7 +79,7 @@ class DownloadController
         
         // Check password if set
         if ($file['password']) {
-            session_start();
+            if (session_status() === PHP_SESSION_NONE) { session_start(); }
             $sessionKey = 'proshare_auth_' . $shortcode;
             
             if (!isset($_SESSION[$sessionKey])) {
@@ -107,7 +113,7 @@ class DownloadController
         }
         
         // Track download
-        $db->insert('file_downloads', [
+        $db->insert('proshare_file_downloads', [
             'file_id' => $file['id'],
             'ip_address' => Security::getClientIp(),
             'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? null,
@@ -131,7 +137,7 @@ class DownloadController
         
         // Self-destruct ONLY if enabled (check flag is 1)
         if ($file['self_destruct'] == 1) {
-            $db->update('files', ['status' => 'deleted'], 'id = ?', [$file['id']]);
+            $db->update('proshare_files', ['status' => 'deleted'], 'id = ?', [$file['id']]);
             
             // Create notification for user if logged in
             if ($file['user_id']) {
@@ -146,10 +152,15 @@ class DownloadController
             @unlink($file['path']);
         }
         
-        // Serve file
+        // Serve file — use RFC 5987 filename* for correct Unicode handling
+        $safeName = preg_replace('/[^\x20-\x7E]/', '_', $file['original_name']); // ASCII fallback
+        $encodedName = rawurlencode($file['original_name']);
         header('Content-Type: ' . $file['mime_type']);
-        header('Content-Disposition: attachment; filename="' . $file['original_name'] . '"');
-        header('Content-Length: ' . $file['size']);
+        header('Content-Disposition: attachment; filename="' . str_replace(['"', '\\'], ['\"', '\\\\'], $safeName) . '"; filename*=UTF-8\'\'' . $encodedName);
+        if ($file['is_compressed']) {
+            header('Content-Encoding: gzip');
+        }
+        header('Content-Length: ' . filesize($file['path']));
         header('Cache-Control: no-cache, must-revalidate');
         header('Expires: 0');
         
@@ -184,7 +195,7 @@ class DownloadController
         }
         
         if (Security::verifyPassword($password, $file['password'])) {
-            session_start();
+            if (session_status() === PHP_SESSION_NONE) { session_start(); }
             $_SESSION['proshare_auth_' . $shortCode] = true;
             echo json_encode(['success' => true]);
         } else {
@@ -290,14 +301,17 @@ class DownloadController
                     try {
                         const response = await fetch('/projects/proshare/verify-password', {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                            body: `short_code=<?= urlencode($shortCode) ?>&password=${encodeURIComponent(password)}`
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                                'Accept': 'application/json'
+                            },
+                            body: `short_code=<?= urlencode($shortCode) ?>&password=${encodeURIComponent(password)}&_csrf_token=<?= urlencode(Security::generateCsrfToken()) ?>`
                         });
                         
                         const data = await response.json();
                         
                         if (data.success) {
-                            window.location.href = '/projects/proshare/download/<?= $shortCode ?>';
+                            window.location.href = '/projects/proshare/preview/<?= $shortCode ?>';
                         } else {
                             error.textContent = data.error || 'Incorrect password';
                             error.classList.add('show');
@@ -321,7 +335,7 @@ class DownloadController
         $db = Database::getInstance();
         
         // Log to audit_logs (with JSON details)
-        $db->insert('audit_logs', [
+        $db->insert('proshare_audit_logs', [
             'user_id' => $userId,
             'action' => $action,
             'resource_type' => $resourceType,
@@ -333,7 +347,7 @@ class DownloadController
         
         // Also log to activity_logs (for admin activity tracking)
         $description = !empty($details) ? json_encode($details) : null;
-        $db->insert('activity_logs', [
+        $db->insert('proshare_activity_logs', [
             'user_id' => $userId,
             'action' => $action,
             'resource_type' => $resourceType,
@@ -351,7 +365,7 @@ class DownloadController
     {
         $db = Database::getInstance();
         
-        $db->insert('notifications', [
+        $db->insert('proshare_notifications', [
             'user_id' => $userId,
             'type' => $type,
             'message' => $message,
@@ -366,9 +380,9 @@ class DownloadController
     {
         $db = Database::getInstance();
         
-        // Get file info
+        // Get file info — allow inactive so we can return a meaningful message
         $file = $db->fetch(
-            "SELECT * FROM proshare_files WHERE short_code = ? AND status = 'active'",
+            "SELECT * FROM proshare_files WHERE short_code = ? AND status NOT IN ('deleted')",
             [$shortcode]
         );
         
@@ -380,10 +394,19 @@ class DownloadController
             ]);
             return;
         }
+
+        if ($file['status'] === 'inactive') {
+            http_response_code(410);
+            View::render('errors/404', [
+                'title' => 'File Deactivated',
+                'message' => 'This file has been deactivated by its owner.'
+            ]);
+            return;
+        }
         
         // Check if file has expired
         if ($file['expires_at'] && strtotime($file['expires_at']) < time()) {
-            $db->update('files', ['status' => 'expired'], 'id = ?', [$file['id']]);
+            $db->update('proshare_files', ['status' => 'expired'], 'id = ?', [$file['id']]);
             
             // Create notification for user if logged in
             if ($file['user_id']) {
@@ -405,7 +428,7 @@ class DownloadController
         
         // Check max downloads
         if ($file['max_downloads'] && $file['downloads'] >= $file['max_downloads']) {
-            $db->update('files', ['status' => 'expired'], 'id = ?', [$file['id']]);
+            $db->update('proshare_files', ['status' => 'expired'], 'id = ?', [$file['id']]);
             
             // Create notification for user if logged in
             if ($file['user_id']) {
@@ -427,7 +450,7 @@ class DownloadController
         
         // Check password if set
         if ($file['password']) {
-            session_start();
+            if (session_status() === PHP_SESSION_NONE) { session_start(); }
             $sessionKey = 'proshare_auth_' . $shortcode;
             
             if (!isset($_SESSION[$sessionKey])) {
@@ -439,12 +462,17 @@ class DownloadController
         
         // Calculate file size in human readable format
         $fileSize = $this->formatBytes($file['size']);
-        
+
+        // Strip sensitive server-side fields before passing to the view
+        $safeFile = array_diff_key($file, array_flip([
+            'path', 'password', 'checksum', 'encryption_key', 'filename',
+        ]));
+
         // Render preview page
         View::render('projects/proshare/file-preview', [
             'title' => 'File Preview',
             'subtitle' => $file['original_name'],
-            'file' => $file,
+            'file' => $safeFile,
             'fileSize' => $fileSize,
             'shortcode' => $shortcode,
         ]);
@@ -462,5 +490,90 @@ class DownloadController
             $i++;
         }
         return round($bytes, 2) . ' ' . $units[$i];
+    }
+
+    /**
+     * Serve file inline (for preview thumbnails / embedded players).
+     * Only works for images, video, audio, and PDFs.
+     */
+    public function serveInline(string $shortcode): void
+    {
+        $db = Database::getInstance();
+
+        $file = $db->fetch(
+            "SELECT * FROM proshare_files WHERE short_code = ? AND status = 'active'",
+            [$shortcode]
+        );
+
+        if (!$file) {
+            http_response_code(404);
+            return;
+        }
+
+        // Require session auth for password-protected files
+        if ($file['password']) {
+            if (session_status() === PHP_SESSION_NONE) { session_start(); }
+            if (empty($_SESSION['proshare_auth_' . $shortcode])) {
+                http_response_code(403);
+                return;
+            }
+        }
+
+        // Enforce expiry
+        if ($file['expires_at'] && strtotime($file['expires_at']) < time()) {
+            http_response_code(410);
+            return;
+        }
+
+        // Enforce max downloads
+        if ($file['max_downloads'] && $file['downloads'] >= $file['max_downloads']) {
+            http_response_code(410);
+            return;
+        }
+
+        if (!file_exists($file['path'])) {
+            http_response_code(404);
+            return;
+        }
+
+        // Only allow inline serving for previewable types
+        $allowed = ['image/', 'video/', 'audio/', 'application/pdf'];
+        $allowed_mime = false;
+        foreach ($allowed as $prefix) {
+            if (str_starts_with($file['mime_type'], $prefix)) {
+                $allowed_mime = true;
+                break;
+            }
+        }
+
+        if (!$allowed_mime) {
+            http_response_code(415);
+            return;
+        }
+
+        $safeName = preg_replace('/[^\x20-\x7E]/', '_', $file['original_name']);
+        $raw = file_get_contents($file['path']);
+        if ($raw === false) {
+            http_response_code(500);
+            return;
+        }
+        $content = $file['is_compressed'] ? gzdecode($raw) : $raw;
+        unset($raw);
+        if ($content === false) {
+            http_response_code(500);
+            return;
+        }
+
+        header('Content-Type: ' . $file['mime_type']);
+        header('Content-Disposition: inline; filename="' . str_replace(['"', '\\'], ['\"', '\\\\'], $safeName) . '"');
+        header('Content-Length: ' . strlen($content));
+        // No-store for password-protected files; short private cache otherwise
+        if ($file['password']) {
+            header('Cache-Control: no-store, no-cache, must-revalidate');
+        } else {
+            header('Cache-Control: private, max-age=3600');
+        }
+        echo $content;
+        exit;
     }
 }

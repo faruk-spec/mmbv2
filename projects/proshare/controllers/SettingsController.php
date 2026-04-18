@@ -29,22 +29,38 @@ class SettingsController
         );
         
         if (!$settings) {
-            $db->insert('user_settings', ['user_id' => $user['id']]);
+            $db->insert('proshare_user_settings', ['user_id' => $user['id']]);
             $settings = $db->fetch("SELECT * FROM proshare_user_settings WHERE user_id = ?", [$user['id']]);
+        }
+
+        // Get global admin settings
+        $globalSettingsRows = $db->fetchAll("SELECT `key`, `value` FROM proshare_settings");
+        $globalSettings = [];
+        foreach ($globalSettingsRows as $row) {
+            $globalSettings[$row['key']] = $row['value'];
+        }
+
+        // Apply admin defaults to user settings on first load (fill nulls with admin defaults)
+        if (empty($settings['default_expiry'])) {
+            $settings['default_expiry'] = (int)($globalSettings['default_expiry_hours'] ?? 24);
+        }
+        if (!isset($settings['auto_delete'])) {
+            $settings['auto_delete'] = (int)($globalSettings['default_auto_delete'] ?? 0);
         }
         
         // Get statistics
         $stats = [
-            'total_files' => $db->fetchColumn("SELECT COUNT(*) FROM proshare_files WHERE user_id = ?", [$user['id']]),
-            'total_texts' => $db->fetchColumn("SELECT COUNT(*) FROM proshare_text_shares WHERE user_id = ?", [$user['id']]),
-            'total_downloads' => $db->fetchColumn("SELECT SUM(downloads) FROM proshare_files WHERE user_id = ?", [$user['id']]) ?: 0,
-            'storage_used' => number_format($db->fetchColumn("SELECT SUM(size) FROM proshare_files WHERE user_id = ?", [$user['id']]) / 1024 / 1024, 2),
+            'total_files'     => (int)($db->fetch("SELECT COUNT(*) as c FROM proshare_files WHERE user_id = ?", [$user['id']])['c'] ?? 0),
+            'total_texts'     => (int)($db->fetch("SELECT COUNT(*) as c FROM proshare_text_shares WHERE user_id = ?", [$user['id']])['c'] ?? 0),
+            'total_downloads' => (int)($db->fetch("SELECT COALESCE(SUM(downloads),0) as c FROM proshare_files WHERE user_id = ?", [$user['id']])['c'] ?? 0),
+            'storage_used'    => round(($db->fetch("SELECT COALESCE(SUM(size),0) as c FROM proshare_files WHERE user_id = ?", [$user['id']])['c'] ?? 0) / 1024 / 1024, 2),
         ];
         
         View::render('projects/proshare/settings', [
             'title' => 'Settings',
             'subtitle' => 'Manage your preferences and account settings',
             'settings' => $settings,
+            'globalSettings' => $globalSettings,
             'stats' => $stats,
         ]);
     }
@@ -73,7 +89,7 @@ class SettingsController
         $maxFileSize = (int)($_POST['max_file_size'] ?? 524288000);
         
         try {
-            $updated = $db->update('user_settings', [
+            $updated = $db->update('proshare_user_settings', [
                 'email_notifications' => $emailNotifications,
                 'sms_notifications' => $smsNotifications,
                 'default_expiry' => $defaultExpiry,
@@ -89,7 +105,7 @@ class SettingsController
                 $exists = $db->fetch("SELECT id FROM proshare_user_settings WHERE user_id = ?", [$user['id']]);
                 if (!$exists) {
                     // Insert new settings record
-                    $db->insert('user_settings', [
+                    $db->insert('proshare_user_settings', [
                         'user_id' => $user['id'],
                         'email_notifications' => $emailNotifications,
                         'sms_notifications' => $smsNotifications,

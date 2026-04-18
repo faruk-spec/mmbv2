@@ -109,7 +109,65 @@ header("Expires: 0");
             max-width: 100vw;
         }
         
-        /* Layout Structure - optimized with rem */
+        /* ── Feature-gate blur overlay ── */
+        .feature-gate-wrap {
+            position: relative;
+        }
+        .feature-gate-wrap .feature-gate-blur {
+            filter: blur(6px);
+            opacity: 0.6;
+            pointer-events: none;
+            user-select: none;
+        }
+        .feature-gate-badge {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 20;
+            background: var(--bg-card);
+            border: 2px solid var(--purple);
+            border-radius: 16px;
+            padding: 28px 36px;
+            text-align: center;
+            min-width: 280px;
+            max-width: 380px;
+            box-shadow: 0 8px 40px rgba(153,69,255,.35);
+            pointer-events: auto;
+        }
+        .feature-gate-badge .fgb-icon {
+            font-size: 2.4rem;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, var(--purple), var(--cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .feature-gate-badge .fgb-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+        .feature-gate-badge .fgb-desc {
+            font-size: .83rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            margin-bottom: 18px;
+        }
+        .feature-gate-badge .fgb-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 22px;
+            background: linear-gradient(135deg, var(--purple), var(--cyan));
+            border-radius: 8px;
+            font-size: .85rem;
+            font-weight: 700;
+            color: #000;
+            text-decoration: none;
+        }
+
+
         .qr-dashboard {
             display: flex;
             min-height: calc(100vh - 3.75rem); /* 60px navbar */

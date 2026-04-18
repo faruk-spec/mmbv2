@@ -97,7 +97,7 @@
         <?php endif; ?>
 
         <form method="POST" action="/admin/projects/codexpro/settings" class="settings-form">
-            <input type="hidden" name="_csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
+            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Security::generateCsrfToken()) ?>">
 
             <h2 style="color: #00ff88; margin-top: 0;">Project Limits</h2>
 

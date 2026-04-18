@@ -19,18 +19,21 @@ $router->post('/projects/proshare/upload', 'Projects\ProShare\Controllers\Upload
 $router->get('/projects/proshare/files', 'Projects\ProShare\Controllers\DashboardController@myFiles');
 $router->delete('/projects/proshare/files/delete/{shortcode}', 'Projects\ProShare\Controllers\FileController@delete');
 $router->post('/projects/proshare/files/delete/{shortcode}', 'Projects\ProShare\Controllers\FileController@delete');
+$router->post('/projects/proshare/files/update/{shortcode}', 'Projects\ProShare\Controllers\FileController@update');
 
 // File Download
 $router->get('/projects/proshare/download/{shortcode}', 'Projects\ProShare\Controllers\DownloadController@download');
 $router->get('/projects/proshare/preview/{shortcode}', 'Projects\ProShare\Controllers\DownloadController@preview');
+$router->get('/projects/proshare/serve/{shortcode}', 'Projects\ProShare\Controllers\DownloadController@serveInline');
 $router->post('/projects/proshare/verify-password', 'Projects\ProShare\Controllers\DownloadController@verifyPassword');
 
-// Anonymous download (short URL)
-$router->get('/s/{shortcode}', 'Projects\ProShare\Controllers\DownloadController@download');
+// Anonymous share link — shows preview/info page first (user clicks Download to get the file)
+$router->get('/s/{shortcode}', 'Projects\ProShare\Controllers\DownloadController@preview');
 
 // Text Sharing
 $router->get('/projects/proshare/text', 'Projects\ProShare\Controllers\TextShareController@index');
 $router->post('/projects/proshare/text/create', 'Projects\ProShare\Controllers\TextShareController@create');
+$router->post('/projects/proshare/text/delete/{shortcode}', 'Projects\ProShare\Controllers\TextShareController@delete');
 $router->get('/projects/proshare/text/{shortcode}', 'Projects\ProShare\Controllers\TextShareController@view');
 $router->post('/projects/proshare/text/verify-password', 'Projects\ProShare\Controllers\TextShareController@verifyPassword');
 

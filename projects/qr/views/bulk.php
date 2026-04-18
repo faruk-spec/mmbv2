@@ -2,19 +2,13 @@
 /**
  * Bulk Generate View
  */
-$canBulk = $canBulk ?? true; // default permissive if not passed
+$canBulk = $canBulk ?? false;
 ?>
-<?php if (!$canBulk): ?>
-<div class="glass-card" style="text-align:center;padding:3rem 2rem;">
-    <div style="font-size:3rem;margin-bottom:1rem;">🔒</div>
-    <h3 style="color:var(--text-primary);margin-bottom:.5rem;">Bulk Generation Requires Upgrade</h3>
-    <p style="color:var(--text-secondary);margin-bottom:1.5rem;">Generate hundreds of QR codes at once from a CSV file. Available on Pro and higher plans.</p>
-    <a href="/projects/qr/plan" class="btn-primary" style="text-decoration:none;display:inline-flex;align-items:center;gap:8px;padding:10px 24px;border-radius:8px;">
-        <i class="fas fa-crown"></i> View Plans &amp; Upgrade
-    </a>
-</div>
-<?php else: ?>
 
+<?php if (!$canBulk): ?>
+<div class="feature-gate-wrap">
+    <div class="feature-gate-blur">
+<?php endif; ?>
 <div class="glass-card">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-xl); flex-wrap: wrap; gap: var(--space-md);">
         <h3 class="section-title" style="margin-bottom: 0;">
@@ -462,4 +456,14 @@ function resetForm() {
     document.getElementById('bulkUploadForm').reset();
 }
 </script>
+
+<?php if (!$canBulk): ?>
+    </div><!-- /.feature-gate-blur -->
+    <div class="feature-gate-badge">
+        <div class="fgb-icon"><i class="fas fa-layer-group"></i></div>
+        <div class="fgb-title">Bulk Generate — Upgrade Required</div>
+        <div class="fgb-desc">Generate hundreds of QR codes at once from a CSV file. Available on Pro and higher plans.</div>
+        <a href="/projects/qr/plan" class="fgb-btn"><i class="fas fa-crown"></i> View Plans &amp; Upgrade</a>
+    </div>
+</div><!-- /.feature-gate-wrap -->
 <?php endif; ?>

@@ -194,9 +194,16 @@ class ProShareAdminController extends BaseController
         $settings['max_expiry_days'] = $settings['max_expiry_days'] ?? 30;
         $settings['enable_password_protection'] = $settings['enable_password_protection'] ?? 1;
         $settings['enable_self_destruct'] = $settings['enable_self_destruct'] ?? 1;
+        $settings['default_self_destruct'] = $settings['default_self_destruct'] ?? 0;
         $settings['enable_compression'] = $settings['enable_compression'] ?? 1;
         $settings['enable_anonymous_sharing'] = $settings['enable_anonymous_sharing'] ?? $settings['enable_anonymous_upload'] ?? 1;
         $settings['require_email_verification'] = $settings['require_email_verification'] ?? 0;
+        $settings['storage_limit_gb'] = $settings['storage_limit_gb'] ?? 5;
+        $settings['enable_email_notifications'] = $settings['enable_email_notifications'] ?? 1;
+        $settings['enable_sms_notifications'] = $settings['enable_sms_notifications'] ?? 1;
+        $settings['default_auto_delete'] = $settings['default_auto_delete'] ?? 0;
+        $settings['user_file_size_options'] = $settings['user_file_size_options'] ?? '50,100,200,500';
+        $settings['user_can_change_auto_delete'] = $settings['user_can_change_auto_delete'] ?? 1;
         
         $this->view('admin/projects/proshare/settings', [
             'title' => 'ProShare Admin - Settings',
@@ -219,15 +226,26 @@ class ProShareAdminController extends BaseController
         }
         
         // Settings to update (key-value structure)
+        // Sanitize user_file_size_options: digits and commas only, remove empty/duplicate values
+        $rawOptions = preg_replace('/[^0-9,]/', '', $_POST['user_file_size_options'] ?? '50,100,200,500');
+        $cleanOptions = array_values(array_unique(array_filter(array_map('intval', explode(',', $rawOptions)), fn($v) => $v > 0)));
+        sort($cleanOptions);
         $settings = [
             'max_file_size' => (int)($_POST['max_file_size_mb'] ?? 100) * 1048576, // Convert MB to bytes
+            'user_file_size_options' => implode(',', $cleanOptions ?: [50, 100, 200, 500]),
             'max_expiry_days' => (int)($_POST['max_expiry_days'] ?? 30),
             'default_expiry_hours' => (int)($_POST['default_expiry_hours'] ?? 24),
             'enable_password_protection' => isset($_POST['enable_password_protection']) ? '1' : '0',
             'enable_self_destruct' => isset($_POST['enable_self_destruct']) ? '1' : '0',
+            'default_self_destruct' => isset($_POST['default_self_destruct']) ? '1' : '0',
             'enable_compression' => isset($_POST['enable_compression']) ? '1' : '0',
             'enable_anonymous_sharing' => isset($_POST['enable_anonymous_sharing']) ? '1' : '0',
-            'require_email_verification' => isset($_POST['require_email_verification']) ? '1' : '0'
+            'require_email_verification' => isset($_POST['require_email_verification']) ? '1' : '0',
+            'storage_limit_gb' => (int)($_POST['storage_limit_gb'] ?? 5),
+            'enable_email_notifications' => isset($_POST['enable_email_notifications']) ? '1' : '0',
+            'enable_sms_notifications' => isset($_POST['enable_sms_notifications']) ? '1' : '0',
+            'default_auto_delete' => isset($_POST['default_auto_delete']) ? '1' : '0',
+            'user_can_change_auto_delete' => isset($_POST['user_can_change_auto_delete']) ? '1' : '0',
         ];
         
         // Update each setting using key-value structure
@@ -235,37 +253,18 @@ class ProShareAdminController extends BaseController
             $existing = $this->projectDb->fetch("SELECT id FROM proshare_settings WHERE `key` = ?", [$key]);
             
             if ($existing) {
-                // Check if updated_at column exists
-                try {
-                    $this->projectDb->update('settings', [
-                        'value' => $value,
-                        'updated_at' => date('Y-m-d H:i:s')
-                    ], '`key` = ?', [$key]);
-                } catch (\PDOException $e) {
-                    // If updated_at doesn't exist, update without it
-                    $this->projectDb->update('settings', [
-                        'value' => $value
-                    ], '`key` = ?', [$key]);
-                }
+                $this->projectDb->update('proshare_settings', [
+                    'value' => $value,
+                    'updated_at' => date('Y-m-d H:i:s')
+                ], '`key` = ?', [$key]);
             } else {
-                // Check if created_at column exists
-                try {
-                    $this->projectDb->insert('settings', [
-                        'key' => $key,
-                        'value' => $value,
-                        'type' => is_numeric($value) ? 'integer' : 'string',
-                        'is_system' => 1,
-                        'created_at' => date('Y-m-d H:i:s')
-                    ]);
-                } catch (\PDOException $e) {
-                    // If created_at doesn't exist, insert without it
-                    $this->projectDb->insert('settings', [
-                        'key' => $key,
-                        'value' => $value,
-                        'type' => is_numeric($value) ? 'integer' : 'string',
-                        'is_system' => 1
-                    ]);
-                }
+                $this->projectDb->insert('proshare_settings', [
+                    'key' => $key,
+                    'value' => $value,
+                    'type' => is_numeric($value) ? 'integer' : 'string',
+                    'is_system' => 1,
+                    'created_at' => date('Y-m-d H:i:s')
+                ]);
             }
         }
         
@@ -524,15 +523,14 @@ class ProShareAdminController extends BaseController
             
             if ($file) {
                 // Delete physical file if exists
-                $filePath = BASE_PATH . '/storage/proshare/' . $file['file_path'];
-                if (file_exists($filePath)) {
-                    unlink($filePath);
+                if (!empty($file['path']) && file_exists($file['path'])) {
+                    @unlink($file['path']);
                 }
                 
-                // Delete from database
-                $this->projectDb->delete('files', 'id = ?', [$id]);
+                // Soft delete from database (mark as deleted to preserve audit trail)
+                $this->projectDb->update('proshare_files', ['status' => 'deleted'], 'id = ?', [$id]);
                 
-                Logger::activity(Auth::id(), 'proshare_file_deleted', ['file_id' => $id, 'filename' => $file['original_filename']]);
+                Logger::activity(Auth::id(), 'proshare_file_deleted', ['file_id' => $id, 'filename' => $file['original_name'] ?? '']);
                 $this->flash('success', 'File deleted successfully.');
             }
         }
@@ -555,7 +553,8 @@ class ProShareAdminController extends BaseController
         $id = (int)($_POST['file_id'] ?? 0);
         
         if ($id > 0) {
-            $this->projectDb->update('files', [
+            $this->projectDb->update('proshare_files', [
+                'status' => 'expired',
                 'expires_at' => date('Y-m-d H:i:s')
             ], 'id = ?', [$id]);
             
@@ -581,7 +580,7 @@ class ProShareAdminController extends BaseController
         $id = (int)($_POST['text_id'] ?? 0);
         
         if ($id > 0) {
-            $this->projectDb->delete('text_shares', 'id = ?', [$id]);
+            $this->projectDb->update('proshare_text_shares', ['status' => 'deleted'], 'id = ?', [$id]);
             Logger::activity(Auth::id(), 'proshare_text_deleted', ['text_id' => $id]);
             $this->flash('success', 'Text share deleted successfully.');
         }
@@ -758,7 +757,7 @@ class ProShareAdminController extends BaseController
         
         // Get all user IDs from activity logs
         $userIdsFromLogs = $this->projectDb->fetchAll(
-            "SELECT DISTINCT user_id FROM activity_logs WHERE user_id IS NOT NULL"
+            "SELECT DISTINCT user_id FROM proshare_activity_logs WHERE user_id IS NOT NULL"
         );
         
         $users = [];
@@ -784,12 +783,12 @@ class ProShareAdminController extends BaseController
             
             // Get user's activities
             $activities = $this->projectDb->fetchAll(
-                "SELECT * FROM activity_logs WHERE user_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?",
+                "SELECT * FROM proshare_activity_logs WHERE user_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?",
                 [$userId, $perPage, $offset]
             );
             
             $totalCount = $this->projectDb->fetch(
-                "SELECT COUNT(*) as count FROM activity_logs WHERE user_id = ?",
+                "SELECT COUNT(*) as count FROM proshare_activity_logs WHERE user_id = ?",
                 [$userId]
             )['count'];
         }
@@ -828,7 +827,7 @@ class ProShareAdminController extends BaseController
         
         // Get activity logs from project DB
         $logs = $this->projectDb->fetchAll(
-            "SELECT * FROM activity_logs $whereClause ORDER BY created_at DESC LIMIT ? OFFSET ?",
+            "SELECT * FROM proshare_activity_logs $whereClause ORDER BY created_at DESC LIMIT ? OFFSET ?",
             array_merge($params, [$perPage, $offset])
         );
         
@@ -859,7 +858,7 @@ class ProShareAdminController extends BaseController
         
         // Get total count
         $totalCount = $this->projectDb->fetch(
-            "SELECT COUNT(*) as count FROM activity_logs $whereClause",
+            "SELECT COUNT(*) as count FROM proshare_activity_logs $whereClause",
             $params
         )['count'];
         
@@ -867,7 +866,7 @@ class ProShareAdminController extends BaseController
         
         // Get all user IDs from activity logs for filter dropdown
         $userIdsFromLogs = $this->projectDb->fetchAll(
-            "SELECT DISTINCT user_id FROM activity_logs WHERE user_id IS NOT NULL"
+            "SELECT DISTINCT user_id FROM proshare_activity_logs WHERE user_id IS NOT NULL"
         );
         
         $allUsers = [];
@@ -950,7 +949,7 @@ class ProShareAdminController extends BaseController
         
         // Get file activity logs
         $activities = $this->projectDb->fetchAll(
-            "SELECT * FROM activity_logs $whereClause ORDER BY created_at DESC LIMIT ? OFFSET ?",
+            "SELECT * FROM proshare_activity_logs $whereClause ORDER BY created_at DESC LIMIT ? OFFSET ?",
             array_merge($params, [$perPage, $offset])
         );
         
@@ -991,7 +990,7 @@ class ProShareAdminController extends BaseController
         
         // Get total count
         $totalCount = $this->projectDb->fetch(
-            "SELECT COUNT(*) as count FROM activity_logs $whereClause",
+            "SELECT COUNT(*) as count FROM proshare_activity_logs $whereClause",
             $params
         )['count'];
         
@@ -1000,16 +999,16 @@ class ProShareAdminController extends BaseController
         // Get activity statistics
         $stats = [
             'uploads' => $this->projectDb->fetch(
-                "SELECT COUNT(*) as count FROM activity_logs WHERE action LIKE '%upload%'"
+                "SELECT COUNT(*) as count FROM proshare_activity_logs WHERE action LIKE '%upload%'"
             )['count'] ?? 0,
             'downloads' => $this->projectDb->fetch(
                 "SELECT COUNT(*) as count FROM proshare_file_downloads"
             )['count'] ?? 0,
             'deletes' => $this->projectDb->fetch(
-                "SELECT COUNT(*) as count FROM activity_logs WHERE action LIKE '%delete%'"
+                "SELECT COUNT(*) as count FROM proshare_activity_logs WHERE action LIKE '%delete%'"
             )['count'] ?? 0,
             'shares' => $this->projectDb->fetch(
-                "SELECT COUNT(*) as count FROM activity_logs WHERE action LIKE '%share%'"
+                "SELECT COUNT(*) as count FROM proshare_activity_logs WHERE action LIKE '%share%'"
             )['count'] ?? 0
         ];
         
@@ -1045,7 +1044,7 @@ class ProShareAdminController extends BaseController
         
         // Get suspicious activities from audit logs
         $suspiciousActivities = $this->projectDb->fetchAll(
-            "SELECT * FROM audit_logs 
+            "SELECT * FROM proshare_audit_logs 
              WHERE action LIKE '%unauthorized%' OR action LIKE '%failed%' OR action LIKE '%suspicious%'
              ORDER BY created_at DESC 
              LIMIT 50"
@@ -1194,7 +1193,7 @@ class ProShareAdminController extends BaseController
         
         // Get audit logs
         $auditLogs = $this->projectDb->fetchAll(
-            "SELECT * FROM audit_logs ORDER BY created_at DESC LIMIT ? OFFSET ?",
+            "SELECT * FROM proshare_audit_logs ORDER BY created_at DESC LIMIT ? OFFSET ?",
             [$perPage, $offset]
         );
         
@@ -1234,7 +1233,7 @@ class ProShareAdminController extends BaseController
         }
         
         // Get total count
-        $totalCount = $this->projectDb->fetch("SELECT COUNT(*) as count FROM audit_logs")['count'];
+        $totalCount = $this->projectDb->fetch("SELECT COUNT(*) as count FROM proshare_audit_logs")['count'];
         $totalPages = ceil($totalCount / $perPage);
         
         $this->view('admin/projects/proshare/audit-trail', [
@@ -1256,7 +1255,7 @@ class ProShareAdminController extends BaseController
         
         // Get all audit logs
         $auditLogs = $this->projectDb->fetchAll(
-            "SELECT * FROM audit_logs ORDER BY created_at DESC"
+            "SELECT * FROM proshare_audit_logs ORDER BY created_at DESC"
         );
         
         // Get user info
@@ -1326,6 +1325,103 @@ class ProShareAdminController extends BaseController
     }
     
     /**
+     * Track — unified real-time tracking dashboard (uploads, downloads, sessions, activity)
+     */
+    public function track(): void
+    {
+        $this->requirePermission('proshare.analytics');
+
+        // Totals
+        $totalFiles    = $this->projectDb->fetch("SELECT COUNT(*) as c FROM proshare_files")['c'] ?? 0;
+        $activeFiles   = $this->projectDb->fetch("SELECT COUNT(*) as c FROM proshare_files WHERE status = 'active'")['c'] ?? 0;
+        $inactiveFiles = $this->projectDb->fetch("SELECT COUNT(*) as c FROM proshare_files WHERE status = 'inactive'")['c'] ?? 0;
+        $totalDl       = $this->projectDb->fetch("SELECT COUNT(*) as c FROM proshare_file_downloads")['c'] ?? 0;
+        $totalTexts    = $this->projectDb->fetch("SELECT COUNT(*) as c FROM proshare_text_shares")['c'] ?? 0;
+        $today         = date('Y-m-d');
+        $uploadsToday  = $this->projectDb->fetch("SELECT COUNT(*) as c FROM proshare_files WHERE DATE(created_at) = ?", [$today])['c'] ?? 0;
+        $dlToday       = $this->projectDb->fetch("SELECT COUNT(*) as c FROM proshare_file_downloads WHERE DATE(downloaded_at) = ?", [$today])['c'] ?? 0;
+
+        // Recent downloads (last 50)
+        $recentDownloads = $this->projectDb->fetchAll(
+            "SELECT d.*, f.original_name, f.short_code, f.user_id
+             FROM proshare_file_downloads d
+             LEFT JOIN proshare_files f ON f.id = d.file_id
+             ORDER BY d.downloaded_at DESC
+             LIMIT 50"
+        );
+
+        // Enrich with uploader names
+        if (!empty($recentDownloads)) {
+            $uids = array_values(array_unique(array_filter(array_column($recentDownloads, 'user_id'))));
+            if (!empty($uids)) {
+                $ph = str_repeat('?,', count($uids) - 1) . '?';
+                $ul = [];
+                foreach ($this->mainDb->fetchAll("SELECT id, name FROM users WHERE id IN ($ph)", $uids) as $u) {
+                    $ul[$u['id']] = $u['name'];
+                }
+                foreach ($recentDownloads as &$row) {
+                    $row['uploader'] = $ul[$row['user_id']] ?? 'Anonymous';
+                }
+                unset($row);
+            } else {
+                foreach ($recentDownloads as &$row) { $row['uploader'] = 'Anonymous'; }
+                unset($row);
+            }
+        }
+
+        // Recent uploads (last 20)
+        $recentUploads = $this->projectDb->fetchAll(
+            "SELECT * FROM proshare_files ORDER BY created_at DESC LIMIT 20"
+        );
+        if (!empty($recentUploads)) {
+            $uids = array_values(array_unique(array_filter(array_column($recentUploads, 'user_id'))));
+            if (!empty($uids)) {
+                $ph = str_repeat('?,', count($uids) - 1) . '?';
+                $ul = [];
+                foreach ($this->mainDb->fetchAll("SELECT id, name FROM users WHERE id IN ($ph)", $uids) as $u) {
+                    $ul[$u['id']] = $u['name'];
+                }
+                foreach ($recentUploads as &$row) {
+                    $row['uploader'] = $ul[$row['user_id']] ?? 'Anonymous';
+                }
+                unset($row);
+            } else {
+                foreach ($recentUploads as &$row) { $row['uploader'] = 'Anonymous'; }
+                unset($row);
+            }
+        }
+
+        // Hourly activity today (uploads + downloads combined)
+        $hourly = [];
+        for ($h = 0; $h < 24; $h++) {
+            $hr = str_pad($h, 2, '0', STR_PAD_LEFT);
+            $up = $this->projectDb->fetch(
+                "SELECT COUNT(*) as c FROM proshare_files WHERE DATE(created_at) = ? AND HOUR(created_at) = ?",
+                [$today, $h]
+            )['c'] ?? 0;
+            $dl = $this->projectDb->fetch(
+                "SELECT COUNT(*) as c FROM proshare_file_downloads WHERE DATE(downloaded_at) = ? AND HOUR(downloaded_at) = ?",
+                [$today, $h]
+            )['c'] ?? 0;
+            $hourly[] = ['hour' => $hr . ':00', 'uploads' => (int)$up, 'downloads' => (int)$dl];
+        }
+
+        $this->view('admin/projects/proshare/track', [
+            'title'           => 'ProShare — Activity Tracker',
+            'totalFiles'      => $totalFiles,
+            'activeFiles'     => $activeFiles,
+            'inactiveFiles'   => $inactiveFiles,
+            'totalDownloads'  => $totalDl,
+            'totalTexts'      => $totalTexts,
+            'uploadsToday'    => $uploadsToday,
+            'dlToday'         => $dlToday,
+            'recentDownloads' => $recentDownloads,
+            'recentUploads'   => $recentUploads,
+            'hourly'          => $hourly,
+        ], 'admin');
+    }
+
+    /**
      * Analytics - Active users, most downloaded files, traffic overview
      */
     public function analytics(): void
@@ -1344,7 +1440,7 @@ class ProShareAdminController extends BaseController
         if (!empty($recentUsers)) {
             foreach ($recentUsers as $user) {
                 $activityCount = $this->projectDb->fetch(
-                    "SELECT COUNT(*) as count FROM activity_logs 
+                    "SELECT COUNT(*) as count FROM proshare_activity_logs 
                      WHERE user_id = ? AND created_at > DATE_SUB(NOW(), INTERVAL 30 DAY)",
                     [$user['id']]
                 )['count'] ?? 0;
@@ -1365,7 +1461,7 @@ class ProShareAdminController extends BaseController
         $mostDownloaded = $this->projectDb->fetchAll(
             "SELECT f.*, COUNT(d.id) as download_count
              FROM proshare_files f
-             LEFT JOIN file_downloads d ON f.id = d.file_id
+             LEFT JOIN proshare_file_downloads d ON f.id = d.file_id
              GROUP BY f.id
              ORDER BY download_count DESC
              LIMIT 20"
@@ -1374,7 +1470,7 @@ class ProShareAdminController extends BaseController
         // Get most active users
         $mostActive = $this->projectDb->fetchAll(
             "SELECT user_id, COUNT(*) as activity_count
-             FROM activity_logs
+             FROM proshare_activity_logs
              WHERE created_at > DATE_SUB(NOW(), INTERVAL 30 DAY)
              GROUP BY user_id
              ORDER BY activity_count DESC
@@ -1412,9 +1508,8 @@ class ProShareAdminController extends BaseController
                 [$date]
             )['count'] ?? 0;
             
-            // Use created_at instead of downloaded_at for file_downloads
             $downloads = $this->projectDb->fetch(
-                "SELECT COUNT(*) as count FROM proshare_file_downloads WHERE DATE(created_at) = ?",
+                "SELECT COUNT(*) as count FROM proshare_file_downloads WHERE DATE(downloaded_at) = ?",
                 [$date]
             )['count'] ?? 0;
             
@@ -1426,25 +1521,19 @@ class ProShareAdminController extends BaseController
         }
         
         // Get statistics
+        $avgRow = $this->projectDb->fetch(
+            "SELECT AVG(download_count) as avg FROM (
+                SELECT COUNT(d.id) as download_count
+                FROM proshare_files f
+                LEFT JOIN proshare_file_downloads d ON f.id = d.file_id
+                GROUP BY f.id
+            ) as subquery"
+        );
         $stats = [
             'active_users_30d' => count($activeUsers),
             'total_downloads' => $this->projectDb->fetch("SELECT COUNT(*) as count FROM proshare_file_downloads")['count'] ?? 0,
             'total_uploads' => $this->projectDb->fetch("SELECT COUNT(*) as count FROM proshare_files")['count'] ?? 0,
-            'avg_downloads_per_file' => $this->projectDb->fetch(
-                "SELECT AVG(download_count) as avg FROM (
-                    SELECT COUNT(d.id) as download_count 
-                    FROM proshare_files f 
-                    LEFT JOIN file_downloads d ON f.id = d.file_id 
-                    GROUP BY f.id
-                ) as subquery"
-            )['avg'] ? round($this->projectDb->fetch(
-                "SELECT AVG(download_count) as avg FROM (
-                    SELECT COUNT(d.id) as download_count 
-                    FROM proshare_files f 
-                    LEFT JOIN file_downloads d ON f.id = d.file_id 
-                    GROUP BY f.id
-                ) as subquery"
-            )['avg'], 2) : 0
+            'avg_downloads_per_file' => $avgRow && $avgRow['avg'] ? round((float)$avgRow['avg'], 2) : 0,
         ];
         
         $this->view('admin/projects/proshare/analytics', [

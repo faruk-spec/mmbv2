@@ -165,7 +165,7 @@ function doSync() {
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: `session_id=${sessionId}&csrf_token=<?= Security::generateCsrfToken() ?>`
+        body: `session_id=${sessionId}&_csrf_token=<?= Security::generateCsrfToken() ?>`
     })
     .then(response => response.json())
     .then(data => {

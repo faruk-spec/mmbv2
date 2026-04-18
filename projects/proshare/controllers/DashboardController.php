@@ -76,10 +76,16 @@ class DashboardController
             [$user['id']]
         );
         
+        $texts = $db->fetchAll(
+            "SELECT * FROM proshare_text_shares WHERE user_id = ? ORDER BY created_at DESC",
+            [$user['id']]
+        );
+        
         View::render('projects/proshare/files-list', [
             'title' => 'My Files',
-            'subtitle' => 'Manage your shared files',
+            'subtitle' => 'Manage your shared files and text shares',
             'files' => $files,
+            'texts' => $texts,
         ]);
     }
 }

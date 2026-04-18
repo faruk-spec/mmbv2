@@ -354,7 +354,7 @@
                             </a>
                             
                             <form method="POST" action="/admin/whatsapp/user-subscriptions/update/<?= $sub['id'] ?>" style="display: inline;">
-                                <input type="hidden" name="csrf_token" value="<?= Security::generateCsrfToken() ?>">
+                                <input type="hidden" name="_csrf_token" value="<?= Security::generateCsrfToken() ?>">
                                 <input type="hidden" name="action" value="extend">
                                 <input type="hidden" name="days" value="30">
                                 <button type="submit" class="action-btn" title="Extend by 30 days">
@@ -363,7 +363,7 @@
                             </form>
                             
                             <form method="POST" action="/admin/whatsapp/user-subscriptions/update/<?= $sub['id'] ?>" style="display: inline;">
-                                <input type="hidden" name="csrf_token" value="<?= Security::generateCsrfToken() ?>">
+                                <input type="hidden" name="_csrf_token" value="<?= Security::generateCsrfToken() ?>">
                                 <input type="hidden" name="action" value="reset_usage">
                                 <button type="submit" class="action-btn" title="Reset usage">
                                     <i class="fas fa-redo"></i> Reset
@@ -373,7 +373,7 @@
                             <?php if ($sub['status'] === 'active'): ?>
                                 <form method="POST" action="/admin/whatsapp/user-subscriptions/cancel/<?= $sub['id'] ?>" 
                                       onsubmit="return confirm('Cancel this subscription?')" style="display: inline;">
-                                    <input type="hidden" name="csrf_token" value="<?= Security::generateCsrfToken() ?>">
+                                    <input type="hidden" name="_csrf_token" value="<?= Security::generateCsrfToken() ?>">
                                     <button type="submit" class="action-btn" title="Cancel subscription" style="color: #dc3545;">
                                         <i class="fas fa-ban"></i> Cancel
                                     </button>

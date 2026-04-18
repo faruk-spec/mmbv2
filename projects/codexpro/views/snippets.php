@@ -69,7 +69,7 @@ ob_start();
             <span class="modal-close" onclick="closeNewSnippetModal()">&times;</span>
         </div>
         <form id="newSnippetForm" onsubmit="createSnippet(event)" style="padding: 24px;">
-            <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
+            <input type="hidden" name="_csrf_token" value="<?= \Core\Security::generateCsrfToken() ?>">
             <div class="form-group">
                 <label for="snippetTitle">Title *</label>
                 <input type="text" id="snippetTitle" name="title" required class="form-control" placeholder="Enter snippet title">

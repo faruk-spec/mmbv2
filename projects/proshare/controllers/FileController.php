@@ -182,6 +182,66 @@ class FileController
     }
     
     /**
+     * Update file settings (password, status)
+     */
+    public function update(string $shortcode): void
+    {
+        header('Content-Type: application/json');
+
+        try {
+            $user = Auth::user();
+            if (!$user) {
+                echo json_encode(['success' => false, 'error' => 'Unauthorized']);
+                return;
+            }
+
+            $db = \Core\Database::getInstance();
+
+            $file = $db->fetch(
+                "SELECT * FROM proshare_files WHERE short_code = ? AND user_id = ?",
+                [$shortcode, $user['id']]
+            );
+
+            if (!$file) {
+                echo json_encode(['success' => false, 'error' => 'File not found']);
+                return;
+            }
+
+            $action = $_POST['action'] ?? '';
+
+            if ($action === 'toggle_status') {
+                $newStatus = ($file['status'] === 'active') ? 'inactive' : 'active';
+                $db->update('proshare_files', ['status' => $newStatus], 'id = ?', [$file['id']]);
+                echo json_encode(['success' => true, 'status' => $newStatus]);
+                return;
+            }
+
+            if ($action === 'update_password') {
+                $enable   = isset($_POST['enable_password']) && $_POST['enable_password'] === '1';
+                $password = $_POST['password'] ?? '';
+
+                if ($enable) {
+                    if (empty($password)) {
+                        echo json_encode(['success' => false, 'error' => 'Password is required when enabling protection']);
+                        return;
+                    }
+                    $hashed = Security::hashPassword($password);
+                    $db->update('proshare_files', ['password' => $hashed], 'id = ?', [$file['id']]);
+                } else {
+                    $db->update('proshare_files', ['password' => null], 'id = ?', [$file['id']]);
+                }
+                echo json_encode(['success' => true, 'password_enabled' => $enable]);
+                return;
+            }
+
+            echo json_encode(['success' => false, 'error' => 'Unknown action']);
+        } catch (\Exception $e) {
+            error_log('File update failed: ' . $e->getMessage());
+            echo json_encode(['success' => false, 'error' => 'Update failed. Please try again.']);
+        }
+    }
+
+    /**
      * Delete file
      */
     public function delete(string $shortcode): void
@@ -215,7 +275,7 @@ class FileController
             }
             
             // Update status in database
-            $db->update('files', ['status' => 'deleted'], 'id = ?', [$file['id']]);
+            $db->update('proshare_files', ['status' => 'deleted'], 'id = ?', [$file['id']]);
             try { ActivityLogger::logDelete($user['id'], 'proshare', 'file', $file['id'], ['filename' => $file['original_name'] ?? null]); } catch (\Throwable $_) {}
             try { \Core\Notification::send($user['id'], 'proshare_file_deleted', 'File "' . ($file['original_name'] ?? '') . '" deleted in ProShare.', ['project' => 'proshare', 'file_id' => $file['id']]); } catch (\Exception $e) {}
             
@@ -240,7 +300,7 @@ class FileController
         } catch (\Exception $e) {
             error_log('File deletion failed: ' . $e->getMessage());
             try { ActivityLogger::logFailure($user['id'] ?? null, 'file_action', $e->getMessage()); } catch (\Throwable $_) {}
-            echo json_encode(['success' => false, 'error' => 'Failed to delete file: ' . $e->getMessage()]);
+            echo json_encode(['success' => false, 'error' => 'Failed to delete file. Please try again.']);
         }
     }
     

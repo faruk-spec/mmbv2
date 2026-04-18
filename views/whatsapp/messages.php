@@ -251,7 +251,7 @@ function sendMessage() {
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: `session_id=${currentSessionId}&recipient=${encodeURIComponent(recipient)}&message=${encodeURIComponent(message)}&csrf_token=<?= Security::generateCsrfToken() ?>`
+        body: `session_id=${currentSessionId}&recipient=${encodeURIComponent(recipient)}&message=${encodeURIComponent(message)}&_csrf_token=<?= Security::generateCsrfToken() ?>`
     })
     .then(response => response.json())
     .then(data => {

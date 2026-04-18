@@ -2,8 +2,13 @@
 /**
  * Campaigns View
  */
+$canCampaigns = $canCampaigns ?? false;
 ?>
 
+<?php if (!$canCampaigns): ?>
+<div class="feature-gate-wrap">
+    <div class="feature-gate-blur">
+<?php endif; ?>
 <div class="glass-card">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-xl); flex-wrap: wrap; gap: var(--space-md);">
         <h3 class="section-title" style="margin-bottom: 0;">
@@ -481,3 +486,14 @@ function sortCampaigns() {
     cards.forEach(card => grid.appendChild(card));
 }
 </script>
+
+<?php if (!$canCampaigns): ?>
+    </div><!-- /.feature-gate-blur -->
+    <div class="feature-gate-badge">
+        <div class="fgb-icon"><i class="fas fa-bullhorn"></i></div>
+        <div class="fgb-title">Campaigns — Upgrade Required</div>
+        <div class="fgb-desc">Organise QR codes into campaigns and track group performance. Available on Pro and higher plans.</div>
+        <a href="/projects/qr/plan" class="fgb-btn"><i class="fas fa-crown"></i> View Plans &amp; Upgrade</a>
+    </div>
+</div><!-- /.feature-gate-wrap -->
+<?php endif; ?>

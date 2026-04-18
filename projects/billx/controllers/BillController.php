@@ -95,7 +95,7 @@ class BillController
     /** POST /projects/billx/generate */
     public function generate(): void
     {
-        if (!Security::validateCsrfToken($_POST['csrf_token'] ?? '')) {
+        if (!Security::validateCsrfToken($_POST['_csrf_token'] ?? '')) {
             http_response_code(403);
             echo "Invalid CSRF token.";
             return;
@@ -349,7 +349,7 @@ class BillController
     /** POST /projects/billx/delete */
     public function delete(): void
     {
-        if (!Security::validateCsrfToken($_POST['csrf_token'] ?? '')) {
+        if (!Security::validateCsrfToken($_POST['_csrf_token'] ?? '')) {
             header('Location: /projects/billx/history?error=csrf');
             exit;
         }

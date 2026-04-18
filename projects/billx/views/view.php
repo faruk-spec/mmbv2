@@ -69,7 +69,7 @@ $autoprint = !empty($_GET['autoprint']);
             Delete bill <strong>#<?= htmlspecialchars($bill['bill_number']) ?></strong>? This cannot be undone.
         </p>
         <form method="POST" action="/projects/billx/delete">
-            <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
+            <input type="hidden" name="_csrf_token" value="<?= $csrfToken ?>">
             <input type="hidden" name="id" value="<?= (int)$bill['id'] ?>">
             <div class="form-actions">
                 <button type="submit" class="btn btn-danger"><i class="fas fa-trash"></i> Delete</button>

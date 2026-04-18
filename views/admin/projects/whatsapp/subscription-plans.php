@@ -274,7 +274,7 @@
                 </a>
                 <form method="POST" action="/admin/whatsapp/subscription-plans/delete/<?= $plan['id'] ?>" 
                       onsubmit="return confirm('Are you sure you want to delete this plan?')" style="flex: 1;">
-                    <input type="hidden" name="csrf_token" value="<?= Security::generateCsrfToken() ?>">
+                    <input type="hidden" name="_csrf_token" value="<?= Security::generateCsrfToken() ?>">
                     <button type="submit" class="btn-delete" style="width: 100%; border: 1px solid #dc3545;">
                         <i class="fas fa-trash"></i> Delete
                     </button>

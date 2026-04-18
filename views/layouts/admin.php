@@ -1487,39 +1487,6 @@ window.mmbSkeleton = (function(){
                     <?php endif; ?>
                     
                     <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('proshare')): ?>
-                    <!-- ProShare - User Dashboard Features -->
-                    <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('proshare.user_dashboard') || \Core\Auth::hasPermission('proshare.user_files') || \Core\Auth::hasPermission('proshare.user_activity')): ?>
-                    <div class="menu-item menu-dropdown">
-                        <div class="menu-dropdown-toggle">
-                            <div class="left">
-                                <i class="fas fa-user-circle"></i>
-                                <span>ProShare User Dashboard</span>
-                            </div>
-                            <i class="fas fa-chevron-down arrow"></i>
-                        </div>
-                        <div class="menu-dropdown-content">
-                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('proshare.user_dashboard')): ?>
-                            <a href="/admin/projects/proshare/user-dashboard" class="menu-link">
-                                <i class="fas fa-tachometer-alt"></i>
-                                <span>User Dashboard</span>
-                            </a>
-                            <?php endif; ?>
-                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('proshare.user_files')): ?>
-                            <a href="/admin/projects/proshare/user-files" class="menu-link">
-                                <i class="fas fa-file"></i>
-                                <span>User Files</span>
-                            </a>
-                            <?php endif; ?>
-                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('proshare.user_activity')): ?>
-                            <a href="/admin/projects/proshare/user-activity" class="menu-link">
-                                <i class="fas fa-history"></i>
-                                <span>User Activity</span>
-                            </a>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                    <?php endif; ?>
-
                     <!-- ProShare - Admin Features -->
                     <div class="menu-item menu-dropdown">
                         <div class="menu-dropdown-toggle">
@@ -1620,6 +1587,11 @@ window.mmbSkeleton = (function(){
                             <a href="/admin/projects/proshare/analytics" class="menu-link">
                                 <i class="fas fa-chart-bar"></i>
                                 <span>Analytics & Insights</span>
+                            </a>
+                            <!-- Activity Tracker -->
+                            <a href="/admin/projects/proshare/track" class="menu-link">
+                                <i class="fas fa-satellite-dish"></i>
+                                <span>Activity Tracker</span>
                             </a>
                             <?php endif; ?>
                         </div>

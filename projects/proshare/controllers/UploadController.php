@@ -43,9 +43,16 @@ class UploadController
             );
             
             if (!$settings) {
-                $db->insert('user_settings', ['user_id' => $user['id']]);
+                $db->insert('proshare_user_settings', ['user_id' => $user['id']]);
                 $settings = $db->fetch("SELECT * FROM proshare_user_settings WHERE user_id = ?", [$user['id']]);
             }
+        }
+
+        // Fetch global ProShare settings (default_self_destruct, etc.)
+        $globalSettingsRows = $db->fetchAll("SELECT `key`, `value` FROM proshare_settings");
+        $globalSettings = [];
+        foreach ($globalSettingsRows as $row) {
+            $globalSettings[$row['key']] = $row['value'];
         }
         
         View::render('projects/proshare/upload', [
@@ -53,7 +60,8 @@ class UploadController
             'subtitle' => 'Share files securely with password protection and expiry options',
             'user' => $user,
             'settings' => $settings,
-            'maxSize' => self::MAX_FILE_SIZE,
+            'globalSettings' => $globalSettings,
+            'maxSize' => (int)($globalSettings['max_file_size'] ?? self::MAX_FILE_SIZE),
         ]);
     }
     
@@ -74,10 +82,16 @@ class UploadController
             }
             
             $file = $_FILES['file'];
+
+            // Get admin-configured max file size
+            $db = Database::getInstance();
+            $adminMaxSizeRow = $db->fetch("SELECT `value` FROM proshare_settings WHERE `key` = 'max_file_size'");
+            $maxFileSize = $adminMaxSizeRow ? (int)$adminMaxSizeRow['value'] : self::MAX_FILE_SIZE;
             
             // Validate file size
-            if ($file['size'] > self::MAX_FILE_SIZE) {
-                echo json_encode(['success' => false, 'error' => 'File size exceeds limit']);
+            if ($file['size'] > $maxFileSize) {
+                $limitMb = round($maxFileSize / 1048576);
+                echo json_encode(['success' => false, 'error' => "File size exceeds the {$limitMb} MB upload limit"]);
                 return;
             }
             
@@ -105,21 +119,26 @@ class UploadController
             $destination = $uploadDir . '/' . $storedFilename;
             
             // Optional compression - accept both 'compression' and 'enable_compression'
-            $enableCompression = isset($_POST['enable_compression']) || isset($_POST['compression']);
+            $enableCompression = !empty($_POST['enable_compression']) || !empty($_POST['compression']);
             $isCompressed = false;
             
-            // Calculate checksum for integrity
+            // Calculate checksum for integrity (before possible compression)
             $checksum = hash_file('sha256', $file['tmp_name']);
-            
-            // Optional encryption - DISABLED until properly implemented
-            // Encryption requires proper key management and is not yet fully implemented
-            $enableEncryption = false; // isset($_POST['enable_encryption']) ? (bool)$_POST['enable_encryption'] : false;
-            $isEncrypted = false;
-            $encryptionKey = null;
             
             if (!move_uploaded_file($file['tmp_name'], $destination)) {
                 echo json_encode(['success' => false, 'error' => 'Failed to save file']);
                 return;
+            }
+            
+            // Apply gzip compression after saving (skip for already-compressed types)
+            $skipCompressionTypes = ['image/jpeg','image/png','image/gif','image/webp','video/mp4','video/webm','audio/mpeg','audio/ogg','application/zip','application/x-rar-compressed','application/gzip'];
+            if ($enableCompression && !in_array($mimeType, $skipCompressionTypes)) {
+                $original = file_get_contents($destination);
+                $compressed = gzencode($original, 6);
+                if ($compressed !== false && strlen($compressed) < strlen($original)) {
+                    file_put_contents($destination, $compressed);
+                    $isCompressed = true;
+                }
             }
             
             // Store in database
@@ -165,9 +184,9 @@ class UploadController
             }
             // else: logged-in user without auto_delete enabled and no form expiry = null (no expiry)
             
-            $selfDestruct = isset($_POST['self_destruct']) ? 1 : 0;
+            $selfDestruct = (!empty($_POST['self_destruct']) && $_POST['self_destruct'] == '1') ? 1 : 0;
             
-            $fileId = $db->insert('files', [
+            $fileId = $db->insert('proshare_files', [
                 'user_id' => $userId,
                 'short_code' => $shortCode,
                 'original_name' => $file['name'],
@@ -179,8 +198,8 @@ class UploadController
                 'max_downloads' => $maxDownloads,
                 'expires_at' => $expiresAt,
                 'self_destruct' => $selfDestruct,
-                'is_encrypted' => $isEncrypted ? 1 : 0,
-                'encryption_key' => $encryptionKey,
+                'is_encrypted' => 0,
+                'encryption_key' => null,
                 'is_compressed' => $isCompressed ? 1 : 0,
                 'checksum' => $checksum,
                 'status' => 'active',
@@ -205,7 +224,6 @@ class UploadController
                 
                 echo json_encode([
                     'success' => true,
-                    'file_id' => $fileId,
                     'short_code' => $shortCode,
                     'share_url' => $shareUrl,
                     'share_link' => $shareUrl, // For backward compatibility with frontend
@@ -218,7 +236,7 @@ class UploadController
         } catch (\Exception $e) {
             error_log('Upload error: ' . $e->getMessage());
             try { ActivityLogger::logFailure($userId ?? null, 'file_upload', $e->getMessage()); } catch (\Throwable $_) {}
-            echo json_encode(['success' => false, 'error' => 'Upload failed: ' . $e->getMessage()]);
+            echo json_encode(['success' => false, 'error' => 'Upload failed. Please try again.']);
         }
     }
     
@@ -253,7 +271,7 @@ class UploadController
         $db = Database::getInstance();
         
         // Log to audit_logs (with JSON details)
-        $db->insert('audit_logs', [
+        $db->insert('proshare_audit_logs', [
             'user_id' => $userId,
             'action' => $action,
             'resource_type' => $resourceType,
@@ -265,7 +283,7 @@ class UploadController
         
         // Also log to activity_logs (for admin activity tracking)
         $description = !empty($details) ? json_encode($details) : null;
-        $db->insert('activity_logs', [
+        $db->insert('proshare_activity_logs', [
             'user_id' => $userId,
             'action' => $action,
             'resource_type' => $resourceType,
@@ -291,7 +309,7 @@ class UploadController
         $backupPath = $backupDir . '/' . basename($filePath);
         
         if (copy($filePath, $backupPath)) {
-            $db->insert('backups', [
+            $db->insert('proshare_backups', [
                 'file_id' => $fileId,
                 'backup_path' => $backupPath,
                 'backup_size' => $fileSize,

@@ -360,6 +360,15 @@ $router->delete('/projects/{project}/{path:wildcard}', function($project, $path 
 $router->get('/s/{shortcode}', 'Projects\ProShare\Controllers\DownloadController@download');
 $router->get('/t/{shortcode}', 'Projects\ProShare\Controllers\TextShareController@view');
 
+// ProShare password verification — must be public so anonymous users can unlock password-protected files
+$router->post('/projects/proshare/verify-password', function() {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    $controller = new \Projects\ProShare\Controllers\DownloadController();
+    $controller->verifyPassword();
+});
+
 // LinkShortner – public redirect (no auth required)
 $router->get('/l/{code}', 'Projects\LinkShortner\Controllers\RedirectController@redirect');
 

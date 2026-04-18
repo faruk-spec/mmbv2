@@ -136,12 +136,12 @@ table tr:hover {
                         </tr>
                     </thead>
                     <tbody>
-                        <?php if (!empty($recent_files)): ?>
-                            <?php foreach ($recent_files as $file): ?>
+                        <?php if (!empty($recentFiles)): ?>
+                            <?php foreach ($recentFiles as $file): ?>
                                 <tr>
-                                    <td><?= htmlspecialchars($file['original_filename']) ?></td>
-                                    <td><?= $file['size_formatted'] ?? '0 KB' ?></td>
-                                    <td><?= $file['download_count'] ?? 0 ?> / <?= $file['max_downloads'] ?? '∞' ?></td>
+                                    <td><?= htmlspecialchars($file['original_name'] ?? '') ?></td>
+                                    <td><?= number_format(($file['size'] ?? 0) / 1024 / 1024, 2) ?> MB</td>
+                                    <td><?= $file['downloads'] ?? 0 ?> / <?= $file['max_downloads'] ?? '∞' ?></td>
                                     <td>
                                         <span class="status-badge status-<?= $file['status'] ?>">
                                             <?= ucfirst($file['status']) ?>
