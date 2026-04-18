@@ -6,4 +6,5 @@ INSERT IGNORE INTO `proshare_settings` (`key`, `value`, `type`, `description`, `
 ('enable_email_notifications',   '1', 'boolean', 'Show email notification option to users',           1),
 ('enable_sms_notifications',     '1', 'boolean', 'Show SMS notification option to users',             1),
 ('default_auto_delete',          '0', 'boolean', 'Default state of Auto-Delete for new users',        1),
-('user_can_change_auto_delete',  '1', 'boolean', 'Allow users to toggle Auto-Delete in their settings', 1);
+('user_can_change_auto_delete',  '1', 'boolean', 'Allow users to toggle Auto-Delete in their settings', 1),
+('user_file_size_options',       '50,100,200,500', 'string', 'Comma-separated MB values for the user file size dropdown', 1);

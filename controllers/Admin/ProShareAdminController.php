@@ -202,6 +202,7 @@ class ProShareAdminController extends BaseController
         $settings['enable_email_notifications'] = $settings['enable_email_notifications'] ?? 1;
         $settings['enable_sms_notifications'] = $settings['enable_sms_notifications'] ?? 1;
         $settings['default_auto_delete'] = $settings['default_auto_delete'] ?? 0;
+        $settings['user_file_size_options'] = $settings['user_file_size_options'] ?? '50,100,200,500';
         $settings['user_can_change_auto_delete'] = $settings['user_can_change_auto_delete'] ?? 1;
         
         $this->view('admin/projects/proshare/settings', [
@@ -225,8 +226,11 @@ class ProShareAdminController extends BaseController
         }
         
         // Settings to update (key-value structure)
+        // Sanitize user_file_size_options: allow only digits and commas
+        $rawOptions = preg_replace('/[^0-9,]/', '', $_POST['user_file_size_options'] ?? '50,100,200,500');
         $settings = [
             'max_file_size' => (int)($_POST['max_file_size_mb'] ?? 100) * 1048576, // Convert MB to bytes
+            'user_file_size_options' => $rawOptions,
             'max_expiry_days' => (int)($_POST['max_expiry_days'] ?? 30),
             'default_expiry_hours' => (int)($_POST['default_expiry_hours'] ?? 24),
             'enable_password_protection' => isset($_POST['enable_password_protection']) ? '1' : '0',

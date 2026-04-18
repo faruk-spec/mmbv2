@@ -111,7 +111,15 @@
                     <input type="number" id="max_file_size_mb" name="max_file_size_mb" 
                            value="<?= $settings['max_file_size_mb'] ?? 100 ?>" 
                            min="1" max="1000" class="form-control">
-                    <small class="form-text">Maximum size for file uploads</small>
+                    <small class="form-text">Hard limit — users cannot upload files larger than this</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="user_file_size_options">File Size Dropdown Options for Users (MB, comma-separated)</label>
+                    <input type="text" id="user_file_size_options" name="user_file_size_options"
+                           value="<?= htmlspecialchars($settings['user_file_size_options'] ?? '50,100,200,500') ?>"
+                           class="form-control" placeholder="e.g. 10,25,50,100,200">
+                    <small class="form-text">These values appear in the "Maximum File Size" dropdown on the user settings page. Values exceeding the hard limit above are automatically excluded.</small>
                 </div>
 
                 <div class="form-group">

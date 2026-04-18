@@ -16,15 +16,19 @@ $userCanChangeAD     = (int)($globalSettings['user_can_change_auto_delete'] ?? 1
 // Determine effective auto_delete (admin-forced if user cannot change)
 $effectiveAutoDelete = $userCanChangeAD ? (int)($settings['auto_delete'] ?? $adminAutoDelete) : $adminAutoDelete;
 
-// Available file size options (only up to admin max)
-$sizeOptions = [
-    50   => '50 MB',
-    100  => '100 MB',
-    200  => '200 MB',
-    500  => '500 MB',
-    1024 => '1 GB',
-];
-$userMaxFileSizeMb   = (int)round((int)($settings['max_file_size'] ?? $adminMaxFileSize) / 1048576);
+// Available file size options: use admin-configured list (only up to admin max)
+$rawSizeOptions = $globalSettings['user_file_size_options'] ?? '50,100,200,500';
+$sizeOptionsMb  = array_filter(
+    array_map('intval', explode(',', $rawSizeOptions)),
+    fn($v) => $v > 0 && $v <= $adminMaxFileSizeMb
+);
+sort($sizeOptionsMb);
+// Ensure admin max is always available as an option
+if (!in_array($adminMaxFileSizeMb, $sizeOptionsMb) && $adminMaxFileSizeMb > 0) {
+    $sizeOptionsMb[] = $adminMaxFileSizeMb;
+    sort($sizeOptionsMb);
+}
+$userMaxFileSizeMb = (int)round((int)($settings['max_file_size'] ?? $adminMaxFileSize) / 1048576);
 ?>
 
 <style>
@@ -114,28 +118,18 @@ $userMaxFileSizeMb   = (int)round((int)($settings['max_file_size'] ?? $adminMaxF
                         <option value="<?= $val ?>" <?= $userExpiry == $val ? 'selected' : '' ?>><?= $label ?></option>
                         <?php endforeach; ?>
                     </select>
-                    <small style="font-size:0.72rem; color:var(--text-secondary); margin-top:3px; display:block;">
-                        Admin default: <?= $expiryOptions[$adminDefaultExpiry] ?? $adminDefaultExpiry . ' hours' ?>
-                    </small>
                 </div>
                 
                 <div class="form-group" style="margin-bottom:0;">
                     <label class="form-label" style="font-size:0.8rem;">Maximum File Size</label>
                     <select name="max_file_size" class="form-control">
-                        <?php foreach ($sizeOptions as $mb => $label):
-                            if ($mb > $adminMaxFileSizeMb) continue; // don't exceed admin limit
+                        <?php foreach ($sizeOptionsMb as $mb):
+                            $bytes = $mb * 1048576;
+                            $label = $mb >= 1024 ? round($mb / 1024, 1) . ' GB' : $mb . ' MB';
                         ?>
-                        <option value="<?= $mb * 1048576 ?>" <?= $userMaxFileSizeMb == $mb ? 'selected' : '' ?>><?= $label ?></option>
+                        <option value="<?= $bytes ?>" <?= $userMaxFileSizeMb == $mb ? 'selected' : '' ?>><?= $label ?></option>
                         <?php endforeach; ?>
-                        <?php if (!isset($sizeOptions[$adminMaxFileSizeMb]) && $adminMaxFileSizeMb > 0): ?>
-                        <option value="<?= $adminMaxFileSize ?>" <?= $userMaxFileSizeMb == $adminMaxFileSizeMb ? 'selected' : '' ?>>
-                            <?= $adminMaxFileSizeMb ?> MB (admin limit)
-                        </option>
-                        <?php endif; ?>
                     </select>
-                    <small style="font-size:0.72rem; color:var(--text-secondary); margin-top:3px; display:block;">
-                        Max allowed by admin: <?= $adminMaxFileSizeMb ?> MB
-                    </small>
                 </div>
             </div>
             

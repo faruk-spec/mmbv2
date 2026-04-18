@@ -45,7 +45,31 @@ $userDefaultExpiry  = (int)($settings['default_expiry'] ?? $adminDefaultExpiry);
     0%,80%,100% { transform:translateY(0); opacity:.5; }
     40%          { transform:translateY(-8px); opacity:1; }
 }
+@keyframes ps-fade-in {
+    from { opacity:0; transform:translate(-50%,-50%) scale(0.9); }
+    to   { opacity:1; transform:translate(-50%,-50%) scale(1); }
+}
 </style>
+
+<!-- Centered warning toast (replaces browser alert) -->
+<div id="uploadWarnOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:10000; backdrop-filter:blur(3px);"></div>
+<div id="uploadWarnToast" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:10001; background:var(--bg-card); border:1px solid var(--ps-danger,#ff4c4c); border-radius:14px; padding:28px 32px; max-width:480px; width:calc(100% - 2rem); box-shadow:0 8px 40px rgba(0,0,0,0.5); animation:ps-fade-in 0.2s ease;">
+    <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px;">
+        <div style="display:flex; align-items:flex-start; gap:14px;">
+            <i class="fas fa-exclamation-triangle" style="color:var(--ps-danger,#ff4c4c); font-size:1.6rem; margin-top:2px; flex-shrink:0;"></i>
+            <div>
+                <div style="font-weight:700; font-size:1rem; color:var(--text-primary); margin-bottom:6px;">File Size Limit Exceeded</div>
+                <div id="uploadWarnMsg" style="font-size:0.875rem; color:var(--text-secondary); line-height:1.5;"></div>
+            </div>
+        </div>
+        <button onclick="closeUploadWarn()" style="background:none; border:none; cursor:pointer; color:var(--text-secondary); font-size:1.2rem; padding:0; flex-shrink:0; line-height:1;" title="Close">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+    <div style="margin-top:18px; text-align:right;">
+        <button onclick="closeUploadWarn()" class="btn btn-secondary" style="padding:7px 18px; font-size:0.875rem;">OK, Got it</button>
+    </div>
+</div>
 
 <div class="card mb-3">
     <div class="card-header">
@@ -225,8 +249,9 @@ $userDefaultExpiry  = (int)($settings['default_expiry'] ?? $adminDefaultExpiry);
         const maxBytes = <?= (int)($maxSize ?? 524288000) ?>;
         const oversized = selectedFiles.filter(f => f.size > maxBytes);
         if (oversized.length > 0) {
-            const names = oversized.map(f => `${f.name} (${(f.size/1024/1024).toFixed(1)} MB)`).join('\n');
-            alert(`The following file(s) exceed the ${(maxBytes/1024/1024).toFixed(0)} MB upload limit and cannot be uploaded:\n\n${names}`);
+            const limitMb = (maxBytes / 1024 / 1024).toFixed(0);
+            const names = oversized.map(f => `<strong>${f.name}</strong> (${(f.size/1024/1024).toFixed(1)} MB)`).join('<br>');
+            showUploadWarn(`The following file(s) exceed the <strong>${limitMb} MB</strong> upload limit and cannot be uploaded:<br><br>${names}`);
             // Keep only files that fit
             selectedFiles = selectedFiles.filter(f => f.size <= maxBytes);
             if (selectedFiles.length === 0) {
@@ -257,7 +282,7 @@ $userDefaultExpiry  = (int)($settings['default_expiry'] ?? $adminDefaultExpiry);
         e.preventDefault();
         
         if (selectedFiles.length === 0) {
-            alert('Please select files to upload');
+            showUploadWarn('Please select at least one file to upload.');
             return;
         }
         
@@ -384,5 +409,19 @@ $userDefaultExpiry  = (int)($settings['default_expiry'] ?? $adminDefaultExpiry);
         const overlay = document.getElementById('psUploadOverlay');
         if (overlay) overlay.style.display = 'none';
     }
+
+    function showUploadWarn(html) {
+        document.getElementById('uploadWarnMsg').innerHTML = html;
+        document.getElementById('uploadWarnOverlay').style.display = 'block';
+        document.getElementById('uploadWarnToast').style.display   = 'block';
+    }
+
+    function closeUploadWarn() {
+        document.getElementById('uploadWarnOverlay').style.display = 'none';
+        document.getElementById('uploadWarnToast').style.display   = 'none';
+    }
+
+    // Close on overlay click
+    document.getElementById('uploadWarnOverlay').addEventListener('click', closeUploadWarn);
 </script>
 <?php View::endSection(); ?>
