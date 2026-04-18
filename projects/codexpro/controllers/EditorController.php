@@ -96,7 +96,7 @@ class EditorController
             $jsContent   = $_POST['js_content'] ?? '';
             $visibility  = Security::sanitize($_POST['visibility'] ?? 'private');
 
-            if ($projectId > 0) {
+            if ($projectId >= 1) {
                 $project = $db->fetch(
                     "SELECT id FROM codexpro_projects WHERE id = ? AND user_id = ?",
                     [$projectId, $user['id']]
@@ -161,7 +161,7 @@ class EditorController
             $db   = Database::getInstance();
 
             $projectId = (int)($_POST['project_id'] ?? 0);
-            if ($projectId <= 0) {
+            if ($projectId < 1) {
                 echo json_encode(['success' => false, 'error' => 'Project ID required']);
                 return;
             }
