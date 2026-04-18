@@ -38,7 +38,7 @@
     </div>
     
     <form id="settingsForm">
-        <input type="hidden" name="_csrf_token" value="<?= Security::generateToken() ?>">
+        <input type="hidden" name="_csrf_token" value="<?= Security::generateCsrfToken() ?>">
         
         <!-- Notifications -->
         <div class="settings-section">

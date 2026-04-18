@@ -11,7 +11,7 @@
     </div>
     
     <form id="shareForm">
-        <input type="hidden" name="_csrf_token" value="<?= Security::generateToken() ?>">
+        <input type="hidden" name="_csrf_token" value="<?= Security::generateCsrfToken() ?>">
         
         <div class="form-group">
             <label class="form-label">

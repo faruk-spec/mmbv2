@@ -38,7 +38,7 @@
     <div id="selectedFilesList" style="margin-bottom: 1.25rem; padding: 0 0.25rem;"></div>
 
     <form id="uploadForm">
-        <input type="hidden" name="_csrf_token" value="<?= Security::generateToken() ?>">
+        <input type="hidden" name="_csrf_token" value="<?= Security::generateCsrfToken() ?>">
         
         <div class="ps-grid ps-grid-2" style="margin-bottom: 1rem;">
             <div class="form-group">
