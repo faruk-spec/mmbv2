@@ -107,24 +107,32 @@
             <div class="settings-section">
                 <h3>File Upload Settings</h3>
                 <div class="form-group">
-                    <label for="max_file_size">Maximum File Size (MB)</label>
-                    <input type="number" id="max_file_size" name="max_file_size" 
-                           value="<?= $settings['max_file_size'] ?? 100 ?>" 
+                    <label for="max_file_size_mb">Maximum File Size (MB)</label>
+                    <input type="number" id="max_file_size_mb" name="max_file_size_mb" 
+                           value="<?= $settings['max_file_size_mb'] ?? 100 ?>" 
                            min="1" max="1000" class="form-control">
                     <small class="form-text">Maximum size for file uploads</small>
                 </div>
 
                 <div class="form-group">
-                    <label for="default_expiry">Default Link Expiry (hours)</label>
-                    <select id="default_expiry" name="default_expiry" class="form-control">
-                        <option value="1" <?= ($settings['default_expiry'] ?? 24) == 1 ? 'selected' : '' ?>>1 Hour</option>
-                        <option value="6" <?= ($settings['default_expiry'] ?? 24) == 6 ? 'selected' : '' ?>>6 Hours</option>
-                        <option value="12" <?= ($settings['default_expiry'] ?? 24) == 12 ? 'selected' : '' ?>>12 Hours</option>
-                        <option value="24" <?= ($settings['default_expiry'] ?? 24) == 24 ? 'selected' : '' ?>>24 Hours</option>
-                        <option value="72" <?= ($settings['default_expiry'] ?? 24) == 72 ? 'selected' : '' ?>>3 Days</option>
-                        <option value="168" <?= ($settings['default_expiry'] ?? 24) == 168 ? 'selected' : '' ?>>7 Days</option>
-                        <option value="720" <?= ($settings['default_expiry'] ?? 24) == 720 ? 'selected' : '' ?>>30 Days</option>
+                    <label for="default_expiry_hours">Default Link Expiry (hours)</label>
+                    <select id="default_expiry_hours" name="default_expiry_hours" class="form-control">
+                        <option value="1" <?= ($settings['default_expiry_hours'] ?? 24) == 1 ? 'selected' : '' ?>>1 Hour</option>
+                        <option value="6" <?= ($settings['default_expiry_hours'] ?? 24) == 6 ? 'selected' : '' ?>>6 Hours</option>
+                        <option value="12" <?= ($settings['default_expiry_hours'] ?? 24) == 12 ? 'selected' : '' ?>>12 Hours</option>
+                        <option value="24" <?= ($settings['default_expiry_hours'] ?? 24) == 24 ? 'selected' : '' ?>>24 Hours</option>
+                        <option value="72" <?= ($settings['default_expiry_hours'] ?? 24) == 72 ? 'selected' : '' ?>>3 Days</option>
+                        <option value="168" <?= ($settings['default_expiry_hours'] ?? 24) == 168 ? 'selected' : '' ?>>7 Days</option>
+                        <option value="720" <?= ($settings['default_expiry_hours'] ?? 24) == 720 ? 'selected' : '' ?>>30 Days</option>
                     </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="max_expiry_days">Maximum Expiry Allowed (days)</label>
+                    <input type="number" id="max_expiry_days" name="max_expiry_days" 
+                           value="<?= $settings['max_expiry_days'] ?? 30 ?>" 
+                           min="1" max="365" class="form-control">
+                    <small class="form-text">Maximum number of days a share link can be valid</small>
                 </div>
             </div>
 
@@ -133,8 +141,8 @@
                 <h3>Security Features</h3>
                 <div class="form-group">
                     <label class="toggle-label">
-                        <input type="checkbox" name="password_protection_enabled" 
-                               <?= ($settings['password_protection_enabled'] ?? true) ? 'checked' : '' ?>>
+                        <input type="checkbox" name="enable_password_protection" 
+                               <?= ($settings['enable_password_protection'] ?? 1) ? 'checked' : '' ?>>
                         <span class="toggle-switch"></span>
                         Password Protection
                     </label>
@@ -143,8 +151,8 @@
 
                 <div class="form-group">
                     <label class="toggle-label">
-                        <input type="checkbox" name="self_destruct_enabled" 
-                               <?= ($settings['self_destruct_enabled'] ?? true) ? 'checked' : '' ?>>
+                        <input type="checkbox" name="enable_self_destruct" 
+                               <?= ($settings['enable_self_destruct'] ?? 1) ? 'checked' : '' ?>>
                         <span class="toggle-switch"></span>
                         Self-Destruct Messages
                     </label>
@@ -153,8 +161,18 @@
 
                 <div class="form-group">
                     <label class="toggle-label">
-                        <input type="checkbox" name="compression_enabled" 
-                               <?= ($settings['compression_enabled'] ?? true) ? 'checked' : '' ?>>
+                        <input type="checkbox" name="default_self_destruct" 
+                               <?= ($settings['default_self_destruct'] ?? 0) ? 'checked' : '' ?>>
+                        <span class="toggle-switch"></span>
+                        Enable Self-Destruct by Default
+                    </label>
+                    <small class="form-text">Pre-enable self-destruct on the upload page (users can still toggle it)</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="toggle-label">
+                        <input type="checkbox" name="enable_compression" 
+                               <?= ($settings['enable_compression'] ?? 1) ? 'checked' : '' ?>>
                         <span class="toggle-switch"></span>
                         File Compression
                     </label>
@@ -163,8 +181,8 @@
 
                 <div class="form-group">
                     <label class="toggle-label">
-                        <input type="checkbox" name="anonymous_sharing_enabled" 
-                               <?= ($settings['anonymous_sharing_enabled'] ?? true) ? 'checked' : '' ?>>
+                        <input type="checkbox" name="enable_anonymous_sharing" 
+                               <?= ($settings['enable_anonymous_sharing'] ?? 1) ? 'checked' : '' ?>>
                         <span class="toggle-switch"></span>
                         Anonymous Sharing
                     </label>

@@ -47,12 +47,20 @@ class UploadController
                 $settings = $db->fetch("SELECT * FROM proshare_user_settings WHERE user_id = ?", [$user['id']]);
             }
         }
+
+        // Fetch global ProShare settings (default_self_destruct, etc.)
+        $globalSettingsRows = $db->fetchAll("SELECT `key`, `value` FROM proshare_settings");
+        $globalSettings = [];
+        foreach ($globalSettingsRows as $row) {
+            $globalSettings[$row['key']] = $row['value'];
+        }
         
         View::render('projects/proshare/upload', [
             'title' => 'Upload Files',
             'subtitle' => 'Share files securely with password protection and expiry options',
             'user' => $user,
             'settings' => $settings,
+            'globalSettings' => $globalSettings,
             'maxSize' => self::MAX_FILE_SIZE,
         ]);
     }

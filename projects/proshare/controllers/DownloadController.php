@@ -295,8 +295,11 @@ class DownloadController
                     try {
                         const response = await fetch('/projects/proshare/verify-password', {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                            body: `short_code=<?= urlencode($shortCode) ?>&password=${encodeURIComponent(password)}`
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                                'Accept': 'application/json'
+                            },
+                            body: `short_code=<?= urlencode($shortCode) ?>&password=${encodeURIComponent(password)}&_csrf_token=<?= urlencode(Security::generateCsrfToken()) ?>`
                         });
                         
                         const data = await response.json();

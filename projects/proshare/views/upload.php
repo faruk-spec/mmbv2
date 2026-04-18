@@ -114,7 +114,7 @@
         <div class="ps-grid ps-grid-2" style="margin-bottom: 1rem;">
             <div class="form-group" style="margin-bottom: 0;">
                 <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 12px 16px; background: var(--bg-secondary); border-radius: 8px; border: 1px solid var(--border-color);">
-                    <input type="checkbox" name="self_destruct" value="1" style="width: 16px; height: 16px; accent-color: var(--cyan);">
+                    <input type="checkbox" name="self_destruct" value="1" <?= !empty($globalSettings['default_self_destruct']) ? 'checked' : '' ?> style="width: 16px; height: 16px; accent-color: var(--cyan);">
                     <span><i class="fas fa-fire" style="color: var(--ps-danger);"></i> Self-destruct after first download</span>
                 </label>
             </div>

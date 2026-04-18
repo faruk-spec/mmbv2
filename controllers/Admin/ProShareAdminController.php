@@ -194,9 +194,11 @@ class ProShareAdminController extends BaseController
         $settings['max_expiry_days'] = $settings['max_expiry_days'] ?? 30;
         $settings['enable_password_protection'] = $settings['enable_password_protection'] ?? 1;
         $settings['enable_self_destruct'] = $settings['enable_self_destruct'] ?? 1;
+        $settings['default_self_destruct'] = $settings['default_self_destruct'] ?? 0;
         $settings['enable_compression'] = $settings['enable_compression'] ?? 1;
         $settings['enable_anonymous_sharing'] = $settings['enable_anonymous_sharing'] ?? $settings['enable_anonymous_upload'] ?? 1;
         $settings['require_email_verification'] = $settings['require_email_verification'] ?? 0;
+        $settings['storage_limit_gb'] = $settings['storage_limit_gb'] ?? 5;
         
         $this->view('admin/projects/proshare/settings', [
             'title' => 'ProShare Admin - Settings',
@@ -225,9 +227,11 @@ class ProShareAdminController extends BaseController
             'default_expiry_hours' => (int)($_POST['default_expiry_hours'] ?? 24),
             'enable_password_protection' => isset($_POST['enable_password_protection']) ? '1' : '0',
             'enable_self_destruct' => isset($_POST['enable_self_destruct']) ? '1' : '0',
+            'default_self_destruct' => isset($_POST['default_self_destruct']) ? '1' : '0',
             'enable_compression' => isset($_POST['enable_compression']) ? '1' : '0',
             'enable_anonymous_sharing' => isset($_POST['enable_anonymous_sharing']) ? '1' : '0',
-            'require_email_verification' => isset($_POST['require_email_verification']) ? '1' : '0'
+            'require_email_verification' => isset($_POST['require_email_verification']) ? '1' : '0',
+            'storage_limit_gb' => (int)($_POST['storage_limit_gb'] ?? 5),
         ];
         
         // Update each setting using key-value structure
