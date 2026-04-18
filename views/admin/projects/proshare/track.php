@@ -121,7 +121,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         title="<?= htmlspecialchars($dl['user_agent'] ?? '') ?>">
                         <?= htmlspecialchars(mb_strimwidth($dl['user_agent'] ?? '—', 0, 60, '…')) ?>
                     </td>
-                    <td style="white-space: nowrap; color: var(--text-secondary);"><?= date('Y-m-d H:i:s', strtotime($dl['downloaded_at'] ?? $dl['created_at'] ?? 'now')) ?></td>
+                    <td style="white-space: nowrap; color: var(--text-secondary);"><?= date('Y-m-d H:i:s', strtotime($dl['downloaded_at'] ?? 'now')) ?></td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>

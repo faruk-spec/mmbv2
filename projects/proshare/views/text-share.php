@@ -37,11 +37,11 @@
                 </label>
                 <select name="expiry" class="form-control">
                     <?php
-                    $defaultExp = (int)($defaultExpiry ?? 24);
+                    $defaultExpiry = (int)($defaultExpiry ?? 24);
                     $expiryOpts = [1 => '1 Hour', 6 => '6 Hours', 24 => '24 Hours', 168 => '7 Days', 720 => '30 Days', 0 => 'Never'];
                     foreach ($expiryOpts as $val => $label):
                     ?>
-                    <option value="<?= $val ?>" <?= $defaultExp == $val ? 'selected' : '' ?>><?= $label ?></option>
+                    <option value="<?= $val ?>" <?= $defaultExpiry == $val ? 'selected' : '' ?>><?= $label ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
