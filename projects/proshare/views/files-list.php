@@ -235,11 +235,19 @@
         });
     }
     
+    const _csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    
     function deleteFile(shortCode, btn) {
         if (!confirm('Delete this file? This cannot be undone.')) return;
         btn.disabled = true;
+        const fd = new FormData();
+        if (_csrfToken) fd.append('_csrf_token', _csrfToken);
         
-        fetch('/projects/proshare/files/delete/' + shortCode, { method: 'POST' })
+        fetch('/projects/proshare/files/delete/' + shortCode, {
+            method: 'POST',
+            headers: { 'Accept': 'application/json' },
+            body: fd
+        })
             .then(r => r.json())
             .then(data => {
                 if (data.success) {
@@ -256,8 +264,14 @@
     function deleteText(shortCode, btn) {
         if (!confirm('Delete this text share? This cannot be undone.')) return;
         btn.disabled = true;
+        const fd = new FormData();
+        if (_csrfToken) fd.append('_csrf_token', _csrfToken);
         
-        fetch('/projects/proshare/text/delete/' + shortCode, { method: 'POST' })
+        fetch('/projects/proshare/text/delete/' + shortCode, {
+            method: 'POST',
+            headers: { 'Accept': 'application/json' },
+            body: fd
+        })
             .then(r => r.json())
             .then(data => {
                 if (data.success) {

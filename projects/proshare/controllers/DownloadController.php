@@ -146,10 +146,11 @@ class DownloadController
             @unlink($file['path']);
         }
         
-        // Serve file
-        header('Content-Type: ' . $file['mime_type']);
+        // Serve file — use RFC 5987 filename* for correct Unicode handling
+        $safeName = preg_replace('/[^\x20-\x7E]/', '_', $file['original_name']); // ASCII fallback
         $encodedName = rawurlencode($file['original_name']);
-        header('Content-Disposition: attachment; filename="' . addslashes($file['original_name']) . '"; filename*=UTF-8\'\'' . $encodedName);
+        header('Content-Type: ' . $file['mime_type']);
+        header('Content-Disposition: attachment; filename="' . str_replace(['"', '\\'], ['\"', '\\\\'], $safeName) . '"; filename*=UTF-8\'\'' . $encodedName);
         if ($file['is_compressed']) {
             header('Content-Encoding: gzip');
         }

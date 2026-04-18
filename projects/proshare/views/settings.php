@@ -27,7 +27,7 @@
 }
 </style>
 
-<div id="saveToast" style="display:none; position:fixed; top:1.5rem; right:1.5rem; z-index:9999; background:var(--bg-card); border:1px solid var(--border-color); border-radius:10px; padding:12px 20px; display:none; align-items:center; gap:10px; box-shadow:0 4px 20px rgba(0,0,0,0.3); font-size:0.875rem;">
+<div id="saveToast" style="position:fixed; top:1.5rem; right:1.5rem; z-index:9999; background:var(--bg-card); border:1px solid var(--border-color); border-radius:10px; padding:12px 20px; display:none; align-items:center; gap:10px; box-shadow:0 4px 20px rgba(0,0,0,0.3); font-size:0.875rem;">
     <i id="toastIcon" class="fas fa-check-circle" style="color:var(--green);"></i>
     <span id="toastMsg">Settings saved successfully!</span>
 </div>
@@ -201,6 +201,7 @@ document.getElementById('settingsForm').addEventListener('submit', async functio
         const text = await response.text();
         let data;
         try { data = JSON.parse(text); } catch (_) {
+            console.error('Server response:', text);
             showToast('Unexpected server response — check console.', 'error');
             return;
         }
