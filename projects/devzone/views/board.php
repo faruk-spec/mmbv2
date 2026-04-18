@@ -168,10 +168,18 @@ $progress = $totalTasks > 0 ? round($doneTasks / $totalTasks * 100) : 0;
 
 <script>
 var boardId  = <?= (int)$board['id'] ?>;
-var taskData = <?= json_encode(array_column(
-    array_merge(...array_map(fn($c) => array_map(fn($t) => array_merge($t, ['column_id' => $c['id']]), $c['tasks'] ?? []), $columns)),
-    null, 'id'
-) ?: new stdClass()) ?>;
+var taskData = (function () {
+    // Build a map of task_id → task (with column_id) for use in the edit modal
+    <?php
+    $taskMap = [];
+    foreach ($columns as $col) {
+        foreach ($col['tasks'] ?? [] as $task) {
+            $taskMap[(int)$task['id']] = array_merge($task, ['column_id' => (int)$col['id']]);
+        }
+    }
+    ?>
+    return <?= json_encode($taskMap ?: new stdClass()) ?>;
+}());
 
 function openTaskModal(columnId) {
     document.getElementById('taskModalTitle').textContent = 'Add Task';
