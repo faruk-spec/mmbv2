@@ -99,7 +99,7 @@ class TextShareController
             
             $selfDestruct = isset($_POST['self_destruct']) ? 1 : 0;
             
-            $textId = $db->insert('text_shares', [
+            $textId = $db->insert('proshare_text_shares', [
                 'user_id' => $userId,
                 'short_code' => $shortCode,
                 'title' => $title,
@@ -160,7 +160,7 @@ class TextShareController
         
         // Check if text has expired
         if ($text['expires_at'] && strtotime($text['expires_at']) < time()) {
-            $db->update('text_shares', ['status' => 'expired'], 'id = ?', [$text['id']]);
+            $db->update('proshare_text_shares', ['status' => 'expired'], 'id = ?', [$text['id']]);
             
             // Create notification for user if logged in
             if ($text['user_id']) {
@@ -179,7 +179,7 @@ class TextShareController
         
         // Check max views - BEFORE incrementing the counter
         if ($text['max_views'] && $text['views'] >= $text['max_views']) {
-            $db->update('text_shares', ['status' => 'expired'], 'id = ?', [$text['id']]);
+            $db->update('proshare_text_shares', ['status' => 'expired'], 'id = ?', [$text['id']]);
             
             // Create notification for user if logged in
             if ($text['user_id']) {
@@ -218,7 +218,7 @@ class TextShareController
         
         // Self-destruct ONLY if enabled (check flag is 1)
         if ($text['self_destruct'] == 1) {
-            $db->update('text_shares', ['status' => 'deleted'], 'id = ?', [$text['id']]);
+            $db->update('proshare_text_shares', ['status' => 'deleted'], 'id = ?', [$text['id']]);
             
             // Create notification for user if logged in
             if ($text['user_id']) {
@@ -388,6 +388,45 @@ class TextShareController
     }
     
     /**
+     * Delete text share
+     */
+    public function delete(string $shortCode): void
+    {
+        header('Content-Type: application/json');
+        
+        try {
+            $user = Auth::user();
+            if (!$user) {
+                echo json_encode(['success' => false, 'error' => 'Unauthorized']);
+                return;
+            }
+            
+            $db = Database::getInstance();
+            $text = $db->fetch(
+                "SELECT * FROM proshare_text_shares WHERE short_code = ? AND user_id = ?",
+                [$shortCode, $user['id']]
+            );
+            
+            if (!$text) {
+                echo json_encode(['success' => false, 'error' => 'Text share not found or you do not have permission']);
+                return;
+            }
+            
+            $db->update('proshare_text_shares', ['status' => 'deleted'], 'id = ?', [$text['id']]);
+            
+            $this->logAudit($user['id'], 'text_share_deleted', 'text', $text['id'], [
+                'short_code' => $shortCode,
+                'title' => $text['title'],
+            ]);
+            
+            echo json_encode(['success' => true, 'message' => 'Text share deleted successfully']);
+        } catch (\Exception $e) {
+            error_log('Text delete error: ' . $e->getMessage());
+            echo json_encode(['success' => false, 'error' => 'Failed to delete: ' . $e->getMessage()]);
+        }
+    }
+    
+    /**
      * Generate unique short code
      */
     private function generateShortCode(int $length = 8): string
@@ -418,7 +457,7 @@ class TextShareController
         $db = Database::getInstance();
         
         // Log to audit_logs (with JSON details)
-        $db->insert('audit_logs', [
+        $db->insert('proshare_audit_logs', [
             'user_id' => $userId,
             'action' => $action,
             'resource_type' => $resourceType,
@@ -430,7 +469,7 @@ class TextShareController
         
         // Also log to activity_logs (for admin activity tracking)
         $description = !empty($details) ? json_encode($details) : null;
-        $db->insert('activity_logs', [
+        $db->insert('proshare_activity_logs', [
             'user_id' => $userId,
             'action' => $action,
             'resource_type' => $resourceType,
@@ -448,7 +487,7 @@ class TextShareController
     {
         $db = Database::getInstance();
         
-        $db->insert('notifications', [
+        $db->insert('proshare_notifications', [
             'user_id' => $userId,
             'type' => $type,
             'message' => $message,

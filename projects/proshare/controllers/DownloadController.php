@@ -35,7 +35,7 @@ class DownloadController
         
         // Check if file has expired
         if ($file['expires_at'] && strtotime($file['expires_at']) < time()) {
-            $db->update('files', ['status' => 'expired'], 'id = ?', [$file['id']]);
+            $db->update('proshare_files', ['status' => 'expired'], 'id = ?', [$file['id']]);
             
             // Create notification for user if logged in
             if ($file['user_id']) {
@@ -54,7 +54,7 @@ class DownloadController
         
         // Check max downloads - BEFORE incrementing the counter
         if ($file['max_downloads'] && $file['downloads'] >= $file['max_downloads']) {
-            $db->update('files', ['status' => 'expired'], 'id = ?', [$file['id']]);
+            $db->update('proshare_files', ['status' => 'expired'], 'id = ?', [$file['id']]);
             
             // Create notification for user if logged in
             if ($file['user_id']) {
@@ -107,7 +107,7 @@ class DownloadController
         }
         
         // Track download
-        $db->insert('file_downloads', [
+        $db->insert('proshare_file_downloads', [
             'file_id' => $file['id'],
             'ip_address' => Security::getClientIp(),
             'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? null,
@@ -131,7 +131,7 @@ class DownloadController
         
         // Self-destruct ONLY if enabled (check flag is 1)
         if ($file['self_destruct'] == 1) {
-            $db->update('files', ['status' => 'deleted'], 'id = ?', [$file['id']]);
+            $db->update('proshare_files', ['status' => 'deleted'], 'id = ?', [$file['id']]);
             
             // Create notification for user if logged in
             if ($file['user_id']) {
@@ -148,8 +148,11 @@ class DownloadController
         
         // Serve file
         header('Content-Type: ' . $file['mime_type']);
-        header('Content-Disposition: attachment; filename="' . $file['original_name'] . '"');
-        header('Content-Length: ' . $file['size']);
+        header('Content-Disposition: attachment; filename="' . addslashes($file['original_name']) . '"');
+        if ($file['is_compressed']) {
+            header('Content-Encoding: gzip');
+        }
+        header('Content-Length: ' . filesize($file['path']));
         header('Cache-Control: no-cache, must-revalidate');
         header('Expires: 0');
         
@@ -321,7 +324,7 @@ class DownloadController
         $db = Database::getInstance();
         
         // Log to audit_logs (with JSON details)
-        $db->insert('audit_logs', [
+        $db->insert('proshare_audit_logs', [
             'user_id' => $userId,
             'action' => $action,
             'resource_type' => $resourceType,
@@ -333,7 +336,7 @@ class DownloadController
         
         // Also log to activity_logs (for admin activity tracking)
         $description = !empty($details) ? json_encode($details) : null;
-        $db->insert('activity_logs', [
+        $db->insert('proshare_activity_logs', [
             'user_id' => $userId,
             'action' => $action,
             'resource_type' => $resourceType,
@@ -351,7 +354,7 @@ class DownloadController
     {
         $db = Database::getInstance();
         
-        $db->insert('notifications', [
+        $db->insert('proshare_notifications', [
             'user_id' => $userId,
             'type' => $type,
             'message' => $message,
@@ -383,7 +386,7 @@ class DownloadController
         
         // Check if file has expired
         if ($file['expires_at'] && strtotime($file['expires_at']) < time()) {
-            $db->update('files', ['status' => 'expired'], 'id = ?', [$file['id']]);
+            $db->update('proshare_files', ['status' => 'expired'], 'id = ?', [$file['id']]);
             
             // Create notification for user if logged in
             if ($file['user_id']) {
@@ -405,7 +408,7 @@ class DownloadController
         
         // Check max downloads
         if ($file['max_downloads'] && $file['downloads'] >= $file['max_downloads']) {
-            $db->update('files', ['status' => 'expired'], 'id = ?', [$file['id']]);
+            $db->update('proshare_files', ['status' => 'expired'], 'id = ?', [$file['id']]);
             
             // Create notification for user if logged in
             if ($file['user_id']) {

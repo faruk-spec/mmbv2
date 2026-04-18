@@ -235,37 +235,18 @@ class ProShareAdminController extends BaseController
             $existing = $this->projectDb->fetch("SELECT id FROM proshare_settings WHERE `key` = ?", [$key]);
             
             if ($existing) {
-                // Check if updated_at column exists
-                try {
-                    $this->projectDb->update('settings', [
-                        'value' => $value,
-                        'updated_at' => date('Y-m-d H:i:s')
-                    ], '`key` = ?', [$key]);
-                } catch (\PDOException $e) {
-                    // If updated_at doesn't exist, update without it
-                    $this->projectDb->update('settings', [
-                        'value' => $value
-                    ], '`key` = ?', [$key]);
-                }
+                $this->projectDb->update('proshare_settings', [
+                    'value' => $value,
+                    'updated_at' => date('Y-m-d H:i:s')
+                ], '`key` = ?', [$key]);
             } else {
-                // Check if created_at column exists
-                try {
-                    $this->projectDb->insert('settings', [
-                        'key' => $key,
-                        'value' => $value,
-                        'type' => is_numeric($value) ? 'integer' : 'string',
-                        'is_system' => 1,
-                        'created_at' => date('Y-m-d H:i:s')
-                    ]);
-                } catch (\PDOException $e) {
-                    // If created_at doesn't exist, insert without it
-                    $this->projectDb->insert('settings', [
-                        'key' => $key,
-                        'value' => $value,
-                        'type' => is_numeric($value) ? 'integer' : 'string',
-                        'is_system' => 1
-                    ]);
-                }
+                $this->projectDb->insert('proshare_settings', [
+                    'key' => $key,
+                    'value' => $value,
+                    'type' => is_numeric($value) ? 'integer' : 'string',
+                    'is_system' => 1,
+                    'created_at' => date('Y-m-d H:i:s')
+                ]);
             }
         }
         
@@ -524,15 +505,14 @@ class ProShareAdminController extends BaseController
             
             if ($file) {
                 // Delete physical file if exists
-                $filePath = BASE_PATH . '/storage/proshare/' . $file['file_path'];
-                if (file_exists($filePath)) {
-                    unlink($filePath);
+                if (!empty($file['path']) && file_exists($file['path'])) {
+                    @unlink($file['path']);
                 }
                 
-                // Delete from database
-                $this->projectDb->delete('files', 'id = ?', [$id]);
+                // Soft delete from database (mark as deleted to preserve audit trail)
+                $this->projectDb->update('proshare_files', ['status' => 'deleted'], 'id = ?', [$id]);
                 
-                Logger::activity(Auth::id(), 'proshare_file_deleted', ['file_id' => $id, 'filename' => $file['original_filename']]);
+                Logger::activity(Auth::id(), 'proshare_file_deleted', ['file_id' => $id, 'filename' => $file['original_name'] ?? '']);
                 $this->flash('success', 'File deleted successfully.');
             }
         }
@@ -555,7 +535,8 @@ class ProShareAdminController extends BaseController
         $id = (int)($_POST['file_id'] ?? 0);
         
         if ($id > 0) {
-            $this->projectDb->update('files', [
+            $this->projectDb->update('proshare_files', [
+                'status' => 'expired',
                 'expires_at' => date('Y-m-d H:i:s')
             ], 'id = ?', [$id]);
             
@@ -581,7 +562,7 @@ class ProShareAdminController extends BaseController
         $id = (int)($_POST['text_id'] ?? 0);
         
         if ($id > 0) {
-            $this->projectDb->delete('text_shares', 'id = ?', [$id]);
+            $this->projectDb->update('proshare_text_shares', ['status' => 'deleted'], 'id = ?', [$id]);
             Logger::activity(Auth::id(), 'proshare_text_deleted', ['text_id' => $id]);
             $this->flash('success', 'Text share deleted successfully.');
         }

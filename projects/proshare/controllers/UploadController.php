@@ -43,7 +43,7 @@ class UploadController
             );
             
             if (!$settings) {
-                $db->insert('user_settings', ['user_id' => $user['id']]);
+                $db->insert('proshare_user_settings', ['user_id' => $user['id']]);
                 $settings = $db->fetch("SELECT * FROM proshare_user_settings WHERE user_id = ?", [$user['id']]);
             }
         }
@@ -105,21 +105,26 @@ class UploadController
             $destination = $uploadDir . '/' . $storedFilename;
             
             // Optional compression - accept both 'compression' and 'enable_compression'
-            $enableCompression = isset($_POST['enable_compression']) || isset($_POST['compression']);
+            $enableCompression = !empty($_POST['enable_compression']) || !empty($_POST['compression']);
             $isCompressed = false;
             
-            // Calculate checksum for integrity
+            // Calculate checksum for integrity (before possible compression)
             $checksum = hash_file('sha256', $file['tmp_name']);
-            
-            // Optional encryption - DISABLED until properly implemented
-            // Encryption requires proper key management and is not yet fully implemented
-            $enableEncryption = false; // isset($_POST['enable_encryption']) ? (bool)$_POST['enable_encryption'] : false;
-            $isEncrypted = false;
-            $encryptionKey = null;
             
             if (!move_uploaded_file($file['tmp_name'], $destination)) {
                 echo json_encode(['success' => false, 'error' => 'Failed to save file']);
                 return;
+            }
+            
+            // Apply gzip compression after saving (skip for already-compressed types)
+            $skipCompressionTypes = ['image/jpeg','image/png','image/gif','image/webp','video/mp4','video/webm','audio/mpeg','audio/ogg','application/zip','application/x-rar-compressed','application/gzip'];
+            if ($enableCompression && !in_array($mimeType, $skipCompressionTypes)) {
+                $original = file_get_contents($destination);
+                $compressed = gzencode($original, 6);
+                if ($compressed !== false && strlen($compressed) < strlen($original)) {
+                    file_put_contents($destination, $compressed);
+                    $isCompressed = true;
+                }
             }
             
             // Store in database
@@ -167,7 +172,7 @@ class UploadController
             
             $selfDestruct = isset($_POST['self_destruct']) ? 1 : 0;
             
-            $fileId = $db->insert('files', [
+            $fileId = $db->insert('proshare_files', [
                 'user_id' => $userId,
                 'short_code' => $shortCode,
                 'original_name' => $file['name'],
@@ -179,8 +184,8 @@ class UploadController
                 'max_downloads' => $maxDownloads,
                 'expires_at' => $expiresAt,
                 'self_destruct' => $selfDestruct,
-                'is_encrypted' => $isEncrypted ? 1 : 0,
-                'encryption_key' => $encryptionKey,
+                'is_encrypted' => 0,
+                'encryption_key' => null,
                 'is_compressed' => $isCompressed ? 1 : 0,
                 'checksum' => $checksum,
                 'status' => 'active',
@@ -253,7 +258,7 @@ class UploadController
         $db = Database::getInstance();
         
         // Log to audit_logs (with JSON details)
-        $db->insert('audit_logs', [
+        $db->insert('proshare_audit_logs', [
             'user_id' => $userId,
             'action' => $action,
             'resource_type' => $resourceType,
@@ -265,7 +270,7 @@ class UploadController
         
         // Also log to activity_logs (for admin activity tracking)
         $description = !empty($details) ? json_encode($details) : null;
-        $db->insert('activity_logs', [
+        $db->insert('proshare_activity_logs', [
             'user_id' => $userId,
             'action' => $action,
             'resource_type' => $resourceType,
@@ -291,7 +296,7 @@ class UploadController
         $backupPath = $backupDir . '/' . basename($filePath);
         
         if (copy($filePath, $backupPath)) {
-            $db->insert('backups', [
+            $db->insert('proshare_backups', [
                 'file_id' => $fileId,
                 'backup_path' => $backupPath,
                 'backup_size' => $fileSize,
