@@ -116,7 +116,7 @@
         try {
             const fd = new FormData();
             fd.append('notification_id', id);
-            if (csrfToken) fd.append('_csrf_token', csrfToken);
+            if (csrfToken) fd.append('csrf_token', csrfToken);
             
             const response = await fetch('/projects/proshare/notifications/mark-read', {
                 method: 'POST',
@@ -153,7 +153,7 @@
         
         const fd = new FormData();
         fd.append('mark_all', '1');
-        if (csrfToken) fd.append('_csrf_token', csrfToken);
+        if (csrfToken) fd.append('csrf_token', csrfToken);
         
         try {
             const response = await fetch('/projects/proshare/notifications/mark-read', {

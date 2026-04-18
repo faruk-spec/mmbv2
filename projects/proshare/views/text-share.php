@@ -24,7 +24,7 @@
             <label class="form-label">
                 <i class="fas fa-align-left"></i> Content <span style="color: var(--ps-danger);">*</span>
             </label>
-            <textarea name="content" id="contentArea" class="form-control" rows="12" placeholder="Paste your text, code, or notes here…" required style="font-family: 'Poppins', monospace; resize: vertical;"></textarea>
+            <textarea name="content" id="contentArea" class="form-control" rows="12" placeholder="Paste your text, code, or notes here…" required style="font-family: 'Courier New', monospace; resize: vertical;"></textarea>
             <div class="text-muted" style="font-size: 0.8rem; margin-top: 4px; text-align: right;">
                 <span id="charCount">0</span> characters
             </div>

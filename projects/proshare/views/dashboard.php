@@ -35,7 +35,7 @@
             <div style="width: 42px; height: 42px; background: rgba(0,240,255,0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
                 <i class="fas fa-file" style="color: var(--cyan);"></i>
             </div>
-            <i class="fas fa-arrow-up" style="color: var(--cyan); font-size: 0.75rem; opacity: 0.6;"></i>
+            <i class="fas fa-arrow-up" style="color: var(--cyan); font-size: 0.75rem; opacity: 0.6;" aria-hidden="true"></i>
         </div>
         <div class="stat-value" style="color: var(--cyan);"><?= number_format($stats['total_files'] ?? 0) ?></div>
         <div class="stat-label">Total Files</div>
@@ -46,7 +46,7 @@
             <div style="width: 42px; height: 42px; background: rgba(255,46,196,0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
                 <i class="fas fa-file-alt" style="color: var(--magenta);"></i>
             </div>
-            <i class="fas fa-arrow-up" style="color: var(--magenta); font-size: 0.75rem; opacity: 0.6;"></i>
+            <i class="fas fa-arrow-up" style="color: var(--magenta); font-size: 0.75rem; opacity: 0.6;" aria-hidden="true"></i>
         </div>
         <div class="stat-value" style="color: var(--magenta);"><?= number_format($stats['total_texts'] ?? 0) ?></div>
         <div class="stat-label">Text Shares</div>
@@ -57,7 +57,7 @@
             <div style="width: 42px; height: 42px; background: rgba(0,255,136,0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
                 <i class="fas fa-download" style="color: var(--green);"></i>
             </div>
-            <i class="fas fa-arrow-up" style="color: var(--green); font-size: 0.75rem; opacity: 0.6;"></i>
+            <i class="fas fa-arrow-up" style="color: var(--green); font-size: 0.75rem; opacity: 0.6;" aria-hidden="true"></i>
         </div>
         <div class="stat-value" style="color: var(--green);"><?= number_format($stats['total_downloads'] ?? 0) ?></div>
         <div class="stat-label">Total Downloads</div>
@@ -68,7 +68,7 @@
             <div style="width: 42px; height: 42px; background: rgba(255,170,0,0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
                 <i class="fas fa-share-alt" style="color: var(--orange);"></i>
             </div>
-            <i class="fas fa-circle" style="color: var(--green); font-size: 0.5rem;"></i>
+            <i class="fas fa-circle" style="color: var(--green); font-size: 0.5rem;" aria-hidden="true"></i>
         </div>
         <div class="stat-value" style="color: var(--orange);"><?= number_format($stats['active_shares'] ?? 0) ?></div>
         <div class="stat-label">Active Shares</div>

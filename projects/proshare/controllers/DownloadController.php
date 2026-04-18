@@ -148,7 +148,8 @@ class DownloadController
         
         // Serve file
         header('Content-Type: ' . $file['mime_type']);
-        header('Content-Disposition: attachment; filename="' . addslashes($file['original_name']) . '"');
+        $encodedName = rawurlencode($file['original_name']);
+        header('Content-Disposition: attachment; filename="' . addslashes($file['original_name']) . '"; filename*=UTF-8\'\'' . $encodedName);
         if ($file['is_compressed']) {
             header('Content-Encoding: gzip');
         }
