@@ -226,11 +226,13 @@ class ProShareAdminController extends BaseController
         }
         
         // Settings to update (key-value structure)
-        // Sanitize user_file_size_options: allow only digits and commas
+        // Sanitize user_file_size_options: digits and commas only, remove empty/duplicate values
         $rawOptions = preg_replace('/[^0-9,]/', '', $_POST['user_file_size_options'] ?? '50,100,200,500');
+        $cleanOptions = array_values(array_unique(array_filter(array_map('intval', explode(',', $rawOptions)), fn($v) => $v > 0)));
+        sort($cleanOptions);
         $settings = [
             'max_file_size' => (int)($_POST['max_file_size_mb'] ?? 100) * 1048576, // Convert MB to bytes
-            'user_file_size_options' => $rawOptions,
+            'user_file_size_options' => implode(',', $cleanOptions ?: [50, 100, 200, 500]),
             'max_expiry_days' => (int)($_POST['max_expiry_days'] ?? 30),
             'default_expiry_hours' => (int)($_POST['default_expiry_hours'] ?? 24),
             'enable_password_protection' => isset($_POST['enable_password_protection']) ? '1' : '0',

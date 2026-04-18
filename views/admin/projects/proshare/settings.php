@@ -118,7 +118,8 @@
                     <label for="user_file_size_options">File Size Dropdown Options for Users (MB, comma-separated)</label>
                     <input type="text" id="user_file_size_options" name="user_file_size_options"
                            value="<?= htmlspecialchars($settings['user_file_size_options'] ?? '50,100,200,500') ?>"
-                           class="form-control" placeholder="e.g. 10,25,50,100,200">
+                           class="form-control" placeholder="e.g. 10,25,50,100,200"
+                           pattern="[0-9]+(,[0-9]+)*" title="Enter numbers separated by commas, e.g. 50,100,200">
                     <small class="form-text">These values appear in the "Maximum File Size" dropdown on the user settings page. Values exceeding the hard limit above are automatically excluded.</small>
                 </div>
 
