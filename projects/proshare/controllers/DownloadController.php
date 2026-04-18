@@ -73,7 +73,7 @@ class DownloadController
         
         // Check password if set
         if ($file['password']) {
-            session_start();
+            if (session_status() === PHP_SESSION_NONE) { session_start(); }
             $sessionKey = 'proshare_auth_' . $shortcode;
             
             if (!isset($_SESSION[$sessionKey])) {
@@ -189,7 +189,7 @@ class DownloadController
         }
         
         if (Security::verifyPassword($password, $file['password'])) {
-            session_start();
+            if (session_status() === PHP_SESSION_NONE) { session_start(); }
             $_SESSION['proshare_auth_' . $shortCode] = true;
             echo json_encode(['success' => true]);
         } else {
@@ -432,7 +432,7 @@ class DownloadController
         
         // Check password if set
         if ($file['password']) {
-            session_start();
+            if (session_status() === PHP_SESSION_NONE) { session_start(); }
             $sessionKey = 'proshare_auth_' . $shortcode;
             
             if (!isset($_SESSION[$sessionKey])) {

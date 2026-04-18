@@ -3,6 +3,40 @@
 
 <?php View::section('content'); ?>
 
+<!-- Upload Overlay Animation -->
+<div id="psUploadOverlay" style="display:none; position:fixed; inset:0; background:rgba(15,15,35,0.88); z-index:9990; align-items:center; justify-content:center; flex-direction:column; backdrop-filter:blur(4px);">
+    <div style="width:80px;height:80px;margin:0 auto 1.25rem;border-radius:50%;background:linear-gradient(135deg,var(--cyan,#00f0ff),var(--ps-secondary,#7c3aed));display:flex;align-items:center;justify-content:center;animation:ps-orb-pulse 1.6s ease-in-out infinite;box-shadow:0 0 40px rgba(0,240,255,0.5);">
+        <i class="fas fa-cloud-upload-alt" style="font-size:2rem;color:#fff;animation:ps-spin 2s linear infinite;"></i>
+    </div>
+    <div style="font-size:1.2rem;font-weight:700;color:#fff;margin-bottom:.5rem;" id="psOverlayMsg">Uploading your file…</div>
+    <div style="font-size:.85rem;color:rgba(255,255,255,.6);" id="psOverlaySub">Please wait while we process your upload</div>
+    <div style="width:280px;height:4px;background:rgba(255,255,255,.12);border-radius:4px;margin:1.25rem auto 0;overflow:hidden;">
+        <div style="height:100%;width:40%;background:linear-gradient(90deg,var(--cyan,#00f0ff),var(--ps-secondary,#7c3aed));border-radius:4px;animation:ps-progress-sweep 1.8s ease-in-out infinite;"></div>
+    </div>
+    <div style="display:flex;gap:.5rem;justify-content:center;margin-top:1rem;">
+        <span style="width:8px;height:8px;background:var(--cyan,#00f0ff);border-radius:50%;animation:ps-dot-bounce 1.4s ease-in-out infinite;animation-delay:0s;"></span>
+        <span style="width:8px;height:8px;background:var(--ps-secondary,#7c3aed);border-radius:50%;animation:ps-dot-bounce 1.4s ease-in-out infinite;animation-delay:.2s;"></span>
+        <span style="width:8px;height:8px;background:var(--green,#00ff88);border-radius:50%;animation:ps-dot-bounce 1.4s ease-in-out infinite;animation-delay:.4s;"></span>
+    </div>
+</div>
+
+<style>
+@keyframes ps-orb-pulse {
+    0%,100% { transform:scale(1);   box-shadow:0 0 40px rgba(0,240,255,0.4); }
+    50%      { transform:scale(1.08); box-shadow:0 0 70px rgba(0,240,255,0.8); }
+}
+@keyframes ps-spin { to { transform:rotate(360deg); } }
+@keyframes ps-progress-sweep {
+    0%   { transform:translateX(-100%); }
+    50%  { transform:translateX(150%); }
+    100% { transform:translateX(-100%); }
+}
+@keyframes ps-dot-bounce {
+    0%,80%,100% { transform:translateY(0); opacity:.5; }
+    40%          { transform:translateY(-8px); opacity:1; }
+}
+</style>
+
 <div class="card mb-3">
     <div class="card-header">
         <h3 class="card-title">
@@ -205,6 +239,12 @@
         
         uploadBtn.disabled = true;
         progressBar.style.display = 'block';
+
+        // Show upload overlay animation
+        const overlay = document.getElementById('psUploadOverlay');
+        const overlayMsg = document.getElementById('psOverlayMsg');
+        const overlaySub = document.getElementById('psOverlaySub');
+        if (overlay) overlay.style.display = 'flex';
         
         const formData = new FormData(uploadForm);
         const results  = [];
@@ -212,6 +252,10 @@
         for (let i = 0; i < selectedFiles.length; i++) {
             const file = selectedFiles[i];
             progressText.textContent = `Uploading ${file.name} (${i + 1} / ${selectedFiles.length})…`;
+            if (overlayMsg) overlayMsg.textContent = selectedFiles.length > 1
+                ? `Uploading file ${i + 1} of ${selectedFiles.length}…`
+                : `Uploading ${file.name}…`;
+            if (overlaySub) overlaySub.textContent = `${(file.size / 1024 / 1024).toFixed(2)} MB`;
             
             const fd = new FormData();
             fd.append('file',          file);
@@ -249,6 +293,9 @@
             const pct = Math.round(((i + 1) / selectedFiles.length) * 100);
             progressFill.style.width = pct + '%';
         }
+
+        // Hide overlay
+        if (overlay) overlay.style.display = 'none';
         
         // Show results
         optionsPanel.style.display = 'none';
@@ -310,6 +357,8 @@
         progressFill.style.width   = '0%';
         uploadBtn.disabled = false;
         document.getElementById('selectedFilesList').innerHTML = '';
+        const overlay = document.getElementById('psUploadOverlay');
+        if (overlay) overlay.style.display = 'none';
     }
 </script>
 <?php View::endSection(); ?>

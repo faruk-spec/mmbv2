@@ -19,6 +19,7 @@ $router->post('/projects/proshare/upload', 'Projects\ProShare\Controllers\Upload
 $router->get('/projects/proshare/files', 'Projects\ProShare\Controllers\DashboardController@myFiles');
 $router->delete('/projects/proshare/files/delete/{shortcode}', 'Projects\ProShare\Controllers\FileController@delete');
 $router->post('/projects/proshare/files/delete/{shortcode}', 'Projects\ProShare\Controllers\FileController@delete');
+$router->post('/projects/proshare/files/update/{shortcode}', 'Projects\ProShare\Controllers\FileController@update');
 
 // File Download
 $router->get('/projects/proshare/download/{shortcode}', 'Projects\ProShare\Controllers\DownloadController@download');

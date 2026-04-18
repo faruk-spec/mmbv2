@@ -53,5 +53,17 @@ if (!\Core\Helpers::isProjectEnabled('proshare')) {
 // Load project config
 $projectConfig = require PROJECT_PATH . '/config.php';
 
+// Apply system timezone from database (same as main App bootstrap)
+try {
+    $__db = \Core\Database::getInstance();
+    $__tz = $__db->fetch("SELECT value FROM settings WHERE `key` = 'system_timezone'");
+    if ($__tz && !empty($__tz['value'])) {
+        date_default_timezone_set($__tz['value']);
+    }
+    unset($__db, $__tz);
+} catch (\Exception $e) {
+    // Keep default timezone on failure
+}
+
 // Load project routes
 require_once PROJECT_PATH . '/routes/web.php';

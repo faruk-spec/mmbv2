@@ -45,6 +45,8 @@
                             <td>
                                 <?php if ($file['status'] === 'active'): ?>
                                     <span class="badge badge-success">Active</span>
+                                <?php elseif ($file['status'] === 'inactive'): ?>
+                                    <span class="badge badge-warning">Inactive</span>
                                 <?php elseif ($file['status'] === 'expired'): ?>
                                     <span class="badge badge-danger">Expired</span>
                                 <?php elseif ($file['status'] === 'deleted'): ?>
@@ -75,7 +77,13 @@
                                     <button onclick="copyLink('<?= View::e($file['short_code']) ?>')" class="btn btn-secondary" style="padding: 6px 10px; font-size: 0.8rem;" title="Copy Link">
                                         <i class="fas fa-copy"></i>
                                     </button>
-                                    <?php if ($file['status'] === 'active'): ?>
+                                    <button onclick="openPasswordModal('<?= View::e($file['short_code']) ?>', <?= $file['password'] ? 'true' : 'false' ?>)" class="btn btn-secondary" style="padding: 6px 10px; font-size: 0.8rem;" title="Password Settings">
+                                        <i class="fas fa-key"></i>
+                                    </button>
+                                    <button onclick="toggleStatus('<?= View::e($file['short_code']) ?>', '<?= View::e($file['status']) ?>', this)" class="btn <?= $file['status'] === 'active' ? 'btn-warning' : 'btn-success' ?>" style="padding: 6px 10px; font-size: 0.8rem;" title="<?= $file['status'] === 'active' ? 'Deactivate' : 'Activate' ?>">
+                                        <i class="fas <?= $file['status'] === 'active' ? 'fa-pause' : 'fa-play' ?>"></i>
+                                    </button>
+                                    <?php if ($file['status'] === 'active' || $file['status'] === 'inactive'): ?>
                                         <button onclick="deleteFile('<?= View::e($file['short_code']) ?>', this)" class="btn btn-danger" style="padding: 6px 10px; font-size: 0.8rem;" title="Delete">
                                             <i class="fas fa-trash"></i>
                                         </button>
@@ -292,5 +300,135 @@
         document.body.appendChild(t);
         setTimeout(() => t.remove(), 3000);
     }
+
+    // Toggle active / inactive status
+    function toggleStatus(shortCode, currentStatus, btn) {
+        const isActive = currentStatus === 'active';
+        const msg = isActive ? 'Deactivate this file?' : 'Activate this file?';
+        if (!confirm(msg)) return;
+        btn.disabled = true;
+        const fd = new FormData();
+        fd.append('action', 'toggle_status');
+        if (_csrfToken) fd.append('_csrf_token', _csrfToken);
+
+        fetch('/projects/proshare/files/update/' + shortCode, {
+            method: 'POST',
+            headers: { 'Accept': 'application/json' },
+            body: fd
+        })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    const newStatus = data.status;
+                    // Update badge
+                    const row = btn.closest('tr');
+                    const badge = row.querySelector('.badge');
+                    if (badge) {
+                        badge.className = 'badge ' + (newStatus === 'active' ? 'badge-success' : 'badge-warning');
+                        badge.textContent = newStatus === 'active' ? 'Active' : 'Inactive';
+                    }
+                    // Update button
+                    if (newStatus === 'active') {
+                        btn.className = btn.className.replace('btn-success', 'btn-warning');
+                        btn.innerHTML = '<i class="fas fa-pause"></i>';
+                        btn.title = 'Deactivate';
+                        btn.onclick = () => toggleStatus(shortCode, 'active', btn);
+                    } else {
+                        btn.className = btn.className.replace('btn-warning', 'btn-success');
+                        btn.innerHTML = '<i class="fas fa-play"></i>';
+                        btn.title = 'Activate';
+                        btn.onclick = () => toggleStatus(shortCode, 'inactive', btn);
+                    }
+                    btn.disabled = false;
+                    showToast(newStatus === 'active' ? 'File activated.' : 'File deactivated.');
+                } else {
+                    alert('Error: ' + (data.error || 'Unknown error'));
+                    btn.disabled = false;
+                }
+            })
+            .catch(() => { alert('Error updating file'); btn.disabled = false; });
+    }
+
+    // Password modal
+    let _pwShortCode = null;
+    function openPasswordModal(shortCode, hasPassword) {
+        _pwShortCode = shortCode;
+        document.getElementById('pwEnableCheck').checked = hasPassword;
+        document.getElementById('pwInput').value = '';
+        document.getElementById('pwFields').style.display = hasPassword ? 'block' : 'none';
+        document.getElementById('passwordModal').style.display = 'flex';
+    }
+    function closePasswordModal() {
+        document.getElementById('passwordModal').style.display = 'none';
+    }
+    document.addEventListener('DOMContentLoaded', () => {
+        const pwCheck = document.getElementById('pwEnableCheck');
+        if (pwCheck) {
+            pwCheck.addEventListener('change', () => {
+                document.getElementById('pwFields').style.display = pwCheck.checked ? 'block' : 'none';
+            });
+        }
+        document.getElementById('pwSaveBtn')?.addEventListener('click', () => {
+            const enable   = document.getElementById('pwEnableCheck').checked;
+            const password = document.getElementById('pwInput').value;
+            const fd = new FormData();
+            fd.append('action', 'update_password');
+            fd.append('enable_password', enable ? '1' : '0');
+            if (enable) fd.append('password', password);
+            if (_csrfToken) fd.append('_csrf_token', _csrfToken);
+
+            fetch('/projects/proshare/files/update/' + _pwShortCode, {
+                method: 'POST',
+                headers: { 'Accept': 'application/json' },
+                body: fd
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        closePasswordModal();
+                        showToast(data.password_enabled ? 'Password protection enabled.' : 'Password protection removed.');
+                        // Update lock icon in table
+                        const rows = document.querySelectorAll('tbody tr');
+                        rows.forEach(row => {
+                            const keyBtn = row.querySelector('button[title="Password Settings"]');
+                            if (keyBtn && keyBtn.getAttribute('onclick')?.includes("'" + _pwShortCode + "'")) {
+                                const lockIcon = row.querySelector('.fa-lock');
+                                if (data.password_enabled && !lockIcon) {
+                                    const nameCell = row.querySelector('td:first-child');
+                                    nameCell?.insertAdjacentHTML('beforeend', ' <i class="fas fa-lock" style="color: var(--orange); margin-left: 6px; font-size: 0.8rem;" title="Password protected"></i>');
+                                } else if (!data.password_enabled && lockIcon) {
+                                    lockIcon.remove();
+                                }
+                            }
+                        });
+                    } else {
+                        alert('Error: ' + (data.error || 'Unknown error'));
+                    }
+                })
+                .catch(() => alert('Error updating password'));
+        });
+    });
 </script>
+
+<!-- Password Modal -->
+<div id="passwordModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:9998; align-items:center; justify-content:center;">
+    <div style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:12px; padding:28px; width:100%; max-width:420px; box-shadow:0 8px 40px rgba(0,0,0,0.5);">
+        <h3 style="margin:0 0 1.25rem; color:var(--text-primary); font-size:1.05rem;">
+            <i class="fas fa-key" style="color:var(--cyan); margin-right:8px;"></i> Password Settings
+        </h3>
+        <label style="display:flex; align-items:center; gap:10px; cursor:pointer; margin-bottom:1rem;">
+            <input type="checkbox" id="pwEnableCheck" style="width:16px;height:16px;accent-color:var(--cyan);">
+            <span>Enable password protection</span>
+        </label>
+        <div id="pwFields" style="display:none; margin-bottom:1.25rem;">
+            <label style="display:block; margin-bottom:6px; font-size:0.875rem; color:var(--text-muted);">New Password</label>
+            <input type="password" id="pwInput" placeholder="Enter new password" style="width:100%; padding:10px 14px; background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:8px; color:var(--text-primary); font-size:0.9rem;">
+        </div>
+        <div style="display:flex; gap:10px; justify-content:flex-end;">
+            <button onclick="closePasswordModal()" class="btn btn-secondary" style="padding:8px 18px;">Cancel</button>
+            <button id="pwSaveBtn" class="btn btn-primary" style="padding:8px 18px;">Save</button>
+        </div>
+    </div>
+</div>
+
 <?php View::endSection(); ?>
