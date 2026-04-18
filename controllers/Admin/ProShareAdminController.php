@@ -739,7 +739,7 @@ class ProShareAdminController extends BaseController
         
         // Get all user IDs from activity logs
         $userIdsFromLogs = $this->projectDb->fetchAll(
-            "SELECT DISTINCT user_id FROM activity_logs WHERE user_id IS NOT NULL"
+            "SELECT DISTINCT user_id FROM proshare_activity_logs WHERE user_id IS NOT NULL"
         );
         
         $users = [];
@@ -765,12 +765,12 @@ class ProShareAdminController extends BaseController
             
             // Get user's activities
             $activities = $this->projectDb->fetchAll(
-                "SELECT * FROM activity_logs WHERE user_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?",
+                "SELECT * FROM proshare_activity_logs WHERE user_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?",
                 [$userId, $perPage, $offset]
             );
             
             $totalCount = $this->projectDb->fetch(
-                "SELECT COUNT(*) as count FROM activity_logs WHERE user_id = ?",
+                "SELECT COUNT(*) as count FROM proshare_activity_logs WHERE user_id = ?",
                 [$userId]
             )['count'];
         }
@@ -809,7 +809,7 @@ class ProShareAdminController extends BaseController
         
         // Get activity logs from project DB
         $logs = $this->projectDb->fetchAll(
-            "SELECT * FROM activity_logs $whereClause ORDER BY created_at DESC LIMIT ? OFFSET ?",
+            "SELECT * FROM proshare_activity_logs $whereClause ORDER BY created_at DESC LIMIT ? OFFSET ?",
             array_merge($params, [$perPage, $offset])
         );
         
@@ -840,7 +840,7 @@ class ProShareAdminController extends BaseController
         
         // Get total count
         $totalCount = $this->projectDb->fetch(
-            "SELECT COUNT(*) as count FROM activity_logs $whereClause",
+            "SELECT COUNT(*) as count FROM proshare_activity_logs $whereClause",
             $params
         )['count'];
         
@@ -848,7 +848,7 @@ class ProShareAdminController extends BaseController
         
         // Get all user IDs from activity logs for filter dropdown
         $userIdsFromLogs = $this->projectDb->fetchAll(
-            "SELECT DISTINCT user_id FROM activity_logs WHERE user_id IS NOT NULL"
+            "SELECT DISTINCT user_id FROM proshare_activity_logs WHERE user_id IS NOT NULL"
         );
         
         $allUsers = [];
@@ -931,7 +931,7 @@ class ProShareAdminController extends BaseController
         
         // Get file activity logs
         $activities = $this->projectDb->fetchAll(
-            "SELECT * FROM activity_logs $whereClause ORDER BY created_at DESC LIMIT ? OFFSET ?",
+            "SELECT * FROM proshare_activity_logs $whereClause ORDER BY created_at DESC LIMIT ? OFFSET ?",
             array_merge($params, [$perPage, $offset])
         );
         
@@ -972,7 +972,7 @@ class ProShareAdminController extends BaseController
         
         // Get total count
         $totalCount = $this->projectDb->fetch(
-            "SELECT COUNT(*) as count FROM activity_logs $whereClause",
+            "SELECT COUNT(*) as count FROM proshare_activity_logs $whereClause",
             $params
         )['count'];
         
@@ -981,16 +981,16 @@ class ProShareAdminController extends BaseController
         // Get activity statistics
         $stats = [
             'uploads' => $this->projectDb->fetch(
-                "SELECT COUNT(*) as count FROM activity_logs WHERE action LIKE '%upload%'"
+                "SELECT COUNT(*) as count FROM proshare_activity_logs WHERE action LIKE '%upload%'"
             )['count'] ?? 0,
             'downloads' => $this->projectDb->fetch(
                 "SELECT COUNT(*) as count FROM proshare_file_downloads"
             )['count'] ?? 0,
             'deletes' => $this->projectDb->fetch(
-                "SELECT COUNT(*) as count FROM activity_logs WHERE action LIKE '%delete%'"
+                "SELECT COUNT(*) as count FROM proshare_activity_logs WHERE action LIKE '%delete%'"
             )['count'] ?? 0,
             'shares' => $this->projectDb->fetch(
-                "SELECT COUNT(*) as count FROM activity_logs WHERE action LIKE '%share%'"
+                "SELECT COUNT(*) as count FROM proshare_activity_logs WHERE action LIKE '%share%'"
             )['count'] ?? 0
         ];
         
@@ -1026,7 +1026,7 @@ class ProShareAdminController extends BaseController
         
         // Get suspicious activities from audit logs
         $suspiciousActivities = $this->projectDb->fetchAll(
-            "SELECT * FROM audit_logs 
+            "SELECT * FROM proshare_audit_logs 
              WHERE action LIKE '%unauthorized%' OR action LIKE '%failed%' OR action LIKE '%suspicious%'
              ORDER BY created_at DESC 
              LIMIT 50"
@@ -1175,7 +1175,7 @@ class ProShareAdminController extends BaseController
         
         // Get audit logs
         $auditLogs = $this->projectDb->fetchAll(
-            "SELECT * FROM audit_logs ORDER BY created_at DESC LIMIT ? OFFSET ?",
+            "SELECT * FROM proshare_audit_logs ORDER BY created_at DESC LIMIT ? OFFSET ?",
             [$perPage, $offset]
         );
         
@@ -1215,7 +1215,7 @@ class ProShareAdminController extends BaseController
         }
         
         // Get total count
-        $totalCount = $this->projectDb->fetch("SELECT COUNT(*) as count FROM audit_logs")['count'];
+        $totalCount = $this->projectDb->fetch("SELECT COUNT(*) as count FROM proshare_audit_logs")['count'];
         $totalPages = ceil($totalCount / $perPage);
         
         $this->view('admin/projects/proshare/audit-trail', [
@@ -1237,7 +1237,7 @@ class ProShareAdminController extends BaseController
         
         // Get all audit logs
         $auditLogs = $this->projectDb->fetchAll(
-            "SELECT * FROM audit_logs ORDER BY created_at DESC"
+            "SELECT * FROM proshare_audit_logs ORDER BY created_at DESC"
         );
         
         // Get user info
@@ -1325,7 +1325,7 @@ class ProShareAdminController extends BaseController
         if (!empty($recentUsers)) {
             foreach ($recentUsers as $user) {
                 $activityCount = $this->projectDb->fetch(
-                    "SELECT COUNT(*) as count FROM activity_logs 
+                    "SELECT COUNT(*) as count FROM proshare_activity_logs 
                      WHERE user_id = ? AND created_at > DATE_SUB(NOW(), INTERVAL 30 DAY)",
                     [$user['id']]
                 )['count'] ?? 0;
@@ -1355,7 +1355,7 @@ class ProShareAdminController extends BaseController
         // Get most active users
         $mostActive = $this->projectDb->fetchAll(
             "SELECT user_id, COUNT(*) as activity_count
-             FROM activity_logs
+             FROM proshare_activity_logs
              WHERE created_at > DATE_SUB(NOW(), INTERVAL 30 DAY)
              GROUP BY user_id
              ORDER BY activity_count DESC

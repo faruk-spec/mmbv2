@@ -151,7 +151,7 @@
 
     <div class="form-card">
         <form method="POST" action="/admin/whatsapp/user-subscriptions/assign" id="assignForm">
-            <input type="hidden" name="csrf_token" value="<?= Security::generateCsrfToken() ?>">
+            <input type="hidden" name="_csrf_token" value="<?= Security::generateCsrfToken() ?>">
             
             <!-- Select User -->
             <div class="form-group">

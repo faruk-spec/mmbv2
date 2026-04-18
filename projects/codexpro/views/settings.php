@@ -18,7 +18,7 @@ ob_start();
 
 <div class="settings-container">
     <form id="settingsForm" onsubmit="saveSettings(event)">
-        <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
+        <input type="hidden" name="_csrf_token" value="<?= \Core\Security::generateCsrfToken() ?>">
         <div class="settings-section">
             <h2>Appearance</h2>
             

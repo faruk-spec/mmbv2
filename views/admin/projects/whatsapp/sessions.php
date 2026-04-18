@@ -239,7 +239,7 @@ function deleteSession(sessionId, sessionName) {
     
     const formData = new FormData();
     formData.append('session_id', sessionId);
-    formData.append('csrf_token', '<?= Core\Security::generateCsrfToken() ?>');
+    formData.append('_csrf_token', '<?= Core\Security::generateCsrfToken() ?>');
     
     fetch('/admin/whatsapp/sessions/delete', {
         method: 'POST',

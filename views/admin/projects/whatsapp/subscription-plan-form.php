@@ -132,7 +132,7 @@
 
     <div class="form-card">
         <form method="POST" action="<?= $plan ? '/admin/whatsapp/subscription-plans/update/' . $plan['id'] : '/admin/whatsapp/subscription-plans/create' ?>">
-            <input type="hidden" name="csrf_token" value="<?= Security::generateCsrfToken() ?>">
+            <input type="hidden" name="_csrf_token" value="<?= Security::generateCsrfToken() ?>">
             
             <!-- Plan Name -->
             <div class="form-group">

@@ -49,7 +49,7 @@ class SettingsController
         
         try {
             // Validate CSRF token
-            if (!Security::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
+            if (!Security::verifyCsrfToken($_POST['_csrf_token'] ?? '')) {
                 throw new \Exception('Invalid CSRF token');
             }
             

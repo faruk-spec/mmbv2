@@ -47,7 +47,7 @@ class MessageController
         
         try {
             // Validate CSRF token
-            if (!Security::validateCSRF($_POST['csrf_token'] ?? '')) {
+            if (!Security::validateCsrfToken($_POST['_csrf_token'] ?? '')) {
                 throw new \Exception('Invalid CSRF token');
             }
             

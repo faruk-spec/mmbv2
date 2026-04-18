@@ -25,7 +25,7 @@ $billNumber = 'BILL-' . strtoupper(date('Ymd')) . '-' . substr(strtoupper(bin2he
     <!-- ====== LEFT PANEL: Scrollable Form ====== -->
     <div id="leftFormPanel" style="overflow-y:auto;height:100%;padding-right:4px;">
     <form method="POST" action="/projects/billx/generate" id="billForm">
-    <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
+    <input type="hidden" name="_csrf_token" value="<?= $csrfToken ?>">
     <div style="display:flex;flex-direction:column;gap:10px;">
 
             <!-- Bill Type & Number -->

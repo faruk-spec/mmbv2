@@ -400,7 +400,7 @@ function submitCreateSession(event) {
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: 'session_name=' + encodeURIComponent(sessionName) + '&csrf_token=<?= Security::generateCsrfToken() ?>'
+        body: 'session_name=' + encodeURIComponent(sessionName) + '&_csrf_token=<?= Security::generateCsrfToken() ?>'
     })
     .then(response => {
         if (!response.ok) {
@@ -618,7 +618,7 @@ function logoutSession(sessionId) {
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
-                body: 'session_id=' + sessionId + '&csrf_token=<?= Security::generateCsrfToken() ?>'
+                body: 'session_id=' + sessionId + '&_csrf_token=<?= Security::generateCsrfToken() ?>'
             })
             .then(response => {
                 if (!response.ok) {
@@ -662,7 +662,7 @@ function disconnectSession(sessionId) {
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
-                body: 'session_id=' + sessionId + '&csrf_token=<?= Security::generateCsrfToken() ?>'
+                body: 'session_id=' + sessionId + '&_csrf_token=<?= Security::generateCsrfToken() ?>'
             })
             .then(response => {
                 if (!response.ok) {
@@ -711,7 +711,7 @@ function deleteSession(sessionId, sessionName) {
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
-                body: 'session_id=' + sessionId + '&csrf_token=<?= Security::generateCsrfToken() ?>'
+                body: 'session_id=' + sessionId + '&_csrf_token=<?= Security::generateCsrfToken() ?>'
             })
             .then(response => {
                 // Validate content type before parsing

@@ -101,7 +101,7 @@
 
     <div class="settings-card">
         <form method="POST" action="/admin/projects/proshare/settings">
-            <input type="hidden" name="_csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
+            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Security::generateCsrfToken()) ?>">
 
             <!-- File Upload Settings -->
             <div class="settings-section">

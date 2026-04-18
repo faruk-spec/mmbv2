@@ -34,7 +34,7 @@ ob_start();
         </div>
         <div class="card-body">
             <form id="editSnippetForm" method="POST">
-                <input type="hidden" name="csrf_token" value="<?= Security::generateToken() ?>">
+                <input type="hidden" name="_csrf_token" value="<?= \Core\Security::generateCsrfToken() ?>">
                 
                 <div class="form-group">
                     <label for="title">

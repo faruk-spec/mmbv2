@@ -110,7 +110,7 @@ $hasError = isset($_GET['error']);
         <h3 style="margin-bottom:12px;"><i class="fas fa-exclamation-triangle" style="color:#ff6b6b;"></i> Delete Bill</h3>
         <p style="color:var(--text-secondary);margin-bottom:20px;">Are you sure you want to delete bill <strong id="deleteBillNo"></strong>? This cannot be undone.</p>
         <form method="POST" action="/projects/billx/delete">
-            <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
+            <input type="hidden" name="_csrf_token" value="<?= $csrfToken ?>">
             <input type="hidden" name="id" id="deleteId">
             <div class="form-actions">
                 <button type="submit" class="btn btn-danger"><i class="fas fa-trash"></i> Delete</button>

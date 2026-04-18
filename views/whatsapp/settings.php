@@ -248,7 +248,7 @@ function generateNewApiKey() {
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: `action=generate_api_key&csrf_token=<?= Security::generateCsrfToken() ?>`
+        body: `action=generate_api_key&_csrf_token=<?= Security::generateCsrfToken() ?>`
     })
     .then(response => response.json())
     .then(data => {
@@ -273,7 +273,7 @@ function updateWebhook() {
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: `action=update_webhook&webhook_url=${encodeURIComponent(webhookUrl)}&csrf_token=<?= Security::generateCsrfToken() ?>`
+        body: `action=update_webhook&webhook_url=${encodeURIComponent(webhookUrl)}&_csrf_token=<?= Security::generateCsrfToken() ?>`
     })
     .then(response => response.json())
     .then(data => {
