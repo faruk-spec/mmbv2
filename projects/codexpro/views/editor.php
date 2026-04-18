@@ -1,10 +1,50 @@
+<?php
+$defaultTheme = 'dark';
+$csrfToken = \Core\Security::generateCsrfToken();
+try {
+    $db = \Core\Database::getInstance();
+    $navbarSettings = $db->fetch("SELECT default_theme FROM navbar_settings WHERE id = 1");
+    if ($navbarSettings && !empty($navbarSettings['default_theme'])) {
+        $defaultTheme = $navbarSettings['default_theme'];
+    }
+} catch (\Exception $e) {
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<?= htmlspecialchars($csrfToken) ?>">
     <title>CodeXPro - Live Editor</title>
+    <link rel="stylesheet" href="/css/universal-theme.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        :root {
+            --editor-bg: #0f0f23;
+            --editor-surface: #1a1a2e;
+            --editor-surface-2: #16213e;
+            --editor-card: #1e293b;
+            --editor-border: #333;
+            --editor-accent: #00f0ff;
+            --editor-text: #ffffff;
+            --editor-muted: #8892a6;
+            --editor-preview-bg: #ffffff;
+            --navbar-height: 3.75rem;
+        }
+
+        [data-theme="light"] {
+            --editor-bg: #f4f6fb;
+            --editor-surface: #ffffff;
+            --editor-surface-2: #eef2ff;
+            --editor-card: #ffffff;
+            --editor-border: rgba(0, 0, 0, 0.12);
+            --editor-accent: #0369a1;
+            --editor-text: #1a2035;
+            --editor-muted: #5a6379;
+            --editor-preview-bg: #ffffff;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -13,8 +53,8 @@
         
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #0f0f23;
-            color: #fff;
+            background: var(--editor-bg);
+            color: var(--editor-text);
             overflow: hidden;
         }
         
@@ -33,12 +73,13 @@
         .editor-container {
             display: flex;
             flex-direction: column;
-            height: 100vh;
+            height: calc(100vh - var(--navbar-height));
+            margin-top: var(--navbar-height);
         }
         
         .editor-header {
-            background: #1a1a2e;
-            border-bottom: 2px solid #00f0ff;
+            background: var(--editor-surface);
+            border-bottom: 2px solid var(--editor-accent);
             padding: 10px 20px;
             display: flex;
             justify-content: space-between;
@@ -48,7 +89,7 @@
         }
         
         .project-name {
-            color: #00f0ff;
+            color: var(--editor-accent);
             font-size: 1.2em;
             font-weight: bold;
         }
@@ -64,8 +105,8 @@
         }
         
         .btn {
-            background: #00f0ff;
-            color: #0f0f23;
+            background: var(--editor-accent);
+            color: var(--editor-bg);
             border: none;
             padding: 8px 16px;
             border-radius: 4px;
@@ -75,17 +116,18 @@
         }
         
         .btn:hover {
-            background: #00d4dd;
+            opacity: 0.92;
             transform: translateY(-2px);
         }
         
         .btn-secondary {
-            background: #333;
-            color: #fff;
+            background: var(--editor-surface-2);
+            color: var(--editor-text);
+            border: 1px solid var(--editor-border);
         }
         
         .btn-secondary:hover {
-            background: #444;
+            opacity: 0.92;
         }
         
         .editor-body {
@@ -106,7 +148,7 @@
         /* Resizer - Only on desktop */
         .resizer {
             width: 5px;
-            background: rgba(0, 240, 255, 0.3);
+            background: color-mix(in srgb, var(--editor-accent) 35%, transparent);
             cursor: ew-resize;
             position: relative;
             z-index: 10;
@@ -115,12 +157,12 @@
         }
         
         .resizer:hover {
-            background: rgba(0, 240, 255, 0.6);
+            background: color-mix(in srgb, var(--editor-accent) 60%, transparent);
             width: 8px;
         }
         
         .resizer:active {
-            background: #00f0ff;
+            background: var(--editor-accent);
         }
         
         .resizer::before {
@@ -136,31 +178,31 @@
         }
         
         .tabs {
-            background: #16213e;
+            background: var(--editor-surface-2);
             display: flex;
-            border-bottom: 1px solid #333;
+            border-bottom: 1px solid var(--editor-border);
         }
         
         .tab {
             padding: 10px 20px;
             cursor: pointer;
-            border-right: 1px solid #333;
+            border-right: 1px solid var(--editor-border);
             transition: all 0.3s;
         }
         
         .tab.active {
-            background: #1a1a2e;
-            color: #00f0ff;
-            border-bottom: 2px solid #00f0ff;
+            background: var(--editor-surface);
+            color: var(--editor-accent);
+            border-bottom: 2px solid var(--editor-accent);
         }
         
         .tab:hover:not(.active) {
-            background: #1a1a2e;
+            background: var(--editor-surface);
         }
         
         .code-editor {
             flex: 1;
-            background: #1a1a2e;
+            background: var(--editor-surface);
             padding: 10px;
             overflow: auto;
         }
@@ -168,9 +210,9 @@
         textarea {
             width: 100%;
             height: 100%;
-            background: #0f0f23;
-            color: #fff;
-            border: 1px solid #333;
+            background: var(--editor-bg);
+            color: var(--editor-text);
+            border: 1px solid var(--editor-border);
             padding: 15px;
             font-family: 'Courier New', Courier, monospace;
             font-size: <?= max(10, min(24, (int)($settings['font_size'] ?? 14))) ?>px;
@@ -181,19 +223,19 @@
         
         .preview-panel {
             flex: 1;
-            background: #fff;
-            border-left: 2px solid #00f0ff;
+            background: var(--editor-preview-bg);
+            border-left: 2px solid var(--editor-accent);
             display: flex;
             flex-direction: column;
             min-width: 0;
         }
         
         .preview-header {
-            background: #1a1a2e;
+            background: var(--editor-surface);
             padding: 10px 20px;
-            color: #00f0ff;
+            color: var(--editor-accent);
             font-weight: bold;
-            border-bottom: 1px solid #333;
+            border-bottom: 1px solid var(--editor-border);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -201,7 +243,7 @@
         
         .preview-content {
             flex: 1;
-            background: #fff;
+            background: var(--editor-preview-bg);
             overflow: auto;
         }
         
@@ -209,15 +251,15 @@
             width: 100%;
             height: 100%;
             border: none;
-            background: #fff;
+            background: var(--editor-preview-bg);
         }
         
         .status-bar {
-            background: #16213e;
+            background: var(--editor-surface-2);
             padding: 5px 20px;
             font-size: 0.9em;
-            color: #888;
-            border-top: 1px solid #333;
+            color: var(--editor-muted);
+            border-top: 1px solid var(--editor-border);
             display: flex;
             justify-content: space-between;
         }
@@ -241,7 +283,7 @@
             
             .preview-panel {
                 border-left: none;
-                border-top: 2px solid #00f0ff;
+                border-top: 2px solid var(--editor-accent);
             }
             
             /* Hide resizer on mobile */
@@ -302,7 +344,8 @@
         }
     </style>
 </head>
-<body>
+<body data-theme="<?= htmlspecialchars($defaultTheme) ?>">
+    <?php include BASE_PATH . '/views/layouts/navbar.php'; ?>
     <div class="editor-container">
         <div class="editor-header">
             <div class="project-name"><?= htmlspecialchars($project['name'] ?? 'Untitled Project') ?></div>
@@ -364,6 +407,43 @@
     </div>
     
     <script>
+        (function initGlobalThemeAndFetch() {
+            const html = document.documentElement;
+            const body = document.body;
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                html.setAttribute('data-theme', savedTheme);
+                body.setAttribute('data-theme', savedTheme);
+            } else {
+                html.setAttribute('data-theme', body.getAttribute('data-theme') || 'dark');
+            }
+
+            document.addEventListener('themeChanged', function (e) {
+                const theme = e?.detail?.theme || html.getAttribute('data-theme');
+                if (theme) {
+                    html.setAttribute('data-theme', theme);
+                    body.setAttribute('data-theme', theme);
+                }
+            });
+
+            const csrfToken = document.querySelector('meta[name=\"csrf-token\"]')?.getAttribute('content') || '';
+            const nativeFetch = window.fetch.bind(window);
+            window.fetch = function(resource, init = {}) {
+                const requestInit = { ...init };
+                const method = String(requestInit.method || 'GET').toUpperCase();
+                if (csrfToken && !['GET', 'HEAD', 'OPTIONS'].includes(method)) {
+                    requestInit.headers = new Headers(requestInit.headers || {});
+                    if (!requestInit.headers.has('X-CSRF-Token')) {
+                        requestInit.headers.set('X-CSRF-Token', csrfToken);
+                    }
+                    if (!requestInit.headers.has('Accept')) {
+                        requestInit.headers.set('Accept', 'application/json');
+                    }
+                }
+                return nativeFetch(resource, requestInit);
+            };
+        })();
+
         const projectId = <?= $project['id'] ?? 'null' ?>;
         const autoSave = <?= ($settings['auto_save'] ?? 1) ? 'true' : 'false' ?>;
         const autoPreview = <?= ($settings['auto_preview'] ?? 1) ? 'true' : 'false' ?>;

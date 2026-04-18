@@ -76,7 +76,14 @@ ob_start();
 <script>
 function useTemplate(templateId) {
     fetch('/projects/codexpro/templates/' + templateId)
-        .then(r => r.json())
+        .then(async (r) => {
+            const contentType = r.headers.get('content-type') || '';
+            if (!contentType.includes('application/json')) {
+                const text = await r.text();
+                throw new Error(text ? text.slice(0, 120) : 'Unexpected non-JSON response');
+            }
+            return r.json();
+        })
         .then(data => {
             if (data.success) {
                 // Store template data and redirect to editor
@@ -94,7 +101,14 @@ function useStarterTemplate(templateKey) {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({ template: templateKey })
     })
-    .then(r => r.json())
+    .then(async (r) => {
+        const contentType = r.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
+            const text = await r.text();
+            throw new Error(text ? text.slice(0, 120) : 'Unexpected non-JSON response');
+        }
+        return r.json();
+    })
     .then(data => {
         if (data.success) {
             window.location.href = '/projects/codexpro/editor/' + data.project_id;

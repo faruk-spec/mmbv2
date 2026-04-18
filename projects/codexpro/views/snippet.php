@@ -153,24 +153,25 @@ ob_start();
     align-items: center;
     gap: 6px;
     font-size: 0.875rem;
-    color: #94a3b8;
+    color: var(--text-secondary);
 }
 
 .badge-language {
-    background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
-    color: white;
+    background: linear-gradient(135deg, var(--cyan) 0%, var(--purple) 100%);
+    color: var(--bg-primary);
     font-weight: 600;
 }
 
 .snippet-description {
     font-size: 1rem;
-    color: #cbd5e1;
+    color: var(--text-primary);
     line-height: 1.6;
     margin: 0;
 }
 
 .code-container {
-    background: #1e293b;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
     border-radius: 8px;
     overflow: hidden;
     margin: 0;
@@ -196,12 +197,12 @@ ob_start();
 }
 
 .snippet-tags i {
-    color: #94a3b8;
+    color: var(--text-secondary);
 }
 
 .tag {
-    background: rgba(59, 130, 246, 0.1);
-    color: #3b82f6;
+    background: rgba(0, 240, 255, 0.12);
+    color: var(--cyan);
     padding: 4px 12px;
     border-radius: 12px;
     font-size: 0.75rem;
@@ -212,8 +213,8 @@ ob_start();
     position: fixed;
     top: 80px;
     right: 20px;
-    background: #1e293b;
-    color: white;
+    background: var(--bg-card);
+    color: var(--text-primary);
     padding: 12px 20px;
     border-radius: 8px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
@@ -232,15 +233,15 @@ ob_start();
 }
 
 .notification-success {
-    border-left: 4px solid #10b981;
+    border-left: 4px solid var(--green);
 }
 
 .notification-error {
-    border-left: 4px solid #ef4444;
+    border-left: 4px solid var(--red);
 }
 
 .notification-info {
-    border-left: 4px solid #3b82f6;
+    border-left: 4px solid var(--cyan);
 }
 </style>
 

@@ -19,6 +19,16 @@ switch ($segments[0]) {
         (new \Projects\DevZone\Controllers\DashboardController())->index();
         break;
 
+    case 'settings':
+        require_once PROJECT_PATH . '/controllers/DashboardController.php';
+        $controller = new \Projects\DevZone\Controllers\DashboardController();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $controller->updateSettings();
+        } else {
+            $controller->settings();
+        }
+        break;
+
     default:
         http_response_code(404);
         echo '<p style="font-family:sans-serif;padding:2rem;color:#888;">DevZone page not found.</p>';

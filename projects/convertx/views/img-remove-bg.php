@@ -50,13 +50,6 @@ $currentView = 'img-remove-bg';
             </div>
         </div>
 
-        <!-- Notify hint -->
-        <p style="font-size:.78rem;color:var(--text-muted);margin:0;">
-            <i class="fa-solid fa-circle-info"></i>
-            This feature requires an iLoveAPI key. Configure it in
-            <a href="/admin/projects/convertx/image-tools-settings" style="color:var(--cx-primary);">Admin → ConvertX → Image Tools APIs</a>.
-        </p>
-
     </div>
 </div>
 

@@ -5,6 +5,7 @@ $user = Auth::user();
 
 // Set theme from navbar settings
 $defaultTheme = 'dark';
+$csrfToken = \Core\Security::generateCsrfToken();
 try {
     $db = \Core\Database::getInstance();
     $navbarSettings = $db->fetch("SELECT default_theme FROM navbar_settings WHERE id = 1");
@@ -20,6 +21,7 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<?= htmlspecialchars($csrfToken) ?>">
     <title><?= View::e($title ?? 'CodeXPro') ?> - <?= APP_NAME ?></title>
     
     <!-- Fonts -->
@@ -846,6 +848,41 @@ try {
     <div id="toastContainer" style="position: fixed; top: 20px; right: 20px; z-index: 10000;"></div>
     
     <script>
+    (function initThemeAndCsrf() {
+        const html = document.documentElement;
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+            html.setAttribute('data-theme', savedTheme);
+        }
+
+        document.addEventListener('themeChanged', function (e) {
+            if (e && e.detail && e.detail.theme) {
+                html.setAttribute('data-theme', e.detail.theme);
+            }
+        });
+
+        const csrfToken = document.querySelector('meta[name=\"csrf-token\"]')?.getAttribute('content') || '';
+        const nativeFetch = window.fetch.bind(window);
+        window.fetch = function(resource, init = {}) {
+            const requestInit = { ...init };
+            const method = String(requestInit.method || 'GET').toUpperCase();
+            const url = typeof resource === 'string' ? resource : (resource?.url || '');
+            const isSameOrigin = !url || url.startsWith('/') || url.startsWith(window.location.origin);
+
+            if (csrfToken && isSameOrigin && !['GET', 'HEAD', 'OPTIONS'].includes(method)) {
+                requestInit.headers = new Headers(requestInit.headers || {});
+                if (!requestInit.headers.has('X-CSRF-Token')) {
+                    requestInit.headers.set('X-CSRF-Token', csrfToken);
+                }
+                if (!requestInit.headers.has('Accept')) {
+                    requestInit.headers.set('Accept', 'application/json');
+                }
+            }
+
+            return nativeFetch(resource, requestInit);
+        };
+    })();
+
     // Toast Notification System
     function showNotification(message, type = 'success') {
         const container = document.getElementById('toastContainer');
@@ -1061,13 +1098,11 @@ try {
         saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
         
         fetch(`/projects/codexpro/snippets/${snippetId}/quick-update`, {
-            method: 'POST',
+            method: 'PATCH',
             headers: {
-                'Content-Type': 'application/json',
-                'X-HTTP-Method-Override': 'PATCH'
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                _method: 'PATCH',
                 title: title,
                 description: description,
                 is_public: isPublic
@@ -1121,14 +1156,11 @@ try {
             'Are you sure you want to delete this snippet? This action cannot be undone.',
             () => {
                 fetch(`/projects/codexpro/snippets/${id}`, {
-                    method: 'POST',
+                    method: 'DELETE',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'X-HTTP-Method-Override': 'DELETE'
+                        'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({
-                        _method: 'DELETE'
-                    })
+                    body: JSON.stringify({})
                 })
                 .then(response => response.json())
                 .then(data => {
@@ -1210,13 +1242,11 @@ try {
         saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
         
         fetch(`/projects/codexpro/projects/${id}/quick-update`, {
-            method: 'POST',
+            method: 'PATCH',
             headers: {
-                'Content-Type': 'application/json',
-                'X-HTTP-Method-Override': 'PATCH'
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                _method: 'PATCH',
                 name: name,
                 description: description,
                 visibility: isPublic ? 'public' : 'private'
@@ -1249,14 +1279,11 @@ try {
             'Are you sure you want to delete this project? This action cannot be undone.',
             () => {
                 fetch(`/projects/codexpro/projects/${id}`, {
-                    method: 'POST',
+                    method: 'DELETE',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'X-HTTP-Method-Override': 'DELETE'
+                        'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({
-                        _method: 'DELETE'
-                    })
+                    body: JSON.stringify({})
                 })
                 .then(response => response.json())
                 .then(data => {

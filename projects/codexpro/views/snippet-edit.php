@@ -202,8 +202,7 @@ document.getElementById('editSnippetForm').addEventListener('submit', function(e
         submitBtn.innerHTML = originalText;
     });
 });
-</script>
-
+<script>
 function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
     notification.className = `notification notification-${type}`;
@@ -267,7 +266,7 @@ function showNotification(message, type = 'info') {
 .form-help {
     margin: 8px 0 0 0;
     font-size: 0.875rem;
-    color: #94a3b8;
+    color: var(--text-secondary);
 }
 
 .form-actions {
@@ -280,8 +279,8 @@ function showNotification(message, type = 'info') {
     position: fixed;
     top: 80px;
     right: 20px;
-    background: #1e293b;
-    color: white;
+    background: var(--bg-card);
+    color: var(--text-primary);
     padding: 12px 20px;
     border-radius: 8px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
@@ -300,15 +299,15 @@ function showNotification(message, type = 'info') {
 }
 
 .notification-success {
-    border-left: 4px solid #10b981;
+    border-left: 4px solid var(--green);
 }
 
 .notification-error {
-    border-left: 4px solid #ef4444;
+    border-left: 4px solid var(--red);
 }
 
 .notification-info {
-    border-left: 4px solid #3b82f6;
+    border-left: 4px solid var(--cyan);
 }
 </style>
 

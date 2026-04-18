@@ -171,19 +171,19 @@ function resetSettings() {
 }
 
 .settings-section {
-    background: rgba(26, 26, 46, 0.6);
+    background: color-mix(in srgb, var(--bg-card) 88%, transparent);
     border-radius: 12px;
     padding: 2rem;
     margin-bottom: 2rem;
-    border: 1px solid rgba(6, 182, 212, 0.2);
+    border: 1px solid color-mix(in srgb, var(--cyan) 25%, var(--border-color));
 }
 
 .settings-section h2 {
-    color: #06b6d4;
+    color: var(--cyan);
     font-size: 1.3rem;
     margin-bottom: 1.5rem;
     padding-bottom: 0.5rem;
-    border-bottom: 2px solid rgba(6, 182, 212, 0.3);
+    border-bottom: 2px solid color-mix(in srgb, var(--cyan) 35%, transparent);
 }
 
 .form-group {
@@ -192,14 +192,14 @@ function resetSettings() {
 
 .form-group label {
     display: block;
-    color: #e2e8f0;
+    color: var(--text-primary);
     margin-bottom: 0.5rem;
     font-weight: 500;
 }
 
 .form-group small {
     display: block;
-    color: #94a3b8;
+    color: var(--text-secondary);
     margin-top: 0.25rem;
     font-size: 0.875rem;
 }
@@ -207,18 +207,18 @@ function resetSettings() {
 .form-control {
     width: 100%;
     padding: 0.75rem;
-    background: rgba(15, 15, 35, 0.8);
-    border: 1px solid rgba(6, 182, 212, 0.3);
+    background: var(--bg-secondary);
+    border: 1px solid color-mix(in srgb, var(--cyan) 35%, var(--border-color));
     border-radius: 8px;
-    color: #fff;
+    color: var(--text-primary);
     font-size: 1rem;
     transition: all 0.3s;
 }
 
 .form-control:focus {
     outline: none;
-    border-color: #06b6d4;
-    box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
+    border-color: var(--cyan);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--cyan) 20%, transparent);
 }
 
 .checkbox-group label {
@@ -251,8 +251,8 @@ function resetSettings() {
     right: 20px;
     padding: 1rem 1.5rem;
     border-radius: 8px;
-    background: rgba(16, 185, 129, 0.9);
-    color: #fff;
+    background: color-mix(in srgb, var(--green) 22%, var(--bg-card));
+    color: var(--text-primary);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     z-index: 9999;
     animation: slideIn 0.3s;

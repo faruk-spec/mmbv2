@@ -67,6 +67,114 @@ class DashboardController
         ]);
     }
 
+    public function settings(): void
+    {
+        $user   = Auth::user();
+        $userId = Auth::id();
+        $db     = Database::getInstance();
+
+        $settings = [];
+        $stats = ['boards' => 0, 'tasks' => 0, 'members' => 0, 'due_soon' => 0];
+
+        try {
+            $settings = $db->fetch(
+                "SELECT * FROM devzone_settings WHERE user_id = ?",
+                [$userId]
+            ) ?: [];
+
+            if (empty($settings)) {
+                $db->insert('devzone_settings', [
+                    'user_id' => $userId,
+                    'default_board_color' => '#00f0ff',
+                    'email_notifications' => 1,
+                    'task_reminders' => 1,
+                ]);
+                $settings = $db->fetch(
+                    "SELECT * FROM devzone_settings WHERE user_id = ?",
+                    [$userId]
+                ) ?: [];
+            }
+
+            $stats['boards'] = (int)($db->fetchColumn(
+                "SELECT COUNT(*) FROM devzone_boards WHERE user_id = ?",
+                [$userId]
+            ) ?: 0);
+            $stats['tasks'] = (int)($db->fetchColumn(
+                "SELECT COUNT(*) FROM devzone_tasks t
+                 JOIN devzone_boards b ON b.id = t.board_id
+                 WHERE (b.user_id = ? OR t.assignee_id = ?) AND t.is_archived = 0",
+                [$userId, $userId]
+            ) ?: 0);
+            $stats['members'] = (int)($db->fetchColumn(
+                "SELECT COUNT(*) FROM devzone_members m
+                 JOIN devzone_boards b ON b.id = m.board_id
+                 WHERE b.user_id = ?",
+                [$userId]
+            ) ?: 0);
+            $stats['due_soon'] = (int)($db->fetchColumn(
+                "SELECT COUNT(*) FROM devzone_tasks t
+                 JOIN devzone_boards b ON b.id = t.board_id
+                 WHERE (b.user_id = ? OR t.assignee_id = ?)
+                   AND t.is_archived = 0
+                   AND t.due_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)",
+                [$userId, $userId]
+            ) ?: 0);
+        } catch (\Exception $e) {
+            // tables may not exist yet
+        }
+
+        $this->render('settings', [
+            'title' => 'DevZone Settings',
+            'user' => $user,
+            'settings' => $settings,
+            'stats' => $stats,
+        ]);
+    }
+
+    public function updateSettings(): void
+    {
+        if (!\Core\Security::validateCsrfToken($_POST['_csrf_token'] ?? '')) {
+            $_SESSION['_flash']['error'] = 'Invalid request token.';
+            header('Location: /projects/devzone/settings');
+            exit;
+        }
+
+        $userId = Auth::id();
+        $db     = Database::getInstance();
+
+        try {
+            $color = (string)($_POST['default_board_color'] ?? '#00f0ff');
+            if (!preg_match('/^#[0-9A-Fa-f]{6}$/', $color)) {
+                $color = '#00f0ff';
+            }
+
+            $data = [
+                'default_board_color' => $color,
+                'email_notifications' => isset($_POST['email_notifications']) ? 1 : 0,
+                'task_reminders' => isset($_POST['task_reminders']) ? 1 : 0,
+            ];
+
+            $existing = $db->fetch(
+                "SELECT id FROM devzone_settings WHERE user_id = ?",
+                [$userId]
+            );
+
+            if ($existing) {
+                $db->update('devzone_settings', $data, 'user_id = ?', [$userId]);
+            } else {
+                $data['user_id'] = $userId;
+                $db->insert('devzone_settings', $data);
+            }
+
+            $_SESSION['_flash']['success'] = 'DevZone settings saved successfully.';
+        } catch (\Exception $e) {
+            $_SESSION['_flash']['error'] = 'Failed to save settings.';
+        }
+
+        header('Location: /projects/devzone/settings');
+        exit;
+    }
+
     private function render(string $view, array $data = []): void
     {
         extract($data);

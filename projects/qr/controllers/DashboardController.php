@@ -226,28 +226,6 @@ class DashboardController
             )['c'] ?? 0);
         } catch (\Exception $e) { /* ignore */ }
 
-        // ── Platform (universal) plans ──────────────────────────────────────
-        $platformPlans = [];
-        try {
-            $rows = $db->fetchAll(
-                "SELECT * FROM platform_plans WHERE status = 'active' ORDER BY sort_order ASC, price ASC"
-            );
-            foreach ($rows as &$p) {
-                $p['included_apps'] = json_decode($p['included_apps'] ?? '[]', true) ?: [];
-            }
-            $platformPlans = $rows;
-        } catch (\Exception $e) { /* table may not exist */ }
-
-        // ── User's active platform subscriptions ────────────────────────────
-        $activePlatformPlanIds = [];
-        try {
-            $subs = $db->fetchAll(
-                "SELECT plan_id FROM platform_user_subscriptions WHERE user_id = ? AND status = 'active'",
-                [$userId]
-            );
-            $activePlatformPlanIds = array_column($subs, 'plan_id');
-        } catch (\Exception $e) { /* ignore */ }
-
         // ── QR-specific upgrade plans ────────────────────────────────────────
         // All active QR subscription plans (shown as upgrade options to users without a subscription)
         $qrUpgradePlans = [];
@@ -283,8 +261,6 @@ class DashboardController
             'qrSub'                 => $qrSub,
             'staticCount'           => $staticCount,
             'dynamicCount'          => $dynamicCount,
-            'platformPlans'         => $platformPlans,
-            'activePlatformPlanIds' => $activePlatformPlanIds,
             'qrUpgradePlans'        => $qrUpgradePlans,
             'contactEmail'          => $contactEmail,
         ]);
