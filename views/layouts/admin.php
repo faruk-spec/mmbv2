@@ -1588,6 +1588,11 @@ window.mmbSkeleton = (function(){
                                 <i class="fas fa-chart-bar"></i>
                                 <span>Analytics & Insights</span>
                             </a>
+                            <!-- Activity Tracker -->
+                            <a href="/admin/projects/proshare/track" class="menu-link">
+                                <i class="fas fa-satellite-dish"></i>
+                                <span>Activity Tracker</span>
+                            </a>
                             <?php endif; ?>
                         </div>
                     </div>

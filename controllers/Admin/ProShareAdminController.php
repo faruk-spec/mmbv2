@@ -1311,6 +1311,103 @@ class ProShareAdminController extends BaseController
     }
     
     /**
+     * Track — unified real-time tracking dashboard (uploads, downloads, sessions, activity)
+     */
+    public function track(): void
+    {
+        $this->requirePermission('proshare.analytics');
+
+        // Totals
+        $totalFiles    = $this->projectDb->fetch("SELECT COUNT(*) as c FROM proshare_files")['c'] ?? 0;
+        $activeFiles   = $this->projectDb->fetch("SELECT COUNT(*) as c FROM proshare_files WHERE status = 'active'")['c'] ?? 0;
+        $inactiveFiles = $this->projectDb->fetch("SELECT COUNT(*) as c FROM proshare_files WHERE status = 'inactive'")['c'] ?? 0;
+        $totalDl       = $this->projectDb->fetch("SELECT COUNT(*) as c FROM proshare_file_downloads")['c'] ?? 0;
+        $totalTexts    = $this->projectDb->fetch("SELECT COUNT(*) as c FROM proshare_text_shares")['c'] ?? 0;
+        $today         = date('Y-m-d');
+        $uploadsToday  = $this->projectDb->fetch("SELECT COUNT(*) as c FROM proshare_files WHERE DATE(created_at) = ?", [$today])['c'] ?? 0;
+        $dlToday       = $this->projectDb->fetch("SELECT COUNT(*) as c FROM proshare_file_downloads WHERE DATE(created_at) = ?", [$today])['c'] ?? 0;
+
+        // Recent downloads (last 50)
+        $recentDownloads = $this->projectDb->fetchAll(
+            "SELECT d.*, f.original_name, f.short_code, f.user_id
+             FROM proshare_file_downloads d
+             LEFT JOIN proshare_files f ON f.id = d.file_id
+             ORDER BY d.created_at DESC
+             LIMIT 50"
+        );
+
+        // Enrich with uploader names
+        if (!empty($recentDownloads)) {
+            $uids = array_values(array_unique(array_filter(array_column($recentDownloads, 'user_id'))));
+            if (!empty($uids)) {
+                $ph = str_repeat('?,', count($uids) - 1) . '?';
+                $ul = [];
+                foreach ($this->mainDb->fetchAll("SELECT id, name FROM users WHERE id IN ($ph)", $uids) as $u) {
+                    $ul[$u['id']] = $u['name'];
+                }
+                foreach ($recentDownloads as &$row) {
+                    $row['uploader'] = $ul[$row['user_id']] ?? 'Anonymous';
+                }
+                unset($row);
+            } else {
+                foreach ($recentDownloads as &$row) { $row['uploader'] = 'Anonymous'; }
+                unset($row);
+            }
+        }
+
+        // Recent uploads (last 20)
+        $recentUploads = $this->projectDb->fetchAll(
+            "SELECT * FROM proshare_files ORDER BY created_at DESC LIMIT 20"
+        );
+        if (!empty($recentUploads)) {
+            $uids = array_values(array_unique(array_filter(array_column($recentUploads, 'user_id'))));
+            if (!empty($uids)) {
+                $ph = str_repeat('?,', count($uids) - 1) . '?';
+                $ul = [];
+                foreach ($this->mainDb->fetchAll("SELECT id, name FROM users WHERE id IN ($ph)", $uids) as $u) {
+                    $ul[$u['id']] = $u['name'];
+                }
+                foreach ($recentUploads as &$row) {
+                    $row['uploader'] = $ul[$row['user_id']] ?? 'Anonymous';
+                }
+                unset($row);
+            } else {
+                foreach ($recentUploads as &$row) { $row['uploader'] = 'Anonymous'; }
+                unset($row);
+            }
+        }
+
+        // Hourly activity today (uploads + downloads combined)
+        $hourly = [];
+        for ($h = 0; $h < 24; $h++) {
+            $hr = str_pad($h, 2, '0', STR_PAD_LEFT);
+            $up = $this->projectDb->fetch(
+                "SELECT COUNT(*) as c FROM proshare_files WHERE DATE(created_at) = ? AND HOUR(created_at) = ?",
+                [$today, $h]
+            )['c'] ?? 0;
+            $dl = $this->projectDb->fetch(
+                "SELECT COUNT(*) as c FROM proshare_file_downloads WHERE DATE(created_at) = ? AND HOUR(created_at) = ?",
+                [$today, $h]
+            )['c'] ?? 0;
+            $hourly[] = ['hour' => $hr . ':00', 'uploads' => (int)$up, 'downloads' => (int)$dl];
+        }
+
+        $this->view('admin/projects/proshare/track', [
+            'title'           => 'ProShare — Activity Tracker',
+            'totalFiles'      => $totalFiles,
+            'activeFiles'     => $activeFiles,
+            'inactiveFiles'   => $inactiveFiles,
+            'totalDownloads'  => $totalDl,
+            'totalTexts'      => $totalTexts,
+            'uploadsToday'    => $uploadsToday,
+            'dlToday'         => $dlToday,
+            'recentDownloads' => $recentDownloads,
+            'recentUploads'   => $recentUploads,
+            'hourly'          => $hourly,
+        ], 'admin');
+    }
+
+    /**
      * Analytics - Active users, most downloaded files, traffic overview
      */
     public function analytics(): void
@@ -1350,7 +1447,7 @@ class ProShareAdminController extends BaseController
         $mostDownloaded = $this->projectDb->fetchAll(
             "SELECT f.*, COUNT(d.id) as download_count
              FROM proshare_files f
-             LEFT JOIN file_downloads d ON f.id = d.file_id
+             LEFT JOIN proshare_file_downloads d ON f.id = d.file_id
              GROUP BY f.id
              ORDER BY download_count DESC
              LIMIT 20"
@@ -1397,7 +1494,6 @@ class ProShareAdminController extends BaseController
                 [$date]
             )['count'] ?? 0;
             
-            // Use created_at instead of downloaded_at for file_downloads
             $downloads = $this->projectDb->fetch(
                 "SELECT COUNT(*) as count FROM proshare_file_downloads WHERE DATE(created_at) = ?",
                 [$date]
@@ -1411,25 +1507,19 @@ class ProShareAdminController extends BaseController
         }
         
         // Get statistics
+        $avgRow = $this->projectDb->fetch(
+            "SELECT AVG(download_count) as avg FROM (
+                SELECT COUNT(d.id) as download_count
+                FROM proshare_files f
+                LEFT JOIN proshare_file_downloads d ON f.id = d.file_id
+                GROUP BY f.id
+            ) as subquery"
+        );
         $stats = [
             'active_users_30d' => count($activeUsers),
             'total_downloads' => $this->projectDb->fetch("SELECT COUNT(*) as count FROM proshare_file_downloads")['count'] ?? 0,
             'total_uploads' => $this->projectDb->fetch("SELECT COUNT(*) as count FROM proshare_files")['count'] ?? 0,
-            'avg_downloads_per_file' => $this->projectDb->fetch(
-                "SELECT AVG(download_count) as avg FROM (
-                    SELECT COUNT(d.id) as download_count 
-                    FROM proshare_files f 
-                    LEFT JOIN file_downloads d ON f.id = d.file_id 
-                    GROUP BY f.id
-                ) as subquery"
-            )['avg'] ? round($this->projectDb->fetch(
-                "SELECT AVG(download_count) as avg FROM (
-                    SELECT COUNT(d.id) as download_count 
-                    FROM proshare_files f 
-                    LEFT JOIN file_downloads d ON f.id = d.file_id 
-                    GROUP BY f.id
-                ) as subquery"
-            )['avg'], 2) : 0
+            'avg_downloads_per_file' => $avgRow && $avgRow['avg'] ? round((float)$avgRow['avg'], 2) : 0,
         ];
         
         $this->view('admin/projects/proshare/analytics', [

@@ -210,6 +210,20 @@
     
     function showOptions() {
         if (selectedFiles.length === 0) return;
+
+        // Check file sizes before showing options
+        const maxBytes = <?= (int)($maxSize ?? 524288000) ?>;
+        const oversized = selectedFiles.filter(f => f.size > maxBytes);
+        if (oversized.length > 0) {
+            const names = oversized.map(f => `${f.name} (${(f.size/1024/1024).toFixed(1)} MB)`).join('\n');
+            alert(`The following file(s) exceed the ${(maxBytes/1024/1024).toFixed(0)} MB upload limit and cannot be uploaded:\n\n${names}`);
+            // Keep only files that fit
+            selectedFiles = selectedFiles.filter(f => f.size <= maxBytes);
+            if (selectedFiles.length === 0) {
+                fileInput.value = '';
+                return;
+            }
+        }
         
         optionsPanel.style.display = 'block';
         uploadZone.closest('.card').style.display = 'none';

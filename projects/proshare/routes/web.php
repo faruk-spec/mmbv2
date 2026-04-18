@@ -24,6 +24,7 @@ $router->post('/projects/proshare/files/update/{shortcode}', 'Projects\ProShare\
 // File Download
 $router->get('/projects/proshare/download/{shortcode}', 'Projects\ProShare\Controllers\DownloadController@download');
 $router->get('/projects/proshare/preview/{shortcode}', 'Projects\ProShare\Controllers\DownloadController@preview');
+$router->get('/projects/proshare/serve/{shortcode}', 'Projects\ProShare\Controllers\DownloadController@serveInline');
 $router->post('/projects/proshare/verify-password', 'Projects\ProShare\Controllers\DownloadController@verifyPassword');
 
 // Anonymous share link — shows preview/info page first (user clicks Download to get the file)

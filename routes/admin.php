@@ -161,6 +161,9 @@ $router->get('/admin/projects/proshare/notifications', 'Admin\\ProShareAdminCont
 // Analytics & Insights
 $router->get('/admin/projects/proshare/analytics', 'Admin\\ProShareAdminController@analytics', ['auth', 'admin']);
 
+// Activity Tracker
+$router->get('/admin/projects/proshare/track', 'Admin\\ProShareAdminController@track', ['auth', 'admin']);
+
 // BillX admin routes
 $router->get('/admin/projects/billx', 'Admin\\BillXAdminController@overview', ['auth', 'admin']);
 $router->get('/admin/projects/billx/bills', 'Admin\\BillXAdminController@bills', ['auth', 'admin']);

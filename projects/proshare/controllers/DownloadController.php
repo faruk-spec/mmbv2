@@ -21,15 +21,21 @@ class DownloadController
     {
         $db = Database::getInstance();
         
-        // Get file info
+        // Get file info — allow inactive so we can return a meaningful message
         $file = $db->fetch(
-            "SELECT * FROM proshare_files WHERE short_code = ? AND status = 'active'",
+            "SELECT * FROM proshare_files WHERE short_code = ? AND status NOT IN ('deleted')",
             [$shortcode]
         );
         
         if (!$file) {
             http_response_code(404);
             echo "File not found or has expired.";
+            return;
+        }
+
+        if ($file['status'] === 'inactive') {
+            http_response_code(410);
+            echo "This file has been deactivated by its owner.";
             return;
         }
         
@@ -374,9 +380,9 @@ class DownloadController
     {
         $db = Database::getInstance();
         
-        // Get file info
+        // Get file info — allow inactive so we can return a meaningful message
         $file = $db->fetch(
-            "SELECT * FROM proshare_files WHERE short_code = ? AND status = 'active'",
+            "SELECT * FROM proshare_files WHERE short_code = ? AND status NOT IN ('deleted')",
             [$shortcode]
         );
         
@@ -385,6 +391,15 @@ class DownloadController
             View::render('errors/404', [
                 'title' => 'File Not Found',
                 'message' => 'File not found or has expired.'
+            ]);
+            return;
+        }
+
+        if ($file['status'] === 'inactive') {
+            http_response_code(410);
+            View::render('errors/404', [
+                'title' => 'File Deactivated',
+                'message' => 'This file has been deactivated by its owner.'
             ]);
             return;
         }
@@ -470,5 +485,67 @@ class DownloadController
             $i++;
         }
         return round($bytes, 2) . ' ' . $units[$i];
+    }
+
+    /**
+     * Serve file inline (for preview thumbnails / embedded players).
+     * Only works for images, video, audio, and PDFs.
+     */
+    public function serveInline(string $shortcode): void
+    {
+        $db = Database::getInstance();
+
+        $file = $db->fetch(
+            "SELECT * FROM proshare_files WHERE short_code = ? AND status = 'active'",
+            [$shortcode]
+        );
+
+        if (!$file) {
+            http_response_code(404);
+            return;
+        }
+
+        // Require session auth for password-protected files
+        if ($file['password']) {
+            if (session_status() === PHP_SESSION_NONE) { session_start(); }
+            if (empty($_SESSION['proshare_auth_' . $shortcode])) {
+                http_response_code(403);
+                return;
+            }
+        }
+
+        if (!file_exists($file['path'])) {
+            http_response_code(404);
+            return;
+        }
+
+        // Only allow inline serving for previewable types
+        $allowed = ['image/', 'video/', 'audio/', 'application/pdf'];
+        $allowed_mime = false;
+        foreach ($allowed as $prefix) {
+            if (str_starts_with($file['mime_type'], $prefix)) {
+                $allowed_mime = true;
+                break;
+            }
+        }
+
+        if (!$allowed_mime) {
+            http_response_code(415);
+            return;
+        }
+
+        $safeName = preg_replace('/[^\x20-\x7E]/', '_', $file['original_name']);
+        $content = $file['is_compressed'] ? gzdecode(file_get_contents($file['path'])) : file_get_contents($file['path']);
+        if ($content === false) {
+            http_response_code(500);
+            return;
+        }
+
+        header('Content-Type: ' . $file['mime_type']);
+        header('Content-Disposition: inline; filename="' . str_replace(['"', '\\'], ['\"', '\\\\'], $safeName) . '"');
+        header('Content-Length: ' . strlen($content));
+        header('Cache-Control: private, max-age=3600');
+        echo $content;
+        exit;
     }
 }
