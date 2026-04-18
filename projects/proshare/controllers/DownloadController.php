@@ -535,7 +535,13 @@ class DownloadController
         }
 
         $safeName = preg_replace('/[^\x20-\x7E]/', '_', $file['original_name']);
-        $content = $file['is_compressed'] ? gzdecode(file_get_contents($file['path'])) : file_get_contents($file['path']);
+        $raw = file_get_contents($file['path']);
+        if ($raw === false) {
+            http_response_code(500);
+            return;
+        }
+        $content = $file['is_compressed'] ? gzdecode($raw) : $raw;
+        unset($raw);
         if ($content === false) {
             http_response_code(500);
             return;
