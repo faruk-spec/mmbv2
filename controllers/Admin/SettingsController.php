@@ -67,6 +67,7 @@ class SettingsController extends BaseController
                 'date_format',
                 'time_format',
                 'auth_tagline',
+                'auth_logo',
             ];
 
             // Snapshot current values before writing
@@ -178,7 +179,7 @@ class SettingsController extends BaseController
                 return;
             }
 
-            $uploadDir = BASE_PATH . '/public/uploads/settings';
+            $uploadDir = BASE_PATH . '/storage/uploads/oauth';
             if (!is_dir($uploadDir)) {
                 mkdir($uploadDir, 0755, true);
             }
@@ -192,16 +193,16 @@ class SettingsController extends BaseController
                 return;
             }
 
-            $webPath = '/uploads/settings/' . $filename;
+            $webPath = '/uploads/oauth/' . $filename;
 
             $db = Database::getInstance();
 
             // Delete old logo file if it was uploaded via this feature
             $existing = $db->fetch("SELECT value FROM settings WHERE `key` = 'auth_logo'");
             if ($existing && !empty($existing['value'])) {
-                $oldPath = BASE_PATH . '/public' . $existing['value'];
+                $oldPath = BASE_PATH . '/storage' . $existing['value'];
                 if (
-                    strpos($existing['value'], '/uploads/settings/') === 0
+                    strpos($existing['value'], '/uploads/oauth/') === 0
                     && file_exists($oldPath)
                 ) {
                     @unlink($oldPath);
@@ -250,8 +251,8 @@ class SettingsController extends BaseController
 
             if ($existing && !empty($existing['value'])) {
                 // Only delete file if it lives in our managed uploads folder
-                if (strpos($existing['value'], '/uploads/settings/') === 0) {
-                    $filePath = BASE_PATH . '/public' . $existing['value'];
+                if (strpos($existing['value'], '/uploads/oauth/') === 0) {
+                    $filePath = BASE_PATH . '/storage' . $existing['value'];
                     if (file_exists($filePath)) {
                         @unlink($filePath);
                     }

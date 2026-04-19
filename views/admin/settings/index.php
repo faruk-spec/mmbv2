@@ -168,17 +168,42 @@
             </form>
             <?php endif; ?>
 
-            <form method="POST" action="/admin/settings/upload-logo" enctype="multipart/form-data">
+            <!-- Upload logo file -->
+            <form method="POST" action="/admin/settings/upload-logo" enctype="multipart/form-data" style="margin-bottom:14px;">
                 <?= \Core\Security::csrfField() ?>
                 <div class="form-group" style="margin-bottom:10px;">
                     <label class="form-label" style="margin-bottom:6px;"><?= empty($currentLogo) ? 'Upload Logo' : 'Replace Logo' ?></label>
                     <input type="file" name="auth_logo_file" class="form-input"
                            accept=".jpg,.jpeg,.png,.gif,.webp" required
                            style="padding:8px;font-size:13px;">
-                    <small class="form-help">JPG, PNG, GIF or WebP · Max 2 MB · Shown on login &amp; register pages.</small>
+                    <small class="form-help">JPG, PNG, GIF or WebP · Max 2 MB</small>
                 </div>
                 <button type="submit" class="btn btn-primary" style="width:100%;font-size:13px;">
                     <i class="fas fa-upload"></i> Upload
+                </button>
+            </form>
+
+            <!-- Or use a URL / path -->
+            <form method="POST" action="/admin/settings">
+                <?= \Core\Security::csrfField() ?>
+                <input type="hidden" name="site_name" value="<?= View::e($settings['site_name'] ?? APP_NAME) ?>">
+                <input type="hidden" name="site_description" value="<?= View::e($settings['site_description'] ?? '') ?>">
+                <input type="hidden" name="contact_email" value="<?= View::e($settings['contact_email'] ?? '') ?>">
+                <input type="hidden" name="system_timezone" value="<?= View::e($settings['system_timezone'] ?? 'UTC') ?>">
+                <input type="hidden" name="date_format" value="<?= View::e($settings['date_format'] ?? 'M d, Y') ?>">
+                <input type="hidden" name="time_format" value="<?= View::e($settings['time_format'] ?? 'g:i A') ?>">
+                <input type="hidden" name="registration_enabled" value="<?= View::e($settings['registration_enabled'] ?? '1') ?>">
+                <input type="hidden" name="auth_tagline" value="<?= View::e($settings['auth_tagline'] ?? '') ?>">
+                <div class="form-group" style="margin-bottom:10px;">
+                    <label class="form-label" style="margin-bottom:6px;">Or enter Logo URL / Path</label>
+                    <input type="text" name="auth_logo" class="form-input"
+                           value="<?= View::e($currentLogo) ?>"
+                           placeholder="https://… or /uploads/oauth/logo.png"
+                           style="font-size:13px;">
+                    <small class="form-help">Absolute URL or a relative path served by the app.</small>
+                </div>
+                <button type="submit" class="btn btn-secondary" style="width:100%;font-size:13px;">
+                    <i class="fas fa-save"></i> Save Path
                 </button>
             </form>
         </div>

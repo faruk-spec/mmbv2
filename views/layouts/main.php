@@ -699,13 +699,13 @@ try {
             font-size: 2rem;
             color: var(--bg-primary);
             font-weight: 700;
-            filter: drop-shadow(0 4px 16px rgba(255, 255, 255, 0.2));
+            filter: drop-shadow(0 2px 8px rgba(0, 245, 255, 0.55)) drop-shadow(0 4px 24px rgba(255, 0, 230, 0.45)) drop-shadow(0 8px 32px rgba(255, 255, 255, 0.18));
         }
         [data-theme="light"] .auth-logo-img {
             filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.18));
         }
         [data-theme="light"] .auth-logo-icon {
-            filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.18));
+            filter: drop-shadow(0 2px 8px rgba(0, 200, 220, 0.5)) drop-shadow(0 4px 20px rgba(0, 0, 0, 0.22));
         }
         .auth-heading {
             text-align: center;
