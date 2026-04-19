@@ -123,21 +123,15 @@ table tr:hover { background: rgba(0, 240, 255, 0.05); }
 
 <?php View::section('content'); ?>
 
-<?php if (!empty($flashMessage['success'])): ?>
-    <div class="flash-success">✓ <?= htmlspecialchars($flashMessage['success']) ?></div>
-<?php elseif (!empty($flashMessage['error'])): ?>
-    <div class="flash-error">✗ <?= htmlspecialchars($flashMessage['error']) ?></div>
-<?php endif; ?>
-
 <?php
-// Also render session flash directly
-$sessionFlash = $_SESSION['flash'] ?? [];
-if (!empty($sessionFlash['success'])): ?>
-    <div class="flash-success">✓ <?= htmlspecialchars($sessionFlash['success']) ?></div>
-<?php elseif (!empty($sessionFlash['error'])): ?>
-    <div class="flash-error">✗ <?= htmlspecialchars($sessionFlash['error']) ?></div>
-<?php endif;
-unset($_SESSION['flash']); ?>
+$flash = !empty($flashMessage) ? $flashMessage : ($_SESSION['flash'] ?? []);
+if (!empty($_SESSION['flash'])) { unset($_SESSION['flash']); }
+?>
+<?php if (!empty($flash['success'])): ?>
+    <div class="flash-success">✓ <?= htmlspecialchars($flash['success']) ?></div>
+<?php elseif (!empty($flash['error'])): ?>
+    <div class="flash-error">✗ <?= htmlspecialchars($flash['error']) ?></div>
+<?php endif; ?>
 
 <div class="card">
     <div style="display:flex; justify-content:space-between; align-items:center; padding-bottom:18px; border-bottom:1px solid var(--border-color); margin-bottom:20px;">

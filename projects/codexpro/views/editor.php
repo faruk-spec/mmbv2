@@ -325,7 +325,7 @@ try {
 (function () {
     'use strict';
 
-    const PROJECT_ID = <?= json_encode($project['id'] ?? null) ?>;
+    const PROJECT_ID = <?= json_encode(isset($project['id']) ? (int)$project['id'] : null) ?>;
     const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]').content;
 
     function cmTheme() {
@@ -552,7 +552,7 @@ try {
         fd.append('css_content',  editors.css.getValue());
         fd.append('js_content',   editors.js.getValue());
         fd.append('visibility',   'private');
-        fd.append('_token',       CSRF_TOKEN);
+        fd.append('_csrf_token',  CSRF_TOKEN);
 
         fetch('/projects/codexpro/editor/save', {
             method: 'POST',
