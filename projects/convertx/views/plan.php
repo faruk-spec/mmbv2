@@ -3,6 +3,8 @@
  * ConvertX – Plans & Pricing View
  */
 $currentView = 'plan';
+$currentPlanSlug = $currentPlanSlug ?? 'free';
+$isFreePlan = ($currentPlanSlug === 'free');
 ?>
 
 <!-- Page header -->
@@ -78,4 +80,31 @@ $currentView = 'plan';
         <a href="/contact-sales" class="btn btn-secondary" style="width:100%;justify-content:center;border-color:var(--cx-accent);color:var(--cx-accent);">Contact Sales</a>
     </div>
 
+</div>
+
+<div style="margin-top:2rem;">
+    <h3 style="margin-bottom:.75rem;">Premium Features</h3>
+    <?php if ($isFreePlan): ?>
+    <div class="feature-gate-wrap" style="position:relative;">
+        <div class="feature-gate-blur" style="filter:blur(6px);opacity:.65;pointer-events:none;user-select:none;">
+    <?php endif; ?>
+            <div class="card" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.75rem;">
+                <div class="cx-ai-option"><i class="fa-solid fa-wand-magic-sparkles"></i><span>AI Process Automation</span></div>
+                <div class="cx-ai-option"><i class="fa-solid fa-layer-group"></i><span>Batch Conversion</span></div>
+                <div class="cx-ai-option"><i class="fa-solid fa-key"></i><span>API Access & Analytics</span></div>
+                <div class="cx-ai-option"><i class="fa-solid fa-file-image"></i><span>AI OCR</span></div>
+                <div class="cx-ai-option"><i class="fa-solid fa-arrow-up-right-dots"></i><span>AI Upscale</span></div>
+                <div class="cx-ai-option"><i class="fa-solid fa-wand-magic-sparkles"></i><span>Background Removal</span></div>
+            </div>
+    <?php if ($isFreePlan): ?>
+        </div>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:10;">
+            <div style="background:var(--bg-card);border:2px solid var(--cx-primary);border-radius:12px;padding:18px 24px;text-align:center;box-shadow:0 8px 24px rgba(99,102,241,.35);">
+                <div style="font-weight:700;margin-bottom:6px;"><i class="fa-solid fa-lock"></i> Premium Features Locked</div>
+                <div style="font-size:.82rem;color:var(--text-secondary);margin-bottom:10px;">Upgrade your plan to unlock all advanced ConvertX capabilities.</div>
+                <a href="/checkout?plan=pro" class="btn btn-primary btn-sm">Upgrade to Pro</a>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
 </div>

@@ -114,12 +114,85 @@ View::extend('admin');
                         <a href="/admin/projects/convertx/settings" class="btn btn-outline-warning mr-2 mb-2">
                             <i class="fas fa-cog"></i> Settings / AI Providers
                         </a>
+                        <a href="/admin/projects/convertx/roles" class="btn btn-outline-dark mr-2 mb-2">
+                            <i class="fas fa-users-cog"></i> Roles / User Features
+                        </a>
                         <a href="/admin/projects/convertx/schema" class="btn btn-outline-dark mr-2 mb-2">
                             <i class="fas fa-table"></i> SQL Schema
                         </a>
                         <a href="/projects/convertx/dashboard" class="btn btn-outline-success mr-2 mb-2" target="_blank">
                             <i class="fas fa-external-link-alt"></i> Open ConvertX
                         </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Usage -->
+        <div class="row mb-4">
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title"><i class="fas fa-brain"></i> AI Usage by Provider</h3>
+                    </div>
+                    <div class="card-body p-0">
+                        <table class="table table-sm mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Provider</th>
+                                    <th class="text-right">AI Jobs</th>
+                                    <th class="text-right">Tokens</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            <?php if (empty($aiUsage['providers'])): ?>
+                                <tr><td colspan="3" class="text-center text-muted py-3">No provider usage found yet.</td></tr>
+                            <?php else: ?>
+                                <?php foreach ($aiUsage['providers'] as $row): ?>
+                                <tr>
+                                    <td><code><?= htmlspecialchars($row['provider_used'] ?: 'unknown') ?></code></td>
+                                    <td class="text-right"><?= number_format((int) ($row['jobs'] ?? 0)) ?></td>
+                                    <td class="text-right"><?= number_format((int) ($row['tokens'] ?? 0)) ?></td>
+                                </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="card-footer text-muted">
+                        This month: <strong><?= number_format((int) ($aiUsage['this_month_ai_jobs'] ?? 0)) ?></strong> AI jobs,
+                        <strong><?= number_format((int) ($aiUsage['this_month_tokens'] ?? 0)) ?></strong> tokens.
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title"><i class="fas fa-user-astronaut"></i> Top AI Users</h3>
+                    </div>
+                    <div class="card-body p-0">
+                        <table class="table table-sm mb-0">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th class="text-right">AI Jobs</th>
+                                    <th class="text-right">Tokens</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            <?php if (empty($aiUsage['users'])): ?>
+                                <tr><td colspan="3" class="text-center text-muted py-3">No user token usage found yet.</td></tr>
+                            <?php else: ?>
+                                <?php foreach ($aiUsage['users'] as $row): ?>
+                                <tr>
+                                    <td><?= htmlspecialchars($row['name'] ?? $row['email'] ?? 'Unknown') ?></td>
+                                    <td class="text-right"><?= number_format((int) ($row['jobs'] ?? 0)) ?></td>
+                                    <td class="text-right"><?= number_format((int) ($row['tokens'] ?? 0)) ?></td>
+                                </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>

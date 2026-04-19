@@ -13,7 +13,9 @@
 
 namespace Projects\ConvertX\Services;
 
+use Core\Database;
 use Core\Logger;
+use Core\Mailer;
 use Projects\ConvertX\Models\ConversionJobModel;
 
 class JobQueueService
@@ -128,6 +130,8 @@ class JobQueueService
                 // JSON_INVALID_UTF8_SUBSTITUTE replaces any remaining bad bytes with U+FFFD.
                 'ai_result'       => !empty($aiResult) ? (json_encode($aiResult, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE) ?: null) : null,
             ]);
+
+            $this->sendCompletionEmailIfEnabled($jobId, (int) ($job['user_id'] ?? 0), (string) ($job['input_filename'] ?? ''), (string) basename($outputPath));
 
             Logger::info("ConvertX: job #{$jobId} completed");
 
@@ -342,6 +346,44 @@ class JobQueueService
 
         if ($code < 200 || $code >= 300) {
             Logger::warning("ConvertX: webhook for job #{$jobId} returned HTTP {$code}");
+        }
+    }
+
+    private function sendCompletionEmailIfEnabled(int $jobId, int $userId, string $inputFilename, string $outputFilename): void
+    {
+        if ($userId <= 0) {
+            return;
+        }
+
+        try {
+            $db = Database::getInstance();
+            $settings = $db->fetch(
+                "SELECT notify_on_complete FROM convertx_user_settings WHERE user_id = :uid LIMIT 1",
+                ['uid' => $userId]
+            );
+            if (empty($settings) || empty($settings['notify_on_complete'])) {
+                return;
+            }
+
+            $user = $db->fetch("SELECT email, name FROM users WHERE id = :uid LIMIT 1", ['uid' => $userId]);
+            $email = trim((string) ($user['email'] ?? ''));
+            if ($email === '') {
+                return;
+            }
+
+            $name = trim((string) ($user['name'] ?? 'there'));
+            $subject = 'Your ConvertX job is complete';
+            $body = '<p>Hi ' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . ',</p>'
+                . '<p>Your ConvertX job <strong>#' . $jobId . '</strong> has completed successfully.</p>'
+                . '<p><strong>Input file:</strong> ' . htmlspecialchars($inputFilename, ENT_QUOTES, 'UTF-8') . '<br>'
+                . '<strong>Output file:</strong> ' . htmlspecialchars($outputFilename, ENT_QUOTES, 'UTF-8') . '</p>'
+                . '<p>You can download it from your history:<br>'
+                . '<a href="' . rtrim((string) ($_ENV['APP_URL'] ?? ''), '/') . '/projects/convertx/history">Open ConvertX History</a></p>'
+                . '<p>— ConvertX</p>';
+
+            Mailer::send($email, $subject, $body);
+        } catch (\Exception $e) {
+            Logger::warning('ConvertX completion email failed for job #' . $jobId . ': ' . $e->getMessage());
         }
     }
 }

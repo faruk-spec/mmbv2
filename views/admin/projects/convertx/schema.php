@@ -38,33 +38,6 @@ View::extend('admin');
             </div>
         </div>
 
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-info-circle"></i> Tables in This Schema</h3>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <ul class="list-unstyled">
-                            <li><i class="fas fa-table text-info mr-2"></i> <strong>convertx_jobs</strong> — Conversion job queue &amp; results</li>
-                            <li><i class="fas fa-table text-warning mr-2"></i> <strong>convertx_ai_providers</strong> — Configured AI providers</li>
-                            <li><i class="fas fa-table text-success mr-2"></i> <strong>convertx_provider_usage</strong> — Token usage log per provider</li>
-                        </ul>
-                    </div>
-                    <div class="col-md-6">
-                        <ul class="list-unstyled">
-                            <li><i class="fas fa-table text-primary mr-2"></i> <strong>api_keys</strong> — User REST API keys</li>
-                            <li><i class="fas fa-table text-secondary mr-2"></i> <strong>convertx_user_settings</strong> — Per-user preferences</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="mt-3">
-                    <a href="/admin/projects/database-setup" class="btn btn-primary btn-sm">
-                        <i class="fas fa-database"></i> Run Schema via Database Setup
-                    </a>
-                </div>
-            </div>
-        </div>
     </div>
 </section>
 

@@ -43,9 +43,19 @@ class DashboardController
 
     public function plan(): void
     {
+        $currentPlanSlug = 'free';
+        try {
+            $db = \Core\Database::getInstance();
+            $uid = (int) (Auth::id() ?? 0);
+            if ($uid > 0) {
+                $row = $db->fetch("SELECT plan_slug FROM user_plans WHERE user_id = :uid LIMIT 1", ['uid' => $uid]);
+                $currentPlanSlug = $row['plan_slug'] ?? 'free';
+            }
+        } catch (\Exception $e) {}
         $this->render('plan', [
             'title' => 'ConvertX Plans & Pricing',
             'user'  => Auth::user(),
+            'currentPlanSlug' => $currentPlanSlug,
         ]);
     }
 

@@ -34,11 +34,13 @@ class ConvertXAdminController extends BaseController
         $this->requirePermission('convertx');
         $stats = $this->getStats();
         $recentJobs = $this->getRecentJobs(15);
+        $aiUsage = $this->getAiUsageStats();
 
         $this->view('admin/projects/convertx/overview', [
             'title'       => 'ConvertX Admin — Overview',
             'stats'       => $stats,
             'recentJobs'  => $recentJobs,
+            'aiUsage'     => $aiUsage,
         ]);
     }
 
@@ -709,16 +711,39 @@ class ConvertXAdminController extends BaseController
         try {
             $plans = $this->db->fetchAll(
                 "SELECT p.*, COUNT(s.id) AS subscriber_count
-                   FROM convertx_subscription_plans p
-                   LEFT JOIN convertx_user_subscriptions s ON s.plan_id=p.id AND s.status='active'
-                  GROUP BY p.id
-                  ORDER BY p.sort_order ASC, p.price ASC"
+                    FROM convertx_subscription_plans p
+                    LEFT JOIN convertx_user_subscriptions s ON s.plan_id=p.id AND s.status='active'
+                   GROUP BY p.id
+                   ORDER BY p.sort_order ASC, p.price ASC"
             );
         } catch (\Exception $e) {}
+
+        $featureKeys = array_keys($this->getPlanFeatures());
+        foreach ($plans as &$plan) {
+            $features = json_decode($plan['features'] ?? '{}', true) ?: [];
+            $changed = false;
+            foreach ($featureKeys as $k) {
+                if (!array_key_exists($k, $features)) {
+                    $features[$k] = ($plan['slug'] ?? '') === 'free' ? $this->getDefaultFreePlanFeatures()[$k] ?? false : false;
+                    $changed = true;
+                }
+            }
+            if ($changed) {
+                try {
+                    $this->db->query(
+                        "UPDATE convertx_subscription_plans SET features = :features, updated_at = NOW() WHERE id = :id",
+                        ['features' => json_encode($features), 'id' => (int) $plan['id']]
+                    );
+                } catch (\Exception $e) {}
+                $plan['features'] = json_encode($features);
+            }
+        }
+        unset($plan);
 
         $this->view('admin/projects/convertx/plans', [
             'title' => 'ConvertX — Subscription Plans',
             'plans' => $plans,
+            'planFeatureLabels' => $this->getPlanFeatures(),
         ]);
     }
 
@@ -744,6 +769,7 @@ class ConvertXAdminController extends BaseController
         $priority   = !empty($_POST['priority_processing']) ? 1 : 0;
         $status     = $_POST['status'] ?? 'active';
         $sortOrder  = (int) ($_POST['sort_order'] ?? 0);
+        $features   = $this->collectPlanFeaturesFromPost();
 
         if (!$name || !$slug) {
             $_SESSION['_flash']['error'] = 'Name and slug are required.';
@@ -753,12 +779,13 @@ class ConvertXAdminController extends BaseController
         try {
             $this->db->query(
                 "INSERT INTO convertx_subscription_plans
-                    (name,slug,description,price,billing_cycle,max_jobs_per_month,max_file_size_mb,max_batch_size,ai_access,api_access,batch_convert,priority_processing,status,sort_order)
-                 VALUES (:name,:slug,:desc,:price,:billing,:jobs,:file,:batch,:ai,:api,:bconv,:prio,:status,:sort)",
+                    (name,slug,description,price,billing_cycle,max_jobs_per_month,max_file_size_mb,max_batch_size,ai_access,api_access,batch_convert,priority_processing,features,status,sort_order)
+                 VALUES (:name,:slug,:desc,:price,:billing,:jobs,:file,:batch,:ai,:api,:bconv,:prio,:features,:status,:sort)",
                 [
                     'name'=>$name,'slug'=>$slug,'desc'=>$desc,'price'=>$price,'billing'=>$billing,
                     'jobs'=>$maxJobs,'file'=>$maxFile,'batch'=>$maxBatch,'ai'=>$aiAccess,
-                    'api'=>$apiAccess,'bconv'=>$batchConv,'prio'=>$priority,'status'=>$status,'sort'=>$sortOrder
+                    'api'=>$apiAccess,'bconv'=>$batchConv,'prio'=>$priority,'features'=>json_encode($features),
+                    'status'=>$status,'sort'=>$sortOrder
                 ]
             );
             $_SESSION['_flash']['success'] = 'Plan created.';
@@ -792,6 +819,7 @@ class ConvertXAdminController extends BaseController
         $batchConv  = !empty($_POST['batch_convert']) ? 1 : 0;
         $priority   = !empty($_POST['priority_processing']) ? 1 : 0;
         $status     = $_POST['status'] ?? 'active';
+        $features   = $this->collectPlanFeaturesFromPost();
 
         if (!$id || !$name) {
             $_SESSION['_flash']['error'] = 'Invalid request.';
@@ -803,12 +831,14 @@ class ConvertXAdminController extends BaseController
                 "UPDATE convertx_subscription_plans SET
                     name=:name, description=:desc, price=:price, billing_cycle=:billing,
                     max_jobs_per_month=:jobs, max_file_size_mb=:file, max_batch_size=:batch,
-                    ai_access=:ai, api_access=:api, batch_convert=:bconv, priority_processing=:prio, status=:status
+                    ai_access=:ai, api_access=:api, batch_convert=:bconv, priority_processing=:prio,
+                    features=:features, status=:status
                  WHERE id=:id",
                 [
                     'name'=>$name,'desc'=>$desc,'price'=>$price,'billing'=>$billing,
                     'jobs'=>$maxJobs,'file'=>$maxFile,'batch'=>$maxBatch,'ai'=>$aiAccess,
-                    'api'=>$apiAccess,'bconv'=>$batchConv,'prio'=>$priority,'status'=>$status,'id'=>$id
+                    'api'=>$apiAccess,'bconv'=>$batchConv,'prio'=>$priority,'features'=>json_encode($features),
+                    'status'=>$status,'id'=>$id
                 ]
             );
             $_SESSION['_flash']['success'] = 'Plan updated.';
@@ -857,12 +887,16 @@ class ConvertXAdminController extends BaseController
                 api_access TINYINT(1) NOT NULL DEFAULT 0,
                 batch_convert TINYINT(1) NOT NULL DEFAULT 1,
                 priority_processing TINYINT(1) NOT NULL DEFAULT 0,
+                features TEXT NULL,
                 status ENUM('active','inactive') DEFAULT 'active',
                 sort_order INT DEFAULT 0,
                 created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
                 INDEX idx_status (status)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+            try {
+                $this->db->query("ALTER TABLE convertx_subscription_plans ADD COLUMN features TEXT NULL AFTER priority_processing");
+            } catch (\Exception $e) {}
             $this->db->query("CREATE TABLE IF NOT EXISTS convertx_user_subscriptions (
                 id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                 user_id INT UNSIGNED NOT NULL,
@@ -877,12 +911,126 @@ class ConvertXAdminController extends BaseController
                 INDEX idx_plan_id (plan_id)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
             $this->db->query("INSERT IGNORE INTO convertx_subscription_plans
-                (name,slug,description,price,billing_cycle,max_jobs_per_month,max_file_size_mb,max_batch_size,ai_access,api_access,batch_convert,priority_processing,status,sort_order)
+                (name,slug,description,price,billing_cycle,max_jobs_per_month,max_file_size_mb,max_batch_size,ai_access,api_access,batch_convert,priority_processing,features,status,sort_order)
                 VALUES
-                ('Free','free','Basic conversion, limited monthly jobs.',0.00,'monthly',50,10,5,0,0,1,0,'active',1),
-                ('Pro','pro','Unlimited conversions with AI and API access.',9.99,'monthly',-1,100,50,1,1,1,1,'active',2),
-                ('Enterprise','enterprise','Full access, custom limits, priority support.',29.99,'monthly',-1,500,100,1,1,1,1,'active',3)");
+                ('Free','free','Basic conversion, limited monthly jobs.',0.00,'monthly',50,10,5,0,0,1,0,:free_features,'active',1),
+                ('Pro','pro','Unlimited conversions with AI and API access.',9.99,'monthly',-1,100,50,1,1,1,1,:pro_features,'active',2),
+                ('Enterprise','enterprise','Full access, custom limits, priority support.',29.99,'monthly',-1,500,100,1,1,1,1,:ent_features,'active',3)", [
+                    'free_features' => json_encode($this->getDefaultFreePlanFeatures()),
+                    'pro_features'  => json_encode(array_fill_keys(array_keys($this->getPlanFeatures()), true)),
+                    'ent_features'  => json_encode(array_fill_keys(array_keys($this->getPlanFeatures()), true)),
+                ]);
         } catch (\Exception $e) {}
+    }
+
+    public function roles(): void
+    {
+        $this->requirePermission('convertx.settings');
+        $this->ensureFeatureTables();
+
+        $users = [];
+        $userFeatures = [];
+        try {
+            $users = $this->db->fetchAll("SELECT id, name, email, role FROM users ORDER BY name");
+            $rows = $this->db->fetchAll(
+                "SELECT uf.*, u.name AS user_name, u.email AS user_email
+                 FROM convertx_user_features uf
+                 JOIN users u ON u.id = uf.user_id
+                 ORDER BY u.name, uf.feature"
+            );
+            foreach ($rows as $row) {
+                if (($row['feature'] ?? '') === '_use_plan') {
+                    continue;
+                }
+                if (!isset($userFeatures[$row['user_id']])) {
+                    $userFeatures[$row['user_id']] = [
+                        'user_name' => $row['user_name'],
+                        'user_email' => $row['user_email'],
+                        'features' => [],
+                    ];
+                }
+                $userFeatures[$row['user_id']]['features'][$row['feature']] = (bool) $row['enabled'];
+            }
+        } catch (\Exception $e) {}
+
+        $this->view('admin/projects/convertx/roles', [
+            'title' => 'ConvertX — Roles & Features',
+            'allFeatures' => $this->getPlanFeatures(),
+            'users' => $users,
+            'userFeatures' => $userFeatures,
+        ]);
+    }
+
+    public function getUserFeaturesApi(string $id): void
+    {
+        $this->requirePermission('convertx.settings');
+        $userId = (int) $id;
+        if ($userId <= 0) {
+            $this->json(['success' => false, 'message' => 'Invalid user.'], 400);
+            return;
+        }
+        try {
+            $service = new \Projects\ConvertX\Services\FeatureService();
+            $features = $service->getFeatures($userId);
+            $rows = $this->db->fetchAll(
+                "SELECT feature, enabled FROM convertx_user_features WHERE user_id = :uid",
+                ['uid' => $userId]
+            );
+            $raw = [];
+            foreach ($rows as $r) {
+                $raw[$r['feature']] = (bool) $r['enabled'];
+            }
+            $this->json(['success' => true, 'features' => $features, 'raw_overrides' => $raw]);
+        } catch (\Exception $e) {
+            $this->json(['success' => false, 'message' => 'Server error.'], 500);
+        }
+    }
+
+    public function setUserFeature(): void
+    {
+        $this->requirePermission('convertx.settings');
+        if (!Security::validateCsrfToken($_POST['_csrf_token'] ?? '')) {
+            $this->json(['success' => false, 'message' => 'Invalid request.'], 403);
+            return;
+        }
+        $userId = (int) ($_POST['user_id'] ?? 0);
+        $feature = trim((string) ($_POST['feature'] ?? ''));
+        $enabled = !empty($_POST['enabled']) ? 1 : 0;
+        if ($userId <= 0 || !array_key_exists($feature, $this->getPlanFeatures())) {
+            $this->json(['success' => false, 'message' => 'Invalid user or feature.'], 400);
+            return;
+        }
+        try {
+            $this->db->query(
+                "INSERT INTO convertx_user_features (user_id, feature, enabled, updated_at)
+                 VALUES (:uid, :feature, :enabled, NOW())
+                 ON DUPLICATE KEY UPDATE enabled = VALUES(enabled), updated_at = NOW()",
+                ['uid' => $userId, 'feature' => $feature, 'enabled' => $enabled]
+            );
+            $this->json(['success' => true]);
+        } catch (\Exception $e) {
+            $this->json(['success' => false, 'message' => 'Server error.'], 500);
+        }
+    }
+
+    public function removeUserFeatures(): void
+    {
+        $this->requirePermission('convertx.settings');
+        if (!Security::validateCsrfToken($_POST['_csrf_token'] ?? '')) {
+            $this->json(['success' => false, 'message' => 'Invalid request.'], 403);
+            return;
+        }
+        $userId = (int) ($_POST['user_id'] ?? 0);
+        if ($userId <= 0) {
+            $this->json(['success' => false, 'message' => 'Invalid user.'], 400);
+            return;
+        }
+        try {
+            $this->db->query("DELETE FROM convertx_user_features WHERE user_id = :uid", ['uid' => $userId]);
+            $this->json(['success' => true]);
+        } catch (\Exception $e) {
+            $this->json(['success' => false, 'message' => 'Server error.'], 500);
+        }
     }
 
     // ------------------------------------------------------------------ //
@@ -1134,5 +1282,133 @@ class ConvertXAdminController extends BaseController
 
         $_SESSION['_flash']['success'] = 'Upload limits saved successfully.';
         $this->redirect('/admin/projects/convertx/upload-limits');
+    }
+
+    private function ensureFeatureTables(): void
+    {
+        try {
+            $this->db->query("CREATE TABLE IF NOT EXISTS convertx_user_features (
+                id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                user_id INT UNSIGNED NOT NULL,
+                feature VARCHAR(100) NOT NULL,
+                enabled TINYINT(1) NOT NULL DEFAULT 1,
+                updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                UNIQUE KEY uniq_user_feature (user_id, feature),
+                INDEX idx_user (user_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+        } catch (\Exception $e) {}
+    }
+
+    private function collectPlanFeaturesFromPost(): array
+    {
+        $features = [];
+        foreach (array_keys($this->getPlanFeatures()) as $key) {
+            $features[$key] = !empty($_POST['feature_' . $key]);
+        }
+        return $features;
+    }
+
+    private function getDefaultFreePlanFeatures(): array
+    {
+        return [
+            'page_dashboard'    => true,
+            'page_convert'      => true,
+            'page_history'      => true,
+            'page_plan'         => true,
+            'page_settings'     => true,
+            'page_ocr'          => true,
+            'page_pdf_merge'    => true,
+            'page_pdf_split'    => true,
+            'page_pdf_compress' => true,
+            'page_img_compress' => true,
+            'page_img_resize'   => true,
+            'page_img_crop'     => true,
+            'page_img_rotate'   => true,
+            'page_img_watermark'=> true,
+            'page_docs'         => false,
+            'page_apikeys'      => false,
+            'page_batch'        => false,
+            'page_ai_process'   => false,
+            'page_ocr_ai'       => false,
+            'page_img_meme'     => false,
+            'page_img_editor'   => false,
+            'page_img_upscale'  => false,
+            'page_img_remove_bg'=> false,
+        ];
+    }
+
+    private function getPlanFeatures(): array
+    {
+        return [
+            'page_dashboard'    => 'Dashboard',
+            'page_convert'      => 'Convert File',
+            'page_ai_process'   => 'AI Process',
+            'page_batch'        => 'Batch Convert',
+            'page_history'      => 'History',
+            'page_ocr'          => 'OCR Extract',
+            'page_ocr_ai'       => 'AI OCR',
+            'page_pdf_merge'    => 'PDF Merge',
+            'page_pdf_split'    => 'PDF Split',
+            'page_pdf_compress' => 'PDF Compress',
+            'page_img_compress' => 'Image Compress',
+            'page_img_resize'   => 'Image Resize',
+            'page_img_crop'     => 'Image Crop',
+            'page_img_watermark'=> 'Image Watermark',
+            'page_img_rotate'   => 'Image Rotate',
+            'page_img_meme'     => 'Meme Generator',
+            'page_img_editor'   => 'Photo Editor',
+            'page_img_upscale'  => 'Upscale Image',
+            'page_img_remove_bg'=> 'Remove Background',
+            'page_docs'         => 'API Docs',
+            'page_apikeys'      => 'API Keys & Analytics',
+            'page_plan'         => 'Plans & Pricing',
+            'page_settings'     => 'Settings',
+        ];
+    }
+
+    private function getAiUsageStats(): array
+    {
+        $stats = [
+            'providers' => [],
+            'users' => [],
+            'this_month_tokens' => 0,
+            'this_month_ai_jobs' => 0,
+        ];
+        try {
+            $month = $this->db->fetch(
+                "SELECT
+                    COALESCE(SUM(tokens_used), 0) AS tokens,
+                    SUM(CASE WHEN ai_tasks IS NOT NULL AND ai_tasks != '[]' AND ai_tasks != '' THEN 1 ELSE 0 END) AS ai_jobs
+                 FROM convertx_jobs
+                 WHERE YEAR(created_at)=YEAR(NOW()) AND MONTH(created_at)=MONTH(NOW())"
+            );
+            $stats['this_month_tokens'] = (int) ($month['tokens'] ?? 0);
+            $stats['this_month_ai_jobs'] = (int) ($month['ai_jobs'] ?? 0);
+        } catch (\Exception $e) {}
+
+        try {
+            $stats['providers'] = $this->db->fetchAll(
+                "SELECT provider_used, COUNT(*) AS jobs, COALESCE(SUM(tokens_used),0) AS tokens
+                 FROM convertx_jobs
+                 WHERE provider_used IS NOT NULL AND provider_used != ''
+                 GROUP BY provider_used
+                 ORDER BY tokens DESC, jobs DESC
+                 LIMIT 10"
+            ) ?: [];
+        } catch (\Exception $e) {}
+
+        try {
+            $stats['users'] = $this->db->fetchAll(
+                "SELECT u.id, u.name, u.email, COUNT(j.id) AS jobs, COALESCE(SUM(j.tokens_used),0) AS tokens
+                 FROM convertx_jobs j
+                 JOIN users u ON u.id = j.user_id
+                 WHERE j.tokens_used > 0
+                 GROUP BY u.id, u.name, u.email
+                 ORDER BY tokens DESC
+                 LIMIT 10"
+            ) ?: [];
+        } catch (\Exception $e) {}
+
+        return $stats;
     }
 }
