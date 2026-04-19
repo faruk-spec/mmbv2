@@ -332,17 +332,21 @@ try {
 
     <div class="toolbar-sep"></div>
 
-    <!-- Collaborators presence bar -->
+    <!-- Collaborators presence avatars (shown only when others are online) -->
     <div id="collab-bar" style="display:none;align-items:center;gap:4px">
         <div id="collab-avatars" style="display:flex;gap:3px"></div>
-        <button class="tb-icon-btn" id="invite-btn" title="Invite collaborator"><i class="fa fa-user-plus"></i></button>
     </div>
+
+    <?php if (!empty($project['id'])): ?>
+    <!-- Invite collaborator button -->
+    <button class="tb-icon-btn" id="invite-btn" title="Invite collaborator"><i class="fa fa-user-plus"></i></button>
 
     <!-- Version history button -->
     <button class="tb-icon-btn" id="history-btn" title="Version history"><i class="fa fa-clock-rotate-left"></i></button>
 
     <!-- Sync status dot -->
     <span id="sync-dot" title="Cloud sync" style="width:8px;height:8px;border-radius:50%;background:#4ade80;flex-shrink:0;transition:background .3s"></span>
+    <?php endif; ?>
 
     <div class="toolbar-sep"></div>
     <a href="/projects/codexpro" class="tb-icon-btn" title="Back to dashboard">
