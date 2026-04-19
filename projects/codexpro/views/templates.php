@@ -1,91 +1,120 @@
 <?php
 /**
- * CodeXPro - Templates View
+ * CodeXPro – Templates View (ConvertX-style)
  */
 use Core\View;
-use Core\Auth;
-
-$user = Auth::user();
-$pageTitle = 'Templates';
 $currentPage = 'templates';
+$title       = 'Code Templates';
 
 ob_start();
+
+$langColors = [
+    'javascript' => '#f7df1e', 'python' => '#3776ab', 'php' => '#777bb4',
+    'html'       => '#e34c26', 'css'    => '#264de4', 'sql' => '#336791',
+    'java'       => '#007396', 'cpp'    => '#00599C', 'csharp' => '#9b4f96',
+    'ruby'       => '#cc342d', 'go'     => '#00ADD8', 'rust' => '#CE422B',
+];
 ?>
 
 <div class="page-header">
-    <h1><i class="fas fa-file-code"></i> Code Templates</h1>
+    <h1>Code Templates</h1>
+    <p>Ready-made boilerplates to jumpstart your projects</p>
 </div>
 
-<div class="content-grid">
-    <?php if (empty($templates)): ?>
-        <div class="empty-state">
-            <i class="fas fa-file-code" style="font-size: 4rem; color: #4a5568; margin-bottom: 1rem;"></i>
-            <h3>No Templates Available</h3>
-            <p>Templates will be added soon to help you get started faster.</p>
-        </div>
-    <?php else: ?>
-        <?php
-        $categories = [];
-        foreach ($templates as $template) {
-            $cat = $template['category'] ?? 'Other';
-            if (!isset($categories[$cat])) {
-                $categories[$cat] = [];
-            }
-            $categories[$cat][] = $template;
-        }
-        ?>
-        
-        <?php foreach ($categories as $category => $catTemplates): ?>
-            <div class="category-section">
-                <h2 class="category-title"><?= View::e($category) ?></h2>
-                <div class="templates-grid">
-                    <?php foreach ($catTemplates as $template): ?>
-                        <div class="card template-card">
-                            <div class="card-header">
-                                <h3><?= View::e($template['name']) ?></h3>
-                                <?php if (!empty($template['language'])): ?>
-                                    <span class="badge badge-<?= View::e($template['language']) ?>">
-                                        <?= View::e(strtoupper($template['language'])) ?>
-                                    </span>
-                                <?php endif; ?>
-                            </div>
-                            <?php if (!empty($template['description'])): ?>
-                                <div class="card-body">
-                                    <p><?= View::e($template['description']) ?></p>
-                                </div>
-                            <?php endif; ?>
-                            <div class="card-footer">
-                                <?php if (!empty($template['is_starter'])): ?>
-                                    <button onclick="useStarterTemplate('<?= View::e($template['id']) ?>')" class="btn btn-primary btn-block">
-                                        <i class="fas fa-check"></i> Use Template
-                                    </button>
-                                <?php else: ?>
-                                    <button onclick="useTemplate(<?= (int)$template['id'] ?>)" class="btn btn-primary btn-block">
-                                        <i class="fas fa-check"></i> Use Template
-                                    </button>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-        <?php endforeach; ?>
-    <?php endif; ?>
+<?php if (empty($templates)): ?>
+<div class="card" style="text-align:center;padding:3.5rem 1.5rem;">
+    <i class="fa-solid fa-file-code" style="font-size:3rem;background:linear-gradient(135deg,var(--cx-primary),var(--cx-accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;display:block;margin-bottom:1rem;"></i>
+    <p style="color:var(--text-secondary);margin-bottom:.5rem;font-weight:600;color:var(--text-primary);">No Templates Yet</p>
+    <p style="color:var(--text-secondary);font-size:.875rem;">Templates will appear here once added to the library.</p>
 </div>
+
+<?php else:
+    $categories = [];
+    foreach ($templates as $t) {
+        $cat = $t['category'] ?? 'Other';
+        $categories[$cat][] = $t;
+    }
+    foreach ($categories as $category => $catTemplates): ?>
+
+<div class="card">
+    <div class="card-header">
+        <span><?= htmlspecialchars($category) ?></span>
+        <span style="font-size:.78rem;font-weight:400;color:var(--text-secondary);"><?= count($catTemplates) ?> template<?= count($catTemplates) !== 1 ? 's' : '' ?></span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:.875rem;">
+        <?php foreach ($catTemplates as $template):
+            $lang = strtolower($template['language'] ?? 'plaintext');
+            $lc   = $langColors[$lang] ?? 'var(--cx-primary)';
+        ?>
+        <div class="cx-template-tile">
+            <div style="height:3px;background:<?= $lc ?>;border-radius:3px 3px 0 0;margin:-1.25rem -1.25rem .75rem;"></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-bottom:.5rem;">
+                <h3 style="font-size:.88rem;font-weight:700;color:var(--text-primary);margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;">
+                    <?= View::e($template['name']) ?>
+                </h3>
+                <?php if (!empty($template['language'])): ?>
+                <span style="background:<?= $lc ?>;color:#fff;font-size:.65rem;font-weight:700;padding:.15rem .45rem;border-radius:10px;flex-shrink:0;text-transform:uppercase;">
+                    <?= View::e(strtoupper($lang)) ?>
+                </span>
+                <?php endif; ?>
+            </div>
+            <?php if (!empty($template['description'])): ?>
+            <p style="font-size:.77rem;color:var(--text-secondary);margin-bottom:.75rem;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">
+                <?= View::e($template['description']) ?>
+            </p>
+            <?php endif; ?>
+            <?php if (!empty($template['is_starter'])): ?>
+            <button onclick="useStarterTemplate('<?= View::e($template['id']) ?>')" class="btn btn-primary btn-sm" style="width:100%;justify-content:center;">
+                <i class="fas fa-rocket"></i> Use Template
+            </button>
+            <?php else: ?>
+            <button onclick="useTemplate(<?= (int)$template['id'] ?>)" class="btn btn-primary btn-sm" style="width:100%;justify-content:center;">
+                <i class="fas fa-check"></i> Use Template
+            </button>
+            <?php endif; ?>
+        </div>
+        <?php endforeach; ?>
+    </div>
+</div>
+
+    <?php endforeach;
+endif; ?>
+
+<style>
+.cx-template-tile {
+    background:var(--bg-secondary);
+    border:1px solid var(--border-color);
+    border-radius:.75rem;
+    padding:1.25rem;
+    transition:border-color .25s,box-shadow .25s,transform .25s;
+}
+.cx-template-tile:hover {
+    border-color:var(--cx-primary);
+    box-shadow:0 4px 20px rgba(0,240,255,.15);
+    transform:translateY(-2px);
+}
+</style>
 
 <script>
 function useTemplate(templateId) {
     fetch('/projects/codexpro/templates/' + templateId)
-        .then(r => r.json())
+        .then(async (r) => {
+            const ct = r.headers.get('content-type') || '';
+            if (!ct.includes('application/json')) {
+                const txt = await r.text();
+                throw new Error(txt ? txt.slice(0, 120) : 'Unexpected non-JSON response');
+            }
+            return r.json();
+        })
         .then(data => {
             if (data.success) {
-                // Store template data and redirect to editor
                 sessionStorage.setItem('template_data', JSON.stringify(data.template));
                 window.location.href = '/projects/codexpro/editor/new';
             } else {
-                alert('Error loading template: ' + (data.error || 'Unknown error'));
+                showNotification('Error loading template: ' + (data.error || 'Unknown'), 'error');
             }
-        });
+        })
+        .catch(err => showNotification('Error: ' + err.message, 'error'));
 }
 
 function useStarterTemplate(templateKey) {
@@ -94,57 +123,25 @@ function useStarterTemplate(templateKey) {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({ template: templateKey })
     })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) {
-            window.location.href = '/projects/codexpro/editor/' + data.project_id;
-        } else {
-            alert('Error creating project from template: ' + (data.error || 'Unknown error'));
-        }
-    })
-    .catch(err => {
-        alert('Error: ' + err.message);
-    });
+        .then(async (r) => {
+            const ct = r.headers.get('content-type') || '';
+            if (!ct.includes('application/json')) {
+                const txt = await r.text();
+                throw new Error(txt ? txt.slice(0, 120) : 'Unexpected non-JSON response');
+            }
+            return r.json();
+        })
+        .then(data => {
+            if (data.success) {
+                window.location.href = '/projects/codexpro/editor/' + data.project_id;
+            } else {
+                showNotification('Error: ' + (data.error || 'Unknown'), 'error');
+            }
+        })
+        .catch(err => showNotification('Error: ' + err.message, 'error'));
 }
 </script>
-
-<style>
-.category-section {
-    margin-bottom: 3rem;
-}
-
-.category-title {
-    color: #06b6d4;
-    font-size: 1.5rem;
-    margin-bottom: 1.5rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 2px solid rgba(6, 182, 212, 0.3);
-}
-
-.templates-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1.5rem;
-}
-
-.template-card {
-    transition: all 0.3s;
-}
-
-.template-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 20px rgba(6, 182, 212, 0.3);
-}
-
-.badge-html { background: #e34c26; }
-.badge-css { background: #264de4; }
-.badge-javascript { background: #f7df1e; color: #000; }
-.badge-python { background: #3776ab; }
-.badge-php { background: #777bb4; }
-.badge-java { background: #007396; }
-</style>
 
 <?php
 $content = ob_get_clean();
 require __DIR__ . '/layout.php';
-?>

@@ -881,7 +881,30 @@ header("Expires: 0");
     </div>
     
     <!-- QR Code Styling Library -->
-    <script src="https://unpkg.com/qr-code-styling@1.6.0-rc.1/lib/qr-code-styling.js"></script>
+    <!-- QR Code Styling Library — resilient multi-CDN loader -->
+    <script>
+    (function loadQrCodeStylingLibrary() {
+        var sources = [
+            'https://cdn.jsdelivr.net/npm/qr-code-styling@1.6.0-rc.1/lib/qr-code-styling.js',
+            'https://unpkg.com/qr-code-styling@1.6.0-rc.1/lib/qr-code-styling.js'
+        ];
+        var index = 0;
+        function tryNext() {
+            if (typeof window.QRCodeStyling !== 'undefined') return;
+            if (index >= sources.length) return;
+            var src = sources[index++];
+            var s = document.createElement('script');
+            s.src = src;
+            s.async = false;
+            s.crossOrigin = 'anonymous';
+            s.referrerPolicy = 'no-referrer';
+            s.onload = function () { if (typeof window.QRCodeStyling === 'undefined') tryNext(); };
+            s.onerror = function () { tryNext(); };
+            document.head.appendChild(s);
+        }
+        tryNext();
+    })();
+    </script>
     
     <script>
     // Sidebar toggle for mobile

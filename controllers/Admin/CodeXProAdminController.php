@@ -13,9 +13,12 @@ use Core\Auth;
 use Core\Logger;
 use Core\ActivityLogger;
 use Core\Cache;
+use Core\Security;
 
 class CodeXProAdminController extends BaseController
 {
+    private const CACHE_KEY_STATS = 'codexpro_stats';
+
     private $projectDb;
     private $mainDb;
     private $mainDbName;
@@ -44,7 +47,7 @@ class CodeXProAdminController extends BaseController
     {
         $this->requirePermission('codexpro');
         // Cache statistics for 5 minutes
-        $stats = Cache::remember('codexpro_stats', function() {
+        $stats = Cache::remember(self::CACHE_KEY_STATS, function() {
             return [
                 'total_projects' => $this->projectDb->fetch("SELECT COUNT(*) as count FROM codexpro_projects")['count'] ?? 0,
                 'total_snippets' => $this->projectDb->fetch("SELECT COUNT(*) as count FROM codexpro_snippets")['count'] ?? 0,
@@ -198,7 +201,7 @@ class CodeXProAdminController extends BaseController
         }
         
         // Invalidate cached statistics after settings update
-        Cache::delete('codexpro_stats');
+        Cache::delete(self::CACHE_KEY_STATS);
         Cache::delete('codexpro_storage');
         
         Logger::activity(Auth::id(), 'codexpro_settings_updated', $settings);
@@ -283,51 +286,75 @@ class CodeXProAdminController extends BaseController
         $page = (int)($_GET['page'] ?? 1);
         $perPage = 20;
         $offset = ($page - 1) * $perPage;
-        
-        // Get all templates from project DB
-        $templates = $this->projectDb->fetchAll(
-            "SELECT * FROM codexpro_templates
-             ORDER BY created_at DESC
-             LIMIT ? OFFSET ?",
+
+        // Load built-in starter templates first
+        require_once BASE_PATH . '/core/CodeXPro/TemplateManager.php';
+        $starterRaw = \TemplateManager::getStarterTemplates();
+        $starterTemplates = [];
+        foreach ($starterRaw as $key => $tpl) {
+            $htmlContent = $tpl['files']['index.html'] ?? '';
+            $cssContent  = $tpl['files']['style.css']  ?? ($tpl['files']['app.css']   ?? '');
+            $jsContent   = $tpl['files']['script.js']  ?? ($tpl['files']['app.js']    ?? '');
+            $starterTemplates[] = [
+                'id'           => null,
+                'slug'         => $key,
+                'name'         => $tpl['name'],
+                'description'  => $tpl['description'] ?? '',
+                'category'     => $tpl['category']    ?? 'Built-in',
+                'language'     => 'html',
+                'html_content' => $htmlContent,
+                'css_content'  => $cssContent,
+                'js_content'   => $jsContent,
+                'is_active'    => 1,
+                'is_builtin'   => true,
+                'created_at'   => null,
+            ];
+        }
+
+        // Get DB templates
+        $dbTemplates = $this->projectDb->fetchAll(
+            "SELECT * FROM codexpro_templates ORDER BY created_at DESC LIMIT ? OFFSET ?",
             [$perPage, $offset]
         );
-        
-        // Get user info for templates from main DB
-        if (!empty($templates)) {
-            $userIds = array_unique(array_filter(array_column($templates, 'user_id')));
+
+        // Enrich DB templates with creator name
+        if (!empty($dbTemplates)) {
+            $userIds = array_unique(array_filter(array_column($dbTemplates, 'user_id')));
             if (!empty($userIds)) {
-                $placeholders = str_repeat('?,', count($userIds) - 1) . '?';
+                $placeholders = implode(',', array_fill(0, count($userIds), '?'));
                 $users = $this->mainDb->fetchAll(
                     "SELECT id, name FROM users WHERE id IN ($placeholders)",
                     $userIds
                 );
-                // Create user lookup array
                 $userLookup = [];
-                foreach ($users as $user) {
-                    $userLookup[$user['id']] = $user;
+                foreach ($users as $u) { $userLookup[$u['id']] = $u; }
+                foreach ($dbTemplates as &$tpl) {
+                    $tpl['creator_name'] = isset($tpl['user_id'], $userLookup[$tpl['user_id']])
+                        ? $userLookup[$tpl['user_id']]['name']
+                        : 'Unknown';
+                    $tpl['is_builtin'] = false;
                 }
-                // Merge user data into templates
-                foreach ($templates as &$template) {
-                    if (isset($template['user_id']) && isset($userLookup[$template['user_id']])) {
-                        $template['creator_name'] = $userLookup[$template['user_id']]['name'];
-                    } else {
-                        $template['creator_name'] = 'Unknown';
-                    }
-                }
-                unset($template); // Break reference
+                unset($tpl);
+            } else {
+                foreach ($dbTemplates as &$tpl) { $tpl['is_builtin'] = false; }
+                unset($tpl);
             }
         }
-        
-        // Get total count
-        $totalCount = $this->projectDb->fetch("SELECT COUNT(*) as count FROM codexpro_templates")['count'];
-        $totalPages = ceil($totalCount / $perPage);
-        
+
+        // Merge: built-in first, then DB templates
+        $templates = array_merge($starterTemplates, $dbTemplates);
+
+        // Total count includes built-in starters
+        $dbTotalCount = (int)($this->projectDb->fetch("SELECT COUNT(*) as count FROM codexpro_templates")['count'] ?? 0);
+        $totalCount   = count($starterTemplates) + $dbTotalCount;
+        $totalPages   = max(1, ceil($dbTotalCount / $perPage));
+
         $this->view('admin/projects/codexpro/templates', [
-            'title' => 'CodeXPro Admin - Templates',
-            'templates' => $templates,
+            'title'       => 'CodeXPro Admin - Templates',
+            'templates'   => $templates,
             'currentPage' => $page,
-            'totalPages' => $totalPages,
-            'totalCount' => $totalCount
+            'totalPages'  => $totalPages,
+            'totalCount'  => $totalCount,
         ]);
     }
     
@@ -346,7 +373,7 @@ class CodeXProAdminController extends BaseController
         $id = (int)($_POST['template_id'] ?? 0);
         
         if ($id > 0) {
-            $this->projectDb->delete('templates', 'id = ?', [$id]);
+            $this->projectDb->delete('codexpro_templates', 'id = ?', [$id]);
             Logger::activity(Auth::id(), 'codexpro_template_deleted', ['template_id' => $id]);
             try { ActivityLogger::logDelete(Auth::id(), 'codexpro', 'template', $id, ['id' => $id]); } catch (\Throwable $_) {}
             $this->flash('success', 'Template deleted successfully.');
@@ -368,19 +395,169 @@ class CodeXProAdminController extends BaseController
             $this->redirect('/admin/projects/codexpro/templates');
             return;
         }
-        
+
         $id = (int)($_POST['template_id'] ?? 0);
-        
+
         if ($id > 0) {
             $template = $this->projectDb->fetch("SELECT is_active FROM codexpro_templates WHERE id = ?", [$id]);
             if ($template) {
                 $newStatus = $template['is_active'] ? 0 : 1;
-                $this->projectDb->update('templates', ['is_active' => $newStatus], 'id = ?', [$id]);
+                $this->projectDb->update('codexpro_templates', ['is_active' => $newStatus], 'id = ?', [$id]);
                 Logger::activity(Auth::id(), 'codexpro_template_toggled', ['template_id' => $id, 'status' => $newStatus]);
                 $this->flash('success', 'Template status updated.');
             }
         }
-        
+
         $this->redirect('/admin/projects/codexpro/templates');
     }
+
+    /**
+     * Create a new template
+     */
+    public function createTemplate(): void
+    {
+        $this->requirePermission('codexpro.templates');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->redirect('/admin/projects/codexpro/templates');
+            return;
+        }
+
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request.');
+            $this->redirect('/admin/projects/codexpro/templates');
+            return;
+        }
+
+        $name = trim(Security::sanitize($_POST['name'] ?? ''));
+        if ($name === '') {
+            $this->flash('error', 'Template name is required.');
+            $this->redirect('/admin/projects/codexpro/templates');
+            return;
+        }
+
+        $allowedCategories = ['basic', 'html', 'css', 'javascript', 'php', 'react', 'other'];
+        $allowedLanguages  = ['html', 'css', 'javascript', 'php', 'plaintext'];
+
+        $category = in_array($_POST['category'] ?? '', $allowedCategories, true)
+            ? $_POST['category']
+            : 'basic';
+        $language = in_array($_POST['language'] ?? '', $allowedLanguages, true)
+            ? $_POST['language']
+            : 'html';
+
+        $data = [
+            'name'         => $name,
+            'description'  => Security::sanitize($_POST['description'] ?? ''),
+            'category'     => $category,
+            'language'     => $language,
+            'html_content' => $_POST['html_content'] ?? '',
+            'css_content'  => $_POST['css_content']  ?? '',
+            'js_content'   => $_POST['js_content']   ?? '',
+            'is_active'    => isset($_POST['is_active']) ? 1 : 0,
+            'created_at'   => date('Y-m-d H:i:s'),
+        ];
+
+        $this->projectDb->insert('codexpro_templates', $data);
+        Cache::delete(self::CACHE_KEY_STATS);
+
+        Logger::activity(Auth::id(), 'codexpro_template_created', ['name' => $name]);
+        try { ActivityLogger::logCreate(Auth::id(), 'codexpro', 'template', 0, $data); } catch (\Throwable $_) {}
+
+        $this->flash('success', 'Template "' . $name . '" created successfully.');
+        $this->redirect('/admin/projects/codexpro/templates');
+    }
+
+    /**
+     * Edit template form
+     */
+    public function editTemplate(int $id): void
+    {
+        $this->requirePermission('codexpro.templates');
+
+        $template = $this->projectDb->fetch(
+            "SELECT * FROM codexpro_templates WHERE id = ?",
+            [$id]
+        );
+
+        if (!$template) {
+            $this->flash('error', 'Template not found.');
+            $this->redirect('/admin/projects/codexpro/templates');
+            return;
+        }
+
+        $this->view('admin/projects/codexpro/template-edit', [
+            'title'    => 'Edit Template — CodeXPro Admin',
+            'template' => $template,
+        ]);
+    }
+
+    /**
+     * Update an existing template
+     */
+    public function updateTemplate(int $id): void
+    {
+        $this->requirePermission('codexpro.templates');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->redirect('/admin/projects/codexpro/templates');
+            return;
+        }
+
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request.');
+            $this->redirect('/admin/projects/codexpro/templates/' . $id . '/edit');
+            return;
+        }
+
+        $template = $this->projectDb->fetch(
+            "SELECT id FROM codexpro_templates WHERE id = ?",
+            [$id]
+        );
+
+        if (!$template) {
+            $this->flash('error', 'Template not found.');
+            $this->redirect('/admin/projects/codexpro/templates');
+            return;
+        }
+
+        $name = trim(Security::sanitize($_POST['name'] ?? ''));
+        if ($name === '') {
+            $this->flash('error', 'Template name is required.');
+            $this->redirect('/admin/projects/codexpro/templates/' . $id . '/edit');
+            return;
+        }
+
+        $allowedCategories = ['basic', 'html', 'css', 'javascript', 'php', 'react', 'other'];
+        $allowedLanguages  = ['html', 'css', 'javascript', 'php', 'plaintext'];
+
+        $category = in_array($_POST['category'] ?? '', $allowedCategories, true)
+            ? $_POST['category']
+            : 'basic';
+        $language = in_array($_POST['language'] ?? '', $allowedLanguages, true)
+            ? $_POST['language']
+            : 'html';
+
+        $data = [
+            'name'         => $name,
+            'description'  => Security::sanitize($_POST['description'] ?? ''),
+            'category'     => $category,
+            'language'     => $language,
+            'html_content' => $_POST['html_content'] ?? '',
+            'css_content'  => $_POST['css_content']  ?? '',
+            'js_content'   => $_POST['js_content']   ?? '',
+            'is_active'    => isset($_POST['is_active']) ? 1 : 0,
+            'updated_at'   => date('Y-m-d H:i:s'),
+        ];
+
+        $this->projectDb->update('codexpro_templates', $data, 'id = ?', [$id]);
+        Cache::delete(self::CACHE_KEY_STATS);
+
+        Logger::activity(Auth::id(), 'codexpro_template_updated', ['id' => $id, 'name' => $name]);
+        try { ActivityLogger::logUpdate(Auth::id(), 'codexpro', 'template', $id, [], $data); } catch (\Throwable $_) {}
+
+        $this->flash('success', 'Template updated successfully.');
+        $this->redirect('/admin/projects/codexpro/templates/' . $id . '/edit');
+    }
 }
+

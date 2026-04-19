@@ -1381,8 +1381,39 @@ $canPriority      = (bool) ($userFeatures['priority_support']     ?? false);
     </div>
 </div>
 
-<!-- QR Code Styling Library (Better than QRCode.js) -->
-<script src="https://unpkg.com/qr-code-styling@1.6.0-rc.1/lib/qr-code-styling.js"></script>
+<!-- QR Code Styling Library (with resilient fallback loader) -->
+<script>
+(function loadQrCodeStylingLibrary() {
+    const sources = [
+        'https://cdn.jsdelivr.net/npm/qr-code-styling@1.6.0-rc.1/lib/qr-code-styling.js',
+        'https://unpkg.com/qr-code-styling@1.6.0-rc.1/lib/qr-code-styling.js'
+    ];
+    let index = 0;
+
+    function tryNext() {
+        if (typeof window.QRCodeStyling !== 'undefined') return;
+        if (index >= sources.length) return;
+
+        const src = sources[index++];
+        const script = document.createElement('script');
+        script.src = src;
+        script.async = false;
+        script.crossOrigin = 'anonymous';
+        script.referrerPolicy = 'no-referrer';
+        script.onload = function () {
+            if (typeof window.QRCodeStyling === 'undefined') {
+                tryNext();
+            }
+        };
+        script.onerror = function () {
+            tryNext();
+        };
+        document.head.appendChild(script);
+    }
+
+    tryNext();
+})();
+</script>
 
 <script>
 // Central QR Configuration Object
@@ -1624,12 +1655,14 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
     
-    // Check library loaded
+    // Check library loaded (allow fallback loader enough time)
     window.addEventListener('load', function() {
-        if (typeof QRCodeStyling === 'undefined') {
-            console.error('QRCodeStyling library failed to load');
-            showNotification('QR library failed to load. Please refresh the page.', 'error');
-        }
+        setTimeout(() => {
+            if (typeof QRCodeStyling === 'undefined') {
+                console.error('QRCodeStyling library failed to load');
+                showNotification('QR library failed to load. Please refresh the page.', 'error');
+            }
+        }, 1200);
     });
 
 // Logo Option Selector Functions
