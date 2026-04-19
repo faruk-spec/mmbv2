@@ -8,12 +8,14 @@ $buttonTextMap = [
     'login' => [
         'google' => 'Continue with Google',
         'github' => 'Continue with GitHub',
-        'apple' => 'Continue with Apple'
+        'apple' => 'Continue with Apple',
+        'microsoft' => 'Continue with Microsoft'
     ],
     'register' => [
         'google' => 'Sign up with Google',
         'github' => 'Sign up with GitHub',
-        'apple' => 'Sign up with Apple'
+        'apple' => 'Sign up with Apple',
+        'microsoft' => 'Sign up with Microsoft'
     ]
 ];
 ?>
@@ -40,6 +42,13 @@ $buttonTextMap = [
                 <?php elseif ($providerName === 'apple'): ?>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="#000000" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
                         <path d="M16.37 1.43c0 1.14-.47 2.24-1.23 3.01-.82.83-2.14 1.46-3.27 1.37-.14-1.09.4-2.22 1.18-3.01.79-.8 2.17-1.43 3.32-1.37zM20.99 17.02c-.38.88-.83 1.69-1.36 2.45-.72 1.03-1.31 1.74-1.78 2.12-.73.62-1.52.94-2.37.96-.61 0-1.34-.18-2.2-.54-.86-.36-1.66-.54-2.4-.54-.77 0-1.59.18-2.47.54-.88.36-1.59.55-2.14.57-.82.04-1.63-.3-2.44-.99-.51-.44-1.13-1.18-1.85-2.23-.77-1.11-1.41-2.4-1.91-3.89-.54-1.61-.81-3.17-.81-4.67 0-1.72.36-3.2 1.08-4.43.57-1 1.33-1.8 2.28-2.39.95-.59 1.98-.89 3.08-.91.61 0 1.41.19 2.43.58 1.01.39 1.66.58 1.93.58.2 0 .87-.22 2.01-.66 1.08-.4 1.99-.57 2.74-.51 2.03.17 3.56.98 4.58 2.43-1.82 1.12-2.72 2.69-2.7 4.71.02 1.58.57 2.9 1.67 3.96.49.49 1.04.86 1.65 1.11-.13.38-.27.76-.42 1.12z"/>
+                    </svg>
+                <?php elseif ($providerName === 'microsoft'): ?>
+                    <svg width="18" height="18" viewBox="0 0 23 23" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
+                        <rect x="1" y="1" width="10" height="10" fill="#F25022"/>
+                        <rect x="12" y="1" width="10" height="10" fill="#7FBA00"/>
+                        <rect x="1" y="12" width="10" height="10" fill="#00A4EF"/>
+                        <rect x="12" y="12" width="10" height="10" fill="#FFB900"/>
                     </svg>
                 <?php endif; ?>
                 <?= View::e($buttonTextMap[$oauthMode][$providerName]) ?>

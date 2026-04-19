@@ -198,6 +198,7 @@ $router->get('/admin/security/stats', 'Admin\\SecurityController@getStats', ['au
 $router->get('/admin/oauth', 'Admin\\OAuthController@index', ['auth', 'admin']);
 $router->get('/admin/oauth/{id}/edit', 'Admin\\OAuthController@edit', ['auth', 'admin']);
 $router->post('/admin/oauth/{id}/edit', 'Admin\\OAuthController@update', ['auth', 'admin']);
+$router->post('/admin/oauth/{id}/toggle', 'Admin\\OAuthController@toggle', ['auth', 'admin']);
 $router->get('/admin/oauth/connections', 'Admin\\OAuthController@connections', ['auth', 'admin']);
 $router->post('/admin/oauth/connections/{id}/revoke', 'Admin\\OAuthController@revokeConnection', ['auth', 'admin']);
 

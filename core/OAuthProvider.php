@@ -9,7 +9,7 @@ namespace Core;
 
 class OAuthProvider
 {
-    private const SUPPORTED_PROVIDERS = ['google', 'github', 'apple'];
+    private const SUPPORTED_PROVIDERS = ['google', 'github', 'apple', 'microsoft'];
 
     private const DEFAULT_CONFIG = [
         'google' => [
@@ -30,6 +30,12 @@ class OAuthProvider
             'token_url' => 'https://appleid.apple.com/auth/token',
             'userinfo_url' => '',
             'scopes' => 'name email'
+        ],
+        'microsoft' => [
+            'auth_url' => 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize',
+            'token_url' => 'https://login.microsoftonline.com/common/oauth2/v2.0/token',
+            'userinfo_url' => 'https://graph.microsoft.com/v1.0/me',
+            'scopes' => 'openid email profile User.Read'
         ]
     ];
 
@@ -365,6 +371,26 @@ class OAuthProvider
                 'name' => $payload['email'] ?? 'Apple User',
                 'avatar' => null,
                 'email_verified' => !empty($payload['email_verified'])
+            ];
+        }
+
+        if ($provider === 'microsoft') {
+            $response = self::makeRequest(
+                self::$config[$provider]['userinfo_url'],
+                'GET',
+                [],
+                ['Authorization: Bearer ' . $accessToken]
+            );
+            if (!$response) {
+                return false;
+            }
+            $email = $response['mail'] ?? $response['userPrincipalName'] ?? null;
+            return [
+                'provider_user_id' => $response['id'] ?? null,
+                'email' => $email,
+                'name' => $response['displayName'] ?? '',
+                'avatar' => null,
+                'email_verified' => !empty($email)
             ];
         }
 

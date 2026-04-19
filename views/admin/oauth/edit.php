@@ -40,6 +40,19 @@ $providerDocs = [
             'Create a client secret/JWT and store it in Client Secret',
             'Save credentials and enable provider'
         ]
+    ],
+    'microsoft' => [
+        'title' => 'Microsoft OAuth (Entra ID / Azure AD)',
+        'url' => 'https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade',
+        'steps' => [
+            'Go to Azure Portal → Microsoft Entra ID → App registrations',
+            'Click "New registration"',
+            'Set the Name and select Supported account types (Multitenant recommended)',
+            'Under Redirect URI select "Web" and add the redirect URI shown below',
+            'After creation, copy the Application (client) ID — this is your Client ID',
+            'Go to Certificates & secrets → New client secret — this is your Client Secret',
+            'Save credentials and enable provider'
+        ]
     ]
 ];
 $doc = $providerDocs[$providerName] ?? null;

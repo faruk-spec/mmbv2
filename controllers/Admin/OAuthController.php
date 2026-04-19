@@ -101,6 +101,51 @@ class OAuthController extends BaseController
     }
     
     /**
+     * Toggle OAuth provider enabled/disabled state
+     */
+    public function toggle(string $id): void
+    {
+        $this->requirePermission('oauth');
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request.');
+            $this->redirect('/admin/oauth');
+            return;
+        }
+
+        try {
+            $db = Database::getInstance();
+            $provider = $db->fetch("SELECT id, name, is_enabled FROM oauth_providers WHERE id = ?", [(int) $id]);
+
+            if (!$provider) {
+                $this->flash('error', 'Provider not found.');
+                $this->redirect('/admin/oauth');
+                return;
+            }
+
+            $newState = $provider['is_enabled'] ? 0 : 1;
+            $db->update('oauth_providers', [
+                'is_enabled' => $newState,
+                'updated_at' => date('Y-m-d H:i:s')
+            ], 'id = ?', [(int) $id]);
+
+            Logger::activity(Auth::id(), 'oauth_provider_toggled', [
+                'provider_id' => (int) $id,
+                'provider_name' => $provider['name'],
+                'new_state' => $newState ? 'enabled' : 'disabled'
+            ]);
+
+            $label = $newState ? 'enabled' : 'disabled';
+            $this->flash('success', ucfirst($provider['name']) . ' OAuth provider ' . $label . '.');
+
+        } catch (\Exception $e) {
+            Logger::error('OAuth provider toggle error: ' . $e->getMessage());
+            $this->flash('error', 'Failed to toggle OAuth provider.');
+        }
+
+        $this->redirect('/admin/oauth');
+    }
+
+    /**
      * List user OAuth connections
      */
     public function connections(): void

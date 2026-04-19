@@ -211,7 +211,8 @@ $db = \Core\Database::getInstance();
 $providerStyles = [
     'google' => ['title' => 'Google', 'connected' => '#4285F4', 'gradient' => 'linear-gradient(135deg, rgba(66, 133, 244, 0.1) 0%, rgba(234, 67, 53, 0.1) 100%)'],
     'github' => ['title' => 'GitHub', 'connected' => '#111827', 'gradient' => 'linear-gradient(135deg, rgba(17, 24, 39, 0.1) 0%, rgba(71, 85, 105, 0.1) 100%)'],
-    'apple' => ['title' => 'Apple', 'connected' => '#111111', 'gradient' => 'linear-gradient(135deg, rgba(17, 17, 17, 0.1) 0%, rgba(115, 115, 115, 0.1) 100%)']
+    'apple' => ['title' => 'Apple', 'connected' => '#111111', 'gradient' => 'linear-gradient(135deg, rgba(17, 17, 17, 0.1) 0%, rgba(115, 115, 115, 0.1) 100%)'],
+    'microsoft' => ['title' => 'Microsoft', 'connected' => '#00A4EF', 'gradient' => 'linear-gradient(135deg, rgba(0, 164, 239, 0.1) 0%, rgba(127, 186, 0, 0.1) 100%)']
 ];
 $enabledProviders = \Core\OAuthProvider::getEnabledProviders();
 if (!empty($enabledProviders)):
