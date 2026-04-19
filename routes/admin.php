@@ -119,6 +119,9 @@ $router->get('/admin/projects/codexpro/users', 'Admin\\CodeXProAdminController@u
 $router->get('/admin/projects/codexpro/templates', 'Admin\\CodeXProAdminController@templates', ['auth', 'admin']);
 $router->post('/admin/projects/codexpro/templates/delete', 'Admin\\CodeXProAdminController@deleteTemplate', ['auth', 'admin']);
 $router->post('/admin/projects/codexpro/templates/toggle', 'Admin\\CodeXProAdminController@toggleTemplate', ['auth', 'admin']);
+$router->post('/admin/projects/codexpro/templates/create', 'Admin\\CodeXProAdminController@createTemplate', ['auth', 'admin']);
+$router->get('/admin/projects/codexpro/templates/{id}/edit', 'Admin\\CodeXProAdminController@editTemplate', ['auth', 'admin']);
+$router->post('/admin/projects/codexpro/templates/{id}/update', 'Admin\\CodeXProAdminController@updateTemplate', ['auth', 'admin']);
 
 // ProShare admin routes
 $router->get('/admin/projects/proshare', 'Admin\\ProShareAdminController@overview', ['auth', 'admin']);
