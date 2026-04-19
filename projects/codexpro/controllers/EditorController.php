@@ -27,13 +27,21 @@ class EditorController
 
         if (!$settings) {
             $db->insert('codexpro_user_settings', [
-                'user_id' => $user['id'],
-                'theme' => 'dark',
-                'font_size' => 14,
-                'tab_size' => 2,
-                'auto_save' => 1,
-                'auto_preview' => 1,
-                'key_bindings' => 'default',
+                'user_id'          => $user['id'],
+                'theme'            => 'dark',
+                'font_size'        => 14,
+                'font_family'      => 'JetBrains Mono',
+                'tab_size'         => 2,
+                'auto_save'        => 1,
+                'auto_preview'     => 1,
+                'key_bindings'     => 'default',
+                'word_wrap'        => 0,
+                'line_numbers'     => 1,
+                'bracket_matching' => 1,
+                'auto_indent'      => 1,
+                'indent_guides'    => 1,
+                'highlight_line'   => 1,
+                'show_minimap'     => 0,
             ]);
 
             $settings = $db->fetch(

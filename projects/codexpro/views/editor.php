@@ -563,8 +563,11 @@ try {
         .then(function(data) {
             if (data.success) {
                 showToast('Saved successfully!');
+                if (data.project_id && !PROJECT_ID) {
+                    window.location.href = '/projects/codexpro/editor/' + data.project_id;
+                }
             } else {
-                showToast(data.message || 'Save failed', true);
+                showToast(data.error || data.message || 'Save failed', true);
             }
         })
         .catch(function() { showToast('Network error during save', true); });
