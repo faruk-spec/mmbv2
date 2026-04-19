@@ -51,7 +51,7 @@
                         <line x1="12" y1="16" x2="12.01" y2="16"></line>
                     </svg>
                     <span style="color: rgba(255, 193, 7, 1); font-size: 0.9rem;">
-                        You currently sign in with Google. Set a password to enable traditional login and unlock all security features.
+                        You currently sign in with OAuth. Set a password to enable traditional login and unlock all security features.
                     </span>
                 </div>
                 <form method="POST" action="/security/set-password">
@@ -205,58 +205,46 @@
     </div>
 </div>
 
-<!-- Google OAuth Connection -->
-<?php 
+<!-- OAuth Connections -->
+<?php
 $db = \Core\Database::getInstance();
-$googleConnection = null;
-if (\Core\GoogleOAuth::isEnabled()) {
-    try {
-        $googleConnection = $db->fetch(
-            "SELECT ouc.*, op.id as provider_id, op.display_name as provider_display_name 
-             FROM oauth_user_connections ouc
-             JOIN oauth_providers op ON ouc.provider_id = op.id
-             WHERE ouc.user_id = ? AND op.name = 'google'",
-            [\Core\Auth::id()]
-        );
-    } catch (\Exception $e) {}
-}
+$providerStyles = [
+    'google' => ['title' => 'Google', 'connected' => '#4285F4', 'gradient' => 'linear-gradient(135deg, rgba(66, 133, 244, 0.1) 0%, rgba(234, 67, 53, 0.1) 100%)'],
+    'github' => ['title' => 'GitHub', 'connected' => '#111827', 'gradient' => 'linear-gradient(135deg, rgba(17, 24, 39, 0.1) 0%, rgba(71, 85, 105, 0.1) 100%)'],
+    'apple' => ['title' => 'Apple', 'connected' => '#111111', 'gradient' => 'linear-gradient(135deg, rgba(17, 17, 17, 0.1) 0%, rgba(115, 115, 115, 0.1) 100%)']
+];
+$enabledProviders = \Core\OAuthProvider::getEnabledProviders();
+if (!empty($enabledProviders)):
+    foreach ($enabledProviders as $provider):
+        $providerName = strtolower($provider['name']);
+        $style = $providerStyles[$providerName] ?? ['title' => ucfirst($providerName), 'connected' => '#4ade80', 'gradient' => 'linear-gradient(135deg, rgba(74, 222, 128, 0.1), rgba(6, 182, 212, 0.1))'];
+        $connection = null;
+        try {
+            $connection = $db->fetch(
+                "SELECT ouc.* FROM oauth_user_connections ouc
+                 JOIN oauth_providers op ON ouc.provider_id = op.id
+                 WHERE ouc.user_id = ? AND op.name = ?",
+                [\Core\Auth::id(), $providerName]
+            );
+        } catch (\Exception $e) {
+        }
 ?>
-
-<?php if (\Core\GoogleOAuth::isEnabled()): ?>
 <div class="card" style="border-radius: 10px; overflow: hidden; border: 1px solid var(--border-color); margin-top: 24px;">
-    <div class="card-header" style="background: linear-gradient(135deg, rgba(66, 133, 244, 0.1) 0%, rgba(234, 67, 53, 0.1) 100%); border-bottom: 1px solid var(--border-color); padding: 12px;">
-        <h3 class="card-title" style="font-size: 0.9rem; display: flex; align-items: center; gap: 10px; margin: 0;">
-            <svg width="16" height="16" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
-                <g fill="none" fill-rule="evenodd">
-                    <path d="M17.64 9.205c0-.639-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
-                    <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
-                    <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
-                    <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
-                </g>
-            </svg>
-            Google Account
-        </h3>
+    <div class="card-header" style="background: <?= View::e($style['gradient']) ?>; border-bottom: 1px solid var(--border-color); padding: 12px;">
+        <h3 class="card-title" style="font-size: 0.9rem; margin: 0;"><?= View::e($style['title']) ?> Account</h3>
     </div>
-    
     <div style="padding: 20px;">
-        <?php if ($googleConnection): ?>
+        <?php if ($connection): ?>
             <div style="display: flex; align-items: center; gap: 16px;">
-                <div style="width: 50px; height: 50px; background: rgba(66, 133, 244, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                    <svg width="20" height="20" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
-                        <g fill="none" fill-rule="evenodd">
-                            <path d="M17.64 9.205c0-.639-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
-                            <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
-                            <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
-                            <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
-                        </g>
-                    </svg>
+                <div style="width: 50px; height: 50px; background: rgba(74, 222, 128, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: <?= View::e($style['connected']) ?>; font-weight: 700; font-size: 1rem;">
+                    <?= View::e(strtoupper(substr($providerName, 0, 1))) ?>
                 </div>
                 <div style="flex: 1;">
-                    <div style="font-weight: 600; color: #4285F4; margin-bottom: 4px;">Connected</div>
-                    <div style="color: var(--text-secondary); font-size: 0.9rem;"><?= View::e($googleConnection['provider_email']) ?></div>
-                    <div style="color: var(--text-secondary); font-size: 0.8rem; margin-top: 4px;">Connected <?= Helpers::timeAgo(strtotime($googleConnection['created_at'])) ?></div>
+                    <div style="font-weight: 600; color: <?= View::e($style['connected']) ?>; margin-bottom: 4px;">Connected</div>
+                    <div style="color: var(--text-secondary); font-size: 0.9rem;"><?= View::e($connection['provider_email'] ?: 'No email available') ?></div>
+                    <div style="color: var(--text-secondary); font-size: 0.8rem; margin-top: 4px;">Connected <?= Helpers::timeAgo(strtotime($connection['created_at'])) ?></div>
                 </div>
-                <form method="POST" action="/auth/google/unlink" style="flex-shrink: 0;" onsubmit="return confirm('Are you sure you want to unlink your Google account?');">
+                <form method="POST" action="/auth/<?= View::e($providerName) ?>/unlink" style="flex-shrink: 0;" onsubmit="return confirm('Are you sure you want to unlink your <?= View::e($style['title']) ?> account?');">
                     <?= \Core\Security::csrfField() ?>
                     <button type="submit" class="btn btn-secondary" style="padding: 8px 16px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); font-weight: 500; cursor: pointer; transition: all 0.3s ease; font-size: 0.85rem;">
                         Unlink
@@ -265,28 +253,24 @@ if (\Core\GoogleOAuth::isEnabled()) {
             </div>
         <?php else: ?>
             <div style="display: flex; align-items: center; gap: 16px;">
-                <div style="width: 50px; height: 50px; background: rgba(100, 116, 139, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                    <svg width="20" height="20" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
-                        <g fill="none" fill-rule="evenodd" opacity="0.5">
-                            <path d="M17.64 9.205c0-.639-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
-                            <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
-                            <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
-                            <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
-                        </g>
-                    </svg>
+                <div style="width: 50px; height: 50px; background: rgba(100, 116, 139, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--text-secondary); font-weight: 700; font-size: 1rem;">
+                    <?= View::e(strtoupper(substr($providerName, 0, 1))) ?>
                 </div>
                 <div style="flex: 1;">
                     <div style="font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">Not Connected</div>
-                    <div style="color: var(--text-secondary); font-size: 0.9rem;">Link your Google account for easier sign-in</div>
+                    <div style="color: var(--text-secondary); font-size: 0.9rem;">Link your <?= View::e($style['title']) ?> account for easier sign-in</div>
                 </div>
-                <a href="/auth/google/link" class="btn btn-primary" style="padding: 8px 16px; background: linear-gradient(135deg, #4285F4, #34A853); border: none; border-radius: 8px; color: white; font-weight: 500; text-decoration: none; display: inline-block; transition: all 0.3s ease; font-size: 0.85rem; flex-shrink: 0;">
+                <a href="/auth/<?= View::e($providerName) ?>/link" class="btn btn-primary" style="padding: 8px 16px; border: none; border-radius: 8px; color: white; font-weight: 500; text-decoration: none; display: inline-block; transition: all 0.3s ease; font-size: 0.85rem; flex-shrink: 0;">
                     Link Account
                 </a>
             </div>
         <?php endif; ?>
     </div>
 </div>
-<?php endif; ?>
+<?php
+    endforeach;
+endif;
+?>
 
 <div class="card mt-3" style="border-radius: 10px; overflow: hidden; border: 1px solid var(--border-color); margin-top: 24px;">
     <div class="card-header" style="background: linear-gradient(135deg, rgba(0, 255, 136, 0.1) 0%, rgba(0, 240, 255, 0.1) 100%); border-bottom: 1px solid var(--border-color); padding: 12px;">

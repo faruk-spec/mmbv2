@@ -5,7 +5,7 @@
 <div class="admin-content">
     <div class="page-header">
         <h1>OAuth Providers</h1>
-        <p>Manage OAuth authentication providers for Google, GitHub, etc.</p>
+        <p>Manage OAuth authentication providers for Google, GitHub, Apple, and more.</p>
     </div>
     
     <?php if (Helpers::hasFlash('success')): ?>

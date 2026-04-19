@@ -68,7 +68,7 @@ CREATE TABLE IF NOT EXISTS `login_history` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `user_id` INT UNSIGNED NULL,
     `email` VARCHAR(255) NOT NULL,
-    `login_method` ENUM('email_password', 'google_oauth', 'remember_token', '2fa') DEFAULT 'email_password',
+    `login_method` ENUM('email_password', 'google_oauth', 'github_oauth', 'apple_oauth', 'remember_token', '2fa') DEFAULT 'email_password',
     `ip_address` VARCHAR(45) NOT NULL,
     `user_agent` VARCHAR(500) NULL,
     `status` ENUM('success', 'failed', 'blocked') DEFAULT 'success',
@@ -81,13 +81,25 @@ CREATE TABLE IF NOT EXISTS `login_history` (
     INDEX `idx_created_at` (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Insert default Google OAuth provider
+-- Insert default OAuth providers
 INSERT INTO `oauth_providers` (`name`, `display_name`, `scopes`, `is_enabled`, `config`) VALUES
 ('google', 'Google', 'openid email profile', 0, JSON_OBJECT(
     'auth_url', 'https://accounts.google.com/o/oauth2/v2/auth',
     'token_url', 'https://oauth2.googleapis.com/token',
     'userinfo_url', 'https://www.googleapis.com/oauth2/v2/userinfo'
-)) ON DUPLICATE KEY UPDATE display_name = 'Google';
+)),
+('github', 'GitHub', 'read:user user:email', 0, JSON_OBJECT(
+    'auth_url', 'https://github.com/login/oauth/authorize',
+    'token_url', 'https://github.com/login/oauth/access_token',
+    'userinfo_url', 'https://api.github.com/user',
+    'userinfo_email_url', 'https://api.github.com/user/emails'
+)),
+('apple', 'Apple', 'name email', 0, JSON_OBJECT(
+    'auth_url', 'https://appleid.apple.com/auth/authorize',
+    'token_url', 'https://appleid.apple.com/auth/token',
+    'userinfo_url', ''
+))
+ON DUPLICATE KEY UPDATE display_name = VALUES(display_name), scopes = VALUES(scopes), config = VALUES(config);
 
 -- ============================================
 -- PART 2: User Table Extensions
@@ -96,6 +108,10 @@ INSERT INTO `oauth_providers` (`name`, `display_name`, `scopes`, `is_enabled`, `
 -- Add OAuth columns to users table if not exists
 ALTER TABLE `users` ADD COLUMN IF NOT EXISTS `google_id` VARCHAR(255) NULL;
 ALTER TABLE `users` ADD UNIQUE INDEX IF NOT EXISTS `idx_google_id` (`google_id`);
+ALTER TABLE `users` ADD COLUMN IF NOT EXISTS `github_id` VARCHAR(255) NULL;
+ALTER TABLE `users` ADD UNIQUE INDEX IF NOT EXISTS `idx_github_id` (`github_id`);
+ALTER TABLE `users` ADD COLUMN IF NOT EXISTS `apple_id` VARCHAR(255) NULL;
+ALTER TABLE `users` ADD UNIQUE INDEX IF NOT EXISTS `idx_apple_id` (`apple_id`);
 
 -- Add session tracking fields to users table if not exists
 ALTER TABLE `users` ADD COLUMN IF NOT EXISTS `session_timeout_minutes` INT DEFAULT 120;

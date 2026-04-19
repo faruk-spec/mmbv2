@@ -40,11 +40,11 @@ $router->get('/verify-otp', 'AuthController@showVerifyOtp');
 $router->post('/verify-otp', 'AuthController@verifyOtp');
 $router->post('/verify-otp/resend', 'AuthController@resendOtp');
 
-// Google OAuth routes
-$router->get('/auth/google', 'GoogleOAuthController@redirectToGoogle');
-$router->get('/auth/google/callback', 'GoogleOAuthController@callback');
-$router->get('/auth/google/link', 'GoogleOAuthController@link', ['auth']);
-$router->post('/auth/google/unlink', 'GoogleOAuthController@unlink', ['auth']);
+// OAuth routes (Google, GitHub, Apple)
+$router->get('/auth/{provider}', 'SocialOAuthController@redirectToProvider');
+$router->get('/auth/{provider}/callback', 'SocialOAuthController@callback');
+$router->get('/auth/{provider}/link', 'SocialOAuthController@link', ['auth']);
+$router->post('/auth/{provider}/unlink', 'SocialOAuthController@unlink', ['auth']);
 
 // User Dashboard
 $router->get('/dashboard', 'DashboardController@index', ['auth']);
