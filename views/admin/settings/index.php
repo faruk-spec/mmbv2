@@ -24,6 +24,28 @@
                 <?= \Core\Security::csrfField() ?>
                 
                 <div class="form-group">
+                    <label class="form-label">Auth Page Logo URL</label>
+                    <input type="url" name="auth_logo" class="form-input"
+                           value="<?= View::e($settings['auth_logo'] ?? '') ?>"
+                           placeholder="https://example.com/logo.png">
+                    <small class="form-help">Displayed on the login &amp; register pages. Use an absolute URL (https://…) or a relative path from the site root.</small>
+                    <?php if (!empty($settings['auth_logo'])): ?>
+                    <div style="margin-top:8px;">
+                        <img src="<?= View::e($settings['auth_logo']) ?>" alt="Auth logo preview"
+                             style="max-height:60px;max-width:180px;object-fit:contain;border-radius:8px;border:1px solid var(--border-color);">
+                    </div>
+                    <?php endif; ?>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Auth Page Tagline</label>
+                    <input type="text" name="auth_tagline" class="form-input"
+                           value="<?= View::e($settings['auth_tagline'] ?? '') ?>"
+                           placeholder="Your tools, all in one place.">
+                    <small class="form-help">Short subtitle shown below the welcome heading on login &amp; register pages.</small>
+                </div>
+
+                <div class="form-group">
                     <label class="form-label">Site Name</label>
                     <input type="text" name="site_name" class="form-input" 
                            value="<?= View::e($settings['site_name'] ?? APP_NAME) ?>">

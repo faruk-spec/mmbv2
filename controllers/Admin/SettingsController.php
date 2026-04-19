@@ -65,7 +65,9 @@ class SettingsController extends BaseController
                 'registration_enabled',
                 'system_timezone',
                 'date_format',
-                'time_format'
+                'time_format',
+                'auth_logo',
+                'auth_tagline',
             ];
 
             // Snapshot current values before writing
