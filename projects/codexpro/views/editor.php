@@ -229,6 +229,45 @@ try {
             .lang-tab{padding:4px 8px;font-size:.72rem}
             .tb-btn{padding:4px 7px;font-size:.72rem}
         }
+        /* ── Collaboration ────────────────────────────────────── */
+        .collab-avatar{
+            width:26px;height:26px;border-radius:50%;display:flex;align-items:center;
+            justify-content:center;font-size:.65rem;font-weight:700;color:#0a0a14;
+            border:2px solid var(--editor-bg);position:relative;cursor:default;flex-shrink:0;
+        }
+        .collab-avatar .av-tooltip{
+            display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);
+            background:#1a1a2e;border:1px solid var(--editor-border);border-radius:5px;
+            padding:3px 8px;font-size:.72rem;color:var(--editor-text);white-space:nowrap;pointer-events:none;
+        }
+        .collab-avatar:hover .av-tooltip{display:block}
+        .collab-cursor{
+            position:absolute;width:2px;pointer-events:none;z-index:200;
+        }
+        .collab-cursor-label{
+            position:absolute;top:-16px;left:0;font-size:.62rem;font-weight:700;
+            white-space:nowrap;padding:1px 5px;border-radius:3px;color:#0a0a14;
+        }
+        /* Version list item */
+        .ver-item{
+            display:flex;align-items:center;gap:10px;padding:9px 12px;
+            background:var(--editor-toolbar);border:1px solid var(--editor-border);
+            border-radius:6px;cursor:pointer;transition:border-color .15s;
+        }
+        .ver-item:hover{border-color:var(--editor-accent)}
+        .ver-num{font-size:.72rem;color:var(--editor-muted);min-width:36px}
+        .ver-label{flex:1;font-size:.82rem;color:var(--editor-text);font-weight:500}
+        .ver-meta{font-size:.72rem;color:var(--editor-muted);text-align:right}
+        .ver-restore-btn{
+            background:none;border:1px solid var(--editor-border);border-radius:4px;
+            color:var(--editor-muted);font-size:.72rem;padding:2px 8px;cursor:pointer;
+            transition:all .15s;white-space:nowrap;
+        }
+        .ver-restore-btn:hover{border-color:var(--editor-accent);color:var(--editor-accent)}
+        /* Sync dot states */
+        #sync-dot.syncing{background:#f7c948;animation:sync-pulse 1s infinite}
+        #sync-dot.error{background:#f87171}
+        @keyframes sync-pulse{0%,100%{opacity:1}50%{opacity:.4}}
     </style>
 </head>
 <body>
@@ -290,6 +329,20 @@ try {
             <div class="tb-dropdown-item" data-width="full"><i class="fa fa-expand"></i> Full Width</div>
         </div>
     </div>
+
+    <div class="toolbar-sep"></div>
+
+    <!-- Collaborators presence bar -->
+    <div id="collab-bar" style="display:none;align-items:center;gap:4px">
+        <div id="collab-avatars" style="display:flex;gap:3px"></div>
+        <button class="tb-icon-btn" id="invite-btn" title="Invite collaborator"><i class="fa fa-user-plus"></i></button>
+    </div>
+
+    <!-- Version history button -->
+    <button class="tb-icon-btn" id="history-btn" title="Version history"><i class="fa fa-clock-rotate-left"></i></button>
+
+    <!-- Sync status dot -->
+    <span id="sync-dot" title="Cloud sync" style="width:8px;height:8px;border-radius:50%;background:#4ade80;flex-shrink:0;transition:background .3s"></span>
 
     <div class="toolbar-sep"></div>
     <a href="/projects/codexpro" class="tb-icon-btn" title="Back to dashboard">
@@ -379,8 +432,12 @@ try {
 (function () {
     'use strict';
 
-    const PROJECT_ID = <?= json_encode(isset($project['id']) ? (int)$project['id'] : null) ?>;
-    const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]').content;
+    const PROJECT_ID   = <?= json_encode(isset($project['id']) ? (int)$project['id'] : null) ?>;
+    const CSRF_TOKEN   = document.querySelector('meta[name="csrf-token"]').content;
+    const READONLY     = <?= json_encode(!empty($project['_readonly'])) ?>;
+    const COLLAB_TOKEN = <?= json_encode($project['collab_token'] ?? null) ?>;
+    const MY_USER_ID   = <?= json_encode((int)($_SESSION['user_id'] ?? 0)) ?>;
+    let   SERVER_VER   = <?= json_encode(isset($project['version']) ? (int)$project['version'] : 0) ?>;
 
     function cmTheme() {
         return document.documentElement.dataset.theme === 'light' ? 'default' : 'dracula';
@@ -702,6 +759,7 @@ try {
 
     /* Save */
     function doSave() {
+        if (READONLY) { showToast('This project is read-only', true); return; }
         var fd = new FormData();
         if (PROJECT_ID) fd.append('project_id', PROJECT_ID);
         fd.append('name',         nameText.textContent.trim());
@@ -709,6 +767,7 @@ try {
         fd.append('css_content',  editors.css.getValue());
         fd.append('js_content',   editors.js.getValue());
         fd.append('visibility',   'private');
+        fd.append('version', SERVER_VER);
         fd.append('_csrf_token',  CSRF_TOKEN);
 
         fetch('/projects/codexpro/editor/save', {
@@ -719,7 +778,8 @@ try {
         .then(function(r) { return r.json(); })
         .then(function(data) {
             if (data.success) {
-                showToast('Saved successfully!');
+                SERVER_VER = data.version || SERVER_VER;
+                showToast(data.conflict ? '⚠ Saved (conflict detected – check history)' : 'Saved ✓');
                 if (data.project_id && !PROJECT_ID) {
                     window.location.href = '/projects/codexpro/editor/' + data.project_id;
                 }
@@ -941,6 +1001,429 @@ try {
         updateStatusBar();
     });
 }());
+
+/* ═══════════════════════════════════════════════════════════
+   Enterprise Collaboration & Version History Module
+   ═══════════════════════════════════════════════════════════ */
+(function () {
+    'use strict';
+
+    if (!PROJECT_ID) return; // No collab on new unsaved projects
+
+    var syncDot       = document.getElementById('sync-dot');
+    var collabBar     = document.getElementById('collab-bar');
+    var collabAvatars = document.getElementById('collab-avatars');
+    var eventSource   = null;
+    var lastSeq       = 0;
+    var applyingRemote = false;
+
+    /* ── SSE connection ─────────────────────────────────────── */
+    function connectSSE() {
+        if (eventSource) { eventSource.close(); }
+        var url = '/projects/codexpro/collab/' + PROJECT_ID + '/stream?since=' + lastSeq
+                + (COLLAB_TOKEN ? '&token=' + encodeURIComponent(COLLAB_TOKEN) : '');
+        eventSource = new EventSource(url);
+
+        eventSource.addEventListener('change', function (e) {
+            var d = JSON.parse(e.data);
+            lastSeq = Math.max(lastSeq, d._seq || 0);
+            applyRemoteChange(d);
+        });
+
+        eventSource.addEventListener('presence', function (e) {
+            var d = JSON.parse(e.data);
+            renderPresence(d.collaborators || []);
+        });
+
+        eventSource.addEventListener('disconnect', function () {
+            renderPresence([]);
+        });
+
+        eventSource.addEventListener('ping', function (e) {
+            var d = JSON.parse(e.data);
+            lastSeq = Math.max(lastSeq, d.since || lastSeq);
+            setSyncDot('ok');
+        });
+
+        eventSource.onerror = function () {
+            setSyncDot('error');
+            eventSource.close();
+            setTimeout(connectSSE, 5000); // reconnect after 5s
+        };
+    }
+
+    /* ── Apply remote change ───────────────────────────────── */
+    function applyRemoteChange(d) {
+        if (!d._type || !editors) return;
+        applyingRemote = true;
+
+        try {
+            if (d._type === 'html' && d.content !== undefined) {
+                editors.html.setValue(d.content);
+            } else if (d._type === 'css' && d.content !== undefined) {
+                editors.css.setValue(d.content);
+            } else if (d._type === 'js' && d.content !== undefined) {
+                editors.js.setValue(d.content);
+            } else if (d._type === 'meta' && d.name) {
+                document.getElementById('project-name-text').textContent = d.name;
+            }
+        } finally {
+            applyingRemote = false;
+        }
+    }
+
+    /* ── Push local change ─────────────────────────────────── */
+    var pushTimers = { html: null, css: null, js: null };
+
+    function schedulePush(type, cm) {
+        if (applyingRemote || READONLY) return;
+        clearTimeout(pushTimers[type]);
+        pushTimers[type] = setTimeout(function () {
+            setSyncDot('syncing');
+            fetch('/projects/codexpro/collab/' + PROJECT_ID + '/push'
+                  + (COLLAB_TOKEN ? '?token=' + encodeURIComponent(COLLAB_TOKEN) : ''), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': CSRF_TOKEN
+                },
+                body: JSON.stringify({ type: type, payload: { content: cm.getValue() } })
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.seq) lastSeq = Math.max(lastSeq, data.seq);
+                setSyncDot('ok');
+            })
+            .catch(function() { setSyncDot('error'); });
+        }, 400);
+    }
+
+    // Hook into existing editors
+    if (typeof editors !== 'undefined') {
+        editors.html.on('change', function(cm, ch) {
+            if (ch.origin === '+input' || ch.origin === 'paste' || ch.origin === '+delete') {
+                schedulePush('html', cm);
+            }
+        });
+        editors.css.on('change', function(cm, ch) {
+            if (ch.origin === '+input' || ch.origin === 'paste' || ch.origin === '+delete') {
+                schedulePush('css', cm);
+            }
+        });
+        editors.js.on('change', function(cm, ch) {
+            if (ch.origin === '+input' || ch.origin === 'paste' || ch.origin === '+delete') {
+                schedulePush('js', cm);
+            }
+        });
+
+        // Push cursor position on cursor move
+        var cursorDebounce = null;
+        Object.keys(editors).forEach(function(lang) {
+            editors[lang].on('cursorActivity', function(cm) {
+                if (applyingRemote) return;
+                clearTimeout(cursorDebounce);
+                cursorDebounce = setTimeout(function() {
+                    var cur = cm.getCursor();
+                    fetch('/projects/codexpro/collab/' + PROJECT_ID + '/push'
+                          + (COLLAB_TOKEN ? '?token=' + encodeURIComponent(COLLAB_TOKEN) : ''), {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF_TOKEN },
+                        body: JSON.stringify({ type: 'cursor', payload: { line: cur.line, ch: cur.ch, tab: lang } })
+                    }).catch(function(){});
+                }, 300);
+            });
+        });
+    }
+
+    /* ── Presence rendering ────────────────────────────────── */
+    function renderPresence(collaborators) {
+        collabAvatars.innerHTML = '';
+        if (!collaborators.length) {
+            collabBar.style.display = 'none';
+            return;
+        }
+        collabBar.style.display = 'flex';
+        collaborators.forEach(function(c) {
+            var initials = (c.name || '?').split(' ').map(function(w){ return w[0]; }).join('').slice(0,2).toUpperCase();
+            var av = document.createElement('div');
+            av.className = 'collab-avatar';
+            av.style.background = c.color || '#00f0ff';
+            av.title = c.name;
+            av.innerHTML = initials + '<span class="av-tooltip">' + escHtml(c.name) + ' · ' + (c.active_tab || 'html').toUpperCase() + '</span>';
+            collabAvatars.appendChild(av);
+        });
+    }
+
+    /* ── Sync dot state ────────────────────────────────────── */
+    function setSyncDot(state) {
+        syncDot.className = '';
+        if (state === 'syncing') { syncDot.classList.add('syncing'); syncDot.title = 'Syncing…'; }
+        else if (state === 'error') { syncDot.classList.add('error'); syncDot.title = 'Sync error'; }
+        else { syncDot.title = 'Synced'; }
+    }
+
+    /* ── Invite modal ──────────────────────────────────────── */
+    var inviteBtn   = document.getElementById('invite-btn');
+    var historyBtn  = document.getElementById('history-btn');
+    var doInviteBtn = document.getElementById('do-invite-btn');
+
+    if (inviteBtn) {
+        inviteBtn.addEventListener('click', function() {
+            openModal('invite-modal');
+            loadMembers();
+            // Show share link if token exists
+            if (COLLAB_TOKEN) {
+                var row   = document.getElementById('invite-link-row');
+                var input = document.getElementById('invite-link-input');
+                row.style.display = 'block';
+                input.value = window.location.origin + '/projects/codexpro/editor/' + PROJECT_ID + '?token=' + COLLAB_TOKEN;
+            }
+        });
+    }
+
+    var copyLinkBtn = document.getElementById('copy-link-btn');
+    if (copyLinkBtn) {
+        copyLinkBtn.addEventListener('click', function() {
+            var input = document.getElementById('invite-link-input');
+            navigator.clipboard.writeText(input.value).then(function() {
+                copyLinkBtn.innerHTML = '<i class="fa fa-check"></i>';
+                setTimeout(function() { copyLinkBtn.innerHTML = '<i class="fa fa-copy"></i>'; }, 1500);
+            });
+        });
+    }
+
+    if (doInviteBtn) {
+        doInviteBtn.addEventListener('click', function() {
+            var email   = (document.getElementById('invite-email').value || '').trim();
+            var canEdit = document.getElementById('invite-can-edit').checked;
+            if (!email) return;
+
+            doInviteBtn.disabled = true;
+            doInviteBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Sending…';
+
+            fetch('/projects/codexpro/collab/' + PROJECT_ID + '/invite', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF_TOKEN },
+                body: JSON.stringify({ email: email, can_edit: canEdit })
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    document.getElementById('invite-email').value = '';
+                    if (data.collab_link) {
+                        var row   = document.getElementById('invite-link-row');
+                        var input = document.getElementById('invite-link-input');
+                        row.style.display  = 'block';
+                        input.value        = window.location.origin + data.collab_link;
+                        // Update COLLAB_TOKEN (can't reassign const, use meta)
+                    }
+                    showToast('Invite sent to ' + (data.invitee ? data.invitee.name : email));
+                    loadMembers();
+                } else {
+                    showToast(data.error || 'Invite failed', true);
+                }
+            })
+            .catch(function() { showToast('Network error', true); })
+            .finally(function() {
+                doInviteBtn.disabled = false;
+                doInviteBtn.innerHTML = '<i class="fa fa-paper-plane"></i> Send Invite';
+            });
+        });
+    }
+
+    function loadMembers() {
+        fetch('/projects/codexpro/collab/' + PROJECT_ID + '/members', {
+            headers: { 'X-CSRF-Token': CSRF_TOKEN }
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (!data.members || !data.members.length) return;
+            var list = document.getElementById('members-list');
+            var rows = document.getElementById('members-rows');
+            list.style.display = 'block';
+            rows.innerHTML = '';
+            data.members.forEach(function(m) {
+                var row = document.createElement('div');
+                row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--editor-border)';
+                row.innerHTML = '<span style="flex:1;font-size:.83rem;color:var(--editor-text)">' + escHtml(m.name) + ' <span style="color:var(--editor-muted);font-size:.75rem">' + escHtml(m.email) + '</span></span>'
+                    + '<span style="font-size:.72rem;padding:2px 7px;border-radius:4px;background:' + (m.can_edit ? 'rgba(0,240,255,.1)' : 'rgba(136,146,166,.1)') + ';color:' + (m.can_edit ? 'var(--editor-accent)' : 'var(--editor-muted)') + '">' + (m.can_edit ? 'Editor' : 'Viewer') + '</span>'
+                    + '<span style="width:8px;height:8px;border-radius:50%;background:' + (m.online ? '#4ade80' : 'var(--editor-muted)') + ';flex-shrink:0" title="' + (m.online ? 'Online' : 'Offline') + '"></span>'
+                    + '<button data-uid="' + m.user_id + '" class="revoke-btn" style="background:none;border:none;color:#f87171;cursor:pointer;font-size:.78rem;padding:2px 5px" title="Remove"><i class="fa fa-xmark"></i></button>';
+                rows.appendChild(row);
+            });
+
+            rows.querySelectorAll('.revoke-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var uid = parseInt(btn.dataset.uid, 10);
+                    if (!confirm('Remove this collaborator?')) return;
+                    fetch('/projects/codexpro/collab/' + PROJECT_ID + '/revoke', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF_TOKEN },
+                        body: JSON.stringify({ user_id: uid })
+                    })
+                    .then(function(r) { return r.json(); })
+                    .then(function() { loadMembers(); })
+                    .catch(function() {});
+                });
+            });
+        })
+        .catch(function(){});
+    }
+
+    /* ── Version history ───────────────────────────────────── */
+    if (historyBtn) {
+        historyBtn.addEventListener('click', function() {
+            openModal('history-modal');
+            loadVersions();
+        });
+    }
+
+    function loadVersions() {
+        var list = document.getElementById('version-list');
+        list.innerHTML = '<div style="color:var(--editor-muted);font-size:.83rem;padding:12px">Loading…</div>';
+
+        fetch('/projects/codexpro/versions/' + PROJECT_ID, {
+            headers: { 'X-CSRF-Token': CSRF_TOKEN }
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            list.innerHTML = '';
+            if (!data.versions || !data.versions.length) {
+                list.innerHTML = '<div style="color:var(--editor-muted);font-size:.83rem;padding:12px">No versions yet. Versions are created automatically when you save.</div>';
+                return;
+            }
+            data.versions.forEach(function(v) {
+                var item = document.createElement('div');
+                item.className = 'ver-item';
+                var dt = new Date(v.created_at.replace(' ','T'));
+                var dtStr = dt.toLocaleDateString() + ' ' + dt.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+                item.innerHTML =
+                    '<span class="ver-num">v' + v.version_num + '</span>' +
+                    '<span class="ver-label">' + escHtml(v.label || ('Saved by ' + (v.author || 'you'))) + '</span>' +
+                    '<span class="ver-meta">' + dtStr + '</span>' +
+                    (READONLY ? '' : '<button class="ver-restore-btn" data-vid="' + v.id + '">Restore</button>');
+                list.appendChild(item);
+            });
+
+            list.querySelectorAll('.ver-restore-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var vid = parseInt(btn.dataset.vid, 10);
+                    if (!confirm('Restore this version? Current code will be saved as a new version first.')) return;
+
+                    fetch('/projects/codexpro/versions/' + PROJECT_ID + '/get?v=' + vid, {
+                        headers: { 'X-CSRF-Token': CSRF_TOKEN }
+                    })
+                    .then(function(r) { return r.json(); })
+                    .then(function(d) {
+                        if (d.version) {
+                            fetch('/projects/codexpro/versions/' + PROJECT_ID + '/restore', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF_TOKEN },
+                                body: JSON.stringify({ version_id: vid })
+                            })
+                            .then(function(r) { return r.json(); })
+                            .then(function(res) {
+                                if (res.success) {
+                                    editors.html.setValue(res.html_content || '');
+                                    editors.css.setValue(res.css_content  || '');
+                                    editors.js.setValue(res.js_content   || '');
+                                    closeModal('history-modal');
+                                    showToast(res.message || 'Version restored!');
+                                    SERVER_VER++;
+                                } else {
+                                    showToast(res.error || 'Restore failed', true);
+                                }
+                            });
+                        }
+                    });
+                });
+            });
+        })
+        .catch(function() {
+            list.innerHTML = '<div style="color:#f87171;font-size:.83rem;padding:12px">Failed to load version history.</div>';
+        });
+    }
+
+    /* ── Start SSE ────────────────────────────────────────────── */
+    connectSSE();
+
+    /* Reconnect on visibility change (tab becomes active again) */
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden && (!eventSource || eventSource.readyState === EventSource.CLOSED)) {
+            connectSSE();
+        }
+    });
+
+    function escHtml(str) {
+        return String(str)
+            .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+            .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function openModal(id)  { document.getElementById(id).classList.add('open'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+}());
 </script>
+<!-- ── Invite collaborator modal ──────────────────────────────── -->
+<div class="modal-overlay" id="invite-modal">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-title">
+      <i class="fa fa-user-plus"></i> Invite Collaborator
+      <button class="modal-close" data-close="invite-modal">&times;</button>
+    </div>
+    <div style="margin-bottom:12px;font-size:.83rem;color:var(--editor-muted)">Invite someone to collaborate on this project in real time.</div>
+
+    <div id="invite-link-row" style="display:none;margin-bottom:14px;">
+      <label style="font-size:.78rem;color:var(--editor-muted);display:block;margin-bottom:4px">Shareable link</label>
+      <div style="display:flex;gap:6px">
+        <input type="text" id="invite-link-input" readonly
+               style="flex:1;background:var(--editor-toolbar);border:1px solid var(--editor-border);border-radius:5px;padding:6px 10px;color:var(--editor-text);font-size:.78rem;outline:none">
+        <button class="tb-btn" id="copy-link-btn" style="flex-shrink:0"><i class="fa fa-copy"></i></button>
+      </div>
+    </div>
+
+    <label style="font-size:.78rem;color:var(--editor-muted);display:block;margin-bottom:6px">Email address</label>
+    <input type="email" id="invite-email"
+           style="width:100%;background:var(--editor-toolbar);border:1px solid var(--editor-border);border-radius:5px;padding:8px 12px;color:var(--editor-text);font-size:.85rem;outline:none;margin-bottom:12px"
+           placeholder="colleague@company.com">
+
+    <label style="display:flex;align-items:center;gap:8px;font-size:.82rem;color:var(--editor-muted);margin-bottom:16px;cursor:pointer">
+      <input type="checkbox" id="invite-can-edit" style="accent-color:var(--editor-accent)">
+      Allow editing (not just viewing)
+    </label>
+
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="tb-btn" onclick="closeModal('invite-modal')">Cancel</button>
+      <button class="tb-btn primary" id="do-invite-btn"><i class="fa fa-paper-plane"></i> Send Invite</button>
+    </div>
+
+    <div id="members-list" style="margin-top:18px;border-top:1px solid var(--editor-border);padding-top:14px;display:none">
+      <div style="font-size:.78rem;color:var(--editor-muted);margin-bottom:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em">Current collaborators</div>
+      <div id="members-rows"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Version history drawer ──────────────────────────────────── -->
+<div class="modal-overlay" id="history-modal">
+  <div class="modal-box" style="max-width:560px">
+    <div class="modal-title">
+      <i class="fa fa-clock-rotate-left"></i> Version History
+      <button class="modal-close" data-close="history-modal">&times;</button>
+    </div>
+    <div id="version-list" style="display:flex;flex-direction:column;gap:6px;max-height:55vh;overflow-y:auto"></div>
+  </div>
+</div>
+
+<!-- ── Conflict toast (persistent until dismissed) ─────────────── -->
+<div id="conflict-banner" style="display:none;position:fixed;top:calc(var(--navbar-height) + 54px);left:50%;transform:translateX(-50%);
+     background:#3d2200;border:1px solid #fb923c;color:#fb923c;padding:10px 18px;border-radius:8px;
+     font-size:.83rem;font-weight:600;z-index:9000;display:none;align-items:center;gap:10px;box-shadow:0 4px 20px rgba(0,0,0,.5)">
+  <i class="fa fa-triangle-exclamation"></i>
+  <span>Conflict detected — someone else saved while you were editing.</span>
+  <button onclick="document.getElementById('conflict-banner').style.display='none'"
+          style="background:none;border:none;color:#fb923c;cursor:pointer;font-size:1rem;padding:0 4px">&times;</button>
+</div>
 </body>
 </html>
