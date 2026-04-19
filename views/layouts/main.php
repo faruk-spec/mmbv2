@@ -2354,7 +2354,6 @@ window.mmbSkeleton = (function(){
     
     <!-- Toast Notification System -->
     <script src="/public/assets/js/toast.js"></script>
-    <script src="/public/assets/js/qrcode.js"></script>
 
     <!-- ── Post-logout Login Suggestion Popup ───────────────────────────────── -->
     <?php if (isset($_GET['logged_out']) && !(\Core\Auth::check())): ?>

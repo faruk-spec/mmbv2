@@ -74,48 +74,64 @@ try {
                         Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.)
                     </p>
                     <div style="text-align: center; padding: 20px; background: white; border-radius: 10px; margin-bottom: 15px;">
-                        <canvas id="qrCanvas" style="display: inline-block;"></canvas>
-                        <div id="qr2fa-fallback" style="display:none;color:#666;font-size:0.85rem">
+                        <div id="qr2fa-container" style="display:inline-block;"></div>
+                        <div id="qr2fa-fallback" style="display:none;color:#666;font-size:0.85rem;padding:10px 0;">
                             Could not render QR. Use the manual code below.
                         </div>
                     </div>
+                    <!-- QRCodeStyling CDN loader (same library used by projects/qr/generate) -->
                     <script>
                     (function() {
                         var uri = <?= json_encode($provisioningUri) ?>;
+                        var sources = [
+                            'https://cdn.jsdelivr.net/npm/qr-code-styling@1.6.0-rc.1/lib/qr-code-styling.js',
+                            'https://unpkg.com/qr-code-styling@1.6.0-rc.1/lib/qr-code-styling.js'
+                        ];
+                        var idx = 0;
 
-                        function renderQRCode() {
-                            var canvas = document.getElementById('qrCanvas');
-                            var fallback = document.getElementById('qr2fa-fallback');
+                        function showFallback() {
+                            var container = document.getElementById('qr2fa-container');
+                            var fallback  = document.getElementById('qr2fa-fallback');
+                            if (container) container.style.display = 'none';
+                            if (fallback)  fallback.style.display  = 'block';
+                        }
 
-                            // QRCode is loaded globally by the main layout from /public/assets/js/qrcode.js
-                            if (
-                                !canvas ||
-                                typeof window.QRCode !== 'function' ||
-                                typeof window.QRCode.prototype.toCanvas !== 'function'
-                            ) {
-                                if (canvas) canvas.style.display = 'none';
-                                if (fallback) fallback.style.display = 'block';
+                        function render() {
+                            var container = document.getElementById('qr2fa-container');
+                            if (!container || typeof window.QRCodeStyling === 'undefined') {
+                                showFallback();
                                 return;
                             }
-
                             try {
-                                var qr = new window.QRCode(uri, 'M');
-                                qr.toCanvas(canvas, {
-                                    moduleSize: 4,
-                                    quiet: 4,
-                                    dark: '#000000',
-                                    light: '#ffffff'
+                                var qr = new window.QRCodeStyling({
+                                    width: 220,
+                                    height: 220,
+                                    data: uri,
+                                    dotsOptions:       { color: '#000000', type: 'square' },
+                                    backgroundOptions: { color: '#ffffff' },
+                                    qrOptions:         { errorCorrectionLevel: 'M' }
                                 });
+                                qr.append(container);
                             } catch (e) {
-                                canvas.style.display = 'none';
-                                fallback.style.display = 'block';
+                                showFallback();
                             }
                         }
 
+                        function tryNext() {
+                            if (typeof window.QRCodeStyling !== 'undefined') { render(); return; }
+                            if (idx >= sources.length) { showFallback(); return; }
+                            var s = document.createElement('script');
+                            s.src = sources[idx++];
+                            s.async = false;
+                            s.onload  = function() { render(); };
+                            s.onerror = function() { tryNext(); };
+                            document.head.appendChild(s);
+                        }
+
                         if (document.readyState === 'loading') {
-                            document.addEventListener('DOMContentLoaded', renderQRCode);
+                            document.addEventListener('DOMContentLoaded', tryNext);
                         } else {
-                            renderQRCode();
+                            tryNext();
                         }
                     })();
                     </script>
