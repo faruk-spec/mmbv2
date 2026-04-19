@@ -104,9 +104,13 @@ class OAuthProvider
     {
         try {
             $db = Database::getInstance();
+            $supportedProviders = self::SUPPORTED_PROVIDERS;
+            $placeholders = implode(', ', array_fill(0, count($supportedProviders), '?'));
             return $db->fetchAll(
-                "SELECT name, display_name FROM oauth_providers WHERE is_enabled = 1 AND name IN ('google', 'github', 'apple') ORDER BY FIELD(name, 'google', 'github', 'apple')",
-                []
+                "SELECT name, display_name FROM oauth_providers
+                 WHERE is_enabled = 1 AND name IN ($placeholders)
+                 ORDER BY FIELD(name, $placeholders)",
+                array_merge($supportedProviders, $supportedProviders)
             );
         } catch (\Exception $e) {
             Logger::error('Failed to load enabled OAuth providers: ' . $e->getMessage());
@@ -114,6 +118,10 @@ class OAuthProvider
         }
     }
 
+    /**
+     * Sanitize user-provided post-authentication return paths.
+     * This blocks open redirects by allowing only relative in-app paths.
+     */
     private static function sanitizeReturnPath(?string $returnUrl): ?string
     {
         if ($returnUrl === null || $returnUrl === '') {
