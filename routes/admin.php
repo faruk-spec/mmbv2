@@ -234,6 +234,8 @@ $router->post('/admin/navbar/reset', 'Admin\\NavbarController@reset', ['auth', '
 // Settings
 $router->get('/admin/settings', 'Admin\\SettingsController@index', ['auth', 'admin']);
 $router->post('/admin/settings', 'Admin\\SettingsController@update', ['auth', 'admin']);
+$router->post('/admin/settings/upload-logo', 'Admin\\SettingsController@uploadLogo', ['auth', 'admin']);
+$router->post('/admin/settings/delete-logo', 'Admin\\SettingsController@deleteLogo', ['auth', 'admin']);
 $router->get('/admin/settings/session', 'Admin\\SettingsController@session', ['auth', 'admin']);
 $router->post('/admin/settings/session', 'Admin\\SettingsController@updateSession', ['auth', 'admin']);
 $router->post('/admin/settings/security-policy', 'Admin\\SettingsController@updateSecurityPolicy', ['auth', 'admin']);

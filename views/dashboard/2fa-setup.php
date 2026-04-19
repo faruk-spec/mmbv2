@@ -74,64 +74,58 @@ try {
                         Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.)
                     </p>
                     <div style="text-align: center; padding: 20px; background: white; border-radius: 10px; margin-bottom: 15px;">
-                        <canvas id="qr2fa-canvas" style="display:block;margin:0 auto"></canvas>
-                        <div id="qr2fa-fallback" style="display:none;color:#666;font-size:0.85rem">
+                        <div id="qr2fa-container" style="display:inline-block;"></div>
+                        <div id="qr2fa-fallback" style="display:none;color:#666;font-size:0.85rem;padding:10px 0;">
                             Could not render QR. Use the manual code below.
                         </div>
                     </div>
-                    <!-- Resilient QR loader: tries qrcode (jsdelivr) → qr-code-styling (jsdelivr) → unpkg fallback -->
+                    <!-- QRCodeStyling CDN loader (same library used by projects/qr/generate) -->
                     <script>
                     (function() {
                         var uri = <?= json_encode($provisioningUri) ?>;
                         var sources = [
-                            { url: 'https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js',      check: function() { return typeof window.QRCode !== 'undefined'; }, render: renderQRCode },
-                            { url: 'https://cdn.jsdelivr.net/npm/qr-code-styling@1.6.0-rc.1/lib/qr-code-styling.js', check: function() { return typeof window.QRCodeStyling !== 'undefined'; }, render: renderQRStyling },
-                            { url: 'https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js',                 check: function() { return typeof window.QRCode !== 'undefined'; }, render: renderQRCode },
-                            { url: 'https://unpkg.com/qr-code-styling@1.6.0-rc.1/lib/qr-code-styling.js',check: function() { return typeof window.QRCodeStyling !== 'undefined'; }, render: renderQRStyling }
+                            'https://cdn.jsdelivr.net/npm/qr-code-styling@1.6.0-rc.1/lib/qr-code-styling.js',
+                            'https://unpkg.com/qr-code-styling@1.6.0-rc.1/lib/qr-code-styling.js'
                         ];
                         var idx = 0;
 
-                        function tryNext() {
-                            if (idx >= sources.length) {
-                                document.getElementById('qr2fa-canvas').style.display = 'none';
-                                document.getElementById('qr2fa-fallback').style.display = 'block';
+                        function showFallback() {
+                            var container = document.getElementById('qr2fa-container');
+                            var fallback  = document.getElementById('qr2fa-fallback');
+                            if (container) container.style.display = 'none';
+                            if (fallback)  fallback.style.display  = 'block';
+                        }
+
+                        function render() {
+                            var container = document.getElementById('qr2fa-container');
+                            if (!container || typeof window.QRCodeStyling === 'undefined') {
+                                showFallback();
                                 return;
                             }
-                            var s = sources[idx++];
-                            if (s.check()) { s.render(); return; }
-                            var el = document.createElement('script');
-                            el.src = s.src = s.url;
-                            el.async = false;
-                            el.onload  = function() { s.check() ? s.render() : tryNext(); };
-                            el.onerror = function() { tryNext(); };
-                            document.head.appendChild(el);
-                        }
-
-                        function renderQRCode() {
-                            var canvas = document.getElementById('qr2fa-canvas');
-                            canvas.width = 220; canvas.height = 220;
-                            window.QRCode.toCanvas(canvas, uri, { width: 220, margin: 2, color: { dark: '#000000', light: '#ffffff' } }, function(err) {
-                                if (err) { tryNext(); }
-                            });
-                        }
-
-                        function renderQRStyling() {
-                            var container = document.getElementById('qr2fa-canvas').parentNode;
-                            document.getElementById('qr2fa-canvas').style.display = 'none';
-                            var div = document.createElement('div');
-                            div.id = 'qr2fa-div';
-                            div.style.cssText = 'display:inline-block';
-                            container.insertBefore(div, document.getElementById('qr2fa-canvas'));
                             try {
                                 var qr = new window.QRCodeStyling({
-                                    width: 220, height: 220,
+                                    width: 220,
+                                    height: 220,
                                     data: uri,
                                     dotsOptions:       { color: '#000000', type: 'square' },
                                     backgroundOptions: { color: '#ffffff' },
                                     qrOptions:         { errorCorrectionLevel: 'M' }
                                 });
-                                qr.append(div);
-                            } catch(e) { tryNext(); }
+                                qr.append(container);
+                            } catch (e) {
+                                showFallback();
+                            }
+                        }
+
+                        function tryNext() {
+                            if (typeof window.QRCodeStyling !== 'undefined') { render(); return; }
+                            if (idx >= sources.length) { showFallback(); return; }
+                            var s = document.createElement('script');
+                            s.src = sources[idx++];
+                            s.async = false;
+                            s.onload  = function() { render(); };
+                            s.onerror = function() { tryNext(); };
+                            document.head.appendChild(s);
                         }
 
                         if (document.readyState === 'loading') {

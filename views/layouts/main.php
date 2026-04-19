@@ -589,6 +589,7 @@ try {
         .btn {
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 6px;
             padding: 10px 20px;
             border: none;
@@ -654,6 +655,87 @@ try {
             border-color: rgba(0, 240, 255, 0.3);
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
         }
+
+        /* Auth pages (login, register) */
+        .auth-page-wrap {
+            min-height: calc(100vh - 80px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 16px;
+        }
+        .auth-card {
+            width: 100%;
+            max-width: 420px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 40px 36px 32px;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.3);
+        }
+        .auth-logo-wrap {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 22px;
+        }
+        .auth-logo-img {
+            width: 72px;
+            height: 72px;
+            object-fit: contain;
+            border-radius: 18px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+            padding: 6px;
+            filter: drop-shadow(0 4px 16px rgba(255, 255, 255, 0.2));
+        }
+        .auth-logo-icon {
+            width: 72px;
+            height: 72px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, var(--cyan), var(--magenta));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: var(--bg-primary);
+            font-weight: 700;
+            filter: drop-shadow(0 2px 8px rgba(0, 245, 255, 0.55)) drop-shadow(0 4px 24px rgba(255, 0, 230, 0.45)) drop-shadow(0 8px 32px rgba(255, 255, 255, 0.18));
+        }
+        [data-theme="light"] .auth-logo-img {
+            filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.18));
+        }
+        [data-theme="light"] .auth-logo-icon {
+            filter: drop-shadow(0 2px 8px rgba(0, 200, 220, 0.5)) drop-shadow(0 4px 20px rgba(0, 0, 0, 0.22));
+        }
+        .auth-heading {
+            text-align: center;
+            font-size: 1.55rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: var(--text-primary);
+        }
+        .auth-tagline {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.92rem;
+            margin-bottom: 28px;
+        }
+        .auth-divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 20px 0;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+        .auth-divider::before,
+        .auth-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border-color);
+        }
+
 
         /* === Professional rotating border-light animation === */
         @keyframes card-border-spin {
@@ -2354,7 +2436,6 @@ window.mmbSkeleton = (function(){
     
     <!-- Toast Notification System -->
     <script src="/public/assets/js/toast.js"></script>
-    <script src="/public/assets/js/qrcode.js"></script>
 
     <!-- ── Post-logout Login Suggestion Popup ───────────────────────────────── -->
     <?php if (isset($_GET['logged_out']) && !(\Core\Auth::check())): ?>

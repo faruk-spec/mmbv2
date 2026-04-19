@@ -65,7 +65,9 @@ class SettingsController extends BaseController
                 'registration_enabled',
                 'system_timezone',
                 'date_format',
-                'time_format'
+                'time_format',
+                'auth_tagline',
+                'auth_logo',
             ];
 
             // Snapshot current values before writing
@@ -128,6 +130,147 @@ class SettingsController extends BaseController
             $this->flash('error', 'Failed to update settings.');
         }
         
+        $this->redirect('/admin/settings');
+    }
+
+    /**
+     * Upload auth logo image
+     */
+    public function uploadLogo(): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request.');
+            $this->redirect('/admin/settings');
+            return;
+        }
+
+        try {
+            if (empty($_FILES['auth_logo_file']) || $_FILES['auth_logo_file']['error'] !== UPLOAD_ERR_OK) {
+                $uploadError = $_FILES['auth_logo_file']['error'] ?? UPLOAD_ERR_NO_FILE;
+                $msg = $uploadError === UPLOAD_ERR_NO_FILE ? 'No file was selected.' : 'File upload failed (error code ' . $uploadError . ').';
+                $this->flash('error', $msg);
+                $this->redirect('/admin/settings');
+                return;
+            }
+
+            $file = $_FILES['auth_logo_file'];
+
+            // Enforce 2 MB size limit
+            $maxBytes = 2 * 1024 * 1024;
+            if ($file['size'] > $maxBytes) {
+                $this->flash('error', 'File is too large. Maximum allowed size is 2 MB.');
+                $this->redirect('/admin/settings');
+                return;
+            }
+
+            $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+            $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+
+            if (!in_array($ext, $allowed)) {
+                $this->flash('error', 'Invalid file type. Allowed: JPG, PNG, GIF, WebP.');
+                $this->redirect('/admin/settings');
+                return;
+            }
+
+            // Validate it is actually an image
+            if (!@getimagesize($file['tmp_name'])) {
+                $this->flash('error', 'Uploaded file is not a valid image.');
+                $this->redirect('/admin/settings');
+                return;
+            }
+
+            $uploadDir = BASE_PATH . '/storage/uploads/oauth';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+
+            $filename = 'auth-logo-' . uniqid() . '.' . $ext;
+            $destPath = $uploadDir . '/' . $filename;
+
+            if (!move_uploaded_file($file['tmp_name'], $destPath)) {
+                $this->flash('error', 'Failed to save uploaded file.');
+                $this->redirect('/admin/settings');
+                return;
+            }
+
+            $webPath = '/uploads/oauth/' . $filename;
+
+            $db = Database::getInstance();
+
+            // Delete old logo file if it was uploaded via this feature
+            $existing = $db->fetch("SELECT value FROM settings WHERE `key` = 'auth_logo'");
+            if ($existing && !empty($existing['value'])) {
+                $oldPath = BASE_PATH . '/storage' . $existing['value'];
+                if (
+                    strpos($existing['value'], '/uploads/oauth/') === 0
+                    && file_exists($oldPath)
+                ) {
+                    @unlink($oldPath);
+                }
+            }
+
+            $row = $db->fetch("SELECT id FROM settings WHERE `key` = 'auth_logo'");
+            if ($row) {
+                $db->update('settings', [
+                    'value'      => $webPath,
+                    'updated_at' => date('Y-m-d H:i:s'),
+                ], '`key` = ?', ['auth_logo']);
+            } else {
+                $db->insert('settings', [
+                    'key'        => 'auth_logo',
+                    'value'      => $webPath,
+                    'created_at' => date('Y-m-d H:i:s'),
+                ]);
+            }
+
+            ActivityLogger::logUpdate(Auth::id(), 'settings', 'settings', 0, [], ['auth_logo' => $webPath]);
+            $this->flash('success', 'Auth logo uploaded successfully.');
+
+        } catch (\Exception $e) {
+            Logger::error('Logo upload error: ' . $e->getMessage());
+            $this->flash('error', 'Failed to upload logo.');
+        }
+
+        $this->redirect('/admin/settings');
+    }
+
+    /**
+     * Delete auth logo image
+     */
+    public function deleteLogo(): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request.');
+            $this->redirect('/admin/settings');
+            return;
+        }
+
+        try {
+            $db = Database::getInstance();
+            $existing = $db->fetch("SELECT value FROM settings WHERE `key` = 'auth_logo'");
+
+            if ($existing && !empty($existing['value'])) {
+                // Only delete file if it lives in our managed uploads folder
+                if (strpos($existing['value'], '/uploads/oauth/') === 0) {
+                    $filePath = BASE_PATH . '/storage' . $existing['value'];
+                    if (file_exists($filePath)) {
+                        @unlink($filePath);
+                    }
+                }
+                $db->update('settings', [
+                    'value'      => '',
+                    'updated_at' => date('Y-m-d H:i:s'),
+                ], '`key` = ?', ['auth_logo']);
+            }
+
+            ActivityLogger::logUpdate(Auth::id(), 'settings', 'settings', 0, ['auth_logo' => $existing['value'] ?? ''], ['auth_logo' => '']);
+            $this->flash('success', 'Auth logo removed.');
+
+        } catch (\Exception $e) {
+            Logger::error('Logo delete error: ' . $e->getMessage());
+            $this->flash('error', 'Failed to remove logo.');
+        }
+
         $this->redirect('/admin/settings');
     }
     
