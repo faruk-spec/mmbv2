@@ -11,878 +11,776 @@ try {
 }
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="<?= htmlspecialchars($defaultTheme) ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="<?= htmlspecialchars($csrfToken) ?>">
-    <title>CodeXPro - Live Editor</title>
-    <link rel="stylesheet" href="/css/universal-theme.css">
+    <title><?= htmlspecialchars($project['name'] ?? 'Untitled Project') ?> — CodeXPro Editor</title>
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/theme/dracula.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/fold/foldgutter.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/hint/show-hint.min.css">
+    <link rel="stylesheet" href="/css/universal-theme.css">
+
     <style>
         :root {
-            --editor-bg: #0f0f23;
-            --editor-surface: #1a1a2e;
-            --editor-surface-2: #16213e;
-            --editor-card: #1e293b;
-            --editor-border: #333;
+            --editor-bg: #0f0f18;
+            --editor-surface: #13131f;
+            --editor-toolbar: #0c0c16;
+            --editor-border: rgba(255,255,255,0.08);
             --editor-accent: #00f0ff;
-            --editor-text: #ffffff;
+            --editor-text: #e8eefc;
             --editor-muted: #8892a6;
-            --editor-preview-bg: #ffffff;
             --navbar-height: 3.75rem;
         }
-
         [data-theme="light"] {
-            --editor-bg: #f4f6fb;
+            --editor-bg: #f0f2f8;
             --editor-surface: #ffffff;
-            --editor-surface-2: #eef2ff;
-            --editor-card: #ffffff;
-            --editor-border: rgba(0, 0, 0, 0.12);
+            --editor-toolbar: #e8eaf2;
+            --editor-border: rgba(0,0,0,0.1);
             --editor-accent: #0369a1;
             --editor-text: #1a2035;
             --editor-muted: #5a6379;
-            --editor-preview-bg: #ffffff;
         }
+        *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+        html,body{height:100%;overflow:hidden;font-family:'Segoe UI',system-ui,sans-serif;background:var(--editor-bg);color:var(--editor-text)}
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        /* Toolbar */
+        #editor-toolbar{
+            position:fixed;top:var(--navbar-height);left:0;right:0;height:48px;
+            background:var(--editor-toolbar);border-bottom:1px solid var(--editor-border);
+            display:flex;align-items:center;gap:4px;padding:0 10px;z-index:100;user-select:none;
         }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: var(--editor-bg);
-            color: var(--editor-text);
-            overflow: hidden;
+        #project-name-display{
+            display:flex;align-items:center;gap:6px;cursor:pointer;padding:4px 8px;
+            border-radius:6px;border:1px solid transparent;transition:border-color .2s;
+            min-width:100px;max-width:220px;white-space:nowrap;overflow:hidden;
         }
-        
-        /* Animations */
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: scale(0.95);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
+        #project-name-display:hover{border-color:var(--editor-border)}
+        #project-name-display span{color:var(--editor-accent);font-weight:600;font-size:.85rem;overflow:hidden;text-overflow:ellipsis}
+        #project-name-display .fa-pencil{font-size:.65rem;color:var(--editor-muted)}
+        #project-name-input{
+            display:none;background:var(--editor-surface);border:1px solid var(--editor-accent);
+            color:var(--editor-text);border-radius:5px;padding:4px 8px;font-size:.85rem;
+            font-weight:600;min-width:100px;max-width:220px;outline:none;
         }
-        
-        .editor-container {
-            display: flex;
-            flex-direction: column;
-            height: calc(100vh - var(--navbar-height));
-            margin-top: var(--navbar-height);
+        .toolbar-sep{width:1px;height:28px;background:var(--editor-border);flex-shrink:0;margin:0 4px}
+        .lang-tabs{display:flex;gap:2px}
+        .lang-tab{
+            padding:5px 13px;border-radius:5px;cursor:pointer;font-size:.78rem;font-weight:600;
+            color:var(--editor-muted);border:1px solid transparent;transition:all .15s;background:transparent;
         }
-        
-        .editor-header {
-            background: var(--editor-surface);
-            border-bottom: 2px solid var(--editor-accent);
-            padding: 10px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
+        .lang-tab:hover{color:var(--editor-text);background:var(--editor-surface)}
+        .lang-tab.active{color:var(--editor-accent);border-color:var(--editor-accent);background:color-mix(in srgb,var(--editor-accent) 10%,transparent)}
+        .lang-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px}
+        .lang-tab[data-lang="html"] .lang-dot{background:#e44d26}
+        .lang-tab[data-lang="css"]  .lang-dot{background:#264de4}
+        .lang-tab[data-lang="js"]   .lang-dot{background:#f7df1e}
+        .tb-spacer{flex:1}
+        .tb-btn{
+            display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:5px;
+            border:1px solid var(--editor-border);background:transparent;color:var(--editor-text);
+            font-size:.78rem;cursor:pointer;transition:all .15s;white-space:nowrap;
         }
-        
-        .project-name {
-            color: var(--editor-accent);
-            font-size: 1.2em;
-            font-weight: bold;
+        .tb-btn:hover{background:var(--editor-surface);border-color:var(--editor-accent);color:var(--editor-accent)}
+        .tb-btn.primary{background:var(--editor-accent);color:#0a0a14;border-color:var(--editor-accent);font-weight:700}
+        .tb-btn.primary:hover{opacity:.88}
+        .tb-btn i{font-size:.8rem}
+        .tb-dropdown{position:relative}
+        .tb-dropdown-menu{
+            display:none;position:absolute;top:calc(100% + 6px);right:0;
+            background:var(--editor-surface);border:1px solid var(--editor-border);
+            border-radius:8px;min-width:160px;z-index:300;overflow:hidden;
+            box-shadow:0 8px 24px rgba(0,0,0,.4);
         }
-        
-        .header-actions {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
+        .tb-dropdown.open .tb-dropdown-menu{display:block}
+        .tb-dropdown-item{
+            display:flex;align-items:center;gap:8px;padding:9px 14px;cursor:pointer;
+            font-size:.82rem;color:var(--editor-text);transition:background .15s;
         }
-        
-        .header-actions .btn i {
-            margin-right: 5px;
+        .tb-dropdown-item:hover{background:color-mix(in srgb,var(--editor-accent) 12%,transparent);color:var(--editor-accent)}
+        .tb-dropdown-item i{width:14px;text-align:center}
+        .tb-icon-btn{
+            width:32px;height:32px;border-radius:6px;border:1px solid var(--editor-border);
+            background:transparent;color:var(--editor-muted);display:flex;align-items:center;
+            justify-content:center;cursor:pointer;font-size:.85rem;transition:all .15s;
+            text-decoration:none;
         }
-        
-        .btn {
-            background: var(--editor-accent);
-            color: var(--editor-bg);
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: all 0.3s;
-        }
-        
-        .btn:hover {
-            opacity: 0.92;
-            transform: translateY(-2px);
-        }
-        
-        .btn-secondary {
-            background: var(--editor-surface-2);
-            color: var(--editor-text);
-            border: 1px solid var(--editor-border);
-        }
-        
-        .btn-secondary:hover {
-            opacity: 0.92;
-        }
-        
-        .editor-body {
-            display: flex;
-            flex: 1;
-            overflow: hidden;
-            position: relative;
-        }
-        
-        .code-panels {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            min-width: 0;
-            width: 50%;
-        }
-        
-        /* Resizer - Only on desktop */
-        .resizer {
-            width: 5px;
-            background: color-mix(in srgb, var(--editor-accent) 35%, transparent);
-            cursor: ew-resize;
-            position: relative;
-            z-index: 10;
-            transition: all 0.2s;
-            flex-shrink: 0;
-        }
-        
-        .resizer:hover {
-            background: color-mix(in srgb, var(--editor-accent) 60%, transparent);
-            width: 8px;
-        }
-        
-        .resizer:active {
-            background: var(--editor-accent);
-        }
-        
-        .resizer::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 3px;
-            height: 40px;
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 2px;
-        }
-        
-        .tabs {
-            background: var(--editor-surface-2);
-            display: flex;
-            border-bottom: 1px solid var(--editor-border);
-        }
-        
-        .tab {
-            padding: 10px 20px;
-            cursor: pointer;
-            border-right: 1px solid var(--editor-border);
-            transition: all 0.3s;
-        }
-        
-        .tab.active {
-            background: var(--editor-surface);
-            color: var(--editor-accent);
-            border-bottom: 2px solid var(--editor-accent);
-        }
-        
-        .tab:hover:not(.active) {
-            background: var(--editor-surface);
-        }
-        
-        .code-editor {
-            flex: 1;
-            background: var(--editor-surface);
-            padding: 10px;
-            overflow: auto;
-        }
-        
-        textarea {
-            width: 100%;
-            height: 100%;
-            background: var(--editor-bg);
-            color: var(--editor-text);
-            border: 1px solid var(--editor-border);
-            padding: 15px;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: <?= max(10, min(24, (int)($settings['font_size'] ?? 14))) ?>px;
-            tab-size: <?= max(2, min(8, (int)($settings['tab_size'] ?? 2))) ?>;
-            resize: none;
-            outline: none;
-        }
-        
-        .preview-panel {
-            flex: 1;
-            background: var(--editor-preview-bg);
-            border-left: 2px solid var(--editor-accent);
-            display: flex;
-            flex-direction: column;
-            min-width: 0;
-        }
-        
-        .preview-header {
-            background: var(--editor-surface);
-            padding: 10px 20px;
-            color: var(--editor-accent);
-            font-weight: bold;
-            border-bottom: 1px solid var(--editor-border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .preview-content {
-            flex: 1;
-            background: var(--editor-preview-bg);
-            overflow: auto;
-        }
-        
-        iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-            background: var(--editor-preview-bg);
-        }
-        
-        .status-bar {
-            background: var(--editor-surface-2);
-            padding: 5px 20px;
-            font-size: 0.9em;
-            color: var(--editor-muted);
-            border-top: 1px solid var(--editor-border);
-            display: flex;
-            justify-content: space-between;
-        }
-        
-        .status-saved {
-            color: #0f0;
-        }
-        
-        /* Mobile Responsive */
-        @media (max-width: 768px) {
-            .editor-body {
-                flex-direction: column;
-            }
-            
-            .code-panels,
-            .preview-panel {
-                flex: 1;
-                min-height: 50vh;
-                width: 100% !important;
-            }
-            
-            .preview-panel {
-                border-left: none;
-                border-top: 2px solid var(--editor-accent);
-            }
-            
-            /* Hide resizer on mobile */
-            .resizer {
-                display: none;
-            }
-            
-            .header-actions {
-                width: 100%;
-                justify-content: flex-start;
-            }
-            
-            .header-actions .btn {
-                flex: 0 1 auto;
-                min-width: fit-content;
-                padding: 8px 12px;
-                font-size: 0.85em;
-            }
-            
-            .header-actions .btn i {
-                font-size: 0.9em;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            .editor-header {
-                padding: 10px;
-            }
-            
-            .project-name {
-                font-size: 1em;
-                width: 100%;
-                margin-bottom: 8px;
-            }
-            
-            .tab {
-                padding: 8px 12px;
-                font-size: 0.9em;
-            }
-            
-            textarea {
-                font-size: 12px;
-            }
-            
-            .header-actions .btn {
-                padding: 6px 10px;
-                font-size: 0.8em;
-            }
-            
-            .header-actions .btn i {
-                margin-right: 3px;
-            }
-            
-            .status-bar {
-                font-size: 0.8em;
-                padding: 5px 10px;
-            }
-        }
-    </style>
-</head>
-<body data-theme="<?= htmlspecialchars($defaultTheme) ?>">
-    <?php include BASE_PATH . '/views/layouts/navbar.php'; ?>
-    <div class="editor-container">
-        <div class="editor-header">
-            <div class="project-name"><?= htmlspecialchars($project['name'] ?? 'Untitled Project') ?></div>
-            <div class="header-actions">
-                <button class="btn" onclick="formatCode()" title="Format Code (Alt+Shift+F)">
-                    <i class="fas fa-magic"></i> Format
-                </button>
-                <button class="btn btn-secondary" onclick="validateCode()" title="Validate Code">
-                    <i class="fas fa-check-circle"></i> Validate
-                </button>
-                <button class="btn" onclick="saveProject()">
-                    <i class="fas fa-save"></i> Save
-                </button>
-                <button class="btn btn-secondary" onclick="exportCode()">
-                    <i class="fas fa-download"></i> Export
-                </button>
-                <button class="btn btn-secondary" onclick="showTemplateModal()" title="Load Template">
-                    <i class="fas fa-file-code"></i> Templates
-                </button>
-                <button class="btn btn-secondary" onclick="window.location.href='/projects/codexpro/dashboard'">
-                    <i class="fas fa-th-large"></i> Dashboard
-                </button>
-            </div>
-        </div>
-        
-        <div class="editor-body">
-            <div class="code-panels">
-                <div class="tabs">
-                    <div class="tab active" data-tab="html">HTML</div>
-                    <div class="tab" data-tab="css">CSS</div>
-                    <div class="tab" data-tab="js">JavaScript</div>
-                </div>
-                
-                <div class="code-editor">
-                    <textarea id="html-editor" class="editor-textarea" placeholder="Enter HTML code..."><?= htmlspecialchars($project['html_content'] ?? '<!DOCTYPE html>\n<html>\n<head>\n  <title>My Project</title>\n</head>\n<body>\n  <h1>Hello World!</h1>\n</body>\n</html>') ?></textarea>
-                    <textarea id="css-editor" class="editor-textarea" style="display: none;" placeholder="Enter CSS code..."><?= htmlspecialchars($project['css_content'] ?? 'body {\n  font-family: Arial, sans-serif;\n  padding: 20px;\n}') ?></textarea>
-                    <textarea id="js-editor" class="editor-textarea" style="display: none;" placeholder="Enter JavaScript code..."><?= htmlspecialchars($project['js_content'] ?? '// Your JavaScript code here\nconsole.log("Hello World!");') ?></textarea>
-                </div>
-            </div>
-            
-            <!-- Resizer - Only visible on desktop -->
-            <div class="resizer" id="resizer"></div>
-            
-            <div class="preview-panel">
-                <div class="preview-header">
-                    <span>Live Preview</span>
-                    <button class="btn" onclick="refreshPreview()" style="padding: 4px 12px; font-size: 0.9em;">Refresh</button>
-                </div>
-                <div class="preview-content">
-                    <iframe id="preview-frame"></iframe>
-                </div>
-            </div>
-        </div>
-        
-        <div class="status-bar">
-            <span id="status-text">Ready</span>
-            <span>Lines: <span id="line-count">1</span> | Auto-save: <span id="autosave-status"><?= ($settings['auto_save'] ?? 1) ? 'ON' : 'OFF' ?></span></span>
-        </div>
-    </div>
-    
-    <script>
-        (function initGlobalThemeAndFetch() {
-            const html = document.documentElement;
-            const body = document.body;
-            const savedTheme = localStorage.getItem('theme');
-            if (savedTheme) {
-                html.setAttribute('data-theme', savedTheme);
-                body.setAttribute('data-theme', savedTheme);
-            } else {
-                html.setAttribute('data-theme', body.getAttribute('data-theme') || 'dark');
-            }
+        .tb-icon-btn:hover{background:var(--editor-surface);color:var(--editor-text);border-color:var(--editor-accent)}
 
-            document.addEventListener('themeChanged', function (e) {
-                const theme = e?.detail?.theme || html.getAttribute('data-theme');
-                if (theme) {
-                    html.setAttribute('data-theme', theme);
-                    body.setAttribute('data-theme', theme);
-                }
-            });
+        /* Editor body */
+        #editor-body{
+            position:fixed;top:calc(var(--navbar-height) + 48px);left:0;right:0;bottom:24px;
+            display:flex;overflow:hidden;
+        }
+        #code-panel{flex:1 1 50%;min-width:250px;display:flex;flex-direction:column;overflow:hidden;position:relative}
+        .cm-editor-wrap{display:none;flex:1;overflow:hidden;position:relative;flex-direction:column}
+        .cm-editor-wrap.active{display:flex}
+        .cm-editor-wrap .CodeMirror{flex:1;height:100%;font-size:13.5px;font-family:'Fira Code','Cascadia Code',Consolas,monospace;line-height:1.6}
 
-            const csrfToken = document.querySelector('meta[name=\"csrf-token\"]')?.getAttribute('content') || '';
-            const nativeFetch = window.fetch.bind(window);
-            window.fetch = function(resource, init = {}) {
-                const requestInit = { ...init };
-                const method = String(requestInit.method || 'GET').toUpperCase();
-                if (csrfToken && !['GET', 'HEAD', 'OPTIONS'].includes(method)) {
-                    requestInit.headers = new Headers(requestInit.headers || {});
-                    if (!requestInit.headers.has('X-CSRF-Token')) {
-                        requestInit.headers.set('X-CSRF-Token', csrfToken);
-                    }
-                    if (!requestInit.headers.has('Accept')) {
-                        requestInit.headers.set('Accept', 'application/json');
-                    }
-                }
-                return nativeFetch(resource, requestInit);
-            };
-        })();
+        #resizer{flex:0 0 5px;background:var(--editor-border);cursor:ew-resize;transition:background .2s;position:relative;z-index:10}
+        #resizer:hover,#resizer.dragging{background:var(--editor-accent)}
+        #resizer::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:3px;height:36px;background:rgba(255,255,255,.18);border-radius:2px}
 
-        const projectId = <?= $project['id'] ?? 'null' ?>;
-        const autoSave = <?= ($settings['auto_save'] ?? 1) ? 'true' : 'false' ?>;
-        const autoPreview = <?= ($settings['auto_preview'] ?? 1) ? 'true' : 'false' ?>;
-        
-        let autoSaveTimeout;
-        let previewTimeout;
-        
-        // Tab switching
-        document.querySelectorAll('.tab').forEach(tab => {
-            tab.addEventListener('click', function() {
-                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                this.classList.add('active');
-                
-                const tabName = this.dataset.tab;
-                document.querySelectorAll('.editor-textarea').forEach(t => t.style.display = 'none');
-                document.getElementById(tabName + '-editor').style.display = 'block';
-            });
-        });
-        
-        // Resizable editor panels (Desktop only)
-        (function() {
-            const resizer = document.getElementById('resizer');
-            const codePanels = document.querySelector('.code-panels');
-            const previewPanel = document.querySelector('.preview-panel');
-            const editorBody = document.querySelector('.editor-body');
-            
-            if (!resizer || !codePanels || !previewPanel || !editorBody) {
-                console.log('Resizer elements not found:', {resizer, codePanels, previewPanel, editorBody});
-                return;
-            }
-            
-            let isResizing = false;
-            
-            function initResizer() {
-                // Only enable on desktop (> 768px)
-                if (window.innerWidth <= 768) {
-                    resizer.style.display = 'none';
-                    codePanels.style.width = '';
-                    previewPanel.style.width = '';
-                    return;
-                }
-                resizer.style.display = '';
-            }
-            
-            resizer.addEventListener('mousedown', function(e) {
-                if (window.innerWidth <= 768) return;
-                e.preventDefault();
-                isResizing = true;
-                document.body.style.cursor = 'ew-resize';
-                document.body.style.userSelect = 'none';
-            });
-            
-            document.addEventListener('mousemove', function(e) {
-                if (!isResizing || window.innerWidth <= 768) return;
-                e.preventDefault();
-                
-                const containerWidth = editorBody.offsetWidth;
-                const mouseX = e.clientX - editorBody.getBoundingClientRect().left;
-                
-                // Calculate percentage (min 20%, max 80%)
-                let leftPercent = (mouseX / containerWidth) * 100;
-                leftPercent = Math.max(20, Math.min(80, leftPercent));
-                
-                codePanels.style.width = leftPercent + '%';
-                previewPanel.style.width = (100 - leftPercent) + '%';
-            });
-            
-            document.addEventListener('mouseup', function() {
-                if (isResizing) {
-                    isResizing = false;
-                    document.body.style.cursor = '';
-                    document.body.style.userSelect = '';
-                }
-            });
-            
-            // Handle window resize
-            window.addEventListener('resize', initResizer);
-            
-            // Initialize on load
-            initResizer();
-        })();
-        
-        // Live preview update
-        function updatePreview() {
-            const html = document.getElementById('html-editor').value;
-            const css = document.getElementById('css-editor').value;
-            const js = document.getElementById('js-editor').value;
-            
-            const iframe = document.getElementById('preview-frame');
-            const doc = iframe.contentDocument || iframe.contentWindow.document;
-            
-            const fullCode = `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <style>${css}</style>
-                </head>
-                <body>
-                    ${html}
-                    <script>${js}<\/script>
-                </body>
-                </html>
-            `;
-            
-            doc.open();
-            doc.write(fullCode);
-            doc.close();
+        #preview-panel{flex:1 1 50%;min-width:200px;display:flex;flex-direction:column;overflow:hidden}
+        #preview-header{
+            height:32px;background:var(--editor-toolbar);border-bottom:1px solid var(--editor-border);
+            display:flex;align-items:center;padding:0 10px;gap:8px;flex-shrink:0;
         }
-        
-        function refreshPreview() {
-            updatePreview();
-            document.getElementById('status-text').textContent = 'Preview updated';
-            setTimeout(() => {
-                document.getElementById('status-text').textContent = 'Ready';
-            }, 2000);
+        #preview-header span{font-size:.72rem;color:var(--editor-muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+        #preview-refresh-btn{margin-left:auto;background:none;border:none;color:var(--editor-muted);cursor:pointer;font-size:.8rem;padding:2px 5px;border-radius:4px;transition:color .15s}
+        #preview-refresh-btn:hover{color:var(--editor-accent)}
+        #preview-panel-inner{flex:1;display:flex;align-items:stretch;justify-content:center;background:var(--editor-bg);overflow:hidden}
+        #preview-frame-wrap{width:100%;height:100%;overflow:hidden;transition:width .3s}
+        #preview-iframe{width:100%;height:100%;border:none;background:#fff;display:block}
+
+        /* Status bar */
+        #status-bar{
+            position:fixed;bottom:0;left:0;right:0;height:24px;
+            background:var(--editor-toolbar);border-top:1px solid var(--editor-border);
+            display:flex;align-items:center;padding:0 12px;gap:16px;
+            font-size:.72rem;color:var(--editor-muted);z-index:100;
         }
-        
-        // Auto-preview with debounce
-        function schedulePreview() {
-            if (!autoPreview) return;
-            
-            clearTimeout(previewTimeout);
-            previewTimeout = setTimeout(updatePreview, 1000);
+        .sb-item{display:flex;align-items:center;gap:4px}
+        .sb-sep{color:var(--editor-border)}
+        #autosave-indicator{color:var(--editor-muted);transition:color .3s}
+        #autosave-indicator.saving{color:#f7c948}
+        #autosave-indicator.saved{color:#4ade80}
+
+        /* Toast */
+        #save-toast{
+            position:fixed;bottom:36px;right:24px;background:#1a3d2b;border:1px solid #4ade80;
+            color:#4ade80;padding:10px 18px;border-radius:8px;font-size:.85rem;font-weight:600;
+            display:none;align-items:center;gap:8px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.5);
         }
-        
-        // Auto-save functionality
-        function scheduleAutoSave() {
-            if (!autoSave || !projectId) return;
-            
-            clearTimeout(autoSaveTimeout);
-            autoSaveTimeout = setTimeout(autoSaveProject, 3000);
-        }
-        
-        function autoSaveProject() {
-            const formData = new FormData();
-            formData.append('project_id', projectId);
-            formData.append('html_content', document.getElementById('html-editor').value);
-            formData.append('css_content', document.getElementById('css-editor').value);
-            formData.append('js_content', document.getElementById('js-editor').value);
-            
-            fetch('/projects/codexpro/editor/autosave', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    document.getElementById('status-text').innerHTML = '<span class="status-saved">Auto-saved</span>';
-                    setTimeout(() => {
-                        document.getElementById('status-text').textContent = 'Ready';
-                    }, 2000);
-                }
-            });
-        }
-        
-        // Save project
-        function saveProject() {
-            const formData = new FormData();
-            if (projectId) formData.append('project_id', projectId);
-            formData.append('name', '<?= addslashes($project['name'] ?? 'Untitled Project') ?>');
-            formData.append('html_content', document.getElementById('html-editor').value);
-            formData.append('css_content', document.getElementById('css-editor').value);
-            formData.append('js_content', document.getElementById('js-editor').value);
-            formData.append('visibility', '<?= $project['visibility'] ?? 'private' ?>');
-            
-            document.getElementById('status-text').textContent = 'Saving...';
-            
-            fetch('/projects/codexpro/editor/save', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    document.getElementById('status-text').innerHTML = '<span class="status-saved">Saved successfully!</span>';
-                    if (data.project_id && !projectId) {
-                        window.location.href = '/projects/codexpro/editor/' + data.project_id;
-                    }
-                } else {
-                    document.getElementById('status-text').textContent = 'Save failed: ' + (data.error || 'Unknown error');
-                }
-            });
-        }
-        
-        // Export code
-        function exportCode() {
-            const html = document.getElementById('html-editor').value;
-            const css = document.getElementById('css-editor').value;
-            const js = document.getElementById('js-editor').value;
-            
-            const fullCode = `<!DOCTYPE html>
-<html>
-<head>
-    <title><?= addslashes($project['name'] ?? 'My Project') ?></title>
-    <style>
-${css}
+        #save-toast.error{background:#3d1a1a;border-color:#f87171;color:#f87171}
+
+        /* Modals */
+        .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;align-items:center;justify-content:center}
+        .modal-overlay.open{display:flex}
+        .modal-box{background:var(--editor-surface);border:1px solid var(--editor-border);border-radius:12px;padding:24px;max-width:760px;width:92%;max-height:82vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+        .modal-title{font-size:1.05rem;font-weight:700;color:var(--editor-accent);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+        .modal-close{margin-left:auto;background:none;border:none;color:var(--editor-muted);font-size:1.1rem;cursor:pointer;padding:2px 6px;border-radius:4px;transition:color .15s}
+        .modal-close:hover{color:var(--editor-text)}
+
+        #template-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+        .template-card{background:var(--editor-toolbar);border:1px solid var(--editor-border);border-radius:8px;padding:14px;cursor:pointer;transition:all .2s}
+        .template-card:hover{border-color:var(--editor-accent);background:color-mix(in srgb,var(--editor-accent) 8%,var(--editor-toolbar))}
+        .template-card-icon{font-size:1.6rem;margin-bottom:8px}
+        .template-card-name{font-size:.85rem;font-weight:600;color:var(--editor-text)}
+        .template-card-desc{font-size:.75rem;color:var(--editor-muted);margin-top:4px}
+
+        #validate-result{font-size:.83rem;margin-top:12px;padding:10px 14px;border-radius:6px;background:var(--editor-toolbar);border:1px solid var(--editor-border);color:var(--editor-muted);min-height:44px;white-space:pre-wrap}
+
+        .CodeMirror-scroll{overflow:auto!important}
+        [data-theme="dark"]  .CodeMirror{background:#1e1e2e!important}
+        [data-theme="light"] .CodeMirror{background:#f8f9fc!important;color:#1a2035!important}
+        [data-theme="light"] .CodeMirror-gutters{background:#eef0f8!important;border-right:1px solid #d5d9e9!important}
+
+        @media(max-width:768px){#resizer,#preview-panel{display:none}#code-panel{flex-basis:100%!important}}
     </style>
 </head>
 <body>
-${html}
-    <script>
-${js}
-    <\/script>
-</body>
-</html>`;
-            
-            const blob = new Blob([fullCode], { type: 'text/html' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = '<?= preg_replace('/[^a-z0-9]+/i', '-', $project['name'] ?? 'project') ?>.html';
-            a.click();
-            URL.revokeObjectURL(url);
-        }
-        
-        // Listen to editor changes
-        document.querySelectorAll('.editor-textarea').forEach(editor => {
-            editor.addEventListener('input', function() {
-                schedulePreview();
-                scheduleAutoSave();
-                
-                // Update line count
-                const lines = this.value.split('\n').length;
-                document.getElementById('line-count').textContent = lines;
-            });
+<?php include BASE_PATH . '/views/layouts/navbar.php'; ?>
+
+<div id="editor-toolbar">
+    <div id="project-name-display" title="Click to rename">
+        <i class="fa fa-pencil"></i>
+        <span id="project-name-text"><?= htmlspecialchars($project['name'] ?? 'Untitled Project') ?></span>
+    </div>
+    <input type="text" id="project-name-input"
+           value="<?= htmlspecialchars($project['name'] ?? 'Untitled Project') ?>"
+           maxlength="120">
+
+    <div class="toolbar-sep"></div>
+
+    <div class="lang-tabs">
+        <button class="lang-tab active" data-lang="html"><span class="lang-dot"></span>HTML</button>
+        <button class="lang-tab" data-lang="css"><span class="lang-dot"></span>CSS</button>
+        <button class="lang-tab" data-lang="js"><span class="lang-dot"></span>JS</button>
+    </div>
+
+    <div class="tb-spacer"></div>
+
+    <button class="tb-btn primary" id="save-btn" title="Save (Ctrl+S)">
+        <i class="fa fa-floppy-disk"></i><span>Save</span>
+    </button>
+    <button class="tb-btn" id="format-btn" title="Format (Alt+Shift+F)">
+        <i class="fa fa-wand-magic-sparkles"></i><span>Format</span>
+    </button>
+    <button class="tb-btn" id="validate-btn" title="Validate code">
+        <i class="fa fa-circle-check"></i><span>Validate</span>
+    </button>
+    <button class="tb-btn" id="export-btn" title="Export as HTML">
+        <i class="fa fa-file-export"></i><span>Export</span>
+    </button>
+
+    <div class="tb-dropdown" id="templates-dropdown">
+        <button class="tb-btn" id="templates-btn">
+            <i class="fa fa-layer-group"></i><span>Templates</span>
+            <i class="fa fa-chevron-down" style="font-size:.6rem;margin-left:2px"></i>
+        </button>
+        <div class="tb-dropdown-menu">
+            <div class="tb-dropdown-item" id="open-templates-modal">
+                <i class="fa fa-th-large"></i> Browse Templates
+            </div>
+        </div>
+    </div>
+
+    <div class="tb-dropdown" id="responsive-dropdown">
+        <button class="tb-btn" id="responsive-btn">
+            <i class="fa fa-mobile-screen-button"></i><span>Responsive</span>
+            <i class="fa fa-chevron-down" style="font-size:.6rem;margin-left:2px"></i>
+        </button>
+        <div class="tb-dropdown-menu">
+            <div class="tb-dropdown-item" data-width="375"><i class="fa fa-mobile-screen-button"></i> Mobile (375px)</div>
+            <div class="tb-dropdown-item" data-width="768"><i class="fa fa-tablet-screen-button"></i> Tablet (768px)</div>
+            <div class="tb-dropdown-item" data-width="1280"><i class="fa fa-desktop"></i> Desktop (1280px)</div>
+            <div class="tb-dropdown-item" data-width="full"><i class="fa fa-expand"></i> Full Width</div>
+        </div>
+    </div>
+
+    <div class="toolbar-sep"></div>
+    <a href="/projects/codexpro" class="tb-icon-btn" title="Back to dashboard">
+        <i class="fa fa-arrow-left"></i>
+    </a>
+</div>
+
+<div id="editor-body">
+    <div id="code-panel">
+        <div class="cm-editor-wrap active" id="wrap-html"><textarea id="cm-html"></textarea></div>
+        <div class="cm-editor-wrap" id="wrap-css"><textarea id="cm-css"></textarea></div>
+        <div class="cm-editor-wrap" id="wrap-js"><textarea id="cm-js"></textarea></div>
+    </div>
+    <div id="resizer"></div>
+    <div id="preview-panel">
+        <div id="preview-header">
+            <i class="fa fa-eye" style="font-size:.75rem;color:var(--editor-muted)"></i>
+            <span>Preview</span>
+            <button id="preview-refresh-btn" title="Refresh"><i class="fa fa-rotate-right"></i></button>
+        </div>
+        <div id="preview-panel-inner">
+            <div id="preview-frame-wrap">
+                <iframe id="preview-iframe" sandbox="allow-scripts allow-same-origin allow-forms" title="Live Preview"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="status-bar">
+    <span class="sb-item"><i class="fa fa-map-pin" style="font-size:.65rem"></i><span id="sb-cursor">Ln 1, Col 1</span></span>
+    <span class="sb-sep">|</span>
+    <span class="sb-item" id="sb-chars">0 chars</span>
+    <span class="sb-sep">|</span>
+    <span class="sb-item" id="sb-lang">HTML</span>
+    <span class="tb-spacer"></span>
+    <span id="autosave-indicator"><i class="fa fa-cloud"></i> <span id="autosave-text">Auto-save ready</span></span>
+</div>
+
+<div id="save-toast"><i class="fa fa-circle-check"></i><span id="toast-msg">Saved!</span></div>
+
+<div class="modal-overlay" id="validate-modal">
+    <div class="modal-box" style="max-width:520px">
+        <div class="modal-title">
+            <i class="fa fa-circle-check"></i> Validation Results
+            <button class="modal-close" data-close="validate-modal"><i class="fa fa-times"></i></button>
+        </div>
+        <div id="validate-result">Click Validate to check your code...</div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="templates-modal">
+    <div class="modal-box">
+        <div class="modal-title">
+            <i class="fa fa-layer-group"></i> Starter Templates
+            <button class="modal-close" data-close="templates-modal"><i class="fa fa-times"></i></button>
+        </div>
+        <div id="template-grid"><div style="color:var(--editor-muted);font-size:.85rem">Loading templates...</div></div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/xml/xml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/css/css.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/javascript/javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/htmlmixed/htmlmixed.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/edit/closebrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/edit/matchbrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/edit/closetag.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/fold/foldcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/fold/foldgutter.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/fold/brace-fold.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/fold/xml-fold.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/selection/active-line.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/hint/show-hint.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/hint/javascript-hint.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/hint/css-hint.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/hint/html-hint.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/comment/comment.min.js"></script>
+
+<script>
+(function () {
+    'use strict';
+
+    const PROJECT_ID = <?= json_encode($project['id'] ?? null) ?>;
+    const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]').content;
+
+    function cmTheme() {
+        return document.documentElement.dataset.theme === 'light' ? 'default' : 'dracula';
+    }
+
+    function cmOptions(mode) {
+        return {
+            mode: mode,
+            theme: cmTheme(),
+            lineNumbers: true,
+            autoCloseBrackets: true,
+            matchBrackets: true,
+            autoCloseTags: true,
+            styleActiveLine: true,
+            foldGutter: true,
+            gutters: ['CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
+            indentUnit: 2,
+            tabSize: 2,
+            indentWithTabs: false,
+            lineWrapping: false,
+            extraKeys: {
+                'Ctrl-/':      function(cm) { cm.execCommand('toggleComment'); },
+                'Alt-Shift-F': function()   { doFormat(); },
+                'Ctrl-S':      function()   { doSave(); },
+                'Ctrl-Space':  'autocomplete',
+                'Tab':         function(cm) {
+                    if (cm.somethingSelected()) {
+                        cm.indentSelection('add');
+                    } else {
+                        cm.replaceSelection('  ', 'end');
+                    }
+                }
+            }
+        };
+    }
+
+    var editors = {
+        html: CodeMirror.fromTextArea(document.getElementById('cm-html'), cmOptions('htmlmixed')),
+        css:  CodeMirror.fromTextArea(document.getElementById('cm-css'),  cmOptions('css')),
+        js:   CodeMirror.fromTextArea(document.getElementById('cm-js'),   cmOptions('javascript'))
+    };
+
+    editors.html.setValue(<?= json_encode($project['html_content'] ?? "<!-- Start coding here -->\n") ?>);
+    editors.css.setValue(<?= json_encode($project['css_content']   ?? "/* Your CSS here */\n") ?>);
+    editors.js.setValue(<?= json_encode($project['js_content']     ?? "// Your JavaScript here\n") ?>);
+
+    Object.values(editors).forEach(function(cm) {
+        cm.getWrapperElement().style.height = '100%';
+        cm.refresh();
+    });
+
+    var activeLang = 'html';
+    var langLabels = { html: 'HTML', css: 'CSS', js: 'JavaScript' };
+
+    function switchLang(lang) {
+        activeLang = lang;
+        document.querySelectorAll('.lang-tab').forEach(function(t) {
+            t.classList.toggle('active', t.dataset.lang === lang);
         });
-        
-        // Initial preview
-        updatePreview();
-        
-        // Resizable Editor (Desktop only)
-        const editorBody = document.querySelector('.editor-body');
-        const codePanels = document.querySelector('.code-panels');
-        const previewPanel = document.querySelector('.preview-panel');
-        
-        // Format code functionality
-        function formatCode() {
-            const activeTab = document.querySelector('.tab.active');
-            const language = activeTab ? activeTab.dataset.tab : 'html';
-            const editorId = language + '-editor';
-            const editor = document.getElementById(editorId);
-            const code = editor.value;
-            
-            document.getElementById('status-text').textContent = 'Formatting...';
-            
-            fetch('/projects/codexpro/api/format', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: new URLSearchParams({ code, language })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    editor.value = data.formatted;
-                    schedulePreview();
-                    document.getElementById('status-text').innerHTML = '<span class="status-saved">Code formatted!</span>';
-                } else {
-                    document.getElementById('status-text').textContent = 'Format failed: ' + (data.error || 'Unknown error');
-                }
-                setTimeout(() => {
-                    document.getElementById('status-text').textContent = 'Ready';
-                }, 2000);
-            })
-            .catch(err => {
-                document.getElementById('status-text').textContent = 'Format failed: ' + err.message;
-            });
-        }
-        
-        // Validate code functionality
-        function validateCode() {
-            const activeTab = document.querySelector('.tab.active');
-            const language = activeTab ? activeTab.dataset.tab : 'html';
-            const editorId = language + '-editor';
-            const editor = document.getElementById(editorId);
-            const code = editor.value;
-            
-            document.getElementById('status-text').textContent = 'Validating...';
-            
-            fetch('/projects/codexpro/api/validate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: new URLSearchParams({ code, language })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    if (data.valid) {
-                        document.getElementById('status-text').innerHTML = '<span class="status-saved">✓ Code is valid!</span>';
-                    } else {
-                        const errors = data.errors.join(', ');
-                        document.getElementById('status-text').textContent = 'Validation errors: ' + errors;
-                        alert('Validation Errors:\n\n' + data.errors.join('\n'));
-                    }
-                } else {
-                    document.getElementById('status-text').textContent = 'Validation failed: ' + (data.error || 'Unknown error');
-                }
-                setTimeout(() => {
-                    document.getElementById('status-text').textContent = 'Ready';
-                }, 3000);
-            })
-            .catch(err => {
-                document.getElementById('status-text').textContent = 'Validation failed: ' + err.message;
-            });
-        }
-        
-        // Template modal functionality
-        function showTemplateModal() {
-            fetch('/projects/codexpro/api/starter-templates')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        displayTemplateModal(data.templates);
-                    } else {
-                        alert('Error loading templates: ' + (data.error || 'Unknown error'));
-                    }
+        document.querySelectorAll('.cm-editor-wrap').forEach(function(w) {
+            w.classList.toggle('active', w.id === 'wrap-' + lang);
+        });
+        editors[lang].refresh();
+        editors[lang].focus();
+        updateStatusBar();
+    }
+
+    document.querySelectorAll('.lang-tab').forEach(function(tab) {
+        tab.addEventListener('click', function() { switchLang(tab.dataset.lang); });
+    });
+
+    function updateStatusBar() {
+        var cm = editors[activeLang];
+        var cur = cm.getCursor();
+        document.getElementById('sb-cursor').textContent = 'Ln ' + (cur.line + 1) + ', Col ' + (cur.ch + 1);
+        document.getElementById('sb-chars').textContent  = cm.getValue().length + ' chars';
+        document.getElementById('sb-lang').textContent   = langLabels[activeLang] || activeLang.toUpperCase();
+    }
+
+    Object.keys(editors).forEach(function(lang) {
+        editors[lang].on('cursorActivity', function() { if (lang === activeLang) updateStatusBar(); });
+        editors[lang].on('change', function() {
+            if (lang === activeLang) updateStatusBar();
+            schedulePreviewRefresh();
+        });
+    });
+    updateStatusBar();
+
+    /* Preview */
+    var previewIframe = document.getElementById('preview-iframe');
+    var previewTimer  = null;
+
+    function buildPreviewDoc() {
+        return '<!DOCTYPE html><html><head><meta charset="UTF-8">' +
+            '<meta name="viewport" content="width=device-width,initial-scale=1">' +
+            '<style>' + editors.css.getValue() + '</style>' +
+            '</head><body>' + editors.html.getValue() +
+            '<script>' + editors.js.getValue() + '<\/script></body></html>';
+    }
+
+    function refreshPreview() {
+        previewIframe.srcdoc = buildPreviewDoc();
+    }
+
+    function schedulePreviewRefresh() {
+        clearTimeout(previewTimer);
+        previewTimer = setTimeout(refreshPreview, 600);
+    }
+
+    document.getElementById('preview-refresh-btn').addEventListener('click', refreshPreview);
+    refreshPreview();
+
+    /* Resizer */
+    var editorBody   = document.getElementById('editor-body');
+    var codePanel    = document.getElementById('code-panel');
+    var previewPanel = document.getElementById('preview-panel');
+    var resizer      = document.getElementById('resizer');
+    var isResizing   = false;
+
+    resizer.addEventListener('mousedown', function(e) {
+        isResizing = true;
+        resizer.classList.add('dragging');
+        document.body.style.cursor     = 'ew-resize';
+        document.body.style.userSelect = 'none';
+        e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', function(e) {
+        if (!isResizing) return;
+        var rect   = editorBody.getBoundingClientRect();
+        var totalW = rect.width - 5;
+        var leftPx = e.clientX - rect.left;
+        var minPx  = 250;
+        var maxPx  = totalW * 0.80;
+        leftPx = Math.max(minPx, Math.min(maxPx, leftPx));
+        codePanel.style.flexBasis    = leftPx + 'px';
+        codePanel.style.flexGrow     = '0';
+        previewPanel.style.flexBasis = (totalW - leftPx) + 'px';
+        previewPanel.style.flexGrow  = '0';
+    });
+
+    document.addEventListener('mouseup', function() {
+        if (!isResizing) return;
+        isResizing = false;
+        resizer.classList.remove('dragging');
+        document.body.style.cursor     = '';
+        document.body.style.userSelect = '';
+        Object.values(editors).forEach(function(cm) { cm.refresh(); });
+    });
+
+    /* Responsive preview */
+    var previewFrameWrap = document.getElementById('preview-frame-wrap');
+    document.querySelectorAll('#responsive-dropdown .tb-dropdown-item[data-width]').forEach(function(item) {
+        item.addEventListener('click', function() {
+            var w = item.dataset.width;
+            previewFrameWrap.style.width = (w === 'full') ? '100%' : w + 'px';
+            closeAllDropdowns();
+        });
+    });
+
+    /* Dropdowns */
+    function closeAllDropdowns() {
+        document.querySelectorAll('.tb-dropdown.open').forEach(function(d) { d.classList.remove('open'); });
+    }
+
+    document.querySelectorAll('.tb-dropdown > .tb-btn').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var parent  = btn.closest('.tb-dropdown');
+            var wasOpen = parent.classList.contains('open');
+            closeAllDropdowns();
+            if (!wasOpen) parent.classList.add('open');
+        });
+    });
+
+    document.addEventListener('click', closeAllDropdowns);
+
+    /* Project name editing */
+    var nameDisplay = document.getElementById('project-name-display');
+    var nameText    = document.getElementById('project-name-text');
+    var nameInput   = document.getElementById('project-name-input');
+
+    nameDisplay.addEventListener('click', function() {
+        nameDisplay.style.display = 'none';
+        nameInput.style.display   = 'block';
+        nameInput.value           = nameText.textContent;
+        nameInput.focus();
+        nameInput.select();
+    });
+
+    function commitName() {
+        var val = nameInput.value.trim() || 'Untitled Project';
+        nameText.textContent      = val;
+        nameInput.style.display   = 'none';
+        nameDisplay.style.display = 'flex';
+    }
+
+    nameInput.addEventListener('blur', commitName);
+    nameInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter')  { e.preventDefault(); commitName(); }
+        if (e.key === 'Escape') { nameInput.value = nameText.textContent; commitName(); }
+    });
+
+    /* Helpers */
+    function csrfHeaders() {
+        return { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF_TOKEN };
+    }
+
+    function showToast(msg, isError) {
+        var t = document.getElementById('save-toast');
+        document.getElementById('toast-msg').textContent = msg;
+        t.className = isError ? 'error' : '';
+        t.style.display = 'flex';
+        setTimeout(function() { t.style.display = 'none'; }, 3000);
+    }
+
+    /* Save */
+    function doSave() {
+        var fd = new FormData();
+        if (PROJECT_ID) fd.append('project_id', PROJECT_ID);
+        fd.append('name',         nameText.textContent.trim());
+        fd.append('html_content', editors.html.getValue());
+        fd.append('css_content',  editors.css.getValue());
+        fd.append('js_content',   editors.js.getValue());
+        fd.append('visibility',   'private');
+        fd.append('_token',       CSRF_TOKEN);
+
+        fetch('/projects/codexpro/editor/save', {
+            method: 'POST',
+            headers: { 'X-CSRF-Token': CSRF_TOKEN },
+            body: fd
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) {
+                showToast('Saved successfully!');
+            } else {
+                showToast(data.message || 'Save failed', true);
+            }
+        })
+        .catch(function() { showToast('Network error during save', true); });
+    }
+
+    document.getElementById('save-btn').addEventListener('click', doSave);
+
+    /* Auto-save */
+    if (PROJECT_ID) {
+        var autoSaveTimer   = null;
+        var autoIndicator   = document.getElementById('autosave-indicator');
+        var autoText        = document.getElementById('autosave-text');
+
+        function scheduleAutoSave() {
+            clearTimeout(autoSaveTimer);
+            autoSaveTimer = setTimeout(function() {
+                autoIndicator.className = 'saving';
+                autoText.textContent    = 'Saving\u2026';
+
+                var fd = new FormData();
+                fd.append('project_id',   PROJECT_ID);
+                fd.append('html_content', editors.html.getValue());
+                fd.append('css_content',  editors.css.getValue());
+                fd.append('js_content',   editors.js.getValue());
+                fd.append('_token',       CSRF_TOKEN);
+
+                fetch('/projects/codexpro/editor/autosave', {
+                    method: 'POST',
+                    headers: { 'X-CSRF-Token': CSRF_TOKEN },
+                    body: fd
                 })
-                .catch(err => {
-                    alert('Error loading templates: ' + err.message);
+                .then(function(r) { return r.json(); })
+                .then(function() {
+                    autoIndicator.className = 'saved';
+                    autoText.textContent    = 'Auto-saved';
+                    setTimeout(function() {
+                        autoIndicator.className = '';
+                        autoText.textContent    = 'Auto-save ready';
+                    }, 2500);
+                })
+                .catch(function() {
+                    autoIndicator.className = '';
+                    autoText.textContent    = 'Auto-save failed';
                 });
+            }, 3000);
         }
-        
-        function displayTemplateModal(templates) {
-            // Create modal overlay
-            const modal = document.createElement('div');
-            modal.id = 'template-modal';
-            modal.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0, 0, 0, 0.8);
-                z-index: 10000;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                padding: 20px;
-                animation: fadeIn 0.3s ease-out;
-            `;
-            
-            const modalContent = document.createElement('div');
-            modalContent.style.cssText = `
-                background: #1a1a2e;
-                border-radius: 8px;
-                padding: 30px;
-                max-width: 800px;
-                max-height: 80vh;
-                overflow-y: auto;
-                width: 100%;
-                animation: fadeIn 0.3s ease-out;
-            `;
-            
-            let html = '<h2 style="color: #00f0ff; margin-bottom: 20px;">Choose a Template</h2>';
-            html += '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">';
-            
-            for (const [key, template] of Object.entries(templates)) {
-                html += `
-                    <div style="background: #0f0f23; border: 2px solid #333; border-radius: 8px; padding: 15px; cursor: pointer; transition: all 0.3s;"
-                         onmouseover="this.style.borderColor='#00f0ff'"
-                         onmouseout="this.style.borderColor='#333'"
-                         onclick="loadTemplate('${key}')">
-                        <h3 style="color: #00f0ff; font-size: 1.1em; margin-bottom: 8px;">${template.name}</h3>
-                        <p style="color: #888; font-size: 0.9em;">${template.description}</p>
-                        <span style="display: inline-block; margin-top: 8px; padding: 4px 8px; background: #00f0ff; color: #000; border-radius: 4px; font-size: 0.8em;">${template.category}</span>
-                    </div>
-                `;
+
+        Object.values(editors).forEach(function(cm) { cm.on('change', scheduleAutoSave); });
+    }
+
+    /* Format */
+    function doFormat() {
+        var cm   = editors[activeLang];
+        var code = cm.getValue();
+
+        fetch('/projects/codexpro/api/format', {
+            method: 'POST',
+            headers: csrfHeaders(),
+            body: JSON.stringify({ code: code, language: activeLang })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.formatted) {
+                var cursor = cm.getCursor();
+                cm.setValue(data.formatted);
+                cm.setCursor(cursor);
+                showToast('Code formatted!');
+            } else {
+                showToast(data.message || 'Format failed', true);
             }
-            
-            html += '</div>';
-            html += '<button onclick="closeTemplateModal()" style="margin-top: 20px; padding: 10px 20px; background: #666; color: #fff; border: none; border-radius: 4px; cursor: pointer;">Close</button>';
-            
-            modalContent.innerHTML = html;
-            modal.appendChild(modalContent);
-            document.body.appendChild(modal);
-            
-            // Close on overlay click
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    closeTemplateModal();
-                }
-            });
-        }
-        
-        function closeTemplateModal() {
-            const modal = document.getElementById('template-modal');
-            if (modal) {
-                modal.remove();
-            }
-        }
-        
-        function loadTemplate(templateKey) {
-            if (!confirm('Loading a template will replace your current code. Continue?')) {
+        })
+        .catch(function() { showToast('Network error during format', true); });
+    }
+
+    document.getElementById('format-btn').addEventListener('click', doFormat);
+
+    /* Validate */
+    document.getElementById('validate-btn').addEventListener('click', function() {
+        openModal('validate-modal');
+        document.getElementById('validate-result').textContent = 'Validating\u2026';
+
+        fetch('/projects/codexpro/api/validate', {
+            method: 'POST',
+            headers: csrfHeaders(),
+            body: JSON.stringify({
+                html: editors.html.getValue(),
+                css:  editors.css.getValue(),
+                js:   editors.js.getValue()
+            })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            var el = document.getElementById('validate-result');
+            el.textContent = data.result || data.message || JSON.stringify(data, null, 2);
+            el.style.color = data.errors ? '#f87171' : '#4ade80';
+        })
+        .catch(function() {
+            document.getElementById('validate-result').textContent = 'Validation request failed.';
+        });
+    });
+
+    /* Export */
+    document.getElementById('export-btn').addEventListener('click', function() {
+        var doc  = buildPreviewDoc();
+        var blob = new Blob([doc], { type: 'text/html' });
+        var url  = URL.createObjectURL(blob);
+        var a    = document.createElement('a');
+        a.href     = url;
+        a.download = (nameText.textContent.trim() || 'project') + '.html';
+        a.click();
+        URL.revokeObjectURL(url);
+    });
+
+    /* Templates */
+    document.getElementById('open-templates-modal').addEventListener('click', function() {
+        closeAllDropdowns();
+        openModal('templates-modal');
+        loadTemplates();
+    });
+
+    var templatesLoaded = false;
+
+    function loadTemplates() {
+        if (templatesLoaded) return;
+        var grid = document.getElementById('template-grid');
+        grid.innerHTML = '<div style="color:var(--editor-muted);font-size:.85rem">Loading...</div>';
+
+        fetch('/projects/codexpro/api/starter-templates', {
+            headers: { 'X-CSRF-Token': CSRF_TOKEN }
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            var templates = Array.isArray(data) ? data : (data.templates || []);
+            if (!templates.length) {
+                grid.innerHTML = '<div style="color:var(--editor-muted)">No templates available.</div>';
                 return;
             }
-            
-            fetch('/projects/codexpro/api/starter-templates')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success && data.templates[templateKey]) {
-                        const template = data.templates[templateKey];
-                        const files = template.files;
-                        
-                        // Load template files into editors
-                        if (files['index.html']) {
-                            document.getElementById('html-editor').value = files['index.html'];
-                        }
-                        if (files['style.css'] || files['app.css']) {
-                            document.getElementById('css-editor').value = files['style.css'] || files['app.css'];
-                        }
-                        if (files['script.js'] || files['app.js']) {
-                            document.getElementById('js-editor').value = files['script.js'] || files['app.js'];
-                        }
-                        
-                        updatePreview();
-                        closeTemplateModal();
-                        document.getElementById('status-text').innerHTML = '<span class="status-saved">Template loaded!</span>';
-                        setTimeout(() => {
-                            document.getElementById('status-text').textContent = 'Ready';
-                        }, 2000);
-                    }
-                })
-                .catch(err => {
-                    alert('Error loading template: ' + err.message);
-                });
-        }
-        
-        // Keyboard shortcuts
-        document.addEventListener('keydown', function(e) {
-            // Alt+Shift+F for format
-            if (e.altKey && e.shiftKey && e.key === 'F') {
-                e.preventDefault();
-                formatCode();
-            }
-            // Ctrl+S or Cmd+S for save
-            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-                e.preventDefault();
-                saveProject();
-            }
+            grid.innerHTML = '';
+            templates.forEach(function(tpl) {
+                var card = document.createElement('div');
+                card.className = 'template-card';
+                card.innerHTML =
+                    '<div class="template-card-icon">' + (tpl.icon || '\uD83D\uDCC4') + '</div>' +
+                    '<div class="template-card-name">' + escHtml(tpl.name || 'Template') + '</div>' +
+                    '<div class="template-card-desc">' + escHtml(tpl.description || '') + '</div>';
+                card.addEventListener('click', function() { applyTemplate(tpl); });
+                grid.appendChild(card);
+            });
+            templatesLoaded = true;
+        })
+        .catch(function() {
+            grid.innerHTML = '<div style="color:#f87171">Failed to load templates.</div>';
         });
-    </script>
+    }
+
+    function applyTemplate(tpl) {
+        if (!confirm('Apply template "' + (tpl.name || 'Template') + '"? This will replace current code.')) return;
+        closeModal('templates-modal');
+
+        fetch('/projects/codexpro/api/create-from-template', {
+            method: 'POST',
+            headers: csrfHeaders(),
+            body: JSON.stringify({ template_id: tpl.id || tpl.slug })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.html !== undefined) editors.html.setValue(data.html || '');
+            if (data.css  !== undefined) editors.css.setValue(data.css   || '');
+            if (data.js   !== undefined) editors.js.setValue(data.js     || '');
+            refreshPreview();
+            showToast('Template applied!');
+        })
+        .catch(function() { showToast('Failed to apply template', true); });
+    }
+
+    /* Modal helpers */
+    function openModal(id)  { document.getElementById(id).classList.add('open'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+    document.querySelectorAll('.modal-close[data-close]').forEach(function(btn) {
+        btn.addEventListener('click', function() { closeModal(btn.dataset.close); });
+    });
+    document.querySelectorAll('.modal-overlay').forEach(function(overlay) {
+        overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) closeModal(overlay.id);
+        });
+    });
+
+    /* Global keyboard shortcuts */
+    document.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); doSave(); }
+        if (e.altKey && e.shiftKey && e.key === 'F')    { e.preventDefault(); doFormat(); }
+        if (e.key === 'Escape') closeAllDropdowns();
+    });
+
+    function escHtml(str) {
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    /* Observe theme changes to swap CodeMirror theme */
+    var themeObserver = new MutationObserver(function() {
+        var t = cmTheme();
+        Object.values(editors).forEach(function(cm) { cm.setOption('theme', t); });
+    });
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+    /* Initial layout refresh */
+    requestAnimationFrame(function() {
+        Object.values(editors).forEach(function(cm) { cm.refresh(); });
+        updateStatusBar();
+    });
+}());
+</script>
 </body>
 </html>
