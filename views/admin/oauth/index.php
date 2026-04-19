@@ -5,7 +5,7 @@
 <div class="admin-content">
     <div class="page-header">
         <h1>OAuth Providers</h1>
-        <p>Manage OAuth authentication providers for Google, GitHub, etc.</p>
+        <p>Manage OAuth authentication providers for Google, GitHub, Apple, and more.</p>
     </div>
     
     <?php if (Helpers::hasFlash('success')): ?>
@@ -69,6 +69,13 @@
                                 <a href="/admin/oauth/<?= $provider['id'] ?>/edit" class="btn btn-sm btn-primary">
                                     Configure
                                 </a>
+                                <form method="POST" action="/admin/oauth/<?= $provider['id'] ?>/toggle" style="display:inline-block; margin-left:4px;"
+                                      onsubmit="return confirm('<?= $provider['is_enabled'] ? 'Disable' : 'Enable' ?> <?= View::e($provider['display_name']) ?> OAuth?')">
+                                    <?= \Core\Security::csrfField() ?>
+                                    <button type="submit" class="btn btn-sm <?= $provider['is_enabled'] ? 'btn-warning' : 'btn-success' ?>">
+                                        <?= $provider['is_enabled'] ? 'Disable' : 'Enable' ?>
+                                    </button>
+                                </form>
                             </td>
                         </tr>
                     <?php endforeach; ?>

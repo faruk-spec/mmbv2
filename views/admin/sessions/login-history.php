@@ -27,6 +27,9 @@
                     <option value="">All Methods</option>
                     <option value="email_password" <?= ($method ?? '') === 'email_password' ? 'selected' : '' ?>>Email/Password</option>
                     <option value="google_oauth" <?= ($method ?? '') === 'google_oauth' ? 'selected' : '' ?>>Google OAuth</option>
+                    <option value="github_oauth" <?= ($method ?? '') === 'github_oauth' ? 'selected' : '' ?>>GitHub OAuth</option>
+                    <option value="apple_oauth" <?= ($method ?? '') === 'apple_oauth' ? 'selected' : '' ?>>Apple OAuth</option>
+                    <option value="microsoft_oauth" <?= ($method ?? '') === 'microsoft_oauth' ? 'selected' : '' ?>>Microsoft OAuth</option>
                     <option value="remember_token" <?= ($method ?? '') === 'remember_token' ? 'selected' : '' ?>>Remember Token</option>
                     <option value="2fa" <?= ($method ?? '') === '2fa' ? 'selected' : '' ?>>2FA</option>
                 </select>
@@ -74,6 +77,9 @@
                                 $methodBadges = [
                                     'email_password' => ['class' => 'badge-primary', 'text' => 'Email/Password'],
                                     'google_oauth' => ['class' => 'badge-info', 'text' => 'Google OAuth'],
+                                    'github_oauth' => ['class' => 'badge-info', 'text' => 'GitHub OAuth'],
+                                    'apple_oauth' => ['class' => 'badge-info', 'text' => 'Apple OAuth'],
+                                    'microsoft_oauth' => ['class' => 'badge-info', 'text' => 'Microsoft OAuth'],
                                     'remember_token' => ['class' => 'badge-secondary', 'text' => 'Remember Me'],
                                     '2fa' => ['class' => 'badge-warning', 'text' => '2FA']
                                 ];

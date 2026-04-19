@@ -87,7 +87,7 @@
                         </td>
                         <td>
                             <span class="badge <?= !empty($u['oauth_only']) ? 'badge-info' : 'badge-secondary' ?>">
-                                <?= !empty($u['oauth_only']) ? 'Google SSO' : 'Password' ?>
+                                <?= !empty($u['oauth_only']) ? 'OAuth SSO' : 'Password' ?>
                             </span>
                         </td>
                         <td>
