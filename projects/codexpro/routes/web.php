@@ -55,5 +55,19 @@ $router->get('/projects/codexpro/api/snippets/search', 'Projects\CodeXPro\Contro
 $router->get('/projects/codexpro/api/export/{id}', 'Projects\CodeXPro\Controllers\ApiController@exportProject');
 $router->post('/projects/codexpro/api/create-from-template', 'Projects\CodeXPro\Controllers\ApiController@createFromTemplate');
 
+// Collaboration (real-time SSE + presence + invite)
+$router->get('/projects/codexpro/collab/{id}/stream',    'Projects\CodeXPro\Controllers\CollaborationController@stream');
+$router->post('/projects/codexpro/collab/{id}/push',      'Projects\CodeXPro\Controllers\CollaborationController@push');
+$router->post('/projects/codexpro/collab/{id}/heartbeat', 'Projects\CodeXPro\Controllers\CollaborationController@heartbeat');
+$router->post('/projects/codexpro/collab/{id}/invite',    'Projects\CodeXPro\Controllers\CollaborationController@invite');
+$router->post('/projects/codexpro/collab/{id}/revoke',    'Projects\CodeXPro\Controllers\CollaborationController@revoke');
+$router->get('/projects/codexpro/collab/{id}/members',   'Projects\CodeXPro\Controllers\CollaborationController@members');
+
+// Version history
+$router->get('/projects/codexpro/versions/{id}',           'Projects\CodeXPro\Controllers\VersionController@index');
+$router->get('/projects/codexpro/versions/{id}/get',       'Projects\CodeXPro\Controllers\VersionController@get');
+$router->post('/projects/codexpro/versions/{id}/restore',  'Projects\CodeXPro\Controllers\VersionController@restore');
+$router->post('/projects/codexpro/versions/{id}/label',    'Projects\CodeXPro\Controllers\VersionController@label');
+
 // Dispatch the route
 $router->dispatch($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI']);
