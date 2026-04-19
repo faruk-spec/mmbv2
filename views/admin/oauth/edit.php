@@ -110,7 +110,6 @@ $doc = $providerDocs[$providerName] ?? null;
                         <?php foreach ($doc['steps'] as $step): ?>
                             <li><?= View::e($step) ?></li>
                         <?php endforeach; ?>
-                        <li>Add redirect URI: <code><?= View::e($defaultRedirect) ?></code></li>
                     </ol>
                 </div>
             <?php endif; ?>
