@@ -202,6 +202,7 @@ document.getElementById('editSnippetForm').addEventListener('submit', function(e
         submitBtn.innerHTML = originalText;
     });
 });
+</script>
 <script>
 function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
