@@ -703,6 +703,61 @@ $csrfToken = \Core\Security::generateCsrfToken();
             flex-wrap: wrap;
         }
 
+        /* ── Quick-action cards ── */
+        .cx-quick-card {
+            flex: 1;
+            min-width: 160px;
+            max-width: 240px;
+            padding: 1.25rem;
+            border-radius: 0.75rem;
+            text-decoration: none;
+            text-align: center;
+            transition: transform 0.25s, box-shadow 0.25s;
+            display: block;
+            color: #fff;
+        }
+        .cx-quick-card:hover { transform: translateY(-4px); }
+        .cx-quick-card .qc-icon {
+            font-size: 1.75rem;
+            margin-bottom: 0.5rem;
+            display: block;
+            color: #fff;
+        }
+        .cx-quick-card strong { display: block; font-size: 0.95rem; color: #fff; margin-bottom: 0.125rem; }
+        .cx-quick-card p { font-size: 0.78rem; color: rgba(255,255,255,0.82); margin: 0; }
+
+        /* ── Feature hub tiles ── */
+        .cx-ai-tile {
+            display: block;
+            text-decoration: none;
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 0.625rem;
+            text-align: center;
+            transition: border-color 0.25s, background 0.25s, transform 0.2s, box-shadow 0.25s;
+            cursor: pointer;
+            color: var(--text-primary);
+        }
+        .cx-ai-tile:hover {
+            border-color: var(--cx-primary);
+            background: rgba(0,240,255,0.06);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 18px rgba(0,240,255,0.12);
+        }
+        .cx-ai-tile .tile-icon {
+            width: 36px;
+            height: 36px;
+            margin: 0 auto 0.5rem;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .cx-ai-tile .tile-icon i { color: #fff; font-size: 0.875rem; }
+        .cx-ai-tile .tile-title { font-size: 0.82rem; font-weight: 600; margin-bottom: 0.2rem; color: var(--text-primary); }
+        .cx-ai-tile .tile-desc { font-size: 0.72rem; color: var(--text-secondary); }
+
         /* ── Badges ── */
         .badge {
             display: inline-flex;
