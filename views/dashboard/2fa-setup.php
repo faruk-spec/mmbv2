@@ -74,40 +74,15 @@ try {
                         Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.)
                     </p>
                     <div style="text-align: center; padding: 20px; background: white; border-radius: 10px; margin-bottom: 15px;">
-                        <div id="qrCanvas" style="display: inline-block;"></div>
+                        <?php if (!empty($qrCodeUrl)): ?>
+                            <img src="<?= View::e($qrCodeUrl) ?>"
+                                 alt="2FA QR Code"
+                                 width="220" height="220"
+                                 style="display:block;margin:0 auto;image-rendering:pixelated">
+                        <?php else: ?>
+                            <p style="color:#666;font-size:0.85rem;">Could not generate QR code. Please use the manual code below.</p>
+                        <?php endif; ?>
                     </div>
-                    <script src="https://unpkg.com/qr-code-styling@1.6.0-rc.1/lib/qr-code-styling.js"></script>
-                    <script>
-                    (function() {
-                        var uri = <?= json_encode($provisioningUri) ?>;
-                        function renderQR() {
-                            var container = document.getElementById('qrCanvas');
-                            if (!container || typeof QRCodeStyling === 'undefined') {
-                                setTimeout(renderQR, 100);
-                                return;
-                            }
-                            try {
-                                var qr = new QRCodeStyling({
-                                    width: 220,
-                                    height: 220,
-                                    data: uri,
-                                    dotsOptions: { color: '#000000', type: 'square' },
-                                    backgroundOptions: { color: '#ffffff' },
-                                    qrOptions: { errorCorrectionLevel: 'M' }
-                                });
-                                qr.append(container);
-                            } catch(e) {
-                                container.innerHTML =
-                                    '<p style="color:#666;font-size:0.85rem;">Could not render QR code. Please use the manual code below.</p>';
-                            }
-                        }
-                        if (document.readyState === 'loading') {
-                            document.addEventListener('DOMContentLoaded', renderQR);
-                        } else {
-                            renderQR();
-                        }
-                    })();
-                    </script>
                     
                     <h3 style="font-size: 1rem; margin-bottom: 10px;">Or enter this code manually:</h3>
                     <div style="background: var(--bg-primary); padding: 15px; border-radius: 8px; font-family: monospace; font-size: 1.1rem; text-align: center; letter-spacing: 2px; word-break: break-all;">
