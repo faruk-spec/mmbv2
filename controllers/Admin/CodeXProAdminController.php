@@ -286,51 +286,75 @@ class CodeXProAdminController extends BaseController
         $page = (int)($_GET['page'] ?? 1);
         $perPage = 20;
         $offset = ($page - 1) * $perPage;
-        
-        // Get all templates from project DB
-        $templates = $this->projectDb->fetchAll(
-            "SELECT * FROM codexpro_templates
-             ORDER BY created_at DESC
-             LIMIT ? OFFSET ?",
+
+        // Load built-in starter templates first
+        require_once BASE_PATH . '/core/CodeXPro/TemplateManager.php';
+        $starterRaw = \TemplateManager::getStarterTemplates();
+        $starterTemplates = [];
+        foreach ($starterRaw as $key => $tpl) {
+            $htmlContent = $tpl['files']['index.html'] ?? '';
+            $cssContent  = $tpl['files']['style.css']  ?? ($tpl['files']['app.css']   ?? '');
+            $jsContent   = $tpl['files']['script.js']  ?? ($tpl['files']['app.js']    ?? '');
+            $starterTemplates[] = [
+                'id'           => null,
+                'slug'         => $key,
+                'name'         => $tpl['name'],
+                'description'  => $tpl['description'] ?? '',
+                'category'     => $tpl['category']    ?? 'Built-in',
+                'language'     => 'html',
+                'html_content' => $htmlContent,
+                'css_content'  => $cssContent,
+                'js_content'   => $jsContent,
+                'is_active'    => 1,
+                'is_builtin'   => true,
+                'created_at'   => null,
+            ];
+        }
+
+        // Get DB templates
+        $dbTemplates = $this->projectDb->fetchAll(
+            "SELECT * FROM codexpro_templates ORDER BY created_at DESC LIMIT ? OFFSET ?",
             [$perPage, $offset]
         );
-        
-        // Get user info for templates from main DB
-        if (!empty($templates)) {
-            $userIds = array_unique(array_filter(array_column($templates, 'user_id')));
+
+        // Enrich DB templates with creator name
+        if (!empty($dbTemplates)) {
+            $userIds = array_unique(array_filter(array_column($dbTemplates, 'user_id')));
             if (!empty($userIds)) {
-                $placeholders = str_repeat('?,', count($userIds) - 1) . '?';
+                $placeholders = implode(',', array_fill(0, count($userIds), '?'));
                 $users = $this->mainDb->fetchAll(
                     "SELECT id, name FROM users WHERE id IN ($placeholders)",
                     $userIds
                 );
-                // Create user lookup array
                 $userLookup = [];
-                foreach ($users as $user) {
-                    $userLookup[$user['id']] = $user;
+                foreach ($users as $u) { $userLookup[$u['id']] = $u; }
+                foreach ($dbTemplates as &$tpl) {
+                    $tpl['creator_name'] = isset($tpl['user_id'], $userLookup[$tpl['user_id']])
+                        ? $userLookup[$tpl['user_id']]['name']
+                        : 'Unknown';
+                    $tpl['is_builtin'] = false;
                 }
-                // Merge user data into templates
-                foreach ($templates as &$template) {
-                    if (isset($template['user_id']) && isset($userLookup[$template['user_id']])) {
-                        $template['creator_name'] = $userLookup[$template['user_id']]['name'];
-                    } else {
-                        $template['creator_name'] = 'Unknown';
-                    }
-                }
-                unset($template); // Break reference
+                unset($tpl);
+            } else {
+                foreach ($dbTemplates as &$tpl) { $tpl['is_builtin'] = false; }
+                unset($tpl);
             }
         }
-        
-        // Get total count
-        $totalCount = $this->projectDb->fetch("SELECT COUNT(*) as count FROM codexpro_templates")['count'];
-        $totalPages = ceil($totalCount / $perPage);
-        
+
+        // Merge: built-in first, then DB templates
+        $templates = array_merge($starterTemplates, $dbTemplates);
+
+        // Total count includes built-in starters
+        $dbTotalCount = (int)($this->projectDb->fetch("SELECT COUNT(*) as count FROM codexpro_templates")['count'] ?? 0);
+        $totalCount   = count($starterTemplates) + $dbTotalCount;
+        $totalPages   = max(1, ceil($dbTotalCount / $perPage));
+
         $this->view('admin/projects/codexpro/templates', [
-            'title' => 'CodeXPro Admin - Templates',
-            'templates' => $templates,
+            'title'       => 'CodeXPro Admin - Templates',
+            'templates'   => $templates,
             'currentPage' => $page,
-            'totalPages' => $totalPages,
-            'totalCount' => $totalCount
+            'totalPages'  => $totalPages,
+            'totalCount'  => $totalCount,
         ]);
     }
     

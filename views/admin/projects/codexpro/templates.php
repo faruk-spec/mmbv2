@@ -159,16 +159,24 @@ if (!empty($_SESSION['flash'])) { unset($_SESSION['flash']); }
                 <?php if (empty($templates)): ?>
                     <tr>
                         <td colspan="7" class="empty-state">
-                            No templates in database yet. Use the <strong>Add Template</strong> button to create one.
+                            No templates found. Use the <strong>Add Template</strong> button to create one.
                         </td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($templates as $tpl): ?>
+                        <?php $isBuiltin = !empty($tpl['is_builtin']); ?>
                         <tr>
-                            <td style="color:var(--text-secondary)">#<?= (int)$tpl['id'] ?></td>
-                            <td><strong><?= htmlspecialchars($tpl['name'] ?? 'Unnamed') ?></strong></td>
+                            <td style="color:var(--text-secondary)">
+                                <?= $isBuiltin ? '<span title="Built-in starter template">⭐</span>' : '#' . (int)$tpl['id'] ?>
+                            </td>
+                            <td>
+                                <strong><?= htmlspecialchars($tpl['name'] ?? 'Unnamed') ?></strong>
+                                <?php if ($isBuiltin): ?>
+                                    <span class="badge" style="background:rgba(0,240,255,.12);color:var(--cyan);font-size:10px;margin-left:5px;">Built-in</span>
+                                <?php endif; ?>
+                            </td>
                             <td><span class="badge badge-cat"><?= htmlspecialchars($tpl['category'] ?? 'N/A') ?></span></td>
-                            <td><span class="badge badge-lang"><?= htmlspecialchars($tpl['language'] ?? 'N/A') ?></span></td>
+                            <td><span class="badge badge-lang"><?= htmlspecialchars($tpl['language'] ?? 'html') ?></span></td>
                             <td>
                                 <?php if (!empty($tpl['is_active'])): ?>
                                     <span class="badge badge-active">Active</span>
@@ -180,22 +188,26 @@ if (!empty($_SESSION['flash'])) { unset($_SESSION['flash']); }
                                 <?= !empty($tpl['created_at']) ? date('M d, Y', strtotime($tpl['created_at'])) : '—' ?>
                             </td>
                             <td style="white-space:nowrap;">
-                                <a href="/admin/projects/codexpro/templates/<?= (int)$tpl['id'] ?>/edit" class="btn-sm btn-edit">Edit</a>
+                                <?php if ($isBuiltin): ?>
+                                    <span style="color:var(--text-secondary);font-size:12px;font-style:italic;">Read-only</span>
+                                <?php else: ?>
+                                    <a href="/admin/projects/codexpro/templates/<?= (int)$tpl['id'] ?>/edit" class="btn-sm btn-edit">Edit</a>
 
-                                <form method="POST" action="/admin/projects/codexpro/templates/toggle" style="display:inline;">
-                                    <input type="hidden" name="_csrf_token" value="<?= Security::generateCsrfToken() ?>">
-                                    <input type="hidden" name="template_id" value="<?= (int)$tpl['id'] ?>">
-                                    <button type="submit" class="btn-sm btn-toggle">
-                                        <?= !empty($tpl['is_active']) ? 'Disable' : 'Enable' ?>
-                                    </button>
-                                </form>
+                                    <form method="POST" action="/admin/projects/codexpro/templates/toggle" style="display:inline;">
+                                        <input type="hidden" name="_csrf_token" value="<?= Security::generateCsrfToken() ?>">
+                                        <input type="hidden" name="template_id" value="<?= (int)$tpl['id'] ?>">
+                                        <button type="submit" class="btn-sm btn-toggle">
+                                            <?= !empty($tpl['is_active']) ? 'Disable' : 'Enable' ?>
+                                        </button>
+                                    </form>
 
-                                <form method="POST" action="/admin/projects/codexpro/templates/delete" style="display:inline;"
-                                      onsubmit="return confirm('Delete this template? This cannot be undone.')">
-                                    <input type="hidden" name="_csrf_token" value="<?= Security::generateCsrfToken() ?>">
-                                    <input type="hidden" name="template_id" value="<?= (int)$tpl['id'] ?>">
-                                    <button type="submit" class="btn-sm btn-delete">Delete</button>
-                                </form>
+                                    <form method="POST" action="/admin/projects/codexpro/templates/delete" style="display:inline;"
+                                          onsubmit="return confirm('Delete this template? This cannot be undone.')">
+                                        <input type="hidden" name="_csrf_token" value="<?= Security::generateCsrfToken() ?>">
+                                        <input type="hidden" name="template_id" value="<?= (int)$tpl['id'] ?>">
+                                        <button type="submit" class="btn-sm btn-delete">Delete</button>
+                                    </form>
+                                <?php endif; ?>
                             </td>
                         </tr>
                     <?php endforeach; ?>
