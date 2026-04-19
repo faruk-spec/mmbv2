@@ -14,11 +14,8 @@
             <?php endif; ?>
         </div>
 
-        <h1 class="auth-heading">Welcome to <?= View::e($authSiteName) ?></h1>
         <?php if ($authTagline): ?>
             <p class="auth-tagline"><?= View::e($authTagline) ?></p>
-        <?php else: ?>
-            <p class="auth-tagline">Sign in to your account</p>
         <?php endif; ?>
 
         <?php if (Helpers::hasFlash('error')): ?>

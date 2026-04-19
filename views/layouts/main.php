@@ -686,6 +686,7 @@ try {
             border: 1px solid var(--border-color);
             background: var(--bg-secondary);
             padding: 6px;
+            filter: drop-shadow(0 4px 16px rgba(255, 255, 255, 0.2));
         }
         .auth-logo-icon {
             width: 72px;
@@ -698,6 +699,13 @@ try {
             font-size: 2rem;
             color: var(--bg-primary);
             font-weight: 700;
+            filter: drop-shadow(0 4px 16px rgba(255, 255, 255, 0.2));
+        }
+        [data-theme="light"] .auth-logo-img {
+            filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.18));
+        }
+        [data-theme="light"] .auth-logo-icon {
+            filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.18));
         }
         .auth-heading {
             text-align: center;

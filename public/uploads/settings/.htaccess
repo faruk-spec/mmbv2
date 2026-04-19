@@ -1,0 +1,12 @@
+# Deny direct directory listing but allow file access
+Options -Indexes
+
+# Allow image files to be served directly
+<FilesMatch "\.(jpg|jpeg|png|gif|webp)$">
+    Require all granted
+</FilesMatch>
+
+# Deny everything else
+<FilesMatch "\.(?!(jpg|jpeg|png|gif|webp)$)">
+    Require all denied
+</FilesMatch>

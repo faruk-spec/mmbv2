@@ -24,25 +24,11 @@
                 <?= \Core\Security::csrfField() ?>
                 
                 <div class="form-group">
-                    <label class="form-label">Auth Page Logo URL</label>
-                    <input type="url" name="auth_logo" class="form-input"
-                           value="<?= View::e($settings['auth_logo'] ?? '') ?>"
-                           placeholder="https://example.com/logo.png">
-                    <small class="form-help">Displayed on the login &amp; register pages. Use an absolute URL (https://…) or a relative path from the site root.</small>
-                    <?php if (!empty($settings['auth_logo'])): ?>
-                    <div style="margin-top:8px;">
-                        <img src="<?= View::e($settings['auth_logo']) ?>" alt="Auth logo preview"
-                             style="max-height:60px;max-width:180px;object-fit:contain;border-radius:8px;border:1px solid var(--border-color);">
-                    </div>
-                    <?php endif; ?>
-                </div>
-
-                <div class="form-group">
                     <label class="form-label">Auth Page Tagline</label>
                     <input type="text" name="auth_tagline" class="form-input"
                            value="<?= View::e($settings['auth_tagline'] ?? '') ?>"
                            placeholder="Your tools, all in one place.">
-                    <small class="form-help">Short subtitle shown below the welcome heading on login &amp; register pages.</small>
+                    <small class="form-help">Short subtitle shown below the logo on login &amp; register pages.</small>
                 </div>
 
                 <div class="form-group">
@@ -164,6 +150,39 @@
     </div>
     
     <div>
+        <div class="card" style="margin-bottom: 16px;">
+            <h4 style="margin-bottom: 15px;">Auth Page Logo</h4>
+
+            <?php $currentLogo = $settings['auth_logo'] ?? ''; ?>
+            <?php if (!empty($currentLogo)): ?>
+            <div style="text-align:center;margin-bottom:14px;">
+                <img src="<?= View::e($currentLogo) ?>" alt="Current auth logo"
+                     style="max-height:80px;max-width:160px;object-fit:contain;border-radius:12px;border:1px solid var(--border-color);background:var(--bg-secondary);padding:8px;">
+            </div>
+            <form method="POST" action="/admin/settings/delete-logo" style="margin-bottom:12px;">
+                <?= \Core\Security::csrfField() ?>
+                <button type="submit" class="btn btn-danger" style="width:100%;font-size:13px;"
+                        onclick="return confirm('Remove the current logo?')">
+                    <i class="fas fa-trash-alt"></i> Remove Logo
+                </button>
+            </form>
+            <?php endif; ?>
+
+            <form method="POST" action="/admin/settings/upload-logo" enctype="multipart/form-data">
+                <?= \Core\Security::csrfField() ?>
+                <div class="form-group" style="margin-bottom:10px;">
+                    <label class="form-label" style="margin-bottom:6px;"><?= empty($currentLogo) ? 'Upload Logo' : 'Replace Logo' ?></label>
+                    <input type="file" name="auth_logo_file" class="form-input"
+                           accept=".jpg,.jpeg,.png,.gif,.webp" required
+                           style="padding:8px;font-size:13px;">
+                    <small class="form-help">JPG, PNG, GIF or WebP · Max 2 MB · Shown on login &amp; register pages.</small>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%;font-size:13px;">
+                    <i class="fas fa-upload"></i> Upload
+                </button>
+            </form>
+        </div>
+
         <div class="card">
             <h4 style="margin-bottom: 15px;">Quick Actions</h4>
             

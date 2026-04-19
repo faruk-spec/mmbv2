@@ -14,11 +14,8 @@
             <?php endif; ?>
         </div>
 
-        <h1 class="auth-heading">Create your account</h1>
         <?php if ($authTagline): ?>
             <p class="auth-tagline"><?= View::e($authTagline) ?></p>
-        <?php else: ?>
-            <p class="auth-tagline">Join <?= View::e($authSiteName) ?> today</p>
         <?php endif; ?>
 
         <?php if (Helpers::hasFlash('error')): ?>
