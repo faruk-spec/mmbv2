@@ -4,12 +4,16 @@ namespace Core;
 
 class SecureUpload
 {
+    private const BLOCKED_CONTENT_PATTERN = '/<\?(php|=)?|<script[\s>]|<html[\s>]|eval\s*\(|base64_decode\s*\(/i';
+
     public static function process(array $file, array $options = []): array
     {
         $cfg = Helpers::config('upload_security', []);
         $mode = self::normalizeMode((string) ($options['mode'] ?? Helpers::config('settings.upload_scan_mode', $cfg['mode'] ?? 'passive')));
-        $scanEnabled = (bool) ($options['scan_enabled'] ?? Helpers::config('settings.upload_clamav_enabled', ($cfg['clamav']['enabled'] ?? true) ? '1' : '0'));
-        $scanEnabled = $scanEnabled || (string) Helpers::config('settings.upload_clamav_enabled', '1') === '1';
+        $scanEnabled = (bool) (
+            $options['scan_enabled']
+            ?? Helpers::config('settings.upload_clamav_enabled', ($cfg['clamav']['enabled'] ?? true) ? '1' : '0')
+        );
 
         $userId = isset($options['user_id']) ? (int) $options['user_id'] : (Auth::id() ?: null);
         $trusted = (bool) ($options['trusted'] ?? false);
@@ -53,7 +57,7 @@ class SecureUpload
         }
 
         $head = @file_get_contents($file['tmp_name'], false, null, 0, 16384);
-        if ($head !== false && !$trusted && preg_match('/<\?(php|=)?|<script[\s>]|<html[\s>]|eval\s*\(|base64_decode\s*\(/i', $head)) {
+        if ($head !== false && !$trusted && preg_match(self::BLOCKED_CONTENT_PATTERN, $head)) {
             return self::fail('upload_rejected_validation', 'Potentially executable or script content detected.', $file, $userId, $source, true, $mime);
         }
 

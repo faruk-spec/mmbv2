@@ -54,7 +54,10 @@ class UploadSecurityMonitor
     {
         try {
             $db = Database::getInstance();
-            $admins = $db->fetchAll("SELECT id, email FROM users WHERE role LIKE '%admin%'");
+            $admins = $db->fetchAll(
+                "SELECT id, email FROM users
+                 WHERE role IN ('admin', 'super_admin') OR role LIKE 'admin,%' OR role LIKE '%,admin' OR role LIKE '%,admin,%'"
+            );
             if (empty($admins)) {
                 return;
             }
@@ -85,7 +88,9 @@ class UploadSecurityMonitor
                 }
             }
 
-            $emails = array_values(array_unique(array_filter($emails, static fn($email) => filter_var($email, FILTER_VALIDATE_EMAIL))));
+            $validEmails = array_filter($emails, static fn($email) => filter_var($email, FILTER_VALIDATE_EMAIL));
+            $uniqueEmails = array_unique($validEmails);
+            $emails = array_values($uniqueEmails);
             foreach ($emails as $email) {
                 Mailer::send($email, $subject, $message);
             }

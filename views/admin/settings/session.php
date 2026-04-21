@@ -124,7 +124,7 @@
                        class="form-input"
                        value="<?= View::e($settings['security_alert_emails'] ?? '') ?>"
                        placeholder="admin@example.com, secops@example.com">
-                <small class="form-help">Comma-separated recipients for upload/security alerts in admin panel.</small>
+                <small class="form-help">Comma-separated email addresses for upload/security alert notifications.</small>
             </div>
 
             <div class="form-group">

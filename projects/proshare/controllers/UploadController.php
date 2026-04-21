@@ -139,6 +139,7 @@ class UploadController
                 if ($compressed !== false && strlen($compressed) < strlen($original)) {
                     file_put_contents($destination, $compressed);
                     $isCompressed = true;
+                    // Persist checksum of the final stored bytes (post-compression) for stored-file integrity verification.
                     $checksum = hash_file('sha256', $destination);
                 }
             }

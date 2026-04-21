@@ -160,7 +160,7 @@ class SettingsController extends BaseController
                 'allowed_extensions' => ['jpg', 'jpeg', 'png', 'gif', 'webp'],
                 'allowed_mime_types' => ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
                 'max_size' => 2 * 1024 * 1024,
-                'trusted' => true,
+                'trusted' => false,
                 'source' => 'admin.settings.auth_logo',
                 'user_id' => Auth::id(),
             ]);
