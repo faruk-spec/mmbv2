@@ -117,9 +117,6 @@ View::extend('admin');
                         <a href="/admin/projects/convertx/roles" class="btn btn-outline-dark mr-2 mb-2">
                             <i class="fas fa-users-cog"></i> Roles / User Features
                         </a>
-                        <a href="/admin/projects/convertx/schema" class="btn btn-outline-dark mr-2 mb-2">
-                            <i class="fas fa-table"></i> SQL Schema
-                        </a>
                         <a href="/projects/convertx/dashboard" class="btn btn-outline-success mr-2 mb-2" target="_blank">
                             <i class="fas fa-external-link-alt"></i> Open ConvertX
                         </a>

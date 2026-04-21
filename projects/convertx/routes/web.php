@@ -46,9 +46,14 @@ try {
         require_once PROJECT_PATH . '/services/FeatureService.php';
         $svc = new \Projects\ConvertX\Services\FeatureService();
         if (!$svc->can($userId, $featureKey)) {
-            $_SESSION['_flash']['error'] = 'This page is currently unavailable for your account.';
-            header('Location: /projects/convertx/dashboard');
-            exit;
+            if (in_array($_SERVER['REQUEST_METHOD'], ['POST', 'PUT', 'PATCH', 'DELETE'], true)) {
+                // Block mutating actions on restricted features (security)
+                $_SESSION['_flash']['error'] = 'This feature is not available on your plan.';
+                header('Location: /projects/convertx/dashboard');
+                exit;
+            }
+            // For GET/view requests: let the page load, layout will show a gate overlay
+            $GLOBALS['cx_feature_gated'] = $featureKey;
         }
     }
 } catch (\Exception $e) {

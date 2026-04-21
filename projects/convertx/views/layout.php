@@ -44,15 +44,11 @@ $renderNavItem = static function (
     string $label,
     string $extraHtml = ''
 ) use ($cxFeatures): void {
-    $allowed = (bool) ($cxFeatures[$featureKey] ?? true);
-    if ($allowed) {
-        echo '<a href="' . htmlspecialchars($href) . '" class="' . htmlspecialchars($activeClass) . '">';
-        echo '<i class="' . htmlspecialchars($iconClass) . '"></i> ' . htmlspecialchars($label);
-        echo $extraHtml;
-        echo '</a>';
-        return;
-    }
-    echo '<span class="sidebar-nav-locked"><i class="fa-solid fa-lock"></i> ' . htmlspecialchars($label) . '</span>';
+    // Always render a normal link — locked pages show a gate overlay when visited
+    echo '<a href="' . htmlspecialchars($href) . '" class="' . htmlspecialchars($activeClass) . '">';
+    echo '<i class="' . htmlspecialchars($iconClass) . '"></i> ' . htmlspecialchars($label);
+    echo $extraHtml;
+    echo '</a>';
 };
 ?>
 <html lang="en" data-theme="<?= htmlspecialchars($defaultTheme) ?>">
@@ -364,29 +360,68 @@ $renderNavItem = static function (
             flex-shrink: 0;
             font-size: 0.875rem;
         }
-        .sidebar-nav .sidebar-nav-locked {
-            display: flex;
-            align-items: center;
-            gap: 0.625rem;
-            padding: 0.5625rem 0.625rem;
-            margin-bottom: 0.125rem;
-            border-radius: 0.5rem;
-            font-size: var(--font-sm);
-            font-weight: 500;
-            color: var(--text-secondary);
-            border: 1px dashed rgba(239,68,68,.25);
-            background: rgba(239,68,68,.05);
-            filter: blur(1.5px);
-            opacity: .75;
+
+        /* ── Feature-gate overlay (QR-style) ── */
+        .cx-feature-gate-wrap {
+            position: relative;
+        }
+        .cx-feature-gate-wrap .cx-feature-gate-blur {
+            filter: blur(6px);
+            opacity: 0.6;
             pointer-events: none;
             user-select: none;
         }
-        .sidebar-nav .sidebar-nav-locked i {
-            width: 1rem;
+        .cx-feature-gate-badge {
+            position: fixed;
+            top: 50%;
+            left: calc(50% + var(--sidebar-width) / 2);
+            transform: translate(-50%, -50%);
+            z-index: 200;
+            background: var(--bg-card);
+            border: 2px solid var(--cx-primary);
+            border-radius: 16px;
+            padding: 28px 36px;
             text-align: center;
-            flex-shrink: 0;
-            color: var(--cx-danger);
-            font-size: 0.875rem;
+            min-width: 280px;
+            max-width: 380px;
+            box-shadow: 0 8px 40px rgba(99,102,241,.4);
+            pointer-events: auto;
+        }
+        .cx-feature-gate-badge .fgb-icon {
+            font-size: 2.4rem;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, var(--cx-primary), var(--cx-accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .cx-feature-gate-badge .fgb-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+        .cx-feature-gate-badge .fgb-desc {
+            font-size: .83rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            margin-bottom: 18px;
+        }
+        .cx-feature-gate-badge .fgb-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 22px;
+            background: linear-gradient(135deg, var(--cx-primary), var(--cx-accent));
+            border-radius: 8px;
+            font-size: .85rem;
+            font-weight: 700;
+            color: #fff;
+            text-decoration: none;
+        }
+        @media (max-width: 48rem) {
+            .cx-feature-gate-badge {
+                left: 50%;
+            }
         }
 
         /* ── Main content ── */
@@ -1262,8 +1297,24 @@ include BASE_PATH . '/views/layouts/navbar.php';
 
         <?php
         $viewFile = PROJECT_PATH . '/views/' . $currentView . '.php';
+        $cxGatedFeature = $GLOBALS['cx_feature_gated'] ?? null;
         if (file_exists($viewFile)) {
-            include $viewFile;
+            if ($cxGatedFeature) {
+                // Show the page content blurred with an upgrade badge (QR-style gate)
+                echo '<div class="cx-feature-gate-wrap">';
+                echo '<div class="cx-feature-gate-blur">';
+                include $viewFile;
+                echo '</div><!-- /.cx-feature-gate-blur -->';
+                echo '<div class="cx-feature-gate-badge">';
+                echo '<div class="fgb-icon"><i class="fa-solid fa-lock"></i></div>';
+                echo '<div class="fgb-title">Premium Feature</div>';
+                echo '<div class="fgb-desc">This page is not included in your current plan. Upgrade to unlock it.</div>';
+                echo '<a href="/projects/convertx/plan" class="fgb-btn"><i class="fa-solid fa-crown"></i> View Plans &amp; Upgrade</a>';
+                echo '</div><!-- /.cx-feature-gate-badge -->';
+                echo '</div><!-- /.cx-feature-gate-wrap -->';
+            } else {
+                include $viewFile;
+            }
         } else {
             echo '<p style="color:var(--cx-danger)">View not found: ' . htmlspecialchars($currentView) . '</p>';
         }
