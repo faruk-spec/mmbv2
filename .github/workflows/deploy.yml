@@ -11,50 +11,194 @@ on:
           - Deploy Latest
           - Rollback
       version:
-        description: 'Version (leave empty for latest)'
+        description: 'Release number to roll back to (leave empty for previous)'
         required: false
 
 jobs:
+  # ──────────────────────────────────────────────────────────────────────────────
+  # DEPLOY
+  # ──────────────────────────────────────────────────────────────────────────────
   deploy:
     runs-on: ubuntu-latest
-    name: ${{ inputs.action }}
-    
+    name: Deploy Latest
+    if: inputs.action == 'Deploy Latest'
+
     steps:
       - name: Checkout Code
-        if: inputs.action == 'Deploy Latest'
-        uses: actions/checkout@v3
-        
-      - name: Deploy via SFTP
-        if: inputs.action == 'Deploy Latest'
-        uses: Dylan700/sftp-upload-action@latest
+        uses: actions/checkout@v4
+
+      # Upload only source directories — exclude screenshots, markdown docs,
+      # vendor/, .git/, SQL dumps, and other dev artefacts to keep the
+      # transfer small and the server clean.
+      - name: Upload source files via SCP
+        uses: appleboy/scp-action@v0.1.7
         with:
-          server: ${{ secrets.AAPANEL_HOST }}
+          host: ${{ secrets.AAPANEL_HOST }}
           username: ${{ secrets.AAPANEL_USER }}
           password: ${{ secrets.AAPANEL_PASSWORD }}
           port: 22
-          uploads: |
-            ./ => /www/wwwroot/${{ secrets.SITE_NAME }}/releases/${{ github.run_number }}/
-            
-      - name: Switch to New Release
-        if: inputs.action == 'Deploy Latest'
-        uses: appleboy/ssh-action@master
+          # Only ship what the application actually needs at runtime.
+          source: >-
+            assets,
+            config,
+            controllers,
+            core,
+            install,
+            migrations,
+            models,
+            projects,
+            public,
+            resources,
+            routes,
+            storage,
+            subdomain,
+            views,
+            websocket-server.php,
+            index.php,
+            .htaccess,
+            nginx.conf.example,
+            composer.json,
+            composer.lock
+          target: /www/wwwroot/${{ secrets.SITE_NAME }}/releases/${{ github.run_number }}
+          strip_components: 0
+
+      # All post-deploy steps run in a single SSH session so errors fail fast.
+      - name: Post-deploy setup (composer, shared dirs, perms, symlink, cache)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.AAPANEL_HOST }}
+          username: ${{ secrets.AAPANEL_USER }}
+          password: ${{ secrets.AAPANEL_PASSWORD }}
+          # Use a generous timeout for composer install
+          command_timeout: 10m
+          script: |
+            set -euo pipefail
+
+            RELEASE=/www/wwwroot/${{ secrets.SITE_NAME }}/releases/${{ github.run_number }}
+            SHARED=/www/wwwroot/${{ secrets.SITE_NAME }}/shared
+            CURRENT=/www/wwwroot/${{ secrets.SITE_NAME }}/current
+
+            echo "==> [1/6] Installing PHP dependencies (no-dev)"
+            cd "$RELEASE"
+            composer install --no-dev --optimize-autoloader --no-interaction --quiet
+
+            echo "==> [2/6] Creating shared directories (uploads, logs, cache survive releases)"
+            mkdir -p "$SHARED/storage/logs"
+            mkdir -p "$SHARED/storage/cache"
+            mkdir -p "$SHARED/storage/uploads"
+            mkdir -p "$SHARED/storage/idcard/logos"
+            mkdir -p "$SHARED/storage/idcard/photos"
+            mkdir -p "$SHARED/config"
+
+            echo "==> [3/6] Linking shared storage into release"
+            rm -rf \
+              "$RELEASE/storage/logs" \
+              "$RELEASE/storage/cache" \
+              "$RELEASE/storage/uploads" \
+              "$RELEASE/storage/idcard"
+            ln -sfn "$SHARED/storage/logs"    "$RELEASE/storage/logs"
+            ln -sfn "$SHARED/storage/cache"   "$RELEASE/storage/cache"
+            ln -sfn "$SHARED/storage/uploads" "$RELEASE/storage/uploads"
+            ln -sfn "$SHARED/storage/idcard"  "$RELEASE/storage/idcard"
+
+            echo "==> [4/6] Preserving production config files"
+            # These files hold production DB credentials and must never be
+            # overwritten by a deploy. Copy from the shared area if they exist.
+            for cfg in database.php mail.php; do
+              if [ -f "$SHARED/config/$cfg" ]; then
+                cp "$SHARED/config/$cfg" "$RELEASE/config/$cfg"
+                echo "    Copied shared config: $cfg"
+              else
+                echo "    WARNING: $SHARED/config/$cfg not found — release will use repo default."
+              fi
+            done
+
+            echo "==> [5/6] Setting file permissions"
+            # Storage must be writable by the web-server process.
+            find "$RELEASE/storage" -type d -exec chmod 775 {} \;
+            find "$RELEASE/storage" -type f -exec chmod 664 {} \;
+            # Try common web-server user names (aaPanel uses 'www').
+            chown -R www:www "$RELEASE" 2>/dev/null \
+              || chown -R www-data:www-data "$RELEASE" 2>/dev/null \
+              || echo "    chown skipped — run manually if needed"
+
+            echo "==> [6/6] Switching current symlink to release ${{ github.run_number }}"
+            ln -sfn "$RELEASE" "$CURRENT"
+
+            echo "==> Clearing OPcache"
+            php -r "if (function_exists('opcache_reset')) { opcache_reset(); echo 'OPcache cleared'; } else { echo 'OPcache not available'; }"
+
+            echo "==> Reloading PHP-FPM"
+            (systemctl reload php-fpm      2>/dev/null && echo "Reloaded php-fpm")      \
+            || (systemctl reload php8.3-fpm 2>/dev/null && echo "Reloaded php8.3-fpm")  \
+            || (systemctl reload php8.2-fpm 2>/dev/null && echo "Reloaded php8.2-fpm")  \
+            || (systemctl reload php8.1-fpm 2>/dev/null && echo "Reloaded php8.1-fpm")  \
+            || echo "WARNING: PHP-FPM reload skipped — check manually"
+
+            echo "==> Pruning old releases (keeping last 5)"
+            cd /www/wwwroot/${{ secrets.SITE_NAME }}/releases \
+              && ls -t | tail -n +6 | xargs -I{} rm -rf {} \
+              || true
+
+            echo "✅ Release ${{ github.run_number }} is now live."
+
+      - name: Health check
+        run: |
+          SITE_URL="https://${{ secrets.SITE_NAME }}"
+          echo "Checking $SITE_URL ..."
+          STATUS=$(curl -o /dev/null -s -w "%{http_code}" --max-time 15 "$SITE_URL" || echo "000")
+          if [ "$STATUS" = "200" ] || [ "$STATUS" = "302" ] || [ "$STATUS" = "301" ]; then
+            echo "✅ Site responded with HTTP $STATUS"
+          else
+            echo "⚠️  Unexpected HTTP status: $STATUS — verify the site manually."
+            # Do not hard-fail: the server may not be directly reachable from GitHub runners.
+          fi
+
+  # ──────────────────────────────────────────────────────────────────────────────
+  # ROLLBACK
+  # ──────────────────────────────────────────────────────────────────────────────
+  rollback:
+    runs-on: ubuntu-latest
+    name: Rollback
+    if: inputs.action == 'Rollback'
+
+    steps:
+      - name: Rollback to specified or previous release
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.AAPANEL_HOST }}
           username: ${{ secrets.AAPANEL_USER }}
           password: ${{ secrets.AAPANEL_PASSWORD }}
           script: |
-            ln -sfn /www/wwwroot/${{ secrets.SITE_NAME }}/releases/${{ github.run_number }} /www/wwwroot/${{ secrets.SITE_NAME }}/current
-            echo "Deployed release ${{ github.run_number }}"
-            
-      - name: Rollback
-        if: inputs.action == 'Rollback'
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.AAPANEL_HOST }}
-          username: ${{ secrets.AAPANEL_USER }}
-          password: ${{ secrets.AAPANEL_PASSWORD }}
-          script: |
-            cd /www/wwwroot/${{ secrets.SITE_NAME }}/releases
-            PREVIOUS=$(ls -t | head -n 2 | tail -n 1)
-            ln -sfn /www/wwwroot/${{ secrets.SITE_NAME }}/releases/$PREVIOUS /www/wwwroot/${{ secrets.SITE_NAME }}/current
-            echo "Rolled back to release $PREVIOUS"
+            set -euo pipefail
+
+            APP=/www/wwwroot/${{ secrets.SITE_NAME }}
+
+            if [ -n "${{ inputs.version }}" ]; then
+              TARGET="$APP/releases/${{ inputs.version }}"
+              if [ ! -d "$TARGET" ]; then
+                echo "❌ Release ${{ inputs.version }} not found in $APP/releases"
+                ls "$APP/releases"
+                exit 1
+              fi
+              echo "Rolling back to specified release: ${{ inputs.version }}"
+            else
+              # Find the second-most-recent release (most recent is current)
+              TARGET=$(ls -td "$APP/releases"/*/ 2>/dev/null | sed -n '2p')
+              TARGET="${TARGET%/}"
+              if [ -z "$TARGET" ]; then
+                echo "❌ No previous release found to roll back to."
+                exit 1
+              fi
+              echo "Rolling back to previous release: $(basename "$TARGET")"
+            fi
+
+            ln -sfn "$TARGET" "$APP/current"
+
+            (systemctl reload php-fpm      2>/dev/null) \
+            || (systemctl reload php8.3-fpm 2>/dev/null) \
+            || (systemctl reload php8.2-fpm 2>/dev/null) \
+            || (systemctl reload php8.1-fpm 2>/dev/null) \
+            || echo "WARNING: PHP-FPM reload skipped"
+
+            echo "✅ Rolled back to: $(basename "$TARGET")"
