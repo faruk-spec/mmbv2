@@ -44,9 +44,13 @@ $renderNavItem = static function (
     string $label,
     string $extraHtml = ''
 ) use ($cxFeatures): void {
+    $isLocked = isset($cxFeatures[$featureKey]) && $cxFeatures[$featureKey] === false;
     // Always render a normal link — locked pages show a gate overlay when visited
     echo '<a href="' . htmlspecialchars($href) . '" class="' . htmlspecialchars($activeClass) . '">';
     echo '<i class="' . htmlspecialchars($iconClass) . '"></i> ' . htmlspecialchars($label);
+    if ($isLocked) {
+        echo '<i class="fa-solid fa-crown cx-nav-premium-icon" title="Premium feature"></i>';
+    }
     echo $extraHtml;
     echo '</a>';
 };
@@ -359,6 +363,15 @@ $renderNavItem = static function (
             text-align: center;
             flex-shrink: 0;
             font-size: 0.875rem;
+        }
+
+        .cx-nav-premium-icon {
+            width: auto !important;
+            font-size: 0.6rem !important;
+            color: #f59e0b;
+            margin-left: auto;
+            opacity: 0.9;
+            flex-shrink: 0;
         }
 
         /* ── Feature-gate overlay (QR-style) ── */
