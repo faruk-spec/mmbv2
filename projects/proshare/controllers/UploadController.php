@@ -13,6 +13,7 @@ use Core\Auth;
 use Core\Security;
 use Core\Helpers;
 use Core\ActivityLogger;
+use Core\SecureUpload;
 
 class UploadController
 {
@@ -107,28 +108,28 @@ class UploadController
             
             // Generate unique short code
             $shortCode = $this->generateShortCode();
-            $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
-            $storedFilename = $shortCode . '_' . time() . '.' . strtolower($ext);
-            
-            // Create upload directory
             $uploadDir = BASE_PATH . '/storage/uploads/proshare/' . date('Y/m');
-            if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0755, true);
+            $secureUpload = SecureUpload::process($file, [
+                'destination_dir' => $uploadDir,
+                'allowed_mime_types' => self::ALLOWED_TYPES,
+                'max_size' => $maxFileSize,
+                'filename_prefix' => $shortCode . '_' . time(),
+                'source' => 'proshare.public_upload',
+                'user_id' => $userId,
+            ]);
+            if (empty($secureUpload['success'])) {
+                echo json_encode(['success' => false, 'error' => $secureUpload['error'] ?? 'File rejected by security checks']);
+                return;
             }
-            
-            $destination = $uploadDir . '/' . $storedFilename;
+            $storedFilename = $secureUpload['filename'];
+            $destination = $secureUpload['path'];
             
             // Optional compression - accept both 'compression' and 'enable_compression'
             $enableCompression = !empty($_POST['enable_compression']) || !empty($_POST['compression']);
             $isCompressed = false;
             
-            // Calculate checksum for integrity (before possible compression)
-            $checksum = hash_file('sha256', $file['tmp_name']);
-            
-            if (!move_uploaded_file($file['tmp_name'], $destination)) {
-                echo json_encode(['success' => false, 'error' => 'Failed to save file']);
-                return;
-            }
+            // Calculate checksum for integrity after secure move
+            $checksum = hash_file('sha256', $destination);
             
             // Apply gzip compression after saving (skip for already-compressed types)
             $skipCompressionTypes = ['image/jpeg','image/png','image/gif','image/webp','video/mp4','video/webm','audio/mpeg','audio/ogg','application/zip','application/x-rar-compressed','application/gzip'];
@@ -138,6 +139,7 @@ class UploadController
                 if ($compressed !== false && strlen($compressed) < strlen($original)) {
                     file_put_contents($destination, $compressed);
                     $isCompressed = true;
+                    $checksum = hash_file('sha256', $destination);
                 }
             }
             

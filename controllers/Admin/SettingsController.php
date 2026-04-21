@@ -13,6 +13,7 @@ use Core\Security;
 use Core\Auth;
 use Core\Logger;
 use Core\ActivityLogger;
+use Core\SecureUpload;
 
 class SettingsController extends BaseController
 {
@@ -154,45 +155,23 @@ class SettingsController extends BaseController
             }
 
             $file = $_FILES['auth_logo_file'];
+            $result = SecureUpload::process($file, [
+                'destination_dir' => BASE_PATH . '/storage/uploads/oauth',
+                'allowed_extensions' => ['jpg', 'jpeg', 'png', 'gif', 'webp'],
+                'allowed_mime_types' => ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+                'max_size' => 2 * 1024 * 1024,
+                'trusted' => true,
+                'source' => 'admin.settings.auth_logo',
+                'user_id' => Auth::id(),
+            ]);
 
-            // Enforce 2 MB size limit
-            $maxBytes = 2 * 1024 * 1024;
-            if ($file['size'] > $maxBytes) {
-                $this->flash('error', 'File is too large. Maximum allowed size is 2 MB.');
+            if (empty($result['success'])) {
+                $this->flash('error', $result['error'] ?? 'Failed to upload logo.');
                 $this->redirect('/admin/settings');
                 return;
             }
 
-            $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-            $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-
-            if (!in_array($ext, $allowed)) {
-                $this->flash('error', 'Invalid file type. Allowed: JPG, PNG, GIF, WebP.');
-                $this->redirect('/admin/settings');
-                return;
-            }
-
-            // Validate it is actually an image
-            if (!@getimagesize($file['tmp_name'])) {
-                $this->flash('error', 'Uploaded file is not a valid image.');
-                $this->redirect('/admin/settings');
-                return;
-            }
-
-            $uploadDir = BASE_PATH . '/storage/uploads/oauth';
-            if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0755, true);
-            }
-
-            $filename = 'auth-logo-' . uniqid() . '.' . $ext;
-            $destPath = $uploadDir . '/' . $filename;
-
-            if (!move_uploaded_file($file['tmp_name'], $destPath)) {
-                $this->flash('error', 'Failed to save uploaded file.');
-                $this->redirect('/admin/settings');
-                return;
-            }
-
+            $filename = $result['filename'];
             $webPath = '/uploads/oauth/' . $filename;
 
             $db = Database::getInstance();
@@ -586,6 +565,11 @@ class SettingsController extends BaseController
                 'password_min_length' => $this->input('password_min_length', '8'),
                 'require_email_verification' => $this->input('require_email_verification') === '1' ? '1' : '0',
                 'force_password_change' => $this->input('force_password_change') === '1' ? '1' : '0',
+                'security_alert_emails' => trim((string) $this->input('security_alert_emails', '')),
+                'upload_scan_mode' => in_array($this->input('upload_scan_mode', 'passive'), ['passive', 'enforce'], true)
+                    ? $this->input('upload_scan_mode', 'passive')
+                    : 'passive',
+                'upload_clamav_enabled' => $this->input('upload_clamav_enabled') === '1' ? '1' : '0',
             ];
             
             foreach ($settingsToUpdate as $key => $value) {

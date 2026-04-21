@@ -66,6 +66,17 @@
                 <div class="stat-trend">Authenticated users</div>
             </div>
         </div>
+
+        <div class="stat-card gradient-red">
+            <div class="stat-icon">
+                <i class="fa fa-bug"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Upload Incidents (Today)</div>
+                <div class="stat-value" id="uploadIncidentsToday"><?= (int)($stats['upload_incidents_today'] ?? 0) ?></div>
+                <div class="stat-trend">Validation/AV rejections</div>
+            </div>
+        </div>
     </div>
     
     <!-- Dashboard Grid -->
@@ -178,6 +189,42 @@
             <div class="empty-state">
                 <i class="fa fa-check-circle"></i>
                 <p>No failed login attempts</p>
+            </div>
+            <?php endif; ?>
+        </div>
+
+        <div class="chart-card full-width">
+            <div class="chart-header">
+                <h3>Recent Upload Security Incidents</h3>
+            </div>
+            <?php if (!empty($recentUploadIncidents)): ?>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>User</th>
+                            <th>IP Address</th>
+                            <th>Action</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($recentUploadIncidents as $incident): ?>
+                        <tr>
+                            <td><?= Helpers::timeAgo($incident['created_at']) ?></td>
+                            <td><?= htmlspecialchars($incident['user_name'] ?: 'System') ?></td>
+                            <td><?= htmlspecialchars($incident['ip_address'] ?? '-') ?></td>
+                            <td><?= htmlspecialchars($incident['action']) ?></td>
+                            <td><?= htmlspecialchars($incident['readable_message'] ?? '') ?></td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+            <?php else: ?>
+            <div class="empty-state">
+                <p>No upload security incidents recorded.</p>
             </div>
             <?php endif; ?>
         </div>
@@ -723,6 +770,10 @@ function startAutoRefresh() {
                     document.getElementById('blockedIps').textContent = data.stats.blocked_ips;
                     document.getElementById('failedLoginsToday').textContent = data.stats.failed_logins_today;
                     document.getElementById('activeSessions').textContent = data.stats.active_sessions;
+                    const uploadIncidentsEl = document.getElementById('uploadIncidentsToday');
+                    if (uploadIncidentsEl) {
+                        uploadIncidentsEl.textContent = data.stats.upload_incidents_today ?? 0;
+                    }
                     // Update suspicious IPs if available
                 }
             } catch (error) {

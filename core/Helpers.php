@@ -217,33 +217,14 @@ class Helpers
      */
     public static function uploadFile(array $file, string $destination, array $allowed = []): string|false
     {
-        if ($file['error'] !== UPLOAD_ERR_OK) {
-            return false;
-        }
-        
-        // Check file type
-        if (!empty($allowed)) {
-            $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-            if (!in_array($ext, $allowed)) {
-                return false;
-            }
-        }
-        
-        // Generate unique filename
-        $filename = uniqid() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '', $file['name']);
-        $path = rtrim($destination, '/') . '/' . $filename;
-        
-        // Create directory if needed
-        $dir = dirname($path);
-        if (!is_dir($dir)) {
-            mkdir($dir, 0755, true);
-        }
-        
-        if (move_uploaded_file($file['tmp_name'], $path)) {
-            return $filename;
-        }
-        
-        return false;
+        $result = SecureUpload::process($file, [
+            'destination_dir' => $destination,
+            'allowed_extensions' => $allowed,
+            'source' => 'helpers.uploadFile',
+            'trusted' => false,
+        ]);
+
+        return !empty($result['success']) ? ($result['filename'] ?? false) : false;
     }
     
     /**

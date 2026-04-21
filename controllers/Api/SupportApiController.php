@@ -35,6 +35,7 @@ use Controllers\BaseController;
 use Core\Auth;
 use Core\Helpers;
 use Core\TemplateValidator;
+use Core\SecureUpload;
 use Models\SupportModel;
 use Models\SupportTemplateModel;
 use Core\Notification;
@@ -437,23 +438,27 @@ class SupportApiController extends BaseController
                 $f = $_FILES[$fieldName];
                 if ((int) ($f['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) continue;
 
-                $ext       = strtolower(pathinfo($f['name'], PATHINFO_EXTENSION));
-                $allowed   = ['pdf','png','jpg','jpeg','gif','webp','mp4','txt','zip','doc','docx','xlsx','csv'];
-                if (!in_array($ext, $allowed, true)) continue;
-
                 $dir = BASE_PATH . '/storage/uploads/support/tickets/' . $ticketId . '/' . preg_replace('/[^a-z0-9_-]/', '', $fieldName);
                 if (!is_dir($dir)) {
                     @mkdir($dir, 0755, true);
                 }
-                try {
-                    $safeName = 'att_' . bin2hex(random_bytes(12)) . '.' . $ext;
-                } catch (\Throwable $e) {
-                    continue;
-                }
-                $target = $dir . '/' . $safeName;
-                if (!@move_uploaded_file($f['tmp_name'], $target)) continue;
+                $result = SecureUpload::process($f, [
+                    'destination_dir' => $dir,
+                    'allowed_extensions' => ['pdf','png','jpg','jpeg','gif','webp','mp4','txt','zip','doc','docx','xlsx','csv'],
+                    'allowed_mime_types' => [
+                        'application/pdf', 'image/png', 'image/jpeg', 'image/gif', 'image/webp', 'video/mp4',
+                        'text/plain', 'application/zip', 'application/x-zip-compressed', 'application/msword',
+                        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'text/csv',
+                    ],
+                    'max_size' => 20 * 1024 * 1024,
+                    'source' => 'support.api.dynamic_attachment',
+                    'user_id' => Auth::id(),
+                ]);
+                if (empty($result['success'])) continue;
 
-                $mime     = mime_content_type($target) ?: ($f['type'] ?? 'application/octet-stream');
+                $safeName = $result['filename'];
+                $mime     = $result['mime_type'] ?? ($f['type'] ?? 'application/octet-stream');
                 $relPath  = 'support/tickets/' . $ticketId . '/' . preg_replace('/[^a-z0-9_-]/', '', $fieldName) . '/' . $safeName;
 
                 $attId = $this->model->saveAttachment($ticketId, $fieldName, basename($f['name']), $relPath, $mime, (int) $f['size']);

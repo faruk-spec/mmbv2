@@ -212,6 +212,8 @@ $router->get('/support-attachments/{file}', function($file) {
     }
     $mime = mime_content_type($real) ?: 'application/octet-stream';
     header('Content-Type: ' . $mime);
+    header('X-Content-Type-Options: nosniff');
+    header("Content-Security-Policy: default-src 'none'; sandbox");
     header('Content-Length: ' . filesize($real));
     header('Content-Disposition: inline; filename="' . basename($real) . '"');
     readfile($real);
@@ -262,10 +264,10 @@ $router->get('/uploads/{path:wildcard}', function($path) {
     ];
     
     header('Content-Type: ' . ($mimeTypes[$ext] ?? 'application/octet-stream'));
+    header('X-Content-Type-Options: nosniff');
     // Restrict SVG execution context for security
     if ($ext === 'svg') {
         header('Content-Security-Policy: default-src \'none\'');
-        header('X-Content-Type-Options: nosniff');
     }
     header('Content-Length: ' . filesize($filePath));
     header('Cache-Control: public, max-age=31536000');

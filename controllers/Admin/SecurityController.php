@@ -39,6 +39,9 @@ class SecurityController extends BaseController
                 "SELECT COUNT(*) as count FROM failed_logins WHERE attempted_at >= DATE_SUB(NOW(), INTERVAL 1 HOUR)"
             )['count'] ?? 0,
             'active_sessions' => $db->fetch("SELECT COUNT(*) as count FROM user_remember_tokens WHERE expires_at > NOW()")['count'] ?? 0,
+            'upload_incidents_today' => $db->fetch(
+                "SELECT COUNT(*) as count FROM activity_logs WHERE module = 'upload_security' AND status = 'failure' AND DATE(created_at) = CURDATE()"
+            )['count'] ?? 0,
             'suspicious_ips' => 0 // Will be calculated below
         ];
         
@@ -85,6 +88,14 @@ class SecurityController extends BaseController
              GROUP BY reason 
              ORDER BY count DESC"
         );
+
+        $recentUploadIncidents = $db->fetchAll(
+            "SELECT created_at, user_name, ip_address, action, readable_message
+             FROM activity_logs
+             WHERE module = 'upload_security' AND status = 'failure'
+             ORDER BY created_at DESC
+             LIMIT 20"
+        );
         
         $this->view('admin/security/index', [
             'title' => 'Security Center',
@@ -93,7 +104,8 @@ class SecurityController extends BaseController
             'suspiciousIps' => $suspiciousIps,
             'failedLoginTrend' => $failedLoginTrend,
             'topTargetedUsers' => $topTargetedUsers,
-            'blockedByReason' => $blockedByReason
+            'blockedByReason' => $blockedByReason,
+            'recentUploadIncidents' => $recentUploadIncidents,
         ]);
     }
     
@@ -318,6 +330,9 @@ class SecurityController extends BaseController
                     "SELECT COUNT(*) as count FROM failed_logins WHERE attempted_at >= DATE_SUB(NOW(), INTERVAL 1 HOUR)"
                 )['count'] ?? 0,
                 'active_sessions' => $db->fetch("SELECT COUNT(*) as count FROM user_remember_tokens WHERE expires_at > NOW()")['count'] ?? 0,
+                'upload_incidents_today' => $db->fetch(
+                    "SELECT COUNT(*) as count FROM activity_logs WHERE module = 'upload_security' AND status = 'failure' AND DATE(created_at) = CURDATE()"
+                )['count'] ?? 0,
                 'timestamp' => date('Y-m-d H:i:s')
             ];
             
