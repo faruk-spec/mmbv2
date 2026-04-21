@@ -14,6 +14,7 @@ use Core\Auth;
 use Core\Security;
 use Core\Logger;
 use Core\ActivityLogger;
+use Core\SecureUpload;
 use Projects\ConvertX\Models\ConversionJobModel;
 use Projects\ConvertX\Services\ConversionService;
 use Projects\ConvertX\Services\JobQueueService;
@@ -137,13 +138,19 @@ class BatchController
                 continue;
             }
 
-            $storedName = uniqid('cx_', true) . '.' . $ext;
-            $storedPath = $uploadDir . '/' . $storedName;
-
-            if (!move_uploaded_file($file['tmp_name'], $storedPath)) {
-                $errors[] = $file['name'] . ': could not save file';
+            $secureResult = SecureUpload::process($file, [
+                'destination_dir'    => $uploadDir,
+                'allowed_extensions' => self::ALLOWED_EXTENSIONS,
+                'max_size'           => $maxBytes,
+                'filename_prefix'    => 'cx',
+                'source'             => 'convertx.batch',
+                'user_id'            => $userId,
+            ]);
+            if (empty($secureResult['success'])) {
+                $errors[] = $file['name'] . ': ' . ($secureResult['error'] ?? 'File rejected by security checks.');
                 continue;
             }
+            $storedPath = $secureResult['path'];
 
             $inputFormat = $this->conversionService->detectFormat($storedPath, $file['name']);
 

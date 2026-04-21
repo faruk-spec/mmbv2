@@ -589,7 +589,18 @@ function toggleAiOptions() {
         var fd = new FormData(form);
         try {
             var res  = await fetch('/projects/convertx/convert', { method: 'POST', body: fd, headers: {'Accept': 'application/json'} });
-            var data = await res.json();
+            var data;
+            try {
+                data = await res.json();
+            } catch (parseErr) {
+                // Response was not valid JSON — most likely PHP timed out during ClamAV scan,
+                // or the server returned an HTML error page.
+                hideConvertingOverlay();
+                alert('⚠️ Security scan is taking longer than expected. Your file is being scanned for viruses — this can take up to 90 seconds. Please try again in a moment.');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fa-solid fa-arrow-right-arrow-left"></i> Start Conversion';
+                return;
+            }
             if (data.success) {
                 hideConvertingOverlay();
                 statusDiv.style.display = 'block';
@@ -597,13 +608,19 @@ function toggleAiOptions() {
                 pollJobStatus(data.job_id);
             } else {
                 hideConvertingOverlay();
-                alert('Error: ' + (data.error || 'Unknown error'));
+                // Show a friendly message for security-rejected files
+                var errorMsg = data.error || 'Unknown error';
+                if (res.status === 422 || errorMsg.toLowerCase().includes('infected') || errorMsg.toLowerCase().includes('virus') || errorMsg.toLowerCase().includes('malware') || errorMsg.toLowerCase().includes('blocked') || errorMsg.toLowerCase().includes('rejected')) {
+                    alert('🚫 Security Alert: ' + errorMsg + '\n\nYour file was blocked because it may contain a virus or malicious content. If you believe this is a mistake, please contact support.');
+                } else {
+                    alert('Error: ' + errorMsg);
+                }
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = '<i class="fa-solid fa-arrow-right-arrow-left"></i> Start Conversion';
             }
         } catch (err) {
             hideConvertingOverlay();
-            alert('Network error: ' + err.message);
+            alert('⚠️ ' + (err.message || 'Network error — please check your connection and try again.'));
             submitBtn.disabled = false;
             submitBtn.innerHTML = '<i class="fa-solid fa-arrow-right-arrow-left"></i> Start Conversion';
         }

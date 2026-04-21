@@ -20,6 +20,7 @@ namespace Projects\ResumeX\Models;
 
 use Core\Database;
 use Core\Logger;
+use Core\SecureUpload;
 
 class TemplateModel
 {
@@ -513,35 +514,21 @@ class TemplateModel
     public function uploadPreviewImage(int $templateId, array $file): array
     {
         $previewDir = BASE_PATH . '/storage/uploads/resumex/previews';
-        if (!is_dir($previewDir)) {
-            mkdir($previewDir, 0775, true);
+
+        $secureResult = SecureUpload::process($file, [
+            'destination_dir'    => $previewDir,
+            'allowed_extensions' => ['jpg', 'jpeg', 'png', 'gif', 'webp'],
+            'allowed_mime_types' => ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+            'max_size'           => 2 * 1024 * 1024,
+            'filename_prefix'    => "preview_{$templateId}",
+            'source'             => 'resumex.preview_image',
+        ]);
+
+        if (empty($secureResult['success'])) {
+            return ['success' => false, 'error' => $secureResult['error'] ?? 'Preview image rejected by security checks.'];
         }
 
-        if (!isset($file['tmp_name']) || $file['error'] !== UPLOAD_ERR_OK) {
-            return ['success' => false, 'error' => 'Upload error (code ' . ($file['error'] ?? '?') . ').'];
-        }
-        if ($file['size'] > 2 * 1024 * 1024) {
-            return ['success' => false, 'error' => 'Preview image must be smaller than 2 MB.'];
-        }
-
-        $allowed = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/gif' => 'gif', 'image/webp' => 'webp'];
-        $finfo   = finfo_open(FILEINFO_MIME_TYPE);
-        $mime    = finfo_file($finfo, $file['tmp_name']);
-        finfo_close($finfo);
-
-        if (!array_key_exists($mime, $allowed)) {
-            return ['success' => false, 'error' => 'Only JPEG, PNG, GIF, and WebP images are accepted.'];
-        }
-
-        $ext      = $allowed[$mime];
-        $fileName = "preview_{$templateId}_" . time() . ".{$ext}";
-        $dest     = $previewDir . '/' . $fileName;
-
-        if (!$this->moveFile($file['tmp_name'], $dest)) {
-            return ['success' => false, 'error' => 'Could not save the preview image.'];
-        }
-
-        $url = '/storage/uploads/resumex/previews/' . $fileName;
+        $url = '/storage/uploads/resumex/previews/' . $secureResult['filename'];
 
         try {
             $this->db->query(

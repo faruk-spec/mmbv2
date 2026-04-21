@@ -381,8 +381,10 @@ class SecurityController extends BaseController
         if (!$isAllowed) {
             $clamavCommand = 'clamscan --no-summary --stdout';
         }
-        // Allow only safe flag characters after the binary: letters, digits, hyphens, spaces, underscores
-        if (preg_match('/[^a-zA-Z0-9 \/_\-.]/', $clamavCommand)) {
+        // Allow only safe flag characters: letters, digits, hyphens, spaces, underscores, dots
+        // Forward slashes are allowed only in the initial binary path portion (already validated above)
+        $flagsPart = substr($clamavCommand, strlen(explode(' ', $clamavCommand, 2)[0]));
+        if (preg_match('/[^a-zA-Z0-9 _\-.]/', $flagsPart)) {
             $clamavCommand = 'clamscan --no-summary --stdout';
         }
 
