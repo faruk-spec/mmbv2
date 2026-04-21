@@ -18,6 +18,7 @@ use Core\Database;
 use Core\Security;
 use Core\Logger;
 use Core\ActivityLogger;
+use Core\SecureUpload;
 use Projects\ConvertX\Services\PdfToolsService;
 
 class PdfToolsController
@@ -221,12 +222,20 @@ class PdfToolsController
                 $errors[] = $f['name'] . ': only PDF files are supported';
                 continue;
             }
-            $dest = $tmpDir . '/' . uniqid('merge_', true) . '.pdf';
-            if (!move_uploaded_file($f['tmp_name'], $dest)) {
-                $errors[] = $f['name'] . ': could not save file';
+            $secureResult = SecureUpload::process($f, [
+                'destination_dir'    => $tmpDir,
+                'allowed_extensions' => ['pdf'],
+                'allowed_mime_types' => ['application/pdf'],
+                'max_size'           => self::MAX_PDF_SIZE_BYTES,
+                'filename_prefix'    => 'merge',
+                'source'             => 'convertx.pdf_merge',
+                'user_id'            => $userId,
+            ]);
+            if (empty($secureResult['success'])) {
+                $errors[] = $f['name'] . ': ' . ($secureResult['error'] ?? 'security check failed');
                 continue;
             }
-            $savedPaths[] = $dest;
+            $savedPaths[] = $secureResult['path'];
         }
 
         if (count($savedPaths) < 2) {
@@ -303,15 +312,21 @@ class PdfToolsController
         }
 
         $tmpDir = BASE_PATH . '/storage/uploads/convertx/' . $userId . '/pdftools';
-        if (!is_dir($tmpDir)) {
-            mkdir($tmpDir, 0755, true);
-        }
 
-        $srcPath = $tmpDir . '/' . uniqid('split_src_', true) . '.pdf';
-        if (!move_uploaded_file($file['tmp_name'], $srcPath)) {
-            $this->jsonError('Could not save uploaded file', 500);
+        $secureResult = SecureUpload::process($file, [
+            'destination_dir'    => $tmpDir,
+            'allowed_extensions' => ['pdf'],
+            'allowed_mime_types' => ['application/pdf'],
+            'max_size'           => self::MAX_PDF_SIZE_BYTES,
+            'filename_prefix'    => 'split_src',
+            'source'             => 'convertx.pdf_split',
+            'user_id'            => $userId,
+        ]);
+        if (empty($secureResult['success'])) {
+            $this->jsonError($secureResult['error'] ?? 'File rejected by security checks.', 422);
             return;
         }
+        $srcPath = $secureResult['path'];
 
         // Parse optional page range (e.g. "1,3-5,7")
         $pageRange = $this->parsePageRange($_POST['page_range'] ?? '');
@@ -422,17 +437,22 @@ class PdfToolsController
         }
 
         $tmpDir = BASE_PATH . '/storage/uploads/convertx/' . $userId . '/pdftools';
-        if (!is_dir($tmpDir)) {
-            mkdir($tmpDir, 0755, true);
-        }
 
-        $srcPath = $tmpDir . '/' . uniqid('compress_src_', true) . '.pdf';
-        if (!move_uploaded_file($file['tmp_name'], $srcPath)) {
-            $this->jsonError('Could not save uploaded file', 500);
+        $secureResult = SecureUpload::process($file, [
+            'destination_dir'    => $tmpDir,
+            'allowed_extensions' => ['pdf'],
+            'allowed_mime_types' => ['application/pdf'],
+            'max_size'           => self::MAX_PDF_SIZE_BYTES,
+            'filename_prefix'    => 'compress_src',
+            'source'             => 'convertx.pdf_compress',
+            'user_id'            => $userId,
+        ]);
+        if (empty($secureResult['success'])) {
+            $this->jsonError($secureResult['error'] ?? 'File rejected by security checks.', 422);
             return;
         }
-
-        $origSize   = filesize($srcPath);
+        $srcPath  = $secureResult['path'];
+        $origSize = filesize($srcPath);
         $outputPath = $tmpDir . '/' . uniqid('compressed_', true) . '.pdf';
 
         try {
@@ -540,11 +560,19 @@ class PdfToolsController
                 continue;
             }
 
-            $srcPath = $tmpDir . '/' . uniqid('img_src_', true) . '.' . $ext;
-            if (!move_uploaded_file($f['tmp_name'], $srcPath)) {
-                $errors[] = $f['name'] . ': could not save file';
+            $secureResult = SecureUpload::process($f, [
+                'destination_dir'    => $tmpDir,
+                'allowed_extensions' => $imageExts,
+                'max_size'           => $limits['max_size_bytes'],
+                'filename_prefix'    => 'img_src',
+                'source'             => 'convertx.img_compress',
+                'user_id'            => $userId,
+            ]);
+            if (empty($secureResult['success'])) {
+                $errors[] = $f['name'] . ': ' . ($secureResult['error'] ?? 'security check failed');
                 continue;
             }
+            $srcPath = $secureResult['path'];
 
             $outExt  = $outputFmt ?: $ext;
             $outExt  = ($outExt === 'jpeg') ? 'jpg' : $outExt;
@@ -742,11 +770,19 @@ class PdfToolsController
                 continue;
             }
 
-            $srcPath = $tmpDir . '/' . uniqid('resize_src_', true) . '.' . $ext;
-            if (!move_uploaded_file($f['tmp_name'], $srcPath)) {
-                $errors[] = $f['name'] . ': could not save file';
+            $secureResult = SecureUpload::process($f, [
+                'destination_dir'    => $tmpDir,
+                'allowed_extensions' => $limits['allowed_exts'],
+                'max_size'           => $limits['max_size_bytes'],
+                'filename_prefix'    => 'resize_src',
+                'source'             => 'convertx.img_resize',
+                'user_id'            => $userId,
+            ]);
+            if (empty($secureResult['success'])) {
+                $errors[] = $f['name'] . ': ' . ($secureResult['error'] ?? 'security check failed');
                 continue;
             }
+            $srcPath = $secureResult['path'];
 
             $outExt   = $outputFmt ?: $ext;
             $outExt   = ($outExt === 'jpeg') ? 'jpg' : $outExt;
@@ -917,11 +953,19 @@ class PdfToolsController
                 continue;
             }
 
-            $srcPath = $tmpDir . '/' . uniqid('crop_src_', true) . '.' . $ext;
-            if (!move_uploaded_file($f['tmp_name'], $srcPath)) {
-                $errors[] = $f['name'] . ': could not save file';
+            $secureResult = SecureUpload::process($f, [
+                'destination_dir'    => $tmpDir,
+                'allowed_extensions' => $limits['allowed_exts'],
+                'max_size'           => $limits['max_size_bytes'],
+                'filename_prefix'    => 'crop_src',
+                'source'             => 'convertx.img_crop',
+                'user_id'            => $userId,
+            ]);
+            if (empty($secureResult['success'])) {
+                $errors[] = $f['name'] . ': ' . ($secureResult['error'] ?? 'security check failed');
                 continue;
             }
+            $srcPath = $secureResult['path'];
 
             $outExt  = ($ext === 'jpeg') ? 'jpg' : $ext;
             $outName = pathinfo($f['name'], PATHINFO_FILENAME) . '_cropped.' . $outExt;
@@ -1060,8 +1104,17 @@ class PdfToolsController
         if ($wmFile && $wmFile['error'] === UPLOAD_ERR_OK) {
             $wmExt = strtolower(pathinfo($wmFile['name'], PATHINFO_EXTENSION));
             if (in_array($wmExt, ['jpg', 'jpeg', 'png', 'gif', 'webp'], true)) {
-                $wmImagePath = $tmpDir . '/' . uniqid('wm_', true) . '.' . $wmExt;
-                move_uploaded_file($wmFile['tmp_name'], $wmImagePath);
+                $wmResult = SecureUpload::process($wmFile, [
+                    'destination_dir'    => $tmpDir,
+                    'allowed_extensions' => ['jpg', 'jpeg', 'png', 'gif', 'webp'],
+                    'max_size'           => $limits['max_size_bytes'],
+                    'filename_prefix'    => 'wm',
+                    'source'             => 'convertx.img_watermark_overlay',
+                    'user_id'            => $userId,
+                ]);
+                if (!empty($wmResult['success'])) {
+                    $wmImagePath = $wmResult['path'];
+                }
             }
         }
 
@@ -1094,11 +1147,19 @@ class PdfToolsController
                 continue;
             }
 
-            $srcPath = $tmpDir . '/' . uniqid('wm_src_', true) . '.' . $ext;
-            if (!move_uploaded_file($f['tmp_name'], $srcPath)) {
-                $errors[] = $f['name'] . ': could not save file';
+            $secureResult = SecureUpload::process($f, [
+                'destination_dir'    => $tmpDir,
+                'allowed_extensions' => $limits['allowed_exts'],
+                'max_size'           => $limits['max_size_bytes'],
+                'filename_prefix'    => 'wm_src',
+                'source'             => 'convertx.img_watermark',
+                'user_id'            => $userId,
+            ]);
+            if (empty($secureResult['success'])) {
+                $errors[] = $f['name'] . ': ' . ($secureResult['error'] ?? 'security check failed');
                 continue;
             }
+            $srcPath = $secureResult['path'];
 
             $outExt  = ($ext === 'jpeg') ? 'jpg' : $ext;
             $outName = pathinfo($f['name'], PATHINFO_FILENAME) . '_watermarked.' . $outExt;
@@ -1263,11 +1324,19 @@ class PdfToolsController
                 continue;
             }
 
-            $srcPath = $tmpDir . '/' . uniqid('meme_src_', true) . '.' . $ext;
-            if (!move_uploaded_file($f['tmp_name'], $srcPath)) {
-                $errors[] = $f['name'] . ': could not save file';
+            $secureResult = SecureUpload::process($f, [
+                'destination_dir'    => $tmpDir,
+                'allowed_extensions' => $limits['allowed_exts'],
+                'max_size'           => $limits['max_size_bytes'],
+                'filename_prefix'    => 'meme_src',
+                'source'             => 'convertx.img_meme',
+                'user_id'            => $userId,
+            ]);
+            if (empty($secureResult['success'])) {
+                $errors[] = $f['name'] . ': ' . ($secureResult['error'] ?? 'security check failed');
                 continue;
             }
+            $srcPath = $secureResult['path'];
 
             $outExt  = ($ext === 'jpeg') ? 'jpg' : $ext;
             $outName = pathinfo($f['name'], PATHINFO_FILENAME) . '_meme.' . $outExt;
@@ -1419,11 +1488,19 @@ class PdfToolsController
                 continue;
             }
 
-            $srcPath = $tmpDir . '/' . uniqid('rot_src_', true) . '.' . $ext;
-            if (!move_uploaded_file($f['tmp_name'], $srcPath)) {
-                $errors[] = $f['name'] . ': could not save file';
+            $secureResult = SecureUpload::process($f, [
+                'destination_dir'    => $tmpDir,
+                'allowed_extensions' => $limits['allowed_exts'],
+                'max_size'           => $limits['max_size_bytes'],
+                'filename_prefix'    => 'rot_src',
+                'source'             => 'convertx.img_rotate',
+                'user_id'            => $userId,
+            ]);
+            if (empty($secureResult['success'])) {
+                $errors[] = $f['name'] . ': ' . ($secureResult['error'] ?? 'security check failed');
                 continue;
             }
+            $srcPath = $secureResult['path'];
 
             $outExt  = ($ext === 'jpeg') ? 'jpg' : $ext;
             $outName = pathinfo($f['name'], PATHINFO_FILENAME) . '_rotated.' . $outExt;

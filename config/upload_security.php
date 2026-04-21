@@ -1,11 +1,13 @@
 <?php
 
 return [
-    'mode' => getenv('UPLOAD_SCAN_MODE') ?: 'passive', // passive|enforce
+    'mode' => getenv('UPLOAD_SCAN_MODE') ?: 'enforce', // passive|enforce
 
     'clamav' => [
         'enabled' => getenv('CLAMAV_ENABLED') !== '0',
-        'command' => getenv('CLAMAV_SCAN_COMMAND') ?: 'clamdscan --no-summary --stdout',
+        // clamscan (standalone) works without the ClamAV daemon.
+        // Set CLAMAV_SCAN_COMMAND=clamdscan --no-summary --stdout to use the faster daemon instead.
+        'command' => getenv('CLAMAV_SCAN_COMMAND') ?: 'clamscan --no-summary --stdout',
     ],
 
     'max_file_size' => 500 * 1024 * 1024, // 500 MB

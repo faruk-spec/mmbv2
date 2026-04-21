@@ -72,9 +72,9 @@
                 <i class="fa fa-bug"></i>
             </div>
             <div class="stat-content">
-                <div class="stat-label">Upload Incidents (Today)</div>
+                <div class="stat-label">Threats Blocked (Today)</div>
                 <div class="stat-value" id="uploadIncidentsToday"><?= (int)($stats['upload_incidents_today'] ?? 0) ?></div>
-                <div class="stat-trend">Validation/AV rejections</div>
+                <div class="stat-trend">of <?= (int)($stats['upload_scanned_today'] ?? 0) ?> scanned</div>
             </div>
         </div>
     </div>
@@ -195,7 +195,8 @@
 
         <div class="chart-card full-width">
             <div class="chart-header">
-                <h3>Recent Upload Security Incidents</h3>
+                <h3>📁 Upload Scan Log (All Files)</h3>
+                <a href="/admin/security/settings" class="btn btn-sm btn-secondary">⚙ Scan Settings</a>
             </div>
             <?php if (!empty($recentUploadIncidents)): ?>
             <div class="table-responsive">
@@ -203,20 +204,35 @@
                     <thead>
                         <tr>
                             <th>Time</th>
+                            <th>Status</th>
+                            <th>Source</th>
+                            <th>File</th>
                             <th>User</th>
                             <th>IP Address</th>
-                            <th>Action</th>
                             <th>Details</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($recentUploadIncidents as $incident): ?>
+                        <?php foreach ($recentUploadIncidents as $incident):
+                            $isClean = ($incident['status'] ?? '') === 'success';
+                            $data    = is_array($incident['data']) ? $incident['data'] : (json_decode((string)($incident['data'] ?? '{}'), true) ?? []);
+                            $originalName = htmlspecialchars($data['original_name'] ?? '-');
+                            $source       = htmlspecialchars($data['source'] ?? '-');
+                        ?>
                         <tr>
                             <td><?= Helpers::timeAgo($incident['created_at']) ?></td>
-                            <td><?= htmlspecialchars($incident['user_name'] ?: 'System') ?></td>
+                            <td>
+                                <?php if ($isClean): ?>
+                                    <span class="badge badge-clean">✅ Clean</span>
+                                <?php else: ?>
+                                    <span class="badge badge-threat">🚨 Blocked</span>
+                                <?php endif; ?>
+                            </td>
+                            <td><code style="font-size:12px"><?= $source ?></code></td>
+                            <td><?= $originalName ?></td>
+                            <td><?= htmlspecialchars($incident['user_name'] ?: 'Guest') ?></td>
                             <td><?= htmlspecialchars($incident['ip_address'] ?? '-') ?></td>
-                            <td><?= htmlspecialchars($incident['action']) ?></td>
-                            <td><?= htmlspecialchars($incident['readable_message'] ?? '') ?></td>
+                            <td style="max-width:260px;white-space:normal"><?= htmlspecialchars($incident['readable_message'] ?? '') ?></td>
                         </tr>
                         <?php endforeach; ?>
                     </tbody>
@@ -224,7 +240,7 @@
             </div>
             <?php else: ?>
             <div class="empty-state">
-                <p>No upload security incidents recorded.</p>
+                <p>No upload scan records yet. Uploads processed through the secure scanner will appear here.</p>
             </div>
             <?php endif; ?>
         </div>
@@ -252,6 +268,16 @@
                     <div>
                         <div class="action-title">Failed Logins</div>
                         <div class="action-desc">View all failed attempts</div>
+                    </div>
+                </a>
+
+                <a href="/admin/security/settings" class="action-card">
+                    <div class="action-icon" style="background: rgba(102, 126, 234, 0.1);">
+                        <i class="fa fa-cog" style="color: #667eea;"></i>
+                    </div>
+                    <div>
+                        <div class="action-title">Scan Settings</div>
+                        <div class="action-desc">ClamAV, alert emails, scan mode</div>
                     </div>
                 </a>
             </div>
@@ -489,6 +515,24 @@
 .badge-orange {
     background: #ffe5e5;
     color: #ff6b6b;
+}
+
+.badge-clean {
+    background: #d4edda;
+    color: #155724;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.badge-threat {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
 }
 
 .chart-container {

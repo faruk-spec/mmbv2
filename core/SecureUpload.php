@@ -9,10 +9,10 @@ class SecureUpload
     public static function process(array $file, array $options = []): array
     {
         $cfg = Helpers::config('upload_security', []);
-        $mode = self::normalizeMode((string) ($options['mode'] ?? Helpers::config('settings.upload_scan_mode', $cfg['mode'] ?? 'passive')));
+        $mode = self::normalizeMode((string) ($options['mode'] ?? self::dbSetting('upload_scan_mode', $cfg['mode'] ?? 'enforce')));
         $scanEnabled = (bool) (
             $options['scan_enabled']
-            ?? Helpers::config('settings.upload_clamav_enabled', ($cfg['clamav']['enabled'] ?? true) ? '1' : '0')
+            ?? (self::dbSetting('upload_clamav_enabled', ($cfg['clamav']['enabled'] ?? true) ? '1' : '0') !== '0')
         );
 
         $userId = isset($options['user_id']) ? (int) $options['user_id'] : (Auth::id() ?: null);
@@ -66,7 +66,9 @@ class SecureUpload
         }
 
         if ($scanEnabled) {
-            $scan = self::scanWithClamAv($file['tmp_name'], (string) ($cfg['clamav']['command'] ?? 'clamdscan --no-summary --stdout'));
+            $clamavCommand = $options['clamav_command']
+                ?? self::dbSetting('upload_clamav_command', $cfg['clamav']['command'] ?? 'clamscan --no-summary --stdout');
+            $scan = self::scanWithClamAv($file['tmp_name'], (string) $clamavCommand);
             if (!$scan['success'] && $mode === 'enforce') {
                 return self::fail('upload_scan_failed', $scan['reason'], $file, $userId, $source, true, $mime);
             }
@@ -105,6 +107,7 @@ class SecureUpload
         @chmod($destinationPath, 0644);
         UploadSecurityMonitor::logEvent('upload_accepted', [
             'status' => 'success',
+            'message' => 'File scanned and accepted: ' . ($file['name'] ?? 'unknown'),
             'source' => $source,
             'user_id' => $userId,
             'trusted' => $trusted ? 1 : 0,
@@ -148,7 +151,25 @@ class SecureUpload
     private static function normalizeMode(string $mode): string
     {
         $mode = strtolower(trim($mode));
-        return in_array($mode, ['passive', 'enforce'], true) ? $mode : 'passive';
+        return in_array($mode, ['passive', 'enforce'], true) ? $mode : 'enforce';
+    }
+
+    private static function dbSetting(string $key, mixed $default = null): mixed
+    {
+        static $cache = [];
+        if (array_key_exists($key, $cache)) {
+            return $cache[$key];
+        }
+        try {
+            $row = Database::getInstance()->fetch(
+                "SELECT value FROM settings WHERE `key` = ? LIMIT 1",
+                [$key]
+            );
+            $cache[$key] = ($row !== false && $row !== null) ? $row['value'] : $default;
+        } catch (\Throwable $_) {
+            $cache[$key] = $default;
+        }
+        return $cache[$key];
     }
 
     private static function scanWithClamAv(string $filePath, string $baseCommand): array
