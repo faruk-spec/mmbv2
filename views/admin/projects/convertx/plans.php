@@ -4,6 +4,7 @@
  */
 use Core\View;
 View::extend('admin');
+$planFeatureLabels = $planFeatureLabels ?? [];
 ?>
 
 <?php View::section('content'); ?>
@@ -130,6 +131,21 @@ View::extend('admin');
                             </div>
                         </div>
                     </div>
+                    <?php if (!empty($planFeatureLabels)): ?>
+                    <div class="mt-3">
+                        <label class="d-block mb-2"><strong>Micro Features</strong></label>
+                        <div class="row">
+                            <?php foreach ($planFeatureLabels as $fKey => $fLabel): ?>
+                            <div class="col-md-3 col-sm-6">
+                                <div class="custom-control custom-checkbox mb-2">
+                                    <input type="checkbox" class="custom-control-input" id="new_feature_<?= htmlspecialchars($fKey) ?>" name="feature_<?= htmlspecialchars($fKey) ?>" value="1">
+                                    <label class="custom-control-label" for="new_feature_<?= htmlspecialchars($fKey) ?>"><?= htmlspecialchars($fLabel) ?></label>
+                                </div>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                    <?php endif; ?>
                     <button type="submit" class="btn btn-primary btn-sm mt-2"><i class="fas fa-plus"></i> Create Plan</button>
                 </form>
             </div>
@@ -142,6 +158,7 @@ View::extend('admin');
         </div>
         <?php else: ?>
         <?php foreach ($plans as $plan): ?>
+        <?php $featureMap = json_decode($plan['features'] ?? '{}', true) ?: []; ?>
         <div class="card mb-3">
             <div class="card-header d-flex align-items-center justify-content-between flex-wrap" style="gap:8px;">
                 <div>
@@ -235,6 +252,26 @@ View::extend('admin');
                             </div>
                         </div>
                     </div>
+                    <?php if (!empty($planFeatureLabels)): ?>
+                    <div class="row mt-2">
+                        <div class="col-12">
+                            <label class="d-block mb-2"><strong>Micro Features</strong></label>
+                        </div>
+                        <?php foreach ($planFeatureLabels as $fKey => $fLabel): ?>
+                        <div class="col-md-3 col-sm-6">
+                            <div class="custom-control custom-checkbox mb-2">
+                                <input type="checkbox"
+                                       class="custom-control-input"
+                                       id="feature_<?= (int)$plan['id'] ?>_<?= htmlspecialchars($fKey) ?>"
+                                       name="feature_<?= htmlspecialchars($fKey) ?>"
+                                       value="1"
+                                       <?= !empty($featureMap[$fKey]) ? 'checked' : '' ?>>
+                                <label class="custom-control-label" for="feature_<?= (int)$plan['id'] ?>_<?= htmlspecialchars($fKey) ?>"><?= htmlspecialchars($fLabel) ?></label>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                    <?php endif; ?>
                     <div class="mt-2">
                         <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-save"></i> Save</button>
                         <button type="button" class="btn btn-secondary btn-sm" onclick="toggleEditPlan(<?= (int)$plan['id'] ?>)">Cancel</button>

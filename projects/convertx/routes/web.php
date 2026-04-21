@@ -12,6 +12,54 @@ $uri      = str_replace('/projects/convertx', '', $uri);
 $uri      = $uri ?: '/';
 $segments = explode('/', trim($uri, '/'));
 
+$featureByRoute = [
+    ''              => 'page_dashboard',
+    'dashboard'     => 'page_dashboard',
+    'convert'       => 'page_convert',
+    'ai-process'    => 'page_ai_process',
+    'batch'         => 'page_batch',
+    'history'       => 'page_history',
+    'ocr'           => 'page_ocr',
+    'ocr-ai'        => 'page_ocr_ai',
+    'pdf-merge'     => 'page_pdf_merge',
+    'pdf-split'     => 'page_pdf_split',
+    'pdf-compress'  => 'page_pdf_compress',
+    'img-compress'  => 'page_img_compress',
+    'img-resize'    => 'page_img_resize',
+    'img-crop'      => 'page_img_crop',
+    'img-watermark' => 'page_img_watermark',
+    'img-rotate'    => 'page_img_rotate',
+    'img-meme'      => 'page_img_meme',
+    'img-editor'    => 'page_img_editor',
+    'img-upscale'   => 'page_img_upscale',
+    'img-remove-bg' => 'page_img_remove_bg',
+    'docs'          => 'page_docs',
+    'apikeys'       => 'page_apikeys',
+    'plan'          => 'page_plan',
+    'settings'      => 'page_settings',
+];
+
+try {
+    $featureKey = $featureByRoute[$segments[0]] ?? null;
+    $userId = (int) (Auth::id() ?? 0);
+    if ($featureKey && $userId > 0) {
+        require_once PROJECT_PATH . '/services/FeatureService.php';
+        $svc = new \Projects\ConvertX\Services\FeatureService();
+        if (!$svc->can($userId, $featureKey)) {
+            if (in_array($_SERVER['REQUEST_METHOD'], ['POST', 'PUT', 'PATCH', 'DELETE'], true)) {
+                // Block mutating actions on restricted features (security)
+                $_SESSION['_flash']['error'] = 'This feature is not available on your plan.';
+                header('Location: /projects/convertx/dashboard');
+                exit;
+            }
+            // For GET/view requests: let the page load, layout will show a gate overlay
+            $GLOBALS['cx_feature_gated'] = $featureKey;
+        }
+    }
+} catch (\Exception $e) {
+    // Fail-open if feature checks are unavailable
+}
+
 switch ($segments[0]) {
     case '':
     case 'dashboard':

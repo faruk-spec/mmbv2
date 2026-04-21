@@ -24,6 +24,36 @@ try {
 } catch (\Exception $e) {
     // fall through to dark default
 }
+
+$cxFeatures = [];
+try {
+    $uid = (int) (\Core\Auth::id() ?? 0);
+    if ($uid > 0) {
+        require_once PROJECT_PATH . '/services/FeatureService.php';
+        $cxFeatures = (new \Projects\ConvertX\Services\FeatureService())->getFeatures($uid);
+    }
+} catch (\Exception $e) {
+    $cxFeatures = [];
+}
+
+$renderNavItem = static function (
+    string $featureKey,
+    string $href,
+    string $activeClass,
+    string $iconClass,
+    string $label,
+    string $extraHtml = ''
+) use ($cxFeatures): void {
+    $isLocked = isset($cxFeatures[$featureKey]) && $cxFeatures[$featureKey] === false;
+    // Always render a normal link — locked pages show a gate overlay when visited
+    echo '<a href="' . htmlspecialchars($href) . '" class="' . htmlspecialchars($activeClass) . '">';
+    echo '<i class="' . htmlspecialchars($iconClass) . '"></i> ' . htmlspecialchars($label);
+    if ($isLocked) {
+        echo '<i class="fa-solid fa-crown cx-nav-premium-icon" title="Premium feature"></i>';
+    }
+    echo $extraHtml;
+    echo '</a>';
+};
 ?>
 <html lang="en" data-theme="<?= htmlspecialchars($defaultTheme) ?>">
 <head>
@@ -333,6 +363,78 @@ try {
             text-align: center;
             flex-shrink: 0;
             font-size: 0.875rem;
+        }
+
+        .cx-nav-premium-icon {
+            width: auto !important;
+            font-size: 0.6rem !important;
+            color: #f59e0b;
+            margin-left: auto;
+            opacity: 0.9;
+            flex-shrink: 0;
+        }
+
+        /* ── Feature-gate overlay (QR-style) ── */
+        .cx-feature-gate-wrap {
+            position: relative;
+        }
+        .cx-feature-gate-wrap .cx-feature-gate-blur {
+            filter: blur(6px);
+            opacity: 0.6;
+            pointer-events: none;
+            user-select: none;
+        }
+        .cx-feature-gate-badge {
+            position: fixed;
+            top: 50%;
+            left: calc(50% + var(--sidebar-width) / 2);
+            transform: translate(-50%, -50%);
+            z-index: 200;
+            background: var(--bg-card);
+            border: 2px solid var(--cx-primary);
+            border-radius: 16px;
+            padding: 28px 36px;
+            text-align: center;
+            min-width: 280px;
+            max-width: 380px;
+            box-shadow: 0 8px 40px rgba(99,102,241,.4);
+            pointer-events: auto;
+        }
+        .cx-feature-gate-badge .fgb-icon {
+            font-size: 2.4rem;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, var(--cx-primary), var(--cx-accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .cx-feature-gate-badge .fgb-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+        .cx-feature-gate-badge .fgb-desc {
+            font-size: .83rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            margin-bottom: 18px;
+        }
+        .cx-feature-gate-badge .fgb-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 22px;
+            background: linear-gradient(135deg, var(--cx-primary), var(--cx-accent));
+            border-radius: 8px;
+            font-size: .85rem;
+            font-weight: 700;
+            color: #fff;
+            text-decoration: none;
+        }
+        @media (max-width: 48rem) {
+            .cx-feature-gate-badge {
+                left: 50%;
+            }
         }
 
         /* ── Main content ── */
@@ -955,13 +1057,19 @@ try {
 
         @media (max-width: 30rem) {
             .cx-main { padding: 0.75rem 0.625rem 5.5rem; }
-            .stats-grid { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; }
+            .stat-card { padding: .75rem .625rem; border-radius: .625rem; min-height: auto; }
+            .stat-card .value { font-size: 1.2rem; }
+            .stat-card .label { font-size: .68rem; }
             .form-actions { flex-direction: column; width: 100%; }
             .form-actions .btn { width: 100%; }
             /* Quick-action cards: full width on phone */
             .cx-quick-card { min-width: 100%; max-width: 100%; }
             /* Tables: make scrollable on small screens */
             .cx-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        }
+        @media (max-width: 22.5rem) {
+            .stats-grid { grid-template-columns: 1fr; }
         }
 
         /* btn-block helper (used in ai-process and convert pages) */
@@ -1117,130 +1225,59 @@ include BASE_PATH . '/views/layouts/navbar.php';
         <div class="sidebar-section">
             <div class="sidebar-title">Convert</div>
             <nav class="sidebar-nav">
-                <a href="/projects/convertx/dashboard"
-                   class="<?= ($currentView === 'dashboard') ? 'active' : '' ?>">
-                    <i class="fa-solid fa-gauge-high"></i> Dashboard
-                </a>
-                <a href="/projects/convertx/convert"
-                   class="<?= ($currentView === 'convert') ? 'active' : '' ?>">
-                    <i class="fa-solid fa-arrow-right-arrow-left"></i> Convert File
-                </a>
-                <a href="/projects/convertx/ai-process"
-                   class="<?= ($currentView === 'ai-process') ? 'active' : '' ?>">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i> AI Process
-                </a>
-                <a href="/projects/convertx/batch"
-                   class="<?= ($currentView === 'batch') ? 'active' : '' ?>">
-                    <i class="fa-solid fa-layer-group"></i> Batch Convert
-                </a>
-                <a href="/projects/convertx/history"
-                   class="<?= ($currentView === 'history') ? 'active' : '' ?>">
-                    <i class="fa-solid fa-clock-rotate-left"></i> History
-                </a>
+                <?php $renderNavItem('page_dashboard', '/projects/convertx/dashboard', ($currentView === 'dashboard') ? 'active' : '', 'fa-solid fa-gauge-high', 'Dashboard'); ?>
+                <?php $renderNavItem('page_convert', '/projects/convertx/convert', ($currentView === 'convert') ? 'active' : '', 'fa-solid fa-arrow-right-arrow-left', 'Convert File'); ?>
+                <?php $renderNavItem('page_ai_process', '/projects/convertx/ai-process', ($currentView === 'ai-process') ? 'active' : '', 'fa-solid fa-wand-magic-sparkles', 'AI Process'); ?>
+                <?php $renderNavItem('page_batch', '/projects/convertx/batch', ($currentView === 'batch') ? 'active' : '', 'fa-solid fa-layer-group', 'Batch Convert'); ?>
+                <?php $renderNavItem('page_history', '/projects/convertx/history', ($currentView === 'history') ? 'active' : '', 'fa-solid fa-clock-rotate-left', 'History'); ?>
             </nav>
         </div>
 
         <div class="sidebar-section">
             <div class="sidebar-title">OCR &amp; Text</div>
             <nav class="sidebar-nav">
-                <a href="/projects/convertx/ocr"
-                   class="<?= ($currentView === 'ocr') ? 'active' : '' ?>">
-                    <i class="fa-solid fa-file-image"></i> OCR Extract
-                </a>
-                <a href="/projects/convertx/ocr-ai"
-                   class="<?= ($currentView === 'ocr-ai') ? 'active' : '' ?>">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i> AI OCR
-                </a>
+                <?php $renderNavItem('page_ocr', '/projects/convertx/ocr', ($currentView === 'ocr') ? 'active' : '', 'fa-solid fa-file-image', 'OCR Extract'); ?>
+                <?php $renderNavItem('page_ocr_ai', '/projects/convertx/ocr-ai', ($currentView === 'ocr-ai') ? 'active' : '', 'fa-solid fa-wand-magic-sparkles', 'AI OCR'); ?>
             </nav>
         </div>
 
         <div class="sidebar-section">
             <div class="sidebar-title">PDF Tools</div>
             <nav class="sidebar-nav">
-                <a href="/projects/convertx/pdf-merge"
-                   class="<?= ($currentView === 'pdf-merge') ? 'active' : '' ?>">
-                    <i class="fa-solid fa-object-group"></i> Merge PDFs
-                </a>
-                <a href="/projects/convertx/pdf-split"
-                   class="<?= ($currentView === 'pdf-split') ? 'active' : '' ?>">
-                    <i class="fa-solid fa-scissors"></i> Split PDF
-                </a>
-                <a href="/projects/convertx/pdf-compress"
-                   class="<?= ($currentView === 'pdf-compress') ? 'active' : '' ?>">
-                    <i class="fa-solid fa-file-zipper"></i> Compress PDF
-                </a>
+                <?php $renderNavItem('page_pdf_merge', '/projects/convertx/pdf-merge', ($currentView === 'pdf-merge') ? 'active' : '', 'fa-solid fa-object-group', 'Merge PDFs'); ?>
+                <?php $renderNavItem('page_pdf_split', '/projects/convertx/pdf-split', ($currentView === 'pdf-split') ? 'active' : '', 'fa-solid fa-scissors', 'Split PDF'); ?>
+                <?php $renderNavItem('page_pdf_compress', '/projects/convertx/pdf-compress', ($currentView === 'pdf-compress') ? 'active' : '', 'fa-solid fa-file-zipper', 'Compress PDF'); ?>
             </nav>
         </div>
 
         <div class="sidebar-section">
             <div class="sidebar-title">Image Tools</div>
             <nav class="sidebar-nav">
-                <a href="/projects/convertx/img-compress"
-                   class="<?= ($currentView === 'img-compress') ? 'active' : '' ?>">
-                    <i class="fa-solid fa-image"></i> Compress Images
-                </a>
-                <a href="/projects/convertx/img-resize"
-                   class="<?= ($currentView === 'img-resize') ? 'active' : '' ?>">
-                    <i class="fa-solid fa-expand"></i> Resize Images
-                </a>
-                <a href="/projects/convertx/img-crop"
-                   class="<?= ($currentView === 'img-crop') ? 'active' : '' ?>">
-                    <i class="fa-solid fa-crop-simple"></i> Crop Image
-                </a>
-                <a href="/projects/convertx/img-watermark"
-                   class="<?= ($currentView === 'img-watermark') ? 'active' : '' ?>">
-                    <i class="fa-solid fa-stamp"></i> Watermark Image
-                </a>
-                <a href="/projects/convertx/img-rotate"
-                   class="<?= ($currentView === 'img-rotate') ? 'active' : '' ?>">
-                    <i class="fa-solid fa-rotate-right"></i> Rotate Images
-                </a>
-                <a href="/projects/convertx/img-meme"
-                   class="<?= ($currentView === 'img-meme') ? 'active' : '' ?>">
-                    <i class="fa-solid fa-face-laugh-wink"></i> Meme Generator
-                </a>
-                <a href="/projects/convertx/img-editor"
-                   class="<?= ($currentView === 'img-editor') ? 'active' : '' ?>">
-                    <i class="fa-solid fa-pen-to-square"></i> Photo Editor
-                </a>
-                <a href="/projects/convertx/img-upscale"
-                   class="<?= ($currentView === 'img-upscale') ? 'active' : '' ?>">
-                    <i class="fa-solid fa-arrow-up-right-dots"></i> Upscale Image
-                    <span style="font-size:.62rem;font-weight:700;background:var(--cx-primary);color:#fff;padding:.1rem .35rem;border-radius:.25rem;margin-left:auto;">NEW</span>
-                </a>
-                <a href="/projects/convertx/img-remove-bg"
-                   class="<?= ($currentView === 'img-remove-bg') ? 'active' : '' ?>">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i> Remove Background
-                    <span style="font-size:.62rem;font-weight:700;background:var(--cx-primary);color:#fff;padding:.1rem .35rem;border-radius:.25rem;margin-left:auto;">NEW</span>
-                </a>
+                <?php $renderNavItem('page_img_compress', '/projects/convertx/img-compress', ($currentView === 'img-compress') ? 'active' : '', 'fa-solid fa-image', 'Compress Images'); ?>
+                <?php $renderNavItem('page_img_resize', '/projects/convertx/img-resize', ($currentView === 'img-resize') ? 'active' : '', 'fa-solid fa-expand', 'Resize Images'); ?>
+                <?php $renderNavItem('page_img_crop', '/projects/convertx/img-crop', ($currentView === 'img-crop') ? 'active' : '', 'fa-solid fa-crop-simple', 'Crop Image'); ?>
+                <?php $renderNavItem('page_img_watermark', '/projects/convertx/img-watermark', ($currentView === 'img-watermark') ? 'active' : '', 'fa-solid fa-stamp', 'Watermark Image'); ?>
+                <?php $renderNavItem('page_img_rotate', '/projects/convertx/img-rotate', ($currentView === 'img-rotate') ? 'active' : '', 'fa-solid fa-rotate-right', 'Rotate Images'); ?>
+                <?php $renderNavItem('page_img_meme', '/projects/convertx/img-meme', ($currentView === 'img-meme') ? 'active' : '', 'fa-solid fa-face-laugh-wink', 'Meme Generator'); ?>
+                <?php $renderNavItem('page_img_editor', '/projects/convertx/img-editor', ($currentView === 'img-editor') ? 'active' : '', 'fa-solid fa-pen-to-square', 'Photo Editor'); ?>
+                <?php $renderNavItem('page_img_upscale', '/projects/convertx/img-upscale', ($currentView === 'img-upscale') ? 'active' : '', 'fa-solid fa-arrow-up-right-dots', 'Upscale Image', '<span style="font-size:.62rem;font-weight:700;background:var(--cx-primary);color:#fff;padding:.1rem .35rem;border-radius:.25rem;margin-left:auto;">NEW</span>'); ?>
+                <?php $renderNavItem('page_img_remove_bg', '/projects/convertx/img-remove-bg', ($currentView === 'img-remove-bg') ? 'active' : '', 'fa-solid fa-wand-magic-sparkles', 'Remove Background', '<span style="font-size:.62rem;font-weight:700;background:var(--cx-primary);color:#fff;padding:.1rem .35rem;border-radius:.25rem;margin-left:auto;">NEW</span>'); ?>
             </nav>
         </div>
 
         <div class="sidebar-section">
             <div class="sidebar-title">Developers</div>
             <nav class="sidebar-nav">
-                <a href="/projects/convertx/docs"
-                   class="<?= ($currentView === 'docs') ? 'active' : '' ?>">
-                    <i class="fa-solid fa-book-open"></i> API Docs
-                </a>
-                <a href="/projects/convertx/apikeys"
-                   class="<?= ($currentView === 'apikeys') ? 'active' : '' ?>">
-                    <i class="fa-solid fa-key"></i> API Keys &amp; Analytics
-                </a>
+                <?php $renderNavItem('page_docs', '/projects/convertx/docs', ($currentView === 'docs') ? 'active' : '', 'fa-solid fa-book-open', 'API Docs'); ?>
+                <?php $renderNavItem('page_apikeys', '/projects/convertx/apikeys', ($currentView === 'apikeys') ? 'active' : '', 'fa-solid fa-key', 'API Keys & Analytics'); ?>
             </nav>
         </div>
 
         <div class="sidebar-section">
             <div class="sidebar-title">Account</div>
             <nav class="sidebar-nav">
-                <a href="/projects/convertx/plan"
-                   class="<?= ($currentView === 'plan') ? 'active' : '' ?>">
-                    <i class="fa-solid fa-star"></i> Plans &amp; Pricing
-                </a>
-                <a href="/projects/convertx/settings"
-                   class="<?= ($currentView === 'settings') ? 'active' : '' ?>">
-                    <i class="fa-solid fa-gear"></i> Settings
-                </a>
+                <?php $renderNavItem('page_plan', '/projects/convertx/plan', ($currentView === 'plan') ? 'active' : '', 'fa-solid fa-star', 'Plans & Pricing'); ?>
+                <?php $renderNavItem('page_settings', '/projects/convertx/settings', ($currentView === 'settings') ? 'active' : '', 'fa-solid fa-gear', 'Settings'); ?>
             </nav>
         </div>
 
@@ -1273,8 +1310,24 @@ include BASE_PATH . '/views/layouts/navbar.php';
 
         <?php
         $viewFile = PROJECT_PATH . '/views/' . $currentView . '.php';
+        $cxGatedFeature = $GLOBALS['cx_feature_gated'] ?? null;
         if (file_exists($viewFile)) {
-            include $viewFile;
+            if ($cxGatedFeature) {
+                // Show the page content blurred with an upgrade badge (QR-style gate)
+                echo '<div class="cx-feature-gate-wrap">';
+                echo '<div class="cx-feature-gate-blur">';
+                include $viewFile;
+                echo '</div><!-- /.cx-feature-gate-blur -->';
+                echo '<div class="cx-feature-gate-badge">';
+                echo '<div class="fgb-icon"><i class="fa-solid fa-lock"></i></div>';
+                echo '<div class="fgb-title">Premium Feature</div>';
+                echo '<div class="fgb-desc">This page is not included in your current plan. Upgrade to unlock it.</div>';
+                echo '<a href="/projects/convertx/plan" class="fgb-btn"><i class="fa-solid fa-crown"></i> View Plans &amp; Upgrade</a>';
+                echo '</div><!-- /.cx-feature-gate-badge -->';
+                echo '</div><!-- /.cx-feature-gate-wrap -->';
+            } else {
+                include $viewFile;
+            }
         } else {
             echo '<p style="color:var(--cx-danger)">View not found: ' . htmlspecialchars($currentView) . '</p>';
         }

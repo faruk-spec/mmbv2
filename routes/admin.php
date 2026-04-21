@@ -109,6 +109,10 @@ $router->get('/admin/projects/convertx/plans', 'Admin\\ConvertXAdminController@p
 $router->post('/admin/projects/convertx/plans/create', 'Admin\\ConvertXAdminController@createPlan', ['auth', 'admin']);
 $router->post('/admin/projects/convertx/plans/update', 'Admin\\ConvertXAdminController@updatePlan', ['auth', 'admin']);
 $router->post('/admin/projects/convertx/plans/delete', 'Admin\\ConvertXAdminController@deletePlan', ['auth', 'admin']);
+$router->get('/admin/projects/convertx/roles', 'Admin\\ConvertXAdminController@roles', ['auth', 'admin']);
+$router->get('/admin/projects/convertx/roles/user-features/{id}', 'Admin\\ConvertXAdminController@getUserFeaturesApi', ['auth', 'admin']);
+$router->post('/admin/projects/convertx/roles/set-user-feature', 'Admin\\ConvertXAdminController@setUserFeature', ['auth', 'admin']);
+$router->post('/admin/projects/convertx/roles/remove-user-features', 'Admin\\ConvertXAdminController@removeUserFeatures', ['auth', 'admin']);
 $router->get('/admin/projects/convertx/schema', 'Admin\\ConvertXAdminController@schema', ['auth', 'admin']);
 
 // CodeXPro admin routes
