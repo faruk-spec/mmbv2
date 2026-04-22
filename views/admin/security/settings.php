@@ -11,12 +11,12 @@
         <a href="/admin/security" class="btn btn-secondary">← Back to Security Center</a>
     </div>
 
-    <?php if ($flash = Helpers::flash('success')): ?>
+    <?php if ($flash = Helpers::getFlash('success')): ?>
     <div class="alert alert-success" style="background:#d4edda;color:#155724;padding:12px 18px;border-radius:8px;margin-bottom:20px;">
         ✅ <?= htmlspecialchars($flash) ?>
     </div>
     <?php endif; ?>
-    <?php if ($flash = Helpers::flash('error')): ?>
+    <?php if ($flash = Helpers::getFlash('error')): ?>
     <div class="alert alert-danger" style="background:#f8d7da;color:#721c24;padding:12px 18px;border-radius:8px;margin-bottom:20px;">
         ❌ <?= htmlspecialchars($flash) ?>
     </div>
