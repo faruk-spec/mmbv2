@@ -8,17 +8,19 @@
 -- Safe to run multiple times (INSERT IGNORE).
 -- ============================================================
 
--- Scan mode: 'enforce' blocks infected/unscanned files; 'passive' logs only
+-- Scan mode: start with 'passive' (log only — never blocks uploads)
+-- Switch to 'enforce' AFTER confirming ClamAV is installed and working.
 INSERT IGNORE INTO `settings` (`key`, `value`, `type`, `created_at`)
-VALUES ('upload_scan_mode', 'enforce', 'string', NOW());
+VALUES ('upload_scan_mode', 'passive', 'string', NOW());
 
--- ClamAV enabled: '1' = on, '0' = off
+-- ClamAV enabled: '0' = off by default (safe to deploy without ClamAV)
+-- Set to '1' in Admin → Security → Scan Settings once ClamAV is confirmed installed.
 INSERT IGNORE INTO `settings` (`key`, `value`, `type`, `created_at`)
-VALUES ('upload_clamav_enabled', '1', 'string', NOW());
+VALUES ('upload_clamav_enabled', '0', 'string', NOW());
 
 -- ClamAV scan command
--- clamscan (standalone) works without the ClamAV daemon.
--- Switch to 'clamdscan --no-summary --stdout' if you run clamd for faster scans.
+-- clamscan (standalone) reloads its virus DB on every call — very slow.
+-- Switch to 'clamdscan --no-summary --stdout' once you have the clamd daemon running.
 INSERT IGNORE INTO `settings` (`key`, `value`, `type`, `created_at`)
 VALUES ('upload_clamav_command', 'clamscan --no-summary --stdout', 'string', NOW());
 
@@ -26,6 +28,14 @@ VALUES ('upload_clamav_command', 'clamscan --no-summary --stdout', 'string', NOW
 -- Leave empty to send alerts to all users with admin role.
 INSERT IGNORE INTO `settings` (`key`, `value`, `type`, `created_at`)
 VALUES ('security_alert_emails', '', 'string', NOW());
+
+-- ============================================================
+-- HOTFIX: If the previous migration already set 'enforce'/'1',
+-- reset to safe defaults to restore upload functionality.
+-- Remove these UPDATE lines once the site is confirmed stable.
+-- ============================================================
+UPDATE `settings` SET `value` = 'passive' WHERE `key` = 'upload_scan_mode' AND `value` = 'enforce';
+UPDATE `settings` SET `value` = '0'       WHERE `key` = 'upload_clamav_enabled' AND `value` = '1';
 
 -- ============================================================
 -- Ensure the activity_logs table has the columns needed by

@@ -182,14 +182,34 @@ class SecureUpload
             return ['success' => false, 'clean' => false, 'reason' => 'shell_exec is disabled; antivirus scan unavailable.'];
         }
 
-        $command = trim($baseCommand) . ' ' . escapeshellarg($filePath) . ' 2>&1';
-        $output = shell_exec($command);
+        // Extract the binary name from the command to check if it exists
+        $binary = strtok(trim($baseCommand), ' ');
+        if ($binary === false) {
+            return ['success' => false, 'clean' => false, 'reason' => 'Invalid ClamAV command configured.'];
+        }
+
+        // Quick binary existence check (avoids waiting for a slow "not found" shell error)
+        $whichOutput = shell_exec('which ' . escapeshellarg($binary) . ' 2>/dev/null');
+        if (empty(trim((string) $whichOutput))) {
+            return ['success' => false, 'clean' => false, 'reason' => 'ClamAV binary "' . basename($binary) . '" not found. Install ClamAV or disable scanning in Security settings.'];
+        }
+
+        // Wrap the scan with a 60-second timeout so a slow clamscan cannot hang PHP workers.
+        // 'timeout' is available on all modern Linux/Debian/Ubuntu systems.
+        $safeCommand = 'timeout 60 ' . trim($baseCommand) . ' ' . escapeshellarg($filePath) . ' 2>&1';
+        $output = shell_exec($safeCommand);
 
         if ($output === null) {
             return ['success' => false, 'clean' => false, 'reason' => 'ClamAV command failed to execute.'];
         }
 
         $normalized = strtoupper($output);
+
+        // timeout(1) exits with status 124 when the process is killed
+        if (str_contains($normalized, 'KILLED') || (trim($output) === '' && str_contains($safeCommand, 'timeout 60'))) {
+            return ['success' => false, 'clean' => false, 'reason' => 'ClamAV scan timed out (>60 s). Consider switching to clamdscan (daemon mode) in Security settings for faster scans.'];
+        }
+
         if (str_contains($normalized, 'FOUND')) {
             return ['success' => true, 'clean' => false, 'reason' => trim($output)];
         }

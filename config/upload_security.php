@@ -1,12 +1,19 @@
 <?php
 
 return [
-    'mode' => getenv('UPLOAD_SCAN_MODE') ?: 'enforce', // passive|enforce
+    // 'passive' = log failed/infected scans but still allow the upload
+    // 'enforce' = block the upload entirely when scan fails or detects malware
+    // Recommended: start with 'passive' and switch to 'enforce' once ClamAV is confirmed working.
+    'mode' => getenv('UPLOAD_SCAN_MODE') ?: 'passive',
 
     'clamav' => [
-        'enabled' => getenv('CLAMAV_ENABLED') !== '0',
-        // clamscan (standalone) works without the ClamAV daemon.
-        // Set CLAMAV_SCAN_COMMAND=clamdscan --no-summary --stdout to use the faster daemon instead.
+        // Set CLAMAV_ENABLED=1 in your environment (or enable via Admin → Security settings)
+        // once you have ClamAV/clamdscan installed and confirmed working.
+        // Leaving this disabled still enforces MIME-type, magic-byte, and extension validation.
+        'enabled' => getenv('CLAMAV_ENABLED') === '1',
+        // clamscan (standalone) reloads its database on every call — SLOW on large DBs.
+        // Switch to 'clamdscan --no-summary --stdout' when running the clamd daemon for
+        // near-instant scans (strongly recommended for production).
         'command' => getenv('CLAMAV_SCAN_COMMAND') ?: 'clamscan --no-summary --stdout',
     ],
 
