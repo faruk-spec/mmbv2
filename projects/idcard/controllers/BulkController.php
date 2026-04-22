@@ -12,6 +12,7 @@ use Core\Auth;
 use Core\Security;
 use Core\Logger;
 use Core\ActivityLogger;
+use Core\SecureUpload;
 use Projects\IDCard\Models\IDCardModel;
 
 class BulkController
@@ -92,17 +93,26 @@ class BulkController
 
         $file = $_FILES['csv_file'];
 
-        // Validate MIME via finfo (not client-supplied header)
-        $finfo   = new \finfo(FILEINFO_MIME_TYPE);
-        $mime    = $finfo->file($file['tmp_name']);
-        $allowed = ['text/plain', 'text/csv', 'application/csv', 'application/vnd.ms-excel'];
-        if (!in_array($mime, $allowed, true)) {
-            echo json_encode(['success' => false, 'message' => 'Only CSV files are accepted.']);
+        // Scan the CSV through SecureUpload (ClamAV + MIME validation) before reading
+        $csvScanDir = BASE_PATH . '/storage/uploads/idcard/csv_tmp';
+        $scanResult = SecureUpload::process($file, [
+            'destination_dir'    => $csvScanDir,
+            'allowed_extensions' => ['csv', 'txt'],
+            'allowed_mime_types' => ['text/plain', 'text/csv', 'application/csv', 'application/vnd.ms-excel'],
+            'max_size'           => 5 * 1024 * 1024,
+            'filename_prefix'    => 'bulk_csv',
+            'source'             => 'idcard.bulk_csv',
+            'user_id'            => Auth::id(),
+        ]);
+        if (empty($scanResult['success'])) {
+            echo json_encode(['success' => false, 'message' => $scanResult['error'] ?? 'CSV file rejected by security checks.']);
             exit;
         }
+        $scannedCsvPath = $scanResult['path'];
 
-        $handle = fopen($file['tmp_name'], 'r');
+        $handle = fopen($scannedCsvPath, 'r');
         if (!$handle) {
+            @unlink($scannedCsvPath);
             echo json_encode(['success' => false, 'message' => 'Unable to read uploaded file.']);
             exit;
         }
@@ -111,6 +121,7 @@ class BulkController
         $csvHeaders = fgetcsv($handle);
         if (!$csvHeaders) {
             fclose($handle);
+            @unlink($scannedCsvPath);
             echo json_encode(['success' => false, 'message' => 'CSV file is empty or unreadable.']);
             exit;
         }
@@ -125,6 +136,7 @@ class BulkController
             }
         }
         fclose($handle);
+        @unlink($scannedCsvPath); // No longer needed — all data is in $rows
 
         if (count($rows) === 0) {
             echo json_encode(['success' => false, 'message' => 'No data rows found in the CSV.']);

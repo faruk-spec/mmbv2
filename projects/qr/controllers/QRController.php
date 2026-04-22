@@ -12,6 +12,7 @@ use Core\Security;
 use Core\Helpers;
 use Core\Logger;
 use Core\ActivityLogger;
+use Core\SecureUpload;
 use Projects\QR\Models\QRModel;
 use Projects\QR\Models\SettingsModel;
 use Projects\QR\Services\QRFeatureService;
@@ -651,45 +652,25 @@ class QRController
     private function handleLogoUpload(array $file): ?string
     {
         $maxSize = 2 * 1024 * 1024; // 2 MB
+        $uploadDir = BASE_PATH . '/storage/qr_logos/' . date('Y/m');
 
-        if ($file['size'] > $maxSize) {
-            Helpers::flash('warning', 'Logo file size must be less than 2MB.');
+        $secureResult = SecureUpload::process($file, [
+            'destination_dir'    => $uploadDir,
+            'allowed_extensions' => ['jpg', 'jpeg', 'png'],
+            'allowed_mime_types' => ['image/jpeg', 'image/png'],
+            'max_size'           => $maxSize,
+            'filename_prefix'    => 'logo',
+            'source'             => 'qr.logo_upload',
+            'user_id'            => Auth::id(),
+        ]);
+
+        if (empty($secureResult['success'])) {
+            Helpers::flash('warning', $secureResult['error'] ?? 'Logo upload was rejected by security checks.');
             return null;
         }
 
-        // Use finfo to detect actual MIME type from file content (not client-supplied header).
-        $finfo    = new \finfo(FILEINFO_MIME_TYPE);
-        $mimeType = $finfo->file($file['tmp_name']);
-
-        $mimeToExt = [
-            'image/png'  => 'png',
-            'image/jpeg' => 'jpg',
-        ];
-
-        if (!isset($mimeToExt[$mimeType])) {
-            Helpers::flash('warning', 'Logo must be a PNG or JPG image.');
-            return null;
-        }
-
-        // Extension derived from verified MIME — never from the original filename.
-        $extension = $mimeToExt[$mimeType];
-
-        // Create upload directory if it doesn't exist
-        $uploadDir = __DIR__ . '/../../../storage/qr_logos/' . date('Y/m');
-        if (!is_dir($uploadDir)) {
-            mkdir($uploadDir, 0755, true);
-        }
-
-        $filename = uniqid('logo_', true) . '.' . $extension;
-        $filepath = $uploadDir . '/' . $filename;
-
-        // Move uploaded file
-        if (move_uploaded_file($file['tmp_name'], $filepath)) {
-            return '/storage/qr_logos/' . date('Y/m') . '/' . $filename;
-        }
-
-        Helpers::flash('warning', 'Failed to upload logo.');
-        return null;
+        // Build URL relative to storage root
+        return '/storage/qr_logos/' . date('Y/m') . '/' . $secureResult['filename'];
     }
     
     /**

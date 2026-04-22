@@ -11,6 +11,7 @@ namespace Projects\IDCard\Controllers;
 use Core\Auth;
 use Core\Security;
 use Core\Logger;
+use Core\SecureUpload;
 use Projects\IDCard\Models\IDCardModel;
 
 class IDCardController
@@ -1201,26 +1202,22 @@ USERPROMPT;
             return null;
         }
 
-        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-        $ext = preg_replace('/[^a-z0-9]/', '', $ext);
-        if (!in_array($ext, $allowedExts, true)) {
-            // Use extension inferred from real MIME type
-            $mimeToExt = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/gif' => 'gif', 'image/webp' => 'webp'];
-            $ext = $mimeToExt[$imageInfo['mime']] ?? 'jpg';
-        }
-
         $uploadDir = BASE_PATH . '/storage/idcard/' . $subdir . '/';
-        if (!is_dir($uploadDir)) {
-            mkdir($uploadDir, 0755, true);
+
+        $result = SecureUpload::process($file, [
+            'destination_dir'    => $uploadDir,
+            'allowed_extensions' => $allowedExts,
+            'allowed_mime_types' => $allowedMimes,
+            'max_size'           => $maxBytes,
+            'source'             => 'idcard.' . $subdir . '_upload',
+            'user_id'            => Auth::id(),
+        ]);
+
+        if (empty($result['success'])) {
+            return null;
         }
 
-        $filename = bin2hex(random_bytes(16)) . '.' . $ext;
-        $destPath = $uploadDir . $filename;
-
-        if (move_uploaded_file($file['tmp_name'], $destPath)) {
-            return 'storage/idcard/' . $subdir . '/' . $filename;
-        }
-        return null;
+        return 'storage/idcard/' . $subdir . '/' . $result['filename'];
     }
 
     private function sanitize(mixed $value): string

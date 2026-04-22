@@ -15,6 +15,7 @@ namespace Projects\ConvertX\Controllers;
 use Core\Auth;
 use Core\Logger;
 use Core\Database;
+use Core\SecureUpload;
 use Projects\ConvertX\Models\ConversionJobModel;
 use Projects\ConvertX\Services\ConversionService;
 use Projects\ConvertX\Services\JobQueueService;
@@ -107,17 +108,18 @@ class ApiController
         }
 
         $uploadDir = BASE_PATH . '/storage/uploads/convertx/' . $userId;
-        if (!is_dir($uploadDir)) {
-            mkdir($uploadDir, 0755, true);
-        }
 
-        $storedName = uniqid('cx_', true) . '.' . $ext;
-        $storedPath = $uploadDir . '/' . $storedName;
-
-        if (!move_uploaded_file($_FILES['file']['tmp_name'], $storedPath)) {
-            $this->error('Failed to save uploaded file', 500);
+        $secureResult = SecureUpload::process($_FILES['file'], [
+            'destination_dir'    => $uploadDir,
+            'allowed_extensions' => self::ALLOWED_EXTENSIONS,
+            'source'             => 'convertx.api',
+            'user_id'            => $userId,
+        ]);
+        if (empty($secureResult['success'])) {
+            $this->error('🚫 ' . ($secureResult['error'] ?? 'File rejected by security checks.'), 422);
             return;
         }
+        $storedPath  = $secureResult['path'];
 
         $inputFormat = $this->conversionService->detectFormat($storedPath, $_FILES['file']['name']);
 

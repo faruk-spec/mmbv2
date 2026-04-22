@@ -117,6 +117,31 @@
                     <span>Force Password Change Every 90 Days</span>
                 </label>
             </div>
+
+            <div class="form-group">
+                <label class="form-label" for="security_alert_emails">Security Alert Emails</label>
+                <input type="text" id="security_alert_emails" name="security_alert_emails"
+                       class="form-input"
+                       value="<?= View::e($settings['security_alert_emails'] ?? '') ?>"
+                       placeholder="admin@example.com, secops@example.com">
+                <small class="form-help">Comma-separated email addresses for upload/security alert notifications.</small>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="upload_scan_mode">Upload Antivirus Mode</label>
+                <select id="upload_scan_mode" name="upload_scan_mode" class="form-input">
+                    <option value="passive" <?= ($settings['upload_scan_mode'] ?? 'passive') === 'passive' ? 'selected' : '' ?>>Passive (log-only on scanner error)</option>
+                    <option value="enforce" <?= ($settings['upload_scan_mode'] ?? 'passive') === 'enforce' ? 'selected' : '' ?>>Enforce (block on scanner error)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-checkbox">
+                    <input type="checkbox" name="upload_clamav_enabled" value="1"
+                           <?= ($settings['upload_clamav_enabled'] ?? '1') === '1' ? 'checked' : '' ?>>
+                    <span>Enable ClamAV scanning for new uploads</span>
+                </label>
+            </div>
             
             <button type="submit" class="btn btn-primary">Save Security Policies</button>
         </form>

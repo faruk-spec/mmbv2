@@ -10,6 +10,7 @@ namespace Controllers;
 use Core\Auth;
 use Core\Database;
 use Core\Notification;
+use Core\SecureUpload;
 use Models\SupportModel;
 
 class SupportController extends BaseController
@@ -105,22 +106,21 @@ class SupportController extends BaseController
                     } elseif ($fieldType === 'attachment') {
                         $fileKey = 'custom_' . $fieldName;
                         if (!empty($_FILES[$fileKey]) && (int) ($_FILES[$fileKey]['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK) {
-                            $allowed = ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'txt', 'zip', 'doc', 'docx', 'xlsx', 'csv'];
-                            $ext = strtolower(pathinfo($_FILES[$fileKey]['name'], PATHINFO_EXTENSION));
-                            if (in_array($ext, $allowed, true)) {
-                                $baseDir = BASE_PATH . '/storage/uploads/support_attachments';
-                                if (!is_dir($baseDir)) {
-                                    @mkdir($baseDir, 0755, true);
-                                }
-                                try {
-                                    $safeName = 'att_' . bin2hex(random_bytes(16)) . '.' . $ext;
-                                } catch (\Throwable $e) {
-                                    continue;
-                                }
-                                $target = rtrim($baseDir, '/') . '/' . $safeName;
-                                if (@move_uploaded_file($_FILES[$fileKey]['tmp_name'], $target)) {
-                                    $value = '/support-attachments/' . $safeName;
-                                }
+                            $result = SecureUpload::process($_FILES[$fileKey], [
+                                'destination_dir' => BASE_PATH . '/storage/uploads/support_attachments',
+                                'allowed_extensions' => ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'txt', 'zip', 'doc', 'docx', 'xlsx', 'csv'],
+                                'allowed_mime_types' => [
+                                    'application/pdf', 'image/png', 'image/jpeg', 'image/gif', 'image/webp',
+                                    'text/plain', 'application/zip', 'application/x-zip-compressed',
+                                    'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'text/csv',
+                                ],
+                                'max_size' => 20 * 1024 * 1024,
+                                'source' => 'support.ticket.custom_attachment',
+                                'user_id' => Auth::id(),
+                            ]);
+                            if (!empty($result['success'])) {
+                                $value = '/support-attachments/' . $result['filename'];
                             }
                         }
                     } else {
