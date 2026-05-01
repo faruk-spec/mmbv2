@@ -45,7 +45,7 @@ class ProjectController extends BaseController
     public function show(string $name): void
     {
         if (!Auth::check()) {
-            http_response_code(404);
+            http_response_code(401);
             $this->json(['error' => 'Unauthorized', 'message' => 'Authentication required.']);
             return;
         }

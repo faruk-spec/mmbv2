@@ -96,7 +96,6 @@ function previewAvatar(input) {
     if (input.files && input.files[0]) {
         const reader = new FileReader();
         reader.onload = e => {
-            const img = input.closest('.form-group') ? input.closest('.form-group').querySelector('img') : null;
             const avatarDiv = document.querySelector('[style*="border-radius:50%"]');
             if (avatarDiv) {
                 avatarDiv.innerHTML = '<img src="' + e.target.result + '" style="width:100%;height:100%;object-fit:cover;">';
