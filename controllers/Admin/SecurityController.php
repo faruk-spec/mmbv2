@@ -39,6 +39,12 @@ class SecurityController extends BaseController
                 "SELECT COUNT(*) as count FROM failed_logins WHERE attempted_at >= DATE_SUB(NOW(), INTERVAL 1 HOUR)"
             )['count'] ?? 0,
             'active_sessions' => $db->fetch("SELECT COUNT(*) as count FROM user_remember_tokens WHERE expires_at > NOW()")['count'] ?? 0,
+            'upload_incidents_today' => $db->fetch(
+                "SELECT COUNT(*) as count FROM activity_logs WHERE module = 'upload_security' AND status = 'failure' AND DATE(created_at) = CURDATE()"
+            )['count'] ?? 0,
+            'upload_scanned_today' => $db->fetch(
+                "SELECT COUNT(*) as count FROM activity_logs WHERE module = 'upload_security' AND DATE(created_at) = CURDATE()"
+            )['count'] ?? 0,
             'suspicious_ips' => 0 // Will be calculated below
         ];
         
@@ -85,6 +91,14 @@ class SecurityController extends BaseController
              GROUP BY reason 
              ORDER BY count DESC"
         );
+
+        $recentUploadIncidents = $db->fetchAll(
+            "SELECT created_at, user_name, ip_address, action, status, readable_message, data
+             FROM activity_logs
+             WHERE module = 'upload_security'
+             ORDER BY created_at DESC
+             LIMIT 30"
+        );
         
         $this->view('admin/security/index', [
             'title' => 'Security Center',
@@ -93,7 +107,8 @@ class SecurityController extends BaseController
             'suspiciousIps' => $suspiciousIps,
             'failedLoginTrend' => $failedLoginTrend,
             'topTargetedUsers' => $topTargetedUsers,
-            'blockedByReason' => $blockedByReason
+            'blockedByReason' => $blockedByReason,
+            'recentUploadIncidents' => $recentUploadIncidents,
         ]);
     }
     
@@ -301,6 +316,114 @@ class SecurityController extends BaseController
     }
     
     /**
+     * Upload scan settings page (GET)
+     */
+    public function uploadSettings(): void
+    {
+        $this->requirePermission('security');
+        $db = Database::getInstance();
+
+        $keys = ['security_alert_emails', 'upload_scan_mode', 'upload_clamav_enabled', 'upload_clamav_command'];
+        $settings = [];
+        foreach ($keys as $k) {
+            $row = $db->fetch("SELECT value FROM settings WHERE `key` = ?", [$k]);
+            $settings[$k] = $row['value'] ?? null;
+        }
+
+        // Defaults from config file when not yet saved to DB
+        $cfg = require BASE_PATH . '/config/upload_security.php';
+        if ($settings['upload_scan_mode'] === null) {
+            $settings['upload_scan_mode'] = $cfg['mode'] ?? 'enforce';
+        }
+        if ($settings['upload_clamav_enabled'] === null) {
+            $settings['upload_clamav_enabled'] = ($cfg['clamav']['enabled'] ?? true) ? '1' : '0';
+        }
+        if ($settings['upload_clamav_command'] === null) {
+            $settings['upload_clamav_command'] = $cfg['clamav']['command'] ?? 'clamscan --no-summary --stdout';
+        }
+
+        $this->view('admin/security/settings', [
+            'title' => 'Upload Scan Settings',
+            'settings' => $settings,
+        ]);
+    }
+
+    /**
+     * Save upload scan settings (POST)
+     */
+    public function updateUploadSettings(): void
+    {
+        $this->requirePermission('security');
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request.');
+            $this->redirect('/admin/security/settings');
+            return;
+        }
+
+        $db = Database::getInstance();
+
+        $scanMode = $this->input('upload_scan_mode', 'enforce');
+        if (!in_array($scanMode, ['passive', 'enforce'], true)) {
+            $scanMode = 'enforce';
+        }
+
+        $clamavCommand = trim((string) $this->input('upload_clamav_command', 'clamscan --no-summary --stdout'));
+        // Whitelist: only allow commands starting with known-safe ClamAV binaries
+        $allowedBinaries = ['clamscan', 'clamdscan', '/usr/bin/clamscan', '/usr/bin/clamdscan',
+                            '/usr/local/bin/clamscan', '/usr/local/bin/clamdscan'];
+        $isAllowed = false;
+        foreach ($allowedBinaries as $bin) {
+            if ($clamavCommand === $bin || str_starts_with($clamavCommand, $bin . ' ')) {
+                $isAllowed = true;
+                break;
+            }
+        }
+        if (!$isAllowed) {
+            $clamavCommand = 'clamscan --no-summary --stdout';
+        }
+        // Allow only safe flag characters: letters, digits, hyphens, spaces, underscores, dots
+        // Forward slashes are allowed only in the initial binary path portion (already validated above)
+        $flagsPart = substr($clamavCommand, strlen(explode(' ', $clamavCommand, 2)[0]));
+        if (preg_match('/[^a-zA-Z0-9 _\-.]/', $flagsPart)) {
+            $clamavCommand = 'clamscan --no-summary --stdout';
+        }
+
+        $settingsToUpdate = [
+            'security_alert_emails'  => trim((string) $this->input('security_alert_emails', '')),
+            'upload_scan_mode'       => $scanMode,
+            'upload_clamav_enabled'  => $this->input('upload_clamav_enabled') === '1' ? '1' : '0',
+            'upload_clamav_command'  => $clamavCommand,
+        ];
+
+        try {
+            foreach ($settingsToUpdate as $key => $value) {
+                $existing = $db->fetch("SELECT id FROM settings WHERE `key` = ?", [$key]);
+                if ($existing) {
+                    $db->update('settings', [
+                        'value'      => Security::sanitize($value),
+                        'updated_at' => date('Y-m-d H:i:s'),
+                    ], '`key` = ?', [$key]);
+                } else {
+                    $db->insert('settings', [
+                        'key'        => $key,
+                        'value'      => Security::sanitize($value),
+                        'type'       => 'string',
+                        'created_at' => date('Y-m-d H:i:s'),
+                    ]);
+                }
+            }
+
+            Logger::activity(Auth::id(), 'upload_security_settings_updated');
+            $this->flash('success', 'Upload scan settings saved successfully.');
+        } catch (\Exception $e) {
+            Logger::error('Upload settings update error: ' . $e->getMessage());
+            $this->flash('error', 'Failed to save settings: ' . $e->getMessage());
+        }
+
+        $this->redirect('/admin/security/settings');
+    }
+
+    /**
      * Get security stats (AJAX for live updates)
      */
     public function getStats(): void
@@ -318,6 +441,9 @@ class SecurityController extends BaseController
                     "SELECT COUNT(*) as count FROM failed_logins WHERE attempted_at >= DATE_SUB(NOW(), INTERVAL 1 HOUR)"
                 )['count'] ?? 0,
                 'active_sessions' => $db->fetch("SELECT COUNT(*) as count FROM user_remember_tokens WHERE expires_at > NOW()")['count'] ?? 0,
+                'upload_incidents_today' => $db->fetch(
+                    "SELECT COUNT(*) as count FROM activity_logs WHERE module = 'upload_security' AND status = 'failure' AND DATE(created_at) = CURDATE()"
+                )['count'] ?? 0,
                 'timestamp' => date('Y-m-d H:i:s')
             ];
             

@@ -12,6 +12,7 @@ use Core\Security;
 use Core\Helpers;
 use Core\Logger;
 use Core\ActivityLogger;
+use Core\SecureUpload;
 
 class FileController
 {
@@ -63,18 +64,18 @@ class FileController
         
         // Generate unique filename
         $shortCode = $this->generateShortCode();
-        $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
-        $safeFilename = $shortCode . '.' . strtolower($ext);
-        
-        // Create upload directory
-        $uploadDir = BASE_PATH . '/storage/uploads/proshare/' . date('Y/m');
-        if (!is_dir($uploadDir)) {
-            mkdir($uploadDir, 0755, true);
-        }
-        
-        $destination = $uploadDir . '/' . $safeFilename;
-        
-        if (move_uploaded_file($file['tmp_name'], $destination)) {
+        $secureUpload = SecureUpload::process($file, [
+            'destination_dir' => BASE_PATH . '/storage/uploads/proshare/' . date('Y/m'),
+            'allowed_mime_types' => $allowedTypes,
+            'max_size' => $this->getMaxUploadSize(),
+            'filename_prefix' => $shortCode,
+            'source' => 'proshare.legacy_upload',
+            'user_id' => Auth::id(),
+        ]);
+
+        if (!empty($secureUpload['success'])) {
+            $safeFilename = $secureUpload['filename'];
+            $destination = $secureUpload['path'];
             // Store file info in session (placeholder for database)
             $fileInfo = [
                 'short_code' => $shortCode,

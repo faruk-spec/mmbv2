@@ -16,6 +16,7 @@ use Core\Auth;
 use Core\Security;
 use Core\Logger;
 use Core\Database;
+use Core\SecureUpload;
 
 class AIProcessController
 {
@@ -104,14 +105,22 @@ class AIProcessController
 
             $userId   = Auth::id();
             $dir      = BASE_PATH . '/storage/uploads/convertx/' . $userId;
-            if (!is_dir($dir)) {
-                mkdir($dir, 0755, true);
-            }
-            $filePath = $dir . '/aiproc_' . bin2hex(random_bytes(8)) . '.' . $ext;
-            if (!move_uploaded_file($_FILES['file']['tmp_name'], $filePath)) {
-                echo json_encode(['success' => false, 'error' => 'Failed to save uploaded file.']);
+
+            $secureResult = SecureUpload::process($_FILES['file'], [
+                'destination_dir' => $dir,
+                'filename_prefix' => 'aiproc',
+                'source'          => 'convertx.ai_process',
+                'user_id'         => $userId,
+            ]);
+            if (empty($secureResult['success'])) {
+                echo json_encode([
+                    'success' => false,
+                    'error'   => '🚫 ' . ($secureResult['error'] ?? 'File rejected by security checks. Upload blocked.'),
+                ]);
                 return;
             }
+            $filePath = $secureResult['path'];
+            $ext      = strtolower(pathinfo($secureResult['filename'], PATHINFO_EXTENSION));
         }
 
         // ── Build OpenAI message content ─────────────────────────────────

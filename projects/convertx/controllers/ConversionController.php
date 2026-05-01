@@ -13,6 +13,7 @@ use Core\Auth;
 use Core\Security;
 use Core\Logger;
 use Core\ActivityLogger;
+use Core\SecureUpload;
 use Projects\ConvertX\Models\ConversionJobModel;
 use Projects\ConvertX\Services\ConversionService;
 use Projects\ConvertX\Services\JobQueueService;
@@ -116,18 +117,21 @@ class ConversionController
             return;
         }
 
-        // Persist file
+        // Persist file via SecureUpload (includes ClamAV scan)
         $uploadDir  = BASE_PATH . '/storage/uploads/convertx/' . $userId;
-        if (!is_dir($uploadDir)) {
-            mkdir($uploadDir, 0755, true);
-        }
-        $storedName = uniqid('cx_', true) . '.' . $ext;
-        $storedPath = $uploadDir . '/' . $storedName;
-
-        if (!move_uploaded_file($_FILES['file']['tmp_name'], $storedPath)) {
-            $this->jsonError('Failed to save uploaded file', 500);
+        $secureResult = SecureUpload::process($_FILES['file'], [
+            'destination_dir'    => $uploadDir,
+            'allowed_extensions' => self::ALLOWED_EXTENSIONS,
+            'max_size'           => $maxBytes,
+            'filename_prefix'    => 'cx',
+            'source'             => 'convertx.conversion',
+            'user_id'            => $userId,
+        ]);
+        if (empty($secureResult['success'])) {
+            $this->jsonError($secureResult['error'] ?? 'File rejected by security checks.', 422);
             return;
         }
+        $storedPath = $secureResult['path'];
 
         // Detect actual format
         $inputFormat = $this->conversionService->detectFormat($storedPath, $originalName);

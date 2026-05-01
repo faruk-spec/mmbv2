@@ -197,6 +197,8 @@ $router->post('/admin/security/unblock-ip/{id}', 'Admin\\SecurityController@unbl
 $router->get('/admin/security/failed-logins', 'Admin\\SecurityController@failedLogins', ['auth', 'admin']);
 $router->post('/admin/security/auto-block', 'Admin\\SecurityController@autoBlock', ['auth', 'admin']);
 $router->get('/admin/security/stats', 'Admin\\SecurityController@getStats', ['auth', 'admin']);
+$router->get('/admin/security/settings', 'Admin\\SecurityController@uploadSettings', ['auth', 'admin']);
+$router->post('/admin/security/update-settings', 'Admin\\SecurityController@updateUploadSettings', ['auth', 'admin']);
 
 // OAuth Management
 $router->get('/admin/oauth', 'Admin\\OAuthController@index', ['auth', 'admin']);

@@ -25,6 +25,7 @@ namespace Projects\ResumeX\Controllers;
 use Core\Auth;
 use Core\Security;
 use Core\Logger;
+use Core\SecureUpload;
 
 class ImageUploadController
 {
@@ -116,16 +117,24 @@ class ImageUploadController
         // Derive extension from the validated MIME type (not from user-supplied filename)
         $ext = self::ALLOWED_MIME_TYPES[$mimeType];
 
-        // Build a safe, unique file name
-        $fileName = sprintf('%d_%s_%s.%s', $userId, date('Ymd'), bin2hex(random_bytes(8)), $ext);
-        $destPath = $this->storageDir . '/' . $fileName;
+        $result = SecureUpload::process($file, [
+            'destination_dir' => $this->storageDir,
+            'allowed_extensions' => [$ext],
+            'allowed_mime_types' => array_keys(self::ALLOWED_MIME_TYPES),
+            'max_size' => self::MAX_FILE_SIZE,
+            'filename_prefix' => sprintf('%d_%s', $userId, date('Ymd')),
+            'source' => 'resumex.profile_photo_upload',
+            'user_id' => $userId,
+        ]);
 
-        if (!$this->moveUploadedFile($file['tmp_name'], $destPath)) {
-            Logger::error('ImageUploadController: move_uploaded_file failed for user ' . $userId);
-            http_response_code(500);
-            echo json_encode(['success' => false, 'error' => 'Could not save the image. Please try again.']);
+        if (empty($result['success'])) {
+            Logger::error('ImageUploadController: secure upload failed for user ' . $userId . ' - ' . ($result['error'] ?? 'unknown'));
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => $result['error'] ?? 'Could not save the image. Please try again.']);
             exit;
         }
+
+        $fileName = $result['filename'];
 
         $url = $this->storageUrl . '/' . $fileName;
 
@@ -146,30 +155,4 @@ class ImageUploadController
         }
     }
 
-    /**
-     * Move an uploaded file to $dest.  Falls back to copy()+unlink() for
-     * environments where PHP's temp directory and the destination sit on
-     * different mount points, which makes rename() (used internally by
-     * move_uploaded_file) fail with EXDEV.
-     */
-    private function moveUploadedFile(string $tmpPath, string $dest): bool
-    {
-        if (move_uploaded_file($tmpPath, $dest)) {
-            return true;
-        }
-        // Log that the primary method failed (helps diagnose filesystem config issues)
-        Logger::error('ImageUploadController: move_uploaded_file failed for ' . basename($dest) . ', trying copy() fallback.');
-        // Fallback: copy the raw bytes, then delete the temp file
-        if (@copy($tmpPath, $dest)) {
-            @unlink($tmpPath);
-            return true;
-        }
-        // Last resort: file_put_contents
-        $data = @file_get_contents($tmpPath);
-        if ($data !== false && @file_put_contents($dest, $data) !== false) {
-            @unlink($tmpPath);
-            return true;
-        }
-        return false;
-    }
 }

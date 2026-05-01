@@ -10,6 +10,7 @@ namespace Projects\ResumeX\Controllers;
 use Core\Auth;
 use Core\View;
 use Core\Security;
+use Core\SecureUpload;
 use Projects\ResumeX\Models\ResumeModel;
 
 class ResumeController
@@ -569,11 +570,26 @@ class ResumeController
         if ($resumeData === null && isset($_FILES['resume_file']) && $_FILES['resume_file']['error'] === UPLOAD_ERR_OK) {
             $ext = strtolower(pathinfo($_FILES['resume_file']['name'], PATHINFO_EXTENSION));
             if ($ext === 'json') {
-                $content = file_get_contents($_FILES['resume_file']['tmp_name']);
-                $parsed  = json_decode($content, true);
-                if (is_array($parsed)) {
-                    $resumeData = $parsed;
+                // Scan file before reading — store to a temp dir then read and delete
+                $tmpScanDir = BASE_PATH . '/storage/uploads/resumex/import_tmp';
+                $secureResult = SecureUpload::process($_FILES['resume_file'], [
+                    'destination_dir'    => $tmpScanDir,
+                    'allowed_extensions' => ['json'],
+                    'allowed_mime_types' => ['application/json', 'text/plain', 'text/json'],
+                    'max_size'           => 2 * 1024 * 1024,
+                    'filename_prefix'    => 'import',
+                    'source'             => 'resumex.json_import',
+                    'user_id'            => $userId,
+                ]);
+                if (!empty($secureResult['success'])) {
+                    $content = @file_get_contents($secureResult['path']);
+                    @unlink($secureResult['path']); // read-once; no need to keep
+                    $parsed  = is_string($content) ? json_decode($content, true) : null;
+                    if (is_array($parsed)) {
+                        $resumeData = $parsed;
+                    }
                 }
+                // If scan failed we silently fall through to default data
             }
         }
 
