@@ -23,7 +23,7 @@
     <?php endif; ?>
 
     <form method="POST" action="/admin/security/update-settings">
-        <input type="hidden" name="_token" value="<?= Helpers::csrf() ?>">
+        <?= \Core\Security::csrfField() ?>
 
         <!-- ClamAV Settings -->
         <div class="settings-card">
