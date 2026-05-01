@@ -343,6 +343,7 @@ $router->get('/admin/mail/templates', 'Admin\\MailConfigController@templates', [
 $router->get('/admin/mail/templates/edit', 'Admin\\MailConfigController@editTemplate', ['auth', 'admin']);
 $router->post('/admin/mail/templates/update', 'Admin\\MailConfigController@updateTemplate', ['auth', 'admin']);
 $router->post('/admin/mail/templates/toggle', 'Admin\\MailConfigController@toggleTemplate', ['auth', 'admin']);
+$router->post('/admin/mail/templates/set-provider', 'Admin\\MailConfigController@setTemplateProvider', ['auth', 'admin']);
 $router->get('/admin/mail/logs', 'Admin\\MailConfigController@logs', ['auth', 'admin']);
 // Mail user access management
 $router->get('/admin/mail/access', 'Admin\\MailAccessController@index', ['auth', 'admin']);

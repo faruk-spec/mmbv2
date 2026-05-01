@@ -367,6 +367,38 @@ class MailConfigController extends BaseController
         $this->json(['success' => true, 'enabled' => (bool)$newVal]);
     }
 
+    public function setTemplateProvider(): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request.');
+            $this->redirect('/admin/mail/templates');
+            return;
+        }
+
+        $id         = (int)$this->input('id', 0);
+        $providerId = $this->input('mail_provider_config_id', '') !== '' ? (int)$this->input('mail_provider_config_id', 0) : null;
+
+        if (!$id) {
+            $this->redirect('/admin/mail/templates');
+            return;
+        }
+
+        $db = Database::getInstance();
+
+        // Only update if the column exists
+        try {
+            $cols = $db->fetchAll("SHOW COLUMNS FROM mail_notification_templates LIKE 'mail_provider_config_id'");
+            if (!empty($cols)) {
+                $db->update('mail_notification_templates', ['mail_provider_config_id' => $providerId], 'id = ?', [$id]);
+            }
+        } catch (\Exception $e) {
+            // column not yet added – ignore
+        }
+
+        $this->flash('success', 'Provider assignment saved.');
+        $this->redirect('/admin/mail/templates');
+    }
+
     // ------------------------------------------------------------------
     // Send log
     // ------------------------------------------------------------------

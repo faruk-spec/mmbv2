@@ -28,6 +28,36 @@ class EmailController extends BaseController
         $this->requirePermission('email.queue');
         $db = Database::getInstance();
 
+        // Auto-create email_queue table if it doesn't exist yet
+        try {
+            $db->query(
+                "CREATE TABLE IF NOT EXISTS `email_queue` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `to_email` VARCHAR(255) NOT NULL,
+                    `subject` VARCHAR(255) NOT NULL,
+                    `body` LONGTEXT NOT NULL,
+                    `cc` VARCHAR(512) NULL,
+                    `bcc` VARCHAR(512) NULL,
+                    `reply_to` VARCHAR(255) NULL,
+                    `attachments` JSON NULL,
+                    `priority` TINYINT DEFAULT 5,
+                    `attempts` INT DEFAULT 0,
+                    `max_attempts` INT DEFAULT 3,
+                    `status` ENUM('pending','processing','sent','failed') DEFAULT 'pending',
+                    `error_message` TEXT NULL,
+                    `scheduled_at` TIMESTAMP NULL,
+                    `sent_at` TIMESTAMP NULL,
+                    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    INDEX `idx_status` (`status`),
+                    INDEX `idx_scheduled` (`scheduled_at`),
+                    INDEX `idx_created` (`created_at`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+                []
+            );
+        } catch (\Throwable $e) {
+            // Silently ignore if already exists or no permission
+        }
+
         $status  = $_GET['status'] ?? 'all';
         $page    = max(1, (int)($_GET['page'] ?? 1));
         $perPage = 50;
@@ -95,6 +125,21 @@ class EmailController extends BaseController
         $templateDir = __DIR__ . '/../../views/emails/';
         $templates = [];
 
+        // These are handled via admin/mail/templates (DB-backed notification templates)
+        // and should not appear in the file-based template list.
+        $excludedNames = [
+            'login-alert',
+            'login_alert',
+            'password-changed',
+            'password_changed',
+            'password-reset',
+            'password_reset',
+            'verify',
+            'email-verify',
+            'email_verify',
+            'welcome',
+        ];
+
         // Load disabled templates from settings
         $disabledTemplates = $this->getDisabledFileTemplates();
 
@@ -103,6 +148,9 @@ class EmailController extends BaseController
             foreach ($files as $file) {
                 if (pathinfo($file, PATHINFO_EXTENSION) === 'php' && $file !== 'layout.php') {
                     $name = str_replace('.php', '', $file);
+                    if (in_array($name, $excludedNames, true)) {
+                        continue;
+                    }
                     $templates[] = [
                         'name'     => $name,
                         'file'     => $file,

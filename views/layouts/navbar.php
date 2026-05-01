@@ -385,7 +385,7 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
                     <?php
                     $navbarAvatarPath = $user['avatar'] ?? '';
                     if (!empty($navbarAvatarPath)):
-                        $navbarAvatarSrc = str_starts_with($navbarAvatarPath, '/') ? $navbarAvatarPath : '/storage/uploads/avatars/' . $navbarAvatarPath;
+                        $navbarAvatarSrc = str_starts_with($navbarAvatarPath, '/') ? $navbarAvatarPath : '/uploads/avatars/' . $navbarAvatarPath;
                     ?>
                         <img src="<?= htmlspecialchars($navbarAvatarSrc) ?>" alt="Avatar" style="width:28px;height:28px;border-radius:50%;object-fit:cover;border:1px solid var(--border-color);">
                     <?php else: ?>

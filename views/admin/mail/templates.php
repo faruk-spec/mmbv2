@@ -22,6 +22,7 @@
                     <th>Slug</th>
                     <th>Name</th>
                     <th>Subject</th>
+                    <th>Send From (Mail Config)</th>
                     <th>Variables</th>
                     <th>Status</th>
                     <th>Actions</th>
@@ -32,7 +33,33 @@
                 <tr>
                     <td><code><?= View::e($tpl['slug']) ?></code></td>
                     <td><?= View::e($tpl['name']) ?></td>
-                    <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><?= View::e($tpl['subject']) ?></td>
+                    <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><?= View::e($tpl['subject']) ?></td>
+                    <td>
+                        <?php
+                        $selectedProviderId = $tpl['mail_provider_config_id'] ?? null;
+                        $selectedProviderName = '— default —';
+                        foreach ($providers as $prov) {
+                            if ((int)$prov['id'] === (int)$selectedProviderId) {
+                                $selectedProviderName = htmlspecialchars($prov['name']);
+                                break;
+                            }
+                        }
+                        ?>
+                        <form method="POST" action="/admin/mail/templates/set-provider" style="display:inline-flex;align-items:center;gap:6px;">
+                            <?= \Core\Security::csrfField() ?>
+                            <input type="hidden" name="id" value="<?= $tpl['id'] ?>">
+                            <select name="mail_provider_config_id"
+                                    onchange="this.form.submit()"
+                                    style="padding:4px 8px;border-radius:6px;border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-size:12px;max-width:160px;">
+                                <option value="">— default —</option>
+                                <?php foreach ($providers as $prov): ?>
+                                <option value="<?= (int)$prov['id'] ?>" <?= (int)$prov['id'] === (int)$selectedProviderId ? 'selected' : '' ?>>
+                                    <?= View::e($prov['name']) ?><?= $prov['is_active'] ? '' : ' (inactive)' ?>
+                                </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </form>
+                    </td>
                     <td>
                         <?php $vars = json_decode($tpl['variables'] ?? '[]', true) ?? []; ?>
                         <?php foreach ($vars as $v): ?>

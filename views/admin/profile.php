@@ -20,7 +20,7 @@
             <div style="display:flex;align-items:center;gap:20px;margin-bottom:24px;">
                 <?php
                 $avatarSrc = !empty($profile['avatar'])
-                    ? (str_starts_with($profile['avatar'], '/') ? $profile['avatar'] : '/storage/uploads/avatars/' . $profile['avatar'])
+                    ? (str_starts_with($profile['avatar'], '/') ? $profile['avatar'] : '/uploads/avatars/' . $profile['avatar'])
                     : '';
                 ?>
                 <div style="width:80px;height:80px;border-radius:50%;overflow:hidden;border:2px solid var(--border-color);flex-shrink:0;background:var(--bg-secondary);display:flex;align-items:center;justify-content:center;">

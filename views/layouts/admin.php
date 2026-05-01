@@ -1383,7 +1383,7 @@ window.mmbSkeleton = (function(){
                     
                     <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('convertx')): ?>
                     <!-- ConvertX Admin -->
-                    <div class="menu-item menu-dropdown">
+                    <div class="menu-item menu-dropdown <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/convertx') === 0 ? 'open' : '' ?>">
                         <div class="menu-dropdown-toggle <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/convertx') === 0 ? 'active' : '' ?>">
                             <div class="left">
                                 <i class="fas fa-file-export"></i>
@@ -1609,8 +1609,8 @@ window.mmbSkeleton = (function(){
                     
                     <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('billx')): ?>
                     <!-- BillX -->
-                    <div class="menu-item menu-dropdown">
-                        <div class="menu-dropdown-toggle">
+                    <div class="menu-item menu-dropdown <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/billx') === 0 ? 'open' : '' ?>">
+                        <div class="menu-dropdown-toggle <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/billx') === 0 ? 'active' : '' ?>">
                             <div class="left">
                                 <i class="fas fa-file-invoice"></i>
                                 <span>BillX</span>
@@ -1654,8 +1654,8 @@ window.mmbSkeleton = (function(){
 
                     <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('whatsapp')): ?>
                     <!-- WhatsApp API -->
-                    <div class="menu-item menu-dropdown">
-                        <div class="menu-dropdown-toggle">
+                    <div class="menu-item menu-dropdown <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/whatsapp') === 0 ? 'open' : '' ?>">
+                        <div class="menu-dropdown-toggle <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/whatsapp') === 0 ? 'active' : '' ?>">
                             <div class="left">
                                 <i class="fab fa-whatsapp"></i>
                                 <span>WhatsApp API</span>
@@ -2576,7 +2576,7 @@ window.mmbSkeleton = (function(){
                                 $adminAvatarPath = $adminAvatarProfile['avatar'] ?? '';
                             } catch (\Exception $_e) { $adminAvatarPath = ''; }
                             if (!empty($adminAvatarPath)):
-                                $adminAvatarSrc = str_starts_with($adminAvatarPath, '/') ? $adminAvatarPath : '/storage/uploads/avatars/' . $adminAvatarPath;
+                                $adminAvatarSrc = str_starts_with($adminAvatarPath, '/') ? $adminAvatarPath : '/uploads/avatars/' . $adminAvatarPath;
                             ?>
                                 <img src="<?= htmlspecialchars($adminAvatarSrc) ?>" alt="Avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
                             <?php else: ?>

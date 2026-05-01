@@ -73,7 +73,7 @@ class UserController extends BaseController
                 'bio'        => $profile['bio'] ?? null,
                 'phone'      => $profile['phone'] ?? null,
                 'avatar_url' => !empty($profile['avatar'])
-                    ? (str_starts_with($profile['avatar'], '/') ? $profile['avatar'] : '/storage/uploads/avatars/' . $profile['avatar'])
+                    ? (str_starts_with($profile['avatar'], '/') ? $profile['avatar'] : '/uploads/avatars/' . $profile['avatar'])
                     : null,
             ],
         ]);
