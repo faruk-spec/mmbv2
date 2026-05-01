@@ -94,26 +94,95 @@ class EmailController extends BaseController
         // Get all email template files
         $templateDir = __DIR__ . '/../../views/emails/';
         $templates = [];
-        
+
+        // Load disabled templates from settings
+        $disabledTemplates = $this->getDisabledFileTemplates();
+
         if (is_dir($templateDir)) {
             $files = scandir($templateDir);
             foreach ($files as $file) {
                 if (pathinfo($file, PATHINFO_EXTENSION) === 'php' && $file !== 'layout.php') {
+                    $name = str_replace('.php', '', $file);
                     $templates[] = [
-                        'name' => str_replace('.php', '', $file),
-                        'file' => $file,
-                        'path' => $templateDir . $file,
-                        'size' => filesize($templateDir . $file),
-                        'modified' => filemtime($templateDir . $file)
+                        'name'     => $name,
+                        'file'     => $file,
+                        'path'     => $templateDir . $file,
+                        'size'     => filesize($templateDir . $file),
+                        'modified' => filemtime($templateDir . $file),
+                        'enabled'  => !in_array($name, $disabledTemplates, true),
                     ];
                 }
             }
         }
-        
+
         $this->view('admin/email/templates', [
-            'title' => 'Email Templates',
-            'templates' => $templates
+            'title'     => 'Email Templates',
+            'templates' => $templates,
         ]);
+    }
+
+    /**
+     * Toggle enable/disable for a file-based email template (AJAX POST).
+     */
+    public function toggleTemplate(): void
+    {
+        $this->requirePermission('email.templates');
+        if (!$this->validateCsrf()) {
+            $this->json(['success' => false, 'message' => 'Invalid request.']);
+            return;
+        }
+
+        $name    = preg_replace('/[^a-zA-Z0-9\-_]/', '', $this->input('name', ''));
+        $enabled = (int)$this->input('enabled', 1);
+
+        if (!$name) {
+            $this->json(['success' => false, 'message' => 'Invalid template name.']);
+            return;
+        }
+
+        $disabled = $this->getDisabledFileTemplates();
+
+        if ($enabled) {
+            $disabled = array_values(array_diff($disabled, [$name]));
+        } else {
+            if (!in_array($name, $disabled, true)) {
+                $disabled[] = $name;
+            }
+        }
+
+        $this->saveDisabledFileTemplates($disabled);
+        Logger::activity(Auth::id(), 'email_template_toggled', ['name' => $name, 'enabled' => $enabled]);
+        $this->json(['success' => true, 'enabled' => $enabled, 'message' => 'Template ' . ($enabled ? 'enabled' : 'disabled') . '.']);
+    }
+
+    private function getDisabledFileTemplates(): array
+    {
+        try {
+            $db  = Database::getInstance();
+            $row = $db->fetch("SELECT value FROM settings WHERE `key` = 'disabled_file_templates' LIMIT 1");
+            if ($row && $row['value']) {
+                return json_decode($row['value'], true) ?: [];
+            }
+        } catch (\Throwable $e) {
+            // ignore
+        }
+        return [];
+    }
+
+    private function saveDisabledFileTemplates(array $disabled): void
+    {
+        try {
+            $db  = Database::getInstance();
+            $val = json_encode(array_values($disabled));
+            $row = $db->fetch("SELECT id FROM settings WHERE `key` = 'disabled_file_templates' LIMIT 1");
+            if ($row) {
+                $db->update('settings', ['value' => $val], '`key` = ?', ['disabled_file_templates']);
+            } else {
+                $db->insert('settings', ['key' => 'disabled_file_templates', 'value' => $val]);
+            }
+        } catch (\Throwable $e) {
+            // ignore
+        }
     }
     
     /**

@@ -43,6 +43,7 @@
                 <thead>
                     <tr style="border-bottom:1px solid var(--border-color,rgba(255,255,255,.08));">
                         <th style="padding:12px 16px;text-align:left;color:var(--text-secondary,#8892a6);font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Template</th>
+                        <th style="padding:12px 16px;text-align:left;color:var(--text-secondary,#8892a6);font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Status</th>
                         <th style="padding:12px 16px;text-align:left;color:var(--text-secondary,#8892a6);font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Size</th>
                         <th style="padding:12px 16px;text-align:left;color:var(--text-secondary,#8892a6);font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Modified</th>
                         <th style="padding:12px 16px;text-align:left;color:var(--text-secondary,#8892a6);font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Actions</th>
@@ -62,6 +63,13 @@
                             <?php if ($desc): ?><div style="font-size:.75rem;color:var(--text-secondary,#8892a6);margin-top:1px;"><?= htmlspecialchars($desc) ?></div><?php endif; ?>
                             <div style="font-size:.73rem;color:var(--text-secondary,#8892a6);font-family:monospace;margin-top:2px;opacity:.7;"><?= htmlspecialchars($tpl['name']) ?>.php</div>
                         </td>
+                        <td style="padding:12px 16px;">
+                            <button onclick="toggleTemplate('<?= htmlspecialchars($tpl['name'], ENT_QUOTES) ?>', <?= $tpl['enabled'] ? 0 : 1 ?>, this)"
+                                    style="display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:6px;border:none;cursor:pointer;font-size:.78rem;font-weight:600;background:<?= $tpl['enabled'] ? 'rgba(0,255,136,.12)' : 'rgba(255,107,107,.12)' ?>;color:<?= $tpl['enabled'] ? '#00ff88' : '#ff6b6b' ?>;">
+                                <i class="fas <?= $tpl['enabled'] ? 'fa-toggle-on' : 'fa-toggle-off' ?>"></i>
+                                <?= $tpl['enabled'] ? 'Enabled' : 'Disabled' ?>
+                            </button>
+                        </td>
                         <td style="padding:12px 16px;color:var(--text-secondary,#8892a6);font-size:.83rem;"><?= number_format($tpl['size']) ?> B</td>
                         <td style="padding:12px 16px;color:var(--text-secondary,#8892a6);font-size:.83rem;"><?= date('M j, Y H:i', $tpl['modified']) ?></td>
                         <td style="padding:12px 16px;">
@@ -79,11 +87,31 @@
                     </tr>
                     <?php endforeach; ?>
                     <?php if (!$hasRows): ?>
-                    <tr><td colspan="4" style="padding:40px;text-align:center;color:var(--text-secondary,#8892a6);font-size:.88rem;">No system email templates found.</td></tr>
+                    <tr><td colspan="5" style="padding:40px;text-align:center;color:var(--text-secondary,#8892a6);font-size:.88rem;">No system email templates found.</td></tr>
                     <?php endif; ?>
                 </tbody>
             </table>
         </div>
     </div>
 </div>
+
+<script>
+const _csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+function toggleTemplate(name, enable, btn) {
+    btn.disabled = true;
+    fetch('/admin/email/templates/toggle', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRF-Token': _csrfToken},
+        body: '_csrf_token=' + encodeURIComponent(_csrfToken) + '&name=' + encodeURIComponent(name) + '&enabled=' + enable
+    }).then(r => r.json()).then(d => {
+        if (d.success) {
+            location.reload();
+        } else {
+            btn.disabled = false;
+            alert(d.message || 'Error');
+        }
+    }).catch(() => { btn.disabled = false; });
+}
+</script>
 <?php View::endSection(); ?>

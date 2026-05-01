@@ -39,6 +39,7 @@ if (!$navbarSettings) {
         'show_profile_link' => 1,
         'show_admin_link' => 1,
         'show_projects_dropdown' => 1,
+        'show_projects_dropdown_to_user' => 1,
         'show_theme_toggle' => 1,
         'default_theme' => 'dark',
         'navbar_bg_color' => null,
@@ -63,6 +64,7 @@ if (!$navbarSettings) {
         'show_profile_link' => 1,
         'show_admin_link' => 1,
         'show_projects_dropdown' => 1,
+        'show_projects_dropdown_to_user' => 1,
         'show_theme_toggle' => 1,
         'default_theme' => 'dark',
         'navbar_bg_color' => null,
@@ -224,7 +226,10 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
             
             <?php if ($isLoggedIn): ?>
                 <!-- Projects Dropdown -->
-                <?php if ($navbarSettings['show_projects_dropdown']): ?>
+                <?php
+                $showProjectsForThisUser = $navbarSettings['show_projects_dropdown'] && (Auth::isAdmin() || !empty($navbarSettings['show_projects_dropdown_to_user']));
+                if ($showProjectsForThisUser):
+                ?>
                 <div class="dropdown nav-item" id="projectsDropdown">
                     <button class="nav-link dropdown-toggle">
                         Projects
@@ -376,11 +381,19 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
 
             <!-- Profile Dropdown — always shown for logged-in users -->
             <div class="dropdown" id="profileDropdown">
-                <button class="nav-link dropdown-toggle">
+                <button class="nav-link dropdown-toggle" style="display:flex;align-items:center;gap:6px;">
+                    <?php
+                    $navbarAvatarPath = $user['avatar'] ?? '';
+                    if (!empty($navbarAvatarPath)):
+                        $navbarAvatarSrc = str_starts_with($navbarAvatarPath, '/') ? $navbarAvatarPath : '/storage/uploads/avatars/' . $navbarAvatarPath;
+                    ?>
+                        <img src="<?= htmlspecialchars($navbarAvatarSrc) ?>" alt="Avatar" style="width:28px;height:28px;border-radius:50%;object-fit:cover;border:1px solid var(--border-color);">
+                    <?php else: ?>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                         <circle cx="12" cy="7" r="4"/>
                     </svg>
+                    <?php endif; ?>
                     <?php
                     // Show full name: first word only, max 10 characters
                     $displayName = $user['name'] ?? $user['username'] ?? 'User';
@@ -402,6 +415,13 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
                             <circle cx="12" cy="7" r="4"/>
                         </svg>
                         Profile
+                    </a>
+                    <a href="/security#change-password" class="dropdown-item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        </svg>
+                        Change Password
                     </a>
                     <a href="/settings" class="dropdown-item">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -795,6 +815,7 @@ body {
 .universal-header .logo {
     font-size: 1.3rem;
     font-weight: 700;
+    color: var(--cyan); /* fallback if gradient-clip is unsupported */
     background: linear-gradient(135deg, var(--cyan), var(--magenta));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;

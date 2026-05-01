@@ -8,6 +8,11 @@
 // Admin dashboard
 $router->get('/admin', 'Admin\\DashboardController@index', ['auth', 'admin']);
 $router->get('/admin/dashboard', 'Admin\\DashboardController@index', ['auth', 'admin']);
+
+// Admin Profile
+$router->get('/admin/profile', 'Admin\\AdminProfileController@index', ['auth', 'admin']);
+$router->post('/admin/profile/update', 'Admin\\AdminProfileController@update', ['auth', 'admin']);
+$router->post('/admin/profile/change-password', 'Admin\\AdminProfileController@changePassword', ['auth', 'admin']);
 $router->get('/admin/api/live-stats', 'Admin\\DashboardController@liveStats', ['auth', 'admin']);
 
 // Pages CMS
@@ -317,6 +322,7 @@ $router->get('/admin/email/queue', 'Admin\\EmailController@queue', ['auth', 'adm
 $router->get('/admin/email/templates', 'Admin\\EmailController@templates', ['auth', 'admin']);
 $router->get('/admin/email/templates/view', 'Admin\\EmailController@viewTemplate', ['auth', 'admin']);
 $router->get('/admin/email/templates/edit', 'Admin\\EmailController@editTemplate', ['auth', 'admin']);
+$router->post('/admin/email/templates/toggle', 'Admin\\EmailController@toggleTemplate', ['auth', 'admin']);
 $router->post('/admin/email/templates/update', 'Admin\\EmailController@updateTemplate', ['auth', 'admin']);
 $router->post('/admin/email/queue/process', 'Admin\\EmailController@processQueue', ['auth', 'admin']);
 $router->post('/admin/email/queue/delete-failed', 'Admin\\EmailController@deleteFailed', ['auth', 'admin']);

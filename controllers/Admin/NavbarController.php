@@ -70,6 +70,7 @@ class NavbarController extends BaseController
             $showProfileLink = isset($_POST['show_profile_link']) ? 1 : 0;
             $showAdminLink = isset($_POST['show_admin_link']) ? 1 : 0;
             $showProjectsDropdown = isset($_POST['show_projects_dropdown']) ? 1 : 0;
+            $showProjectsDropdownToUser = isset($_POST['show_projects_dropdown_to_user']) ? 1 : 0;
             $showThemeToggle = isset($_POST['show_theme_toggle']) ? 1 : 0;
             $navbarSticky = isset($_POST['navbar_sticky']) ? 1 : 0;
             $defaultTheme = $_POST['default_theme'] ?? 'dark';
@@ -241,6 +242,11 @@ class NavbarController extends BaseController
             if (in_array('show_projects_dropdown', $columnNames)) {
                 $updateFields[] = "show_projects_dropdown = ?";
                 $updateValues[] = $showProjectsDropdown;
+            }
+
+            if (in_array('show_projects_dropdown_to_user', $columnNames)) {
+                $updateFields[] = "show_projects_dropdown_to_user = ?";
+                $updateValues[] = $showProjectsDropdownToUser;
             }
             
             if (in_array('show_theme_toggle', $columnNames)) {

@@ -152,8 +152,12 @@
                             <a href="/admin/mail/config/edit?id=<?= $p['id'] ?>" class="btn btn-sm btn-secondary">
                                 <i class="fas fa-edit"></i>
                             </a>
-                            <?php if (!$p['is_active']): ?>
-                            <button class="btn btn-sm btn-primary" onclick="activateProvider(<?= $p['id'] ?>)">
+                            <?php if ($p['is_active']): ?>
+                            <button class="btn btn-sm btn-warning" onclick="toggleProvider(<?= $p['id'] ?>, false)">
+                                <i class="fas fa-power-off"></i> Deactivate
+                            </button>
+                            <?php else: ?>
+                            <button class="btn btn-sm btn-primary" onclick="toggleProvider(<?= $p['id'] ?>, true)">
                                 <i class="fas fa-power-off"></i> Activate
                             </button>
                             <?php endif; ?>
@@ -173,16 +177,19 @@
 <script>
 const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
 
-function activateProvider(id) {
-    if (!confirm('Activate this provider? It will become the default sender.')) return;
+function toggleProvider(id, activate) {
+    const action = activate ? 'Activate' : 'Deactivate';
+    if (!confirm(action + ' this provider?')) return;
     fetch('/admin/mail/config/activate', {
         method: 'POST',
         headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRF-Token': csrfToken},
-        body: '_csrf_token=' + encodeURIComponent(csrfToken) + '&id=' + id
+        body: '_csrf_token=' + encodeURIComponent(csrfToken) + '&id=' + id + '&action=' + (activate ? 'activate' : 'deactivate')
     }).then(r => r.json()).then(d => {
         if (d.success) { location.reload(); } else { alert(d.message || 'Error'); }
     });
 }
+
+function activateProvider(id) { toggleProvider(id, true); }
 
 function deleteProvider(id, name) {
     if (!confirm('Delete provider "' + name + '"? This cannot be undone.')) return;
