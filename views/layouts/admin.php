@@ -1263,7 +1263,13 @@ window.mmbSkeleton = (function(){
                     } catch (\Exception $_e) { $sidebarNavSettings = null; }
                     if ($sidebarNavSettings && $sidebarNavSettings['logo_type'] === 'image' && !empty($sidebarNavSettings['logo_image_url'])):
                     ?>
-                        <img src="<?= htmlspecialchars($sidebarNavSettings['logo_image_url']) ?>" alt="Logo" style="max-height:36px;width:auto;object-fit:contain;display:block;">
+                        <img src="<?= htmlspecialchars($sidebarNavSettings['logo_image_url']) ?>"
+                             alt="Logo"
+                             style="max-height:36px;width:auto;object-fit:contain;display:block;"
+                             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                        <span style="display:none;align-items:center;gap:10px;">
+                            <i class="fas fa-bolt"></i><?= htmlspecialchars($sidebarNavSettings['logo_text'] ?? APP_NAME) ?> Admin
+                        </span>
                     <?php else: ?>
                         <i class="fas fa-bolt"></i>
                         <?= htmlspecialchars($sidebarNavSettings['logo_text'] ?? APP_NAME) ?> Admin
@@ -1717,7 +1723,7 @@ window.mmbSkeleton = (function(){
 
                     <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('qr')): ?>
                     <!-- QR Codes -->
-                    <div class="menu-item menu-dropdown">
+                    <div class="menu-item menu-dropdown <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/qr') === 0 ? 'open' : '' ?>">
                         <div class="menu-dropdown-toggle <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/qr') === 0 ? 'active' : '' ?>">
                             <div class="left">
                                 <i class="fas fa-qrcode"></i>
@@ -1780,7 +1786,7 @@ window.mmbSkeleton = (function(){
 
                     <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('idcard')): ?>
                     <!-- CardX -->
-                    <div class="menu-item menu-dropdown">
+                    <div class="menu-item menu-dropdown <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/idcard') === 0 ? 'open' : '' ?>">
                         <div class="menu-dropdown-toggle <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/idcard') === 0 ? 'active' : '' ?>">
                             <div class="left">
                                 <i class="fas fa-id-card"></i>
@@ -1825,7 +1831,7 @@ window.mmbSkeleton = (function(){
 
                     <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('resumex')): ?>
                     <!-- ResumeX -->
-                    <div class="menu-item menu-dropdown">
+                    <div class="menu-item menu-dropdown <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/resumex') === 0 ? 'open' : '' ?>">
                         <div class="menu-dropdown-toggle <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/resumex') === 0 ? 'active' : '' ?>">
                             <div class="left">
                                 <i class="fas fa-file-alt"></i>
@@ -1876,7 +1882,7 @@ window.mmbSkeleton = (function(){
 
                     <!-- FormX – Form Builder -->
                     <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('formx')): ?>
-                    <div class="menu-item menu-dropdown">
+                    <div class="menu-item menu-dropdown <?= (strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/formx') === 0 || strpos($_SERVER['REQUEST_URI'] ?? '', '/projects/formx') === 0) ? 'open' : '' ?>">
                         <div class="menu-dropdown-toggle <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/formx') === 0 || strpos($_SERVER['REQUEST_URI'] ?? '', '/projects/formx') === 0 ? 'active' : '' ?>">
                             <div class="left">
                                 <i class="fas fa-wpforms"></i>
@@ -1907,7 +1913,7 @@ window.mmbSkeleton = (function(){
                 
                 <!-- LinkShortner – URL Shortener -->
                 <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('linkshortner')): ?>
-                <div class="menu-item menu-dropdown">
+                <div class="menu-item menu-dropdown <?= (strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/linkshortner') === 0 || strpos($_SERVER['REQUEST_URI'] ?? '', '/projects/linkshortner') === 0) ? 'open' : '' ?>">
                     <div class="menu-dropdown-toggle <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/linkshortner') === 0 || strpos($_SERVER['REQUEST_URI'] ?? '', '/projects/linkshortner') === 0 ? 'active' : '' ?>">
                         <div class="left">
                             <i class="fas fa-link" style="color:#00d4ff;"></i>
@@ -1946,7 +1952,7 @@ window.mmbSkeleton = (function(){
 
                 <!-- NoteX – Private Notes -->
                 <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('notex')): ?>
-                <div class="menu-item menu-dropdown">
+                <div class="menu-item menu-dropdown <?= (strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/notex') === 0 || strpos($_SERVER['REQUEST_URI'] ?? '', '/projects/notex') === 0) ? 'open' : '' ?>">
                     <div class="menu-dropdown-toggle <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/notex') === 0 || strpos($_SERVER['REQUEST_URI'] ?? '', '/projects/notex') === 0 ? 'active' : '' ?>">
                         <div class="left">
                             <i class="fas fa-sticky-note" style="color:#ffd700;"></i>
@@ -3050,19 +3056,21 @@ window.mmbSkeleton = (function(){
 (function () {
     var sidebar = document.getElementById('sidebar');
     if (!sidebar) return;
-    var active = sidebar.querySelector('.menu-link.active, .menu-dropdown-toggle.active');
-    if (!active) return;
-    // Delay slightly so the browser has painted and computed layout
+    // Allow the auto-open JS above to run and any CSS transition to settle
     setTimeout(function () {
-        var sTop    = sidebar.scrollTop;
-        var sHeight = sidebar.clientHeight;
-        var elTop   = active.offsetTop;
-        var elBot   = elTop + active.offsetHeight;
+        var active = sidebar.querySelector('.menu-link.active, .menu-dropdown-toggle.active');
+        if (!active) return;
+        // Use getBoundingClientRect for correct position relative to the sidebar viewport
+        var activeRect  = active.getBoundingClientRect();
+        var sidebarRect = sidebar.getBoundingClientRect();
+        var sHeight     = sidebar.clientHeight;
+        var relTop      = activeRect.top - sidebarRect.top + sidebar.scrollTop;
+        var relBot      = relTop + active.offsetHeight;
         // Only scroll if the element is not already in view
-        if (elTop < sTop + 60 || elBot > sTop + sHeight - 20) {
-            sidebar.scrollTo({ top: Math.max(0, elTop - 80), behavior: 'smooth' });
+        if (relTop < sidebar.scrollTop + 60 || relBot > sidebar.scrollTop + sHeight - 20) {
+            sidebar.scrollTo({ top: Math.max(0, relTop - 80), behavior: 'smooth' });
         }
-    }, 120);
+    }, 350); // wait for auto-open dropdown CSS transition (~300ms) to settle
 })();
 </script>
 </body>

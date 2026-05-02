@@ -82,11 +82,6 @@ if (!empty($navbarSettings['custom_links'])) {
 }
 ?>
 <!-- Universal Navbar Component -->
-<!-- Debug: Settings loaded from <?= $navbarSettings ? 'DATABASE' : 'DEFAULTS' ?> 
-<?php if ($settingsFetchError): ?>
-Error: <?= htmlspecialchars($settingsFetchError) ?>
-<?php endif; ?>
-Logo: <?= htmlspecialchars($navbarSettings['logo_text'] ?? 'N/A') ?> -->
 <?php 
 // Build header inline styles
 $headerStyles = [];
@@ -113,7 +108,10 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
     <div class="container header-content">
         <?php if ($navbarSettings['logo_type'] === 'image' && !empty($navbarSettings['logo_image_url'])): ?>
             <a href="/" class="logo">
-                <img src="<?= htmlspecialchars($navbarSettings['logo_image_url']) ?>" alt="Logo" style="max-height: 40px;">
+                <img src="<?= htmlspecialchars($navbarSettings['logo_image_url']) ?>"
+                     alt="Logo"
+                     style="max-height: 40px;"
+                     onerror="this.style.display='none';this.parentElement.insertAdjacentText('beforeend',<?= json_encode(htmlspecialchars($navbarSettings['logo_text'] ?? APP_NAME)) ?>);">
             </a>
         <?php else: ?>
             <a href="/" class="logo" <?php if ($navbarSettings['navbar_text_color']): ?>style="color: <?= htmlspecialchars($navbarSettings['navbar_text_color']) ?>;"<?php endif; ?>><?= htmlspecialchars($navbarSettings['logo_text']) ?></a>
@@ -387,12 +385,18 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
                     if (!empty($navbarAvatarPath)):
                         $navbarAvatarSrc = str_starts_with($navbarAvatarPath, '/') ? $navbarAvatarPath : '/uploads/avatars/' . $navbarAvatarPath;
                     ?>
-                        <img src="<?= htmlspecialchars($navbarAvatarSrc) ?>" alt="Avatar" style="width:28px;height:28px;border-radius:50%;object-fit:cover;border:1px solid var(--border-color);">
+                        <span class="profile-avatar-wrap">
+                            <img src="<?= htmlspecialchars($navbarAvatarSrc) ?>" alt="Avatar" style="width:28px;height:28px;border-radius:50%;object-fit:cover;border:1px solid var(--border-color);display:block;">
+                            <svg class="profile-chevron-badge" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 1l4 4 4-4"/></svg>
+                        </span>
                     <?php else: ?>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                        <circle cx="12" cy="7" r="4"/>
-                    </svg>
+                        <span class="profile-avatar-wrap">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="border-radius:50%;background:var(--bg-secondary);padding:5px;border:1px solid var(--border-color);">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                <circle cx="12" cy="7" r="4"/>
+                            </svg>
+                            <svg class="profile-chevron-badge" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 1l4 4 4-4"/></svg>
+                        </span>
                     <?php endif; ?>
                     <?php
                     // Show full name: first word only, max 10 characters
@@ -1210,10 +1214,18 @@ html:not([data-theme="light"]) .universal-header .dropdown-item:hover {
     border-color: var(--cyan);
 }
 
-/* On mobile: hide profile dropdown chevron to save space */
+/* On mobile: hide profile dropdown chevron and username to save space;
+   show a compact chevron badge overlaid on the avatar instead */
 @media (max-width: 768px) {
     .header-end-actions #profileDropdown .dropdown-toggle .profile-chevron {
         display: none;
+    }
+    .header-end-actions #profileDropdown .dropdown-toggle .profile-username {
+        display: none;
+    }
+    /* Show the badge chevron only on mobile */
+    .profile-chevron-badge {
+        display: block !important;
     }
     /* Reduce padding on hamburger button on mobile */
     .mobile-menu-btn {
@@ -1226,6 +1238,33 @@ html:not([data-theme="light"]) .universal-header .dropdown-item:hover {
     .header-end-actions #profileDropdown .dropdown-toggle .profile-chevron {
         display: none;
     }
+    .profile-chevron-badge {
+        display: block !important;
+    }
+}
+
+/* Profile avatar wrapper — positions the chevron badge */
+.profile-avatar-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* Badge chevron: small, overlaid at the bottom-right of the avatar */
+.profile-chevron-badge {
+    display: none; /* hidden on desktop; shown on mobile via media query */
+    position: absolute;
+    bottom: -3px;
+    right: -3px;
+    width: 12px;
+    height: 8px;
+    color: var(--text-primary);
+    opacity: 0.75;
+    background: var(--bg-card, #16161a);
+    border-radius: 3px;
+    padding: 1px;
 }
 
 /* Navbar overlay: intercepts clicks on page content when any popup is open */

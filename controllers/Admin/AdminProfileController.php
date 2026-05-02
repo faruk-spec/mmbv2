@@ -85,14 +85,21 @@ class AdminProfileController extends BaseController
         ];
 
         // Handle avatar upload
-        if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
-            $avatar = Helpers::uploadFile(
-                $_FILES['avatar'],
-                BASE_PATH . '/storage/uploads/avatars',
-                ['jpg', 'jpeg', 'png', 'gif', 'webp']
-            );
-            if ($avatar) {
-                $profileData['avatar'] = $avatar;
+        $avatarUploadError = null;
+        if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] !== UPLOAD_ERR_NO_FILE) {
+            if ($_FILES['avatar']['error'] !== UPLOAD_ERR_OK) {
+                $avatarUploadError = 'Photo could not be uploaded. Please check the file size and try again.';
+            } else {
+                $avatar = Helpers::uploadFile(
+                    $_FILES['avatar'],
+                    BASE_PATH . '/storage/uploads/avatars',
+                    ['jpg', 'jpeg', 'png', 'gif', 'webp']
+                );
+                if ($avatar) {
+                    $profileData['avatar'] = $avatar;
+                } else {
+                    $avatarUploadError = 'Photo could not be saved. Please use a JPG, PNG, GIF or WebP image.';
+                }
             }
         }
 
@@ -104,7 +111,11 @@ class AdminProfileController extends BaseController
         }
 
         Logger::activity($userId, 'admin_profile_updated');
-        $this->flash('success', 'Profile updated successfully.');
+        if ($avatarUploadError) {
+            $this->flash('warning', 'Profile saved, but: ' . $avatarUploadError);
+        } else {
+            $this->flash('success', 'Profile updated successfully.');
+        }
         $this->redirect('/admin/profile');
     }
 

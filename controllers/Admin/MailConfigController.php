@@ -271,7 +271,7 @@ class MailConfigController extends BaseController
     {
         $db        = Database::getInstance();
         $templates = $db->fetchAll("SELECT * FROM mail_notification_templates ORDER BY slug ASC");
-        $providers = $db->fetchAll("SELECT id, name, from_email FROM mail_provider_configs ORDER BY name ASC");
+        $providers = $db->fetchAll("SELECT id, name, from_email, is_active FROM mail_provider_configs ORDER BY is_active DESC, name ASC");
 
         $this->view('admin/mail/templates', [
             'title'     => 'Notification Templates',
@@ -292,7 +292,7 @@ class MailConfigController extends BaseController
             return;
         }
 
-        $providers = $db->fetchAll("SELECT id, name, from_email FROM mail_provider_configs ORDER BY name ASC");
+        $providers = $db->fetchAll("SELECT id, name, from_email, is_active FROM mail_provider_configs ORDER BY is_active DESC, name ASC");
 
         $this->view('admin/mail/edit-template', [
             'title'     => 'Edit Template: ' . $template['name'],

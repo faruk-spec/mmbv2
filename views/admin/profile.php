@@ -5,6 +5,11 @@
 <?php if (Helpers::hasFlash('success')): ?>
 <div class="alert alert-success" style="margin-bottom:20px;"><?= View::e(Helpers::getFlash('success')) ?></div>
 <?php endif; ?>
+<?php if (Helpers::hasFlash('warning')): ?>
+<div class="alert alert-warning" style="margin-bottom:20px;background:rgba(255,193,7,0.1);border:1px solid #ffc107;color:#ffc107;padding:12px 16px;border-radius:8px;">
+    <i class="fas fa-exclamation-triangle" style="margin-right:6px;"></i><?= View::e(Helpers::getFlash('warning')) ?>
+</div>
+<?php endif; ?>
 <?php if (Helpers::hasFlash('error')): ?>
 <div class="alert alert-error" style="margin-bottom:20px;"><?= View::e(Helpers::getFlash('error')) ?></div>
 <?php endif; ?>
