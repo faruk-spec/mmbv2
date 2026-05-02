@@ -458,6 +458,7 @@ class ApiController
                     'uid'      => $userId,
                     'kid'      => $this->currentKeyRow['id'] ?? null,
                     'kpfx'     => $this->currentKeyRow['key_prefix'] ?? '',
+                    // session_id() is '' for API-key-authenticated requests (sessions bypassed by design)
                     'sid'      => substr(session_id() ?: '', 0, 128),
                     'email'    => substr($email, 0, 255),
                     'endpoint' => substr(parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?? '', 0, 255),

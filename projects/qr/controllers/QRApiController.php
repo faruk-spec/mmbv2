@@ -562,6 +562,7 @@ class QRApiController
                     $userId,
                     $this->currentKeyRow['id'] ?? null,
                     $this->currentKeyRow['key_prefix'] ?? '',
+                    // session_id() is '' for API-key-authenticated requests (sessions bypassed by design)
                     substr(session_id() ?: '', 0, 128),
                     substr($email, 0, 255),
                     substr(parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?? '', 0, 255),

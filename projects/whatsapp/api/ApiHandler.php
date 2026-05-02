@@ -168,6 +168,8 @@ class ApiHandler
             $userId       = (int) ($this->user['id'] ?? 0);
             $email        = $this->user['email'] ?? '';
             $keyPrefix    = $this->apiKey ? substr($this->apiKey, 0, 8) : '';
+            // session_id() is intentionally empty for API-key-authenticated requests
+            // (sessions are bypassed); stored as '' to confirm API-auth path.
             $sessionId    = substr(session_id() ?: '', 0, 128);
 
             $this->db->query(
