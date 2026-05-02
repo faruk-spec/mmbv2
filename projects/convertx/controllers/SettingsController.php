@@ -136,11 +136,13 @@ class SettingsController
         try {
             $db->query(
                 "CREATE TABLE IF NOT EXISTS convertx_api_keys (
-                    id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                    user_id    INT UNSIGNED NOT NULL,
-                    api_key    VARCHAR(100) NOT NULL,
-                    is_active  TINYINT(1)   NOT NULL DEFAULT 1,
-                    created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    user_id       INT UNSIGNED NOT NULL,
+                    api_key       VARCHAR(100) NOT NULL,
+                    is_active     TINYINT(1)   NOT NULL DEFAULT 1,
+                    created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    last_used_at  DATETIME     DEFAULT NULL,
+                    request_count INT          NOT NULL DEFAULT 0,
                     INDEX idx_user (user_id),
                     UNIQUE KEY uniq_key (api_key)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"

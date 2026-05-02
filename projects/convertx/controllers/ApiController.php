@@ -317,16 +317,6 @@ class ApiController
                 }
 
                 // Track last-used timestamp and request count (best-effort).
-                // Adds columns via ALTER TABLE IF NOT EXISTS first-time they're missing.
-                try {
-                    $db->query(
-                        "ALTER TABLE convertx_api_keys
-                             ADD COLUMN IF NOT EXISTS last_used_at  DATETIME DEFAULT NULL,
-                             ADD COLUMN IF NOT EXISTS request_count INT      NOT NULL DEFAULT 0"
-                    );
-                } catch (\Exception $e) {
-                    // Column already exists or engine doesn't support IF NOT EXISTS — ignore
-                }
                 try {
                     $db->query(
                         "UPDATE convertx_api_keys
