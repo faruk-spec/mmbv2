@@ -266,8 +266,12 @@ class ApiController
     // ------------------------------------------------------------------ //
 
     /**
-     * Validate API key from header or query param.
-     * Returns the owning user ID on success, or null after sending 401.
+     * Validate API key from header or query param, then enforce the api_access
+     * feature flag for the owning user.  Returns the user ID on success, or
+     * null after sending the appropriate JSON error response.
+     *
+     * This method must NEVER redirect or output HTML — all callers depend on a
+     * clean JSON error so that API clients always receive machine-readable output.
      */
     private function authenticateApiKey(): ?int
     {
@@ -294,7 +298,23 @@ class ApiController
                 ['key' => $key]
             );
             if ($row) {
-                return (int) $row['user_id'];
+                $userId = (int) $row['user_id'];
+
+                // Enforce the api_access feature flag.  If the user's plan does
+                // not include API access, return a JSON 403 — never a redirect.
+                try {
+                    require_once PROJECT_PATH . '/services/FeatureService.php';
+                    $featureSvc = new \Projects\ConvertX\Services\FeatureService();
+                    if (!$featureSvc->can($userId, 'api_access')) {
+                        $this->error('API access is not available on your current plan. Please upgrade.', 403);
+                        return null;
+                    }
+                } catch (\Exception $fe) {
+                    Logger::error('ConvertX API feature check: ' . $fe->getMessage());
+                    // Fail-open: if feature service is unavailable, allow access
+                }
+
+                return $userId;
             }
         } catch (\Exception $e) {
             Logger::error('ConvertX API auth: ' . $e->getMessage());

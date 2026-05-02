@@ -36,16 +36,34 @@ if (session_status() === PHP_SESSION_NONE) {
 
 use Core\SSO;
 
-// Check if user has access to this project
-if (!SSO::validateProjectRequest('convertx')) {
-    SSO::redirectToLogin($_SERVER['REQUEST_URI']);
-}
+// API requests (/projects/convertx/api/*) authenticate via X-Api-Key and must
+// never be redirected to the web login page.  The ApiController handles its own
+// authentication, so we bypass session/SSO checks entirely for these routes.
+$_cx_uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+$_cx_is_api = (bool) preg_match('#^/projects/convertx/api(/|$)#', $_cx_uri);
+unset($_cx_uri);
 
-// Defensive: block access if project has been disabled in admin
-if (!\Core\Helpers::isProjectEnabled('convertx')) {
-    http_response_code(503);
-    \Core\View::render('errors/project-disabled', ['project' => 'convertx']);
-    exit;
+if (!$_cx_is_api) {
+    // Check if user has access to this project (session/SSO required)
+    if (!SSO::validateProjectRequest('convertx')) {
+        SSO::redirectToLogin($_SERVER['REQUEST_URI']);
+    }
+
+    // Defensive: block access if project has been disabled in admin
+    if (!\Core\Helpers::isProjectEnabled('convertx')) {
+        http_response_code(503);
+        \Core\View::render('errors/project-disabled', ['project' => 'convertx']);
+        exit;
+    }
+} else {
+    // For API routes: if the project is disabled, return a JSON error instead
+    // of an HTML page or redirect, so API clients always receive JSON.
+    if (!\Core\Helpers::isProjectEnabled('convertx')) {
+        http_response_code(503);
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'error' => 'This project is currently disabled.']);
+        exit;
+    }
 }
 
 // Load project config
