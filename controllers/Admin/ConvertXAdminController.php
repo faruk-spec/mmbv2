@@ -159,21 +159,50 @@ class ConvertXAdminController extends BaseController
     }
 
     // ------------------------------------------------------------------ //
-    //  API Keys                                                            //
+    //  API Keys & Usage                                                   //
     // ------------------------------------------------------------------ //
 
     public function apiKeys(): void
     {
         $this->requirePermission('convertx.api_keys');
-        $keys = $this->db->fetchAll(
-            "SELECT k.*, u.name AS user_name, u.email AS user_email
+
+        // Optional per-user filter
+        $filterUserId = isset($_GET['user_id']) ? (int) $_GET['user_id'] : null;
+
+        if ($filterUserId) {
+            $keys = $this->db->fetchAll(
+                "SELECT k.*, u.name AS user_name, u.email AS user_email
+                   FROM api_keys k
+                   LEFT JOIN users u ON u.id = k.user_id
+                  WHERE k.user_id = ? AND k.api_key LIKE 'cx_%'
+                  ORDER BY k.created_at DESC",
+                [$filterUserId]
+            );
+        } else {
+            $keys = $this->db->fetchAll(
+                "SELECT k.*, u.name AS user_name, u.email AS user_email
+                   FROM api_keys k
+                   LEFT JOIN users u ON u.id = k.user_id
+                  WHERE k.api_key LIKE 'cx_%'
+                  ORDER BY k.created_at DESC"
+            );
+        }
+
+        // Per-user usage summary (top users by request count)
+        $userUsage = $this->db->fetchAll(
+            "SELECT u.id, u.name AS user_name, u.email AS user_email,
+                    COUNT(k.id) AS key_count,
+                    SUM(k.request_count) AS total_requests,
+                    MAX(k.last_used_at) AS last_used_at
                FROM api_keys k
                LEFT JOIN users u ON u.id = k.user_id
               WHERE k.api_key LIKE 'cx_%'
-              ORDER BY k.created_at DESC"
+              GROUP BY u.id, u.name, u.email
+              ORDER BY total_requests DESC
+              LIMIT 50"
         );
 
-        // Fetch all users for the dropdown
+        // Fetch all users for the generate-key dropdown
         $users = [];
         try {
             $users = $this->db->fetchAll(
@@ -183,10 +212,18 @@ class ConvertXAdminController extends BaseController
             // Non-fatal
         }
 
+        $filterUser = null;
+        if ($filterUserId) {
+            $filterUser = $this->db->fetch("SELECT id, name, email FROM users WHERE id = ?", [$filterUserId]);
+        }
+
         $this->view('admin/projects/convertx/api-keys', [
-            'title' => 'ConvertX Admin — API Keys',
-            'keys'  => $keys,
-            'users' => $users,
+            'title'        => 'ConvertX Admin — API Keys & Usage',
+            'keys'         => $keys,
+            'users'        => $users,
+            'userUsage'    => $userUsage,
+            'filterUserId' => $filterUserId,
+            'filterUser'   => $filterUser,
         ]);
     }
 

@@ -187,6 +187,18 @@
         <p style="color: var(--text-secondary); font-size: 0.95rem;">Monitor API request logs and performance metrics</p>
     </div>
 
+    <!-- User filter + top users sidebar layout -->
+    <div style="display:grid;grid-template-columns:1fr 280px;gap:20px;align-items:start;">
+    <div>
+
+    <!-- Active user filter banner -->
+    <?php if ($filterUser): ?>
+    <div style="margin-bottom:16px;padding:10px 16px;border-radius:8px;background:rgba(37,211,102,.08);border:1px solid #25D366;display:flex;align-items:center;justify-content:space-between;font-size:.86rem;">
+        <span>Showing logs for <strong><?= htmlspecialchars($filterUser['name'], ENT_QUOTES, 'UTF-8') ?></strong> (<?= htmlspecialchars($filterUser['email'], ENT_QUOTES, 'UTF-8') ?>)</span>
+        <a href="/admin/whatsapp/api-logs" style="color:#ff6b6b;text-decoration:none;font-weight:600;">✕ Clear filter</a>
+    </div>
+    <?php endif; ?>
+
     <!-- API Logs Table -->
     <div class="admin-card">
         <div class="admin-card-header">
@@ -194,7 +206,7 @@
                 API Request Logs
             </h3>
             <span style="color: var(--text-secondary); font-size: 0.875rem;">
-                Total: <?= $totalLogs ?? 0 ?>
+                Total: <?= number_format($totalLogs ?? 0) ?>
             </span>
         </div>
         <div class="admin-card-body">
@@ -202,78 +214,53 @@
                 <thead>
                     <tr>
                         <th>Log ID</th>
-                        <th>Username</th>
+                        <th>User</th>
                         <th>Endpoint</th>
                         <th>Method</th>
-                        <th>Status Code</th>
-                        <th>Response Time</th>
                         <th>IP Address</th>
-                        <th>Created At</th>
+                        <th>Time</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if (empty($logs)): ?>
                         <tr>
-                            <td colspan="8" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                            <td colspan="6" style="text-align: center; padding: 40px; color: var(--text-secondary);">
                                 No API logs found
                             </td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($logs as $log): ?>
-                            <?php
-                                $statusCode = $log['status_code'];
-                                $statusClass = 'status-2xx';
-                                if ($statusCode >= 500) {
-                                    $statusClass = 'status-5xx';
-                                } elseif ($statusCode >= 400) {
-                                    $statusClass = 'status-4xx';
-                                } elseif ($statusCode >= 300) {
-                                    $statusClass = 'status-3xx';
-                                }
-                                
-                                $responseTime = $log['response_time'];
-                                $timeClass = 'response-time-fast';
-                                if ($responseTime > 1000) {
-                                    $timeClass = 'response-time-slow';
-                                } elseif ($responseTime > 500) {
-                                    $timeClass = 'response-time-medium';
-                                }
-                            ?>
                             <tr>
-                                <td><code><?= View::e($log['id']) ?></code></td>
-                                <td><?= View::e($log['username']) ?></td>
+                                <td><code><?= htmlspecialchars((string) $log['id'], ENT_QUOTES, 'UTF-8') ?></code></td>
                                 <td>
-                                    <code style="font-size: 0.8rem;"><?= View::e($log['endpoint']) ?></code>
+                                    <a href="/admin/whatsapp/api-logs?user_id=<?= (int) $log['user_id'] ?>" style="color:var(--text-primary);text-decoration:none;" title="Filter by this user">
+                                        <?= htmlspecialchars($log['username'] ?? '', ENT_QUOTES, 'UTF-8') ?>
+                                    </a>
+                                    <div style="font-size:.75rem;color:var(--text-secondary);"><?= htmlspecialchars($log['email'] ?? '', ENT_QUOTES, 'UTF-8') ?></div>
                                 </td>
                                 <td>
-                                    <span class="method-badge method-<?= strtolower($log['method']) ?>">
-                                        <?= strtoupper(View::e($log['method'])) ?>
+                                    <code style="font-size: 0.8rem;"><?= htmlspecialchars($log['endpoint'] ?? '', ENT_QUOTES, 'UTF-8') ?></code>
+                                </td>
+                                <td>
+                                    <span class="method-badge method-<?= strtolower($log['method'] ?? 'post') ?>">
+                                        <?= strtoupper(htmlspecialchars($log['method'] ?? 'POST', ENT_QUOTES, 'UTF-8')) ?>
                                     </span>
                                 </td>
                                 <td>
-                                    <span class="status-code-badge <?= $statusClass ?>">
-                                        <?= $statusCode ?>
-                                    </span>
+                                    <code style="font-size: 0.8rem;"><?= htmlspecialchars($log['ip_address'] ?? '', ENT_QUOTES, 'UTF-8') ?></code>
                                 </td>
-                                <td>
-                                    <span class="response-time <?= $timeClass ?>">
-                                        <?= number_format($responseTime, 0) ?>ms
-                                    </span>
-                                </td>
-                                <td>
-                                    <code style="font-size: 0.8rem;"><?= View::e($log['ip_address']) ?></code>
-                                </td>
-                                <td><?= date('M d, Y H:i:s', strtotime($log['created_at'])) ?></td>
+                                <td><?= isset($log['created_at']) ? date('M d, Y H:i', strtotime($log['created_at'])) : '—' ?></td>
                             </tr>
                         <?php endforeach; ?>
                     <?php endif; ?>
                 </tbody>
             </table>
             
-            <?php if (!empty($logs) && $totalPages > 1): ?>
+            <?php if (!empty($logs) && ($totalPages ?? 1) > 1): ?>
                 <div class="pagination">
+                    <?php $pageQs = $filterUserId ? '&user_id=' . $filterUserId : ''; ?>
                     <?php if ($currentPage > 1): ?>
-                        <a href="?page=<?= $currentPage - 1 ?>" class="pagination-btn">← Previous</a>
+                        <a href="?page=<?= $currentPage - 1 . $pageQs ?>" class="pagination-btn">← Previous</a>
                     <?php else: ?>
                         <button class="pagination-btn" disabled>← Previous</button>
                     <?php endif; ?>
@@ -283,7 +270,7 @@
                     </span>
                     
                     <?php if ($currentPage < $totalPages): ?>
-                        <a href="?page=<?= $currentPage + 1 ?>" class="pagination-btn">Next →</a>
+                        <a href="?page=<?= $currentPage + 1 . $pageQs ?>" class="pagination-btn">Next →</a>
                     <?php else: ?>
                         <button class="pagination-btn" disabled>Next →</button>
                     <?php endif; ?>
@@ -291,6 +278,39 @@
             <?php endif; ?>
         </div>
     </div>
+
+    </div><!-- /main column -->
+
+    <!-- Sidebar: Top users by API usage -->
+    <div>
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h3 class="admin-card-title" style="font-size:.9rem;">Top Users by API Usage</h3>
+            </div>
+            <div class="admin-card-body" style="padding:0;">
+                <?php if (empty($topUsers)): ?>
+                    <p style="padding:16px;color:var(--text-secondary);font-size:.84rem;">No data available.</p>
+                <?php else: ?>
+                <?php $maxCount = max(array_column($topUsers, 'total') ?: [1]); ?>
+                <div style="padding:8px 0;">
+                    <?php foreach ($topUsers as $tu): ?>
+                    <a href="/admin/whatsapp/api-logs?user_id=<?= (int) $tu['id'] ?>" style="display:block;padding:8px 16px;text-decoration:none;color:var(--text-primary);transition:.15s;<?= ($filterUserId === (int) $tu['id']) ? 'background:rgba(37,211,102,.08);' : '' ?>">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
+                            <span style="font-size:.82rem;font-weight:600;"><?= htmlspecialchars($tu['name'], ENT_QUOTES, 'UTF-8') ?></span>
+                            <span style="font-size:.78rem;color:#25D366;font-weight:700;"><?= number_format((int) $tu['total']) ?></span>
+                        </div>
+                        <div style="background:var(--border-color);height:3px;border-radius:2px;overflow:hidden;">
+                            <div style="background:#25D366;height:100%;width:<?= round(($tu['total'] / $maxCount) * 100) ?>%;"></div>
+                        </div>
+                    </a>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+
+    </div><!-- /grid layout -->
 </div>
 
 <?php View::endSection(); ?>

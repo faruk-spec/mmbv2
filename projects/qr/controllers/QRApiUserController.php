@@ -55,13 +55,47 @@ class QRApiUserController
         $featureService = new QRFeatureService();
         $canApiAccess   = $featureService->can($this->userId, 'api_access');
 
-        $title   = 'API Access';
+        // Usage analytics: total requests across all user keys
+        $totalRequests = array_sum(array_column($keys, 'request_count'));
+        $activeKeys    = count(array_filter($keys, fn($k) => $k['is_active']));
+        $lastUsedAt    = null;
+        foreach ($keys as $k) {
+            if ($k['last_used_at'] && (!$lastUsedAt || $k['last_used_at'] > $lastUsedAt)) {
+                $lastUsedAt = $k['last_used_at'];
+            }
+        }
+
+        // Daily QR codes generated via API for last 14 days (from qr_codes table source = 'api')
+        $dailyApiUsage = [];
+        try {
+            $rows = $this->db->fetchAll(
+                "SELECT DATE(created_at) AS day, COUNT(*) AS cnt
+                   FROM qr_codes
+                  WHERE user_id = :uid
+                    AND source = 'api'
+                    AND created_at >= DATE_SUB(CURDATE(), INTERVAL 14 DAY)
+                  GROUP BY DATE(created_at)
+                  ORDER BY day ASC",
+                ['uid' => $this->userId]
+            );
+            foreach ($rows as $r) {
+                $dailyApiUsage[$r['day']] = (int) $r['cnt'];
+            }
+        } catch (\Exception $e) {
+            // qr_codes.source column may not exist yet — continue without chart data
+        }
+
+        $title   = 'API & Analytics';
         $content_vars = [
-            'keys'         => $keys,
-            'baseUrl'      => $baseUrl,
-            'newKey'       => $newKey,
-            'title'        => $title,
-            'canApiAccess' => $canApiAccess,
+            'keys'          => $keys,
+            'baseUrl'       => $baseUrl,
+            'newKey'        => $newKey,
+            'title'         => $title,
+            'canApiAccess'  => $canApiAccess,
+            'totalRequests' => $totalRequests,
+            'activeKeys'    => $activeKeys,
+            'lastUsedAt'    => $lastUsedAt,
+            'dailyApiUsage' => $dailyApiUsage,
         ];
 
         // Buffer the view content then wrap in layout.php (navbar + sidebar).

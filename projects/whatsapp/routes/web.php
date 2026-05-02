@@ -45,6 +45,12 @@ $router->get('/projects/whatsapp/contacts/sync', 'Projects\WhatsApp\Controllers\
 $router->get('/projects/whatsapp/settings', 'Projects\WhatsApp\Controllers\SettingsController@index');
 $router->post('/projects/whatsapp/settings/update', 'Projects\WhatsApp\Controllers\SettingsController@update');
 
+// API keys & analytics
+require_once BASE_PATH . '/projects/whatsapp/controllers/ApiKeysController.php';
+$router->get('/projects/whatsapp/api', 'Projects\WhatsApp\Controllers\ApiKeysController@index');
+$router->post('/projects/whatsapp/api/generate', 'Projects\WhatsApp\Controllers\ApiKeysController@generate');
+$router->post('/projects/whatsapp/api/revoke', 'Projects\WhatsApp\Controllers\ApiKeysController@revoke');
+
 // API documentation
 $router->get('/projects/whatsapp/api-docs', 'Projects\WhatsApp\Controllers\ApiDocsController@index');
 

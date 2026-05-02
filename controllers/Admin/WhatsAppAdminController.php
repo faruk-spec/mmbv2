@@ -135,26 +135,64 @@ class WhatsAppAdminController
             header('Location: /admin/dashboard');
             exit;
         }
-        $page = $_GET['page'] ?? 1;
+        $page    = max(1, (int) ($_GET['page'] ?? 1));
         $perPage = 50;
-        $offset = ($page - 1) * $perPage;
-        
-        $logs = $this->db->fetchAll("
-            SELECT l.*, u.name as username, u.email
+        $offset  = ($page - 1) * $perPage;
+
+        // Optional user filter
+        $filterUserId = isset($_GET['user_id']) ? (int) $_GET['user_id'] : null;
+
+        if ($filterUserId) {
+            $logs = $this->db->fetchAll("
+                SELECT l.*, u.name as username, u.email
+                FROM whatsapp_api_logs l
+                JOIN users u ON l.user_id = u.id
+                WHERE l.user_id = ?
+                ORDER BY l.created_at DESC
+                LIMIT ? OFFSET ?
+            ", [$filterUserId, $perPage, $offset]);
+
+            $totalLogs = $this->db->fetchColumn(
+                "SELECT COUNT(*) FROM whatsapp_api_logs WHERE user_id = ?",
+                [$filterUserId]
+            );
+
+            $filterUser = $this->db->fetch(
+                "SELECT id, name, email FROM users WHERE id = ?",
+                [$filterUserId]
+            );
+        } else {
+            $logs = $this->db->fetchAll("
+                SELECT l.*, u.name as username, u.email
+                FROM whatsapp_api_logs l
+                JOIN users u ON l.user_id = u.id
+                ORDER BY l.created_at DESC
+                LIMIT ? OFFSET ?
+            ", [$perPage, $offset]);
+
+            $totalLogs = $this->db->fetchColumn("SELECT COUNT(*) FROM whatsapp_api_logs");
+            $filterUser = null;
+        }
+
+        // Top users by API usage
+        $topUsers = $this->db->fetchAll("
+            SELECT u.id, u.name, u.email, COUNT(l.id) AS total
             FROM whatsapp_api_logs l
             JOIN users u ON l.user_id = u.id
-            ORDER BY l.created_at DESC
-            LIMIT ? OFFSET ?
-        ", [$perPage, $offset]);
-        
-        // Get total count
-        $totalLogs = $this->db->fetchColumn("SELECT COUNT(*) FROM whatsapp_api_logs");
-        
+            GROUP BY u.id, u.name, u.email
+            ORDER BY total DESC
+            LIMIT 20
+        ");
+
         View::render('admin/projects/whatsapp/api-logs', [
-            'logs' => $logs,
-            'currentPage' => $page,
-            'totalPages' => ceil($totalLogs / $perPage),
-            'pageTitle' => 'API Logs - Admin'
+            'logs'         => $logs,
+            'currentPage'  => $page,
+            'totalPages'   => (int) ceil(($totalLogs ?: 0) / $perPage),
+            'totalLogs'    => (int) $totalLogs,
+            'filterUserId' => $filterUserId,
+            'filterUser'   => $filterUser ?? null,
+            'topUsers'     => $topUsers,
+            'pageTitle'    => 'API Logs - Admin'
         ]);
     }
     
