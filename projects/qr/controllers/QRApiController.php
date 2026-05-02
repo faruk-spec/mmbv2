@@ -506,9 +506,16 @@ class QRApiController
 
     /**
      * Generate a unique short code for a QR code ID.
+     * Uses the same approach as QRController::generateShortCode(): 6 random
+     * alphanumeric chars + the QR ID as suffix for guaranteed uniqueness.
      */
     private function generateShortCode(int $qrId): string
     {
-        return strtolower(base_convert($qrId, 10, 36) . substr(bin2hex(random_bytes(3)), 0, 4));
+        $chars  = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $code   = '';
+        for ($i = 0; $i < 6; $i++) {
+            $code .= $chars[random_int(0, strlen($chars) - 1)];
+        }
+        return $code . $qrId;
     }
 }

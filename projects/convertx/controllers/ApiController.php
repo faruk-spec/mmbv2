@@ -311,7 +311,9 @@ class ApiController
                     }
                 } catch (\Exception $fe) {
                     Logger::error('ConvertX API feature check: ' . $fe->getMessage());
-                    // Fail-open: if feature service is unavailable, allow access
+                    // Fail-closed: if feature service is unavailable, deny access to maintain security
+                    $this->error('Unable to verify plan access. Please try again later.', 503);
+                    return null;
                 }
 
                 return $userId;
