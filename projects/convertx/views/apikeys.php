@@ -10,9 +10,10 @@ $baseUrl     = (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . ($_SERVER
 $usage    = $usage    ?? [];
 $formats  = $formats  ?? [];
 $activity = $activity ?? [];
+$apiLogs  = $apiLogs  ?? [];
 
 // Active tab from query param (default: apikey)
-$allowedTabs = ['apikey', 'usage', 'analytics'];
+$allowedTabs = ['apikey', 'usage', 'analytics', 'logs'];
 $activeTab   = in_array($_GET['tab'] ?? '', $allowedTabs, true) ? $_GET['tab'] : 'apikey';
 
 // Bar widths for format breakdown
@@ -94,6 +95,9 @@ if (!empty($_SESSION['_flash']['error'])) {
     </a>
     <a href="?tab=analytics" class="cx-tab <?= $activeTab === 'analytics' ? 'active' : '' ?>" role="tab">
         <i class="fa-solid fa-chart-line"></i> Analytics
+    </a>
+    <a href="?tab=logs"      class="cx-tab <?= $activeTab === 'logs'      ? 'active' : '' ?>" role="tab">
+        <i class="fa-solid fa-list"></i> Request Logs
     </a>
 </div>
 
@@ -264,7 +268,7 @@ if (!empty($_SESSION['_flash']['error'])) {
         </div>
     </div>
 
-<?php else: ?>
+<?php elseif ($activeTab === 'analytics'): ?>
 
 <!-- ══════════════════════════════════════════
      TAB 3 – Analytics
@@ -366,6 +370,60 @@ if (!empty($_SESSION['_flash']['error'])) {
                 </p>
             </div>
         </div>
+    </div>
+
+<?php elseif ($activeTab === 'logs'): ?>
+
+<!-- ══════════════════════════════════════════
+     TAB 4 – Request Logs
+═══════════════════════════════════════════ -->
+
+    <div class="card">
+        <div class="card-header">
+            <i class="fa-solid fa-list"></i> API Request Logs
+            <span style="font-size:.75rem;font-weight:400;color:var(--text-muted);margin-left:.5rem;">(last 100 requests)</span>
+        </div>
+
+        <?php if (empty($apiLogs)): ?>
+            <div style="text-align:center;padding:2.5rem;color:var(--text-secondary);">
+                <i class="fa-solid fa-list" style="font-size:2.5rem;opacity:.3;display:block;margin-bottom:.75rem;"></i>
+                No API requests recorded yet. Requests will appear here after your key is used.
+            </div>
+        <?php else: ?>
+            <div style="overflow-x:auto;">
+                <table style="width:100%;border-collapse:collapse;font-size:.8rem;">
+                    <thead>
+                        <tr style="background:var(--bg-secondary);border-bottom:1px solid var(--border-color);">
+                            <th style="padding:.6rem .75rem;text-align:left;font-weight:600;color:var(--text-secondary);white-space:nowrap;">Time</th>
+                            <th style="padding:.6rem .75rem;text-align:left;font-weight:600;color:var(--text-secondary);">Endpoint</th>
+                            <th style="padding:.6rem .75rem;text-align:left;font-weight:600;color:var(--text-secondary);">Method</th>
+                            <th style="padding:.6rem .75rem;text-align:left;font-weight:600;color:var(--text-secondary);">Action</th>
+                            <th style="padding:.6rem .75rem;text-align:center;font-weight:600;color:var(--text-secondary);">Status</th>
+                            <th style="padding:.6rem .75rem;text-align:right;font-weight:600;color:var(--text-secondary);white-space:nowrap;">Latency</th>
+                            <th style="padding:.6rem .75rem;text-align:left;font-weight:600;color:var(--text-secondary);">IP</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($apiLogs as $log):
+                            $sc  = (int) $log['status_code'];
+                            $scColor = $sc >= 500 ? 'var(--cx-danger,#ef4444)'
+                                     : ($sc >= 400 ? 'var(--cx-warning,#f59e0b)'
+                                     : 'var(--cx-success,#10b981)');
+                        ?>
+                        <tr style="border-bottom:1px solid var(--border-color);">
+                            <td style="padding:.5rem .75rem;white-space:nowrap;color:var(--text-secondary);"><?= htmlspecialchars($log['created_at']) ?></td>
+                            <td style="padding:.5rem .75rem;font-family:monospace;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="<?= htmlspecialchars($log['endpoint']) ?>"><?= htmlspecialchars($log['endpoint']) ?></td>
+                            <td style="padding:.5rem .75rem;font-family:monospace;color:var(--cx-accent);"><?= htmlspecialchars($log['method']) ?></td>
+                            <td style="padding:.5rem .75rem;color:var(--text-secondary);"><?= htmlspecialchars($log['action']) ?></td>
+                            <td style="padding:.5rem .75rem;text-align:center;font-weight:700;color:<?= $scColor ?>;"><?= $sc ?></td>
+                            <td style="padding:.5rem .75rem;text-align:right;color:var(--text-secondary);"><?= number_format((int)$log['response_time']) ?> ms</td>
+                            <td style="padding:.5rem .75rem;font-family:monospace;color:var(--text-secondary);"><?= htmlspecialchars($log['ip_address']) ?></td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php endif; ?>
     </div>
 
 <?php endif; ?>

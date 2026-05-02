@@ -217,6 +217,26 @@ class ConvertXAdminController extends BaseController
             $filterUser = $this->db->fetch("SELECT id, name, email FROM users WHERE id = ?", [$filterUserId]);
         }
 
+        // Fetch recent request logs
+        $recentLogs = [];
+        try {
+            $logsWhere  = $filterUserId ? 'WHERE l.user_id = :uid' : '';
+            $logsParams = $filterUserId ? ['uid' => $filterUserId] : [];
+            $recentLogs = $this->db->fetchAll(
+                "SELECT l.id, l.user_id, u.email, u.name AS user_name,
+                        l.api_key_prefix, l.endpoint, l.method,
+                        l.ip_address, l.status_code, l.response_time, l.action, l.created_at
+                   FROM convertx_api_request_logs l
+                   LEFT JOIN users u ON l.user_id = u.id
+                   {$logsWhere}
+                   ORDER BY l.id DESC
+                   LIMIT 200",
+                $logsParams
+            ) ?: [];
+        } catch (\Exception $e) {
+            // Table may not exist yet
+        }
+
         $this->view('admin/projects/convertx/api-keys', [
             'title'        => 'ConvertX Admin — API Keys & Usage',
             'keys'         => $keys,
@@ -224,6 +244,7 @@ class ConvertXAdminController extends BaseController
             'userUsage'    => $userUsage,
             'filterUserId' => $filterUserId,
             'filterUser'   => $filterUser,
+            'recentLogs'   => $recentLogs,
         ]);
     }
 

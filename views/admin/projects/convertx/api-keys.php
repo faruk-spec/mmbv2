@@ -56,7 +56,7 @@ View::extend('admin');
     <div class="alert alert-info alert-dismissible" style="border-left:4px solid #17a2b8;">
       <i class="fas fa-filter"></i> Showing API keys for user <strong><?= htmlspecialchars($filterUser['name']) ?></strong>
       (<?= htmlspecialchars($filterUser['email']) ?>)
-      — <a href="/admin/projects/convertx/api-keys" class="text-danger font-weight-bold">✕ Clear filter</a>
+      — <a href="/admin/projects/convertx/api-keys" class="text-danger font-weight-bold">Clear filter</a>
     </div>
     <?php endif; ?>
 
@@ -203,4 +203,77 @@ View::extend('admin');
     </div>
   </div>
 </section>
+
+<!-- ── Request Logs Section ─────────────────────────────────────────────── -->
+<?php
+$recentLogs   = $recentLogs   ?? [];
+$filterUserId = $filterUserId ?? null;
+?>
+<section class="content">
+  <div class="container-fluid">
+    <div class="card">
+      <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+        <h3 class="card-title">
+          <i class="fas fa-list"></i>
+          API Request Logs <?php if ($filterUserId): ?>(User #<?= (int)$filterUserId ?>)<?php endif; ?>
+          <small style="font-weight:400;opacity:.7;">(last 200)</small>
+        </h3>
+        <?php if ($filterUserId): ?>
+          <a href="/admin/projects/convertx/api-keys" class="btn btn-sm btn-default">
+            <i class="fas fa-times"></i> Clear filter
+          </a>
+        <?php endif; ?>
+      </div>
+      <div class="card-body p-0">
+        <?php if (empty($recentLogs)): ?>
+          <div style="padding:2rem;text-align:center;color:#888;">
+            No API request logs recorded yet.
+          </div>
+        <?php else: ?>
+          <div style="overflow-x:auto;">
+            <table class="table table-sm table-hover" style="font-size:.8rem;margin:0;">
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>User</th>
+                  <th>Key Prefix</th>
+                  <th>Endpoint</th>
+                  <th>Method</th>
+                  <th>Action</th>
+                  <th>Status</th>
+                  <th style="text-align:right;">Latency</th>
+                  <th>IP</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php foreach ($recentLogs as $log):
+                    $sc = (int) $log['status_code'];
+                    $badgeClass = $sc >= 500 ? 'badge-danger' : ($sc >= 400 ? 'badge-warning' : 'badge-success');
+                ?>
+                <tr>
+                  <td style="white-space:nowrap;"><?= htmlspecialchars($log['created_at']) ?></td>
+                  <td>
+                    <a href="?user_id=<?= (int)$log['user_id'] ?>" title="Filter by user" style="text-decoration:none;">
+                      <?= htmlspecialchars($log['user_name'] ?? '') ?>
+                    </a>
+                    <br><small class="text-muted"><?= htmlspecialchars($log['email'] ?? '') ?></small>
+                  </td>
+                  <td style="font-family:monospace;"><?= htmlspecialchars($log['api_key_prefix']) ?>...</td>
+                  <td style="font-family:monospace;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="<?= htmlspecialchars($log['endpoint']) ?>"><?= htmlspecialchars($log['endpoint']) ?></td>
+                  <td style="font-family:monospace;"><?= htmlspecialchars($log['method']) ?></td>
+                  <td><?= htmlspecialchars($log['action']) ?></td>
+                  <td><span class="badge <?= $badgeClass ?>"><?= $sc ?></span></td>
+                  <td style="text-align:right;"><?= number_format((int)$log['response_time']) ?> ms</td>
+                  <td style="font-family:monospace;"><?= htmlspecialchars($log['ip_address']) ?></td>
+                </tr>
+                <?php endforeach; ?>
+              </tbody>
+            </table>
+          </div>
+        <?php endif; ?>
+      </div>
+    </div>
+  </div>
+</section>
+
 <?php View::endSection(); ?>

@@ -86,7 +86,7 @@ $dailyApiUsage  = $dailyApiUsage  ?? [];
 <div style="margin-bottom:14px;padding:10px 14px;border-radius:8px;font-size:.85rem;
     <?= $t === 'success' ? 'background:rgba(0,255,136,.1);border:1px solid var(--green);color:var(--green);'
                          : 'background:rgba(255,107,107,.1);border:1px solid var(--red);color:var(--red);' ?>">
-    <?= $t === 'success' ? '✓' : '✗' ?> <?= htmlspecialchars($msg, ENT_QUOTES, 'UTF-8') ?>
+    <?= $t === 'success' ? 'OK' : 'Error' ?>: <?= htmlspecialchars($msg, ENT_QUOTES, 'UTF-8') ?>
 </div>
 <?php endforeach; ?>
 
@@ -94,7 +94,7 @@ $dailyApiUsage  = $dailyApiUsage  ?? [];
 <?php if (!empty($newKey)): ?>
 <div style="margin-bottom:20px;padding:14px 18px;border-radius:10px;background:rgba(0,240,255,.07);border:1px solid var(--cyan);">
     <div style="font-size:.8rem;font-weight:700;color:var(--cyan);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em;">
-        ⚡ Your new API key — copy it now, it won't be shown again
+        New API key — copy it now, it won't be shown again
     </div>
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
         <code id="newKeyCode" style="flex:1;background:rgba(0,0,0,.4);padding:10px 14px;border-radius:6px;font-size:.85rem;word-break:break-all;border:1px solid rgba(0,240,255,.3);"><?= htmlspecialchars($newKey, ENT_QUOTES, 'UTF-8') ?></code>
@@ -105,9 +105,10 @@ $dailyApiUsage  = $dailyApiUsage  ?? [];
 
 <!-- ── TABS ────────────────────────────────────────────────────────────── -->
 <div class="api-tabs">
-    <button class="api-tab active" onclick="showTab('tab-keys',this)">🔑 API Keys</button>
-    <button class="api-tab"        onclick="showTab('tab-analytics',this)">📊 Usage &amp; Analytics</button>
-    <button class="api-tab"        onclick="showTab('tab-docs',this)">📖 API Docs</button>
+    <button class="api-tab active" onclick="showTab('tab-keys',this)">API Keys</button>
+    <button class="api-tab"        onclick="showTab('tab-analytics',this)">Usage &amp; Analytics</button>
+    <button class="api-tab"        onclick="showTab('tab-docs',this)">API Docs</button>
+    <button class="api-tab"        onclick="showTab('tab-logs',this)">Request Logs</button>
 </div>
 
 <!-- ═════ TAB 1: API Keys ═══════════════════════════════════════════════ -->
@@ -229,7 +230,7 @@ $dailyApiUsage  = $dailyApiUsage  ?? [];
     <!-- Daily API usage sparkline (14 days) -->
     <div class="api-card" style="margin-bottom:20px;">
         <div style="padding:12px 16px;background:linear-gradient(135deg,rgba(0,240,255,.1),rgba(255,46,196,.1));border-bottom:1px solid var(--border-color);">
-            <h3 style="margin:0;font-size:.9rem;font-weight:700;">📅 QR Codes Created via API — Last 14 Days</h3>
+            <h3 style="margin:0;font-size:.9rem;font-weight:700;">QR Codes Created via API — Last 14 Days</h3>
         </div>
         <div style="padding:16px;">
             <?php
@@ -263,7 +264,7 @@ $dailyApiUsage  = $dailyApiUsage  ?? [];
     <!-- Per-key breakdown -->
     <div class="api-card">
         <div style="padding:12px 16px;background:linear-gradient(135deg,rgba(0,240,255,.1),rgba(255,46,196,.1));border-bottom:1px solid var(--border-color);">
-            <h3 style="margin:0;font-size:.9rem;font-weight:700;">🔑 Per-Key Usage Breakdown</h3>
+            <h3 style="margin:0;font-size:.9rem;font-weight:700;">Per-Key Usage Breakdown</h3>
         </div>
         <div style="padding:16px;">
             <?php if (empty($keys)): ?>
@@ -463,6 +464,54 @@ $dailyApiUsage  = $dailyApiUsage  ?? [];
 
 </div><!-- /tab-docs -->
 
+<!-- ═════ TAB 4: Request Logs ════════════════════════════════════════════ -->
+<div id="tab-logs" class="api-tab-panel">
+<?php $apiLogs = $apiLogs ?? []; ?>
+<div class="api-card">
+    <div class="api-card-head">
+        <i class="fas fa-list"></i> API Request Logs
+        <span style="font-size:.75rem;font-weight:400;opacity:.7;margin-left:.5rem;">(last 100 requests)</span>
+    </div>
+    <?php if (empty($apiLogs)): ?>
+        <div style="padding:2.5rem;text-align:center;opacity:.6;font-size:.875rem;">
+            No API requests recorded yet. Requests will appear here after your key is used.
+        </div>
+    <?php else: ?>
+        <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:.78rem;">
+                <thead>
+                    <tr style="border-bottom:1px solid var(--border-color);">
+                        <th style="padding:.5rem .75rem;text-align:left;opacity:.7;font-weight:600;white-space:nowrap;">Time</th>
+                        <th style="padding:.5rem .75rem;text-align:left;opacity:.7;font-weight:600;">Endpoint</th>
+                        <th style="padding:.5rem .75rem;text-align:left;opacity:.7;font-weight:600;">Method</th>
+                        <th style="padding:.5rem .75rem;text-align:left;opacity:.7;font-weight:600;">Action</th>
+                        <th style="padding:.5rem .75rem;text-align:center;opacity:.7;font-weight:600;">Status</th>
+                        <th style="padding:.5rem .75rem;text-align:right;opacity:.7;font-weight:600;white-space:nowrap;">Latency</th>
+                        <th style="padding:.5rem .75rem;text-align:left;opacity:.7;font-weight:600;">IP</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($apiLogs as $log):
+                        $sc = (int) $log['status_code'];
+                        $scColor = $sc >= 500 ? 'var(--red)' : ($sc >= 400 ? '#f59e0b' : 'var(--green)');
+                    ?>
+                    <tr style="border-bottom:1px solid var(--border-color);">
+                        <td style="padding:.45rem .75rem;white-space:nowrap;opacity:.7;"><?= htmlspecialchars($log['created_at']) ?></td>
+                        <td style="padding:.45rem .75rem;font-family:monospace;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="<?= htmlspecialchars($log['endpoint']) ?>"><?= htmlspecialchars($log['endpoint']) ?></td>
+                        <td style="padding:.45rem .75rem;font-family:monospace;color:var(--cyan);"><?= htmlspecialchars($log['method']) ?></td>
+                        <td style="padding:.45rem .75rem;opacity:.8;"><?= htmlspecialchars($log['action']) ?></td>
+                        <td style="padding:.45rem .75rem;text-align:center;font-weight:700;color:<?= $scColor ?>;"><?= $sc ?></td>
+                        <td style="padding:.45rem .75rem;text-align:right;opacity:.7;"><?= number_format((int)$log['response_time']) ?> ms</td>
+                        <td style="padding:.45rem .75rem;font-family:monospace;opacity:.7;"><?= htmlspecialchars($log['ip_address']) ?></td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    <?php endif; ?>
+</div>
+</div><!-- /tab-logs -->
+
 <script>
 function showTab(id, btn) {
     document.querySelectorAll('.api-tab-panel').forEach(p => p.classList.remove('active'));
@@ -493,7 +542,7 @@ function copyEl(elId, btn) {
     const text = document.getElementById(elId).textContent.trim();
     navigator.clipboard.writeText(text).then(() => {
         const orig = btn.textContent;
-        btn.textContent = '✓';
+        btn.textContent = 'OK';
         setTimeout(() => { btn.textContent = orig; }, 2000);
     }).catch(() => showApiToast('Copy failed.', 'error'));
 }

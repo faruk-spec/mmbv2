@@ -37,8 +37,15 @@ class QRApiController
     private QRModel        $qrModel;
     private QRFeatureService $featureService;
 
+    /** Resolved API key row from DB (set by authenticateApiKey) */
+    private ?array $currentKeyRow = null;
+
+    /** Request start time (microtime) for latency tracking */
+    private float $requestStart;
+
     public function __construct()
     {
+        $this->requestStart = microtime(true);
         ob_start(); // swallow any stray output before we send JSON headers
         $this->qrModel        = new QRModel();
         $this->featureService = new QRFeatureService();
@@ -245,6 +252,7 @@ class QRApiController
                 'access_url' => $accessUrl,
                 'created_at' => date('Y-m-d H:i:s'),
             ]);
+            $this->logApiRequest($userId, 'generate', 201);
         } catch (\Exception $e) {
             Logger::error('QR API generate: ' . $e->getMessage());
             $this->error('Failed to generate QR code', 500);
@@ -276,6 +284,7 @@ class QRApiController
             'page'     => $page,
             'per_page' => $perPage,
         ]);
+        $this->logApiRequest($userId, 'list', 200);
     }
 
     // ------------------------------------------------------------------ //
@@ -302,6 +311,7 @@ class QRApiController
         }
 
         echo json_encode(['success' => true, 'qr_code' => $qr]);
+        $this->logApiRequest($userId, 'view', 200);
     }
 
     // ------------------------------------------------------------------ //
@@ -334,6 +344,7 @@ class QRApiController
 
         $this->qrModel->delete($id, $userId);
         echo json_encode(['success' => true, 'message' => 'QR code deleted.']);
+        $this->logApiRequest($userId, 'delete', 200);
     }
 
     // ------------------------------------------------------------------ //
@@ -357,6 +368,7 @@ class QRApiController
             'total_dynamic' => $this->qrModel->countDynamicByUser($userId),
             'scans'         => $stats,
         ]);
+        $this->logApiRequest($userId, 'usage', 200);
     }
 
     // ------------------------------------------------------------------ //
@@ -423,7 +435,7 @@ class QRApiController
         try {
             $db  = Database::getInstance();
             $row = $db->fetch(
-                "SELECT user_id FROM api_keys WHERE api_key = ? AND is_active = 1 LIMIT 1",
+                "SELECT id, user_id FROM api_keys WHERE api_key = ? AND is_active = 1 LIMIT 1",
                 [$key]
             );
 
@@ -433,6 +445,13 @@ class QRApiController
             }
 
             $userId = (int) $row['user_id'];
+
+            // Store row for logging (key id, masked prefix)
+            $this->currentKeyRow = [
+                'id'         => (int) $row['id'],
+                'user_id'    => $userId,
+                'key_prefix' => substr($key, 0, 8),
+            ];
 
             // Enforce the api_access feature flag — return JSON error, never redirect
             if (!$this->featureService->can($userId, 'api_access')) {
@@ -460,21 +479,28 @@ class QRApiController
     }
 
     /**
-     * Simple per-user-per-minute rate limiter using temp-file counters.
+     * DB-based per-key per-minute rate limiter.
+     * Falls back to allow on DB error to avoid blocking legitimate traffic.
      */
     private function checkRateLimit(int $userId): bool
     {
-        $file  = sys_get_temp_dir() . '/qr_rl_' . $userId . '_' . date('YmdHi');
-        $count = (int) @file_get_contents($file);
-
-        if ($count >= self::RATE_LIMIT_PER_MIN) {
-            http_response_code(429);
-            header('Retry-After: 60');
-            echo json_encode(['success' => false, 'error' => 'Rate limit exceeded. Try again in 60 seconds.']);
-            return false;
+        try {
+            $db    = Database::getInstance();
+            $count = (int) $db->fetchColumn(
+                "SELECT COUNT(*) FROM qr_api_request_logs
+                  WHERE user_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 60 SECOND)",
+                [$userId]
+            );
+            if ($count >= self::RATE_LIMIT_PER_MIN) {
+                http_response_code(429);
+                header('Retry-After: 60');
+                echo json_encode(['success' => false, 'error' => 'Rate limit exceeded. Maximum ' . self::RATE_LIMIT_PER_MIN . ' requests per minute.']);
+                return false;
+            }
+        } catch (\Exception $e) {
+            Logger::error('QR API rate-limit check failed: ' . $e->getMessage());
+            // Fail-open on DB error to avoid blocking legitimate traffic
         }
-
-        @file_put_contents($file, $count + 1);
         return true;
     }
 
@@ -482,6 +508,74 @@ class QRApiController
     {
         http_response_code($code);
         echo json_encode(['success' => false, 'error' => $message]);
+    }
+
+    /**
+     * Log an API request to qr_api_request_logs.
+     * All fields are captured automatically. Errors are swallowed.
+     */
+    private function logApiRequest(int $userId, string $action, int $statusCode): void
+    {
+        try {
+            $db = Database::getInstance();
+
+            $db->query(
+                "CREATE TABLE IF NOT EXISTS qr_api_request_logs (
+                    id              BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    user_id         INT UNSIGNED    NOT NULL,
+                    api_key_id      INT UNSIGNED    NULL,
+                    api_key_prefix  VARCHAR(16)     NOT NULL DEFAULT '',
+                    session_id      VARCHAR(128)    NOT NULL DEFAULT '',
+                    email           VARCHAR(255)    NOT NULL DEFAULT '',
+                    endpoint        VARCHAR(255)    NOT NULL,
+                    method          VARCHAR(10)     NOT NULL,
+                    ip_address      VARCHAR(45)     NOT NULL,
+                    user_agent      TEXT            NULL,
+                    status_code     SMALLINT UNSIGNED NOT NULL,
+                    response_time   INT UNSIGNED    NOT NULL DEFAULT 0 COMMENT 'Milliseconds',
+                    action          VARCHAR(100)    NOT NULL DEFAULT '',
+                    created_at      TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    INDEX idx_user_id  (user_id),
+                    INDEX idx_created  (created_at),
+                    INDEX idx_status   (status_code)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+            );
+
+            $responseTime = (int) round((microtime(true) - $this->requestStart) * 1000);
+
+            $email = '';
+            try {
+                $uRow  = $db->fetch("SELECT email FROM users WHERE id = ? LIMIT 1", [$userId]);
+                $email = $uRow['email'] ?? '';
+            } catch (\Exception $e) {
+                // ignore
+            }
+
+            $db->query(
+                "INSERT INTO qr_api_request_logs
+                    (user_id, api_key_id, api_key_prefix, session_id, email,
+                     endpoint, method, ip_address, user_agent,
+                     status_code, response_time, action)
+                 VALUES
+                    (?, ?, ?, ?, ?,  ?, ?, ?, ?,  ?, ?, ?)",
+                [
+                    $userId,
+                    $this->currentKeyRow['id'] ?? null,
+                    $this->currentKeyRow['key_prefix'] ?? '',
+                    substr(session_id() ?: '', 0, 128),
+                    substr($email, 0, 255),
+                    substr(parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?? '', 0, 255),
+                    strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET'),
+                    substr($_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '', 0, 45),
+                    substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 512),
+                    $statusCode,
+                    $responseTime,
+                    substr($action, 0, 100),
+                ]
+            );
+        } catch (\Exception $e) {
+            Logger::error('QR API log write failed: ' . $e->getMessage());
+        }
     }
 
     // ------------------------------------------------------------------ //

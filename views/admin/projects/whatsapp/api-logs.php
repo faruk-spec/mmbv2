@@ -172,7 +172,7 @@
     <!-- Page Header -->
     <div style="margin-bottom: 30px;">
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
-            <a href="/admin/whatsapp" style="color: var(--text-secondary); text-decoration: none; font-size: 0.875rem;">← Back to Overview</a>
+            <a href="/admin/whatsapp" style="color: var(--text-secondary); text-decoration: none; font-size: 0.875rem;">&laquo; Back to Overview</a>
         </div>
         <h1 style="font-size: 2rem; margin-bottom: 8px; display: flex; align-items: center; gap: 12px;">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ff6b6b" stroke-width="2">
@@ -195,7 +195,7 @@
     <?php if ($filterUser): ?>
     <div style="margin-bottom:16px;padding:10px 16px;border-radius:8px;background:rgba(37,211,102,.08);border:1px solid #25D366;display:flex;align-items:center;justify-content:space-between;font-size:.86rem;">
         <span>Showing logs for <strong><?= htmlspecialchars($filterUser['name'], ENT_QUOTES, 'UTF-8') ?></strong> (<?= htmlspecialchars($filterUser['email'], ENT_QUOTES, 'UTF-8') ?>)</span>
-        <a href="/admin/whatsapp/api-logs" style="color:#ff6b6b;text-decoration:none;font-weight:600;">✕ Clear filter</a>
+        <a href="/admin/whatsapp/api-logs" style="color:#ff6b6b;text-decoration:none;font-weight:600;">Clear filter</a>
     </div>
     <?php endif; ?>
 
@@ -260,9 +260,9 @@
                 <div class="pagination">
                     <?php $pageQs = $filterUserId ? '&user_id=' . $filterUserId : ''; ?>
                     <?php if ($currentPage > 1): ?>
-                        <a href="?page=<?= $currentPage - 1 . $pageQs ?>" class="pagination-btn">← Previous</a>
+                        <a href="?page=<?= $currentPage - 1 . $pageQs ?>" class="pagination-btn">&laquo; Previous</a>
                     <?php else: ?>
-                        <button class="pagination-btn" disabled>← Previous</button>
+                        <button class="pagination-btn" disabled>&laquo; Previous</button>
                     <?php endif; ?>
                     
                     <span class="pagination-info">
@@ -270,9 +270,9 @@
                     </span>
                     
                     <?php if ($currentPage < $totalPages): ?>
-                        <a href="?page=<?= $currentPage + 1 . $pageQs ?>" class="pagination-btn">Next →</a>
+                        <a href="?page=<?= $currentPage + 1 . $pageQs ?>" class="pagination-btn">Next &raquo;</a>
                     <?php else: ?>
-                        <button class="pagination-btn" disabled>Next →</button>
+                        <button class="pagination-btn" disabled>Next &raquo;</button>
                     <?php endif; ?>
                 </div>
             <?php endif; ?>

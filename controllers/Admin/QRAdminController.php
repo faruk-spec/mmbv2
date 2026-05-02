@@ -1426,9 +1426,25 @@ class QRAdminController extends BaseController
             $allUsers = [];
         }
 
-        $totalKeys     = count($keys);
-        $activeKeys    = count(array_filter($keys, fn($k) => $k['is_active']));
-        $totalRequests = array_sum(array_column($keys, 'request_count'));
+        $filterUserId  = isset($_GET['user_id']) ? (int) $_GET['user_id'] : null;
+        $recentLogs    = [];
+        try {
+            $logsWhere  = $filterUserId ? 'WHERE user_id = :uid' : '';
+            $logsParams = $filterUserId ? ['uid' => $filterUserId] : [];
+            $recentLogs = $db->fetchAll(
+                "SELECT l.id, l.user_id, u.email, u.name AS user_name,
+                        l.api_key_prefix, l.endpoint, l.method,
+                        l.ip_address, l.status_code, l.response_time, l.action, l.created_at
+                   FROM qr_api_request_logs l
+                   LEFT JOIN users u ON l.user_id = u.id
+                   {$logsWhere}
+                   ORDER BY l.id DESC
+                   LIMIT 200",
+                $logsParams
+            ) ?: [];
+        } catch (\Exception $e) {
+            // Table may not exist yet
+        }
 
         $this->view('admin/qr/api-keys', [
             'title'         => 'QR API Keys',
@@ -1437,6 +1453,8 @@ class QRAdminController extends BaseController
             'totalKeys'     => $totalKeys,
             'activeKeys'    => $activeKeys,
             'totalRequests' => $totalRequests,
+            'recentLogs'    => $recentLogs,
+            'filterUserId'  => $filterUserId,
         ]);
     }
 

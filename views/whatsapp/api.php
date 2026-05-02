@@ -89,7 +89,7 @@ $apiEndpoints   = $apiEndpoints   ?? [];
 <div style="margin-bottom:14px;padding:10px 14px;border-radius:8px;font-size:.85rem;
     <?= $t === 'success' ? 'background:rgba(37,211,102,.1);border:1px solid #25D366;color:#25D366;'
                          : 'background:rgba(255,107,107,.1);border:1px solid #ff6b6b;color:#ff6b6b;' ?>">
-    <?= $t === 'success' ? '✓' : '✗' ?> <?= htmlspecialchars($msg, ENT_QUOTES, 'UTF-8') ?>
+    <?= $t === 'success' ? 'OK' : 'Error' ?>: <?= htmlspecialchars($msg, ENT_QUOTES, 'UTF-8') ?>
 </div>
 <?php endforeach; ?>
 
@@ -97,7 +97,7 @@ $apiEndpoints   = $apiEndpoints   ?? [];
 <?php if (!empty($newKey)): ?>
 <div style="margin-bottom:20px;padding:14px 18px;border-radius:10px;background:rgba(37,211,102,.07);border:1px solid #25D366;">
     <div style="font-size:.8rem;font-weight:700;color:#25D366;margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em;">
-        ⚡ Your new API key — copy it now, it won't be shown again
+        New API key — copy it now, it won't be shown again
     </div>
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
         <code id="newWaKeyCode" style="flex:1;background:rgba(0,0,0,.4);padding:10px 14px;border-radius:6px;font-size:.85rem;word-break:break-all;border:1px solid rgba(37,211,102,.3);color:#25D366;"><?= htmlspecialchars($newKey, ENT_QUOTES, 'UTF-8') ?></code>
@@ -108,9 +108,9 @@ $apiEndpoints   = $apiEndpoints   ?? [];
 
 <!-- ── Tabs ───────────────────────────────────────────────────────────────── -->
 <div class="wa-api-tabs">
-    <button class="wa-api-tab active" onclick="waShowTab('wa-tab-keys',this)">🔑 API Key</button>
-    <button class="wa-api-tab"        onclick="waShowTab('wa-tab-analytics',this)">📊 Usage &amp; Analytics</button>
-    <button class="wa-api-tab"        onclick="waShowTab('wa-tab-docs',this)">📖 API Docs</button>
+    <button class="wa-api-tab active" onclick="waShowTab('wa-tab-keys',this)">API Key</button>
+    <button class="wa-api-tab"        onclick="waShowTab('wa-tab-analytics',this)">Usage &amp; Analytics</button>
+    <button class="wa-api-tab"        onclick="waShowTab('wa-tab-docs',this)">API Docs</button>
 </div>
 
 <!-- ═══════════ TAB 1: API Key ═══════════════════════════════════════════ -->
@@ -374,7 +374,7 @@ function waCopyEl(id, btn, rawVal) {
     const text = rawVal || document.getElementById(id).textContent.trim();
     navigator.clipboard.writeText(text).then(() => {
         const orig = btn.textContent;
-        btn.textContent = '✓ Copied';
+        btn.textContent = 'Copied';
         setTimeout(() => btn.textContent = orig, 2000);
     }).catch(() => waToast('Copy failed — please copy manually.', 'error'));
 }

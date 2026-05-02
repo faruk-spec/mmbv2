@@ -43,6 +43,7 @@ class SettingsController
         $usage    = $userId ? $jobModel->getMonthlyUsage($userId) : [];
         $formats  = $userId ? $jobModel->getFormatBreakdown($userId) : [];
         $activity = $userId ? $jobModel->getDailyActivity($userId, 14) : [];
+        $apiLogs  = $userId ? $this->getApiLogs($userId) : [];
 
         $this->render('apikeys', [
             'title'    => 'API Keys & Analytics',
@@ -51,6 +52,7 @@ class SettingsController
             'usage'    => $usage,
             'formats'  => $formats,
             'activity' => $activity,
+            'apiLogs'  => $apiLogs,
         ]);
     }
 
@@ -243,5 +245,27 @@ class SettingsController
         http_response_code($code);
         header('Content-Type: application/json');
         echo json_encode(['success' => false, 'error' => $message]);
+    }
+
+    /**
+     * Fetch the 100 most recent API request log entries for a user.
+     * Returns an empty array if the log table does not exist yet.
+     */
+    private function getApiLogs(int $userId): array
+    {
+        try {
+            $db = Database::getInstance();
+            return $db->fetchAll(
+                "SELECT id, api_key_prefix, endpoint, method, ip_address,
+                        user_agent, status_code, response_time, action, created_at
+                   FROM convertx_api_request_logs
+                  WHERE user_id = :uid
+                  ORDER BY id DESC
+                  LIMIT 100",
+                ['uid' => $userId]
+            ) ?: [];
+        } catch (\Exception $e) {
+            return [];
+        }
     }
 }

@@ -86,6 +86,23 @@ class QRApiUserController
         }
 
         $title   = 'API & Analytics';
+
+        // Request logs for this user (last 100)
+        $apiLogs = [];
+        try {
+            $apiLogs = $this->db->fetchAll(
+                "SELECT id, api_key_prefix, endpoint, method, ip_address,
+                        user_agent, status_code, response_time, action, created_at
+                   FROM qr_api_request_logs
+                  WHERE user_id = :uid
+                  ORDER BY id DESC
+                  LIMIT 100",
+                ['uid' => $this->userId]
+            ) ?: [];
+        } catch (\Exception $e) {
+            // Table may not exist yet
+        }
+
         $content_vars = [
             'keys'          => $keys,
             'baseUrl'       => $baseUrl,
@@ -96,6 +113,7 @@ class QRApiUserController
             'activeKeys'    => $activeKeys,
             'lastUsedAt'    => $lastUsedAt,
             'dailyApiUsage' => $dailyApiUsage,
+            'apiLogs'       => $apiLogs,
         ];
 
         // Buffer the view content then wrap in layout.php (navbar + sidebar).
