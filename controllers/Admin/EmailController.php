@@ -51,7 +51,9 @@ class EmailController extends BaseController
                 []
             );
         } catch (\Throwable $e) {
-            // Silently ignore if already exists or no permission
+            // Log the error but continue — the table may already exist or the DB user
+            // may lack CREATE permission; the subsequent queries will surface the real error.
+            Logger::warning('EmailController: could not ensure email_queue table: ' . $e->getMessage());
         }
     }
 
