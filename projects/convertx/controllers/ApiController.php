@@ -316,6 +316,29 @@ class ApiController
                     return null;
                 }
 
+                // Track last-used timestamp and request count (best-effort).
+                // Adds columns via ALTER TABLE IF NOT EXISTS first-time they're missing.
+                try {
+                    $db->query(
+                        "ALTER TABLE convertx_api_keys
+                             ADD COLUMN IF NOT EXISTS last_used_at  DATETIME DEFAULT NULL,
+                             ADD COLUMN IF NOT EXISTS request_count INT      NOT NULL DEFAULT 0"
+                    );
+                } catch (\Exception $e) {
+                    // Column already exists or engine doesn't support IF NOT EXISTS — ignore
+                }
+                try {
+                    $db->query(
+                        "UPDATE convertx_api_keys
+                            SET last_used_at  = NOW(),
+                                request_count = request_count + 1
+                          WHERE api_key = :key LIMIT 1",
+                        ['key' => $key]
+                    );
+                } catch (\Exception $e) {
+                    // Non-fatal
+                }
+
                 return $userId;
             }
         } catch (\Exception $e) {

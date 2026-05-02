@@ -201,9 +201,9 @@ $canApiAccess = $canApiAccess ?? false;
         <!-- Auth -->
         <div style="margin-bottom:16px;">
             <h4 style="font-size:.8rem;font-weight:700;color:var(--cyan);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em;">Authentication</h4>
-            <p style="color:var(--text-secondary);line-height:1.6;">Send your API key in the <code style="background:rgba(0,240,255,.1);padding:1px 5px;border-radius:3px;">Authorization</code> header:</p>
+            <p style="color:var(--text-secondary);line-height:1.6;">Send your API key in the <code style="background:rgba(0,240,255,.1);padding:1px 5px;border-radius:3px;">X-Api-Key</code> header (or <code style="background:rgba(0,240,255,.1);padding:1px 5px;border-radius:3px;">Authorization: Bearer</code>):</p>
             <div style="position:relative;margin-top:6px;">
-                <code id="authExample" style="display:block;background:rgba(0,0,0,.5);padding:8px 10px;border-radius:6px;border:1px solid var(--border-color);color:var(--green);white-space:pre-wrap;word-break:break-all;">Authorization: Bearer mmb_your_api_key_here</code>
+                <code id="authExample" style="display:block;background:rgba(0,0,0,.5);padding:8px 10px;border-radius:6px;border:1px solid var(--border-color);color:var(--green);white-space:pre-wrap;word-break:break-all;">X-Api-Key: mmb_your_api_key_here</code>
                 <button onclick="copyEl('authExample',this)" style="position:absolute;top:6px;right:6px;padding:3px 8px;font-size:.7rem;background:rgba(0,240,255,.15);border:1px solid rgba(0,240,255,.3);color:var(--cyan);border-radius:4px;cursor:pointer;">Copy</button>
             </div>
         </div>
@@ -222,10 +222,12 @@ $canApiAccess = $canApiAccess ?? false;
                 <tbody>
                     <?php
                     $endpoints = [
-                        ['GET',    '/api/qr',          'List your QR codes (paginated)'],
-                        ['POST',   '/api/qr',          'Create a new QR code'],
-                        ['GET',    '/api/qr/{code}',   'Get a single QR by short_code or id'],
-                        ['DELETE', '/api/qr/{code}',   'Delete a QR code'],
+                        ['POST',   '/projects/qr/api/generate',      'Create a new QR code'],
+                        ['GET',    '/projects/qr/api/list',           'List your QR codes (paginated)'],
+                        ['GET',    '/projects/qr/api/view/{id}',      'Get details of a single QR code'],
+                        ['DELETE', '/projects/qr/api/delete/{id}',    'Delete a QR code'],
+                        ['GET',    '/projects/qr/api/usage',          'Show usage summary'],
+                        ['GET',    '/projects/qr/api/plans',          'List available subscription plans'],
                     ];
                     $methodColors = ['GET'=>'var(--green)','POST'=>'var(--cyan)','DELETE'=>'var(--red)','PUT'=>'var(--orange)'];
                     foreach ($endpoints as [$method, $path, $desc]):
@@ -248,24 +250,29 @@ $canApiAccess = $canApiAccess ?? false;
         <?php
         $examples = [
             [
-                'title' => 'List QR codes',
+                'title' => 'Generate a URL QR code',
                 'id'    => 'ex1',
-                'code'  => "curl -H \"Authorization: Bearer YOUR_API_KEY\" \\\n  {$baseUrl}/api/qr?page=1&limit=20",
+                'code'  => "curl -X POST \\\n  -H \"X-Api-Key: YOUR_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"content\":\"https://example.com\",\"type\":\"url\"}' \\\n  {$baseUrl}/projects/qr/api/generate",
             ],
             [
-                'title' => 'Create a URL QR code',
+                'title' => 'List your QR codes',
                 'id'    => 'ex2',
-                'code'  => "curl -X POST -H \"Authorization: Bearer YOUR_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"type\":\"url\",\"content\":\"https://example.com\",\"label\":\"My QR\"}' \\\n  {$baseUrl}/api/qr",
+                'code'  => "curl -H \"X-Api-Key: YOUR_API_KEY\" \\\n  \"{$baseUrl}/projects/qr/api/list?page=1&per_page=20\"",
             ],
             [
-                'title' => 'Create a dynamic QR code',
+                'title' => 'View a single QR code',
                 'id'    => 'ex3',
-                'code'  => "curl -X POST -H \"Authorization: Bearer YOUR_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"type\":\"url\",\"content\":\"https://example.com\",\"dynamic\":true}' \\\n  {$baseUrl}/api/qr",
+                'code'  => "curl -H \"X-Api-Key: YOUR_API_KEY\" \\\n  {$baseUrl}/projects/qr/api/view/42",
             ],
             [
                 'title' => 'Delete a QR code',
                 'id'    => 'ex4',
-                'code'  => "curl -X DELETE -H \"Authorization: Bearer YOUR_API_KEY\" \\\n  {$baseUrl}/api/qr/abc123",
+                'code'  => "curl -X DELETE \\\n  -H \"X-Api-Key: YOUR_API_KEY\" \\\n  {$baseUrl}/projects/qr/api/delete/42",
+            ],
+            [
+                'title' => 'Usage summary',
+                'id'    => 'ex5',
+                'code'  => "curl -H \"X-Api-Key: YOUR_API_KEY\" \\\n  {$baseUrl}/projects/qr/api/usage",
             ],
         ];
         foreach ($examples as $ex): ?>

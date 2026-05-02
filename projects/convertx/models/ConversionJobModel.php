@@ -466,7 +466,7 @@ class ConversionJobModel
         return $this->db->fetchAll(
             "SELECT output_format, COUNT(*) AS cnt
              FROM convertx_jobs
-             WHERE user_id = :uid AND status = 'completed'
+             WHERE user_id = :uid
              GROUP BY output_format
              ORDER BY cnt DESC
              LIMIT :limit",

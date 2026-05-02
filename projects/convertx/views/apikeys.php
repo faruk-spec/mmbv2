@@ -274,7 +274,7 @@ if (!empty($_SESSION['_flash']['error'])) {
     <div class="card">
         <div class="card-header">
             <i class="fa-solid fa-chart-bar"></i> Top Output Formats
-            <span style="font-size:.75rem;font-weight:400;color:var(--text-muted);margin-left:.5rem;">(completed jobs, all time)</span>
+            <span style="font-size:.75rem;font-weight:400;color:var(--text-muted);margin-left:.5rem;">(all jobs, all time)</span>
         </div>
 
         <?php if (empty($formats)): ?>

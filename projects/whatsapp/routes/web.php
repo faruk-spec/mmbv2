@@ -48,5 +48,23 @@ $router->post('/projects/whatsapp/settings/update', 'Projects\WhatsApp\Controlle
 // API documentation
 $router->get('/projects/whatsapp/api-docs', 'Projects\WhatsApp\Controllers\ApiDocsController@index');
 
+// ── External REST API (authenticated via X-Api-Key, no session required) ───
+require_once PROJECT_PATH . '/api/ApiHandler.php';
+$router->post('/projects/whatsapp/api/send-message', function () {
+    (new \WhatsApp\API\ApiHandler())->handle('send-message', 'POST');
+});
+$router->post('/projects/whatsapp/api/send-media', function () {
+    (new \WhatsApp\API\ApiHandler())->handle('send-media', 'POST');
+});
+$router->get('/projects/whatsapp/api/messages', function () {
+    (new \WhatsApp\API\ApiHandler())->handle('messages', 'GET');
+});
+$router->get('/projects/whatsapp/api/contacts', function () {
+    (new \WhatsApp\API\ApiHandler())->handle('contacts', 'GET');
+});
+$router->get('/projects/whatsapp/api/status', function () {
+    (new \WhatsApp\API\ApiHandler())->handle('status', 'GET');
+});
+
 // Dispatch the route
 $router->dispatch($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI']);
