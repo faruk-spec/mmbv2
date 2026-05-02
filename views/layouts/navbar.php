@@ -111,7 +111,7 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
                 <img src="<?= htmlspecialchars($navbarSettings['logo_image_url']) ?>"
                      alt="Logo"
                      style="max-height: 40px;"
-                     onerror="this.style.display='none';this.parentElement.insertAdjacentText('beforeend',<?= json_encode(htmlspecialchars($navbarSettings['logo_text'] ?? APP_NAME)) ?>);">
+                     onerror="this.style.display='none';this.parentElement.insertAdjacentText('beforeend',<?= json_encode($navbarSettings['logo_text'] ?? APP_NAME) ?>);">
             </a>
         <?php else: ?>
             <a href="/" class="logo" <?php if ($navbarSettings['navbar_text_color']): ?>style="color: <?= htmlspecialchars($navbarSettings['navbar_text_color']) ?>;"<?php endif; ?>><?= htmlspecialchars($navbarSettings['logo_text']) ?></a>
