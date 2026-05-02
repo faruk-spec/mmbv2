@@ -27,6 +27,14 @@ class CsrfMiddleware
             }
         }
 
+        // Exempt project API sub-routes which are authenticated via X-Api-Key,
+        // not CSRF tokens.  Matches paths like /projects/qr/api/generate and
+        // the short-URL equivalents /qr/api/generate.
+        $path = parse_url($uri, PHP_URL_PATH) ?? $uri;
+        if (preg_match('#/api(?:/|$)#', $path)) {
+            return true;
+        }
+
         $token = $_POST['_csrf_token']
             ?? $_POST['_token']
             ?? $_SERVER['HTTP_X_CSRF_TOKEN']
