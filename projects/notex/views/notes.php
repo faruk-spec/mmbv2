@@ -77,7 +77,9 @@
         position: absolute;
         top: 0.5rem;
         right: 0.5rem;
-        z-index: 10;  /* above the card content but below the dropdown */
+        /* No explicit z-index here so the row doesn't create its own stacking context.
+           The dropdown child (z-index:200) will stack relative to the nearest
+           stacking context ancestor (.note-card on hover, which gets z-index:5). */
         display: flex;
         gap: 0.25rem;
     }
