@@ -103,6 +103,29 @@ class QRApiUserController
             // Table may not exist yet
         }
 
+        // Per-key endpoint breakdown (from request logs)
+        $keyLogStats = [];
+        try {
+            $rows = $this->db->fetchAll(
+                "SELECT api_key_prefix,
+                        COUNT(*)                                                AS total,
+                        SUM(CASE WHEN status_code >= 200 AND status_code < 300 THEN 1 ELSE 0 END) AS success,
+                        SUM(CASE WHEN status_code >= 400 THEN 1 ELSE 0 END)    AS errors,
+                        ROUND(AVG(response_time), 0)                           AS avg_ms,
+                        MAX(created_at)                                        AS last_at
+                   FROM qr_api_request_logs
+                  WHERE user_id = :uid
+                  GROUP BY api_key_prefix
+                  ORDER BY total DESC",
+                ['uid' => $this->userId]
+            ) ?: [];
+            foreach ($rows as $r) {
+                $keyLogStats[$r['api_key_prefix']] = $r;
+            }
+        } catch (\Exception $e) {
+            // Table may not exist yet
+        }
+
         $content_vars = [
             'keys'          => $keys,
             'baseUrl'       => $baseUrl,
@@ -114,6 +137,7 @@ class QRApiUserController
             'lastUsedAt'    => $lastUsedAt,
             'dailyApiUsage' => $dailyApiUsage,
             'apiLogs'       => $apiLogs,
+            'keyLogStats'   => $keyLogStats,
         ];
 
         // Buffer the view content then wrap in layout.php (navbar + sidebar).

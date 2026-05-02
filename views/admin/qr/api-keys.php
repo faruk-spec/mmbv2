@@ -77,6 +77,59 @@ use Core\Security;
     </div>
 </div>
 
+<!-- Active user filter banner -->
+<?php if (!empty($filterUserId)): ?>
+<div style="margin-bottom:16px;padding:10px 16px;border-radius:8px;background:rgba(0,240,255,.08);border:1px solid var(--cyan);display:flex;align-items:center;justify-content:space-between;font-size:.86rem;">
+    <span>Filtering by user #<?= (int)$filterUserId ?></span>
+    <a href="/admin/qr/api-keys" style="color:var(--red);text-decoration:none;font-weight:600;">Clear filter</a>
+</div>
+<?php endif; ?>
+
+<!-- Per-user usage summary -->
+<?php if (!empty($userUsage) && empty($filterUserId)): ?>
+<div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:10px;overflow:hidden;margin-bottom:24px;">
+    <div style="padding:14px 18px;border-bottom:1px solid var(--border-color);">
+        <h3 style="margin:0;font-size:.95rem;font-weight:700;">API Usage by User <span style="font-size:.75rem;font-weight:400;color:var(--text-secondary);margin-left:6px;">(click to filter)</span></h3>
+    </div>
+    <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:.83rem;">
+            <thead>
+                <tr style="background:rgba(0,0,0,.2);border-bottom:1px solid var(--border-color);">
+                    <th style="padding:10px 14px;text-align:left;color:var(--text-secondary);font-weight:600;">User</th>
+                    <th style="padding:10px 14px;text-align:left;color:var(--text-secondary);font-weight:600;">Email</th>
+                    <th style="padding:10px 14px;text-align:right;color:var(--text-secondary);font-weight:600;">Requests</th>
+                    <th style="padding:10px 14px;text-align:right;color:var(--text-secondary);font-weight:600;">Success</th>
+                    <th style="padding:10px 14px;text-align:right;color:var(--text-secondary);font-weight:600;">Errors</th>
+                    <th style="padding:10px 14px;text-align:left;color:var(--text-secondary);font-weight:600;">Last Request</th>
+                    <th style="padding:10px 14px;text-align:left;color:var(--text-secondary);font-weight:600;">Filter</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($userUsage as $uu): ?>
+                <tr style="border-bottom:1px solid rgba(255,255,255,.05);">
+                    <td style="padding:9px 14px;font-weight:600;"><?= htmlspecialchars($uu['user_name'] ?? 'Unknown', ENT_QUOTES, 'UTF-8') ?></td>
+                    <td style="padding:9px 14px;color:var(--text-secondary);"><?= htmlspecialchars($uu['email'] ?? '', ENT_QUOTES, 'UTF-8') ?></td>
+                    <td style="padding:9px 14px;text-align:right;font-weight:700;color:var(--cyan);"><?= number_format((int)$uu['total_requests']) ?></td>
+                    <td style="padding:9px 14px;text-align:right;color:var(--green);"><?= number_format((int)$uu['success_count']) ?></td>
+                    <td style="padding:9px 14px;text-align:right;color:var(--red);"><?= number_format((int)$uu['error_count']) ?></td>
+                    <td style="padding:9px 14px;color:var(--text-secondary);font-size:.78rem;">
+                        <?= $uu['last_request'] ? date('M j, Y H:i', strtotime($uu['last_request'])) : '—' ?>
+                    </td>
+                    <td style="padding:9px 14px;">
+                        <?php if ($uu['user_id']): ?>
+                        <a href="?user_id=<?= (int)$uu['user_id'] ?>" style="font-size:.75rem;color:var(--cyan);text-decoration:none;">
+                            <i class="fas fa-search"></i> Filter
+                        </a>
+                        <?php endif; ?>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+<?php endif; ?>
+
 <!-- Keys table -->
 <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:10px;overflow:hidden;">
     <div style="padding:14px 18px;border-bottom:1px solid var(--border-color);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">

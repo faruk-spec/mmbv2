@@ -45,14 +45,41 @@ class SettingsController
         $activity = $userId ? $jobModel->getDailyActivity($userId, 14) : [];
         $apiLogs  = $userId ? $this->getApiLogs($userId) : [];
 
+        // Per-key stats from request logs
+        $keyLogStats = [];
+        if ($userId) {
+            try {
+                $db   = Database::getInstance();
+                $rows = $db->fetchAll(
+                    "SELECT api_key_prefix,
+                            COUNT(*) AS total,
+                            SUM(CASE WHEN status_code >= 200 AND status_code < 300 THEN 1 ELSE 0 END) AS success,
+                            SUM(CASE WHEN status_code >= 400 THEN 1 ELSE 0 END) AS errors,
+                            ROUND(AVG(response_time), 0) AS avg_ms,
+                            MAX(created_at) AS last_at
+                       FROM convertx_api_request_logs
+                      WHERE user_id = :uid
+                      GROUP BY api_key_prefix
+                      ORDER BY total DESC",
+                    ['uid' => $userId]
+                ) ?: [];
+                foreach ($rows as $r) {
+                    $keyLogStats[$r['api_key_prefix']] = $r;
+                }
+            } catch (\Exception $e) {
+                // Table may not exist yet
+            }
+        }
+
         $this->render('apikeys', [
-            'title'    => 'API Keys & Analytics',
-            'user'     => Auth::user(),
-            'apiKey'   => $apiKey,
-            'usage'    => $usage,
-            'formats'  => $formats,
-            'activity' => $activity,
-            'apiLogs'  => $apiLogs,
+            'title'       => 'API Keys & Analytics',
+            'user'        => Auth::user(),
+            'apiKey'      => $apiKey,
+            'usage'       => $usage,
+            'formats'     => $formats,
+            'activity'    => $activity,
+            'apiLogs'     => $apiLogs,
+            'keyLogStats' => $keyLogStats,
         ]);
     }
 

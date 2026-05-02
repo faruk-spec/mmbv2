@@ -167,7 +167,11 @@ class ConvertXAdminController extends BaseController
         $this->requirePermission('convertx.api_keys');
 
         // Optional per-user filter
-        $filterUserId = isset($_GET['user_id']) ? (int) $_GET['user_id'] : null;
+        $filterUserId  = isset($_GET['user_id'])     ? (int) $_GET['user_id']     : null;
+        $filterKeyPfx  = isset($_GET['key_prefix'])  ? trim($_GET['key_prefix'])  : null;
+        if ($filterKeyPfx && !preg_match('/^[a-zA-Z0-9_]{1,16}$/', $filterKeyPfx)) {
+            $filterKeyPfx = null; // reject invalid prefix
+        }
 
         if ($filterUserId) {
             $keys = $this->db->fetchAll(
@@ -187,8 +191,6 @@ class ConvertXAdminController extends BaseController
                   ORDER BY k.created_at DESC"
             );
         }
-
-        // Per-user usage summary (top users by request count)
         $userUsage = $this->db->fetchAll(
             "SELECT u.id, u.name AS user_name, u.email AS user_email,
                     COUNT(k.id) AS key_count,
@@ -217,11 +219,14 @@ class ConvertXAdminController extends BaseController
             $filterUser = $this->db->fetch("SELECT id, name, email FROM users WHERE id = ?", [$filterUserId]);
         }
 
-        // Fetch recent request logs
+        // Fetch recent request logs (filtered by user and/or key prefix)
         $recentLogs = [];
         try {
-            $logsWhere  = $filterUserId ? 'WHERE l.user_id = :uid' : '';
-            $logsParams = $filterUserId ? ['uid' => $filterUserId] : [];
+            $conditions = [];
+            $logsParams = [];
+            if ($filterUserId)  { $conditions[] = 'l.user_id = ?';        $logsParams[] = $filterUserId; }
+            if ($filterKeyPfx)  { $conditions[] = 'l.api_key_prefix = ?'; $logsParams[] = $filterKeyPfx; }
+            $logsWhere  = $conditions ? 'WHERE ' . implode(' AND ', $conditions) : '';
             $recentLogs = $this->db->fetchAll(
                 "SELECT l.id, l.user_id, u.email, u.name AS user_name,
                         l.api_key_prefix, l.endpoint, l.method,
@@ -237,14 +242,27 @@ class ConvertXAdminController extends BaseController
             // Table may not exist yet
         }
 
+        // Distinct key prefixes for the filter dropdown
+        $keyPrefixes = [];
+        try {
+            $rows = $this->db->fetchAll(
+                "SELECT DISTINCT api_key_prefix FROM convertx_api_request_logs ORDER BY api_key_prefix LIMIT 200"
+            );
+            $keyPrefixes = array_column($rows, 'api_key_prefix');
+        } catch (\Exception $e) {
+            // Non-fatal
+        }
+
         $this->view('admin/projects/convertx/api-keys', [
-            'title'        => 'ConvertX Admin — API Keys & Usage',
-            'keys'         => $keys,
-            'users'        => $users,
-            'userUsage'    => $userUsage,
-            'filterUserId' => $filterUserId,
-            'filterUser'   => $filterUser,
-            'recentLogs'   => $recentLogs,
+            'title'          => 'ConvertX Admin — API Keys & Usage',
+            'keys'           => $keys,
+            'users'          => $users,
+            'userUsage'      => $userUsage,
+            'filterUserId'   => $filterUserId,
+            'filterUser'     => $filterUser,
+            'filterKeyPfx'   => $filterKeyPfx,
+            'keyPrefixes'    => $keyPrefixes,
+            'recentLogs'     => $recentLogs,
         ]);
     }
 

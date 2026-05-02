@@ -372,6 +372,41 @@ if (!empty($_SESSION['_flash']['error'])) {
         </div>
     </div>
 
+    <!-- Per-key API log stats -->
+    <?php if (!empty($keyLogStats)): ?>
+    <div class="card">
+        <div class="card-header">
+            <i class="fa-solid fa-key"></i> API Key Usage (from request logs)
+        </div>
+        <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:.82rem;">
+                <thead>
+                    <tr style="background:var(--bg-secondary);border-bottom:1px solid var(--border-color);">
+                        <th style="padding:.6rem .75rem;text-align:left;font-weight:600;color:var(--text-secondary);">Key Prefix</th>
+                        <th style="padding:.6rem .75rem;text-align:right;font-weight:600;color:var(--text-secondary);">Requests</th>
+                        <th style="padding:.6rem .75rem;text-align:right;font-weight:600;color:var(--text-secondary);">Success</th>
+                        <th style="padding:.6rem .75rem;text-align:right;font-weight:600;color:var(--text-secondary);">Errors</th>
+                        <th style="padding:.6rem .75rem;text-align:right;font-weight:600;color:var(--text-secondary);">Avg Latency</th>
+                        <th style="padding:.6rem .75rem;text-align:left;font-weight:600;color:var(--text-secondary);">Last Request</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($keyLogStats as $pfx => $s): ?>
+                    <tr style="border-bottom:1px solid var(--border-color);">
+                        <td style="padding:.5rem .75rem;font-family:monospace;"><?= htmlspecialchars($pfx, ENT_QUOTES, 'UTF-8') ?>...</td>
+                        <td style="padding:.5rem .75rem;text-align:right;font-weight:700;color:var(--cx-primary);"><?= number_format((int)$s['total']) ?></td>
+                        <td style="padding:.5rem .75rem;text-align:right;color:var(--cx-success,#10b981);"><?= number_format((int)$s['success']) ?></td>
+                        <td style="padding:.5rem .75rem;text-align:right;color:var(--cx-danger,#ef4444);"><?= number_format((int)$s['errors']) ?></td>
+                        <td style="padding:.5rem .75rem;text-align:right;color:var(--text-secondary);"><?= number_format((int)$s['avg_ms']) ?> ms</td>
+                        <td style="padding:.5rem .75rem;color:var(--text-secondary);"><?= $s['last_at'] ? date('d M Y H:i', strtotime($s['last_at'])) : '—' ?></td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <?php endif; ?>
+
 <?php elseif ($activeTab === 'logs'): ?>
 
 <!-- ══════════════════════════════════════════

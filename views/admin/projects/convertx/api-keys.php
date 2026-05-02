@@ -208,6 +208,8 @@ View::extend('admin');
 <?php
 $recentLogs   = $recentLogs   ?? [];
 $filterUserId = $filterUserId ?? null;
+$filterKeyPfx = $filterKeyPfx ?? null;
+$keyPrefixes  = $keyPrefixes  ?? [];
 ?>
 <section class="content">
   <div class="container-fluid">
@@ -215,14 +217,39 @@ $filterUserId = $filterUserId ?? null;
       <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
         <h3 class="card-title">
           <i class="fas fa-list"></i>
-          API Request Logs <?php if ($filterUserId): ?>(User #<?= (int)$filterUserId ?>)<?php endif; ?>
+          API Request Logs
+          <?php if ($filterUserId || $filterKeyPfx): ?>
+            <small style="font-weight:400;opacity:.7;">
+              (<?= $filterUserId ? 'user #' . (int)$filterUserId : '' ?><?= $filterUserId && $filterKeyPfx ? ', ' : '' ?><?= $filterKeyPfx ? 'key ' . htmlspecialchars($filterKeyPfx, ENT_QUOTES, 'UTF-8') . '...' : '' ?>)
+            </small>
+          <?php endif; ?>
           <small style="font-weight:400;opacity:.7;">(last 200)</small>
         </h3>
-        <?php if ($filterUserId): ?>
-          <a href="/admin/projects/convertx/api-keys" class="btn btn-sm btn-default">
-            <i class="fas fa-times"></i> Clear filter
-          </a>
-        <?php endif; ?>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <!-- Key-prefix filter dropdown -->
+          <?php if (!empty($keyPrefixes)): ?>
+          <form method="GET" action="/admin/projects/convertx/api-keys" style="display:flex;gap:6px;align-items:center;margin:0;">
+            <?php if ($filterUserId): ?>
+            <input type="hidden" name="user_id" value="<?= (int)$filterUserId ?>">
+            <?php endif; ?>
+            <select name="key_prefix" onchange="this.form.submit()"
+                style="padding:5px 10px;border-radius:6px;border:1px solid #ced4da;background:#343a40;color:#fff;font-size:.8rem;">
+              <option value="">— All Keys —</option>
+              <?php foreach ($keyPrefixes as $pfx): ?>
+              <option value="<?= htmlspecialchars($pfx, ENT_QUOTES, 'UTF-8') ?>"
+                  <?= $filterKeyPfx === $pfx ? 'selected' : '' ?>>
+                <?= htmlspecialchars($pfx, ENT_QUOTES, 'UTF-8') ?>...
+              </option>
+              <?php endforeach; ?>
+            </select>
+          </form>
+          <?php endif; ?>
+          <?php if ($filterUserId || $filterKeyPfx): ?>
+            <a href="/admin/projects/convertx/api-keys" class="btn btn-sm btn-default">
+              <i class="fas fa-times"></i> Clear filter
+            </a>
+          <?php endif; ?>
+        </div>
       </div>
       <div class="card-body p-0">
         <?php if (empty($recentLogs)): ?>

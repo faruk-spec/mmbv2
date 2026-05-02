@@ -275,15 +275,27 @@ $dailyApiUsage  = $dailyApiUsage  ?? [];
                     <tr style="border-bottom:1px solid var(--border-color);">
                         <th style="text-align:left;padding:8px;color:var(--text-secondary);font-weight:600;">Key Name</th>
                         <th style="text-align:right;padding:8px;color:var(--text-secondary);font-weight:600;">Requests</th>
+                        <th style="text-align:right;padding:8px;color:var(--text-secondary);font-weight:600;">Success</th>
+                        <th style="text-align:right;padding:8px;color:var(--text-secondary);font-weight:600;">Errors</th>
+                        <th style="text-align:right;padding:8px;color:var(--text-secondary);font-weight:600;">Avg Latency</th>
                         <th style="text-align:right;padding:8px;color:var(--text-secondary);font-weight:600;">Last Used</th>
                         <th style="text-align:center;padding:8px;color:var(--text-secondary);font-weight:600;">Status</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($keys as $k): ?>
+                    <?php
+                    $keyLogStats = $keyLogStats ?? [];
+                    foreach ($keys as $k):
+                        // Match log stats by first 8 chars of key (api_key_prefix stored as 8-char slice)
+                        $pfx   = substr($k['api_key'], 0, 8);
+                        $lstat = $keyLogStats[$pfx] ?? null;
+                    ?>
                     <tr style="border-bottom:1px solid rgba(255,255,255,.04);">
                         <td style="padding:8px;font-weight:500;"><?= htmlspecialchars($k['name'], ENT_QUOTES, 'UTF-8') ?></td>
                         <td style="padding:8px;text-align:right;font-variant-numeric:tabular-nums;color:var(--cyan);"><?= number_format((int) $k['request_count']) ?></td>
+                        <td style="padding:8px;text-align:right;color:var(--green);"><?= $lstat ? number_format((int)$lstat['success']) : '—' ?></td>
+                        <td style="padding:8px;text-align:right;color:var(--red);"><?= $lstat ? number_format((int)$lstat['errors']) : '—' ?></td>
+                        <td style="padding:8px;text-align:right;color:var(--text-secondary);"><?= $lstat ? number_format((int)$lstat['avg_ms']) . ' ms' : '—' ?></td>
                         <td style="padding:8px;text-align:right;color:var(--text-secondary);"><?= $k['last_used_at'] ? date('d M Y H:i', strtotime($k['last_used_at'])) : '—' ?></td>
                         <td style="padding:8px;text-align:center;">
                             <?php if ($k['is_active']): ?>
