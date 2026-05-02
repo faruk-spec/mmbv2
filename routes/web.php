@@ -291,6 +291,26 @@ $router->get('/uploads/{path:wildcard}', function($path) {
 // Public pages (no auth required)
 $router->get('/pages/{slug:wildcard}', 'PagesController@show');
 
+// ── Project API routes — no session auth required ────────────────────────────
+// API requests authenticate solely via the X-Api-Key header (or ?api_key=).
+// The project's own ApiController validates the key and enforces plan limits.
+// These routes MUST be registered BEFORE the ['auth']-guarded wildcard routes
+// below so the router (which iterates patterns in insertion order) matches
+// /projects/{project}/api/* here first — before the session guard fires.
+foreach (['get', 'post', 'put', 'delete', 'patch'] as $_apiMethod) {
+    $router->$_apiMethod('/projects/{project}/api/{path:wildcard}', function($project, $path = '') {
+        $projectFile = BASE_PATH . '/projects/' . $project . '/index.php';
+        if (file_exists($projectFile)) {
+            require_once $projectFile;
+        } else {
+            http_response_code(404);
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'Project not found']);
+        }
+    }); // No ['auth'] middleware — API key authentication is done inside each project's ApiController
+}
+unset($_apiMethod);
+
 $router->get('/projects/{project}', function($project) {
     // Check if project is enabled
     if (!\Core\Helpers::isProjectEnabled($project)) {
@@ -397,6 +417,30 @@ $router->post('/forms/{slug}', 'FormXPublicController@submit');
 $knownProjects = ['qr','proshare','formx','codexpro','convertx','idcard','linkshortner','notex','resumex','billx','whatsapp','devzone'];
 
 foreach ($knownProjects as $_proj) {
+    // API sub-routes for short-URL format: /{project}/api/* — no session auth needed.
+    // Must be registered before the ['auth'] wildcard routes in the same loop.
+    // REQUEST_URI is rewritten to the canonical /projects/{project}/... form so the
+    // project's own index.php and router work without modification.
+    foreach (['get', 'post', 'put', 'delete', 'patch'] as $_am) {
+        $router->$_am('/' . $_proj . '/api/{path:wildcard}', function($path = '') use ($_proj) {
+            // Normalise REQUEST_URI: /qr/api/... → /projects/qr/api/...
+            $_SERVER['REQUEST_URI'] = preg_replace(
+                '#^/' . preg_quote($_proj, '#') . '/#',
+                '/projects/' . $_proj . '/',
+                $_SERVER['REQUEST_URI']
+            );
+            $f = BASE_PATH . '/projects/' . $_proj . '/index.php';
+            if (file_exists($f)) {
+                require_once $f;
+            } else {
+                http_response_code(404);
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'error' => 'Not found']);
+            }
+        }); // No ['auth'] — API key auth is done inside the project's ApiController
+    }
+    unset($_am);
+
     $router->get('/' . $_proj, function() use ($_proj) {
         if (!\Core\Helpers::isProjectEnabled($_proj)) {
             \Core\View::render('errors/project-disabled', ['project' => $_proj]);

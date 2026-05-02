@@ -38,15 +38,30 @@ if (session_status() === PHP_SESSION_NONE) {
 // Validate SSO access
 use Core\SSO;
 
-// Check if user has access to this project
-if (!SSO::validateProjectRequest('whatsapp')) {
-    SSO::redirectToLogin($_SERVER['REQUEST_URI']);
+// API requests (/projects/whatsapp/api/*) authenticate via X-Api-Key and must
+// never be redirected to the web login page.  ApiHandler handles its own
+// authentication, so we bypass session/SSO checks entirely for these routes.
+$_wa_uri    = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+$_wa_is_api = (bool) preg_match('#^/projects/whatsapp/api(/|$)#', $_wa_uri);
+unset($_wa_uri);
+
+if (!$_wa_is_api) {
+    // Check if user has access to this project
+    if (!SSO::validateProjectRequest('whatsapp')) {
+        SSO::redirectToLogin($_SERVER['REQUEST_URI']);
+    }
 }
 
 // Defensive: block access if project has been disabled in admin
 if (!\Core\Helpers::isProjectEnabled('whatsapp')) {
-    http_response_code(503);
-    \Core\View::render('errors/project-disabled', ['project' => 'whatsapp']);
+    if ($_wa_is_api) {
+        http_response_code(503);
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'error' => 'This project is currently disabled.']);
+    } else {
+        http_response_code(503);
+        \Core\View::render('errors/project-disabled', ['project' => 'whatsapp']);
+    }
     exit;
 }
 

@@ -1426,17 +1426,74 @@ class QRAdminController extends BaseController
             $allUsers = [];
         }
 
-        $totalKeys     = count($keys);
-        $activeKeys    = count(array_filter($keys, fn($k) => $k['is_active']));
-        $totalRequests = array_sum(array_column($keys, 'request_count'));
+        // Stats for QR API keys
+        $totalKeys     = 0;
+        $activeKeys    = 0;
+        $totalRequests = 0;
+        try {
+            $statsRow      = $db->fetch(
+                "SELECT COUNT(*) AS total,
+                        SUM(is_active) AS active,
+                        SUM(request_count) AS requests
+                   FROM api_keys
+                  WHERE permissions LIKE '%qr%'
+                     OR name LIKE '%qr%'
+                     OR name LIKE '%QR%'"
+            );
+            $totalKeys     = (int) ($statsRow['total']    ?? 0);
+            $activeKeys    = (int) ($statsRow['active']   ?? 0);
+            $totalRequests = (int) ($statsRow['requests'] ?? 0);
+        } catch (\Exception $e) {
+            // Non-fatal
+        }
+
+        $filterUserId  = isset($_GET['user_id']) ? (int) $_GET['user_id'] : null;
+        $recentLogs    = [];
+        try {
+            // Per-user usage summary from request logs
+            $userUsage = $db->fetchAll(
+                "SELECT l.user_id, u.name AS user_name, u.email,
+                        COUNT(l.id) AS total_requests,
+                        MAX(l.created_at) AS last_request,
+                        SUM(CASE WHEN l.status_code >= 200 AND l.status_code < 300 THEN 1 ELSE 0 END) AS success_count,
+                        SUM(CASE WHEN l.status_code >= 400 THEN 1 ELSE 0 END) AS error_count
+                   FROM qr_api_request_logs l
+                   LEFT JOIN users u ON l.user_id = u.id
+                   GROUP BY l.user_id, u.name, u.email
+                   ORDER BY total_requests DESC
+                   LIMIT 100"
+            ) ?: [];
+        } catch (\Exception $e) {
+            $userUsage = [];
+        }
+        try {
+            $logsWhere  = $filterUserId ? 'WHERE user_id = :uid' : '';
+            $logsParams = $filterUserId ? ['uid' => $filterUserId] : [];
+            $recentLogs = $db->fetchAll(
+                "SELECT l.id, l.user_id, u.email, u.name AS user_name,
+                        l.api_key_prefix, l.endpoint, l.method,
+                        l.ip_address, l.status_code, l.response_time, l.action, l.created_at
+                   FROM qr_api_request_logs l
+                   LEFT JOIN users u ON l.user_id = u.id
+                   {$logsWhere}
+                   ORDER BY l.id DESC
+                   LIMIT 200",
+                $logsParams
+            ) ?: [];
+        } catch (\Exception $e) {
+            // Table may not exist yet
+        }
 
         $this->view('admin/qr/api-keys', [
             'title'         => 'QR API Keys',
             'keys'          => $keys,
             'allUsers'      => $allUsers,
+            'userUsage'     => $userUsage,
             'totalKeys'     => $totalKeys,
             'activeKeys'    => $activeKeys,
             'totalRequests' => $totalRequests,
+            'recentLogs'    => $recentLogs,
+            'filterUserId'  => $filterUserId,
         ]);
     }
 

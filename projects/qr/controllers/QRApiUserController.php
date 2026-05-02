@@ -55,13 +55,89 @@ class QRApiUserController
         $featureService = new QRFeatureService();
         $canApiAccess   = $featureService->can($this->userId, 'api_access');
 
-        $title   = 'API Access';
+        // Usage analytics: total requests across all user keys
+        $totalRequests = array_sum(array_column($keys, 'request_count'));
+        $activeKeys    = count(array_filter($keys, fn($k) => $k['is_active']));
+        $lastUsedAt    = null;
+        foreach ($keys as $k) {
+            if ($k['last_used_at'] && (!$lastUsedAt || $k['last_used_at'] > $lastUsedAt)) {
+                $lastUsedAt = $k['last_used_at'];
+            }
+        }
+
+        // Daily QR codes generated via API for last 14 days (from qr_codes table source = 'api')
+        $dailyApiUsage = [];
+        try {
+            $rows = $this->db->fetchAll(
+                "SELECT DATE(created_at) AS day, COUNT(*) AS cnt
+                   FROM qr_codes
+                  WHERE user_id = :uid
+                    AND source = 'api'
+                    AND created_at >= DATE_SUB(CURDATE(), INTERVAL 14 DAY)
+                  GROUP BY DATE(created_at)
+                  ORDER BY day ASC",
+                ['uid' => $this->userId]
+            );
+            foreach ($rows as $r) {
+                $dailyApiUsage[$r['day']] = (int) $r['cnt'];
+            }
+        } catch (\Exception $e) {
+            // qr_codes.source column may not exist yet — continue without chart data
+        }
+
+        $title   = 'API & Analytics';
+
+        // Request logs for this user (last 100)
+        $apiLogs = [];
+        try {
+            $apiLogs = $this->db->fetchAll(
+                "SELECT id, api_key_prefix, endpoint, method, ip_address,
+                        user_agent, status_code, response_time, action, created_at
+                   FROM qr_api_request_logs
+                  WHERE user_id = :uid
+                  ORDER BY id DESC
+                  LIMIT 100",
+                ['uid' => $this->userId]
+            ) ?: [];
+        } catch (\Exception $e) {
+            // Table may not exist yet
+        }
+
+        // Per-key endpoint breakdown (from request logs)
+        $keyLogStats = [];
+        try {
+            $rows = $this->db->fetchAll(
+                "SELECT api_key_prefix,
+                        COUNT(*)                                                AS total,
+                        SUM(CASE WHEN status_code >= 200 AND status_code < 300 THEN 1 ELSE 0 END) AS success,
+                        SUM(CASE WHEN status_code >= 400 THEN 1 ELSE 0 END)    AS errors,
+                        ROUND(AVG(response_time), 0)                           AS avg_ms,
+                        MAX(created_at)                                        AS last_at
+                   FROM qr_api_request_logs
+                  WHERE user_id = :uid
+                  GROUP BY api_key_prefix
+                  ORDER BY total DESC",
+                ['uid' => $this->userId]
+            ) ?: [];
+            foreach ($rows as $r) {
+                $keyLogStats[$r['api_key_prefix']] = $r;
+            }
+        } catch (\Exception $e) {
+            // Table may not exist yet
+        }
+
         $content_vars = [
-            'keys'         => $keys,
-            'baseUrl'      => $baseUrl,
-            'newKey'       => $newKey,
-            'title'        => $title,
-            'canApiAccess' => $canApiAccess,
+            'keys'          => $keys,
+            'baseUrl'       => $baseUrl,
+            'newKey'        => $newKey,
+            'title'         => $title,
+            'canApiAccess'  => $canApiAccess,
+            'totalRequests' => $totalRequests,
+            'activeKeys'    => $activeKeys,
+            'lastUsedAt'    => $lastUsedAt,
+            'dailyApiUsage' => $dailyApiUsage,
+            'apiLogs'       => $apiLogs,
+            'keyLogStats'   => $keyLogStats,
         ];
 
         // Buffer the view content then wrap in layout.php (navbar + sidebar).

@@ -1422,8 +1422,8 @@ window.mmbSkeleton = (function(){
                             <?php endif; ?>
                             <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('convertx.api_keys')): ?>
                             <a href="/admin/projects/convertx/api-keys" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/convertx/api-keys') === 0 ? 'active' : '' ?>">
-                                <i class="fas fa-key"></i>
-                                <span>API Keys</span>
+                                <i class="fas fa-chart-line"></i>
+                                <span>API Keys &amp; Usage</span>
                             </a>
                             <?php endif; ?>
                             <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('convertx.settings')): ?>
@@ -1698,9 +1698,9 @@ window.mmbSkeleton = (function(){
                             </a>
                             <?php endif; ?>
                             <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('whatsapp.api_logs')): ?>
-                            <a href="/admin/whatsapp/api-logs" class="menu-link">
-                                <i class="fas fa-file-alt"></i>
-                                <span>API Logs</span>
+                            <a href="/admin/whatsapp/api-logs" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/whatsapp/api-logs') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-chart-bar"></i>
+                                <span>API Logs &amp; Usage</span>
                             </a>
                             <?php endif; ?>
                             <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('whatsapp.subscription_plans')): ?>
@@ -1780,8 +1780,8 @@ window.mmbSkeleton = (function(){
                             <?php endif; ?>
                             <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('qr.api_keys')): ?>
                             <a href="/admin/qr/api-keys" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/qr/api-keys') === 0 ? 'active' : '' ?>">
-                                <i class="fas fa-key"></i>
-                                <span>QR API Keys</span>
+                                <i class="fas fa-chart-line"></i>
+                                <span>API Keys &amp; Usage</span>
                             </a>
                             <?php endif; ?>
                         </div>

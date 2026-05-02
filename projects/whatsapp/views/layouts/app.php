@@ -811,9 +811,9 @@
                     </div>
                     
                     <div class="menu-item">
-                        <a href="/projects/whatsapp/api-docs" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/projects/whatsapp/api-docs') === 0 ? 'active' : '' ?>">
-                            <i class="fas fa-book"></i>
-                            <span>API Docs</span>
+                        <a href="/projects/whatsapp/api" class="menu-link <?= (strpos($_SERVER['REQUEST_URI'] ?? '', '/projects/whatsapp/api') === 0 && strpos($_SERVER['REQUEST_URI'] ?? '', '/projects/whatsapp/api/') !== 0) ? 'active' : '' ?>">
+                            <i class="fas fa-chart-line"></i>
+                            <span>API &amp; Analytics</span>
                         </a>
                     </div>
                 </div>

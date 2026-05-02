@@ -36,6 +36,15 @@ DirectoryIndex index.php public/index.php
     RewriteCond %{DOCUMENT_ROOT}%{REQUEST_URI} -f
     RewriteRule ^(.*)$ $1 [L]
 
+    # Handle /projects/{project}/api (and /api/) — the api/ sub-directory is a real filesystem
+    # directory in some projects (e.g. whatsapp/api/ApiHandler.php).  Without this rule,
+    # Apache's mod_dir adds a trailing-slash 301 redirect and QSA injects ?url= into
+    # REQUEST_URI, which then leaks into auth redirects and shows up in the browser URL bar.
+    # This specific rule (no QSA, optional trailing slash, $1 never includes trailing slash)
+    # must appear BEFORE the generic directory rule below.
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^(projects/[a-zA-Z0-9][a-zA-Z0-9_-]+/api)/?$ index.php?url=$1 [L]
+
     # Force project sub-paths that are real directories to route through PHP
     # (e.g. /projects/resumex/templates/ exists as a dir but must be handled by the PHP router)
     RewriteCond %{REQUEST_FILENAME} -d

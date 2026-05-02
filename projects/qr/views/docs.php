@@ -316,19 +316,80 @@ code.inline{background:rgba(0,0,0,.3);padding:2px 6px;border-radius:4px;font-siz
 <!-- API -->
 <div class="docs-section" id="api">
     <h2><i class="fas fa-code" style="color:var(--cyan);"></i> API Access <span class="badge-pro">Pro</span></h2>
-    <div class="section-meta">Requires API Access feature • <a href="/projects/qr/api" style="color:var(--cyan);">Go to API page →</a></div>
-    <p>Generate and manage QR codes programmatically using the REST API.</p>
-    <ul>
-        <li><strong>Base URL:</strong> <code class="inline"><?= htmlspecialchars($_SERVER['HTTP_HOST'] ?? 'mmbtech.online') ?>/api/qr</code></li>
-        <li>Authenticate with <code class="inline">Authorization: Bearer &lt;YOUR_API_KEY&gt;</code></li>
-    </ul>
+    <div class="section-meta">Requires API Access feature • <a href="/projects/qr/api" style="color:var(--cyan);">Manage API Keys →</a></div>
+    <p>Generate and manage QR codes programmatically using the REST API. Authenticate every request by sending your API key in the <code class="inline">X-Api-Key</code> header — <strong>no browser session or CSRF token is needed</strong>.</p>
+
+    <h3 style="font-size:.9rem;font-weight:700;margin:1rem 0 .5rem;">Authentication</h3>
+    <pre style="background:rgba(0,0,0,.3);border:1px solid var(--border-color);border-radius:8px;padding:.9rem;font-size:.78rem;overflow-x:auto;margin-bottom:1rem;">X-Api-Key: YOUR_API_KEY
+# OR
+Authorization: Bearer YOUR_API_KEY
+# OR as a query parameter
+?api_key=YOUR_API_KEY</pre>
+
+    <h3 style="font-size:.9rem;font-weight:700;margin:1rem 0 .5rem;">Endpoints</h3>
     <div class="feature-grid">
-        <div class="feature-item"><i class="fas fa-list" style="color:var(--cyan);"></i><div><strong>GET /api/qr</strong><span>List your QR codes</span></div></div>
-        <div class="feature-item"><i class="fas fa-eye" style="color:var(--purple);"></i><div><strong>GET /api/qr/{code}</strong><span>Get one QR code</span></div></div>
-        <div class="feature-item"><i class="fas fa-plus" style="color:var(--green);"></i><div><strong>POST /api/qr</strong><span>Create a QR code</span></div></div>
-        <div class="feature-item"><i class="fas fa-trash" style="color:var(--magenta);"></i><div><strong>DELETE /api/qr/{code}</strong><span>Delete a QR code</span></div></div>
+        <div class="feature-item"><i class="fas fa-plus" style="color:var(--green);"></i><div><strong>POST /projects/qr/api/generate</strong><span>Create a new QR code</span></div></div>
+        <div class="feature-item"><i class="fas fa-list" style="color:var(--cyan);"></i><div><strong>GET /projects/qr/api/list</strong><span>List your QR codes (paginated)</span></div></div>
+        <div class="feature-item"><i class="fas fa-eye" style="color:var(--purple);"></i><div><strong>GET /projects/qr/api/view/{id}</strong><span>Get a single QR code</span></div></div>
+        <div class="feature-item"><i class="fas fa-trash" style="color:var(--magenta);"></i><div><strong>DELETE /projects/qr/api/delete/{id}</strong><span>Delete a QR code</span></div></div>
+        <div class="feature-item"><i class="fas fa-chart-bar" style="color:var(--cyan);"></i><div><strong>GET /projects/qr/api/usage</strong><span>Scan &amp; usage stats</span></div></div>
+        <div class="feature-item"><i class="fas fa-crown" style="color:var(--purple);"></i><div><strong>GET /projects/qr/api/plans</strong><span>List available plans</span></div></div>
     </div>
-    <p>Generate your API key from the <a href="/projects/qr/api" style="color:var(--cyan);">API Access</a> page in the sidebar.</p>
+
+    <h3 style="font-size:.9rem;font-weight:700;margin:1rem 0 .5rem;">Example: Generate a QR Code</h3>
+    <pre style="background:rgba(0,0,0,.3);border:1px solid var(--border-color);border-radius:8px;padding:.9rem;font-size:.78rem;overflow-x:auto;margin-bottom:.75rem;">curl -X POST "<?= htmlspecialchars((isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'yourdomain.com')) ?>/projects/qr/api/generate" \
+  -H "X-Api-Key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"content":"https://example.com","type":"url"}'
+
+# Response (201 Created)
+{
+  "success": true,
+  "qr_id": 42,
+  "content": "https://example.com",
+  "type": "url",
+  "is_dynamic": false,
+  "created_at": "2026-01-01 12:00:00"
+}</pre>
+
+    <h3 style="font-size:.9rem;font-weight:700;margin:1rem 0 .5rem;">Example: List QR Codes</h3>
+    <pre style="background:rgba(0,0,0,.3);border:1px solid var(--border-color);border-radius:8px;padding:.9rem;font-size:.78rem;overflow-x:auto;margin-bottom:.75rem;">curl "<?= htmlspecialchars((isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'yourdomain.com')) ?>/projects/qr/api/list?page=1&per_page=20" \
+  -H "X-Api-Key: YOUR_API_KEY"
+
+# Response
+{
+  "success": true,
+  "qr_codes": [...],
+  "total": 58,
+  "page": 1,
+  "per_page": 20
+}</pre>
+
+    <h3 style="font-size:.9rem;font-weight:700;margin:1rem 0 .5rem;">POST /api/generate — Body Parameters</h3>
+    <table style="width:100%;border-collapse:collapse;font-size:.8rem;margin-bottom:.75rem;">
+        <thead><tr style="background:rgba(0,0,0,.2);">
+            <th style="padding:.4rem .6rem;text-align:left;border-bottom:1px solid var(--border-color);">Parameter</th>
+            <th style="padding:.4rem .6rem;text-align:left;border-bottom:1px solid var(--border-color);">Type</th>
+            <th style="padding:.4rem .6rem;text-align:left;border-bottom:1px solid var(--border-color);">Required</th>
+            <th style="padding:.4rem .6rem;text-align:left;border-bottom:1px solid var(--border-color);">Description</th>
+        </tr></thead>
+        <tbody>
+            <tr><td style="padding:.35rem .6rem;border-bottom:1px solid rgba(255,255,255,.05);"><code class="inline">content</code></td><td style="padding:.35rem .6rem;border-bottom:1px solid rgba(255,255,255,.05);">string</td><td style="padding:.35rem .6rem;border-bottom:1px solid rgba(255,255,255,.05);">✓</td><td style="padding:.35rem .6rem;border-bottom:1px solid rgba(255,255,255,.05);">The QR code content (URL, text, etc.)</td></tr>
+            <tr><td style="padding:.35rem .6rem;border-bottom:1px solid rgba(255,255,255,.05);"><code class="inline">type</code></td><td style="padding:.35rem .6rem;border-bottom:1px solid rgba(255,255,255,.05);">string</td><td style="padding:.35rem .6rem;border-bottom:1px solid rgba(255,255,255,.05);"></td><td style="padding:.35rem .6rem;border-bottom:1px solid rgba(255,255,255,.05);">Content type: url, text, email, phone, sms, wifi, vcard… (default: url)</td></tr>
+            <tr><td style="padding:.35rem .6rem;border-bottom:1px solid rgba(255,255,255,.05);"><code class="inline">is_dynamic</code></td><td style="padding:.35rem .6rem;border-bottom:1px solid rgba(255,255,255,.05);">bool</td><td style="padding:.35rem .6rem;border-bottom:1px solid rgba(255,255,255,.05);"></td><td style="padding:.35rem .6rem;border-bottom:1px solid rgba(255,255,255,.05);">Create a dynamic (editable) QR — requires Dynamic QR plan feature</td></tr>
+            <tr><td style="padding:.35rem .6rem;border-bottom:1px solid rgba(255,255,255,.05);"><code class="inline">redirect_url</code></td><td style="padding:.35rem .6rem;border-bottom:1px solid rgba(255,255,255,.05);">string</td><td style="padding:.35rem .6rem;border-bottom:1px solid rgba(255,255,255,.05);"></td><td style="padding:.35rem .6rem;border-bottom:1px solid rgba(255,255,255,.05);">Redirect URL for dynamic QR (defaults to content if omitted)</td></tr>
+            <tr><td style="padding:.35rem .6rem;border-bottom:1px solid rgba(255,255,255,.05);"><code class="inline">size</code></td><td style="padding:.35rem .6rem;border-bottom:1px solid rgba(255,255,255,.05);">int</td><td style="padding:.35rem .6rem;border-bottom:1px solid rgba(255,255,255,.05);"></td><td style="padding:.35rem .6rem;border-bottom:1px solid rgba(255,255,255,.05);">QR image size in pixels (100–500, default: 300)</td></tr>
+            <tr><td style="padding:.35rem .6rem;border-bottom:1px solid rgba(255,255,255,.05);"><code class="inline">foreground_color</code></td><td style="padding:.35rem .6rem;border-bottom:1px solid rgba(255,255,255,.05);">string</td><td style="padding:.35rem .6rem;border-bottom:1px solid rgba(255,255,255,.05);"></td><td style="padding:.35rem .6rem;border-bottom:1px solid rgba(255,255,255,.05);">Hex color for QR dots (default: 000000)</td></tr>
+            <tr><td style="padding:.35rem .6rem;border-bottom:1px solid rgba(255,255,255,.05);"><code class="inline">background_color</code></td><td style="padding:.35rem .6rem;border-bottom:1px solid rgba(255,255,255,.05);">string</td><td style="padding:.35rem .6rem;border-bottom:1px solid rgba(255,255,255,.05);"></td><td style="padding:.35rem .6rem;border-bottom:1px solid rgba(255,255,255,.05);">Hex color for background (default: ffffff)</td></tr>
+            <tr><td style="padding:.35rem .6rem;border-bottom:1px solid rgba(255,255,255,.05);"><code class="inline">error_correction</code></td><td style="padding:.35rem .6rem;border-bottom:1px solid rgba(255,255,255,.05);">string</td><td style="padding:.35rem .6rem;border-bottom:1px solid rgba(255,255,255,.05);"></td><td style="padding:.35rem .6rem;border-bottom:1px solid rgba(255,255,255,.05);">L, M, Q, or H (default: H)</td></tr>
+            <tr><td style="padding:.35rem .6rem;border-bottom:1px solid rgba(255,255,255,.05);"><code class="inline">password</code></td><td style="padding:.35rem .6rem;border-bottom:1px solid rgba(255,255,255,.05);">string</td><td style="padding:.35rem .6rem;border-bottom:1px solid rgba(255,255,255,.05);"></td><td style="padding:.35rem .6rem;border-bottom:1px solid rgba(255,255,255,.05);">Password-protect the QR (min 4 chars) — requires plan feature</td></tr>
+            <tr><td style="padding:.35rem .6rem;border-bottom:1px solid rgba(255,255,255,.05);"><code class="inline">expires_at</code></td><td style="padding:.35rem .6rem;border-bottom:1px solid rgba(255,255,255,.05);">string</td><td style="padding:.35rem .6rem;border-bottom:1px solid rgba(255,255,255,.05);"></td><td style="padding:.35rem .6rem;border-bottom:1px solid rgba(255,255,255,.05);">ISO 8601 expiry datetime — requires plan feature</td></tr>
+            <tr><td style="padding:.35rem .6rem;"><code class="inline">label</code></td><td style="padding:.35rem .6rem;">string</td><td style="padding:.35rem .6rem;"></td><td style="padding:.35rem .6rem;">Private label/note for your dashboard</td></tr>
+        </tbody>
+    </table>
+
+    <div class="docs-tip">💡 All <code class="inline">/projects/qr/api/*</code> endpoints also work with the short URL: <code class="inline">/qr/api/*</code>. No browser session or CSRF token is ever needed — only your API key.</div>
+    <p style="font-size:.83rem;margin-top:.75rem;">Generate your API key from the <a href="/projects/qr/api" style="color:var(--cyan);">API Access</a> page in the sidebar. API access requires a plan that includes the <strong>api_access</strong> feature.</p>
 </div>
 
 <!-- White-Label -->

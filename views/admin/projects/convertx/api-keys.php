@@ -6,12 +6,12 @@ View::extend('admin');
 <div class="content-header">
   <div class="container-fluid">
     <div class="row mb-2">
-      <div class="col-sm-6"><h1 class="m-0"><i class="fas fa-key text-primary"></i> ConvertX — API Keys</h1></div>
+      <div class="col-sm-6"><h1 class="m-0"><i class="fas fa-chart-line text-primary"></i> ConvertX — API Keys &amp; Usage</h1></div>
       <div class="col-sm-6">
         <ol class="breadcrumb float-sm-right">
           <li class="breadcrumb-item"><a href="/admin">Admin</a></li>
           <li class="breadcrumb-item"><a href="/admin/projects/convertx">ConvertX</a></li>
-          <li class="breadcrumb-item active">API Keys</li>
+          <li class="breadcrumb-item active">API Keys &amp; Usage</li>
         </ol>
       </div>
     </div>
@@ -49,6 +49,51 @@ View::extend('admin');
       <small class="text-muted">This key will not be shown again.</small>
     </div>
     <?php unset($_SESSION['_flash']['new_key']); unset($_SESSION['_flash']['new_key_user']); ?>
+    <?php endif; ?>
+
+    <!-- Active user filter banner -->
+    <?php if (!empty($filterUser)): ?>
+    <div class="alert alert-info alert-dismissible" style="border-left:4px solid #17a2b8;">
+      <i class="fas fa-filter"></i> Showing API keys for user <strong><?= htmlspecialchars($filterUser['name']) ?></strong>
+      (<?= htmlspecialchars($filterUser['email']) ?>)
+      — <a href="/admin/projects/convertx/api-keys" class="text-danger font-weight-bold">Clear filter</a>
+    </div>
+    <?php endif; ?>
+
+    <!-- Per-User Usage Summary -->
+    <?php if (!empty($userUsage) && empty($filterUser)): ?>
+    <div class="card mb-3">
+      <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-users"></i> API Usage by User <small class="text-muted ml-2">(click a user to filter)</small></h3>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-sm table-hover mb-0">
+            <thead><tr>
+              <th>User</th><th>Email</th><th>Keys</th><th>Total Requests</th><th>Last Used</th><th>Filter</th>
+            </tr></thead>
+            <tbody>
+            <?php foreach ($userUsage as $uu): ?>
+            <tr>
+              <td><?= htmlspecialchars($uu['user_name'] ?? 'Unknown') ?></td>
+              <td><?= htmlspecialchars($uu['user_email'] ?? '') ?></td>
+              <td><?= (int) $uu['key_count'] ?></td>
+              <td><strong style="color:#007bff;"><?= number_format((int) $uu['total_requests']) ?></strong></td>
+              <td><?= $uu['last_used_at'] ? date('M d, Y H:i', strtotime($uu['last_used_at'])) : '—' ?></td>
+              <td>
+                <?php if ($uu['id']): ?>
+                <a href="/admin/projects/convertx/api-keys?user_id=<?= (int) $uu['id'] ?>" class="btn btn-xs btn-outline-secondary">
+                  <i class="fas fa-search"></i> View Keys
+                </a>
+                <?php endif; ?>
+              </td>
+            </tr>
+            <?php endforeach; ?>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
     <?php endif; ?>
 
     <!-- Generate API key for user -->
@@ -103,24 +148,32 @@ View::extend('admin');
     <!-- Keys table -->
     <div class="card">
       <div class="card-header">
-        <h3 class="card-title">ConvertX API Keys</h3>
+        <h3 class="card-title">
+          <?= $filterUser ? 'API Keys for ' . htmlspecialchars($filterUser['name']) : 'All ConvertX API Keys' ?>
+        </h3>
       </div>
       <div class="card-body p-0">
         <div class="table-responsive">
           <table class="table table-sm table-hover mb-0">
             <thead><tr>
-              <th>ID</th><th>User</th><th>Email</th><th>Key (partial)</th><th>Status</th><th>Created</th><th>Actions</th>
+              <th>ID</th><th>User</th><th>Email</th><th>Key (partial)</th><th>Requests</th><th>Last Used</th><th>Status</th><th>Created</th><th>Actions</th>
             </tr></thead>
             <tbody>
             <?php if (empty($keys)): ?>
-              <tr><td colspan="7" class="text-center text-muted py-3">No ConvertX API keys found</td></tr>
+              <tr><td colspan="9" class="text-center text-muted py-3">No ConvertX API keys found</td></tr>
             <?php else: ?>
               <?php foreach ($keys as $k): ?>
               <tr>
                 <td><?= (int)$k['id'] ?></td>
-                <td><?= htmlspecialchars($k['user_name'] ?? '') ?></td>
+                <td>
+                  <a href="/admin/projects/convertx/api-keys?user_id=<?= (int) $k['user_id'] ?>" style="color:inherit;text-decoration:none;">
+                    <?= htmlspecialchars($k['user_name'] ?? '') ?>
+                  </a>
+                </td>
                 <td><?= htmlspecialchars($k['user_email'] ?? '') ?></td>
                 <td><code><?= htmlspecialchars(substr($k['api_key'], 0, 12)) ?>…</code></td>
+                <td><strong style="color:#007bff;"><?= number_format((int) ($k['request_count'] ?? 0)) ?></strong></td>
+                <td style="font-size:.8rem;color:#6c757d;"><?= $k['last_used_at'] ? date('M d, Y H:i', strtotime($k['last_used_at'])) : '—' ?></td>
                 <td>
                   <?php if ($k['is_active']): ?>
                     <span class="badge badge-success">Active</span>
@@ -150,4 +203,104 @@ View::extend('admin');
     </div>
   </div>
 </section>
+
+<!-- ── Request Logs Section ─────────────────────────────────────────────── -->
+<?php
+$recentLogs   = $recentLogs   ?? [];
+$filterUserId = $filterUserId ?? null;
+$filterKeyPfx = $filterKeyPfx ?? null;
+$keyPrefixes  = $keyPrefixes  ?? [];
+?>
+<section class="content">
+  <div class="container-fluid">
+    <div class="card">
+      <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+        <h3 class="card-title">
+          <i class="fas fa-list"></i>
+          API Request Logs
+          <?php if ($filterUserId || $filterKeyPfx): ?>
+            <small style="font-weight:400;opacity:.7;">
+              (<?= $filterUserId ? 'user #' . (int)$filterUserId : '' ?><?= $filterUserId && $filterKeyPfx ? ', ' : '' ?><?= $filterKeyPfx ? 'key ' . htmlspecialchars($filterKeyPfx, ENT_QUOTES, 'UTF-8') . '...' : '' ?>)
+            </small>
+          <?php endif; ?>
+          <small style="font-weight:400;opacity:.7;">(last 200)</small>
+        </h3>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <!-- Key-prefix filter dropdown -->
+          <?php if (!empty($keyPrefixes)): ?>
+          <form method="GET" action="/admin/projects/convertx/api-keys" style="display:flex;gap:6px;align-items:center;margin:0;">
+            <?php if ($filterUserId): ?>
+            <input type="hidden" name="user_id" value="<?= (int)$filterUserId ?>">
+            <?php endif; ?>
+            <select name="key_prefix" onchange="this.form.submit()"
+                style="padding:5px 10px;border-radius:6px;border:1px solid #ced4da;background:#343a40;color:#fff;font-size:.8rem;">
+              <option value="">— All Keys —</option>
+              <?php foreach ($keyPrefixes as $pfx): ?>
+              <option value="<?= htmlspecialchars($pfx, ENT_QUOTES, 'UTF-8') ?>"
+                  <?= $filterKeyPfx === $pfx ? 'selected' : '' ?>>
+                <?= htmlspecialchars($pfx, ENT_QUOTES, 'UTF-8') ?>...
+              </option>
+              <?php endforeach; ?>
+            </select>
+          </form>
+          <?php endif; ?>
+          <?php if ($filterUserId || $filterKeyPfx): ?>
+            <a href="/admin/projects/convertx/api-keys" class="btn btn-sm btn-default">
+              <i class="fas fa-times"></i> Clear filter
+            </a>
+          <?php endif; ?>
+        </div>
+      </div>
+      <div class="card-body p-0">
+        <?php if (empty($recentLogs)): ?>
+          <div style="padding:2rem;text-align:center;color:#888;">
+            No API request logs recorded yet.
+          </div>
+        <?php else: ?>
+          <div style="overflow-x:auto;">
+            <table class="table table-sm table-hover" style="font-size:.8rem;margin:0;">
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>User</th>
+                  <th>Key Prefix</th>
+                  <th>Endpoint</th>
+                  <th>Method</th>
+                  <th>Action</th>
+                  <th>Status</th>
+                  <th style="text-align:right;">Latency</th>
+                  <th>IP</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php foreach ($recentLogs as $log):
+                    $sc = (int) $log['status_code'];
+                    $badgeClass = $sc >= 500 ? 'badge-danger' : ($sc >= 400 ? 'badge-warning' : 'badge-success');
+                ?>
+                <tr>
+                  <td style="white-space:nowrap;"><?= htmlspecialchars($log['created_at']) ?></td>
+                  <td>
+                    <a href="?user_id=<?= (int)$log['user_id'] ?>" title="Filter by user" style="text-decoration:none;">
+                      <?= htmlspecialchars($log['user_name'] ?? '') ?>
+                    </a>
+                    <br><small class="text-muted"><?= htmlspecialchars($log['email'] ?? '') ?></small>
+                  </td>
+                  <td style="font-family:monospace;"><?= htmlspecialchars($log['api_key_prefix']) ?>...</td>
+                  <td style="font-family:monospace;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="<?= htmlspecialchars($log['endpoint']) ?>"><?= htmlspecialchars($log['endpoint']) ?></td>
+                  <td style="font-family:monospace;"><?= htmlspecialchars($log['method']) ?></td>
+                  <td><?= htmlspecialchars($log['action']) ?></td>
+                  <td><span class="badge <?= $badgeClass ?>"><?= $sc ?></span></td>
+                  <td style="text-align:right;"><?= number_format((int)$log['response_time']) ?> ms</td>
+                  <td style="font-family:monospace;"><?= htmlspecialchars($log['ip_address']) ?></td>
+                </tr>
+                <?php endforeach; ?>
+              </tbody>
+            </table>
+          </div>
+        <?php endif; ?>
+      </div>
+    </div>
+  </div>
+</section>
+
 <?php View::endSection(); ?>

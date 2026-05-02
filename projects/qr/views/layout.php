@@ -810,7 +810,7 @@ header("Expires: 0");
                             <polyline points="16 18 22 12 16 6"/>
                             <polyline points="8 6 2 12 8 18"/>
                         </svg>
-                        API Access<?= !$sfGet('api_access') ? ' <span style="font-size:.6rem;vertical-align:middle;color:var(--purple);">&#x1F451;</span>' : '' ?>
+                        API &amp; Analytics<?= !$sfGet('api_access') ? ' <span style="font-size:.6rem;vertical-align:middle;color:var(--purple);">&#x1F451;</span>' : '' ?>
                     </a>
                 </nav>
             </div>

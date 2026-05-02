@@ -64,7 +64,7 @@ use Core\Security;
         <input type="text" id="genKeyName" placeholder="e.g. Admin Generated Key" maxlength="80"
             style="width:100%;padding:9px 12px;border-radius:7px;border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-size:.83rem;margin-bottom:14px;box-sizing:border-box;">
         <div id="newGeneratedKey" style="display:none;margin-bottom:14px;">
-            <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:5px;color:var(--cyan);">⚡ Generated Key — copy now, shown only once</label>
+            <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:5px;color:var(--cyan);">Generated Key — copy now, shown only once</label>
             <div style="display:flex;gap:8px;align-items:center;">
                 <code id="newKeyVal" style="flex:1;background:rgba(0,0,0,.4);padding:8px 12px;border-radius:6px;font-size:.8rem;word-break:break-all;border:1px solid rgba(0,240,255,.3);color:var(--green);"></code>
                 <button onclick="copyGenKey()" style="padding:7px 14px;background:var(--cyan);color:#000;border:none;border-radius:6px;font-weight:700;font-size:.78rem;cursor:pointer;white-space:nowrap;">Copy</button>
@@ -76,6 +76,59 @@ use Core\Security;
         </div>
     </div>
 </div>
+
+<!-- Active user filter banner -->
+<?php if (!empty($filterUserId)): ?>
+<div style="margin-bottom:16px;padding:10px 16px;border-radius:8px;background:rgba(0,240,255,.08);border:1px solid var(--cyan);display:flex;align-items:center;justify-content:space-between;font-size:.86rem;">
+    <span>Filtering by user #<?= (int)$filterUserId ?></span>
+    <a href="/admin/qr/api-keys" style="color:var(--red);text-decoration:none;font-weight:600;">Clear filter</a>
+</div>
+<?php endif; ?>
+
+<!-- Per-user usage summary -->
+<?php if (!empty($userUsage) && empty($filterUserId)): ?>
+<div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:10px;overflow:hidden;margin-bottom:24px;">
+    <div style="padding:14px 18px;border-bottom:1px solid var(--border-color);">
+        <h3 style="margin:0;font-size:.95rem;font-weight:700;">API Usage by User <span style="font-size:.75rem;font-weight:400;color:var(--text-secondary);margin-left:6px;">(click to filter)</span></h3>
+    </div>
+    <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:.83rem;">
+            <thead>
+                <tr style="background:rgba(0,0,0,.2);border-bottom:1px solid var(--border-color);">
+                    <th style="padding:10px 14px;text-align:left;color:var(--text-secondary);font-weight:600;">User</th>
+                    <th style="padding:10px 14px;text-align:left;color:var(--text-secondary);font-weight:600;">Email</th>
+                    <th style="padding:10px 14px;text-align:right;color:var(--text-secondary);font-weight:600;">Requests</th>
+                    <th style="padding:10px 14px;text-align:right;color:var(--text-secondary);font-weight:600;">Success</th>
+                    <th style="padding:10px 14px;text-align:right;color:var(--text-secondary);font-weight:600;">Errors</th>
+                    <th style="padding:10px 14px;text-align:left;color:var(--text-secondary);font-weight:600;">Last Request</th>
+                    <th style="padding:10px 14px;text-align:left;color:var(--text-secondary);font-weight:600;">Filter</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($userUsage as $uu): ?>
+                <tr style="border-bottom:1px solid rgba(255,255,255,.05);">
+                    <td style="padding:9px 14px;font-weight:600;"><?= htmlspecialchars($uu['user_name'] ?? 'Unknown', ENT_QUOTES, 'UTF-8') ?></td>
+                    <td style="padding:9px 14px;color:var(--text-secondary);"><?= htmlspecialchars($uu['email'] ?? '', ENT_QUOTES, 'UTF-8') ?></td>
+                    <td style="padding:9px 14px;text-align:right;font-weight:700;color:var(--cyan);"><?= number_format((int)$uu['total_requests']) ?></td>
+                    <td style="padding:9px 14px;text-align:right;color:var(--green);"><?= number_format((int)$uu['success_count']) ?></td>
+                    <td style="padding:9px 14px;text-align:right;color:var(--red);"><?= number_format((int)$uu['error_count']) ?></td>
+                    <td style="padding:9px 14px;color:var(--text-secondary);font-size:.78rem;">
+                        <?= $uu['last_request'] ? date('M j, Y H:i', strtotime($uu['last_request'])) : '—' ?>
+                    </td>
+                    <td style="padding:9px 14px;">
+                        <?php if ($uu['user_id']): ?>
+                        <a href="?user_id=<?= (int)$uu['user_id'] ?>" style="font-size:.75rem;color:var(--cyan);text-decoration:none;">
+                            <i class="fas fa-search"></i> Filter
+                        </a>
+                        <?php endif; ?>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+<?php endif; ?>
 
 <!-- Keys table -->
 <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:10px;overflow:hidden;">
@@ -244,7 +297,7 @@ function submitGenKey() {
             document.getElementById('newKeyVal').textContent = d.api_key;
             document.getElementById('newGeneratedKey').style.display = 'block';
             const res = document.getElementById('genKeyResult');
-            res.textContent = '✓ ' + (d.message || 'Key generated successfully.');
+            res.textContent = (d.message || 'Key generated successfully.');
             res.style.display = 'block';
         } else {
             showToast(d.error || 'Failed to generate key.', 'error');
@@ -269,5 +322,71 @@ function showToast(msg, type) {
     setTimeout(() => t.remove(), 3500);
 }
 </script>
+
+<?php
+// ── Request Logs section ───────────────────────────────────────────────────
+$recentLogs   = $recentLogs   ?? [];
+$filterUserId = $filterUserId ?? null;
+?>
+<div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:10px;margin-top:28px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border-color);flex-wrap:wrap;gap:10px;">
+        <h3 style="margin:0;font-size:.95rem;font-weight:700;display:flex;align-items:center;gap:8px;">
+            <i class="fas fa-list" style="color:var(--cyan);"></i>
+            API Request Logs <?php if ($filterUserId): ?>(User #<?= (int)$filterUserId ?>)<?php endif; ?>
+            <span style="font-size:.72rem;font-weight:400;color:var(--text-secondary);">(last 200)</span>
+        </h3>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <?php if ($filterUserId): ?>
+                <a href="/admin/qr/api-keys" style="font-size:.8rem;color:var(--red);text-decoration:none;">Clear filter</a>
+            <?php endif; ?>
+        </div>
+    </div>
+    <?php if (empty($recentLogs)): ?>
+        <div style="padding:2rem;text-align:center;color:var(--text-secondary);font-size:.875rem;">
+            No API request logs recorded yet.
+        </div>
+    <?php else: ?>
+        <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:.78rem;">
+                <thead>
+                    <tr style="background:var(--bg-secondary);">
+                        <th style="padding:.5rem .75rem;text-align:left;font-weight:600;color:var(--text-secondary);white-space:nowrap;">Time</th>
+                        <th style="padding:.5rem .75rem;text-align:left;font-weight:600;color:var(--text-secondary);">User</th>
+                        <th style="padding:.5rem .75rem;text-align:left;font-weight:600;color:var(--text-secondary);">Key Prefix</th>
+                        <th style="padding:.5rem .75rem;text-align:left;font-weight:600;color:var(--text-secondary);">Endpoint</th>
+                        <th style="padding:.5rem .75rem;text-align:left;font-weight:600;color:var(--text-secondary);">Method</th>
+                        <th style="padding:.5rem .75rem;text-align:left;font-weight:600;color:var(--text-secondary);">Action</th>
+                        <th style="padding:.5rem .75rem;text-align:center;font-weight:600;color:var(--text-secondary);">Status</th>
+                        <th style="padding:.5rem .75rem;text-align:right;font-weight:600;color:var(--text-secondary);white-space:nowrap;">Latency</th>
+                        <th style="padding:.5rem .75rem;text-align:left;font-weight:600;color:var(--text-secondary);">IP</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($recentLogs as $log):
+                        $sc = (int) $log['status_code'];
+                        $scColor = $sc >= 500 ? '#ef4444' : ($sc >= 400 ? '#f59e0b' : '#10b981');
+                    ?>
+                    <tr style="border-top:1px solid var(--border-color);">
+                        <td style="padding:.45rem .75rem;white-space:nowrap;color:var(--text-secondary);"><?= htmlspecialchars($log['created_at']) ?></td>
+                        <td style="padding:.45rem .75rem;">
+                            <a href="?user_id=<?= (int)$log['user_id'] ?>" style="color:var(--cyan);text-decoration:none;" title="Filter by this user">
+                                <?= htmlspecialchars($log['user_name'] ?? '') ?>
+                            </a>
+                            <div style="font-size:.7rem;color:var(--text-secondary);"><?= htmlspecialchars($log['email'] ?? '') ?></div>
+                        </td>
+                        <td style="padding:.45rem .75rem;font-family:monospace;color:var(--text-secondary);"><?= htmlspecialchars($log['api_key_prefix']) ?>...</td>
+                        <td style="padding:.45rem .75rem;font-family:monospace;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="<?= htmlspecialchars($log['endpoint']) ?>"><?= htmlspecialchars($log['endpoint']) ?></td>
+                        <td style="padding:.45rem .75rem;font-family:monospace;color:var(--cyan);"><?= htmlspecialchars($log['method']) ?></td>
+                        <td style="padding:.45rem .75rem;color:var(--text-secondary);"><?= htmlspecialchars($log['action']) ?></td>
+                        <td style="padding:.45rem .75rem;text-align:center;font-weight:700;color:<?= $scColor ?>;"><?= $sc ?></td>
+                        <td style="padding:.45rem .75rem;text-align:right;color:var(--text-secondary);"><?= number_format((int)$log['response_time']) ?> ms</td>
+                        <td style="padding:.45rem .75rem;font-family:monospace;color:var(--text-secondary);"><?= htmlspecialchars($log['ip_address']) ?></td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    <?php endif; ?>
+</div>
 
 <?php View::end(); ?>

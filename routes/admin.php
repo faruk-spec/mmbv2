@@ -372,6 +372,9 @@ $router->get('/admin/whatsapp/sessions', 'Admin\\WhatsAppAdminController@session
 $router->get('/admin/whatsapp/messages', 'Admin\\WhatsAppAdminController@messages', ['auth', 'admin']);
 $router->get('/admin/whatsapp/users', 'Admin\\WhatsAppAdminController@userSettings', ['auth', 'admin']);
 $router->get('/admin/whatsapp/api-logs', 'Admin\\WhatsAppAdminController@apiLogs', ['auth', 'admin']);
+$router->get('/admin/whatsapp/api-keys', 'Admin\\WhatsAppAdminController@whatsappApiKeys', ['auth', 'admin']);
+$router->post('/admin/whatsapp/api-keys/generate', 'Admin\\WhatsAppAdminController@generateWhatsAppApiKeyForUser', ['auth', 'admin']);
+$router->post('/admin/whatsapp/api-keys/revoke', 'Admin\\WhatsAppAdminController@revokeWhatsAppApiKey', ['auth', 'admin']);
 $router->post('/admin/whatsapp/sessions/delete', 'Admin\\WhatsAppAdminController@deleteSession', ['auth', 'admin']);
 
 // WhatsApp Subscription Management

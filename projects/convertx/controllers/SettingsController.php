@@ -43,14 +43,43 @@ class SettingsController
         $usage    = $userId ? $jobModel->getMonthlyUsage($userId) : [];
         $formats  = $userId ? $jobModel->getFormatBreakdown($userId) : [];
         $activity = $userId ? $jobModel->getDailyActivity($userId, 14) : [];
+        $apiLogs  = $userId ? $this->getApiLogs($userId) : [];
+
+        // Per-key stats from request logs
+        $keyLogStats = [];
+        if ($userId) {
+            try {
+                $db   = Database::getInstance();
+                $rows = $db->fetchAll(
+                    "SELECT api_key_prefix,
+                            COUNT(*) AS total,
+                            SUM(CASE WHEN status_code >= 200 AND status_code < 300 THEN 1 ELSE 0 END) AS success,
+                            SUM(CASE WHEN status_code >= 400 THEN 1 ELSE 0 END) AS errors,
+                            ROUND(AVG(response_time), 0) AS avg_ms,
+                            MAX(created_at) AS last_at
+                       FROM convertx_api_request_logs
+                      WHERE user_id = :uid
+                      GROUP BY api_key_prefix
+                      ORDER BY total DESC",
+                    ['uid' => $userId]
+                ) ?: [];
+                foreach ($rows as $r) {
+                    $keyLogStats[$r['api_key_prefix']] = $r;
+                }
+            } catch (\Exception $e) {
+                // Table may not exist yet
+            }
+        }
 
         $this->render('apikeys', [
-            'title'    => 'API Keys & Analytics',
-            'user'     => Auth::user(),
-            'apiKey'   => $apiKey,
-            'usage'    => $usage,
-            'formats'  => $formats,
-            'activity' => $activity,
+            'title'       => 'API Keys & Analytics',
+            'user'        => Auth::user(),
+            'apiKey'      => $apiKey,
+            'usage'       => $usage,
+            'formats'     => $formats,
+            'activity'    => $activity,
+            'apiLogs'     => $apiLogs,
+            'keyLogStats' => $keyLogStats,
         ]);
     }
 
@@ -136,11 +165,13 @@ class SettingsController
         try {
             $db->query(
                 "CREATE TABLE IF NOT EXISTS convertx_api_keys (
-                    id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                    user_id    INT UNSIGNED NOT NULL,
-                    api_key    VARCHAR(100) NOT NULL,
-                    is_active  TINYINT(1)   NOT NULL DEFAULT 1,
-                    created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    user_id       INT UNSIGNED NOT NULL,
+                    api_key       VARCHAR(100) NOT NULL,
+                    is_active     TINYINT(1)   NOT NULL DEFAULT 1,
+                    created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    last_used_at  DATETIME     DEFAULT NULL,
+                    request_count INT          NOT NULL DEFAULT 0,
                     INDEX idx_user (user_id),
                     UNIQUE KEY uniq_key (api_key)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
@@ -241,5 +272,27 @@ class SettingsController
         http_response_code($code);
         header('Content-Type: application/json');
         echo json_encode(['success' => false, 'error' => $message]);
+    }
+
+    /**
+     * Fetch the 100 most recent API request log entries for a user.
+     * Returns an empty array if the log table does not exist yet.
+     */
+    private function getApiLogs(int $userId): array
+    {
+        try {
+            $db = Database::getInstance();
+            return $db->fetchAll(
+                "SELECT id, api_key_prefix, endpoint, method, ip_address,
+                        user_agent, status_code, response_time, action, created_at
+                   FROM convertx_api_request_logs
+                  WHERE user_id = :uid
+                  ORDER BY id DESC
+                  LIMIT 100",
+                ['uid' => $userId]
+            ) ?: [];
+        } catch (\Exception $e) {
+            return [];
+        }
     }
 }

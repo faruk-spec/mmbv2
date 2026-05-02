@@ -159,21 +159,52 @@ class ConvertXAdminController extends BaseController
     }
 
     // ------------------------------------------------------------------ //
-    //  API Keys                                                            //
+    //  API Keys & Usage                                                   //
     // ------------------------------------------------------------------ //
 
     public function apiKeys(): void
     {
         $this->requirePermission('convertx.api_keys');
-        $keys = $this->db->fetchAll(
-            "SELECT k.*, u.name AS user_name, u.email AS user_email
+
+        // Optional per-user filter
+        $filterUserId  = isset($_GET['user_id'])     ? (int) $_GET['user_id']     : null;
+        $filterKeyPfx  = isset($_GET['key_prefix'])  ? trim($_GET['key_prefix'])  : null;
+        if ($filterKeyPfx && !preg_match('/^[a-zA-Z0-9_]{1,16}$/', $filterKeyPfx)) {
+            $filterKeyPfx = null; // reject invalid prefix
+        }
+
+        if ($filterUserId) {
+            $keys = $this->db->fetchAll(
+                "SELECT k.*, u.name AS user_name, u.email AS user_email
+                   FROM api_keys k
+                   LEFT JOIN users u ON u.id = k.user_id
+                  WHERE k.user_id = ? AND k.api_key LIKE 'cx_%'
+                  ORDER BY k.created_at DESC",
+                [$filterUserId]
+            );
+        } else {
+            $keys = $this->db->fetchAll(
+                "SELECT k.*, u.name AS user_name, u.email AS user_email
+                   FROM api_keys k
+                   LEFT JOIN users u ON u.id = k.user_id
+                  WHERE k.api_key LIKE 'cx_%'
+                  ORDER BY k.created_at DESC"
+            );
+        }
+        $userUsage = $this->db->fetchAll(
+            "SELECT u.id, u.name AS user_name, u.email AS user_email,
+                    COUNT(k.id) AS key_count,
+                    SUM(k.request_count) AS total_requests,
+                    MAX(k.last_used_at) AS last_used_at
                FROM api_keys k
                LEFT JOIN users u ON u.id = k.user_id
               WHERE k.api_key LIKE 'cx_%'
-              ORDER BY k.created_at DESC"
+              GROUP BY u.id, u.name, u.email
+              ORDER BY total_requests DESC
+              LIMIT 50"
         );
 
-        // Fetch all users for the dropdown
+        // Fetch all users for the generate-key dropdown
         $users = [];
         try {
             $users = $this->db->fetchAll(
@@ -183,10 +214,55 @@ class ConvertXAdminController extends BaseController
             // Non-fatal
         }
 
+        $filterUser = null;
+        if ($filterUserId) {
+            $filterUser = $this->db->fetch("SELECT id, name, email FROM users WHERE id = ?", [$filterUserId]);
+        }
+
+        // Fetch recent request logs (filtered by user and/or key prefix)
+        $recentLogs = [];
+        try {
+            $conditions = [];
+            $logsParams = [];
+            if ($filterUserId)  { $conditions[] = 'l.user_id = ?';        $logsParams[] = $filterUserId; }
+            if ($filterKeyPfx)  { $conditions[] = 'l.api_key_prefix = ?'; $logsParams[] = $filterKeyPfx; }
+            $logsWhere  = $conditions ? 'WHERE ' . implode(' AND ', $conditions) : '';
+            $recentLogs = $this->db->fetchAll(
+                "SELECT l.id, l.user_id, u.email, u.name AS user_name,
+                        l.api_key_prefix, l.endpoint, l.method,
+                        l.ip_address, l.status_code, l.response_time, l.action, l.created_at
+                   FROM convertx_api_request_logs l
+                   LEFT JOIN users u ON l.user_id = u.id
+                   {$logsWhere}
+                   ORDER BY l.id DESC
+                   LIMIT 200",
+                $logsParams
+            ) ?: [];
+        } catch (\Exception $e) {
+            // Table may not exist yet
+        }
+
+        // Distinct key prefixes for the filter dropdown
+        $keyPrefixes = [];
+        try {
+            $rows = $this->db->fetchAll(
+                "SELECT DISTINCT api_key_prefix FROM convertx_api_request_logs ORDER BY api_key_prefix LIMIT 200"
+            );
+            $keyPrefixes = array_column($rows, 'api_key_prefix');
+        } catch (\Exception $e) {
+            // Non-fatal
+        }
+
         $this->view('admin/projects/convertx/api-keys', [
-            'title' => 'ConvertX Admin — API Keys',
-            'keys'  => $keys,
-            'users' => $users,
+            'title'          => 'ConvertX Admin — API Keys & Usage',
+            'keys'           => $keys,
+            'users'          => $users,
+            'userUsage'      => $userUsage,
+            'filterUserId'   => $filterUserId,
+            'filterUser'     => $filterUser,
+            'filterKeyPfx'   => $filterKeyPfx,
+            'keyPrefixes'    => $keyPrefixes,
+            'recentLogs'     => $recentLogs,
         ]);
     }
 

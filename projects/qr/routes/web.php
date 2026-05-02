@@ -266,14 +266,41 @@ switch ($segments[0]) {
         break;
 
     case 'api':
-        require_once PROJECT_PATH . '/controllers/QRApiUserController.php';
-        $controller = new \Projects\QR\Controllers\QRApiUserController();
-        if (isset($segments[1]) && $segments[1] === 'revoke') {
-            $controller->revoke();
-        } elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $controller->generate();
+        // Determine whether this is a programmatic API request (X-Api-Key / ?api_key=)
+        // or a session-authenticated web UI request for API key management.
+        //
+        // Sub-routes used by the REST API (QRApiController) are: generate, list,
+        // view, delete, usage, plans.  The root /api path and /api/revoke belong to
+        // QRApiUserController which manages API keys via the browser UI and requires
+        // a valid session + CSRF token.
+        $apiAction = $segments[1] ?? '';
+        $apiRestRoutes = ['generate', 'list', 'view', 'delete', 'usage', 'plans'];
+
+        if (in_array($apiAction, $apiRestRoutes, true)) {
+            // REST API endpoint — authenticated by API key, never by session.
+            require_once PROJECT_PATH . '/controllers/QRApiController.php';
+            $ctrl = new \Projects\QR\Controllers\QRApiController();
+            $resourceId = $segments[2] ?? '';
+            match ($apiAction) {
+                'generate' => $ctrl->generate(),
+                'list'     => $ctrl->list(),
+                'view'     => $ctrl->view($resourceId),
+                'delete'   => $ctrl->delete($resourceId),
+                'usage'    => $ctrl->usage(),
+                'plans'    => $ctrl->plans(),
+                default    => $ctrl->index(),
+            };
         } else {
-            $controller->index();
+            // Session-authenticated API key management UI (list/create/revoke own keys).
+            require_once PROJECT_PATH . '/controllers/QRApiUserController.php';
+            $controller = new \Projects\QR\Controllers\QRApiUserController();
+            if ($apiAction === 'revoke') {
+                $controller->revoke();
+            } elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                $controller->generate();
+            } else {
+                $controller->index();
+            }
         }
         break;
 
