@@ -215,8 +215,11 @@
                     <tr>
                         <th>Log ID</th>
                         <th>User</th>
+                        <th>API Key</th>
                         <th>Endpoint</th>
                         <th>Method</th>
+                        <th>Status</th>
+                        <th>Latency</th>
                         <th>IP Address</th>
                         <th>Time</th>
                     </tr>
@@ -224,7 +227,7 @@
                 <tbody>
                     <?php if (empty($logs)): ?>
                         <tr>
-                            <td colspan="6" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                            <td colspan="9" style="text-align: center; padding: 40px; color: var(--text-secondary);">
                                 No API logs found
                             </td>
                         </tr>
@@ -239,12 +242,37 @@
                                     <div style="font-size:.75rem;color:var(--text-secondary);"><?= htmlspecialchars($log['email'] ?? '', ENT_QUOTES, 'UTF-8') ?></div>
                                 </td>
                                 <td>
+                                    <?php if (!empty($log['api_key_prefix'])): ?>
+                                        <code style="font-size:.75rem;"><?= htmlspecialchars($log['api_key_prefix'], ENT_QUOTES, 'UTF-8') ?>••••</code>
+                                    <?php else: ?>
+                                        <span style="color:var(--text-secondary);">—</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
                                     <code style="font-size: 0.8rem;"><?= htmlspecialchars($log['endpoint'] ?? '', ENT_QUOTES, 'UTF-8') ?></code>
                                 </td>
                                 <td>
                                     <span class="method-badge method-<?= strtolower($log['method'] ?? 'post') ?>">
                                         <?= strtoupper(htmlspecialchars($log['method'] ?? 'POST', ENT_QUOTES, 'UTF-8')) ?>
                                     </span>
+                                </td>
+                                <td>
+                                    <?php
+                                    $sc = (int) ($log['status_code'] ?? 0);
+                                    $scClass = $sc >= 500 ? 'status-5xx' : ($sc >= 400 ? 'status-4xx' : ($sc >= 300 ? 'status-3xx' : 'status-2xx'));
+                                    ?>
+                                    <?php if ($sc > 0): ?>
+                                        <span class="status-code-badge <?= $scClass ?>"><?= $sc ?></span>
+                                    <?php else: ?>
+                                        <span style="color:var(--text-secondary);">—</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <?php if (isset($log['response_time']) && $log['response_time'] > 0): ?>
+                                        <span style="font-size:.8rem;"><?= (int)$log['response_time'] ?>ms</span>
+                                    <?php else: ?>
+                                        <span style="color:var(--text-secondary);">—</span>
+                                    <?php endif; ?>
                                 </td>
                                 <td>
                                     <code style="font-size: 0.8rem;"><?= htmlspecialchars($log['ip_address'] ?? '', ENT_QUOTES, 'UTF-8') ?></code>
