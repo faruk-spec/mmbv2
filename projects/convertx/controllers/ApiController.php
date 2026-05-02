@@ -123,7 +123,8 @@ class ApiController
             'user_id'            => $userId,
         ]);
         if (empty($secureResult['success'])) {
-            $this->errorAndLog($userId, 'convert', 'File rejected by security checks: ' . ($secureResult['error'] ?? ''), 422);
+            $errMsg = trim($secureResult['error'] ?? '') ?: 'unknown reason';
+            $this->errorAndLog($userId, 'convert', 'File rejected by security checks: ' . $errMsg, 422);
             return;
         }
         $storedPath  = $secureResult['path'];
