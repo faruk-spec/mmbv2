@@ -74,6 +74,12 @@ $hasError = isset($_GET['error']);
                             <a href="/projects/billx/download/<?= (int)$bill['id'] ?>" class="btn btn-secondary btn-sm" title="Download">
                                 <i class="fas fa-download"></i>
                             </a>
+                            <button type="button"
+                                    class="btn btn-secondary btn-sm"
+                                    title="Generate QR"
+                                    onclick="ecoQrOpen('<?= htmlspecialchars((defined('APP_URL') ? APP_URL : '') . '/projects/billx/view/' . (int)$bill['id'], ENT_QUOTES) ?>')">
+                                <i class="fas fa-qrcode" style="color:#00f0ff;"></i>
+                            </button>
                             <button type="button" class="btn btn-danger btn-sm"
                                     title="Delete"
                                     onclick="confirmDelete(<?= (int)$bill['id'] ?>, '<?= htmlspecialchars(addslashes($bill['bill_number'])) ?>')">
@@ -130,3 +136,4 @@ function confirmDelete(id, billNo) {
 function closeDelete() { document.getElementById('deleteModal').style.display = 'none'; }
 document.getElementById('deleteModal').addEventListener('click', function(e){ if(e.target === this) closeDelete(); });
 </script>
+<?php if (defined('BASE_PATH')) require BASE_PATH . '/views/partials/eco-qr-modal.php'; ?>

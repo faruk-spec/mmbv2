@@ -67,6 +67,12 @@
                         <a href="/projects/linkshortner/analytics/<?= View::e($link['code']) ?>" class="btn btn-secondary btn-sm" title="Analytics">
                             <i class="fas fa-chart-bar"></i>
                         </a>
+                        <button type="button"
+                                class="btn btn-secondary btn-sm"
+                                title="Generate QR"
+                                onclick="ecoQrOpen('<?= View::e((defined('APP_URL') ? APP_URL : '') . '/l/' . $link['code']) ?>')">
+                            <i class="fas fa-qrcode" style="color:#00f0ff;"></i>
+                        </button>
                         <a href="/projects/linkshortner/links/<?= $link['id'] ?>/edit" class="btn btn-secondary btn-sm" title="Edit">
                             <i class="fas fa-edit"></i>
                         </a>
@@ -114,3 +120,4 @@ function copyText(text) {
 }
 </script>
 <?php View::end(); ?>
+<?php require BASE_PATH . '/views/partials/eco-qr-modal.php'; ?>

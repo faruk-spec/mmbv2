@@ -77,6 +77,9 @@
                                     <button onclick="copyLink('<?= View::e($file['short_code']) ?>')" class="btn btn-secondary" style="padding: 6px 10px; font-size: 0.8rem;" title="Copy Link">
                                         <i class="fas fa-copy"></i>
                                     </button>
+                                    <button onclick="ecoQrOpen('<?= View::e((defined('APP_URL') ? APP_URL : '') . '/projects/proshare/preview/' . $file['short_code']) ?>')" class="btn btn-secondary" style="padding: 6px 10px; font-size: 0.8rem; color:#00f0ff;" title="Generate QR">
+                                        <i class="fas fa-qrcode"></i>
+                                    </button>
                                     <button onclick="openPasswordModal('<?= View::e($file['short_code']) ?>', <?= $file['password'] ? 'true' : 'false' ?>)" class="btn btn-secondary" style="padding: 6px 10px; font-size: 0.8rem;" title="Password Settings">
                                         <i class="fas fa-key"></i>
                                     </button>
@@ -176,6 +179,9 @@
                                     </a>
                                     <button onclick="copyTextLink('<?= View::e($text['short_code']) ?>', this)" class="btn btn-secondary" style="padding: 6px 10px; font-size: 0.8rem;" title="Copy Link">
                                         <i class="fas fa-copy"></i>
+                                    </button>
+                                    <button onclick="ecoQrOpen('<?= View::e((defined('APP_URL') ? APP_URL : '') . '/t/' . $text['short_code']) ?>')" class="btn btn-secondary" style="padding: 6px 10px; font-size: 0.8rem; color:#00f0ff;" title="Generate QR">
+                                        <i class="fas fa-qrcode"></i>
                                     </button>
                                     <?php if ($text['status'] === 'active'): ?>
                                         <button onclick="deleteText('<?= View::e($text['short_code']) ?>', this)" class="btn btn-danger" style="padding: 6px 10px; font-size: 0.8rem;" title="Delete">
@@ -432,3 +438,4 @@
 </div>
 
 <?php View::endSection(); ?>
+<?php require BASE_PATH . '/views/partials/eco-qr-modal.php'; ?>

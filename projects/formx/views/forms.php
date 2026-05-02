@@ -173,6 +173,13 @@
                             <a href="/forms/<?= View::e($f['slug']) ?>" target="_blank" class="fx-action-btn" style="background:rgba(153,69,255,.08);border-color:rgba(153,69,255,.2);color:var(--purple);">
                                 <i class="fas fa-external-link-alt"></i>
                             </a>
+                            <button type="button"
+                                    class="fx-action-btn"
+                                    style="background:rgba(0,240,255,.08);border-color:rgba(0,240,255,.2);color:#00f0ff;"
+                                    title="Generate QR for form link"
+                                    onclick="ecoQrOpen('<?= htmlspecialchars((defined('APP_URL') ? APP_URL : '') . '/forms/' . $f['slug'], ENT_QUOTES) ?>')">
+                                <i class="fas fa-qrcode"></i>
+                            </button>
                             <?php endif; ?>
                             <form method="POST" action="/projects/formx/<?= $f['id'] ?>/delete" style="display:inline;"
                                   onsubmit="return confirm('Delete this form and all its submissions?');">
@@ -213,5 +220,7 @@
     o.addEventListener('click',close);
 })();
 </script>
+
+<?php require BASE_PATH . '/views/partials/eco-qr-modal.php'; ?>
 
 <?php View::endSection(); ?>

@@ -392,6 +392,14 @@ if ($userId) {
                                         <i class="fas fa-edit"></i>
                                     </a>
                                     <?php endif; ?>
+                                    <?php if (filter_var($qr['content'], FILTER_VALIDATE_URL)): ?>
+                                    <a href="/projects/linkshortner/create?url=<?= urlencode($qr['content']) ?>"
+                                       class="btn btn-secondary btn-sm icon-only-btn"
+                                       title="Shorten this URL with LinkShortner"
+                                       style="padding: 0.5rem 0.75rem; text-decoration: none; color:#00f0ff;">
+                                        <i class="fas fa-compress-alt"></i>
+                                    </a>
+                                    <?php endif; ?>
                                     <button onclick="downloadQRCode(<?= $qr['id'] ?>)" 
                                             class="btn btn-success btn-sm icon-only-btn" 
                                             title="Download QR Code"

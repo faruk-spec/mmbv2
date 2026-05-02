@@ -43,20 +43,27 @@
         font-family: inherit;
         font-size: var(--font-sm);
     }
-    .note-card-link {
+    /* Note card inner link (wraps content only, not action buttons) */
+    .note-card-inner {
         text-decoration: none;
         color: inherit;
         display: block;
-    }
-    .note-card-link .note-card {
         cursor: pointer;
-        position: relative;
+        padding-top: 2rem; /* make room for action buttons above */
+        padding-left: 0.625rem;
     }
-    .note-card-link .note-card:hover {
+    .note-card-inner:hover .note-card-title {
+        color: var(--nx-accent);
+    }
+    /* Card hover: lift + raise z-index so dropdown isn't hidden by sibling cards */
+    .note-card:hover {
         border-color: rgba(245,158,11,0.4);
         transform: translateY(-0.125rem);
         box-shadow: 0 0.375rem 1.25rem rgba(0,0,0,0.2);
+        z-index: 5;
     }
+    /* note-card already has position:relative from layout CSS; ensure z-index works */
+    .notes-grid .note-card { position: relative; }
     .note-card-footer {
         display: flex;
         align-items: center;
@@ -65,28 +72,28 @@
         padding-top: 0.625rem;
         border-top: 1px solid var(--border-color);
     }
+    /* Actions row – always rendered; 3-dot always visible, pin/qr subtle on desktop */
     .note-card-actions-row {
         position: absolute;
         top: 0.5rem;
         right: 0.5rem;
-        z-index: 2;
+        z-index: 10;  /* above the card content but below the dropdown */
         display: flex;
         gap: 0.25rem;
-        opacity: 0;
-        transition: opacity 0.2s;
     }
-    .note-card-link:hover .note-card-actions-row { opacity: 1; }
-    .note-card-delete {
-        position: static;
-        z-index: auto;
-        opacity: 1;
-        transition: none;
+    /* On desktop hide pin/qr until card hovered; 3-dot always shown */
+    @media (min-width: 48.0625rem) {
+        .note-card-pin-btn,
+        .note-card-qr-btn { opacity: 0.25; transition: opacity 0.2s; }
+        .note-card:hover .note-card-pin-btn,
+        .note-card:hover .note-card-qr-btn { opacity: 1; }
     }
-    .note-card-link:hover .note-card-delete { opacity: 1; }
     @media (max-width: 48rem) {
         .nx-notes-toolbar { flex-direction: column; align-items: stretch; }
         .nx-notes-toolbar .search-wrap { min-width: 0; }
-        .note-card-actions-row { opacity: 1; }
+        /* On mobile all action buttons are always fully visible */
+        .note-card-pin-btn,
+        .note-card-qr-btn { opacity: 1; }
     }
     /* Three-dot dropdown */
     .nx-3dot-wrap { position: relative; display: inline-block; }
@@ -98,7 +105,7 @@
         border: 1px solid var(--border-color);
         border-radius: 0.5rem;
         min-width: 9.5rem;
-        z-index: 20;
+        z-index: 200;
         box-shadow: 0 0.375rem 1.25rem rgba(0,0,0,0.35);
         display: none;
         flex-direction: column;
@@ -211,80 +218,79 @@
 <?php if (!empty($notes)): ?>
 <div class="notes-grid">
     <?php foreach ($notes as $note): ?>
-    <a href="/projects/notex/notes/<?= $note['id'] ?>/edit" class="note-card-link">
-        <div class="note-card" id="nc-<?= $note['id'] ?>">
-            <div class="note-card-accent" style="background:<?= View::e($note['color'] ?? '#ffd700') ?>;"></div>
-            <!-- Actions: pin + qr + three-dot -->
-            <div class="note-card-actions-row" onclick="event.stopPropagation();event.preventDefault();">
-                <button type="button"
-                        class="btn btn-secondary btn-sm btn-icon pin-btn"
-                        data-note-id="<?= $note['id'] ?>"
-                        data-pinned="<?= $note['is_pinned'] ? '1' : '0' ?>"
-                        title="<?= $note['is_pinned'] ? 'Unpin' : 'Pin' ?>"
-                        style="color:<?= $note['is_pinned'] ? 'var(--nx-accent)' : 'var(--text-secondary)' ?>;">
-                    <i class="fas fa-thumbtack" style="font-size:0.6875rem;"></i>
-                </button>
-                <?php if (!empty($note['share_token'])): ?>
+    <div class="note-card" id="nc-<?= $note['id'] ?>">
+        <div class="note-card-accent" style="background:<?= View::e($note['color'] ?? '#ffd700') ?>;"></div>
+        <!-- Actions: outside the content link so mobile touch works -->
+        <div class="note-card-actions-row">
+            <button type="button"
+                    class="btn btn-secondary btn-sm btn-icon note-card-pin-btn pin-btn"
+                    data-note-id="<?= $note['id'] ?>"
+                    data-pinned="<?= $note['is_pinned'] ? '1' : '0' ?>"
+                    title="<?= $note['is_pinned'] ? 'Unpin' : 'Pin' ?>"
+                    style="color:<?= $note['is_pinned'] ? 'var(--nx-accent)' : 'var(--text-secondary)' ?>;">
+                <i class="fas fa-thumbtack" style="font-size:0.6875rem;"></i>
+            </button>
+            <?php if (!empty($note['share_token'])): ?>
+            <button type="button"
+                    class="btn btn-secondary btn-sm btn-icon note-card-qr-btn"
+                    style="color:var(--cyan,#00f0ff);"
+                    title="View Share QR"
+                    data-share-url="<?= View::e((defined('APP_URL') ? APP_URL : '') . '/projects/notex/shared/' . $note['share_token']) ?>"
+                    data-note-title="<?= View::e($note['title']) ?>"
+                    onclick="nxOpenQr(this, event)">
+                <i class="fas fa-qrcode" style="font-size:0.6875rem;"></i>
+            </button>
+            <?php endif; ?>
+            <!-- Three-dot menu -->
+            <div class="nx-3dot-wrap">
                 <button type="button"
                         class="btn btn-secondary btn-sm btn-icon"
-                        style="color:var(--cyan,#00f0ff);"
-                        title="View Share QR"
-                        data-share-url="<?= View::e((defined('APP_URL') ? APP_URL : '') . '/projects/notex/shared/' . $note['share_token']) ?>"
-                        data-note-title="<?= View::e($note['title']) ?>"
-                        onclick="nxOpenQr(this, event)">
-                    <i class="fas fa-qrcode" style="font-size:0.6875rem;"></i>
+                        title="More options"
+                        onclick="nxToggle3dot(this, event)">
+                    <i class="fas fa-ellipsis-v" style="font-size:0.6875rem;"></i>
                 </button>
-                <?php endif; ?>
-                <!-- Three-dot menu -->
-                <div class="nx-3dot-wrap">
-                    <button type="button"
-                            class="btn btn-secondary btn-sm btn-icon"
-                            title="More options"
-                            onclick="nxToggle3dot(this, event)">
-                        <i class="fas fa-ellipsis-v" style="font-size:0.6875rem;"></i>
-                    </button>
-                    <div class="nx-3dot-dropdown">
-                        <a href="/projects/notex/notes/<?= $note['id'] ?>/edit">
-                            <i class="fas fa-edit" style="color:var(--nx-accent);font-size:0.75rem;"></i> Edit
-                        </a>
-                        <?php if (!empty($note['share_token'])): ?>
-                        <a href="/projects/qr/analytics" target="_blank" rel="noopener">
-                            <i class="fas fa-chart-bar" style="color:var(--cyan,#00f0ff);font-size:0.75rem;"></i> View Analytics
-                        </a>
-                        <?php else: ?>
-                        <a href="/projects/notex/notes/<?= $note['id'] ?>/edit#share">
-                            <i class="fas fa-chart-bar" style="color:var(--text-secondary);font-size:0.75rem;"></i> View Analytics
-                        </a>
-                        <?php endif; ?>
-                        <form method="POST" action="/projects/notex/notes/<?= $note['id'] ?>/delete"
-                              onsubmit="return confirm('Move to trash?');" style="margin:0;padding:0;">
-                            <input type="hidden" name="_token" value="<?= Security::generateCsrfToken() ?>">
-                            <button type="submit" class="nx-dd-danger" style="width:100%;">
-                                <i class="fas fa-trash" style="font-size:0.75rem;"></i> Delete
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-            <div style="padding-left:0.625rem;">
-                <div class="note-card-title">
-                    <?php if ($note['is_pinned']): ?>
-                        <i class="fas fa-thumbtack pin-icon nc-pin-icon" style="margin-right:0.25rem;font-size:0.75rem;"></i>
+                <div class="nx-3dot-dropdown">
+                    <a href="/projects/notex/notes/<?= $note['id'] ?>/edit">
+                        <i class="fas fa-edit" style="color:var(--nx-accent);font-size:0.75rem;"></i> Edit
+                    </a>
+                    <?php if (!empty($note['share_token'])): ?>
+                    <a href="/projects/qr/analytics" target="_blank" rel="noopener">
+                        <i class="fas fa-chart-bar" style="color:var(--cyan,#00f0ff);font-size:0.75rem;"></i> View Analytics
+                    </a>
+                    <?php else: ?>
+                    <a href="/projects/notex/notes/<?= $note['id'] ?>/edit#share">
+                        <i class="fas fa-chart-bar" style="color:var(--text-secondary);font-size:0.75rem;"></i> View Analytics
+                    </a>
                     <?php endif; ?>
-                    <?= View::e($note['title']) ?>
-                </div>
-                <div class="note-card-preview"><?= View::e(substr(strip_tags($note['content'] ?? ''), 0, 150)) ?></div>
-                <div class="note-card-footer">
-                    <span style="font-size:var(--font-xs);color:var(--text-secondary);">
-                        <?= $note['folder_name'] ? '<i class="fas fa-folder" style="margin-right:0.1875rem;"></i>' . View::e($note['folder_name']) : '&nbsp;' ?>
-                    </span>
-                    <span style="font-size:var(--font-xs);color:var(--text-secondary);">
-                        <?= date('M d', strtotime($note['updated_at'] ?? $note['created_at'])) ?>
-                    </span>
+                    <form method="POST" action="/projects/notex/notes/<?= $note['id'] ?>/delete"
+                          onsubmit="return confirm('Move to trash?');" style="margin:0;padding:0;">
+                        <input type="hidden" name="_token" value="<?= Security::generateCsrfToken() ?>">
+                        <button type="submit" class="nx-dd-danger" style="width:100%;">
+                            <i class="fas fa-trash" style="font-size:0.75rem;"></i> Delete
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
-    </a>
+        <!-- Clickable content area (link only wraps the content, not the action buttons) -->
+        <a href="/projects/notex/notes/<?= $note['id'] ?>/edit" class="note-card-inner">
+            <div class="note-card-title">
+                <?php if ($note['is_pinned']): ?>
+                    <i class="fas fa-thumbtack pin-icon nc-pin-icon" style="margin-right:0.25rem;font-size:0.75rem;"></i>
+                <?php endif; ?>
+                <?= View::e($note['title']) ?>
+            </div>
+            <div class="note-card-preview"><?= View::e(substr(strip_tags($note['content'] ?? ''), 0, 150)) ?></div>
+            <div class="note-card-footer">
+                <span style="font-size:var(--font-xs);color:var(--text-secondary);">
+                    <?= $note['folder_name'] ? '<i class="fas fa-folder" style="margin-right:0.1875rem;"></i>' . View::e($note['folder_name']) : '&nbsp;' ?>
+                </span>
+                <span style="font-size:var(--font-xs);color:var(--text-secondary);">
+                    <?= date('M d', strtotime($note['updated_at'] ?? $note['created_at'])) ?>
+                </span>
+            </div>
+        </a>
+    </div>
     <?php endforeach; ?>
 </div>
 <?php else: ?>
