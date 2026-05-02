@@ -291,7 +291,7 @@
                 <?php if (empty($topUsers)): ?>
                     <p style="padding:16px;color:var(--text-secondary);font-size:.84rem;">No data available.</p>
                 <?php else: ?>
-                <?php $maxCount = max(array_column($topUsers, 'total') ?: [1]); ?>
+                <?php $maxCount = max(array_column($topUsers, 'total')) ?: 1; ?>
                 <div style="padding:8px 0;">
                     <?php foreach ($topUsers as $tu): ?>
                     <a href="/admin/whatsapp/api-logs?user_id=<?= (int) $tu['id'] ?>" style="display:block;padding:8px 16px;text-decoration:none;color:var(--text-primary);transition:.15s;<?= ($filterUserId === (int) $tu['id']) ? 'background:rgba(37,211,102,.08);' : '' ?>">

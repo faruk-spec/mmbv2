@@ -239,7 +239,7 @@ $dailyApiUsage  = $dailyApiUsage  ?? [];
                 $d = date('Y-m-d', strtotime("-{$i} days"));
                 $days14[$d] = $dailyApiUsage[$d] ?? 0;
             }
-            $maxVal = max(array_values($days14) ?: [1]);
+            $maxVal = max(array_values($days14)) ?: 1;
             if ($maxVal === 0) $maxVal = 1;
             ?>
             <?php if (array_sum($days14) === 0): ?>

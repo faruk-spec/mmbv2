@@ -125,7 +125,7 @@ $apiEndpoints   = $apiEndpoints   ?? [];
                 Use this key in the <code style="background:rgba(37,211,102,.1);padding:1px 5px;border-radius:3px;">X-Api-Key</code> header for all API requests.
             </p>
             <div class="wa-key-box">
-                <code class="wa-key-code" id="activeKeyCode"><?= htmlspecialchars(substr($activeKey['api_key'], 0, 12) . str_repeat('•', 48), ENT_QUOTES, 'UTF-8') ?></code>
+                <code class="wa-key-code" id="activeKeyCode"><?= htmlspecialchars(substr($activeKey['api_key'], 0, 12) . str_repeat('•', max(0, strlen($activeKey['api_key']) - 12)), ENT_QUOTES, 'UTF-8') ?></code>
                 <button onclick="toggleKeyVisibility(this, <?= htmlspecialchars(json_encode($activeKey['api_key']), ENT_QUOTES, 'UTF-8') ?>)" class="wa-btn wa-btn-green" style="white-space:nowrap;">Show</button>
                 <button onclick="waCopyEl('activeKeyCode', this, <?= htmlspecialchars(json_encode($activeKey['api_key']), ENT_QUOTES, 'UTF-8') ?>)" class="wa-btn wa-btn-green" style="white-space:nowrap;">Copy</button>
             </div>
@@ -208,8 +208,7 @@ $apiEndpoints   = $apiEndpoints   ?? [];
                 $d = date('Y-m-d', strtotime("-{$i} days"));
                 $days14[$d] = $dailyUsage[$d] ?? 0;
             }
-            $maxVal = max(array_values($days14) ?: [1]);
-            if ($maxVal === 0) $maxVal = 1;
+            $maxVal = max(array_values($days14)) ?: 1;
             ?>
             <?php if (array_sum($days14) === 0): ?>
                 <p style="color:var(--text-secondary);font-size:.85rem;text-align:center;padding:20px 0;">
@@ -385,7 +384,7 @@ function toggleKeyVisibility(btn, rawKey) {
         code.textContent = rawKey;
         btn.textContent = 'Hide';
     } else {
-        code.textContent = rawKey.substring(0, 12) + '•'.repeat(48);
+        code.textContent = rawKey.substring(0, 12) + '•'.repeat(Math.max(0, rawKey.length - 12));
         btn.textContent = 'Show';
     }
 }
