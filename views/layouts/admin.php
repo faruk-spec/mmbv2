@@ -1262,8 +1262,12 @@ window.mmbSkeleton = (function(){
                         $sidebarNavSettings = \Core\Database::getInstance()->fetch("SELECT logo_type, logo_text, logo_image_url FROM navbar_settings WHERE id = 1");
                     } catch (\Exception $_e) { $sidebarNavSettings = null; }
                     if ($sidebarNavSettings && $sidebarNavSettings['logo_type'] === 'image' && !empty($sidebarNavSettings['logo_image_url'])):
+                        $sidebarLogoSrc = $sidebarNavSettings['logo_image_url'];
+                        if ($sidebarLogoSrc !== '' && $sidebarLogoSrc[0] !== '/' && !str_starts_with($sidebarLogoSrc, 'http') && !str_starts_with($sidebarLogoSrc, '//')) {
+                            $sidebarLogoSrc = '/' . $sidebarLogoSrc;
+                        }
                     ?>
-                        <img src="<?= htmlspecialchars($sidebarNavSettings['logo_image_url']) ?>"
+                        <img src="<?= htmlspecialchars($sidebarLogoSrc) ?>"
                              alt="Logo"
                              style="max-height:36px;width:auto;object-fit:contain;display:block;"
                              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">

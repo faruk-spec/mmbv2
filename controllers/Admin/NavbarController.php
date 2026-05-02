@@ -65,6 +65,10 @@ class NavbarController extends BaseController
             $logoType = $_POST['logo_type'] ?? 'text';
             $logoText = $_POST['logo_text'] ?? 'MyMultiBranch';
             $logoImageUrl = $_POST['logo_image_url'] ?? '';
+            // Normalize: if the URL is a relative path (no leading /), prefix it.
+            if ($logoImageUrl !== '' && $logoImageUrl[0] !== '/' && !str_starts_with($logoImageUrl, 'http') && !str_starts_with($logoImageUrl, '//')) {
+                $logoImageUrl = '/' . $logoImageUrl;
+            }
             $showHomeLink = isset($_POST['show_home_link']) ? 1 : 0;
             $showDashboardLink = isset($_POST['show_dashboard_link']) ? 1 : 0;
             $showProfileLink = isset($_POST['show_profile_link']) ? 1 : 0;
@@ -124,7 +128,7 @@ class NavbarController extends BaseController
                         'title'          => $title,
                         'url'            => $urls[$i],
                         'icon'           => $icons[$i] ?? '',
-                        'logo_url'       => $linkLogoUrl,
+                        'logo_url'       => $this->normalizeUrl($linkLogoUrl),
                         'position'       => (int)($positions[$i] ?? 0),
                         'is_dropdown'    => in_array($idx, $isDropdownArr),
                         'dropdown_items' => []
@@ -157,7 +161,7 @@ class NavbarController extends BaseController
                                 'title'           => $subTitle,
                                 'url'             => $diUrls[$si],
                                 'icon'            => $diIcons[$si] ?? '',
-                                'logo_url'        => $diLogoUrls[$si] ?? '',
+                                'logo_url'        => $this->normalizeUrl($diLogoUrls[$si] ?? ''),
                                 'description'     => $diDescs[$si] ?? '',
                                 // Validate hex color to prevent CSS injection at render time
                                 'text_color'      => preg_match('/^#[0-9A-Fa-f]{6}$/', $diColors[$si] ?? '') ? $diColors[$si] : '',
@@ -183,7 +187,7 @@ class NavbarController extends BaseController
                                         'title'    => $subSubTitle,
                                         'url'      => $siUrls[$ti],
                                         'icon'     => $siIcons[$ti] ?? '',
-                                        'logo_url' => $siLogoUrls[$ti] ?? '',
+                                        'logo_url' => $this->normalizeUrl($siLogoUrls[$ti] ?? ''),
                                     ];
                                 }
                             }
@@ -355,6 +359,18 @@ class NavbarController extends BaseController
         }
 
         return $this->redirect('/admin/navbar');
+    }
+
+    /**
+     * Ensure a URL is absolute (has a leading / or a full scheme).
+     * Relative paths like "uploads/navbar/logo.svg" are prefixed with "/".
+     */
+    private function normalizeUrl(string $url): string
+    {
+        if ($url === '' || $url[0] === '/' || str_starts_with($url, 'http') || str_starts_with($url, '//')) {
+            return $url;
+        }
+        return '/' . $url;
     }
 
     /**

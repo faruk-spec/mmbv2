@@ -5,13 +5,26 @@ use Core\Database;
 $user = Auth::user();
 $isLoggedIn = $user !== null;
 
+/**
+ * Ensure an image URL is absolute (starts with / or http/https/protocol-relative).
+ * Relative paths like "uploads/navbar/logo.svg" are prefixed with "/" so they
+ * always resolve from the site root regardless of the current page URL depth.
+ */
+function navbarAbsUrl(string $url): string {
+    if ($url === '') return '';
+    if ($url[0] === '/' || str_starts_with($url, 'http') || str_starts_with($url, '//')) {
+        return $url;
+    }
+    return '/' . $url;
+}
+
 // Fetch navbar settings from database with error handling
 $navbarSettings = null;
 $settingsFetchError = null;
 try {
     $db = Database::getInstance();
     $navbarSettings = $db->fetch("SELECT * FROM navbar_settings WHERE id = 1");
-    
+
     // Debug: Log if settings were fetched
     if (defined('APP_DEBUG') && APP_DEBUG) {
         error_log("Navbar settings fetched: " . ($navbarSettings ? json_encode($navbarSettings) : 'NULL'));
@@ -108,7 +121,7 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
     <div class="container header-content">
         <?php if ($navbarSettings['logo_type'] === 'image' && !empty($navbarSettings['logo_image_url'])): ?>
             <a href="/" class="logo">
-                <img src="<?= htmlspecialchars($navbarSettings['logo_image_url']) ?>"
+                <img src="<?= htmlspecialchars(navbarAbsUrl($navbarSettings['logo_image_url'])) ?>"
                      alt="Logo"
                      style="max-height: 40px;"
                      onerror="this.style.display='none';this.parentElement.insertAdjacentText('beforeend',<?= json_encode($navbarSettings['logo_text'] ?? APP_NAME) ?>);">
@@ -138,7 +151,7 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
                         <div class="dropdown nav-item">
                             <button class="nav-link dropdown-toggle">
                                 <?php if (!empty($link['logo_url'])): ?>
-                                    <img src="<?= htmlspecialchars($link['logo_url']) ?>" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;margin-right:4px;">
+                                    <img src="<?= htmlspecialchars(navbarAbsUrl($link['logo_url'])) ?>" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;margin-right:4px;">
                                 <?php elseif (!empty($link['icon'])): ?>
                                     <i class="<?= htmlspecialchars($link['icon']) ?>"></i>
                                 <?php endif; ?>
@@ -166,7 +179,7 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
                                         <!-- Sub-sub dropdown item -->
                                         <div class="dropdown-item has-submenu" style="<?= $diStyle ?>">
                                             <?php if (!empty($subLink['logo_url'])): ?>
-                                                <img src="<?= htmlspecialchars($subLink['logo_url']) ?>" alt="" style="width:20px;height:20px;object-fit:contain;vertical-align:middle;flex-shrink:0;">
+                                                <img src="<?= htmlspecialchars(navbarAbsUrl($subLink['logo_url'])) ?>" alt="" style="width:20px;height:20px;object-fit:contain;vertical-align:middle;flex-shrink:0;">
                                             <?php elseif (!empty($subLink['icon'])): ?>
                                                 <i class="<?= htmlspecialchars($subLink['icon']) ?>"></i>
                                             <?php endif; ?>
@@ -181,7 +194,7 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
                                                 <?php foreach ($subLink['sub_items'] as $subSubLink): ?>
                                                     <a href="<?= htmlspecialchars($subSubLink['url']) ?>" class="dropdown-item">
                                                         <?php if (!empty($subSubLink['logo_url'])): ?>
-                                                            <img src="<?= htmlspecialchars($subSubLink['logo_url']) ?>" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;flex-shrink:0;">
+                                                            <img src="<?= htmlspecialchars(navbarAbsUrl($subSubLink['logo_url'])) ?>" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;flex-shrink:0;">
                                                         <?php elseif (!empty($subSubLink['icon'])): ?>
                                                             <i class="<?= htmlspecialchars($subSubLink['icon']) ?>"></i>
                                                         <?php endif; ?>
@@ -193,7 +206,7 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
                                     <?php else: ?>
                                         <a href="<?= htmlspecialchars($subLink['url']) ?>" class="dropdown-item" style="<?= $diStyle ?>">
                                             <?php if (!empty($subLink['logo_url'])): ?>
-                                                <img src="<?= htmlspecialchars($subLink['logo_url']) ?>" alt="" style="width:20px;height:20px;object-fit:contain;vertical-align:middle;flex-shrink:0;">
+                                                <img src="<?= htmlspecialchars(navbarAbsUrl($subLink['logo_url'])) ?>" alt="" style="width:20px;height:20px;object-fit:contain;vertical-align:middle;flex-shrink:0;">
                                             <?php elseif (!empty($subLink['icon'])): ?>
                                                 <i class="<?= htmlspecialchars($subLink['icon']) ?>"></i>
                                             <?php endif; ?>
@@ -212,7 +225,7 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
                         <!-- Regular Custom Link -->
                         <a href="<?= htmlspecialchars($link['url']) ?>" class="nav-link">
                             <?php if (!empty($link['logo_url'])): ?>
-                                <img src="<?= htmlspecialchars($link['logo_url']) ?>" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;margin-right:4px;">
+                                <img src="<?= htmlspecialchars(navbarAbsUrl($link['logo_url'])) ?>" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;margin-right:4px;">
                             <?php elseif (!empty($link['icon'])): ?>
                                 <i class="<?= htmlspecialchars($link['icon']) ?>"></i>
                             <?php endif; ?>
