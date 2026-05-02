@@ -207,6 +207,25 @@
                         /shared/<?= View::e($note['share_token']) ?>
                     </a>
                 </div>
+                <div style="margin-top:0.5rem;display:flex;gap:0.375rem;">
+                    <button type="button" class="btn btn-secondary btn-sm"
+                            style="flex:1;font-size:var(--font-xs);"
+                            onclick="nxEditShowQr()"
+                            title="Generate QR for share link">
+                        <i class="fas fa-qrcode" style="color:var(--cyan,#00f0ff);"></i> Generate QR
+                    </button>
+                    <a href="/projects/qr/generate" target="_blank" rel="noopener"
+                       class="btn btn-secondary btn-sm"
+                       style="flex:1;font-size:var(--font-xs);text-align:center;"
+                       title="Open QRx Generator">
+                        <i class="fas fa-external-link-alt" style="color:var(--nx-accent);"></i> Open in QRx
+                    </a>
+                </div>
+                <!-- Inline QR preview -->
+                <div id="nxEditQrWrap" style="display:none;margin-top:0.625rem;text-align:center;">
+                    <div id="nxEditQrContainer" style="display:flex;justify-content:center;"></div>
+                    <div style="margin-top:0.375rem;font-size:var(--font-xs);color:var(--text-secondary);">Scan to open shared note</div>
+                </div>
                 <?php endif; ?>
             </div>
 
@@ -227,5 +246,56 @@
         </div>
     </div>
 </form>
+
+<?php if ($note['share_token']): ?>
+<script>
+(function() {
+    var shareUrl = <?= json_encode((defined('APP_URL') ? APP_URL : '') . '/projects/notex/shared/' . $note['share_token']) ?>;
+    var qrLoaded = false;
+
+    function loadQrLib(cb) {
+        if (window.QRCode) { cb(); return; }
+        var s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+        s.integrity = 'sha512-CNgIRecGo7nphbeZ04Sc13ka07paqdeTu0WR1IM4kNcpmBAUSHSQX0FslNhTDadL4O5SAGapGt4FodqL8My0mA==';
+        s.crossOrigin = 'anonymous';
+        s.onload = cb;
+        s.onerror = function() {
+            var s2 = document.createElement('script');
+            s2.src = 'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js';
+            s2.onload = cb;
+            document.head.appendChild(s2);
+        };
+        document.head.appendChild(s);
+    }
+
+    window.nxEditShowQr = function() {
+        var wrap = document.getElementById('nxEditQrWrap');
+        var container = document.getElementById('nxEditQrContainer');
+        if (wrap.style.display !== 'none') {
+            wrap.style.display = 'none';
+            container.innerHTML = '';
+            qrLoaded = false;
+            return;
+        }
+        wrap.style.display = 'block';
+        if (qrLoaded) return;
+        container.innerHTML = '';
+        loadQrLib(function() {
+            container.innerHTML = '';
+            new QRCode(container, {
+                text: shareUrl,
+                width: 160,
+                height: 160,
+                colorDark: '#000000',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.H
+            });
+            qrLoaded = true;
+        });
+    };
+})();
+</script>
+<?php endif; ?>
 
 <?php View::end(); ?>
