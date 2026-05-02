@@ -1426,6 +1426,27 @@ class QRAdminController extends BaseController
             $allUsers = [];
         }
 
+        // Stats for QR API keys
+        $totalKeys     = 0;
+        $activeKeys    = 0;
+        $totalRequests = 0;
+        try {
+            $statsRow      = $db->fetch(
+                "SELECT COUNT(*) AS total,
+                        SUM(is_active) AS active,
+                        SUM(request_count) AS requests
+                   FROM api_keys
+                  WHERE permissions LIKE '%qr%'
+                     OR name LIKE '%qr%'
+                     OR name LIKE '%QR%'"
+            );
+            $totalKeys     = (int) ($statsRow['total']    ?? 0);
+            $activeKeys    = (int) ($statsRow['active']   ?? 0);
+            $totalRequests = (int) ($statsRow['requests'] ?? 0);
+        } catch (\Exception $e) {
+            // Non-fatal
+        }
+
         $filterUserId  = isset($_GET['user_id']) ? (int) $_GET['user_id'] : null;
         $recentLogs    = [];
         try {
