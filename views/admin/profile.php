@@ -9,6 +9,12 @@
 <div class="alert alert-error" style="margin-bottom:20px;"><?= View::e(Helpers::getFlash('error')) ?></div>
 <?php endif; ?>
 
+<!-- Sync notice: this profile page shares the same data as /profile -->
+<div style="margin-bottom:16px;padding:10px 16px;background:rgba(0,240,255,0.07);border:1px solid rgba(0,240,255,0.2);border-radius:8px;font-size:13px;color:var(--text-secondary);display:flex;align-items:center;gap:10px;">
+    <i class="fas fa-sync-alt" style="color:var(--cyan);"></i>
+    <span>This profile syncs with your <a href="/profile" style="color:var(--cyan);text-decoration:underline;">user profile page</a>. Changes made here are immediately reflected there, and vice versa.</span>
+</div>
+
 <div class="grid grid-2" style="gap:24px;align-items:start;">
     <!-- Profile Info -->
     <div class="card">

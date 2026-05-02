@@ -3045,5 +3045,25 @@ window.mmbSkeleton = (function(){
     </script>
     
     <?php View::yield('scripts'); ?>
+<script>
+// Auto-scroll admin sidebar to the active menu item on page load
+(function () {
+    var sidebar = document.getElementById('sidebar');
+    if (!sidebar) return;
+    var active = sidebar.querySelector('.menu-link.active, .menu-dropdown-toggle.active');
+    if (!active) return;
+    // Delay slightly so the browser has painted and computed layout
+    setTimeout(function () {
+        var sTop    = sidebar.scrollTop;
+        var sHeight = sidebar.clientHeight;
+        var elTop   = active.offsetTop;
+        var elBot   = elTop + active.offsetHeight;
+        // Only scroll if the element is not already in view
+        if (elTop < sTop + 60 || elBot > sTop + sHeight - 20) {
+            sidebar.scrollTo({ top: Math.max(0, elTop - 80), behavior: 'smooth' });
+        }
+    }, 120);
+})();
+</script>
 </body>
 </html>

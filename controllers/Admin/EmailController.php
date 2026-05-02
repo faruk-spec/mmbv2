@@ -21,14 +21,10 @@ class EmailController extends BaseController
     }
     
     /**
-     * Email Queue Management
+     * Ensure the email_queue table exists. Safe to call multiple times.
      */
-    public function queue(): void
+    private function ensureQueueTable(Database $db): void
     {
-        $this->requirePermission('email.queue');
-        $db = Database::getInstance();
-
-        // Auto-create email_queue table if it doesn't exist yet
         try {
             $db->query(
                 "CREATE TABLE IF NOT EXISTS `email_queue` (
@@ -57,6 +53,18 @@ class EmailController extends BaseController
         } catch (\Throwable $e) {
             // Silently ignore if already exists or no permission
         }
+    }
+
+    /**
+     * Email Queue Management
+     */
+    public function queue(): void
+    {
+        $this->requirePermission('email.queue');
+        $db = Database::getInstance();
+
+        // Auto-create email_queue table if it doesn't exist yet
+        $this->ensureQueueTable($db);
 
         $status  = $_GET['status'] ?? 'all';
         $page    = max(1, (int)($_GET['page'] ?? 1));
@@ -371,6 +379,7 @@ class EmailController extends BaseController
         $processed = 0;
         try {
             $db = Database::getInstance();
+            $this->ensureQueueTable($db);
             $rows = $db->fetchAll(
                 "SELECT id FROM email_queue WHERE status = 'pending' ORDER BY created_at ASC LIMIT ?",
                 [$limit]

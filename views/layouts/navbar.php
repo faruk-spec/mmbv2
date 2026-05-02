@@ -404,7 +404,7 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
                     }
                     ?>
                     <span class="profile-username"><?= htmlspecialchars($firstName) ?></span>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <svg class="profile-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M6 9l6 6 6-6"/>
                     </svg>
                 </button>
@@ -454,7 +454,8 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
         </div>
     </div>
 </header>
-
+<!-- Navbar overlay: prevents click-through to page content when a popup is open -->
+<div id="nav-overlay" aria-hidden="true"></div>
 <script>
 // Universal Navbar JavaScript
 (function() {
@@ -513,6 +514,20 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
     // Mobile menu elements (declared early so dropdown handlers can reference them)
     const mobileMenuBtn = document.getElementById('mobileMenuBtn');
     const mainNav = document.getElementById('mainNav');
+    const navOverlay = document.getElementById('nav-overlay');
+
+    // Show/hide the nav overlay to intercept clicks on page content behind open popups
+    function showOverlay() {
+        if (navOverlay) navOverlay.style.display = 'block';
+    }
+    function hideOverlay() {
+        if (navOverlay) navOverlay.style.display = 'none';
+    }
+    function isAnyPanelOpen() {
+        return (mainNav && mainNav.classList.contains('active'))
+            || document.querySelector('.dropdown.active') !== null
+            || document.querySelector('.notif-bell-wrap.active') !== null;
+    }
 
     // Dropdown functionality
     const dropdowns = document.querySelectorAll('.dropdown');
@@ -533,6 +548,7 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
                     document.body.classList.remove('mobile-menu-open');
                 }
                 dropdown.classList.toggle('active');
+                if (isAnyPanelOpen()) showOverlay(); else hideOverlay();
             });
         }
     });
@@ -579,12 +595,14 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
                 setTimeout(() => {
                     dropdowns.forEach(d => d.classList.remove('active'));
                     document.querySelectorAll('.has-submenu.active').forEach(s => s.classList.remove('active'));
+                    hideOverlay();
                 }, 100);
             }
         } else {
             // Clicked outside, close all dropdowns and submenus
             dropdowns.forEach(d => d.classList.remove('active'));
             document.querySelectorAll('.has-submenu.active').forEach(s => s.classList.remove('active'));
+            if (!isAnyPanelOpen()) hideOverlay();
         }
     });
     
@@ -601,27 +619,31 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
             }
             mainNav.classList.toggle('active');
             document.body.classList.toggle('mobile-menu-open');
+            if (isAnyPanelOpen()) showOverlay(); else hideOverlay();
         });
-        
-        // Close menu when clicking outside
-        document.addEventListener('click', (e) => {
-            if (mainNav.classList.contains('active')) {
-                const isClickInsideNav = mainNav.contains(e.target);
-                const isClickOnButton = mobileMenuBtn.contains(e.target);
-                
-                if (!isClickInsideNav && !isClickOnButton) {
-                    mainNav.classList.remove('active');
-                    document.body.classList.remove('mobile-menu-open');
-                }
-            }
-        });
-        
+
         // Close menu when clicking on nav links (for better UX on navigation)
         mainNav.querySelectorAll('.nav-link:not(.dropdown-toggle)').forEach(link => {
             link.addEventListener('click', () => {
                 mainNav.classList.remove('active');
                 document.body.classList.remove('mobile-menu-open');
+                hideOverlay();
             });
+        });
+    }
+
+    // Overlay click: close all open panels without letting the click reach page content
+    if (navOverlay) {
+        navOverlay.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdowns.forEach(d => d.classList.remove('active'));
+            document.querySelectorAll('.has-submenu.active').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.notif-bell-wrap.active').forEach(w => w.classList.remove('active'));
+            if (mainNav) {
+                mainNav.classList.remove('active');
+                document.body.classList.remove('mobile-menu-open');
+            }
+            hideOverlay();
         });
     }
 })();
@@ -713,6 +735,12 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
         if (!isOpen) {
             drop && drop.classList.add('active');
             if (!loaded) { loadNotifications(); loaded = true; }
+            // Show overlay to prevent click-through on underlying page elements
+            const overlay = document.getElementById('nav-overlay');
+            if (overlay) overlay.style.display = 'block';
+        } else {
+            const overlay = document.getElementById('nav-overlay');
+            if (overlay) overlay.style.display = 'none';
         }
     });
 
@@ -733,11 +761,15 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
         });
     }
 
-    // Close notification panel when clicking outside
+    // Close notification panel when clicking outside — handled by the nav-overlay
+    // Also keep the legacy document-click handler as a fallback for desktop
     document.addEventListener('click', function(e) {
         const drop = bell.closest('.notif-bell-wrap');
         if (drop && drop.classList.contains('active') && !drop.contains(e.target)) {
             drop.classList.remove('active');
+            const overlay = document.getElementById('nav-overlay');
+            const anyOpen = document.querySelector('.dropdown.active') || document.querySelector('.notif-bell-wrap.active');
+            if (overlay && !anyOpen) overlay.style.display = 'none';
         }
     });
 
@@ -1176,6 +1208,34 @@ html:not([data-theme="light"]) .universal-header .dropdown-item:hover {
 .theme-toggle:hover {
     background: var(--hover-bg);
     border-color: var(--cyan);
+}
+
+/* On mobile: hide profile dropdown chevron to save space */
+@media (max-width: 768px) {
+    .header-end-actions #profileDropdown .dropdown-toggle .profile-chevron {
+        display: none;
+    }
+    /* Reduce padding on hamburger button on mobile */
+    .mobile-menu-btn {
+        padding: 6px;
+    }
+}
+
+/* On tablet too */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .header-end-actions #profileDropdown .dropdown-toggle .profile-chevron {
+        display: none;
+    }
+}
+
+/* Navbar overlay: intercepts clicks on page content when any popup is open */
+#nav-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9998; /* above page content, below header (9999) */
+    background: transparent;
+    cursor: default;
 }
 
 .mobile-menu-btn {
