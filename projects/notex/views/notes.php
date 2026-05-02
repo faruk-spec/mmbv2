@@ -231,7 +231,7 @@
                         title="View Share QR"
                         data-share-url="<?= View::e((defined('APP_URL') ? APP_URL : '') . '/projects/notex/shared/' . $note['share_token']) ?>"
                         data-note-title="<?= View::e($note['title']) ?>"
-                        onclick="nxOpenQr(this)">
+                        onclick="nxOpenQr(this, event)">
                     <i class="fas fa-qrcode" style="font-size:0.6875rem;"></i>
                 </button>
                 <?php endif; ?>
@@ -240,7 +240,7 @@
                     <button type="button"
                             class="btn btn-secondary btn-sm btn-icon"
                             title="More options"
-                            onclick="nxToggle3dot(this)">
+                            onclick="nxToggle3dot(this, event)">
                         <i class="fas fa-ellipsis-v" style="font-size:0.6875rem;"></i>
                     </button>
                     <div class="nx-3dot-dropdown">
@@ -360,9 +360,9 @@
     });
 
     // ── Three-dot dropdown ───────────────────────────────────────────────
-    window.nxToggle3dot = function(btn) {
-        event.preventDefault();
-        event.stopPropagation();
+    window.nxToggle3dot = function(btn, e) {
+        e.preventDefault();
+        e.stopPropagation();
         var dd = btn.nextElementSibling;
         var wasOpen = dd.classList.contains('open');
         document.querySelectorAll('.nx-3dot-dropdown.open').forEach(function(d) { d.classList.remove('open'); });
@@ -374,8 +374,6 @@
     });
 
     // ── QR Modal ─────────────────────────────────────────────────────────
-    var _qrLib = null;
-
     function loadQrLib(cb) {
         if (window.QRCode) { cb(); return; }
         var s = document.createElement('script');
@@ -392,17 +390,17 @@
         document.head.appendChild(s);
     }
 
-    window.nxOpenQr = function(btn) {
-        event.preventDefault();
-        event.stopPropagation();
+    window.nxOpenQr = function(btn, e) {
+        e.preventDefault();
+        e.stopPropagation();
         var url = btn.dataset.shareUrl;
         document.getElementById('nxQrUrlLabel').textContent = url;
         document.getElementById('nxQrOpenInQrx').href = '/projects/qr/generate';
-        document.getElementById('nxQrContainer').innerHTML = '';
+        var container = document.getElementById('nxQrContainer');
+        container.innerHTML = '';
         document.getElementById('nxQrBackdrop').classList.add('open');
         loadQrLib(function() {
-            document.getElementById('nxQrContainer').innerHTML = '';
-            new QRCode(document.getElementById('nxQrContainer'), {
+            new QRCode(container, {
                 text: url,
                 width: 180,
                 height: 180,

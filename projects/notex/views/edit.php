@@ -282,7 +282,6 @@
         if (qrLoaded) return;
         container.innerHTML = '';
         loadQrLib(function() {
-            container.innerHTML = '';
             new QRCode(container, {
                 text: shareUrl,
                 width: 160,
