@@ -1257,8 +1257,27 @@ window.mmbSkeleton = (function(){
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <div class="sidebar-logo">
-                    <i class="fas fa-bolt"></i>
-                    <?= APP_NAME ?> Admin
+                    <?php
+                    try {
+                        $sidebarNavSettings = \Core\Database::getInstance()->fetch("SELECT logo_type, logo_text, logo_image_url FROM navbar_settings WHERE id = 1");
+                    } catch (\Exception $_e) { $sidebarNavSettings = null; }
+                    if ($sidebarNavSettings && $sidebarNavSettings['logo_type'] === 'image' && !empty($sidebarNavSettings['logo_image_url'])):
+                        $sidebarLogoSrc = $sidebarNavSettings['logo_image_url'];
+                        if ($sidebarLogoSrc !== '' && $sidebarLogoSrc[0] !== '/' && !str_starts_with($sidebarLogoSrc, 'http') && !str_starts_with($sidebarLogoSrc, '//')) {
+                            $sidebarLogoSrc = '/' . $sidebarLogoSrc;
+                        }
+                    ?>
+                        <img src="<?= htmlspecialchars($sidebarLogoSrc) ?>"
+                             alt="Logo"
+                             style="max-height:36px;width:auto;object-fit:contain;display:block;"
+                             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                        <span style="display:none;align-items:center;gap:10px;">
+                            <i class="fas fa-bolt"></i><?= htmlspecialchars($sidebarNavSettings['logo_text'] ?? APP_NAME) ?> Admin
+                        </span>
+                    <?php else: ?>
+                        <i class="fas fa-bolt"></i>
+                        <?= htmlspecialchars($sidebarNavSettings['logo_text'] ?? APP_NAME) ?> Admin
+                    <?php endif; ?>
                 </div>
             </div>
             
@@ -1328,8 +1347,8 @@ window.mmbSkeleton = (function(){
                 <div class="menu-section">
                     <div class="menu-section-title">Platform Billing</div>
 
-                    <div class="menu-item menu-dropdown">
-                        <div class="menu-dropdown-toggle">
+                    <div class="menu-item menu-dropdown <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/platform-plans') === 0 ? 'open' : '' ?>">
+                        <div class="menu-dropdown-toggle <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/platform-plans') === 0 ? 'active' : '' ?>">
                             <div class="left">
                                 <i class="fas fa-layer-group"></i>
                                 <span>Platform Plans</span>
@@ -1374,7 +1393,7 @@ window.mmbSkeleton = (function(){
                     
                     <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('convertx')): ?>
                     <!-- ConvertX Admin -->
-                    <div class="menu-item menu-dropdown">
+                    <div class="menu-item menu-dropdown <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/convertx') === 0 ? 'open' : '' ?>">
                         <div class="menu-dropdown-toggle <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/convertx') === 0 ? 'active' : '' ?>">
                             <div class="left">
                                 <i class="fas fa-file-export"></i>
@@ -1449,8 +1468,8 @@ window.mmbSkeleton = (function(){
                     
                     <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('codexpro')): ?>
                     <!-- CodeXPro -->
-                    <div class="menu-item menu-dropdown">
-                        <div class="menu-dropdown-toggle">
+                    <div class="menu-item menu-dropdown <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/codexpro') === 0 ? 'open' : '' ?>">
+                        <div class="menu-dropdown-toggle <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/codexpro') === 0 ? 'active' : '' ?>">
                             <div class="left">
                                 <i class="fas fa-code"></i>
                                 <span>CodeXPro</span>
@@ -1488,8 +1507,8 @@ window.mmbSkeleton = (function(){
                     
                     <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('proshare')): ?>
                     <!-- ProShare - Admin Features -->
-                    <div class="menu-item menu-dropdown">
-                        <div class="menu-dropdown-toggle">
+                    <div class="menu-item menu-dropdown <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/proshare') === 0 ? 'open' : '' ?>">
+                        <div class="menu-dropdown-toggle <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/proshare') === 0 ? 'active' : '' ?>">
                             <div class="left">
                                 <i class="fas fa-share-alt"></i>
                                 <span>ProShare Admin</span>
@@ -1600,8 +1619,8 @@ window.mmbSkeleton = (function(){
                     
                     <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('billx')): ?>
                     <!-- BillX -->
-                    <div class="menu-item menu-dropdown">
-                        <div class="menu-dropdown-toggle">
+                    <div class="menu-item menu-dropdown <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/billx') === 0 ? 'open' : '' ?>">
+                        <div class="menu-dropdown-toggle <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/billx') === 0 ? 'active' : '' ?>">
                             <div class="left">
                                 <i class="fas fa-file-invoice"></i>
                                 <span>BillX</span>
@@ -1645,8 +1664,8 @@ window.mmbSkeleton = (function(){
 
                     <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('whatsapp')): ?>
                     <!-- WhatsApp API -->
-                    <div class="menu-item menu-dropdown">
-                        <div class="menu-dropdown-toggle">
+                    <div class="menu-item menu-dropdown <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/whatsapp') === 0 ? 'open' : '' ?>">
+                        <div class="menu-dropdown-toggle <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/whatsapp') === 0 ? 'active' : '' ?>">
                             <div class="left">
                                 <i class="fab fa-whatsapp"></i>
                                 <span>WhatsApp API</span>
@@ -1708,7 +1727,7 @@ window.mmbSkeleton = (function(){
 
                     <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('qr')): ?>
                     <!-- QR Codes -->
-                    <div class="menu-item menu-dropdown">
+                    <div class="menu-item menu-dropdown <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/qr') === 0 ? 'open' : '' ?>">
                         <div class="menu-dropdown-toggle <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/qr') === 0 ? 'active' : '' ?>">
                             <div class="left">
                                 <i class="fas fa-qrcode"></i>
@@ -1771,7 +1790,7 @@ window.mmbSkeleton = (function(){
 
                     <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('idcard')): ?>
                     <!-- CardX -->
-                    <div class="menu-item menu-dropdown">
+                    <div class="menu-item menu-dropdown <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/idcard') === 0 ? 'open' : '' ?>">
                         <div class="menu-dropdown-toggle <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/idcard') === 0 ? 'active' : '' ?>">
                             <div class="left">
                                 <i class="fas fa-id-card"></i>
@@ -1816,7 +1835,7 @@ window.mmbSkeleton = (function(){
 
                     <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('resumex')): ?>
                     <!-- ResumeX -->
-                    <div class="menu-item menu-dropdown">
+                    <div class="menu-item menu-dropdown <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/resumex') === 0 ? 'open' : '' ?>">
                         <div class="menu-dropdown-toggle <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/resumex') === 0 ? 'active' : '' ?>">
                             <div class="left">
                                 <i class="fas fa-file-alt"></i>
@@ -1867,7 +1886,7 @@ window.mmbSkeleton = (function(){
 
                     <!-- FormX – Form Builder -->
                     <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('formx')): ?>
-                    <div class="menu-item menu-dropdown">
+                    <div class="menu-item menu-dropdown <?= (strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/formx') === 0 || strpos($_SERVER['REQUEST_URI'] ?? '', '/projects/formx') === 0) ? 'open' : '' ?>">
                         <div class="menu-dropdown-toggle <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/formx') === 0 || strpos($_SERVER['REQUEST_URI'] ?? '', '/projects/formx') === 0 ? 'active' : '' ?>">
                             <div class="left">
                                 <i class="fas fa-wpforms"></i>
@@ -1898,7 +1917,7 @@ window.mmbSkeleton = (function(){
                 
                 <!-- LinkShortner – URL Shortener -->
                 <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('linkshortner')): ?>
-                <div class="menu-item menu-dropdown">
+                <div class="menu-item menu-dropdown <?= (strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/linkshortner') === 0 || strpos($_SERVER['REQUEST_URI'] ?? '', '/projects/linkshortner') === 0) ? 'open' : '' ?>">
                     <div class="menu-dropdown-toggle <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/linkshortner') === 0 || strpos($_SERVER['REQUEST_URI'] ?? '', '/projects/linkshortner') === 0 ? 'active' : '' ?>">
                         <div class="left">
                             <i class="fas fa-link" style="color:#00d4ff;"></i>
@@ -1937,7 +1956,7 @@ window.mmbSkeleton = (function(){
 
                 <!-- NoteX – Private Notes -->
                 <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('notex')): ?>
-                <div class="menu-item menu-dropdown">
+                <div class="menu-item menu-dropdown <?= (strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/notex') === 0 || strpos($_SERVER['REQUEST_URI'] ?? '', '/projects/notex') === 0) ? 'open' : '' ?>">
                     <div class="menu-dropdown-toggle <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/notex') === 0 || strpos($_SERVER['REQUEST_URI'] ?? '', '/projects/notex') === 0 ? 'active' : '' ?>">
                         <div class="left">
                             <i class="fas fa-sticky-note" style="color:#ffd700;"></i>
@@ -2014,8 +2033,8 @@ window.mmbSkeleton = (function(){
                     <div class="menu-section-title">Security</div>
                     
                     <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('security')): ?>
-                    <div class="menu-item menu-dropdown">
-                        <div class="menu-dropdown-toggle">
+                    <div class="menu-item menu-dropdown <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/security') === 0 ? 'open' : '' ?>">
+                        <div class="menu-dropdown-toggle <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/security') === 0 ? 'active' : '' ?>">
                             <div class="left">
                                 <i class="fas fa-shield-alt"></i>
                                 <span>Security Center</span>
@@ -2046,8 +2065,8 @@ window.mmbSkeleton = (function(){
                     <?php endif; ?>
                     
                     <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('oauth')): ?>
-                    <div class="menu-item menu-dropdown">
-                        <div class="menu-dropdown-toggle">
+                    <div class="menu-item menu-dropdown <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/oauth') === 0 ? 'open' : '' ?>">
+                        <div class="menu-dropdown-toggle <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/oauth') === 0 ? 'active' : '' ?>">
                             <div class="left">
                                 <i class="fas fa-key"></i>
                                 <span>OAuth & SSO</span>
@@ -2072,8 +2091,8 @@ window.mmbSkeleton = (function(){
                     <?php endif; ?>
                     
                     <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('sessions')): ?>
-                    <div class="menu-item menu-dropdown">
-                        <div class="menu-dropdown-toggle">
+                    <div class="menu-item menu-dropdown <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/sessions') === 0 ? 'open' : '' ?>">
+                        <div class="menu-dropdown-toggle <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/sessions') === 0 ? 'active' : '' ?>">
                             <div class="left">
                                 <i class="fas fa-clock"></i>
                                 <span>Session Management</span>
@@ -2099,8 +2118,8 @@ window.mmbSkeleton = (function(){
                     
                     <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('2fa')): ?>
                     <!-- 2FA Management -->
-                    <div class="menu-item menu-dropdown">
-                        <div class="menu-dropdown-toggle">
+                    <div class="menu-item menu-dropdown <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/2fa') === 0 ? 'open' : '' ?>">
+                        <div class="menu-dropdown-toggle <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/2fa') === 0 ? 'active' : '' ?>">
                             <div class="left">
                                 <i class="fas fa-shield-alt"></i>
                                 <span>2FA Management</span>
@@ -2124,8 +2143,8 @@ window.mmbSkeleton = (function(){
                     <div class="menu-section-title">Logs</div>
                     
                     <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('logs')): ?>
-                    <div class="menu-item menu-dropdown">
-                        <div class="menu-dropdown-toggle">
+                    <div class="menu-item menu-dropdown <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/logs') === 0 ? 'open' : '' ?>">
+                        <div class="menu-dropdown-toggle <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/logs') === 0 ? 'active' : '' ?>">
                             <div class="left">
                                 <i class="fas fa-file-alt"></i>
                                 <span>Activity Logs</span>
@@ -2155,8 +2174,8 @@ window.mmbSkeleton = (function(){
                     </div>
                     <?php endif; ?>
                     <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('audit')): ?>
-                    <div class="menu-item menu-dropdown">
-                        <div class="menu-dropdown-toggle">
+                    <div class="menu-item menu-dropdown <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/audit') === 0 ? 'open' : '' ?>">
+                        <div class="menu-dropdown-toggle <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/audit') === 0 ? 'active' : '' ?>">
                             <div class="left">
                                 <i class="fas fa-search"></i>
                                 <span>Audit Explorer</span>
@@ -2181,8 +2200,8 @@ window.mmbSkeleton = (function(){
 
                     <!-- API Management -->
                     <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('api')): ?>
-                    <div class="menu-item menu-dropdown">
-                        <div class="menu-dropdown-toggle">
+                    <div class="menu-item menu-dropdown <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/api') === 0 ? 'open' : '' ?>">
+                        <div class="menu-dropdown-toggle <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/api') === 0 ? 'active' : '' ?>">
                             <div class="left">
                                 <i class="fas fa-plug"></i>
                                 <span>API Management</span>
@@ -2220,8 +2239,8 @@ window.mmbSkeleton = (function(){
                     
                     <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('websocket')): ?>
                     <!-- Real-time & WebSocket -->
-                    <div class="menu-item menu-dropdown">
-                        <div class="menu-dropdown-toggle">
+                    <div class="menu-item menu-dropdown <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/websocket') === 0 ? 'open' : '' ?>">
+                        <div class="menu-dropdown-toggle <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/websocket') === 0 ? 'active' : '' ?>">
                             <div class="left">
                                 <i class="fas fa-broadcast-tower"></i>
                                 <span>Real-time Features</span>
@@ -2259,8 +2278,8 @@ window.mmbSkeleton = (function(){
                     
                     <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('analytics')): ?>
                     <!-- Analytics & Reports -->
-                    <div class="menu-item menu-dropdown">
-                        <div class="menu-dropdown-toggle">
+                    <div class="menu-item menu-dropdown <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/analytics') === 0 ? 'open' : '' ?>">
+                        <div class="menu-dropdown-toggle <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/analytics') === 0 ? 'active' : '' ?>">
                             <div class="left">
                                 <i class="fas fa-chart-bar"></i>
                                 <span>Analytics</span>
@@ -2298,8 +2317,9 @@ window.mmbSkeleton = (function(){
                     
                     <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('email') || \Core\Auth::hasPermissionGroup('notifications')): ?>
                     <!-- Email & Notifications -->
-                    <div class="menu-item menu-dropdown">
-                        <div class="menu-dropdown-toggle">
+                    <?php $emailActive = strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/mail') === 0 || strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/email') === 0 || strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/notifications') === 0; ?>
+                    <div class="menu-item menu-dropdown <?= $emailActive ? 'open' : '' ?>">
+                        <div class="menu-dropdown-toggle <?= $emailActive ? 'active' : '' ?>">
                             <div class="left">
                                 <i class="fas fa-envelope"></i>
                                 <span>Email & Notifications</span>
@@ -2355,8 +2375,8 @@ window.mmbSkeleton = (function(){
                     
                     <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('performance')): ?>
                     <!-- Performance & Cache -->
-                    <div class="menu-item menu-dropdown">
-                        <div class="menu-dropdown-toggle">
+                    <div class="menu-item menu-dropdown <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/performance') === 0 ? 'open' : '' ?>">
+                        <div class="menu-dropdown-toggle <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/performance') === 0 ? 'active' : '' ?>">
                             <div class="left">
                                 <i class="fas fa-bolt"></i>
                                 <span>Performance</span>
@@ -2417,11 +2437,12 @@ window.mmbSkeleton = (function(){
                 </div>
 
                 <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('settings') || \Core\Auth::hasPermission('navbar')): ?>
+                <?php $settingsActive = strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/settings') === 0 || strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/navbar') === 0 || strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/home-content') === 0; ?>
                 <div class="menu-section">
                     <div class="menu-section-title">System</div>
                     
-                    <div class="menu-item menu-dropdown">
-                        <div class="menu-dropdown-toggle">
+                    <div class="menu-item menu-dropdown <?= $settingsActive ? 'open' : '' ?>">
+                        <div class="menu-dropdown-toggle <?= $settingsActive ? 'active' : '' ?>">
                             <div class="left">
                                 <i class="fas fa-cog"></i>
                                 <span>Settings</span>
@@ -2559,7 +2580,18 @@ window.mmbSkeleton = (function(){
                     <!-- User Menu with Dropdown -->
                     <div class="user-menu" id="userMenu">
                         <div class="user-avatar">
-                            <?= strtoupper(substr($user['name'] ?? 'A', 0, 1)) ?>
+                            <?php
+                            try {
+                                $adminAvatarProfile = \Core\Database::getInstance()->fetch("SELECT avatar FROM user_profiles WHERE user_id = ?", [$user['id'] ?? 0]);
+                                $adminAvatarPath = $adminAvatarProfile['avatar'] ?? '';
+                            } catch (\Exception $_e) { $adminAvatarPath = ''; }
+                            if (!empty($adminAvatarPath)):
+                                $adminAvatarSrc = str_starts_with($adminAvatarPath, '/') ? $adminAvatarPath : '/uploads/avatars/' . $adminAvatarPath;
+                            ?>
+                                <img src="<?= htmlspecialchars($adminAvatarSrc) ?>" alt="Avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
+                            <?php else: ?>
+                                <?= strtoupper(substr($user['name'] ?? 'A', 0, 1)) ?>
+                            <?php endif; ?>
                         </div>
                         <span class="hide-mobile"><?= $user['name'] ?? 'Admin' ?></span>
                         <i class="fas fa-chevron-down"></i>
@@ -2568,7 +2600,11 @@ window.mmbSkeleton = (function(){
                         <div class="profile-dropdown">
                             <div class="profile-header">
                                 <div class="user-avatar">
-                                    <?= strtoupper(substr($user['name'] ?? 'A', 0, 1)) ?>
+                                    <?php if (!empty($adminAvatarPath)): ?>
+                                        <img src="<?= htmlspecialchars($adminAvatarSrc) ?>" alt="Avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
+                                    <?php else: ?>
+                                        <?= strtoupper(substr($user['name'] ?? 'A', 0, 1)) ?>
+                                    <?php endif; ?>
                                 </div>
                                 <h3><?= View::e($user['name'] ?? 'Admin') ?></h3>
                                 <p><?= View::e($user['email'] ?? 'admin@example.com') ?></p>
@@ -2578,6 +2614,10 @@ window.mmbSkeleton = (function(){
                                 <a href="/admin/profile" class="profile-menu-item">
                                     <i class="fas fa-user"></i>
                                     <span>My Profile</span>
+                                </a>
+                                <a href="/admin/profile#change-password" class="profile-menu-item">
+                                    <i class="fas fa-key"></i>
+                                    <span>Change Password</span>
                                 </a>
                                 <a href="/admin/security" class="profile-menu-item">
                                     <i class="fas fa-shield-alt"></i>
@@ -3015,5 +3055,27 @@ window.mmbSkeleton = (function(){
     </script>
     
     <?php View::yield('scripts'); ?>
+<script>
+// Auto-scroll admin sidebar to the active menu item on page load
+(function () {
+    var sidebar = document.getElementById('sidebar');
+    if (!sidebar) return;
+    // Allow the auto-open JS above to run and any CSS transition to settle
+    setTimeout(function () {
+        var active = sidebar.querySelector('.menu-link.active, .menu-dropdown-toggle.active');
+        if (!active) return;
+        // Use getBoundingClientRect for correct position relative to the sidebar viewport
+        var activeRect  = active.getBoundingClientRect();
+        var sidebarRect = sidebar.getBoundingClientRect();
+        var sHeight     = sidebar.clientHeight;
+        var relTop      = activeRect.top - sidebarRect.top + sidebar.scrollTop;
+        var relBot      = relTop + active.offsetHeight;
+        // Only scroll if the element is not already in view
+        if (relTop < sidebar.scrollTop + 60 || relBot > sidebar.scrollTop + sHeight - 20) {
+            sidebar.scrollTo({ top: Math.max(0, relTop - 80), behavior: 'smooth' });
+        }
+    }, 350); // wait for auto-open dropdown CSS transition (~300ms) to settle
+})();
+</script>
 </body>
 </html>

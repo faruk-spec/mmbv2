@@ -239,21 +239,7 @@ $router->get('/uploads/{path:wildcard}', function($path) {
         http_response_code(403);
         exit('Forbidden');
     }
-    
-    // Prevent path traversal
-    $realBase = realpath(BASE_PATH . '/storage/uploads');
-    $filePath = realpath(BASE_PATH . '/storage/uploads/' . $path);
-    
-    if (!$filePath || !str_starts_with($filePath, $realBase)) {
-        http_response_code(404);
-        exit('Not found');
-    }
-    
-    if (!file_exists($filePath)) {
-        http_response_code(404);
-        exit('Not found');
-    }
-    
+
     $mimeTypes = [
         'jpg'  => 'image/jpeg',
         'jpeg' => 'image/jpeg',
@@ -262,7 +248,34 @@ $router->get('/uploads/{path:wildcard}', function($path) {
         'webp' => 'image/webp',
         'svg'  => 'image/svg+xml',
     ];
-    
+
+    // Helper to safely resolve a file path within a base directory
+    $resolveFile = function(string $base, string $relativePath): string|false {
+        $realBase = realpath($base);
+        if (!$realBase) {
+            return false;
+        }
+        $candidate = realpath($base . '/' . $relativePath);
+        if (!$candidate || !str_starts_with($candidate, $realBase)) {
+            return false;
+        }
+        return $candidate;
+    };
+
+    // Primary: storage/uploads (new uploads location)
+    $filePath = $resolveFile(BASE_PATH . '/storage/uploads', $path);
+
+    // Fallback: physical uploads/ directory in project root (legacy upload location)
+    if (!$filePath || !file_exists($filePath)) {
+        $legacyPath = $resolveFile(BASE_PATH . '/uploads', $path);
+        if ($legacyPath && file_exists($legacyPath)) {
+            $filePath = $legacyPath;
+        } else {
+            http_response_code(404);
+            exit('Not found');
+        }
+    }
+
     header('Content-Type: ' . ($mimeTypes[$ext] ?? 'application/octet-stream'));
     header('X-Content-Type-Options: nosniff');
     // Restrict SVG execution context for security

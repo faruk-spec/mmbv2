@@ -12,6 +12,16 @@
     </div>
 <?php endif; ?>
 
+<?php if (Helpers::hasFlash('warning')): ?>
+    <div class="alert alert-warning" style="margin-bottom: 12px; padding: 16px; background: rgba(255, 193, 7, 0.1); border: 1px solid #ffc107; border-radius: 8px; color: #ffc107;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        <?= View::e(Helpers::getFlash('warning')) ?>
+    </div>
+<?php endif; ?>
+
 <?php if (Helpers::hasFlash('error')): ?>
     <div class="alert alert-error" style="margin-bottom: 12px; padding: 16px; background: rgba(255, 107, 107, 0.1); border: 1px solid var(--red); border-radius: 8px; color: var(--red);">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">

@@ -45,6 +45,20 @@
                 </label>
             </div>
         </div>
+        <?php if (!empty($providers)): ?>
+        <div class="form-group" style="margin-top:12px;">
+            <label class="form-label">Send From (Mail Config)</label>
+            <select name="mail_provider_config_id" class="form-input">
+                <option value="">— Default active provider —</option>
+                <?php foreach ($providers as $prov): ?>
+                <option value="<?= (int)$prov['id'] ?>" <?= (isset($template['mail_provider_config_id']) && (int)$template['mail_provider_config_id'] === (int)$prov['id']) ? 'selected' : '' ?>>
+                    <?= View::e($prov['name']) ?><?= $prov['from_email'] ? ' <' . View::e($prov['from_email']) . '>' : '' ?>
+                </option>
+                <?php endforeach; ?>
+            </select>
+            <small style="color:var(--text-secondary);">Override which mail provider config this notification uses. Leave blank to use the default active provider.</small>
+        </div>
+        <?php endif; ?>
     </div>
 
     <div class="card" style="margin-bottom:16px;">

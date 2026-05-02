@@ -162,10 +162,19 @@ class MailConfigController extends BaseController
             return;
         }
 
-        $id = (int)$this->input('id', 0);
-        $db = Database::getInstance();
+        $id     = (int)$this->input('id', 0);
+        $action = $this->input('action', 'activate'); // 'activate' or 'deactivate'
+        $db     = Database::getInstance();
 
-        $db->query("UPDATE mail_provider_configs SET is_active = 0");
+        if ($action === 'deactivate') {
+            $db->update('mail_provider_configs', ['is_active' => 0], 'id = ?', [$id]);
+            MailService::clearProviderCache();
+            Logger::activity(Auth::id(), 'mail_provider_deactivated', ['id' => $id]);
+            $this->json(['success' => true, 'message' => 'Provider deactivated.']);
+            return;
+        }
+
+        // Activate without deactivating others (support multiple active providers)
         $db->update('mail_provider_configs', ['is_active' => 1], 'id = ?', [$id]);
 
         MailService::clearProviderCache();
@@ -262,10 +271,12 @@ class MailConfigController extends BaseController
     {
         $db        = Database::getInstance();
         $templates = $db->fetchAll("SELECT * FROM mail_notification_templates ORDER BY slug ASC");
+        $providers = $db->fetchAll("SELECT id, name, from_email, is_active FROM mail_provider_configs ORDER BY is_active DESC, name ASC");
 
         $this->view('admin/mail/templates', [
             'title'     => 'Notification Templates',
             'templates' => $templates,
+            'providers' => $providers,
         ]);
     }
 
@@ -281,9 +292,12 @@ class MailConfigController extends BaseController
             return;
         }
 
+        $providers = $db->fetchAll("SELECT id, name, from_email, is_active FROM mail_provider_configs ORDER BY is_active DESC, name ASC");
+
         $this->view('admin/mail/edit-template', [
-            'title'    => 'Edit Template: ' . $template['name'],
-            'template' => $template,
+            'title'     => 'Edit Template: ' . $template['name'],
+            'template'  => $template,
+            'providers' => $providers,
         ]);
     }
 
@@ -299,6 +313,7 @@ class MailConfigController extends BaseController
         $subject = Security::sanitize($this->input('subject', ''));
         $body    = $this->input('body', ''); // Allow HTML
         $enabled = $this->input('is_enabled', '0') === '1' ? 1 : 0;
+        $providerConfigId = $this->input('mail_provider_config_id', '') !== '' ? (int)$this->input('mail_provider_config_id', 0) : null;
 
         if (!$id || !$subject) {
             $this->flash('error', 'Subject is required.');
@@ -307,11 +322,24 @@ class MailConfigController extends BaseController
         }
 
         $db = Database::getInstance();
-        $db->update('mail_notification_templates', [
+
+        $updateData = [
             'subject'    => $subject,
             'body'       => $body,
             'is_enabled' => $enabled,
-        ], 'id = ?', [$id]);
+        ];
+
+        // Only store provider config if the column exists
+        try {
+            $cols = $db->fetchAll("SHOW COLUMNS FROM mail_notification_templates LIKE 'mail_provider_config_id'");
+            if (!empty($cols)) {
+                $updateData['mail_provider_config_id'] = $providerConfigId;
+            }
+        } catch (\Exception $e) {
+            // column doesn't exist yet – skip
+        }
+
+        $db->update('mail_notification_templates', $updateData, 'id = ?', [$id]);
 
         Logger::activity(Auth::id(), 'mail_template_updated', ['id' => $id]);
         $this->flash('success', 'Template saved.');
@@ -337,6 +365,38 @@ class MailConfigController extends BaseController
         $db->update('mail_notification_templates', ['is_enabled' => $newVal], 'id = ?', [$id]);
 
         $this->json(['success' => true, 'enabled' => (bool)$newVal]);
+    }
+
+    public function setTemplateProvider(): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request.');
+            $this->redirect('/admin/mail/templates');
+            return;
+        }
+
+        $id         = (int)$this->input('id', 0);
+        $providerId = $this->input('mail_provider_config_id', '') !== '' ? (int)$this->input('mail_provider_config_id', 0) : null;
+
+        if (!$id) {
+            $this->redirect('/admin/mail/templates');
+            return;
+        }
+
+        $db = Database::getInstance();
+
+        // Only update if the column exists
+        try {
+            $cols = $db->fetchAll("SHOW COLUMNS FROM mail_notification_templates LIKE 'mail_provider_config_id'");
+            if (!empty($cols)) {
+                $db->update('mail_notification_templates', ['mail_provider_config_id' => $providerId], 'id = ?', [$id]);
+            }
+        } catch (\Exception $e) {
+            // column not yet added – ignore
+        }
+
+        $this->flash('success', 'Provider assignment saved.');
+        $this->redirect('/admin/mail/templates');
     }
 
     // ------------------------------------------------------------------

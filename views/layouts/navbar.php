@@ -5,13 +5,26 @@ use Core\Database;
 $user = Auth::user();
 $isLoggedIn = $user !== null;
 
+/**
+ * Ensure an image URL is absolute (starts with / or http/https/protocol-relative).
+ * Relative paths like "uploads/navbar/logo.svg" are prefixed with "/" so they
+ * always resolve from the site root regardless of the current page URL depth.
+ */
+function navbarAbsUrl(string $url): string {
+    if ($url === '') return '';
+    if ($url[0] === '/' || str_starts_with($url, 'http') || str_starts_with($url, '//')) {
+        return $url;
+    }
+    return '/' . $url;
+}
+
 // Fetch navbar settings from database with error handling
 $navbarSettings = null;
 $settingsFetchError = null;
 try {
     $db = Database::getInstance();
     $navbarSettings = $db->fetch("SELECT * FROM navbar_settings WHERE id = 1");
-    
+
     // Debug: Log if settings were fetched
     if (defined('APP_DEBUG') && APP_DEBUG) {
         error_log("Navbar settings fetched: " . ($navbarSettings ? json_encode($navbarSettings) : 'NULL'));
@@ -39,6 +52,7 @@ if (!$navbarSettings) {
         'show_profile_link' => 1,
         'show_admin_link' => 1,
         'show_projects_dropdown' => 1,
+        'show_projects_dropdown_to_user' => 1,
         'show_theme_toggle' => 1,
         'default_theme' => 'dark',
         'navbar_bg_color' => null,
@@ -63,6 +77,7 @@ if (!$navbarSettings) {
         'show_profile_link' => 1,
         'show_admin_link' => 1,
         'show_projects_dropdown' => 1,
+        'show_projects_dropdown_to_user' => 1,
         'show_theme_toggle' => 1,
         'default_theme' => 'dark',
         'navbar_bg_color' => null,
@@ -80,11 +95,6 @@ if (!empty($navbarSettings['custom_links'])) {
 }
 ?>
 <!-- Universal Navbar Component -->
-<!-- Debug: Settings loaded from <?= $navbarSettings ? 'DATABASE' : 'DEFAULTS' ?> 
-<?php if ($settingsFetchError): ?>
-Error: <?= htmlspecialchars($settingsFetchError) ?>
-<?php endif; ?>
-Logo: <?= htmlspecialchars($navbarSettings['logo_text'] ?? 'N/A') ?> -->
 <?php 
 // Build header inline styles
 $headerStyles = [];
@@ -111,7 +121,10 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
     <div class="container header-content">
         <?php if ($navbarSettings['logo_type'] === 'image' && !empty($navbarSettings['logo_image_url'])): ?>
             <a href="/" class="logo">
-                <img src="<?= htmlspecialchars($navbarSettings['logo_image_url']) ?>" alt="Logo" style="max-height: 40px;">
+                <img src="<?= htmlspecialchars(navbarAbsUrl($navbarSettings['logo_image_url'])) ?>"
+                     alt="Logo"
+                     style="max-height: 40px;"
+                     onerror="this.style.display='none';this.parentElement.insertAdjacentText('beforeend',<?= json_encode($navbarSettings['logo_text'] ?? APP_NAME) ?>);">
             </a>
         <?php else: ?>
             <a href="/" class="logo" <?php if ($navbarSettings['navbar_text_color']): ?>style="color: <?= htmlspecialchars($navbarSettings['navbar_text_color']) ?>;"<?php endif; ?>><?= htmlspecialchars($navbarSettings['logo_text']) ?></a>
@@ -138,7 +151,7 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
                         <div class="dropdown nav-item">
                             <button class="nav-link dropdown-toggle">
                                 <?php if (!empty($link['logo_url'])): ?>
-                                    <img src="<?= htmlspecialchars($link['logo_url']) ?>" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;margin-right:4px;">
+                                    <img src="<?= htmlspecialchars(navbarAbsUrl($link['logo_url'])) ?>" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;margin-right:4px;">
                                 <?php elseif (!empty($link['icon'])): ?>
                                     <i class="<?= htmlspecialchars($link['icon']) ?>"></i>
                                 <?php endif; ?>
@@ -166,7 +179,7 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
                                         <!-- Sub-sub dropdown item -->
                                         <div class="dropdown-item has-submenu" style="<?= $diStyle ?>">
                                             <?php if (!empty($subLink['logo_url'])): ?>
-                                                <img src="<?= htmlspecialchars($subLink['logo_url']) ?>" alt="" style="width:20px;height:20px;object-fit:contain;vertical-align:middle;flex-shrink:0;">
+                                                <img src="<?= htmlspecialchars(navbarAbsUrl($subLink['logo_url'])) ?>" alt="" style="width:20px;height:20px;object-fit:contain;vertical-align:middle;flex-shrink:0;">
                                             <?php elseif (!empty($subLink['icon'])): ?>
                                                 <i class="<?= htmlspecialchars($subLink['icon']) ?>"></i>
                                             <?php endif; ?>
@@ -181,7 +194,7 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
                                                 <?php foreach ($subLink['sub_items'] as $subSubLink): ?>
                                                     <a href="<?= htmlspecialchars($subSubLink['url']) ?>" class="dropdown-item">
                                                         <?php if (!empty($subSubLink['logo_url'])): ?>
-                                                            <img src="<?= htmlspecialchars($subSubLink['logo_url']) ?>" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;flex-shrink:0;">
+                                                            <img src="<?= htmlspecialchars(navbarAbsUrl($subSubLink['logo_url'])) ?>" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;flex-shrink:0;">
                                                         <?php elseif (!empty($subSubLink['icon'])): ?>
                                                             <i class="<?= htmlspecialchars($subSubLink['icon']) ?>"></i>
                                                         <?php endif; ?>
@@ -193,7 +206,7 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
                                     <?php else: ?>
                                         <a href="<?= htmlspecialchars($subLink['url']) ?>" class="dropdown-item" style="<?= $diStyle ?>">
                                             <?php if (!empty($subLink['logo_url'])): ?>
-                                                <img src="<?= htmlspecialchars($subLink['logo_url']) ?>" alt="" style="width:20px;height:20px;object-fit:contain;vertical-align:middle;flex-shrink:0;">
+                                                <img src="<?= htmlspecialchars(navbarAbsUrl($subLink['logo_url'])) ?>" alt="" style="width:20px;height:20px;object-fit:contain;vertical-align:middle;flex-shrink:0;">
                                             <?php elseif (!empty($subLink['icon'])): ?>
                                                 <i class="<?= htmlspecialchars($subLink['icon']) ?>"></i>
                                             <?php endif; ?>
@@ -212,7 +225,7 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
                         <!-- Regular Custom Link -->
                         <a href="<?= htmlspecialchars($link['url']) ?>" class="nav-link">
                             <?php if (!empty($link['logo_url'])): ?>
-                                <img src="<?= htmlspecialchars($link['logo_url']) ?>" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;margin-right:4px;">
+                                <img src="<?= htmlspecialchars(navbarAbsUrl($link['logo_url'])) ?>" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;margin-right:4px;">
                             <?php elseif (!empty($link['icon'])): ?>
                                 <i class="<?= htmlspecialchars($link['icon']) ?>"></i>
                             <?php endif; ?>
@@ -224,7 +237,10 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
             
             <?php if ($isLoggedIn): ?>
                 <!-- Projects Dropdown -->
-                <?php if ($navbarSettings['show_projects_dropdown']): ?>
+                <?php
+                $showProjectsForThisUser = $navbarSettings['show_projects_dropdown'] && (Auth::isAdmin() || !empty($navbarSettings['show_projects_dropdown_to_user']));
+                if ($showProjectsForThisUser):
+                ?>
                 <div class="dropdown nav-item" id="projectsDropdown">
                     <button class="nav-link dropdown-toggle">
                         Projects
@@ -376,11 +392,25 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
 
             <!-- Profile Dropdown — always shown for logged-in users -->
             <div class="dropdown" id="profileDropdown">
-                <button class="nav-link dropdown-toggle">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                        <circle cx="12" cy="7" r="4"/>
-                    </svg>
+                <button class="nav-link dropdown-toggle" style="display:flex;align-items:center;gap:6px;">
+                    <?php
+                    $navbarAvatarPath = $user['avatar'] ?? '';
+                    if (!empty($navbarAvatarPath)):
+                        $navbarAvatarSrc = str_starts_with($navbarAvatarPath, '/') ? $navbarAvatarPath : '/uploads/avatars/' . $navbarAvatarPath;
+                    ?>
+                        <span class="profile-avatar-wrap">
+                            <img src="<?= htmlspecialchars($navbarAvatarSrc) ?>" alt="Avatar" style="width:28px;height:28px;border-radius:50%;object-fit:cover;border:1px solid var(--border-color);display:block;">
+                            <svg class="profile-chevron-badge" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 1l4 4 4-4"/></svg>
+                        </span>
+                    <?php else: ?>
+                        <span class="profile-avatar-wrap">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="border-radius:50%;background:var(--bg-secondary);padding:5px;border:1px solid var(--border-color);">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                <circle cx="12" cy="7" r="4"/>
+                            </svg>
+                            <svg class="profile-chevron-badge" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 1l4 4 4-4"/></svg>
+                        </span>
+                    <?php endif; ?>
                     <?php
                     // Show full name: first word only, max 10 characters
                     $displayName = $user['name'] ?? $user['username'] ?? 'User';
@@ -391,7 +421,7 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
                     }
                     ?>
                     <span class="profile-username"><?= htmlspecialchars($firstName) ?></span>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <svg class="profile-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M6 9l6 6 6-6"/>
                     </svg>
                 </button>
@@ -402,6 +432,13 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
                             <circle cx="12" cy="7" r="4"/>
                         </svg>
                         Profile
+                    </a>
+                    <a href="/security#change-password" class="dropdown-item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        </svg>
+                        Change Password
                     </a>
                     <a href="/settings" class="dropdown-item">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -434,7 +471,8 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
         </div>
     </div>
 </header>
-
+<!-- Navbar overlay: prevents click-through to page content when a popup is open -->
+<div id="nav-overlay" aria-hidden="true"></div>
 <script>
 // Universal Navbar JavaScript
 (function() {
@@ -493,6 +531,20 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
     // Mobile menu elements (declared early so dropdown handlers can reference them)
     const mobileMenuBtn = document.getElementById('mobileMenuBtn');
     const mainNav = document.getElementById('mainNav');
+    const navOverlay = document.getElementById('nav-overlay');
+
+    // Show/hide the nav overlay to intercept clicks on page content behind open popups
+    function showOverlay() {
+        if (navOverlay) navOverlay.style.display = 'block';
+    }
+    function hideOverlay() {
+        if (navOverlay) navOverlay.style.display = 'none';
+    }
+    function isAnyPanelOpen() {
+        return (mainNav && mainNav.classList.contains('active'))
+            || document.querySelector('.dropdown.active') !== null
+            || document.querySelector('.notif-bell-wrap.active') !== null;
+    }
 
     // Dropdown functionality
     const dropdowns = document.querySelectorAll('.dropdown');
@@ -513,6 +565,7 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
                     document.body.classList.remove('mobile-menu-open');
                 }
                 dropdown.classList.toggle('active');
+                if (isAnyPanelOpen()) showOverlay(); else hideOverlay();
             });
         }
     });
@@ -559,12 +612,14 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
                 setTimeout(() => {
                     dropdowns.forEach(d => d.classList.remove('active'));
                     document.querySelectorAll('.has-submenu.active').forEach(s => s.classList.remove('active'));
+                    hideOverlay();
                 }, 100);
             }
         } else {
             // Clicked outside, close all dropdowns and submenus
             dropdowns.forEach(d => d.classList.remove('active'));
             document.querySelectorAll('.has-submenu.active').forEach(s => s.classList.remove('active'));
+            if (!isAnyPanelOpen()) hideOverlay();
         }
     });
     
@@ -581,27 +636,31 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
             }
             mainNav.classList.toggle('active');
             document.body.classList.toggle('mobile-menu-open');
+            if (isAnyPanelOpen()) showOverlay(); else hideOverlay();
         });
-        
-        // Close menu when clicking outside
-        document.addEventListener('click', (e) => {
-            if (mainNav.classList.contains('active')) {
-                const isClickInsideNav = mainNav.contains(e.target);
-                const isClickOnButton = mobileMenuBtn.contains(e.target);
-                
-                if (!isClickInsideNav && !isClickOnButton) {
-                    mainNav.classList.remove('active');
-                    document.body.classList.remove('mobile-menu-open');
-                }
-            }
-        });
-        
+
         // Close menu when clicking on nav links (for better UX on navigation)
         mainNav.querySelectorAll('.nav-link:not(.dropdown-toggle)').forEach(link => {
             link.addEventListener('click', () => {
                 mainNav.classList.remove('active');
                 document.body.classList.remove('mobile-menu-open');
+                hideOverlay();
             });
+        });
+    }
+
+    // Overlay click: close all open panels without letting the click reach page content
+    if (navOverlay) {
+        navOverlay.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdowns.forEach(d => d.classList.remove('active'));
+            document.querySelectorAll('.has-submenu.active').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.notif-bell-wrap.active').forEach(w => w.classList.remove('active'));
+            if (mainNav) {
+                mainNav.classList.remove('active');
+                document.body.classList.remove('mobile-menu-open');
+            }
+            hideOverlay();
         });
     }
 })();
@@ -693,6 +752,12 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
         if (!isOpen) {
             drop && drop.classList.add('active');
             if (!loaded) { loadNotifications(); loaded = true; }
+            // Show overlay to prevent click-through on underlying page elements
+            const overlay = document.getElementById('nav-overlay');
+            if (overlay) overlay.style.display = 'block';
+        } else {
+            const overlay = document.getElementById('nav-overlay');
+            if (overlay) overlay.style.display = 'none';
         }
     });
 
@@ -713,11 +778,15 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
         });
     }
 
-    // Close notification panel when clicking outside
+    // Close notification panel when clicking outside — handled by the nav-overlay
+    // Also keep the legacy document-click handler as a fallback for desktop
     document.addEventListener('click', function(e) {
         const drop = bell.closest('.notif-bell-wrap');
         if (drop && drop.classList.contains('active') && !drop.contains(e.target)) {
             drop.classList.remove('active');
+            const overlay = document.getElementById('nav-overlay');
+            const anyOpen = document.querySelector('.dropdown.active') || document.querySelector('.notif-bell-wrap.active');
+            if (overlay && !anyOpen) overlay.style.display = 'none';
         }
     });
 
@@ -795,6 +864,7 @@ body {
 .universal-header .logo {
     font-size: 1.3rem;
     font-weight: 700;
+    color: var(--cyan); /* fallback if gradient-clip is unsupported */
     background: linear-gradient(135deg, var(--cyan), var(--magenta));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -1155,6 +1225,69 @@ html:not([data-theme="light"]) .universal-header .dropdown-item:hover {
 .theme-toggle:hover {
     background: var(--hover-bg);
     border-color: var(--cyan);
+}
+
+/* On mobile: hide profile dropdown chevron and username to save space;
+   show a compact chevron badge overlaid on the avatar instead */
+@media (max-width: 768px) {
+    .header-end-actions #profileDropdown .dropdown-toggle .profile-chevron {
+        display: none;
+    }
+    .header-end-actions #profileDropdown .dropdown-toggle .profile-username {
+        display: none;
+    }
+    /* Show the badge chevron only on mobile */
+    .profile-chevron-badge {
+        display: block !important;
+    }
+    /* Reduce padding on hamburger button on mobile */
+    .mobile-menu-btn {
+        padding: 6px;
+    }
+}
+
+/* On tablet too */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .header-end-actions #profileDropdown .dropdown-toggle .profile-chevron {
+        display: none;
+    }
+    .profile-chevron-badge {
+        display: block !important;
+    }
+}
+
+/* Profile avatar wrapper — positions the chevron badge */
+.profile-avatar-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* Badge chevron: small, overlaid at the bottom-right of the avatar */
+.profile-chevron-badge {
+    display: none; /* hidden on desktop; shown on mobile via media query */
+    position: absolute;
+    bottom: -3px;
+    right: -3px;
+    width: 12px;
+    height: 8px;
+    color: var(--text-primary);
+    opacity: 0.75;
+    background: var(--bg-card, #16161a);
+    border-radius: 3px;
+    padding: 1px;
+}
+
+/* Navbar overlay: intercepts clicks on page content when any popup is open */
+#nav-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9998; /* above page content, below header (9999) */
+    background: transparent;
+    cursor: default;
 }
 
 .mobile-menu-btn {

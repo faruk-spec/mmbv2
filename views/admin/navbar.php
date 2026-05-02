@@ -387,6 +387,14 @@
                 </label>
                 <span>Show Projects Dropdown</span>
             </div>
+
+            <div class="switch-container">
+                <label class="switch">
+                    <input type="checkbox" name="show_projects_dropdown_to_user" <?= !empty($settings['show_projects_dropdown_to_user']) ? 'checked' : '' ?>>
+                    <span class="slider"></span>
+                </label>
+                <span>Show Projects Dropdown to User (non-admin users)</span>
+            </div>
             
             <div class="switch-container">
                 <label class="switch">
