@@ -377,11 +377,6 @@
         </div>
         <?php endif; ?>
 
-        <div class="rx-sidebar-upgrade">
-            <h4>Upgrade to Pro</h4>
-            <p>Unlock unlimited resumes, AI writing, premium templates and more.</p>
-            <a href="/projects/resumex/plans" class="rx-upgrade-btn">View Plans</a>
-        </div>
     </aside>
 
     <!-- Main Content -->

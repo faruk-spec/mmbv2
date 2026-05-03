@@ -84,6 +84,14 @@ input:checked + .toggle-slider:before { transform:translateX(22px); }
                     </select>
                 </div>
                 <div>
+                    <label style="font-size:12px;color:var(--text-secondary);">Cancel Window (Days)</label>
+                    <input type="number" name="cancel_days" class="form-control" value="0" min="0">
+                </div>
+                <div>
+                    <label style="font-size:12px;color:var(--text-secondary);">Refund Window (Days)</label>
+                    <input type="number" name="refund_days" class="form-control" value="0" min="0">
+                </div>
+                <div>
                     <label style="font-size:12px;color:var(--text-secondary);">Max Static QR (-1=unlimited)</label>
                     <input type="number" name="max_static_qr" class="form-control" value="10">
                 </div>
@@ -128,6 +136,8 @@ input:checked + .toggle-slider:before { transform:translateX(22px); }
                     $cur   = View::e($plan['currency'] ?? 'USD');
                     echo $price > 0 ? $cur . ' ' . number_format($price, 2) . ' / ' . View::e($plan['billing_cycle'] ?? '') : 'Free';
                     ?>
+                    &bull; Cancel: <?= (int)($plan['cancel_days'] ?? 0) ?>d
+                    &bull; Refund: <?= (int)($plan['refund_days'] ?? 0) ?>d
                     &bull; <?= (int)($plan['subscriber_count'] ?? 0) ?> active subscriber(s) &bull;
                     <span class="badge <?= $plan['status'] === 'active' ? 'badge-success' : 'badge-danger' ?>"><?= ucfirst($plan['status']) ?></span>
                 </p>
@@ -176,6 +186,14 @@ input:checked + .toggle-slider:before { transform:translateX(22px); }
                             <option value="<?= $bc ?>" <?= ($plan['billing_cycle'] ?? 'lifetime') === $bc ? 'selected' : '' ?>><?= ucfirst($bc) ?></option>
                             <?php endforeach; ?>
                         </select>
+                    </div>
+                    <div>
+                        <label style="font-size:12px;color:var(--text-secondary);">Cancel Window (Days)</label>
+                        <input type="number" name="cancel_days" class="form-control" value="<?= (int)($plan['cancel_days'] ?? 0) ?>" min="0">
+                    </div>
+                    <div>
+                        <label style="font-size:12px;color:var(--text-secondary);">Refund Window (Days)</label>
+                        <input type="number" name="refund_days" class="form-control" value="<?= (int)($plan['refund_days'] ?? 0) ?>" min="0">
                     </div>
                     <div>
                         <label style="font-size:12px;color:var(--text-secondary);">Max Static QR (-1 = unlimited)</label>

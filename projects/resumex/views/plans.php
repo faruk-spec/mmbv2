@@ -36,6 +36,16 @@
 .badge-cancelled { background: rgba(255,107,107,.15); color: var(--red); padding: 3px 10px; border-radius: 20px; font-size: .72rem; font-weight: 600; }
 .badge-trial   { background: rgba(245,158,11,.15); color: #f59e0b; padding: 3px 10px; border-radius: 20px; font-size: .72rem; font-weight: 600; }
 .badge-pending { background: rgba(0,240,255,.15); color: var(--cyan); padding: 3px 10px; border-radius: 20px; font-size: .72rem; font-weight: 600; }
+.rx-billing-layout { display:grid; grid-template-columns:260px minmax(0,1fr); gap:24px; align-items:start; }
+.rx-billing-sidebar { position:sticky; top:90px; background:var(--bg-card); border:1px solid var(--border-color); border-radius:18px; padding:18px; }
+.rx-billing-brand { display:flex; align-items:center; gap:12px; margin-bottom:18px; }
+.rx-billing-brand-icon { width:40px; height:40px; border-radius:12px; background:linear-gradient(135deg,#ff6b6b,#9945ff); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800; }
+.rx-billing-link { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px; color:var(--text-secondary); text-decoration:none; margin-bottom:6px; transition:all .2s; }
+.rx-billing-link:hover, .rx-billing-link.active { background:rgba(153,69,255,.12); color:var(--text-primary); }
+@media (max-width: 960px) {
+    .rx-billing-layout { grid-template-columns:1fr; }
+    .rx-billing-sidebar { position:static; top:auto; }
+}
 </style>
 <?php View::endSection(); ?>
 
@@ -47,6 +57,21 @@
 <?php if (isset($_SESSION['_flash']['error'])): ?>
 <div class="alert alert-error"><?= htmlspecialchars($_SESSION['_flash']['error']) ?></div>
 <?php unset($_SESSION['_flash']['error']); endif; ?>
+
+<div class="rx-billing-layout">
+    <aside class="rx-billing-sidebar">
+        <div class="rx-billing-brand">
+            <div class="rx-billing-brand-icon">RX</div>
+            <div>
+                <div style="font-weight:700;">ResumeX</div>
+                <div style="font-size:.78rem;color:var(--text-secondary);">Billing Workspace</div>
+            </div>
+        </div>
+        <a href="/projects/resumex" class="rx-billing-link"><i class="fas fa-th-large"></i> Dashboard</a>
+        <a href="/projects/resumex/create" class="rx-billing-link"><i class="fas fa-plus-circle"></i> New Resume</a>
+        <a href="/projects/resumex/templates" class="rx-billing-link"><i class="fas fa-file-alt"></i> Templates</a>
+        <a href="/projects/resumex/plans" class="rx-billing-link active"><i class="fas fa-credit-card"></i> Plans &amp; Billing</a>
+    </aside>
 
 <div class="rx-plans-page">
     <div style="margin-bottom:24px;display:flex;justify-content:space-between;align-items:flex-start;">
@@ -205,6 +230,7 @@
         <?php endforeach; ?>
     </div>
     <?php endif; ?>
+</div>
 </div>
 
 <?php View::endSection(); ?>

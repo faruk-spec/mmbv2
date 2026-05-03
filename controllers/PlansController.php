@@ -27,6 +27,7 @@ class PlansController extends BaseController
     private const APP_META = [
         'qr'        => ['name' => 'QR Generator',   'color' => '#9945ff', 'icon' => 'qr_code',      'url' => '/projects/qr'],
         'whatsapp'  => ['name' => 'WhatsApp API',    'color' => '#25D366', 'icon' => 'chat',         'url' => '/projects/whatsapp'],
+        'convertx'  => ['name' => 'ConvertX',        'color' => '#6366f1', 'icon' => 'swap_horiz',   'url' => '/projects/convertx'],
         'proshare'  => ['name' => 'ProShare',        'color' => '#ffaa00', 'icon' => 'share',        'url' => '/projects/proshare'],
         'codexpro'  => ['name' => 'CodeXPro',        'color' => '#00f0ff', 'icon' => 'code',         'url' => '/projects/codexpro'],
         'resumex'   => ['name' => 'ResumeX',         'color' => '#ff6b6b', 'icon' => 'description', 'url' => '/projects/resumex'],
@@ -58,7 +59,7 @@ class PlansController extends BaseController
         // ── User's active platform subscription(s) ────────────────────────────
         $userPlatformSubs = $this->getUserPlatformSubscriptions($userId);
         $platformHistory = $this->getPlatformSubscriptionHistory($userId);
-        $paymentHistory = $this->subscriptionService->getUserPayments($userId, 'platform');
+        $paymentHistory = $this->subscriptionService->getUserPayments($userId);
         $paymentSettings = $this->subscriptionService->getPaymentSettings();
 
         // Map plan_id → subscription so the view can check if a plan is active
@@ -254,6 +255,8 @@ class PlansController extends BaseController
             'title' => 'Subscription Payment',
             'payment' => $payment,
             'paymentSettings' => $this->subscriptionService->getPaymentSettings(),
+            'canCancel' => $this->subscriptionService->canCancelPayment($payment),
+            'canRefund' => $this->subscriptionService->canRequestRefund($payment),
         ]);
     }
 
@@ -271,6 +274,160 @@ class PlansController extends BaseController
             $this->flash('error', 'Unable to update payment status.');
         }
 
+        $this->redirect('/plans/payment/' . (int) $id);
+    }
+
+    public function appSubscribe(string $app, string $slug): void
+    {
+        $plan = $this->subscriptionService->getAppPlan($app, $slug);
+        if (!$plan) {
+            $this->flash('error', 'Subscription plan not found.');
+            $this->redirect('/plans');
+            return;
+        }
+
+        $existing = $this->subscriptionService->getCurrentSubscription($app, Auth::id());
+        $this->view('dashboard/app-plan-subscribe', [
+            'title' => 'Subscribe to ' . ucfirst($app) . ' Plan',
+            'plan' => $plan,
+            'app' => $app,
+            'appMeta' => self::APP_META[$app] ?? ['name' => ucfirst($app), 'url' => '/plans'],
+            'existing' => $existing,
+            'paymentSettings' => $this->subscriptionService->getPaymentSettings(),
+        ]);
+    }
+
+    public function processAppSubscribe(string $app, string $slug): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request token.');
+            $this->redirect('/plans/project/' . urlencode($app) . '/' . urlencode($slug));
+            return;
+        }
+
+        $plan = $this->subscriptionService->getAppPlan($app, $slug);
+        if (!$plan) {
+            $this->flash('error', 'Subscription plan not found.');
+            $this->redirect('/plans');
+            return;
+        }
+
+        $paymentSettings = $this->subscriptionService->getPaymentSettings();
+        $paymentMethod = $_POST['payment_method'] ?? ($paymentSettings['payment_method'] ?? 'request');
+        $user = Auth::user();
+        $policy = [
+            'cancel_days' => (int) ($plan['cancel_days'] ?? 0),
+            'refund_days' => (int) ($plan['refund_days'] ?? 0),
+        ];
+
+        if ((float) ($plan['price'] ?? 0) === 0.0) {
+            $payment = $this->subscriptionService->createOrReusePayment([
+                'user_id' => Auth::id(),
+                'app_key' => $app,
+                'plan_id' => (int) $plan['id'],
+                'plan_name' => (string) $plan['name'],
+                'billing_cycle' => (string) ($plan['billing_cycle'] ?? 'free'),
+                'gateway' => 'request',
+                'status' => 'paid',
+                'amount' => 0,
+                'currency' => (string) ($plan['currency'] ?? 'USD'),
+                'metadata' => $policy,
+            ]);
+            $this->subscriptionService->approvePayment((int) $payment['id'], Auth::id());
+            $this->flash('success', 'Your free plan is now active.');
+            $this->redirect(self::APP_META[$app]['url'] ?? '/plans');
+            return;
+        }
+
+        $paymentTitle = preg_replace('/[^a-zA-Z0-9 .,_-]/', '', (string) $plan['name']) ?: 'Plan';
+        $payment = $this->subscriptionService->createOrReusePayment([
+            'user_id' => Auth::id(),
+            'app_key' => $app,
+            'plan_id' => (int) $plan['id'],
+            'plan_name' => (string) $plan['name'],
+            'billing_cycle' => (string) ($plan['billing_cycle'] ?? (($plan['duration_days'] ?? 30) . ' days')),
+            'gateway' => in_array($paymentMethod, ['upi', 'cashfree'], true) ? $paymentMethod : 'request',
+            'status' => $paymentMethod === 'request' ? 'verification_pending' : 'pending',
+            'amount' => (float) $plan['price'],
+            'currency' => (string) ($plan['currency'] ?? ($paymentSettings['payment_currency'] ?? 'USD')),
+            'payment_payload' => $paymentMethod === 'upi' && !empty($paymentSettings['payment_upi_id'])
+                ? 'upi://pay?' . http_build_query([
+                    'pa' => $paymentSettings['payment_upi_id'],
+                    'pn' => self::APP_META[$app]['name'] ?? ucfirst($app),
+                    'am' => sprintf('%.2f', (float) $plan['price']),
+                    'cu' => $plan['currency'] ?? ($paymentSettings['payment_currency'] ?? 'USD'),
+                    'tn' => $paymentTitle . ' Plan',
+                ])
+                : null,
+            'metadata' => array_merge($policy, ['plan_slug' => $plan['slug'] ?? $slug]),
+        ]);
+
+        if ($paymentMethod === 'cashfree'
+            && ($paymentSettings['payment_cashfree_enabled'] ?? '0') === '1'
+            && !empty($paymentSettings['payment_cashfree_app_id'])
+            && !empty($paymentSettings['payment_cashfree_secret'])
+        ) {
+            $result = $this->subscriptionService->createCashfreeOrder(
+                $payment,
+                $paymentSettings,
+                [
+                    'name' => $user['name'] ?? 'Customer',
+                    'email' => $user['email'] ?? '',
+                    'phone' => $user['phone'] ?? '9999999999',
+                ],
+                $this->buildAbsoluteUrl('/plans/payment/' . (int) $payment['id'] . '/return')
+            );
+            if (!$result['success']) {
+                $this->flash('error', $result['message'] ?? 'Unable to start payment.');
+                $this->redirect('/plans/project/' . urlencode($app) . '/' . urlencode($slug));
+                return;
+            }
+        }
+
+        $this->flash('success', 'Subscription request created. Complete payment to activate.');
+        $this->redirect('/plans/payment/' . (int) $payment['id']);
+    }
+
+    public function paymentInvoice(string $id): void
+    {
+        $payment = $this->subscriptionService->getUserPayment((int) $id, Auth::id());
+        if (!$payment) {
+            $this->flash('error', 'Invoice not found.');
+            $this->redirect('/plans');
+            return;
+        }
+        header('Content-Type: text/html; charset=utf-8');
+        echo $this->subscriptionService->renderInvoiceHtmlForPayment($payment, Auth::user());
+        exit;
+    }
+
+    public function cancelPaymentSubscription(string $id): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request token.');
+            $this->redirect('/plans/payment/' . (int) $id);
+            return;
+        }
+        if ($this->subscriptionService->cancelSubscriptionByPayment((int) $id, Auth::id())) {
+            $this->flash('success', 'Subscription cancelled.');
+        } else {
+            $this->flash('error', 'Unable to cancel this subscription.');
+        }
+        $this->redirect('/plans/payment/' . (int) $id);
+    }
+
+    public function requestRefund(string $id): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request token.');
+            $this->redirect('/plans/payment/' . (int) $id);
+            return;
+        }
+        if ($this->subscriptionService->requestRefund((int) $id, Auth::id())) {
+            $this->flash('success', 'Refund request submitted.');
+        } else {
+            $this->flash('error', 'Refund request is not available for this payment.');
+        }
         $this->redirect('/plans/payment/' . (int) $id);
     }
 
@@ -343,13 +500,35 @@ class PlansController extends BaseController
             // Table may not exist yet
         }
 
+        // ConvertX
+        try {
+            $row = $this->db->fetch(
+                "SELECT s.*, p.name plan_name, p.slug plan_slug, p.price, p.currency, p.billing_cycle,
+                        p.max_jobs_per_month, p.max_file_size_mb, p.max_batch_size, p.features, s.expires_at
+                 FROM convertx_user_subscriptions s
+                 JOIN convertx_subscription_plans p ON p.id = s.plan_id
+                 WHERE s.user_id = ? AND s.status = 'active'
+                 ORDER BY s.started_at DESC LIMIT 1",
+                [$userId]
+            );
+            if ($row) {
+                $row['app_key'] = 'convertx';
+                $row['features'] = $this->decodeFeatures($row['features'] ?? '');
+                $subs['convertx'] = $row;
+            }
+        } catch (\Exception $e) {
+        }
+
         // WhatsApp
         try {
             $row = $this->db->fetch(
-                "SELECT s.*, p.name plan_name, p.plan_type plan_slug, p.price, p.billing_cycle,
-                        p.max_sessions, p.max_messages_per_day
+                "SELECT s.*, p.id AS plan_id, p.name AS plan_name, LOWER(REPLACE(REPLACE(p.name, ' Plan', ''), ' ', '-')) AS plan_slug, p.price, p.currency,
+                        CONCAT(p.duration_days, ' days') AS billing_cycle,
+                        p.sessions_limit AS max_sessions, p.messages_limit AS max_messages_per_day,
+                        s.start_date AS started_at, s.end_date AS expires_at
                  FROM whatsapp_subscriptions s
-                 JOIN whatsapp_subscription_plans p ON p.id = s.plan_id
+                 LEFT JOIN whatsapp_subscription_plans p
+                   ON p.id = COALESCE(s.plan_id, (SELECT id FROM whatsapp_subscription_plans WHERE LOWER(REPLACE(REPLACE(name, ' Plan', ''), ' ', '-')) = s.plan_type LIMIT 1))
                  WHERE s.user_id = ? AND s.status = 'active'
                  ORDER BY s.created_at DESC LIMIT 1",
                 [$userId]
@@ -521,117 +700,33 @@ class PlansController extends BaseController
         }
 
         $user = Auth::user();
+        $payment = $this->db->fetch(
+            "SELECT * FROM subscription_payments
+             WHERE user_id = ? AND app_key = 'platform' AND subscription_id = ?
+             ORDER BY id DESC LIMIT 1",
+            [$userId, $subId]
+        );
+        if (!$payment) {
+            $payment = [
+                'id' => $sub['id'],
+                'app_key' => 'platform',
+                'subscription_id' => $sub['id'],
+                'plan_name' => $sub['plan_name'],
+                'billing_cycle' => $sub['billing_cycle'],
+                'amount' => $sub['price'],
+                'currency' => $sub['currency'] ?? 'USD',
+                'invoice_no' => 'INV-' . strtoupper(substr(md5($sub['id'] . $sub['started_at']), 0, 8)),
+                'paid_at' => $sub['started_at'],
+                'created_at' => $sub['started_at'],
+                'expires_at' => $sub['expires_at'],
+                'status' => $sub['status'],
+            ];
+        }
 
-        // Generate simple HTML invoice
-        $invoiceHtml = $this->renderInvoiceHtml($sub, $user);
+        $invoiceHtml = $this->subscriptionService->renderInvoiceHtmlForPayment($payment, $user);
         header('Content-Type: text/html; charset=utf-8');
         echo $invoiceHtml;
         exit;
-    }
-
-    private function renderInvoiceHtml(array $sub, array $user): string
-    {
-        $cur      = htmlspecialchars($sub['currency'] ?? 'USD');
-        $price    = number_format((float)$sub['price'], 2);
-        $isFree   = (float)$sub['price'] === 0.0;
-        $invoiceNo = 'INV-' . strtoupper(substr(md5($sub['id'] . $sub['started_at']), 0, 8));
-        $date     = date('F j, Y', strtotime($sub['started_at']));
-        $expiry   = $sub['expires_at'] ? date('F j, Y', strtotime($sub['expires_at'])) : 'Lifetime';
-        $userName = htmlspecialchars($user['name'] ?? $user['username'] ?? 'User');
-        $userEmail= htmlspecialchars($user['email'] ?? '');
-        $planName = htmlspecialchars($sub['plan_name']);
-        $billing  = htmlspecialchars($sub['billing_cycle']);
-        $status   = htmlspecialchars($sub['status']);
-        $noPayment = $isFree ? 'This is a complimentary plan — no payment required.' : 'Payment is processed by your administrator.';
-
-        return <<<HTML
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>Invoice {$invoiceNo}</title>
-<style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Segoe UI', Arial, sans-serif; background: #fff; color: #1a1a2e; padding: 40px; max-width: 700px; margin: 0 auto; }
-.invoice-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; border-bottom: 2px solid #0077cc; padding-bottom: 24px; }
-.brand { font-size: 1.5rem; font-weight: 800; color: #0077cc; }
-.inv-meta { text-align: right; }
-.inv-meta h2 { font-size: 1.1rem; color: #0077cc; }
-.inv-meta p { font-size: .85rem; color: #666; margin-top: 4px; }
-.section { margin-bottom: 28px; }
-.section-title { font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: #888; margin-bottom: 8px; }
-.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-.info-block p { font-size: .9rem; line-height: 1.6; }
-.info-block strong { display: block; font-size: .78rem; color: #888; margin-bottom: 2px; }
-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-th { background: #f0f4ff; padding: 10px 14px; text-align: left; font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #444; }
-td { padding: 12px 14px; border-bottom: 1px solid #e8edf5; font-size: .9rem; }
-.total-row td { font-weight: 700; font-size: 1rem; background: #f8faff; }
-.status-badge { background: #e6ffed; color: #1a7a3e; padding: 3px 12px; border-radius: 20px; font-size: .78rem; font-weight: 700; }
-.footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e8edf5; font-size: .78rem; color: #999; text-align: center; }
-@media print { body { padding: 20px; } }
-</style>
-</head>
-<body>
-<div class="invoice-header">
-    <div>
-        <div class="brand">MMB Platform</div>
-        <div style="font-size:.82rem;color:#666;margin-top:4px;">Subscription Invoice</div>
-    </div>
-    <div class="inv-meta">
-        <h2>{$invoiceNo}</h2>
-        <p>Issued: {$date}</p>
-    </div>
-</div>
-
-<div class="section info-grid">
-    <div class="info-block">
-        <div class="section-title">Bill To</div>
-        <p><strong>Name</strong>{$userName}</p>
-        <p><strong>Email</strong>{$userEmail}</p>
-    </div>
-    <div class="info-block">
-        <div class="section-title">Subscription Details</div>
-        <p><strong>Plan</strong>{$planName}</p>
-        <p><strong>Started</strong>{$date}</p>
-        <p><strong>Expires</strong>{$expiry}</p>
-        <p><strong>Status</strong><span class="status-badge">{$status}</span></p>
-    </div>
-</div>
-
-<div class="section">
-    <table>
-        <thead>
-            <tr>
-                <th>Description</th>
-                <th>Billing</th>
-                <th style="text-align:right;">Amount</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>{$planName} Subscription</td>
-                <td>{$billing}</td>
-                <td style="text-align:right;">{$cur} {$price}</td>
-            </tr>
-        </tbody>
-        <tfoot>
-            <tr class="total-row">
-                <td colspan="2">Total</td>
-                <td style="text-align:right;">{$cur} {$price}</td>
-            </tr>
-        </tfoot>
-    </table>
-    <p style="font-size:.8rem;color:#666;">{$noPayment}</p>
-</div>
-
-<div class="footer">
-    Thank you for using MMB Platform &bull; This is a computer-generated invoice &bull; No signature required<br>
-    <button onclick="window.print()" style="color:#0077cc;background:none;border:none;cursor:pointer;font-size:.78rem;padding:0;text-decoration:underline;">🖨 Print / Save as PDF</button>
-</div>
-</body>
-</html>
-HTML;
     }
 
     private function buildAbsoluteUrl(string $path): string

@@ -37,7 +37,7 @@ use Core\Auth;
             <div>
                 <div style="font-weight:700;font-size:1.1rem;color:var(--purple);"><?= htmlspecialchars($qrSub['plan_name']) ?></div>
                 <div style="font-size:.82rem;color:var(--text-secondary);margin-top:4px;">
-                    <?= $qrSub['price'] == 0 ? 'Free' : ('$' . number_format((float)$qrSub['price'], 2) . ' / ' . htmlspecialchars($qrSub['billing_cycle'])) ?>
+                    <?= $qrSub['price'] == 0 ? 'Free' : (htmlspecialchars($qrSub['currency'] ?? 'USD') . ' ' . number_format((float)$qrSub['price'], 2) . ' / ' . htmlspecialchars($qrSub['billing_cycle'])) ?>
                     &middot; Active since <?= date('M j, Y', strtotime($qrSub['started_at'])) ?>
                     <?php if (!empty($qrSub['expires_at'])): ?>
                         &middot; Expires <?= date('M j, Y', strtotime($qrSub['expires_at'])) ?>
@@ -132,7 +132,7 @@ use Core\Auth;
                 <div>
                     <div style="font-weight:700;font-size:1rem;color:var(--purple);"><?= htmlspecialchars($qrPlan['name']) ?></div>
                     <div style="font-size:1.3rem;font-weight:800;margin-top:4px;">
-                        <?= $isFree ? 'Free' : ('$' . number_format((float)$qrPlan['price'], 2)) ?>
+                        <?= $isFree ? 'Free' : (htmlspecialchars($qrPlan['currency'] ?? 'USD') . ' ' . number_format((float)$qrPlan['price'], 2)) ?>
                         <?php if (!$isFree): ?>
                         <span style="font-size:.75rem;font-weight:400;color:var(--text-secondary);">/ <?= htmlspecialchars($qrPlan['billing_cycle'] ?? 'month') ?></span>
                         <?php endif; ?>
@@ -183,7 +183,7 @@ use Core\Auth;
                 Default free tier
             </div>
             <?php else: ?>
-            <a href="/plans/subscribe/<?= urlencode($planSlug) ?>?app=qr"
+            <a href="/plans/project/qr/<?= urlencode($planSlug) ?>"
                style="display:block;width:100%;padding:9px;background:linear-gradient(135deg,var(--purple),var(--cyan));border-radius:6px;text-align:center;font-size:.82rem;font-weight:700;color:#000;text-decoration:none;">
                 Upgrade to <?= htmlspecialchars($qrPlan['name']) ?>
             </a>
@@ -195,4 +195,57 @@ use Core\Auth;
 </section>
 <?php endif; ?>
 
+<?php if (!empty($qrHistory)): ?>
+<section style="margin-bottom:32px;">
+    <h2 style="font-size:1rem;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg>
+        Subscription History
+    </h2>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+        <?php foreach ($qrHistory as $history): ?>
+        <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:10px;padding:14px 18px;display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;">
+            <div>
+                <strong><?= htmlspecialchars($history['plan_name']) ?></strong>
+                <div style="font-size:.78rem;color:var(--text-secondary);margin-top:4px;">
+                    <?= htmlspecialchars($history['currency'] ?? 'USD') ?> <?= number_format((float) ($history['price'] ?? 0), 2) ?> / <?= htmlspecialchars($history['billing_cycle'] ?? 'monthly') ?>
+                    &middot; Started <?= date('M j, Y', strtotime($history['started_at'])) ?>
+                    <?php if (!empty($history['expires_at'])): ?> &middot; Expires <?= date('M j, Y', strtotime($history['expires_at'])) ?><?php endif; ?>
+                </div>
+            </div>
+            <span style="padding:4px 12px;border-radius:999px;font-size:.75rem;font-weight:600;background:<?= ($history['status'] ?? '') === 'active' ? 'rgba(0,255,136,.12)' : 'rgba(255,170,0,.12)' ?>;color:<?= ($history['status'] ?? '') === 'active' ? 'var(--green)' : '#ffaa00' ?>;">
+                <?= htmlspecialchars(ucfirst($history['status'] ?? 'unknown')) ?>
+            </span>
+            <div style="display:flex;gap:8px;">
+                <?php foreach (($paymentHistory ?? []) as $payment): if ((int) ($payment['subscription_id'] ?? 0) !== (int) ($history['id'] ?? 0)) continue; ?>
+                <a href="/plans/payment/<?= (int) $payment['id'] ?>/invoice" class="btn btn-secondary btn-sm">Invoice</a>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php endforeach; ?>
+    </div>
+</section>
+<?php endif; ?>
+
+<?php if (!empty($paymentHistory)): ?>
+<section>
+    <h2 style="font-size:1rem;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--magenta)" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+        Payment History
+    </h2>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+        <?php foreach ($paymentHistory as $payment): ?>
+        <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:10px;padding:14px 18px;display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;">
+            <div>
+                <strong><?= htmlspecialchars($payment['plan_name']) ?></strong>
+                <div style="font-size:.78rem;color:var(--text-secondary);margin-top:4px;"><?= htmlspecialchars($payment['currency']) ?> <?= number_format((float) $payment['amount'], 2) ?> &middot; <?= strtoupper(htmlspecialchars($payment['gateway'])) ?> &middot; Ref <?= htmlspecialchars($payment['reference']) ?></div>
+            </div>
+            <span style="padding:4px 12px;border-radius:999px;font-size:.75rem;font-weight:600;background:<?= ($payment['status'] ?? '') === 'paid' ? 'rgba(0,255,136,.12)' : 'rgba(0,240,255,.12)' ?>;color:<?= ($payment['status'] ?? '') === 'paid' ? 'var(--green)' : 'var(--cyan)' ?>;">
+                <?= htmlspecialchars(ucfirst(str_replace('_', ' ', $payment['status'] ?? 'pending'))) ?>
+            </span>
+            <a href="/plans/payment/<?= (int) $payment['id'] ?>" class="btn btn-secondary btn-sm">View</a>
+        </div>
+        <?php endforeach; ?>
+    </div>
+</section>
+<?php endif; ?>
 

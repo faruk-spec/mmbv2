@@ -239,6 +239,9 @@
                     <?= $plan['currency'] ?> <?= number_format($plan['price'], 2) ?>
                     <small>/ <?= $plan['duration_days'] ?> days</small>
                 </div>
+                <div style="font-size:.82rem;color:var(--text-secondary);margin-top:6px;">
+                    Cancel: <?= (int) ($plan['cancel_days'] ?? 0) ?> day(s) &middot; Refund: <?= (int) ($plan['refund_days'] ?? 0) ?> day(s)
+                </div>
             </div>
             
             <?php if ($plan['description']): ?>

@@ -14,6 +14,7 @@ use Core\View;
 use Core\Database;
 use Core\Security;
 use Core\ActivityLogger;
+use Core\SubscriptionService;
 
 class WhatsAppSubscriptionController
 {
@@ -22,6 +23,7 @@ class WhatsAppSubscriptionController
     public function __construct()
     {
         $this->db = Database::getInstance();
+        (new SubscriptionService($this->db))->ensureInfrastructure();
 
         if (!Auth::check()) {
             header('Location: /login');
@@ -110,6 +112,8 @@ class WhatsAppSubscriptionController
         $sessions_limit = intval($_POST['sessions_limit'] ?? 0);
         $api_calls_limit = intval($_POST['api_calls_limit'] ?? 0);
         $duration_days = intval($_POST['duration_days'] ?? 30);
+        $cancel_days = max(0, intval($_POST['cancel_days'] ?? 0));
+        $refund_days = max(0, intval($_POST['refund_days'] ?? 0));
         $is_active = isset($_POST['is_active']) ? 1 : 0;
         
         // Validation
@@ -122,9 +126,9 @@ class WhatsAppSubscriptionController
         // Insert plan
         $this->db->query("
             INSERT INTO whatsapp_subscription_plans 
-            (name, description, price, currency, messages_limit, sessions_limit, api_calls_limit, duration_days, is_active)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ", [$name, $description, $price, $currency, $messages_limit, $sessions_limit, $api_calls_limit, $duration_days, $is_active]);
+            (name, slug, description, price, currency, messages_limit, sessions_limit, api_calls_limit, duration_days, cancel_days, refund_days, is_active)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ", [$name, strtolower(trim(preg_replace('/[^a-z0-9]+/', '-', str_replace(' plan', '', strtolower($name))), '-')), $description, $price, $currency, $messages_limit, $sessions_limit, $api_calls_limit, $duration_days, $cancel_days, $refund_days, $is_active]);
         
         try { ActivityLogger::logCreate(Auth::id(), 'whatsapp', 'subscription_plan', null, ['name' => $name, 'price' => $price]); } catch (\Throwable $_) {}
         $_SESSION['success'] = 'Subscription plan created successfully';
@@ -186,6 +190,8 @@ class WhatsAppSubscriptionController
         $sessions_limit = intval($_POST['sessions_limit'] ?? 0);
         $api_calls_limit = intval($_POST['api_calls_limit'] ?? 0);
         $duration_days = intval($_POST['duration_days'] ?? 30);
+        $cancel_days = max(0, intval($_POST['cancel_days'] ?? 0));
+        $refund_days = max(0, intval($_POST['refund_days'] ?? 0));
         $is_active = isset($_POST['is_active']) ? 1 : 0;
         
         // Validation
@@ -200,9 +206,9 @@ class WhatsAppSubscriptionController
             UPDATE whatsapp_subscription_plans 
             SET name = ?, description = ?, price = ?, currency = ?, 
                 messages_limit = ?, sessions_limit = ?, api_calls_limit = ?, 
-                duration_days = ?, is_active = ?
+                duration_days = ?, cancel_days = ?, refund_days = ?, slug = ?, is_active = ?
             WHERE id = ?
-        ", [$name, $description, $price, $currency, $messages_limit, $sessions_limit, $api_calls_limit, $duration_days, $is_active, $id]);
+        ", [$name, $description, $price, $currency, $messages_limit, $sessions_limit, $api_calls_limit, $duration_days, $cancel_days, $refund_days, strtolower(trim(preg_replace('/[^a-z0-9]+/', '-', str_replace(' plan', '', strtolower($name))), '-')), $is_active, $id]);
         
         try { ActivityLogger::logUpdate(Auth::id(), 'whatsapp', 'subscription_plan', $id, [], ['name' => $name, 'price' => $price]); } catch (\Throwable $_) {}
         $_SESSION['success'] = 'Subscription plan updated successfully';

@@ -92,6 +92,14 @@ input:checked + .toggle-slider:before { transform:translateX(22px); }
                     </select>
                 </div>
                 <div>
+                    <label style="font-size:12px;color:var(--text-secondary);">Cancel Window (Days)</label>
+                    <input type="number" name="cancel_days" class="form-control" value="0" min="0">
+                </div>
+                <div>
+                    <label style="font-size:12px;color:var(--text-secondary);">Refund Window (Days)</label>
+                    <input type="number" name="refund_days" class="form-control" value="0" min="0">
+                </div>
+                <div>
                     <label style="font-size:12px;color:var(--text-secondary);">Max Resumes (0 = unlimited)</label>
                     <input type="number" name="max_resumes" class="form-control" value="5">
                 </div>
@@ -139,6 +147,8 @@ $featureLabels = [
                     $cur   = View::e($plan['currency'] ?? 'USD');
                     echo $price > 0 ? $cur . ' ' . number_format($price, 2) . ' / ' . View::e($plan['billing_cycle'] ?? '') : 'Free';
                     ?>
+                    &bull; Cancel: <?= (int)($plan['cancel_days'] ?? 0) ?>d
+                    &bull; Refund: <?= (int)($plan['refund_days'] ?? 0) ?>d
                     &bull; Max resumes: <?= $plan['max_resumes'] == 0 ? '&#8734; Unlimited' : (int)$plan['max_resumes'] ?>
                     &bull; <?= (int)($plan['subscriber_count'] ?? 0) ?> subscriber(s) &bull;
                     <span class="badge <?= $plan['status'] === 'active' ? 'badge-success' : 'badge-danger' ?>"><?= ucfirst($plan['status']) ?></span>
@@ -191,6 +201,14 @@ $featureLabels = [
                             <option value="<?= $bc ?>" <?= ($plan['billing_cycle'] ?? 'monthly') === $bc ? 'selected' : '' ?>><?= ucfirst($bc) ?></option>
                             <?php endforeach; ?>
                         </select>
+                    </div>
+                    <div>
+                        <label style="font-size:12px;color:var(--text-secondary);">Cancel Window (Days)</label>
+                        <input type="number" name="cancel_days" class="form-control" value="<?= (int)($plan['cancel_days'] ?? 0) ?>" min="0">
+                    </div>
+                    <div>
+                        <label style="font-size:12px;color:var(--text-secondary);">Refund Window (Days)</label>
+                        <input type="number" name="refund_days" class="form-control" value="<?= (int)($plan['refund_days'] ?? 0) ?>" min="0">
                     </div>
                     <div>
                         <label style="font-size:12px;color:var(--text-secondary);">Max Resumes (0 = unlimited)</label>

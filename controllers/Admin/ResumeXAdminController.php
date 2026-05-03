@@ -434,14 +434,16 @@ class ResumeXAdminController extends BaseController
         try {
             $this->db->query(
                 "INSERT INTO resumex_subscription_plans
-                    (name, slug, price, currency, billing_cycle, max_resumes, features, status, sort_order)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (name, slug, price, currency, billing_cycle, cancel_days, refund_days, max_resumes, features, status, sort_order)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 [
                     $name,
                     $slug,
                     max(0, (float) $this->input('price', 0)),
                     $currency,
                     $billingCycle,
+                    max(0, (int) $this->input('cancel_days', 0)),
+                    max(0, (int) $this->input('refund_days', 0)),
                     (int) $this->input('max_resumes', 5),
                     json_encode([]),
                     in_array($this->input('status', 'active'), ['active', 'inactive']) ? $this->input('status') : 'active',
@@ -494,6 +496,8 @@ class ResumeXAdminController extends BaseController
                     price         = ?,
                     currency      = ?,
                     billing_cycle = ?,
+                    cancel_days   = ?,
+                    refund_days   = ?,
                     max_resumes   = ?,
                     features      = ?,
                     status        = ?,
@@ -505,6 +509,8 @@ class ResumeXAdminController extends BaseController
                     max(0, (float) $this->input('price', $plan['price'] ?? 0)),
                     $currency,
                     $billingCycle,
+                    max(0, (int) $this->input('cancel_days', $plan['cancel_days'] ?? 0)),
+                    max(0, (int) $this->input('refund_days', $plan['refund_days'] ?? 0)),
                     (int) $this->input('max_resumes', $plan['max_resumes'] ?? 5),
                     $existingFeatures,
                     in_array($this->input('status', $plan['status']), ['active', 'inactive']) ? $this->input('status') : 'active',
@@ -603,6 +609,8 @@ class ResumeXAdminController extends BaseController
                     `price` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
                     `currency` VARCHAR(3) NOT NULL DEFAULT 'USD',
                     `billing_cycle` ENUM('monthly','yearly','lifetime') DEFAULT 'monthly',
+                    `cancel_days` INT NOT NULL DEFAULT 0,
+                    `refund_days` INT NOT NULL DEFAULT 0,
                     `max_resumes` INT DEFAULT 5,
                     `features` TEXT NULL,
                     `is_default` TINYINT(1) DEFAULT 0,
@@ -614,6 +622,16 @@ class ResumeXAdminController extends BaseController
                     INDEX `idx_status` (`status`)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             ");
+            try {
+                $cols = array_column($this->db->fetchAll("SHOW COLUMNS FROM resumex_subscription_plans"), 'Field');
+                if (!in_array('cancel_days', $cols, true)) {
+                    $this->db->query("ALTER TABLE resumex_subscription_plans ADD COLUMN `cancel_days` INT NOT NULL DEFAULT 0 AFTER `billing_cycle`");
+                }
+                if (!in_array('refund_days', $cols, true)) {
+                    $this->db->query("ALTER TABLE resumex_subscription_plans ADD COLUMN `refund_days` INT NOT NULL DEFAULT 0 AFTER `cancel_days`");
+                }
+            } catch (\Exception $e) {
+            }
 
             $freeFeatures = $this->getResumeXFreePlanFeatures();
             $this->db->query(

@@ -85,6 +85,14 @@ $planFeatureLabels = $planFeatureLabels ?? [];
                                 <option value="lifetime">Lifetime</option>
                             </select>
                         </div>
+                        <div class="col-md-2 form-group">
+                            <label>Cancel Days</label>
+                            <input type="number" name="cancel_days" class="form-control" value="0" min="0">
+                        </div>
+                        <div class="col-md-2 form-group">
+                            <label>Refund Days</label>
+                            <input type="number" name="refund_days" class="form-control" value="0" min="0">
+                        </div>
                         <div class="col-md-3 form-group">
                             <label>Description</label>
                             <input type="text" name="description" class="form-control" placeholder="Short description">
@@ -180,6 +188,7 @@ $planFeatureLabels = $planFeatureLabels ?? [];
                     <span class="badge badge-secondary ml-2"><?= htmlspecialchars($plan['slug']) ?></span>
                     <span class="badge <?= $plan['status'] === 'active' ? 'badge-success' : 'badge-danger' ?> ml-1"><?= ucfirst($plan['status']) ?></span>
                     &nbsp; <?= htmlspecialchars($plan['currency'] ?? 'USD') ?> <?= number_format((float)$plan['price'], 2) ?>/<?= htmlspecialchars($plan['billing_cycle']) ?>
+                    &nbsp; <small class="text-muted">Cancel <?= (int)($plan['cancel_days'] ?? 0) ?>d / Refund <?= (int)($plan['refund_days'] ?? 0) ?>d</small>
                     &nbsp; <small class="text-muted"><?= (int)($plan['subscriber_count'] ?? 0) ?> subscribers</small>
                 </div>
                 <div class="d-flex" style="gap:6px;">
@@ -223,6 +232,14 @@ $planFeatureLabels = $planFeatureLabels ?? [];
                                 <option value="<?= $bc ?>" <?= $plan['billing_cycle'] === $bc ? 'selected' : '' ?>><?= ucfirst($bc) ?></option>
                                 <?php endforeach; ?>
                             </select>
+                        </div>
+                        <div class="col-md-2 form-group">
+                            <label>Cancel Days</label>
+                            <input type="number" name="cancel_days" class="form-control" value="<?= (int)($plan['cancel_days'] ?? 0) ?>" min="0">
+                        </div>
+                        <div class="col-md-2 form-group">
+                            <label>Refund Days</label>
+                            <input type="number" name="refund_days" class="form-control" value="<?= (int)($plan['refund_days'] ?? 0) ?>" min="0">
                         </div>
                         <div class="col-md-3 form-group">
                             <label>Description</label>

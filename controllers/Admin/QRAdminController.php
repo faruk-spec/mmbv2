@@ -843,15 +843,17 @@ class QRAdminController extends BaseController
                 $billingCycle = 'lifetime';
             }
 
-            $this->db->query(
-                "UPDATE qr_subscription_plans SET
-                     name                 = ?,
-                     price                = ?,
-                     currency             = ?,
-                     billing_cycle        = ?,
-                     max_static_qr        = ?,
-                     max_dynamic_qr       = ?,
-                     max_scans_per_month  = ?,
+             $this->db->query(
+                 "UPDATE qr_subscription_plans SET
+                      name                 = ?,
+                      price                = ?,
+                      currency             = ?,
+                      billing_cycle        = ?,
+                      cancel_days          = ?,
+                      refund_days          = ?,
+                      max_static_qr        = ?,
+                      max_dynamic_qr       = ?,
+                      max_scans_per_month  = ?,
                      max_bulk_generation  = ?,
                      features             = ?,
                      status               = ?,
@@ -862,6 +864,8 @@ class QRAdminController extends BaseController
                     max(0, (float) $this->input('price', $plan['price'] ?? 0)),
                     $currency,
                     $billingCycle,
+                    max(0, (int) $this->input('cancel_days', $plan['cancel_days'] ?? 0)),
+                    max(0, (int) $this->input('refund_days', $plan['refund_days'] ?? 0)),
                     (int) $this->input('max_static_qr', $plan['max_static_qr']),
                     (int) $this->input('max_dynamic_qr', $plan['max_dynamic_qr']),
                     (int) $this->input('max_scans_per_month', $plan['max_scans_per_month']),
@@ -968,15 +972,17 @@ class QRAdminController extends BaseController
         try {
             $this->db->query(
                 "INSERT INTO qr_subscription_plans
-                    (name, slug, price, currency, billing_cycle, max_static_qr, max_dynamic_qr,
+                    (name, slug, price, currency, billing_cycle, cancel_days, refund_days, max_static_qr, max_dynamic_qr,
                      max_scans_per_month, max_bulk_generation, features, status, sort_order)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 [
                     $name,
                     $slug,
                     max(0, (float) $this->input('price', 0)),
                     $currency,
                     $billingCycle,
+                    max(0, (int) $this->input('cancel_days', 0)),
+                    max(0, (int) $this->input('refund_days', 0)),
                     (int) $this->input('max_static_qr', 10),
                     (int) $this->input('max_dynamic_qr', 0),
                     (int) $this->input('max_scans_per_month', 1000),
@@ -1041,6 +1047,12 @@ class QRAdminController extends BaseController
             $cols = array_column($this->db->fetchAll("SHOW COLUMNS FROM qr_subscription_plans"), 'Field');
             if (!in_array('currency', $cols, true)) {
                 $this->db->query("ALTER TABLE qr_subscription_plans ADD COLUMN `currency` VARCHAR(3) NOT NULL DEFAULT 'USD' AFTER `price`");
+            }
+            if (!in_array('cancel_days', $cols, true)) {
+                $this->db->query("ALTER TABLE qr_subscription_plans ADD COLUMN `cancel_days` INT NOT NULL DEFAULT 0 AFTER `billing_cycle`");
+            }
+            if (!in_array('refund_days', $cols, true)) {
+                $this->db->query("ALTER TABLE qr_subscription_plans ADD COLUMN `refund_days` INT NOT NULL DEFAULT 0 AFTER `cancel_days`");
             }
         } catch (\Exception $e) {
             Logger::error('QRAdmin ensurePriceCurrencyColumns: ' . $e->getMessage());

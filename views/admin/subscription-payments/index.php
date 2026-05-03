@@ -41,6 +41,7 @@
                 <th style="padding:12px 16px;text-align:left;">Gateway</th>
                 <th style="padding:12px 16px;text-align:left;">Amount</th>
                 <th style="padding:12px 16px;text-align:left;">Status</th>
+                <th style="padding:12px 16px;text-align:left;">Refund</th>
                 <th style="padding:12px 16px;text-align:left;">Created</th>
                 <th style="padding:12px 16px;text-align:center;">Actions</th>
             </tr>
@@ -81,6 +82,11 @@
                         <?= View::e(str_replace('_', ' ', ucfirst($payment['status']))) ?>
                     </span>
                 </td>
+                <td style="padding:14px 16px;">
+                    <span style="font-size:.78rem;color:<?= ($payment['refund_status'] ?? 'none') === 'requested' ? '#f59e0b' : 'var(--text-secondary)' ?>;">
+                        <?= View::e(ucfirst($payment['refund_status'] ?? 'none')) ?>
+                    </span>
+                </td>
                 <td style="padding:14px 16px;"><?= date('M j, Y H:i', strtotime($payment['created_at'])) ?></td>
                 <td style="padding:14px 16px;text-align:center;">
                     <?php if (in_array($payment['status'], ['pending', 'verification_pending'], true)): ?>
@@ -96,7 +102,22 @@
                         </button>
                     </form>
                     <?php else: ?>
-                    <span style="color:var(--text-secondary);font-size:.8rem;">No action</span>
+                        <?php if (($payment['refund_status'] ?? 'none') === 'requested'): ?>
+                        <form method="POST" action="/admin/subscription-payments/<?= (int) $payment['id'] ?>/refund" style="display:inline-block;margin:0 4px 6px 0;">
+                            <?= \Core\Security::csrfField() ?>
+                            <input type="hidden" name="decision" value="approved">
+                            <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-undo"></i> Approve Refund</button>
+                        </form>
+                        <form method="POST" action="/admin/subscription-payments/<?= (int) $payment['id'] ?>/refund" style="display:inline-block;margin:0;">
+                            <?= \Core\Security::csrfField() ?>
+                            <input type="hidden" name="decision" value="rejected">
+                            <button type="submit" class="btn btn-sm" style="background:rgba(255,107,107,.1);border:1px solid var(--red);color:var(--red);cursor:pointer;">
+                                <i class="fas fa-times"></i> Reject Refund
+                            </button>
+                        </form>
+                        <?php else: ?>
+                        <span style="color:var(--text-secondary);font-size:.8rem;">No action</span>
+                        <?php endif; ?>
                     <?php endif; ?>
                 </td>
             </tr>

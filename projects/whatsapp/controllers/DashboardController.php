@@ -10,6 +10,7 @@ namespace Projects\WhatsApp\Controllers;
 use Core\Auth;
 use Core\View;
 use Core\Database;
+use Core\SubscriptionService;
 
 class DashboardController
 {
@@ -115,6 +116,8 @@ class DashboardController
      */
     public function subscription()
     {
+        $subscriptionService = new SubscriptionService($this->db);
+        $subscriptionService->ensureInfrastructure();
         // Get user's current subscription
         $subscription = $this->db->fetch("
             SELECT * FROM whatsapp_subscription_details
@@ -147,6 +150,7 @@ class DashboardController
             'user' => $this->user,
             'subscription' => $subscription,
             'plans' => $plans,
+            'paymentHistory' => $subscriptionService->getUserPayments((int) $this->user['id'], 'whatsapp'),
             'pageTitle' => 'My Subscription - WhatsApp API'
         ]);
     }

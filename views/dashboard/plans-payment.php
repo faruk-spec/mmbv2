@@ -83,7 +83,23 @@
                 </button>
             </form>
             <?php elseif ($payment['status'] === 'paid' && !empty($payment['subscription_id'])): ?>
-            <a href="/plans/invoice/<?= (int) $payment['subscription_id'] ?>" class="btn btn-primary">View Invoice</a>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <a href="/plans/payment/<?= (int) $payment['id'] ?>/invoice" class="btn btn-primary">View Invoice</a>
+                <?php if (!empty($canCancel['allowed'])): ?>
+                <form method="POST" action="/plans/payment/<?= (int) $payment['id'] ?>/cancel" style="margin:0;">
+                    <?= \Core\Security::csrfField() ?>
+                    <button type="submit" class="btn btn-secondary" onclick="return confirm('Cancel this subscription?')">Cancel Subscription</button>
+                </form>
+                <?php endif; ?>
+                <?php if (!empty($canRefund['allowed']) && ($payment['refund_status'] ?? 'none') === 'none'): ?>
+                <form method="POST" action="/plans/payment/<?= (int) $payment['id'] ?>/refund" style="margin:0;">
+                    <?= \Core\Security::csrfField() ?>
+                    <button type="submit" class="btn btn-secondary" onclick="return confirm('Request a refund for this payment?')">Request Refund</button>
+                </form>
+                <?php elseif (($payment['refund_status'] ?? 'none') !== 'none'): ?>
+                <span class="btn btn-secondary" style="cursor:default;">Refund: <?= View::e(ucfirst($payment['refund_status'])) ?></span>
+                <?php endif; ?>
+            </div>
             <?php endif; ?>
         </div>
     </div>

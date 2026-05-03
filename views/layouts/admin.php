@@ -2467,6 +2467,12 @@ window.mmbSkeleton = (function(){
                             </a>
                             <?php endif; ?>
                             <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('settings')): ?>
+                            <a href="/admin/invoice-settings" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/invoice-settings') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-file-invoice"></i>
+                                <span>Invoice Settings</span>
+                            </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('settings')): ?>
                             <a href="/admin/subscription-payments" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/subscription-payments') === 0 ? 'active' : '' ?>">
                                 <i class="fas fa-file-invoice-dollar"></i>
                                 <span>Subscription Payments</span>

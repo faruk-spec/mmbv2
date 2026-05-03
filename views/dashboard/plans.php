@@ -132,7 +132,13 @@
             $billing  = $sub['billing_cycle'] ?? null;
             $since    = $sub['started_at']    ?? null;
             $expires  = $sub['expires_at']    ?? null;
-            $upgradeUrl = $appKey === 'resumex' ? '/projects/resumex/plans' : '#platform-plans';
+            $upgradeUrl = match ($appKey) {
+                'resumex' => '/projects/resumex/plans',
+                'qr' => '/projects/qr/plan',
+                'convertx' => '/projects/convertx/plan',
+                'whatsapp' => '/projects/whatsapp/subscription',
+                default => '#platform-plans',
+            };
         ?>
         <div class="app-sub-row">
             <!-- Icon -->
@@ -337,6 +343,7 @@
                     <div class="app-name"><?= View::e($payment['plan_name']) ?></div>
                     <div class="app-meta">
                         <?= View::e($payment['currency']) ?>&nbsp;<?= number_format((float) $payment['amount'], 2) ?>
+                        &middot; <?= View::e(strtoupper($payment['app_key'])) ?>
                         &middot; <?= strtoupper(View::e($payment['gateway'])) ?>
                         &middot; Ref <?= View::e($payment['reference']) ?>
                         &middot; <?= date('M j, Y', strtotime($payment['created_at'])) ?>
@@ -347,8 +354,8 @@
                 </span>
                 <div class="app-actions">
                     <a href="/plans/payment/<?= (int) $payment['id'] ?>" class="btn-app btn-app-open">View</a>
-                    <?php if (!empty($payment['subscription_id']) && ($payment['status'] ?? '') === 'paid'): ?>
-                    <a href="/plans/invoice/<?= (int) $payment['subscription_id'] ?>" class="btn-app btn-app-open">Invoice</a>
+                    <?php if (($payment['status'] ?? '') === 'paid'): ?>
+                    <a href="/plans/payment/<?= (int) $payment['id'] ?>/invoice" class="btn-app btn-app-open">Invoice</a>
                     <?php endif; ?>
                 </div>
             </div>

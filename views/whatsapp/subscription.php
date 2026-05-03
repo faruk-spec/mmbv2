@@ -371,14 +371,14 @@
                 <?php if ($subscription['days_remaining'] !== null && $subscription['days_remaining'] < 7): ?>
                     <div class="alert alert-warning">
                         <i class="fas fa-exclamation-triangle"></i>
-                        <strong>Your subscription is expiring soon!</strong> Please contact admin to renew.
+                        <strong>Your subscription is expiring soon!</strong> Renew from the plan list below.
                     </div>
                 <?php endif; ?>
                 
                 <?php if ($subscription['status'] === 'expired'): ?>
                     <div class="alert alert-danger">
                         <i class="fas fa-times-circle"></i>
-                        <strong>Your subscription has expired!</strong> Please contact admin to renew your plan.
+                        <strong>Your subscription has expired!</strong> Choose a plan below to reactivate.
                     </div>
                 <?php endif; ?>
                 
@@ -455,7 +455,7 @@
         <?php else: ?>
             <div class="alert alert-info">
                 <i class="fas fa-info-circle"></i>
-                <strong>No active subscription found.</strong> Please contact the administrator to get a subscription plan.
+                <strong>No active subscription found.</strong> Choose a plan below to start your subscription.
             </div>
         <?php endif; ?>
         
@@ -489,15 +489,37 @@
                                 <li><i class="fas fa-check" style="color: var(--success);"></i> 
                                     <?= $plan['api_calls_limit'] == 0 ? 'Unlimited' : number_format($plan['api_calls_limit']) ?> API Calls
                                 </li>
+                                <?php if (!empty($plan['cancel_days'])): ?>
+                                <li><i class="fas fa-check" style="color: var(--success);"></i> Cancel within <?= (int) $plan['cancel_days'] ?> day(s)</li>
+                                <?php endif; ?>
+                                <?php if (!empty($plan['refund_days'])): ?>
+                                <li><i class="fas fa-check" style="color: var(--success);"></i> Refund within <?= (int) $plan['refund_days'] ?> day(s)</li>
+                                <?php endif; ?>
                             </ul>
+                            <?php if (!$subscription || strtolower(str_replace(' Plan', '', $plan['name'])) !== $subscription['plan_type']): ?>
+                            <a href="/plans/project/whatsapp/<?= urlencode($plan['slug'] ?? $plan['id']) ?>" class="btn btn-primary" style="width:100%;justify-content:center;">Continue</a>
+                            <?php endif; ?>
                         </div>
                     <?php endforeach; ?>
                 </div>
-                <div style="text-align: center; margin-top: 32px;">
-                    <p style="color: var(--text-secondary);">
-                        <i class="fas fa-info-circle"></i>
-                        Want to upgrade or change your plan? Please contact the administrator.
-                    </p>
+            </div>
+        <?php endif; ?>
+
+        <?php if (!empty($paymentHistory)): ?>
+            <div class="plans-section">
+                <h3>Payment History</h3>
+                <div class="plans-grid" style="grid-template-columns:1fr;">
+                    <?php foreach ($paymentHistory as $payment): ?>
+                    <div class="plan-card" style="text-align:left;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+                            <div>
+                                <h4><?= View::e($payment['plan_name']) ?></h4>
+                                <div style="color:var(--text-secondary);font-size:.88rem;"><?= View::e($payment['currency']) ?> <?= number_format((float) $payment['amount'], 2) ?> &middot; <?= strtoupper(View::e($payment['gateway'])) ?> &middot; Ref <?= View::e($payment['reference']) ?></div>
+                            </div>
+                            <a href="/plans/payment/<?= (int) $payment['id'] ?>" class="btn btn-secondary">View</a>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
                 </div>
             </div>
         <?php endif; ?>
