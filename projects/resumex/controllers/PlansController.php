@@ -201,7 +201,7 @@ td { padding: 12px 14px; border-bottom: 1px solid #f5e8e8; font-size: .9rem; }
 </div>
 <div class="footer">
     ResumeX &bull; This is a computer-generated invoice &bull; No signature required<br>
-    <a href="javascript:window.print()" style="color:#ff6b6b;text-decoration:none;">&#128424; Print / Save as PDF</a>
+    <button onclick="window.print()" style="color:#ff6b6b;background:none;border:none;cursor:pointer;font-size:.78rem;padding:0;text-decoration:underline;">&#128424; Print / Save as PDF</button>
 </div>
 </body>
 </html>

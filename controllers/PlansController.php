@@ -493,7 +493,7 @@ td { padding: 12px 14px; border-bottom: 1px solid #e8edf5; font-size: .9rem; }
 
 <div class="footer">
     Thank you for using MMB Platform &bull; This is a computer-generated invoice &bull; No signature required<br>
-    <a href="javascript:window.print()" style="color:#0077cc;text-decoration:none;">🖨 Print / Save as PDF</a>
+    <button onclick="window.print()" style="color:#0077cc;background:none;border:none;cursor:pointer;font-size:.78rem;padding:0;text-decoration:underline;">🖨 Print / Save as PDF</button>
 </div>
 </body>
 </html>
