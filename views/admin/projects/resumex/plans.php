@@ -152,9 +152,8 @@ $featureLabels = [
                     <i class="fas fa-edit"></i> Edit
                 </button>
                 <?php if (empty($plan['is_default'])): ?>
-                <?php $deleteConfirm = 'Delete plan ' . ($plan['name'] ?? '') . '? This cannot be undone.'; ?>
                 <form method="POST" action="/admin/projects/resumex/plans/<?= $plan['id'] ?>/delete" style="margin:0;"
-                      onsubmit="return confirm(<?= json_encode($deleteConfirm) ?>)">
+                      onsubmit="return confirm(<?= json_encode('Delete plan ' . ($plan['name'] ?? '') . '? This cannot be undone.') ?>)">
                     <?= \Core\Security::csrfField() ?>
                     <button type="submit" class="btn btn-sm" style="background:rgba(255,107,107,.1);border:1px solid var(--red);color:var(--red);cursor:pointer;">
                         <i class="fas fa-trash"></i> Delete

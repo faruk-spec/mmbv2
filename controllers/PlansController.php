@@ -191,6 +191,7 @@ class PlansController extends BaseController
             return;
         }
 
+        $paymentTitle = preg_replace('/[^a-zA-Z0-9 .,_-]/', '', (string) $plan['name']) ?: 'Plan';
         $payment = $this->subscriptionService->createOrReusePayment([
             'user_id' => $userId,
             'app_key' => 'platform',
@@ -207,7 +208,7 @@ class PlansController extends BaseController
                     'pn' => 'MMB Platform',
                     'am' => sprintf('%.2f', (float) $plan['price']),
                     'cu' => $plan['currency'] ?? ($paymentSettings['payment_currency'] ?? 'USD'),
-                    'tn' => $plan['name'] . ' Plan',
+                    'tn' => $paymentTitle . ' Plan',
                 ])
                 : null,
             'metadata' => ['message' => $message, 'plan_slug' => $plan['slug']],

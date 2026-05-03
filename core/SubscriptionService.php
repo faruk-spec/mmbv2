@@ -355,7 +355,7 @@ class SubscriptionService
                 'customer_phone' => (string) ($customer['phone'] ?? '9999999999'),
             ],
             'order_meta' => [
-                'return_url' => $validatedReturnUrl . (str_contains($validatedReturnUrl, '?') ? '&' : '?') . 'order_id={order_id}',
+                'return_url' => $this->appendQueryParams($validatedReturnUrl, ['order_id' => '{order_id}']),
             ],
         ];
 
@@ -463,6 +463,9 @@ class SubscriptionService
             );
 
             if (!$payment || empty($payment['user_email'])) {
+                Logger::warning('SubscriptionService::sendConfirmationEmail - Payment not found or missing email', [
+                    'payment_id' => $paymentId,
+                ]);
                 return;
             }
 
@@ -623,5 +626,31 @@ class SubscriptionService
         }
 
         return $returnUrl;
+    }
+
+    private function appendQueryParams(string $url, array $params): string
+    {
+        $parts = parse_url($url);
+        if ($parts === false) {
+            return $url;
+        }
+
+        $existing = [];
+        if (!empty($parts['query'])) {
+            parse_str($parts['query'], $existing);
+        }
+        $existing = array_merge($existing, $params);
+
+        $scheme = isset($parts['scheme']) ? $parts['scheme'] . '://' : '';
+        $host = $parts['host'] ?? '';
+        $port = isset($parts['port']) ? ':' . $parts['port'] : '';
+        $user = $parts['user'] ?? '';
+        $pass = isset($parts['pass']) ? ':' . $parts['pass']  : '';
+        $pass = ($user !== '' || $pass !== '') ? $pass . '@' : '';
+        $path = $parts['path'] ?? '';
+        $query = http_build_query($existing);
+        $fragment = isset($parts['fragment']) ? '#' . $parts['fragment'] : '';
+
+        return $scheme . $user . $pass . $host . $port . $path . ($query !== '' ? '?' . $query : '') . $fragment;
     }
 }

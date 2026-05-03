@@ -98,6 +98,7 @@ class PlansController
         $settings = $this->getPaymentSettings();
         $method   = $_POST['payment_method'] ?? ($settings['payment_method'] ?? 'request');
 
+        $paymentTitle = preg_replace('/[^a-zA-Z0-9 .,_-]/', '', (string) $plan['name']) ?: 'Plan';
         $payment = $this->subscriptionService->createOrReusePayment([
             'user_id' => $this->userId,
             'app_key' => 'resumex',
@@ -114,7 +115,7 @@ class PlansController
                     'pn' => 'ResumeX',
                     'am' => sprintf('%.2f', (float) $plan['price']),
                     'cu' => $plan['currency'] ?? ($settings['payment_currency'] ?? 'USD'),
-                    'tn' => $plan['name'] . ' Plan',
+                    'tn' => $paymentTitle . ' Plan',
                 ])
                 : null,
             'metadata' => ['plan_slug' => $slug],

@@ -101,7 +101,7 @@
         </div>
         <div class="form-group">
             <label for="payment_cashfree_secret">Secret Key</label>
-            <?php $secretPlaceholder = !empty($settings['payment_cashfree_secret_set']) ? (($settings['payment_cashfree_secret'] ?? '') . ' (leave blank to keep existing)') : 'Your Cashfree Secret Key'; ?>
+            <?php $secretPlaceholder = !empty($settings['payment_cashfree_secret_set']) ? 'Leave blank to keep existing secret' : 'Your Cashfree Secret Key'; ?>
             <input type="text" id="payment_cashfree_secret" name="payment_cashfree_secret"
                    value=""
                    placeholder="<?= htmlspecialchars($secretPlaceholder) ?>">
